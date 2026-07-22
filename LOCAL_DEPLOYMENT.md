@@ -73,6 +73,11 @@ vLLM workload that reserves about half of the RTX 4070 Ti Super. The profile giv
 MOSS 30% of VRAM, two active sequences, and a 16K context, leaving roughly 1--1.5
 GB of headroom after both services have loaded.
 
+`MOSS_MAX_MODEL_LEN` is the shared context-cap source of truth. The vLLM service
+uses it as `--max-model-len`, and the web service receives the same value as
+`--max-len` so `/api/runtime`, the UI default, uploads, and reruns all report and
+enforce the deployed serving cap.
+
 If the other GPU service is stopped and MOSS can use the GPU exclusively, change
 the values to:
 

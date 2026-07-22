@@ -53,6 +53,7 @@ def create_app(
         max_new_tokens=max_new_tokens,
         decoding=decoding,
         temperature=temperature,
+        max_length_cap=max_length if backend == "vllm" else None,
     )
     app.state.manager = manager
 
@@ -143,7 +144,7 @@ def create_app(
             job = manager.rerun_job(
                 job_id,
                 prompt=payload.get("prompt"),
-                max_length=payload.get("max_len") or payload.get("max_length"),
+                max_length=_payload_value(payload, "max_len", "max_length"),
                 max_new_tokens=payload.get("max_new_tokens"),
                 decoding=payload.get("decoding"),
                 temperature=payload.get("temperature"),
@@ -251,6 +252,13 @@ def _runner_runtime_info(runner) -> dict[str, Any]:
     else:
         info.setdefault("processor", {})
     return info
+
+
+def _payload_value(payload: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in payload:
+            return payload[key]
+    return None
 
 
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
@@ -932,7 +940,7 @@ INDEX_HTML = """<!doctype html>
                 </div>
                 <div>
                   <label for="maxLen">上下文上限</label>
-                  <input id="maxLen" type="number" min="1" step="1" value="131072" />
+                  <input id="maxLen" type="number" min="1" step="1" />
                 </div>
               </div>
               <div class="row" style="margin-top:10px">

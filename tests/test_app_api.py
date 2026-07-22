@@ -62,8 +62,53 @@ class BlockingRunner:
         )
 
 
+class NoopRunner:
+    model_path = "fake-model"
+    device_name = "cpu"
+    dtype_name = "float32"
+
+    def transcribe(self, audio_path, **kwargs):
+        callback = kwargs.get("status_callback")
+        if callback:
+            callback("transcribing", 0.5, 1)
+        return TranscriptionResult(
+            text="[0][S01]hello[1]",
+            prompt_len=10,
+            generated_tokens=5,
+            elapsed_sec=0.01,
+            model=self.model_path,
+            audio=str(audio_path),
+            decoding="greedy",
+            temperature=None,
+        )
+
+
+def wait_terminal(client, job_id: str) -> dict:
+    job = {}
+    for _ in range(80):
+        job = client.get(f"/api/jobs/{job_id}").json()
+        if job["status"] in {"waiting_review", "done", "failed", "cancelled"}:
+            return job
+        time.sleep(0.025)
+    raise AssertionError(f"job {job_id} did not finish: {job}")
+
+
 @unittest.skipUnless(FASTAPI_AVAILABLE, "fastapi is not installed")
 class AppApiTest(unittest.TestCase):
+    def make_vllm_app(self, tmpdir: str):
+        from moss_transcribe_diarize.app.server import create_app
+
+        app = create_app(
+            model_path="unused-local-model",
+            runs_dir=tmpdir,
+            backend="vllm",
+            vllm_base_url="http://vllm.test:8000/v1",
+            vllm_model="moss-served",
+            max_length=16384,
+        )
+        app.state.manager.model_runner = NoopRunner()
+        return app
+
     def test_runtime_reports_vllm_backend(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
@@ -212,6 +257,112 @@ class AppApiTest(unittest.TestCase):
                 time.sleep(0.05)
             self.assertEqual(finished["status"], "waiting_review")
             self.assertEqual(finished["usage"]["generated_tokens"], 5)
+
+    def test_vllm_runtime_reports_deployed_context_cap(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(self.make_vllm_app(tmpdir))
+            runtime = client.get("/api/runtime")
+            self.assertEqual(runtime.status_code, 200)
+            self.assertEqual(runtime.json()["inference"]["max_length"], 16384)
+
+    def test_index_omits_static_context_default(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(self.make_vllm_app(tmpdir))
+            response = client.get("/")
+            self.assertEqual(response.status_code, 200)
+            self.assertNotIn('id="maxLen" type="number" min="1" step="1" value=', response.text)
+
+    def test_vllm_upload_accepts_value_equal_to_deployed_cap(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(self.make_vllm_app(tmpdir))
+            response = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+                data={"max_len": "16384"},
+            )
+            self.assertEqual(response.status_code, 200)
+            wait_terminal(client, response.json()["id"])
+
+    def test_vllm_upload_rejects_value_above_deployed_cap(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(self.make_vllm_app(tmpdir))
+            response = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+                data={"max_len": "131072"},
+            )
+            if response.status_code == 200:
+                wait_terminal(client, response.json()["id"])
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("max_len", response.json()["detail"])
+            self.assertIn("16384", response.json()["detail"])
+
+    def test_vllm_rerun_rejects_value_above_deployed_cap(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(self.make_vllm_app(tmpdir))
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+                data={"max_len": "16384"},
+            )
+            self.assertEqual(created.status_code, 200)
+            source_id = created.json()["id"]
+            wait_terminal(client, source_id)
+
+            response = client.post(f"/api/jobs/{source_id}/rerun", json={"max_len": 131072})
+            if response.status_code == 200:
+                wait_terminal(client, response.json()["id"])
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("max_len", response.json()["detail"])
+            self.assertIn("16384", response.json()["detail"])
+
+    def test_vllm_rerun_rejects_explicit_invalid_max_len_values(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(self.make_vllm_app(tmpdir))
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+                data={"max_len": "16384"},
+            )
+            self.assertEqual(created.status_code, 200)
+            source_id = created.json()["id"]
+            wait_terminal(client, source_id)
+
+            for value in (0, -1, "abc"):
+                with self.subTest(max_len=value):
+                    response = client.post(f"/api/jobs/{source_id}/rerun", json={"max_len": value})
+                    if response.status_code == 200:
+                        wait_terminal(client, response.json()["id"])
+                    self.assertEqual(response.status_code, 400)
+
+    def test_hf_backend_retains_configured_max_len_behavior(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_length=131072)
+            app.state.manager.model_runner = NoopRunner()
+            client = TestClient(app)
+            response = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+                data={"max_len": "131072"},
+            )
+            self.assertEqual(response.status_code, 200)
+            job = wait_terminal(client, response.json()["id"])
+            self.assertEqual(job["inference"]["max_length"], 131072)
 
 
 if __name__ == "__main__":
