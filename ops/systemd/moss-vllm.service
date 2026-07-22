@@ -1,0 +1,16 @@
+[Unit]
+Description=MOSS Transcribe Diarize vLLM API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss.env
+ExecStart=/bin/bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/start-vllm.sh
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=120
+KillSignal=SIGINT
+
+[Install]
+WantedBy=default.target

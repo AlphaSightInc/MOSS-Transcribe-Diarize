@@ -1,0 +1,15 @@
+[Unit]
+Description=MOSS Transcribe Diarize subtitle web app
+After=network-online.target moss-vllm.service
+Wants=network-online.target moss-vllm.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss.env
+ExecStart=/bin/bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/start-web.sh
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
