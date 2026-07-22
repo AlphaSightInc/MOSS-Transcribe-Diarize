@@ -15,4 +15,5 @@ exec "${VENV_DIR}/bin/mtd-subtitle-web" \
   --runs-dir "${PROJECT_DIR}/runs" \
   --host 0.0.0.0 \
   --port 7860 \
+  --max-len "${MOSS_MAX_MODEL_LEN:-16384}" \
   --max-new-tokens "${MOSS_MAX_NEW_TOKENS:-12000}"

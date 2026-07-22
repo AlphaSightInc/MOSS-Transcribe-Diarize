@@ -940,7 +940,7 @@ INDEX_HTML = """<!doctype html>
                 </div>
                 <div>
                   <label for="maxLen">上下文上限</label>
-                  <input id="maxLen" type="number" min="1" step="1" value="131072" />
+                  <input id="maxLen" type="number" min="1" step="1" />
                 </div>
               </div>
               <div class="row" style="margin-top:10px">
