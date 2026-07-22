@@ -142,6 +142,7 @@ class JobManager:
         max_new_tokens: int,
         decoding: str = "greedy",
         temperature: float | None = None,
+        max_length_cap: int | None = None,
     ):
         self.runs_dir = Path(runs_dir)
         self.runs_dir.mkdir(parents=True, exist_ok=True)
@@ -149,6 +150,7 @@ class JobManager:
         self.prompt = prompt
         self.max_length = max_length
         self.max_new_tokens = max_new_tokens
+        self.max_length_cap = max_length_cap
         self.decoding = decoding
         self.temperature = temperature
         self._jobs: dict[str, JobRecord] = {}
@@ -463,6 +465,8 @@ class JobManager:
             raise ValueError("decoding must be greedy or sample.")
         if max_length_value <= 0:
             raise ValueError("max_length must be greater than 0.")
+        if self.max_length_cap is not None and max_length_value > self.max_length_cap:
+            raise ValueError(f"max_len must be less than or equal to {self.max_length_cap}.")
         if max_new_tokens_value <= 0:
             raise ValueError("max_new_tokens must be greater than 0.")
 

@@ -53,6 +53,7 @@ def create_app(
         max_new_tokens=max_new_tokens,
         decoding=decoding,
         temperature=temperature,
+        max_length_cap=max_length if backend == "vllm" else None,
     )
     app.state.manager = manager
 
