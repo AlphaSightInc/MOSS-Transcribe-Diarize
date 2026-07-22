@@ -317,6 +317,27 @@ class AppApiTest(unittest.TestCase):
             self.assertIn("max_len", response.json()["detail"])
             self.assertIn("16384", response.json()["detail"])
 
+    def test_vllm_rerun_rejects_explicit_invalid_max_len_values(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(self.make_vllm_app(tmpdir))
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+                data={"max_len": "16384"},
+            )
+            self.assertEqual(created.status_code, 200)
+            source_id = created.json()["id"]
+            wait_terminal(client, source_id)
+
+            for value in (0, -1, "abc"):
+                with self.subTest(max_len=value):
+                    response = client.post(f"/api/jobs/{source_id}/rerun", json={"max_len": value})
+                    if response.status_code == 200:
+                        wait_terminal(client, response.json()["id"])
+                    self.assertEqual(response.status_code, 400)
+
     def test_hf_backend_retains_configured_max_len_behavior(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
