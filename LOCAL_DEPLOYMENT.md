@@ -66,15 +66,24 @@ transcription. To repeat the health and transcription check:
 & 'D:\Coding\MOSS-Transcribe-Diarize\ops\smoke-test.ps1'
 ```
 
-After an authorized GitHub handoff and service restart, run the parked
-bounded-window deployed proof from this branch:
+IDEA-003 local branch validation uses these three gates from the target root:
 
 ```bash
-bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-002-window-stitch-contract/deployed-repro.sh"
+bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-003-speaker-continuity/repro.sh"
+python -m pytest tests/test_speaker_continuity.py tests/test_windowed_transcription.py tests/test_app_api.py -q
+python -m pytest tests -q
+```
+
+After an authorized GitHub handoff and service restart, run the parked deployed
+speaker-continuity proof from this branch:
+
+```bash
+bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-003-speaker-continuity/deployed-repro.sh"
 ```
 
 Do not run that command against an unchanged deployment; it is a post-handoff
-proof that the deployed service contains the branch-local windowing changes.
+proof that the deployed service contains the branch-local speaker-continuity
+changes.
 
 ## GPU capacity
 
@@ -117,8 +126,43 @@ Window stitching uses absolute timestamps. Each local segment is offset by the
 window start, then kept only when its absolute midpoint belongs to that window's
 ownership interval. Overlap ownership is split at the temporal midpoint. Non-final
 upper bounds are half-open; the final upper bound is closed. The transcript grammar
-remains compact `[start][Sxx]text[end]`, and speaker labels are preserved exactly
-as returned per window.
+remains compact `[start][Sxx]text[end]`; only the speaker labels may be relabeled
+by the local identity resolver before midpoint ownership.
+
+## Cross-window speaker identity
+
+The vLLM window runner resolves speaker labels after all per-window transcript
+segments have absolute timestamps and before midpoint ownership. The resolver
+does not infer identity from equal local labels. Its node key is
+`(window_index, local_label)`, and labels are deterministic job-level labels that
+continue past `S08`.
+
+Tier A is always local and deterministic. It compares adjacent overlapping
+windows with merged interval support, Dice overlap, exact SciPy rectangular
+assignment, and mutual-margin checks. The trial defaults are 2.0 seconds of
+support, Dice >= 0.75, and a 1.0-second mutual margin. Same-window nodes are
+cannot-link. Ambiguous, low-support, low-Dice, and cannot-link cases abstain with
+reason-coded diagnostics instead of forcing a merge.
+
+Tier B is an optional trial for Tier-A-unresolved singleton components only and
+is disabled by default. The pinned trial asset is WeSpeaker ResNet152-LM revision
+`4adba1525a6c9d5fff74b6df43a6ec97a86c4112` with state SHA-256
+`b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc`.
+When explicitly enabled, the local adapter must find and hash-verify that state
+file before embedding. It performs no job-time download and model weights are not
+committed.
+
+Tier B selects only single-label speech evidence at least 2 seconds long, with at
+most three intervals per node. Candidate centroids are matched with normalized
+cosine >= 0.70 and mutual margin >= 0.20 while preserving same-window cannot-link.
+Short audio, mixed or invalid embeddings, low similarity, low margin, missing
+assets, hash mismatch, and provider failures abstain. Missing or failing Tier B is
+reported as `tier_b_unavailable` and does not discard Tier-A output.
+
+Finished jobs persist additive identity metadata without changing compact
+transcript text, subtitles, or exports. The API exposes `identity_summary` and
+`files.identity_resolution`; the versioned job artifact is
+`identity-resolution.json`.
 
 The parent job fails closed if any child window returns a vLLM error payload, zero
 generated tokens, empty transcript text, or zero parsed transcript segments. Partial
@@ -127,7 +171,8 @@ windowed output is not published. The persisted API usage object includes
 counts are aggregated across windows, so they are not comparable to one window's
 output cap.
 
-Current limits: this does not provide cross-window speaker identity, resume or
+Current limits: Tier B remains default-off pending WSL/PyTorch parity and
+approved deployed proof. The window runner still does not provide resume or
 checkpointing, per-window retry, upload-limit changes, context-cap changes, or
 larger vLLM request limits. Those require separate reviewed changes.
 
