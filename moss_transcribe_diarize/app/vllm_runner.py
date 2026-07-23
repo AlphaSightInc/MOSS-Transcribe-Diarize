@@ -12,6 +12,7 @@ from typing import Any
 import soundfile as sf
 
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT, load_audio_item
+from moss_transcribe_diarize.transcript_parser import parse_transcript
 
 from .model_runner import StatusCallback, TranscriptionResult, generation_progress
 
@@ -83,10 +84,17 @@ class VllmRunner:
             status_callback=status_callback,
             max_new_tokens=max_new_tokens,
         )
+        if "error" in response:
+            _raise_vllm_error(response["error"])
         text = _extract_transcription_text(response)
         usage = response.get("usage") or {}
         generated_tokens = int(usage.get("completion_tokens") or 0)
         prompt_len = int(usage.get("prompt_tokens") or 0)
+        _validate_transcription_response(
+            text=text,
+            generated_tokens=generated_tokens,
+            audio_path=audio_path,
+        )
         if status_callback is not None:
             status_callback("transcribing", 0.85, generated_tokens)
         return TranscriptionResult(
@@ -222,6 +230,29 @@ def _extract_transcription_text(response: dict[str, Any]) -> str:
     return ""
 
 
+def _validate_transcription_response(
+    *,
+    text: str,
+    generated_tokens: int,
+    audio_path: str | Path,
+) -> None:
+    audio = str(Path(audio_path).expanduser())
+    if generated_tokens <= 0:
+        raise RuntimeError(f"vLLM transcription returned zero generated tokens for {audio}.")
+    if not text:
+        raise RuntimeError(f"vLLM transcription returned empty transcript text for {audio}.")
+    if not parse_transcript(text):
+        raise RuntimeError(f"vLLM transcription returned zero parsed segments for {audio}.")
+
+
+def _raise_vllm_error(error: Any) -> None:
+    if isinstance(error, dict):
+        message = error.get("message") or error.get("detail") or error.get("type") or error
+    else:
+        message = error
+    raise RuntimeError(f"vLLM request failed with error payload: {message}")
+
+
 def _consume_sse_transcription(
     response: Any,
     *,
@@ -239,6 +270,8 @@ def _consume_sse_transcription(
         if not data or data == "[DONE]":
             continue
         chunk = json.loads(data)
+        if "error" in chunk:
+            _raise_vllm_error(chunk["error"])
 
         chunk_usage = chunk.get("usage")
         if isinstance(chunk_usage, dict):
