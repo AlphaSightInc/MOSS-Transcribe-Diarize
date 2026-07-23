@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import hashlib
 import json
 import tempfile
 import time
@@ -118,6 +119,81 @@ def test_within_window_cannot_link_blocks_tier_b_component_merge(identity_api):
     assert "cannot_link_conflict" in edge_reasons(resolution.diagnostics)
 
 
+def test_enabled_tier_b_missing_asset_preserves_tier_a_and_reports_unavailable(identity_api, tmp_path):
+    adapter = identity_api.WeSpeakerResNet152LmAdapter(
+        tmp_path / "missing-state.bin",
+        embedder=CannotLinkMergingTierBEncoder(),
+    )
+
+    resolution = resolve_identity(
+        identity_api,
+        [
+            window(0, 0, 150, 0, 135),
+            window(1, 120, 270, 135, 270),
+        ],
+        [
+            [segment(125, 134, "S01", "left overlap")],
+            [segment(5, 14, "S02", "right overlap")],
+        ],
+        tier_b_enabled=True,
+        tier_b_encoder=adapter,
+    )
+
+    assert speakers_by_text(resolution)["right overlap"] == "S01"
+    assert resolution.summary["tier_a_accepted"] == 1
+    assert resolution.summary["tier_b_status"] == "unavailable"
+    assert resolution.summary["tier_b_accepted"] == 0
+    assert resolution.diagnostics["tier_b"]["provider"]["provider"] == "wespeaker_resnet152_lm"
+    assert resolution.diagnostics["tier_b"]["provider"]["revision"] == (
+        "4adba1525a6c9d5fff74b6df43a6ec97a86c4112"
+    )
+    assert resolution.diagnostics["tier_b"]["unavailable_reason"] == "asset_missing"
+    assert "tier_b_unavailable" in edge_reasons(resolution.diagnostics)
+
+
+def test_tier_b_preflight_selects_only_two_second_unresolved_evidence(identity_api, tmp_path):
+    state = tmp_path / "state.bin"
+    state.write_bytes(b"fake-state")
+    spec = identity_api.TierBAssetSpec(state_sha256=hashlib.sha256(b"fake-state").hexdigest())
+    adapter = identity_api.WeSpeakerResNet152LmAdapter(
+        state,
+        embedder=CannotLinkMergingTierBEncoder(),
+        spec=spec,
+    )
+
+    resolution = resolve_identity(
+        identity_api,
+        [window(0, 0, 150, 0, 150)],
+        [
+            [
+                segment(1, 2.5, "S01", "too short"),
+                segment(10, 14, "S01", "longest"),
+                segment(20, 22, "S01", "two seconds"),
+                segment(30, 33, "S01", "middle"),
+                segment(40, 43, "S01", "tie"),
+            ],
+        ],
+        tier_b_enabled=True,
+        tier_b_encoder=adapter,
+        window_audio_paths=[tmp_path / "window.wav"],
+    )
+
+    assert resolution.summary["tier_b_status"] == "available"
+    node_evidence = resolution.diagnostics["tier_b"]["evidence"][0]["nodes"][0]
+    assert node_evidence["node"] == "0:S01"
+    assert node_evidence["selected_interval_count"] == 3
+    assert node_evidence["selected_duration_seconds"] == 10.0
+    assert [
+        (item["start"], item["end"], item["duration_seconds"])
+        for item in node_evidence["selected_intervals"]
+    ] == [
+        (10.0, 14.0, 4.0),
+        (30.0, 33.0, 3.0),
+        (40.0, 43.0, 3.0),
+    ]
+    assert all(item["duration_seconds"] >= 2.0 for item in node_evidence["selected_intervals"])
+
+
 def test_resolution_replay_is_byte_deterministic(identity_api):
     windows = [
         window(0, 0, 150, 0, 135),
@@ -196,6 +272,8 @@ def identity_api():
     return SimpleNamespace(
         IdentityResolver=module.IdentityResolver,
         IdentityResolverConfig=module.IdentityResolverConfig,
+        TierBAssetSpec=module.TierBAssetSpec,
+        WeSpeakerResNet152LmAdapter=module.WeSpeakerResNet152LmAdapter,
     )
 
 
@@ -206,10 +284,11 @@ def resolve_identity(
     *,
     tier_b_enabled: bool = False,
     tier_b_encoder=None,
+    window_audio_paths=None,
 ):
     config = identity_api.IdentityResolverConfig(tier_b_enabled=tier_b_enabled)
     resolver = identity_api.IdentityResolver(config=config, tier_b_encoder=tier_b_encoder)
-    return resolver.resolve(windows, local_results, window_audio_paths=[])
+    return resolver.resolve(windows, local_results, window_audio_paths=window_audio_paths or [])
 
 
 def window(index: int, start: float, end: float, own_start: float, own_end: float) -> WindowPlan:

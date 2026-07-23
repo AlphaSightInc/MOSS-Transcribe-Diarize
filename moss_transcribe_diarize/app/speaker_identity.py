@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
+from typing import Any, Protocol
 
 from scipy.optimize import linear_sum_assignment
 
@@ -18,6 +20,36 @@ class IdentityResolverConfig:
     min_overlap_dice: float = 0.75
     mutual_margin_seconds: float = 1.0
     tier_b_enabled: bool = False
+    tier_b_min_segment_seconds: float = 2.0
+    tier_b_max_segments_per_node: int = 3
+    tier_b_similarity: float = 0.70
+    tier_b_margin: float = 0.20
+
+
+@dataclass(frozen=True, slots=True)
+class TierBAssetSpec:
+    provider: str = "wespeaker_resnet152_lm"
+    revision: str = "4adba1525a6c9d5fff74b6df43a6ec97a86c4112"
+    state_sha256: str = "b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc"
+    embedding_dimension: int = 256
+    frontend_version: str = "pytorch-offline-trial"
+
+
+@dataclass(frozen=True, slots=True)
+class TierBPreflight:
+    available: bool
+    reason: str | None
+    descriptor: dict[str, Any]
+
+
+class TierBEmbedder(Protocol):
+    descriptor: dict[str, Any]
+
+    def preflight(self) -> TierBPreflight:
+        ...
+
+    def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
+        ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +67,7 @@ class _WindowBundle:
     own_start: float
     own_end: float
     segments: list[TranscriptSegment]
+    audio_path: Path | None
 
 
 class _UnionFind:
@@ -70,8 +103,7 @@ class IdentityResolver:
         *,
         window_audio_paths: list[str] | list[Any],
     ) -> IdentityResolution:
-        del window_audio_paths
-        bundles = _bundle_windows(windows, local_results)
+        bundles = _bundle_windows(windows, local_results, window_audio_paths)
         nodes = _nodes_for(bundles)
         union = _UnionFind(nodes)
         node_intervals = _node_intervals(bundles)
@@ -85,7 +117,7 @@ class IdentityResolver:
                 boundaries.append(boundary)
 
         components = _components(nodes, union)
-        tier_b = self._tier_b_diagnostics(components)
+        tier_b = self._tier_b_diagnostics(bundles, components)
         canonical = _canonical_labels(bundles, components, union)
         relabeled = _relabeled_results(bundles, canonical)
 
@@ -99,10 +131,18 @@ class IdentityResolver:
         diagnostics = {
             "schema_version": 2,
             "config": {
-                "min_overlap_support_seconds": self.config.min_overlap_support_seconds,
-                "min_overlap_dice": self.config.min_overlap_dice,
-                "mutual_margin_seconds": self.config.mutual_margin_seconds,
-                "tier_b_enabled": self.config.tier_b_enabled,
+                "tier_a": {
+                    "min_overlap_support_seconds": self.config.min_overlap_support_seconds,
+                    "min_overlap_dice": self.config.min_overlap_dice,
+                    "mutual_margin_seconds": self.config.mutual_margin_seconds,
+                },
+                "tier_b": {
+                    "enabled": self.config.tier_b_enabled,
+                    "min_segment_seconds": self.config.tier_b_min_segment_seconds,
+                    "max_segments_per_node": self.config.tier_b_max_segments_per_node,
+                    "similarity": self.config.tier_b_similarity,
+                    "margin": self.config.tier_b_margin,
+                },
             },
             "boundaries": boundaries,
             "tier_b": tier_b,
@@ -186,15 +226,24 @@ class IdentityResolver:
             return "low_dice"
         return "accepted_overlap"
 
-    def _tier_b_diagnostics(self, components: list[list[NodeKey]]) -> dict[str, Any]:
+    def _tier_b_diagnostics(
+        self,
+        bundles: list[_WindowBundle],
+        components: list[list[NodeKey]],
+    ) -> dict[str, Any]:
         if not self.config.tier_b_enabled:
             return {"status": "disabled", "proposals": []}
-        if self.tier_b_encoder is None:
+
+        preflight = self._tier_b_preflight()
+        if not preflight.available:
             return {
                 "status": "unavailable",
+                "provider": preflight.descriptor,
+                "unavailable_reason": preflight.reason,
                 "proposals": [{"reason": "tier_b_unavailable"}],
             }
 
+        evidence = _tier_b_evidence(bundles, components, self.config)
         proposals: list[dict[str, Any]] = []
         for index, left in enumerate(components):
             for right in components[index + 1 :]:
@@ -206,13 +255,101 @@ class IdentityResolver:
                             "reason": "cannot_link_conflict",
                         }
                     )
-        return {"status": "available", "provider": getattr(self.tier_b_encoder, "descriptor", {}), "proposals": proposals}
+        for component in evidence:
+            if component["selected_interval_count"] == 0:
+                proposals.append(
+                    {
+                        "component": component["component"],
+                        "reason": "tier_b_insufficient_audio",
+                    }
+                )
+        return {
+            "status": "available",
+            "provider": preflight.descriptor,
+            "evidence": evidence,
+            "proposals": proposals,
+        }
+
+    def _tier_b_preflight(self) -> TierBPreflight:
+        if self.tier_b_encoder is None:
+            return TierBPreflight(available=False, reason="provider_missing", descriptor={})
+
+        descriptor = dict(getattr(self.tier_b_encoder, "descriptor", {}) or {})
+        preflight = getattr(self.tier_b_encoder, "preflight", None)
+        if not callable(preflight):
+            return TierBPreflight(available=True, reason=None, descriptor=descriptor)
+        try:
+            result = preflight()
+        except Exception as exc:
+            return TierBPreflight(
+                available=False,
+                reason=getattr(exc, "reason", "provider_exception"),
+                descriptor=descriptor,
+            )
+        if isinstance(result, TierBPreflight):
+            return result
+        if isinstance(result, dict):
+            return TierBPreflight(
+                available=bool(result.get("available")),
+                reason=result.get("reason"),
+                descriptor=dict(result.get("descriptor") or descriptor),
+            )
+        return TierBPreflight(available=bool(result), reason=None if result else "provider_unavailable", descriptor=descriptor)
 
 
-def _bundle_windows(windows: list[Any], local_results: list[list[TranscriptSegment]]) -> list[_WindowBundle]:
+class WeSpeakerResNet152LmAdapter:
+    def __init__(
+        self,
+        state_path: str | Path,
+        *,
+        embedder: Any = None,
+        spec: TierBAssetSpec | None = None,
+        device: str = "cpu",
+    ):
+        self.state_path = Path(state_path)
+        self.embedder = embedder
+        self.spec = spec or TierBAssetSpec()
+        self.device = device
+        self.descriptor = {
+            "provider": self.spec.provider,
+            "revision": self.spec.revision,
+            "state_sha256": self.spec.state_sha256,
+            "embedding_dimension": self.spec.embedding_dimension,
+            "frontend_version": self.spec.frontend_version,
+            "device": self.device,
+        }
+
+    def preflight(self) -> TierBPreflight:
+        if not self.state_path.exists():
+            return TierBPreflight(False, "asset_missing", self.descriptor)
+        actual_sha256 = _sha256_file(self.state_path)
+        if actual_sha256 != self.spec.state_sha256:
+            return TierBPreflight(False, "asset_hash_mismatch", self.descriptor | {"actual_state_sha256": actual_sha256})
+        if self.embedder is None or not callable(getattr(self.embedder, "embed", None)):
+            return TierBPreflight(False, "provider_missing", self.descriptor)
+        return TierBPreflight(True, None, self.descriptor)
+
+    def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
+        preflight = self.preflight()
+        if not preflight.available:
+            raise RuntimeError(f"Tier B provider unavailable: {preflight.reason}")
+        return list(self.embedder.embed(wav_path, intervals))
+
+
+def _bundle_windows(
+    windows: list[Any],
+    local_results: list[list[TranscriptSegment]],
+    window_audio_paths: list[str] | list[Any],
+) -> list[_WindowBundle]:
     if len(windows) != len(local_results):
         raise ValueError("windows and local_results must have the same length.")
-    pairs = sorted(zip(windows, local_results, strict=True), key=lambda item: item[0].index)
+    audio_paths = list(window_audio_paths)
+    if audio_paths and len(audio_paths) != len(windows):
+        raise ValueError("window_audio_paths must be empty or have the same length as windows.")
+    pairs = sorted(
+        zip(windows, local_results, audio_paths or [None] * len(windows), strict=True),
+        key=lambda item: item[0].index,
+    )
     return [
         _WindowBundle(
             index=int(window.index),
@@ -221,8 +358,9 @@ def _bundle_windows(windows: list[Any], local_results: list[list[TranscriptSegme
             own_start=float(window.own_start),
             own_end=float(window.own_end),
             segments=list(segments),
+            audio_path=None if audio_path is None else Path(audio_path),
         )
-        for window, segments in pairs
+        for window, segments, audio_path in pairs
     ]
 
 
@@ -237,6 +375,67 @@ def _node_intervals(bundles: list[_WindowBundle]) -> dict[NodeKey, list[Interval
             key = (bundle.index, segment.speaker)
             intervals.setdefault(key, []).append((bundle.start + float(segment.start), bundle.start + float(segment.end)))
     return {key: _merge_intervals(value) for key, value in intervals.items()}
+
+
+def _tier_b_evidence(
+    bundles: list[_WindowBundle],
+    components: list[list[NodeKey]],
+    config: IdentityResolverConfig,
+) -> list[dict[str, Any]]:
+    unresolved_components = [component for component in components if len(component) == 1]
+    evidence: list[dict[str, Any]] = []
+    for component in unresolved_components:
+        node_entries = [_tier_b_node_evidence(bundles, node, config) for node in component]
+        evidence.append(
+            {
+                "component": _format_component(component),
+                "selected_interval_count": sum(entry["selected_interval_count"] for entry in node_entries),
+                "selected_duration_seconds": round(
+                    sum(entry["selected_duration_seconds"] for entry in node_entries),
+                    6,
+                ),
+                "nodes": node_entries,
+            }
+        )
+    return evidence
+
+
+def _tier_b_node_evidence(
+    bundles: list[_WindowBundle],
+    node: NodeKey,
+    config: IdentityResolverConfig,
+) -> dict[str, Any]:
+    candidates: list[dict[str, Any]] = []
+    for bundle in bundles:
+        if bundle.index != node[0]:
+            continue
+        for segment in bundle.segments:
+            if segment.speaker != node[1]:
+                continue
+            absolute_start = bundle.start + float(segment.start)
+            absolute_end = bundle.start + float(segment.end)
+            duration = absolute_end - absolute_start
+            if duration < config.tier_b_min_segment_seconds:
+                continue
+            candidates.append(
+                {
+                    "window": bundle.index,
+                    "start": round(absolute_start, 6),
+                    "end": round(absolute_end, 6),
+                    "duration_seconds": round(duration, 6),
+                }
+            )
+
+    selected = sorted(
+        candidates,
+        key=lambda item: (-item["duration_seconds"], item["start"], item["end"]),
+    )[: config.tier_b_max_segments_per_node]
+    return {
+        "node": _format_node(node),
+        "selected_interval_count": len(selected),
+        "selected_duration_seconds": round(sum(item["duration_seconds"] for item in selected), 6),
+        "selected_intervals": selected,
+    }
 
 
 def _clip_intervals(intervals: list[Interval], bounds: Interval) -> list[Interval]:
@@ -371,4 +570,19 @@ def _component_windows(component: list[NodeKey]) -> set[int]:
     return {node[0] for node in component}
 
 
-__all__ = ["IdentityResolution", "IdentityResolver", "IdentityResolverConfig"]
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+__all__ = [
+    "IdentityResolution",
+    "IdentityResolver",
+    "IdentityResolverConfig",
+    "TierBAssetSpec",
+    "TierBPreflight",
+    "WeSpeakerResNet152LmAdapter",
+]
