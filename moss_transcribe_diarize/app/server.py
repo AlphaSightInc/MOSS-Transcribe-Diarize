@@ -1,4 +1,5 @@
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +30,7 @@ def create_app(
     vllm_timeout: float = 600.0,
 ):
     try:
-        from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+        from fastapi import FastAPI, HTTPException, Request
         from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
     except ImportError as exc:
         raise RuntimeError("Install fastapi, uvicorn, and python-multipart to run the local web app.") from exc
@@ -87,14 +88,21 @@ def create_app(
         return {"jobs": [job.to_dict() for job in manager.list_jobs()]}
 
     @app.post("/api/jobs")
-    async def create_job(
-        file: UploadFile = File(...),
-        prompt: str | None = Form(None),
-        max_new_tokens: int | None = Form(None),
-        max_len: int | None = Form(None),
-        decoding: str | None = Form(None),
-        temperature: float | None = Form(None),
-    ):
+    async def create_job(request: Request):
+        _admit_upload_request(request, manager.runs_dir)
+        try:
+            form = await request.form()
+            file = form.get("file")
+            if file is None or not hasattr(file, "read"):
+                raise ValueError("Missing upload file.")
+            prompt = _optional_form_text(form.get("prompt"))
+            max_new_tokens = _optional_form_int(form.get("max_new_tokens"))
+            max_len = _optional_form_int(form.get("max_len"))
+            decoding = _optional_form_text(form.get("decoding"))
+            temperature = _optional_form_float(form.get("temperature"))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         try:
             job, input_path = manager.create_job_for_upload(
                 file.filename or "input.media",
@@ -281,6 +289,39 @@ def _payload_value(payload: dict[str, Any], *keys: str) -> Any:
         if key in payload:
             return payload[key]
     return None
+
+
+def _admit_upload_request(request, runs_dir: Path) -> int:
+    from fastapi import HTTPException
+
+    raw_length = request.headers.get("content-length")
+    if raw_length is None or not raw_length.isdecimal():
+        raise HTTPException(status_code=411, detail="Content-Length is required.")
+    content_length = int(raw_length)
+    required_free = 2 * content_length + 512 * 1024 * 1024
+    if shutil.disk_usage(runs_dir).free < required_free:
+        raise HTTPException(status_code=507, detail="Insufficient storage for upload.")
+    return content_length
+
+
+def _optional_form_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    return str(value)
+
+
+def _optional_form_int(value: Any) -> int | None:
+    text = _optional_form_text(value)
+    if text is None or text == "":
+        return None
+    return int(text)
+
+
+def _optional_form_float(value: Any) -> float | None:
+    text = _optional_form_text(value)
+    if text is None or text == "":
+        return None
+    return float(text)
 
 
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
