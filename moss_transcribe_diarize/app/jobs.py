@@ -28,6 +28,8 @@ from .model_runner import ModelRunner
 
 
 TERMINAL_STATES = {"waiting_review", "done", "failed", "cancelled"}
+STARTUP_RESUMABLE_STATES = {"queued", "loading_model", "transcribing", "postprocessing"}
+ACTIVE_STATES = STARTUP_RESUMABLE_STATES | {"rendering"}
 
 
 def _optional_int(value: Any) -> int | None:
@@ -207,9 +209,11 @@ class JobManager:
         self._queue: queue.Queue[str] = queue.Queue()
         self._render_lock = threading.Lock()
         self._progress_save_times: dict[str, float] = {}
-        self._load_existing_jobs()
+        startup_resume_ids = self._load_existing_jobs()
         self._worker = threading.Thread(target=self._worker_loop, name="mtd-job-worker", daemon=True)
         self._worker.start()
+        for job_id in startup_resume_ids:
+            self._queue.put(job_id)
 
     def create_job_from_file(
         self,
@@ -339,7 +343,7 @@ class JobManager:
 
     def delete_job(self, job_id: str) -> None:
         job = self.get_job(job_id)
-        if job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
+        if job.status in ACTIVE_STATES:
             raise RuntimeError("Cannot delete a job while it is running.")
         self._jobs.pop(job_id, None)
         shutil.rmtree(job.job_dir, ignore_errors=True)
@@ -407,14 +411,20 @@ class JobManager:
             finally:
                 self._queue.task_done()
 
-    def _load_existing_jobs(self) -> None:
+    def _load_existing_jobs(self) -> list[str]:
+        startup_resume_ids: list[str] = []
         for path in sorted(self.runs_dir.glob("*/job.json")):
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 job = JobRecord.from_dict(data)
                 if not job.job_dir:
                     job.job_dir = str(path.parent)
-                if job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
+                if job.status in STARTUP_RESUMABLE_STATES:
+                    self._jobs[job.id] = job
+                    if self._prepare_startup_resume(job):
+                        startup_resume_ids.append(job.id)
+                    continue
+                if job.status in {"rendering"}:
                     job.status = "failed"
                     job.progress = 1.0
                     job.error = "Interrupted by previous server shutdown."
@@ -423,6 +433,23 @@ class JobManager:
                 self._jobs[job.id] = job
             except Exception:
                 continue
+        return startup_resume_ids
+
+    def _prepare_startup_resume(self, job: JobRecord) -> bool:
+        if not Path(job.input_path).exists():
+            job.status = "failed"
+            job.progress = 1.0
+            job.error = "Media file is missing after previous server shutdown."
+            job.updated_at = time.time()
+            self._save_job(job)
+            return False
+        self._ensure_source_metadata(job)
+        job.status = "queued"
+        job.progress = max(0.0, min(job.progress, 0.84))
+        job.error = None
+        job.updated_at = time.time()
+        self._save_job(job)
+        return True
 
     def _process_job(self, job: JobRecord) -> None:
         try:

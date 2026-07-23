@@ -356,6 +356,58 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(persisted["checkpoint_state"], "complete")
             self.assertEqual(persisted["resume_attempts"], 0)
 
+    def test_startup_requeues_interrupted_checkpoint_job_once(self):
+        from moss_transcribe_diarize.app.jobs import JobManager, JobRecord
+
+        payload = b"audio"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs_dir = Path(tmpdir)
+            job_dir = runs_dir / "interrupted-job"
+            job_dir.mkdir()
+            input_path = job_dir / "input.wav"
+            input_path.write_bytes(payload)
+            checkpoint_dir = job_dir / "checkpoint"
+            job = JobRecord(
+                id="interrupted-job",
+                status="transcribing",
+                progress=0.55,
+                media_name="sample.wav",
+                input_path=str(input_path),
+                job_dir=str(job_dir),
+                inference_prompt="resume prompt",
+                max_length=456,
+                max_new_tokens=5,
+                decoding="greedy",
+                temperature=None,
+                model="fake-model",
+                source_sha256=hashlib.sha256(payload).hexdigest(),
+                checkpoint_dir=str(checkpoint_dir),
+                checkpoint_state="running",
+            )
+            job.job_path.write_text(json.dumps(job.to_dict(), ensure_ascii=False), encoding="utf-8")
+
+            runner = CheckpointRecordingRunner()
+            manager = JobManager(
+                runs_dir,
+                runner,
+                prompt="default prompt",
+                max_length=123,
+                max_new_tokens=9,
+            )
+            manager._queue.join()
+
+            recovered = manager.get_job(job.id)
+            self.assertEqual(recovered.status, "waiting_review")
+            self.assertEqual(recovered.progress, 0.95)
+            self.assertEqual(recovered.error, None)
+            self.assertEqual(recovered.resume_attempts, 0)
+            self.assertEqual(recovered.checkpoint_state, "complete")
+            self.assertEqual(runner.checkpoint_dirs, [checkpoint_dir])
+            persisted = json.loads(job.job_path.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "waiting_review")
+            self.assertEqual(persisted["checkpoint_state"], "complete")
+            self.assertEqual(persisted["resume_attempts"], 0)
+
     def test_vllm_runtime_reports_deployed_context_cap(self):
         from fastapi.testclient import TestClient
 
