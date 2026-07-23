@@ -113,6 +113,31 @@ manifest reference paths are metadata only. The fine gate fails closed unless th
 fixture has `match_rate == 1.0`, reference coverage equal to duration, usable
 reference timestamps/text, and duration at most five minutes.
 
+## Long Fixture Certification
+
+The long-form fixture certifier is a CPU-only identity and policy check. It
+streams source SHA-256 and byte counts, probes duration with `ffprobe`, inventories
+the manifest-named sibling reference and alignment files, and fails closed on any
+declared fact or threshold drift. It does not upload media, run transcription,
+score quality, restart services, or close requirement A.
+
+Run it from the repository root:
+
+```bash
+python -m moss_transcribe_diarize.long_form_fixtures \
+  --manifest path/to/manifest.json \
+  --corpus-root path/to/corpus-root
+```
+
+Manifests use schema version 1 and corpus-root-relative paths only. The
+`duration_quality` role is the coarse, quality-eligible long fixture role:
+`match_rate` must be `1.0`, duration must exceed 200 minutes, size must exceed
+decimal 200 MB, and WER/DER pass-fail remains forbidden. The
+`strict_size_smoke` role is smoke-only: it must exceed binary 200 MiB and may
+record source integrity, admission, completion, resource, and continuity
+observations, but it is not quality-eligible and must not add speaker-count,
+sampled-message, WER, or DER pass-fail gates.
+
 ## GPU capacity
 
 `ops/moss.env` is intentionally configured to coexist with the existing MinerU
