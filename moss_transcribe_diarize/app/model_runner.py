@@ -40,6 +40,9 @@ class TranscriptionResult:
     temperature: float | None
     top_p: float | None = None
     top_k: int | None = None
+    window_count: int | None = None
+    completed_windows: int | None = None
+    possibly_truncated: bool | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -53,6 +56,9 @@ class TranscriptionResult:
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
+            "window_count": self.window_count,
+            "completed_windows": self.completed_windows,
+            "possibly_truncated": self.possibly_truncated,
         }
 
 

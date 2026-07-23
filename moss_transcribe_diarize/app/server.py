@@ -8,6 +8,7 @@ from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager
 from .model_runner import ModelRunner
 from .vllm_runner import VllmRunner
+from .windowed_transcription import WindowedRunner
 
 
 def create_app(
@@ -37,11 +38,13 @@ def create_app(
     if backend == "vllm":
         if not vllm_base_url:
             raise ValueError("--vllm-base-url is required when backend='vllm'.")
-        runner = VllmRunner(
-            base_url=vllm_base_url,
-            model=vllm_model or str(model_path),
-            api_key=vllm_api_key,
-            timeout=vllm_timeout,
+        runner = WindowedRunner(
+            VllmRunner(
+                base_url=vllm_base_url,
+                model=vllm_model or str(model_path),
+                api_key=vllm_api_key,
+                timeout=vllm_timeout,
+            )
         )
     else:
         runner = ModelRunner(model_path, device=device, dtype=dtype)

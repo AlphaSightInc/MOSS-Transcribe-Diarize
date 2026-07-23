@@ -28,6 +28,28 @@ from .model_runner import ModelRunner
 TERMINAL_STATES = {"waiting_review", "done", "failed", "cancelled"}
 
 
+def _optional_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    return int(value)
+
+
+def _optional_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    return float(value)
+
+
+def _optional_bool(value: Any) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
 @dataclass(slots=True)
 class JobRecord:
     id: str
@@ -48,6 +70,9 @@ class JobRecord:
     prompt_len: int | None = None
     generated_tokens: int | None = None
     elapsed_sec: float | None = None
+    window_count: int | None = None
+    completed_windows: int | None = None
+    possibly_truncated: bool | None = None
     subtitle_style: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -76,11 +101,13 @@ class JobRecord:
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
-        possibly_truncated = (
-            self.generated_tokens is not None
-            and self.max_new_tokens > 0
-            and self.generated_tokens >= self.max_new_tokens
-        )
+        possibly_truncated = self.possibly_truncated
+        if possibly_truncated is None:
+            possibly_truncated = (
+                self.generated_tokens is not None
+                and self.max_new_tokens > 0
+                and self.generated_tokens >= self.max_new_tokens
+            )
         data["inference"] = {
             "prompt": self.inference_prompt,
             "max_length": self.max_length,
@@ -94,6 +121,8 @@ class JobRecord:
             "max_new_tokens": self.max_new_tokens,
             "possibly_truncated": possibly_truncated,
             "elapsed_sec": self.elapsed_sec,
+            "window_count": self.window_count,
+            "completed_windows": self.completed_windows,
         }
         data["files"] = {
             "raw_transcript": str(self.raw_transcript_path),
@@ -107,6 +136,7 @@ class JobRecord:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "JobRecord":
         inference = data.get("inference") or {}
+        usage = data.get("usage") or {}
         temperature = data.get("temperature", inference.get("temperature"))
         return cls(
             id=str(data["id"]),
@@ -124,9 +154,12 @@ class JobRecord:
             created_at=float(data.get("created_at") or time.time()),
             updated_at=float(data.get("updated_at") or time.time()),
             model=data.get("model"),
-            prompt_len=data.get("prompt_len"),
-            generated_tokens=data.get("generated_tokens"),
-            elapsed_sec=data.get("elapsed_sec"),
+            prompt_len=_optional_int(data.get("prompt_len", usage.get("prompt_tokens"))),
+            generated_tokens=_optional_int(data.get("generated_tokens", usage.get("generated_tokens"))),
+            elapsed_sec=_optional_float(data.get("elapsed_sec", usage.get("elapsed_sec"))),
+            window_count=_optional_int(data.get("window_count", usage.get("window_count"))),
+            completed_windows=_optional_int(data.get("completed_windows", usage.get("completed_windows"))),
+            possibly_truncated=_optional_bool(data.get("possibly_truncated", usage.get("possibly_truncated"))),
             subtitle_style=dict(data.get("subtitle_style") or {}),
         )
 
@@ -388,6 +421,9 @@ class JobManager:
                 status_callback=update,
             )
             job.generated_tokens = result.generated_tokens
+            job.window_count = result.window_count
+            job.completed_windows = result.completed_windows
+            job.possibly_truncated = result.possibly_truncated
             self._set_status(job, "postprocessing", 0.85, error=None)
             job.raw_transcript_path.write_text(result.text, encoding="utf-8")
             segments = subtitle_segments_from_transcript(result.text, postprocess=False)

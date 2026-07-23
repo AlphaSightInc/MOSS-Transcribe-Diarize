@@ -66,6 +66,16 @@ transcription. To repeat the health and transcription check:
 & 'D:\Coding\MOSS-Transcribe-Diarize\ops\smoke-test.ps1'
 ```
 
+After an authorized GitHub handoff and service restart, run the parked
+bounded-window deployed proof from this branch:
+
+```bash
+bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-002-window-stitch-contract/deployed-repro.sh"
+```
+
+Do not run that command against an unchanged deployment; it is a post-handoff
+proof that the deployed service contains the branch-local windowing changes.
+
 ## GPU capacity
 
 `ops/moss.env` is intentionally configured to coexist with the existing MinerU
@@ -91,6 +101,35 @@ MOSS_MAX_NEW_TOKENS=30000
 Then restart both MOSS services. Higher values are possible only after measuring
 the target recording lengths and concurrency; the practical limit is the 16 GB
 VRAM capacity.
+
+## Bounded vLLM windows
+
+The web app wraps only the vLLM backend in a bounded window runner. HF inference
+keeps the direct runner path and does not use this windowing contract.
+
+For vLLM jobs, the app probes media duration and forwards the source as 16 kHz
+mono WAV windows. Each forwarded request is at most 150 seconds. Window starts
+advance every 120 seconds, so adjacent windows overlap by 30 seconds. The final
+window starts at the next 120-second stride and is shorter when needed; it is not
+shifted backward to fill 150 seconds.
+
+Window stitching uses absolute timestamps. Each local segment is offset by the
+window start, then kept only when its absolute midpoint belongs to that window's
+ownership interval. Overlap ownership is split at the temporal midpoint. Non-final
+upper bounds are half-open; the final upper bound is closed. The transcript grammar
+remains compact `[start][Sxx]text[end]`, and speaker labels are preserved exactly
+as returned per window.
+
+The parent job fails closed if any child window returns a vLLM error payload, zero
+generated tokens, empty transcript text, or zero parsed transcript segments. Partial
+windowed output is not published. The persisted API usage object includes
+`window_count`, `completed_windows`, and `possibly_truncated`. Generated token
+counts are aggregated across windows, so they are not comparable to one window's
+output cap.
+
+Current limits: this does not provide cross-window speaker identity, resume or
+checkpointing, per-window retry, upload-limit changes, context-cap changes, or
+larger vLLM request limits. Those require separate reviewed changes.
 
 ## Reinstall or update
 
