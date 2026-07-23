@@ -17,6 +17,7 @@ from moss_transcribe_diarize.app.live_adapters import (
     RunnerBoundedWavInference,
     admit_live_provider,
 )
+from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
 from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, LIVE_SAMPLE_RATE, LiveSession, LiveSessionFailed
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 
@@ -167,3 +168,45 @@ def test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav(tmp_path):
 
     assert result.transcript == "[0][S01]ok[0.25]"
     assert runner.params == (1, 2, LIVE_SAMPLE_RATE, 4000)
+
+
+def test_inference_arbiter_preserves_batch_canonical_provisional_priority():
+    arbiter = InferenceArbiter()
+
+    provisional = arbiter.submit_live_provisional(coalesce_key="session-a", payload="provisional")
+    canonical = arbiter.submit_live_canonical(key="session-a:span-1", payload="canonical")
+    batch = arbiter.submit_batch(key="job-a", payload="batch")
+
+    assert provisional.accepted
+    assert canonical.accepted
+    assert batch.accepted
+    assert [arbiter.next_work().payload, arbiter.next_work().payload, arbiter.next_work().payload] == [
+        "batch",
+        "canonical",
+        "provisional",
+    ]
+    assert arbiter.next_work() is None
+
+
+def test_inference_arbiter_coalesces_and_suppresses_provisional_before_canonical():
+    arbiter = InferenceArbiter(max_live_canonical_items=1, max_live_provisional_items=1)
+
+    first = arbiter.submit_live_provisional(coalesce_key="session-a", payload="old provisional")
+    replacement = arbiter.submit_live_provisional(coalesce_key="session-a", payload="new provisional")
+    saturated = arbiter.submit_live_provisional(coalesce_key="session-b", payload="suppressed provisional")
+    canonical = arbiter.submit_live_canonical(key="session-a:span-1", payload="canonical")
+
+    assert first.accepted
+    assert replacement.accepted
+    assert replacement.replaced_item_id == first.item_id
+    assert not saturated.accepted
+    assert saturated.reason == "live provisional queue suppressed"
+    assert canonical.accepted
+    assert arbiter.snapshot().live_canonical == 1
+    assert arbiter.snapshot().live_provisional == 1
+    assert arbiter.next_work().payload == "canonical"
+    assert arbiter.next_work().payload == "new provisional"
+
+    with pytest.raises(InferenceArbiterBackpressure, match="live canonical queue is full"):
+        full = InferenceArbiter(max_live_canonical_items=0)
+        full.submit_live_canonical(key="session-c:span-1", payload="canonical")
