@@ -219,3 +219,44 @@ def test_upload_read_failure_removes_job_record_and_directory(tmp_path, monkeypa
     assert app.state.manager.list_jobs() == []
     assert app.state.manager._queue.puts == []
     assert list(tmp_path.iterdir()) == []
+
+
+def test_upload_write_failure_removes_job_record_and_directory(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from moss_transcribe_diarize.app.jobs import UploadTransaction
+
+    app = make_app(tmp_path)
+
+    def fail_write(self, chunk):
+        raise OSError("simulated short write")
+
+    monkeypatch.setattr(UploadTransaction, "write", fail_write)
+    response = TestClient(app).post(
+        "/api/jobs",
+        files={"file": ("sample.wav", b"partial", "audio/wav")},
+    )
+
+    assert response.status_code == 500
+    assert app.state.manager.list_jobs() == []
+    assert app.state.manager._queue.puts == []
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_upload_commit_failure_removes_temporary_input_and_directory(tmp_path, monkeypatch):
+    import moss_transcribe_diarize.app.jobs as jobs_module
+
+    app = make_app(tmp_path)
+    manager = app.state.manager
+    upload = manager.create_upload_transaction("sample.wav")
+    upload.write(b"complete payload before rename")
+
+    def fail_replace(source, target):
+        raise OSError("simulated atomic rename failure")
+
+    monkeypatch.setattr(jobs_module.os, "replace", fail_replace)
+    with pytest.raises(OSError, match="simulated atomic rename failure"):
+        upload.commit_and_enqueue()
+
+    assert manager.list_jobs() == []
+    assert manager._queue.puts == []
+    assert list(tmp_path.iterdir()) == []
