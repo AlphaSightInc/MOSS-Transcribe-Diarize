@@ -383,6 +383,19 @@ mtd-subtitle-web \
 
 Open `http://127.0.0.1:7860`, upload an audio/video file, review the parsed subtitle segments, then download JSON/SRT/ASS or burn an MP4 if `ffmpeg` and `ffprobe` are available on `PATH`.
 
+Uploads to `POST /api/jobs` require a valid non-negative `Content-Length` before
+multipart parsing begins. The web app rejects missing or malformed lengths with
+HTTP 411, and rejects uploads before reading the body when the runs filesystem
+does not have at least two copies of the declared payload size plus 512 MiB free.
+While receiving the body, only receive idleness is capped: each progressing block
+may continue, but a 30-second stall returns HTTP 408.
+
+Accepted uploads stream bounded blocks into a job-local temporary input. The app
+computes the uploaded byte count and SHA-256 as it writes, flushes and `fsync`s
+the file, then atomically renames it into place before the queued job is
+published. Failures before that commit leave no visible job, queue entry,
+`job.json`, partial input, temporary file, or job directory.
+
 For vLLM windowed jobs, the web app stores an internal job-local checkpoint under
 the job directory. If the process stops after one or more windows are committed,
 startup recovery or `POST /api/jobs/{id}/resume` resumes the same job from the

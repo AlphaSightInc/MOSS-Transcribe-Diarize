@@ -133,6 +133,30 @@ upper bounds are half-open; the final upper bound is closed. The transcript gram
 remains compact `[start][Sxx]text[end]`; only the speaker labels may be relabeled
 by the local identity resolver before midpoint ownership.
 
+## Upload admission and transaction
+
+`POST /api/jobs` admits uploads before FastAPI multipart parsing consumes the
+body. `Content-Length` is mandatory, syntactically decimal, and non-negative; a
+missing or malformed value returns HTTP 411. The runs filesystem must have at
+least `2 * Content-Length + 512 MiB` free before the body is read; less free
+space returns HTTP 507, while equality is accepted.
+
+The upload receive limit is a 30-second idle bound, separate from the vLLM
+inference timeout. Large uploads may take longer than 30 seconds as long as each
+bounded receive/read block progresses. A stalled receive returns HTTP 408.
+
+Committed uploads are transactional. The web app streams bounded blocks through
+`JobManager` into a job-local temporary input while computing byte count and
+SHA-256, flushes and file-`fsync`s the temporary file, then atomically renames it
+into place. Only after that durable input commit does the app persist the queued
+`JobRecord`, set source metadata and ready checkpoint metadata, and enqueue the
+job once.
+
+Any multipart, receive-timeout, write, hash, persistence, or other pre-enqueue
+failure aborts the unpublished transaction and removes the in-memory record,
+temporary input, final input, `job.json`, queue entry, and job directory. The
+response shape for successful uploads remains the existing `JobRecord` JSON.
+
 ## Cross-window speaker identity
 
 The vLLM window runner resolves speaker labels after all per-window transcript
