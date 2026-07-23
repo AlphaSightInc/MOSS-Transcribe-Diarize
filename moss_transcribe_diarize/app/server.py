@@ -1,4 +1,6 @@
+import asyncio
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +31,7 @@ def create_app(
     vllm_timeout: float = 600.0,
 ):
     try:
-        from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+        from fastapi import FastAPI, HTTPException, Request
         from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
     except ImportError as exc:
         raise RuntimeError("Install fastapi, uvicorn, and python-multipart to run the local web app.") from exc
@@ -88,15 +90,55 @@ def create_app(
 
     @app.post("/api/jobs")
     async def create_job(
-        file: UploadFile = File(...),
-        prompt: str | None = Form(None),
-        max_new_tokens: int | None = Form(None),
-        max_len: int | None = Form(None),
-        decoding: str | None = Form(None),
-        temperature: float | None = Form(None),
+        request: Request = None,
+        file: Any = None,
+        prompt: Any = None,
+        max_new_tokens: Any = None,
+        max_len: Any = None,
+        decoding: Any = None,
+        temperature: Any = None,
+    ):
+        if request is not None:
+            _admit_upload_request(request, manager.runs_dir)
+            try:
+                _install_receive_idle_timeout(request)
+                form = await request.form()
+                file = form.get("file")
+                if file is None or not hasattr(file, "read"):
+                    raise ValueError("Missing upload file.")
+                prompt = form.get("prompt")
+                max_new_tokens = form.get("max_new_tokens")
+                max_len = form.get("max_len")
+                decoding = form.get("decoding")
+                temperature = form.get("temperature")
+            except _UploadReceiveIdleTimeout as exc:
+                raise HTTPException(status_code=408, detail=str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if file is None or not hasattr(file, "read"):
+            raise HTTPException(status_code=400, detail="Missing upload file.")
+        return await _create_job_from_upload(
+            manager,
+            file,
+            prompt=_optional_form_text(prompt),
+            max_new_tokens=_optional_form_int(max_new_tokens),
+            max_len=_optional_form_int(max_len),
+            decoding=_optional_form_text(decoding),
+            temperature=_optional_form_float(temperature),
+        )
+
+    async def _create_job_from_upload(
+        manager: JobManager,
+        file,
+        *,
+        prompt: str | None,
+        max_new_tokens: int | None,
+        max_len: int | None,
+        decoding: str | None,
+        temperature: float | None,
     ):
         try:
-            job, input_path = manager.create_job_for_upload(
+            upload = manager.create_upload_transaction(
                 file.filename or "input.media",
                 prompt=prompt,
                 max_length=max_len,
@@ -107,16 +149,18 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         try:
-            with input_path.open("wb") as handle:
-                while True:
-                    chunk = await file.read(1024 * 1024)
-                    if not chunk:
-                        break
-                    handle.write(chunk)
-            manager.enqueue(job.id)
+            while True:
+                chunk = await _read_upload_chunk(file)
+                if not chunk:
+                    break
+                upload.write(chunk)
+            job = upload.commit_and_enqueue()
             return job.to_dict()
+        except _UploadReceiveIdleTimeout as exc:
+            upload.abort()
+            raise HTTPException(status_code=408, detail=str(exc)) from exc
         except Exception as exc:
-            manager._set_status(job, "failed", 1.0, error=str(exc))
+            upload.abort()
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.get("/api/jobs/{job_id}")
@@ -281,6 +325,65 @@ def _payload_value(payload: dict[str, Any], *keys: str) -> Any:
         if key in payload:
             return payload[key]
     return None
+
+
+UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS = 30.0
+
+
+class _UploadReceiveIdleTimeout(TimeoutError):
+    pass
+
+
+def _install_receive_idle_timeout(request) -> None:
+    receive = request._receive
+
+    async def receive_with_idle_timeout():
+        try:
+            return await asyncio.wait_for(receive(), timeout=UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS)
+        except TimeoutError as exc:
+            raise _UploadReceiveIdleTimeout("Upload receive timed out.") from exc
+
+    request._receive = receive_with_idle_timeout
+
+
+async def _read_upload_chunk(file, size: int = 1024 * 1024) -> bytes:
+    try:
+        return await asyncio.wait_for(file.read(size), timeout=UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS)
+    except TimeoutError as exc:
+        raise _UploadReceiveIdleTimeout("Upload receive timed out.") from exc
+
+
+def _admit_upload_request(request, runs_dir: Path) -> int:
+    from fastapi import HTTPException
+
+    raw_length = request.headers.get("content-length")
+    if raw_length is None or not raw_length.isdecimal():
+        raise HTTPException(status_code=411, detail="Content-Length is required.")
+    content_length = int(raw_length)
+    required_free = 2 * content_length + 512 * 1024 * 1024
+    if shutil.disk_usage(runs_dir).free < required_free:
+        raise HTTPException(status_code=507, detail="Insufficient storage for upload.")
+    return content_length
+
+
+def _optional_form_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    return str(value)
+
+
+def _optional_form_int(value: Any) -> int | None:
+    text = _optional_form_text(value)
+    if text is None or text == "":
+        return None
+    return int(text)
+
+
+def _optional_form_float(value: Any) -> float | None:
+    text = _optional_form_text(value)
+    if text is None or text == "":
+        return None
+    return float(text)
 
 
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">

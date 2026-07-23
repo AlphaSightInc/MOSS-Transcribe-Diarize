@@ -10,7 +10,7 @@ import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 from moss_transcribe_diarize.subtitle import (
     SubtitleSegment,
@@ -262,7 +262,7 @@ class JobManager:
         self._queue.put(job.id)
         return job
 
-    def create_job_for_upload(
+    def create_upload_transaction(
         self,
         filename: str,
         *,
@@ -271,7 +271,7 @@ class JobManager:
         max_new_tokens: int | None = None,
         decoding: str | None = None,
         temperature: float | None = None,
-    ) -> tuple[JobRecord, Path]:
+    ) -> "UploadTransaction":
         options = self._resolve_inference_options(
             prompt=prompt,
             max_length=max_length,
@@ -300,13 +300,16 @@ class JobManager:
             checkpoint_dir=str(job_dir / "checkpoint"),
             checkpoint_state="pending",
         )
-        self._jobs[job.id] = job
-        self._save_job(job)
-        return job, input_path
+        return UploadTransaction(self, job, input_path.with_name(f"{input_path.name}.uploading"))
 
     def enqueue(self, job_id: str) -> None:
         self._ensure_source_metadata(self.get_job(job_id))
         self._queue.put(job_id)
+
+    def abort_unpublished_job(self, job_id: str) -> None:
+        job = self._jobs.pop(job_id, None)
+        if job is not None:
+            shutil.rmtree(job.job_dir, ignore_errors=True)
 
     def rerun_job(
         self,
@@ -700,6 +703,59 @@ class JobManager:
             return False
         self._progress_save_times[job_id] = now
         return True
+
+
+class UploadTransaction:
+    def __init__(self, manager: JobManager, job: JobRecord, tmp_path: Path):
+        self._manager = manager
+        self.job = job
+        self._input_path = Path(job.input_path)
+        self._tmp_path = tmp_path
+        self._digest = hashlib.sha256()
+        self._byte_count = 0
+        self._closed = False
+        self._handle: BinaryIO = self._tmp_path.open("wb")
+
+    @property
+    def byte_count(self) -> int:
+        return self._byte_count
+
+    def write(self, chunk: bytes) -> None:
+        if self._closed:
+            raise RuntimeError("Upload transaction is closed.")
+        written = self._handle.write(chunk)
+        if written != len(chunk):
+            raise OSError("Short write while storing upload.")
+        self._digest.update(chunk)
+        self._byte_count += written
+
+    def commit_and_enqueue(self) -> JobRecord:
+        if self._closed:
+            raise RuntimeError("Upload transaction is closed.")
+        try:
+            self._handle.flush()
+            os.fsync(self._handle.fileno())
+            self._handle.close()
+            self._closed = True
+            os.replace(self._tmp_path, self._input_path)
+            job = self.job
+            job.source_sha256 = self._digest.hexdigest()
+            job.checkpoint_state = "ready"
+            job.updated_at = time.time()
+            self._manager._jobs[job.id] = job
+            self._manager._save_job(job)
+            self._manager.enqueue(job.id)
+            return job
+        except Exception:
+            self.abort()
+            raise
+
+    def abort(self) -> None:
+        if not self._closed:
+            self._handle.close()
+            self._closed = True
+        self._manager._jobs.pop(self.job.id, None)
+        shutil.rmtree(self.job.job_dir, ignore_errors=True)
 
 
 def _sha256_file(path: Path) -> str:
