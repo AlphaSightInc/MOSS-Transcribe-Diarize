@@ -74,6 +74,10 @@ python -m pytest tests/test_speaker_continuity.py tests/test_windowed_transcript
 python -m pytest tests -q
 ```
 
+Latest local IDEA-003 audit: the evidence prototype passed, the focused
+speaker-continuity/window/API selection passed with 28 tests and 3 subtests, the
+full suite passed with 54 tests and 6 subtests, and `ops/moss.env` had no diff.
+
 After an authorized GitHub handoff and service restart, run the parked deployed
 speaker-continuity proof from this branch:
 
