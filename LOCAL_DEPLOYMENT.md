@@ -289,6 +289,46 @@ approved deployed proof. This resume path does not add per-window retry beyond
 same-job resume, upload-limit changes, context-cap changes, or larger vLLM request
 limits. Those require separate reviewed changes.
 
+## Default-off live session slice
+
+IDEA-009 live mode is a local, default-off substrate only. It adds a sibling
+`LiveSession` state machine for ordered 16 kHz mono PCM frames, replace-only
+provisional suffixes, immutable in-order canonical commits, and exact
+accepted/accounted sample equality on successful close. The batch `JobManager`,
+complete-file upload routes, checkpoints, artifacts, statuses, and
+`waiting_review` workflow remain the production path.
+
+Provider admission is fail-closed. VAD, stable live identity, and bounded
+complete-WAV inference are internal adapters, and any provider asset must already
+exist locally with the declared SHA-256. The live path must not download models or
+weights at runtime. Canonical spans freeze only from VAD end-silence, hard cap, or
+stop flush, and they publish only after bounded decode returns valid transcript
+timestamps and confirmed stable session identity.
+
+The FastAPI transport is absent unless `create_app(..., live_enabled=True,
+live_max_retained_samples=...)` is called by an explicit local test or reviewed
+future integration. Enabling this in deployed service configuration is not part
+of the current local gate and should not be described as production live mode.
+
+Local CPU gates for this disabled slice:
+
+```bash
+python -m pytest tests/test_live_session.py tests/test_live_vad.py tests/test_live_api.py -q
+python -m pytest tests/test_vllm_runner.py tests/test_windowed_transcription.py tests/test_jobs.py tests/test_app_api.py -q
+python -m pytest tests -q
+git diff --check
+```
+
+Operator-only enablement replays remain parked until a separate deployment
+handoff reviews service configuration and available live provider assets. Do not
+run or report them as measured production latency, quality, VAD suitability, or
+online identity readiness from this branch-local CPU work:
+
+```bash
+# parked 60-second local/live replay after explicit deployment enablement
+# parked 300-second local/live replay after explicit deployment enablement
+```
+
 ## Reinstall or update
 
 The reproducible setup helpers are in `ops/`:
