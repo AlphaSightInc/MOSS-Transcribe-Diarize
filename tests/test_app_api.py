@@ -112,6 +112,8 @@ class AppApiTest(unittest.TestCase):
     def test_runtime_reports_vllm_backend(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
+        from moss_transcribe_diarize.app.vllm_runner import VllmRunner
+        from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
 
         with tempfile.TemporaryDirectory() as tmpdir:
             app = create_app(
@@ -121,6 +123,8 @@ class AppApiTest(unittest.TestCase):
                 vllm_base_url="http://vllm.test:8000/v1",
                 vllm_model="moss-served",
             )
+            self.assertIsInstance(app.state.manager.model_runner, WindowedRunner)
+            self.assertIsInstance(app.state.manager.model_runner.delegate, VllmRunner)
             client = TestClient(app)
             runtime = client.get("/api/runtime")
             self.assertEqual(runtime.status_code, 200)
@@ -128,6 +132,7 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(model["backend"], "vllm")
             self.assertEqual(model["path"], "moss-served")
             self.assertEqual(model["base_url"], "http://vllm.test:8000/v1")
+            self.assertEqual(model["windowing"], {"window_seconds": 150, "stride_seconds": 120})
 
     def test_job_lifecycle_and_missing_ffmpeg_render_error(self):
         from fastapi.testclient import TestClient
@@ -350,9 +355,11 @@ class AppApiTest(unittest.TestCase):
     def test_hf_backend_retains_configured_max_len_behavior(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
+        from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
 
         with tempfile.TemporaryDirectory() as tmpdir:
             app = create_app(model_path="fake-model", runs_dir=tmpdir, max_length=131072)
+            self.assertNotIsInstance(app.state.manager.model_runner, WindowedRunner)
             app.state.manager.model_runner = NoopRunner()
             client = TestClient(app)
             response = client.post(
