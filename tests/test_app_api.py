@@ -83,6 +83,23 @@ class NoopRunner:
         )
 
 
+class WindowMetadataRunner(NoopRunner):
+    def transcribe(self, audio_path, **kwargs):
+        return TranscriptionResult(
+            text="[0][S01]hello[1]",
+            prompt_len=30,
+            generated_tokens=15,
+            elapsed_sec=0.03,
+            model=self.model_path,
+            audio=str(audio_path),
+            decoding="greedy",
+            temperature=None,
+            window_count=3,
+            completed_windows=3,
+            possibly_truncated=False,
+        )
+
+
 def wait_terminal(client, job_id: str) -> dict:
     job = {}
     for _ in range(80):
@@ -262,6 +279,35 @@ class AppApiTest(unittest.TestCase):
                 time.sleep(0.05)
             self.assertEqual(finished["status"], "waiting_review")
             self.assertEqual(finished["usage"]["generated_tokens"], 5)
+
+    def test_job_persists_runner_window_metadata_through_reload(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=5)
+            app.state.manager.model_runner = WindowMetadataRunner()
+            client = TestClient(app)
+
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+            )
+            self.assertEqual(created.status_code, 200)
+            job_id = created.json()["id"]
+            finished = wait_terminal(client, job_id)
+            self.assertEqual(finished["usage"]["generated_tokens"], 15)
+            self.assertEqual(finished["usage"]["window_count"], 3)
+            self.assertEqual(finished["usage"]["completed_windows"], 3)
+            self.assertFalse(finished["usage"]["possibly_truncated"])
+
+            reloaded = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=5)
+            reloaded.state.manager.model_runner = WindowMetadataRunner()
+            reloaded_client = TestClient(reloaded)
+            persisted = reloaded_client.get(f"/api/jobs/{job_id}").json()
+            self.assertEqual(persisted["usage"]["window_count"], 3)
+            self.assertEqual(persisted["usage"]["completed_windows"], 3)
+            self.assertFalse(persisted["usage"]["possibly_truncated"])
 
     def test_vllm_runtime_reports_deployed_context_cap(self):
         from fastapi.testclient import TestClient
