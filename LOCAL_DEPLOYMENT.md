@@ -310,9 +310,26 @@ live_max_retained_samples=...)` is called by an explicit local test or reviewed
 future integration. Enabling this in deployed service configuration is not part
 of the current local gate and should not be described as production live mode.
 
+IDEA-010 adds an offline replay CLI for this disabled substrate:
+
+```bash
+python -m moss_transcribe_diarize.live_replay \
+  --manifest /path/to/live-replay-manifest.json \
+  --out-dir runs/live-replay
+```
+
+The manifest supplies ordered 16 kHz mono PCM frames, speech observations,
+offline provider identity, bounded decode outputs, and identity evidence. The
+CLI preflights manifest revision, configuration hash, provider revision/assets,
+and optional read-only service state, then writes `trace.jsonl`, `summary.json`,
+and `evaluator.jsonl`. It exits nonzero on integrity, provider, identity, or
+RTF failures. It never starts, restarts, or enables the deployed service.
+
 Local CPU gates for this disabled slice:
 
 ```bash
+python -m moss_transcribe_diarize.live_replay --help
+python -m pytest tests/test_live_identity.py tests/test_live_endpoint.py tests/test_live_replay.py -q
 python -m pytest tests/test_live_session.py tests/test_live_vad.py tests/test_live_api.py -q
 python -m pytest tests/test_vllm_runner.py tests/test_windowed_transcription.py tests/test_jobs.py tests/test_app_api.py -q
 python -m pytest tests -q

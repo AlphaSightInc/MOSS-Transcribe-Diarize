@@ -418,6 +418,22 @@ mtd-subtitle /path/to/input.mp4 \
   --render
 ```
 
+### Default-Off Live Replay
+
+The package includes an offline replay CLI for reviewing the disabled live
+session substrate without enabling live HTTP routes or restarting any service:
+
+```bash
+python -m moss_transcribe_diarize.live_replay \
+  --manifest /path/to/live-replay-manifest.json \
+  --out-dir runs/live-replay
+```
+
+The manifest provides ordered 16 kHz mono PCM frames, speech observations,
+offline provider identity/assets, bounded decode outputs, and identity evidence.
+Replay writes `trace.jsonl`, `summary.json`, and evaluator JSONL, and exits
+nonzero for integrity, provider, identity, or RTF failures.
+
 ## Citation
 
 If you use MOSS-Transcribe-Diarize, please cite the technical report:
