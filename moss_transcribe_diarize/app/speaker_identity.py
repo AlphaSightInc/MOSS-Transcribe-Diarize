@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -117,7 +118,9 @@ class IdentityResolver:
                 boundaries.append(boundary)
 
         components = _components(nodes, union)
-        tier_b = self._tier_b_diagnostics(bundles, components)
+        tier_b, tier_b_accepted = self._resolve_tier_b(bundles, components, union)
+        if tier_b_accepted:
+            components = _components(nodes, union)
         canonical = _canonical_labels(bundles, components, union)
         relabeled = _relabeled_results(bundles, canonical)
 
@@ -126,7 +129,7 @@ class IdentityResolver:
             "accepted_edges": accepted_edges,
             "tier_a_accepted": accepted_edges,
             "tier_b_status": tier_b["status"],
-            "tier_b_accepted": 0,
+            "tier_b_accepted": tier_b_accepted,
         }
         diagnostics = {
             "schema_version": 2,
@@ -226,24 +229,28 @@ class IdentityResolver:
             return "low_dice"
         return "accepted_overlap"
 
-    def _tier_b_diagnostics(
+    def _resolve_tier_b(
         self,
         bundles: list[_WindowBundle],
         components: list[list[NodeKey]],
-    ) -> dict[str, Any]:
+        union: _UnionFind,
+    ) -> tuple[dict[str, Any], int]:
         if not self.config.tier_b_enabled:
-            return {"status": "disabled", "proposals": []}
+            return {"status": "disabled", "proposals": []}, 0
 
         preflight = self._tier_b_preflight()
         if not preflight.available:
-            return {
-                "status": "unavailable",
-                "provider": preflight.descriptor,
-                "unavailable_reason": preflight.reason,
-                "proposals": [{"reason": "tier_b_unavailable"}],
-            }
+            return (
+                {
+                    "status": "unavailable",
+                    "provider": preflight.descriptor,
+                    "unavailable_reason": preflight.reason,
+                    "proposals": [{"reason": "tier_b_unavailable"}],
+                },
+                0,
+            )
 
-        evidence = _tier_b_evidence(bundles, components, self.config)
+        evidence, candidates = _tier_b_evidence(bundles, components, self.config)
         proposals: list[dict[str, Any]] = []
         for index, left in enumerate(components):
             for right in components[index + 1 :]:
@@ -263,12 +270,114 @@ class IdentityResolver:
                         "reason": "tier_b_insufficient_audio",
                     }
                 )
+
+        centroid_by_index: dict[int, list[float]] = {}
+        for index, candidate in enumerate(candidates):
+            if candidate["selected_interval_count"] == 0:
+                continue
+            if candidate["audio_path"] is None:
+                proposals.append(
+                    {
+                        "component": candidate["component"],
+                        "reason": "tier_b_insufficient_audio",
+                    }
+                )
+                continue
+            try:
+                centroid = self._tier_b_centroid(candidate["audio_path"], candidate["local_intervals"])
+            except Exception as exc:
+                proposals.append(
+                    {
+                        "component": candidate["component"],
+                        "reason": "tier_b_embedding_failed",
+                        "detail": exc.__class__.__name__,
+                    }
+                )
+                continue
+            if centroid is None:
+                proposals.append(
+                    {
+                        "component": candidate["component"],
+                        "reason": "tier_b_mixture_or_invalid_embedding",
+                    }
+                )
+                continue
+            centroid_by_index[index] = centroid
+
+        pair_scores: dict[tuple[int, int], float] = {}
+        for left_index in sorted(centroid_by_index):
+            for right_index in sorted(centroid_by_index):
+                if right_index <= left_index:
+                    continue
+                try:
+                    pair_scores[(left_index, right_index)] = _cosine(
+                        centroid_by_index[left_index],
+                        centroid_by_index[right_index],
+                    )
+                except ValueError:
+                    proposals.append(
+                        {
+                            "left": candidates[left_index]["component"],
+                            "right": candidates[right_index]["component"],
+                            "reason": "tier_b_embedding_failed",
+                            "detail": "dimension_mismatch",
+                        }
+                    )
+
+        accepted = 0
+        for (left_index, right_index), similarity in sorted(
+            pair_scores.items(),
+            key=lambda item: (-item[1], candidates[item[0][0]]["component"], candidates[item[0][1]]["component"]),
+        ):
+            left = candidates[left_index]
+            right = candidates[right_index]
+            proposal = {
+                "left": left["component"],
+                "right": right["component"],
+                "similarity": round(similarity, 6),
+            }
+            if _component_windows(left["nodes"]) & _component_windows(right["nodes"]):
+                proposals.append(proposal | {"reason": "cannot_link_conflict"})
+                continue
+            if similarity < self.config.tier_b_similarity:
+                proposals.append(proposal | {"reason": "low_similarity"})
+                continue
+            margin = min(
+                similarity - _tier_b_runner_up(pair_scores, left_index, right_index),
+                similarity - _tier_b_runner_up(pair_scores, right_index, left_index),
+            )
+            proposal["margin"] = round(margin, 6)
+            if margin < self.config.tier_b_margin:
+                proposals.append(proposal | {"reason": "low_margin"})
+                continue
+            left_node = left["nodes"][0]
+            right_node = right["nodes"][0]
+            if _would_violate_cannot_link(union, left_node, right_node):
+                proposals.append(proposal | {"reason": "cannot_link_conflict"})
+                continue
+            union.union(left_node, right_node)
+            accepted += 1
+            proposals.append(proposal | {"reason": "accepted_similarity"})
+
         return {
             "status": "available",
             "provider": preflight.descriptor,
             "evidence": evidence,
             "proposals": proposals,
-        }
+        }, accepted
+
+    def _tier_b_centroid(self, audio_path: Path, intervals: list[Interval]) -> list[float] | None:
+        vectors: list[list[float]] = []
+        for interval in intervals:
+            vector = self.tier_b_encoder.embed(audio_path, [interval])
+            normalized = _normalized_vector(vector)
+            if normalized is None:
+                return None
+            vectors.append(normalized)
+        if not vectors:
+            return None
+        centroid = [sum(values) / len(vectors) for values in zip(*vectors, strict=True)]
+        return _normalized_vector(centroid)
 
     def _tier_b_preflight(self) -> TierBPreflight:
         if self.tier_b_encoder is None:
@@ -381,11 +490,19 @@ def _tier_b_evidence(
     bundles: list[_WindowBundle],
     components: list[list[NodeKey]],
     config: IdentityResolverConfig,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     unresolved_components = [component for component in components if len(component) == 1]
     evidence: list[dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     for component in unresolved_components:
-        node_entries = [_tier_b_node_evidence(bundles, node, config) for node in component]
+        node_entries = []
+        local_intervals: list[Interval] = []
+        audio_path: Path | None = None
+        for node in component:
+            node_entry, node_audio_path, node_local_intervals = _tier_b_node_evidence(bundles, node, config)
+            node_entries.append(node_entry)
+            audio_path = node_audio_path if audio_path is None else audio_path
+            local_intervals.extend(node_local_intervals)
         evidence.append(
             {
                 "component": _format_component(component),
@@ -397,23 +514,36 @@ def _tier_b_evidence(
                 "nodes": node_entries,
             }
         )
-    return evidence
+        candidates.append(
+            {
+                "component": _format_component(component),
+                "nodes": component,
+                "audio_path": audio_path,
+                "local_intervals": local_intervals,
+                "selected_interval_count": sum(entry["selected_interval_count"] for entry in node_entries),
+            }
+        )
+    return evidence, candidates
 
 
 def _tier_b_node_evidence(
     bundles: list[_WindowBundle],
     node: NodeKey,
     config: IdentityResolverConfig,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], Path | None, list[Interval]]:
     candidates: list[dict[str, Any]] = []
+    audio_path: Path | None = None
     for bundle in bundles:
         if bundle.index != node[0]:
             continue
+        audio_path = bundle.audio_path
         for segment in bundle.segments:
             if segment.speaker != node[1]:
                 continue
             absolute_start = bundle.start + float(segment.start)
             absolute_end = bundle.start + float(segment.end)
+            local_start = float(segment.start)
+            local_end = float(segment.end)
             duration = absolute_end - absolute_start
             if duration < config.tier_b_min_segment_seconds:
                 continue
@@ -422,6 +552,8 @@ def _tier_b_node_evidence(
                     "window": bundle.index,
                     "start": round(absolute_start, 6),
                     "end": round(absolute_end, 6),
+                    "local_start": local_start,
+                    "local_end": local_end,
                     "duration_seconds": round(duration, 6),
                 }
             )
@@ -430,12 +562,26 @@ def _tier_b_node_evidence(
         candidates,
         key=lambda item: (-item["duration_seconds"], item["start"], item["end"]),
     )[: config.tier_b_max_segments_per_node]
-    return {
-        "node": _format_node(node),
-        "selected_interval_count": len(selected),
-        "selected_duration_seconds": round(sum(item["duration_seconds"] for item in selected), 6),
-        "selected_intervals": selected,
-    }
+    public_intervals = [
+        {
+            "window": item["window"],
+            "start": item["start"],
+            "end": item["end"],
+            "duration_seconds": item["duration_seconds"],
+        }
+        for item in selected
+    ]
+    local_intervals = [(item["local_start"], item["local_end"]) for item in selected]
+    return (
+        {
+            "node": _format_node(node),
+            "selected_interval_count": len(selected),
+            "selected_duration_seconds": round(sum(item["duration_seconds"] for item in selected), 6),
+            "selected_intervals": public_intervals,
+        },
+        audio_path,
+        local_intervals,
+    )
 
 
 def _clip_intervals(intervals: list[Interval], bounds: Interval) -> list[Interval]:
@@ -568,6 +714,29 @@ def _format_component(component: list[NodeKey]) -> list[str]:
 
 def _component_windows(component: list[NodeKey]) -> set[int]:
     return {node[0] for node in component}
+
+
+def _normalized_vector(vector: Any) -> list[float] | None:
+    values = [float(value) for value in vector]
+    norm = math.sqrt(sum(value * value for value in values))
+    if norm <= 0.0:
+        return None
+    return [value / norm for value in values]
+
+
+def _cosine(left: list[float], right: list[float]) -> float:
+    if len(left) != len(right):
+        raise ValueError("Tier B embeddings must have matching dimensions.")
+    return sum(left_value * right_value for left_value, right_value in zip(left, right, strict=True))
+
+
+def _tier_b_runner_up(pair_scores: dict[tuple[int, int], float], index: int, matched_index: int) -> float:
+    alternatives = [
+        score
+        for pair, score in pair_scores.items()
+        if index in pair and matched_index not in pair
+    ]
+    return max(alternatives, default=0.0)
 
 
 def _sha256_file(path: Path) -> str:

@@ -194,6 +194,85 @@ def test_tier_b_preflight_selects_only_two_second_unresolved_evidence(identity_a
     assert all(item["duration_seconds"] >= 2.0 for item in node_evidence["selected_intervals"])
 
 
+def test_enabled_tier_b_links_unresolved_absent_recurrence(identity_api, tmp_path):
+    tier_b = PathNamedTierBEncoder(
+        {
+            "window-0.wav": [1.0, 0.0, 0.0],
+            "window-1.wav": [0.0, 1.0, 0.0],
+            "window-2.wav": [1.0, 0.0, 0.0],
+        }
+    )
+
+    resolution = resolve_identity(
+        identity_api,
+        [
+            window(0, 0, 150, 0, 135),
+            window(1, 120, 270, 135, 255),
+            window(2, 240, 390, 255, 390),
+        ],
+        [
+            [segment(20, 30, "S01", "speaker first")],
+            [segment(20, 30, "S02", "other speaker")],
+            [segment(40, 50, "S01", "speaker returns")],
+        ],
+        tier_b_enabled=True,
+        tier_b_encoder=tier_b,
+        window_audio_paths=[
+            tmp_path / "window-0.wav",
+            tmp_path / "window-1.wav",
+            tmp_path / "window-2.wav",
+        ],
+    )
+
+    speakers = speakers_by_text(resolution)
+    assert speakers["speaker returns"] == speakers["speaker first"]
+    assert speakers["other speaker"] != speakers["speaker first"]
+    assert resolution.summary["tier_b_status"] == "available"
+    assert resolution.summary["tier_b_accepted"] == 1
+    assert "accepted_similarity" in edge_reasons(resolution.diagnostics)
+    assert tier_b.calls == [
+        ("window-0.wav", [(20.0, 30.0)]),
+        ("window-1.wav", [(20.0, 30.0)]),
+        ("window-2.wav", [(40.0, 50.0)]),
+    ]
+
+
+def test_enabled_tier_b_abstains_on_embedding_ambiguity(identity_api, tmp_path):
+    tier_b = PathNamedTierBEncoder(
+        {
+            "window-0.wav": [1.0, 0.0, 0.0],
+            "window-1.wav": [0.96, 0.04, 0.0],
+            "window-2.wav": [0.96, -0.04, 0.0],
+        }
+    )
+
+    resolution = resolve_identity(
+        identity_api,
+        [
+            window(0, 0, 150, 0, 135),
+            window(1, 120, 270, 135, 255),
+            window(2, 240, 390, 255, 390),
+        ],
+        [
+            [segment(20, 30, "S01", "anchor")],
+            [segment(20, 30, "S02", "near option one")],
+            [segment(40, 50, "S01", "near option two")],
+        ],
+        tier_b_enabled=True,
+        tier_b_encoder=tier_b,
+        window_audio_paths=[
+            tmp_path / "window-0.wav",
+            tmp_path / "window-1.wav",
+            tmp_path / "window-2.wav",
+        ],
+    )
+
+    speakers = speakers_by_text(resolution)
+    assert len({speakers["anchor"], speakers["near option one"], speakers["near option two"]}) == 3
+    assert resolution.summary["tier_b_accepted"] == 0
+    assert "low_margin" in edge_reasons(resolution.diagnostics)
+
+
 def test_resolution_replay_is_byte_deterministic(identity_api):
     windows = [
         window(0, 0, 150, 0, 135),
@@ -355,6 +434,20 @@ class CannotLinkMergingTierBEncoder:
 
     def embed(self, wav_path, intervals):
         return [1.0, 0.0, 0.0]
+
+
+class PathNamedTierBEncoder:
+    descriptor = {"provider": "test-path-named"}
+
+    def __init__(self, vectors):
+        self.vectors = vectors
+        self.calls = []
+
+    def embed(self, wav_path, intervals):
+        key = Path(wav_path).name
+        normalized = [(float(start), float(end)) for start, end in intervals]
+        self.calls.append((key, normalized))
+        return self.vectors[key]
 
 
 class IdentityMetadataRunner:
