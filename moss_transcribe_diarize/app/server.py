@@ -8,6 +8,8 @@ from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
 
 from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager
+from .live_session import LIVE_SAMPLE_RATE
+from .live_transport import LiveTransportSessions, attach_live_routes
 from .model_runner import ModelRunner
 from .vllm_runner import VllmRunner
 from .windowed_transcription import WindowedRunner
@@ -29,6 +31,9 @@ def create_app(
     vllm_model: str | None = None,
     vllm_api_key: str | None = None,
     vllm_timeout: float = 600.0,
+    live_enabled: bool = False,
+    live_max_retained_samples: int | None = None,
+    live_hard_cap_samples: int | None = None,
 ):
     try:
         from fastapi import FastAPI, HTTPException, Request
@@ -61,6 +66,15 @@ def create_app(
         max_length_cap=max_length if backend == "vllm" else None,
     )
     app.state.manager = manager
+    if live_enabled:
+        if live_max_retained_samples is None:
+            raise ValueError("live_max_retained_samples is required when live mode is enabled.")
+        live_sessions = LiveTransportSessions(
+            max_retained_samples=live_max_retained_samples,
+            hard_cap_samples=live_hard_cap_samples,
+        )
+        app.state.live_sessions = live_sessions
+        attach_live_routes(app, live_sessions)
 
     @app.get("/", response_class=HTMLResponse)
     def index():
@@ -82,6 +96,18 @@ def create_app(
                 "decoding": manager.decoding,
                 "temperature": manager.temperature,
             },
+            **(
+                {
+                    "live": {
+                        "enabled": True,
+                        "sample_rate": LIVE_SAMPLE_RATE,
+                        "max_retained_samples": live_max_retained_samples,
+                        "hard_cap_samples": live_hard_cap_samples,
+                    }
+                }
+                if live_enabled
+                else {}
+            ),
         }
 
     @app.get("/api/jobs")
