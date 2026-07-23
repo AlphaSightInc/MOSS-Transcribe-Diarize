@@ -166,7 +166,12 @@ reported as `tier_b_unavailable` and does not discard Tier-A output.
 Finished jobs persist additive identity metadata without changing compact
 transcript text, subtitles, or exports. The API exposes `identity_summary` and
 `files.identity_resolution`; the versioned job artifact is
-`identity-resolution.json`.
+`identity-resolution.json`. Both summaries include
+`fragmented_recurring_speakers`, the number of final singleton identity
+components carrying an unmatched/unresolved birth-or-return diagnostic, and
+`false_accepted_edges`, the number of accepted diagnostic edges that violate
+same-window cannot-link or boundary/component one-to-one constraints. Both
+values are computed from the persisted diagnostics rather than fixed constants.
 
 The parent job fails closed if any child window returns a vLLM error payload, zero
 generated tokens, empty transcript text, or zero parsed transcript segments. Partial

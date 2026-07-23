@@ -109,6 +109,8 @@ def test_windowed_result_relabels_overlap_copies_before_stitching(tmp_path):
         "tier_a_accepted": 2,
         "tier_b_status": "disabled",
         "tier_b_accepted": 0,
+        "false_accepted_edges": 0,
+        "fragmented_recurring_speakers": 0,
     }
     assert stitched.identity_resolution is not None
     assert stitched.identity_resolution["summary"] == stitched.identity_summary

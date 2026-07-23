@@ -68,6 +68,7 @@ def test_absent_overlap_recurrence_stays_unresolved_when_tier_b_is_default_off(i
     assert speakers["speaker first"] == "S01"
     assert speakers["speaker returns"] != "S01"
     assert resolution.summary["tier_b_status"] == "disabled"
+    assert resolution.summary["fragmented_recurring_speakers"] == 2
     assert "unmatched_birth_or_return" in edge_reasons(resolution.diagnostics)
     assert tier_b.calls == 0
 
@@ -229,6 +230,7 @@ def test_enabled_tier_b_links_unresolved_absent_recurrence(identity_api, tmp_pat
     assert speakers["other speaker"] != speakers["speaker first"]
     assert resolution.summary["tier_b_status"] == "available"
     assert resolution.summary["tier_b_accepted"] == 1
+    assert resolution.summary["fragmented_recurring_speakers"] == 1
     assert "accepted_similarity" in edge_reasons(resolution.diagnostics)
     assert tier_b.calls == [
         ("window-0.wav", [(20.0, 30.0)]),
@@ -289,6 +291,30 @@ def test_resolution_replay_is_byte_deterministic(identity_api):
     assert serialized_resolution(first) == serialized_resolution(second)
 
 
+def test_identity_summary_observability_is_derived_from_diagnostics(identity_api):
+    metrics = identity_api.summary_observability(
+        {
+            "boundaries": [
+                {
+                    "edges": [
+                        {"left": "0:S01", "right": "1:S01", "reason": "accepted_overlap"},
+                        {"left": "0:S02", "right": "1:S01", "reason": "accepted_overlap"},
+                        {"left": "2:S01", "right": "2:S02", "reason": "accepted_overlap"},
+                        {"left": None, "right": "3:S01", "reason": "unmatched_birth_or_return"},
+                    ]
+                }
+            ],
+            "tier_b": {"proposals": []},
+        },
+        [[(0, "S01"), (1, "S01")], [(3, "S01")]],
+    )
+
+    assert metrics == {
+        "false_accepted_edges": 2,
+        "fragmented_recurring_speakers": 1,
+    }
+
+
 def test_canonical_labels_continue_beyond_s08(identity_api):
     first_window = [
         segment(float(i * 10), float(i * 10 + 3), f"S{i + 1:02d}", f"speaker {i + 1}")
@@ -330,18 +356,32 @@ def test_identity_summary_and_artifact_persist_through_job_api_reload():
         finished = wait_terminal(client, job_id)
 
         assert finished["status"] == "waiting_review", finished.get("error")
-        assert finished["identity_summary"] == {"schema_version": 2, "accepted_edges": 1}
+        assert finished["identity_summary"] == {
+            "schema_version": 2,
+            "accepted_edges": 1,
+            "false_accepted_edges": 0,
+            "fragmented_recurring_speakers": 0,
+        }
         artifact_path = Path(finished["files"]["identity_resolution"])
         assert artifact_path.exists()
         assert json.loads(artifact_path.read_text(encoding="utf-8")) == {
             "schema_version": 2,
-            "summary": {"accepted_edges": 1},
+            "summary": {
+                "accepted_edges": 1,
+                "false_accepted_edges": 0,
+                "fragmented_recurring_speakers": 0,
+            },
         }
 
         reloaded = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=5)
         reloaded.state.manager.model_runner = IdentityMetadataRunner()
         persisted = TestClient(reloaded).get(f"/api/jobs/{job_id}").json()
-        assert persisted["identity_summary"] == {"schema_version": 2, "accepted_edges": 1}
+        assert persisted["identity_summary"] == {
+            "schema_version": 2,
+            "accepted_edges": 1,
+            "false_accepted_edges": 0,
+            "fragmented_recurring_speakers": 0,
+        }
         assert persisted["files"]["identity_resolution"] == str(artifact_path)
 
 
@@ -353,6 +393,7 @@ def identity_api():
         IdentityResolverConfig=module.IdentityResolverConfig,
         TierBAssetSpec=module.TierBAssetSpec,
         WeSpeakerResNet152LmAdapter=module.WeSpeakerResNet152LmAdapter,
+        summary_observability=module._summary_observability,
     )
 
 
@@ -463,8 +504,20 @@ class IdentityMetadataRunner:
             audio=str(audio_path),
             decoding="greedy",
             temperature=None,
-            identity_summary={"schema_version": 2, "accepted_edges": 1},
-            identity_resolution={"schema_version": 2, "summary": {"accepted_edges": 1}},
+            identity_summary={
+                "schema_version": 2,
+                "accepted_edges": 1,
+                "false_accepted_edges": 0,
+                "fragmented_recurring_speakers": 0,
+            },
+            identity_resolution={
+                "schema_version": 2,
+                "summary": {
+                    "accepted_edges": 1,
+                    "false_accepted_edges": 0,
+                    "fragmented_recurring_speakers": 0,
+                },
+            },
         )
 
 

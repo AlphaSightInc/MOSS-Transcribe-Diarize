@@ -124,13 +124,6 @@ class IdentityResolver:
         canonical = _canonical_labels(bundles, components, union)
         relabeled = _relabeled_results(bundles, canonical)
 
-        summary = {
-            "schema_version": 2,
-            "accepted_edges": accepted_edges,
-            "tier_a_accepted": accepted_edges,
-            "tier_b_status": tier_b["status"],
-            "tier_b_accepted": tier_b_accepted,
-        }
         diagnostics = {
             "schema_version": 2,
             "config": {
@@ -149,6 +142,15 @@ class IdentityResolver:
             },
             "boundaries": boundaries,
             "tier_b": tier_b,
+        }
+        observability = _summary_observability(diagnostics, components)
+        summary = {
+            "schema_version": 2,
+            "accepted_edges": accepted_edges,
+            "tier_a_accepted": accepted_edges,
+            "tier_b_status": tier_b["status"],
+            "tier_b_accepted": tier_b_accepted,
+            **observability,
         }
         return IdentityResolution(relabeled_results=relabeled, summary=summary, diagnostics=diagnostics)
 
@@ -714,6 +716,78 @@ def _format_component(component: list[NodeKey]) -> list[str]:
 
 def _component_windows(component: list[NodeKey]) -> set[int]:
     return {node[0] for node in component}
+
+
+def _summary_observability(
+    diagnostics: dict[str, Any],
+    components: list[list[NodeKey]],
+) -> dict[str, int]:
+    birth_or_return_reasons = {
+        "unmatched_birth_or_return",
+        "unresolved_birth_or_return",
+    }
+    birth_or_return_nodes: set[str] = set()
+    false_accepted_edges = 0
+
+    for boundary in diagnostics.get("boundaries", []):
+        accepted_left: set[str] = set()
+        accepted_right: set[str] = set()
+        for edge in boundary.get("edges", []):
+            reason = edge.get("reason")
+            left = edge.get("left")
+            right = edge.get("right")
+            if reason in birth_or_return_reasons and right:
+                birth_or_return_nodes.add(right)
+            if reason != "accepted_overlap":
+                continue
+            violates = (
+                not left
+                or not right
+                or _node_window(left) == _node_window(right)
+                or left in accepted_left
+                or right in accepted_right
+            )
+            false_accepted_edges += int(violates)
+            if left:
+                accepted_left.add(left)
+            if right:
+                accepted_right.add(right)
+
+    accepted_components: set[tuple[str, ...]] = set()
+    for proposal in diagnostics.get("tier_b", {}).get("proposals", []):
+        reason = proposal.get("reason")
+        if reason in birth_or_return_reasons:
+            for field in ("component", "left", "right"):
+                birth_or_return_nodes.update(proposal.get(field) or [])
+        if reason != "accepted_similarity":
+            continue
+        left = tuple(proposal.get("left") or [])
+        right = tuple(proposal.get("right") or [])
+        violates = (
+            not left
+            or not right
+            or bool({_node_window(node) for node in left} & {_node_window(node) for node in right})
+            or left in accepted_components
+            or right in accepted_components
+        )
+        false_accepted_edges += int(violates)
+        if left:
+            accepted_components.add(left)
+        if right:
+            accepted_components.add(right)
+
+    fragmented_recurring_speakers = sum(
+        len(component) == 1 and _format_node(component[0]) in birth_or_return_nodes
+        for component in components
+    )
+    return {
+        "false_accepted_edges": false_accepted_edges,
+        "fragmented_recurring_speakers": fragmented_recurring_speakers,
+    }
+
+
+def _node_window(node: str) -> int:
+    return int(node.split(":", 1)[0])
 
 
 def _normalized_vector(vector: Any) -> list[float] | None:
