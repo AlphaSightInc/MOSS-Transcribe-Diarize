@@ -10,6 +10,7 @@ from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_t
 
 from .ffmpeg import detect_ffmpeg, probe_media
 from .model_runner import StatusCallback, TranscriptionResult
+from .speaker_identity import IdentityResolver
 
 
 class WindowTranscriptionError(RuntimeError):
@@ -171,6 +172,7 @@ class WindowedRunner:
         elapsed_sec = 0.0
         possibly_truncated = False
         segments_by_window: list[list[TranscriptSegment]] = []
+        window_audio_paths: list[Path] = []
         last_progress = 0.0
 
         with tempfile.TemporaryDirectory(prefix="mtd-window-", dir=self.scratch_dir) as scratch:
@@ -208,6 +210,7 @@ class WindowedRunner:
                     raise _window_error(window, "returned zero parsed segments")
 
                 segments_by_window.append(segments)
+                window_audio_paths.append(window_audio)
                 prompt_tokens += result.prompt_len
                 generated_tokens += result.generated_tokens
                 elapsed_sec += result.elapsed_sec
@@ -217,7 +220,13 @@ class WindowedRunner:
                     last_progress = max(last_progress, 0.25 + 0.60 * (completed / len(windows)))
                     status_callback("transcribing", last_progress, generated_tokens)
 
-        stitched = _stitch_segments(windows, segments_by_window)
+            identity = IdentityResolver().resolve(
+                windows,
+                segments_by_window,
+                window_audio_paths=window_audio_paths,
+            )
+
+        stitched = _stitch_segments(windows, identity.relabeled_results)
         return TranscriptionResult(
             text=_serialize_segments(stitched),
             prompt_len=prompt_tokens,
@@ -230,6 +239,12 @@ class WindowedRunner:
             window_count=len(windows),
             completed_windows=completed,
             possibly_truncated=possibly_truncated,
+            identity_summary=identity.summary,
+            identity_resolution={
+                "schema_version": identity.diagnostics["schema_version"],
+                "summary": identity.summary,
+                "diagnostics": identity.diagnostics,
+            },
         )
 
 
