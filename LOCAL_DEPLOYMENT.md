@@ -89,6 +89,30 @@ Do not run that command against an unchanged deployment; it is a post-handoff
 proof that the deployed service contains the branch-local speaker-continuity
 changes.
 
+## Fine Fixture Evaluation
+
+The speaker-mapped evaluator is a CPU-only scoring tool for short fine fixtures.
+It compares positional MOSS speaker labels such as `S01` against real-name
+reference speakers by exact assignment, then reports TBSA and DER mappings in
+deterministic JSON. It does not run inference, import external scorers, classify
+model quality, or set pass/fail thresholds for long-form recordings.
+
+Run it from the repository root:
+
+```bash
+python -m moss_transcribe_diarize.evaluation \
+  --manifest path/to/sample_manifest.json \
+  --alignment-stats path/to/alignment_stats.json \
+  --hypothesis path/to/segments.json
+```
+
+`--hypothesis` accepts a JSON segment list, a JSON object with `segments`, or
+JSONL. Each segment must contain `start`, `end`, `speaker`, and `text`. The
+reference file is always `reference.jsonl` next to the manifest; embedded
+manifest reference paths are metadata only. The fine gate fails closed unless the
+fixture has `match_rate == 1.0`, reference coverage equal to duration, usable
+reference timestamps/text, and duration at most five minutes.
+
 ## GPU capacity
 
 `ops/moss.env` is intentionally configured to coexist with the existing MinerU
