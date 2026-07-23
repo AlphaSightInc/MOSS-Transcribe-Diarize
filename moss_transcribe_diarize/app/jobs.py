@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import queue
 import shutil
 import threading
@@ -75,6 +77,10 @@ class JobRecord:
     possibly_truncated: bool | None = None
     identity_summary: dict[str, Any] | None = None
     subtitle_style: dict[str, Any] = field(default_factory=dict)
+    source_sha256: str | None = None
+    checkpoint_dir: str | None = None
+    checkpoint_state: str | None = None
+    resume_attempts: int = 0
 
     @property
     def raw_transcript_path(self) -> Path:
@@ -168,6 +174,10 @@ class JobRecord:
             possibly_truncated=_optional_bool(data.get("possibly_truncated", usage.get("possibly_truncated"))),
             identity_summary=data.get("identity_summary"),
             subtitle_style=dict(data.get("subtitle_style") or {}),
+            source_sha256=data.get("source_sha256"),
+            checkpoint_dir=data.get("checkpoint_dir"),
+            checkpoint_state=data.get("checkpoint_state"),
+            resume_attempts=int(data.get("resume_attempts") or 0),
         )
 
 
@@ -239,6 +249,9 @@ class JobManager:
             decoding=options["decoding"],
             temperature=options["temperature"],
             model=self.model_runner.model_path,
+            source_sha256=_sha256_file(input_path),
+            checkpoint_dir=str(job_dir / "checkpoint"),
+            checkpoint_state="ready",
         )
         self._jobs[job.id] = job
         self._save_job(job)
@@ -280,12 +293,15 @@ class JobManager:
             decoding=options["decoding"],
             temperature=options["temperature"],
             model=self.model_runner.model_path,
+            checkpoint_dir=str(job_dir / "checkpoint"),
+            checkpoint_state="pending",
         )
         self._jobs[job.id] = job
         self._save_job(job)
         return job, input_path
 
     def enqueue(self, job_id: str) -> None:
+        self._ensure_source_metadata(self.get_job(job_id))
         self._queue.put(job_id)
 
     def rerun_job(
@@ -418,15 +434,21 @@ class JobManager:
                 save = generated_tokens is None or self._should_save_live_progress(job.id)
                 self._set_status(job, status, progress if progress is not None else job.progress, save=save)
 
-            result = self.model_runner.transcribe(
-                job.input_path,
-                prompt=job.inference_prompt,
-                max_length=job.max_length,
-                max_new_tokens=job.max_new_tokens,
-                decoding=job.decoding,
-                temperature=job.temperature,
-                status_callback=update,
-            )
+            self._ensure_source_metadata(job)
+            job.checkpoint_state = "running" if self._runner_accepts_checkpoint() else "unsupported"
+            self._save_job(job)
+            transcribe_kwargs = {
+                "prompt": job.inference_prompt,
+                "max_length": job.max_length,
+                "max_new_tokens": job.max_new_tokens,
+                "decoding": job.decoding,
+                "temperature": job.temperature,
+                "status_callback": update,
+            }
+            if job.checkpoint_state == "running":
+                transcribe_kwargs["checkpoint_dir"] = job.checkpoint_dir
+
+            result = self.model_runner.transcribe(job.input_path, **transcribe_kwargs)
             job.generated_tokens = result.generated_tokens
             job.window_count = result.window_count
             job.completed_windows = result.completed_windows
@@ -443,9 +465,13 @@ class JobManager:
             self._write_subtitle_files(job, segments)
             job.prompt_len = result.prompt_len
             job.elapsed_sec = result.elapsed_sec
+            if job.checkpoint_state == "running":
+                job.checkpoint_state = "complete"
             self._set_status(job, "waiting_review", 0.95, error=None)
             self._progress_save_times.pop(job.id, None)
         except Exception as exc:
+            if self._runner_accepts_checkpoint():
+                job.checkpoint_state = "failed"
             self._set_status(job, "failed", 1.0, error=str(exc))
             self._progress_save_times.pop(job.id, None)
 
@@ -542,8 +568,25 @@ class JobManager:
         if save:
             self._save_job(job)
 
+    def _ensure_source_metadata(self, job: JobRecord) -> None:
+        changed = False
+        if job.checkpoint_dir is None:
+            job.checkpoint_dir = str(Path(job.job_dir) / "checkpoint")
+            changed = True
+        if job.source_sha256 is None:
+            job.source_sha256 = _sha256_file(Path(job.input_path))
+            changed = True
+        if job.checkpoint_state in {None, "pending"}:
+            job.checkpoint_state = "ready"
+            changed = True
+        if changed:
+            self._save_job(job)
+
+    def _runner_accepts_checkpoint(self) -> bool:
+        return hasattr(self.model_runner, "window_seconds") and hasattr(self.model_runner, "stride_seconds")
+
     def _save_job(self, job: JobRecord) -> None:
-        job.job_path.write_text(json.dumps(job.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+        _atomic_write_json(job.job_path, job.to_dict())
 
     def _should_save_live_progress(self, job_id: str) -> bool:
         now = time.time()
@@ -552,3 +595,22 @@ class JobManager:
             return False
         self._progress_save_times[job_id] = now
         return True
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp_path, path)

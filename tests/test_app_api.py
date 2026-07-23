@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import json
 import threading
 import tempfile
 import time
@@ -98,6 +100,18 @@ class WindowMetadataRunner(NoopRunner):
             completed_windows=3,
             possibly_truncated=False,
         )
+
+
+class CheckpointRecordingRunner(NoopRunner):
+    window_seconds = 150
+    stride_seconds = 120
+
+    def __init__(self):
+        self.checkpoint_dirs: list[Path] = []
+
+    def transcribe(self, audio_path, **kwargs):
+        self.checkpoint_dirs.append(Path(kwargs["checkpoint_dir"]))
+        return super().transcribe(audio_path, **kwargs)
 
 
 def wait_terminal(client, job_id: str) -> dict:
@@ -308,6 +322,39 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(persisted["usage"]["window_count"], 3)
             self.assertEqual(persisted["usage"]["completed_windows"], 3)
             self.assertFalse(persisted["usage"]["possibly_truncated"])
+
+    def test_job_persists_checkpoint_lifecycle_fields_and_passes_checkpoint_dir(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        payload = b"audio"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=5)
+            runner = CheckpointRecordingRunner()
+            app.state.manager.model_runner = runner
+            client = TestClient(app)
+
+            created = client.post(
+                "/api/jobs",
+                files={"file": ("sample.wav", payload, "audio/wav")},
+            )
+            self.assertEqual(created.status_code, 200)
+            job_id = created.json()["id"]
+            finished = wait_terminal(client, job_id)
+
+            expected_sha = hashlib.sha256(payload).hexdigest()
+            expected_checkpoint = Path(tmpdir) / job_id / "checkpoint"
+            self.assertEqual(finished["source_sha256"], expected_sha)
+            self.assertEqual(finished["checkpoint_dir"], str(expected_checkpoint))
+            self.assertEqual(finished["checkpoint_state"], "complete")
+            self.assertEqual(finished["resume_attempts"], 0)
+            self.assertEqual(runner.checkpoint_dirs, [expected_checkpoint])
+
+            persisted = json.loads((Path(tmpdir) / job_id / "job.json").read_text(encoding="utf-8"))
+            self.assertEqual(persisted["source_sha256"], expected_sha)
+            self.assertEqual(persisted["checkpoint_dir"], str(expected_checkpoint))
+            self.assertEqual(persisted["checkpoint_state"], "complete")
+            self.assertEqual(persisted["resume_attempts"], 0)
 
     def test_vllm_runtime_reports_deployed_context_cap(self):
         from fastapi.testclient import TestClient
