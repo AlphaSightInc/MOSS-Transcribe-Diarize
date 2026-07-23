@@ -160,6 +160,19 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    @app.post("/api/jobs/{job_id}/resume")
+    def resume_job(job_id: str):
+        try:
+            return manager.resume_job(job_id).to_dict()
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Media file is missing.") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     @app.get("/api/jobs/{job_id}/media")
     def media(job_id: str):
         try:
@@ -179,6 +192,8 @@ def create_app(
             return {"segments": manager.list_segments(job_id)}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @app.put("/api/jobs/{job_id}/segments")
     async def update_segments(job_id: str, request: Request):
@@ -191,6 +206,8 @@ def create_app(
             return {"segments": manager.update_segments(job_id, segments, style)}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -216,6 +233,8 @@ def create_app(
             path = manager.download_path(job_id, kind)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=f"File is not ready: {kind}") from exc
         return FileResponse(path, filename=path.name)

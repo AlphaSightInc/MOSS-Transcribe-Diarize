@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import queue
 import shutil
 import threading
@@ -26,6 +28,8 @@ from .model_runner import ModelRunner
 
 
 TERMINAL_STATES = {"waiting_review", "done", "failed", "cancelled"}
+STARTUP_RESUMABLE_STATES = {"queued", "loading_model", "transcribing", "postprocessing"}
+ACTIVE_STATES = STARTUP_RESUMABLE_STATES | {"rendering"}
 
 
 def _optional_int(value: Any) -> int | None:
@@ -75,6 +79,10 @@ class JobRecord:
     possibly_truncated: bool | None = None
     identity_summary: dict[str, Any] | None = None
     subtitle_style: dict[str, Any] = field(default_factory=dict)
+    source_sha256: str | None = None
+    checkpoint_dir: str | None = None
+    checkpoint_state: str | None = None
+    resume_attempts: int = 0
 
     @property
     def raw_transcript_path(self) -> Path:
@@ -168,6 +176,10 @@ class JobRecord:
             possibly_truncated=_optional_bool(data.get("possibly_truncated", usage.get("possibly_truncated"))),
             identity_summary=data.get("identity_summary"),
             subtitle_style=dict(data.get("subtitle_style") or {}),
+            source_sha256=data.get("source_sha256"),
+            checkpoint_dir=data.get("checkpoint_dir"),
+            checkpoint_state=data.get("checkpoint_state"),
+            resume_attempts=int(data.get("resume_attempts") or 0),
         )
 
 
@@ -197,9 +209,11 @@ class JobManager:
         self._queue: queue.Queue[str] = queue.Queue()
         self._render_lock = threading.Lock()
         self._progress_save_times: dict[str, float] = {}
-        self._load_existing_jobs()
+        startup_resume_ids = self._load_existing_jobs()
         self._worker = threading.Thread(target=self._worker_loop, name="mtd-job-worker", daemon=True)
         self._worker.start()
+        for job_id in startup_resume_ids:
+            self._queue.put(job_id)
 
     def create_job_from_file(
         self,
@@ -239,6 +253,9 @@ class JobManager:
             decoding=options["decoding"],
             temperature=options["temperature"],
             model=self.model_runner.model_path,
+            source_sha256=_sha256_file(input_path),
+            checkpoint_dir=str(job_dir / "checkpoint"),
+            checkpoint_state="ready",
         )
         self._jobs[job.id] = job
         self._save_job(job)
@@ -280,12 +297,15 @@ class JobManager:
             decoding=options["decoding"],
             temperature=options["temperature"],
             model=self.model_runner.model_path,
+            checkpoint_dir=str(job_dir / "checkpoint"),
+            checkpoint_state="pending",
         )
         self._jobs[job.id] = job
         self._save_job(job)
         return job, input_path
 
     def enqueue(self, job_id: str) -> None:
+        self._ensure_source_metadata(self.get_job(job_id))
         self._queue.put(job_id)
 
     def rerun_job(
@@ -312,6 +332,31 @@ class JobManager:
             temperature=source.temperature if temperature is None else temperature,
         )
 
+    def resume_job(self, job_id: str) -> JobRecord:
+        job = self.get_job(job_id)
+        if job.status in ACTIVE_STATES:
+            return job
+        if job.status in {"waiting_review", "done", "cancelled"}:
+            raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
+        if job.status != "failed":
+            raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
+        if not self._runner_accepts_checkpoint():
+            raise RuntimeError("This job does not support checkpoint resume.")
+        if not job.checkpoint_dir or not job.source_sha256:
+            raise RuntimeError("Job has no checkpoint state to resume.")
+        if not Path(job.input_path).exists():
+            raise FileNotFoundError(str(job.input_path))
+
+        job.resume_attempts += 1
+        job.status = "queued"
+        job.progress = min(job.progress, 0.84)
+        job.error = None
+        job.checkpoint_state = "ready"
+        job.updated_at = time.time()
+        self._save_job(job)
+        self._queue.put(job.id)
+        return job
+
     def list_jobs(self) -> list[JobRecord]:
         return sorted(self._jobs.values(), key=lambda job: job.updated_at, reverse=True)
 
@@ -323,13 +368,14 @@ class JobManager:
 
     def delete_job(self, job_id: str) -> None:
         job = self.get_job(job_id)
-        if job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
+        if job.status in ACTIVE_STATES:
             raise RuntimeError("Cannot delete a job while it is running.")
         self._jobs.pop(job_id, None)
         shutil.rmtree(job.job_dir, ignore_errors=True)
 
     def list_segments(self, job_id: str) -> list[dict[str, Any]]:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         if not job.segments_path.exists():
             return []
         return json.loads(job.segments_path.read_text(encoding="utf-8"))
@@ -341,6 +387,7 @@ class JobManager:
         style_payload: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         segments = coerce_subtitle_segments(payload)
         style = SubtitleStyle.from_dict(style_payload) if style_payload is not None else None
         if style is not None:
@@ -354,6 +401,7 @@ class JobManager:
 
     def render(self, job_id: str, style_payload: dict[str, Any] | None = None) -> JobRecord:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         if not detect_ffmpeg().available:
             raise RuntimeError("ffmpeg and ffprobe are not available on PATH.")
         if not job.segments_path.exists():
@@ -368,6 +416,7 @@ class JobManager:
 
     def download_path(self, job_id: str, kind: str) -> Path:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         table = {
             "json": job.segments_path,
             "segments": job.segments_path,
@@ -391,14 +440,20 @@ class JobManager:
             finally:
                 self._queue.task_done()
 
-    def _load_existing_jobs(self) -> None:
+    def _load_existing_jobs(self) -> list[str]:
+        startup_resume_ids: list[str] = []
         for path in sorted(self.runs_dir.glob("*/job.json")):
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 job = JobRecord.from_dict(data)
                 if not job.job_dir:
                     job.job_dir = str(path.parent)
-                if job.status in {"queued", "loading_model", "transcribing", "postprocessing", "rendering"}:
+                if job.status in STARTUP_RESUMABLE_STATES:
+                    self._jobs[job.id] = job
+                    if self._prepare_startup_resume(job):
+                        startup_resume_ids.append(job.id)
+                    continue
+                if job.status in {"rendering"}:
                     job.status = "failed"
                     job.progress = 1.0
                     job.error = "Interrupted by previous server shutdown."
@@ -407,6 +462,25 @@ class JobManager:
                 self._jobs[job.id] = job
             except Exception:
                 continue
+        return startup_resume_ids
+
+    def _prepare_startup_resume(self, job: JobRecord) -> bool:
+        if not Path(job.input_path).exists():
+            job.status = "failed"
+            job.progress = 1.0
+            job.error = "Media file is missing after previous server shutdown."
+            job.updated_at = time.time()
+            self._save_job(job)
+            return False
+        if job.status == "postprocessing":
+            self._discard_nonterminal_artifacts(job)
+        self._ensure_source_metadata(job)
+        job.status = "queued"
+        job.progress = max(0.0, min(job.progress, 0.84))
+        job.error = None
+        job.updated_at = time.time()
+        self._save_job(job)
+        return True
 
     def _process_job(self, job: JobRecord) -> None:
         try:
@@ -418,34 +492,38 @@ class JobManager:
                 save = generated_tokens is None or self._should_save_live_progress(job.id)
                 self._set_status(job, status, progress if progress is not None else job.progress, save=save)
 
-            result = self.model_runner.transcribe(
-                job.input_path,
-                prompt=job.inference_prompt,
-                max_length=job.max_length,
-                max_new_tokens=job.max_new_tokens,
-                decoding=job.decoding,
-                temperature=job.temperature,
-                status_callback=update,
-            )
+            self._ensure_source_metadata(job)
+            job.checkpoint_state = "running" if self._runner_accepts_checkpoint() else "unsupported"
+            self._save_job(job)
+            transcribe_kwargs = {
+                "prompt": job.inference_prompt,
+                "max_length": job.max_length,
+                "max_new_tokens": job.max_new_tokens,
+                "decoding": job.decoding,
+                "temperature": job.temperature,
+                "status_callback": update,
+            }
+            if job.checkpoint_state == "running":
+                transcribe_kwargs["checkpoint_dir"] = job.checkpoint_dir
+
+            result = self.model_runner.transcribe(job.input_path, **transcribe_kwargs)
             job.generated_tokens = result.generated_tokens
             job.window_count = result.window_count
             job.completed_windows = result.completed_windows
             job.possibly_truncated = result.possibly_truncated
             job.identity_summary = result.identity_summary
             self._set_status(job, "postprocessing", 0.85, error=None)
-            job.raw_transcript_path.write_text(result.text, encoding="utf-8")
-            if result.identity_resolution is not None:
-                job.identity_resolution_path.write_text(
-                    json.dumps(result.identity_resolution, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
             segments = subtitle_segments_from_transcript(result.text, postprocess=False)
-            self._write_subtitle_files(job, segments)
+            self._stage_final_artifacts(job, result.text, segments, result.identity_resolution)
             job.prompt_len = result.prompt_len
             job.elapsed_sec = result.elapsed_sec
+            if job.checkpoint_state == "running":
+                job.checkpoint_state = "complete"
             self._set_status(job, "waiting_review", 0.95, error=None)
             self._progress_save_times.pop(job.id, None)
         except Exception as exc:
+            if self._runner_accepts_checkpoint():
+                job.checkpoint_state = "failed"
             self._set_status(job, "failed", 1.0, error=str(exc))
             self._progress_save_times.pop(job.id, None)
 
@@ -453,8 +531,8 @@ class JobManager:
         job = self.get_job(job_id)
         with self._render_lock:
             try:
-                self._set_status(job, "rendering", 0.97, error=None)
                 segments = [SubtitleSegment.from_dict(item) for item in self.list_segments(job.id)]
+                self._set_status(job, "rendering", 0.97, error=None)
                 width, height = probe_video_size(job.input_path)
                 write_text(job.ass_path, export_ass(segments, style=style, video_width=width, video_height=height))
                 burn_ass_subtitles(job.input_path, job.ass_path, job.output_path)
@@ -468,21 +546,74 @@ class JobManager:
         segments: list[SubtitleSegment],
         *,
         style: SubtitleStyle | None = None,
+        output_dir: Path | None = None,
     ) -> None:
-        write_text(job.segments_path, export_json(segments))
+        paths = _artifact_paths(job, output_dir)
+        write_text(paths["segments"], export_json(segments))
         if style is None:
             style = SubtitleStyle.from_dict(job.subtitle_style) if job.subtitle_style else SubtitleStyle(font_size=48)
         write_text(
-            job.srt_path,
+            paths["srt"],
             export_srt(segments, show_speaker=style.show_speaker, speaker_names=style.speaker_names),
             encoding="utf-8-sig",
         )
         width, height = probe_video_size(job.input_path)
         write_text(
-            job.ass_path,
+            paths["ass"],
             export_ass(segments, style=style, video_width=width, video_height=height),
             encoding="utf-8-sig",
         )
+
+    def _stage_final_artifacts(
+        self,
+        job: JobRecord,
+        transcript: str,
+        segments: list[SubtitleSegment],
+        identity_resolution: dict[str, Any] | None,
+    ) -> None:
+        staging_dir = _staging_dir(job)
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        staging_paths = _artifact_paths(job, staging_dir)
+        _atomic_write_text(staging_paths["raw_transcript"], transcript)
+        self._write_subtitle_files(job, segments, output_dir=staging_dir)
+        if identity_resolution is not None:
+            _atomic_write_text(
+                staging_paths["identity_resolution"],
+                json.dumps(identity_resolution, ensure_ascii=False, indent=2) + "\n",
+            )
+        self._validate_staged_artifacts(job, staging_paths, identity_resolution is not None)
+        for name, staged_path in staging_paths.items():
+            if name == "identity_resolution" and identity_resolution is None:
+                job.identity_resolution_path.unlink(missing_ok=True)
+                continue
+            os.replace(staged_path, _artifact_paths(job)[name])
+        shutil.rmtree(staging_dir, ignore_errors=True)
+
+    def _validate_staged_artifacts(
+        self,
+        job: JobRecord,
+        paths: dict[str, Path],
+        has_identity_resolution: bool,
+    ) -> None:
+        required = ["raw_transcript", "segments", "srt", "ass"]
+        if has_identity_resolution:
+            required.append("identity_resolution")
+        for name in required:
+            if not paths[name].is_file():
+                raise RuntimeError(f"Missing staged artifact: {name}")
+        json.loads(paths["segments"].read_text(encoding="utf-8"))
+        if has_identity_resolution:
+            json.loads(paths["identity_resolution"].read_text(encoding="utf-8"))
+
+    def _discard_nonterminal_artifacts(self, job: JobRecord) -> None:
+        shutil.rmtree(_staging_dir(job), ignore_errors=True)
+        for path in _artifact_paths(job).values():
+            path.unlink(missing_ok=True)
+
+    def _ensure_artifacts_ready(self, job: JobRecord) -> None:
+        if job.status not in {"waiting_review", "done"}:
+            raise RuntimeError(f"Artifacts are not ready for job status {job.status}.")
 
     def _set_status(
         self,
@@ -542,8 +673,25 @@ class JobManager:
         if save:
             self._save_job(job)
 
+    def _ensure_source_metadata(self, job: JobRecord) -> None:
+        changed = False
+        if job.checkpoint_dir is None:
+            job.checkpoint_dir = str(Path(job.job_dir) / "checkpoint")
+            changed = True
+        if job.source_sha256 is None:
+            job.source_sha256 = _sha256_file(Path(job.input_path))
+            changed = True
+        if job.checkpoint_state in {None, "pending"}:
+            job.checkpoint_state = "ready"
+            changed = True
+        if changed:
+            self._save_job(job)
+
+    def _runner_accepts_checkpoint(self) -> bool:
+        return hasattr(self.model_runner, "window_seconds") and hasattr(self.model_runner, "stride_seconds")
+
     def _save_job(self, job: JobRecord) -> None:
-        job.job_path.write_text(json.dumps(job.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+        _atomic_write_json(job.job_path, job.to_dict())
 
     def _should_save_live_progress(self, job_id: str) -> bool:
         now = time.time()
@@ -552,3 +700,54 @@ class JobManager:
             return False
         self._progress_save_times[job_id] = now
         return True
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp_path, path)
+
+
+def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    with tmp_path.open("w", encoding=encoding) as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp_path, path)
+
+
+def _staging_dir(job: JobRecord) -> Path:
+    return Path(job.job_dir) / ".postprocessing"
+
+
+def _artifact_paths(job: JobRecord, output_dir: Path | None = None) -> dict[str, Path]:
+    if output_dir is None:
+        return {
+            "raw_transcript": job.raw_transcript_path,
+            "segments": job.segments_path,
+            "srt": job.srt_path,
+            "ass": job.ass_path,
+            "identity_resolution": job.identity_resolution_path,
+        }
+    return {
+        "raw_transcript": output_dir / job.raw_transcript_path.name,
+        "segments": output_dir / job.segments_path.name,
+        "srt": output_dir / job.srt_path.name,
+        "ass": output_dir / job.ass_path.name,
+        "identity_resolution": output_dir / job.identity_resolution_path.name,
+    }
