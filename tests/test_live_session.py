@@ -161,3 +161,57 @@ def test_stop_flush_requires_exact_accepted_accounted_equality():
         assert stopped.retained_samples == 0
 
     asyncio.run(scenario())
+
+
+def test_replay_after_committed_prefix_prunes_retention_and_keeps_hash_chain():
+    session = LiveSession(max_retained_samples=4, hard_cap_samples=2)
+    first_ack = session.accept_frame(frame(0, 2))
+    first_span = session._frozen_spans[first_ack.frozen_span_ids[0]]
+
+    session.submit_canonical(result(first_span, transcript(2 / LIVE_SAMPLE_RATE, "first")))
+    first_snapshot = session.snapshot()
+    assert first_snapshot.accounted_samples == 2
+    assert first_snapshot.retained_samples == 0
+    assert len(first_snapshot.committed) == 1
+    first_hash = first_snapshot.committed_prefix_hash
+
+    replay_ack = session.accept_frame(frame(1, 4))
+    assert replay_ack.frozen_span_ids == (1, 2)
+    second_span = session._frozen_spans[1]
+    third_span = session._frozen_spans[2]
+    session.submit_canonical(result(third_span, transcript(2 / LIVE_SAMPLE_RATE, "third")))
+    assert session.snapshot().accounted_samples == 2
+
+    session.submit_canonical(result(second_span, transcript(2 / LIVE_SAMPLE_RATE, "second")))
+    replayed = session.snapshot()
+    assert replayed.accepted_samples == replayed.accounted_samples == 6
+    assert replayed.retained_samples == 0
+    assert [commit.transcript for commit in replayed.committed] == [
+        "[0][S01]first[0.000125]",
+        "[0][S01]second[0.000125]",
+        "[0][S01]third[0.000125]",
+    ]
+    assert replayed.committed[0].prefix_hash == first_hash
+    assert replayed.committed_prefix_hash != first_hash
+
+
+def test_canonical_result_mismatch_is_failure_injection_not_partial_commit():
+    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
+    ack = session.accept_frame(frame(0, 4000))
+    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    bad = CanonicalResult(
+        span_id=span.id,
+        epoch=span.epoch,
+        start_sample=span.start_sample,
+        end_sample=span.end_sample - 1,
+        transcript=transcript(0.25),
+    )
+
+    with pytest.raises(LiveSessionFailed, match="does not match frozen span"):
+        session.submit_canonical(bad)
+
+    failed = session.snapshot()
+    assert failed.status == "failed"
+    assert failed.accepted_samples == 4000
+    assert failed.accounted_samples == 0
+    assert failed.pending_span_ids == (span.id,)
