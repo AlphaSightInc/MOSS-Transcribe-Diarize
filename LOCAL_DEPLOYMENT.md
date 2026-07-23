@@ -180,10 +180,41 @@ windowed output is not published. The persisted API usage object includes
 counts are aggregated across windows, so they are not comparable to one window's
 output cap.
 
+## Durable window resume
+
+For vLLM jobs, each web-app job directory contains an internal `checkpoint/`
+directory. Its root manifest binds the job ID, source SHA-256, complete 150/120
+window plan, model/prompt/inference options, identity configuration, Tier-B state,
+and a contract fingerprint. Each committed window is an immutable record named
+from its index and absolute start/end microseconds.
+
+Resume is fail-closed. Startup recovery requeues interrupted `queued`,
+`loading_model`, `transcribing`, and `postprocessing` jobs once. Same-process
+window failures remain `failed` until `POST /api/jobs/{id}/resume` is called.
+Active resume requests return the current job state without adding duplicate work.
+`waiting_review`, `done`, `cancelled`, and legacy jobs without checkpoint metadata
+do not resume. Changed inference options continue to use `/rerun`, which creates a
+new job ID.
+
+Only a validated consecutive committed prefix from window 0 is reused. Stray temp
+files are ignored, but corrupt records, schema mismatches, source or fingerprint
+mismatches, plan mismatches, duplicate records, and gaps reject before model
+invocation. A committed window is never replayed for the same job and contract;
+the first uncommitted window may retry. Final transcript stitching and identity
+resolution are rebuilt from ordered raw committed window outputs rather than from
+serialized resolver internals.
+
+During postprocessing, transcript, segments, SRT, ASS, and identity artifacts are
+written under `.postprocessing`, validated as a complete set, then published by
+replace before `waiting_review`. Startup recovery from `postprocessing` discards
+staging and nonterminal final files and rebuilds them from the committed prefix.
+Segment and download routes reject nonterminal jobs, so stale partial output is
+not exposed as successful.
+
 Current limits: Tier B remains default-off pending WSL/PyTorch parity and
-approved deployed proof. The window runner still does not provide resume or
-checkpointing, per-window retry, upload-limit changes, context-cap changes, or
-larger vLLM request limits. Those require separate reviewed changes.
+approved deployed proof. This resume path does not add per-window retry beyond
+same-job resume, upload-limit changes, context-cap changes, or larger vLLM request
+limits. Those require separate reviewed changes.
 
 ## Reinstall or update
 

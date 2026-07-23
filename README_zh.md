@@ -383,6 +383,13 @@ mtd-subtitle-web \
 
 打开 `http://127.0.0.1:7860`，上传音频/视频文件，审阅解析出的字幕分段，然后下载 JSON/SRT/ASS；若 `PATH` 中存在 `ffmpeg` 与 `ffprobe`，还可压制生成 MP4。
 
+对于 vLLM 分窗任务，Web 应用会在任务目录下保存内部的任务本地检查点。若进程在一个或多个窗口提交后停止，启动恢复或
+`POST /api/jobs/{id}/resume` 会从第一个未提交窗口继续同一个任务。同一源文件和同一推理契约下，已提交窗口不会再次发送给模型。
+`POST /api/jobs/{id}/rerun` 仍会创建新任务，适用于 prompt、解码方式、token 限制或其他推理选项发生变化的情况。
+
+转写文本、JSON 分段、SRT、ASS 与说话人身份 artifact 会在 `postprocessing` 阶段暂存，只有完整集合校验通过后才发布。分段编辑和下载只在任务进入
+`waiting_review` 或 `done` 后可用。
+
 批量处理：
 
 ```bash

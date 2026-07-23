@@ -383,6 +383,19 @@ mtd-subtitle-web \
 
 Open `http://127.0.0.1:7860`, upload an audio/video file, review the parsed subtitle segments, then download JSON/SRT/ASS or burn an MP4 if `ffmpeg` and `ffprobe` are available on `PATH`.
 
+For vLLM windowed jobs, the web app stores an internal job-local checkpoint under
+the job directory. If the process stops after one or more windows are committed,
+startup recovery or `POST /api/jobs/{id}/resume` resumes the same job from the
+first uncommitted window. Committed windows are not sent to the model again for
+the same source file and inference contract. `POST /api/jobs/{id}/rerun` keeps
+creating a new job and should be used when prompt, decoding, token limits, or
+other inference options change.
+
+Transcript, JSON segments, SRT, ASS, and speaker identity artifacts are staged
+while a job is postprocessing and are published only as a complete set. Segment
+editing and downloads are available after the job reaches `waiting_review` or
+`done`.
+
 For batch processing:
 
 ```bash
