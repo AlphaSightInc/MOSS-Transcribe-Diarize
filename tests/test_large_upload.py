@@ -172,6 +172,34 @@ def test_success_publishes_complete_metadata_before_exactly_one_enqueue(tmp_path
     assert queue.puts[0]["job_json"]["source_sha256"] == hashlib.sha256(payload).hexdigest()
 
 
+def test_job_manager_upload_transaction_commits_atomic_input_and_metadata(tmp_path):
+    app = make_app(tmp_path)
+    manager = app.state.manager
+    payload = [b"chunk-one", b"-chunk-two"]
+
+    upload = manager.create_upload_transaction("sample.wav")
+    job = upload.job
+    tmp_input = Path(job.input_path).with_name(f"{Path(job.input_path).name}.uploading")
+
+    assert manager.list_jobs() == []
+    assert tmp_input.is_file()
+    assert not Path(job.input_path).exists()
+    assert not job.job_path.exists()
+
+    for chunk in payload:
+        upload.write(chunk)
+    committed = upload.commit_and_enqueue()
+
+    expected = b"".join(payload)
+    assert committed.id == job.id
+    assert Path(committed.input_path).read_bytes() == expected
+    assert not tmp_input.exists()
+    assert committed.source_sha256 == hashlib.sha256(expected).hexdigest()
+    assert committed.checkpoint_state == "ready"
+    assert json.loads(committed.job_path.read_text(encoding="utf-8"))["source_sha256"] == committed.source_sha256
+    assert [put["job_id"] for put in manager._queue.puts] == [job.id]
+
+
 def test_upload_read_failure_removes_job_record_and_directory(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from starlette.datastructures import UploadFile

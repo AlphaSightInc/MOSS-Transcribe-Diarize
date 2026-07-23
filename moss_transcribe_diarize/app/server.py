@@ -108,7 +108,7 @@ def create_app(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         try:
-            job, input_path = manager.create_job_for_upload(
+            upload = manager.create_upload_transaction(
                 file.filename or "input.media",
                 prompt=prompt,
                 max_length=max_len,
@@ -119,19 +119,18 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         try:
-            with input_path.open("wb") as handle:
-                while True:
-                    chunk = await _read_upload_chunk(file)
-                    if not chunk:
-                        break
-                    handle.write(chunk)
-            manager.enqueue(job.id)
+            while True:
+                chunk = await _read_upload_chunk(file)
+                if not chunk:
+                    break
+                upload.write(chunk)
+            job = upload.commit_and_enqueue()
             return job.to_dict()
         except _UploadReceiveIdleTimeout as exc:
-            manager.abort_unpublished_job(job.id)
+            upload.abort()
             raise HTTPException(status_code=408, detail=str(exc)) from exc
         except Exception as exc:
-            manager._set_status(job, "failed", 1.0, error=str(exc))
+            upload.abort()
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.get("/api/jobs/{job_id}")
