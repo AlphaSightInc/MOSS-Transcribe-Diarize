@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -149,6 +150,44 @@ def test_upload_receive_idle_timeout_returns_408_without_job_creation(tmp_path, 
     assert asyncio.run(call_stalled_receive()) == 408
     assert app.state.manager.list_jobs() == []
     assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.skipif(sys.version_info[:2] != (3, 10), reason="Python 3.10 compatibility contract")
+def test_python310_request_receive_timeout_maps_to_upload_timeout(monkeypatch):
+    import moss_transcribe_diarize.app.server as server_module
+
+    async def raise_asyncio_timeout(awaitable, *, timeout):
+        awaitable.close()
+        raise asyncio.TimeoutError(f"simulated idle after {timeout}")
+
+    class Request:
+        async def _receive(self):
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+    monkeypatch.setattr(server_module.asyncio, "wait_for", raise_asyncio_timeout)
+    request = Request()
+    server_module._install_receive_idle_timeout(request)
+
+    with pytest.raises(server_module._UploadReceiveIdleTimeout):
+        asyncio.run(request._receive())
+
+
+@pytest.mark.skipif(sys.version_info[:2] != (3, 10), reason="Python 3.10 compatibility contract")
+def test_python310_upload_file_read_timeout_maps_to_upload_timeout(monkeypatch):
+    import moss_transcribe_diarize.app.server as server_module
+
+    async def raise_asyncio_timeout(awaitable, *, timeout):
+        awaitable.close()
+        raise asyncio.TimeoutError(f"simulated idle after {timeout}")
+
+    class Upload:
+        async def read(self, _size):
+            return b""
+
+    monkeypatch.setattr(server_module.asyncio, "wait_for", raise_asyncio_timeout)
+
+    with pytest.raises(server_module._UploadReceiveIdleTimeout):
+        asyncio.run(server_module._read_upload_chunk(Upload()))
 
 
 def test_success_publishes_complete_metadata_before_exactly_one_enqueue(tmp_path):
