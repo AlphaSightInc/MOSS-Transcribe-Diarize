@@ -79,7 +79,7 @@ def test_300_second_result_has_bounded_plan_absolute_times_and_one_overlap_owner
     assert all(duration <= 150.0 for _, _, _, duration in extractor.calls)
     assert stitched.text == (
         "[129][S01]left[135][136][S02]duplicate[142]"
-        "[250][S01]right[256][290][S01]tail[296]"
+        "[250][S01]right[256][290][S03]tail[296]"
     )
     assert stitched.prompt_len == 30
     assert stitched.generated_tokens == 15
@@ -87,6 +87,33 @@ def test_300_second_result_has_bounded_plan_absolute_times_and_one_overlap_owner
     assert stitched.window_count == 3
     assert stitched.completed_windows == 3
     assert stitched.possibly_truncated is False
+
+
+def test_windowed_result_relabels_overlap_copies_before_stitching(tmp_path):
+    runner, _ = make_runner(
+        [
+            result("[125][S01]alice overlap[134][136][S02]bob owned[146]"),
+            result("[5][S02]alice copy[14][16][S01]bob overlap[26]"),
+        ],
+        200.0,
+    )
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"source")
+
+    stitched = runner.transcribe(source, max_new_tokens=12000)
+
+    assert stitched.text == "[125][S01]alice overlap[134][136][S02]bob overlap[146]"
+    assert stitched.identity_summary == {
+        "schema_version": 2,
+        "accepted_edges": 2,
+        "tier_a_accepted": 2,
+        "tier_b_status": "disabled",
+        "tier_b_accepted": 0,
+        "false_accepted_edges": 0,
+        "fragmented_recurring_speakers": 0,
+    }
+    assert stitched.identity_resolution is not None
+    assert stitched.identity_resolution["summary"] == stitched.identity_summary
 
 
 def test_short_input_delegates_without_slicing(tmp_path):

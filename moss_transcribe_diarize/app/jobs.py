@@ -73,6 +73,7 @@ class JobRecord:
     window_count: int | None = None
     completed_windows: int | None = None
     possibly_truncated: bool | None = None
+    identity_summary: dict[str, Any] | None = None
     subtitle_style: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -94,6 +95,10 @@ class JobRecord:
     @property
     def output_path(self) -> Path:
         return Path(self.job_dir) / "output.mp4"
+
+    @property
+    def identity_resolution_path(self) -> Path:
+        return Path(self.job_dir) / "identity-resolution.json"
 
     @property
     def job_path(self) -> Path:
@@ -130,6 +135,7 @@ class JobRecord:
             "srt": str(self.srt_path),
             "ass": str(self.ass_path),
             "mp4": str(self.output_path),
+            "identity_resolution": str(self.identity_resolution_path),
         }
         return data
 
@@ -160,6 +166,7 @@ class JobRecord:
             window_count=_optional_int(data.get("window_count", usage.get("window_count"))),
             completed_windows=_optional_int(data.get("completed_windows", usage.get("completed_windows"))),
             possibly_truncated=_optional_bool(data.get("possibly_truncated", usage.get("possibly_truncated"))),
+            identity_summary=data.get("identity_summary"),
             subtitle_style=dict(data.get("subtitle_style") or {}),
         )
 
@@ -424,8 +431,14 @@ class JobManager:
             job.window_count = result.window_count
             job.completed_windows = result.completed_windows
             job.possibly_truncated = result.possibly_truncated
+            job.identity_summary = result.identity_summary
             self._set_status(job, "postprocessing", 0.85, error=None)
             job.raw_transcript_path.write_text(result.text, encoding="utf-8")
+            if result.identity_resolution is not None:
+                job.identity_resolution_path.write_text(
+                    json.dumps(result.identity_resolution, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
             segments = subtitle_segments_from_transcript(result.text, postprocess=False)
             self._write_subtitle_files(job, segments)
             job.prompt_len = result.prompt_len

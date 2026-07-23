@@ -14,6 +14,7 @@ dependencies = [
   "transformers>=5.0.0,<6.0.0",
   "safetensors>=0.6.2",
   "numpy>=1.26,<3",
+  "scipy>=1.11,<2",
   "av>=14.0",
   "librosa>=0.11.0",
   "numba>=0.61.0",
