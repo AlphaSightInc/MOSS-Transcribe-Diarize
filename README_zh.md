@@ -406,6 +406,19 @@ mtd-subtitle /path/to/input.mp4 \
   --render
 ```
 
+### 默认关闭的实时回放
+
+工具包包含一个离线回放 CLI，用于审查默认关闭的实时会话底座；它不会启用实时 HTTP 路由，也不会启动或重启任何服务：
+
+```bash
+python -m moss_transcribe_diarize.live_replay \
+  --manifest /path/to/live-replay-manifest.json \
+  --out-dir runs/live-replay
+```
+
+manifest 提供有序的 16 kHz 单声道 PCM 帧、语音观测、离线 provider 身份与资产、有界 decode 输出以及身份判定证据。回放会写出
+`trace.jsonl`、`summary.json` 和 evaluator JSONL，并在完整性、provider、身份或 RTF 失败时以非零状态退出。
+
 ## 引用
 
 如果你使用了 MOSS-Transcribe-Diarize，请引用我们的技术报告：

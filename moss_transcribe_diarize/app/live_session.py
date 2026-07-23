@@ -62,6 +62,26 @@ class FrozenSpan:
 
 
 @dataclass(frozen=True, slots=True)
+class LiveIdentitySnapshot:
+    version: int = 0
+    canonical_speakers: tuple[str, ...] = ()
+    diagnostics: tuple[tuple[str, str], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class LiveIdentityPreparation:
+    span_id: int
+    epoch: int
+    start_sample: int
+    end_sample: int
+    base_snapshot_version: int
+    proposed_snapshot: LiveIdentitySnapshot
+    relabeled_transcript: str
+    status: str = "prepared"
+    reason: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class CanonicalResult:
     span_id: int
     epoch: int
@@ -69,6 +89,7 @@ class CanonicalResult:
     end_sample: int
     transcript: str
     identity_confirmed: bool = True
+    identity_preparation: LiveIdentityPreparation | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +99,7 @@ class CanonicalCommit:
     end_sample: int
     transcript: str
     prefix_hash: str
+    identity_snapshot_version: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +120,7 @@ class LiveSnapshot:
     retained_samples: int
     committed_samples: int
     committed_prefix_hash: str
+    identity_snapshot: LiveIdentitySnapshot
     committed: tuple[CanonicalCommit, ...]
     provisional: ProvisionalSuffix | None
     next_frame_sequence: int
@@ -145,6 +168,7 @@ class LiveSession:
         self._pending_results: dict[int, CanonicalResult] = {}
         self._committed: list[CanonicalCommit] = []
         self._prefix_hash = _hash_payload({"schema_version": 1, "prefix": []})
+        self._identity_snapshot = LiveIdentitySnapshot()
         self._provisional_generation = 0
         self._provisional: ProvisionalSuffix | None = None
         self._waiters: list[asyncio.Event] = []
@@ -232,6 +256,30 @@ class LiveSession:
         self._notify_waiters()
         return True
 
+    def submit_prepared_canonical(self, result: CanonicalResult) -> bool:
+        """Atomically publish the next canonical span and identity snapshot."""
+
+        if result.epoch != self._epoch:
+            return False
+        self._ensure_accepting_or_closing()
+        span = self._frozen_spans.get(result.span_id)
+        if span is None:
+            return False
+        if not self._span_order or self._span_order[0] != result.span_id:
+            return False
+        if result.start_sample != span.start_sample or result.end_sample != span.end_sample:
+            return False
+        if not self._identity_preparation_is_current(result, span):
+            return False
+        if self._canonical_validation_error(result, span) is not None:
+            return False
+
+        assert result.identity_preparation is not None
+        self._publish_span(span, result, identity_snapshot=result.identity_preparation.proposed_snapshot)
+        self._bump()
+        self._notify_waiters()
+        return True
+
     def snapshot(self) -> LiveSnapshot:
         return LiveSnapshot(
             status=self._status,
@@ -242,6 +290,7 @@ class LiveSession:
             retained_samples=self._retained_samples,
             committed_samples=self._committed_samples,
             committed_prefix_hash=self._prefix_hash,
+            identity_snapshot=self._identity_snapshot,
             committed=tuple(self._committed),
             provisional=self._provisional,
             next_frame_sequence=self._next_frame_sequence,
@@ -324,21 +373,49 @@ class LiveSession:
         return span
 
     def _validate_canonical(self, result: CanonicalResult, span: FrozenSpan) -> None:
+        error = self._canonical_validation_error(result, span)
+        if error is not None:
+            failure_reason, exception_reason = error
+            self._fail(failure_reason)
+            raise LiveSessionFailed(self._failure_reason or exception_reason)
+
+    def _canonical_validation_error(self, result: CanonicalResult, span: FrozenSpan) -> tuple[str, str] | None:
         if not result.identity_confirmed:
-            self._fail(f"canonical span {span.id} is missing stable session identity.")
-            raise LiveSessionFailed(self._failure_reason or "missing stable session identity.")
+            return (
+                f"canonical span {span.id} is missing stable session identity.",
+                "missing stable session identity.",
+            )
         if not result.transcript.strip():
-            self._fail(f"canonical span {span.id} returned empty transcript.")
-            raise LiveSessionFailed(self._failure_reason or "empty canonical transcript.")
+            return (f"canonical span {span.id} returned empty transcript.", "empty canonical transcript.")
         segments = parse_transcript(result.transcript)
         if not segments:
-            self._fail(f"canonical span {span.id} returned zero parsed segments.")
-            raise LiveSessionFailed(self._failure_reason or "unparseable canonical transcript.")
+            return (f"canonical span {span.id} returned zero parsed segments.", "unparseable canonical transcript.")
         duration = span.sample_count / float(LIVE_SAMPLE_RATE)
         for segment in segments:
             if segment.start < 0 or segment.end > duration:
-                self._fail(f"canonical span {span.id} returned timestamps outside frozen span.")
-                raise LiveSessionFailed(self._failure_reason or "canonical timestamp bounds failed.")
+                return (
+                    f"canonical span {span.id} returned timestamps outside frozen span.",
+                    "canonical timestamp bounds failed.",
+                )
+        return None
+
+    def _identity_preparation_is_current(self, result: CanonicalResult, span: FrozenSpan) -> bool:
+        preparation = result.identity_preparation
+        if preparation is None:
+            return False
+        if preparation.status != "prepared" or preparation.reason is not None:
+            return False
+        if preparation.epoch != self._epoch or preparation.span_id != span.id:
+            return False
+        if preparation.start_sample != span.start_sample or preparation.end_sample != span.end_sample:
+            return False
+        if preparation.base_snapshot_version != self._identity_snapshot.version:
+            return False
+        if preparation.proposed_snapshot.version != self._identity_snapshot.version + 1:
+            return False
+        if preparation.relabeled_transcript != result.transcript:
+            return False
+        return True
 
     def _publish_ready_prefix(self) -> None:
         while self._span_order:
@@ -350,30 +427,42 @@ class LiveSession:
             if span.start_sample != self._committed_samples:
                 return
             self._pending_results.pop(span_id)
-            self._span_order.pop(0)
-            self._frozen_spans.pop(span_id)
-            prefix_hash = _hash_payload(
-                {
-                    "previous": self._prefix_hash,
-                    "span_id": span.id,
-                    "start_sample": span.start_sample,
-                    "end_sample": span.end_sample,
-                    "transcript": result.transcript,
-                }
-            )
-            commit = CanonicalCommit(
-                span_id=span.id,
-                start_sample=span.start_sample,
-                end_sample=span.end_sample,
-                transcript=result.transcript,
-                prefix_hash=prefix_hash,
-            )
-            self._committed.append(commit)
-            self._committed_samples = span.end_sample
-            self._prefix_hash = prefix_hash
-            if self._provisional is not None and self._provisional.start_sample < self._committed_samples:
-                self._provisional = None
-            self._prune_committed_frames()
+            self._publish_span(span, result, identity_snapshot=self._identity_snapshot)
+
+    def _publish_span(
+        self,
+        span: FrozenSpan,
+        result: CanonicalResult,
+        *,
+        identity_snapshot: LiveIdentitySnapshot,
+    ) -> None:
+        self._span_order.pop(0)
+        self._frozen_spans.pop(span.id)
+        prefix_hash = _hash_payload(
+            {
+                "previous": self._prefix_hash,
+                "span_id": span.id,
+                "start_sample": span.start_sample,
+                "end_sample": span.end_sample,
+                "transcript": result.transcript,
+                "identity_snapshot": _identity_snapshot_payload(identity_snapshot),
+            }
+        )
+        commit = CanonicalCommit(
+            span_id=span.id,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            transcript=result.transcript,
+            prefix_hash=prefix_hash,
+            identity_snapshot_version=identity_snapshot.version,
+        )
+        self._committed.append(commit)
+        self._committed_samples = span.end_sample
+        self._prefix_hash = prefix_hash
+        self._identity_snapshot = identity_snapshot
+        if self._provisional is not None and self._provisional.start_sample < self._committed_samples:
+            self._provisional = None
+        self._prune_committed_frames()
 
     def _prune_committed_frames(self, *, force: bool = False) -> None:
         while self._frames and self._frames[0].end_sample <= self._committed_samples:
@@ -410,3 +499,11 @@ def _validate_frame(frame: AudioFrame) -> None:
 def _hash_payload(payload: dict[str, Any]) -> str:
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _identity_snapshot_payload(snapshot: LiveIdentitySnapshot) -> dict[str, Any]:
+    return {
+        "version": snapshot.version,
+        "canonical_speakers": list(snapshot.canonical_speakers),
+        "diagnostics": [list(item) for item in snapshot.diagnostics],
+    }

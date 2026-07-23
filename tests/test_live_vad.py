@@ -16,6 +16,9 @@ from moss_transcribe_diarize.app.live_adapters import (
     OfflineAsset,
     RunnerBoundedWavInference,
     admit_live_provider,
+    silero_vad_manifest,
+    webrtc_vad_manifest,
+    wespeaker_identity_manifest,
 )
 from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
 from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, LIVE_SAMPLE_RATE, LiveSession, LiveSessionFailed
@@ -52,6 +55,10 @@ def provider(asset_path: Path, *, transcript: str = "[0][S01]ok[0.25]", identity
     )
 
 
+def asset_sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def test_provider_admission_requires_preinstalled_checksum_asset(tmp_path):
     asset = tmp_path / "vad.asset"
     asset.write_bytes(b"offline asset")
@@ -77,6 +84,128 @@ def test_provider_admission_requires_preinstalled_checksum_asset(tmp_path):
                 assets=(OfflineAsset(name="vad-manifest", path=tmp_path / "missing.asset", sha256="0" * 64),),
             ),
             vad=FakeVad(),
+            identity=FakeStableIdentity(),
+            inference=FakeBoundedWavInference(transcript="[0][S01]ok[0.1]"),
+        )
+
+
+def test_optional_live_provider_manifests_are_explicit_offline_and_pinned(tmp_path):
+    silero = tmp_path / "silero.onnx"
+    webrtc = tmp_path / "webrtc.wheel"
+    wespeaker = tmp_path / "wespeaker.pt"
+    silero.write_bytes(b"silero")
+    webrtc.write_bytes(b"webrtc")
+    wespeaker.write_bytes(b"wespeaker")
+    config = LiveProviderConfig(
+        name="offline-trials",
+        assets=(),
+        offline_providers=(
+            silero_vad_manifest(model_path=silero, sha256=asset_sha(silero), revision="6.2.1"),
+            webrtc_vad_manifest(asset_path=webrtc, sha256=asset_sha(webrtc), revision="control-1"),
+            wespeaker_identity_manifest(state_path=wespeaker, sha256=asset_sha(wespeaker), revision="resnet152-lm"),
+        ),
+    )
+
+    admitted = admit_live_provider(
+        config,
+        vad=FakeVad(),
+        identity=FakeStableIdentity(),
+        inference=FakeBoundedWavInference(transcript="[0][S01]ok[0.1]"),
+    )
+
+    assert [manifest.kind for manifest in admitted.config.offline_providers] == [
+        "silero_vad",
+        "webrtc_vad",
+        "wespeaker_identity",
+    ]
+
+
+def test_optional_live_provider_admission_fails_closed_without_asset_or_package(tmp_path):
+    asset = tmp_path / "silero.onnx"
+    asset.write_bytes(b"silero")
+    base_kwargs = dict(
+        vad=FakeVad(),
+        identity=FakeStableIdentity(),
+        inference=FakeBoundedWavInference(transcript="[0][S01]ok[0.1]"),
+    )
+
+    with pytest.raises(LiveProviderAdmissionError, match="checksum mismatch"):
+        admit_live_provider(
+            LiveProviderConfig(
+                name="bad-silero",
+                assets=(),
+                offline_providers=(
+                    silero_vad_manifest(model_path=asset, sha256="0" * 64, revision="6.2.1"),
+                ),
+            ),
+            **base_kwargs,
+        )
+    with pytest.raises(LiveProviderAdmissionError, match="not preinstalled"):
+        admit_live_provider(
+            LiveProviderConfig(
+                name="missing-wespeaker",
+                assets=(),
+                offline_providers=(
+                    wespeaker_identity_manifest(
+                        state_path=tmp_path / "missing.pt",
+                        sha256="0" * 64,
+                        revision="resnet152-lm",
+                    ),
+                ),
+            ),
+            **base_kwargs,
+        )
+    with pytest.raises(LiveProviderAdmissionError, match="package is not preinstalled"):
+        admit_live_provider(
+            LiveProviderConfig(
+                name="missing-package",
+                assets=(),
+                offline_providers=(
+                    webrtc_vad_manifest(
+                        asset_path=asset,
+                        sha256=asset_sha(asset),
+                        revision="control-1",
+                        package_name="moss-definitely-missing-live-provider",
+                        package_version="1.0.0",
+                    ),
+                ),
+            ),
+            **base_kwargs,
+        )
+    with pytest.raises(LiveProviderAdmissionError, match="module is not importable"):
+        admit_live_provider(
+            LiveProviderConfig(
+                name="missing-module",
+                assets=(),
+                offline_providers=(
+                    webrtc_vad_manifest(
+                        asset_path=asset,
+                        sha256=asset_sha(asset),
+                        revision="control-1",
+                        import_name="moss_definitely_missing_live_provider",
+                    ),
+                ),
+            ),
+            **base_kwargs,
+        )
+
+
+def test_optional_provider_admission_rejects_duplicates_and_adapter_failures(tmp_path):
+    asset = tmp_path / "silero.onnx"
+    asset.write_bytes(b"silero")
+    manifest = silero_vad_manifest(model_path=asset, sha256=asset_sha(asset), revision="6.2.1")
+
+    with pytest.raises(LiveProviderAdmissionError, match="duplicate optional provider"):
+        admit_live_provider(
+            LiveProviderConfig(name="duplicate", assets=(), offline_providers=(manifest, manifest)),
+            vad=FakeVad(),
+            identity=FakeStableIdentity(),
+            inference=FakeBoundedWavInference(transcript="[0][S01]ok[0.1]"),
+        )
+    with pytest.raises(LiveProviderAdmissionError, match="vad provider unavailable"):
+        admit_live_provider(
+            LiveProviderConfig(name="adapter-failure", assets=(), offline_providers=(manifest,)),
+            vad=FakeVad(available=False),
             identity=FakeStableIdentity(),
             inference=FakeBoundedWavInference(transcript="[0][S01]ok[0.1]"),
         )
