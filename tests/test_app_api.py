@@ -127,6 +127,14 @@ class BlockingCheckpointRunner(BlockingRunner):
         return super().transcribe(audio_path, **kwargs)
 
 
+class IdentityRunner(NoopRunner):
+    def transcribe(self, audio_path, **kwargs):
+        result = super().transcribe(audio_path, **kwargs)
+        result.identity_resolution = {"summary": {"S01": {"windows": 1}}}
+        result.identity_summary = {"S01": {"windows": 1}}
+        return result
+
+
 def wait_terminal(client, job_id: str) -> dict:
     job = {}
     for _ in range(80):
@@ -307,6 +315,44 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(finished["status"], "waiting_review")
             self.assertEqual(finished["usage"]["generated_tokens"], 5)
 
+    def test_nonterminal_artifact_routes_refuse_stale_files(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.jobs import JobRecord
+        from moss_transcribe_diarize.app.server import create_app
+
+        payload = b"audio"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs_dir = Path(tmpdir)
+            app = create_app(model_path="fake-model", runs_dir=runs_dir, max_new_tokens=5)
+            client = TestClient(app)
+
+            job_dir = runs_dir / "active-job"
+            job_dir.mkdir()
+            input_path = job_dir / "input.wav"
+            input_path.write_bytes(payload)
+            job = JobRecord(
+                id="active-job",
+                status="postprocessing",
+                progress=0.85,
+                media_name="sample.wav",
+                input_path=str(input_path),
+                job_dir=str(job_dir),
+                inference_prompt="resume prompt",
+                max_length=456,
+                max_new_tokens=5,
+                decoding="greedy",
+                temperature=None,
+                model="fake-model",
+            )
+            job.segments_path.write_text('[{"start":0,"end":1,"speaker":"OLD","text":"stale"}]', encoding="utf-8")
+            job.srt_path.write_text("stale", encoding="utf-8")
+            app.state.manager._jobs[job.id] = job
+
+            self.assertEqual(client.get(f"/api/jobs/{job.id}/segments").status_code, 409)
+            self.assertEqual(client.get(f"/api/jobs/{job.id}/download?kind=srt").status_code, 409)
+            updated = client.put(f"/api/jobs/{job.id}/segments", json={"segments": []})
+            self.assertEqual(updated.status_code, 409)
+
     def test_job_persists_runner_window_metadata_through_reload(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
@@ -335,6 +381,62 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(persisted["usage"]["window_count"], 3)
             self.assertEqual(persisted["usage"]["completed_windows"], 3)
             self.assertFalse(persisted["usage"]["possibly_truncated"])
+
+    def test_postprocessing_recovery_discards_stale_finals_and_staging(self):
+        from moss_transcribe_diarize.app.jobs import JobManager, JobRecord
+
+        payload = b"audio"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs_dir = Path(tmpdir)
+            job_dir = runs_dir / "postprocessing-job"
+            job_dir.mkdir()
+            input_path = job_dir / "input.wav"
+            input_path.write_bytes(payload)
+            job = JobRecord(
+                id="postprocessing-job",
+                status="postprocessing",
+                progress=0.85,
+                media_name="sample.wav",
+                input_path=str(input_path),
+                job_dir=str(job_dir),
+                inference_prompt="resume prompt",
+                max_length=456,
+                max_new_tokens=5,
+                decoding="greedy",
+                temperature=None,
+                model="fake-model",
+                source_sha256=hashlib.sha256(payload).hexdigest(),
+            )
+            job.raw_transcript_path.write_text("stale transcript", encoding="utf-8")
+            job.segments_path.write_text('[{"start":0,"end":1,"speaker":"OLD","text":"stale"}]', encoding="utf-8")
+            job.srt_path.write_text("stale srt", encoding="utf-8")
+            job.ass_path.write_text("stale ass", encoding="utf-8")
+            job.identity_resolution_path.write_text('{"stale": true}', encoding="utf-8")
+            staging_dir = job_dir / ".postprocessing"
+            staging_dir.mkdir()
+            (staging_dir / "raw_transcript.txt").write_text("staged stale", encoding="utf-8")
+            job.job_path.write_text(json.dumps(job.to_dict(), ensure_ascii=False), encoding="utf-8")
+
+            manager = JobManager(
+                runs_dir,
+                IdentityRunner(),
+                prompt="default prompt",
+                max_length=123,
+                max_new_tokens=9,
+            )
+            manager._queue.join()
+
+            recovered = manager.get_job(job.id)
+            self.assertEqual(recovered.status, "waiting_review")
+            self.assertFalse(staging_dir.exists())
+            self.assertEqual(recovered.raw_transcript_path.read_text(encoding="utf-8"), "[0][S01]hello[1]")
+            self.assertIn("hello", recovered.segments_path.read_text(encoding="utf-8"))
+            self.assertNotIn("stale", recovered.srt_path.read_text(encoding="utf-8"))
+            self.assertNotIn("stale", recovered.ass_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                json.loads(recovered.identity_resolution_path.read_text(encoding="utf-8")),
+                {"summary": {"S01": {"windows": 1}}},
+            )
 
     def test_job_persists_checkpoint_lifecycle_fields_and_passes_checkpoint_dir(self):
         from fastapi.testclient import TestClient

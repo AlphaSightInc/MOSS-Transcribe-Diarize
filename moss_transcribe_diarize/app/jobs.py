@@ -375,6 +375,7 @@ class JobManager:
 
     def list_segments(self, job_id: str) -> list[dict[str, Any]]:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         if not job.segments_path.exists():
             return []
         return json.loads(job.segments_path.read_text(encoding="utf-8"))
@@ -386,6 +387,7 @@ class JobManager:
         style_payload: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         segments = coerce_subtitle_segments(payload)
         style = SubtitleStyle.from_dict(style_payload) if style_payload is not None else None
         if style is not None:
@@ -399,6 +401,7 @@ class JobManager:
 
     def render(self, job_id: str, style_payload: dict[str, Any] | None = None) -> JobRecord:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         if not detect_ffmpeg().available:
             raise RuntimeError("ffmpeg and ffprobe are not available on PATH.")
         if not job.segments_path.exists():
@@ -413,6 +416,7 @@ class JobManager:
 
     def download_path(self, job_id: str, kind: str) -> Path:
         job = self.get_job(job_id)
+        self._ensure_artifacts_ready(job)
         table = {
             "json": job.segments_path,
             "segments": job.segments_path,
@@ -468,6 +472,8 @@ class JobManager:
             job.updated_at = time.time()
             self._save_job(job)
             return False
+        if job.status == "postprocessing":
+            self._discard_nonterminal_artifacts(job)
         self._ensure_source_metadata(job)
         job.status = "queued"
         job.progress = max(0.0, min(job.progress, 0.84))
@@ -507,14 +513,8 @@ class JobManager:
             job.possibly_truncated = result.possibly_truncated
             job.identity_summary = result.identity_summary
             self._set_status(job, "postprocessing", 0.85, error=None)
-            job.raw_transcript_path.write_text(result.text, encoding="utf-8")
-            if result.identity_resolution is not None:
-                job.identity_resolution_path.write_text(
-                    json.dumps(result.identity_resolution, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
             segments = subtitle_segments_from_transcript(result.text, postprocess=False)
-            self._write_subtitle_files(job, segments)
+            self._stage_final_artifacts(job, result.text, segments, result.identity_resolution)
             job.prompt_len = result.prompt_len
             job.elapsed_sec = result.elapsed_sec
             if job.checkpoint_state == "running":
@@ -531,8 +531,8 @@ class JobManager:
         job = self.get_job(job_id)
         with self._render_lock:
             try:
-                self._set_status(job, "rendering", 0.97, error=None)
                 segments = [SubtitleSegment.from_dict(item) for item in self.list_segments(job.id)]
+                self._set_status(job, "rendering", 0.97, error=None)
                 width, height = probe_video_size(job.input_path)
                 write_text(job.ass_path, export_ass(segments, style=style, video_width=width, video_height=height))
                 burn_ass_subtitles(job.input_path, job.ass_path, job.output_path)
@@ -546,21 +546,74 @@ class JobManager:
         segments: list[SubtitleSegment],
         *,
         style: SubtitleStyle | None = None,
+        output_dir: Path | None = None,
     ) -> None:
-        write_text(job.segments_path, export_json(segments))
+        paths = _artifact_paths(job, output_dir)
+        write_text(paths["segments"], export_json(segments))
         if style is None:
             style = SubtitleStyle.from_dict(job.subtitle_style) if job.subtitle_style else SubtitleStyle(font_size=48)
         write_text(
-            job.srt_path,
+            paths["srt"],
             export_srt(segments, show_speaker=style.show_speaker, speaker_names=style.speaker_names),
             encoding="utf-8-sig",
         )
         width, height = probe_video_size(job.input_path)
         write_text(
-            job.ass_path,
+            paths["ass"],
             export_ass(segments, style=style, video_width=width, video_height=height),
             encoding="utf-8-sig",
         )
+
+    def _stage_final_artifacts(
+        self,
+        job: JobRecord,
+        transcript: str,
+        segments: list[SubtitleSegment],
+        identity_resolution: dict[str, Any] | None,
+    ) -> None:
+        staging_dir = _staging_dir(job)
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        staging_paths = _artifact_paths(job, staging_dir)
+        _atomic_write_text(staging_paths["raw_transcript"], transcript)
+        self._write_subtitle_files(job, segments, output_dir=staging_dir)
+        if identity_resolution is not None:
+            _atomic_write_text(
+                staging_paths["identity_resolution"],
+                json.dumps(identity_resolution, ensure_ascii=False, indent=2) + "\n",
+            )
+        self._validate_staged_artifacts(job, staging_paths, identity_resolution is not None)
+        for name, staged_path in staging_paths.items():
+            if name == "identity_resolution" and identity_resolution is None:
+                job.identity_resolution_path.unlink(missing_ok=True)
+                continue
+            os.replace(staged_path, _artifact_paths(job)[name])
+        shutil.rmtree(staging_dir, ignore_errors=True)
+
+    def _validate_staged_artifacts(
+        self,
+        job: JobRecord,
+        paths: dict[str, Path],
+        has_identity_resolution: bool,
+    ) -> None:
+        required = ["raw_transcript", "segments", "srt", "ass"]
+        if has_identity_resolution:
+            required.append("identity_resolution")
+        for name in required:
+            if not paths[name].is_file():
+                raise RuntimeError(f"Missing staged artifact: {name}")
+        json.loads(paths["segments"].read_text(encoding="utf-8"))
+        if has_identity_resolution:
+            json.loads(paths["identity_resolution"].read_text(encoding="utf-8"))
+
+    def _discard_nonterminal_artifacts(self, job: JobRecord) -> None:
+        shutil.rmtree(_staging_dir(job), ignore_errors=True)
+        for path in _artifact_paths(job).values():
+            path.unlink(missing_ok=True)
+
+    def _ensure_artifacts_ready(self, job: JobRecord) -> None:
+        if job.status not in {"waiting_review", "done"}:
+            raise RuntimeError(f"Artifacts are not ready for job status {job.status}.")
 
     def _set_status(
         self,
@@ -666,3 +719,35 @@ def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
         handle.flush()
         os.fsync(handle.fileno())
     os.replace(tmp_path, path)
+
+
+def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    with tmp_path.open("w", encoding=encoding) as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp_path, path)
+
+
+def _staging_dir(job: JobRecord) -> Path:
+    return Path(job.job_dir) / ".postprocessing"
+
+
+def _artifact_paths(job: JobRecord, output_dir: Path | None = None) -> dict[str, Path]:
+    if output_dir is None:
+        return {
+            "raw_transcript": job.raw_transcript_path,
+            "segments": job.segments_path,
+            "srt": job.srt_path,
+            "ass": job.ass_path,
+            "identity_resolution": job.identity_resolution_path,
+        }
+    return {
+        "raw_transcript": output_dir / job.raw_transcript_path.name,
+        "segments": output_dir / job.segments_path.name,
+        "srt": output_dir / job.srt_path.name,
+        "ass": output_dir / job.ass_path.name,
+        "identity_resolution": output_dir / job.identity_resolution_path.name,
+    }
