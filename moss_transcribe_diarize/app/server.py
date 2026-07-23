@@ -89,24 +89,54 @@ def create_app(
         return {"jobs": [job.to_dict() for job in manager.list_jobs()]}
 
     @app.post("/api/jobs")
-    async def create_job(request: Request):
-        _admit_upload_request(request, manager.runs_dir)
-        try:
-            _install_receive_idle_timeout(request)
-            form = await request.form()
-            file = form.get("file")
-            if file is None or not hasattr(file, "read"):
-                raise ValueError("Missing upload file.")
-            prompt = _optional_form_text(form.get("prompt"))
-            max_new_tokens = _optional_form_int(form.get("max_new_tokens"))
-            max_len = _optional_form_int(form.get("max_len"))
-            decoding = _optional_form_text(form.get("decoding"))
-            temperature = _optional_form_float(form.get("temperature"))
-        except _UploadReceiveIdleTimeout as exc:
-            raise HTTPException(status_code=408, detail=str(exc)) from exc
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    async def create_job(
+        request: Request = None,
+        file: Any = None,
+        prompt: Any = None,
+        max_new_tokens: Any = None,
+        max_len: Any = None,
+        decoding: Any = None,
+        temperature: Any = None,
+    ):
+        if request is not None:
+            _admit_upload_request(request, manager.runs_dir)
+            try:
+                _install_receive_idle_timeout(request)
+                form = await request.form()
+                file = form.get("file")
+                if file is None or not hasattr(file, "read"):
+                    raise ValueError("Missing upload file.")
+                prompt = form.get("prompt")
+                max_new_tokens = form.get("max_new_tokens")
+                max_len = form.get("max_len")
+                decoding = form.get("decoding")
+                temperature = form.get("temperature")
+            except _UploadReceiveIdleTimeout as exc:
+                raise HTTPException(status_code=408, detail=str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if file is None or not hasattr(file, "read"):
+            raise HTTPException(status_code=400, detail="Missing upload file.")
+        return await _create_job_from_upload(
+            manager,
+            file,
+            prompt=_optional_form_text(prompt),
+            max_new_tokens=_optional_form_int(max_new_tokens),
+            max_len=_optional_form_int(max_len),
+            decoding=_optional_form_text(decoding),
+            temperature=_optional_form_float(temperature),
+        )
 
+    async def _create_job_from_upload(
+        manager: JobManager,
+        file,
+        *,
+        prompt: str | None,
+        max_new_tokens: int | None,
+        max_len: int | None,
+        decoding: str | None,
+        temperature: float | None,
+    ):
         try:
             upload = manager.create_upload_transaction(
                 file.filename or "input.media",

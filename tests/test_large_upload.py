@@ -200,6 +200,39 @@ def test_job_manager_upload_transaction_commits_atomic_input_and_metadata(tmp_pa
     assert [put["job_id"] for put in manager._queue.puts] == [job.id]
 
 
+def test_upload_transaction_uses_manager_enqueue_seam_after_publication(tmp_path, monkeypatch):
+    app = make_app(tmp_path)
+    manager = app.state.manager
+    enqueued = []
+
+    def intercept_enqueue(job_id: str) -> None:
+        published = manager.get_job(job_id)
+        assert published.job_path.is_file()
+        assert Path(published.input_path).is_file()
+        enqueued.append(
+            {
+                "job_id": job_id,
+                "source_sha256": published.source_sha256,
+                "checkpoint_state": published.checkpoint_state,
+            }
+        )
+
+    monkeypatch.setattr(manager, "enqueue", intercept_enqueue)
+
+    upload = manager.create_upload_transaction("sample.wav")
+    upload.write(b"enqueue seam payload")
+    committed = upload.commit_and_enqueue()
+
+    assert enqueued == [
+        {
+            "job_id": committed.id,
+            "source_sha256": committed.source_sha256,
+            "checkpoint_state": "ready",
+        }
+    ]
+    assert manager._queue.puts == []
+
+
 def test_upload_read_failure_removes_job_record_and_directory(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from starlette.datastructures import UploadFile

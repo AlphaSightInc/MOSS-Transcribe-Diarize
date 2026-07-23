@@ -744,7 +744,7 @@ class UploadTransaction:
             job.updated_at = time.time()
             self._manager._jobs[job.id] = job
             self._manager._save_job(job)
-            self._manager._queue.put(job.id)
+            self._manager.enqueue(job.id)
             return job
         except Exception:
             self.abort()
