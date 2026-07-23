@@ -4,7 +4,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 import torch
 from transformers import AutoModelForCausalLM, AutoProcessor
@@ -43,6 +43,8 @@ class TranscriptionResult:
     window_count: int | None = None
     completed_windows: int | None = None
     possibly_truncated: bool | None = None
+    identity_summary: dict[str, Any] | None = None
+    identity_resolution: dict[str, Any] | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -59,6 +61,8 @@ class TranscriptionResult:
             "window_count": self.window_count,
             "completed_windows": self.completed_windows,
             "possibly_truncated": self.possibly_truncated,
+            "identity_summary": self.identity_summary,
+            "identity_resolution": self.identity_resolution,
         }
 
 
