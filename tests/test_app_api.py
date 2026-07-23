@@ -114,6 +114,19 @@ class CheckpointRecordingRunner(NoopRunner):
         return super().transcribe(audio_path, **kwargs)
 
 
+class BlockingCheckpointRunner(BlockingRunner):
+    window_seconds = 150
+    stride_seconds = 120
+
+    def __init__(self):
+        super().__init__()
+        self.checkpoint_dirs: list[Path] = []
+
+    def transcribe(self, audio_path, **kwargs):
+        self.checkpoint_dirs.append(Path(kwargs["checkpoint_dir"]))
+        return super().transcribe(audio_path, **kwargs)
+
+
 def wait_terminal(client, job_id: str) -> dict:
     job = {}
     for _ in range(80):
@@ -407,6 +420,196 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(persisted["status"], "waiting_review")
             self.assertEqual(persisted["checkpoint_state"], "complete")
             self.assertEqual(persisted["resume_attempts"], 0)
+
+    def test_resume_failed_checkpoint_job_is_idempotent_while_active(self):
+        from moss_transcribe_diarize.app.jobs import JobManager, JobRecord
+
+        payload = b"audio"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs_dir = Path(tmpdir)
+            job_dir = runs_dir / "failed-job"
+            job_dir.mkdir()
+            input_path = job_dir / "input.wav"
+            input_path.write_bytes(payload)
+            checkpoint_dir = job_dir / "checkpoint"
+            job = JobRecord(
+                id="failed-job",
+                status="failed",
+                progress=1.0,
+                media_name="sample.wav",
+                input_path=str(input_path),
+                job_dir=str(job_dir),
+                inference_prompt="resume prompt",
+                max_length=456,
+                max_new_tokens=5,
+                decoding="greedy",
+                temperature=None,
+                model="fake-model",
+                source_sha256=hashlib.sha256(payload).hexdigest(),
+                checkpoint_dir=str(checkpoint_dir),
+                checkpoint_state="failed",
+                resume_attempts=2,
+                error="window failed",
+            )
+            job.job_path.write_text(json.dumps(job.to_dict(), ensure_ascii=False), encoding="utf-8")
+
+            runner = BlockingCheckpointRunner()
+            manager = JobManager(
+                runs_dir,
+                runner,
+                prompt="default prompt",
+                max_length=123,
+                max_new_tokens=9,
+            )
+
+            resumed = manager.resume_job(job.id)
+            self.assertEqual(resumed.id, job.id)
+            self.assertEqual(resumed.status, "queued")
+            self.assertEqual(resumed.resume_attempts, 3)
+            self.assertEqual(resumed.error, None)
+            self.assertEqual(resumed.checkpoint_state, "ready")
+            self.assertTrue(runner.started.wait(timeout=2))
+
+            active = manager.resume_job(job.id)
+            self.assertIn(active.status, {"queued", "loading_model", "transcribing", "postprocessing", "rendering"})
+            self.assertEqual(active.resume_attempts, 3)
+
+            runner.release.set()
+            manager._queue.join()
+            finished = manager.get_job(job.id)
+            self.assertEqual(finished.status, "waiting_review")
+            self.assertEqual(finished.resume_attempts, 3)
+            self.assertEqual(runner.checkpoint_dirs, [checkpoint_dir])
+
+    def test_resume_rejects_terminal_and_non_checkpoint_jobs(self):
+        from moss_transcribe_diarize.app.jobs import JobManager, JobRecord
+
+        payload = b"audio"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs_dir = Path(tmpdir)
+            runner = CheckpointRecordingRunner()
+            manager = JobManager(
+                runs_dir,
+                runner,
+                prompt="default prompt",
+                max_length=123,
+                max_new_tokens=9,
+            )
+            for status in ("waiting_review", "done", "cancelled"):
+                with self.subTest(status=status):
+                    job_dir = runs_dir / f"{status}-job"
+                    job_dir.mkdir()
+                    input_path = job_dir / "input.wav"
+                    input_path.write_bytes(payload)
+                    job = JobRecord(
+                        id=f"{status}-job",
+                        status=status,
+                        progress=1.0,
+                        media_name="sample.wav",
+                        input_path=str(input_path),
+                        job_dir=str(job_dir),
+                        inference_prompt="resume prompt",
+                        max_length=456,
+                        max_new_tokens=5,
+                        decoding="greedy",
+                        temperature=None,
+                        model="fake-model",
+                        source_sha256=hashlib.sha256(payload).hexdigest(),
+                        checkpoint_dir=str(job_dir / "checkpoint"),
+                        checkpoint_state="complete",
+                    )
+                    manager._jobs[job.id] = job
+                    with self.assertRaises(RuntimeError):
+                        manager.resume_job(job.id)
+                    self.assertEqual(job.resume_attempts, 0)
+
+            legacy_dir = runs_dir / "legacy-failed"
+            legacy_dir.mkdir()
+            legacy_input = legacy_dir / "input.wav"
+            legacy_input.write_bytes(payload)
+            legacy = JobRecord(
+                id="legacy-failed",
+                status="failed",
+                progress=1.0,
+                media_name="sample.wav",
+                input_path=str(legacy_input),
+                job_dir=str(legacy_dir),
+                inference_prompt="resume prompt",
+                max_length=456,
+                max_new_tokens=5,
+                decoding="greedy",
+                temperature=None,
+                model="fake-model",
+            )
+            manager._jobs[legacy.id] = legacy
+            with self.assertRaises(RuntimeError):
+                manager.resume_job(legacy.id)
+            self.assertEqual(runner.checkpoint_dirs, [])
+
+    def test_resume_api_queues_same_job_and_rerun_still_creates_new_job(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.jobs import JobRecord
+        from moss_transcribe_diarize.app.server import create_app
+
+        payload = b"audio"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs_dir = Path(tmpdir)
+            app = create_app(model_path="fake-model", runs_dir=runs_dir, max_new_tokens=5)
+            runner = BlockingCheckpointRunner()
+            app.state.manager.model_runner = runner
+            client = TestClient(app)
+
+            job_dir = runs_dir / "api-failed"
+            job_dir.mkdir()
+            input_path = job_dir / "input.wav"
+            input_path.write_bytes(payload)
+            checkpoint_dir = job_dir / "checkpoint"
+            job = JobRecord(
+                id="api-failed",
+                status="failed",
+                progress=1.0,
+                media_name="sample.wav",
+                input_path=str(input_path),
+                job_dir=str(job_dir),
+                inference_prompt="resume prompt",
+                max_length=456,
+                max_new_tokens=5,
+                decoding="greedy",
+                temperature=None,
+                model="fake-model",
+                source_sha256=hashlib.sha256(payload).hexdigest(),
+                checkpoint_dir=str(checkpoint_dir),
+                checkpoint_state="failed",
+                error="window failed",
+            )
+            app.state.manager._jobs[job.id] = job
+            app.state.manager._save_job(job)
+
+            response = client.post(f"/api/jobs/{job.id}/resume")
+            self.assertEqual(response.status_code, 200)
+            resumed = response.json()
+            self.assertEqual(resumed["id"], job.id)
+            self.assertEqual(resumed["resume_attempts"], 1)
+            self.assertTrue(runner.started.wait(timeout=2))
+
+            active = client.post(f"/api/jobs/{job.id}/resume")
+            self.assertEqual(active.status_code, 200)
+            self.assertEqual(active.json()["id"], job.id)
+            self.assertEqual(active.json()["resume_attempts"], 1)
+
+            runner.release.set()
+            finished = wait_terminal(client, job.id)
+            self.assertEqual(finished["status"], "waiting_review")
+            self.assertEqual(finished["resume_attempts"], 1)
+            self.assertEqual(runner.checkpoint_dirs, [checkpoint_dir])
+
+            terminal = client.post(f"/api/jobs/{job.id}/resume")
+            self.assertEqual(terminal.status_code, 409)
+
+            rerun = client.post(f"/api/jobs/{job.id}/rerun", json={"max_new_tokens": 6})
+            self.assertEqual(rerun.status_code, 200)
+            self.assertNotEqual(rerun.json()["id"], job.id)
+            wait_terminal(client, rerun.json()["id"])
 
     def test_vllm_runtime_reports_deployed_context_cap(self):
         from fastapi.testclient import TestClient

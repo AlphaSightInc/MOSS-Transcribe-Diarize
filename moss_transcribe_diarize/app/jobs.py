@@ -332,6 +332,31 @@ class JobManager:
             temperature=source.temperature if temperature is None else temperature,
         )
 
+    def resume_job(self, job_id: str) -> JobRecord:
+        job = self.get_job(job_id)
+        if job.status in ACTIVE_STATES:
+            return job
+        if job.status in {"waiting_review", "done", "cancelled"}:
+            raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
+        if job.status != "failed":
+            raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
+        if not self._runner_accepts_checkpoint():
+            raise RuntimeError("This job does not support checkpoint resume.")
+        if not job.checkpoint_dir or not job.source_sha256:
+            raise RuntimeError("Job has no checkpoint state to resume.")
+        if not Path(job.input_path).exists():
+            raise FileNotFoundError(str(job.input_path))
+
+        job.resume_attempts += 1
+        job.status = "queued"
+        job.progress = min(job.progress, 0.84)
+        job.error = None
+        job.checkpoint_state = "ready"
+        job.updated_at = time.time()
+        self._save_job(job)
+        self._queue.put(job.id)
+        return job
+
     def list_jobs(self) -> list[JobRecord]:
         return sorted(self._jobs.values(), key=lambda job: job.updated_at, reverse=True)
 
