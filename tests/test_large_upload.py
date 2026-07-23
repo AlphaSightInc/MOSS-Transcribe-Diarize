@@ -114,6 +114,43 @@ def test_upload_rejects_insufficient_capacity_before_body_and_job_creation(tmp_p
     assert list(tmp_path.iterdir()) == []
 
 
+def test_upload_receive_idle_timeout_returns_408_without_job_creation(tmp_path, monkeypatch):
+    import moss_transcribe_diarize.app.server as server_module
+
+    monkeypatch.setattr(server_module, "UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS", 0.01)
+    app = make_app(tmp_path)
+
+    async def call_stalled_receive():
+        sent = []
+
+        async def receive():
+            await asyncio.sleep(1)
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            sent.append(message)
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/api/jobs",
+            "raw_path": b"/api/jobs",
+            "query_string": b"",
+            "headers": multipart_headers("128"),
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+        }
+        await app(scope, receive, send)
+        return next(message["status"] for message in sent if message["type"] == "http.response.start")
+
+    assert asyncio.run(call_stalled_receive()) == 408
+    assert app.state.manager.list_jobs() == []
+    assert list(tmp_path.iterdir()) == []
+
+
 def test_success_publishes_complete_metadata_before_exactly_one_enqueue(tmp_path):
     from fastapi.testclient import TestClient
 

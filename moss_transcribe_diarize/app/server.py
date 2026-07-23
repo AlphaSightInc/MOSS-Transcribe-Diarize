@@ -1,3 +1,4 @@
+import asyncio
 import json
 import shutil
 from pathlib import Path
@@ -91,6 +92,7 @@ def create_app(
     async def create_job(request: Request):
         _admit_upload_request(request, manager.runs_dir)
         try:
+            _install_receive_idle_timeout(request)
             form = await request.form()
             file = form.get("file")
             if file is None or not hasattr(file, "read"):
@@ -100,6 +102,8 @@ def create_app(
             max_len = _optional_form_int(form.get("max_len"))
             decoding = _optional_form_text(form.get("decoding"))
             temperature = _optional_form_float(form.get("temperature"))
+        except _UploadReceiveIdleTimeout as exc:
+            raise HTTPException(status_code=408, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -117,12 +121,15 @@ def create_app(
         try:
             with input_path.open("wb") as handle:
                 while True:
-                    chunk = await file.read(1024 * 1024)
+                    chunk = await _read_upload_chunk(file)
                     if not chunk:
                         break
                     handle.write(chunk)
             manager.enqueue(job.id)
             return job.to_dict()
+        except _UploadReceiveIdleTimeout as exc:
+            manager.abort_unpublished_job(job.id)
+            raise HTTPException(status_code=408, detail=str(exc)) from exc
         except Exception as exc:
             manager._set_status(job, "failed", 1.0, error=str(exc))
             raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -289,6 +296,32 @@ def _payload_value(payload: dict[str, Any], *keys: str) -> Any:
         if key in payload:
             return payload[key]
     return None
+
+
+UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS = 30.0
+
+
+class _UploadReceiveIdleTimeout(TimeoutError):
+    pass
+
+
+def _install_receive_idle_timeout(request) -> None:
+    receive = request._receive
+
+    async def receive_with_idle_timeout():
+        try:
+            return await asyncio.wait_for(receive(), timeout=UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS)
+        except TimeoutError as exc:
+            raise _UploadReceiveIdleTimeout("Upload receive timed out.") from exc
+
+    request._receive = receive_with_idle_timeout
+
+
+async def _read_upload_chunk(file, size: int = 1024 * 1024) -> bytes:
+    try:
+        return await asyncio.wait_for(file.read(size), timeout=UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS)
+    except TimeoutError as exc:
+        raise _UploadReceiveIdleTimeout("Upload receive timed out.") from exc
 
 
 def _admit_upload_request(request, runs_dir: Path) -> int:

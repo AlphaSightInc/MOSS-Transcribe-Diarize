@@ -308,6 +308,11 @@ class JobManager:
         self._ensure_source_metadata(self.get_job(job_id))
         self._queue.put(job_id)
 
+    def abort_unpublished_job(self, job_id: str) -> None:
+        job = self._jobs.pop(job_id, None)
+        if job is not None:
+            shutil.rmtree(job.job_dir, ignore_errors=True)
+
     def rerun_job(
         self,
         job_id: str,
