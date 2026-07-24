@@ -18,6 +18,8 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceFailureKind,
     LiveServiceProviderConfigFailure,
     LiveServiceRuntime,
+    _ManualCanonicalPumpScheduler,
+    _TransientCanonicalPumpScheduler,
     hash_config,
 )
 from moss_transcribe_diarize.app.live_session import (
@@ -210,6 +212,7 @@ def _runtime(
     identity: PreparingIdentity | None = None,
     descriptor: LiveServiceDescriptor | None = None,
     session_ids: tuple[str, ...] = ("session-1",),
+    scheduler: _ManualCanonicalPumpScheduler | None = None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
     return LiveServiceRuntime(
@@ -221,6 +224,7 @@ def _runtime(
         decoder_factory=lambda: decoder or RecordingDecoder(),
         identity_preparer_factory=lambda: identity or PreparingIdentity(),
         session_id_factory=lambda: next(ids),
+        _canonical_scheduler=scheduler,
     )
 
 
@@ -239,6 +243,73 @@ def test_runtime_frame_admission_queues_without_canonical_decode():
     assert second.snapshot.session.accounted_samples == 0
     assert second.snapshot.pending_work_items == 1
     assert [event.seq for event in runtime.events(created.session_id)] == list(range(5))
+
+
+def test_manual_canonical_scheduler_is_coalesced_and_deterministic():
+    scheduler = _ManualCanonicalPumpScheduler()
+    calls: list[str] = []
+
+    def first() -> None:
+        calls.append("first")
+        assert scheduler.in_flight
+        scheduler.signal(second)
+
+    def second() -> None:
+        calls.append("second")
+
+    scheduler.signal(first)
+    scheduler.signal(first)
+
+    assert scheduler.pending_signals == 1
+    assert scheduler.run_one()
+    assert calls == ["first"]
+    assert scheduler.pending_signals == 1
+    assert scheduler.drain() == 1
+    assert calls == ["first", "second"]
+    assert scheduler.pending_signals == 0
+    assert not scheduler.in_flight
+
+
+def test_transient_canonical_scheduler_serializes_and_exits_when_idle():
+    async def scenario() -> tuple[list[str], int, int]:
+        scheduler = _TransientCanonicalPumpScheduler()
+        release = asyncio.Event()
+        calls: list[str] = []
+
+        async def first() -> None:
+            calls.append("first-start")
+            scheduler.signal(second)
+            await release.wait()
+            calls.append("first-end")
+
+        def second() -> None:
+            calls.append("second")
+
+        scheduler.signal(first)
+        scheduler.signal(first)
+        await asyncio.sleep(0)
+        worker_count_while_blocked = scheduler.worker_count
+        assert scheduler.in_flight
+        release.set()
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        return calls, worker_count_while_blocked, scheduler.worker_count
+
+    calls, worker_count_while_blocked, worker_count_after_drain = asyncio.run(scenario())
+
+    assert calls == ["first-start", "first-end", "second"]
+    assert worker_count_while_blocked == 1
+    assert worker_count_after_drain == 0
+
+
+def test_runtime_scheduler_is_internal_not_a_public_pump_operation():
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(speech=(True,), scheduler=scheduler)
+
+    assert not hasattr(runtime, "pump")
+    assert not hasattr(runtime, "run_pump")
+    assert not hasattr(runtime, "canonical_pump")
+    assert scheduler.pending_signals == 0
 
 
 def test_runtime_stop_closes_endpoint_and_drains_exact_accounting():

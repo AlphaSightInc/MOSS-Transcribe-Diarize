@@ -7,7 +7,7 @@ import uuid
 from collections import deque
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Any, Callable, Mapping
+from typing import Any, Awaitable, Callable, Mapping, Protocol
 
 from .live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
 from .live_coordinator import (
@@ -267,6 +267,108 @@ class LiveServiceFrameResult:
         object.__setattr__(self, "queued_item_ids", tuple(self.queued_item_ids))
 
 
+_CanonicalPumpCallback = Callable[[], Awaitable[None] | None]
+
+
+class _CanonicalPumpScheduler(Protocol):
+    @property
+    def pending_signals(self) -> int:
+        ...
+
+    @property
+    def in_flight(self) -> bool:
+        ...
+
+    def signal(self, callback: _CanonicalPumpCallback) -> None:
+        ...
+
+
+class _TransientCanonicalPumpScheduler:
+    """Coalesced transient worker for production-owned canonical pumping."""
+
+    def __init__(self, loop_factory: Callable[[], asyncio.AbstractEventLoop] = asyncio.get_running_loop):
+        self._loop_factory = loop_factory
+        self._pending: _CanonicalPumpCallback | None = None
+        self._task: asyncio.Task[None] | None = None
+        self._in_flight = False
+
+    @property
+    def pending_signals(self) -> int:
+        return 1 if self._pending is not None else 0
+
+    @property
+    def in_flight(self) -> bool:
+        return self._in_flight
+
+    @property
+    def worker_count(self) -> int:
+        return 0 if self._task is None or self._task.done() else 1
+
+    def signal(self, callback: _CanonicalPumpCallback) -> None:
+        self._pending = callback
+        if self.worker_count:
+            return
+        self._task = self._loop_factory().create_task(self._run())
+
+    async def _run(self) -> None:
+        try:
+            while self._pending is not None:
+                callback = self._pending
+                self._pending = None
+                self._in_flight = True
+                try:
+                    result = callback()
+                    if result is not None:
+                        await result
+                finally:
+                    self._in_flight = False
+        finally:
+            self._task = None
+            if self._pending is not None:
+                self.signal(self._pending)
+
+
+class _ManualCanonicalPumpScheduler:
+    """Deterministic scheduler adapter for runtime-interface tests."""
+
+    def __init__(self):
+        self._pending: _CanonicalPumpCallback | None = None
+        self._in_flight = False
+
+    @property
+    def pending_signals(self) -> int:
+        return 1 if self._pending is not None else 0
+
+    @property
+    def in_flight(self) -> bool:
+        return self._in_flight
+
+    def signal(self, callback: _CanonicalPumpCallback) -> None:
+        self._pending = callback
+
+    def run_one(self) -> bool:
+        if self._in_flight:
+            raise RuntimeError("manual canonical scheduler is already in flight.")
+        if self._pending is None:
+            return False
+        callback = self._pending
+        self._pending = None
+        self._in_flight = True
+        try:
+            result = callback()
+            if result is not None:
+                raise RuntimeError("manual canonical scheduler callback must be synchronous.")
+        finally:
+            self._in_flight = False
+        return True
+
+    def drain(self) -> int:
+        runs = 0
+        while self.run_one():
+            runs += 1
+        return runs
+
+
 @dataclass(slots=True)
 class _RuntimeSession:
     session_id: str
@@ -291,6 +393,7 @@ class LiveServiceRuntime:
         decoder_factory: Callable[[], Any],
         identity_preparer_factory: Callable[[], LiveIdentityPreparer],
         session_id_factory: Callable[[], str] | None = None,
+        _canonical_scheduler: _CanonicalPumpScheduler | None = None,
     ):
         self.descriptor = descriptor
         self._endpoint_policy_factory = endpoint_policy_factory
@@ -298,6 +401,7 @@ class LiveServiceRuntime:
         self._decoder_factory = decoder_factory
         self._identity_preparer_factory = identity_preparer_factory
         self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
+        self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
         self._sessions: dict[str, _RuntimeSession] = {}
 
     def create(self) -> LiveServiceCreateResult:
