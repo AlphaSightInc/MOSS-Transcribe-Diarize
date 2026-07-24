@@ -6,6 +6,7 @@ import threading
 import time
 import unittest
 from dataclasses import dataclass
+from unittest.mock import patch
 
 import pytest
 
@@ -24,6 +25,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     _TransientCanonicalPumpScheduler,
     hash_config,
 )
+from moss_transcribe_diarize.app import live_service_runtime as runtime_module
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     FrozenSpan,
@@ -182,6 +184,11 @@ class LabelingDecoder(RecordingDecoder):
     def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
         self.labels.append(pcm[:1].decode("ascii"))
         return super().transcribe_pcm(span=span, pcm=pcm)
+
+
+class SameTickLoop:
+    def time(self) -> float:
+        return 100.0
 
 
 @dataclass
@@ -380,6 +387,25 @@ def test_runtime_stop_closes_endpoint_and_drains_exact_accounting():
     event_kinds = [event.kind for event in runtime.events(created.session_id)]
     assert "canonical_processed" in event_kinds
     assert event_kinds[-1] == "session_closed"
+
+
+def test_zero_deadline_rejects_pending_work_before_decode_when_clock_has_not_advanced():
+    decoder = RecordingDecoder()
+    runtime = _runtime(speech=(True,), decoder=decoder)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+
+    with patch.object(runtime_module.asyncio, "get_running_loop", return_value=SameTickLoop()):
+        with pytest.raises(TimeoutError, match="deadline expired"):
+            asyncio.run(runtime.stop(created.session_id, deadline=0.0))
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert decoder.calls == []
+    assert snapshot.session.accepted_samples == 1000
+    assert snapshot.session.accounted_samples == 0
+    assert snapshot.pending_work_items == 1
+    assert snapshot.terminal_failure is not None
+    assert snapshot.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
 
 
 def test_runtime_terminal_failure_is_session_local():

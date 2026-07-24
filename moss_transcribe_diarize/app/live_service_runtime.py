@@ -518,10 +518,16 @@ class LiveServiceRuntime:
             queued = state.coordinator.stop_endpoint()
             for item_id in queued:
                 self._record_event(state, "canonical_queued", {"item_id": item_id, "reason": "stop"})
+            if (
+                queued
+                or self._pending_work_items(state)
+                or state.session.snapshot().pending_span_ids
+            ) and loop.time() >= end_time:
+                raise TimeoutError("live service stop deadline expired with unresolved work.")
             if queued:
                 self._mark_ready_locked(state)
             while self._pending_work_items(state) or state.session.snapshot().pending_span_ids:
-                if loop.time() > end_time:
+                if loop.time() >= end_time:
                     raise TimeoutError("live service stop deadline expired with unresolved work.")
                 self._pump_one(state)
             remaining = max(0.0, end_time - loop.time())
