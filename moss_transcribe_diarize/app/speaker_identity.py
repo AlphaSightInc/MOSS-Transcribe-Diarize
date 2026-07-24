@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Protocol
@@ -72,6 +73,31 @@ def tier_b_provider_manifest(
     }
 
 
+def _identity_contract(config: IdentityResolverConfig, tier_b_preflight: TierBPreflight) -> dict[str, Any]:
+    return {
+        "schema_version": 2,
+        "config": {
+            "tier_a": {
+                "min_overlap_support_seconds": config.min_overlap_support_seconds,
+                "min_overlap_dice": config.min_overlap_dice,
+                "mutual_margin_seconds": config.mutual_margin_seconds,
+            },
+            "tier_b": {
+                "enabled": config.tier_b_enabled,
+                "min_segment_seconds": config.tier_b_min_segment_seconds,
+                "max_segments_per_node": config.tier_b_max_segments_per_node,
+                "similarity": config.tier_b_similarity,
+                "margin": config.tier_b_margin,
+            },
+        },
+        "provider": dict(tier_b_preflight.descriptor),
+        "availability": {
+            "available": bool(config.tier_b_enabled and tier_b_preflight.available),
+            "reason": tier_b_preflight.reason,
+        },
+    }
+
+
 @dataclass(frozen=True, slots=True)
 class IdentityResolution:
     relabeled_results: list[list[TranscriptSegment]]
@@ -115,6 +141,11 @@ class IdentityResolver:
     def __init__(self, *, config: IdentityResolverConfig | None = None, tier_b_encoder: Any = None):
         self.config = config or IdentityResolverConfig()
         self.tier_b_encoder = tier_b_encoder
+        self._tier_b_static_preflight = self._build_tier_b_static_preflight()
+        self._contract = _identity_contract(self.config, self._tier_b_static_preflight)
+
+    def contract(self) -> dict[str, Any]:
+        return deepcopy(self._contract)
 
     def resolve(
         self,
@@ -145,20 +176,8 @@ class IdentityResolver:
 
         diagnostics = {
             "schema_version": 2,
-            "config": {
-                "tier_a": {
-                    "min_overlap_support_seconds": self.config.min_overlap_support_seconds,
-                    "min_overlap_dice": self.config.min_overlap_dice,
-                    "mutual_margin_seconds": self.config.mutual_margin_seconds,
-                },
-                "tier_b": {
-                    "enabled": self.config.tier_b_enabled,
-                    "min_segment_seconds": self.config.tier_b_min_segment_seconds,
-                    "max_segments_per_node": self.config.tier_b_max_segments_per_node,
-                    "similarity": self.config.tier_b_similarity,
-                    "margin": self.config.tier_b_margin,
-                },
-            },
+            "config": self.contract()["config"],
+            "contract": self.contract(),
             "boundaries": boundaries,
             "tier_b": tier_b,
         }
@@ -259,7 +278,7 @@ class IdentityResolver:
         if not self.config.tier_b_enabled:
             return {"status": "disabled", "proposals": []}, 0
 
-        preflight = self._tier_b_preflight()
+        preflight = self._tier_b_static_preflight
         if not preflight.available:
             return (
                 {
@@ -400,9 +419,23 @@ class IdentityResolver:
         centroid = [sum(values) / len(vectors) for values in zip(*vectors, strict=True)]
         return _normalized_vector(centroid)
 
-    def _tier_b_preflight(self) -> TierBPreflight:
+    def _build_tier_b_static_preflight(self) -> TierBPreflight:
+        descriptor = dict(getattr(self.tier_b_encoder, "descriptor", {}) or {})
+        if not self.config.tier_b_enabled:
+            return TierBPreflight(
+                available=False,
+                reason="disabled",
+                descriptor=descriptor or tier_b_provider_manifest(),
+            )
+        return self._probe_tier_b_preflight()
+
+    def _probe_tier_b_preflight(self) -> TierBPreflight:
         if self.tier_b_encoder is None:
-            return TierBPreflight(available=False, reason="provider_missing", descriptor={})
+            return TierBPreflight(
+                available=False,
+                reason="provider_missing",
+                descriptor=tier_b_provider_manifest(),
+            )
 
         descriptor = dict(getattr(self.tier_b_encoder, "descriptor", {}) or {})
         preflight = getattr(self.tier_b_encoder, "preflight", None)
