@@ -38,8 +38,7 @@ torch-runtime = [
 speaker-identity = [
   "torch>=2.8",
   "torchaudio>=2.8",
-  "pyannote.audio==3.4.0",
-  "einops==0.8.1",
+  "onnxruntime==1.23.2",
 ]
 flash-attn = ["flash-attn"]
 dev = ["pytest"]
