@@ -296,7 +296,31 @@ def test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav(tmp_path):
     result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
 
     assert result.transcript == "[0][S01]ok[0.25]"
+    assert result.elapsed_sec == 0.01
     assert runner.params == (1, 2, LIVE_SAMPLE_RATE, 4000)
+
+
+@pytest.mark.parametrize("elapsed_sec", [None, -0.01, float("nan"), float("inf"), "slow"])
+def test_runner_bounded_wav_inference_rejects_invalid_decode_elapsed_sec(tmp_path, elapsed_sec):
+    class TimingRunner:
+        def transcribe(self, audio_path, **kwargs):
+            del audio_path, kwargs
+            return TranscriptionResult(
+                text="[0][S01]ok[0.25]",
+                prompt_len=1,
+                generated_tokens=2,
+                elapsed_sec=elapsed_sec,
+                model="fake",
+                audio="fake.wav",
+                decoding="greedy",
+                temperature=None,
+            )
+
+    adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
+    frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+
+    with pytest.raises(LiveProviderError, match="runner result elapsed_sec"):
+        adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
 
 
 def test_inference_arbiter_preserves_batch_canonical_provisional_priority():

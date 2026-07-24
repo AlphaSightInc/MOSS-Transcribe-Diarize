@@ -374,6 +374,15 @@ and optional read-only service state, then writes `trace.jsonl`, `summary.json`,
 and `evaluator.jsonl`. It exits nonzero on integrity, provider, identity, or
 RTF failures. It never starts, restarts, or enables the deployed service.
 
+IDEA-025 measured canonical-decoder RTF observability is limited to the existing
+service replay/event contract. The runner's decode elapsed seconds may appear
+only as additive immutable internal data and `canonical_processed` event fields;
+replay computes per-span RTF from that measured decode time and frozen 16 kHz
+span duration, retains raw values and nearest-rank p95 in replay artifacts, and
+fails the existing `rtf` gate at p95 `>= 1.0`. This does not add a public
+runtime operation, route, pump, decoder, metric authority, provider selection,
+live enablement, deployed latency proof, or 60/300-second production evidence.
+
 Local CPU gates for this disabled slice:
 
 ```bash

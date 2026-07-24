@@ -5,6 +5,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import math
 import sys
 import time
 import urllib.error
@@ -41,6 +42,7 @@ from .app.live_session import (
 
 
 REPLAY_ARTIFACT_SCHEMA_VERSION = 1
+CANONICAL_DECODE_RTF_BOUND = 1.0
 
 
 class ServiceReplayFailure(RuntimeError):
@@ -421,7 +423,8 @@ def run_service_replay(
                 sequence += 1
 
             snapshot = asyncio.run(service.stop(session_id, deadline=5.0))
-            for event in service.events(session_id, since_seq=0):
+            service_events = service.events(session_id, since_seq=0)
+            for event in service_events:
                 trace.append(
                     {
                         "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
@@ -429,6 +432,24 @@ def run_service_replay(
                         "kind": "service_event",
                         "event": event.to_dict(),
                     }
+                )
+            rtf_evaluation = _canonical_decode_rtf_evaluation(service_events)
+            summary.update(rtf_evaluation)
+            trace.append(
+                {
+                    "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
+                    "seq": len(trace),
+                    "kind": "canonical_decode_rtf_evaluation",
+                    **rtf_evaluation,
+                }
+            )
+            if not rtf_evaluation["canonical_decode_rtf_passed"]:
+                if rtf_evaluation["canonical_decode_rtf_invalid_count"]:
+                    raise ServiceReplayRtfFailure("canonical decoder RTF event payload invalid.")
+                p95 = rtf_evaluation["canonical_decode_rtf_p95"]
+                raise ServiceReplayRtfFailure(
+                    f"canonical decoder p95 RTF {p95:.6g} exceeded strict bound "
+                    f"{rtf_evaluation['canonical_decode_rtf_bound']:.6g}."
                 )
             summary.update(
                 {
@@ -617,6 +638,97 @@ def _summary_from_trace(trace: list[dict[str, Any]], seed: dict[str, Any]) -> di
     return summary
 
 
+def _canonical_decode_rtf_evaluation(events: tuple[LiveServiceEvent, ...]) -> dict[str, Any]:
+    measurements: list[dict[str, Any]] = []
+    invalid_measurements: list[dict[str, Any]] = []
+    for event in events:
+        if event.kind != "canonical_processed":
+            continue
+        payload = dict(event.payload)
+        try:
+            measurement = {
+                "event_seq": event.seq,
+                "span_id": _required_int(payload, "span_id"),
+                "canonical_decode_elapsed_sec": _required_finite_non_negative_float(
+                    payload, "canonical_decode_elapsed_sec"
+                ),
+                "frozen_span_sample_count": _required_positive_int(payload, "frozen_span_sample_count"),
+                "frozen_span_duration_sec": _required_positive_finite_float(payload, "frozen_span_duration_sec"),
+                "canonical_decode_rtf": _required_finite_non_negative_float(payload, "canonical_decode_rtf"),
+            }
+        except ServiceReplayRtfFailure as exc:
+            invalid_measurements.append(_invalid_canonical_decode_rtf_measurement(event, payload, str(exc)))
+            continue
+        measurements.append(measurement)
+
+    values = [item["canonical_decode_rtf"] for item in measurements]
+    p95 = _nearest_rank_p95(values) if values else None
+    return {
+        "canonical_decode_rtf_values": values,
+        "canonical_decode_rtf_measurements": measurements,
+        "canonical_decode_rtf_span_ids": [item["span_id"] for item in measurements],
+        "canonical_decode_rtf_p95": p95,
+        "canonical_decode_rtf_bound": CANONICAL_DECODE_RTF_BOUND,
+        "canonical_decode_rtf_invalid_measurements": invalid_measurements,
+        "canonical_decode_rtf_invalid_count": len(invalid_measurements),
+        "canonical_decode_rtf_passed": not invalid_measurements and (p95 is None or p95 < CANONICAL_DECODE_RTF_BOUND),
+    }
+
+
+def _nearest_rank_p95(values: list[float]) -> float:
+    if not values:
+        raise ValueError("nearest-rank p95 requires at least one value.")
+    rank = math.ceil(0.95 * len(values)) - 1
+    return sorted(values)[rank]
+
+
+def _required_int(payload: dict[str, Any], key: str) -> int:
+    value = payload.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ServiceReplayRtfFailure(f"canonical decoder RTF event field {key} must be an integer.")
+    return value
+
+
+def _required_positive_int(payload: dict[str, Any], key: str) -> int:
+    value = _required_int(payload, key)
+    if value <= 0:
+        raise ServiceReplayRtfFailure(f"canonical decoder RTF event field {key} must be positive.")
+    return value
+
+
+def _invalid_canonical_decode_rtf_measurement(
+    event: LiveServiceEvent,
+    payload: dict[str, Any],
+    message: str,
+) -> dict[str, Any]:
+    span_id = payload.get("span_id")
+    if isinstance(span_id, bool) or not isinstance(span_id, int):
+        span_id = None
+    return {
+        "event_seq": event.seq,
+        "span_id": span_id,
+        "message": message,
+        "payload_fields": sorted(str(key) for key in payload),
+    }
+
+
+def _required_finite_non_negative_float(payload: dict[str, Any], key: str) -> float:
+    value = payload.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ServiceReplayRtfFailure(f"canonical decoder RTF event field {key} must be finite and non-negative.")
+    value = float(value)
+    if not math.isfinite(value) or value < 0:
+        raise ServiceReplayRtfFailure(f"canonical decoder RTF event field {key} must be finite and non-negative.")
+    return value
+
+
+def _required_positive_finite_float(payload: dict[str, Any], key: str) -> float:
+    value = _required_finite_non_negative_float(payload, key)
+    if value <= 0:
+        raise ServiceReplayRtfFailure(f"canonical decoder RTF event field {key} must be positive.")
+    return value
+
+
 def _evaluator_records_from_summary(summary: dict[str, Any]) -> list[dict[str, Any]]:
     base = {
         "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
@@ -643,6 +755,18 @@ def _evaluator_records_from_summary(summary: dict[str, Any]) -> list[dict[str, A
             "accounted_samples": summary["accounted_samples"],
             "exact_accounting": summary["exact_accounting"],
             "committed_prefix_hash": summary.get("committed_prefix_hash"),
+        },
+        {
+            **base,
+            "kind": "canonical_decode_rtf",
+            "values": summary.get("canonical_decode_rtf_values", []),
+            "measurements": summary.get("canonical_decode_rtf_measurements", []),
+            "span_ids": summary.get("canonical_decode_rtf_span_ids", []),
+            "p95": summary.get("canonical_decode_rtf_p95"),
+            "bound": summary.get("canonical_decode_rtf_bound", CANONICAL_DECODE_RTF_BOUND),
+            "passed": summary.get("canonical_decode_rtf_passed"),
+            "invalid_measurements": summary.get("canonical_decode_rtf_invalid_measurements", []),
+            "invalid_count": summary.get("canonical_decode_rtf_invalid_count", 0),
         },
     ]
 

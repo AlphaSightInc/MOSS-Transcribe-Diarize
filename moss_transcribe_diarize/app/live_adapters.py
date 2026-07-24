@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import importlib.metadata
+import math
 import tempfile
 import wave
 from dataclasses import dataclass
@@ -69,6 +70,16 @@ class InferenceTranscript:
     transcript: str
     prompt_len: int = 0
     generated_tokens: int = 1
+    elapsed_sec: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.elapsed_sec is None:
+            return
+        object.__setattr__(
+            self,
+            "elapsed_sec",
+            _finite_non_negative_float(self.elapsed_sec, "elapsed_sec"),
+        )
 
 
 OPTIONAL_LIVE_PROVIDER_KINDS = frozenset(
@@ -224,6 +235,7 @@ class RunnerBoundedWavInference:
             transcript=str(result.text),
             prompt_len=int(getattr(result, "prompt_len", 0) or 0),
             generated_tokens=int(getattr(result, "generated_tokens", 0) or 0),
+            elapsed_sec=_runner_elapsed_sec(result),
         )
 
 
@@ -370,3 +382,25 @@ def _write_pcm16_wav(path: Path, pcm: bytes) -> None:
         wav.setsampwidth(PCM16_BYTES_PER_SAMPLE)
         wav.setframerate(LIVE_SAMPLE_RATE)
         wav.writeframes(pcm)
+
+
+def _runner_elapsed_sec(result) -> float:
+    try:
+        return _finite_non_negative_float(
+            getattr(result, "elapsed_sec", None),
+            "runner result elapsed_sec",
+        )
+    except ValueError as exc:
+        raise LiveProviderError(str(exc)) from exc
+
+
+def _finite_non_negative_float(value, label: str) -> float:
+    if value is None:
+        raise ValueError(f"{label} must be present.")
+    try:
+        elapsed = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{label} must be finite and non-negative.") from None
+    if not math.isfinite(elapsed) or elapsed < 0.0:
+        raise ValueError(f"{label} must be finite and non-negative.")
+    return elapsed

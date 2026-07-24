@@ -44,8 +44,9 @@ class WholeFrameSpeech:
 class RecordingDecoder:
     max_samples = LIVE_SAMPLE_RATE
 
-    def __init__(self, transcript: str = "[0][S01]decoded[0.0625]"):
+    def __init__(self, transcript: str = "[0][S01]decoded[0.0625]", elapsed_sec: float | None = None):
         self.transcript = transcript
+        self.elapsed_sec = elapsed_sec
         self.calls: list[tuple[tuple[int, int], int, bytes]] = []
 
     def preflight(self):
@@ -53,7 +54,7 @@ class RecordingDecoder:
 
     def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
         self.calls.append(((span.start_sample, span.end_sample), len(pcm), pcm[:2]))
-        return InferenceTranscript(self.transcript)
+        return InferenceTranscript(self.transcript, elapsed_sec=self.elapsed_sec)
 
 
 @dataclass
@@ -172,6 +173,24 @@ def test_coordinator_prepares_against_captured_identity_snapshot():
     assert identity.base_versions == [0]
     assert prepared.preparation.base_snapshot_version == 0
     assert session.snapshot().identity_snapshot.version == 7
+
+
+def test_coordinator_prepared_work_preserves_decoder_elapsed_sec():
+    live, _decoder, arbiter, _session = coordinator(
+        speech=(True, False),
+        decoder=RecordingDecoder(elapsed_sec=123.0),
+    )
+    live.accept_frame(frame(0, 1000, b"a"))
+    live.accept_frame(frame(1, 1000, b"b"))
+
+    prepared = live.prepare_work_item(live.capture_work_item(arbiter.next_work()))
+
+    assert prepared.decode_elapsed_sec == 123.0
+    result = live.submit_prepared_work(prepared)
+    assert result.canonical_decode_elapsed_sec == 123.0
+    assert result.frozen_span_sample_count == 1000
+    assert result.frozen_span_duration_sec == 1000 / LIVE_SAMPLE_RATE
+    assert result.canonical_decode_rtf == pytest.approx(123.0 / (1000 / LIVE_SAMPLE_RATE))
 
 
 def test_coordinator_backpressure_leaves_frozen_span_uncommitted_not_dropped():

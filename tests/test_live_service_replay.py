@@ -18,6 +18,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
+    LiveServiceEvent,
     LiveServiceFailureKind,
     LiveServiceIdentityCommitFailure,
     LiveServiceProviderConfigFailure,
@@ -96,7 +97,12 @@ class LiveServiceReplayContractTest(unittest.TestCase):
     def test_in_memory_paced_runner_uses_descriptor_frames_and_final_short_frame(self):
         descriptor = _descriptor(frame_samples=400)
         service = live_service_replay.InMemoryLiveReplayService(
-            _runtime(descriptor=descriptor, speech=(False, False, False), session_ids=("session-1",))
+            _runtime(
+                descriptor=descriptor,
+                speech=(False, False, False),
+                session_ids=("session-1",),
+                decoder=RecordingDecoder(elapsed_sec=0.001),
+            )
         )
         clock = ScriptedClock()
 
@@ -141,9 +147,11 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertTrue(summary["exact_accounting"])
         self.assertEqual(
             [item["kind"] for item in evaluator],
-            ["terminal_outcome", "frame_sequence", "sample_accounting"],
+            ["terminal_outcome", "frame_sequence", "sample_accounting", "canonical_decode_rtf"],
         )
-        self.assertTrue(evaluator[-1]["exact_accounting"])
+        self.assertTrue(evaluator[2]["exact_accounting"])
+        self.assertEqual(evaluator[-1]["values"], [0.001 / (900 / LIVE_SAMPLE_RATE)])
+        self.assertTrue(evaluator[-1]["passed"])
 
     def test_descriptor_mismatch_fails_before_audio_admission(self):
         descriptor = _descriptor()
@@ -256,7 +264,7 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertEqual(summary["accounted_samples"], 0)
         self.assertFalse(summary["exact_accounting"])
         self.assertEqual(evaluator[0]["failure_kind"], "identity_commit")
-        self.assertFalse(evaluator[-1]["exact_accounting"])
+        self.assertFalse(evaluator[2]["exact_accounting"])
 
     def test_rtf_failure_writes_typed_terminal_artifacts_after_admission(self):
         descriptor = _descriptor(frame_samples=400)
@@ -298,6 +306,187 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertFalse(summary["exact_accounting"])
         self.assertEqual(evaluator[0]["failure_kind"], "rtf")
 
+    def test_measured_canonical_decode_rtf_0_999999_passes_with_artifacts(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = live_service_replay.InMemoryLiveReplayService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(True, False),
+                session_ids=("session-1",),
+                decoder=RecordingDecoder(elapsed_sec=0.024999975),
+            )
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=800)
+            outputs = live_service_replay.run_service_replay(
+                service=service,
+                audio_path=audio,
+                out_dir=root / "out",
+                pace=1.0,
+                max_pacing_lag=0.5,
+                runs=1,
+                expect_revision=descriptor.source_revision,
+                expect_provider_hash=descriptor.provider_manifest_hash,
+                expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                monotonic=ScriptedClock().monotonic,
+                sleep=ScriptedClock().sleep,
+            )
+
+            trace = _jsonl(outputs.trace_path)
+            summary = json.loads(outputs.summary_path.read_text(encoding="utf-8"))
+            evaluator = _jsonl(outputs.evaluator_path)
+
+        rtf_evaluation = [item for item in trace if item["kind"] == "canonical_decode_rtf_evaluation"][0]
+        self.assertEqual(summary["status"], "succeeded")
+        self.assertEqual(summary["canonical_decode_rtf_values"], [0.999999, 0.999999])
+        self.assertEqual(summary["canonical_decode_rtf_span_ids"], [0, 1])
+        self.assertEqual(summary["canonical_decode_rtf_p95"], 0.999999)
+        self.assertEqual(summary["canonical_decode_rtf_bound"], 1.0)
+        self.assertTrue(summary["canonical_decode_rtf_passed"])
+        self.assertEqual(rtf_evaluation["canonical_decode_rtf_p95"], 0.999999)
+        self.assertEqual(evaluator[-1]["kind"], "canonical_decode_rtf")
+        self.assertEqual(evaluator[-1]["p95"], 0.999999)
+        self.assertTrue(evaluator[-1]["passed"])
+
+    def test_measured_canonical_decode_rtf_1_0_fails_with_retained_artifacts(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = live_service_replay.InMemoryLiveReplayService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(True, False),
+                session_ids=("session-1",),
+                decoder=RecordingDecoder(elapsed_sec=0.025),
+            )
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=800)
+            with self.assertRaises(live_service_replay.ServiceReplayRtfFailure):
+                live_service_replay.run_service_replay(
+                    service=service,
+                    audio_path=audio,
+                    out_dir=root / "out",
+                    pace=1.0,
+                    max_pacing_lag=0.5,
+                    runs=1,
+                    expect_revision=descriptor.source_revision,
+                    expect_provider_hash=descriptor.provider_manifest_hash,
+                    expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                    monotonic=ScriptedClock().monotonic,
+                    sleep=ScriptedClock().sleep,
+                )
+
+            trace = _jsonl(root / "out" / "run-001" / "trace.jsonl")
+            summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+            evaluator = _jsonl(root / "out" / "run-001" / "evaluator.jsonl")
+
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["failure_kind"], "rtf")
+        self.assertEqual(summary["canonical_decode_rtf_values"], [1.0, 1.0])
+        self.assertEqual(summary["canonical_decode_rtf_p95"], 1.0)
+        self.assertEqual(summary["canonical_decode_rtf_bound"], 1.0)
+        self.assertFalse(summary["canonical_decode_rtf_passed"])
+        self.assertEqual(trace[-1]["kind"], "terminal")
+        self.assertEqual(trace[-1]["failure_kind"], "rtf")
+        self.assertEqual(evaluator[0]["failure_kind"], "rtf")
+        self.assertEqual(evaluator[-1]["p95"], 1.0)
+        self.assertFalse(evaluator[-1]["passed"])
+
+    def test_canonical_decode_rtf_uses_nearest_rank_p95_not_mean_or_max(self):
+        values = [0.1] * 18 + [0.8, 2.0]
+        events = tuple(
+            _canonical_processed_event(seq=index, span_id=index, rtf=value)
+            for index, value in enumerate(values, start=1)
+        )
+
+        evaluation = live_service_replay._canonical_decode_rtf_evaluation(events)
+
+        self.assertEqual(evaluation["canonical_decode_rtf_values"], values)
+        self.assertEqual(evaluation["canonical_decode_rtf_span_ids"], list(range(1, 21)))
+        self.assertEqual(evaluation["canonical_decode_rtf_p95"], 0.8)
+        self.assertLess(evaluation["canonical_decode_rtf_p95"], max(values))
+        self.assertNotEqual(evaluation["canonical_decode_rtf_p95"], sum(values) / len(values))
+
+    def test_invalid_canonical_decode_rtf_event_payloads_fail_closed(self):
+        cases = {
+            "missing_elapsed": lambda payload: payload.pop("canonical_decode_elapsed_sec"),
+            "negative_elapsed": lambda payload: payload.update({"canonical_decode_elapsed_sec": -0.1}),
+            "non_finite_rtf": lambda payload: payload.update({"canonical_decode_rtf": float("inf")}),
+            "zero_duration": lambda payload: payload.update({"frozen_span_duration_sec": 0.0}),
+        }
+
+        for name, mutate in cases.items():
+            with self.subTest(name=name):
+                event = _canonical_processed_event(seq=1, span_id=7, rtf=0.5)
+                payload = dict(event.payload)
+                mutate(payload)
+                evaluation = live_service_replay._canonical_decode_rtf_evaluation(
+                    (_event_with_payload(event, payload),)
+                )
+
+                self.assertEqual(evaluation["canonical_decode_rtf_values"], [])
+                self.assertEqual(evaluation["canonical_decode_rtf_span_ids"], [])
+                self.assertIsNone(evaluation["canonical_decode_rtf_p95"])
+                self.assertEqual(evaluation["canonical_decode_rtf_bound"], 1.0)
+                self.assertFalse(evaluation["canonical_decode_rtf_passed"])
+                self.assertEqual(evaluation["canonical_decode_rtf_invalid_count"], 1)
+                self.assertEqual(evaluation["canonical_decode_rtf_invalid_measurements"][0]["span_id"], 7)
+
+    def test_invalid_canonical_decode_rtf_event_retains_failure_artifacts(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = CorruptingEventsService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(True, False),
+                session_ids=("session-1",),
+                decoder=RecordingDecoder(elapsed_sec=0.01),
+            ),
+            lambda payload: payload.pop("canonical_decode_elapsed_sec"),
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=800)
+            with self.assertRaises(live_service_replay.ServiceReplayRtfFailure):
+                live_service_replay.run_service_replay(
+                    service=service,
+                    audio_path=audio,
+                    out_dir=root / "out",
+                    pace=1.0,
+                    max_pacing_lag=0.5,
+                    runs=1,
+                    expect_revision=descriptor.source_revision,
+                    expect_provider_hash=descriptor.provider_manifest_hash,
+                    expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                    monotonic=ScriptedClock().monotonic,
+                    sleep=ScriptedClock().sleep,
+                )
+
+            trace = _jsonl(root / "out" / "run-001" / "trace.jsonl")
+            summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+            evaluator = _jsonl(root / "out" / "run-001" / "evaluator.jsonl")
+
+        rtf_evaluation = [item for item in trace if item["kind"] == "canonical_decode_rtf_evaluation"][0]
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["failure_kind"], "rtf")
+        self.assertEqual(summary["canonical_decode_rtf_values"], [])
+        self.assertEqual(summary["canonical_decode_rtf_span_ids"], [])
+        self.assertIsNone(summary["canonical_decode_rtf_p95"])
+        self.assertEqual(summary["canonical_decode_rtf_bound"], 1.0)
+        self.assertFalse(summary["canonical_decode_rtf_passed"])
+        self.assertEqual(summary["canonical_decode_rtf_invalid_count"], 2)
+        self.assertIn("canonical_decode_elapsed_sec", summary["canonical_decode_rtf_invalid_measurements"][0]["message"])
+        self.assertEqual(rtf_evaluation["canonical_decode_rtf_invalid_count"], 2)
+        self.assertEqual(trace[-1]["failure_kind"], "rtf")
+        self.assertEqual(evaluator[0]["failure_kind"], "rtf")
+        self.assertEqual(evaluator[-1]["invalid_count"], 2)
+
     def test_pacing_lag_fails_before_late_frame_admission(self):
         descriptor = _descriptor(frame_samples=400)
         service = RecordingService(_runtime(descriptor=descriptor, speech=(False,), session_ids=("session-1",)))
@@ -336,8 +525,9 @@ class LiveServiceReplayContractTest(unittest.TestCase):
             live_enabled=True,
             live_runtime_factory=lambda: _runtime(
                 descriptor=descriptor,
-                speech=(False,),
+                speech=(True, False),
                 session_ids=("http-session",),
+                decoder=RecordingDecoder(elapsed_sec=0.01),
             ),
         )
         port = _free_port()
@@ -358,15 +548,59 @@ class LiveServiceReplayContractTest(unittest.TestCase):
             )
             events = service.events(created.session_id, since_seq=0)
             filtered_events = service.events(created.session_id, since_seq=1)
+            service.accept_frame(
+                created.session_id,
+                AudioFrame(sequence=1, pcm=b"\0\0" * 400, sample_count=400),
+            )
+            deadline = time.monotonic() + 5.0
+            processed = []
+            while time.monotonic() < deadline:
+                processed = [event for event in service.events(created.session_id) if event.kind == "canonical_processed"]
+                if processed:
+                    break
+                time.sleep(0.01)
 
             self.assertEqual(created.session_id, "http-session")
             self.assertEqual(result.ack.accepted_samples, 400)
             self.assertEqual(events[0].kind, "session_created")
             self.assertEqual([event.seq for event in filtered_events], [1])
             self.assertEqual(filtered_events[0].kind, "frame_accepted")
+            self.assertTrue(processed)
+            self.assertEqual(processed[0].payload["canonical_decode_elapsed_sec"], 0.01)
+            self.assertEqual(processed[0].payload["frozen_span_sample_count"], 400)
+            self.assertEqual(processed[0].payload["frozen_span_duration_sec"], 400 / LIVE_SAMPLE_RATE)
+            self.assertAlmostEqual(processed[0].payload["canonical_decode_rtf"], 0.4)
         finally:
             server.should_exit = True
             thread.join(timeout=5)
+
+
+def _canonical_processed_event(*, seq: int, span_id: int, rtf: float) -> LiveServiceEvent:
+    return LiveServiceEvent(
+        seq=seq,
+        session_id="session-1",
+        kind="canonical_processed",
+        snapshot_version=seq,
+        payload={
+            "span_id": span_id,
+            "canonical_decode_elapsed_sec": rtf,
+            "frozen_span_sample_count": LIVE_SAMPLE_RATE,
+            "frozen_span_duration_sec": 1.0,
+            "canonical_decode_rtf": rtf,
+        },
+    )
+
+
+def _event_with_payload(event: LiveServiceEvent, payload: dict) -> LiveServiceEvent:
+    return LiveServiceEvent(
+        seq=event.seq,
+        session_id=event.session_id,
+        kind=event.kind,
+        snapshot_version=event.snapshot_version,
+        payload=payload,
+        schema_version=event.schema_version,
+    )
+
 
 def _digest(label: str) -> str:
     return hash_config({"label": label})
@@ -399,6 +633,7 @@ def _runtime(
     descriptor: LiveServiceDescriptor,
     speech: tuple[bool, ...],
     session_ids: tuple[str, ...],
+    decoder: "RecordingDecoder | None" = None,
     identity: "PreparingIdentity | None" = None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
@@ -408,7 +643,7 @@ def _runtime(
             EndpointPolicyConfig(min_speech_samples=1, min_silence_samples=1)
         ),
         speech_provider_factory=lambda: ScriptedSpeechProvider(speech),
-        decoder_factory=lambda: RecordingDecoder(),
+        decoder_factory=lambda: decoder or RecordingDecoder(),
         identity_preparer_factory=lambda: identity or PreparingIdentity(),
         session_id_factory=lambda: next(ids),
     )
@@ -432,9 +667,12 @@ class ScriptedSpeechProvider:
 class RecordingDecoder:
     max_samples = 4000
 
+    def __init__(self, elapsed_sec: float | None = None):
+        self.elapsed_sec = elapsed_sec
+
     def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
         del span, pcm
-        return InferenceTranscript("[0][S01]decoded[0.01]")
+        return InferenceTranscript("[0][S01]decoded[0.01]", elapsed_sec=self.elapsed_sec)
 
 
 @dataclass
@@ -487,6 +725,22 @@ class AmbiguousOnceService(RecordingService):
     def accept_frame(self, session_id: str, frame: AudioFrame):
         self.frame_sequences.append(frame.sequence)
         raise live_service_replay.ServiceReplayTransportFailure("timeout after possible admission")
+
+
+class CorruptingEventsService(live_service_replay.InMemoryLiveReplayService):
+    def __init__(self, runtime: LiveServiceRuntime, mutate):
+        super().__init__(runtime)
+        self.mutate = mutate
+
+    def events(self, session_id: str, since_seq: int = 0):
+        events = []
+        for event in super().events(session_id, since_seq=since_seq):
+            if event.kind == "canonical_processed":
+                payload = dict(event.payload)
+                self.mutate(payload)
+                event = _event_with_payload(event, payload)
+            events.append(event)
+        return tuple(events)
 
 
 class StopFailureService(RecordingService):
