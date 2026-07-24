@@ -82,6 +82,7 @@ class CoordinatorPreparedWork:
     span: FrozenSpan
     transcript: str
     preparation: LiveIdentityPreparation
+    decode_elapsed_sec: float | None = None
 
 
 class LiveCoordinator:
@@ -160,7 +161,12 @@ class LiveCoordinator:
             transcript=transcript,
             base_snapshot=work.base_snapshot,
         )
-        return CoordinatorPreparedWork(span=span, transcript=transcript, preparation=preparation)
+        return CoordinatorPreparedWork(
+            span=span,
+            transcript=transcript,
+            preparation=preparation,
+            decode_elapsed_sec=inferred.elapsed_sec,
+        )
 
     def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
         span = work.span
