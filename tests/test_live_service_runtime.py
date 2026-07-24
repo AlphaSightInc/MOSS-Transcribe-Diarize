@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import dataclasses
+import inspect
 import threading
 import time
 import unittest
@@ -41,6 +42,15 @@ def _digest(label: str) -> str:
 
 
 class LiveServiceContractTypesTest(unittest.TestCase):
+    def test_runtime_public_operation_set_stays_narrow(self):
+        operations = [
+            name
+            for name, value in vars(LiveServiceRuntime).items()
+            if not name.startswith("_") and inspect.isfunction(value)
+        ]
+
+        self.assertEqual(operations, ["create", "accept_frame", "events", "snapshot", "stop", "abort"])
+
     def test_descriptor_is_immutable_versioned_and_json_safe(self):
         hashes = LiveServiceConfigHashes.from_parts(
             endpoint_config={"min_speech_samples": 1600},

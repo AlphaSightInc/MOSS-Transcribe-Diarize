@@ -268,7 +268,7 @@ class FakeRunner:
     def transcribe(self, wav_path, **kwargs):
         del wav_path, kwargs
         self.calls += 1
-        return SimpleNamespace(text="[0][S01]ok[0.01]", prompt_len=0, generated_tokens=1)
+        return SimpleNamespace(text="[0][S01]ok[0.01]", prompt_len=0, generated_tokens=1, elapsed_sec=0.01)
 
 
 def _observations(provider, pcm: bytes):
