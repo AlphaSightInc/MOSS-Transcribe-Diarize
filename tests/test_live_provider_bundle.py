@@ -12,10 +12,13 @@ from moss_transcribe_diarize.app.live_provider_bundle import (
     BUNDLE_SCHEMA_VERSION,
     LiveProviderBundleAdmissionError,
     LiveProviderBundleConfig,
+    SileroOnnxSpeechProvider,
+    WebRtcSpeechProvider,
+    WeSpeakerLiveEvidenceProvider,
     build_live_runtime_factory,
     compute_live_provider_bundle_hashes,
 )
-from moss_transcribe_diarize.app.live_session import AudioFrame
+from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, LiveIdentitySnapshot
 
 
 def _sha256_bytes(payload: bytes) -> str:
@@ -179,3 +182,86 @@ def test_bundle_runtime_factory_fails_before_route_construction(tmp_path):
 
     with pytest.raises(LiveProviderBundleAdmissionError, match="runner has no transcribe"):
         build_live_runtime_factory(config, object())
+
+
+def test_silero_onnx_adapter_emits_observations_only_from_injected_inference():
+    calls = []
+
+    def infer(pcm, sample_rate):
+        calls.append((pcm, sample_rate))
+        return {"speech_score": 0.81}
+
+    provider = SileroOnnxSpeechProvider(infer=infer, threshold=0.80)
+
+    observations = provider.observe(
+        frame=AudioFrame(sequence=7, pcm=b"\0\0" * 320, sample_count=320, sample_rate=16000),
+        start_sample=100,
+        end_sample=420,
+    )
+
+    assert calls == [(b"\0\0" * 320, 16000)]
+    assert observations[0].start_sample == 100
+    assert observations[0].end_sample == 420
+    assert observations[0].speech_present is True
+    assert observations[0].confidence == pytest.approx(0.81)
+    assert observations[0].provider_endpoint_sample is None
+
+
+def test_webrtc_adapter_normalizes_binary_frames_without_endpoint_authority():
+    seen = []
+
+    def vad(pcm, sample_rate):
+        seen.append((len(pcm), sample_rate))
+        return len(seen) == 2
+
+    provider = WebRtcSpeechProvider(vad=vad, frame_samples=160)
+
+    observations = provider.observe(
+        frame=AudioFrame(sequence=1, pcm=b"\0\0" * 320, sample_count=320, sample_rate=16000),
+        start_sample=0,
+        end_sample=320,
+    )
+
+    assert seen == [(320, 16000), (320, 16000)]
+    assert [(item.start_sample, item.end_sample, item.speech_present) for item in observations] == [
+        (0, 160, False),
+        (160, 320, True),
+    ]
+    assert all(item.provider_endpoint_sample is None for item in observations)
+
+
+def test_wespeaker_live_adapter_scores_evidence_without_mutating_identity_snapshot():
+    class FakeEncoder:
+        def __init__(self):
+            self.calls = []
+
+        def embed(self, wav_path, intervals):
+            self.calls.append((wav_path, intervals))
+            return [1.0, 0.0]
+
+    encoder = FakeEncoder()
+    base = LiveIdentitySnapshot(version=4, canonical_speakers=("speaker-0001", "speaker-0002"))
+    provider = WeSpeakerLiveEvidenceProvider(
+        encoder=encoder,
+        canonical_embedding=lambda snapshot, speaker: {
+            "speaker-0001": [1.0, 0.0],
+            "speaker-0002": [0.0, 1.0],
+        }[speaker],
+    )
+
+    evidence = provider.score(
+        span=FrozenSpan(id=3, epoch=0, start_sample=0, end_sample=3200, reason="end_silence"),
+        pcm=b"\0\0" * 3200,
+        segments=tuple(
+            [
+                SimpleNamespace(start=0.0, end=0.1, speaker="S01", text="one"),
+                SimpleNamespace(start=0.1, end=0.2, speaker="S02", text="two"),
+            ]
+        ),
+        base_snapshot=base,
+    )
+
+    assert base.canonical_speakers == ("speaker-0001", "speaker-0002")
+    assert len(encoder.calls) == 2
+    assert [item.local_speaker for item in evidence] == ["S01", "S01", "S02", "S02"]
+    assert [item.score for item in evidence] == [1.0, 0.0, 1.0, 0.0]

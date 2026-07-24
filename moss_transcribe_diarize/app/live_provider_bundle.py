@@ -5,13 +5,18 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import json
+import math
+import tempfile
+import wave
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Sequence
+
+from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_adapters import RunnerBoundedWavInference
 from .live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
-from .live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig
+from .live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig, LiveSpeakerEvidence
 from .live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -20,7 +25,7 @@ from .live_service_runtime import (
     LiveServiceRuntime,
     hash_config,
 )
-from .live_session import AudioFrame, LIVE_SAMPLE_RATE
+from .live_session import AudioFrame, FrozenSpan, LIVE_SAMPLE_RATE, LiveIdentitySnapshot
 
 
 BUNDLE_SCHEMA_VERSION = 1
@@ -351,6 +356,150 @@ class _StaticSpeechSignalProvider:
         )
 
 
+class SileroOnnxSpeechProvider:
+    """Silero-ONNX speech observation adapter with injected inference."""
+
+    def __init__(
+        self,
+        *,
+        infer: Callable[[bytes, int], float | Mapping[str, Any]],
+        threshold: float,
+        provider_reason: str = "silero_onnx_observation",
+    ):
+        if not 0.0 <= threshold <= 1.0:
+            raise LiveProviderBundleAdmissionError("silero threshold must be between 0 and 1.")
+        self._infer = infer
+        self.threshold = float(threshold)
+        self.provider_reason = provider_reason
+
+    def observe(
+        self,
+        *,
+        frame: AudioFrame,
+        start_sample: int,
+        end_sample: int,
+    ) -> tuple[SpeechObservation, ...]:
+        score = _observation_score(self._infer(frame.pcm, frame.sample_rate), "silero")
+        return (
+            SpeechObservation(
+                start_sample=start_sample,
+                end_sample=end_sample,
+                speech_present=score >= self.threshold,
+                confidence=score,
+                provider_reason=self.provider_reason,
+            ),
+        )
+
+
+class WebRtcSpeechProvider:
+    """WebRTC speech observation adapter with injected binary VAD."""
+
+    def __init__(
+        self,
+        *,
+        vad: Any,
+        frame_samples: int,
+        sample_rate: int = LIVE_SAMPLE_RATE,
+        provider_reason: str = "webrtc_observation",
+    ):
+        if frame_samples <= 0:
+            raise LiveProviderBundleAdmissionError("webrtc frame_samples must be positive.")
+        if sample_rate != LIVE_SAMPLE_RATE:
+            raise LiveProviderBundleAdmissionError("webrtc sample_rate must be 16000.")
+        if not (callable(vad) or callable(getattr(vad, "is_speech", None))):
+            raise LiveProviderBundleAdmissionError("webrtc vad must be callable or expose is_speech().")
+        self._vad = vad
+        self.frame_samples = int(frame_samples)
+        self.sample_rate = int(sample_rate)
+        self.provider_reason = provider_reason
+
+    def observe(
+        self,
+        *,
+        frame: AudioFrame,
+        start_sample: int,
+        end_sample: int,
+    ) -> tuple[SpeechObservation, ...]:
+        if frame.sample_rate != self.sample_rate:
+            raise LiveProviderBundleAdmissionError("webrtc frame sample_rate mismatch.")
+        observations: list[SpeechObservation] = []
+        cursor = start_sample
+        byte_cursor = 0
+        while cursor < end_sample:
+            piece_samples = min(self.frame_samples, end_sample - cursor)
+            byte_end = byte_cursor + piece_samples * 2
+            piece = frame.pcm[byte_cursor:byte_end]
+            voiced = bool(_call_webrtc_vad(self._vad, piece, self.sample_rate))
+            observations.append(
+                SpeechObservation(
+                    start_sample=cursor,
+                    end_sample=cursor + piece_samples,
+                    speech_present=voiced,
+                    confidence=1.0 if voiced else 0.0,
+                    provider_reason=self.provider_reason,
+                )
+            )
+            cursor += piece_samples
+            byte_cursor = byte_end
+        return tuple(observations)
+
+
+class WeSpeakerLiveEvidenceProvider:
+    """Live evidence adapter over the pinned file-mode WeSpeaker encoder seam."""
+
+    def __init__(
+        self,
+        *,
+        encoder: Any,
+        canonical_embedding: Callable[[LiveIdentitySnapshot, str], Sequence[float] | None],
+        min_segment_samples: int = 1,
+    ):
+        if min_segment_samples <= 0:
+            raise LiveProviderBundleAdmissionError("wespeaker min_segment_samples must be positive.")
+        if not callable(getattr(encoder, "embed", None)):
+            raise LiveProviderBundleAdmissionError("wespeaker encoder must expose embed().")
+        self.encoder = encoder
+        self._canonical_embedding = canonical_embedding
+        self.min_segment_samples = int(min_segment_samples)
+
+    def score(
+        self,
+        *,
+        span: FrozenSpan,
+        pcm: bytes,
+        segments: tuple[TranscriptSegment, ...],
+        base_snapshot: LiveIdentitySnapshot,
+    ) -> tuple[LiveSpeakerEvidence, ...]:
+        if not base_snapshot.canonical_speakers:
+            return ()
+        intervals_by_speaker = _speaker_intervals_by_label(span, segments, self.min_segment_samples)
+        if not intervals_by_speaker:
+            return ()
+        with tempfile.TemporaryDirectory() as directory:
+            wav_path = Path(directory) / "live-evidence.wav"
+            _write_pcm_wav(wav_path, pcm)
+            local_vectors = {
+                speaker: _vector_values(self.encoder.embed(wav_path, intervals))
+                for speaker, intervals in intervals_by_speaker.items()
+            }
+        evidence: list[LiveSpeakerEvidence] = []
+        for local_speaker, local_vector in sorted(local_vectors.items()):
+            for canonical_speaker in base_snapshot.canonical_speakers:
+                canonical_vector = self._canonical_embedding(base_snapshot, canonical_speaker)
+                if canonical_vector is None:
+                    continue
+                score = _cosine_similarity(local_vector, _vector_values(canonical_vector))
+                evidence.append(
+                    LiveSpeakerEvidence(
+                        local_speaker=local_speaker,
+                        canonical_speaker=canonical_speaker,
+                        score=score,
+                        evidence_id=f"wespeaker:{span.id}:{local_speaker}:{canonical_speaker}",
+                    )
+                )
+        return tuple(evidence)
+
+
 def _speech_provider(payload: Mapping[str, Any]) -> _StaticSpeechSignalProvider:
     kind = _required_str(payload, "kind")
     if kind != "static_observation":
@@ -365,6 +514,67 @@ def _speech_provider(payload: Mapping[str, Any]) -> _StaticSpeechSignalProvider:
         confidence=confidence,
         provider_reason=payload.get("provider_reason"),
     )
+
+
+def _observation_score(value: float | Mapping[str, Any], provider: str) -> float:
+    raw = value.get("speech_score") if isinstance(value, Mapping) else value
+    try:
+        score = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise LiveProviderBundleAdmissionError(f"{provider} speech score must be numeric.") from exc
+    if not math.isfinite(score) or not 0.0 <= score <= 1.0:
+        raise LiveProviderBundleAdmissionError(f"{provider} speech score must be finite and between 0 and 1.")
+    return score
+
+
+def _call_webrtc_vad(vad: Any, pcm: bytes, sample_rate: int) -> bool:
+    if callable(vad):
+        return bool(vad(pcm, sample_rate))
+    return bool(vad.is_speech(pcm, sample_rate))
+
+
+def _speaker_intervals_by_label(
+    span: FrozenSpan,
+    segments: tuple[TranscriptSegment, ...],
+    min_segment_samples: int,
+) -> dict[str, list[tuple[float, float]]]:
+    duration = span.sample_count / float(LIVE_SAMPLE_RATE)
+    intervals: dict[str, list[tuple[float, float]]] = {}
+    for segment in segments:
+        start = max(0.0, float(segment.start))
+        end = min(duration, float(segment.end))
+        if end <= start:
+            continue
+        if int(round((end - start) * LIVE_SAMPLE_RATE)) < min_segment_samples:
+            continue
+        intervals.setdefault(segment.speaker, []).append((start, end))
+    return intervals
+
+
+def _write_pcm_wav(path: Path, pcm: bytes) -> None:
+    with wave.open(str(path), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(LIVE_SAMPLE_RATE)
+        wav.writeframes(pcm)
+
+
+def _vector_values(vector: Sequence[float]) -> tuple[float, ...]:
+    values = tuple(float(item) for item in vector)
+    if not values or any(not math.isfinite(item) for item in values):
+        raise LiveProviderBundleAdmissionError("wespeaker evidence vector must be finite and non-empty.")
+    return values
+
+
+def _cosine_similarity(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    if len(left) != len(right):
+        raise LiveProviderBundleAdmissionError("wespeaker evidence vector dimensions must match.")
+    left_norm = math.sqrt(sum(item * item for item in left))
+    right_norm = math.sqrt(sum(item * item for item in right))
+    if left_norm <= 0.0 or right_norm <= 0.0:
+        raise LiveProviderBundleAdmissionError("wespeaker evidence vectors must be non-zero.")
+    score = sum(a * b for a, b in zip(left, right, strict=True)) / (left_norm * right_norm)
+    return max(0.0, min(1.0, score))
 
 
 def _collect_preflight_failures(config: LiveProviderBundleConfig) -> list[str]:
@@ -607,6 +817,9 @@ __all__ = [
     "LiveProviderBundlePackage",
     "LiveProviderBundlePreflight",
     "LiveProviderBundleRuntime",
+    "SileroOnnxSpeechProvider",
+    "WebRtcSpeechProvider",
+    "WeSpeakerLiveEvidenceProvider",
     "build_live_runtime_factory",
     "compute_live_provider_bundle_hashes",
     "compute_live_provider_manifest_hash",
