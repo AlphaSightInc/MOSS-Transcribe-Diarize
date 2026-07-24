@@ -1,12 +1,32 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
+import uuid
+from collections import deque
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Any, Mapping, Protocol
+from typing import Any, Callable, Mapping
 
-from .live_session import AudioFrame, FrameAck, LIVE_SAMPLE_RATE, LiveSnapshot
+from .live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
+from .live_coordinator import (
+    LiveCoordinator,
+    LiveCoordinatorError,
+    LiveIdentityPreparer,
+    SpeechSignalProvider,
+)
+from .live_endpoint import EndpointPolicy, EndpointPolicyError
+from .live_session import (
+    AudioFrame,
+    FrameAck,
+    LIVE_SAMPLE_RATE,
+    LiveSession,
+    LiveSessionBackpressure,
+    LiveSessionClosed,
+    LiveSessionFailed,
+    LiveSnapshot,
+)
 
 
 LIVE_SERVICE_SCHEMA_VERSION = 1
@@ -247,24 +267,297 @@ class LiveServiceFrameResult:
         object.__setattr__(self, "queued_item_ids", tuple(self.queued_item_ids))
 
 
-class LiveServiceRuntime(Protocol):
+@dataclass(slots=True)
+class _RuntimeSession:
+    session_id: str
+    descriptor: LiveServiceDescriptor
+    session: LiveSession
+    coordinator: LiveCoordinator
+    arbiter: InferenceArbiter
+    events: deque[LiveServiceEvent]
+    next_event_seq: int = 0
+    terminal_failure: LiveServiceFailureRecord | None = None
+
+
+class LiveServiceRuntime:
+    """Deep default-off runtime for isolated service-backed live sessions."""
+
+    def __init__(
+        self,
+        *,
+        descriptor: LiveServiceDescriptor,
+        endpoint_policy_factory: Callable[[], EndpointPolicy],
+        speech_provider_factory: Callable[[], SpeechSignalProvider],
+        decoder_factory: Callable[[], Any],
+        identity_preparer_factory: Callable[[], LiveIdentityPreparer],
+        session_id_factory: Callable[[], str] | None = None,
+    ):
+        self.descriptor = descriptor
+        self._endpoint_policy_factory = endpoint_policy_factory
+        self._speech_provider_factory = speech_provider_factory
+        self._decoder_factory = decoder_factory
+        self._identity_preparer_factory = identity_preparer_factory
+        self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
+        self._sessions: dict[str, _RuntimeSession] = {}
+
     def create(self) -> LiveServiceCreateResult:
-        ...
+        session_id = self._new_session_id()
+        session = LiveSession(
+            max_retained_samples=self.descriptor.bounds.max_retained_samples,
+            hard_cap_samples=self.descriptor.bounds.hard_cap_samples,
+        )
+        arbiter = InferenceArbiter(max_live_canonical_items=self.descriptor.bounds.max_queue_depth)
+        coordinator = LiveCoordinator(
+            session_key=session_id,
+            session=session,
+            endpoint_policy=self._endpoint_policy_factory(),
+            speech_provider=self._speech_provider_factory(),
+            decoder=self._decoder_factory(),
+            identity_preparer=self._identity_preparer_factory(),
+            arbiter=arbiter,
+        )
+        state = _RuntimeSession(
+            session_id=session_id,
+            descriptor=self.descriptor,
+            session=session,
+            coordinator=coordinator,
+            arbiter=arbiter,
+            events=deque(maxlen=self.descriptor.bounds.max_events),
+        )
+        self._sessions[session_id] = state
+        self._record_event(state, "session_created", {})
+        snapshot = self._snapshot(state)
+        return LiveServiceCreateResult(session_id=session_id, descriptor=self.descriptor, snapshot=snapshot)
 
     def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
-        ...
+        state = self._get(session_id)
+        self._raise_terminal(state)
+        try:
+            result = state.coordinator.accept_frame(frame)
+        except Exception as exc:
+            self._fail(state, self._failure_from_exception(exc))
+            raise
+
+        session_snapshot = state.session.snapshot()
+        ack = FrameAck(
+            sequence=frame.sequence,
+            start_sample=result.accepted_start_sample,
+            end_sample=result.accepted_end_sample,
+            accepted_samples=session_snapshot.accepted_samples,
+            retained_samples=session_snapshot.retained_samples,
+            frozen_span_ids=tuple(span.id for span in result.frozen_spans),
+        )
+        self._record_event(
+            state,
+            "frame_accepted",
+            {
+                "sequence": frame.sequence,
+                "start_sample": result.accepted_start_sample,
+                "end_sample": result.accepted_end_sample,
+                "queued_item_ids": result.queued_item_ids,
+            },
+        )
+        for span in result.frozen_spans:
+            self._record_event(
+                state,
+                "span_frozen",
+                {
+                    "span_id": span.id,
+                    "start_sample": span.start_sample,
+                    "end_sample": span.end_sample,
+                    "reason": span.reason,
+                },
+            )
+        for item_id in result.queued_item_ids:
+            self._record_event(state, "canonical_queued", {"item_id": item_id})
+        return LiveServiceFrameResult(
+            ack=ack,
+            queued_item_ids=result.queued_item_ids,
+            snapshot=self._snapshot(state),
+        )
 
     def events(self, session_id: str, since_seq: int = 0) -> tuple[LiveServiceEvent, ...]:
-        ...
+        state = self._get(session_id)
+        _non_negative(since_seq, "since_seq")
+        return tuple(event for event in state.events if event.seq >= since_seq)
 
     def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
-        ...
+        state = self._get(session_id)
+        snapshot = self._snapshot(state)
+        if since_version is not None and snapshot.session.version <= since_version:
+            return None
+        return snapshot
 
     async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
-        ...
+        state = self._get(session_id)
+        self._raise_terminal(state)
+        loop = asyncio.get_running_loop()
+        end_time = loop.time() + max(0.0, float(deadline))
+        try:
+            queued = state.coordinator.stop_endpoint()
+            for item_id in queued:
+                self._record_event(state, "canonical_queued", {"item_id": item_id, "reason": "stop"})
+            while self._pending_work_items(state) or state.session.snapshot().pending_span_ids:
+                if loop.time() > end_time:
+                    raise TimeoutError("live service stop deadline expired with unresolved work.")
+                self._pump_one(state)
+            remaining = max(0.0, end_time - loop.time())
+            snapshot = await state.session.stop(remaining)
+        except Exception as exc:
+            failure = self._failure_from_exception(exc)
+            self._fail(state, failure)
+            if not isinstance(exc, TimeoutError):
+                raise
+            raise
+        snapshot = self._snapshot(state, session_snapshot=snapshot)
+        if snapshot.session.accepted_samples != snapshot.session.accounted_samples or snapshot.pending_work_items:
+            failure = LiveServiceIntegrityFailure(
+                "live service stop completed without exact accepted/accounted equality.",
+                code="stop_accounting_mismatch",
+            ).failure
+            self._fail(state, failure)
+            raise LiveServiceIntegrityFailure(failure.message, code=failure.code)
+        self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
+        return self._snapshot(state)
 
     async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
-        ...
+        state = self._get(session_id)
+        reason = reason or "aborted"
+        if state.terminal_failure is None:
+            self._fail(
+                state,
+                LiveServiceTransportPacingFailure(reason, code="aborted").failure,
+                event_kind="session_aborted",
+            )
+        snapshot = await state.session.abort(reason)
+        return self._snapshot(state, session_snapshot=snapshot)
+
+    def _new_session_id(self) -> str:
+        session_id = self._session_id_factory()
+        if not session_id:
+            raise ValueError("session_id_factory returned an empty id.")
+        if session_id in self._sessions:
+            raise ValueError(f"duplicate live session id {session_id}.")
+        return session_id
+
+    def _get(self, session_id: str) -> _RuntimeSession:
+        try:
+            return self._sessions[session_id]
+        except KeyError as exc:
+            raise KeyError(f"unknown live service session {session_id}") from exc
+
+    def _snapshot(
+        self,
+        state: _RuntimeSession,
+        *,
+        session_snapshot: LiveSnapshot | None = None,
+    ) -> LiveServiceSnapshot:
+        return LiveServiceSnapshot(
+            session_id=state.session_id,
+            descriptor=state.descriptor,
+            session=session_snapshot or state.session.snapshot(),
+            pending_work_items=self._pending_work_items(state),
+            terminal_failure=state.terminal_failure,
+        )
+
+    def _pending_work_items(self, state: _RuntimeSession) -> int:
+        return state.arbiter.snapshot().live_canonical
+
+    def _pump_one(self, state: _RuntimeSession) -> None:
+        item = state.arbiter.next_work()
+        if item is None:
+            if state.session.snapshot().pending_span_ids:
+                raise LiveServiceIdentityCommitFailure(
+                    "live service has unresolved frozen spans without queued work.",
+                    code="unqueued_frozen_span",
+                )
+            return
+        try:
+            result = state.coordinator.process_work_item(item)
+        except Exception as exc:
+            self._fail(state, self._failure_from_exception(exc))
+            raise
+        self._record_event(
+            state,
+            "canonical_processed",
+            {
+                "item_id": item.id,
+                "span_id": result.span_id,
+                "submitted": result.submitted,
+                "identity_status": result.identity_status,
+                "committed_samples": result.committed_samples,
+            },
+        )
+        if not result.submitted:
+            failure = LiveServiceIdentityCommitFailure(
+                "canonical work did not atomically publish.",
+                code="canonical_not_submitted",
+                detail={"span_id": result.span_id, "identity_status": result.identity_status},
+            ).failure
+            self._fail(state, failure)
+            raise LiveServiceIdentityCommitFailure(
+                failure.message,
+                code=failure.code,
+                detail=failure.detail,
+            )
+
+    def _record_event(self, state: _RuntimeSession, kind: str, payload: Mapping[str, Any]) -> None:
+        event = LiveServiceEvent(
+            seq=state.next_event_seq,
+            session_id=state.session_id,
+            kind=kind,
+            snapshot_version=state.session.snapshot().version,
+            payload=payload,
+        )
+        state.events.append(event)
+        state.next_event_seq += 1
+
+    def _fail(
+        self,
+        state: _RuntimeSession,
+        failure: LiveServiceFailureRecord,
+        *,
+        event_kind: str = "terminal_failure",
+    ) -> None:
+        if state.terminal_failure is not None:
+            return
+        state.terminal_failure = failure
+        self._record_event(state, event_kind, {"failure": failure.to_dict()})
+
+    def _raise_terminal(self, state: _RuntimeSession) -> None:
+        if state.terminal_failure is not None:
+            raise _error_from_failure(state.terminal_failure)
+
+    def _failure_from_exception(self, exc: Exception) -> LiveServiceFailureRecord:
+        if isinstance(exc, LiveServiceError):
+            return exc.failure
+        if isinstance(exc, (LiveSessionBackpressure, InferenceArbiterBackpressure, TimeoutError)):
+            return LiveServiceTransportPacingFailure(str(exc), code="backpressure_or_deadline").failure
+        if isinstance(exc, (LiveSessionFailed, LiveCoordinatorError, EndpointPolicyError)):
+            return LiveServiceIdentityCommitFailure(str(exc), code="identity_commit_failed").failure
+        if isinstance(exc, (LiveSessionClosed, ValueError)):
+            return LiveServiceIntegrityFailure(str(exc), code="integrity_error").failure
+        return LiveServiceIntegrityFailure(str(exc), code=exc.__class__.__name__).failure
+
+
+def _error_from_failure(failure: LiveServiceFailureRecord) -> LiveServiceError:
+    error_type: type[LiveServiceError]
+    if failure.kind == LiveServiceFailureKind.PROVIDER_CONFIG:
+        error_type = LiveServiceProviderConfigFailure
+    elif failure.kind == LiveServiceFailureKind.IDENTITY_COMMIT:
+        error_type = LiveServiceIdentityCommitFailure
+    elif failure.kind == LiveServiceFailureKind.RTF:
+        error_type = LiveServiceRtfFailure
+    elif failure.kind == LiveServiceFailureKind.TRANSPORT_PACING:
+        error_type = LiveServiceTransportPacingFailure
+    else:
+        error_type = LiveServiceIntegrityFailure
+    return error_type(
+        failure.message,
+        code=failure.code,
+        retryable=failure.retryable,
+        detail=failure.detail,
+    )
 
 
 def hash_config(payload: Mapping[str, Any]) -> str:
