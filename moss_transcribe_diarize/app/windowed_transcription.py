@@ -6,6 +6,7 @@ import os
 import subprocess
 import tempfile
 import time
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Protocol
@@ -123,11 +124,13 @@ class WindowedRunner:
         duration_probe=probe_media_duration,
         window_extractor=extract_window_wav,
         scratch_dir: str | Path | None = None,
+        identity_resolver: IdentityResolver | None = None,
     ):
         self.delegate = delegate
         self.duration_probe = duration_probe
         self.window_extractor = window_extractor
         self.scratch_dir = None if scratch_dir is None else Path(scratch_dir)
+        self.identity_resolver = identity_resolver or IdentityResolver()
         self.model_path = delegate.model_path
 
     @property
@@ -141,6 +144,7 @@ class WindowedRunner:
             "window_seconds": self.window_seconds,
             "stride_seconds": self.stride_seconds,
         }
+        data["speaker_identity"] = self.identity_resolver.contract()
         return data
 
     def transcribe(self, audio_path: str | Path, **kwargs) -> TranscriptionResult:
@@ -171,6 +175,7 @@ class WindowedRunner:
                 inference=_checkpoint_inference(kwargs),
                 window_seconds=float(self.window_seconds),
                 stride_seconds=float(self.stride_seconds),
+                identity_contract=self.identity_resolver.contract(),
             )
         return self._transcribe_windows(source, windows, kwargs, checkpoint)
 
@@ -205,6 +210,8 @@ class WindowedRunner:
             elapsed_sec += result.elapsed_sec
             possibly_truncated = possibly_truncated or _hit_token_cap(result, kwargs.get("max_new_tokens"))
 
+        if self.scratch_dir is not None:
+            self.scratch_dir.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="mtd-window-", dir=self.scratch_dir) as scratch:
             scratch_path = Path(scratch)
             for window in windows[completed:]:
@@ -252,7 +259,7 @@ class WindowedRunner:
                     last_progress = max(last_progress, 0.25 + 0.60 * (completed / len(windows)))
                     status_callback("transcribing", last_progress, generated_tokens)
 
-            identity = IdentityResolver().resolve(
+            identity = self.identity_resolver.resolve(
                 windows,
                 segments_by_window,
                 window_audio_paths=window_audio_paths,
@@ -297,6 +304,7 @@ class _CheckpointStore:
         inference: dict[str, Any],
         window_seconds: float,
         stride_seconds: float,
+        identity_contract: dict[str, Any],
     ):
         self.root = root
         self.windows_dir = root / "windows"
@@ -312,8 +320,7 @@ class _CheckpointStore:
                 "stride_seconds": stride_seconds,
             },
             "plan": self.plan,
-            "identity": _identity_contract(),
-            "tier_b": _tier_b_contract(),
+            "identity": deepcopy(identity_contract),
         }
         self.fingerprint = _sha256_canonical(self.contract)
         self.manifest = self._load_or_create_manifest()
@@ -356,7 +363,7 @@ class _CheckpointStore:
                 "windowing": self.contract["windowing"],
                 "plan": self.plan,
                 "identity": self.contract["identity"],
-                "tier_b": self.contract["tier_b"],
+                "contract": self.contract,
                 "created_at": time.time(),
                 "contract_fingerprint": self.fingerprint,
             }
@@ -481,18 +488,6 @@ def _checkpoint_inference(kwargs: dict[str, Any]) -> dict[str, Any]:
         "top_p": kwargs.get("top_p"),
         "top_k": kwargs.get("top_k"),
     }
-
-
-def _identity_contract() -> dict[str, Any]:
-    diagnostics = IdentityResolver().resolve([], [], window_audio_paths=[]).diagnostics
-    return {
-        "schema_version": diagnostics["schema_version"],
-        "config": diagnostics["config"],
-    }
-
-
-def _tier_b_contract() -> dict[str, Any]:
-    return {"enabled": False, "asset": None}
 
 
 def _plan_entry(window: WindowPlan) -> dict[str, int]:

@@ -397,6 +397,40 @@ mtd-subtitle-web \
 转写文本、JSON 分段、SRT、ASS 与说话人身份 artifact 会在 `postprocessing` 阶段暂存，只有完整集合校验通过后才发布。分段编辑和下载只在任务进入
 `waiting_review` 或 `done` 后可用。
 
+vLLM 文件模式分窗 runner 还包含可选的跨窗口说话人身份 Tier B provider。它默认关闭，也不会用于 live mode。基础安装不包含 provider 依赖或权重。只有在机器上已经具备批准的本地 state 文件时，才安装可选 extra：
+
+```bash
+uv pip install -e ".[speaker-identity]" --torch-backend=auto
+```
+
+固定的离线 provider 是 WeSpeaker ResNet152-LM，revision 为
+`4adba1525a6c9d5fff74b6df43a6ec97a86c4112`，state SHA-256 为
+`b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc`，embedding 维度为 256，设备为 CPU。preflight 命令只读：它会校验既有 state 路径的哈希并在 CPU 上加载 provider。启用服务前必须提供很小的 WAV fixture，以验证已加载 provider 的实际 embedding 维度、确定性、归一化以及零 CUDA 分配。它不会下载任何资产。
+
+```bash
+python -m moss_transcribe_diarize.speaker_identity_preflight \
+  --state-path /path/to/wespeaker-resnet152-lm.pt \
+  --fixture tests/fixtures/idea_020_provider_smoke.wav \
+  --json
+```
+
+只有 preflight 成功后，才为本地字幕 Web 应用显式启用 Tier B：
+
+```bash
+mtd-subtitle-web \
+  --backend vllm \
+  --model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --vllm-base-url http://127.0.0.1:8000/v1 \
+  --speaker-identity-tier-b \
+  --speaker-identity-state /path/to/wespeaker-resnet152-lm.pt \
+  --speaker-identity-fixture tests/fixtures/idea_020_provider_smoke.wav
+```
+
+回滚方式是省略 `--speaker-identity-tier-b`，或设置
+`MOSS_SPEAKER_IDENTITY_TIER_B=0`。显式启用时，如果依赖包、state 路径、revision、哈希、维度、设备或 smoke preflight 与固定契约不匹配，任务会在准入前失败。部署环境变量只由 `ops/start-web.sh` 转换为这些显式 CLI 参数，启用值必须严格为 `0` 或 `1`。运行时 readback 会在 `speaker_identity` 暴露完全相同的 resolver 契约，vLLM checkpoint 会把同一对象持久化到 `contract.identity`。身份配置变化会在任何模型调用前拒绝 resume。
+
+这个本地默认关闭能力不表示已经具备部署可用性、PyTorch 与 WSL parity、延迟/RSS 结论、阈值校准、30 分钟结果或完整的说话人感知产品闭环。安装 provider state 文件、在部署的 WSL 服务配置中启用它，以及运行 post-handoff proof，仍然是需要 operator 审阅的部署步骤。
+
 批量处理：
 
 ```bash

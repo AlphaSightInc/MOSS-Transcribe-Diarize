@@ -73,6 +73,36 @@ def test_absent_overlap_recurrence_stays_unresolved_when_tier_b_is_default_off(i
     assert tier_b.calls == 0
 
 
+def test_identity_resolver_contract_is_immutable_default_off(identity_api):
+    resolver = identity_api.IdentityResolver(tier_b_encoder=ExplodingTierBEncoder())
+
+    contract = resolver.contract()
+    contract["config"]["tier_b"]["enabled"] = True
+    contract["availability"]["reason"] = "mutated"
+
+    assert resolver.contract() == {
+        "schema_version": 2,
+        "config": {
+            "tier_a": {
+                "min_overlap_support_seconds": 2.0,
+                "min_overlap_dice": 0.75,
+                "mutual_margin_seconds": 1.0,
+            },
+            "tier_b": {
+                "enabled": False,
+                "min_segment_seconds": 2.0,
+                "max_segments_per_node": 3,
+                "similarity": 0.70,
+                "margin": 0.20,
+            },
+        },
+        "provider": {"provider": "test-exploding"},
+        "availability": {"available": False, "reason": "disabled"},
+    }
+    assert resolver.resolve([], [], window_audio_paths=[]).diagnostics["contract"] == resolver.contract()
+    assert resolver.tier_b_encoder.calls == 0
+
+
 def test_ambiguous_overlap_abstains_instead_of_forcing_a_merge(identity_api):
     resolution = resolve_identity(
         identity_api,
@@ -150,6 +180,43 @@ def test_enabled_tier_b_missing_asset_preserves_tier_a_and_reports_unavailable(i
     )
     assert resolution.diagnostics["tier_b"]["unavailable_reason"] == "asset_missing"
     assert "tier_b_unavailable" in edge_reasons(resolution.diagnostics)
+    assert resolution.diagnostics["contract"]["availability"] == {
+        "available": False,
+        "reason": "asset_missing",
+    }
+
+
+def test_transient_tier_b_embedding_failure_is_reason_coded_tier_a_only(identity_api, tmp_path):
+    tier_b = TransientFailingTierBEncoder(identity_api.TierBPreflight)
+
+    resolution = resolve_identity(
+        identity_api,
+        [
+            window(0, 0, 150, 0, 135),
+            window(1, 120, 270, 135, 270),
+        ],
+        [
+            [segment(20, 30, "S01", "first isolated")],
+            [segment(40, 50, "S01", "second isolated")],
+        ],
+        tier_b_enabled=True,
+        tier_b_encoder=tier_b,
+        window_audio_paths=[
+            tmp_path / "window-0.wav",
+            tmp_path / "window-1.wav",
+        ],
+    )
+
+    speakers = speakers_by_text(resolution)
+    assert speakers["first isolated"] != speakers["second isolated"]
+    assert resolution.summary["tier_a_accepted"] == 0
+    assert resolution.summary["tier_b_status"] == "available"
+    assert resolution.summary["tier_b_accepted"] == 0
+    assert resolution.diagnostics["contract"]["availability"] == {
+        "available": True,
+        "reason": None,
+    }
+    assert "tier_b_embedding_failed" in edge_reasons(resolution.diagnostics)
 
 
 def test_tier_b_preflight_selects_only_two_second_unresolved_evidence(identity_api, tmp_path):
@@ -391,6 +458,7 @@ def identity_api():
     return SimpleNamespace(
         IdentityResolver=module.IdentityResolver,
         IdentityResolverConfig=module.IdentityResolverConfig,
+        TierBPreflight=module.TierBPreflight,
         TierBAssetSpec=module.TierBAssetSpec,
         WeSpeakerResNet152LmAdapter=module.WeSpeakerResNet152LmAdapter,
         summary_observability=module._summary_observability,
@@ -468,6 +536,20 @@ class ExplodingTierBEncoder:
     def embed(self, wav_path, intervals):
         self.calls += 1
         raise AssertionError("Tier B must not be invoked when disabled by default.")
+
+
+class TransientFailingTierBEncoder:
+    descriptor = {"provider": "test-transient"}
+
+    def __init__(self, preflight_type):
+        self.preflight_type = preflight_type
+
+    def preflight(self):
+        return self.preflight_type(True, None, self.descriptor)
+
+    def embed(self, wav_path, intervals):
+        del wav_path, intervals
+        raise RuntimeError("temporary embed failure")
 
 
 class CannotLinkMergingTierBEncoder:

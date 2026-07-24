@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import math
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 from scipy.optimize import linear_sum_assignment
 
@@ -53,6 +54,50 @@ class TierBEmbedder(Protocol):
         ...
 
 
+PINNED_TIER_B_ASSET_SPEC = TierBAssetSpec()
+
+
+def tier_b_provider_manifest(
+    spec: TierBAssetSpec | None = None,
+    *,
+    device: str = "cpu",
+) -> dict[str, Any]:
+    manifest_spec = spec or PINNED_TIER_B_ASSET_SPEC
+    return {
+        "provider": manifest_spec.provider,
+        "revision": manifest_spec.revision,
+        "state_sha256": manifest_spec.state_sha256,
+        "embedding_dimension": manifest_spec.embedding_dimension,
+        "frontend_version": manifest_spec.frontend_version,
+        "device": device,
+    }
+
+
+def _identity_contract(config: IdentityResolverConfig, tier_b_preflight: TierBPreflight) -> dict[str, Any]:
+    return {
+        "schema_version": 2,
+        "config": {
+            "tier_a": {
+                "min_overlap_support_seconds": config.min_overlap_support_seconds,
+                "min_overlap_dice": config.min_overlap_dice,
+                "mutual_margin_seconds": config.mutual_margin_seconds,
+            },
+            "tier_b": {
+                "enabled": config.tier_b_enabled,
+                "min_segment_seconds": config.tier_b_min_segment_seconds,
+                "max_segments_per_node": config.tier_b_max_segments_per_node,
+                "similarity": config.tier_b_similarity,
+                "margin": config.tier_b_margin,
+            },
+        },
+        "provider": dict(tier_b_preflight.descriptor),
+        "availability": {
+            "available": bool(config.tier_b_enabled and tier_b_preflight.available),
+            "reason": tier_b_preflight.reason,
+        },
+    }
+
+
 @dataclass(frozen=True, slots=True)
 class IdentityResolution:
     relabeled_results: list[list[TranscriptSegment]]
@@ -96,6 +141,11 @@ class IdentityResolver:
     def __init__(self, *, config: IdentityResolverConfig | None = None, tier_b_encoder: Any = None):
         self.config = config or IdentityResolverConfig()
         self.tier_b_encoder = tier_b_encoder
+        self._tier_b_static_preflight = self._build_tier_b_static_preflight()
+        self._contract = _identity_contract(self.config, self._tier_b_static_preflight)
+
+    def contract(self) -> dict[str, Any]:
+        return deepcopy(self._contract)
 
     def resolve(
         self,
@@ -126,20 +176,8 @@ class IdentityResolver:
 
         diagnostics = {
             "schema_version": 2,
-            "config": {
-                "tier_a": {
-                    "min_overlap_support_seconds": self.config.min_overlap_support_seconds,
-                    "min_overlap_dice": self.config.min_overlap_dice,
-                    "mutual_margin_seconds": self.config.mutual_margin_seconds,
-                },
-                "tier_b": {
-                    "enabled": self.config.tier_b_enabled,
-                    "min_segment_seconds": self.config.tier_b_min_segment_seconds,
-                    "max_segments_per_node": self.config.tier_b_max_segments_per_node,
-                    "similarity": self.config.tier_b_similarity,
-                    "margin": self.config.tier_b_margin,
-                },
-            },
+            "config": self.contract()["config"],
+            "contract": self.contract(),
             "boundaries": boundaries,
             "tier_b": tier_b,
         }
@@ -240,7 +278,7 @@ class IdentityResolver:
         if not self.config.tier_b_enabled:
             return {"status": "disabled", "proposals": []}, 0
 
-        preflight = self._tier_b_preflight()
+        preflight = self._tier_b_static_preflight
         if not preflight.available:
             return (
                 {
@@ -381,9 +419,23 @@ class IdentityResolver:
         centroid = [sum(values) / len(vectors) for values in zip(*vectors, strict=True)]
         return _normalized_vector(centroid)
 
-    def _tier_b_preflight(self) -> TierBPreflight:
+    def _build_tier_b_static_preflight(self) -> TierBPreflight:
+        descriptor = dict(getattr(self.tier_b_encoder, "descriptor", {}) or {})
+        if not self.config.tier_b_enabled:
+            return TierBPreflight(
+                available=False,
+                reason="disabled",
+                descriptor=descriptor or tier_b_provider_manifest(),
+            )
+        return self._probe_tier_b_preflight()
+
+    def _probe_tier_b_preflight(self) -> TierBPreflight:
         if self.tier_b_encoder is None:
-            return TierBPreflight(available=False, reason="provider_missing", descriptor={})
+            return TierBPreflight(
+                available=False,
+                reason="provider_missing",
+                descriptor=tier_b_provider_manifest(),
+            )
 
         descriptor = dict(getattr(self.tier_b_encoder, "descriptor", {}) or {})
         preflight = getattr(self.tier_b_encoder, "preflight", None)
@@ -414,37 +466,141 @@ class WeSpeakerResNet152LmAdapter:
         state_path: str | Path,
         *,
         embedder: Any = None,
+        loader: Callable[[], Any] | None = None,
         spec: TierBAssetSpec | None = None,
         device: str = "cpu",
     ):
         self.state_path = Path(state_path)
         self.embedder = embedder
-        self.spec = spec or TierBAssetSpec()
+        self._loader = loader
+        self._embedder_injected = embedder is not None
+        self._loaded_descriptor: dict[str, Any] | None = None
+        self._verified_preflight: TierBPreflight | None = None
+        self.spec = spec or PINNED_TIER_B_ASSET_SPEC
         self.device = device
-        self.descriptor = {
-            "provider": self.spec.provider,
-            "revision": self.spec.revision,
-            "state_sha256": self.spec.state_sha256,
-            "embedding_dimension": self.spec.embedding_dimension,
-            "frontend_version": self.spec.frontend_version,
-            "device": self.device,
-        }
+        self.descriptor = tier_b_provider_manifest(self.spec, device=self.device)
 
-    def preflight(self) -> TierBPreflight:
+    def preflight(self, *, fixture_path: str | Path | None = None) -> TierBPreflight:
+        if self.device != "cpu":
+            return TierBPreflight(False, "device_not_cpu", self.descriptor)
         if not self.state_path.exists():
             return TierBPreflight(False, "asset_missing", self.descriptor)
         actual_sha256 = _sha256_file(self.state_path)
         if actual_sha256 != self.spec.state_sha256:
             return TierBPreflight(False, "asset_hash_mismatch", self.descriptor | {"actual_state_sha256": actual_sha256})
-        if self.embedder is None or not callable(getattr(self.embedder, "embed", None)):
+        try:
+            embedder = self._get_embedder()
+        except ImportError as exc:
+            return TierBPreflight(False, "provider_missing", self.descriptor | {"detail": str(exc)})
+        except Exception as exc:
+            return TierBPreflight(False, "provider_load_failed", self.descriptor | {"detail": exc.__class__.__name__})
+        if not callable(getattr(embedder, "embed", None)):
             return TierBPreflight(False, "provider_missing", self.descriptor)
-        return TierBPreflight(True, None, self.descriptor)
+        loaded_descriptor = dict(self._loaded_descriptor or {})
+        loaded_failure = _loaded_provider_failure(loaded_descriptor, self.descriptor)
+        if loaded_failure is not None:
+            return TierBPreflight(
+                False,
+                loaded_failure,
+                self.descriptor | {"loaded_provider": loaded_descriptor},
+            )
+        if fixture_path is None:
+            return self._verified_preflight or TierBPreflight(True, None, self.descriptor)
+        result = self._smoke_preflight(embedder, Path(fixture_path))
+        if result.available:
+            self._verified_preflight = result
+        return result
 
     def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
         preflight = self.preflight()
         if not preflight.available:
             raise RuntimeError(f"Tier B provider unavailable: {preflight.reason}")
-        return list(self.embedder.embed(wav_path, intervals))
+        return list(self._get_embedder().embed(wav_path, intervals))
+
+    def _get_embedder(self) -> Any:
+        if self.embedder is None:
+            loader = self._loader or (
+                lambda: _PyannoteWeSpeakerEmbedder(
+                    self.state_path,
+                    device=self.device,
+                )
+            )
+            self.embedder = loader()
+        if self._loaded_descriptor is None:
+            if self._embedder_injected:
+                self._loaded_descriptor = dict(self.descriptor)
+            else:
+                load = getattr(self.embedder, "load", None)
+                if not callable(load):
+                    raise TypeError("Tier B provider loader must expose load().")
+                loaded_descriptor = load()
+                if not isinstance(loaded_descriptor, dict):
+                    raise TypeError("Tier B provider load() must return a descriptor.")
+                self._loaded_descriptor = dict(loaded_descriptor)
+        return self.embedder
+
+    def _smoke_preflight(self, embedder: Any, fixture_path: Path) -> TierBPreflight:
+        if not fixture_path.exists():
+            return TierBPreflight(False, "fixture_missing", self.descriptor)
+        cuda_before = _cuda_allocated_bytes()
+        try:
+            first = _vector_values(embedder.embed(fixture_path, [(0.0, 2.0)]))
+            second = _vector_values(embedder.embed(fixture_path, [(0.0, 2.0)]))
+        except Exception as exc:
+            return TierBPreflight(False, "smoke_embedding_failed", self.descriptor | {"detail": exc.__class__.__name__})
+        cuda_after = _cuda_allocated_bytes()
+        descriptor = self.descriptor | {
+            "smoke": {
+                "fixture": str(fixture_path),
+                "cuda_allocated_bytes_before": cuda_before,
+                "cuda_allocated_bytes_after": cuda_after,
+            }
+        }
+        failure = _embedding_smoke_failure(first, second, self.spec.embedding_dimension, cuda_before, cuda_after)
+        if failure is not None:
+            return TierBPreflight(False, failure, descriptor)
+        return TierBPreflight(True, None, descriptor)
+
+
+class _PyannoteWeSpeakerEmbedder:
+    def __init__(self, state_path: Path, *, device: str):
+        self.state_path = state_path
+        self.device = device
+        self._inference = None
+
+    def load(self) -> dict[str, Any]:
+        self._load_inference()
+        return tier_b_provider_manifest(device=self.device)
+
+    def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
+        inference = self._load_inference()
+        vectors = []
+        for start, end in intervals:
+            if end <= start:
+                continue
+            vectors.append(_normalized_vector(inference.crop(str(wav_path), _pyannote_segment(start, end))))
+        if not vectors:
+            raise ValueError("Tier B embedding intervals are empty.")
+        return _mean_unit_vector(vectors)
+
+    def _load_inference(self) -> Any:
+        if self._inference is not None:
+            return self._inference
+        try:
+            from pyannote.audio import Inference, Model
+        except ImportError as exc:
+            raise ImportError("install the speaker-identity optional extra") from exc
+        model = Model.from_pretrained(str(self.state_path), map_location=self.device)
+        self._inference = Inference(model, window="whole", device=self.device)
+        return self._inference
+
+
+def _pyannote_segment(start: float, end: float) -> Any:
+    try:
+        from pyannote.core import Segment
+    except ImportError as exc:
+        raise ImportError("install the speaker-identity optional extra") from exc
+    return Segment(float(start), float(end))
 
 
 def _bundle_windows(
@@ -791,11 +947,85 @@ def _node_window(node: str) -> int:
 
 
 def _normalized_vector(vector: Any) -> list[float] | None:
-    values = [float(value) for value in vector]
+    values = _vector_values(vector)
+    if any(not math.isfinite(value) for value in values):
+        return None
     norm = math.sqrt(sum(value * value for value in values))
     if norm <= 0.0:
         return None
     return [value / norm for value in values]
+
+
+def _vector_values(vector: Any) -> list[float]:
+    return [float(value) for value in vector]
+
+
+def _mean_unit_vector(vectors: list[list[float] | None]) -> list[float]:
+    valid = [vector for vector in vectors if vector is not None]
+    if not valid:
+        raise ValueError("Tier B embeddings are not finite unit vectors.")
+    length = len(valid[0])
+    if any(len(vector) != length for vector in valid):
+        raise ValueError("Tier B embeddings must have matching dimensions.")
+    return _normalized_vector(
+        [
+            sum(vector[index] for vector in valid) / len(valid)
+            for index in range(length)
+        ]
+    ) or []
+
+
+def _embedding_smoke_failure(
+    first: list[float] | None,
+    second: list[float] | None,
+    expected_dimension: int,
+    cuda_before: int | None,
+    cuda_after: int | None,
+) -> str | None:
+    if first is None or second is None:
+        return "smoke_embedding_invalid"
+    if len(first) != expected_dimension or len(second) != expected_dimension:
+        return "dimension_mismatch"
+    if any(not math.isfinite(value) for value in first + second):
+        return "smoke_embedding_invalid"
+    if abs(math.sqrt(sum(value * value for value in first)) - 1.0) > 1e-6:
+        return "smoke_embedding_not_unit_normalized"
+    if abs(math.sqrt(sum(value * value for value in second)) - 1.0) > 1e-6:
+        return "smoke_embedding_not_unit_normalized"
+    if max(first) - min(first) <= 1e-9:
+        return "smoke_embedding_constant"
+    if any(abs(left - right) > 1e-9 for left, right in zip(first, second, strict=True)):
+        return "smoke_embedding_not_deterministic"
+    if cuda_before not in (None, 0) or cuda_after not in (None, 0):
+        return "cuda_allocated"
+    return None
+
+
+def _loaded_provider_failure(loaded: dict[str, Any], expected: dict[str, Any]) -> str | None:
+    for field, reason in (
+        ("provider", "provider_mismatch"),
+        ("revision", "revision_mismatch"),
+        ("state_sha256", "asset_hash_mismatch"),
+        ("embedding_dimension", "dimension_mismatch"),
+        ("device", "device_not_cpu"),
+    ):
+        if loaded.get(field) != expected.get(field):
+            return reason
+    return None
+
+
+def _cuda_allocated_bytes() -> int | None:
+    try:
+        import torch
+    except ImportError:
+        return None
+    cuda = getattr(torch, "cuda", None)
+    if cuda is None or not callable(getattr(cuda, "memory_allocated", None)):
+        return None
+    try:
+        return int(cuda.memory_allocated())
+    except Exception:
+        return None
 
 
 def _cosine(left: list[float], right: list[float]) -> float:
@@ -825,7 +1055,9 @@ __all__ = [
     "IdentityResolution",
     "IdentityResolver",
     "IdentityResolverConfig",
+    "PINNED_TIER_B_ASSET_SPEC",
     "TierBAssetSpec",
     "TierBPreflight",
     "WeSpeakerResNet152LmAdapter",
+    "tier_b_provider_manifest",
 ]

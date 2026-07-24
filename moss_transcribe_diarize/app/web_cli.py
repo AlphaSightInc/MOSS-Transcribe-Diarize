@@ -17,6 +17,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--vllm-model", default=None, help="vLLM served model name. Defaults to --model.")
     parser.add_argument("--vllm-api-key", default="EMPTY")
     parser.add_argument("--vllm-timeout", type=float, default=600.0)
+    parser.add_argument(
+        "--speaker-identity-tier-b",
+        action="store_true",
+        help="Enable the default-off file-mode Tier B speaker identity provider.",
+    )
+    parser.add_argument(
+        "--speaker-identity-state",
+        help="Existing local WeSpeaker ResNet152-LM state file required when Tier B is enabled.",
+    )
+    parser.add_argument(
+        "--speaker-identity-fixture",
+        help="Tiny WAV fixture required for Tier B smoke preflight when enabled.",
+    )
     parser.add_argument("--runs-dir", default="runs")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7860)
@@ -52,9 +65,11 @@ def main() -> None:
         vllm_model=args.vllm_model,
         vllm_api_key=args.vllm_api_key,
         vllm_timeout=args.vllm_timeout,
+        speaker_identity_tier_b=args.speaker_identity_tier_b,
+        speaker_identity_state=args.speaker_identity_state,
+        speaker_identity_fixture=args.speaker_identity_fixture,
     )
     uvicorn.run(app, host=args.host, port=args.port)
-
 
 if __name__ == "__main__":
     main()
