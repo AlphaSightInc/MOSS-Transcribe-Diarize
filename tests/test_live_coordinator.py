@@ -145,6 +145,35 @@ def test_coordinator_endpoint_queues_and_atomically_commits_frozen_pcm():
     assert decoder.calls == [((0, 1000), 2000, b"aa")]
 
 
+def test_coordinator_prepares_against_captured_identity_snapshot():
+    class RecordingIdentity(PreparingIdentity):
+        def __init__(self) -> None:
+            super().__init__()
+            self.base_versions: list[int] = []
+
+        def prepare(self, **kwargs):
+            self.base_versions.append(kwargs["base_snapshot"].version)
+            return super().prepare(**kwargs)
+
+    identity = RecordingIdentity()
+    live, _decoder, arbiter, session = coordinator(speech=(True, False), identity=identity)
+    live.accept_frame(frame(0, 1000, b"a"))
+    live.accept_frame(frame(1, 1000, b"b"))
+    work = live.capture_work_item(arbiter.next_work())
+
+    session._identity_snapshot = LiveIdentitySnapshot(
+        version=7,
+        canonical_speakers=("speaker-newer",),
+        diagnostics=(("test", "newer"),),
+    )
+    prepared = live.prepare_work_item(work)
+
+    assert work.base_snapshot.version == 0
+    assert identity.base_versions == [0]
+    assert prepared.preparation.base_snapshot_version == 0
+    assert session.snapshot().identity_snapshot.version == 7
+
+
 def test_coordinator_backpressure_leaves_frozen_span_uncommitted_not_dropped():
     live, decoder, _arbiter, session = coordinator(
         speech=(True, False),

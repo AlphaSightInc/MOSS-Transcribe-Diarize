@@ -387,6 +387,13 @@ class _RuntimeSession:
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
     work_changed: threading.Event = field(default_factory=threading.Event)
+    drain_waiters: set[_DrainWaiter] = field(default_factory=set)
+
+
+@dataclass(frozen=True, slots=True)
+class _DrainWaiter:
+    loop: asyncio.AbstractEventLoop
+    event: asyncio.Event
 
 
 class LiveServiceRuntime:
@@ -598,7 +605,9 @@ class LiveServiceRuntime:
 
     async def _wait_for_drain(self, state: _RuntimeSession, *, end_time: float) -> None:
         loop = asyncio.get_running_loop()
+        waiter = _DrainWaiter(loop=loop, event=asyncio.Event())
         while True:
+            timeout: float
             with self._lock:
                 self._raise_terminal(state)
                 if not self._has_unresolved_work_locked(state):
@@ -607,8 +616,23 @@ class LiveServiceRuntime:
                 if remaining <= 0:
                     raise TimeoutError("live service stop deadline expired with unresolved work.")
                 state.work_changed.clear()
-            if not await asyncio.to_thread(state.work_changed.wait, remaining):
-                raise TimeoutError("live service stop deadline expired with unresolved work.")
+                waiter.event.clear()
+                state.drain_waiters.add(waiter)
+                self._raise_terminal(state)
+                if not self._has_unresolved_work_locked(state):
+                    state.drain_waiters.discard(waiter)
+                    return
+                timeout = end_time - loop.time()
+                if timeout <= 0:
+                    state.drain_waiters.discard(waiter)
+                    raise TimeoutError("live service stop deadline expired with unresolved work.")
+            try:
+                await asyncio.wait_for(waiter.event.wait(), timeout=timeout)
+            except asyncio.TimeoutError as exc:
+                raise TimeoutError("live service stop deadline expired with unresolved work.") from exc
+            finally:
+                with self._lock:
+                    state.drain_waiters.discard(waiter)
 
     def _mark_ready_locked(self, state: _RuntimeSession) -> None:
         if state.terminal_failure is not None:
@@ -620,14 +644,6 @@ class LiveServiceRuntime:
         self._ready_session_ids.append(state.session_id)
         self._ready_session_set.add(state.session_id)
         self._canonical_scheduler.signal(self._drain_ready_sessions)
-
-    def _discard_ready_locked(self, state: _RuntimeSession) -> None:
-        if state.session_id not in self._ready_session_set:
-            return
-        self._ready_session_set.remove(state.session_id)
-        self._ready_session_ids = deque(
-            session_id for session_id in self._ready_session_ids if session_id != state.session_id
-        )
 
     def _drain_ready_sessions(self) -> None:
         while self._pump_next_ready_session(raise_errors=False):
@@ -669,29 +685,6 @@ class LiveServiceRuntime:
                 return False
         self._process_in_flight_item(state, item, work, raise_errors=raise_errors)
         return True
-
-    def _pump_one(self, state: _RuntimeSession) -> None:
-        with self._lock:
-            self._discard_ready_locked(state)
-            if state.session_id in self._in_flight_session_ids:
-                return
-            item = state.arbiter.next_work()
-            if item is None:
-                if state.session.snapshot().pending_span_ids:
-                    raise LiveServiceIdentityCommitFailure(
-                        "live service has unresolved frozen spans without queued work.",
-                        code="unqueued_frozen_span",
-                    )
-                return
-            self._in_flight_session_ids.add(state.session_id)
-            self._record_event(state, "canonical_started", {"item_id": item.id})
-            try:
-                work = state.coordinator.capture_work_item(item)
-            except Exception as exc:
-                self._in_flight_session_ids.discard(state.session_id)
-                self._fail(state, self._failure_from_exception(exc))
-                raise
-        self._process_in_flight_item(state, item, work, raise_errors=True)
 
     def _process_in_flight_item(self, state: _RuntimeSession, item: Any, work: Any, *, raise_errors: bool) -> None:
         try:
@@ -755,6 +748,11 @@ class LiveServiceRuntime:
         state.events.append(event)
         state.next_event_seq += 1
         state.work_changed.set()
+        self._notify_drain_waiters_locked(state)
+
+    def _notify_drain_waiters_locked(self, state: _RuntimeSession) -> None:
+        for waiter in tuple(state.drain_waiters):
+            waiter.loop.call_soon_threadsafe(waiter.event.set)
 
     def _fail(
         self,
