@@ -19,7 +19,9 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
     LiveServiceFailureKind,
+    LiveServiceIdentityCommitFailure,
     LiveServiceProviderConfigFailure,
+    LiveServiceRtfFailure,
     LiveServiceRuntime,
     hash_config,
 )
@@ -81,6 +83,14 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertEqual(
             live_service_replay._exit_code_for_service_failure(LiveServiceFailureKind.TRANSPORT_PACING),
             live_service_replay.ServiceReplayTransportFailure.exit_code,
+        )
+        self.assertEqual(
+            live_service_replay._exit_code_for_service_failure(LiveServiceFailureKind.IDENTITY_COMMIT),
+            live_service_replay.ServiceReplayIdentityCommitFailure.exit_code,
+        )
+        self.assertEqual(
+            live_service_replay._exit_code_for_service_failure(LiveServiceFailureKind.RTF),
+            live_service_replay.ServiceReplayRtfFailure.exit_code,
         )
 
     def test_in_memory_paced_runner_uses_descriptor_frames_and_final_short_frame(self):
@@ -205,6 +215,89 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertEqual(evaluator[0]["status"], "failed")
         self.assertEqual(evaluator[0]["failure_kind"], "transport_pacing")
 
+    def test_identity_commit_failure_writes_typed_terminal_artifacts(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = live_service_replay.InMemoryLiveReplayService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(False,),
+                session_ids=("session-1",),
+                identity=PreparingIdentity(status="abstain", reason="ambiguous_identity"),
+            )
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=400)
+            with self.assertRaises(live_service_replay.ServiceReplayIdentityCommitFailure):
+                live_service_replay.run_service_replay(
+                    service=service,
+                    audio_path=audio,
+                    out_dir=root / "out",
+                    pace=1.0,
+                    max_pacing_lag=0.5,
+                    runs=1,
+                    expect_revision=descriptor.source_revision,
+                    expect_provider_hash=descriptor.provider_manifest_hash,
+                    expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                    monotonic=lambda: 0.0,
+                    sleep=lambda seconds: None,
+                )
+
+            trace = _jsonl(root / "out" / "run-001" / "trace.jsonl")
+            summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+            evaluator = _jsonl(root / "out" / "run-001" / "evaluator.jsonl")
+
+        self.assertEqual(trace[-1]["failure_kind"], "identity_commit")
+        self.assertEqual(trace[-1]["service_failure"]["kind"], "identity_commit")
+        self.assertEqual(summary["failure_kind"], "identity_commit")
+        self.assertEqual(summary["accepted_samples"], 400)
+        self.assertEqual(summary["accounted_samples"], 0)
+        self.assertFalse(summary["exact_accounting"])
+        self.assertEqual(evaluator[0]["failure_kind"], "identity_commit")
+        self.assertFalse(evaluator[-1]["exact_accounting"])
+
+    def test_rtf_failure_writes_typed_terminal_artifacts_after_admission(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = StopFailureService(
+            _runtime(descriptor=descriptor, speech=(False,), session_ids=("session-1",)),
+            LiveServiceRtfFailure("canonical decoder p95 RTF bound exceeded.", code="rtf_exceeded"),
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=400)
+            with self.assertRaises(live_service_replay.ServiceReplayRtfFailure):
+                live_service_replay.run_service_replay(
+                    service=service,
+                    audio_path=audio,
+                    out_dir=root / "out",
+                    pace=1.0,
+                    max_pacing_lag=0.5,
+                    runs=1,
+                    expect_revision=descriptor.source_revision,
+                    expect_provider_hash=descriptor.provider_manifest_hash,
+                    expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                    monotonic=lambda: 0.0,
+                    sleep=lambda seconds: None,
+                )
+
+            trace = _jsonl(root / "out" / "run-001" / "trace.jsonl")
+            summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+            evaluator = _jsonl(root / "out" / "run-001" / "evaluator.jsonl")
+
+        self.assertEqual(service.frame_sequences, [0])
+        self.assertEqual(service.abort_reasons, ["canonical decoder p95 RTF bound exceeded."])
+        self.assertEqual(trace[-1]["failure_kind"], "rtf")
+        self.assertEqual(trace[-1]["service_failure"]["code"], "rtf_exceeded")
+        self.assertEqual(summary["failure_kind"], "rtf")
+        self.assertEqual(summary["accepted_samples"], 400)
+        self.assertEqual(summary["accounted_samples"], 0)
+        self.assertFalse(summary["exact_accounting"])
+        self.assertEqual(evaluator[0]["failure_kind"], "rtf")
+
     def test_pacing_lag_fails_before_late_frame_admission(self):
         descriptor = _descriptor(frame_samples=400)
         service = RecordingService(_runtime(descriptor=descriptor, speech=(False,), session_ids=("session-1",)))
@@ -264,10 +357,13 @@ class LiveServiceReplayContractTest(unittest.TestCase):
                 AudioFrame(sequence=0, pcm=b"\0\0" * 400, sample_count=400),
             )
             events = service.events(created.session_id, since_seq=0)
+            filtered_events = service.events(created.session_id, since_seq=1)
 
             self.assertEqual(created.session_id, "http-session")
             self.assertEqual(result.ack.accepted_samples, 400)
             self.assertEqual(events[0].kind, "session_created")
+            self.assertEqual([event.seq for event in filtered_events], [1])
+            self.assertEqual(filtered_events[0].kind, "frame_accepted")
         finally:
             server.should_exit = True
             thread.join(timeout=5)
@@ -303,6 +399,7 @@ def _runtime(
     descriptor: LiveServiceDescriptor,
     speech: tuple[bool, ...],
     session_ids: tuple[str, ...],
+    identity: "PreparingIdentity | None" = None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
     return LiveServiceRuntime(
@@ -312,7 +409,7 @@ def _runtime(
         ),
         speech_provider_factory=lambda: ScriptedSpeechProvider(speech),
         decoder_factory=lambda: RecordingDecoder(),
-        identity_preparer_factory=lambda: PreparingIdentity(),
+        identity_preparer_factory=lambda: identity or PreparingIdentity(),
         session_id_factory=lambda: next(ids),
     )
 
@@ -342,6 +439,9 @@ class RecordingDecoder:
 
 @dataclass
 class PreparingIdentity:
+    status: str = "prepared"
+    reason: str | None = None
+
     def prepare(
         self,
         *,
@@ -363,6 +463,8 @@ class PreparingIdentity:
             base_snapshot_version=base_snapshot.version,
             proposed_snapshot=proposed,
             relabeled_transcript="[0][S01]stable[0.01]",
+            status=self.status,
+            reason=self.reason,
         )
 
 
@@ -385,6 +487,16 @@ class AmbiguousOnceService(RecordingService):
     def accept_frame(self, session_id: str, frame: AudioFrame):
         self.frame_sequences.append(frame.sequence)
         raise live_service_replay.ServiceReplayTransportFailure("timeout after possible admission")
+
+
+class StopFailureService(RecordingService):
+    def __init__(self, runtime: LiveServiceRuntime, failure: Exception):
+        super().__init__(runtime)
+        self.failure = failure
+
+    async def stop(self, session_id: str, deadline: float):
+        del session_id, deadline
+        raise self.failure
 
 
 class ScriptedClock:
