@@ -639,9 +639,19 @@ class LiveServiceRuntime:
                     continue
                 self._in_flight_session_ids.add(state.session_id)
                 self._record_event(state, "canonical_started", {"item_id": item.id})
-                self._process_in_flight_item(state, item, raise_errors=raise_errors)
-                return True
-            return False
+                try:
+                    work = state.coordinator.capture_work_item(item)
+                except Exception as exc:
+                    self._in_flight_session_ids.discard(state.session_id)
+                    self._fail(state, self._failure_from_exception(exc))
+                    if raise_errors:
+                        raise
+                    continue
+                break
+            else:
+                return False
+        self._process_in_flight_item(state, item, work, raise_errors=raise_errors)
+        return True
 
     def _pump_one(self, state: _RuntimeSession) -> None:
         with self._lock:
@@ -658,44 +668,64 @@ class LiveServiceRuntime:
                 return
             self._in_flight_session_ids.add(state.session_id)
             self._record_event(state, "canonical_started", {"item_id": item.id})
-            self._process_in_flight_item(state, item, raise_errors=True)
+            try:
+                work = state.coordinator.capture_work_item(item)
+            except Exception as exc:
+                self._in_flight_session_ids.discard(state.session_id)
+                self._fail(state, self._failure_from_exception(exc))
+                raise
+        self._process_in_flight_item(state, item, work, raise_errors=True)
 
-    def _process_in_flight_item(self, state: _RuntimeSession, item: Any, *, raise_errors: bool) -> None:
+    def _process_in_flight_item(self, state: _RuntimeSession, item: Any, work: Any, *, raise_errors: bool) -> None:
         try:
-            result = state.coordinator.process_work_item(item)
+            prepared = state.coordinator.prepare_work_item(work)
         except Exception as exc:
-            self._fail(state, self._failure_from_exception(exc))
+            with self._lock:
+                self._in_flight_session_ids.discard(state.session_id)
+                self._fail(state, self._failure_from_exception(exc))
             if raise_errors:
                 raise
             return
-        finally:
-            self._in_flight_session_ids.discard(state.session_id)
-        self._record_event(
-            state,
-            "canonical_processed",
-            {
-                "item_id": item.id,
-                "span_id": result.span_id,
-                "submitted": result.submitted,
-                "identity_status": result.identity_status,
-                "committed_samples": result.committed_samples,
-            },
-        )
-        if not result.submitted:
-            failure = LiveServiceIdentityCommitFailure(
-                "canonical work did not atomically publish.",
-                code="canonical_not_submitted",
-                detail={"span_id": result.span_id, "identity_status": result.identity_status},
-            ).failure
-            self._fail(state, failure)
-            if raise_errors:
-                raise LiveServiceIdentityCommitFailure(
-                    failure.message,
-                    code=failure.code,
-                    detail=failure.detail,
+
+        try:
+            with self._lock:
+                self._in_flight_session_ids.discard(state.session_id)
+                if state.terminal_failure is not None:
+                    return
+                result = state.coordinator.submit_prepared_work(prepared)
+                self._record_event(
+                    state,
+                    "canonical_processed",
+                    {
+                        "item_id": item.id,
+                        "span_id": result.span_id,
+                        "submitted": result.submitted,
+                        "identity_status": result.identity_status,
+                        "committed_samples": result.committed_samples,
+                    },
                 )
-        elif state.arbiter.snapshot().live_canonical > 0:
-            self._mark_ready_locked(state)
+                if not result.submitted:
+                    failure = LiveServiceIdentityCommitFailure(
+                        "canonical work did not atomically publish.",
+                        code="canonical_not_submitted",
+                        detail={"span_id": result.span_id, "identity_status": result.identity_status},
+                    ).failure
+                    self._fail(state, failure)
+                    if raise_errors:
+                        raise LiveServiceIdentityCommitFailure(
+                            failure.message,
+                            code=failure.code,
+                            detail=failure.detail,
+                        )
+                elif state.arbiter.snapshot().live_canonical > 0:
+                    self._mark_ready_locked(state)
+        except Exception as exc:
+            with self._lock:
+                self._in_flight_session_ids.discard(state.session_id)
+                self._fail(state, self._failure_from_exception(exc))
+            if raise_errors:
+                raise
+            return
 
     def _record_event(self, state: _RuntimeSession, kind: str, payload: Mapping[str, Any]) -> None:
         event = LiveServiceEvent(

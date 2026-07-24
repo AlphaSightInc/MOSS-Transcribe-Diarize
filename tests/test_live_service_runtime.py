@@ -176,6 +176,23 @@ class RecordingDecoder:
         return InferenceTranscript(f"[0][S01]decoded[{seconds:g}]")
 
 
+class BlockingDecoder(RecordingDecoder):
+    def __init__(self):
+        super().__init__()
+        self.entered = threading.Event()
+        self.release = threading.Event()
+        self.finished = threading.Event()
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        self.entered.set()
+        if not self.release.wait(timeout=1.0):
+            raise RuntimeError("blocked decoder was not released.")
+        try:
+            return super().transcribe_pcm(span=span, pcm=pcm)
+        finally:
+            self.finished.set()
+
+
 class LabelingDecoder(RecordingDecoder):
     def __init__(self):
         super().__init__()
@@ -247,6 +264,29 @@ def _runtime(
     )
 
 
+def _threaded_call(fn):
+    done = threading.Event()
+    result: dict[str, object] = {}
+
+    def run() -> None:
+        try:
+            result["value"] = fn()
+        except BaseException as exc:  # pragma: no cover - re-raised by the caller
+            result["error"] = exc
+        finally:
+            done.set()
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    return done, result, thread
+
+
+def _threaded_result(result: dict[str, object]):
+    if "error" in result:
+        raise result["error"]
+    return result["value"]
+
+
 def test_runtime_frame_admission_queues_without_canonical_decode():
     decoder = RecordingDecoder()
     scheduler = _ManualCanonicalPumpScheduler()
@@ -273,6 +313,58 @@ def test_runtime_frame_admission_queues_without_canonical_decode():
     event_kinds = [event.kind for event in runtime.events(created.session_id)]
     assert event_kinds.index("canonical_queued") < event_kinds.index("canonical_started")
     assert event_kinds.index("canonical_started") < event_kinds.index("canonical_processed")
+
+
+def test_blocked_decode_does_not_block_frame_admission_or_snapshot_reads():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(
+        speech=(True, False, True),
+        decoder=decoder,
+        descriptor=_descriptor(max_queue_depth=2, max_retained_samples=6000),
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    queued = runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert queued.queued_item_ids == (0,)
+    assert decoder.entered.wait(timeout=1.0)
+
+    snapshot_done, snapshot_result, snapshot_thread = _threaded_call(
+        lambda: runtime.snapshot(created.session_id)
+    )
+    if not snapshot_done.wait(timeout=0.25):
+        decoder.release.set()
+        snapshot_thread.join(timeout=1.0)
+        pytest.fail("snapshot read blocked behind canonical decode.")
+    in_flight = _threaded_result(snapshot_result)
+    assert in_flight.pending_work_items == 1
+    assert in_flight.session.accounted_samples == 0
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert "canonical_started" in event_kinds
+    assert "canonical_processed" not in event_kinds
+
+    accept_done, accept_result, accept_thread = _threaded_call(
+        lambda: runtime.accept_frame(created.session_id, _frame(2, byte=b"c"))
+    )
+    if not accept_done.wait(timeout=0.25):
+        decoder.release.set()
+        accept_thread.join(timeout=1.0)
+        pytest.fail("frame admission blocked behind canonical decode.")
+    accepted = _threaded_result(accept_result)
+    assert accepted.snapshot.session.accepted_samples == 3000
+    assert accepted.snapshot.session.accounted_samples == 0
+    assert accepted.queued_item_ids == (1,)
+    assert accepted.snapshot.pending_work_items == 2
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+    drained = runtime.snapshot(created.session_id)
+    assert drained.session.accounted_samples == 2000
+    assert drained.pending_work_items == 0
 
 
 def test_manual_canonical_scheduler_is_coalesced_and_deterministic():
