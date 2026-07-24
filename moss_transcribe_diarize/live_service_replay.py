@@ -40,6 +40,9 @@ from .app.live_session import (
 )
 
 
+REPLAY_ARTIFACT_SCHEMA_VERSION = 1
+
+
 class ServiceReplayFailure(RuntimeError):
     exit_code = 2
     failure_kind = "integrity"
@@ -283,14 +286,43 @@ def run_service_replay(
     manifest_path = out_dir / "replay-manifest.json"
     audio_samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
     manifest: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
+        "artifact_schema_versions": {
+            "evaluator": REPLAY_ARTIFACT_SCHEMA_VERSION,
+            "manifest": REPLAY_ARTIFACT_SCHEMA_VERSION,
+            "summary": REPLAY_ARTIFACT_SCHEMA_VERSION,
+            "trace": REPLAY_ARTIFACT_SCHEMA_VERSION,
+        },
         "audio": {
             "path": str(audio_path),
             "pcm_sha256": hashlib.sha256(pcm).hexdigest(),
             "sample_rate": LIVE_SAMPLE_RATE,
             "sample_count": audio_samples,
             "bytes": len(pcm),
+            "duration_seconds": audio_samples / LIVE_SAMPLE_RATE,
         },
+        "cli": {
+            "expect_config_hash": expect_config_hash,
+            "expect_provider_hash": expect_provider_hash,
+            "expect_revision": expect_revision,
+            "max_pacing_lag": max_pacing_lag,
+            "pace": pace,
+            "runs": runs,
+        },
+        "expected_service": {
+            "combined_config_hash": expect_config_hash,
+            "provider_manifest_hash": expect_provider_hash,
+            "source_revision": expect_revision,
+        },
+        "run_artifacts": [
+            {
+                "run_index": index,
+                "trace": f"run-{index:03d}/trace.jsonl",
+                "summary": f"run-{index:03d}/summary.json",
+                "evaluator": f"run-{index:03d}/evaluator.jsonl",
+            }
+            for index in range(1, runs + 1)
+        ],
         "runs": runs,
         "pace": pace,
         "max_pacing_lag": max_pacing_lag,
@@ -310,7 +342,7 @@ def run_service_replay(
         last_evaluator = run_dir / "evaluator.jsonl"
         trace: list[dict[str, Any]] = []
         summary: dict[str, Any] = {
-            "schema_version": 1,
+            "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
             "run_index": run_index,
             "status": "failed",
             "failure_kind": None,
@@ -323,20 +355,21 @@ def run_service_replay(
             created = service.create()
             session_id = created.session_id
             descriptor = created.descriptor
+            if run_index == 1:
+                manifest["descriptor"] = descriptor.to_dict()
+                manifest["frame_samples"] = descriptor.frame_samples
+                manifest["frame_count"] = _frame_count(audio_samples, descriptor.frame_samples)
+                _write_json(manifest_path, manifest)
             _validate_descriptor(
                 descriptor,
                 expect_revision=expect_revision,
                 expect_provider_hash=expect_provider_hash,
                 expect_config_hash=expect_config_hash,
             )
-            if run_index == 1:
-                manifest["descriptor"] = descriptor.to_dict()
-                manifest["frame_samples"] = descriptor.frame_samples
-                manifest["frame_count"] = _frame_count(audio_samples, descriptor.frame_samples)
-                _write_json(manifest_path, manifest)
 
             trace.append(
                 {
+                    "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
                     "seq": len(trace),
                     "kind": "session_created",
                     "session_id": session_id,
@@ -372,6 +405,7 @@ def run_service_replay(
                     raise ServiceReplayTransportFailure("service acknowledged an unexpected frame sequence or offset.")
                 trace.append(
                     {
+                        "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
                         "seq": len(trace),
                         "kind": "frame_accepted",
                         "frame_sequence": sequence,
@@ -388,7 +422,14 @@ def run_service_replay(
 
             snapshot = asyncio.run(service.stop(session_id, deadline=5.0))
             for event in service.events(session_id, since_seq=0):
-                trace.append({"seq": len(trace), "kind": "service_event", "event": event.to_dict()})
+                trace.append(
+                    {
+                        "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
+                        "seq": len(trace),
+                        "kind": "service_event",
+                        "event": event.to_dict(),
+                    }
+                )
             summary.update(
                 {
                     "status": "succeeded",
@@ -398,11 +439,20 @@ def run_service_replay(
                     "committed_prefix_hash": snapshot.session.committed_prefix_hash,
                 }
             )
-            trace.append({"seq": len(trace), "kind": "terminal", "status": "succeeded"})
+            trace.append(
+                {
+                    "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
+                    "seq": len(trace),
+                    "kind": "terminal",
+                    "status": "succeeded",
+                    "snapshot": snapshot.to_dict(),
+                }
+            )
         except ServiceReplayFailure as exc:
             summary["failure_kind"] = exc.failure_kind
             trace.append(
                 {
+                    "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
                     "seq": len(trace),
                     "kind": "terminal",
                     "status": "failed",
@@ -410,7 +460,9 @@ def run_service_replay(
                     "message": str(exc),
                 }
             )
-            _abort_after_failure(service, session_id, str(exc))
+            abort_snapshot = _abort_after_failure(service, session_id, str(exc))
+            if abort_snapshot is not None:
+                trace[-1]["snapshot"] = abort_snapshot.to_dict()
             _write_run_artifacts(last_trace, last_summary, last_evaluator, trace, summary)
             if not manifest_path.exists():
                 _write_json(manifest_path, manifest)
@@ -420,6 +472,7 @@ def run_service_replay(
             summary["failure_kind"] = replay_exc.failure_kind
             trace.append(
                 {
+                    "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
                     "seq": len(trace),
                     "kind": "terminal",
                     "status": "failed",
@@ -427,7 +480,9 @@ def run_service_replay(
                     "service_failure": exc.failure.to_dict(),
                 }
             )
-            _abort_after_failure(service, session_id, exc.failure.message)
+            abort_snapshot = _abort_after_failure(service, session_id, exc.failure.message)
+            if abort_snapshot is not None:
+                trace[-1]["snapshot"] = abort_snapshot.to_dict()
             _write_run_artifacts(last_trace, last_summary, last_evaluator, trace, summary)
             if not manifest_path.exists():
                 _write_json(manifest_path, manifest)
@@ -489,13 +544,17 @@ def _frame_count(sample_count: int, frame_samples: int) -> int:
     return (sample_count + frame_samples - 1) // frame_samples if sample_count else 0
 
 
-def _abort_after_failure(service: LiveReplayService, session_id: str | None, reason: str) -> None:
+def _abort_after_failure(
+    service: LiveReplayService,
+    session_id: str | None,
+    reason: str,
+) -> LiveServiceSnapshot | None:
     if session_id is None:
-        return
+        return None
     try:
-        asyncio.run(service.abort(session_id, reason))
+        return asyncio.run(service.abort(session_id, reason))
     except Exception:
-        return
+        return None
 
 
 def _write_run_artifacts(
@@ -505,27 +564,87 @@ def _write_run_artifacts(
     trace: list[dict[str, Any]],
     summary: dict[str, Any],
 ) -> None:
+    summary = _summary_from_trace(trace, summary)
     trace_path.write_text(
         "".join(json.dumps(item, sort_keys=True, separators=(",", ":")) + "\n" for item in trace),
         encoding="utf-8",
     )
     _write_json(summary_path, summary)
     evaluator_path.write_text(
-        json.dumps(
-            {
-                "schema_version": 1,
-                "run_index": summary["run_index"],
-                "status": summary["status"],
-                "accepted_samples": summary["accepted_samples"],
-                "accounted_samples": summary["accounted_samples"],
-                "failure_kind": summary["failure_kind"],
-            },
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        + "\n",
+        "".join(
+            json.dumps(item, sort_keys=True, separators=(",", ":")) + "\n"
+            for item in _evaluator_records_from_summary(summary)
+        ),
         encoding="utf-8",
     )
+
+
+def _summary_from_trace(trace: list[dict[str, Any]], seed: dict[str, Any]) -> dict[str, Any]:
+    summary = dict(seed)
+    frame_events = [item for item in trace if item.get("kind") == "frame_accepted"]
+    terminal = next((item for item in reversed(trace) if item.get("kind") == "terminal"), None)
+    terminal_snapshot = terminal.get("snapshot") if isinstance(terminal, dict) else None
+    session_snapshot = terminal_snapshot.get("session") if isinstance(terminal_snapshot, dict) else None
+
+    accepted_samples = summary.get("accepted_samples", 0)
+    if frame_events:
+        accepted_samples = int(frame_events[-1]["ack"]["accepted_samples"])
+    if isinstance(session_snapshot, dict):
+        accepted_samples = int(session_snapshot["accepted_samples"])
+
+    accounted_samples = summary.get("accounted_samples", 0)
+    committed_prefix_hash = summary.get("committed_prefix_hash")
+    if isinstance(session_snapshot, dict):
+        accounted_samples = int(session_snapshot["accounted_samples"])
+        committed_prefix_hash = str(session_snapshot["committed_prefix_hash"])
+
+    summary.update(
+        {
+            "trace_schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
+            "trace_event_count": len(trace),
+            "terminal_seq": None if terminal is None else int(terminal["seq"]),
+            "status": summary["status"] if terminal is None else str(terminal["status"]),
+            "failure_kind": None if terminal is None else terminal.get("failure_kind"),
+            "frame_count": len(frame_events),
+            "scheduled_sample_offsets": [int(item["scheduled_sample"]) for item in frame_events],
+            "accepted_samples": accepted_samples,
+            "accounted_samples": accounted_samples,
+            "exact_accounting": accepted_samples == accounted_samples,
+        }
+    )
+    if committed_prefix_hash is not None:
+        summary["committed_prefix_hash"] = committed_prefix_hash
+    return summary
+
+
+def _evaluator_records_from_summary(summary: dict[str, Any]) -> list[dict[str, Any]]:
+    base = {
+        "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
+        "run_index": summary["run_index"],
+    }
+    return [
+        {
+            **base,
+            "kind": "terminal_outcome",
+            "status": summary["status"],
+            "failure_kind": summary["failure_kind"],
+            "terminal_seq": summary["terminal_seq"],
+        },
+        {
+            **base,
+            "kind": "frame_sequence",
+            "frame_count": summary["frame_count"],
+            "scheduled_sample_offsets": summary["scheduled_sample_offsets"],
+        },
+        {
+            **base,
+            "kind": "sample_accounting",
+            "accepted_samples": summary["accepted_samples"],
+            "accounted_samples": summary["accounted_samples"],
+            "exact_accounting": summary["exact_accounting"],
+            "committed_prefix_hash": summary.get("committed_prefix_hash"),
+        },
+    ]
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

@@ -110,13 +110,30 @@ class LiveServiceReplayContractTest(unittest.TestCase):
 
             trace = _jsonl(outputs.trace_path)
             summary = json.loads(outputs.summary_path.read_text(encoding="utf-8"))
+            manifest = json.loads(outputs.manifest_path.read_text(encoding="utf-8"))
+            evaluator = _jsonl(outputs.evaluator_path)
             frame_events = [item for item in trace if item["kind"] == "frame_accepted"]
 
+        self.assertTrue(all(item["schema_version"] == 1 for item in trace))
+        self.assertEqual(manifest["artifact_schema_versions"]["trace"], 1)
+        self.assertEqual(manifest["audio"]["sample_count"], 900)
+        self.assertEqual(manifest["audio"]["duration_seconds"], 900 / LIVE_SAMPLE_RATE)
+        self.assertEqual(manifest["frame_samples"], 400)
+        self.assertEqual(manifest["frame_count"], 3)
+        self.assertEqual(manifest["descriptor"]["provider_manifest_hash"], descriptor.provider_manifest_hash)
         self.assertEqual([item["sample_count"] for item in frame_events], [400, 400, 100])
         self.assertEqual([item["scheduled_sample"] for item in frame_events], [0, 400, 800])
         self.assertEqual(summary["status"], "succeeded")
+        self.assertEqual(summary["trace_event_count"], len(trace))
+        self.assertEqual(summary["scheduled_sample_offsets"], [0, 400, 800])
         self.assertEqual(summary["accepted_samples"], 900)
         self.assertEqual(summary["accounted_samples"], 900)
+        self.assertTrue(summary["exact_accounting"])
+        self.assertEqual(
+            [item["kind"] for item in evaluator],
+            ["terminal_outcome", "frame_sequence", "sample_accounting"],
+        )
+        self.assertTrue(evaluator[-1]["exact_accounting"])
 
     def test_descriptor_mismatch_fails_before_audio_admission(self):
         descriptor = _descriptor()
@@ -143,8 +160,17 @@ class LiveServiceReplayContractTest(unittest.TestCase):
                 )
 
             summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+            manifest = json.loads((root / "out" / "replay-manifest.json").read_text(encoding="utf-8"))
+            trace = _jsonl(root / "out" / "run-001" / "trace.jsonl")
 
         self.assertEqual(summary["failure_kind"], "provider_config")
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["accepted_samples"], 0)
+        self.assertEqual(summary["accounted_samples"], 0)
+        self.assertEqual(manifest["descriptor"]["source_revision"], descriptor.source_revision)
+        self.assertEqual(trace[-1]["kind"], "terminal")
+        self.assertEqual(trace[-1]["failure_kind"], "provider_config")
+        self.assertIn("snapshot", trace[-1])
         self.assertEqual(runtime.snapshot("session-1").session.accepted_samples, 0)
 
     def test_ambiguous_frame_failure_aborts_without_retrying_sequence(self):
@@ -171,10 +197,13 @@ class LiveServiceReplayContractTest(unittest.TestCase):
                 )
 
             summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+            evaluator = _jsonl(root / "out" / "run-001" / "evaluator.jsonl")
 
         self.assertEqual(service.frame_sequences, [0])
         self.assertEqual(service.abort_reasons, ["timeout after possible admission"])
         self.assertEqual(summary["failure_kind"], "transport_pacing")
+        self.assertEqual(evaluator[0]["status"], "failed")
+        self.assertEqual(evaluator[0]["failure_kind"], "transport_pacing")
 
     def test_pacing_lag_fails_before_late_frame_admission(self):
         descriptor = _descriptor(frame_samples=400)
