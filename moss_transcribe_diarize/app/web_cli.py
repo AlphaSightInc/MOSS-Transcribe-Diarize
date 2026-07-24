@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
@@ -21,18 +20,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--speaker-identity-tier-b",
         action="store_true",
-        default=_env_flag("MOSS_SPEAKER_IDENTITY_TIER_B", default=False),
         help="Enable the default-off file-mode Tier B speaker identity provider.",
     )
     parser.add_argument(
         "--speaker-identity-state",
-        default=os.environ.get("MOSS_SPEAKER_IDENTITY_STATE"),
         help="Existing local WeSpeaker ResNet152-LM state file required when Tier B is enabled.",
     )
     parser.add_argument(
         "--speaker-identity-fixture",
-        default=os.environ.get("MOSS_SPEAKER_IDENTITY_FIXTURE"),
-        help="Optional tiny WAV fixture for Tier B smoke preflight.",
+        help="Tiny WAV fixture required for Tier B smoke preflight when enabled.",
     )
     parser.add_argument("--runs-dir", default="runs")
     parser.add_argument("--host", default="127.0.0.1")
@@ -74,14 +70,6 @@ def main() -> None:
         speaker_identity_fixture=args.speaker_identity_fixture,
     )
     uvicorn.run(app, host=args.host, port=args.port)
-
-
-def _env_flag(name: str, *, default: bool) -> bool:
-    value = os.environ.get(name)
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
-
 
 if __name__ == "__main__":
     main()

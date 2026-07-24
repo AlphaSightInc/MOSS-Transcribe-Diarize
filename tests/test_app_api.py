@@ -201,31 +201,14 @@ class AppApiTest(unittest.TestCase):
                     speaker_identity_tier_b=True,
                 )
 
-    def test_vllm_speaker_identity_uses_green_preflight_resolver(self):
-        from moss_transcribe_diarize.app.speaker_identity import TierBPreflight, tier_b_provider_manifest
+    def test_vllm_speaker_identity_enablement_requires_smoke_fixture(self):
         from moss_transcribe_diarize.app.server import create_app
-
-        class PassingAdapter:
-            descriptor = tier_b_provider_manifest()
-
-            def __init__(self, state_path):
-                self.state_path = Path(state_path)
-                self.preflight_calls = []
-
-            def preflight(self, *, fixture_path=None):
-                self.preflight_calls.append(fixture_path)
-                return TierBPreflight(True, None, self.descriptor)
-
-            def embed(self, wav_path, intervals):
-                del wav_path, intervals
-                return [1.0] + [0.0] * 255
 
         with tempfile.TemporaryDirectory() as tmpdir:
             state = Path(tmpdir) / "state.pt"
             state.write_bytes(b"state")
-            adapter = PassingAdapter(state)
-            with patch("moss_transcribe_diarize.app.server.WeSpeakerResNet152LmAdapter", return_value=adapter):
-                app = create_app(
+            with self.assertRaisesRegex(ValueError, "--speaker-identity-fixture"):
+                create_app(
                     model_path="unused-local-model",
                     runs_dir=tmpdir,
                     backend="vllm",
@@ -234,10 +217,93 @@ class AppApiTest(unittest.TestCase):
                     speaker_identity_state=state,
                 )
 
+    def test_vllm_speaker_identity_uses_real_green_preflight_resolver(self):
+        from moss_transcribe_diarize.app import speaker_identity
+        from moss_transcribe_diarize.app.server import create_app
+
+        class PassingLoadedProvider:
+            def __init__(self, state_path, *, device):
+                self.state_path = Path(state_path)
+                self.device = device
+
+            def load(self):
+                return speaker_identity.tier_b_provider_manifest(device=self.device)
+
+            def embed(self, wav_path, intervals):
+                self.assert_loaded_input(wav_path, intervals)
+                return [1.0] + [0.0] * 255
+
+            def assert_loaded_input(self, wav_path, intervals):
+                assert self.state_path.exists()
+                assert Path(wav_path).exists()
+                assert intervals == [(0.0, 2.0)]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            state = Path(tmpdir) / "state.pt"
+            state.write_bytes(b"state")
+            fixture = Path(tmpdir) / "fixture.wav"
+            fixture.write_bytes(b"fixture")
+            spec = speaker_identity.TierBAssetSpec(
+                state_sha256=hashlib.sha256(state.read_bytes()).hexdigest(),
+            )
+            with (
+                patch.object(speaker_identity, "PINNED_TIER_B_ASSET_SPEC", spec),
+                patch.object(speaker_identity, "_PyannoteWeSpeakerEmbedder", PassingLoadedProvider),
+            ):
+                app = create_app(
+                    model_path="unused-local-model",
+                    runs_dir=tmpdir,
+                    backend="vllm",
+                    vllm_base_url="http://vllm.test:8000/v1",
+                    speaker_identity_tier_b=True,
+                    speaker_identity_state=state,
+                    speaker_identity_fixture=fixture,
+                )
+
             contract = app.state.manager.model_runner.runtime_info()["speaker_identity"]
             self.assertTrue(contract["config"]["tier_b"]["enabled"])
             self.assertTrue(contract["availability"]["available"])
-            self.assertEqual(adapter.preflight_calls, [None, None])
+            self.assertEqual(contract["provider"]["state_sha256"], spec.state_sha256)
+            self.assertEqual(contract["provider"]["embedding_dimension"], 256)
+            self.assertEqual(contract["provider"]["device"], "cpu")
+            self.assertEqual(contract["provider"]["smoke"]["fixture"], str(fixture))
+
+    def test_vllm_speaker_identity_rejects_lazy_provider_failure_before_app_construction(self):
+        from moss_transcribe_diarize.app import speaker_identity
+        from moss_transcribe_diarize.app.server import create_app
+
+        class LazyMissingProvider:
+            def __init__(self, state_path, *, device):
+                del state_path, device
+
+            def load(self):
+                raise ImportError("install the speaker-identity optional extra")
+
+            def embed(self, wav_path, intervals):
+                raise AssertionError("embed must not run after provider load fails")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            state = Path(tmpdir) / "state.pt"
+            state.write_bytes(b"state")
+            fixture = Path(tmpdir) / "fixture.wav"
+            fixture.write_bytes(b"fixture")
+            spec = speaker_identity.TierBAssetSpec(
+                state_sha256=hashlib.sha256(state.read_bytes()).hexdigest(),
+            )
+            with (
+                patch.object(speaker_identity, "PINNED_TIER_B_ASSET_SPEC", spec),
+                patch.object(speaker_identity, "_PyannoteWeSpeakerEmbedder", LazyMissingProvider),
+                self.assertRaisesRegex(ValueError, "provider_missing"),
+            ):
+                create_app(
+                    model_path="unused-local-model",
+                    runs_dir=tmpdir,
+                    backend="vllm",
+                    vllm_base_url="http://vllm.test:8000/v1",
+                    speaker_identity_tier_b=True,
+                    speaker_identity_state=state,
+                    speaker_identity_fixture=fixture,
+                )
 
     def test_job_lifecycle_and_missing_ffmpeg_render_error(self):
         from fastapi.testclient import TestClient

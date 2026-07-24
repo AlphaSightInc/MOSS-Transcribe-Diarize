@@ -49,7 +49,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--fixture",
         type=Path,
         default=None,
-        help="Optional tiny speech WAV used for deterministic embedding smoke validation.",
+        help="Tiny speech WAV used for deterministic embedding smoke validation; required before service enablement.",
     )
     parser.add_argument(
         "--json",

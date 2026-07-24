@@ -10,7 +10,7 @@ import pytest
 
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 from moss_transcribe_diarize.app.speaker_identity import IdentityResolution
-from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
+from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner, WindowTranscriptionError
 
 
 WINDOW_TRANSCRIPTS = {
@@ -63,11 +63,12 @@ class RecordingExtractor:
 
 
 class StaticIdentityResolver:
-    def __init__(self, *, tier_b_enabled: bool):
+    def __init__(self, *, tier_b_enabled: bool, contract_mutator: Callable[[dict], None] | None = None):
         self.tier_b_enabled = tier_b_enabled
+        self.contract_mutator = contract_mutator
 
     def contract(self) -> dict:
-        return {
+        contract = {
             "schema_version": 2,
             "config": {
                 "tier_a": {
@@ -92,6 +93,9 @@ class StaticIdentityResolver:
             },
             "availability": {"available": self.tier_b_enabled, "reason": None},
         }
+        if self.contract_mutator is not None:
+            self.contract_mutator(contract)
+        return contract
 
     def resolve(self, windows, local_results, *, window_audio_paths) -> IdentityResolution:
         del windows, window_audio_paths
@@ -259,7 +263,7 @@ def test_checkpointed_uninterrupted_three_window_result_persists_contract(tmp_pa
     manifest = _read_json(_manifest_path(checkpoint_dir))
     assert manifest["contract"]["identity"] == runner.identity_resolver.contract()
     assert manifest["identity"] == runner.identity_resolver.contract()
-    assert "tier_b" not in manifest["contract"]
+    assert "tier_b" not in manifest
 
 
 def test_resume_retries_interrupted_suffix_without_replaying_committed_window(tmp_path):
@@ -356,7 +360,10 @@ def test_invalid_checkpoint_is_rejected_before_delegate_invocation(
     delegate = RejectingDelegate()
     runner, _ = _runner(delegate, tmp_path, duration=duration)
 
-    with pytest.raises(Exception, match="checkpoint|manifest|fingerprint|schema|checksum|source|plan|gap|prefix"):
+    with pytest.raises(
+        WindowTranscriptionError,
+        match="checkpoint|manifest|fingerprint|schema|checksum|source|plan|gap|prefix",
+    ):
         runner.transcribe(
             source,
             prompt=prompt,
@@ -369,7 +376,21 @@ def test_invalid_checkpoint_is_rejected_before_delegate_invocation(
     assert delegate.calls == 0, name
 
 
-def test_identity_contract_drift_rejects_checkpoint_before_delegate_invocation(tmp_path):
+@pytest.mark.parametrize(
+    ("name", "mutate_contract"),
+    [
+        ("enabled", lambda contract: contract["config"]["tier_b"].__setitem__("enabled", True)),
+        ("provider", lambda contract: contract["provider"].__setitem__("provider", "other_provider")),
+        ("revision", lambda contract: contract["provider"].__setitem__("revision", "other_revision")),
+        ("state_hash", lambda contract: contract["provider"].__setitem__("state_sha256", "1" * 64)),
+        ("policy", lambda contract: contract["config"]["tier_b"].__setitem__("similarity", 0.71)),
+    ],
+)
+def test_identity_contract_drift_rejects_checkpoint_before_delegate_invocation(
+    tmp_path,
+    name,
+    mutate_contract,
+):
     checkpoint_dir = tmp_path / "checkpoint"
     source = _source(tmp_path)
     initial_runner, _ = _runner(
@@ -383,13 +404,16 @@ def test_identity_contract_drift_rejects_checkpoint_before_delegate_invocation(t
     drifted_runner, _ = _runner(
         delegate,
         tmp_path,
-        identity_resolver=StaticIdentityResolver(tier_b_enabled=True),
+        identity_resolver=StaticIdentityResolver(
+            tier_b_enabled=False,
+            contract_mutator=mutate_contract,
+        ),
     )
 
-    with pytest.raises(Exception, match="checkpoint contract fingerprint mismatch"):
+    with pytest.raises(WindowTranscriptionError, match="checkpoint contract fingerprint mismatch"):
         _transcribe(drifted_runner, source, checkpoint_dir)
 
-    assert delegate.calls == 0
+    assert delegate.calls == 0, name
 
 
 def _rewrite_manifest(checkpoint_dir: Path, mutator: Callable[[dict], dict]) -> None:

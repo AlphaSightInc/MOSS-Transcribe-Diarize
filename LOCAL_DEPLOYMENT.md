@@ -227,9 +227,10 @@ is disabled by default. The pinned trial asset is WeSpeaker ResNet152-LM revisio
 `b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc`.
 When explicitly enabled, the local adapter must find and hash-verify that state
 file before embedding. It performs no job-time download and model weights are not
-committed. The provider contract is CPU-only, 256-dimensional, and lazy: startup
-and job admission only verify an existing local state file and optional tiny WAV
-smoke fixture; inference embeds only selected unresolved singleton evidence.
+committed. The provider contract is CPU-only, 256-dimensional, and default-off:
+explicit enablement loads the existing local state file during startup and requires
+a tiny WAV smoke fixture to verify the loaded provider before any job is admitted.
+Job inference embeds only selected unresolved singleton evidence.
 
 Provider dependencies are isolated in the optional `speaker-identity` extra:
 
@@ -254,19 +255,22 @@ MOSS_SPEAKER_IDENTITY_TIER_B=0
 ```
 
 To enable only after green preflight, set `MOSS_SPEAKER_IDENTITY_TIER_B=1`,
-`MOSS_SPEAKER_IDENTITY_STATE=/path/to/wespeaker-resnet152-lm.pt`, and optionally
+`MOSS_SPEAKER_IDENTITY_STATE=/path/to/wespeaker-resnet152-lm.pt`, and
 `MOSS_SPEAKER_IDENTITY_FIXTURE=tests/fixtures/idea_020_provider_smoke.wav` before
 restarting `moss-web.service`. Rollback is setting
 `MOSS_SPEAKER_IDENTITY_TIER_B=0` and restarting the web service. The service
 fails before job admission if explicit enablement lacks the state path or fails
 package, state, revision, hash, dimension, device, or smoke checks.
+`ops/start-web.sh` is the sole deployment environment adapter and accepts only
+exact `0` or `1`; Python CLI arguments do not reinterpret environment values.
 
 Tier B selects only single-label speech evidence at least 2 seconds long, with at
 most three intervals per node. Candidate centroids are matched with normalized
 cosine >= 0.70 and mutual margin >= 0.20 while preserving same-window cannot-link.
-Short audio, mixed or invalid embeddings, low similarity, low margin, missing
-assets, hash mismatch, and provider failures abstain. Missing or failing Tier B is
-reported as `tier_b_unavailable` and does not discard Tier-A output.
+Short audio, mixed or invalid embeddings, low similarity, and low margin abstain.
+Static package/asset/hash/provider/smoke failures block explicit startup. A
+transient embedding failure after admission is reason-coded and preserves Tier-A
+output without fabricating a merge.
 
 Finished jobs persist additive identity metadata without changing compact
 transcript text, subtitles, or exports. The API exposes `identity_summary` and

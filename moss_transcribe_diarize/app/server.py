@@ -338,9 +338,11 @@ def _build_file_identity_resolver(
         return IdentityResolver(config=config)
     if state_path is None:
         raise ValueError("Speaker identity Tier B requires --speaker-identity-state.")
+    if fixture_path is None:
+        raise ValueError("Speaker identity Tier B requires --speaker-identity-fixture.")
     adapter = WeSpeakerResNet152LmAdapter(Path(state_path).expanduser())
     preflight = adapter.preflight(
-        fixture_path=None if fixture_path is None else Path(fixture_path).expanduser(),
+        fixture_path=Path(fixture_path).expanduser(),
     )
     if not preflight.available:
         raise ValueError(f"Speaker identity Tier B preflight failed: {preflight.reason}.")

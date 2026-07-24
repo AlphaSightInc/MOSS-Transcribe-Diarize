@@ -473,17 +473,14 @@ class WeSpeakerResNet152LmAdapter:
         self.state_path = Path(state_path)
         self.embedder = embedder
         self._loader = loader
-        self.spec = spec or TierBAssetSpec()
+        self._embedder_injected = embedder is not None
+        self._loaded_descriptor: dict[str, Any] | None = None
+        self._verified_preflight: TierBPreflight | None = None
+        self.spec = spec or PINNED_TIER_B_ASSET_SPEC
         self.device = device
         self.descriptor = tier_b_provider_manifest(self.spec, device=self.device)
 
     def preflight(self, *, fixture_path: str | Path | None = None) -> TierBPreflight:
-        if self.spec.provider != PINNED_TIER_B_ASSET_SPEC.provider:
-            return TierBPreflight(False, "provider_mismatch", self.descriptor)
-        if self.spec.revision != PINNED_TIER_B_ASSET_SPEC.revision:
-            return TierBPreflight(False, "revision_mismatch", self.descriptor)
-        if self.spec.embedding_dimension != PINNED_TIER_B_ASSET_SPEC.embedding_dimension:
-            return TierBPreflight(False, "dimension_mismatch", self.descriptor)
         if self.device != "cpu":
             return TierBPreflight(False, "device_not_cpu", self.descriptor)
         if not self.state_path.exists():
@@ -499,9 +496,20 @@ class WeSpeakerResNet152LmAdapter:
             return TierBPreflight(False, "provider_load_failed", self.descriptor | {"detail": exc.__class__.__name__})
         if not callable(getattr(embedder, "embed", None)):
             return TierBPreflight(False, "provider_missing", self.descriptor)
+        loaded_descriptor = dict(self._loaded_descriptor or {})
+        loaded_failure = _loaded_provider_failure(loaded_descriptor, self.descriptor)
+        if loaded_failure is not None:
+            return TierBPreflight(
+                False,
+                loaded_failure,
+                self.descriptor | {"loaded_provider": loaded_descriptor},
+            )
         if fixture_path is None:
-            return TierBPreflight(True, None, self.descriptor)
-        return self._smoke_preflight(embedder, Path(fixture_path))
+            return self._verified_preflight or TierBPreflight(True, None, self.descriptor)
+        result = self._smoke_preflight(embedder, Path(fixture_path))
+        if result.available:
+            self._verified_preflight = result
+        return result
 
     def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
         preflight = self.preflight()
@@ -514,11 +522,21 @@ class WeSpeakerResNet152LmAdapter:
             loader = self._loader or (
                 lambda: _PyannoteWeSpeakerEmbedder(
                     self.state_path,
-                    spec=self.spec,
                     device=self.device,
                 )
             )
             self.embedder = loader()
+        if self._loaded_descriptor is None:
+            if self._embedder_injected:
+                self._loaded_descriptor = dict(self.descriptor)
+            else:
+                load = getattr(self.embedder, "load", None)
+                if not callable(load):
+                    raise TypeError("Tier B provider loader must expose load().")
+                loaded_descriptor = load()
+                if not isinstance(loaded_descriptor, dict):
+                    raise TypeError("Tier B provider load() must return a descriptor.")
+                self._loaded_descriptor = dict(loaded_descriptor)
         return self.embedder
 
     def _smoke_preflight(self, embedder: Any, fixture_path: Path) -> TierBPreflight:
@@ -545,11 +563,14 @@ class WeSpeakerResNet152LmAdapter:
 
 
 class _PyannoteWeSpeakerEmbedder:
-    def __init__(self, state_path: Path, *, spec: TierBAssetSpec, device: str):
+    def __init__(self, state_path: Path, *, device: str):
         self.state_path = state_path
-        self.spec = spec
         self.device = device
         self._inference = None
+
+    def load(self) -> dict[str, Any]:
+        self._load_inference()
+        return tier_b_provider_manifest(device=self.device)
 
     def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
         inference = self._load_inference()
@@ -977,6 +998,19 @@ def _embedding_smoke_failure(
         return "smoke_embedding_not_deterministic"
     if cuda_before not in (None, 0) or cuda_after not in (None, 0):
         return "cuda_allocated"
+    return None
+
+
+def _loaded_provider_failure(loaded: dict[str, Any], expected: dict[str, Any]) -> str | None:
+    for field, reason in (
+        ("provider", "provider_mismatch"),
+        ("revision", "revision_mismatch"),
+        ("state_sha256", "asset_hash_mismatch"),
+        ("embedding_dimension", "dimension_mismatch"),
+        ("device", "device_not_cpu"),
+    ):
+        if loaded.get(field) != expected.get(field):
+            return reason
     return None
 
 
