@@ -412,6 +412,81 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertLess(evaluation["canonical_decode_rtf_p95"], max(values))
         self.assertNotEqual(evaluation["canonical_decode_rtf_p95"], sum(values) / len(values))
 
+    def test_invalid_canonical_decode_rtf_event_payloads_fail_closed(self):
+        cases = {
+            "missing_elapsed": lambda payload: payload.pop("canonical_decode_elapsed_sec"),
+            "negative_elapsed": lambda payload: payload.update({"canonical_decode_elapsed_sec": -0.1}),
+            "non_finite_rtf": lambda payload: payload.update({"canonical_decode_rtf": float("inf")}),
+            "zero_duration": lambda payload: payload.update({"frozen_span_duration_sec": 0.0}),
+        }
+
+        for name, mutate in cases.items():
+            with self.subTest(name=name):
+                event = _canonical_processed_event(seq=1, span_id=7, rtf=0.5)
+                payload = dict(event.payload)
+                mutate(payload)
+                evaluation = live_service_replay._canonical_decode_rtf_evaluation(
+                    (_event_with_payload(event, payload),)
+                )
+
+                self.assertEqual(evaluation["canonical_decode_rtf_values"], [])
+                self.assertEqual(evaluation["canonical_decode_rtf_span_ids"], [])
+                self.assertIsNone(evaluation["canonical_decode_rtf_p95"])
+                self.assertEqual(evaluation["canonical_decode_rtf_bound"], 1.0)
+                self.assertFalse(evaluation["canonical_decode_rtf_passed"])
+                self.assertEqual(evaluation["canonical_decode_rtf_invalid_count"], 1)
+                self.assertEqual(evaluation["canonical_decode_rtf_invalid_measurements"][0]["span_id"], 7)
+
+    def test_invalid_canonical_decode_rtf_event_retains_failure_artifacts(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = CorruptingEventsService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(True, False),
+                session_ids=("session-1",),
+                decoder=RecordingDecoder(elapsed_sec=0.01),
+            ),
+            lambda payload: payload.pop("canonical_decode_elapsed_sec"),
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=800)
+            with self.assertRaises(live_service_replay.ServiceReplayRtfFailure):
+                live_service_replay.run_service_replay(
+                    service=service,
+                    audio_path=audio,
+                    out_dir=root / "out",
+                    pace=1.0,
+                    max_pacing_lag=0.5,
+                    runs=1,
+                    expect_revision=descriptor.source_revision,
+                    expect_provider_hash=descriptor.provider_manifest_hash,
+                    expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                    monotonic=ScriptedClock().monotonic,
+                    sleep=ScriptedClock().sleep,
+                )
+
+            trace = _jsonl(root / "out" / "run-001" / "trace.jsonl")
+            summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+            evaluator = _jsonl(root / "out" / "run-001" / "evaluator.jsonl")
+
+        rtf_evaluation = [item for item in trace if item["kind"] == "canonical_decode_rtf_evaluation"][0]
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["failure_kind"], "rtf")
+        self.assertEqual(summary["canonical_decode_rtf_values"], [])
+        self.assertEqual(summary["canonical_decode_rtf_span_ids"], [])
+        self.assertIsNone(summary["canonical_decode_rtf_p95"])
+        self.assertEqual(summary["canonical_decode_rtf_bound"], 1.0)
+        self.assertFalse(summary["canonical_decode_rtf_passed"])
+        self.assertEqual(summary["canonical_decode_rtf_invalid_count"], 2)
+        self.assertIn("canonical_decode_elapsed_sec", summary["canonical_decode_rtf_invalid_measurements"][0]["message"])
+        self.assertEqual(rtf_evaluation["canonical_decode_rtf_invalid_count"], 2)
+        self.assertEqual(trace[-1]["failure_kind"], "rtf")
+        self.assertEqual(evaluator[0]["failure_kind"], "rtf")
+        self.assertEqual(evaluator[-1]["invalid_count"], 2)
+
     def test_pacing_lag_fails_before_late_frame_admission(self):
         descriptor = _descriptor(frame_samples=400)
         service = RecordingService(_runtime(descriptor=descriptor, speech=(False,), session_ids=("session-1",)))
@@ -513,6 +588,17 @@ def _canonical_processed_event(*, seq: int, span_id: int, rtf: float) -> LiveSer
             "frozen_span_duration_sec": 1.0,
             "canonical_decode_rtf": rtf,
         },
+    )
+
+
+def _event_with_payload(event: LiveServiceEvent, payload: dict) -> LiveServiceEvent:
+    return LiveServiceEvent(
+        seq=event.seq,
+        session_id=event.session_id,
+        kind=event.kind,
+        snapshot_version=event.snapshot_version,
+        payload=payload,
+        schema_version=event.schema_version,
     )
 
 
@@ -639,6 +725,22 @@ class AmbiguousOnceService(RecordingService):
     def accept_frame(self, session_id: str, frame: AudioFrame):
         self.frame_sequences.append(frame.sequence)
         raise live_service_replay.ServiceReplayTransportFailure("timeout after possible admission")
+
+
+class CorruptingEventsService(live_service_replay.InMemoryLiveReplayService):
+    def __init__(self, runtime: LiveServiceRuntime, mutate):
+        super().__init__(runtime)
+        self.mutate = mutate
+
+    def events(self, session_id: str, since_seq: int = 0):
+        events = []
+        for event in super().events(session_id, since_seq=since_seq):
+            if event.kind == "canonical_processed":
+                payload = dict(event.payload)
+                self.mutate(payload)
+                event = _event_with_payload(event, payload)
+            events.append(event)
+        return tuple(events)
 
 
 class StopFailureService(RecordingService):

@@ -444,9 +444,11 @@ def run_service_replay(
                 }
             )
             if not rtf_evaluation["canonical_decode_rtf_passed"]:
+                if rtf_evaluation["canonical_decode_rtf_invalid_count"]:
+                    raise ServiceReplayRtfFailure("canonical decoder RTF event payload invalid.")
+                p95 = rtf_evaluation["canonical_decode_rtf_p95"]
                 raise ServiceReplayRtfFailure(
-                    "canonical decoder p95 RTF "
-                    f"{rtf_evaluation['canonical_decode_rtf_p95']:.6g} exceeded strict bound "
+                    f"canonical decoder p95 RTF {p95:.6g} exceeded strict bound "
                     f"{rtf_evaluation['canonical_decode_rtf_bound']:.6g}."
                 )
             summary.update(
@@ -638,20 +640,25 @@ def _summary_from_trace(trace: list[dict[str, Any]], seed: dict[str, Any]) -> di
 
 def _canonical_decode_rtf_evaluation(events: tuple[LiveServiceEvent, ...]) -> dict[str, Any]:
     measurements: list[dict[str, Any]] = []
+    invalid_measurements: list[dict[str, Any]] = []
     for event in events:
         if event.kind != "canonical_processed":
             continue
         payload = dict(event.payload)
-        measurement = {
-            "event_seq": event.seq,
-            "span_id": _required_int(payload, "span_id"),
-            "canonical_decode_elapsed_sec": _required_finite_non_negative_float(
-                payload, "canonical_decode_elapsed_sec"
-            ),
-            "frozen_span_sample_count": _required_positive_int(payload, "frozen_span_sample_count"),
-            "frozen_span_duration_sec": _required_positive_finite_float(payload, "frozen_span_duration_sec"),
-            "canonical_decode_rtf": _required_finite_non_negative_float(payload, "canonical_decode_rtf"),
-        }
+        try:
+            measurement = {
+                "event_seq": event.seq,
+                "span_id": _required_int(payload, "span_id"),
+                "canonical_decode_elapsed_sec": _required_finite_non_negative_float(
+                    payload, "canonical_decode_elapsed_sec"
+                ),
+                "frozen_span_sample_count": _required_positive_int(payload, "frozen_span_sample_count"),
+                "frozen_span_duration_sec": _required_positive_finite_float(payload, "frozen_span_duration_sec"),
+                "canonical_decode_rtf": _required_finite_non_negative_float(payload, "canonical_decode_rtf"),
+            }
+        except ServiceReplayRtfFailure as exc:
+            invalid_measurements.append(_invalid_canonical_decode_rtf_measurement(event, payload, str(exc)))
+            continue
         measurements.append(measurement)
 
     values = [item["canonical_decode_rtf"] for item in measurements]
@@ -662,7 +669,9 @@ def _canonical_decode_rtf_evaluation(events: tuple[LiveServiceEvent, ...]) -> di
         "canonical_decode_rtf_span_ids": [item["span_id"] for item in measurements],
         "canonical_decode_rtf_p95": p95,
         "canonical_decode_rtf_bound": CANONICAL_DECODE_RTF_BOUND,
-        "canonical_decode_rtf_passed": p95 is None or p95 < CANONICAL_DECODE_RTF_BOUND,
+        "canonical_decode_rtf_invalid_measurements": invalid_measurements,
+        "canonical_decode_rtf_invalid_count": len(invalid_measurements),
+        "canonical_decode_rtf_passed": not invalid_measurements and (p95 is None or p95 < CANONICAL_DECODE_RTF_BOUND),
     }
 
 
@@ -685,6 +694,22 @@ def _required_positive_int(payload: dict[str, Any], key: str) -> int:
     if value <= 0:
         raise ServiceReplayRtfFailure(f"canonical decoder RTF event field {key} must be positive.")
     return value
+
+
+def _invalid_canonical_decode_rtf_measurement(
+    event: LiveServiceEvent,
+    payload: dict[str, Any],
+    message: str,
+) -> dict[str, Any]:
+    span_id = payload.get("span_id")
+    if isinstance(span_id, bool) or not isinstance(span_id, int):
+        span_id = None
+    return {
+        "event_seq": event.seq,
+        "span_id": span_id,
+        "message": message,
+        "payload_fields": sorted(str(key) for key in payload),
+    }
 
 
 def _required_finite_non_negative_float(payload: dict[str, Any], key: str) -> float:
@@ -740,6 +765,8 @@ def _evaluator_records_from_summary(summary: dict[str, Any]) -> list[dict[str, A
             "p95": summary.get("canonical_decode_rtf_p95"),
             "bound": summary.get("canonical_decode_rtf_bound", CANONICAL_DECODE_RTF_BOUND),
             "passed": summary.get("canonical_decode_rtf_passed"),
+            "invalid_measurements": summary.get("canonical_decode_rtf_invalid_measurements", []),
+            "invalid_count": summary.get("canonical_decode_rtf_invalid_count", 0),
         },
     ]
 
