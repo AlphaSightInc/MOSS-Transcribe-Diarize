@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
+from moss_transcribe_diarize.app.speaker_identity import IdentityResolution
 from moss_transcribe_diarize.app.windowed_transcription import (
     WindowTranscriptionError,
     WindowedRunner,
@@ -34,6 +35,67 @@ class RecordingExtractor:
         Path(destination).write_bytes(b"slice")
 
 
+class RecordingIdentityResolver:
+    def __init__(self):
+        self.calls: list[dict[str, int]] = []
+
+    def contract(self) -> dict:
+        return {
+            "schema_version": 2,
+            "config": {
+                "tier_a": {
+                    "min_overlap_support_seconds": 2.0,
+                    "min_overlap_dice": 0.75,
+                    "mutual_margin_seconds": 1.0,
+                },
+                "tier_b": {
+                    "enabled": True,
+                    "min_segment_seconds": 2.0,
+                    "max_segments_per_node": 3,
+                    "similarity": 0.70,
+                    "margin": 0.20,
+                },
+            },
+            "provider": {
+                "provider": "fake",
+                "revision": "test",
+                "state_sha256": "0" * 64,
+                "embedding_dimension": 256,
+                "device": "cpu",
+            },
+            "availability": {"available": True, "reason": None},
+        }
+
+    def resolve(self, windows, local_results, *, window_audio_paths) -> IdentityResolution:
+        self.calls.append(
+            {
+                "windows": len(windows),
+                "local_results": len(local_results),
+                "window_audio_paths": len(window_audio_paths),
+            }
+        )
+        summary = {
+            "schema_version": 2,
+            "accepted_edges": 0,
+            "tier_a_accepted": 0,
+            "tier_b_status": "available",
+            "tier_b_accepted": 2,
+            "false_accepted_edges": 0,
+            "fragmented_recurring_speakers": 0,
+        }
+        diagnostics = {
+            "schema_version": 2,
+            "config": self.contract()["config"],
+            "contract": self.contract(),
+            "tier_b": {"status": "available", "proposals": []},
+        }
+        return IdentityResolution(
+            relabeled_results=local_results,
+            summary=summary,
+            diagnostics=diagnostics,
+        )
+
+
 def result(text, prompt_tokens=10, generated_tokens=5, elapsed=1.0):
     return TranscriptionResult(
         text=text,
@@ -55,6 +117,32 @@ def make_runner(results, duration):
         window_extractor=extractor,
     )
     return runner, extractor
+
+
+def test_windowed_runner_uses_injected_identity_resolver_and_runtime_contract(tmp_path):
+    resolver = RecordingIdentityResolver()
+    extractor = RecordingExtractor()
+    runner = WindowedRunner(
+        FakeRunner(
+            [
+                result("[10][S01]first[20]"),
+                result("[10][S02]second[20]"),
+                result("[10][S03]third[20]"),
+            ]
+        ),
+        duration_probe=lambda _: 300.0,
+        window_extractor=extractor,
+        identity_resolver=resolver,
+    )
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"source")
+
+    stitched = runner.transcribe(source, max_new_tokens=12000)
+
+    assert resolver.calls == [{"windows": 3, "local_results": 3, "window_audio_paths": 3}]
+    assert runner.runtime_info()["speaker_identity"] == resolver.contract()
+    assert stitched.identity_summary["tier_b_status"] == "available"
+    assert stitched.identity_summary["tier_b_accepted"] == 2
 
 
 def test_300_second_result_has_bounded_plan_absolute_times_and_one_overlap_owner(tmp_path):

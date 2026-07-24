@@ -9,6 +9,7 @@ from typing import Callable
 import pytest
 
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
+from moss_transcribe_diarize.app.speaker_identity import IdentityResolution
 from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
 
 
@@ -61,6 +62,61 @@ class RecordingExtractor:
         Path(destination).write_bytes(b"slice")
 
 
+class StaticIdentityResolver:
+    def __init__(self, *, tier_b_enabled: bool):
+        self.tier_b_enabled = tier_b_enabled
+
+    def contract(self) -> dict:
+        return {
+            "schema_version": 2,
+            "config": {
+                "tier_a": {
+                    "min_overlap_support_seconds": 2.0,
+                    "min_overlap_dice": 0.75,
+                    "mutual_margin_seconds": 1.0,
+                },
+                "tier_b": {
+                    "enabled": self.tier_b_enabled,
+                    "min_segment_seconds": 2.0,
+                    "max_segments_per_node": 3,
+                    "similarity": 0.70,
+                    "margin": 0.20,
+                },
+            },
+            "provider": {
+                "provider": "fake",
+                "revision": "test",
+                "state_sha256": "0" * 64,
+                "embedding_dimension": 256,
+                "device": "cpu",
+            },
+            "availability": {"available": self.tier_b_enabled, "reason": None},
+        }
+
+    def resolve(self, windows, local_results, *, window_audio_paths) -> IdentityResolution:
+        del windows, window_audio_paths
+        summary = {
+            "schema_version": 2,
+            "accepted_edges": 0,
+            "tier_a_accepted": 0,
+            "tier_b_status": "available" if self.tier_b_enabled else "disabled",
+            "tier_b_accepted": 0,
+            "false_accepted_edges": 0,
+            "fragmented_recurring_speakers": 0,
+        }
+        diagnostics = {
+            "schema_version": 2,
+            "config": self.contract()["config"],
+            "contract": self.contract(),
+            "tier_b": {"status": summary["tier_b_status"], "proposals": []},
+        }
+        return IdentityResolution(
+            relabeled_results=local_results,
+            summary=summary,
+            diagnostics=diagnostics,
+        )
+
+
 def _result(text: str, window_index: int) -> TranscriptionResult:
     return TranscriptionResult(
         text=text,
@@ -74,7 +130,13 @@ def _result(text: str, window_index: int) -> TranscriptionResult:
     )
 
 
-def _runner(delegate, tmp_path: Path, *, duration: float = 300.0) -> tuple[WindowedRunner, RecordingExtractor]:
+def _runner(
+    delegate,
+    tmp_path: Path,
+    *,
+    duration: float = 300.0,
+    identity_resolver=None,
+) -> tuple[WindowedRunner, RecordingExtractor]:
     extractor = RecordingExtractor()
     scratch_dir = tmp_path / "scratch"
     scratch_dir.mkdir(exist_ok=True)
@@ -84,6 +146,7 @@ def _runner(delegate, tmp_path: Path, *, duration: float = 300.0) -> tuple[Windo
             duration_probe=lambda _: duration,
             window_extractor=extractor,
             scratch_dir=scratch_dir,
+            identity_resolver=identity_resolver,
         ),
         extractor,
     )
@@ -193,6 +256,10 @@ def test_checkpointed_uninterrupted_three_window_result_persists_contract(tmp_pa
     ]
     assert all("checkpoint_dir" not in kwargs for kwargs in delegate.kwargs)
     _assert_checkpoint_shape(checkpoint_dir)
+    manifest = _read_json(_manifest_path(checkpoint_dir))
+    assert manifest["contract"]["identity"] == runner.identity_resolver.contract()
+    assert manifest["identity"] == runner.identity_resolver.contract()
+    assert "tier_b" not in manifest["contract"]
 
 
 def test_resume_retries_interrupted_suffix_without_replaying_committed_window(tmp_path):
@@ -300,6 +367,29 @@ def test_invalid_checkpoint_is_rejected_before_delegate_invocation(
         )
 
     assert delegate.calls == 0, name
+
+
+def test_identity_contract_drift_rejects_checkpoint_before_delegate_invocation(tmp_path):
+    checkpoint_dir = tmp_path / "checkpoint"
+    source = _source(tmp_path)
+    initial_runner, _ = _runner(
+        RecordingDelegate(),
+        tmp_path,
+        identity_resolver=StaticIdentityResolver(tier_b_enabled=False),
+    )
+    _transcribe(initial_runner, source, checkpoint_dir)
+
+    delegate = RejectingDelegate()
+    drifted_runner, _ = _runner(
+        delegate,
+        tmp_path,
+        identity_resolver=StaticIdentityResolver(tier_b_enabled=True),
+    )
+
+    with pytest.raises(Exception, match="checkpoint contract fingerprint mismatch"):
+        _transcribe(drifted_runner, source, checkpoint_dir)
+
+    assert delegate.calls == 0
 
 
 def _rewrite_manifest(checkpoint_dir: Path, mutator: Callable[[dict], dict]) -> None:
