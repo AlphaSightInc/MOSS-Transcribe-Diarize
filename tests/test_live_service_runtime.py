@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import threading
+import time
 import unittest
 from dataclasses import dataclass
+from unittest.mock import patch
 
 import pytest
 
@@ -18,8 +21,11 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceFailureKind,
     LiveServiceProviderConfigFailure,
     LiveServiceRuntime,
+    _ManualCanonicalPumpScheduler,
+    _TransientCanonicalPumpScheduler,
     hash_config,
 )
+from moss_transcribe_diarize.app import live_service_runtime as runtime_module
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     FrozenSpan,
@@ -170,6 +176,45 @@ class RecordingDecoder:
         return InferenceTranscript(f"[0][S01]decoded[{seconds:g}]")
 
 
+class BlockingDecoder(RecordingDecoder):
+    def __init__(self):
+        super().__init__()
+        self.entered = threading.Event()
+        self.release = threading.Event()
+        self.finished = threading.Event()
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        self.entered.set()
+        if not self.release.wait(timeout=1.0):
+            raise RuntimeError("blocked decoder was not released.")
+        try:
+            return super().transcribe_pcm(span=span, pcm=pcm)
+        finally:
+            self.finished.set()
+
+
+class LabelingDecoder(RecordingDecoder):
+    def __init__(self):
+        super().__init__()
+        self.labels: list[str] = []
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        self.labels.append(pcm[:1].decode("ascii"))
+        return super().transcribe_pcm(span=span, pcm=pcm)
+
+
+class SelectiveFailingDecoder(RecordingDecoder):
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        if pcm.startswith(b"x"):
+            raise RuntimeError("simulated canonical decoder failure.")
+        return super().transcribe_pcm(span=span, pcm=pcm)
+
+
+class SameTickLoop:
+    def time(self) -> float:
+        return 100.0
+
+
 @dataclass
 class PreparingIdentity:
     status: str = "prepared"
@@ -210,6 +255,7 @@ def _runtime(
     identity: PreparingIdentity | None = None,
     descriptor: LiveServiceDescriptor | None = None,
     session_ids: tuple[str, ...] = ("session-1",),
+    scheduler: _ManualCanonicalPumpScheduler | None = None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
     return LiveServiceRuntime(
@@ -221,12 +267,37 @@ def _runtime(
         decoder_factory=lambda: decoder or RecordingDecoder(),
         identity_preparer_factory=lambda: identity or PreparingIdentity(),
         session_id_factory=lambda: next(ids),
+        _canonical_scheduler=scheduler,
     )
+
+
+def _threaded_call(fn):
+    done = threading.Event()
+    result: dict[str, object] = {}
+
+    def run() -> None:
+        try:
+            result["value"] = fn()
+        except BaseException as exc:  # pragma: no cover - re-raised by the caller
+            result["error"] = exc
+        finally:
+            done.set()
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    return done, result, thread
+
+
+def _threaded_result(result: dict[str, object]):
+    if "error" in result:
+        raise result["error"]
+    return result["value"]
 
 
 def test_runtime_frame_admission_queues_without_canonical_decode():
     decoder = RecordingDecoder()
-    runtime = _runtime(speech=(True, False), decoder=decoder)
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
     created = runtime.create()
 
     first = runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
@@ -239,6 +310,163 @@ def test_runtime_frame_admission_queues_without_canonical_decode():
     assert second.snapshot.session.accounted_samples == 0
     assert second.snapshot.pending_work_items == 1
     assert [event.seq for event in runtime.events(created.session_id)] == list(range(5))
+
+    assert scheduler.run_one()
+    pumped = runtime.snapshot(created.session_id)
+    assert decoder.calls == [(0, 1000)]
+    assert pumped.session.status == "active"
+    assert pumped.session.accounted_samples == 1000
+    assert pumped.pending_work_items == 0
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert event_kinds.index("canonical_queued") < event_kinds.index("canonical_started")
+    assert event_kinds.index("canonical_started") < event_kinds.index("canonical_processed")
+
+
+def test_blocked_decode_does_not_block_frame_admission_or_snapshot_reads():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(
+        speech=(True, False, True),
+        decoder=decoder,
+        descriptor=_descriptor(max_queue_depth=2, max_retained_samples=6000),
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    queued = runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert queued.queued_item_ids == (0,)
+    assert decoder.entered.wait(timeout=1.0)
+
+    snapshot_done, snapshot_result, snapshot_thread = _threaded_call(
+        lambda: runtime.snapshot(created.session_id)
+    )
+    if not snapshot_done.wait(timeout=0.25):
+        decoder.release.set()
+        snapshot_thread.join(timeout=1.0)
+        pytest.fail("snapshot read blocked behind canonical decode.")
+    in_flight = _threaded_result(snapshot_result)
+    assert in_flight.pending_work_items == 1
+    assert in_flight.session.accounted_samples == 0
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert "canonical_started" in event_kinds
+    assert "canonical_processed" not in event_kinds
+
+    accept_done, accept_result, accept_thread = _threaded_call(
+        lambda: runtime.accept_frame(created.session_id, _frame(2, byte=b"c"))
+    )
+    if not accept_done.wait(timeout=0.25):
+        decoder.release.set()
+        accept_thread.join(timeout=1.0)
+        pytest.fail("frame admission blocked behind canonical decode.")
+    accepted = _threaded_result(accept_result)
+    assert accepted.snapshot.session.accepted_samples == 3000
+    assert accepted.snapshot.session.accounted_samples == 0
+    assert accepted.queued_item_ids == (1,)
+    assert accepted.snapshot.pending_work_items == 2
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+    drained = runtime.snapshot(created.session_id)
+    assert drained.session.accounted_samples == 2000
+    assert drained.pending_work_items == 0
+
+
+def test_manual_canonical_scheduler_is_coalesced_and_deterministic():
+    scheduler = _ManualCanonicalPumpScheduler()
+    calls: list[str] = []
+
+    def first() -> None:
+        calls.append("first")
+        assert scheduler.in_flight
+        scheduler.signal(second)
+
+    def second() -> None:
+        calls.append("second")
+
+    scheduler.signal(first)
+    scheduler.signal(first)
+
+    assert scheduler.pending_signals == 1
+    assert scheduler.run_one()
+    assert calls == ["first"]
+    assert scheduler.pending_signals == 1
+    assert scheduler.drain() == 1
+    assert calls == ["first", "second"]
+    assert scheduler.pending_signals == 0
+    assert not scheduler.in_flight
+
+
+def test_transient_canonical_scheduler_serializes_and_exits_when_idle():
+    scheduler = _TransientCanonicalPumpScheduler()
+    release = threading.Event()
+    entered = threading.Event()
+    calls: list[str] = []
+
+    def first() -> None:
+        calls.append("first-start")
+        entered.set()
+        scheduler.signal(second)
+        release.wait(timeout=1.0)
+        calls.append("first-end")
+
+    def second() -> None:
+        calls.append("second")
+
+    scheduler.signal(first)
+    scheduler.signal(first)
+    assert entered.wait(timeout=1.0)
+    worker_count_while_blocked = scheduler.worker_count
+    assert scheduler.in_flight
+    release.set()
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+
+    assert calls == ["first-start", "first-end", "second"]
+    assert worker_count_while_blocked == 1
+    assert scheduler.worker_count == 0
+
+
+def test_ready_sessions_drain_round_robin_without_hot_session_starvation():
+    scheduler = _ManualCanonicalPumpScheduler()
+    decoder = LabelingDecoder()
+    runtime = _runtime(
+        speech=(True, False, True, False),
+        decoder=decoder,
+        session_ids=("hot-session", "other-session"),
+        scheduler=scheduler,
+    )
+    hot = runtime.create()
+    other = runtime.create()
+
+    runtime.accept_frame(hot.session_id, _frame(0, byte=b"h"))
+    runtime.accept_frame(hot.session_id, _frame(1, byte=b"i"))
+    runtime.accept_frame(hot.session_id, _frame(2, byte=b"H"))
+    runtime.accept_frame(hot.session_id, _frame(3, byte=b"I"))
+    runtime.accept_frame(other.session_id, _frame(0, byte=b"o"))
+    runtime.accept_frame(other.session_id, _frame(1, byte=b"p"))
+
+    assert scheduler.run_one()
+
+    assert decoder.labels[0] == "h"
+    assert decoder.labels.index("o") < decoder.labels.index("i")
+    assert runtime.snapshot(hot.session_id).session.accounted_samples == 3000
+    assert runtime.snapshot(other.session_id).session.accounted_samples == 1000
+    assert runtime.snapshot(hot.session_id).pending_work_items == 0
+    assert runtime.snapshot(other.session_id).pending_work_items == 0
+
+
+def test_runtime_scheduler_is_internal_not_a_public_pump_operation():
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(speech=(True,), scheduler=scheduler)
+
+    assert not hasattr(runtime, "pump")
+    assert not hasattr(runtime, "run_pump")
+    assert not hasattr(runtime, "canonical_pump")
+    assert scheduler.pending_signals == 0
 
 
 def test_runtime_stop_closes_endpoint_and_drains_exact_accounting():
@@ -258,6 +486,198 @@ def test_runtime_stop_closes_endpoint_and_drains_exact_accounting():
     event_kinds = [event.kind for event in runtime.events(created.session_id)]
     assert "canonical_processed" in event_kinds
     assert event_kinds[-1] == "session_closed"
+
+
+def test_stop_with_positive_deadline_yields_while_worker_is_in_flight():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    async def exercise_stop():
+        heartbeat_ticks = 0
+        stopped = asyncio.Event()
+
+        async def heartbeat() -> None:
+            nonlocal heartbeat_ticks
+            while not stopped.is_set():
+                heartbeat_ticks += 1
+                await asyncio.sleep(0.005)
+
+        async def release_decoder() -> None:
+            await asyncio.sleep(0.05)
+            decoder.release.set()
+
+        heartbeat_task = asyncio.create_task(heartbeat())
+        release_task = asyncio.create_task(release_decoder())
+        try:
+            snapshot = await runtime.stop(created.session_id, deadline=1.0)
+        finally:
+            stopped.set()
+            await heartbeat_task
+            await release_task
+        return snapshot, heartbeat_ticks
+
+    snapshot, heartbeat_ticks = asyncio.run(exercise_stop())
+
+    assert heartbeat_ticks >= 5
+    assert snapshot.session.status == "closed"
+    assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
+    assert snapshot.pending_work_items == 0
+
+
+@pytest.mark.parametrize("operation", ("stop", "abort"))
+def test_stop_and_abort_serialize_events_with_in_flight_worker(operation: str):
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    lock_violations: list[str] = []
+    original_record_event = runtime._record_event
+
+    def record_event_while_locked(state, kind, payload):
+        if not runtime._lock._is_owned():
+            lock_violations.append(kind)
+        original_record_event(state, kind, payload)
+
+    runtime._record_event = record_event_while_locked
+    release_timer = threading.Timer(0.02, decoder.release.set)
+    release_timer.start()
+    try:
+        if operation == "stop":
+            asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+        else:
+            asyncio.run(runtime.abort(created.session_id, "caller cancelled"))
+    finally:
+        decoder.release.set()
+        release_timer.cancel()
+    assert decoder.finished.wait(timeout=1.0)
+
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+    events = runtime.events(created.session_id)
+
+    assert lock_violations == []
+    assert [event.seq for event in events] == list(range(len(events)))
+    assert sum(event.kind == "terminal_failure" for event in events) <= 1
+
+
+def test_zero_deadline_rejects_pending_work_before_decode_when_clock_has_not_advanced():
+    decoder = RecordingDecoder()
+    runtime = _runtime(speech=(True,), decoder=decoder)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+
+    with patch.object(runtime_module.asyncio, "get_running_loop", return_value=SameTickLoop()):
+        with pytest.raises(TimeoutError, match="deadline expired"):
+            asyncio.run(runtime.stop(created.session_id, deadline=0.0))
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert decoder.calls == []
+    assert snapshot.session.accepted_samples == 1000
+    assert snapshot.session.accounted_samples == 0
+    assert snapshot.pending_work_items == 1
+    assert snapshot.terminal_failure is not None
+    assert snapshot.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+
+
+def test_stop_timeout_fences_late_in_flight_canonical_result():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    with pytest.raises(TimeoutError, match="deadline expired"):
+        asyncio.run(runtime.stop(created.session_id, deadline=0.0))
+
+    timed_out = runtime.snapshot(created.session_id)
+    assert timed_out.terminal_failure is not None
+    assert timed_out.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+    assert timed_out.session.accepted_samples == 2000
+    assert timed_out.session.accounted_samples == 0
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+
+    fenced = runtime.snapshot(created.session_id)
+    assert fenced.session.accounted_samples == 0
+    assert fenced.session.committed == ()
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert "canonical_started" in event_kinds
+    assert "canonical_processed" not in event_kinds
+    assert "session_closed" not in event_kinds
+
+
+def test_abort_fences_late_in_flight_canonical_result():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    aborted = asyncio.run(runtime.abort(created.session_id, "caller cancelled"))
+    assert aborted.terminal_failure is not None
+    assert aborted.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+    assert aborted.session.status == "aborted"
+    assert aborted.session.accounted_samples == 0
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+
+    fenced = runtime.snapshot(created.session_id)
+    assert fenced.session.status == "aborted"
+    assert fenced.session.accounted_samples == 0
+    assert fenced.session.committed == ()
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert "canonical_started" in event_kinds
+    assert "canonical_processed" not in event_kinds
+    assert event_kinds[-1] == "session_aborted"
+
+
+def test_canonical_failure_does_not_starve_sibling_session():
+    scheduler = _ManualCanonicalPumpScheduler()
+    decoder = SelectiveFailingDecoder()
+    runtime = _runtime(
+        speech=(True, False),
+        decoder=decoder,
+        session_ids=("bad-session", "other-session"),
+        scheduler=scheduler,
+    )
+    bad = runtime.create()
+    other = runtime.create()
+    runtime.accept_frame(bad.session_id, _frame(0, byte=b"x"))
+    runtime.accept_frame(bad.session_id, _frame(1, byte=b"y"))
+    runtime.accept_frame(other.session_id, _frame(0, byte=b"o"))
+    runtime.accept_frame(other.session_id, _frame(1, byte=b"p"))
+
+    assert scheduler.run_one()
+
+    bad_snapshot = runtime.snapshot(bad.session_id)
+    other_snapshot = runtime.snapshot(other.session_id)
+    assert bad_snapshot.terminal_failure is not None
+    assert bad_snapshot.session.accounted_samples == 0
+    assert other_snapshot.terminal_failure is None
+    assert other_snapshot.session.accounted_samples == 1000
+    assert other_snapshot.pending_work_items == 0
 
 
 def test_runtime_terminal_failure_is_session_local():

@@ -70,6 +70,20 @@ class CoordinatorWorkResult:
     committed_samples: int
 
 
+@dataclass(frozen=True, slots=True)
+class CoordinatorWorkInput:
+    span: FrozenSpan
+    pcm: bytes
+    base_snapshot: LiveIdentitySnapshot
+
+
+@dataclass(frozen=True, slots=True)
+class CoordinatorPreparedWork:
+    span: FrozenSpan
+    transcript: str
+    preparation: LiveIdentityPreparation
+
+
 class LiveCoordinator:
     """Connect ordered live PCM to endpointing, canonical decode, and atomic publish."""
 
@@ -123,7 +137,7 @@ class LiveCoordinator:
     def stop_endpoint(self) -> tuple[int, ...]:
         return self._freeze_and_queue(self.endpoint_policy.stop())
 
-    def process_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkResult:
+    def capture_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkInput:
         if item.kind != InferenceArbiter.LIVE_CANONICAL or not isinstance(item.payload, CanonicalWork):
             raise LiveCoordinatorError("work item is not live canonical coordinator work.")
         work = item.payload
@@ -132,14 +146,25 @@ class LiveCoordinator:
 
         span = work.span
         pcm = self._pcm.extract(span.start_sample, span.end_sample)
+        base_snapshot = self.session.snapshot().identity_snapshot
+        return CoordinatorWorkInput(span=span, pcm=pcm, base_snapshot=base_snapshot)
+
+    def prepare_work_item(self, work: CoordinatorWorkInput) -> CoordinatorPreparedWork:
+        span = work.span
+        pcm = work.pcm
         inferred = self.decoder.transcribe_pcm(span=span, pcm=pcm)
         transcript = _transcript_text(inferred)
         preparation = self.identity_preparer.prepare(
             span=span,
             pcm=pcm,
             transcript=transcript,
-            base_snapshot=self.session.snapshot().identity_snapshot,
+            base_snapshot=work.base_snapshot,
         )
+        return CoordinatorPreparedWork(span=span, transcript=transcript, preparation=preparation)
+
+    def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
+        span = work.span
+        preparation = work.preparation
         result = CanonicalResult(
             span_id=span.id,
             epoch=span.epoch,
@@ -158,6 +183,11 @@ class LiveCoordinator:
             identity_status=preparation.status,
             committed_samples=snapshot.committed_samples,
         )
+
+    def process_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkResult:
+        work = self.capture_work_item(item)
+        prepared = self.prepare_work_item(work)
+        return self.submit_prepared_work(prepared)
 
     def _observe_endpoint(
         self,
