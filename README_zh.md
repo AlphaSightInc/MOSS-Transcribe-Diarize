@@ -168,14 +168,18 @@ MOSS-Transcribe-Diarize 支持 50+ 种语言。
 ### 环境准备
 
 请使用干净的 Python 环境。本项目在 Python 3.12 与 Transformers 5.x 上测试通过。
+OpenMOSS 仓库仍是规范上游，并保留本项目的归属与历史。本受管的开发/部署检出使用 AlphaSightInc fork 作为 `origin`，并将 OpenMOSS 作为 `upstream`：
 
 ```bash
-git clone https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git
+git clone https://github.com/AlphaSightInc/MOSS-Transcribe-Diarize.git
 cd MOSS-Transcribe-Diarize
+git remote add upstream https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git
 uv venv --python 3.12 .venv
 source .venv/bin/activate
 uv pip install -e ".[torch-runtime]" --torch-backend=auto
 ```
+
+MacStudio→GitHub→RTX 交接中的推送、拉取和部署均由操作员执行。克隆并配置这些远程仓库并不授权自动化执行这些操作。
 
 微调说明请参阅 [FINETUNING.md](FINETUNING.md)。
 
