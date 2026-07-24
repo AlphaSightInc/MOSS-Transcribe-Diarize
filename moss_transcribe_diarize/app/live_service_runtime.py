@@ -7,7 +7,7 @@ import json
 import threading
 import uuid
 from collections import deque
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, Awaitable, Callable, Mapping, Protocol
 
@@ -386,6 +386,7 @@ class _RuntimeSession:
     events: deque[LiveServiceEvent]
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
+    work_changed: threading.Event = field(default_factory=threading.Event)
 
 
 class LiveServiceRuntime:
@@ -510,56 +511,55 @@ class LiveServiceRuntime:
             return snapshot
 
     async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
-        state = self._get(session_id)
-        self._raise_terminal(state)
         loop = asyncio.get_running_loop()
         end_time = loop.time() + max(0.0, float(deadline))
+        with self._lock:
+            state = self._get(session_id)
         try:
-            queued = state.coordinator.stop_endpoint()
-            for item_id in queued:
-                self._record_event(state, "canonical_queued", {"item_id": item_id, "reason": "stop"})
-            if (
-                queued
-                or self._pending_work_items(state)
-                or state.session.snapshot().pending_span_ids
-            ) and loop.time() >= end_time:
-                raise TimeoutError("live service stop deadline expired with unresolved work.")
-            if queued:
-                self._mark_ready_locked(state)
-            while self._pending_work_items(state) or state.session.snapshot().pending_span_ids:
-                if loop.time() >= end_time:
+            with self._lock:
+                self._raise_terminal(state)
+                queued = state.coordinator.stop_endpoint()
+                for item_id in queued:
+                    self._record_event(state, "canonical_queued", {"item_id": item_id, "reason": "stop"})
+                if self._has_unresolved_work_locked(state) and loop.time() >= end_time:
                     raise TimeoutError("live service stop deadline expired with unresolved work.")
-                self._pump_one(state)
+                if queued:
+                    self._mark_ready_locked(state)
+            await self._wait_for_drain(state, end_time=end_time)
             remaining = max(0.0, end_time - loop.time())
             snapshot = await state.session.stop(remaining)
         except Exception as exc:
             failure = self._failure_from_exception(exc)
-            self._fail(state, failure)
+            with self._lock:
+                self._fail(state, failure)
             if not isinstance(exc, TimeoutError):
                 raise
             raise
-        snapshot = self._snapshot(state, session_snapshot=snapshot)
-        if snapshot.session.accepted_samples != snapshot.session.accounted_samples or snapshot.pending_work_items:
-            failure = LiveServiceIntegrityFailure(
-                "live service stop completed without exact accepted/accounted equality.",
-                code="stop_accounting_mismatch",
-            ).failure
-            self._fail(state, failure)
-            raise LiveServiceIntegrityFailure(failure.message, code=failure.code)
-        self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
-        return self._snapshot(state)
+        with self._lock:
+            snapshot = self._snapshot(state, session_snapshot=snapshot)
+            if snapshot.session.accepted_samples != snapshot.session.accounted_samples or snapshot.pending_work_items:
+                failure = LiveServiceIntegrityFailure(
+                    "live service stop completed without exact accepted/accounted equality.",
+                    code="stop_accounting_mismatch",
+                ).failure
+                self._fail(state, failure)
+                raise LiveServiceIntegrityFailure(failure.message, code=failure.code)
+            self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
+            return self._snapshot(state)
 
     async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
-        state = self._get(session_id)
         reason = reason or "aborted"
-        if state.terminal_failure is None:
-            self._fail(
-                state,
-                LiveServiceTransportPacingFailure(reason, code="aborted").failure,
-                event_kind="session_aborted",
-            )
+        with self._lock:
+            state = self._get(session_id)
+            if state.terminal_failure is None:
+                self._fail(
+                    state,
+                    LiveServiceTransportPacingFailure(reason, code="aborted").failure,
+                    event_kind="session_aborted",
+                )
         snapshot = await state.session.abort(reason)
-        return self._snapshot(state, session_snapshot=snapshot)
+        with self._lock:
+            return self._snapshot(state, session_snapshot=snapshot)
 
     def _new_session_id(self) -> str:
         session_id = self._session_id_factory()
@@ -592,6 +592,23 @@ class LiveServiceRuntime:
     def _pending_work_items(self, state: _RuntimeSession) -> int:
         in_flight = 1 if state.session_id in self._in_flight_session_ids else 0
         return state.arbiter.snapshot().live_canonical + in_flight
+
+    def _has_unresolved_work_locked(self, state: _RuntimeSession) -> bool:
+        return bool(self._pending_work_items(state) or state.session.snapshot().pending_span_ids)
+
+    async def _wait_for_drain(self, state: _RuntimeSession, *, end_time: float) -> None:
+        loop = asyncio.get_running_loop()
+        while True:
+            with self._lock:
+                self._raise_terminal(state)
+                if not self._has_unresolved_work_locked(state):
+                    return
+                remaining = end_time - loop.time()
+                if remaining <= 0:
+                    raise TimeoutError("live service stop deadline expired with unresolved work.")
+                state.work_changed.clear()
+            if not await asyncio.to_thread(state.work_changed.wait, remaining):
+                raise TimeoutError("live service stop deadline expired with unresolved work.")
 
     def _mark_ready_locked(self, state: _RuntimeSession) -> None:
         if state.terminal_failure is not None:
@@ -737,6 +754,7 @@ class LiveServiceRuntime:
         )
         state.events.append(event)
         state.next_event_seq += 1
+        state.work_changed.set()
 
     def _fail(
         self,

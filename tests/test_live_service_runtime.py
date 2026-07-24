@@ -488,6 +488,88 @@ def test_runtime_stop_closes_endpoint_and_drains_exact_accounting():
     assert event_kinds[-1] == "session_closed"
 
 
+def test_stop_with_positive_deadline_yields_while_worker_is_in_flight():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    async def exercise_stop():
+        heartbeat_ticks = 0
+        stopped = asyncio.Event()
+
+        async def heartbeat() -> None:
+            nonlocal heartbeat_ticks
+            while not stopped.is_set():
+                heartbeat_ticks += 1
+                await asyncio.sleep(0.005)
+
+        async def release_decoder() -> None:
+            await asyncio.sleep(0.05)
+            decoder.release.set()
+
+        heartbeat_task = asyncio.create_task(heartbeat())
+        release_task = asyncio.create_task(release_decoder())
+        try:
+            snapshot = await runtime.stop(created.session_id, deadline=1.0)
+        finally:
+            stopped.set()
+            await heartbeat_task
+            await release_task
+        return snapshot, heartbeat_ticks
+
+    snapshot, heartbeat_ticks = asyncio.run(exercise_stop())
+
+    assert heartbeat_ticks >= 5
+    assert snapshot.session.status == "closed"
+    assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
+    assert snapshot.pending_work_items == 0
+
+
+@pytest.mark.parametrize("operation", ("stop", "abort"))
+def test_stop_and_abort_serialize_events_with_in_flight_worker(operation: str):
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    lock_violations: list[str] = []
+    original_record_event = runtime._record_event
+
+    def record_event_while_locked(state, kind, payload):
+        if not runtime._lock._is_owned():
+            lock_violations.append(kind)
+        original_record_event(state, kind, payload)
+
+    runtime._record_event = record_event_while_locked
+    release_timer = threading.Timer(0.02, decoder.release.set)
+    release_timer.start()
+    try:
+        if operation == "stop":
+            asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+        else:
+            asyncio.run(runtime.abort(created.session_id, "caller cancelled"))
+    finally:
+        decoder.release.set()
+        release_timer.cancel()
+    assert decoder.finished.wait(timeout=1.0)
+
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+    events = runtime.events(created.session_id)
+
+    assert lock_violations == []
+    assert [event.seq for event in events] == list(range(len(events)))
+    assert sum(event.kind == "terminal_failure" for event in events) <= 1
+
+
 def test_zero_deadline_rejects_pending_work_before_decode_when_clock_has_not_advanced():
     decoder = RecordingDecoder()
     runtime = _runtime(speech=(True,), decoder=decoder)
