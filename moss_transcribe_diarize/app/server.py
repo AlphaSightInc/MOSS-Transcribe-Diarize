@@ -2,14 +2,15 @@ import asyncio
 import json
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
 
 from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager
 from .live_session import LIVE_SAMPLE_RATE
-from .live_transport import LiveTransportSessions, attach_live_routes
+from .live_service_runtime import LiveServiceRuntime
+from .live_transport import attach_live_routes
 from .model_runner import ModelRunner
 from .vllm_runner import VllmRunner
 from .windowed_transcription import WindowedRunner
@@ -34,6 +35,7 @@ def create_app(
     live_enabled: bool = False,
     live_max_retained_samples: int | None = None,
     live_hard_cap_samples: int | None = None,
+    live_runtime_factory: Callable[[], LiveServiceRuntime] | None = None,
 ):
     try:
         from fastapi import FastAPI, HTTPException, Request
@@ -66,15 +68,13 @@ def create_app(
         max_length_cap=max_length if backend == "vllm" else None,
     )
     app.state.manager = manager
+    live_runtime: LiveServiceRuntime | None = None
     if live_enabled:
-        if live_max_retained_samples is None:
-            raise ValueError("live_max_retained_samples is required when live mode is enabled.")
-        live_sessions = LiveTransportSessions(
-            max_retained_samples=live_max_retained_samples,
-            hard_cap_samples=live_hard_cap_samples,
-        )
-        app.state.live_sessions = live_sessions
-        attach_live_routes(app, live_sessions)
+        if live_runtime_factory is None:
+            raise ValueError("live_runtime_factory is required when live mode is enabled.")
+        live_runtime = live_runtime_factory()
+        app.state.live_runtime = live_runtime
+        attach_live_routes(app, live_runtime)
 
     @app.get("/", response_class=HTMLResponse)
     def index():
@@ -100,9 +100,8 @@ def create_app(
                 {
                     "live": {
                         "enabled": True,
-                        "sample_rate": LIVE_SAMPLE_RATE,
-                        "max_retained_samples": live_max_retained_samples,
-                        "hard_cap_samples": live_hard_cap_samples,
+                        "sample_rate": live_runtime.descriptor.sample_rate,
+                        "descriptor": live_runtime.descriptor.to_dict(),
                     }
                 }
                 if live_enabled
