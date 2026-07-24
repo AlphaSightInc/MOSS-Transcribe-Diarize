@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import threading
+import time
 import unittest
 from dataclasses import dataclass
 
@@ -172,6 +174,16 @@ class RecordingDecoder:
         return InferenceTranscript(f"[0][S01]decoded[{seconds:g}]")
 
 
+class LabelingDecoder(RecordingDecoder):
+    def __init__(self):
+        super().__init__()
+        self.labels: list[str] = []
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        self.labels.append(pcm[:1].decode("ascii"))
+        return super().transcribe_pcm(span=span, pcm=pcm)
+
+
 @dataclass
 class PreparingIdentity:
     status: str = "prepared"
@@ -230,7 +242,8 @@ def _runtime(
 
 def test_runtime_frame_admission_queues_without_canonical_decode():
     decoder = RecordingDecoder()
-    runtime = _runtime(speech=(True, False), decoder=decoder)
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
     created = runtime.create()
 
     first = runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
@@ -243,6 +256,16 @@ def test_runtime_frame_admission_queues_without_canonical_decode():
     assert second.snapshot.session.accounted_samples == 0
     assert second.snapshot.pending_work_items == 1
     assert [event.seq for event in runtime.events(created.session_id)] == list(range(5))
+
+    assert scheduler.run_one()
+    pumped = runtime.snapshot(created.session_id)
+    assert decoder.calls == [(0, 1000)]
+    assert pumped.session.status == "active"
+    assert pumped.session.accounted_samples == 1000
+    assert pumped.pending_work_items == 0
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert event_kinds.index("canonical_queued") < event_kinds.index("canonical_started")
+    assert event_kinds.index("canonical_started") < event_kinds.index("canonical_processed")
 
 
 def test_manual_canonical_scheduler_is_coalesced_and_deterministic():
@@ -271,35 +294,63 @@ def test_manual_canonical_scheduler_is_coalesced_and_deterministic():
 
 
 def test_transient_canonical_scheduler_serializes_and_exits_when_idle():
-    async def scenario() -> tuple[list[str], int, int]:
-        scheduler = _TransientCanonicalPumpScheduler()
-        release = asyncio.Event()
-        calls: list[str] = []
+    scheduler = _TransientCanonicalPumpScheduler()
+    release = threading.Event()
+    entered = threading.Event()
+    calls: list[str] = []
 
-        async def first() -> None:
-            calls.append("first-start")
-            scheduler.signal(second)
-            await release.wait()
-            calls.append("first-end")
+    def first() -> None:
+        calls.append("first-start")
+        entered.set()
+        scheduler.signal(second)
+        release.wait(timeout=1.0)
+        calls.append("first-end")
 
-        def second() -> None:
-            calls.append("second")
+    def second() -> None:
+        calls.append("second")
 
-        scheduler.signal(first)
-        scheduler.signal(first)
-        await asyncio.sleep(0)
-        worker_count_while_blocked = scheduler.worker_count
-        assert scheduler.in_flight
-        release.set()
-        await asyncio.sleep(0)
-        await asyncio.sleep(0)
-        return calls, worker_count_while_blocked, scheduler.worker_count
-
-    calls, worker_count_while_blocked, worker_count_after_drain = asyncio.run(scenario())
+    scheduler.signal(first)
+    scheduler.signal(first)
+    assert entered.wait(timeout=1.0)
+    worker_count_while_blocked = scheduler.worker_count
+    assert scheduler.in_flight
+    release.set()
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
 
     assert calls == ["first-start", "first-end", "second"]
     assert worker_count_while_blocked == 1
-    assert worker_count_after_drain == 0
+    assert scheduler.worker_count == 0
+
+
+def test_ready_sessions_drain_round_robin_without_hot_session_starvation():
+    scheduler = _ManualCanonicalPumpScheduler()
+    decoder = LabelingDecoder()
+    runtime = _runtime(
+        speech=(True, False, True, False),
+        decoder=decoder,
+        session_ids=("hot-session", "other-session"),
+        scheduler=scheduler,
+    )
+    hot = runtime.create()
+    other = runtime.create()
+
+    runtime.accept_frame(hot.session_id, _frame(0, byte=b"h"))
+    runtime.accept_frame(hot.session_id, _frame(1, byte=b"i"))
+    runtime.accept_frame(hot.session_id, _frame(2, byte=b"H"))
+    runtime.accept_frame(hot.session_id, _frame(3, byte=b"I"))
+    runtime.accept_frame(other.session_id, _frame(0, byte=b"o"))
+    runtime.accept_frame(other.session_id, _frame(1, byte=b"p"))
+
+    assert scheduler.run_one()
+
+    assert decoder.labels[0] == "h"
+    assert decoder.labels.index("o") < decoder.labels.index("i")
+    assert runtime.snapshot(hot.session_id).session.accounted_samples == 3000
+    assert runtime.snapshot(other.session_id).session.accounted_samples == 1000
+    assert runtime.snapshot(hot.session_id).pending_work_items == 0
+    assert runtime.snapshot(other.session_id).pending_work_items == 0
 
 
 def test_runtime_scheduler_is_internal_not_a_public_pump_operation():

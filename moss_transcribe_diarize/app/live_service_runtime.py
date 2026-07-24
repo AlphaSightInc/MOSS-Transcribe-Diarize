@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
 import json
+import threading
 import uuid
 from collections import deque
 from dataclasses import asdict, dataclass
@@ -286,46 +288,51 @@ class _CanonicalPumpScheduler(Protocol):
 class _TransientCanonicalPumpScheduler:
     """Coalesced transient worker for production-owned canonical pumping."""
 
-    def __init__(self, loop_factory: Callable[[], asyncio.AbstractEventLoop] = asyncio.get_running_loop):
-        self._loop_factory = loop_factory
+    def __init__(self):
+        self._condition = threading.Condition()
         self._pending: _CanonicalPumpCallback | None = None
-        self._task: asyncio.Task[None] | None = None
+        self._worker: threading.Thread | None = None
         self._in_flight = False
 
     @property
     def pending_signals(self) -> int:
-        return 1 if self._pending is not None else 0
+        with self._condition:
+            return 1 if self._pending is not None else 0
 
     @property
     def in_flight(self) -> bool:
-        return self._in_flight
+        with self._condition:
+            return self._in_flight
 
     @property
     def worker_count(self) -> int:
-        return 0 if self._task is None or self._task.done() else 1
+        with self._condition:
+            return 0 if self._worker is None or not self._worker.is_alive() else 1
 
     def signal(self, callback: _CanonicalPumpCallback) -> None:
-        self._pending = callback
-        if self.worker_count:
-            return
-        self._task = self._loop_factory().create_task(self._run())
+        with self._condition:
+            self._pending = callback
+            if self._worker is not None and self._worker.is_alive():
+                return
+            self._worker = threading.Thread(target=self._run, name="moss-live-canonical-pump", daemon=True)
+            self._worker.start()
 
-    async def _run(self) -> None:
-        try:
-            while self._pending is not None:
+    def _run(self) -> None:
+        while True:
+            with self._condition:
+                if self._pending is None:
+                    self._worker = None
+                    return
                 callback = self._pending
                 self._pending = None
                 self._in_flight = True
-                try:
-                    result = callback()
-                    if result is not None:
-                        await result
-                finally:
+            try:
+                result = callback()
+                if inspect.isawaitable(result):
+                    asyncio.run(result)
+            finally:
+                with self._condition:
                     self._in_flight = False
-        finally:
-            self._task = None
-            if self._pending is not None:
-                self.signal(self._pending)
 
 
 class _ManualCanonicalPumpScheduler:
@@ -403,94 +410,104 @@ class LiveServiceRuntime:
         self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
         self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
         self._sessions: dict[str, _RuntimeSession] = {}
+        self._lock = threading.RLock()
+        self._ready_session_ids: deque[str] = deque()
+        self._ready_session_set: set[str] = set()
+        self._in_flight_session_ids: set[str] = set()
 
     def create(self) -> LiveServiceCreateResult:
-        session_id = self._new_session_id()
-        session = LiveSession(
-            max_retained_samples=self.descriptor.bounds.max_retained_samples,
-            hard_cap_samples=self.descriptor.bounds.hard_cap_samples,
-        )
-        arbiter = InferenceArbiter(max_live_canonical_items=self.descriptor.bounds.max_queue_depth)
-        coordinator = LiveCoordinator(
-            session_key=session_id,
-            session=session,
-            endpoint_policy=self._endpoint_policy_factory(),
-            speech_provider=self._speech_provider_factory(),
-            decoder=self._decoder_factory(),
-            identity_preparer=self._identity_preparer_factory(),
-            arbiter=arbiter,
-        )
-        state = _RuntimeSession(
-            session_id=session_id,
-            descriptor=self.descriptor,
-            session=session,
-            coordinator=coordinator,
-            arbiter=arbiter,
-            events=deque(maxlen=self.descriptor.bounds.max_events),
-        )
-        self._sessions[session_id] = state
-        self._record_event(state, "session_created", {})
-        snapshot = self._snapshot(state)
-        return LiveServiceCreateResult(session_id=session_id, descriptor=self.descriptor, snapshot=snapshot)
+        with self._lock:
+            session_id = self._new_session_id()
+            session = LiveSession(
+                max_retained_samples=self.descriptor.bounds.max_retained_samples,
+                hard_cap_samples=self.descriptor.bounds.hard_cap_samples,
+            )
+            arbiter = InferenceArbiter(max_live_canonical_items=self.descriptor.bounds.max_queue_depth)
+            coordinator = LiveCoordinator(
+                session_key=session_id,
+                session=session,
+                endpoint_policy=self._endpoint_policy_factory(),
+                speech_provider=self._speech_provider_factory(),
+                decoder=self._decoder_factory(),
+                identity_preparer=self._identity_preparer_factory(),
+                arbiter=arbiter,
+            )
+            state = _RuntimeSession(
+                session_id=session_id,
+                descriptor=self.descriptor,
+                session=session,
+                coordinator=coordinator,
+                arbiter=arbiter,
+                events=deque(maxlen=self.descriptor.bounds.max_events),
+            )
+            self._sessions[session_id] = state
+            self._record_event(state, "session_created", {})
+            snapshot = self._snapshot(state)
+            return LiveServiceCreateResult(session_id=session_id, descriptor=self.descriptor, snapshot=snapshot)
 
     def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
-        state = self._get(session_id)
-        self._raise_terminal(state)
-        try:
-            result = state.coordinator.accept_frame(frame)
-        except Exception as exc:
-            self._fail(state, self._failure_from_exception(exc))
-            raise
+        with self._lock:
+            state = self._get(session_id)
+            self._raise_terminal(state)
+            try:
+                result = state.coordinator.accept_frame(frame)
+            except Exception as exc:
+                self._fail(state, self._failure_from_exception(exc))
+                raise
 
-        session_snapshot = state.session.snapshot()
-        ack = FrameAck(
-            sequence=frame.sequence,
-            start_sample=result.accepted_start_sample,
-            end_sample=result.accepted_end_sample,
-            accepted_samples=session_snapshot.accepted_samples,
-            retained_samples=session_snapshot.retained_samples,
-            frozen_span_ids=tuple(span.id for span in result.frozen_spans),
-        )
-        self._record_event(
-            state,
-            "frame_accepted",
-            {
-                "sequence": frame.sequence,
-                "start_sample": result.accepted_start_sample,
-                "end_sample": result.accepted_end_sample,
-                "queued_item_ids": result.queued_item_ids,
-            },
-        )
-        for span in result.frozen_spans:
+            session_snapshot = state.session.snapshot()
+            ack = FrameAck(
+                sequence=frame.sequence,
+                start_sample=result.accepted_start_sample,
+                end_sample=result.accepted_end_sample,
+                accepted_samples=session_snapshot.accepted_samples,
+                retained_samples=session_snapshot.retained_samples,
+                frozen_span_ids=tuple(span.id for span in result.frozen_spans),
+            )
             self._record_event(
                 state,
-                "span_frozen",
+                "frame_accepted",
                 {
-                    "span_id": span.id,
-                    "start_sample": span.start_sample,
-                    "end_sample": span.end_sample,
-                    "reason": span.reason,
+                    "sequence": frame.sequence,
+                    "start_sample": result.accepted_start_sample,
+                    "end_sample": result.accepted_end_sample,
+                    "queued_item_ids": result.queued_item_ids,
                 },
             )
-        for item_id in result.queued_item_ids:
-            self._record_event(state, "canonical_queued", {"item_id": item_id})
-        return LiveServiceFrameResult(
-            ack=ack,
-            queued_item_ids=result.queued_item_ids,
-            snapshot=self._snapshot(state),
-        )
+            for span in result.frozen_spans:
+                self._record_event(
+                    state,
+                    "span_frozen",
+                    {
+                        "span_id": span.id,
+                        "start_sample": span.start_sample,
+                        "end_sample": span.end_sample,
+                        "reason": span.reason,
+                    },
+                )
+            for item_id in result.queued_item_ids:
+                self._record_event(state, "canonical_queued", {"item_id": item_id})
+            if result.queued_item_ids:
+                self._mark_ready_locked(state)
+            return LiveServiceFrameResult(
+                ack=ack,
+                queued_item_ids=result.queued_item_ids,
+                snapshot=self._snapshot(state),
+            )
 
     def events(self, session_id: str, since_seq: int = 0) -> tuple[LiveServiceEvent, ...]:
-        state = self._get(session_id)
-        _non_negative(since_seq, "since_seq")
-        return tuple(event for event in state.events if event.seq >= since_seq)
+        with self._lock:
+            state = self._get(session_id)
+            _non_negative(since_seq, "since_seq")
+            return tuple(event for event in state.events if event.seq >= since_seq)
 
     def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
-        state = self._get(session_id)
-        snapshot = self._snapshot(state)
-        if since_version is not None and snapshot.session.version <= since_version:
-            return None
-        return snapshot
+        with self._lock:
+            state = self._get(session_id)
+            snapshot = self._snapshot(state)
+            if since_version is not None and snapshot.session.version <= since_version:
+                return None
+            return snapshot
 
     async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
         state = self._get(session_id)
@@ -501,6 +518,8 @@ class LiveServiceRuntime:
             queued = state.coordinator.stop_endpoint()
             for item_id in queued:
                 self._record_event(state, "canonical_queued", {"item_id": item_id, "reason": "stop"})
+            if queued:
+                self._mark_ready_locked(state)
             while self._pending_work_items(state) or state.session.snapshot().pending_span_ids:
                 if loop.time() > end_time:
                     raise TimeoutError("live service stop deadline expired with unresolved work.")
@@ -565,22 +584,86 @@ class LiveServiceRuntime:
         )
 
     def _pending_work_items(self, state: _RuntimeSession) -> int:
-        return state.arbiter.snapshot().live_canonical
+        in_flight = 1 if state.session_id in self._in_flight_session_ids else 0
+        return state.arbiter.snapshot().live_canonical + in_flight
+
+    def _mark_ready_locked(self, state: _RuntimeSession) -> None:
+        if state.terminal_failure is not None:
+            return
+        if state.session_id in self._in_flight_session_ids or state.session_id in self._ready_session_set:
+            return
+        if state.arbiter.snapshot().live_canonical <= 0:
+            return
+        self._ready_session_ids.append(state.session_id)
+        self._ready_session_set.add(state.session_id)
+        self._canonical_scheduler.signal(self._drain_ready_sessions)
+
+    def _discard_ready_locked(self, state: _RuntimeSession) -> None:
+        if state.session_id not in self._ready_session_set:
+            return
+        self._ready_session_set.remove(state.session_id)
+        self._ready_session_ids = deque(
+            session_id for session_id in self._ready_session_ids if session_id != state.session_id
+        )
+
+    def _drain_ready_sessions(self) -> None:
+        while self._pump_next_ready_session(raise_errors=False):
+            pass
+
+    def _pump_next_ready_session(self, *, raise_errors: bool) -> bool:
+        with self._lock:
+            while self._ready_session_ids:
+                session_id = self._ready_session_ids.popleft()
+                self._ready_session_set.remove(session_id)
+                state = self._sessions.get(session_id)
+                if state is None or state.terminal_failure is not None:
+                    continue
+                if state.session_id in self._in_flight_session_ids:
+                    continue
+                item = state.arbiter.next_work()
+                if item is None:
+                    if state.session.snapshot().pending_span_ids:
+                        failure = LiveServiceIdentityCommitFailure(
+                            "live service has unresolved frozen spans without queued work.",
+                            code="unqueued_frozen_span",
+                        ).failure
+                        self._fail(state, failure)
+                        if raise_errors:
+                            raise LiveServiceIdentityCommitFailure(failure.message, code=failure.code)
+                    continue
+                self._in_flight_session_ids.add(state.session_id)
+                self._record_event(state, "canonical_started", {"item_id": item.id})
+                self._process_in_flight_item(state, item, raise_errors=raise_errors)
+                return True
+            return False
 
     def _pump_one(self, state: _RuntimeSession) -> None:
-        item = state.arbiter.next_work()
-        if item is None:
-            if state.session.snapshot().pending_span_ids:
-                raise LiveServiceIdentityCommitFailure(
-                    "live service has unresolved frozen spans without queued work.",
-                    code="unqueued_frozen_span",
-                )
-            return
+        with self._lock:
+            self._discard_ready_locked(state)
+            if state.session_id in self._in_flight_session_ids:
+                return
+            item = state.arbiter.next_work()
+            if item is None:
+                if state.session.snapshot().pending_span_ids:
+                    raise LiveServiceIdentityCommitFailure(
+                        "live service has unresolved frozen spans without queued work.",
+                        code="unqueued_frozen_span",
+                    )
+                return
+            self._in_flight_session_ids.add(state.session_id)
+            self._record_event(state, "canonical_started", {"item_id": item.id})
+            self._process_in_flight_item(state, item, raise_errors=True)
+
+    def _process_in_flight_item(self, state: _RuntimeSession, item: Any, *, raise_errors: bool) -> None:
         try:
             result = state.coordinator.process_work_item(item)
         except Exception as exc:
             self._fail(state, self._failure_from_exception(exc))
-            raise
+            if raise_errors:
+                raise
+            return
+        finally:
+            self._in_flight_session_ids.discard(state.session_id)
         self._record_event(
             state,
             "canonical_processed",
@@ -599,11 +682,14 @@ class LiveServiceRuntime:
                 detail={"span_id": result.span_id, "identity_status": result.identity_status},
             ).failure
             self._fail(state, failure)
-            raise LiveServiceIdentityCommitFailure(
-                failure.message,
-                code=failure.code,
-                detail=failure.detail,
-            )
+            if raise_errors:
+                raise LiveServiceIdentityCommitFailure(
+                    failure.message,
+                    code=failure.code,
+                    detail=failure.detail,
+                )
+        elif state.arbiter.snapshot().live_canonical > 0:
+            self._mark_ready_locked(state)
 
     def _record_event(self, state: _RuntimeSession, kind: str, payload: Mapping[str, Any]) -> None:
         event = LiveServiceEvent(
