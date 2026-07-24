@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import hashlib
 import importlib.metadata
 import json
+import socket
 from types import SimpleNamespace
 
 import pytest
@@ -159,6 +161,20 @@ def test_bundle_preflight_rejects_asset_hash_drift(tmp_path):
     assert "asset sha256 mismatch: provider-asset" in preflight.failures
 
 
+def test_bundle_preflight_is_offline_when_network_is_denied(tmp_path, monkeypatch):
+    def deny_network(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("live provider preflight attempted network access")
+
+    monkeypatch.setattr(socket, "create_connection", deny_network)
+    monkeypatch.setattr(socket, "socket", deny_network)
+
+    preflight = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path))).preflight()
+
+    assert preflight.available is True
+    assert preflight.failures == ()
+
+
 def test_bundle_runtime_factory_uses_existing_live_runtime_seams(tmp_path):
     config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
     runner = FakeRunner()
@@ -182,6 +198,47 @@ def test_bundle_runtime_factory_fails_before_route_construction(tmp_path):
 
     with pytest.raises(LiveProviderBundleAdmissionError, match="runner has no transcribe"):
         build_live_runtime_factory(config, object())
+
+
+def test_web_cli_disabled_live_does_not_import_provider_bundle_or_optional_providers(monkeypatch):
+    from moss_transcribe_diarize.app.web_cli import _live_runtime_factory
+
+    real_import = builtins.__import__
+    forbidden_roots = {"onnxruntime", "webrtcvad", "silero", "pyannote"}
+    forbidden_modules = {"moss_transcribe_diarize.app.live_provider_bundle"}
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name in forbidden_modules or name.split(".", 1)[0] in forbidden_roots:
+            raise AssertionError(f"disabled live mode imported optional provider surface: {name}")
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+    assert _live_runtime_factory(SimpleNamespace(live=False, live_provider_manifest=None)) is None
+
+
+def test_web_cli_enabled_live_rejects_bad_manifest_before_app_construction(tmp_path):
+    from moss_transcribe_diarize.app.web_cli import _live_runtime_factory
+
+    manifest_path = _write_manifest(tmp_path, _manifest(tmp_path, runtime_device="cuda"))
+    args = SimpleNamespace(
+        live=True,
+        live_provider_manifest=str(manifest_path),
+        backend="hf",
+        model="fake-model",
+        vllm_model=None,
+        vllm_base_url=None,
+        vllm_api_key="EMPTY",
+        vllm_timeout=600.0,
+        device="cpu",
+        dtype="float32",
+    )
+
+    with pytest.raises(LiveProviderBundleAdmissionError) as exc:
+        _live_runtime_factory(args)
+
+    assert exc.value.failure.code == "bundle_preflight_failed"
+    assert "runtime.device must be cpu" in exc.value.failure.detail["failures"]
 
 
 def test_silero_onnx_adapter_emits_observations_only_from_injected_inference():
