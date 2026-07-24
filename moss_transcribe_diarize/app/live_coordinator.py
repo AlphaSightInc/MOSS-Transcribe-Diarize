@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections import deque
 from dataclasses import dataclass
 from typing import Protocol
@@ -13,6 +14,7 @@ from .live_session import (
     AudioFrame,
     CanonicalResult,
     FrozenSpan,
+    LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
     LiveSession,
@@ -68,6 +70,10 @@ class CoordinatorWorkResult:
     submitted: bool
     identity_status: str
     committed_samples: int
+    canonical_decode_elapsed_sec: float | None = None
+    frozen_span_sample_count: int | None = None
+    frozen_span_duration_sec: float | None = None
+    canonical_decode_rtf: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,11 +189,16 @@ class LiveCoordinator:
         snapshot = self.session.snapshot()
         if submitted:
             self._pcm.prune_before(snapshot.committed_samples)
+        measurement = _canonical_decode_measurement(span, work.decode_elapsed_sec)
         return CoordinatorWorkResult(
             span_id=span.id,
             submitted=submitted,
             identity_status=preparation.status,
             committed_samples=snapshot.committed_samples,
+            canonical_decode_elapsed_sec=measurement["canonical_decode_elapsed_sec"],
+            frozen_span_sample_count=measurement["frozen_span_sample_count"],
+            frozen_span_duration_sec=measurement["frozen_span_duration_sec"],
+            canonical_decode_rtf=measurement["canonical_decode_rtf"],
         )
 
     def process_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkResult:
@@ -284,3 +295,23 @@ def _transcript_text(inferred: InferenceTranscript) -> str:
     if not transcript.strip() or not parse_transcript(transcript):
         raise LiveCoordinatorError("canonical decoder returned an invalid transcript.")
     return transcript
+
+
+def _canonical_decode_measurement(span: FrozenSpan, elapsed_sec: float | None) -> dict[str, float | int | None]:
+    sample_count = span.sample_count
+    if sample_count <= 0:
+        raise LiveCoordinatorError("canonical span sample count must be positive.")
+    duration_sec = sample_count / float(LIVE_SAMPLE_RATE)
+    if elapsed_sec is None:
+        rtf = None
+    else:
+        elapsed_sec = float(elapsed_sec)
+        if not math.isfinite(elapsed_sec) or elapsed_sec < 0:
+            raise LiveCoordinatorError("canonical decode elapsed_sec must be finite and non-negative.")
+        rtf = elapsed_sec / duration_sec
+    return {
+        "canonical_decode_elapsed_sec": elapsed_sec,
+        "frozen_span_sample_count": sample_count,
+        "frozen_span_duration_sec": duration_sec,
+        "canonical_decode_rtf": rtf,
+    }

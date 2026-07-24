@@ -712,6 +712,10 @@ class LiveServiceRuntime:
                         "submitted": result.submitted,
                         "identity_status": result.identity_status,
                         "committed_samples": result.committed_samples,
+                        "canonical_decode_elapsed_sec": result.canonical_decode_elapsed_sec,
+                        "frozen_span_sample_count": result.frozen_span_sample_count,
+                        "frozen_span_duration_sec": result.frozen_span_duration_sec,
+                        "canonical_decode_rtf": result.canonical_decode_rtf,
                     },
                 )
                 if not result.submitted:

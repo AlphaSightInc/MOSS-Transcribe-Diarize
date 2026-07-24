@@ -336,8 +336,9 @@ class LiveServiceReplayContractTest(unittest.TestCase):
             live_enabled=True,
             live_runtime_factory=lambda: _runtime(
                 descriptor=descriptor,
-                speech=(False,),
+                speech=(True, False),
                 session_ids=("http-session",),
+                decoder=RecordingDecoder(elapsed_sec=0.01),
             ),
         )
         port = _free_port()
@@ -358,12 +359,28 @@ class LiveServiceReplayContractTest(unittest.TestCase):
             )
             events = service.events(created.session_id, since_seq=0)
             filtered_events = service.events(created.session_id, since_seq=1)
+            service.accept_frame(
+                created.session_id,
+                AudioFrame(sequence=1, pcm=b"\0\0" * 400, sample_count=400),
+            )
+            deadline = time.monotonic() + 5.0
+            processed = []
+            while time.monotonic() < deadline:
+                processed = [event for event in service.events(created.session_id) if event.kind == "canonical_processed"]
+                if processed:
+                    break
+                time.sleep(0.01)
 
             self.assertEqual(created.session_id, "http-session")
             self.assertEqual(result.ack.accepted_samples, 400)
             self.assertEqual(events[0].kind, "session_created")
             self.assertEqual([event.seq for event in filtered_events], [1])
             self.assertEqual(filtered_events[0].kind, "frame_accepted")
+            self.assertTrue(processed)
+            self.assertEqual(processed[0].payload["canonical_decode_elapsed_sec"], 0.01)
+            self.assertEqual(processed[0].payload["frozen_span_sample_count"], 400)
+            self.assertEqual(processed[0].payload["frozen_span_duration_sec"], 400 / LIVE_SAMPLE_RATE)
+            self.assertAlmostEqual(processed[0].payload["canonical_decode_rtf"], 0.4)
         finally:
             server.should_exit = True
             thread.join(timeout=5)
@@ -399,6 +416,7 @@ def _runtime(
     descriptor: LiveServiceDescriptor,
     speech: tuple[bool, ...],
     session_ids: tuple[str, ...],
+    decoder: "RecordingDecoder | None" = None,
     identity: "PreparingIdentity | None" = None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
@@ -408,7 +426,7 @@ def _runtime(
             EndpointPolicyConfig(min_speech_samples=1, min_silence_samples=1)
         ),
         speech_provider_factory=lambda: ScriptedSpeechProvider(speech),
-        decoder_factory=lambda: RecordingDecoder(),
+        decoder_factory=lambda: decoder or RecordingDecoder(),
         identity_preparer_factory=lambda: identity or PreparingIdentity(),
         session_id_factory=lambda: next(ids),
     )
@@ -432,9 +450,12 @@ class ScriptedSpeechProvider:
 class RecordingDecoder:
     max_samples = 4000
 
+    def __init__(self, elapsed_sec: float | None = None):
+        self.elapsed_sec = elapsed_sec
+
     def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
         del span, pcm
-        return InferenceTranscript("[0][S01]decoded[0.01]")
+        return InferenceTranscript("[0][S01]decoded[0.01]", elapsed_sec=self.elapsed_sec)
 
 
 @dataclass

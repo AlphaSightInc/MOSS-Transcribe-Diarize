@@ -167,14 +167,15 @@ class ScriptedSpeechProvider:
 class RecordingDecoder:
     max_samples = 4000
 
-    def __init__(self):
+    def __init__(self, elapsed_sec: float | None = None):
         self.calls: list[tuple[int, int]] = []
+        self.elapsed_sec = elapsed_sec
 
     def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
         del pcm
         self.calls.append((span.start_sample, span.end_sample))
         seconds = span.sample_count / LIVE_SAMPLE_RATE
-        return InferenceTranscript(f"[0][S01]decoded[{seconds:g}]")
+        return InferenceTranscript(f"[0][S01]decoded[{seconds:g}]", elapsed_sec=self.elapsed_sec)
 
 
 class BlockingDecoder(RecordingDecoder):
@@ -363,6 +364,24 @@ def test_runtime_frame_admission_queues_without_canonical_decode():
     event_kinds = [event.kind for event in runtime.events(created.session_id)]
     assert event_kinds.index("canonical_queued") < event_kinds.index("canonical_started")
     assert event_kinds.index("canonical_started") < event_kinds.index("canonical_processed")
+
+
+def test_runtime_canonical_processed_event_reports_measured_decode_rtf():
+    decoder = RecordingDecoder(elapsed_sec=0.03125)
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+
+    assert scheduler.run_one()
+
+    processed = [event for event in runtime.events(created.session_id) if event.kind == "canonical_processed"][0]
+    assert processed.payload["canonical_decode_elapsed_sec"] == 0.03125
+    assert processed.payload["frozen_span_sample_count"] == 1000
+    assert processed.payload["frozen_span_duration_sec"] == 1000 / LIVE_SAMPLE_RATE
+    assert processed.payload["canonical_decode_rtf"] == 0.5
+    assert processed.to_dict()["payload"]["canonical_decode_rtf"] == 0.5
 
 
 def test_blocked_decode_does_not_block_frame_admission_or_snapshot_reads():

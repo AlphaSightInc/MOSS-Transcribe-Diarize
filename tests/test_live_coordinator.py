@@ -186,6 +186,11 @@ def test_coordinator_prepared_work_preserves_decoder_elapsed_sec():
     prepared = live.prepare_work_item(live.capture_work_item(arbiter.next_work()))
 
     assert prepared.decode_elapsed_sec == 123.0
+    result = live.submit_prepared_work(prepared)
+    assert result.canonical_decode_elapsed_sec == 123.0
+    assert result.frozen_span_sample_count == 1000
+    assert result.frozen_span_duration_sec == 1000 / LIVE_SAMPLE_RATE
+    assert result.canonical_decode_rtf == pytest.approx(123.0 / (1000 / LIVE_SAMPLE_RATE))
 
 
 def test_coordinator_backpressure_leaves_frozen_span_uncommitted_not_dropped():
