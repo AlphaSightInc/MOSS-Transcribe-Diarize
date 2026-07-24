@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import dataclasses
 import threading
 import time
@@ -546,6 +547,106 @@ def test_stop_with_positive_deadline_yields_while_worker_is_in_flight():
     assert snapshot.session.status == "closed"
     assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
     assert snapshot.pending_work_items == 0
+
+
+def test_stop_deadline_is_not_delayed_by_saturated_default_executor():
+    async def exercise_stop():
+        loop = asyncio.get_running_loop()
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        loop.set_default_executor(executor)
+        executor_release = threading.Event()
+        occupied = loop.run_in_executor(None, executor_release.wait)
+
+        scheduler = _TransientCanonicalPumpScheduler()
+        decoder = BlockingDecoder()
+        runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+        created = runtime.create()
+        runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+        runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+        assert decoder.entered.wait(timeout=1.0)
+
+        def release_later() -> None:
+            time.sleep(0.02)
+            decoder.release.set()
+            time.sleep(0.23)
+            executor_release.set()
+
+        helper = threading.Thread(target=release_later)
+        helper.start()
+        started = time.monotonic()
+        snapshot = None
+        elapsed = None
+        try:
+            snapshot = await runtime.stop(created.session_id, deadline=0.10)
+            elapsed = time.monotonic() - started
+        finally:
+            executor_release.set()
+            await occupied
+            helper.join(timeout=1.0)
+            executor.shutdown(wait=True)
+        assert snapshot is not None
+        assert elapsed is not None
+        return snapshot, elapsed
+
+    snapshot, elapsed = asyncio.run(exercise_stop())
+
+    assert snapshot.session.status == "closed"
+    assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
+    assert elapsed < 0.20
+
+
+def test_cancelled_stop_unregisters_waiter_without_default_executor_residue():
+    async def exercise_cancelled_stop():
+        loop = asyncio.get_running_loop()
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        loop.set_default_executor(executor)
+
+        scheduler = _TransientCanonicalPumpScheduler()
+        decoder = BlockingDecoder()
+        runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+        created = runtime.create()
+        runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+        runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+        assert decoder.entered.wait(timeout=1.0)
+
+        stop_task = asyncio.create_task(runtime.stop(created.session_id, deadline=0.6))
+        await asyncio.sleep(0.05)
+        stop_task.cancel()
+        try:
+            await stop_task
+        except asyncio.CancelledError:
+            pass
+
+        marker = loop.run_in_executor(None, time.monotonic)
+        try:
+            await asyncio.wait_for(marker, timeout=0.10)
+        finally:
+            decoder.release.set()
+            executor.shutdown(wait=True)
+        state = runtime._get(created.session_id)
+        return state.drain_waiters
+
+    waiters = asyncio.run(exercise_cancelled_stop())
+
+    assert waiters == set()
+
+
+def test_concurrent_stops_across_sessions_share_no_executor_waiters():
+    runtime = _runtime(speech=(True,), session_ids=("session-1", "session-2", "session-3"))
+    created = [runtime.create() for _ in range(3)]
+    for result in created:
+        runtime.accept_frame(result.session_id, _frame(0, byte=result.session_id[-1].encode("ascii")))
+
+    async def stop_all():
+        return await asyncio.gather(
+            *(runtime.stop(result.session_id, deadline=1.0) for result in created)
+        )
+
+    snapshots = asyncio.run(stop_all())
+
+    assert [snapshot.session.status for snapshot in snapshots] == ["closed", "closed", "closed"]
+    assert [snapshot.pending_work_items for snapshot in snapshots] == [0, 0, 0]
+    assert [snapshot.session.accounted_samples for snapshot in snapshots] == [1000, 1000, 1000]
 
 
 def test_wait_for_drain_registers_and_rechecks_without_lost_wakeup():
