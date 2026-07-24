@@ -215,6 +215,25 @@ class SameTickLoop:
         return 100.0
 
 
+class InterleavingWorkChangedEvent(threading.Event):
+    def __init__(self) -> None:
+        super().__init__()
+        self.clear_entered = threading.Event()
+        self.set_during_clear = threading.Event()
+        self.allow_clear = threading.Event()
+
+    def clear(self) -> None:
+        self.clear_entered.set()
+        if not self.allow_clear.wait(timeout=1.0):
+            raise RuntimeError("test did not release work_changed.clear().")
+        super().clear()
+
+    def set(self) -> None:
+        if self.clear_entered.is_set() and not self.allow_clear.is_set():
+            self.set_during_clear.set()
+        super().set()
+
+
 @dataclass
 class PreparingIdentity:
     status: str = "prepared"
@@ -527,6 +546,42 @@ def test_stop_with_positive_deadline_yields_while_worker_is_in_flight():
     assert snapshot.session.status == "closed"
     assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
     assert snapshot.pending_work_items == 0
+
+
+def test_wait_for_drain_registers_and_rechecks_without_lost_wakeup():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    state = runtime._get(created.session_id)
+    event = InterleavingWorkChangedEvent()
+    state.work_changed = event
+
+    def orchestrate() -> None:
+        if not event.clear_entered.wait(timeout=1.0):
+            decoder.release.set()
+            event.allow_clear.set()
+            return
+        decoder.release.set()
+        event.set_during_clear.wait(timeout=0.15)
+        event.allow_clear.set()
+
+    helper = threading.Thread(target=orchestrate)
+    helper.start()
+    try:
+        snapshot = asyncio.run(runtime.stop(created.session_id, deadline=0.5))
+    finally:
+        decoder.release.set()
+        event.allow_clear.set()
+        helper.join(timeout=1.0)
+
+    assert snapshot.session.status == "closed"
+    assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
+    assert not event.set_during_clear.is_set()
 
 
 @pytest.mark.parametrize("operation", ("stop", "abort"))
