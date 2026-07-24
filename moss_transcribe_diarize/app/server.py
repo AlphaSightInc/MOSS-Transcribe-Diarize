@@ -12,6 +12,11 @@ from .live_session import LIVE_SAMPLE_RATE
 from .live_service_runtime import LiveServiceRuntime
 from .live_transport import attach_live_routes
 from .model_runner import ModelRunner
+from .speaker_identity import (
+    IdentityResolver,
+    IdentityResolverConfig,
+    WeSpeakerResNet152LmAdapter,
+)
 from .vllm_runner import VllmRunner
 from .windowed_transcription import WindowedRunner
 
@@ -32,6 +37,9 @@ def create_app(
     vllm_model: str | None = None,
     vllm_api_key: str | None = None,
     vllm_timeout: float = 600.0,
+    speaker_identity_tier_b: bool = False,
+    speaker_identity_state: str | Path | None = None,
+    speaker_identity_fixture: str | Path | None = None,
     live_enabled: bool = False,
     live_max_retained_samples: int | None = None,
     live_hard_cap_samples: int | None = None,
@@ -47,15 +55,23 @@ def create_app(
     if backend == "vllm":
         if not vllm_base_url:
             raise ValueError("--vllm-base-url is required when backend='vllm'.")
+        identity_resolver = _build_file_identity_resolver(
+            tier_b_enabled=speaker_identity_tier_b,
+            state_path=speaker_identity_state,
+            fixture_path=speaker_identity_fixture,
+        )
         runner = WindowedRunner(
             VllmRunner(
                 base_url=vllm_base_url,
                 model=vllm_model or str(model_path),
                 api_key=vllm_api_key,
                 timeout=vllm_timeout,
-            )
+            ),
+            identity_resolver=identity_resolver,
         )
     else:
+        if speaker_identity_tier_b:
+            raise ValueError("Speaker identity Tier B is only supported by the vLLM windowed file-mode backend.")
         runner = ModelRunner(model_path, device=device, dtype=dtype)
     manager = JobManager(
         runs_dir,
@@ -309,6 +325,26 @@ def create_app(
         return FileResponse(path, filename=path.name)
 
     return app
+
+
+def _build_file_identity_resolver(
+    *,
+    tier_b_enabled: bool,
+    state_path: str | Path | None,
+    fixture_path: str | Path | None,
+) -> IdentityResolver:
+    config = IdentityResolverConfig(tier_b_enabled=tier_b_enabled)
+    if not tier_b_enabled:
+        return IdentityResolver(config=config)
+    if state_path is None:
+        raise ValueError("Speaker identity Tier B requires --speaker-identity-state.")
+    adapter = WeSpeakerResNet152LmAdapter(Path(state_path).expanduser())
+    preflight = adapter.preflight(
+        fixture_path=None if fixture_path is None else Path(fixture_path).expanduser(),
+    )
+    if not preflight.available:
+        raise ValueError(f"Speaker identity Tier B preflight failed: {preflight.reason}.")
+    return IdentityResolver(config=config, tier_b_encoder=adapter)
 
 
 def _read_processor_config(model_path: str | Path) -> dict[str, Any]:

@@ -185,6 +185,59 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(model["path"], "moss-served")
             self.assertEqual(model["base_url"], "http://vllm.test:8000/v1")
             self.assertEqual(model["windowing"], {"window_seconds": 150, "stride_seconds": 120})
+            self.assertFalse(model["speaker_identity"]["config"]["tier_b"]["enabled"])
+            self.assertEqual(model["speaker_identity"]["availability"]["reason"], "disabled")
+
+    def test_vllm_speaker_identity_enablement_requires_state_path(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with self.assertRaisesRegex(ValueError, "--speaker-identity-state"):
+                create_app(
+                    model_path="unused-local-model",
+                    runs_dir=tmpdir,
+                    backend="vllm",
+                    vllm_base_url="http://vllm.test:8000/v1",
+                    speaker_identity_tier_b=True,
+                )
+
+    def test_vllm_speaker_identity_uses_green_preflight_resolver(self):
+        from moss_transcribe_diarize.app.speaker_identity import TierBPreflight, tier_b_provider_manifest
+        from moss_transcribe_diarize.app.server import create_app
+
+        class PassingAdapter:
+            descriptor = tier_b_provider_manifest()
+
+            def __init__(self, state_path):
+                self.state_path = Path(state_path)
+                self.preflight_calls = []
+
+            def preflight(self, *, fixture_path=None):
+                self.preflight_calls.append(fixture_path)
+                return TierBPreflight(True, None, self.descriptor)
+
+            def embed(self, wav_path, intervals):
+                del wav_path, intervals
+                return [1.0] + [0.0] * 255
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            state = Path(tmpdir) / "state.pt"
+            state.write_bytes(b"state")
+            adapter = PassingAdapter(state)
+            with patch("moss_transcribe_diarize.app.server.WeSpeakerResNet152LmAdapter", return_value=adapter):
+                app = create_app(
+                    model_path="unused-local-model",
+                    runs_dir=tmpdir,
+                    backend="vllm",
+                    vllm_base_url="http://vllm.test:8000/v1",
+                    speaker_identity_tier_b=True,
+                    speaker_identity_state=state,
+                )
+
+            contract = app.state.manager.model_runner.runtime_info()["speaker_identity"]
+            self.assertTrue(contract["config"]["tier_b"]["enabled"])
+            self.assertTrue(contract["availability"]["available"])
+            self.assertEqual(adapter.preflight_calls, [None, None])
 
     def test_job_lifecycle_and_missing_ffmpeg_render_error(self):
         from fastapi.testclient import TestClient
