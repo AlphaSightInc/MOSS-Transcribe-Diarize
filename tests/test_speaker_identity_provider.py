@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -223,6 +224,8 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     monkeypatch.setenv("MOSS_SPEAKER_IDENTITY_TIER_B", "1")
     monkeypatch.setenv("MOSS_SPEAKER_IDENTITY_STATE", "/env/state.pt")
     monkeypatch.setenv("MOSS_SPEAKER_IDENTITY_FIXTURE", "/env/fixture.wav")
+    monkeypatch.setenv("MOSS_LIVE_ENABLED", "1")
+    monkeypatch.setenv("MOSS_LIVE_PROVIDER_MANIFEST", "/env/live-provider.json")
     monkeypatch.setattr(sys, "argv", ["mtd-subtitle-web"])
 
     disabled = parse_args()
@@ -230,6 +233,8 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert disabled.speaker_identity_tier_b is False
     assert disabled.speaker_identity_state is None
     assert disabled.speaker_identity_fixture is None
+    assert disabled.live is False
+    assert disabled.live_provider_manifest is None
 
     monkeypatch.setattr(
         sys,
@@ -241,6 +246,9 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
             "/cli/state.pt",
             "--speaker-identity-fixture",
             "/cli/fixture.wav",
+            "--live",
+            "--live-provider-manifest",
+            "/cli/live-provider.json",
         ],
     )
     enabled = parse_args()
@@ -248,6 +256,50 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert enabled.speaker_identity_tier_b is True
     assert enabled.speaker_identity_state == "/cli/state.pt"
     assert enabled.speaker_identity_fixture == "/cli/fixture.wav"
+    assert enabled.live is True
+    assert enabled.live_provider_manifest == "/cli/live-provider.json"
+
+
+def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch):
+    from moss_transcribe_diarize.app import live_provider_bundle
+    from moss_transcribe_diarize.app.web_cli import _live_runtime_factory
+
+    assert _live_runtime_factory(SimpleNamespace(live=False, live_provider_manifest=None)) is None
+
+    with pytest.raises(SystemExit, match="--live-provider-manifest"):
+        _live_runtime_factory(SimpleNamespace(live=True, live_provider_manifest=None))
+
+    calls = []
+
+    class Config:
+        @classmethod
+        def from_manifest(cls, path):
+            calls.append(("manifest", path))
+            return "config"
+
+    def build_factory(config, runner):
+        calls.append(("build", config, runner))
+        return "factory"
+
+    monkeypatch.setattr(live_provider_bundle, "LiveProviderBundleConfig", Config)
+    monkeypatch.setattr(live_provider_bundle, "build_live_runtime_factory", build_factory)
+    args = SimpleNamespace(
+        live=True,
+        live_provider_manifest="/provider/live-provider.json",
+        backend="hf",
+        model="fake-model",
+        vllm_model=None,
+        vllm_base_url=None,
+        vllm_api_key="EMPTY",
+        vllm_timeout=600.0,
+        device="cpu",
+        dtype="float32",
+    )
+
+    assert _live_runtime_factory(args) == "factory"
+    assert calls[0] == ("manifest", "/provider/live-provider.json")
+    assert calls[1][0:2] == ("build", "config")
+    assert hasattr(calls[1][2], "transcribe")
 
 
 def test_start_web_is_the_single_environment_adapter(tmp_path):
@@ -275,6 +327,8 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "MOSS_SPEAKER_IDENTITY_TIER_B": "1",
         "MOSS_SPEAKER_IDENTITY_STATE": "/provider/state.pt",
         "MOSS_SPEAKER_IDENTITY_FIXTURE": "/provider/smoke.wav",
+        "MOSS_LIVE_ENABLED": "1",
+        "MOSS_LIVE_PROVIDER_MANIFEST": "/provider/live-provider.json",
     }
 
     enabled = subprocess.run(
@@ -287,12 +341,15 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
 
     assert enabled.returncode == 0, enabled.stderr
     enabled_args = capture_path.read_text(encoding="utf-8").splitlines()
-    assert enabled_args[-5:] == [
+    assert enabled_args[-8:] == [
         "--speaker-identity-tier-b",
         "--speaker-identity-state",
         "/provider/state.pt",
         "--speaker-identity-fixture",
         "/provider/smoke.wav",
+        "--live",
+        "--live-provider-manifest",
+        "/provider/live-provider.json",
     ]
 
     disabled = subprocess.run(
@@ -300,11 +357,13 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         check=False,
         capture_output=True,
         text=True,
-        env=env | {"MOSS_SPEAKER_IDENTITY_TIER_B": "0"},
+        env=env | {"MOSS_SPEAKER_IDENTITY_TIER_B": "0", "MOSS_LIVE_ENABLED": "0"},
     )
     assert disabled.returncode == 0, disabled.stderr
     disabled_args = capture_path.read_text(encoding="utf-8").splitlines()
     assert not any(arg.startswith("--speaker-identity") for arg in disabled_args)
+    assert "--live" not in disabled_args
+    assert "--live-provider-manifest" not in disabled_args
 
     invalid = subprocess.run(
         ["bash", "ops/start-web.sh"],
@@ -315,6 +374,26 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
     )
     assert invalid.returncode == 2
     assert "must be 0 or 1" in invalid.stderr
+
+    invalid_live = subprocess.run(
+        ["bash", "ops/start-web.sh"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env | {"MOSS_LIVE_ENABLED": "true"},
+    )
+    assert invalid_live.returncode == 2
+    assert "MOSS_LIVE_ENABLED must be 0 or 1" in invalid_live.stderr
+
+    missing_live_manifest = subprocess.run(
+        ["bash", "ops/start-web.sh"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env={key: value for key, value in (env | {"MOSS_LIVE_ENABLED": "1"}).items() if key != "MOSS_LIVE_PROVIDER_MANIFEST"},
+    )
+    assert missing_live_manifest.returncode != 0
+    assert "MOSS_LIVE_PROVIDER_MANIFEST is required" in missing_live_manifest.stderr
 
 
 def _spec_for(path: Path) -> TierBAssetSpec:
