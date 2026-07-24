@@ -168,14 +168,18 @@ We evaluate MOSS-Transcribe-Diarize using three objective metrics: Character Err
 ### Environment Setup
 
 Use a clean Python environment. The project is tested with Python 3.12 and Transformers 5.x.
+The OpenMOSS repository remains the canonical upstream and retains the project's ownership and history. This managed development/deployment checkout uses the AlphaSightInc fork as `origin` and tracks OpenMOSS as `upstream`:
 
 ```bash
-git clone https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git
+git clone https://github.com/AlphaSightInc/MOSS-Transcribe-Diarize.git
 cd MOSS-Transcribe-Diarize
+git remote add upstream https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git
 uv venv --python 3.12 .venv
 source .venv/bin/activate
 uv pip install -e ".[torch-runtime]" --torch-backend=auto
 ```
+
+Push, pull, and deployment in the MacStudio→GitHub→RTX handoff are operator-managed. Cloning these remotes does not authorize automation to perform those actions.
 
 For fine-tuning, see [FINETUNING.md](FINETUNING.md).
 
