@@ -1,21 +1,43 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
+import base64
+import hashlib
+import json
 import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import wave
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 from .app.live_service_runtime import (
+    LiveServiceBounds,
+    LiveServiceConfigHashes,
     LiveServiceCreateResult,
+    LiveServiceDescriptor,
     LiveServiceError,
     LiveServiceEvent,
     LiveServiceFailureKind,
+    LiveServiceFailureRecord,
     LiveServiceFrameResult,
+    LiveServiceRuntime,
     LiveServiceSnapshot,
 )
-from .app.live_session import AudioFrame
+from .app.live_session import (
+    AudioFrame,
+    CanonicalCommit,
+    FrameAck,
+    LIVE_SAMPLE_RATE,
+    LiveIdentitySnapshot,
+    LiveSnapshot,
+    PCM16_BYTES_PER_SAMPLE,
+    ProvisionalSuffix,
+)
 
 
 class ServiceReplayFailure(RuntimeError):
@@ -81,27 +103,115 @@ class HttpLiveReplayService:
         self.timeout_seconds = float(timeout_seconds)
 
     def create(self) -> LiveServiceCreateResult:
-        raise ServiceReplayTransportFailure("HTTP live replay service create is not implemented yet.")
+        payload = self._json("POST", "/api/live/sessions")
+        return LiveServiceCreateResult(
+            session_id=str(payload["id"]),
+            descriptor=_descriptor_from_dict(payload["descriptor"]),
+            snapshot=_snapshot_from_dict(payload["snapshot"]),
+        )
 
     def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
-        del session_id, frame
-        raise ServiceReplayTransportFailure("HTTP live replay service frame admission is not implemented yet.")
+        payload = self._json(
+            "POST",
+            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/frames",
+            {
+                "sequence": frame.sequence,
+                "sample_rate": frame.sample_rate,
+                "sample_count": frame.sample_count,
+                "pcm_base64": base64.b64encode(frame.pcm).decode("ascii"),
+            },
+        )
+        snapshot_payload = self._json(
+            "GET",
+            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/snapshot",
+        )["snapshot"]
+        return LiveServiceFrameResult(
+            ack=_frame_ack_from_dict(payload["ack"]),
+            queued_item_ids=tuple(int(item) for item in payload.get("queued_item_ids", ())),
+            snapshot=_snapshot_from_dict(snapshot_payload),
+        )
 
     def events(self, session_id: str, since_seq: int = 0) -> tuple[LiveServiceEvent, ...]:
-        del session_id, since_seq
-        raise ServiceReplayTransportFailure("HTTP live replay service event polling is not implemented yet.")
+        query = urllib.parse.urlencode({"since_seq": int(since_seq)})
+        payload = self._json(
+            "GET",
+            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/events?{query}",
+        )
+        return tuple(_event_from_dict(item) for item in payload["events"])
 
     def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
-        del session_id, since_version
-        raise ServiceReplayTransportFailure("HTTP live replay service snapshot polling is not implemented yet.")
+        query = "" if since_version is None else "?" + urllib.parse.urlencode({"since_version": int(since_version)})
+        payload = self._json(
+            "GET",
+            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/snapshot{query}",
+        )
+        snapshot = payload["snapshot"]
+        return None if snapshot is None else _snapshot_from_dict(snapshot)
 
     async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
-        del session_id, deadline
-        raise ServiceReplayTransportFailure("HTTP live replay service stop is not implemented yet.")
+        payload = await asyncio.to_thread(
+            self._json,
+            "POST",
+            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/stop",
+            {"deadline": float(deadline)},
+        )
+        return _snapshot_from_dict(payload["snapshot"])
 
     async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
-        del session_id, reason
-        raise ServiceReplayTransportFailure("HTTP live replay service abort is not implemented yet.")
+        payload = await asyncio.to_thread(
+            self._json,
+            "POST",
+            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/abort",
+            {"reason": reason},
+        )
+        return _snapshot_from_dict(payload["snapshot"])
+
+    def _json(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        data = None
+        headers = {"Accept": "application/json"}
+        if payload is not None:
+            data = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        request = urllib.request.Request(self.base_url + path, data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+                return _load_json_bytes(response.read())
+        except urllib.error.HTTPError as exc:
+            body = exc.read()
+            response_payload = _load_json_bytes(body) if body else {}
+            if exc.code == 404 and path.startswith("/api/live"):
+                raise ServiceReplayProviderConfigFailure("live service routes are disabled.") from exc
+            if isinstance(response_payload, dict) and isinstance(response_payload.get("failure"), dict):
+                raise _replay_failure_from_service(_failure_from_dict(response_payload["failure"])) from exc
+            detail = response_payload.get("detail") if isinstance(response_payload, dict) else str(exc)
+            if exc.code in {408, 429, 502, 503, 504}:
+                raise ServiceReplayTransportFailure(str(detail)) from exc
+            raise ServiceReplayIdentityCommitFailure(str(detail)) from exc
+        except (TimeoutError, OSError) as exc:
+            raise ServiceReplayTransportFailure(f"ambiguous HTTP live replay result: {exc}") from exc
+
+
+class InMemoryLiveReplayService:
+    def __init__(self, runtime: LiveServiceRuntime):
+        self.runtime = runtime
+
+    def create(self) -> LiveServiceCreateResult:
+        return self.runtime.create()
+
+    def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
+        return self.runtime.accept_frame(session_id, frame)
+
+    def events(self, session_id: str, since_seq: int = 0) -> tuple[LiveServiceEvent, ...]:
+        return self.runtime.events(session_id, since_seq=since_seq)
+
+    def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
+        return self.runtime.snapshot(session_id, since_version=since_version)
+
+    async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
+        return await self.runtime.stop(session_id, deadline)
+
+    async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
+        return await self.runtime.abort(session_id, reason)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -161,9 +271,177 @@ def run_service_replay(
     monotonic=time.monotonic,
     sleep=time.sleep,
 ) -> ServiceReplayOutputs:
-    del service, audio_path, out_dir, pace, max_pacing_lag, runs
-    del expect_revision, expect_provider_hash, expect_config_hash, monotonic, sleep
-    raise ServiceReplayTransportFailure("service-backed paced replay runner is not implemented yet.")
+    if pace <= 0:
+        raise ServiceReplayFailure("pace must be positive.")
+    if max_pacing_lag < 0:
+        raise ServiceReplayFailure("max_pacing_lag must be non-negative.")
+    if runs <= 0:
+        raise ServiceReplayFailure("runs must be positive.")
+
+    pcm = _read_mono_pcm16_wav(audio_path)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = out_dir / "replay-manifest.json"
+    audio_samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
+    manifest: dict[str, Any] = {
+        "schema_version": 1,
+        "audio": {
+            "path": str(audio_path),
+            "pcm_sha256": hashlib.sha256(pcm).hexdigest(),
+            "sample_rate": LIVE_SAMPLE_RATE,
+            "sample_count": audio_samples,
+            "bytes": len(pcm),
+        },
+        "runs": runs,
+        "pace": pace,
+        "max_pacing_lag": max_pacing_lag,
+        "expect_revision": expect_revision,
+        "expect_provider_hash": expect_provider_hash,
+        "expect_config_hash": expect_config_hash,
+    }
+
+    last_trace = out_dir / "run-001" / "trace.jsonl"
+    last_summary = out_dir / "run-001" / "summary.json"
+    last_evaluator = out_dir / "run-001" / "evaluator.jsonl"
+    for run_index in range(1, runs + 1):
+        run_dir = out_dir / f"run-{run_index:03d}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        last_trace = run_dir / "trace.jsonl"
+        last_summary = run_dir / "summary.json"
+        last_evaluator = run_dir / "evaluator.jsonl"
+        trace: list[dict[str, Any]] = []
+        summary: dict[str, Any] = {
+            "schema_version": 1,
+            "run_index": run_index,
+            "status": "failed",
+            "failure_kind": None,
+            "frame_count": 0,
+            "accepted_samples": 0,
+            "accounted_samples": 0,
+        }
+        session_id: str | None = None
+        try:
+            created = service.create()
+            session_id = created.session_id
+            descriptor = created.descriptor
+            _validate_descriptor(
+                descriptor,
+                expect_revision=expect_revision,
+                expect_provider_hash=expect_provider_hash,
+                expect_config_hash=expect_config_hash,
+            )
+            if run_index == 1:
+                manifest["descriptor"] = descriptor.to_dict()
+                manifest["frame_samples"] = descriptor.frame_samples
+                manifest["frame_count"] = _frame_count(audio_samples, descriptor.frame_samples)
+                _write_json(manifest_path, manifest)
+
+            trace.append(
+                {
+                    "seq": len(trace),
+                    "kind": "session_created",
+                    "session_id": session_id,
+                    "snapshot_version": created.snapshot.session.version,
+                }
+            )
+            start_time = float(monotonic())
+            offset = 0
+            sequence = 0
+            while offset < audio_samples:
+                sample_count = min(descriptor.frame_samples, audio_samples - offset)
+                scheduled = start_time + (offset / (LIVE_SAMPLE_RATE * pace))
+                now = float(monotonic())
+                if now < scheduled:
+                    sleep(scheduled - now)
+                    now = float(monotonic())
+                lag = now - scheduled
+                if lag > max_pacing_lag:
+                    raise ServiceReplayTransportFailure(
+                        f"pacing lag {lag:.6f}s exceeded bound {max_pacing_lag:.6f}s."
+                    )
+                byte_start = offset * PCM16_BYTES_PER_SAMPLE
+                byte_end = byte_start + sample_count * PCM16_BYTES_PER_SAMPLE
+                result = service.accept_frame(
+                    session_id,
+                    AudioFrame(
+                        sequence=sequence,
+                        pcm=pcm[byte_start:byte_end],
+                        sample_count=sample_count,
+                    ),
+                )
+                if result.ack.sequence != sequence or result.ack.start_sample != offset:
+                    raise ServiceReplayTransportFailure("service acknowledged an unexpected frame sequence or offset.")
+                trace.append(
+                    {
+                        "seq": len(trace),
+                        "kind": "frame_accepted",
+                        "frame_sequence": sequence,
+                        "scheduled_sample": offset,
+                        "sample_count": sample_count,
+                        "observed_monotonic_offset": now - start_time,
+                        "pacing_lag": lag,
+                        "ack": _jsonable(result.ack),
+                        "queued_item_ids": list(result.queued_item_ids),
+                    }
+                )
+                offset += sample_count
+                sequence += 1
+
+            snapshot = asyncio.run(service.stop(session_id, deadline=5.0))
+            for event in service.events(session_id, since_seq=0):
+                trace.append({"seq": len(trace), "kind": "service_event", "event": event.to_dict()})
+            summary.update(
+                {
+                    "status": "succeeded",
+                    "frame_count": sequence,
+                    "accepted_samples": snapshot.session.accepted_samples,
+                    "accounted_samples": snapshot.session.accounted_samples,
+                    "committed_prefix_hash": snapshot.session.committed_prefix_hash,
+                }
+            )
+            trace.append({"seq": len(trace), "kind": "terminal", "status": "succeeded"})
+        except ServiceReplayFailure as exc:
+            summary["failure_kind"] = exc.failure_kind
+            trace.append(
+                {
+                    "seq": len(trace),
+                    "kind": "terminal",
+                    "status": "failed",
+                    "failure_kind": exc.failure_kind,
+                    "message": str(exc),
+                }
+            )
+            _abort_after_failure(service, session_id, str(exc))
+            _write_run_artifacts(last_trace, last_summary, last_evaluator, trace, summary)
+            if not manifest_path.exists():
+                _write_json(manifest_path, manifest)
+            raise
+        except LiveServiceError as exc:
+            replay_exc = _replay_failure_from_service(exc.failure)
+            summary["failure_kind"] = replay_exc.failure_kind
+            trace.append(
+                {
+                    "seq": len(trace),
+                    "kind": "terminal",
+                    "status": "failed",
+                    "failure_kind": replay_exc.failure_kind,
+                    "service_failure": exc.failure.to_dict(),
+                }
+            )
+            _abort_after_failure(service, session_id, exc.failure.message)
+            _write_run_artifacts(last_trace, last_summary, last_evaluator, trace, summary)
+            if not manifest_path.exists():
+                _write_json(manifest_path, manifest)
+            raise replay_exc from exc
+        _write_run_artifacts(last_trace, last_summary, last_evaluator, trace, summary)
+
+    if not manifest_path.exists():
+        _write_json(manifest_path, manifest)
+    return ServiceReplayOutputs(
+        manifest_path=manifest_path,
+        trace_path=last_trace,
+        summary_path=last_summary,
+        evaluator_path=last_evaluator,
+    )
 
 
 def _exit_code_for_service_failure(kind: LiveServiceFailureKind) -> int:
@@ -176,6 +454,217 @@ def _exit_code_for_service_failure(kind: LiveServiceFailureKind) -> int:
     if kind == LiveServiceFailureKind.TRANSPORT_PACING:
         return ServiceReplayTransportFailure.exit_code
     return ServiceReplayFailure.exit_code
+
+
+def _read_mono_pcm16_wav(path: Path) -> bytes:
+    try:
+        with wave.open(str(path), "rb") as wav:
+            if wav.getnchannels() != 1:
+                raise ServiceReplayFailure("audio must be mono.")
+            if wav.getframerate() != LIVE_SAMPLE_RATE:
+                raise ServiceReplayFailure(f"audio must be {LIVE_SAMPLE_RATE} Hz.")
+            if wav.getsampwidth() != PCM16_BYTES_PER_SAMPLE:
+                raise ServiceReplayFailure("audio must be PCM16.")
+            return wav.readframes(wav.getnframes())
+    except wave.Error as exc:
+        raise ServiceReplayFailure(f"audio must be a readable WAV file: {exc}") from exc
+
+
+def _validate_descriptor(
+    descriptor: LiveServiceDescriptor,
+    *,
+    expect_revision: str,
+    expect_provider_hash: str,
+    expect_config_hash: str,
+) -> None:
+    if descriptor.source_revision != expect_revision:
+        raise ServiceReplayProviderConfigFailure("service source revision mismatch.")
+    if descriptor.provider_manifest_hash != expect_provider_hash:
+        raise ServiceReplayProviderConfigFailure("service provider manifest hash mismatch.")
+    if descriptor.config_hashes.combined_config_hash != expect_config_hash:
+        raise ServiceReplayProviderConfigFailure("service configuration hash mismatch.")
+
+
+def _frame_count(sample_count: int, frame_samples: int) -> int:
+    return (sample_count + frame_samples - 1) // frame_samples if sample_count else 0
+
+
+def _abort_after_failure(service: LiveReplayService, session_id: str | None, reason: str) -> None:
+    if session_id is None:
+        return
+    try:
+        asyncio.run(service.abort(session_id, reason))
+    except Exception:
+        return
+
+
+def _write_run_artifacts(
+    trace_path: Path,
+    summary_path: Path,
+    evaluator_path: Path,
+    trace: list[dict[str, Any]],
+    summary: dict[str, Any],
+) -> None:
+    trace_path.write_text(
+        "".join(json.dumps(item, sort_keys=True, separators=(",", ":")) + "\n" for item in trace),
+        encoding="utf-8",
+    )
+    _write_json(summary_path, summary)
+    evaluator_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "run_index": summary["run_index"],
+                "status": summary["status"],
+                "accepted_samples": summary["accepted_samples"],
+                "accounted_samples": summary["accounted_samples"],
+                "failure_kind": summary["failure_kind"],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _load_json_bytes(data: bytes) -> dict[str, Any]:
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ServiceReplayTransportFailure("HTTP live replay returned non-JSON data.") from exc
+    if not isinstance(payload, dict):
+        raise ServiceReplayTransportFailure("HTTP live replay returned a non-object envelope.")
+    return payload
+
+
+def _replay_failure_from_service(failure: LiveServiceFailureRecord) -> ServiceReplayFailure:
+    if failure.kind == LiveServiceFailureKind.PROVIDER_CONFIG:
+        return ServiceReplayProviderConfigFailure(failure.message)
+    if failure.kind == LiveServiceFailureKind.IDENTITY_COMMIT:
+        return ServiceReplayIdentityCommitFailure(failure.message)
+    if failure.kind == LiveServiceFailureKind.RTF:
+        return ServiceReplayRtfFailure(failure.message)
+    if failure.kind == LiveServiceFailureKind.TRANSPORT_PACING:
+        return ServiceReplayTransportFailure(failure.message)
+    return ServiceReplayFailure(failure.message)
+
+
+def _descriptor_from_dict(payload: dict[str, Any]) -> LiveServiceDescriptor:
+    return LiveServiceDescriptor(
+        source_revision=str(payload["source_revision"]),
+        provider_name=str(payload["provider_name"]),
+        provider_revision=str(payload["provider_revision"]),
+        provider_manifest_hash=str(payload["provider_manifest_hash"]),
+        config_hashes=LiveServiceConfigHashes(**payload["config_hashes"]),
+        bounds=LiveServiceBounds(**payload["bounds"]),
+        schema_version=int(payload.get("schema_version", 1)),
+        live_protocol_version=str(payload.get("live_protocol_version", "moss-live-service.v1")),
+        sample_rate=int(payload.get("sample_rate", LIVE_SAMPLE_RATE)),
+        frame_samples=int(payload.get("frame_samples", LIVE_SAMPLE_RATE)),
+        feature_enabled=bool(payload.get("feature_enabled", True)),
+    )
+
+
+def _failure_from_dict(payload: dict[str, Any]) -> LiveServiceFailureRecord:
+    return LiveServiceFailureRecord(
+        kind=LiveServiceFailureKind(payload["kind"]),
+        code=str(payload["code"]),
+        message=str(payload["message"]),
+        retryable=bool(payload.get("retryable", False)),
+        detail=payload.get("detail"),
+    )
+
+
+def _event_from_dict(payload: dict[str, Any]) -> LiveServiceEvent:
+    return LiveServiceEvent(
+        seq=int(payload["seq"]),
+        session_id=str(payload["session_id"]),
+        kind=str(payload["kind"]),
+        snapshot_version=int(payload["snapshot_version"]),
+        payload=payload.get("payload") or {},
+        schema_version=int(payload.get("schema_version", 1)),
+    )
+
+
+def _snapshot_from_dict(payload: dict[str, Any]) -> LiveServiceSnapshot:
+    return LiveServiceSnapshot(
+        session_id=str(payload["session_id"]),
+        descriptor=_descriptor_from_dict(payload["descriptor"]),
+        session=_live_snapshot_from_dict(payload["session"]),
+        pending_work_items=int(payload["pending_work_items"]),
+        terminal_failure=None if payload.get("terminal_failure") is None else _failure_from_dict(payload["terminal_failure"]),
+        schema_version=int(payload.get("schema_version", 1)),
+    )
+
+
+def _live_snapshot_from_dict(payload: dict[str, Any]) -> LiveSnapshot:
+    provisional = payload.get("provisional")
+    return LiveSnapshot(
+        status=str(payload["status"]),
+        epoch=int(payload["epoch"]),
+        version=int(payload["version"]),
+        accepted_samples=int(payload["accepted_samples"]),
+        accounted_samples=int(payload["accounted_samples"]),
+        retained_samples=int(payload["retained_samples"]),
+        committed_samples=int(payload["committed_samples"]),
+        committed_prefix_hash=str(payload["committed_prefix_hash"]),
+        identity_snapshot=_identity_snapshot_from_dict(payload["identity_snapshot"]),
+        committed=tuple(_commit_from_dict(item) for item in payload.get("committed", ())),
+        provisional=None if provisional is None else ProvisionalSuffix(**provisional),
+        next_frame_sequence=int(payload["next_frame_sequence"]),
+        frozen_until_sample=int(payload["frozen_until_sample"]),
+        pending_span_ids=tuple(int(item) for item in payload.get("pending_span_ids", ())),
+        failure_reason=payload.get("failure_reason"),
+    )
+
+
+def _identity_snapshot_from_dict(payload: dict[str, Any]) -> LiveIdentitySnapshot:
+    return LiveIdentitySnapshot(
+        version=int(payload.get("version", 0)),
+        canonical_speakers=tuple(str(item) for item in payload.get("canonical_speakers", ())),
+        diagnostics=tuple((str(left), str(right)) for left, right in payload.get("diagnostics", ())),
+    )
+
+
+def _commit_from_dict(payload: dict[str, Any]) -> CanonicalCommit:
+    return CanonicalCommit(
+        span_id=int(payload["span_id"]),
+        start_sample=int(payload["start_sample"]),
+        end_sample=int(payload["end_sample"]),
+        transcript=str(payload["transcript"]),
+        prefix_hash=str(payload["prefix_hash"]),
+        identity_snapshot_version=int(payload["identity_snapshot_version"]),
+    )
+
+
+def _frame_ack_from_dict(payload: dict[str, Any]) -> FrameAck:
+    return FrameAck(
+        sequence=int(payload["sequence"]),
+        start_sample=int(payload["start_sample"]),
+        end_sample=int(payload["end_sample"]),
+        accepted_samples=int(payload["accepted_samples"]),
+        retained_samples=int(payload["retained_samples"]),
+        frozen_span_ids=tuple(int(item) for item in payload.get("frozen_span_ids", ())),
+    )
+
+
+def _jsonable(value: Any) -> Any:
+    if hasattr(value, "to_dict"):
+        return value.to_dict()
+    if hasattr(value, "__dataclass_fields__"):
+        return {field: _jsonable(getattr(value, field)) for field in value.__dataclass_fields__}
+    if isinstance(value, tuple):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, list):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    return value
 
 
 if __name__ == "__main__":
