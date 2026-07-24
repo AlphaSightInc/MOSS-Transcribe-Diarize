@@ -162,8 +162,8 @@ def compare_live_provider_candidates(
     candidates: Sequence[LiveVadCandidate | Mapping[str, Any]],
     *,
     phase: str,
+    thresholds: Mapping[str, float],
     locked_config_hash: str | None = None,
-    thresholds: Mapping[str, float] | None = None,
 ) -> dict[str, Any]:
     truth_obj = truth if isinstance(truth, LiveVadTruth) else LiveVadTruth.from_mapping(truth)
     validate_live_vad_truth(truth_obj)
@@ -171,12 +171,7 @@ def compare_live_provider_candidates(
     if not candidate_objs:
         raise LiveVadTruthError("at least one candidate is required.")
     _validate_phase_contract(truth_obj, phase=phase, locked_config_hash=locked_config_hash)
-    limits = {
-        "min_speech_recall": 0.95,
-        "max_false_positive_rate": 0.05,
-        "min_safe_end_recall": 1.0,
-        **dict(thresholds or {}),
-    }
+    limits = _validated_thresholds(thresholds)
     results = tuple(_score_candidate(truth_obj, candidate, phase=phase, locked_config_hash=locked_config_hash, thresholds=limits) for candidate in candidate_objs)
     accepted = tuple(item for item in results if item["accepted"])
     best = max(results, key=lambda item: (item["accepted"], item["metrics"]["speech_recall"], -item["metrics"]["false_positive_rate"]))
@@ -184,6 +179,7 @@ def compare_live_provider_candidates(
         "schema_version": 1,
         "phase": phase,
         "fixture_sha256": truth_obj.fixture_sha256,
+        "thresholds": limits,
         "locked_config_hash": _locked_hash_for_phase(phase, accepted, best, locked_config_hash),
         "results": list(results),
     }
@@ -195,6 +191,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--candidate", action="append", default=[], help="Candidate JSON file. Repeat for multiple candidates.")
     parser.add_argument("--phase", required=True, choices=[DEVELOPMENT_60S_PHASE, HOLDOUT_300S_PHASE])
     parser.add_argument("--locked-config-hash", default=None, help="Required exact config hash for holdout.")
+    parser.add_argument("--min-speech-recall", required=True, type=float, help="Reviewed acceptance threshold; no default is supplied.")
+    parser.add_argument(
+        "--max-false-positive-rate",
+        required=True,
+        type=float,
+        help="Reviewed acceptance threshold; no default is supplied.",
+    )
+    parser.add_argument("--min-safe-end-recall", required=True, type=float, help="Reviewed acceptance threshold; no default is supplied.")
     parser.add_argument("--json", action="store_true", help="Emit JSON.")
     args = parser.parse_args(argv)
 
@@ -204,6 +208,11 @@ def main(argv: list[str] | None = None) -> int:
         truth,
         candidates,
         phase=args.phase,
+        thresholds={
+            "min_speech_recall": args.min_speech_recall,
+            "max_false_positive_rate": args.max_false_positive_rate,
+            "min_safe_end_recall": args.min_safe_end_recall,
+        },
         locked_config_hash=args.locked_config_hash,
     )
     if args.json:
@@ -250,6 +259,29 @@ def _score_candidate(
         "scored_samples": speech_total + non_speech_total,
         "uncertain_samples_excluded": sum(interval.sample_count for interval in truth.uncertain_intervals),
     }
+
+
+def _validated_thresholds(thresholds: Mapping[str, float]) -> dict[str, float]:
+    required = {
+        "min_speech_recall",
+        "max_false_positive_rate",
+        "min_safe_end_recall",
+    }
+    if set(thresholds) != required:
+        raise LiveVadTruthError(
+            "thresholds must explicitly provide min_speech_recall, "
+            "max_false_positive_rate, and min_safe_end_recall."
+        )
+    limits: dict[str, float] = {}
+    for name in sorted(required):
+        value = thresholds[name]
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            raise LiveVadTruthError(f"{name} must be numeric.")
+        number = float(value)
+        if not 0.0 <= number <= 1.0:
+            raise LiveVadTruthError(f"{name} must be between 0 and 1.")
+        limits[name] = number
+    return limits
 
 
 def _candidate_failures(truth: LiveVadTruth, candidate: LiveVadCandidate) -> list[str]:

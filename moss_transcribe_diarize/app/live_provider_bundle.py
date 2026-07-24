@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import importlib.metadata
 import importlib.util
 import json
@@ -26,6 +27,7 @@ from .live_service_runtime import (
     hash_config,
 )
 from .live_session import AudioFrame, FrozenSpan, LIVE_SAMPLE_RATE, LiveIdentitySnapshot
+from .speaker_identity import TierBAssetSpec, WeSpeakerResNet152LmAdapter
 
 
 BUNDLE_SCHEMA_VERSION = 1
@@ -39,6 +41,10 @@ REQUIRED_CONFIG_HASH_KEYS = frozenset(
         "combined_config_hash",
     }
 )
+RUNTIME_BACKEND_BY_SPEECH_PROVIDER = {
+    "silero_onnx": "onnxruntime-cpu",
+    "webrtc": "webrtc-cpu",
+}
 
 
 class LiveProviderBundleAdmissionError(LiveServiceProviderConfigFailure):
@@ -159,6 +165,7 @@ class LiveProviderBundleConfig:
     bounds_config: dict[str, Any]
     declared_config_hashes: dict[str, str]
     speech_provider: dict[str, Any]
+    identity_provider: dict[str, Any]
     manifest_path: Path | None = None
     schema_version: int = BUNDLE_SCHEMA_VERSION
 
@@ -205,6 +212,7 @@ class LiveProviderBundleConfig:
             bounds_config=dict(_required_mapping(payload, "bounds_config")),
             declared_config_hashes=_hash_mapping(_required_mapping(payload, "config_hashes")),
             speech_provider=dict(_required_mapping(payload, "speech_provider")),
+            identity_provider=dict(_optional_mapping(payload, "identity_provider")),
         )
 
     def preflight(self) -> LiveProviderBundlePreflight:
@@ -217,6 +225,8 @@ class LiveProviderBundleConfig:
             "provider_license": self.provider_license,
             "provider_provenance": self.provider_provenance,
             "runtime": asdict(self.runtime),
+            "speech_provider_kind": self.speech_provider.get("kind"),
+            "identity_provider_kind": self.identity_provider.get("kind"),
             "sample_rate": LIVE_SAMPLE_RATE,
         }
         return LiveProviderBundlePreflight(
@@ -259,16 +269,21 @@ def build_live_runtime_factory(
         frame_samples=int(config.bounds_config.get("frame_samples", bounds.max_frame_samples)),
     )
 
+    identity_encoder = _identity_encoder(config)
+
     def factory() -> LiveServiceRuntime:
         return LiveServiceRuntime(
             descriptor=descriptor,
             endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config(config.endpoint_config)),
-            speech_provider_factory=lambda: _speech_provider(config.speech_provider),
+            speech_provider_factory=lambda: _speech_provider(config),
             decoder_factory=lambda: RunnerBoundedWavInference(
                 runner,
                 max_samples=_positive_int(config.decoder_config.get("max_samples"), "decoder_config.max_samples"),
             ),
-            identity_preparer_factory=lambda: BoundedCausalIdentityPreparer(config=_identity_config(config.identity_config)),
+            identity_preparer_factory=lambda: BoundedCausalIdentityPreparer(
+                config=_identity_config(config.identity_config),
+                evidence_provider=_identity_evidence_provider(config, encoder=identity_encoder),
+            ),
         )
 
     return factory
@@ -296,6 +311,7 @@ def compute_live_provider_manifest_hash(config: LiveProviderBundleConfig) -> str
         "bounds_config": config.bounds_config,
         "config_hashes": config.declared_config_hashes,
         "speech_provider": config.speech_provider,
+        "identity_provider": config.identity_provider,
     }
     return hash_config(payload)
 
@@ -313,6 +329,7 @@ def compute_live_provider_bundle_hashes(config: LiveProviderBundleConfig) -> dic
             "identity": identity_hash,
             "runtime": hash_config(asdict(config.runtime)),
             "speech_provider": hash_config(config.speech_provider),
+            "identity_provider": hash_config(config.identity_provider),
         }
     )
     return {
@@ -329,31 +346,6 @@ def compute_live_provider_bundle_hashes(config: LiveProviderBundleConfig) -> dic
             }
         ),
     }
-
-
-class _StaticSpeechSignalProvider:
-    def __init__(self, *, speech_present: bool, confidence: float | None = None, provider_reason: str | None = None):
-        self.speech_present = bool(speech_present)
-        self.confidence = confidence
-        self.provider_reason = provider_reason
-
-    def observe(
-        self,
-        *,
-        frame: AudioFrame,
-        start_sample: int,
-        end_sample: int,
-    ) -> tuple[SpeechObservation, ...]:
-        del frame
-        return (
-            SpeechObservation(
-                start_sample=start_sample,
-                end_sample=end_sample,
-                speech_present=self.speech_present,
-                confidence=self.confidence,
-                provider_reason=self.provider_reason,
-            ),
-        )
 
 
 class SileroOnnxSpeechProvider:
@@ -451,7 +443,7 @@ class WeSpeakerLiveEvidenceProvider:
         self,
         *,
         encoder: Any,
-        canonical_embedding: Callable[[LiveIdentitySnapshot, str], Sequence[float] | None],
+        canonical_embedding: Callable[[LiveIdentitySnapshot, str], Sequence[float] | None] | None = None,
         min_segment_samples: int = 1,
     ):
         if min_segment_samples <= 0:
@@ -461,6 +453,8 @@ class WeSpeakerLiveEvidenceProvider:
         self.encoder = encoder
         self._canonical_embedding = canonical_embedding
         self.min_segment_samples = int(min_segment_samples)
+        self._pending_vectors: dict[int, dict[str, tuple[float, ...]]] = {}
+        self._canonical_vectors: dict[str, tuple[float, ...]] = {}
 
     def score(
         self,
@@ -470,8 +464,7 @@ class WeSpeakerLiveEvidenceProvider:
         segments: tuple[TranscriptSegment, ...],
         base_snapshot: LiveIdentitySnapshot,
     ) -> tuple[LiveSpeakerEvidence, ...]:
-        if not base_snapshot.canonical_speakers:
-            return ()
+        self._reconcile_committed_vectors(base_snapshot)
         intervals_by_speaker = _speaker_intervals_by_label(span, segments, self.min_segment_samples)
         if not intervals_by_speaker:
             return ()
@@ -482,10 +475,13 @@ class WeSpeakerLiveEvidenceProvider:
                 speaker: _vector_values(self.encoder.embed(wav_path, intervals))
                 for speaker, intervals in intervals_by_speaker.items()
             }
+        self._pending_vectors[span.id] = local_vectors
+        if not base_snapshot.canonical_speakers:
+            return ()
         evidence: list[LiveSpeakerEvidence] = []
         for local_speaker, local_vector in sorted(local_vectors.items()):
             for canonical_speaker in base_snapshot.canonical_speakers:
-                canonical_vector = self._canonical_embedding(base_snapshot, canonical_speaker)
+                canonical_vector = self._canonical_vector(base_snapshot, canonical_speaker)
                 if canonical_vector is None:
                     continue
                 score = _cosine_similarity(local_vector, _vector_values(canonical_vector))
@@ -499,20 +495,134 @@ class WeSpeakerLiveEvidenceProvider:
                 )
         return tuple(evidence)
 
+    def _canonical_vector(
+        self,
+        snapshot: LiveIdentitySnapshot,
+        speaker: str,
+    ) -> Sequence[float] | None:
+        if self._canonical_embedding is not None:
+            return self._canonical_embedding(snapshot, speaker)
+        return self._canonical_vectors.get(speaker)
 
-def _speech_provider(payload: Mapping[str, Any]) -> _StaticSpeechSignalProvider:
+    def _reconcile_committed_vectors(self, snapshot: LiveIdentitySnapshot) -> None:
+        diagnostics = dict(snapshot.diagnostics)
+        if diagnostics.get("status") != "prepared":
+            return
+        try:
+            span_id = int(diagnostics["span_id"])
+        except (KeyError, TypeError, ValueError):
+            return
+        pending = self._pending_vectors.pop(span_id, None)
+        if pending is None:
+            return
+        for assignment in diagnostics.get("assignments", "").split(","):
+            if "->" not in assignment:
+                continue
+            local_speaker, canonical_speaker = assignment.split("->", 1)
+            vector = pending.get(local_speaker)
+            if vector is not None:
+                self._canonical_vectors[canonical_speaker] = vector
+
+
+def _speech_provider(config: LiveProviderBundleConfig):
+    payload = config.speech_provider
+    kind = _required_str(payload, "kind")
+    if kind == "silero_onnx":
+        package_import = _required_declared_import(config, payload, field="speech_provider")
+        asset = _required_named_asset(config, payload, key="asset_name", field="speech_provider")
+        factory_name = _required_str(payload, "factory")
+        module = importlib.import_module(package_import)
+        factory = getattr(module, factory_name, None)
+        if not callable(factory):
+            raise LiveProviderBundleAdmissionError(
+                f"speech_provider.factory is not callable: {package_import}.{factory_name}",
+                code="bundle_provider_factory",
+            )
+        engine = factory(
+            model_path=str(asset.path),
+            backend=config.runtime.backend,
+            device=config.runtime.device,
+            intra_op_threads=config.runtime.intra_op_threads,
+            inter_op_threads=config.runtime.inter_op_threads,
+        )
+        infer = engine if callable(engine) else getattr(engine, "speech_score", None)
+        if not callable(infer):
+            raise LiveProviderBundleAdmissionError(
+                "silero provider factory must return a callable or expose speech_score().",
+                code="bundle_provider_factory",
+            )
+        return SileroOnnxSpeechProvider(
+            infer=infer,
+            threshold=_required_probability(payload, "threshold", field="speech_provider"),
+            provider_reason=str(payload.get("provider_reason") or "silero_onnx_observation"),
+        )
+    if kind == "webrtc":
+        package_import = _required_declared_import(config, payload, field="speech_provider")
+        factory_name = _required_str(payload, "factory")
+        module = importlib.import_module(package_import)
+        factory = getattr(module, factory_name, None)
+        if not callable(factory):
+            raise LiveProviderBundleAdmissionError(
+                f"speech_provider.factory is not callable: {package_import}.{factory_name}",
+                code="bundle_provider_factory",
+            )
+        mode = _non_negative_int(payload.get("mode"), "speech_provider.mode")
+        vad = factory(mode)
+        return WebRtcSpeechProvider(
+            vad=vad,
+            frame_samples=_positive_int(payload.get("frame_samples"), "speech_provider.frame_samples"),
+            provider_reason=str(payload.get("provider_reason") or "webrtc_observation"),
+        )
+    return _reject_removed_static_provider(payload)
+
+
+def _reject_removed_static_provider(payload: Mapping[str, Any]):
     kind = _required_str(payload, "kind")
     if kind != "static_observation":
         raise LiveProviderBundleAdmissionError(f"unsupported speech provider kind: {kind}", code="bundle_provider_kind")
-    confidence = payload.get("confidence")
-    if confidence is not None:
-        confidence = float(confidence)
-        if not 0.0 <= confidence <= 1.0:
-            raise LiveProviderBundleAdmissionError("speech_provider.confidence must be between 0 and 1.")
-    return _StaticSpeechSignalProvider(
-        speech_present=bool(payload.get("speech_present", False)),
-        confidence=confidence,
-        provider_reason=payload.get("provider_reason"),
+    raise LiveProviderBundleAdmissionError(
+        "static_observation is an unwired stub and cannot enable live mode.",
+        code="bundle_provider_kind",
+    )
+
+
+def _identity_encoder(config: LiveProviderBundleConfig):
+    payload = config.identity_provider
+    kind = _required_str(payload, "kind")
+    if kind != "wespeaker_resnet152_lm":
+        raise LiveProviderBundleAdmissionError(
+            f"unsupported identity provider kind: {kind}",
+            code="bundle_identity_provider_kind",
+        )
+    importlib.import_module(_required_declared_import(config, payload, field="identity_provider"))
+    state_asset = _required_named_asset(config, payload, key="state_asset_name", field="identity_provider")
+    embedding_dimension = config.runtime.embedding_dimension
+    if embedding_dimension is None:
+        raise LiveProviderBundleAdmissionError(
+            "runtime.embedding_dimension is required for live identity.",
+            code="bundle_embedding_dimension",
+        )
+    spec = TierBAssetSpec(
+        provider=kind,
+        revision=_required_str(payload, "revision"),
+        state_sha256=state_asset.sha256,
+        embedding_dimension=embedding_dimension,
+        frontend_version=_required_str(payload, "frontend_version"),
+    )
+    return WeSpeakerResNet152LmAdapter(state_asset.path, spec=spec, device=config.runtime.device)
+
+
+def _identity_evidence_provider(
+    config: LiveProviderBundleConfig,
+    *,
+    encoder: Any,
+) -> WeSpeakerLiveEvidenceProvider:
+    return WeSpeakerLiveEvidenceProvider(
+        encoder=encoder,
+        min_segment_samples=_positive_int(
+            config.identity_provider.get("min_segment_samples"),
+            "identity_provider.min_segment_samples",
+        ),
     )
 
 
@@ -584,9 +694,12 @@ def _collect_preflight_failures(config: LiveProviderBundleConfig) -> list[str]:
     for name in ("intra_op_threads", "inter_op_threads"):
         if getattr(config.runtime, name) <= 0:
             failures.append(f"runtime.{name} must be positive")
+    if not config.packages:
+        failures.append("packages must declare every provider import")
+    if not config.assets:
+        failures.append("assets must declare every provider asset")
     failures.extend(_package_failures(config.packages))
     failures.extend(_asset_failures(config.assets + (config.golden.input,)))
-    failures.extend(_golden_failures(config.golden))
     computed = compute_live_provider_bundle_hashes(config)
     missing_hashes = REQUIRED_CONFIG_HASH_KEYS.difference(config.declared_config_hashes)
     for key in sorted(missing_hashes):
@@ -599,7 +712,15 @@ def _collect_preflight_failures(config: LiveProviderBundleConfig) -> list[str]:
         _identity_config(config.identity_config)
         _bounds(config.bounds_config)
         _positive_int(config.decoder_config.get("max_samples"), "decoder_config.max_samples")
-        _speech_provider(config.speech_provider)
+        _validate_provider_references(config)
+    except Exception as exc:
+        failures.append(str(exc))
+    if failures:
+        return failures
+    try:
+        speech_provider = _speech_provider(config)
+        identity_encoder = _identity_encoder(config)
+        failures.extend(_golden_failures(config, speech_provider=speech_provider, identity_encoder=identity_encoder))
     except Exception as exc:
         failures.append(str(exc))
     return failures
@@ -619,6 +740,10 @@ def _package_failures(packages: tuple[LiveProviderBundlePackage, ...]) -> list[s
             actual = None
         if actual is not None and actual != package.version:
             failures.append(f"package version mismatch: {package.distribution}")
+        parent_import = package.import_name.split(".", 1)[0]
+        if "." in package.import_name and importlib.util.find_spec(parent_import) is None:
+            failures.append(f"package import is not available: {package.import_name}")
+            continue
         if importlib.util.find_spec(package.import_name) is None:
             failures.append(f"package import is not available: {package.import_name}")
     return failures
@@ -643,12 +768,117 @@ def _asset_failures(assets: tuple[LiveProviderBundleAsset, ...]) -> list[str]:
     return failures
 
 
-def _golden_failures(golden: LiveProviderBundleGolden) -> list[str]:
-    payload = f"{golden.input.sha256}:{golden.expected_output_identity}".encode("utf-8")
-    actual = hashlib.sha256(payload).hexdigest()
+def _golden_failures(
+    config: LiveProviderBundleConfig,
+    *,
+    speech_provider: Any,
+    identity_encoder: Any,
+) -> list[str]:
+    golden = config.golden
+    frame = _read_golden_frame(golden.input.path)
+    observations = speech_provider.observe(
+        frame=frame,
+        start_sample=0,
+        end_sample=frame.sample_count,
+    )
+    identity_preflight = identity_encoder.preflight(fixture_path=golden.input.path)
+    if not identity_preflight.available:
+        return [f"identity provider golden preflight failed: {identity_preflight.reason}"]
+    embedding = _vector_values(
+        identity_encoder.embed(
+            golden.input.path,
+            [(0.0, frame.sample_count / float(LIVE_SAMPLE_RATE))],
+        )
+    )
+    if len(embedding) != config.runtime.embedding_dimension:
+        return ["runtime.embedding_dimension mismatch"]
+    actual_identity = (
+        f"{_required_str(config.speech_provider, 'kind')}"
+        f"+{_required_str(config.identity_provider, 'kind')}:golden-v1"
+    )
+    if golden.expected_output_identity != actual_identity:
+        return ["golden expected_output_identity mismatch"]
+    actual = hash_config(
+        {
+            "schema_version": 1,
+            "output_identity": actual_identity,
+            "speech_observations": [asdict(item) for item in observations],
+            "identity_embedding": list(embedding),
+        }
+    )
     if actual != golden.expected_output_sha256:
         return ["golden expected_output_sha256 mismatch"]
     return []
+
+
+def _validate_provider_references(config: LiveProviderBundleConfig) -> None:
+    speech_kind = _required_str(config.speech_provider, "kind")
+    expected_backend = RUNTIME_BACKEND_BY_SPEECH_PROVIDER.get(speech_kind)
+    if expected_backend is None:
+        _reject_removed_static_provider(config.speech_provider)
+    if config.runtime.backend != expected_backend:
+        raise LiveProviderBundleAdmissionError(
+            f"runtime.backend must be {expected_backend} for {speech_kind}.",
+            code="bundle_runtime_backend",
+        )
+    speech_import = _required_declared_import(config, config.speech_provider, field="speech_provider")
+    identity_import = _required_declared_import(config, config.identity_provider, field="identity_provider")
+    declared_imports = {package.import_name for package in config.packages}
+    used_imports = {speech_import, identity_import}
+    if declared_imports != used_imports:
+        raise LiveProviderBundleAdmissionError(
+            "packages must contain exactly the imports consumed by speech_provider and identity_provider.",
+            code="bundle_package_coverage",
+        )
+    state_asset = _required_named_asset(
+        config,
+        config.identity_provider,
+        key="state_asset_name",
+        field="identity_provider",
+    )
+    used_assets = {state_asset.name}
+    if speech_kind == "silero_onnx":
+        used_assets.add(
+            _required_named_asset(
+                config,
+                config.speech_provider,
+                key="asset_name",
+                field="speech_provider",
+            ).name
+        )
+    declared_assets = {asset.name for asset in config.assets}
+    if declared_assets != used_assets:
+        raise LiveProviderBundleAdmissionError(
+            "assets must contain exactly the files consumed by speech_provider and identity_provider.",
+            code="bundle_asset_coverage",
+        )
+    _positive_int(config.identity_provider.get("min_segment_samples"), "identity_provider.min_segment_samples")
+
+
+def _read_golden_frame(path: Path) -> AudioFrame:
+    try:
+        with wave.open(str(path), "rb") as wav:
+            channels = wav.getnchannels()
+            sample_width = wav.getsampwidth()
+            sample_rate = wav.getframerate()
+            sample_count = wav.getnframes()
+            pcm = wav.readframes(sample_count)
+    except (OSError, wave.Error) as exc:
+        raise LiveProviderBundleAdmissionError(
+            "golden.input must be a readable 16 kHz mono PCM16 WAV.",
+            code="bundle_golden_input",
+        ) from exc
+    if channels != 1 or sample_width != 2 or sample_rate != LIVE_SAMPLE_RATE or sample_count <= 0:
+        raise LiveProviderBundleAdmissionError(
+            "golden.input must be a non-empty 16 kHz mono PCM16 WAV.",
+            code="bundle_golden_input",
+        )
+    return AudioFrame(
+        sequence=0,
+        pcm=pcm,
+        sample_count=sample_count,
+        sample_rate=sample_rate,
+    )
 
 
 def _endpoint_config(payload: Mapping[str, Any]) -> EndpointPolicyConfig:
@@ -710,6 +940,7 @@ def _config_kwargs(config: LiveProviderBundleConfig) -> dict[str, Any]:
         "bounds_config": config.bounds_config,
         "declared_config_hashes": config.declared_config_hashes,
         "speech_provider": config.speech_provider,
+        "identity_provider": config.identity_provider,
         "schema_version": config.schema_version,
     }
 
@@ -725,11 +956,50 @@ def _required_mapping(payload: Mapping[str, Any], key: str) -> Mapping[str, Any]
     return value
 
 
+def _optional_mapping(payload: Mapping[str, Any], key: str) -> Mapping[str, Any]:
+    value = payload.get(key, {})
+    if not isinstance(value, Mapping):
+        raise LiveProviderBundleAdmissionError(f"{key} must be an object.", code="bundle_manifest_invalid")
+    return value
+
+
 def _required_sequence(payload: Mapping[str, Any], key: str) -> tuple[Any, ...]:
     value = payload.get(key)
     if not isinstance(value, list):
         raise LiveProviderBundleAdmissionError(f"{key} is required.", code="bundle_manifest_incomplete")
     return tuple(value)
+
+
+def _required_declared_import(
+    config: LiveProviderBundleConfig,
+    payload: Mapping[str, Any],
+    *,
+    field: str,
+) -> str:
+    import_name = _required_str(payload, "package_import")
+    if import_name not in {package.import_name for package in config.packages}:
+        raise LiveProviderBundleAdmissionError(
+            f"{field}.package_import is not declared in packages: {import_name}",
+            code="bundle_provider_package",
+        )
+    return import_name
+
+
+def _required_named_asset(
+    config: LiveProviderBundleConfig,
+    payload: Mapping[str, Any],
+    *,
+    key: str,
+    field: str,
+) -> LiveProviderBundleAsset:
+    name = _required_str(payload, key)
+    matches = [asset for asset in config.assets if asset.name == name]
+    if len(matches) != 1:
+        raise LiveProviderBundleAdmissionError(
+            f"{field}.{key} must reference exactly one declared asset: {name}",
+            code="bundle_provider_asset",
+        )
+    return matches[0]
 
 
 def _as_mapping(value: Any, name: str) -> Mapping[str, Any]:
@@ -759,6 +1029,16 @@ def _non_negative_int(value: Any, name: str) -> int:
     if not isinstance(value, int) or value < 0:
         raise LiveProviderBundleAdmissionError(f"{name} must be a non-negative integer.")
     return value
+
+
+def _required_probability(payload: Mapping[str, Any], key: str, *, field: str) -> float:
+    value = payload.get(key)
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise LiveProviderBundleAdmissionError(f"{field}.{key} must be numeric.")
+    probability = float(value)
+    if not math.isfinite(probability) or not 0.0 <= probability <= 1.0:
+        raise LiveProviderBundleAdmissionError(f"{field}.{key} must be between 0 and 1.")
+    return probability
 
 
 def _required_sha256(payload: Mapping[str, Any], key: str) -> str:

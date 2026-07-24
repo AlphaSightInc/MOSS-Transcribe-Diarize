@@ -436,7 +436,7 @@ provider config, and all declared config hashes:
     }
   ],
   "runtime": {
-    "backend": "<cpu backend>",
+    "backend": "webrtc-cpu",
     "device": "cpu",
     "intra_op_threads": 1,
     "inter_op_threads": 1,
@@ -445,19 +445,33 @@ provider config, and all declared config hashes:
   "golden": {
     "input": {
       "name": "<golden input>",
-      "path": "<manifest-relative golden input>",
+      "path": "<manifest-relative 16 kHz mono PCM16 WAV>",
       "byte_size": 0,
       "sha256": "<64 hex chars>",
       "identity": "<golden input identity>"
     },
     "expected_output_sha256": "<64 hex chars>",
-    "expected_output_identity": "<golden output identity>"
+    "expected_output_identity": "webrtc+wespeaker_resnet152_lm:golden-v1"
   },
   "endpoint_config": {},
   "identity_config": {},
   "decoder_config": {},
   "bounds_config": {},
-  "speech_provider": {},
+  "speech_provider": {
+    "kind": "webrtc",
+    "package_import": "webrtcvad",
+    "factory": "Vad",
+    "mode": "<explicit reviewed value>",
+    "frame_samples": "<explicit frame size>"
+  },
+  "identity_provider": {
+    "kind": "wespeaker_resnet152_lm",
+    "package_import": "pyannote.audio",
+    "state_asset_name": "<name from assets>",
+    "revision": "<provider revision>",
+    "frontend_version": "<frontend identity>",
+    "min_segment_samples": "<explicit reviewed value>"
+  },
   "config_hashes": {
     "endpoint_config_hash": "<64 hex chars>",
     "identity_config_hash": "<64 hex chars>",
@@ -469,6 +483,21 @@ provider config, and all declared config hashes:
 }
 ```
 
+`speech_provider.kind` is either `webrtc` or `silero_onnx`. WebRTC loads the
+declared module and factory directly. Silero additionally names a declared
+`asset_name`, factory, and explicit threshold; the factory receives the local
+model path, CPU backend/device, and thread counts and must return a callable or
+an object exposing `speech_score(pcm, sample_rate)`. The identity provider is
+required and is constructed through the existing file-mode
+`WeSpeakerResNet152LmAdapter`; its state asset and declared import are consumed
+by the runtime, not merely checked by preflight.
+
+Every declared package import and asset must be referenced by one of those
+providers, and every provider reference must be declared. Empty lists,
+decorative entries, unsupported kinds, non-positive thread counts, or a backend
+other than `webrtc-cpu` / `onnxruntime-cpu` for the selected speech adapter fail
+closed.
+
 Run the read-only preflight from the target root before any enablement:
 
 ```bash
@@ -478,12 +507,15 @@ python -m moss_transcribe_diarize.live_provider_preflight \
 ```
 
 Preflight fails closed on unreadable or ambiguous manifest facts, unsupported
-schema, package version or import mismatch, missing asset, byte-size or SHA-256
-drift, non-CPU device, package-free fallback, config-hash drift, golden-output
-mismatch, or any network access attempted by the checked path. A green local or
-synthetic preflight proves only manifest mechanics; it is not provider selection,
-deployment proof, production readiness, or permission to run 60-second or
-300-second live evidence.
+schema/provider kind, package version or import mismatch, empty/decorative
+package or asset declarations, missing asset, byte-size or SHA-256 drift,
+backend/device/thread mismatch, config-hash drift, identity-encoder dimension
+mismatch, or golden-output mismatch. Golden validation executes the constructed
+speech provider and identity encoder on the declared WAV, then hashes their
+normalized observations and embedding; it is not a hash of other manifest
+fields. A green local or synthetic preflight proves only manifest mechanics; it
+is not provider selection, deployment proof, production readiness, or
+permission to run 60-second or 300-second live evidence.
 
 The committed deployment default remains:
 
@@ -522,6 +554,9 @@ python -m moss_transcribe_diarize.live_provider_truth \
   --truth /path/to/provider-blind-truth.json \
   --candidate /path/to/candidate.json \
   --phase development_60s \
+  --min-speech-recall <reviewed-value> \
+  --max-false-positive-rate <reviewed-value> \
+  --min-safe-end-recall <reviewed-value> \
   --json
 ```
 
@@ -535,8 +570,15 @@ python -m moss_transcribe_diarize.live_provider_truth \
   --candidate /path/to/holdout-candidate.json \
   --phase holdout_300s \
   --locked-config-hash <development locked config hash> \
+  --min-speech-recall <same-reviewed-value> \
+  --max-false-positive-rate <same-reviewed-value> \
+  --min-safe-end-recall <same-reviewed-value> \
   --json
 ```
+
+The comparison CLI supplies no acceptance defaults. All three thresholds are
+required inputs, validated in `[0,1]`, and echoed in the result. This local slice
+therefore cannot invent a pass/fail bar before reviewed calibration exists.
 
 Missing operator gates remain explicit: exact WSL package versions, exact Silero
 ONNX/WebRTC/WeSpeaker assets, asset hashes, provider golden outputs, calibrated

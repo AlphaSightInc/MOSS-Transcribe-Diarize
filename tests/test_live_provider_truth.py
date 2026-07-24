@@ -63,6 +63,14 @@ def _candidate(
     }
 
 
+def _thresholds() -> dict[str, float]:
+    return {
+        "min_speech_recall": 0.9,
+        "max_false_positive_rate": 0.1,
+        "min_safe_end_recall": 1.0,
+    }
+
+
 def test_truth_schema_validates_provider_blind_exact_partition():
     truth = LiveVadTruth.from_mapping(_truth())
 
@@ -91,11 +99,20 @@ def test_truth_validation_rejects_overlap_gap_and_non_independent_review():
         LiveVadTruth.from_mapping(payload)
 
 
+def test_truth_validation_rejects_safe_end_outside_non_speech():
+    payload = _truth()
+    payload["safe_end_intervals"] = [_interval(200, 300)]
+
+    with pytest.raises(LiveVadTruthError, match="inside non_speech"):
+        LiveVadTruth.from_mapping(payload)
+
+
 def test_compare_excludes_uncertain_intervals_from_threshold_scoring():
     result = compare_live_provider_candidates(
         _truth(),
         [_candidate(wrong_uncertain=True)],
         phase=DEVELOPMENT_60S_PHASE,
+        thresholds=_thresholds(),
     )
 
     candidate = result["results"][0]
@@ -110,6 +127,7 @@ def test_safe_end_requires_end_silence_not_hard_cap_or_stop_flush():
         _truth(),
         [_candidate(endpoint_reason="hard_cap")],
         phase=DEVELOPMENT_60S_PHASE,
+        thresholds=_thresholds(),
     )
 
     candidate = result["results"][0]
@@ -124,6 +142,7 @@ def test_calibration_lock_only_for_registered_60_second_phase():
             _truth(sample_count=LIVE_SAMPLE_RATE),
             [_candidate(sample_count=LIVE_SAMPLE_RATE)],
             phase=DEVELOPMENT_60S_PHASE,
+            thresholds=_thresholds(),
         )
 
     with pytest.raises(LiveVadTruthError, match="produces"):
@@ -131,6 +150,7 @@ def test_calibration_lock_only_for_registered_60_second_phase():
             _truth(),
             [_candidate()],
             phase=DEVELOPMENT_60S_PHASE,
+            thresholds=_thresholds(),
             locked_config_hash=_sha("locked"),
         )
 
@@ -141,12 +161,14 @@ def test_holdout_accepts_exact_locked_hash_and_rejects_retuning():
         _truth(sample_count=300 * LIVE_SAMPLE_RATE),
         [_candidate(config_hash=locked, sample_count=300 * LIVE_SAMPLE_RATE)],
         phase=HOLDOUT_300S_PHASE,
+        thresholds=_thresholds(),
         locked_config_hash=locked,
     )
     retuned = compare_live_provider_candidates(
         _truth(sample_count=300 * LIVE_SAMPLE_RATE),
         [_candidate(config_hash=_sha("retuned"), sample_count=300 * LIVE_SAMPLE_RATE)],
         phase=HOLDOUT_300S_PHASE,
+        thresholds=_thresholds(),
         locked_config_hash=locked,
     )
 
@@ -156,14 +178,56 @@ def test_holdout_accepts_exact_locked_hash_and_rejects_retuning():
     assert "holdout candidate config_hash does not match locked_config_hash" in retuned["results"][0]["failures"]
 
 
+def test_thresholds_are_explicit_validated_and_reported():
+    with pytest.raises(TypeError):
+        compare_live_provider_candidates(
+            _truth(),
+            [_candidate()],
+            phase=DEVELOPMENT_60S_PHASE,
+        )
+    with pytest.raises(LiveVadTruthError, match="explicitly provide"):
+        compare_live_provider_candidates(
+            _truth(),
+            [_candidate()],
+            phase=DEVELOPMENT_60S_PHASE,
+            thresholds={"min_speech_recall": 0.9},
+        )
+
+    result = compare_live_provider_candidates(
+        _truth(),
+        [_candidate()],
+        phase=DEVELOPMENT_60S_PHASE,
+        thresholds=_thresholds(),
+    )
+
+    assert result["thresholds"] == _thresholds()
+
+
 def test_truth_cli_compares_json_files(tmp_path, capsys):
     truth_path = tmp_path / "truth.json"
     candidate_path = tmp_path / "candidate.json"
     truth_path.write_text(json.dumps(_truth(), sort_keys=True), encoding="utf-8")
     candidate_path.write_text(json.dumps(_candidate(), sort_keys=True), encoding="utf-8")
 
-    rc = main(["--truth", str(truth_path), "--candidate", str(candidate_path), "--phase", DEVELOPMENT_60S_PHASE, "--json"])
+    rc = main(
+        [
+            "--truth",
+            str(truth_path),
+            "--candidate",
+            str(candidate_path),
+            "--phase",
+            DEVELOPMENT_60S_PHASE,
+            "--min-speech-recall",
+            "0.9",
+            "--max-false-positive-rate",
+            "0.1",
+            "--min-safe-end-recall",
+            "1.0",
+            "--json",
+        ]
+    )
 
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     assert out["results"][0]["accepted"] is True
+    assert out["thresholds"] == _thresholds()
