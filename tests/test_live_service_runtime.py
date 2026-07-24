@@ -203,6 +203,13 @@ class LabelingDecoder(RecordingDecoder):
         return super().transcribe_pcm(span=span, pcm=pcm)
 
 
+class SelectiveFailingDecoder(RecordingDecoder):
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        if pcm.startswith(b"x"):
+            raise RuntimeError("simulated canonical decoder failure.")
+        return super().transcribe_pcm(span=span, pcm=pcm)
+
+
 class SameTickLoop:
     def time(self) -> float:
         return 100.0
@@ -498,6 +505,97 @@ def test_zero_deadline_rejects_pending_work_before_decode_when_clock_has_not_adv
     assert snapshot.pending_work_items == 1
     assert snapshot.terminal_failure is not None
     assert snapshot.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+
+
+def test_stop_timeout_fences_late_in_flight_canonical_result():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    with pytest.raises(TimeoutError, match="deadline expired"):
+        asyncio.run(runtime.stop(created.session_id, deadline=0.0))
+
+    timed_out = runtime.snapshot(created.session_id)
+    assert timed_out.terminal_failure is not None
+    assert timed_out.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+    assert timed_out.session.accepted_samples == 2000
+    assert timed_out.session.accounted_samples == 0
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+
+    fenced = runtime.snapshot(created.session_id)
+    assert fenced.session.accounted_samples == 0
+    assert fenced.session.committed == ()
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert "canonical_started" in event_kinds
+    assert "canonical_processed" not in event_kinds
+    assert "session_closed" not in event_kinds
+
+
+def test_abort_fences_late_in_flight_canonical_result():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    aborted = asyncio.run(runtime.abort(created.session_id, "caller cancelled"))
+    assert aborted.terminal_failure is not None
+    assert aborted.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+    assert aborted.session.status == "aborted"
+    assert aborted.session.accounted_samples == 0
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+
+    fenced = runtime.snapshot(created.session_id)
+    assert fenced.session.status == "aborted"
+    assert fenced.session.accounted_samples == 0
+    assert fenced.session.committed == ()
+    event_kinds = [event.kind for event in runtime.events(created.session_id)]
+    assert "canonical_started" in event_kinds
+    assert "canonical_processed" not in event_kinds
+    assert event_kinds[-1] == "session_aborted"
+
+
+def test_canonical_failure_does_not_starve_sibling_session():
+    scheduler = _ManualCanonicalPumpScheduler()
+    decoder = SelectiveFailingDecoder()
+    runtime = _runtime(
+        speech=(True, False),
+        decoder=decoder,
+        session_ids=("bad-session", "other-session"),
+        scheduler=scheduler,
+    )
+    bad = runtime.create()
+    other = runtime.create()
+    runtime.accept_frame(bad.session_id, _frame(0, byte=b"x"))
+    runtime.accept_frame(bad.session_id, _frame(1, byte=b"y"))
+    runtime.accept_frame(other.session_id, _frame(0, byte=b"o"))
+    runtime.accept_frame(other.session_id, _frame(1, byte=b"p"))
+
+    assert scheduler.run_one()
+
+    bad_snapshot = runtime.snapshot(bad.session_id)
+    other_snapshot = runtime.snapshot(other.session_id)
+    assert bad_snapshot.terminal_failure is not None
+    assert bad_snapshot.session.accounted_samples == 0
+    assert other_snapshot.terminal_failure is None
+    assert other_snapshot.session.accounted_samples == 1000
+    assert other_snapshot.pending_work_items == 0
 
 
 def test_runtime_terminal_failure_is_session_local():
