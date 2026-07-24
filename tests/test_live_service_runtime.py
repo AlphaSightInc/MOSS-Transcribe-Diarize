@@ -235,6 +235,29 @@ class InterleavingWorkChangedEvent(threading.Event):
         super().set()
 
 
+class InterleavingDrainWaiterSet(set):
+    def __init__(self, *, runtime, state, decoder: BlockingDecoder) -> None:
+        super().__init__()
+        self.runtime = runtime
+        self.state = state
+        self.decoder = decoder
+        self.armed = True
+        self.worker_finished_before_registration = False
+
+    def add(self, waiter) -> None:
+        if self.armed:
+            self.armed = False
+            self.decoder.release.set()
+            deadline = time.monotonic() + 0.25
+            while time.monotonic() < deadline:
+                with self.runtime._lock:
+                    if not self.runtime._has_unresolved_work_locked(self.state):
+                        self.worker_finished_before_registration = True
+                        break
+                time.sleep(0.005)
+        super().add(waiter)
+
+
 @dataclass
 class PreparingIdentity:
     status: str = "prepared"
@@ -595,6 +618,27 @@ def test_stop_deadline_is_not_delayed_by_saturated_default_executor():
     assert elapsed < 0.20
 
 
+def test_stop_positive_deadline_bounds_permanently_blocked_work():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    started = time.monotonic()
+    try:
+        with pytest.raises(TimeoutError, match="stop deadline expired"):
+            asyncio.run(runtime.stop(created.session_id, deadline=0.10))
+    finally:
+        elapsed = time.monotonic() - started
+        decoder.release.set()
+        decoder.finished.wait(timeout=1.0)
+
+    assert elapsed < 0.5
+
+
 def test_cancelled_stop_unregisters_waiter_without_default_executor_residue():
     async def exercise_cancelled_stop():
         loop = asyncio.get_running_loop()
@@ -683,6 +727,34 @@ def test_wait_for_drain_registers_and_rechecks_without_lost_wakeup():
     assert snapshot.session.status == "closed"
     assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
     assert not event.set_during_clear.is_set()
+
+
+def test_wait_for_drain_registers_new_waiter_without_lost_wakeup():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    state = runtime._get(created.session_id)
+    waiters = InterleavingDrainWaiterSet(
+        runtime=runtime,
+        state=state,
+        decoder=decoder,
+    )
+    state.drain_waiters = waiters
+
+    try:
+        snapshot = asyncio.run(runtime.stop(created.session_id, deadline=0.6))
+    finally:
+        decoder.release.set()
+
+    assert snapshot.session.status == "closed"
+    assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
+    assert snapshot.pending_work_items == 0
+    assert not waiters.worker_finished_before_registration
 
 
 @pytest.mark.parametrize("operation", ("stop", "abort"))
