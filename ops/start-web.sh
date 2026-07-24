@@ -24,6 +24,22 @@ case "${MOSS_SPEAKER_IDENTITY_TIER_B:-0}" in
     ;;
 esac
 
+live_args=()
+case "${MOSS_LIVE_ENABLED:-0}" in
+  0) ;;
+  1)
+    : "${MOSS_LIVE_PROVIDER_MANIFEST:?MOSS_LIVE_PROVIDER_MANIFEST is required when live mode is enabled}"
+    live_args+=(
+      --live
+      --live-provider-manifest "${MOSS_LIVE_PROVIDER_MANIFEST}"
+    )
+    ;;
+  *)
+    echo "MOSS_LIVE_ENABLED must be 0 or 1" >&2
+    exit 2
+    ;;
+esac
+
 web_args=(
   --backend vllm \
   --model "${MODEL_DIR}" \
@@ -38,6 +54,9 @@ web_args=(
 )
 if ((${#speaker_identity_args[@]})); then
   web_args+=("${speaker_identity_args[@]}")
+fi
+if ((${#live_args[@]})); then
+  web_args+=("${live_args[@]}")
 fi
 
 exec "${VENV_DIR}/bin/mtd-subtitle-web" "${web_args[@]}"

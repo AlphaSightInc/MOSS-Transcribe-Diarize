@@ -30,6 +30,15 @@ def parse_args() -> argparse.Namespace:
         "--speaker-identity-fixture",
         help="Tiny WAV fixture required for Tier B smoke preflight when enabled.",
     )
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Enable default-off live HTTP routes with an explicit offline provider manifest.",
+    )
+    parser.add_argument(
+        "--live-provider-manifest",
+        help="Offline live provider manifest required when --live is enabled.",
+    )
     parser.add_argument("--runs-dir", default="runs")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7860)
@@ -43,6 +52,50 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+class _LiveCliRunnerProxy:
+    def __init__(self, args: argparse.Namespace):
+        self._args = args
+        self._runner = None
+        self.model_path = str(args.vllm_model or args.model)
+
+    def transcribe(self, audio_path, **kwargs):
+        if self._runner is None:
+            self._runner = self._build_runner()
+            self.model_path = getattr(self._runner, "model_path", self.model_path)
+        return self._runner.transcribe(audio_path, **kwargs)
+
+    def _build_runner(self):
+        if self._args.backend == "vllm":
+            if not self._args.vllm_base_url:
+                raise ValueError("--vllm-base-url is required when backend='vllm'.")
+            from .vllm_runner import VllmRunner
+
+            return VllmRunner(
+                base_url=self._args.vllm_base_url,
+                model=self._args.vllm_model or str(self._args.model),
+                api_key=self._args.vllm_api_key,
+                timeout=self._args.vllm_timeout,
+            )
+        from .model_runner import ModelRunner
+
+        return ModelRunner(
+            Path(self._args.model).expanduser(),
+            device=self._args.device,
+            dtype=self._args.dtype,
+        )
+
+
+def _live_runtime_factory(args: argparse.Namespace):
+    if not args.live:
+        return None
+    if not args.live_provider_manifest:
+        raise SystemExit("--live-provider-manifest is required when --live is enabled.")
+    from .live_provider_bundle import LiveProviderBundleConfig, build_live_runtime_factory
+
+    config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
+    return build_live_runtime_factory(config, _LiveCliRunnerProxy(args))
+
+
 def main() -> None:
     try:
         import uvicorn
@@ -50,6 +103,7 @@ def main() -> None:
         raise SystemExit("Install uvicorn to run mtd-subtitle-web.") from exc
 
     args = parse_args()
+    live_runtime_factory = _live_runtime_factory(args)
     app = create_app(
         model_path=Path(args.model).expanduser(),
         runs_dir=Path(args.runs_dir).expanduser(),
@@ -68,6 +122,8 @@ def main() -> None:
         speaker_identity_tier_b=args.speaker_identity_tier_b,
         speaker_identity_state=args.speaker_identity_state,
         speaker_identity_fixture=args.speaker_identity_fixture,
+        live_enabled=args.live,
+        live_runtime_factory=live_runtime_factory,
     )
     uvicorn.run(app, host=args.host, port=args.port)
 

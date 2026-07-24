@@ -395,6 +395,197 @@ online identity readiness from this branch-local CPU work:
 # parked 300-second local/live replay after explicit deployment enablement
 ```
 
+## Default-off live provider bundle
+
+IDEA-021 adds a local live-provider bundle package behind the existing
+`LiveServiceRuntime` interface. It is disabled by default and does not select a
+provider, install packages, download weights, start services, or authorize live
+deployment. Disabled startup must not import optional provider modules or read
+provider assets.
+
+An offline bundle manifest must be complete before live mode can be enabled. It
+uses schema version 1 and declares the source revision, provider name, provider
+revision, license, provenance, exact package distribution/version/import facts,
+asset paths, byte sizes, SHA-256 hashes, identities, CPU runtime backend/device
+and thread facts, optional embedding dimension, golden input/output identity and
+hash, endpoint config, identity config, decoder config, bounds config, speech
+provider config, and all declared config hashes:
+
+```json
+{
+  "schema_version": 1,
+  "source_revision": "<git revision>",
+  "provider_name": "<local provider bundle>",
+  "provider_revision": "<provider revision>",
+  "provider_license": "<license/provenance label>",
+  "provider_provenance": "<offline assembly note>",
+  "packages": [
+    {
+      "distribution": "<installed distribution>",
+      "version": "<exact installed version>",
+      "import_name": "<importable module>"
+    }
+  ],
+  "assets": [
+    {
+      "name": "<asset name>",
+      "path": "<manifest-relative asset path>",
+      "byte_size": 0,
+      "sha256": "<64 hex chars>",
+      "identity": "<asset identity>"
+    }
+  ],
+  "runtime": {
+    "backend": "webrtc-cpu",
+    "device": "cpu",
+    "intra_op_threads": 1,
+    "inter_op_threads": 1,
+    "embedding_dimension": 256
+  },
+  "golden": {
+    "input": {
+      "name": "<golden input>",
+      "path": "<manifest-relative 16 kHz mono PCM16 WAV>",
+      "byte_size": 0,
+      "sha256": "<64 hex chars>",
+      "identity": "<golden input identity>"
+    },
+    "expected_output_sha256": "<64 hex chars>",
+    "expected_output_identity": "webrtc+wespeaker_resnet152_lm:golden-v1"
+  },
+  "endpoint_config": {},
+  "identity_config": {},
+  "decoder_config": {},
+  "bounds_config": {},
+  "speech_provider": {
+    "kind": "webrtc",
+    "package_import": "webrtcvad",
+    "factory": "Vad",
+    "mode": "<explicit reviewed value>",
+    "frame_samples": "<explicit frame size>"
+  },
+  "identity_provider": {
+    "kind": "wespeaker_resnet152_lm",
+    "package_import": "pyannote.audio",
+    "state_asset_name": "<name from assets>",
+    "revision": "<provider revision>",
+    "frontend_version": "<frontend identity>",
+    "min_segment_samples": "<explicit reviewed value>"
+  },
+  "config_hashes": {
+    "endpoint_config_hash": "<64 hex chars>",
+    "identity_config_hash": "<64 hex chars>",
+    "decoder_config_hash": "<64 hex chars>",
+    "bounds_config_hash": "<64 hex chars>",
+    "component_config_hash": "<64 hex chars>",
+    "combined_config_hash": "<64 hex chars>"
+  }
+}
+```
+
+`speech_provider.kind` is either `webrtc` or `silero_onnx`. WebRTC loads the
+declared module and factory directly. Silero additionally names a declared
+`asset_name`, factory, and explicit threshold; the factory receives the local
+model path, CPU backend/device, and thread counts and must return a callable or
+an object exposing `speech_score(pcm, sample_rate)`. The identity provider is
+required and is constructed through the existing file-mode
+`WeSpeakerResNet152LmAdapter`; its state asset and declared import are consumed
+by the runtime, not merely checked by preflight.
+
+Every declared package import and asset must be referenced by one of those
+providers, and every provider reference must be declared. Empty lists,
+decorative entries, unsupported kinds, non-positive thread counts, or a backend
+other than `webrtc-cpu` / `onnxruntime-cpu` for the selected speech adapter fail
+closed.
+
+Run the read-only preflight from the target root before any enablement:
+
+```bash
+python -m moss_transcribe_diarize.live_provider_preflight \
+  --manifest /path/to/live-provider-manifest.json \
+  --json
+```
+
+Preflight fails closed on unreadable or ambiguous manifest facts, unsupported
+schema/provider kind, package version or import mismatch, empty/decorative
+package or asset declarations, missing asset, byte-size or SHA-256 drift,
+backend/device/thread mismatch, config-hash drift, identity-encoder dimension
+mismatch, or golden-output mismatch. Golden validation executes the constructed
+speech provider and identity encoder on the declared WAV, then hashes their
+normalized observations and embedding; it is not a hash of other manifest
+fields. A green local or synthetic preflight proves only manifest mechanics; it
+is not provider selection, deployment proof, production readiness, or
+permission to run 60-second or 300-second live evidence.
+
+The committed deployment default remains:
+
+```ini
+MOSS_LIVE_ENABLED=0
+```
+
+`ops/start-web.sh` is the only deployment environment adapter. It accepts exactly
+`MOSS_LIVE_ENABLED=0` or `MOSS_LIVE_ENABLED=1`. Enabled mode also requires
+`MOSS_LIVE_PROVIDER_MANIFEST` and translates that state into explicit CLI flags:
+
+```ini
+MOSS_LIVE_ENABLED=1
+MOSS_LIVE_PROVIDER_MANIFEST=/path/to/live-provider-manifest.json
+```
+
+```bash
+mtd-subtitle-web ... --live --live-provider-manifest /path/to/live-provider-manifest.json
+```
+
+Rollback is setting `MOSS_LIVE_ENABLED=0`, removing or ignoring
+`MOSS_LIVE_PROVIDER_MANIFEST`, and restarting only after the reviewed operator
+handoff permits a restart. Invalid enablement exits before web app construction,
+routes, sessions, or job admission.
+
+Provider-blind truth and calibration are separate from bundle assembly. Truth
+uses 16 kHz integer sample intervals with independent annotation and review
+provenance, exact speech/non-speech/uncertain partition validation, and safe-end
+intervals inside non-speech. Uncertain intervals are excluded from threshold
+scoring, and end-silence remains distinct from hard-cap and stop-flush.
+
+Run synthetic or local candidate comparisons only with provider-blind truth:
+
+```bash
+python -m moss_transcribe_diarize.live_provider_truth \
+  --truth /path/to/provider-blind-truth.json \
+  --candidate /path/to/candidate.json \
+  --phase development_60s \
+  --min-speech-recall <reviewed-value> \
+  --max-false-positive-rate <reviewed-value> \
+  --min-safe-end-recall <reviewed-value> \
+  --json
+```
+
+Only the registered 60-second development phase may produce a locked config
+hash. The 300-second holdout must be run with the exact locked hash and rejects
+retuning:
+
+```bash
+python -m moss_transcribe_diarize.live_provider_truth \
+  --truth /path/to/holdout-truth.json \
+  --candidate /path/to/holdout-candidate.json \
+  --phase holdout_300s \
+  --locked-config-hash <development locked config hash> \
+  --min-speech-recall <same-reviewed-value> \
+  --max-false-positive-rate <same-reviewed-value> \
+  --min-safe-end-recall <same-reviewed-value> \
+  --json
+```
+
+The comparison CLI supplies no acceptance defaults. All three thresholds are
+required inputs, validated in `[0,1]`, and echoed in the result. This local slice
+therefore cannot invent a pass/fail bar before reviewed calibration exists.
+
+Missing operator gates remain explicit: exact WSL package versions, exact Silero
+ONNX/WebRTC/WeSpeaker assets, asset hashes, provider golden outputs, calibrated
+thresholds, locked development config hash, 300-second holdout truth, deployed
+service configuration, restart authorization, latency/RSS evidence, and any
+60/300-second live evidence are not supplied by this branch-local package.
+
 ## Reinstall or update
 
 The reproducible setup helpers are in `ops/`:
