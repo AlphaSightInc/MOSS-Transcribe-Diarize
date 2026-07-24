@@ -1066,9 +1066,17 @@ def _validate_onnx_io(session: Any) -> None:
         raise _TierBProviderError("onnx_output_mismatch")
     input_shape = list(getattr(inputs[0], "shape", []) or [])
     output_shape = list(getattr(outputs[0], "shape", []) or [])
-    if len(input_shape) != 3 or input_shape[0] != 1 or input_shape[2] != 80:
+    if (
+        len(input_shape) != 3
+        or (isinstance(input_shape[0], int) and input_shape[0] != 1)
+        or input_shape[2] != 80
+    ):
         raise _TierBProviderError("onnx_input_mismatch")
-    if len(output_shape) != 2 or output_shape[0] != 1 or output_shape[1] != PINNED_TIER_B_ASSET_SPEC.embedding_dimension:
+    if (
+        len(output_shape) != 2
+        or (isinstance(output_shape[0], int) and output_shape[0] != 1)
+        or output_shape[1] != PINNED_TIER_B_ASSET_SPEC.embedding_dimension
+    ):
         raise _TierBProviderError("onnx_output_mismatch")
 
 
