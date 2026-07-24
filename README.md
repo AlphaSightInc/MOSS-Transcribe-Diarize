@@ -409,6 +409,55 @@ while a job is postprocessing and are published only as a complete set. Segment
 editing and downloads are available after the job reaches `waiting_review` or
 `done`.
 
+The vLLM file-mode runner has an optional cross-window speaker identity Tier B
+provider. It is disabled by default and is not used by live mode. The base
+install does not include provider packages or weights. Install the optional
+extra only on machines that already have the approved local state file:
+
+```bash
+uv pip install -e ".[speaker-identity]" --torch-backend=auto
+```
+
+The pinned offline provider is WeSpeaker ResNet152-LM revision
+`4adba1525a6c9d5fff74b6df43a6ec97a86c4112` with state SHA-256
+`b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc`, 256
+embedding dimensions, and CPU device. The preflight command is read-only: it
+hashes the existing state path, loads the provider on CPU, and can run a tiny WAV
+smoke embedding check. It never downloads assets.
+
+```bash
+python -m moss_transcribe_diarize.speaker_identity_preflight \
+  --state-path /path/to/wespeaker-resnet152-lm.pt \
+  --fixture tests/fixtures/idea_020_provider_smoke.wav \
+  --json
+```
+
+Enable Tier B for the local subtitle web app only after preflight succeeds:
+
+```bash
+mtd-subtitle-web \
+  --backend vllm \
+  --model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --vllm-base-url http://127.0.0.1:8000/v1 \
+  --speaker-identity-tier-b \
+  --speaker-identity-state /path/to/wespeaker-resnet152-lm.pt \
+  --speaker-identity-fixture tests/fixtures/idea_020_provider_smoke.wav
+```
+
+Rollback is to omit `--speaker-identity-tier-b` or set
+`MOSS_SPEAKER_IDENTITY_TIER_B=0`. Explicit enablement fails before jobs are
+admitted if packages, state path, revision, hash, dimension, device, or smoke
+preflight do not match the pinned contract. Runtime readback exposes the exact
+resolver contract at `speaker_identity`, and vLLM checkpoints persist the same
+object under `contract.identity`. Changed identity configuration rejects resume
+before any model call.
+
+This local default-off capability does not claim deployed availability,
+PyTorch-vs-WSL parity, latency/RSS, threshold calibration, a 30-minute result, or
+full speaker-aware product closure. Installing the provider state file, enabling
+it in deployed WSL service configuration, and running the post-handoff proof
+remain operator-reviewed deployment steps.
+
 For batch processing:
 
 ```bash
