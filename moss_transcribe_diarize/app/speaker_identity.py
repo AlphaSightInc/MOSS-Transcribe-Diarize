@@ -32,9 +32,9 @@ class IdentityResolverConfig:
 class TierBAssetSpec:
     provider: str = "wespeaker_resnet152_lm"
     revision: str = "4adba1525a6c9d5fff74b6df43a6ec97a86c4112"
-    state_sha256: str = "b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc"
+    state_sha256: str = "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
     embedding_dimension: int = 256
-    frontend_version: str = "pytorch-offline-trial"
+    frontend_version: str = "wespeaker-onnx-fbank-v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -493,7 +493,11 @@ class WeSpeakerResNet152LmAdapter:
         except ImportError as exc:
             return TierBPreflight(False, "provider_missing", self.descriptor | {"detail": str(exc)})
         except Exception as exc:
-            return TierBPreflight(False, "provider_load_failed", self.descriptor | {"detail": exc.__class__.__name__})
+            return TierBPreflight(
+                False,
+                getattr(exc, "reason", "provider_load_failed"),
+                self.descriptor | {"detail": exc.__class__.__name__},
+            )
         if not callable(getattr(embedder, "embed", None)):
             return TierBPreflight(False, "provider_missing", self.descriptor)
         loaded_descriptor = dict(self._loaded_descriptor or {})
@@ -520,7 +524,7 @@ class WeSpeakerResNet152LmAdapter:
     def _get_embedder(self) -> Any:
         if self.embedder is None:
             loader = self._loader or (
-                lambda: _PyannoteWeSpeakerEmbedder(
+                lambda: _OnnxWeSpeakerEmbedder(
                     self.state_path,
                     device=self.device,
                 )
@@ -562,45 +566,115 @@ class WeSpeakerResNet152LmAdapter:
         return TierBPreflight(True, None, descriptor)
 
 
-class _PyannoteWeSpeakerEmbedder:
-    def __init__(self, state_path: Path, *, device: str):
+class _TierBProviderError(RuntimeError):
+    def __init__(self, reason: str, message: str | None = None):
+        super().__init__(message or reason)
+        self.reason = reason
+
+
+class _OnnxWeSpeakerEmbedder:
+    def __init__(
+        self,
+        state_path: Path,
+        *,
+        device: str,
+        session_factory: Callable[..., Any] | None = None,
+        fbank: Callable[[Any], Any] | None = None,
+        audio_loader: Callable[[str | Path], tuple[Any, int]] | None = None,
+    ):
         self.state_path = state_path
         self.device = device
-        self._inference = None
+        self._session_factory = session_factory
+        self._fbank = fbank
+        self._audio_loader = audio_loader
+        self._session = None
 
     def load(self) -> dict[str, Any]:
-        self._load_inference()
+        self._load_session()
         return tier_b_provider_manifest(device=self.device)
 
     def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
-        inference = self._load_inference()
+        session = self._load_session()
+        samples, sample_rate = self._load_audio(wav_path)
+        if sample_rate != 16000:
+            raise ValueError("Tier B ONNX input WAV must be 16 kHz mono.")
         vectors = []
         for start, end in intervals:
             if end <= start:
                 continue
-            vectors.append(_normalized_vector(inference.crop(str(wav_path), _pyannote_segment(start, end))))
+            interval_samples = _slice_interval(samples, sample_rate, start, end)
+            if len(interval_samples) == 0:
+                continue
+            features = self._features(interval_samples)
+            vectors.append(_normalized_vector(_run_onnx_embedding(session, features)))
         if not vectors:
             raise ValueError("Tier B embedding intervals are empty.")
         return _mean_unit_vector(vectors)
 
-    def _load_inference(self) -> Any:
-        if self._inference is not None:
-            return self._inference
+    def _load_session(self) -> Any:
+        if self._session is not None:
+            return self._session
+        if self.device != "cpu":
+            raise _TierBProviderError("device_not_cpu")
         try:
-            from pyannote.audio import Inference, Model
+            import onnxruntime as ort
         except ImportError as exc:
             raise ImportError("install the speaker-identity optional extra") from exc
-        model = Model.from_pretrained(str(self.state_path), map_location=self.device)
-        self._inference = Inference(model, window="whole", device=self.device)
-        return self._inference
+        if "CPUExecutionProvider" not in ort.get_available_providers():
+            raise _TierBProviderError("cpu_provider_unavailable")
+        options = ort.SessionOptions()
+        options.inter_op_num_threads = 1
+        options.intra_op_num_threads = 1
+        factory = self._session_factory or ort.InferenceSession
+        self._session = factory(
+            str(self.state_path),
+            sess_options=options,
+            providers=["CPUExecutionProvider"],
+        )
+        if getattr(options, "inter_op_num_threads", None) != 1 or getattr(options, "intra_op_num_threads", None) != 1:
+            raise _TierBProviderError("threading_mismatch")
+        if list(getattr(self._session, "get_providers")()) != ["CPUExecutionProvider"]:
+            raise _TierBProviderError("execution_provider_mismatch")
+        _validate_onnx_io(self._session)
+        return self._session
 
+    def _load_audio(self, wav_path: str | Path) -> tuple[Any, int]:
+        if self._audio_loader is not None:
+            samples, sample_rate = self._audio_loader(wav_path)
+        else:
+            try:
+                import soundfile as sf
+            except ImportError as exc:
+                raise ImportError("install the base audio dependencies") from exc
+            samples, sample_rate = sf.read(str(wav_path), dtype="float32", always_2d=False)
+        if getattr(samples, "ndim", 1) != 1:
+            raise ValueError("Tier B ONNX input WAV must be 16 kHz mono.")
+        return samples, int(sample_rate)
 
-def _pyannote_segment(start: float, end: float) -> Any:
-    try:
-        from pyannote.core import Segment
-    except ImportError as exc:
-        raise ImportError("install the speaker-identity optional extra") from exc
-    return Segment(float(start), float(end))
+    def _features(self, samples: Any) -> Any:
+        if self._fbank is not None:
+            features = self._fbank(samples)
+            return _as_onnx_features(features)
+        try:
+            import torch
+            from torchaudio.compliance.kaldi import fbank
+        except ImportError as exc:
+            raise ImportError("install the speaker-identity optional extra") from exc
+        waveform = torch.as_tensor(samples, dtype=torch.float32).unsqueeze(0) * float(2**15)
+        features = fbank(
+            waveform,
+            sample_frequency=16000,
+            num_mel_bins=80,
+            frame_length=25.0,
+            frame_shift=10.0,
+            dither=0.0,
+            window_type="hamming",
+            use_energy=False,
+        )
+        if features.numel() == 0:
+            raise ValueError("Tier B ONNX features are empty.")
+        features = features - features.mean(dim=0, keepdim=True)
+        return features.unsqueeze(0).cpu().numpy().astype("float32", copy=False)
 
 
 def _bundle_windows(
@@ -960,6 +1034,66 @@ def _vector_values(vector: Any) -> list[float]:
     return [float(value) for value in vector]
 
 
+def _slice_interval(samples: Any, sample_rate: int, start: float, end: float) -> Any:
+    first = max(0, int(round(float(start) * sample_rate)))
+    last = max(first, int(round(float(end) * sample_rate)))
+    return samples[first:last]
+
+
+def _as_onnx_features(features: Any) -> Any:
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise ImportError("install the base numeric dependencies") from exc
+    array = np.asarray(features, dtype=np.float32)
+    if array.ndim == 2:
+        array = array[None, :, :]
+    if array.ndim != 3 or array.shape[0] != 1 or array.shape[2] != 80:
+        raise ValueError("Tier B ONNX features must have shape [1,T,80].")
+    if array.shape[1] == 0:
+        raise ValueError("Tier B ONNX features are empty.")
+    if not np.isfinite(array).all():
+        raise ValueError("Tier B ONNX features must be finite.")
+    return array
+
+
+def _validate_onnx_io(session: Any) -> None:
+    inputs = list(session.get_inputs())
+    outputs = list(session.get_outputs())
+    if len(inputs) != 1 or getattr(inputs[0], "name", None) != "feats":
+        raise _TierBProviderError("onnx_input_mismatch")
+    if len(outputs) != 1 or getattr(outputs[0], "name", None) != "embs":
+        raise _TierBProviderError("onnx_output_mismatch")
+    input_shape = list(getattr(inputs[0], "shape", []) or [])
+    output_shape = list(getattr(outputs[0], "shape", []) or [])
+    if (
+        len(input_shape) != 3
+        or (isinstance(input_shape[0], int) and input_shape[0] != 1)
+        or input_shape[2] != 80
+    ):
+        raise _TierBProviderError("onnx_input_mismatch")
+    if (
+        len(output_shape) != 2
+        or (isinstance(output_shape[0], int) and output_shape[0] != 1)
+        or output_shape[1] != PINNED_TIER_B_ASSET_SPEC.embedding_dimension
+    ):
+        raise _TierBProviderError("onnx_output_mismatch")
+
+
+def _run_onnx_embedding(session: Any, features: Any) -> list[float]:
+    result = session.run(["embs"], {"feats": features})
+    if len(result) != 1:
+        raise ValueError("Tier B ONNX run must return one output.")
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise ImportError("install the base numeric dependencies") from exc
+    output = np.asarray(result[0], dtype=np.float32)
+    if output.shape != (1, PINNED_TIER_B_ASSET_SPEC.embedding_dimension):
+        raise ValueError("Tier B ONNX output must have shape [1,256].")
+    return [float(value) for value in output[0]]
+
+
 def _mean_unit_vector(vectors: list[list[float] | None]) -> list[float]:
     valid = [vector for vector in vectors if vector is not None]
     if not valid:
@@ -1007,6 +1141,7 @@ def _loaded_provider_failure(loaded: dict[str, Any], expected: dict[str, Any]) -
         ("revision", "revision_mismatch"),
         ("state_sha256", "asset_hash_mismatch"),
         ("embedding_dimension", "dimension_mismatch"),
+        ("frontend_version", "frontend_mismatch"),
         ("device", "device_not_cpu"),
     ):
         if loaded.get(field) != expected.get(field):

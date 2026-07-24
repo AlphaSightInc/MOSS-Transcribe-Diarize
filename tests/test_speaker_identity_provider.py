@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from moss_transcribe_diarize.app import speaker_identity as identity_module
@@ -40,9 +41,9 @@ def test_pinned_manifest_is_the_default_descriptor():
     assert tier_b_provider_manifest() == {
         "provider": "wespeaker_resnet152_lm",
         "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
-        "state_sha256": "b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc",
+        "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
         "embedding_dimension": 256,
-        "frontend_version": "pytorch-offline-trial",
+        "frontend_version": "wespeaker-onnx-fbank-v1",
         "device": "cpu",
     }
 
@@ -216,6 +217,313 @@ def test_adapter_loads_provider_lazily_and_reuses_loaded_embedder(tmp_path):
     assert calls == 1
     assert len(adapter.embed(FIXTURE, [(0.0, 2.0)])) == 256
     assert calls == 1
+
+
+def test_onnx_embedder_forces_cpu_session_threads_and_feeds_fbank_features(tmp_path, monkeypatch):
+    state = tmp_path / "voxceleb_resnet152_LM.onnx"
+    state.write_bytes(b"fake-onnx")
+    calls = {}
+
+    class SessionOptions:
+        inter_op_num_threads = 0
+        intra_op_num_threads = 0
+
+    class FakeValueInfo:
+        def __init__(self, name, shape):
+            self.name = name
+            self.shape = shape
+
+    class FakeSession:
+        def __init__(self, path, *, sess_options, providers):
+            calls["path"] = path
+            calls["providers"] = providers
+            calls["threads"] = (sess_options.inter_op_num_threads, sess_options.intra_op_num_threads)
+
+        def get_providers(self):
+            return ["CPUExecutionProvider"]
+
+        def get_inputs(self):
+            return [FakeValueInfo("feats", [1, "T", 80])]
+
+        def get_outputs(self):
+            return [FakeValueInfo("embs", [1, 256])]
+
+        def run(self, outputs, inputs):
+            calls["outputs"] = outputs
+            calls["input_name"] = list(inputs)
+            calls["feature_shape"] = inputs["feats"].shape
+            return [np.asarray([_unit_vector()], dtype=np.float32)]
+
+    class FakeOrt:
+        pass
+
+    FakeOrt.SessionOptions = SessionOptions
+    FakeOrt.get_available_providers = staticmethod(lambda: ["CPUExecutionProvider"])
+    FakeOrt.InferenceSession = FakeSession
+    monkeypatch.setitem(sys.modules, "onnxruntime", FakeOrt)
+
+    embedder = identity_module._OnnxWeSpeakerEmbedder(
+        state,
+        device="cpu",
+        fbank=lambda samples: np.ones((12, 80), dtype=np.float32) * float(np.asarray(samples).shape[0]),
+        audio_loader=lambda wav_path: (np.zeros(32000, dtype=np.float32), 16000),
+    )
+
+    assert embedder.load()["frontend_version"] == "wespeaker-onnx-fbank-v1"
+    assert embedder.embed(FIXTURE, [(0.0, 2.0)]) == _unit_vector()
+    assert calls == {
+        "path": str(state),
+        "providers": ["CPUExecutionProvider"],
+        "threads": (1, 1),
+        "outputs": ["embs"],
+        "input_name": ["feats"],
+        "feature_shape": (1, 12, 80),
+    }
+
+
+@pytest.mark.parametrize(
+    ("input_shape", "output_shape"),
+    [
+        (["B", "T", 80], ["B", 256]),
+        ([1, "T", 80], [1, 256]),
+        ([None, None, 80], [None, 256]),
+    ],
+)
+def test_onnx_preflight_accepts_dynamic_batch_and_time_axes(
+    tmp_path,
+    monkeypatch,
+    input_shape,
+    output_shape,
+):
+    state = tmp_path / "voxceleb_resnet152_LM.onnx"
+    state.write_bytes(b"fake-onnx")
+    spec = _spec_for(state)
+    monkeypatch.setattr(identity_module, "PINNED_TIER_B_ASSET_SPEC", spec)
+    _install_fake_ort(
+        monkeypatch,
+        session_factory=lambda *args, **kwargs: FakeOnnxSession(
+            inputs=[FakeOnnxValue("feats", input_shape)],
+            outputs=[FakeOnnxValue("embs", output_shape)],
+        ),
+    )
+
+    result = WeSpeakerResNet152LmAdapter(
+        state,
+        spec=spec,
+        loader=lambda: identity_module._OnnxWeSpeakerEmbedder(state, device="cpu"),
+    ).preflight()
+
+    assert result.available is True
+    assert result.reason is None
+
+
+def test_onnx_embedder_real_frontend_matches_wespeaker_fbank_and_cmn(tmp_path, monkeypatch):
+    import soundfile as sf
+    import torch
+    from torchaudio.compliance.kaldi import fbank
+
+    state = tmp_path / "voxceleb_resnet152_LM.onnx"
+    state.write_bytes(b"fake-onnx")
+    fed_features = []
+
+    class RecordingSession(FakeOnnxSession):
+        def run(self, outputs, inputs):
+            fed_features.append(np.array(inputs["feats"], copy=True))
+            return super().run(outputs, inputs)
+
+    _install_fake_ort(
+        monkeypatch,
+        session_factory=lambda *args, **kwargs: RecordingSession(),
+    )
+    embedder = identity_module._OnnxWeSpeakerEmbedder(state, device="cpu")
+
+    embedder.embed(FIXTURE, [(0.0, 2.1)])
+
+    samples, sample_rate = sf.read(
+        str(FIXTURE),
+        dtype="float32",
+        always_2d=False,
+    )
+    assert sample_rate == 16000
+    waveform = torch.as_tensor(
+        samples[: int(round(2.1 * sample_rate))],
+        dtype=torch.float32,
+    ).unsqueeze(0) * float(2**15)
+    expected = fbank(
+        waveform,
+        sample_frequency=16000,
+        num_mel_bins=80,
+        frame_length=25.0,
+        frame_shift=10.0,
+        dither=0.0,
+        window_type="hamming",
+        use_energy=False,
+    )
+    expected = expected - expected.mean(dim=0, keepdim=True)
+    expected = expected.unsqueeze(0).cpu().numpy().astype("float32", copy=False)
+
+    assert len(fed_features) == 1
+    assert fed_features[0].shape == (1, 208, 80)
+    assert fed_features[0].dtype == np.float32
+    np.testing.assert_array_equal(fed_features[0], expected)
+    assert float(np.abs(fed_features[0][0].mean(axis=0)).max()) < 1e-4
+
+
+def test_onnx_embedder_slices_each_interval_before_frontend(tmp_path, monkeypatch):
+    state = tmp_path / "voxceleb_resnet152_LM.onnx"
+    state.write_bytes(b"fake-onnx")
+    fed_features = []
+
+    class RecordingSession(FakeOnnxSession):
+        def run(self, outputs, inputs):
+            fed_features.append(np.array(inputs["feats"], copy=True))
+            return super().run(outputs, inputs)
+
+    _install_fake_ort(
+        monkeypatch,
+        session_factory=lambda *args, **kwargs: RecordingSession(),
+    )
+    embedder = identity_module._OnnxWeSpeakerEmbedder(state, device="cpu")
+    feature_sample_counts = []
+    real_features = embedder._features
+
+    def recording_features(samples):
+        feature_sample_counts.append(len(samples))
+        return real_features(samples)
+
+    embedder._features = recording_features
+    embedder.embed(FIXTURE, [(0.0, 0.5), (1.0, 2.0)])
+
+    assert feature_sample_counts == [8000, 16000]
+    assert [features.shape for features in fed_features] == [
+        (1, 48, 80),
+        (1, 98, 80),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("available_providers", "session", "reason"),
+    [
+        (["CUDAExecutionProvider"], None, "cpu_provider_unavailable"),
+        (
+            ["CPUExecutionProvider"],
+            lambda: FakeOnnxSession(session_providers=["CPUExecutionProvider", "CUDAExecutionProvider"]),
+            "execution_provider_mismatch",
+        ),
+        (
+            ["CPUExecutionProvider"],
+            lambda: FakeOnnxSession(inputs=[FakeOnnxValue("audio", [1, "T", 80])]),
+            "onnx_input_mismatch",
+        ),
+        (
+            ["CPUExecutionProvider"],
+            lambda: FakeOnnxSession(inputs=[FakeOnnxValue("feats", [1, "T", 79])]),
+            "onnx_input_mismatch",
+        ),
+        (
+            ["CPUExecutionProvider"],
+            lambda: FakeOnnxSession(inputs=[FakeOnnxValue("feats", [2, "T", 80])]),
+            "onnx_input_mismatch",
+        ),
+        (
+            ["CPUExecutionProvider"],
+            lambda: FakeOnnxSession(outputs=[FakeOnnxValue("embedding", [1, 256])]),
+            "onnx_output_mismatch",
+        ),
+        (
+            ["CPUExecutionProvider"],
+            lambda: FakeOnnxSession(outputs=[FakeOnnxValue("embs", [1, 128])]),
+            "onnx_output_mismatch",
+        ),
+        (
+            ["CPUExecutionProvider"],
+            lambda: FakeOnnxSession(outputs=[FakeOnnxValue("embs", [2, 256])]),
+            "onnx_output_mismatch",
+        ),
+    ],
+)
+def test_onnx_preflight_fails_closed_on_provider_and_io_contract(
+    tmp_path,
+    monkeypatch,
+    available_providers,
+    session,
+    reason,
+):
+    state = tmp_path / "voxceleb_resnet152_LM.onnx"
+    state.write_bytes(b"fake-onnx")
+    _install_fake_ort(
+        monkeypatch,
+        available_providers=available_providers,
+        session_factory=lambda *args, **kwargs: session() if session is not None else None,
+    )
+
+    adapter = WeSpeakerResNet152LmAdapter(
+        state,
+        spec=_spec_for(state),
+        loader=lambda: identity_module._OnnxWeSpeakerEmbedder(state, device="cpu"),
+    )
+
+    result = adapter.preflight()
+
+    assert result.available is False
+    assert result.reason == reason
+
+
+@pytest.mark.parametrize(
+    ("audio_loader", "fbank", "session", "match"),
+    [
+        (
+            lambda wav_path: (np.zeros(32000, dtype=np.float32), 8000),
+            lambda samples: np.ones((12, 80), dtype=np.float32),
+            lambda: FakeOnnxSession(),
+            "16 kHz mono",
+        ),
+        (
+            lambda wav_path: (np.zeros((32000, 2), dtype=np.float32), 16000),
+            lambda samples: np.ones((12, 80), dtype=np.float32),
+            lambda: FakeOnnxSession(),
+            "16 kHz mono",
+        ),
+        (
+            lambda wav_path: (np.zeros(32000, dtype=np.float32), 16000),
+            lambda samples: np.ones((12, 79), dtype=np.float32),
+            lambda: FakeOnnxSession(),
+            r"\[1,T,80\]",
+        ),
+        (
+            lambda wav_path: (np.zeros(32000, dtype=np.float32), 16000),
+            lambda samples: np.ones((12, 80), dtype=np.float32),
+            lambda: FakeOnnxSession(run_output=np.zeros((1, 128), dtype=np.float32)),
+            r"\[1,256\]",
+        ),
+        (
+            lambda wav_path: (np.zeros(32000, dtype=np.float32), 16000),
+            lambda samples: np.ones((12, 80), dtype=np.float32),
+            lambda: FakeOnnxSession(run_output=np.asarray([[float("nan")] + [0.0] * 255], dtype=np.float32)),
+            "finite unit vectors",
+        ),
+    ],
+)
+def test_onnx_embedder_rejects_audio_feature_and_output_contract_violations(
+    tmp_path,
+    monkeypatch,
+    audio_loader,
+    fbank,
+    session,
+    match,
+):
+    state = tmp_path / "voxceleb_resnet152_LM.onnx"
+    state.write_bytes(b"fake-onnx")
+    _install_fake_ort(monkeypatch, session_factory=lambda *args, **kwargs: session())
+    embedder = identity_module._OnnxWeSpeakerEmbedder(
+        state,
+        device="cpu",
+        fbank=fbank,
+        audio_loader=audio_loader,
+    )
+
+    with pytest.raises(ValueError, match=match):
+        embedder.embed(FIXTURE, [(0.0, 2.0)])
 
 
 def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
@@ -445,3 +753,63 @@ class LazyMissingEmbedder:
 
     def embed(self, wav_path, intervals):
         raise AssertionError("embed must not run after provider load fails")
+
+
+class FakeOnnxValue:
+    def __init__(self, name, shape):
+        self.name = name
+        self.shape = shape
+
+
+class FakeOnnxSession:
+    def __init__(
+        self,
+        *,
+        session_providers=None,
+        inputs=None,
+        outputs=None,
+        run_output=None,
+    ):
+        self.session_providers = list(session_providers or ["CPUExecutionProvider"])
+        self.inputs = list(inputs or [FakeOnnxValue("feats", [1, "T", 80])])
+        self.outputs = list(outputs or [FakeOnnxValue("embs", [1, 256])])
+        self.run_output = (
+            np.asarray([_unit_vector()], dtype=np.float32)
+            if run_output is None
+            else run_output
+        )
+
+    def get_providers(self):
+        return self.session_providers
+
+    def get_inputs(self):
+        return self.inputs
+
+    def get_outputs(self):
+        return self.outputs
+
+    def run(self, outputs, inputs):
+        assert outputs == ["embs"]
+        assert list(inputs) == ["feats"]
+        return [self.run_output]
+
+
+def _install_fake_ort(
+    monkeypatch,
+    *,
+    available_providers=None,
+    session_factory=lambda *args, **kwargs: FakeOnnxSession(),
+):
+    class SessionOptions:
+        inter_op_num_threads = 0
+        intra_op_num_threads = 0
+
+    class FakeOrt:
+        pass
+
+    FakeOrt.SessionOptions = SessionOptions
+    FakeOrt.get_available_providers = staticmethod(
+        lambda: list(available_providers or ["CPUExecutionProvider"])
+    )
+    FakeOrt.InferenceSession = session_factory
+    monkeypatch.setitem(sys.modules, "onnxruntime", FakeOrt)

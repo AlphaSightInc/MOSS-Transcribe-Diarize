@@ -248,7 +248,7 @@ class AppApiTest(unittest.TestCase):
             )
             with (
                 patch.object(speaker_identity, "PINNED_TIER_B_ASSET_SPEC", spec),
-                patch.object(speaker_identity, "_PyannoteWeSpeakerEmbedder", PassingLoadedProvider),
+                patch.object(speaker_identity, "_OnnxWeSpeakerEmbedder", PassingLoadedProvider),
             ):
                 app = create_app(
                     model_path="unused-local-model",
@@ -292,7 +292,7 @@ class AppApiTest(unittest.TestCase):
             )
             with (
                 patch.object(speaker_identity, "PINNED_TIER_B_ASSET_SPEC", spec),
-                patch.object(speaker_identity, "_PyannoteWeSpeakerEmbedder", LazyMissingProvider),
+                patch.object(speaker_identity, "_OnnxWeSpeakerEmbedder", LazyMissingProvider),
                 self.assertRaisesRegex(ValueError, "provider_missing"),
             ):
                 create_app(

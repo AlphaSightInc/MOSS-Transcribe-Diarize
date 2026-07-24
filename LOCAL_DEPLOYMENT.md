@@ -223,16 +223,20 @@ reason-coded diagnostics instead of forcing a merge.
 
 Tier B is an optional trial for Tier-A-unresolved singleton components only and
 is disabled by default. The pinned trial asset is WeSpeaker ResNet152-LM revision
-`4adba1525a6c9d5fff74b6df43a6ec97a86c4112` with state SHA-256
-`b0446afc11bb51b0eb79559b60508e967310980cf1a5580804473104024239bc`.
-When explicitly enabled, the local adapter must find and hash-verify that state
+`4adba1525a6c9d5fff74b6df43a6ec97a86c4112` with asset
+`voxceleb_resnet152_LM.onnx` and SHA-256
+`5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8`.
+When explicitly enabled, the local adapter must find and hash-verify that ONNX
 file before embedding. It performs no job-time download and model weights are not
-committed. The provider contract is CPU-only, 256-dimensional, and default-off:
-explicit enablement loads the existing local state file during startup and requires
-a tiny WAV smoke fixture to verify the loaded provider before any job is admitted.
-Job inference embeds only selected unresolved singleton evidence.
+committed. The provider contract is `wespeaker_resnet152_lm`,
+frontend `wespeaker-onnx-fbank-v1`, CPU-only ONNX Runtime, and 256-dimensional.
+Explicit enablement loads the existing local ONNX file during startup and
+requires a tiny 16-kHz mono WAV smoke fixture to verify the loaded provider before
+any job is admitted. Job inference embeds only selected unresolved singleton
+evidence.
 
 Provider dependencies are isolated in the optional `speaker-identity` extra:
+`onnxruntime==1.23.2`, retaining the existing torch and torchaudio lower bounds.
 
 ```bash
 uv pip install -e ".[speaker-identity]" --torch-backend=auto
@@ -243,7 +247,7 @@ target root:
 
 ```bash
 python -m moss_transcribe_diarize.speaker_identity_preflight \
-  --state-path /path/to/wespeaker-resnet152-lm.pt \
+  --state-path /path/to/voxceleb_resnet152_LM.onnx \
   --fixture tests/fixtures/idea_020_provider_smoke.wav \
   --json
 ```
@@ -255,12 +259,13 @@ MOSS_SPEAKER_IDENTITY_TIER_B=0
 ```
 
 To enable only after green preflight, set `MOSS_SPEAKER_IDENTITY_TIER_B=1`,
-`MOSS_SPEAKER_IDENTITY_STATE=/path/to/wespeaker-resnet152-lm.pt`, and
+`MOSS_SPEAKER_IDENTITY_STATE=/path/to/voxceleb_resnet152_LM.onnx`, and
 `MOSS_SPEAKER_IDENTITY_FIXTURE=tests/fixtures/idea_020_provider_smoke.wav` before
 restarting `moss-web.service`. Rollback is setting
 `MOSS_SPEAKER_IDENTITY_TIER_B=0` and restarting the web service. The service
 fails before job admission if explicit enablement lacks the state path or fails
-package, state, revision, hash, dimension, device, or smoke checks.
+dependency, ONNX path, revision, hash, frontend, dimension, CPU provider,
+16-kHz mono input, or smoke checks.
 `ops/start-web.sh` is the sole deployment environment adapter and accepts only
 exact `0` or `1`; Python CLI arguments do not reinterpret environment values.
 
@@ -297,10 +302,10 @@ counts are aggregated across windows, so they are not comparable to one window's
 output cap.
 
 This branch-local provider wiring does not prove deployed availability,
-PyTorch-vs-WSL parity, latency/RSS, threshold calibration, a 30-minute result, or
-requirement-A closure. Installing the pinned state file on WSL, enabling the env
-vars in deployed service configuration, and running the post-handoff speaker
-continuity proof remain parked operator steps after review.
+latency/RSS, threshold calibration, a 30-minute result, or requirement-A closure.
+Deployed remedy and quality remain Missing until an operator installs the pinned
+ONNX file on WSL, enables the env vars in deployed service configuration, and
+runs the post-handoff speaker continuity proof after review.
 
 ## Durable window resume
 
@@ -333,8 +338,8 @@ staging and nonterminal final files and rebuilds them from the committed prefix.
 Segment and download routes reject nonterminal jobs, so stale partial output is
 not exposed as successful.
 
-Current limits: Tier B remains default-off pending WSL/PyTorch parity and
-approved deployed proof. This resume path does not add per-window retry beyond
+Current limits: Tier B remains default-off pending approved deployed proof.
+Deployed remedy and quality remain Missing. This resume path does not add per-window retry beyond
 same-job resume, upload-limit changes, context-cap changes, or larger vLLM request
 limits. Those require separate reviewed changes.
 
@@ -475,10 +480,10 @@ provider config, and all declared config hashes:
   },
   "identity_provider": {
     "kind": "wespeaker_resnet152_lm",
-    "package_import": "pyannote.audio",
-    "state_asset_name": "<name from assets>",
+    "package_import": "onnxruntime",
+    "state_asset_name": "voxceleb_resnet152_LM.onnx",
     "revision": "<provider revision>",
-    "frontend_version": "<frontend identity>",
+    "frontend_version": "wespeaker-onnx-fbank-v1",
     "min_segment_samples": "<explicit reviewed value>"
   },
   "config_hashes": {
@@ -590,7 +595,7 @@ required inputs, validated in `[0,1]`, and echoed in the result. This local slic
 therefore cannot invent a pass/fail bar before reviewed calibration exists.
 
 Missing operator gates remain explicit: exact WSL package versions, exact Silero
-ONNX/WebRTC/WeSpeaker assets, asset hashes, provider golden outputs, calibrated
+ONNX/WebRTC/WeSpeaker ONNX assets, asset hashes, provider golden outputs, calibrated
 thresholds, locked development config hash, 300-second holdout truth, deployed
 service configuration, restart authorization, latency/RSS evidence, and any
 60/300-second live evidence are not supplied by this branch-local package.
