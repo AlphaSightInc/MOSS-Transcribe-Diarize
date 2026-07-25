@@ -7,7 +7,12 @@ from typing import Any
 
 from starlette.requests import Request
 
-from .live_ingest import LiveLaneIngress
+from .live_ingest import (
+    LiveLaneIngress,
+    LiveV2EpochDiscontinuityRequiredError,
+    LiveV2LaneCapacityError,
+    LiveV2StaleDeviceEpochError,
+)
 from .live_lane_contract import (
     LiveLane,
     LiveV2Ack,
@@ -80,6 +85,8 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                 snapshot = runtime.snapshot(session_id)
                 if snapshot is None:
                     raise KeyError(session_id)
+                if snapshot.session.status != "active":
+                    raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
                 result = _TransportAcceptResult(
                     ack=v2_ingresses[session_id].accept(frame.v2_frame),
                     queued_item_ids=(),
@@ -92,8 +99,14 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             }
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-        except (LiveV2OutOfOrderFrameError, LiveV2PrunedReplayError) as exc:
-            status, conflict = live_v2_replay_conflict_response(exc)
+        except (
+            LiveV2EpochDiscontinuityRequiredError,
+            LiveV2LaneCapacityError,
+            LiveV2OutOfOrderFrameError,
+            LiveV2PrunedReplayError,
+            LiveV2StaleDeviceEpochError,
+        ) as exc:
+            status, conflict = live_v2_ingress_failure_response(exc)
             conflict["snapshot"] = _snapshot_payload(runtime, session_id)
             return JSONResponse(conflict, status_code=status)
         except LiveSessionBackpressure as exc:
@@ -139,6 +152,10 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
         try:
             payload = await _optional_json(request)
             deadline = float(payload.get("deadline", 0.0))
+            if _has_unconsumed_v2_frames(v2_ingresses, session_id):
+                status, failure = live_v2_unconsumed_frames_response()
+                failure["snapshot"] = _snapshot_payload(runtime, session_id)
+                return JSONResponse(failure, status_code=status)
             return {"snapshot": (await runtime.stop(session_id, deadline)).to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -162,7 +179,9 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
         try:
             payload = await _optional_json(request)
             reason = str(payload.get("reason") or "aborted")
-            return {"snapshot": (await runtime.abort(session_id, reason)).to_dict()}
+            snapshot = await runtime.abort(session_id, reason)
+            v2_ingresses.pop(session_id, None)
+            return {"snapshot": snapshot.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -278,6 +297,11 @@ def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str,
     return None if snapshot is None else snapshot.to_dict()
 
 
+def _has_unconsumed_v2_frames(v2_ingresses: dict[str, LiveLaneIngress], session_id: str) -> bool:
+    ingress = v2_ingresses.get(session_id)
+    return False if ingress is None else bool(ingress.retained_frames())
+
+
 def _failure_status(exc: LiveServiceError) -> int:
     if exc.failure.kind == LiveServiceFailureKind.TRANSPORT_PACING:
         return 429
@@ -308,6 +332,50 @@ def live_v2_replay_conflict_response(
             "pruned_through_sequence": exc.pruned_through_sequence,
         }
     return 409, {"detail": str(exc), "failure": failure}
+
+
+def live_v2_ingress_failure_response(
+    exc: (
+        LiveV2EpochDiscontinuityRequiredError
+        | LiveV2LaneCapacityError
+        | LiveV2OutOfOrderFrameError
+        | LiveV2PrunedReplayError
+        | LiveV2StaleDeviceEpochError
+    ),
+) -> tuple[int, dict[str, Any]]:
+    if isinstance(exc, (LiveV2OutOfOrderFrameError, LiveV2PrunedReplayError)):
+        return live_v2_replay_conflict_response(exc)
+    if isinstance(exc, LiveV2LaneCapacityError):
+        failure = {
+            "code": "v2_lane_retention_capacity_reached",
+            "lane": exc.lane.value,
+            "max_retained_samples": exc.max_retained_samples,
+            "retained_samples": exc.retained_samples,
+            "frame_sample_count": exc.frame_sample_count,
+        }
+        return 429, {"detail": str(exc), "failure": failure}
+    if isinstance(exc, LiveV2EpochDiscontinuityRequiredError):
+        code = "v2_epoch_discontinuity_required"
+    else:
+        code = "v2_stale_device_epoch"
+    failure = {
+        "code": code,
+        "lane": exc.lane.value,
+        "sequence": exc.sequence,
+        "current_device_epoch": exc.current_device_epoch,
+        "received_device_epoch": exc.received_device_epoch,
+    }
+    return 409, {"detail": str(exc), "failure": failure}
+
+
+def live_v2_unconsumed_frames_response() -> tuple[int, dict[str, Any]]:
+    return (
+        409,
+        {
+            "detail": "v2 lane frames remain retained for the future mixer.",
+            "failure": {"code": "v2_unconsumed_lane_frames"},
+        },
+    )
 
 
 def _jsonable(value: Any) -> Any:
