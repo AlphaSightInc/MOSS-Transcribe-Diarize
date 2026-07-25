@@ -141,6 +141,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
     (() => {
       const allowedServerStates = new Set(["active", "closing", "closed", "failed", "aborted"]);
       const localStates = new Set(["disconnected", "reconnecting"]);
+      const terminalStates = new Set(["closed", "failed", "aborted"]);
+      const retryDelaysMs = [500, 1000, 2000, 5000];
+      const pollDelayMs = 1000;
       const endpoints = {
         snapshot: (sessionId, snapshotVersion) => `/api/live/sessions/${encodeURIComponent(sessionId)}/snapshot?since_version=${snapshotVersion}`,
         events: (sessionId, eventSequence) => `/api/live/sessions/${encodeURIComponent(sessionId)}/events?since_seq=${eventSequence}`,
@@ -166,10 +169,17 @@ LIVE_PORTAL_HTML = """<!doctype html>
         snapshotVersion: 0,
         eventSequence: 0,
         connected: false,
+        generation: 0,
+        inFlight: false,
+        retryIndex: 0,
+        retryTimer: 0,
+        controller: null,
+        renderedEvents: new Set(),
       };
 
       function setText(node, value) {
-        node.textContent = value;
+        node.textContent = value == null ? "" : String(value);
+        node.classList.toggle("empty", !node.textContent);
       }
 
       function setLocalState(value) {
@@ -187,7 +197,34 @@ LIVE_PORTAL_HTML = """<!doctype html>
       }
 
       function authHeaders() {
-        return { "Authorization": `Bearer ${state.viewToken}` };
+        return {
+          "Authorization": `Bearer ${state.viewToken}`,
+          "Content-Type": "application/json",
+        };
+      }
+
+      function assertCurrent(generation) {
+        if (!state.connected || generation !== state.generation) {
+          throw new DOMException("stale live portal generation", "AbortError");
+        }
+      }
+
+      function cancelPending() {
+        if (state.retryTimer) {
+          clearTimeout(state.retryTimer);
+          state.retryTimer = 0;
+        }
+        if (state.controller) {
+          state.controller.abort();
+          state.controller = null;
+        }
+      }
+
+      function setControls(connected) {
+        nodes.connect.disabled = connected;
+        nodes.disconnect.disabled = !connected;
+        nodes.stop.disabled = !connected;
+        nodes.abort.disabled = !connected;
       }
 
       function clearAuthority() {
@@ -195,40 +232,272 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.viewToken = "";
         state.snapshotVersion = 0;
         state.eventSequence = 0;
+        state.renderedEvents.clear();
         nodes.sessionId.value = "";
         nodes.viewToken.value = "";
       }
 
       function disconnect() {
+        state.generation += 1;
         state.connected = false;
+        state.inFlight = false;
+        cancelPending();
         clearAuthority();
         setLocalState("disconnected");
         setText(nodes.serverState, "disconnected");
-        nodes.connect.disabled = false;
-        nodes.disconnect.disabled = true;
-        nodes.stop.disabled = true;
-        nodes.abort.disabled = true;
+        setControls(false);
+      }
+
+      function terminalDisconnect() {
+        state.generation += 1;
+        state.connected = false;
+        state.inFlight = false;
+        cancelPending();
+        clearAuthority();
+        setLocalState("disconnected");
+        setControls(false);
+      }
+
+      async function readJson(response) {
+        let payload;
+        try {
+          payload = await response.json();
+        } catch (error) {
+          throw new Error("invalid JSON response");
+        }
+        if (!response.ok) {
+          const failure = payload && payload.failure;
+          if (failure && (failure.code || failure.kind || failure.reason)) {
+            throw new Error([failure.code, failure.kind, failure.reason].filter(Boolean).join(": "));
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return payload;
+      }
+
+      async function fetchJson(url, options, generation) {
+        assertCurrent(generation);
+        const response = await fetch(url, {
+          cache: "no-store",
+          credentials: "same-origin",
+          signal: state.controller.signal,
+          ...options,
+          headers: {
+            ...authHeaders(),
+            ...(options && options.headers ? options.headers : {}),
+          },
+        });
+        assertCurrent(generation);
+        return readJson(response);
+      }
+
+      function line(label, value) {
+        if (value === undefined || value === null || value === "") {
+          return "";
+        }
+        return `${label}: ${value}`;
+      }
+
+      function renderTranscript(snapshot) {
+        const session = snapshot.session;
+        const rows = [];
+        for (const item of session.committed || []) {
+          rows.push(item.transcript);
+        }
+        if (session.provisional && session.provisional.transcript) {
+          rows.push(session.provisional.transcript);
+        }
+        setText(nodes.transcript, rows.join("\\n\\n"));
+      }
+
+      function renderSnapshot(payload) {
+        if (!payload || typeof payload !== "object") {
+          throw new Error("malformed snapshot response");
+        }
+        const snapshot = payload.snapshot;
+        if (!snapshot) {
+          return null;
+        }
+        const session = snapshot.session;
+        if (!session || !allowedServerStates.has(session.status)) {
+          throw new Error("malformed snapshot session");
+        }
+        setServerState(session.status);
+        const failure = snapshot.terminal_failure || {};
+        const details = [
+          line("state", session.status),
+          line("version", session.version),
+          line("accepted samples", session.accepted_samples),
+          line("accounted samples", session.accounted_samples),
+          line("retained samples", session.retained_samples),
+          line("pending work", snapshot.pending_work_items),
+          line("failure", session.failure_reason),
+          line("failure kind", failure.kind),
+          line("failure code", failure.code),
+          line("failure detail", failure.detail),
+        ].filter(Boolean);
+        setText(nodes.statusDetail, details.join("\\n"));
+        renderTranscript(snapshot);
+        return session;
+      }
+
+      function renderEvents(payload) {
+        if (!payload || !Array.isArray(payload.events)) {
+          throw new Error("malformed events response");
+        }
+        let highest = null;
+        const fragment = document.createDocumentFragment();
+        for (const event of payload.events) {
+          if (!Number.isInteger(event.seq) || state.renderedEvents.has(event.seq)) {
+            continue;
+          }
+          const row = document.createElement("div");
+          row.textContent = [
+            line("seq", event.seq),
+            line("kind", event.kind),
+            line("snapshot", event.snapshot_version),
+          ].filter(Boolean).join(" | ");
+          fragment.appendChild(row);
+          state.renderedEvents.add(event.seq);
+          highest = highest === null ? event.seq : Math.max(highest, event.seq);
+        }
+        if (fragment.childNodes.length) {
+          nodes.events.appendChild(fragment);
+          nodes.events.classList.remove("empty");
+        }
+        return highest;
+      }
+
+      function schedulePoll(delayMs) {
+        if (!state.connected || state.retryTimer) {
+          return;
+        }
+        const generation = state.generation;
+        state.retryTimer = window.setTimeout(() => {
+          state.retryTimer = 0;
+          void poll(generation);
+        }, delayMs);
+      }
+
+      function scheduleRetry(message) {
+        setLocalState("reconnecting");
+        setText(nodes.statusDetail, `Reconnecting: ${message}`);
+        const delay = retryDelaysMs[Math.min(state.retryIndex, retryDelaysMs.length - 1)];
+        state.retryIndex += 1;
+        schedulePoll(delay);
+      }
+
+      async function poll(generation) {
+        if (!state.connected || state.inFlight || generation !== state.generation) {
+          return;
+        }
+        state.inFlight = true;
+        state.controller = new AbortController();
+        try {
+          const snapshotPayload = await fetchJson(
+            endpoints.snapshot(state.sessionId, state.snapshotVersion),
+            { method: "GET" },
+            generation,
+          );
+          const session = renderSnapshot(snapshotPayload);
+          assertCurrent(generation);
+          if (session) {
+            state.snapshotVersion = session.version;
+          }
+          const eventsPayload = await fetchJson(
+            endpoints.events(state.sessionId, state.eventSequence),
+            { method: "GET" },
+            generation,
+          );
+          const highestEvent = renderEvents(eventsPayload);
+          assertCurrent(generation);
+          if (highestEvent !== null) {
+            state.eventSequence = highestEvent;
+          }
+          state.retryIndex = 0;
+          if (session && terminalStates.has(session.status)) {
+            terminalDisconnect();
+          } else {
+            schedulePoll(pollDelayMs);
+          }
+        } catch (error) {
+          if (error.name !== "AbortError" && state.connected && generation === state.generation) {
+            scheduleRetry(error.message || "request failed");
+          }
+        } finally {
+          if (generation === state.generation) {
+            state.inFlight = false;
+            state.controller = null;
+          }
+        }
+      }
+
+      async function control(action) {
+        if (!state.connected || !["stop", "abort"].includes(action)) {
+          return;
+        }
+        const generation = state.generation;
+        const url = endpoints[action](state.sessionId);
+        state.controller = new AbortController();
+        try {
+          const payload = await fetchJson(
+            url,
+            {
+              method: "POST",
+              body: JSON.stringify(action === "stop" ? { deadline: 0.0 } : { reason: "operator abort" }),
+            },
+            generation,
+          );
+          const session = renderSnapshot(payload);
+          if (session) {
+            state.snapshotVersion = session.version;
+          }
+          if (session && terminalStates.has(session.status)) {
+            terminalDisconnect();
+          }
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            setText(nodes.statusDetail, `${action} failed: ${error.message || "request failed"}`);
+          }
+        } finally {
+          if (generation === state.generation) {
+            state.controller = null;
+          }
+        }
       }
 
       nodes.connect.addEventListener("click", () => {
-        state.sessionId = nodes.sessionId.value.trim();
-        state.viewToken = nodes.viewToken.value;
+        const nextSessionId = nodes.sessionId.value.trim();
+        const nextViewToken = nodes.viewToken.value;
+        disconnect();
+        state.sessionId = nextSessionId;
+        state.viewToken = nextViewToken;
         nodes.sessionId.value = "";
         nodes.viewToken.value = "";
         state.connected = Boolean(state.sessionId && state.viewToken);
-        nodes.connect.disabled = state.connected;
-        nodes.disconnect.disabled = !state.connected;
-        nodes.stop.disabled = !state.connected;
-        nodes.abort.disabled = !state.connected;
+        state.generation += 1;
+        state.retryIndex = 0;
+        state.snapshotVersion = 0;
+        state.eventSequence = 0;
+        state.renderedEvents.clear();
+        setText(nodes.events, "");
+        setText(nodes.transcript, "");
+        setControls(state.connected);
         if (state.connected) {
           setLocalState("reconnecting");
           setText(nodes.statusDetail, "Waiting for first server snapshot.");
+          schedulePoll(0);
         }
       });
       nodes.disconnect.addEventListener("click", disconnect);
+      nodes.stop.addEventListener("click", () => {
+        setText(nodes.statusDetail, "Stop requested.");
+        void control("stop");
+      });
+      nodes.abort.addEventListener("click", () => void control("abort"));
       window.addEventListener("pagehide", clearAuthority);
 
-      window.mossLivePortal = { endpoints, authHeaders, setText, setServerState, disconnect };
+      window.mossLivePortal = { endpoints };
     })();
   </script>
 </body>
