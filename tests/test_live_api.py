@@ -187,6 +187,7 @@ class LiveApiTest(unittest.TestCase):
             session_id = created.json()["id"]
             self.assertFalse(hasattr(app.state.manager, "live_runtime"))
             self.assertIsNotNone(app.state.live_runtime.snapshot(session_id))
+            self.assertIn(session_id, app.state.live_v2_sessions)
 
             ack = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
             self.assertEqual(ack.status_code, 200)
@@ -212,6 +213,8 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(snapshot.status_code, 200)
             self.assertFalse(snapshot.json()["unchanged"])
             self.assertEqual(snapshot.json()["snapshot"]["session"]["next_frame_sequence"], 2)
+            self.assertEqual(snapshot.json()["v2_session"]["lanes"]["system"]["next_sequence"], 0)
+            self.assertEqual(snapshot.json()["v2_session"]["lanes"]["microphone"]["next_sequence"], 0)
 
             events = client.get(f"/api/live/sessions/{session_id}/events?since_seq=1")
             self.assertEqual(events.status_code, 200)
@@ -291,9 +294,14 @@ class LiveApiTest(unittest.TestCase):
             )
             self.assertEqual(accepted.json()["queued_item_ids"], [])
             self.assertEqual(accepted.json()["snapshot_version"], 0)
-            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
-            self.assertEqual(snapshot["accepted_samples"], 0)
-            self.assertEqual(snapshot["next_frame_sequence"], 0)
+            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()
+            self.assertEqual(snapshot["snapshot"]["session"]["accepted_samples"], 0)
+            self.assertEqual(snapshot["snapshot"]["session"]["next_frame_sequence"], 0)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["next_sequence"], 1)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["accepted_samples"], 2)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["retained_samples"], 2)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["pruned_through_sequence"], -1)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["system"]["next_sequence"], 0)
 
     def test_v2_http_replays_prior_ack_and_keeps_lane_sequences_distinct(self):
         from fastapi.testclient import TestClient
@@ -334,6 +342,28 @@ class LiveApiTest(unittest.TestCase):
             snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
             self.assertEqual(snapshot["accepted_samples"], 0)
             self.assertEqual(snapshot["next_frame_sequence"], 0)
+
+    def test_v2_empty_stop_releases_registry_entry(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            self.assertIn(session_id, app.state.live_v2_sessions)
+
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
+
+            self.assertEqual(stopped.status_code, 200)
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "closed")
+            self.assertEqual(stopped.json()["v2_session"]["status"], "closed")
+            self.assertNotIn(session_id, app.state.live_v2_sessions)
 
     def test_v2_http_rejects_out_of_order_lane_sequence_with_typed_conflict(self):
         from fastapi.testclient import TestClient
@@ -475,10 +505,13 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(stopped.status_code, 409)
             self.assertEqual(stopped.json()["failure"]["code"], "v2_unconsumed_lane_frames")
             self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "active")
+            self.assertEqual(stopped.json()["v2_session"]["status"], "closing")
+            self.assertIn(session_id, app.state.live_v2_sessions)
 
             aborted = client.post(f"/api/live/sessions/{session_id}/abort", json={"reason": "caller cancelled"})
             self.assertEqual(aborted.status_code, 200)
             self.assertEqual(aborted.json()["snapshot"]["session"]["status"], "aborted")
+            self.assertNotIn(session_id, app.state.live_v2_sessions)
 
             rejected_after_abort = client.post(
                 f"/api/live/sessions/{session_id}/frames",

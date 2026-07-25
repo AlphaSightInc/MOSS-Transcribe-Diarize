@@ -8,7 +8,6 @@ from typing import Any
 from starlette.requests import Request
 
 from .live_ingest import (
-    LiveLaneIngress,
     LiveV2EpochDiscontinuityRequiredError,
     LiveV2LaneCapacityError,
     LiveV2StaleDeviceEpochError,
@@ -35,13 +34,17 @@ from .live_session import (
     LiveSessionClosed,
     LiveSessionFailed,
 )
+from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
 
 
 def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
 
-    v2_ingresses: dict[str, LiveLaneIngress] = {}
+    v2_sessions = LiveV2SessionRegistry(
+        max_retained_samples=runtime.descriptor.bounds.max_retained_samples
+    )
+    app.state.live_v2_sessions = v2_sessions
 
     @app.get("/api/live/descriptor")
     def live_descriptor(client_min_protocol_version: int | None = None, client_max_protocol_version: int | None = None):
@@ -60,9 +63,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     @app.post("/api/live/sessions")
     def create_live_session():
         created = runtime.create()
-        v2_ingresses[created.session_id] = LiveLaneIngress(
-            max_retained_samples=created.descriptor.bounds.max_retained_samples
-        )
+        v2_sessions.create(created.session_id)
         return {
             "id": created.session_id,
             "descriptor": created.descriptor.to_dict(),
@@ -88,7 +89,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                 if snapshot.session.status != "active":
                     raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
                 result = _TransportAcceptResult(
-                    ack=v2_ingresses[session_id].accept(frame.v2_frame),
+                    ack=v2_sessions.get(session_id).accept(frame.v2_frame),
                     queued_item_ids=(),
                     snapshot_version=snapshot.session.version,
                 )
@@ -108,6 +109,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
         ) as exc:
             status, conflict = live_v2_ingress_failure_response(exc)
             conflict["snapshot"] = _snapshot_payload(runtime, session_id)
+            conflict["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
             return JSONResponse(conflict, status_code=status)
         except LiveSessionBackpressure as exc:
             return JSONResponse(
@@ -115,6 +117,8 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                 status_code=429,
             )
         except LiveSessionClosed as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except LiveV2SessionTerminalError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         except ValueError as exc:
             status_code = 409 if str(exc).startswith("expected frame sequence") else 400
@@ -129,13 +133,14 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     @app.get("/api/live/sessions/{session_id}/snapshot")
     def live_snapshot(session_id: str, since_version: int | None = None):
         try:
-            snapshot = runtime.snapshot(session_id, since_version=since_version)
+            return _snapshot_response(
+                runtime,
+                v2_sessions,
+                session_id,
+                since_version=since_version,
+            )
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-        return {
-            "snapshot": None if snapshot is None else snapshot.to_dict(),
-            "unchanged": snapshot is None,
-        }
 
     @app.get("/api/live/sessions/{session_id}/events")
     def live_events(session_id: str, since_seq: int = 0):
@@ -152,11 +157,21 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
         try:
             payload = await _optional_json(request)
             deadline = float(payload.get("deadline", 0.0))
-            if _has_unconsumed_v2_frames(v2_ingresses, session_id):
+            v2_snapshot = await v2_sessions.get(session_id).stop(deadline)
+            if v2_snapshot.status == "closing":
                 status, failure = live_v2_unconsumed_frames_response()
                 failure["snapshot"] = _snapshot_payload(runtime, session_id)
+                failure["v2_session"] = v2_snapshot.to_dict()
                 return JSONResponse(failure, status_code=status)
-            return {"snapshot": (await runtime.stop(session_id, deadline)).to_dict()}
+            if v2_snapshot.status == "failed":
+                v2_sessions.release(session_id)
+                status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
+                failure["snapshot"] = _snapshot_payload(runtime, session_id)
+                failure["v2_session"] = v2_snapshot.to_dict()
+                return JSONResponse(failure, status_code=status)
+            stopped = await runtime.stop(session_id, deadline)
+            v2_sessions.release(session_id)
+            return {"snapshot": stopped.to_dict(), "v2_session": v2_snapshot.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except TimeoutError as exc:
@@ -165,6 +180,8 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                 status_code=409,
             )
         except (LiveSessionClosed, LiveSessionFailed) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except LiveV2SessionTerminalError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         except LiveServiceError as exc:
             return JSONResponse(
@@ -180,7 +197,16 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             payload = await _optional_json(request)
             reason = str(payload.get("reason") or "aborted")
             snapshot = await runtime.abort(session_id, reason)
-            v2_ingresses.pop(session_id, None)
+            try:
+                v2_session = v2_sessions.get(session_id)
+            except KeyError:
+                v2_session = None
+            if v2_session is not None:
+                try:
+                    v2_session.abort(reason)
+                except LiveV2SessionTerminalError:
+                    pass
+                v2_sessions.release(session_id)
             return {"snapshot": snapshot.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -289,6 +315,21 @@ def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:
     )
 
 
+def _snapshot_response(
+    runtime: LiveServiceRuntime,
+    v2_sessions: LiveV2SessionRegistry,
+    session_id: str,
+    *,
+    since_version: int | None = None,
+) -> dict[str, Any]:
+    snapshot = runtime.snapshot(session_id, since_version=since_version)
+    return {
+        "snapshot": None if snapshot is None else snapshot.to_dict(),
+        "unchanged": snapshot is None,
+        "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
+    }
+
+
 def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str, Any] | None:
     try:
         snapshot = runtime.snapshot(session_id)
@@ -297,9 +338,14 @@ def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str,
     return None if snapshot is None else snapshot.to_dict()
 
 
-def _has_unconsumed_v2_frames(v2_ingresses: dict[str, LiveLaneIngress], session_id: str) -> bool:
-    ingress = v2_ingresses.get(session_id)
-    return False if ingress is None else bool(ingress.retained_frames())
+def _v2_snapshot_payload(
+    v2_sessions: LiveV2SessionRegistry,
+    session_id: str,
+) -> dict[str, Any] | None:
+    try:
+        return v2_sessions.get(session_id).snapshot().to_dict()
+    except KeyError:
+        return None
 
 
 def _failure_status(exc: LiveServiceError) -> int:
@@ -374,6 +420,16 @@ def live_v2_unconsumed_frames_response() -> tuple[int, dict[str, Any]]:
         {
             "detail": "v2 lane frames remain retained for the future mixer.",
             "failure": {"code": "v2_unconsumed_lane_frames"},
+        },
+    )
+
+
+def live_v2_terminal_failure_response(reason: str | None) -> tuple[int, dict[str, Any]]:
+    return (
+        409,
+        {
+            "detail": "v2 lane session failed before clean stop.",
+            "failure": {"code": "v2_stop_accounting_mismatch", "reason": reason},
         },
     )
 
