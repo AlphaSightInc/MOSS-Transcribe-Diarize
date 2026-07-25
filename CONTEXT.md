@@ -38,7 +38,9 @@
   server minimum. The HTTP adapter maps it to a 426-style response payload.
 - **Prior acknowledgement replay**: Bounded v2 contract behavior keyed by
   `(lane, sequence)` that returns a stored acknowledgement for an accepted
-  duplicate without mutating accepted or retained totals.
+  duplicate without mutating accepted or retained totals. Its transport-local
+  window automatically prunes the oldest acknowledgement instead of blocking
+  new frames.
 - **Pruned replay**: Typed failure when a duplicate key is older than an
   explicit v2 replay-store prune boundary.
 - **Default-off transport adapter**: Existing FastAPI live route attachment

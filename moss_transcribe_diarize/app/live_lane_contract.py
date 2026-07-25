@@ -12,6 +12,7 @@ from typing import Any, Mapping
 V2_PROTOCOL_NAME = "moss-live-service.v2"
 V2_PROTOCOL_VERSION = 2
 PCM16_BYTES_PER_SAMPLE = 2
+LIVE_V2_REPLAY_ACK_WINDOW = 256
 
 
 class LiveLane(str, Enum):
@@ -194,10 +195,6 @@ class LiveV2PrunedReplayError(ValueError):
             f"v2 {lane.value} frame sequence {sequence} "
             f"was pruned through {pruned_through_sequence}."
         )
-
-
-class LiveV2ReplayStoreFullError(RuntimeError):
-    pass
 
 
 def negotiate_v2_protocol(
@@ -407,17 +404,14 @@ class LiveV2PriorAckReplayStore:
                 expected_sequence=expected_sequence,
                 received_sequence=frame.sequence,
             )
-        if len(self._acks) >= self._max_retained_acks:
-            raise LiveV2ReplayStoreFullError(
-                "v2 prior acknowledgement replay store is full; "
-                "prune explicitly before accepting more frames."
-            )
-
         ack = accept_new(frame)
         if not isinstance(ack, LiveV2Ack):
             raise ValueError("accept_new must return LiveV2Ack.")
         if ack.lane is not frame.lane or ack.sequence != frame.sequence:
             raise ValueError("accepted acknowledgement must match frame lane and sequence.")
+        if len(self._acks) >= self._max_retained_acks:
+            oldest_lane, oldest_sequence = next(iter(self._acks))
+            self.prune_through(lane=oldest_lane, sequence=oldest_sequence)
         self._acks[key] = ack
         self._next_sequences[frame.lane] = expected_sequence + 1
         return ack

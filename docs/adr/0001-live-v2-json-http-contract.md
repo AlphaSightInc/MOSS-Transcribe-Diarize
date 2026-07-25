@@ -49,6 +49,10 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
 - Lane-labelled v2 data is representational at this slice; it does not create
   independent per-lane retention, epochs, ingestion, mixing, recovery, or final
   drain behavior.
+- Prior acknowledgements use a transport-local 256-entry replay window,
+  independent of the runtime event-ring bound. The oldest acknowledgement is
+  pruned when the window fills, so new frames continue and replaying a pruned
+  key returns the typed `v2_pruned_replay` conflict.
 - Clients can discover the v2 contract through the default-off descriptor and
   can fail with a stable machine-readable obsolete-client response.
 - JSON plus base64 is less efficient than binary transport, but keeps the MVP

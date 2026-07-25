@@ -372,7 +372,9 @@ or `microphone`), per-lane sequence, capture timestamp, device epoch,
 silent/discontinuity booleans, sample facts, and strict base64 PCM16. The
 adapter validates v2 frames before runtime mutation, returns lane-qualified
 acknowledgements, maps obsolete clients to a 426-style payload, and still accepts
-the existing v1 mono frame payload. This is not dual-lane ingestion,
+the existing v1 mono frame payload. Its transport-local 256-ack replay window
+automatically prunes the oldest acknowledgement and never blocks new frames;
+replaying a pruned key returns a typed conflict. This is not dual-lane ingestion,
 per-lane retention/accounting, mixing, recovery/final drain, WebSocket, binary
 transport, or live deployment enablement; binary transport is deferred to v3.
 

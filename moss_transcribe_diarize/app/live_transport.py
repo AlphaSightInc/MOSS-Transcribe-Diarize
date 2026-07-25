@@ -8,6 +8,7 @@ from typing import Any
 from starlette.requests import Request
 
 from .live_lane_contract import (
+    LIVE_V2_REPLAY_ACK_WINDOW,
     LiveLane,
     LiveV2Ack,
     LiveV2Frame,
@@ -15,7 +16,6 @@ from .live_lane_contract import (
     LiveV2OutOfOrderFrameError,
     LiveV2PriorAckReplayStore,
     LiveV2PrunedReplayError,
-    LiveV2ReplayStoreFullError,
     negotiate_v2_protocol,
 )
 from .live_service_runtime import (
@@ -57,7 +57,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     def create_live_session():
         created = runtime.create()
         v2_replay_stores[created.session_id] = LiveV2PriorAckReplayStore(
-            max_retained_acks=runtime.descriptor.bounds.max_events
+            max_retained_acks=LIVE_V2_REPLAY_ACK_WINDOW
         )
         return {
             "id": created.session_id,
@@ -91,7 +91,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             }
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-        except (LiveV2OutOfOrderFrameError, LiveV2PrunedReplayError, LiveV2ReplayStoreFullError) as exc:
+        except (LiveV2OutOfOrderFrameError, LiveV2PrunedReplayError) as exc:
             status, conflict = live_v2_replay_conflict_response(exc)
             conflict["snapshot"] = _snapshot_payload(runtime, session_id)
             return JSONResponse(conflict, status_code=status)
@@ -348,7 +348,7 @@ def live_v2_obsolete_client_response(exc: LiveV2ObsoleteClientError) -> tuple[in
 
 
 def live_v2_replay_conflict_response(
-    exc: LiveV2OutOfOrderFrameError | LiveV2PrunedReplayError | LiveV2ReplayStoreFullError,
+    exc: LiveV2OutOfOrderFrameError | LiveV2PrunedReplayError,
 ) -> tuple[int, dict[str, Any]]:
     if isinstance(exc, LiveV2OutOfOrderFrameError):
         failure = {
@@ -357,15 +357,13 @@ def live_v2_replay_conflict_response(
             "expected_sequence": exc.expected_sequence,
             "received_sequence": exc.received_sequence,
         }
-    elif isinstance(exc, LiveV2PrunedReplayError):
+    else:
         failure = {
             "code": "v2_pruned_replay",
             "lane": exc.lane.value,
             "sequence": exc.sequence,
             "pruned_through_sequence": exc.pruned_through_sequence,
         }
-    else:
-        failure = {"code": "v2_replay_store_full"}
     return 409, {"detail": str(exc), "failure": failure}
 
 

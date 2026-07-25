@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
+from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -361,6 +362,52 @@ class LiveApiTest(unittest.TestCase):
             snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
             self.assertEqual(snapshot["accepted_samples"], 0)
             self.assertEqual(snapshot["next_frame_sequence"], 0)
+
+    def test_v2_http_streams_past_event_bound_and_auto_prunes_ack_window(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4096),
+            )
+            client = TestClient(app)
+            created = client.post("/api/live/sessions").json()
+            frames_url = f"/api/live/sessions/{created['id']}/frames"
+
+            for sequence in range(LIVE_V2_REPLAY_ACK_WINDOW + 1):
+                response = client.post(frames_url, json=v2_frame_payload(sequence, 2, lane="system"))
+                self.assertEqual(response.status_code, 200)
+
+            pruned = client.post(frames_url, json=v2_frame_payload(0, 2, lane="system"))
+            self.assertEqual(pruned.status_code, 409)
+            self.assertEqual(pruned.json()["failure"]["code"], "v2_pruned_replay")
+            continued = client.post(
+                frames_url,
+                json=v2_frame_payload(LIVE_V2_REPLAY_ACK_WINDOW + 1, 2, lane="system"),
+            )
+            self.assertEqual(continued.status_code, 200)
+
+            dual_app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4096),
+            )
+            dual_client = TestClient(dual_app)
+            dual_created = dual_client.post("/api/live/sessions").json()
+            dual_frames_url = f"/api/live/sessions/{dual_created['id']}/frames"
+            max_events = dual_created["descriptor"]["bounds"]["max_events"]
+            for sequence in range(max_events + 1):
+                for lane in ("system", "microphone"):
+                    response = dual_client.post(
+                        dual_frames_url,
+                        json=v2_frame_payload(sequence, 2, lane=lane),
+                    )
+                    self.assertEqual(response.status_code, 200)
 
     def test_v2_pruned_replay_maps_to_typed_conflict_payload(self):
         from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2PrunedReplayError

@@ -15,7 +15,6 @@ from moss_transcribe_diarize.app.live_lane_contract import (
     LiveV2OutOfOrderFrameError,
     LiveV2PriorAckReplayStore,
     LiveV2PrunedReplayError,
-    LiveV2ReplayStoreFullError,
     negotiate_v2_protocol,
 )
 from moss_transcribe_diarize.app.live_transport import live_v2_obsolete_client_response
@@ -337,18 +336,18 @@ def test_v2_replay_store_rejects_explicitly_pruned_old_key():
     assert store.retained_ack_count == 0
 
 
-def test_v2_replay_store_is_bounded_until_callers_prune_explicitly():
+def test_v2_replay_store_prunes_oldest_ack_when_its_own_window_is_full():
     store = LiveV2PriorAckReplayStore(max_retained_acks=1)
     first = LiveV2Frame.from_dict(frame_payload(lane="system", sequence=0))
     second = LiveV2Frame.from_dict(frame_payload(lane="system", sequence=1))
     calls = []
 
     store.accept(first, lambda frame: calls.append(frame.sequence) or ack_for(frame))
-    with pytest.raises(LiveV2ReplayStoreFullError):
-        store.accept(second, lambda frame: calls.append(frame.sequence) or ack_for(frame))
-
-    assert calls == [0]
-    assert store.prune_through(lane=LiveLane.SYSTEM, sequence=0) == 1
     accepted = store.accept(second, lambda frame: calls.append(frame.sequence) or ack_for(frame))
+
     assert accepted.sequence == 1
     assert calls == [0, 1]
+    assert store.retained_ack_count == 1
+    with pytest.raises(LiveV2PrunedReplayError) as raised:
+        store.accept(first, ack_for)
+    assert raised.value.pruned_through_sequence == 0
