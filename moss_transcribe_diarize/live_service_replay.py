@@ -235,6 +235,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--expect-revision", required=True, help="Expected service source revision.")
     parser.add_argument("--expect-provider-hash", required=True, help="Expected provider manifest hash.")
     parser.add_argument("--expect-config-hash", required=True, help="Expected combined configuration hash.")
+    parser.add_argument(
+        "--bearer-token-file",
+        help="Caller-owned file containing the live capture bearer for HTTP replay.",
+    )
     return parser.parse_args(argv)
 
 
@@ -242,7 +246,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         run_service_replay(
-            service=HttpLiveReplayService(base_url=args.base_url),
+            service=HttpLiveReplayService(
+                base_url=args.base_url,
+                bearer_token=_read_bearer_token_file(Path(args.bearer_token_file)) if args.bearer_token_file else None,
+            ),
             audio_path=Path(args.audio),
             out_dir=Path(args.out_dir),
             pace=args.pace,
@@ -263,6 +270,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"live service replay failed [integrity]: {exc}", file=sys.stderr)
         return ServiceReplayFailure.exit_code
     return 0
+
+
+def _read_bearer_token_file(path: Path) -> str:
+    token = path.read_text(encoding="utf-8").strip()
+    if not token:
+        raise ServiceReplayFailure("bearer token file is empty.")
+    if "\n" in token or "\r" in token:
+        raise ServiceReplayFailure("bearer token file must contain exactly one token.")
+    return token
 
 
 def run_service_replay(

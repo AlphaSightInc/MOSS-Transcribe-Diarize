@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import ssl
 from pathlib import Path
 
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
@@ -38,6 +40,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--live-provider-manifest",
         help="Offline live provider manifest required when --live is enabled.",
+    )
+    parser.add_argument(
+        "--live-auth-state",
+        help="Private live access registry state file required when --live is enabled.",
+    )
+    parser.add_argument(
+        "--live-tls-certfile",
+        help="TLS certificate file required when --live is enabled.",
+    )
+    parser.add_argument(
+        "--live-tls-keyfile",
+        help="TLS private key file required when --live is enabled.",
     )
     parser.add_argument("--runs-dir", default="runs")
     parser.add_argument("--host", default="127.0.0.1")
@@ -96,6 +110,45 @@ def _live_runtime_factory(args: argparse.Namespace):
     return build_live_runtime_factory(config, _LiveCliRunnerProxy(args))
 
 
+def _live_startup_config(args: argparse.Namespace) -> dict[str, object]:
+    if not args.live:
+        return {
+            "live_auth_state_path": None,
+            "live_server_cert_sha256": None,
+            "ssl_certfile": None,
+            "ssl_keyfile": None,
+        }
+    missing = [
+        flag
+        for flag, value in (
+            ("--live-auth-state", args.live_auth_state),
+            ("--live-tls-certfile", args.live_tls_certfile),
+            ("--live-tls-keyfile", args.live_tls_keyfile),
+        )
+        if not value
+    ]
+    if missing:
+        raise SystemExit(f"{', '.join(missing)} are required when --live is enabled.")
+    certfile = Path(args.live_tls_certfile).expanduser()
+    return {
+        "live_auth_state_path": Path(args.live_auth_state).expanduser(),
+        "live_server_cert_sha256": _certificate_sha256(certfile),
+        "ssl_certfile": str(certfile),
+        "ssl_keyfile": str(Path(args.live_tls_keyfile).expanduser()),
+    }
+
+
+def _certificate_sha256(certfile: Path) -> str:
+    data = certfile.read_bytes()
+    try:
+        text = data.decode("ascii")
+    except UnicodeDecodeError:
+        der = data
+    else:
+        der = ssl.PEM_cert_to_DER_cert(text) if "-----BEGIN CERTIFICATE-----" in text else data
+    return hashlib.sha256(der).hexdigest()
+
+
 def main() -> None:
     try:
         import uvicorn
@@ -104,6 +157,7 @@ def main() -> None:
 
     args = parse_args()
     live_runtime_factory = _live_runtime_factory(args)
+    live_startup = _live_startup_config(args)
     app = create_app(
         model_path=Path(args.model).expanduser(),
         runs_dir=Path(args.runs_dir).expanduser(),
@@ -124,8 +178,17 @@ def main() -> None:
         speaker_identity_fixture=args.speaker_identity_fixture,
         live_enabled=args.live,
         live_runtime_factory=live_runtime_factory,
+        live_auth_state_path=live_startup["live_auth_state_path"],
+        live_server_cert_sha256=live_startup["live_server_cert_sha256"],
     )
-    uvicorn.run(app, host=args.host, port=args.port)
+    uvicorn.run(
+        app,
+        host=args.host,
+        port=args.port,
+        ssl_certfile=live_startup["ssl_certfile"],
+        ssl_keyfile=live_startup["ssl_keyfile"],
+        proxy_headers=False,
+    )
 
 if __name__ == "__main__":
     main()

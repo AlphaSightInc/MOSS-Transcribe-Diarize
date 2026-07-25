@@ -73,6 +73,47 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertEqual(args.audio, "audio.wav")
         self.assertEqual(args.runs, 3)
         self.assertEqual(args.expect_provider_hash, "a" * 64)
+        self.assertIsNone(args.bearer_token_file)
+
+    def test_http_replay_cli_reads_bearer_from_secret_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            token_file = root / "capture.secret"
+            token_file.write_text(" capture-token \n", encoding="utf-8")
+            captured = {}
+
+            def run_service_replay(*, service, **kwargs):
+                captured["bearer_token"] = service.bearer_token
+                captured["base_url"] = service.base_url
+                captured["kwargs"] = kwargs
+
+            original = live_service_replay.run_service_replay
+            live_service_replay.run_service_replay = run_service_replay
+            try:
+                exit_code = live_service_replay.main(
+                    [
+                        "--base-url",
+                        "https://moss.lan:7860",
+                        "--audio",
+                        "audio.wav",
+                        "--out-dir",
+                        str(root / "out"),
+                        "--expect-revision",
+                        "revision",
+                        "--expect-provider-hash",
+                        "a" * 64,
+                        "--expect-config-hash",
+                        "b" * 64,
+                        "--bearer-token-file",
+                        str(token_file),
+                    ]
+                )
+            finally:
+                live_service_replay.run_service_replay = original
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(captured["bearer_token"], "capture-token")
+        self.assertEqual(captured["base_url"], "https://moss.lan:7860")
 
     def test_service_failure_kinds_map_to_typed_replay_exits(self):
         error = LiveServiceProviderConfigFailure("config mismatch")

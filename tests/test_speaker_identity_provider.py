@@ -534,6 +534,9 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     monkeypatch.setenv("MOSS_SPEAKER_IDENTITY_FIXTURE", "/env/fixture.wav")
     monkeypatch.setenv("MOSS_LIVE_ENABLED", "1")
     monkeypatch.setenv("MOSS_LIVE_PROVIDER_MANIFEST", "/env/live-provider.json")
+    monkeypatch.setenv("MOSS_LIVE_AUTH_STATE", "/env/live-auth.json")
+    monkeypatch.setenv("MOSS_LIVE_TLS_CERTFILE", "/env/live.crt")
+    monkeypatch.setenv("MOSS_LIVE_TLS_KEYFILE", "/env/live.key")
     monkeypatch.setattr(sys, "argv", ["mtd-subtitle-web"])
 
     disabled = parse_args()
@@ -543,6 +546,9 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert disabled.speaker_identity_fixture is None
     assert disabled.live is False
     assert disabled.live_provider_manifest is None
+    assert disabled.live_auth_state is None
+    assert disabled.live_tls_certfile is None
+    assert disabled.live_tls_keyfile is None
 
     monkeypatch.setattr(
         sys,
@@ -557,6 +563,12 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
             "--live",
             "--live-provider-manifest",
             "/cli/live-provider.json",
+            "--live-auth-state",
+            "/cli/live-auth.json",
+            "--live-tls-certfile",
+            "/cli/live.crt",
+            "--live-tls-keyfile",
+            "/cli/live.key",
         ],
     )
     enabled = parse_args()
@@ -566,6 +578,63 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert enabled.speaker_identity_fixture == "/cli/fixture.wav"
     assert enabled.live is True
     assert enabled.live_provider_manifest == "/cli/live-provider.json"
+    assert enabled.live_auth_state == "/cli/live-auth.json"
+    assert enabled.live_tls_certfile == "/cli/live.crt"
+    assert enabled.live_tls_keyfile == "/cli/live.key"
+
+
+def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path, monkeypatch):
+    from moss_transcribe_diarize.app import web_cli
+
+    certfile = tmp_path / "live.der"
+    certfile.write_bytes(b"configured leaf cert")
+    keyfile = tmp_path / "live.key"
+    keyfile.write_text("private key placeholder", encoding="utf-8")
+    state = tmp_path / "live-auth.json"
+    calls = {}
+
+    def create_app(**kwargs):
+        calls["create_app"] = kwargs
+        return "app"
+
+    def run(app, **kwargs):
+        calls["uvicorn"] = (app, kwargs)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "mtd-subtitle-web",
+            "--live",
+            "--live-provider-manifest",
+            str(tmp_path / "live-provider.json"),
+            "--live-auth-state",
+            str(state),
+            "--live-tls-certfile",
+            str(certfile),
+            "--live-tls-keyfile",
+            str(keyfile),
+        ],
+    )
+    monkeypatch.setattr(web_cli, "_live_runtime_factory", lambda args: "runtime-factory")
+    monkeypatch.setattr(web_cli, "create_app", create_app)
+    monkeypatch.setitem(sys.modules, "uvicorn", SimpleNamespace(run=run))
+
+    web_cli.main()
+
+    assert calls["create_app"]["live_runtime_factory"] == "runtime-factory"
+    assert calls["create_app"]["live_auth_state_path"] == state
+    assert calls["create_app"]["live_server_cert_sha256"] == hashlib.sha256(b"configured leaf cert").hexdigest()
+    assert calls["uvicorn"] == (
+        "app",
+        {
+            "host": "127.0.0.1",
+            "port": 7860,
+            "ssl_certfile": str(certfile),
+            "ssl_keyfile": str(keyfile),
+            "proxy_headers": False,
+        },
+    )
 
 
 def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch):
@@ -637,6 +706,9 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "MOSS_SPEAKER_IDENTITY_FIXTURE": "/provider/smoke.wav",
         "MOSS_LIVE_ENABLED": "1",
         "MOSS_LIVE_PROVIDER_MANIFEST": "/provider/live-provider.json",
+        "MOSS_LIVE_AUTH_STATE": "/provider/live-auth.json",
+        "MOSS_LIVE_TLS_CERTFILE": "/provider/live.crt",
+        "MOSS_LIVE_TLS_KEYFILE": "/provider/live.key",
     }
 
     enabled = subprocess.run(
@@ -649,7 +721,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
 
     assert enabled.returncode == 0, enabled.stderr
     enabled_args = capture_path.read_text(encoding="utf-8").splitlines()
-    assert enabled_args[-8:] == [
+    assert enabled_args[-14:] == [
         "--speaker-identity-tier-b",
         "--speaker-identity-state",
         "/provider/state.pt",
@@ -658,6 +730,12 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "--live",
         "--live-provider-manifest",
         "/provider/live-provider.json",
+        "--live-auth-state",
+        "/provider/live-auth.json",
+        "--live-tls-certfile",
+        "/provider/live.crt",
+        "--live-tls-keyfile",
+        "/provider/live.key",
     ]
 
     disabled = subprocess.run(
