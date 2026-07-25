@@ -94,3 +94,16 @@
 - **Default-off transport adapter**: Existing FastAPI live route attachment
   that is absent unless live is explicitly enabled. It validates v2 JSON frames
   before lane ingress, and continues to send v1 mono frames to the mono runtime.
+- **Live access registry**: Single server-side live authorization owner for
+  private-peer admission, pairing grants, capture authority, view authority,
+  live session ownership, and device revocation.
+- **Pairing payload**: Short-lived opaque live bootstrap value carrying a
+  random pairing secret and the configured full TLS certificate fingerprint.
+- **Capture authority**: Persistent device-scoped bearer authority that can
+  create a live session and operate only sessions owned by that exact device.
+- **View authority**: Short-lived bearer authority scoped to one live session
+  for observation and control requests; it cannot create or feed capture audio.
+- **Live session ownership**: Exact binding between one capture device and one
+  live session. Ownership gates feed, watch, stop, and abort authority.
+- **Device revocation**: Explicit loopback operator action that durably
+  invalidates one capture device and its owned view authorities.

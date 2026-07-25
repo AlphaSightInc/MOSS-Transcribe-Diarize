@@ -16,8 +16,10 @@ but not for the project's supported continuous-batching vLLM service.
 
 The vLLM API listens only on WSL loopback port 8000. The web application listens
 on port 7860 and is the only component exposed to trusted LAN and Tailscale
-clients. The application does not provide user authentication, so do not expose
-port 7860 to the public internet.
+clients. Existing batch routes do not provide user authentication, so do not
+expose port 7860 to the public internet. Default-off live routes add their own
+live-only TLS and bearer authority when explicitly enabled; that does not make
+the batch surface public-safe.
 
 The installed runtime uses uv 0.11.30 with uv-managed Python 3.12.13. The pinned
 CUDA 13 vLLM wheel needs its legacy model runner under WSL because WSL does not
@@ -373,10 +375,20 @@ weights at runtime. Canonical spans freeze only from VAD end-silence, hard cap, 
 stop flush, and they publish only after bounded decode returns valid transcript
 timestamps and confirmed stable session identity.
 
-The FastAPI transport is absent unless `create_app(..., live_enabled=True,
-live_max_retained_samples=...)` is called by an explicit local test or reviewed
-future integration. Enabling this in deployed service configuration is not part
-of the current local gate and should not be described as production live mode.
+The FastAPI transport is absent unless `create_app(..., live_enabled=True, ...)`
+is called by an explicit local test or reviewed future integration. Enabling
+this in deployed service configuration is not part of the current local gate and
+should not be described as production live mode.
+
+When live mode is enabled, one server-side live access registry protects only
+the live routes. Pairing-code issuance and device revocation are loopback-only
+operator actions. Remote live pairing and all non-loopback live requests require
+direct private-peer HTTPS, with the pairing payload bound to the configured full
+TLS certificate fingerprint. Capture authority is device scoped; view authority
+is one-session scoped and cannot create sessions or feed audio. Explicit device
+revocation invalidates the device, invalidates owned views, and releases owned
+live state. This is not helper-loss detection, a heartbeat, certificate
+provisioning, helper Keychain storage, or deployed reachability proof.
 
 IDEA-028 adds the default-off `moss-live-service.v2` JSON/HTTP contract at this
 same disabled transport seam, and IDEA-029 terminates accepted v2 frames at
@@ -570,21 +582,33 @@ MOSS_LIVE_ENABLED=0
 
 `ops/start-web.sh` is the only deployment environment adapter. It accepts exactly
 `MOSS_LIVE_ENABLED=0` or `MOSS_LIVE_ENABLED=1`. Enabled mode also requires
-`MOSS_LIVE_PROVIDER_MANIFEST` and translates that state into explicit CLI flags:
+`MOSS_LIVE_PROVIDER_MANIFEST`, `MOSS_LIVE_AUTH_STATE`,
+`MOSS_LIVE_TLS_CERTFILE`, and `MOSS_LIVE_TLS_KEYFILE`, then translates that state
+into explicit CLI flags:
 
 ```ini
 MOSS_LIVE_ENABLED=1
 MOSS_LIVE_PROVIDER_MANIFEST=/path/to/live-provider-manifest.json
+MOSS_LIVE_AUTH_STATE=/path/to/live-auth.json
+MOSS_LIVE_TLS_CERTFILE=/path/to/live.crt
+MOSS_LIVE_TLS_KEYFILE=/path/to/live.key
 ```
 
 ```bash
-mtd-subtitle-web ... --live --live-provider-manifest /path/to/live-provider-manifest.json
+mtd-subtitle-web ... \
+  --live \
+  --live-provider-manifest /path/to/live-provider-manifest.json \
+  --live-auth-state /path/to/live-auth.json \
+  --live-tls-certfile /path/to/live.crt \
+  --live-tls-keyfile /path/to/live.key
 ```
 
 Rollback is setting `MOSS_LIVE_ENABLED=0`, removing or ignoring
-`MOSS_LIVE_PROVIDER_MANIFEST`, and restarting only after the reviewed operator
-handoff permits a restart. Invalid enablement exits before web app construction,
-routes, sessions, or job admission.
+the live provider, auth-state, certificate, and key environment variables, and
+restarting only after the reviewed operator handoff permits a restart. Invalid
+enablement exits before web app construction, routes, sessions, or job
+admission. Auth-state files and certificate private keys are operator-owned
+secret files and must not be committed.
 
 Provider-blind truth and calibration are separate from bundle assembly. Truth
 uses 16 kHz integer sample intervals with independent annotation and review
