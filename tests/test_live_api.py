@@ -289,6 +289,11 @@ class LiveApiTest(unittest.TestCase):
                     "frozen_span_ids": [],
                 },
             )
+            self.assertEqual(accepted.json()["queued_item_ids"], [])
+            self.assertEqual(accepted.json()["snapshot_version"], 0)
+            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
+            self.assertEqual(snapshot["accepted_samples"], 0)
+            self.assertEqual(snapshot["next_frame_sequence"], 0)
 
     def test_v2_http_replays_prior_ack_and_keeps_lane_sequences_distinct(self):
         from fastapi.testclient import TestClient
@@ -319,16 +324,16 @@ class LiveApiTest(unittest.TestCase):
                 {
                     "lane": "microphone",
                     "sequence": 0,
-                    "start_sample": 2,
-                    "end_sample": 4,
-                    "accepted_samples": 4,
-                    "retained_samples": 4,
+                    "start_sample": 0,
+                    "end_sample": 2,
+                    "accepted_samples": 2,
+                    "retained_samples": 2,
                     "frozen_span_ids": [],
                 },
             )
             snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
-            self.assertEqual(snapshot["accepted_samples"], 4)
-            self.assertEqual(snapshot["next_frame_sequence"], 2)
+            self.assertEqual(snapshot["accepted_samples"], 0)
+            self.assertEqual(snapshot["next_frame_sequence"], 0)
 
     def test_v2_http_rejects_out_of_order_lane_sequence_with_typed_conflict(self):
         from fastapi.testclient import TestClient

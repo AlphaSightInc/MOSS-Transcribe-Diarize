@@ -7,14 +7,13 @@ from typing import Any
 
 from starlette.requests import Request
 
+from .live_ingest import LiveLaneIngress
 from .live_lane_contract import (
-    LIVE_V2_REPLAY_ACK_WINDOW,
     LiveLane,
     LiveV2Ack,
     LiveV2Frame,
     LiveV2ObsoleteClientError,
     LiveV2OutOfOrderFrameError,
-    LiveV2PriorAckReplayStore,
     LiveV2PrunedReplayError,
     negotiate_v2_protocol,
 )
@@ -37,7 +36,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
 
-    v2_replay_stores: dict[str, LiveV2PriorAckReplayStore] = {}
+    v2_ingresses: dict[str, LiveLaneIngress] = {}
 
     @app.get("/api/live/descriptor")
     def live_descriptor(client_min_protocol_version: int | None = None, client_max_protocol_version: int | None = None):
@@ -56,8 +55,8 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     @app.post("/api/live/sessions")
     def create_live_session():
         created = runtime.create()
-        v2_replay_stores[created.session_id] = LiveV2PriorAckReplayStore(
-            max_retained_acks=LIVE_V2_REPLAY_ACK_WINDOW
+        v2_ingresses[created.session_id] = LiveLaneIngress(
+            max_retained_samples=created.descriptor.bounds.max_retained_samples
         )
         return {
             "id": created.session_id,
@@ -78,11 +77,13 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                     snapshot_version=accepted.snapshot.session.version,
                 )
             else:
-                result = _accept_v2_frame(
-                    runtime,
-                    v2_replay_stores[session_id],
-                    session_id=session_id,
-                    frame=frame.v2_frame,
+                snapshot = runtime.snapshot(session_id)
+                if snapshot is None:
+                    raise KeyError(session_id)
+                result = _TransportAcceptResult(
+                    ack=v2_ingresses[session_id].accept(frame.v2_frame),
+                    queued_item_ids=(),
+                    snapshot_version=snapshot.session.version,
                 )
             return {
                 "ack": _jsonable(_ack_for_transport(result.ack, lane=frame.lane)),
@@ -175,7 +176,7 @@ class _TransportFrame:
 
 @dataclass(frozen=True, slots=True)
 class _TransportAcceptResult:
-    ack: FrameAck
+    ack: FrameAck | LiveV2Ack
     queued_item_ids: tuple[int, ...]
     snapshot_version: int
 
@@ -266,64 +267,6 @@ def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:
         accepted_samples=ack.accepted_samples,
         retained_samples=ack.retained_samples,
         frozen_span_ids=ack.frozen_span_ids,
-    )
-
-
-def _accept_v2_frame(
-    runtime: LiveServiceRuntime,
-    replay_store: LiveV2PriorAckReplayStore,
-    *,
-    session_id: str,
-    frame: LiveV2Frame,
-) -> _TransportAcceptResult:
-    accepted_result = None
-
-    def accept_new(v2_frame: LiveV2Frame) -> LiveV2Ack:
-        nonlocal accepted_result
-        snapshot = runtime.snapshot(session_id)
-        if snapshot is None:
-            raise KeyError(session_id)
-        accepted_result = runtime.accept_frame(
-            session_id,
-            AudioFrame(
-                sequence=snapshot.session.next_frame_sequence,
-                pcm=v2_frame.pcm,
-                sample_count=v2_frame.sample_count,
-                sample_rate=v2_frame.sample_rate,
-            ),
-        )
-        ack = accepted_result.ack
-        return LiveV2Ack(
-            lane=v2_frame.lane,
-            sequence=v2_frame.sequence,
-            start_sample=ack.start_sample,
-            end_sample=ack.end_sample,
-            accepted_samples=ack.accepted_samples,
-            retained_samples=ack.retained_samples,
-            frozen_span_ids=ack.frozen_span_ids,
-        )
-
-    v2_ack = replay_store.accept(frame, accept_new)
-    if accepted_result is None:
-        snapshot = runtime.snapshot(session_id)
-        if snapshot is None:
-            raise KeyError(session_id)
-        queued_item_ids = ()
-        snapshot_version = snapshot.session.version
-    else:
-        queued_item_ids = accepted_result.queued_item_ids
-        snapshot_version = accepted_result.snapshot.session.version
-    return _TransportAcceptResult(
-        ack=FrameAck(
-            sequence=v2_ack.sequence,
-            start_sample=v2_ack.start_sample,
-            end_sample=v2_ack.end_sample,
-            accepted_samples=v2_ack.accepted_samples,
-            retained_samples=v2_ack.retained_samples,
-            frozen_span_ids=v2_ack.frozen_span_ids,
-        ),
-        queued_item_ids=queued_item_ids,
-        snapshot_version=snapshot_version,
     )
 
 
