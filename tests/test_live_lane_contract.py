@@ -10,7 +10,11 @@ from moss_transcribe_diarize.app.live_lane_contract import (
     LiveV2Capabilities,
     LiveV2Descriptor,
     LiveV2Frame,
+    LiveV2Negotiation,
+    LiveV2ObsoleteClientError,
+    negotiate_v2_protocol,
 )
+from moss_transcribe_diarize.app.live_transport import live_v2_obsolete_client_response
 
 
 def frame_payload(**overrides):
@@ -189,3 +193,66 @@ def test_v2_descriptor_rejects_non_exact_capability_bools_and_protocol_range():
         LiveV2Capabilities(binary=0)
     with pytest.raises(ValueError, match="protocol range"):
         LiveV2Descriptor(min_protocol_version=1)
+
+
+def test_v2_negotiation_selects_highest_common_protocol_version_and_round_trips():
+    negotiated = negotiate_v2_protocol(client_min_protocol_version=1, client_max_protocol_version=2)
+
+    assert negotiated == LiveV2Negotiation(selected_protocol_version=2)
+    assert negotiated.to_dict() == {
+        "protocol": "moss-live-service.v2",
+        "selected_protocol_version": 2,
+    }
+    assert LiveV2Negotiation.from_dict(negotiated.to_dict()) == negotiated
+
+
+def test_v2_negotiation_rejects_obsolete_client_with_machine_payload():
+    with pytest.raises(LiveV2ObsoleteClientError) as raised:
+        negotiate_v2_protocol(client_min_protocol_version=1, client_max_protocol_version=1)
+
+    assert raised.value.to_dict() == {
+        "code": "obsolete_client",
+        "protocol": "moss-live-service.v2",
+        "required_min_protocol_version": 2,
+        "server_min_protocol_version": 2,
+        "server_max_protocol_version": 2,
+        "client_min_protocol_version": 1,
+        "client_max_protocol_version": 1,
+    }
+
+
+def test_v2_negotiation_rejects_future_disjoint_range_as_unsupported():
+    with pytest.raises(ValueError, match="no common version"):
+        negotiate_v2_protocol(client_min_protocol_version=3, client_max_protocol_version=4)
+
+
+@pytest.mark.parametrize(
+    ("client_min_protocol_version", "client_max_protocol_version", "message"),
+    [
+        (2, 1, "must not exceed"),
+        (True, 2, "client protocol range min_protocol_version"),
+        (1, False, "client protocol range max_protocol_version"),
+        (0, 2, "positive"),
+    ],
+)
+def test_v2_negotiation_rejects_invalid_ranges(client_min_protocol_version, client_max_protocol_version, message):
+    with pytest.raises(ValueError, match=message):
+        negotiate_v2_protocol(
+            client_min_protocol_version=client_min_protocol_version,
+            client_max_protocol_version=client_max_protocol_version,
+        )
+
+
+def test_v2_obsolete_client_maps_to_426_style_http_payload():
+    error = LiveV2ObsoleteClientError(
+        client_min_protocol_version=1,
+        client_max_protocol_version=1,
+        server_min_protocol_version=2,
+        server_max_protocol_version=2,
+    )
+
+    status, payload = live_v2_obsolete_client_response(error)
+
+    assert status == 426
+    assert payload["failure"]["code"] == "obsolete_client"
+    assert payload["failure"]["required_min_protocol_version"] == 2

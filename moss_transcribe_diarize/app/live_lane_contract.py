@@ -109,6 +109,99 @@ class LiveV2Descriptor:
 
 
 @dataclass(frozen=True, slots=True)
+class LiveV2Negotiation:
+    selected_protocol_version: int
+    protocol: str = V2_PROTOCOL_NAME
+
+    def __post_init__(self) -> None:
+        if self.protocol != V2_PROTOCOL_NAME:
+            raise ValueError("v2 negotiation protocol must be moss-live-service.v2.")
+        _positive_int(self.selected_protocol_version, "selected_protocol_version")
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "LiveV2Negotiation":
+        _assert_exact_keys(
+            payload,
+            {
+                "protocol",
+                "selected_protocol_version",
+            },
+            "v2 negotiation",
+        )
+        return cls(
+            protocol=payload["protocol"],
+            selected_protocol_version=_required_int(
+                payload["selected_protocol_version"],
+                "selected_protocol_version",
+            ),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "protocol": self.protocol,
+            "selected_protocol_version": self.selected_protocol_version,
+        }
+
+
+class LiveV2ObsoleteClientError(ValueError):
+    def __init__(
+        self,
+        *,
+        client_min_protocol_version: int,
+        client_max_protocol_version: int,
+        server_min_protocol_version: int,
+        server_max_protocol_version: int,
+    ):
+        self.client_min_protocol_version = client_min_protocol_version
+        self.client_max_protocol_version = client_max_protocol_version
+        self.server_min_protocol_version = server_min_protocol_version
+        self.server_max_protocol_version = server_max_protocol_version
+        super().__init__(
+            "client live protocol range is obsolete; "
+            f"server requires at least version {server_min_protocol_version}."
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "code": "obsolete_client",
+            "protocol": V2_PROTOCOL_NAME,
+            "required_min_protocol_version": self.server_min_protocol_version,
+            "server_min_protocol_version": self.server_min_protocol_version,
+            "server_max_protocol_version": self.server_max_protocol_version,
+            "client_min_protocol_version": self.client_min_protocol_version,
+            "client_max_protocol_version": self.client_max_protocol_version,
+        }
+
+
+def negotiate_v2_protocol(
+    *,
+    client_min_protocol_version: int,
+    client_max_protocol_version: int,
+    server_descriptor: LiveV2Descriptor | None = None,
+) -> LiveV2Negotiation:
+    descriptor = server_descriptor or LiveV2Descriptor()
+    _valid_protocol_range(
+        client_min_protocol_version,
+        client_max_protocol_version,
+        "client protocol range",
+    )
+    selected = min(client_max_protocol_version, descriptor.max_protocol_version)
+    if selected >= max(client_min_protocol_version, descriptor.min_protocol_version):
+        return LiveV2Negotiation(
+            protocol=descriptor.protocol,
+            selected_protocol_version=selected,
+        )
+    if client_max_protocol_version < descriptor.min_protocol_version:
+        raise LiveV2ObsoleteClientError(
+            client_min_protocol_version=client_min_protocol_version,
+            client_max_protocol_version=client_max_protocol_version,
+            server_min_protocol_version=descriptor.min_protocol_version,
+            server_max_protocol_version=descriptor.max_protocol_version,
+        )
+    raise ValueError("client protocol range has no common version with server.")
+
+
+@dataclass(frozen=True, slots=True)
 class LiveV2Frame:
     lane: LiveLane
     sequence: int
@@ -283,6 +376,13 @@ def _positive_int(value: Any, name: str) -> None:
     value = _required_int(value, name)
     if value <= 0:
         raise ValueError(f"{name} must be positive.")
+
+
+def _valid_protocol_range(min_value: Any, max_value: Any, label: str) -> None:
+    _positive_int(min_value, f"{label} min_protocol_version")
+    _positive_int(max_value, f"{label} max_protocol_version")
+    if min_value > max_value:
+        raise ValueError(f"{label} min_protocol_version must not exceed max_protocol_version.")
 
 
 def _exact_bool(value: Any, name: str) -> None:

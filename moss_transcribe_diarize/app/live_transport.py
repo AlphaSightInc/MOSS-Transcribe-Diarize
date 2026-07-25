@@ -6,6 +6,7 @@ from typing import Any
 
 from starlette.requests import Request
 
+from .live_lane_contract import LiveV2ObsoleteClientError
 from .live_service_runtime import (
     LiveServiceError,
     LiveServiceFailureKind,
@@ -163,6 +164,10 @@ def _failure_status(exc: LiveServiceError) -> int:
     if exc.failure.kind == LiveServiceFailureKind.PROVIDER_CONFIG:
         return 503
     return 409
+
+
+def live_v2_obsolete_client_response(exc: LiveV2ObsoleteClientError) -> tuple[int, dict[str, Any]]:
+    return 426, {"detail": str(exc), "failure": exc.to_dict()}
 
 
 def _jsonable(value: Any) -> Any:
