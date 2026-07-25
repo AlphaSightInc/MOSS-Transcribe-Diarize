@@ -76,6 +76,15 @@ releases authority on terminal session paths. FastAPI extracts direct peer,
 scheme, and bearer headers; Uvicorn supplies the configured TLS certificate and
 key with proxy headers disabled. Batch routes remain outside this authority.
 
+The server-hosted live portal is a separate, default-off `/live` document
+attached only when live routes are enabled. It owns no live backend API and acts
+only as a browser-local pull adapter to the existing same-origin `snapshot`,
+`events`, `stop`, and `abort` operations. Operators manually enter the session
+id and view token; the view token remains in page memory and `Authorization`
+headers only. Browser cursors advance only after successful parse and render,
+replayed events render once, bounded retry remains single-flight, and terminal
+`closed`, `failed`, or `aborted` state stops polling and clears authority.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
 ## Consequences
@@ -120,3 +129,7 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
 - Device revocation is explicit operator control that invalidates capture and
   view authority and releases owned live state. It is not helper-loss detection
   or an inactivity heartbeat.
+- The `/live` portal is an L-tier manual operations view. It does not create,
+  feed, pair, exchange, revoke, list sessions, contact a helper or localhost
+  bridge, persist secrets, expose history or artifacts, or automate secure
+  helper-to-browser bootstrap.

@@ -103,6 +103,19 @@
   create a live session and operate only sessions owned by that exact device.
 - **View authority**: Short-lived bearer authority scoped to one live session
   for observation and control requests; it cannot create or feed capture audio.
+- **Server-hosted live portal**: Default-off `/live` document served only by the
+  live-enabled FastAPI app. It is a pull-only view adapter to the existing
+  same-origin live `snapshot`, `events`, `stop`, and `abort` routes, not a new
+  backend API or frontend app.
+- **Live portal view token**: Manually entered view token retained only in page
+  memory and sent only as an `Authorization` bearer header. It is cleared from
+  inputs immediately after connect and from memory on disconnect, reload, or a
+  terminal live state.
+- **Live portal cursor**: Browser-local snapshot version or event sequence that
+  advances only after the matching response is fetched, parsed, and rendered.
+- **Live portal terminal state**: Server state `closed`, `failed`, or `aborted`.
+  The portal stops polling and clears page-memory authority at terminal state;
+  `closing` remains non-terminal.
 - **Live session ownership**: Exact binding between one capture device and one
   live session. Ownership gates feed, watch, stop, and abort authority.
 - **Device revocation**: Explicit loopback operator action that durably

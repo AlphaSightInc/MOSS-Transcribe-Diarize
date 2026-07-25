@@ -10,6 +10,7 @@ from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager
 from .live_session import LIVE_SAMPLE_RATE
 from .live_auth import LiveAccessRegistry
+from .live_portal import attach_live_portal
 from .live_service_runtime import LiveServiceRuntime
 from .live_transport import attach_live_routes
 from .model_runner import ModelRunner
@@ -105,6 +106,7 @@ def create_app(
         app.state.live_runtime = live_runtime
         app.state.live_access_registry = live_access_registry
         attach_live_routes(app, live_runtime, live_access_registry)
+        attach_live_portal(app)
 
     @app.get("/", response_class=HTMLResponse)
     def index():
