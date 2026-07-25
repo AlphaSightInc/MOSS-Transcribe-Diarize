@@ -15,7 +15,7 @@ The hard contract needs strict validation, deterministic JSON-compatible domain
 objects, highest-common protocol negotiation, lane-qualified acknowledgements,
 typed obsolete-client errors, and independent pre-mixer source-lane admission.
 It must not add deployment enablement, a binary transport, WebSockets, or a
-server-side mixer.
+server-side mixer inside the v2 ingress/session lifecycle.
 
 ## Decision
 
@@ -35,10 +35,9 @@ and capabilities:
 The adapter continues to accept the existing v1 mono frame payload shape. A v2
 frame is detected by its v2-only metadata fields, strictly validated first, then
 admitted into one in-process `LiveV2Session` for its live session. V2
-acknowledgements are lane-local, keep `queued_item_ids` empty, and report the
-current unchanged mono snapshot version. V2 admission does not call
-`LiveServiceRuntime.accept_frame`; IDEA-030 owns compatibility mixing into
-canonical mono `AudioFrame`s.
+acknowledgements are lane-local and report the current mono snapshot version.
+V2 ingress acknowledgement is not mono admission; IDEA-030 owns compatibility
+mixing into canonical mono `AudioFrame`s.
 
 Lane ingress independently sequences `system` and `microphone`, fences
 device-epoch transitions, enforces per-lane retained-sample capacity, stores
@@ -60,6 +59,14 @@ Protocol negotiation selects the highest common version. An obsolete client
 range below the server minimum returns a typed payload with required minimum
 version and maps to an HTTP 426-style response.
 
+One in-process `LiveCompatibilityMixer` plus a per-session registry bridges
+retained `system` and `microphone` lane frames into the unchanged mono runtime.
+It interprets `capture_timestamp_ns` as the frame's first PCM sample time,
+seals lane intervals with successor timestamps or final nominal ends, resamples
+onto a shared 16 kHz mono grid, applies exact per-lane headroom and the
+registered soft limiter, then calls `LiveServiceRuntime.accept_frame`. Source
+lane prefixes are accounted only after successful mono admission.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
 ## Consequences
@@ -67,8 +74,9 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
 - The current mono decoder, coordinator, scheduler, transcript grammar,
   accounting, finality, provider selection, and batch behavior remain unchanged.
 - Lane-labelled v2 data now terminates at an in-process source-lane session
-  lifecycle. It proves local reconnect, accounting, failure, finality, explicit
-  expiry, and cleanup mechanics only; it does not prove mixing, helper-crash
+  lifecycle and a server-owned compatibility mixer. This proves local
+  retention, compatibility mixing, downstream accounting, failure, finality,
+  explicit expiry, and cleanup mechanics only; it does not prove helper-crash
   detection, provider quality, deployment, or live enablement.
 - Prior acknowledgements use an ingress-local 256-entry replay window,
   independent of retained PCM/metadata and the runtime event-ring bound. The
@@ -84,3 +92,6 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
   can fail with a stable machine-readable obsolete-client response.
 - JSON plus base64 is less efficient than binary transport, but keeps the MVP
   auditable and compatible with the existing disabled HTTP route seam.
+- Server-owned mixing keeps JSON/HTTP and independent source retention intact,
+  but makes the server responsible for timestamp alignment, limiter behavior,
+  mono runtime admission, and post-admission source accounting.
