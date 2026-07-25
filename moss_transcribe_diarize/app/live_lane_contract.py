@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 import binascii
+from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Mapping
@@ -173,6 +175,31 @@ class LiveV2ObsoleteClientError(ValueError):
         }
 
 
+class LiveV2OutOfOrderFrameError(ValueError):
+    def __init__(self, *, lane: LiveLane, expected_sequence: int, received_sequence: int):
+        self.lane = lane
+        self.expected_sequence = expected_sequence
+        self.received_sequence = received_sequence
+        super().__init__(
+            f"expected v2 {lane.value} frame sequence {expected_sequence}, got {received_sequence}."
+        )
+
+
+class LiveV2PrunedReplayError(ValueError):
+    def __init__(self, *, lane: LiveLane, sequence: int, pruned_through_sequence: int):
+        self.lane = lane
+        self.sequence = sequence
+        self.pruned_through_sequence = pruned_through_sequence
+        super().__init__(
+            f"v2 {lane.value} frame sequence {sequence} "
+            f"was pruned through {pruned_through_sequence}."
+        )
+
+
+class LiveV2ReplayStoreFullError(RuntimeError):
+    pass
+
+
 def negotiate_v2_protocol(
     *,
     client_min_protocol_version: int,
@@ -334,6 +361,79 @@ class LiveV2Ack:
             "retained_samples": self.retained_samples,
             "frozen_span_ids": list(self.frozen_span_ids),
         }
+
+
+class LiveV2PriorAckReplayStore:
+    """Bounded prior-ack replay keyed by canonical v2 lane and sequence."""
+
+    def __init__(self, *, max_retained_acks: int):
+        _positive_int(max_retained_acks, "max_retained_acks")
+        self._max_retained_acks = max_retained_acks
+        self._next_sequences: dict[LiveLane, int] = {lane: 0 for lane in LiveLane}
+        self._pruned_through: dict[LiveLane, int] = {lane: -1 for lane in LiveLane}
+        self._acks: OrderedDict[tuple[LiveLane, int], LiveV2Ack] = OrderedDict()
+
+    @property
+    def retained_ack_count(self) -> int:
+        return len(self._acks)
+
+    def next_sequence(self, lane: LiveLane) -> int:
+        if not isinstance(lane, LiveLane):
+            raise ValueError("lane must be a canonical v2 live lane.")
+        return self._next_sequences[lane]
+
+    def accept(
+        self,
+        frame: LiveV2Frame,
+        accept_new: Callable[[LiveV2Frame], LiveV2Ack],
+    ) -> LiveV2Ack:
+        if not isinstance(frame, LiveV2Frame):
+            raise ValueError("frame must be LiveV2Frame.")
+        key = (frame.lane, frame.sequence)
+        prior = self._acks.get(key)
+        if prior is not None:
+            return prior
+        pruned_through = self._pruned_through[frame.lane]
+        if frame.sequence <= pruned_through:
+            raise LiveV2PrunedReplayError(
+                lane=frame.lane,
+                sequence=frame.sequence,
+                pruned_through_sequence=pruned_through,
+            )
+        expected_sequence = self._next_sequences[frame.lane]
+        if frame.sequence != expected_sequence:
+            raise LiveV2OutOfOrderFrameError(
+                lane=frame.lane,
+                expected_sequence=expected_sequence,
+                received_sequence=frame.sequence,
+            )
+        if len(self._acks) >= self._max_retained_acks:
+            raise LiveV2ReplayStoreFullError(
+                "v2 prior acknowledgement replay store is full; "
+                "prune explicitly before accepting more frames."
+            )
+
+        ack = accept_new(frame)
+        if not isinstance(ack, LiveV2Ack):
+            raise ValueError("accept_new must return LiveV2Ack.")
+        if ack.lane is not frame.lane or ack.sequence != frame.sequence:
+            raise ValueError("accepted acknowledgement must match frame lane and sequence.")
+        self._acks[key] = ack
+        self._next_sequences[frame.lane] = expected_sequence + 1
+        return ack
+
+    def prune_through(self, *, lane: LiveLane, sequence: int) -> int:
+        if not isinstance(lane, LiveLane):
+            raise ValueError("lane must be a canonical v2 live lane.")
+        _non_negative_int(sequence, "sequence")
+        removed = 0
+        for key in list(self._acks):
+            key_lane, key_sequence = key
+            if key_lane is lane and key_sequence <= sequence:
+                self._acks.pop(key)
+                removed += 1
+        self._pruned_through[lane] = max(self._pruned_through[lane], sequence)
+        return removed
 
 
 def _assert_exact_keys(payload: Mapping[str, Any], expected: set[str], label: str) -> None:

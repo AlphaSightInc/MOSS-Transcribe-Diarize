@@ -12,6 +12,10 @@ from moss_transcribe_diarize.app.live_lane_contract import (
     LiveV2Frame,
     LiveV2Negotiation,
     LiveV2ObsoleteClientError,
+    LiveV2OutOfOrderFrameError,
+    LiveV2PriorAckReplayStore,
+    LiveV2PrunedReplayError,
+    LiveV2ReplayStoreFullError,
     negotiate_v2_protocol,
 )
 from moss_transcribe_diarize.app.live_transport import live_v2_obsolete_client_response
@@ -31,6 +35,25 @@ def frame_payload(**overrides):
     }
     payload.update(overrides)
     return payload
+
+
+def ack_for(
+    frame: LiveV2Frame,
+    *,
+    accepted_samples: int | None = None,
+    retained_samples: int | None = None,
+) -> LiveV2Ack:
+    accepted = frame.sample_count if accepted_samples is None else accepted_samples
+    retained = frame.sample_count if retained_samples is None else retained_samples
+    return LiveV2Ack(
+        lane=frame.lane,
+        sequence=frame.sequence,
+        start_sample=0,
+        end_sample=frame.sample_count,
+        accepted_samples=accepted,
+        retained_samples=retained,
+        frozen_span_ids=(),
+    )
 
 
 def test_v2_frame_accepts_canonical_lanes_and_round_trips_json_payloads():
@@ -256,3 +279,76 @@ def test_v2_obsolete_client_maps_to_426_style_http_payload():
     assert status == 426
     assert payload["failure"]["code"] == "obsolete_client"
     assert payload["failure"]["required_min_protocol_version"] == 2
+
+
+def test_v2_replay_store_keys_prior_acknowledgements_by_lane_and_sequence():
+    store = LiveV2PriorAckReplayStore(max_retained_acks=4)
+    calls = []
+
+    def accept_new(frame):
+        calls.append((frame.lane, frame.sequence))
+        return ack_for(frame, accepted_samples=len(calls) * frame.sample_count)
+
+    system_zero = LiveV2Frame.from_dict(frame_payload(lane="system", sequence=0))
+    microphone_zero = LiveV2Frame.from_dict(frame_payload(lane="microphone", sequence=0))
+
+    system_ack = store.accept(system_zero, accept_new)
+    microphone_ack = store.accept(microphone_zero, accept_new)
+    duplicate_system_ack = store.accept(system_zero, accept_new)
+
+    assert system_ack.lane is LiveLane.SYSTEM
+    assert microphone_ack.lane is LiveLane.MICROPHONE
+    assert system_ack.sequence == microphone_ack.sequence == 0
+    assert duplicate_system_ack == system_ack
+    assert calls == [(LiveLane.SYSTEM, 0), (LiveLane.MICROPHONE, 0)]
+    assert store.retained_ack_count == 2
+    assert store.next_sequence(LiveLane.SYSTEM) == 1
+    assert store.next_sequence(LiveLane.MICROPHONE) == 1
+
+
+def test_v2_replay_store_rejects_future_gap_before_acceptor_mutation():
+    store = LiveV2PriorAckReplayStore(max_retained_acks=4)
+    calls = []
+    future = LiveV2Frame.from_dict(frame_payload(lane="system", sequence=1))
+
+    with pytest.raises(LiveV2OutOfOrderFrameError) as raised:
+        store.accept(future, lambda frame: calls.append(frame) or ack_for(frame))
+
+    assert raised.value.lane is LiveLane.SYSTEM
+    assert raised.value.expected_sequence == 0
+    assert raised.value.received_sequence == 1
+    assert calls == []
+    assert store.retained_ack_count == 0
+
+
+def test_v2_replay_store_rejects_explicitly_pruned_old_key():
+    store = LiveV2PriorAckReplayStore(max_retained_acks=4)
+    frame = LiveV2Frame.from_dict(frame_payload(lane="system", sequence=0))
+    store.accept(frame, ack_for)
+
+    assert store.prune_through(lane=LiveLane.SYSTEM, sequence=0) == 1
+
+    with pytest.raises(LiveV2PrunedReplayError) as raised:
+        store.accept(frame, ack_for)
+
+    assert raised.value.lane is LiveLane.SYSTEM
+    assert raised.value.sequence == 0
+    assert raised.value.pruned_through_sequence == 0
+    assert store.retained_ack_count == 0
+
+
+def test_v2_replay_store_is_bounded_until_callers_prune_explicitly():
+    store = LiveV2PriorAckReplayStore(max_retained_acks=1)
+    first = LiveV2Frame.from_dict(frame_payload(lane="system", sequence=0))
+    second = LiveV2Frame.from_dict(frame_payload(lane="system", sequence=1))
+    calls = []
+
+    store.accept(first, lambda frame: calls.append(frame.sequence) or ack_for(frame))
+    with pytest.raises(LiveV2ReplayStoreFullError):
+        store.accept(second, lambda frame: calls.append(frame.sequence) or ack_for(frame))
+
+    assert calls == [0]
+    assert store.prune_through(lane=LiveLane.SYSTEM, sequence=0) == 1
+    accepted = store.accept(second, lambda frame: calls.append(frame.sequence) or ack_for(frame))
+    assert accepted.sequence == 1
+    assert calls == [0, 1]
