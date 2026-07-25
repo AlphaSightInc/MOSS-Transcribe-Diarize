@@ -288,3 +288,99 @@ class LiveApiTest(unittest.TestCase):
                     "frozen_span_ids": [],
                 },
             )
+
+    def test_v2_http_replays_prior_ack_and_keeps_lane_sequences_distinct(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            system_zero = client.post(frames_url, json=v2_frame_payload(0, 2, lane="system"))
+            replayed_system_zero = client.post(frames_url, json=v2_frame_payload(0, 2, lane="system"))
+            microphone_zero = client.post(frames_url, json=v2_frame_payload(0, 2, lane="microphone"))
+
+            self.assertEqual(system_zero.status_code, 200)
+            self.assertEqual(replayed_system_zero.status_code, 200)
+            self.assertEqual(replayed_system_zero.json()["ack"], system_zero.json()["ack"])
+            self.assertEqual(replayed_system_zero.json()["queued_item_ids"], [])
+            self.assertEqual(microphone_zero.status_code, 200)
+            self.assertEqual(
+                microphone_zero.json()["ack"],
+                {
+                    "lane": "microphone",
+                    "sequence": 0,
+                    "start_sample": 2,
+                    "end_sample": 4,
+                    "accepted_samples": 4,
+                    "retained_samples": 4,
+                    "frozen_span_ids": [],
+                },
+            )
+            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
+            self.assertEqual(snapshot["accepted_samples"], 4)
+            self.assertEqual(snapshot["next_frame_sequence"], 2)
+
+    def test_v2_http_rejects_out_of_order_lane_sequence_with_typed_conflict(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            rejected = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(1, 2, lane="system"),
+            )
+
+            self.assertEqual(rejected.status_code, 409)
+            self.assertEqual(
+                rejected.json()["failure"],
+                {
+                    "code": "v2_out_of_order_frame",
+                    "lane": "system",
+                    "expected_sequence": 0,
+                    "received_sequence": 1,
+                },
+            )
+            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
+            self.assertEqual(snapshot["accepted_samples"], 0)
+            self.assertEqual(snapshot["next_frame_sequence"], 0)
+
+    def test_v2_pruned_replay_maps_to_typed_conflict_payload(self):
+        from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2PrunedReplayError
+        from moss_transcribe_diarize.app.live_transport import live_v2_replay_conflict_response
+
+        status, payload = live_v2_replay_conflict_response(
+            LiveV2PrunedReplayError(
+                lane=LiveLane.MICROPHONE,
+                sequence=3,
+                pruned_through_sequence=4,
+            )
+        )
+
+        self.assertEqual(status, 409)
+        self.assertEqual(
+            payload["failure"],
+            {
+                "code": "v2_pruned_replay",
+                "lane": "microphone",
+                "sequence": 3,
+                "pruned_through_sequence": 4,
+            },
+        )
