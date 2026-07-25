@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import binascii
 from dataclasses import dataclass
@@ -154,24 +155,39 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
 
     @app.post("/api/live/sessions/{session_id}/stop")
     async def stop_live_session(session_id: str, request: Request):
+        release_v2_on_error = False
         try:
             payload = await _optional_json(request)
             deadline = float(payload.get("deadline", 0.0))
-            v2_snapshot = await v2_sessions.get(session_id).stop(deadline)
-            if v2_snapshot.status == "closing":
-                status, failure = live_v2_unconsumed_frames_response()
-                failure["snapshot"] = _snapshot_payload(runtime, session_id)
-                failure["v2_session"] = v2_snapshot.to_dict()
-                return JSONResponse(failure, status_code=status)
-            if v2_snapshot.status == "failed":
-                v2_sessions.release(session_id)
-                status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
-                failure["snapshot"] = _snapshot_payload(runtime, session_id)
-                failure["v2_session"] = v2_snapshot.to_dict()
-                return JSONResponse(failure, status_code=status)
+            loop = asyncio.get_running_loop()
+            end_time = loop.time() + max(0.0, deadline)
+            try:
+                v2_session = v2_sessions.get(session_id)
+            except KeyError:
+                v2_session = None
+            v2_snapshot = None
+            if v2_session is not None:
+                v2_snapshot = await v2_session.stop(max(0.0, end_time - loop.time()))
+                if v2_snapshot.status == "closing":
+                    status, failure = live_v2_unconsumed_frames_response()
+                    failure["snapshot"] = _snapshot_payload(runtime, session_id)
+                    failure["v2_session"] = v2_snapshot.to_dict()
+                    return JSONResponse(failure, status_code=status)
+                if v2_snapshot.status == "failed":
+                    v2_sessions.release(session_id)
+                    status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
+                    failure["snapshot"] = _snapshot_payload(runtime, session_id)
+                    failure["v2_session"] = v2_snapshot.to_dict()
+                    return JSONResponse(failure, status_code=status)
+                release_v2_on_error = True
+            deadline = max(0.0, end_time - loop.time())
             stopped = await runtime.stop(session_id, deadline)
             v2_sessions.release(session_id)
-            return {"snapshot": stopped.to_dict(), "v2_session": v2_snapshot.to_dict()}
+            release_v2_on_error = False
+            response = {"snapshot": stopped.to_dict()}
+            if v2_snapshot is not None:
+                response["v2_session"] = v2_snapshot.to_dict()
+            return response
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except TimeoutError as exc:
@@ -190,6 +206,9 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             )
         except (TypeError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        finally:
+            if release_v2_on_error:
+                v2_sessions.release(session_id)
 
     @app.post("/api/live/sessions/{session_id}/abort")
     async def abort_live_session(session_id: str, request: Request):

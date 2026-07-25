@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import time
 
 import pytest
@@ -104,6 +105,19 @@ def test_accounting_validates_all_requested_lanes_before_mutation():
     assert len(session.retained_frames(LiveLane.MICROPHONE)) == 1
 
 
+def test_accounting_rejects_regressing_watermark_with_typed_error():
+    session = LiveV2Session(max_retained_samples=8)
+    session.accept(frame(LiveLane.SYSTEM, 0, 2))
+    session.account_through({LiveLane.SYSTEM: 0})
+    session.accept(frame(LiveLane.SYSTEM, 1, 2))
+    before = session.snapshot()
+
+    with pytest.raises(LiveV2AccountingError, match="accounting watermark regressed"):
+        session.account_through({LiveLane.SYSTEM: 0})
+
+    assert session.snapshot() == before
+
+
 def test_clean_stop_requires_exact_accounting():
     session = LiveV2Session(max_retained_samples=8)
     session.accept(frame(LiveLane.SYSTEM, 0, 2))
@@ -124,19 +138,30 @@ def test_stop_waits_for_accounting_notification_and_closes_without_polling():
     session.accept(frame(LiveLane.SYSTEM, 0, 2))
 
     async def exercise_stop():
-        stop_task = asyncio.create_task(session.stop(0.5))
-        await asyncio.sleep(0)
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+        stop_task = asyncio.create_task(session.stop(2.0))
+        await asyncio.sleep(0.2)
         assert not stop_task.done()
 
         session.account_through({LiveLane.SYSTEM: 0})
-        return await stop_task
+        return await stop_task, loop.time() - started
 
-    closed = asyncio.run(exercise_stop()).to_dict()
+    stopped, elapsed = asyncio.run(exercise_stop())
+    closed = stopped.to_dict()
 
+    assert elapsed < 0.75
     assert closed["status"] == "closed"
     assert closed["lanes"]["system"]["accepted_samples"] == 2
     assert closed["lanes"]["system"]["accounted_samples"] == 2
     assert closed["lanes"]["system"]["retained_samples"] == 0
+
+
+def test_stop_drain_wait_is_notification_driven_not_polled():
+    source = inspect.getsource(LiveV2Session._wait_for_drain)
+
+    assert "waiter.event.wait()" in source
+    assert "asyncio.sleep" not in source
 
 
 def test_stop_deadline_returns_nonterminal_closing_snapshot_and_fences_late_frames():
