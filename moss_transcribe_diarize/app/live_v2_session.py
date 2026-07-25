@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import threading
 from dataclasses import dataclass
 from typing import Mapping
@@ -61,6 +62,12 @@ class LiveV2SessionSnapshot:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class _DrainWaiter:
+    loop: asyncio.AbstractEventLoop
+    event: asyncio.Event
+
+
 @dataclass(slots=True)
 class _LaneLifecycle:
     accounted_samples: int = 0
@@ -77,6 +84,7 @@ class LiveV2Session:
         self._lanes = {lane: _LaneLifecycle() for lane in LiveLane}
         self._status = "active"
         self._terminal_reason: str | None = None
+        self._drain_waiters: set[_DrainWaiter] = set()
         self._lock = threading.RLock()
 
     @property
@@ -125,6 +133,7 @@ class LiveV2Session:
                 self._lanes[lane].accounted_samples += sum(
                     retained.frame.sample_count for retained in released
                 )
+            self._notify_drain_waiters_locked()
             return self._snapshot_locked()
 
     def fail_lane(self, lane: LiveLane, code: str) -> LiveV2SessionSnapshot:
@@ -144,21 +153,35 @@ class LiveV2Session:
             lifecycle.failed_samples += sum(item.frame.sample_count for item in retained)
             lifecycle.health = "failed"
             lifecycle.failure_code = code
+            self._notify_drain_waiters_locked()
             return self._snapshot_locked()
 
     async def stop(self, deadline: float) -> LiveV2SessionSnapshot:
         if not isinstance(deadline, (int, float)) or isinstance(deadline, bool):
             raise ValueError("deadline must be numeric.")
+        loop = asyncio.get_running_loop()
+        end_time = loop.time() + max(0.0, float(deadline))
         with self._lock:
             self._ensure_not_terminal()
             if self._has_failed_lane_locked():
                 self._status = "failed"
                 self._terminal_reason = self._first_failure_code_locked()
+                self._notify_drain_waiters_locked()
                 return self._snapshot_locked()
             if self._is_clean_locked():
                 self._status = "closed"
+                self._notify_drain_waiters_locked()
                 return self._snapshot_locked()
             self._status = "closing"
+            if loop.time() >= end_time:
+                return self._snapshot_locked()
+        await self._wait_for_drain(end_time=end_time)
+        with self._lock:
+            if self._has_failed_lane_locked():
+                self._status = "failed"
+                self._terminal_reason = self._first_failure_code_locked()
+            elif self._is_clean_locked():
+                self._status = "closed"
             return self._snapshot_locked()
 
     def abort(self, reason: str = "aborted") -> LiveV2SessionSnapshot:
@@ -169,6 +192,7 @@ class LiveV2Session:
             self._release_all_retained_locked()
             self._status = "aborted"
             self._terminal_reason = reason
+            self._notify_drain_waiters_locked()
             return self._snapshot_locked()
 
     def expire(self, reason: str) -> LiveV2SessionSnapshot:
@@ -187,7 +211,43 @@ class LiveV2Session:
                     lifecycle.failure_code = lifecycle.failure_code or reason
             self._status = "failed"
             self._terminal_reason = reason
+            self._notify_drain_waiters_locked()
             return self._snapshot_locked()
+
+    async def _wait_for_drain(self, *, end_time: float) -> None:
+        loop = asyncio.get_running_loop()
+        waiter = _DrainWaiter(loop=loop, event=asyncio.Event())
+        while True:
+            with self._lock:
+                if (
+                    self._status in {"closed", "failed", "aborted"}
+                    or self._is_clean_locked()
+                    or self._has_failed_lane_locked()
+                ):
+                    return
+                remaining = end_time - loop.time()
+                if remaining <= 0:
+                    return
+                waiter.event.clear()
+                self._drain_waiters.add(waiter)
+                if (
+                    self._status in {"closed", "failed", "aborted"}
+                    or self._is_clean_locked()
+                    or self._has_failed_lane_locked()
+                ):
+                    self._drain_waiters.discard(waiter)
+                    return
+                timeout = end_time - loop.time()
+                if timeout <= 0:
+                    self._drain_waiters.discard(waiter)
+                    return
+            try:
+                await asyncio.wait_for(waiter.event.wait(), timeout=timeout)
+            except asyncio.TimeoutError:
+                return
+            finally:
+                with self._lock:
+                    self._drain_waiters.discard(waiter)
 
     def _accountable_prefix(
         self,
@@ -218,6 +278,10 @@ class LiveV2Session:
             retained = self._ingress.retained_frames(lane)
             if retained:
                 self._ingress.release_retained_prefix(lane, retained[-1].frame.sequence)
+
+    def _notify_drain_waiters_locked(self) -> None:
+        for waiter in tuple(self._drain_waiters):
+            waiter.loop.call_soon_threadsafe(waiter.event.set)
 
     def _ensure_accepting(self) -> None:
         if self._status != "active":

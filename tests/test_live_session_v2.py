@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 
 import pytest
 
@@ -116,6 +117,44 @@ def test_clean_stop_requires_exact_accounting():
     assert closed["lanes"]["system"]["accepted_samples"] == 2
     assert closed["lanes"]["system"]["accounted_samples"] == 2
     assert closed["lanes"]["system"]["retained_samples"] == 0
+
+
+def test_stop_waits_for_accounting_notification_and_closes_without_polling():
+    session = LiveV2Session(max_retained_samples=8)
+    session.accept(frame(LiveLane.SYSTEM, 0, 2))
+
+    async def exercise_stop():
+        stop_task = asyncio.create_task(session.stop(0.5))
+        await asyncio.sleep(0)
+        assert not stop_task.done()
+
+        session.account_through({LiveLane.SYSTEM: 0})
+        return await stop_task
+
+    closed = asyncio.run(exercise_stop()).to_dict()
+
+    assert closed["status"] == "closed"
+    assert closed["lanes"]["system"]["accepted_samples"] == 2
+    assert closed["lanes"]["system"]["accounted_samples"] == 2
+    assert closed["lanes"]["system"]["retained_samples"] == 0
+
+
+def test_stop_deadline_returns_nonterminal_closing_snapshot_and_fences_late_frames():
+    session = LiveV2Session(max_retained_samples=8)
+    session.accept(frame(LiveLane.SYSTEM, 0, 2))
+
+    started = time.monotonic()
+    closing = asyncio.run(session.stop(0.05)).to_dict()
+    elapsed = time.monotonic() - started
+
+    assert elapsed >= 0.025
+    assert elapsed < 0.25
+    assert closing["status"] == "closing"
+    assert closing["lanes"]["system"]["accepted_samples"] == 2
+    assert closing["lanes"]["system"]["accounted_samples"] == 0
+    assert closing["lanes"]["system"]["retained_samples"] == 2
+    with pytest.raises(LiveV2SessionTerminalError):
+        session.accept(frame(LiveLane.SYSTEM, 1, 1))
 
 
 def test_typed_lane_failure_conserves_retained_samples_and_keeps_sibling_usable():
