@@ -31,6 +31,16 @@ def frame_payload(sequence: int, samples: int, *, sample_rate: int = LIVE_SAMPLE
     }
 
 
+def v2_frame_payload(sequence: int, samples: int, *, lane: str = "system", sample_rate: int = LIVE_SAMPLE_RATE) -> dict:
+    return frame_payload(sequence, samples, sample_rate=sample_rate) | {
+        "lane": lane,
+        "capture_timestamp_ns": 123,
+        "device_epoch": 0,
+        "silent": False,
+        "discontinuity": False,
+    }
+
+
 def _digest(label: str) -> str:
     return hash_config({"label": label})
 
@@ -155,6 +165,21 @@ class LiveApiTest(unittest.TestCase):
             descriptor = client.get("/api/live/descriptor")
             self.assertEqual(descriptor.status_code, 200)
             self.assertEqual(descriptor.json()["descriptor"]["provider_name"], "api-fake")
+            self.assertEqual(descriptor.json()["descriptor"]["live_protocol"]["protocol"], "moss-live-service.v2")
+            self.assertEqual(descriptor.json()["descriptor"]["live_protocol"]["min_protocol_version"], 2)
+            self.assertFalse(descriptor.json()["descriptor"]["live_protocol"]["capabilities"]["binary"])
+
+            negotiated = client.get(
+                "/api/live/descriptor?client_min_protocol_version=1&client_max_protocol_version=2"
+            )
+            self.assertEqual(negotiated.status_code, 200)
+            self.assertEqual(negotiated.json()["negotiation"]["selected_protocol_version"], 2)
+
+            obsolete = client.get(
+                "/api/live/descriptor?client_min_protocol_version=1&client_max_protocol_version=1"
+            )
+            self.assertEqual(obsolete.status_code, 426)
+            self.assertEqual(obsolete.json()["failure"]["required_min_protocol_version"], 2)
 
             created = client.post("/api/live/sessions")
             self.assertEqual(created.status_code, 200)
@@ -223,3 +248,43 @@ class LiveApiTest(unittest.TestCase):
 
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
             self.assertEqual(rejected.status_code, 429)
+
+    def test_v2_frame_adapter_validates_before_mono_runtime_and_returns_lane_ack(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            invalid = v2_frame_payload(0, 2)
+            invalid["sample_count"] = 3
+            rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=invalid)
+            self.assertEqual(rejected.status_code, 400)
+            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
+            self.assertEqual(snapshot["accepted_samples"], 0)
+            self.assertEqual(snapshot["next_frame_sequence"], 0)
+
+            accepted = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(0, 2, lane="microphone"),
+            )
+            self.assertEqual(accepted.status_code, 200)
+            self.assertEqual(
+                accepted.json()["ack"],
+                {
+                    "lane": "microphone",
+                    "sequence": 0,
+                    "start_sample": 0,
+                    "end_sample": 2,
+                    "accepted_samples": 2,
+                    "retained_samples": 2,
+                    "frozen_span_ids": [],
+                },
+            )

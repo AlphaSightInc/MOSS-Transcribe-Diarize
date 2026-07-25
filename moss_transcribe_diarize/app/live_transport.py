@@ -2,11 +2,18 @@ from __future__ import annotations
 
 import base64
 import binascii
+from dataclasses import dataclass
 from typing import Any
 
 from starlette.requests import Request
 
-from .live_lane_contract import LiveV2ObsoleteClientError
+from .live_lane_contract import (
+    LiveLane,
+    LiveV2Ack,
+    LiveV2Frame,
+    LiveV2ObsoleteClientError,
+    negotiate_v2_protocol,
+)
 from .live_service_runtime import (
     LiveServiceError,
     LiveServiceFailureKind,
@@ -26,8 +33,18 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     from fastapi.responses import JSONResponse
 
     @app.get("/api/live/descriptor")
-    def live_descriptor():
-        return {"descriptor": runtime.descriptor.to_dict()}
+    def live_descriptor(client_min_protocol_version: int | None = None, client_max_protocol_version: int | None = None):
+        try:
+            return _descriptor_payload(
+                runtime,
+                client_min_protocol_version=client_min_protocol_version,
+                client_max_protocol_version=client_max_protocol_version,
+            )
+        except LiveV2ObsoleteClientError as exc:
+            status, payload = live_v2_obsolete_client_response(exc)
+            return JSONResponse(payload, status_code=status)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.post("/api/live/sessions")
     def create_live_session():
@@ -43,9 +60,9 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
         try:
             payload = await request.json()
             frame = _frame_from_payload(payload)
-            result = runtime.accept_frame(session_id, frame)
+            result = runtime.accept_frame(session_id, frame.audio_frame)
             return {
-                "ack": _jsonable(result.ack),
+                "ack": _jsonable(_ack_for_transport(result.ack, lane=frame.lane)),
                 "queued_item_ids": list(result.queued_item_ids),
                 "snapshot_version": result.snapshot.session.version,
             }
@@ -122,6 +139,12 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@dataclass(frozen=True, slots=True)
+class _TransportFrame:
+    audio_frame: AudioFrame
+    lane: LiveLane | None = None
+
+
 async def _optional_json(request) -> dict[str, Any]:
     try:
         payload = await request.json()
@@ -130,9 +153,40 @@ async def _optional_json(request) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
-def _frame_from_payload(payload: Any) -> AudioFrame:
+def _descriptor_payload(
+    runtime: LiveServiceRuntime,
+    *,
+    client_min_protocol_version: int | None,
+    client_max_protocol_version: int | None,
+) -> dict[str, Any]:
+    payload = {"descriptor": runtime.descriptor.to_dict()}
+    if client_min_protocol_version is None and client_max_protocol_version is None:
+        return payload
+    if client_min_protocol_version is None or client_max_protocol_version is None:
+        raise ValueError("both client_min_protocol_version and client_max_protocol_version are required.")
+    negotiated = negotiate_v2_protocol(
+        client_min_protocol_version=client_min_protocol_version,
+        client_max_protocol_version=client_max_protocol_version,
+        server_descriptor=runtime.descriptor.live_protocol,
+    )
+    payload["negotiation"] = negotiated.to_dict()
+    return payload
+
+
+def _frame_from_payload(payload: Any) -> _TransportFrame:
     if not isinstance(payload, dict):
         raise ValueError("frame payload must be a JSON object.")
+    if _is_v2_frame_payload(payload):
+        frame = LiveV2Frame.from_dict(payload)
+        return _TransportFrame(
+            audio_frame=AudioFrame(
+                sequence=frame.sequence,
+                pcm=frame.pcm,
+                sample_count=frame.sample_count,
+                sample_rate=frame.sample_rate,
+            ),
+            lane=frame.lane,
+        )
     try:
         pcm = base64.b64decode(str(payload["pcm_base64"]), validate=True)
         sample_count = int(payload["sample_count"])
@@ -142,11 +196,40 @@ def _frame_from_payload(payload: Any) -> AudioFrame:
         raise ValueError("frame payload missing required fields.") from exc
     except (binascii.Error, TypeError) as exc:
         raise ValueError("frame pcm_base64 must be valid base64.") from exc
-    return AudioFrame(
-        sequence=sequence,
-        pcm=pcm,
-        sample_count=sample_count,
-        sample_rate=sample_rate,
+    return _TransportFrame(
+        audio_frame=AudioFrame(
+            sequence=sequence,
+            pcm=pcm,
+            sample_count=sample_count,
+            sample_rate=sample_rate,
+        ),
+    )
+
+
+def _is_v2_frame_payload(payload: dict[str, Any]) -> bool:
+    return any(
+        field in payload
+        for field in (
+            "lane",
+            "capture_timestamp_ns",
+            "device_epoch",
+            "silent",
+            "discontinuity",
+        )
+    )
+
+
+def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:
+    if lane is None:
+        return ack
+    return LiveV2Ack(
+        lane=lane,
+        sequence=ack.sequence,
+        start_sample=ack.start_sample,
+        end_sample=ack.end_sample,
+        accepted_samples=ack.accepted_samples,
+        retained_samples=ack.retained_samples,
+        frozen_span_ids=ack.frozen_span_ids,
     )
 
 

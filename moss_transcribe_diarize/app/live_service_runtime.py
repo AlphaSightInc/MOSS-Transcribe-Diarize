@@ -19,6 +19,7 @@ from .live_coordinator import (
     SpeechSignalProvider,
 )
 from .live_endpoint import EndpointPolicy, EndpointPolicyError
+from .live_lane_contract import LiveV2Descriptor
 from .live_session import (
     AudioFrame,
     FrameAck,
@@ -178,6 +179,7 @@ class LiveServiceDescriptor:
     bounds: LiveServiceBounds
     schema_version: int = LIVE_SERVICE_SCHEMA_VERSION
     live_protocol_version: str = LIVE_PROTOCOL_VERSION
+    live_protocol: LiveV2Descriptor = field(default_factory=LiveV2Descriptor)
     sample_rate: int = LIVE_SAMPLE_RATE
     frame_samples: int = LIVE_SAMPLE_RATE
     feature_enabled: bool = True
@@ -187,6 +189,8 @@ class LiveServiceDescriptor:
             raise ValueError("unsupported live service descriptor schema_version.")
         if self.live_protocol_version != LIVE_PROTOCOL_VERSION:
             raise ValueError("unsupported live service protocol version.")
+        if not isinstance(self.live_protocol, LiveV2Descriptor):
+            raise ValueError("live_protocol must be LiveV2Descriptor.")
         if self.sample_rate != LIVE_SAMPLE_RATE:
             raise ValueError(f"live service audio must be {LIVE_SAMPLE_RATE} Hz.")
         _positive(self.frame_samples, "frame_samples")
