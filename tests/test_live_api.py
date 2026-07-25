@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
-from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW
+from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW, LiveLane
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -518,6 +518,39 @@ class LiveApiTest(unittest.TestCase):
                 json=v2_frame_payload(1, 1, lane="microphone"),
             )
             self.assertEqual(rejected_after_abort.status_code, 409)
+
+    def test_v2_failed_terminal_stop_releases_registry_entry(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            accepted = client.post(frames_url, json=v2_frame_payload(0, 2, lane="system"))
+            self.assertEqual(accepted.status_code, 200)
+            failed = app.state.live_v2_sessions.get(session_id).fail_lane(
+                LiveLane.SYSTEM,
+                "helper_inactive",
+            )
+            self.assertEqual(failed.to_dict()["lanes"]["system"]["failed_samples"], 2)
+
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
+
+            self.assertEqual(stopped.status_code, 409)
+            self.assertEqual(stopped.json()["failure"]["code"], "v2_stop_accounting_mismatch")
+            self.assertEqual(stopped.json()["failure"]["reason"], "helper_inactive")
+            self.assertEqual(stopped.json()["v2_session"]["status"], "failed")
+            self.assertEqual(stopped.json()["v2_session"]["lanes"]["system"]["retained_samples"], 0)
+            self.assertEqual(stopped.json()["v2_session"]["lanes"]["system"]["failed_samples"], 2)
+            self.assertNotIn(session_id, app.state.live_v2_sessions)
 
     def test_v2_http_streams_640_interleaved_frames_across_ack_window_without_mono_bypass(self):
         from fastapi.testclient import TestClient
