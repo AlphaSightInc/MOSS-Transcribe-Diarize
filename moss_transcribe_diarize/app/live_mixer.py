@@ -130,29 +130,42 @@ class LiveCompatibilityMixer:
             lane: source.retained_frames(lane)
             for lane in (LiveLane.SYSTEM, LiveLane.MICROPHONE)
         }
-        observed_lanes = {
-            lane for lane, retained in retained_by_lane.items() if retained
+        lane_snapshots = source.snapshot().lanes
+        failed_lanes = {
+            lane
+            for lane, snapshot in lane_snapshots.items()
+            if snapshot.health == "failed" or snapshot.failed_samples
         }
-        if final and len(observed_lanes) != len(retained_by_lane):
+        active_lanes = tuple(lane for lane in retained_by_lane if lane not in failed_lanes)
+        observed_active_lanes = tuple(
+            lane for lane in active_lanes if retained_by_lane[lane]
+        )
+        missing_active_lanes = tuple(
+            lane for lane in active_lanes if lane not in observed_active_lanes
+        )
+        if final and missing_active_lanes:
             missing = sorted(
-                lane.value for lane in retained_by_lane if lane not in observed_lanes
+                lane.value for lane in missing_active_lanes
             )
             raise LiveMixSourceMissingError(
                 "missing active source lane: " + ", ".join(missing)
             )
-        if len(observed_lanes) != len(retained_by_lane):
+        if missing_active_lanes:
+            return None
+        if not active_lanes:
             return None
 
         intervals_by_lane = {
             lane: self._sealed_intervals(retained, final=final)
             for lane, retained in retained_by_lane.items()
+            if lane in active_lanes
         }
         if any(not intervals for intervals in intervals_by_lane.values()):
             return None
 
         origin_ns = max(
-            retained[0].frame.capture_timestamp_ns
-            for retained in retained_by_lane.values()
+            retained_by_lane[lane][0].frame.capture_timestamp_ns
+            for lane in active_lanes
         )
         cursor_ns = origin_ns if self._cursor_ns is None else self._cursor_ns
         safe_end_ns = (
@@ -176,7 +189,13 @@ class LiveCompatibilityMixer:
         lane_values: dict[LiveLane, list[float]] = {}
         lane_gaps: dict[LiveLane, int] = {}
         lane_silent: dict[LiveLane, int] = {}
-        for lane, intervals in intervals_by_lane.items():
+        for lane in retained_by_lane:
+            if lane in failed_lanes:
+                lane_values[lane] = [0.0] * sample_count
+                lane_gaps[lane] = 0
+                lane_silent[lane] = sample_count
+                continue
+            intervals = intervals_by_lane[lane]
             values, gaps, silent = self._render_lane(
                 intervals,
                 cursor_ns=cursor_ns,

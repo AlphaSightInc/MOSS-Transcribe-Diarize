@@ -67,6 +67,24 @@ onto a shared 16 kHz mono grid, applies exact per-lane headroom and the
 registered soft limiter, then calls `LiveServiceRuntime.accept_frame`. Source
 lane prefixes are accounted only after successful mono admission.
 
+An explicitly failed active lane is distinct from a never-observed active lane.
+The mixer treats the failed lane as zero-valued input only for admission, so a
+sealed healthy peer can continue to the existing mono runtime. Failed-lane PCM
+is not mixed, failed samples remain failed rather than clean, and source-lane
+accounting still happens only after successful mono admission. A never-observed
+active lane continues to wait before final mixing and to fail closed at final
+mixing.
+
+The OS-neutral capture-adapter seam remains the existing v2 frame/lifecycle
+boundary: lane, sequence, sample rate, first-sample timestamp, device epoch,
+silence, discontinuity, and mono PCM16 bytes. A simulated Windows adapter under
+`tests/` freezes this contract for native `float32_le` and `pcm16_le` inputs,
+lane-local sequence/epoch, invalidation discontinuity, native silence, and
+typed failure events. It is test-only evidence, not a Windows client, native
+module, helper, installer, dependency, deployment path, or production caller.
+Capture conversion becomes shared code only after real native helpers prove a
+repeated production behavior that belongs behind the same OS-neutral seam.
+
 One server-side `LiveAccessRegistry` owns live-only access at the same disabled
 HTTP seam. It admits only direct private peers, requires TLS for non-loopback
 live requests, issues loopback-only certificate-bound pairing payloads, persists
@@ -96,6 +114,10 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
   retention, compatibility mixing, downstream accounting, failure, finality,
   explicit expiry, and cleanup mechanics only; it does not prove helper-crash
   detection, provider quality, deployment, or live enablement.
+- Simulated Windows coverage freezes the adapter-side contract without changing
+  the transport, portal, server, lifecycle, mixer interface, or mono runtime.
+  Real WASAPI capture, endpoint privacy/recovery, native helper reliability,
+  signing, deployment, 60/300 evidence, canary, and enablement remain open.
 - Prior acknowledgements use an ingress-local 256-entry replay window,
   independent of retained PCM/metadata and the runtime event-ring bound. The
   oldest acknowledgement is pruned when the window fills, so new frames continue

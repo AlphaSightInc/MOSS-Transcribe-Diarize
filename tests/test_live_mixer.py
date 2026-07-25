@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import math
 import struct
 from types import SimpleNamespace
@@ -287,6 +288,55 @@ def test_silent_flag_ignores_nonzero_pcm_before_overlap_mix():
     assert result.diagnostics.silent_samples[LiveLane.MICROPHONE] == result.frame.sample_count
 
 
+def test_failed_lane_contributes_silence_while_sealed_peer_admits_and_accounts():
+    source = LiveV2Session(max_retained_samples=20_000)
+    source.accept(_frame(LiveLane.SYSTEM, 0, 0, 48_000, 480, 8_192))
+    source.accept(_frame(LiveLane.SYSTEM, 1, 10_000_000, 48_000, 480, 8_192))
+    source.fail_lane(LiveLane.MICROPHONE, "windows_device_invalidated")
+
+    result = LiveCompatibilityMixer().admit_available(
+        "session-1",
+        source,
+        _Runtime(),
+        final=False,
+    )
+
+    assert result is not None
+    assert set(_pcm_values(result.frame.pcm)) == {_encoded_sample(8_192)}
+    assert result.diagnostics.overlap_samples == 0
+    assert result.diagnostics.source_watermarks == {LiveLane.SYSTEM: 0}
+    assert result.diagnostics.silent_samples[LiveLane.MICROPHONE] == result.frame.sample_count
+    lanes = source.snapshot().to_dict()["lanes"]
+    assert lanes["system"]["accounted_samples"] == 480
+    assert lanes["microphone"]["health"] == "failed"
+    assert lanes["microphone"]["accounted_samples"] == 0
+    assert lanes["microphone"]["failure_code"] == "windows_device_invalidated"
+
+    stopped = asyncio.run(source.stop(0.0)).to_dict()
+    assert stopped["status"] == "failed"
+    assert stopped["terminal_reason"] == "windows_device_invalidated"
+
+
+def test_failed_lane_admission_rejection_rolls_back_peer_accounting_and_cursor():
+    source = LiveV2Session(max_retained_samples=20_000)
+    source.accept(_frame(LiveLane.SYSTEM, 0, 0, 48_000, 480, 8_192))
+    source.accept(_frame(LiveLane.SYSTEM, 1, 10_000_000, 48_000, 480, 8_192))
+    source.fail_lane(LiveLane.MICROPHONE, "windows_device_invalidated")
+    mixer = LiveCompatibilityMixer()
+    before = (
+        source.snapshot().to_dict(),
+        source.retained_frames(),
+    )
+
+    with pytest.raises(RuntimeError, match="reject mono admission"):
+        mixer.admit_available("session-1", source, _Runtime(reject=True), final=False)
+
+    assert (source.snapshot().to_dict(), source.retained_frames()) == before
+    retry = mixer.admit_available("session-1", source, _Runtime(), final=False)
+    assert retry is not None
+    assert retry.diagnostics.source_watermarks == {LiveLane.SYSTEM: 0}
+
+
 def test_limiter_uses_registered_tanh_curve_above_098_not_hard_clip():
     source = LiveV2Session(max_retained_samples=20_000)
     for lane in (LiveLane.SYSTEM, LiveLane.MICROPHONE):
@@ -337,6 +387,13 @@ def test_final_missing_source_fails_typed_without_mutating_source():
     source = LiveV2Session(max_retained_samples=20_000)
     source.accept(_frame(LiveLane.SYSTEM, 0, 0, 48_000, 480, 8_192))
     before = source.snapshot().to_dict()
+
+    assert LiveCompatibilityMixer().admit_available(
+        "session-1",
+        source,
+        _Runtime(),
+        final=False,
+    ) is None
 
     with pytest.raises(LiveMixSourceMissingError):
         LiveCompatibilityMixer().admit_available("session-1", source, _Runtime(), final=True)
