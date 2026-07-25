@@ -144,6 +144,8 @@ LIVE_PORTAL_HTML = """<!doctype html>
       const terminalStates = new Set(["closed", "failed", "aborted"]);
       const retryDelaysMs = [500, 1000, 2000, 5000];
       const pollDelayMs = 1000;
+      const pollRequestTimeoutMs = 10000;
+      const stopDrainDeadlineSeconds = 5.0;
       const endpoints = {
         snapshot: (sessionId, snapshotVersion) => `/api/live/sessions/${encodeURIComponent(sessionId)}/snapshot?since_version=${snapshotVersion}`,
         events: (sessionId, eventSequence) => `/api/live/sessions/${encodeURIComponent(sessionId)}/events?since_seq=${eventSequence}`,
@@ -173,7 +175,8 @@ LIVE_PORTAL_HTML = """<!doctype html>
         inFlight: false,
         retryIndex: 0,
         retryTimer: 0,
-        controller: null,
+        pollController: null,
+        controlController: null,
         renderedEvents: new Set(),
       };
 
@@ -214,9 +217,11 @@ LIVE_PORTAL_HTML = """<!doctype html>
           clearTimeout(state.retryTimer);
           state.retryTimer = 0;
         }
-        if (state.controller) {
-          state.controller.abort();
-          state.controller = null;
+        for (const key of ["pollController", "controlController"]) {
+          if (state[key]) {
+            state[key].abort();
+            state[key] = null;
+          }
         }
       }
 
@@ -275,12 +280,12 @@ LIVE_PORTAL_HTML = """<!doctype html>
         return payload;
       }
 
-      async function fetchJson(url, options, generation) {
+      async function fetchJson(url, options, generation, signal) {
         assertCurrent(generation);
         const response = await fetch(url, {
           cache: "no-store",
           credentials: "same-origin",
-          signal: state.controller.signal,
+          signal,
           ...options,
           headers: {
             ...authHeaders(),
@@ -289,6 +294,24 @@ LIVE_PORTAL_HTML = """<!doctype html>
         });
         assertCurrent(generation);
         return readJson(response);
+      }
+
+      async function fetchPollJson(url, options, generation, controller) {
+        let timedOut = false;
+        const timeout = window.setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, pollRequestTimeoutMs);
+        try {
+          return await fetchJson(url, options, generation, controller.signal);
+        } catch (error) {
+          if (timedOut) {
+            throw new Error("request timed out");
+          }
+          throw error;
+        } finally {
+          clearTimeout(timeout);
+        }
       }
 
       function line(label, value) {
@@ -392,22 +415,25 @@ LIVE_PORTAL_HTML = """<!doctype html>
           return;
         }
         state.inFlight = true;
-        state.controller = new AbortController();
+        const controller = new AbortController();
+        state.pollController = controller;
         try {
-          const snapshotPayload = await fetchJson(
+          const snapshotPayload = await fetchPollJson(
             endpoints.snapshot(state.sessionId, state.snapshotVersion),
             { method: "GET" },
             generation,
+            controller,
           );
           const session = renderSnapshot(snapshotPayload);
           assertCurrent(generation);
           if (session) {
             state.snapshotVersion = session.version;
           }
-          const eventsPayload = await fetchJson(
+          const eventsPayload = await fetchPollJson(
             endpoints.events(state.sessionId, state.eventSequence),
             { method: "GET" },
             generation,
+            controller,
           );
           const highestEvent = renderEvents(eventsPayload);
           assertCurrent(generation);
@@ -427,7 +453,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
         } finally {
           if (generation === state.generation) {
             state.inFlight = false;
-            state.controller = null;
+          }
+          if (state.pollController === controller) {
+            state.pollController = null;
           }
         }
       }
@@ -438,15 +466,22 @@ LIVE_PORTAL_HTML = """<!doctype html>
         }
         const generation = state.generation;
         const url = endpoints[action](state.sessionId);
-        state.controller = new AbortController();
+        if (state.controlController) {
+          state.controlController.abort();
+        }
+        const controller = new AbortController();
+        state.controlController = controller;
         try {
           const payload = await fetchJson(
             url,
             {
               method: "POST",
-              body: JSON.stringify(action === "stop" ? { deadline: 0.0 } : { reason: "operator abort" }),
+              body: JSON.stringify(
+                action === "stop" ? { deadline: stopDrainDeadlineSeconds } : { reason: "operator abort" },
+              ),
             },
             generation,
+            controller.signal,
           );
           const session = renderSnapshot(payload);
           if (session) {
@@ -460,8 +495,8 @@ LIVE_PORTAL_HTML = """<!doctype html>
             setText(nodes.statusDetail, `${action} failed: ${error.message || "request failed"}`);
           }
         } finally {
-          if (generation === state.generation) {
-            state.controller = null;
+          if (state.controlController === controller) {
+            state.controlController = null;
           }
         }
       }
