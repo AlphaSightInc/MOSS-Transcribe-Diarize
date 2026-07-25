@@ -10,6 +10,20 @@
   `moss-live-service.v2` for source-labelled capture frames and
   acknowledgements. It admits source lanes independently before any canonical
   mono mixing.
+- **OS-neutral capture-adapter seam**: The v2 boundary receives lane-labelled
+  mono PCM16 frames plus sample rate, first-sample timestamp, device epoch,
+  silence, and discontinuity facts. Platform capture details stay outside the
+  wire, lifecycle, mixer, transport, portal, and runtime contracts.
+- **Simulated Windows capture adapter**: Test-only adapter under `tests/` that
+  converts Windows-shaped native packets, including interleaved `float32_le`
+  or `pcm16_le`, into the existing v2 frame contract. It proves adapter-side
+  native conversion, lane-local sequence/epoch ownership, invalidation
+  discontinuity, native silence, and typed failure-event construction without
+  adding production Windows capture.
+- **Shared code threshold**: Capture conversion or helper code becomes
+  production shared code only after a real native helper demonstrates repeated
+  behavior that belongs behind the OS-neutral capture-adapter seam. The current
+  simulator is not that threshold.
 - **Lane**: Canonical source label on a v2 frame or acknowledgement. The only
   valid lanes are `system` and `microphone`.
 - **System lane**: V2 lane for captured system audio.
@@ -68,6 +82,11 @@
   consumer-failed prefixes leave every lane unchanged.
 - **Failed lane samples**: Samples conserved from retained frames after a typed
   lane failure. Failed samples are terminal accounting, not clean completion.
+- **Failed lane silence**: During compatibility mixing, an explicitly failed
+  active lane contributes zero-valued samples so a sealed healthy peer can
+  continue through mono admission. Failed-lane PCM is never mixed or reported
+  clean, and a never-observed active lane still waits non-final and fails
+  closed final.
 - **Clean finality**: Terminal live v2 state where every lane has accepted
   samples equal to accounted samples, with zero failed, retained, or pending
   work.
@@ -120,3 +139,7 @@
   live session. Ownership gates feed, watch, stop, and abort authority.
 - **Device revocation**: Explicit loopback operator action that durably
   invalidates one capture device and its owned view authorities.
+- **Deferred production caller**: No production caller detects helper loss or
+  invokes lane failure. Heartbeats, last-seen expiry, native helper failure
+  signaling, endpoint recovery, deployment evidence, and live enablement remain
+  open work outside this glossary.
