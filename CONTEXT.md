@@ -31,11 +31,37 @@
   lane-local retained samples, and frozen span ids.
 - **Lane ingress**: Independent admission and bounded in-memory retention of
   validated source-lane frames before canonical mono mixing.
+- **Live v2 session**: In-process lifecycle authority for one live session's v2
+  lane ingress. It owns reconnect facts, accounting, failure, stop, abort,
+  explicit expiry, and terminal release for source lanes before mixing.
+- **Live v2 session registry**: In-process map from live session ids to their
+  live v2 sessions. It retains non-terminal retry state and releases terminal
+  sessions.
+- **Live v2 session snapshot**: Additive HTTP-visible status object with
+  independent per-lane next sequence, accepted/accounted/failed/retained
+  samples, device epoch, replay-prune watermark, health, and stable failure
+  code.
 - **Retained lane frame**: Complete immutable accepted v2 source frame,
   including PCM bytes and capture metadata, awaiting the compatibility mixer.
 - **Ingress conservation**: Each successful v2 acknowledgement corresponds
   exactly once to one retained lane frame, or admission fails without changing
   ingress state.
+- **Accounted lane frame**: Retained source frame whose whole lane-local prefix
+  has been accepted by the downstream consumer and removed from retained PCM.
+- **Accounted lane prefix**: Highest contiguous lane sequence accounted in one
+  atomic request. Invalid, future, gapped, regressing, partial, or
+  consumer-failed prefixes leave every lane unchanged.
+- **Failed lane samples**: Samples conserved from retained frames after a typed
+  lane failure. Failed samples are terminal accounting, not clean completion.
+- **Clean finality**: Terminal live v2 state where every lane has accepted
+  samples equal to accounted samples, with zero failed, retained, or pending
+  work.
+- **Explicit expiry**: Caller-declared terminal lifecycle outcome for an
+  abandoned live v2 session. It is a cleanup mechanism, not helper-crash
+  detection.
+- **Terminal release**: Registry and retained-PCM cleanup after clean stop,
+  abort, terminal failure, or explicit expiry. Rejected non-terminal stop keeps
+  state available for retry or abort.
 - **V2 descriptor**: JSON-compatible descriptor with protocol range `2..2` and
   capabilities `lanes=true`, `binary=false`, `idempotent_frames=true`, and
   `resumable=true`.
