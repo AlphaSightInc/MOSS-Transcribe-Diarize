@@ -78,6 +78,16 @@ class RetainedLiveV2Frame:
     end_sample: int
 
 
+@dataclass(frozen=True, slots=True)
+class LiveLaneIngressSnapshot:
+    lane: LiveLane
+    next_sequence: int
+    accepted_samples: int
+    retained_samples: int
+    current_device_epoch: int | None
+    pruned_through_sequence: int
+
+
 @dataclass(slots=True)
 class _LaneState:
     next_sequence: int = 0
@@ -174,6 +184,43 @@ class LiveLaneIngress:
                 raise ValueError("lane must be a canonical v2 live lane.")
             return tuple(self._lanes[lane].retained_frames)
 
+    def snapshot(self, lane: LiveLane) -> LiveLaneIngressSnapshot:
+        if not isinstance(lane, LiveLane):
+            raise ValueError("lane must be a canonical v2 live lane.")
+        with self._lock:
+            state = self._lanes[lane]
+            return LiveLaneIngressSnapshot(
+                lane=lane,
+                next_sequence=state.next_sequence,
+                accepted_samples=state.accepted_samples,
+                retained_samples=state.retained_samples,
+                current_device_epoch=state.current_device_epoch,
+                pruned_through_sequence=self._pruned_through[lane],
+            )
+
+    def release_retained_prefix(
+        self,
+        lane: LiveLane,
+        through_sequence: int,
+    ) -> tuple[RetainedLiveV2Frame, ...]:
+        if not isinstance(lane, LiveLane):
+            raise ValueError("lane must be a canonical v2 live lane.")
+        _non_negative_int(through_sequence, "through_sequence")
+        with self._lock:
+            state = self._lanes[lane]
+            release_count = 0
+            release_samples = 0
+            for retained in state.retained_frames:
+                if retained.frame.sequence > through_sequence:
+                    break
+                release_count += 1
+                release_samples += retained.frame.sample_count
+            released = tuple(state.retained_frames[:release_count])
+            if release_count:
+                del state.retained_frames[:release_count]
+                state.retained_samples -= release_samples
+            return released
+
     def _check_epoch(self, frame: LiveV2Frame, lane: _LaneState) -> None:
         current = lane.current_device_epoch
         if current is None or frame.device_epoch == current:
@@ -223,3 +270,10 @@ def _positive_int(value: int, name: str) -> None:
         raise ValueError(f"{name} must be an integer.")
     if value <= 0:
         raise ValueError(f"{name} must be positive.")
+
+
+def _non_negative_int(value: int, name: str) -> None:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{name} must be an integer.")
+    if value < 0:
+        raise ValueError(f"{name} must be non-negative.")

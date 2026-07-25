@@ -3,12 +3,14 @@ from __future__ import annotations
 import base64
 import importlib.util
 import tempfile
+import threading
+import time
 import unittest
 from dataclasses import dataclass
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
-from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW
+from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW, LiveLane
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -95,6 +97,7 @@ def make_live_runtime(
     max_retained_samples: int = 8,
     speech: tuple[bool, ...] = (),
     session_id: str = "api-session",
+    decoder_factory=ApiDecoder,
 ) -> LiveServiceRuntime:
     descriptor = LiveServiceDescriptor(
         source_revision="eda5e69faf0e0251383029295f7e8875a2a1a4f6",
@@ -122,7 +125,7 @@ def make_live_runtime(
             EndpointPolicyConfig(min_speech_samples=1, min_silence_samples=1, hard_cap_samples=4000)
         ),
         speech_provider_factory=lambda: ApiSpeechProvider(speech),
-        decoder_factory=ApiDecoder,
+        decoder_factory=decoder_factory,
         identity_preparer_factory=ApiIdentity,
         session_id_factory=lambda: next(ids),
     )
@@ -187,6 +190,7 @@ class LiveApiTest(unittest.TestCase):
             session_id = created.json()["id"]
             self.assertFalse(hasattr(app.state.manager, "live_runtime"))
             self.assertIsNotNone(app.state.live_runtime.snapshot(session_id))
+            self.assertIn(session_id, app.state.live_v2_sessions)
 
             ack = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
             self.assertEqual(ack.status_code, 200)
@@ -212,6 +216,8 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(snapshot.status_code, 200)
             self.assertFalse(snapshot.json()["unchanged"])
             self.assertEqual(snapshot.json()["snapshot"]["session"]["next_frame_sequence"], 2)
+            self.assertEqual(snapshot.json()["v2_session"]["lanes"]["system"]["next_sequence"], 0)
+            self.assertEqual(snapshot.json()["v2_session"]["lanes"]["microphone"]["next_sequence"], 0)
 
             events = client.get(f"/api/live/sessions/{session_id}/events?since_seq=1")
             self.assertEqual(events.status_code, 200)
@@ -249,6 +255,81 @@ class LiveApiTest(unittest.TestCase):
 
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
             self.assertEqual(rejected.status_code, 429)
+
+    def test_stop_composes_v2_and_mono_work_under_one_client_deadline(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        class SlowApiDecoder(ApiDecoder):
+            def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+                time.sleep(0.6)
+                return super().transcribe_pcm(span=span, pcm=pcm)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=8,
+                    speech=(True,),
+                    decoder_factory=SlowApiDecoder,
+                ),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            self.assertEqual(
+                client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 4)).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(
+                    f"/api/live/sessions/{session_id}/frames",
+                    json=v2_frame_payload(0, 2),
+                ).status_code,
+                200,
+            )
+
+            def account_v2_lane() -> None:
+                time.sleep(0.18)
+                app.state.live_v2_sessions.get(session_id).account_through({LiveLane.SYSTEM: 0})
+
+            consumer = threading.Thread(target=account_v2_lane)
+            consumer.start()
+            started = time.monotonic()
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.25})
+            elapsed = time.monotonic() - started
+            consumer.join()
+
+            self.assertEqual(stopped.status_code, 409)
+            self.assertLessEqual(elapsed, 0.32)
+
+    def test_v1_stop_retry_preserves_typed_mono_terminal_failure(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8, speech=(True,)),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            self.assertEqual(
+                client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 4)).status_code,
+                200,
+            )
+
+            first = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
+            retried = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 1.0})
+
+            self.assertEqual(first.status_code, 409)
+            self.assertEqual(retried.status_code, 429)
+            self.assertEqual(retried.json()["failure"]["kind"], "transport_pacing")
+            self.assertEqual(retried.json()["failure"]["code"], "backpressure_or_deadline")
+            self.assertEqual(retried.json()["snapshot"]["terminal_failure"]["kind"], "transport_pacing")
 
     def test_v2_frame_adapter_validates_before_mono_runtime_and_returns_lane_ack(self):
         from fastapi.testclient import TestClient
@@ -291,9 +372,14 @@ class LiveApiTest(unittest.TestCase):
             )
             self.assertEqual(accepted.json()["queued_item_ids"], [])
             self.assertEqual(accepted.json()["snapshot_version"], 0)
-            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
-            self.assertEqual(snapshot["accepted_samples"], 0)
-            self.assertEqual(snapshot["next_frame_sequence"], 0)
+            snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()
+            self.assertEqual(snapshot["snapshot"]["session"]["accepted_samples"], 0)
+            self.assertEqual(snapshot["snapshot"]["session"]["next_frame_sequence"], 0)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["next_sequence"], 1)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["accepted_samples"], 2)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["retained_samples"], 2)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["pruned_through_sequence"], -1)
+            self.assertEqual(snapshot["v2_session"]["lanes"]["system"]["next_sequence"], 0)
 
     def test_v2_http_replays_prior_ack_and_keeps_lane_sequences_distinct(self):
         from fastapi.testclient import TestClient
@@ -334,6 +420,28 @@ class LiveApiTest(unittest.TestCase):
             snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
             self.assertEqual(snapshot["accepted_samples"], 0)
             self.assertEqual(snapshot["next_frame_sequence"], 0)
+
+    def test_v2_empty_stop_releases_registry_entry(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            self.assertIn(session_id, app.state.live_v2_sessions)
+
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
+
+            self.assertEqual(stopped.status_code, 200)
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "closed")
+            self.assertEqual(stopped.json()["v2_session"]["status"], "closed")
+            self.assertNotIn(session_id, app.state.live_v2_sessions)
 
     def test_v2_http_rejects_out_of_order_lane_sequence_with_typed_conflict(self):
         from fastapi.testclient import TestClient
@@ -475,16 +583,52 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(stopped.status_code, 409)
             self.assertEqual(stopped.json()["failure"]["code"], "v2_unconsumed_lane_frames")
             self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "active")
+            self.assertEqual(stopped.json()["v2_session"]["status"], "closing")
+            self.assertIn(session_id, app.state.live_v2_sessions)
 
             aborted = client.post(f"/api/live/sessions/{session_id}/abort", json={"reason": "caller cancelled"})
             self.assertEqual(aborted.status_code, 200)
             self.assertEqual(aborted.json()["snapshot"]["session"]["status"], "aborted")
+            self.assertNotIn(session_id, app.state.live_v2_sessions)
 
             rejected_after_abort = client.post(
                 f"/api/live/sessions/{session_id}/frames",
                 json=v2_frame_payload(1, 1, lane="microphone"),
             )
             self.assertEqual(rejected_after_abort.status_code, 409)
+
+    def test_v2_failed_terminal_stop_releases_registry_entry(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+            )
+            client = TestClient(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            accepted = client.post(frames_url, json=v2_frame_payload(0, 2, lane="system"))
+            self.assertEqual(accepted.status_code, 200)
+            failed = app.state.live_v2_sessions.get(session_id).fail_lane(
+                LiveLane.SYSTEM,
+                "helper_inactive",
+            )
+            self.assertEqual(failed.to_dict()["lanes"]["system"]["failed_samples"], 2)
+
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
+
+            self.assertEqual(stopped.status_code, 409)
+            self.assertEqual(stopped.json()["failure"]["code"], "v2_stop_accounting_mismatch")
+            self.assertEqual(stopped.json()["failure"]["reason"], "helper_inactive")
+            self.assertEqual(stopped.json()["v2_session"]["status"], "failed")
+            self.assertEqual(stopped.json()["v2_session"]["lanes"]["system"]["retained_samples"], 0)
+            self.assertEqual(stopped.json()["v2_session"]["lanes"]["system"]["failed_samples"], 2)
+            self.assertNotIn(session_id, app.state.live_v2_sessions)
 
     def test_v2_http_streams_640_interleaved_frames_across_ack_window_without_mono_bypass(self):
         from fastapi.testclient import TestClient
