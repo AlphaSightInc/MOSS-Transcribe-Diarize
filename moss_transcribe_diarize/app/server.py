@@ -9,6 +9,7 @@ from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
 from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager
 from .live_session import LIVE_SAMPLE_RATE
+from .live_auth import LiveAccessRegistry
 from .live_service_runtime import LiveServiceRuntime
 from .live_transport import attach_live_routes
 from .model_runner import ModelRunner
@@ -44,6 +45,9 @@ def create_app(
     live_max_retained_samples: int | None = None,
     live_hard_cap_samples: int | None = None,
     live_runtime_factory: Callable[[], LiveServiceRuntime] | None = None,
+    live_auth_state_path: str | Path | None = None,
+    live_server_cert_sha256: str | None = None,
+    live_access_registry: LiveAccessRegistry | None = None,
 ):
     try:
         from fastapi import FastAPI, HTTPException, Request
@@ -88,9 +92,19 @@ def create_app(
     if live_enabled:
         if live_runtime_factory is None:
             raise ValueError("live_runtime_factory is required when live mode is enabled.")
+        if live_access_registry is None:
+            if live_auth_state_path is None:
+                raise ValueError("live_auth_state_path is required when live mode is enabled.")
+            if live_server_cert_sha256 is None:
+                raise ValueError("live_server_cert_sha256 is required when live mode is enabled.")
+            live_access_registry = LiveAccessRegistry(
+                state_path=live_auth_state_path,
+                server_cert_sha256=live_server_cert_sha256,
+            )
         live_runtime = live_runtime_factory()
         app.state.live_runtime = live_runtime
-        attach_live_routes(app, live_runtime)
+        app.state.live_access_registry = live_access_registry
+        attach_live_routes(app, live_runtime, live_access_registry)
 
     @app.get("/", response_class=HTMLResponse)
     def index():

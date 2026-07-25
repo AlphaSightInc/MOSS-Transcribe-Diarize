@@ -3,11 +3,18 @@ from __future__ import annotations
 import asyncio
 import base64
 import binascii
+import time
 from dataclasses import dataclass
 from typing import Any
 
 from starlette.requests import Request
 
+from .live_auth import (
+    CapturePrincipal,
+    LiveAccessError,
+    LiveAccessRegistry,
+    LivePeer,
+)
 from .live_ingest import (
     LiveV2EpochDiscontinuityRequiredError,
     LiveV2LaneCapacityError,
@@ -43,7 +50,7 @@ from .live_session import (
 from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
 
 
-def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
+def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegistry) -> None:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
 
@@ -55,26 +62,89 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     app.state.live_v2_mixers = v2_mixers
 
     @app.get("/api/live/descriptor")
-    def live_descriptor(client_min_protocol_version: int | None = None, client_max_protocol_version: int | None = None):
+    def live_descriptor(
+        request: Request,
+        client_min_protocol_version: int | None = None,
+        client_max_protocol_version: int | None = None,
+    ):
         try:
+            access.authorize(
+                _peer_from_request(request),
+                None,
+                "descriptor",
+                None,
+                now=_request_now(),
+            )
             return _descriptor_payload(
                 runtime,
                 client_min_protocol_version=client_min_protocol_version,
                 client_max_protocol_version=client_max_protocol_version,
             )
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except LiveV2ObsoleteClientError as exc:
             status, payload = live_v2_obsolete_client_response(exc)
             return JSONResponse(payload, status_code=status)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    @app.post("/api/live/pairing-codes")
+    def issue_live_pairing(request: Request):
+        try:
+            grant = access.issue_pairing(_peer_from_request(request), now=_request_now())
+            return {"pairing_payload": grant.pairing_payload, "expires_at": grant.expires_at}
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @app.post("/api/live/pairings")
+    async def exchange_live_pairing(request: Request):
+        try:
+            payload = await request.json()
+            if not isinstance(payload, dict):
+                raise ValueError("pairing request must be a JSON object.")
+            credential = access.exchange_pairing(
+                _peer_from_request(request),
+                str(payload.get("pairing_payload") or ""),
+                device_id=str(payload.get("device_id") or ""),
+                now=_request_now(),
+            )
+            return {
+                "device_id": credential.device_id,
+                "device_token": credential.device_token,
+                "scope": credential.scope,
+            }
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     @app.post("/api/live/sessions")
-    def create_live_session():
+    def create_live_session(request: Request):
+        try:
+            decision = access.authorize(
+                _peer_from_request(request),
+                _bearer_from_request(request),
+                "create",
+                None,
+                now=_request_now(),
+            )
+            if not isinstance(decision.principal, CapturePrincipal):
+                raise HTTPException(status_code=403, detail="capture authority is required.")
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         created = runtime.create()
-        v2_sessions.create(created.session_id)
-        v2_mixers.create(created.session_id)
+        try:
+            view = access.bind_session(decision.principal, created.session_id, now=_request_now())
+            v2_sessions.create(created.session_id)
+            v2_mixers.create(created.session_id)
+        except Exception:
+            access.release_session(created.session_id)
+            raise
         return {
             "id": created.session_id,
+            "owner_device_id": view.owner_device_id,
+            "view_token": view.view_token,
+            "view_expires_at": view.expires_at,
             "descriptor": created.descriptor.to_dict(),
             "snapshot": created.snapshot.to_dict(),
         }
@@ -82,6 +152,13 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     @app.post("/api/live/sessions/{session_id}/frames")
     async def accept_live_frame(session_id: str, request: Request):
         try:
+            access.authorize(
+                _peer_from_request(request),
+                _bearer_from_request(request),
+                "frame",
+                session_id,
+                now=_request_now(),
+            )
             payload = await request.json()
             frame = _frame_from_payload(payload)
             if frame.v2_frame is None:
@@ -120,6 +197,8 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             }
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except (
             LiveV2EpochDiscontinuityRequiredError,
             LiveV2LaneCapacityError,
@@ -151,21 +230,39 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             )
 
     @app.get("/api/live/sessions/{session_id}/snapshot")
-    def live_snapshot(session_id: str, since_version: int | None = None):
+    def live_snapshot(request: Request, session_id: str, since_version: int | None = None):
         try:
+            access.authorize(
+                _peer_from_request(request),
+                _bearer_from_request(request),
+                "snapshot",
+                session_id,
+                now=_request_now(),
+            )
             return _snapshot_response(
                 runtime,
                 v2_sessions,
                 session_id,
                 since_version=since_version,
             )
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @app.get("/api/live/sessions/{session_id}/events")
-    def live_events(session_id: str, since_seq: int = 0):
+    def live_events(request: Request, session_id: str, since_seq: int = 0):
         try:
+            access.authorize(
+                _peer_from_request(request),
+                _bearer_from_request(request),
+                "events",
+                session_id,
+                now=_request_now(),
+            )
             events = runtime.events(session_id, since_seq=since_seq)
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except ValueError as exc:
@@ -176,6 +273,13 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     async def stop_live_session(session_id: str, request: Request):
         release_v2_on_error = False
         try:
+            access.authorize(
+                _peer_from_request(request),
+                _bearer_from_request(request),
+                "stop",
+                session_id,
+                now=_request_now(),
+            )
             payload = await _optional_json(request)
             deadline = float(payload.get("deadline", 0.0))
             loop = asyncio.get_running_loop()
@@ -203,6 +307,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                 if v2_snapshot.status == "failed":
                     v2_sessions.release(session_id)
                     v2_mixers.release(session_id)
+                    access.release_session(session_id)
                     status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
                     failure["snapshot"] = _snapshot_payload(runtime, session_id)
                     failure["v2_session"] = v2_snapshot.to_dict()
@@ -212,6 +317,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             stopped = await runtime.stop(session_id, deadline)
             v2_sessions.release(session_id)
             v2_mixers.release(session_id)
+            access.release_session(session_id)
             release_v2_on_error = False
             response = {"snapshot": stopped.to_dict()}
             if v2_snapshot is not None:
@@ -219,6 +325,8 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             return response
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except TimeoutError as exc:
             return JSONResponse(
                 {"detail": str(exc), "snapshot": _snapshot_payload(runtime, session_id)},
@@ -250,6 +358,13 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     @app.post("/api/live/sessions/{session_id}/abort")
     async def abort_live_session(session_id: str, request: Request):
         try:
+            access.authorize(
+                _peer_from_request(request),
+                _bearer_from_request(request),
+                "abort",
+                session_id,
+                now=_request_now(),
+            )
             payload = await _optional_json(request)
             reason = str(payload.get("reason") or "aborted")
             snapshot = await runtime.abort(session_id, reason)
@@ -264,9 +379,32 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                     pass
                 v2_sessions.release(session_id)
                 v2_mixers.release(session_id)
+            access.release_session(session_id)
             return {"snapshot": snapshot.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @app.delete("/api/live/devices/{device_id}")
+    async def revoke_live_device(request: Request, device_id: str):
+        try:
+            revoked = access.revoke_device(_peer_from_request(request), device_id, now=_request_now())
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        for session_id in revoked.session_ids:
+            try:
+                await runtime.abort(session_id, "device revoked")
+            except Exception:
+                pass
+            try:
+                v2_sessions.get(session_id).abort("device revoked")
+            except (KeyError, LiveV2SessionTerminalError):
+                pass
+            v2_sessions.release(session_id)
+            v2_mixers.release(session_id)
+            access.release_session(session_id)
+        return {"device_id": revoked.device_id, "session_ids": list(revoked.session_ids)}
 
 
 @dataclass(frozen=True, slots=True)
@@ -356,6 +494,26 @@ def _is_v2_frame_payload(payload: dict[str, Any]) -> bool:
             "discontinuity",
         )
     )
+
+
+def _peer_from_request(request: Request) -> LivePeer:
+    client = request.client
+    host = "" if client is None else client.host
+    return LivePeer(host=host, scheme=str(request.scope.get("scheme") or "http"))
+
+
+def _bearer_from_request(request: Request) -> str | None:
+    header = request.headers.get("authorization")
+    if header is None:
+        return None
+    scheme, _, token = header.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        return None
+    return token
+
+
+def _request_now() -> float:
+    return time.time()
 
 
 def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:

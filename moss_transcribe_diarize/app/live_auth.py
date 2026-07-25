@@ -79,7 +79,12 @@ class ViewPrincipal:
     session_id: str
 
 
-LivePrincipal = CapturePrincipal | ViewPrincipal
+@dataclass(frozen=True, slots=True)
+class DescriptorPrincipal:
+    pass
+
+
+LivePrincipal = CapturePrincipal | ViewPrincipal | DescriptorPrincipal
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,6 +221,12 @@ class LiveAccessRegistry:
         now: float,
     ) -> AccessDecision:
         self._admit_peer(peer)
+        if action == "descriptor" and session_id is None:
+            return AccessDecision(
+                principal=DescriptorPrincipal(),
+                action=action,
+                session_id=None,
+            )
         if not bearer:
             raise LiveAccessUnauthorized("missing bearer authority.")
         digest = _digest(bearer)

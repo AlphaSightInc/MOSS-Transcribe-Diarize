@@ -99,13 +99,14 @@ class LiveReplayService(Protocol):
 
 
 class HttpLiveReplayService:
-    def __init__(self, *, base_url: str, timeout_seconds: float = 10.0):
+    def __init__(self, *, base_url: str, timeout_seconds: float = 10.0, bearer_token: str | None = None):
         if not base_url:
             raise ValueError("base_url must be non-empty.")
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive.")
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = float(timeout_seconds)
+        self.bearer_token = bearer_token
 
     def create(self) -> LiveServiceCreateResult:
         payload = self._json("POST", "/api/live/sessions")
@@ -174,6 +175,8 @@ class HttpLiveReplayService:
     def _json(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         data = None
         headers = {"Accept": "application/json"}
+        if self.bearer_token:
+            headers["Authorization"] = f"Bearer {self.bearer_token}"
         if payload is not None:
             data = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
             headers["Content-Type"] = "application/json"
