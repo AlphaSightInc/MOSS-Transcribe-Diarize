@@ -67,6 +67,15 @@ onto a shared 16 kHz mono grid, applies exact per-lane headroom and the
 registered soft limiter, then calls `LiveServiceRuntime.accept_frame`. Source
 lane prefixes are accounted only after successful mono admission.
 
+One server-side `LiveAccessRegistry` owns live-only access at the same disabled
+HTTP seam. It admits only direct private peers, requires TLS for non-loopback
+live requests, issues loopback-only certificate-bound pairing payloads, persists
+only capture-authority digests and revocation facts, binds live session
+ownership to the capture device, grants separate short-lived view authority, and
+releases authority on terminal session paths. FastAPI extracts direct peer,
+scheme, and bearer headers; Uvicorn supplies the configured TLS certificate and
+key with proxy headers disabled. Batch routes remain outside this authority.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
 ## Consequences
@@ -95,3 +104,19 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
 - Server-owned mixing keeps JSON/HTTP and independent source retention intact,
   but makes the server responsible for timestamp alignment, limiter behavior,
   mono runtime admission, and post-admission source accounting.
+- A single deep access authority keeps pairing, TLS admission, capture/view
+  scopes, ownership, and revocation out of route closures. The trade-off is
+  that live startup now needs explicit TLS certificate, TLS key, and private
+  auth-state inputs before enabled live routes can listen.
+- Live authentication is intentionally narrower than web-app authentication:
+  it protects the default-off live surface only. Existing batch upload,
+  runtime, media, render, and download routes remain unauthenticated and scoped
+  to trusted LAN/Tailscale deployment limits.
+- Pairing binds to the configured full TLS certificate fingerprint so a future
+  helper can compare the observed certificate before exchanging the payload.
+  This server decision does not prove native helper pin comparison, Keychain
+  storage, certificate provisioning, rotation, signing, TCC, or deployed
+  network reachability.
+- Device revocation is explicit operator control that invalidates capture and
+  view authority and releases owned live state. It is not helper-loss detection
+  or an inactivity heartbeat.

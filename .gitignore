@@ -19,3 +19,9 @@ runs/
 *.pth
 *.onnx
 *.log
+
+# Live access credentials and operator pairing material.
+*.key
+*.pem
+*live-auth*.json
+*pairing-payload*

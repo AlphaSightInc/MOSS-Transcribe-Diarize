@@ -73,6 +73,47 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertEqual(args.audio, "audio.wav")
         self.assertEqual(args.runs, 3)
         self.assertEqual(args.expect_provider_hash, "a" * 64)
+        self.assertIsNone(args.bearer_token_file)
+
+    def test_http_replay_cli_reads_bearer_from_secret_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            token_file = root / "capture.secret"
+            token_file.write_text(" capture-token \n", encoding="utf-8")
+            captured = {}
+
+            def run_service_replay(*, service, **kwargs):
+                captured["bearer_token"] = service.bearer_token
+                captured["base_url"] = service.base_url
+                captured["kwargs"] = kwargs
+
+            original = live_service_replay.run_service_replay
+            live_service_replay.run_service_replay = run_service_replay
+            try:
+                exit_code = live_service_replay.main(
+                    [
+                        "--base-url",
+                        "https://moss.lan:7860",
+                        "--audio",
+                        "audio.wav",
+                        "--out-dir",
+                        str(root / "out"),
+                        "--expect-revision",
+                        "revision",
+                        "--expect-provider-hash",
+                        "a" * 64,
+                        "--expect-config-hash",
+                        "b" * 64,
+                        "--bearer-token-file",
+                        str(token_file),
+                    ]
+                )
+            finally:
+                live_service_replay.run_service_replay = original
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(captured["bearer_token"], "capture-token")
+        self.assertEqual(captured["base_url"], "https://moss.lan:7860")
 
     def test_service_failure_kinds_map_to_typed_replay_exits(self):
         error = LiveServiceProviderConfigFailure("config mismatch")
@@ -515,14 +556,28 @@ class LiveServiceReplayContractTest(unittest.TestCase):
 
     @unittest.skipUnless(UVICORN_AVAILABLE, "uvicorn is not installed")
     def test_http_adapter_crosses_real_loopback_live_routes(self):
+        from moss_transcribe_diarize.app.live_auth import LiveAccessRegistry, LivePeer
         from moss_transcribe_diarize.app.server import create_app
         import uvicorn
 
         descriptor = _descriptor(frame_samples=400)
+        auth_root = Path(tempfile.mkdtemp())
+        registry = LiveAccessRegistry(
+            state_path=auth_root / "live-auth.json",
+            server_cert_sha256="ab" * 32,
+        )
+        grant = registry.issue_pairing(LivePeer("127.0.0.1", "http"), now=0.0)
+        capture = registry.exchange_pairing(
+            LivePeer("192.168.68.20", "https"),
+            grant.pairing_payload,
+            device_id="replay-device",
+            now=1.0,
+        )
         app = create_app(
             model_path="fake-model",
             runs_dir=tempfile.mkdtemp(),
             live_enabled=True,
+            live_access_registry=registry,
             live_runtime_factory=lambda: _runtime(
                 descriptor=descriptor,
                 speech=(True, False),
@@ -540,7 +595,10 @@ class LiveServiceReplayContractTest(unittest.TestCase):
                 time.sleep(0.01)
             self.assertTrue(server.started)
 
-            service = live_service_replay.HttpLiveReplayService(base_url=f"http://127.0.0.1:{port}")
+            service = live_service_replay.HttpLiveReplayService(
+                base_url=f"http://127.0.0.1:{port}",
+                bearer_token=capture.device_token,
+            )
             created = service.create()
             result = service.accept_frame(
                 created.session_id,

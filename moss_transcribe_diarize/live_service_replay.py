@@ -99,13 +99,14 @@ class LiveReplayService(Protocol):
 
 
 class HttpLiveReplayService:
-    def __init__(self, *, base_url: str, timeout_seconds: float = 10.0):
+    def __init__(self, *, base_url: str, timeout_seconds: float = 10.0, bearer_token: str | None = None):
         if not base_url:
             raise ValueError("base_url must be non-empty.")
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive.")
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = float(timeout_seconds)
+        self.bearer_token = bearer_token
 
     def create(self) -> LiveServiceCreateResult:
         payload = self._json("POST", "/api/live/sessions")
@@ -174,6 +175,8 @@ class HttpLiveReplayService:
     def _json(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         data = None
         headers = {"Accept": "application/json"}
+        if self.bearer_token:
+            headers["Authorization"] = f"Bearer {self.bearer_token}"
         if payload is not None:
             data = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
             headers["Content-Type"] = "application/json"
@@ -232,6 +235,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--expect-revision", required=True, help="Expected service source revision.")
     parser.add_argument("--expect-provider-hash", required=True, help="Expected provider manifest hash.")
     parser.add_argument("--expect-config-hash", required=True, help="Expected combined configuration hash.")
+    parser.add_argument(
+        "--bearer-token-file",
+        help="Caller-owned file containing the live capture bearer for HTTP replay.",
+    )
     return parser.parse_args(argv)
 
 
@@ -239,7 +246,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         run_service_replay(
-            service=HttpLiveReplayService(base_url=args.base_url),
+            service=HttpLiveReplayService(
+                base_url=args.base_url,
+                bearer_token=_read_bearer_token_file(Path(args.bearer_token_file)) if args.bearer_token_file else None,
+            ),
             audio_path=Path(args.audio),
             out_dir=Path(args.out_dir),
             pace=args.pace,
@@ -260,6 +270,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"live service replay failed [integrity]: {exc}", file=sys.stderr)
         return ServiceReplayFailure.exit_code
     return 0
+
+
+def _read_bearer_token_file(path: Path) -> str:
+    token = path.read_text(encoding="utf-8").strip()
+    if not token:
+        raise ServiceReplayFailure("bearer token file is empty.")
+    if "\n" in token or "\r" in token:
+        raise ServiceReplayFailure("bearer token file must contain exactly one token.")
+    return token
 
 
 def run_service_replay(

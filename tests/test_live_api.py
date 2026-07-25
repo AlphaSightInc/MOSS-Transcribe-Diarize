@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import importlib.util
+import io
 import tempfile
 import threading
 import time
 import unittest
 from dataclasses import dataclass
+from pathlib import Path
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
@@ -23,6 +26,35 @@ from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, Liv
 
 
 FASTAPI_AVAILABLE = importlib.util.find_spec("fastapi") is not None
+LIVE_AUTH_FINGERPRINT = "ab" * 32
+
+
+class AuthorizedLiveClient:
+    def __init__(self, app, token: str):
+        from fastapi.testclient import TestClient
+
+        self._client = TestClient(
+            app,
+            base_url="https://moss.lan",
+            client=("192.168.68.20", 50000),
+        )
+        self._headers = {"Authorization": f"Bearer {token}"}
+
+    def get(self, path: str, **kwargs):
+        return self._client.get(path, **self._with_auth(path, kwargs))
+
+    def post(self, path: str, **kwargs):
+        return self._client.post(path, **self._with_auth(path, kwargs))
+
+    def delete(self, path: str, **kwargs):
+        return self._client.delete(path, **self._with_auth(path, kwargs))
+
+    def _with_auth(self, path: str, kwargs: dict) -> dict:
+        if path == "/api/live/sessions" or path.startswith("/api/live/sessions/"):
+            headers = dict(self._headers)
+            headers.update(kwargs.pop("headers", {}))
+            kwargs["headers"] = headers
+        return kwargs
 
 
 def frame_payload(
@@ -147,6 +179,34 @@ def make_live_runtime(
 
 @unittest.skipUnless(FASTAPI_AVAILABLE, "fastapi is not installed")
 class LiveApiTest(unittest.TestCase):
+    def _live_auth_kwargs(self, tmpdir: str) -> dict:
+        return {
+            "live_auth_state_path": Path(tmpdir) / "live-auth.json",
+            "live_server_cert_sha256": LIVE_AUTH_FINGERPRINT,
+        }
+
+    def _paired_client(self, app) -> AuthorizedLiveClient:
+        from fastapi.testclient import TestClient
+
+        local = TestClient(
+            app,
+            base_url="http://127.0.0.1",
+            client=("127.0.0.1", 50000),
+        )
+        lan = TestClient(
+            app,
+            base_url="https://moss.lan",
+            client=("192.168.68.20", 50001),
+        )
+        issued = local.post("/api/live/pairing-codes")
+        self.assertEqual(issued.status_code, 200)
+        paired = lan.post(
+            "/api/live/pairings",
+            json={"device_id": "test-device", "pairing_payload": issued.json()["pairing_payload"]},
+        )
+        self.assertEqual(paired.status_code, 200)
+        return AuthorizedLiveClient(app, paired.json()["device_token"])
+
     def test_live_routes_are_absent_by_default_and_runtime_is_unchanged(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
@@ -167,6 +227,96 @@ class LiveApiTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "live_runtime_factory is required"):
                 create_app(model_path="fake-model", runs_dir=tmpdir, live_enabled=True)
 
+    def test_forwarding_headers_cannot_grant_loopback_admin_authority(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            lan = TestClient(
+                app,
+                base_url="https://moss.lan",
+                client=("192.168.68.20", 50000),
+            )
+
+            for headers in (
+                {"X-Forwarded-For": "127.0.0.1"},
+                {"X-Real-IP": "127.0.0.1"},
+                {"Forwarded": "for=127.0.0.1"},
+            ):
+                with self.subTest(headers=headers):
+                    self.assertEqual(
+                        lan.post("/api/live/pairing-codes", headers=headers).status_code,
+                        403,
+                    )
+                    self.assertEqual(
+                        lan.delete("/api/live/devices/test-device", headers=headers).status_code,
+                        403,
+                    )
+
+    def test_live_credentials_stay_out_of_query_parameters_and_process_output(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            local = TestClient(
+                app,
+                base_url="http://127.0.0.1",
+                client=("127.0.0.1", 50000),
+            )
+            lan = TestClient(
+                app,
+                base_url="https://moss.lan",
+                client=("192.168.68.20", 50001),
+            )
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                issued = local.post("/api/live/pairing-codes")
+                paired = lan.post(
+                    "/api/live/pairings",
+                    json={
+                        "device_id": "test-device",
+                        "pairing_payload": issued.json()["pairing_payload"],
+                    },
+                )
+                created = lan.post(
+                    "/api/live/sessions",
+                    headers={"Authorization": f"Bearer {paired.json()['device_token']}"},
+                )
+
+            self.assertEqual(issued.status_code, 200)
+            self.assertEqual(paired.status_code, 200)
+            self.assertEqual(created.status_code, 200)
+            captured_output = stdout.getvalue() + stderr.getvalue()
+            for credential in (
+                issued.json()["pairing_payload"],
+                paired.json()["device_token"],
+                created.json()["view_token"],
+            ):
+                self.assertNotIn(credential, captured_output)
+
+            session_id = created.json()["id"]
+            query_only = lan.get(
+                f"/api/live/sessions/{session_id}/snapshot",
+                params={"token": created.json()["view_token"]},
+            )
+            self.assertEqual(query_only.status_code, 401)
+
     def test_live_routes_are_runtime_backed_with_descriptor_events_and_backpressure(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
@@ -177,8 +327,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
 
             descriptor = client.get("/api/live/descriptor")
             self.assertEqual(descriptor.status_code, 200)
@@ -249,8 +400,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8, speech=(True,)),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
 
             frame = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 4))
@@ -268,7 +420,7 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(aborted.json()["snapshot"]["session"]["failure_reason"], "caller cancelled")
 
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
-            self.assertEqual(rejected.status_code, 429)
+            self.assertEqual(rejected.status_code, 403)
 
     def test_stop_composes_v2_and_mono_work_under_one_client_deadline(self):
         from fastapi.testclient import TestClient
@@ -289,8 +441,9 @@ class LiveApiTest(unittest.TestCase):
                     speech=(True,),
                     decoder_factory=SlowApiDecoder,
                 ),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             self.assertEqual(
                 client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 4)).status_code,
@@ -328,8 +481,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8, speech=(True,)),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             self.assertEqual(
                 client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 4)).status_code,
@@ -355,8 +509,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
 
             invalid = v2_frame_payload(0, 2)
@@ -408,8 +563,9 @@ class LiveApiTest(unittest.TestCase):
                     max_retained_samples=9000,
                     speech=(True,),
                 ),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             frames_url = f"/api/live/sessions/{session_id}/frames"
 
@@ -458,8 +614,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             frames_url = f"/api/live/sessions/{session_id}/frames"
 
@@ -498,8 +655,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             self.assertIn(session_id, app.state.live_v2_sessions)
 
@@ -522,8 +680,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
 
             rejected = client.post(
@@ -555,8 +714,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             frames_url = f"/api/live/sessions/{session_id}/frames"
 
@@ -605,8 +765,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             frames_url = f"/api/live/sessions/{session_id}/frames"
 
@@ -638,8 +799,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
 
             accepted = client.post(
@@ -666,7 +828,7 @@ class LiveApiTest(unittest.TestCase):
                 f"/api/live/sessions/{session_id}/frames",
                 json=v2_frame_payload(1, 1, lane="microphone"),
             )
-            self.assertEqual(rejected_after_abort.status_code, 409)
+            self.assertEqual(rejected_after_abort.status_code, 403)
 
     def test_v2_failed_terminal_stop_releases_registry_entry(self):
         from fastapi.testclient import TestClient
@@ -678,8 +840,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             session_id = client.post("/api/live/sessions").json()["id"]
             frames_url = f"/api/live/sessions/{session_id}/frames"
 
@@ -713,8 +876,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=321),
+                **self._live_auth_kwargs(tmpdir),
             )
-            client = TestClient(app)
+            client = self._paired_client(app)
             created = client.post("/api/live/sessions").json()
             frames_url = f"/api/live/sessions/{created['id']}/frames"
 
@@ -774,8 +938,9 @@ class LiveApiTest(unittest.TestCase):
                 runs_dir=tmpdir,
                 live_enabled=True,
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=258),
+                **self._live_auth_kwargs(tmpdir),
             )
-            idle_client = TestClient(idle_app)
+            idle_client = self._paired_client(idle_app)
             idle_created = idle_client.post("/api/live/sessions").json()
             idle_frames_url = f"/api/live/sessions/{idle_created['id']}/frames"
             self.assertEqual(
