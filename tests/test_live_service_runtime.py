@@ -76,6 +76,20 @@ class LiveServiceContractTypesTest(unittest.TestCase):
 
         self.assertEqual(payload["schema_version"], 1)
         self.assertEqual(payload["live_protocol_version"], "moss-live-service.v1")
+        self.assertEqual(
+            payload["live_protocol"],
+            {
+                "protocol": "moss-live-service.v2",
+                "min_protocol_version": 2,
+                "max_protocol_version": 2,
+                "capabilities": {
+                    "lanes": True,
+                    "binary": False,
+                    "idempotent_frames": True,
+                    "resumable": True,
+                },
+            },
+        )
         self.assertEqual(payload["sample_rate"], LIVE_SAMPLE_RATE)
         self.assertTrue(payload["feature_enabled"])
         self.assertEqual(payload["config_hashes"]["combined_config_hash"], hashes.combined_config_hash)
