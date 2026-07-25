@@ -168,11 +168,21 @@ def test_epoch_transition_requires_marked_discontinuity_and_retries_without_muta
 
 def test_ack_window_prunes_replay_without_pruning_retained_frames_or_blocking_idle_lane():
     ingress = LiveLaneIngress(max_retained_samples=LIVE_V2_REPLAY_ACK_WINDOW + 4)
-    first = ingress.accept(frame(LiveLane.SYSTEM, 0, 1))
+    first_frame = frame(
+        LiveLane.SYSTEM,
+        0,
+        1,
+        capture_timestamp_ns=987654321,
+        device_epoch=4,
+        silent=True,
+        discontinuity=True,
+        pcm_byte=0xA5,
+    )
+    first = ingress.accept(first_frame)
     ingress.accept(frame(LiveLane.MICROPHONE, 0, 1))
 
     for sequence in range(1, LIVE_V2_REPLAY_ACK_WINDOW + 1):
-        ingress.accept(frame(LiveLane.SYSTEM, sequence, 1))
+        ingress.accept(frame(LiveLane.SYSTEM, sequence, 1, device_epoch=4))
 
     with pytest.raises(LiveV2PrunedReplayError) as raised:
         ingress.accept(frame(LiveLane.SYSTEM, 0, 1))
@@ -182,3 +192,10 @@ def test_ack_window_prunes_replay_without_pruning_retained_frames_or_blocking_id
     assert resumed_idle_lane.start_sample == 1
     assert len(ingress.retained_frames(LiveLane.SYSTEM)) == LIVE_V2_REPLAY_ACK_WINDOW + 1
     assert len(ingress.retained_frames(LiveLane.MICROPHONE)) == 2
+    retained_first = ingress.retained_frames(LiveLane.SYSTEM)[0]
+    assert retained_first.frame.to_dict() == first_frame.to_dict()
+    assert retained_first.frame.pcm == bytes([0xA5]) * 2
+    assert retained_first.frame.capture_timestamp_ns == 987654321
+    assert retained_first.frame.device_epoch == 4
+    assert retained_first.frame.silent is True
+    assert retained_first.frame.discontinuity is True

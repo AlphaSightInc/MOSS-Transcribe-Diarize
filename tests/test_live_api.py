@@ -486,7 +486,7 @@ class LiveApiTest(unittest.TestCase):
             )
             self.assertEqual(rejected_after_abort.status_code, 409)
 
-    def test_v2_http_streams_past_event_bound_and_auto_prunes_ack_window(self):
+    def test_v2_http_streams_640_interleaved_frames_across_ack_window_without_mono_bypass(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
 
@@ -495,42 +495,89 @@ class LiveApiTest(unittest.TestCase):
                 model_path="fake-model",
                 runs_dir=tmpdir,
                 live_enabled=True,
-                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4096),
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=321),
             )
             client = TestClient(app)
             created = client.post("/api/live/sessions").json()
             frames_url = f"/api/live/sessions/{created['id']}/frames"
 
-            for sequence in range(LIVE_V2_REPLAY_ACK_WINDOW + 1):
-                response = client.post(frames_url, json=v2_frame_payload(sequence, 2, lane="system"))
-                self.assertEqual(response.status_code, 200)
+            for sequence in range(320):
+                for lane in ("system", "microphone"):
+                    with self.subTest(sequence=sequence, lane=lane):
+                        response = client.post(frames_url, json=v2_frame_payload(sequence, 1, lane=lane))
+                        self.assertEqual(response.status_code, 200)
+                        payload = response.json()
+                        self.assertEqual(payload["queued_item_ids"], [])
+                        self.assertEqual(payload["snapshot_version"], 0)
+                        self.assertEqual(
+                            payload["ack"],
+                            {
+                                "lane": lane,
+                                "sequence": sequence,
+                                "start_sample": sequence,
+                                "end_sample": sequence + 1,
+                                "accepted_samples": sequence + 1,
+                                "retained_samples": sequence + 1,
+                                "frozen_span_ids": [],
+                            },
+                        )
+
+            snapshot = client.get(f"/api/live/sessions/{created['id']}/snapshot").json()["snapshot"]["session"]
+            self.assertEqual(snapshot["accepted_samples"], 0)
+            self.assertEqual(snapshot["next_frame_sequence"], 0)
 
             pruned = client.post(frames_url, json=v2_frame_payload(0, 2, lane="system"))
             self.assertEqual(pruned.status_code, 409)
             self.assertEqual(pruned.json()["failure"]["code"], "v2_pruned_replay")
-            continued = client.post(
-                frames_url,
-                json=v2_frame_payload(LIVE_V2_REPLAY_ACK_WINDOW + 1, 2, lane="system"),
+            self.assertEqual(pruned.json()["failure"]["lane"], "system")
+            self.assertGreaterEqual(
+                pruned.json()["failure"]["pruned_through_sequence"],
+                0,
             )
-            self.assertEqual(continued.status_code, 200)
 
-            dual_app = create_app(
+            too_large_system = client.post(frames_url, json=v2_frame_payload(320, 2, lane="system"))
+            self.assertEqual(too_large_system.status_code, 429)
+            self.assertEqual(too_large_system.json()["failure"]["code"], "v2_lane_retention_capacity_reached")
+
+            corrected_system = client.post(frames_url, json=v2_frame_payload(320, 1, lane="system"))
+            continued_microphone = client.post(frames_url, json=v2_frame_payload(320, 1, lane="microphone"))
+            self.assertEqual(corrected_system.status_code, 200)
+            self.assertEqual(corrected_system.json()["ack"]["retained_samples"], 321)
+            self.assertEqual(continued_microphone.status_code, 200)
+            self.assertEqual(continued_microphone.json()["ack"]["retained_samples"], 321)
+
+            accepted_v1 = client.post(frames_url, json=frame_payload(0, 1))
+            self.assertEqual(accepted_v1.status_code, 200)
+            self.assertEqual(accepted_v1.json()["ack"]["sequence"], 0)
+            snapshot = client.get(f"/api/live/sessions/{created['id']}/snapshot").json()["snapshot"]["session"]
+            self.assertEqual(snapshot["accepted_samples"], 1)
+            self.assertEqual(snapshot["next_frame_sequence"], 1)
+
+            idle_app = create_app(
                 model_path="fake-model",
                 runs_dir=tmpdir,
                 live_enabled=True,
-                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4096),
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=258),
             )
-            dual_client = TestClient(dual_app)
-            dual_created = dual_client.post("/api/live/sessions").json()
-            dual_frames_url = f"/api/live/sessions/{dual_created['id']}/frames"
-            max_events = dual_created["descriptor"]["bounds"]["max_events"]
-            for sequence in range(max_events + 1):
-                for lane in ("system", "microphone"):
-                    response = dual_client.post(
-                        dual_frames_url,
-                        json=v2_frame_payload(sequence, 2, lane=lane),
-                    )
-                    self.assertEqual(response.status_code, 200)
+            idle_client = TestClient(idle_app)
+            idle_created = idle_client.post("/api/live/sessions").json()
+            idle_frames_url = f"/api/live/sessions/{idle_created['id']}/frames"
+            self.assertEqual(
+                idle_client.post(idle_frames_url, json=v2_frame_payload(0, 1, lane="system")).status_code,
+                200,
+            )
+            for sequence in range(LIVE_V2_REPLAY_ACK_WINDOW + 1):
+                response = idle_client.post(
+                    idle_frames_url,
+                    json=v2_frame_payload(sequence, 1, lane="microphone"),
+                )
+                self.assertEqual(response.status_code, 200)
+            resumed_idle_system = idle_client.post(
+                idle_frames_url,
+                json=v2_frame_payload(1, 1, lane="system"),
+            )
+            self.assertEqual(resumed_idle_system.status_code, 200)
+            self.assertEqual(resumed_idle_system.json()["ack"]["start_sample"], 1)
 
     def test_v2_pruned_replay_maps_to_typed_conflict_payload(self):
         from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2PrunedReplayError
