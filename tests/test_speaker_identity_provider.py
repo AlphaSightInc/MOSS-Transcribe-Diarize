@@ -637,6 +637,36 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
     )
 
 
+@pytest.mark.parametrize(
+    ("missing_attribute", "missing_flag"),
+    [
+        ("live_auth_state", "--live-auth-state"),
+        ("live_tls_certfile", "--live-tls-certfile"),
+        ("live_tls_keyfile", "--live-tls-keyfile"),
+    ],
+)
+def test_web_cli_live_startup_names_each_missing_security_input(
+    tmp_path,
+    missing_attribute,
+    missing_flag,
+):
+    from moss_transcribe_diarize.app.web_cli import _live_startup_config
+
+    certfile = tmp_path / "live.der"
+    certfile.write_bytes(b"configured leaf cert")
+    values = {
+        "live_auth_state": str(tmp_path / "live-auth.json"),
+        "live_tls_certfile": str(certfile),
+        "live_tls_keyfile": str(tmp_path / "live.key"),
+    }
+    values[missing_attribute] = None
+
+    with pytest.raises(SystemExit) as exc_info:
+        _live_startup_config(SimpleNamespace(live=True, **values))
+
+    assert missing_flag in str(exc_info.value)
+
+
 def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch):
     from moss_transcribe_diarize.app import live_provider_bundle
     from moss_transcribe_diarize.app.web_cli import _live_runtime_factory

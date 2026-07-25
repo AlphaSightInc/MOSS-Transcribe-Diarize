@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -210,7 +211,24 @@ class LiveAccessRegistryTest(unittest.TestCase):
             owner = registry.authorize(LAN_TLS, capture.device_token, "create", None, now=3.0)
             registry.bind_session(owner.principal, "session-1", now=4.0)
 
-            self.assertEqual([nbytes for nbytes, _ in secrets.issued], [SECRET_BYTES, SECRET_BYTES, SECRET_BYTES])
+            self.assertEqual(SECRET_BYTES, 32)
+            self.assertEqual([nbytes for nbytes, _ in secrets.issued], [32, 32, 32])
+
+    def test_live_access_secret_files_are_ignored_by_git(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        for relative_path in (
+            "ops/live-tls.key",
+            "ops/live-tls.pem",
+            "ops/live-auth.json",
+            "ops/pairing-payload.txt",
+        ):
+            with self.subTest(relative_path=relative_path):
+                result = subprocess.run(
+                    ["git", "check-ignore", "--quiet", "--", relative_path],
+                    cwd=repo_root,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0)
 
     def _registry(self, tmpdir: str, secret_factory=None) -> LiveAccessRegistry:
         return LiveAccessRegistry(

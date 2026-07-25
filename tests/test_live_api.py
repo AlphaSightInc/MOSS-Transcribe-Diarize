@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import importlib.util
+import io
 import tempfile
 import threading
 import time
@@ -224,6 +226,96 @@ class LiveApiTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             with self.assertRaisesRegex(ValueError, "live_runtime_factory is required"):
                 create_app(model_path="fake-model", runs_dir=tmpdir, live_enabled=True)
+
+    def test_forwarding_headers_cannot_grant_loopback_admin_authority(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            lan = TestClient(
+                app,
+                base_url="https://moss.lan",
+                client=("192.168.68.20", 50000),
+            )
+
+            for headers in (
+                {"X-Forwarded-For": "127.0.0.1"},
+                {"X-Real-IP": "127.0.0.1"},
+                {"Forwarded": "for=127.0.0.1"},
+            ):
+                with self.subTest(headers=headers):
+                    self.assertEqual(
+                        lan.post("/api/live/pairing-codes", headers=headers).status_code,
+                        403,
+                    )
+                    self.assertEqual(
+                        lan.delete("/api/live/devices/test-device", headers=headers).status_code,
+                        403,
+                    )
+
+    def test_live_credentials_stay_out_of_query_parameters_and_process_output(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            local = TestClient(
+                app,
+                base_url="http://127.0.0.1",
+                client=("127.0.0.1", 50000),
+            )
+            lan = TestClient(
+                app,
+                base_url="https://moss.lan",
+                client=("192.168.68.20", 50001),
+            )
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                issued = local.post("/api/live/pairing-codes")
+                paired = lan.post(
+                    "/api/live/pairings",
+                    json={
+                        "device_id": "test-device",
+                        "pairing_payload": issued.json()["pairing_payload"],
+                    },
+                )
+                created = lan.post(
+                    "/api/live/sessions",
+                    headers={"Authorization": f"Bearer {paired.json()['device_token']}"},
+                )
+
+            self.assertEqual(issued.status_code, 200)
+            self.assertEqual(paired.status_code, 200)
+            self.assertEqual(created.status_code, 200)
+            captured_output = stdout.getvalue() + stderr.getvalue()
+            for credential in (
+                issued.json()["pairing_payload"],
+                paired.json()["device_token"],
+                created.json()["view_token"],
+            ):
+                self.assertNotIn(credential, captured_output)
+
+            session_id = created.json()["id"]
+            query_only = lan.get(
+                f"/api/live/sessions/{session_id}/snapshot",
+                params={"token": created.json()["view_token"]},
+            )
+            self.assertEqual(query_only.status_code, 401)
 
     def test_live_routes_are_runtime_backed_with_descriptor_events_and_backpressure(self):
         from fastapi.testclient import TestClient
