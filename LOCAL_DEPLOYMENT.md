@@ -89,6 +89,20 @@ Do not run that command against an unchanged deployment; it is a post-handoff
 proof that the deployed service contains the branch-local speaker-continuity
 changes.
 
+## Live v2 lane ingress
+
+The default-off live HTTP adapter can accept `moss-live-service.v2` JSON frames
+for `system` and `microphone` lanes. Accepted v2 frames are independently
+sequenced and bounded-retained in memory as complete lane frames before any mono
+runtime mutation. Their acknowledgements are lane-local, return empty
+`queued_item_ids`, and report the current unchanged mono snapshot version.
+
+This is not a deployment-enablement claim. The branch does not add the
+IDEA-030 compatibility mixer, recovery/reconnect, lifecycle cleanup, provider
+quality proof, or successful final-drain behavior. Stop fails closed while
+retained v2 lane frames are still awaiting the future mixer; abort explicitly
+discards the session ingress.
+
 ## Fine Fixture Evaluation
 
 The speaker-mapped evaluator is a CPU-only scoring tool for short fine fixtures.
@@ -365,18 +379,21 @@ future integration. Enabling this in deployed service configuration is not part
 of the current local gate and should not be described as production live mode.
 
 IDEA-028 adds the default-off `moss-live-service.v2` JSON/HTTP contract at this
-same disabled transport seam. The descriptor advertises protocol range `2..2`
-with lane, idempotent-frame, and resumable capabilities, and with binary
+same disabled transport seam, and IDEA-029 terminates accepted v2 frames at
+independent in-memory lane ingress. The descriptor advertises protocol range
+`2..2` with lane, idempotent-frame, and resumable capabilities, and with binary
 transport explicitly disabled. V2 frame JSON carries the source lane (`system`
 or `microphone`), per-lane sequence, capture timestamp, device epoch,
 silent/discontinuity booleans, sample facts, and strict base64 PCM16. The
-adapter validates v2 frames before runtime mutation, returns lane-qualified
+adapter validates v2 frames before ingress mutation, returns lane-local
 acknowledgements, maps obsolete clients to a 426-style payload, and still accepts
-the existing v1 mono frame payload. Its transport-local 256-ack replay window
-automatically prunes the oldest acknowledgement and never blocks new frames;
-replaying a pruned key returns a typed conflict. This is not dual-lane ingestion,
-per-lane retention/accounting, mixing, recovery/final drain, WebSocket, binary
-transport, or live deployment enablement; binary transport is deferred to v3.
+the existing v1 mono frame payload through the mono runtime. Its ingress-local
+256-ack replay window automatically prunes the oldest acknowledgement and never
+blocks new frames; replaying a pruned key returns a typed conflict. This is
+independent pre-mixer lane ingestion and retention, not mixing,
+recovery/reconnect, successful final drain, lifecycle cleanup, WebSocket, binary
+transport, provider/deployed proof, or live deployment enablement; binary
+transport is deferred to v3.
 
 IDEA-010 adds an offline replay CLI for this disabled substrate:
 

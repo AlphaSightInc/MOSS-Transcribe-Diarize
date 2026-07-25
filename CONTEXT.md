@@ -8,8 +8,8 @@
   `LiveSession`, with `sequence`, `sample_rate`, `sample_count`, and PCM bytes.
 - **Live v2 lane contract**: Additive JSON contract named
   `moss-live-service.v2` for source-labelled capture frames and
-  acknowledgements. It does not create independent per-lane ingestion in the
-  mono runtime.
+  acknowledgements. It admits source lanes independently before any canonical
+  mono mixing.
 - **Lane**: Canonical source label on a v2 frame or acknowledgement. The only
   valid lanes are `system` and `microphone`.
 - **System lane**: V2 lane for captured system audio.
@@ -27,8 +27,15 @@
 - **PCM16 payload**: Strict base64-encoded 16-bit mono PCM bytes. The decoded
   byte length must equal `sample_count * 2`.
 - **V2 acknowledgement**: Lane-qualified acknowledgement carrying the existing
-  mono facts: sequence, sample range, accepted samples, retained samples, and
-  frozen span ids.
+  wire facts: sequence, lane-local sample range, lane-local accepted samples,
+  lane-local retained samples, and frozen span ids.
+- **Lane ingress**: Independent admission and bounded in-memory retention of
+  validated source-lane frames before canonical mono mixing.
+- **Retained lane frame**: Complete immutable accepted v2 source frame,
+  including PCM bytes and capture metadata, awaiting the compatibility mixer.
+- **Ingress conservation**: Each successful v2 acknowledgement corresponds
+  exactly once to one retained lane frame, or admission fails without changing
+  ingress state.
 - **V2 descriptor**: JSON-compatible descriptor with protocol range `2..2` and
   capabilities `lanes=true`, `binary=false`, `idempotent_frames=true`, and
   `resumable=true`.
@@ -45,4 +52,4 @@
   explicit v2 replay-store prune boundary.
 - **Default-off transport adapter**: Existing FastAPI live route attachment
   that is absent unless live is explicitly enabled. It validates v2 JSON frames
-  before adapting them to the mono runtime.
+  before lane ingress, and continues to send v1 mono frames to the mono runtime.
