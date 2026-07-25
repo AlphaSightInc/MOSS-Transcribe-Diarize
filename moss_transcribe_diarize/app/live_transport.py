@@ -22,6 +22,11 @@ from .live_lane_contract import (
     LiveV2PrunedReplayError,
     negotiate_v2_protocol,
 )
+from .live_mixer import (
+    LiveCompatibilityMixerRegistry,
+    LiveMixIntegrityError,
+    LiveMixSourceMissingError,
+)
 from .live_service_runtime import (
     LiveServiceError,
     LiveServiceFailureKind,
@@ -45,7 +50,9 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     v2_sessions = LiveV2SessionRegistry(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
     )
+    v2_mixers = LiveCompatibilityMixerRegistry()
     app.state.live_v2_sessions = v2_sessions
+    app.state.live_v2_mixers = v2_mixers
 
     @app.get("/api/live/descriptor")
     def live_descriptor(client_min_protocol_version: int | None = None, client_max_protocol_version: int | None = None):
@@ -65,6 +72,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
     def create_live_session():
         created = runtime.create()
         v2_sessions.create(created.session_id)
+        v2_mixers.create(created.session_id)
         return {
             "id": created.session_id,
             "descriptor": created.descriptor.to_dict(),
@@ -89,9 +97,20 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                     raise KeyError(session_id)
                 if snapshot.session.status != "active":
                     raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
+                v2_session = v2_sessions.get(session_id)
+                ack = v2_session.accept(frame.v2_frame)
+                mixed = v2_mixers.get(session_id).admit_available(
+                    session_id,
+                    v2_session,
+                    runtime,
+                    final=False,
+                )
+                snapshot = runtime.snapshot(session_id)
+                if snapshot is None:
+                    raise KeyError(session_id)
                 result = _TransportAcceptResult(
-                    ack=v2_sessions.get(session_id).accept(frame.v2_frame),
-                    queued_item_ids=(),
+                    ack=ack,
+                    queued_item_ids=() if mixed is None else mixed.queued_item_ids,
                     snapshot_version=snapshot.session.version,
                 )
             return {
@@ -167,7 +186,15 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                 v2_session = None
             v2_snapshot = None
             if v2_session is not None:
-                v2_snapshot = await v2_session.stop(max(0.0, end_time - loop.time()))
+                v2_snapshot = await v2_session.stop(0.0)
+                if v2_snapshot.status == "closing":
+                    v2_mixers.get(session_id).admit_available(
+                        session_id,
+                        v2_session,
+                        runtime,
+                        final=True,
+                    )
+                    v2_snapshot = await v2_session.stop(max(0.0, end_time - loop.time()))
                 if v2_snapshot.status == "closing":
                     status, failure = live_v2_unconsumed_frames_response()
                     failure["snapshot"] = _snapshot_payload(runtime, session_id)
@@ -175,6 +202,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                     return JSONResponse(failure, status_code=status)
                 if v2_snapshot.status == "failed":
                     v2_sessions.release(session_id)
+                    v2_mixers.release(session_id)
                     status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
                     failure["snapshot"] = _snapshot_payload(runtime, session_id)
                     failure["v2_session"] = v2_snapshot.to_dict()
@@ -183,6 +211,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             deadline = max(0.0, end_time - loop.time())
             stopped = await runtime.stop(session_id, deadline)
             v2_sessions.release(session_id)
+            v2_mixers.release(session_id)
             release_v2_on_error = False
             response = {"snapshot": stopped.to_dict()}
             if v2_snapshot is not None:
@@ -199,6 +228,13 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         except LiveV2SessionTerminalError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except LiveMixIntegrityError as exc:
+            status, failure = live_v2_mix_failure_response(exc)
+            failure["snapshot"] = _snapshot_payload(runtime, session_id)
+            failure["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
+            if isinstance(exc, LiveMixSourceMissingError):
+                v2_mixers.release(session_id)
+            return JSONResponse(failure, status_code=status)
         except LiveServiceError as exc:
             return JSONResponse(
                 {"detail": str(exc), "failure": exc.failure.to_dict(), "snapshot": _snapshot_payload(runtime, session_id)},
@@ -209,6 +245,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
         finally:
             if release_v2_on_error:
                 v2_sessions.release(session_id)
+                v2_mixers.release(session_id)
 
     @app.post("/api/live/sessions/{session_id}/abort")
     async def abort_live_session(session_id: str, request: Request):
@@ -226,6 +263,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime) -> None:
                 except LiveV2SessionTerminalError:
                     pass
                 v2_sessions.release(session_id)
+                v2_mixers.release(session_id)
             return {"snapshot": snapshot.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -451,6 +489,11 @@ def live_v2_terminal_failure_response(reason: str | None) -> tuple[int, dict[str
             "failure": {"code": "v2_stop_accounting_mismatch", "reason": reason},
         },
     )
+
+
+def live_v2_mix_failure_response(exc: LiveMixIntegrityError) -> tuple[int, dict[str, Any]]:
+    code = "v2_mix_source_missing" if isinstance(exc, LiveMixSourceMissingError) else "v2_mix_integrity"
+    return 409, {"detail": str(exc), "failure": {"code": code}}
 
 
 def _jsonable(value: Any) -> Any:

@@ -17,7 +17,7 @@
 - **Sequence**: Non-negative, per-lane frame counter in the v2 contract. The
   mono runtime still receives its existing single `AudioFrame.sequence`.
 - **Capture timestamp**: Non-negative `capture_timestamp_ns` supplied by the v2
-  frame producer.
+  frame producer for the frame's first PCM sample.
 - **Device epoch**: Non-negative `device_epoch` supplied by the v2 frame
   producer to identify a capture-device epoch.
 - **Silent flag**: Exact boolean v2 frame field indicating producer-observed
@@ -43,6 +43,21 @@
   code.
 - **Retained lane frame**: Complete immutable accepted v2 source frame,
   including PCM bytes and capture metadata, awaiting the compatibility mixer.
+- **Compatibility mixer**: Default-off, in-process bridge that converts retained
+  `system` and `microphone` lane frames into canonical 16 kHz mono PCM16 for
+  the existing mono runtime.
+- **Sealed lane interval**: Retained lane-frame interval whose end is known
+  from a successor frame's capture timestamp, a discontinuity boundary, or final
+  nominal sealing.
+- **Shared mix frontier**: The timestamp frontier through which every active
+  lane has sealed input available for mono mixing. Streaming output advances
+  only to this frontier.
+- **Mono admission**: Successful mono admission is the existing runtime
+  acceptance of the mixed `AudioFrame`; it remains the downstream commit point
+  before source-lane accounting.
+- **Mixer soft limiter**: The compatibility mixer's registered limiter that is
+  transparent through absolute 0.98 and applies the reviewed tanh curve only
+  above that threshold.
 - **Ingress conservation**: Each successful v2 acknowledgement corresponds
   exactly once to one retained lane frame, or admission fails without changing
   ingress state.
