@@ -156,15 +156,15 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
         var facts: [(CaptureLane, NativeLaneFact)] = []
         lock.lock()
         for lane in CaptureLane.allCases {
+            let discontinuities = discontinuitiesByLane[lane, default: 0]
+            if discontinuities > 0 {
+                facts.append((lane, .discontinuity(count: discontinuities)))
+            }
             let lastReportedDropped = reportedDroppedBuffers[lane, default: 0]
             let dropped = droppedByLane[lane, default: 0]
             if dropped > lastReportedDropped {
                 facts.append((lane, .bufferOverrun(droppedBuffers: dropped - lastReportedDropped)))
                 reportedDroppedBuffers[lane] = dropped
-            }
-            let discontinuities = discontinuitiesByLane[lane, default: 0]
-            if discontinuities > 0 {
-                facts.append((lane, .discontinuity(count: discontinuities)))
             }
         }
         lock.unlock()

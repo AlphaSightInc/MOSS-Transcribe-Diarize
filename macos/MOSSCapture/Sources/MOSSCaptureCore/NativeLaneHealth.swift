@@ -21,6 +21,8 @@ enum NativeLaneObservation: Equatable {
     case startFailed(NativeCaptureError)
     case deviceUnavailable(String)
     case ioStoppedAbnormally(String)
+    case configurationChanged
+    case reconciliationUnresolved(String)
     case overload(count: UInt64)
     case bufferOverrun(droppedBuffers: UInt64)
     case discontinuity(count: UInt64)
@@ -42,11 +44,14 @@ protocol NativeLaneHealthFactSink: AnyObject {
 
 final class NativeLaneHealth: NativeLaneHealthFactSink {
     private let lock = NSLock()
+    private let mailboxCapacity: Int
     private var generation: UInt64 = 0
     private var mailboxes: [CaptureLane: NativeLaneMailbox] = [:]
     private var lanes: [CaptureLane: NativeLaneProjection] = [:]
 
-    init() {
+    init(mailboxCapacity: Int = 128) {
+        precondition(mailboxCapacity > 0)
+        self.mailboxCapacity = mailboxCapacity
         resetForCurrentGeneration()
     }
 
@@ -73,16 +78,31 @@ final class NativeLaneHealth: NativeLaneHealthFactSink {
     }
 
     func enqueue(_ fact: NativeLaneFact, lane: CaptureLane, generation: UInt64) {
+        enqueue(
+            fact,
+            lane: lane,
+            generation: generation,
+            callbackMonotonicNS: DispatchTime.now().uptimeNanoseconds
+        )
+    }
+
+    func enqueue(
+        _ fact: NativeLaneFact,
+        lane: CaptureLane,
+        generation: UInt64,
+        callbackMonotonicNS: UInt64
+    ) {
         lock.lock()
-        if generation == self.generation {
-            mailboxes[lane]?.facts.append(fact)
+        if generation == self.generation, var mailbox = mailboxes[lane] {
+            mailbox.enqueue(fact, callbackMonotonicNS: callbackMonotonicNS)
+            mailboxes[lane] = mailbox
         }
         lock.unlock()
     }
 
     func statuses(running: Bool) -> [CaptureLaneStatus] {
-        lock.lock()
         drainAcceptedFacts()
+        lock.lock()
         let snapshot = CaptureLane.allCases.map { lane in
             let projection = lanes[lane, default: NativeLaneProjection()]
             let state = projection.failure == nil
@@ -103,17 +123,51 @@ final class NativeLaneHealth: NativeLaneHealthFactSink {
     }
 
     func failure(for lane: CaptureLane) -> NativeLaneFailure? {
-        lock.lock()
         drainAcceptedFacts()
+        lock.lock()
         let failure = lanes[lane]?.failure
         lock.unlock()
         return failure
     }
 
+    func detachAcceptedFacts() -> [NativeLaneBatch] {
+        lock.lock()
+        let batches = CaptureLane.allCases.compactMap { lane -> NativeLaneBatch? in
+            guard var mailbox = mailboxes[lane] else {
+                return nil
+            }
+            let batch = mailbox.detach(lane: lane)
+            mailboxes[lane] = mailbox
+            return batch
+        }
+        lock.unlock()
+        return batches
+    }
+
+    func applyDetachedFacts(_ batches: [NativeLaneBatch]) {
+        for batch in batches {
+            lock.lock()
+            guard batch.generation == generation else {
+                lock.unlock()
+                continue
+            }
+            for entry in batch.entries {
+                NativeLaneHealthReducer.reduce(entry.fact, lane: batch.lane, into: &lanes)
+            }
+            lock.unlock()
+        }
+    }
+
     private func resetForCurrentGeneration() {
         mailboxes = Dictionary(
             uniqueKeysWithValues: CaptureLane.allCases.map {
-                ($0, NativeLaneMailbox(generation: generation))
+                (
+                    $0,
+                    NativeLaneMailbox(
+                        generation: generation,
+                        capacity: mailboxCapacity
+                    )
+                )
             }
         )
         lanes = Dictionary(
@@ -124,19 +178,7 @@ final class NativeLaneHealth: NativeLaneHealthFactSink {
     }
 
     private func drainAcceptedFacts() {
-        for lane in CaptureLane.allCases {
-            guard var mailbox = mailboxes[lane],
-                  mailbox.generation == generation,
-                  !mailbox.facts.isEmpty else {
-                continue
-            }
-            let facts = mailbox.facts
-            mailbox.facts.removeAll(keepingCapacity: true)
-            mailboxes[lane] = mailbox
-            for fact in facts {
-                NativeLaneHealthReducer.reduce(fact, lane: lane, into: &lanes)
-            }
-        }
+        applyDetachedFacts(detachAcceptedFacts())
     }
 }
 
@@ -164,6 +206,12 @@ private struct NativeLaneHealthReducer {
             projection.recordFailure(.deviceUnavailable, cause: cause)
         case .ioStoppedAbnormally(let cause):
             projection.recordFailure(.ioStoppedAbnormally, cause: cause)
+        case .configurationChanged:
+            if projection.failure == nil {
+                projection.state = "recovering"
+            }
+        case .reconciliationUnresolved:
+            break
         case .overload:
             break
         case .bufferOverrun(let droppedBuffers):
@@ -177,6 +225,9 @@ private struct NativeLaneHealthReducer {
             projection.recordFailure(.unexpectedCaptureError, cause: cause)
         case .deviceEpoch(let deviceEpoch):
             projection.deviceEpoch = deviceEpoch
+            if projection.failure == nil {
+                projection.state = "capturing"
+            }
         case .stoppedCleanly:
             if projection.failure == nil {
                 projection.state = "stopped"
@@ -202,9 +253,78 @@ private struct NativeLaneHealthReducer {
     }
 }
 
+struct NativeLaneBatch: Equatable {
+    var lane: CaptureLane
+    var generation: UInt64
+    var entries: [SequencedNativeLaneFact]
+}
+
+struct SequencedNativeLaneFact: Equatable {
+    var mailboxOrder: UInt64
+    var callbackMonotonicNS: UInt64
+    var fact: NativeLaneFact
+}
+
 private struct NativeLaneMailbox {
     var generation: UInt64
-    var facts: [NativeLaneFact] = []
+    var capacity: Int
+    var nextMailboxOrder: UInt64 = 0
+    var terminalFenced = false
+    var entries: [SequencedNativeLaneFact] = []
+
+    mutating func enqueue(_ fact: NativeLaneFact, callbackMonotonicNS: UInt64) {
+        guard !terminalFenced else {
+            return
+        }
+        if isTerminalOverrun(fact) {
+            append(fact, callbackMonotonicNS: callbackMonotonicNS)
+            terminalFenced = true
+            return
+        }
+        guard entries.count < capacity else {
+            append(
+                .bufferOverrun(droppedBuffers: 1),
+                callbackMonotonicNS: callbackMonotonicNS
+            )
+            terminalFenced = true
+            return
+        }
+        append(fact, callbackMonotonicNS: callbackMonotonicNS)
+    }
+
+    mutating func detach(lane: CaptureLane) -> NativeLaneBatch? {
+        guard !entries.isEmpty else {
+            return nil
+        }
+        let batch = NativeLaneBatch(
+            lane: lane,
+            generation: generation,
+            entries: entries
+        )
+        entries.removeAll(keepingCapacity: true)
+        return batch
+    }
+
+    private mutating func append(
+        _ fact: NativeLaneFact,
+        callbackMonotonicNS: UInt64
+    ) {
+        entries.append(
+            SequencedNativeLaneFact(
+                mailboxOrder: nextMailboxOrder,
+                callbackMonotonicNS: callbackMonotonicNS,
+                fact: fact
+            )
+        )
+        nextMailboxOrder += 1
+    }
+
+    private func isTerminalOverrun(_ fact: NativeLaneFact) -> Bool {
+        if case .bufferOverrun(let droppedBuffers) = fact {
+            return droppedBuffers > 0
+        }
+        return false
+    }
 }
 
 private struct NativeLaneProjection {

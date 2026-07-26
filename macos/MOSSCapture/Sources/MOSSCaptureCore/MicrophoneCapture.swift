@@ -20,6 +20,7 @@ public final class MicrophoneCapture {
     )
 
     private let driver: MicrophoneCaptureDriver
+    private let reconciliationScheduler: MicrophoneCaptureReconciliationScheduling
     private let lock = NSLock()
     private weak var healthSink: NativeLaneHealthFactSink?
     private var healthLane = CaptureLane.microphone
@@ -27,15 +28,22 @@ public final class MicrophoneCapture {
     private var tapInstalled = false
     private var configurationHandlerInstalled = false
     private var engineStarted = false
+    private var reconciliationPending = false
     private var stopping = false
 
     public init(engine: AVAudioEngine = AVAudioEngine(), deviceEpoch: UInt64 = 0) {
         _ = deviceEpoch
         self.driver = AVAudioEngineMicrophoneDriver(engine: engine)
+        self.reconciliationScheduler = DispatchMicrophoneCaptureReconciliationScheduler()
     }
 
-    init(driver: MicrophoneCaptureDriver) {
+    init(
+        driver: MicrophoneCaptureDriver,
+        reconciliationScheduler: MicrophoneCaptureReconciliationScheduling =
+            DispatchMicrophoneCaptureReconciliationScheduler()
+    ) {
         self.driver = driver
+        self.reconciliationScheduler = reconciliationScheduler
     }
 
     func attachHealthSink(_ sink: NativeLaneHealthFactSink, lane: CaptureLane, generation: UInt64) {
@@ -90,13 +98,13 @@ public final class MicrophoneCapture {
     private func handleEngineObservation(_ observation: MicrophoneCaptureEngineObservation) {
         switch observation {
         case .configurationChanged:
-            do {
-                emit(.deviceEpoch(UInt64(try driver.currentInputDeviceID())))
-            } catch {
-                emit(.unexpectedCaptureError(String(describing: error)))
+            setReconciliationPending(true)
+            emit(.configurationChanged)
+            reconciliationScheduler.schedule { [weak self] in
+                self?.reconcileCurrentInputDevice()
             }
         case .engineRunning(false):
-            if isEngineStarted() && !isStopping() {
+            if isEngineStarted() && !isStopping() && !isReconciliationPending() {
                 emit(.ioStoppedAbnormally("microphone engine stopped unexpectedly"))
             }
         case .engineOverloaded:
@@ -104,6 +112,16 @@ public final class MicrophoneCapture {
         case .engineRunning(true):
             break
         }
+    }
+
+    private func reconcileCurrentInputDevice() {
+        do {
+            let deviceID = try driver.currentInputDeviceID()
+            emit(.deviceEpoch(UInt64(deviceID)))
+        } catch {
+            emit(.reconciliationUnresolved(String(describing: error)))
+        }
+        setReconciliationPending(false)
     }
 
     private func emit(_ fact: NativeLaneFact) {
@@ -139,6 +157,19 @@ public final class MicrophoneCapture {
         engineStarted = value
         lock.unlock()
     }
+
+    private func setReconciliationPending(_ value: Bool) {
+        lock.lock()
+        reconciliationPending = value
+        lock.unlock()
+    }
+
+    private func isReconciliationPending() -> Bool {
+        lock.lock()
+        let value = reconciliationPending
+        lock.unlock()
+        return value
+    }
 }
 
 extension MicrophoneCapture: @unchecked Sendable {}
@@ -160,6 +191,20 @@ protocol MicrophoneCaptureDriver: AnyObject {
     func startEngine() throws
     func stopEngine()
     func removeTap()
+}
+
+protocol MicrophoneCaptureReconciliationScheduling: Sendable {
+    func schedule(_ operation: @escaping @Sendable () -> Void)
+}
+
+private struct DispatchMicrophoneCaptureReconciliationScheduler:
+    MicrophoneCaptureReconciliationScheduling
+{
+    private let queue = DispatchQueue(label: "moss.capture.microphone.reconciliation")
+
+    func schedule(_ operation: @escaping @Sendable () -> Void) {
+        queue.async(execute: operation)
+    }
 }
 
 private final class AVAudioEngineMicrophoneDriver: MicrophoneCaptureDriver {
