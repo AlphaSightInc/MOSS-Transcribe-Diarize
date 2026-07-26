@@ -103,6 +103,16 @@ headers only. Browser cursors advance only after successful parse and render,
 replayed events render once, bounded retry remains single-flight, and terminal
 `closed`, `failed`, or `aborted` state stops polling and clears authority.
 
+IDEA-035 adds an observation-only helper heartbeat side channel at the same
+default-off live HTTP seam. The owning capture authority may post strict
+`moss-live-helper-health.v1` JSON to
+`/api/live/sessions/{session_id}/heartbeat`; view authority cannot write it.
+`HelperPresenceRegistry.observe/snapshot/release` validates exact schema,
+ordering, idempotency, helper-instance stability, and server-monotonic receipt
+behind one interface. Authorized snapshots add `helper_presence` as data only.
+Clean stop, abort, terminal failure release, failed-stop release, and device
+revocation release the presence record with the rest of session-owned state.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
 ## Consequences
@@ -155,3 +165,7 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
   feed, pair, exchange, revoke, list sessions, contact a helper or localhost
   bridge, persist secrets, expose history or artifacts, or automate secure
   helper-to-browser bootstrap.
+- A helper heartbeat is telemetry, not liveness policy. A delayed exact
+  duplicate does not refresh last-seen; helper-sent time and wall time are not
+  server freshness authority; failed/degraded health does not call lane
+  failure, expiry, stop, abort, recovery, abandonment, or enablement logic.

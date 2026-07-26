@@ -117,12 +117,18 @@ class LiveAccessRegistryTest(unittest.TestCase):
                 CapturePrincipal("mac-1"),
             )
             self.assertEqual(
+                registry.authorize(LAN_TLS, capture.device_token, "heartbeat", "session-1", now=4.0).principal,
+                CapturePrincipal("mac-1"),
+            )
+            self.assertEqual(
                 registry.authorize(LAN_TLS, view.view_token, "snapshot", "session-1", now=4.0).principal.session_id,
                 "session-1",
             )
 
             with self.assertRaisesRegex(LiveAccessForbidden, "view authority"):
                 registry.authorize(LAN_TLS, view.view_token, "frame", "session-1", now=4.0)
+            with self.assertRaisesRegex(LiveAccessForbidden, "view authority"):
+                registry.authorize(LAN_TLS, view.view_token, "heartbeat", "session-1", now=4.0)
             with self.assertRaisesRegex(LiveAccessForbidden, "different session"):
                 registry.authorize(LAN_TLS, view.view_token, "snapshot", "session-2", now=4.0)
             with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
