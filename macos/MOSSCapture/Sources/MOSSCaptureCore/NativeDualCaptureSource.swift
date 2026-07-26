@@ -12,6 +12,7 @@ protocol NativeLaneHealthReportingComponent: AnyObject {
 extension SystemAudioTap: NativeAudioCaptureComponent {}
 extension SystemAudioTap: NativeLaneHealthReportingComponent {}
 extension MicrophoneCapture: NativeAudioCaptureComponent {}
+extension MicrophoneCapture: NativeLaneHealthReportingComponent {}
 
 public final class NativeDualCaptureSource: CaptureSourceAdapter {
     private let lock = NSLock()

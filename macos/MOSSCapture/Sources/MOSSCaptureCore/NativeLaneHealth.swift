@@ -21,6 +21,7 @@ enum NativeLaneObservation: Equatable {
     case startFailed(NativeCaptureError)
     case deviceUnavailable(String)
     case ioStoppedAbnormally(String)
+    case overload(count: UInt64)
     case bufferOverrun(droppedBuffers: UInt64)
     case discontinuity(count: UInt64)
     case unexpectedCaptureError(String)
@@ -163,6 +164,8 @@ private struct NativeLaneHealthReducer {
             projection.recordFailure(.deviceUnavailable, cause: cause)
         case .ioStoppedAbnormally(let cause):
             projection.recordFailure(.ioStoppedAbnormally, cause: cause)
+        case .overload:
+            break
         case .bufferOverrun(let droppedBuffers):
             projection.droppedFrames += droppedBuffers
             if droppedBuffers > 0 {

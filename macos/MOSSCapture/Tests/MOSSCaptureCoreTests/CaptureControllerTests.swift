@@ -525,6 +525,38 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(microphoneStatus.discontinuities, 0)
     }
 
+    func testNativeDualCaptureSourceSilenceIsNonTerminal() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0])
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 12, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let status = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(frames.map(\.silent), [true, true])
+        XCTAssertEqual(status.map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(status.map(\.failureCode), [nil, nil])
+    }
+
     func testNativeDualCaptureSourceUnwindsBothLanesWhenEveryStartFails() throws {
         let system = RecordingNativeCaptureComponent(
             startError: NativeCaptureError.deviceUnavailable("system")
@@ -662,6 +694,162 @@ final class CaptureControllerTests: XCTestCase {
         )
         XCTAssertEqual(system.state, "stopped")
         XCTAssertNil(system.failureCode)
+    }
+
+    func testMicrophoneCaptureReportsPermissionAndCurrentInputDevice() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(driver.events, [
+            "recordPermission",
+            "kAudioOutputUnitProperty_CurrentDevice",
+            "AVAudioEngineConfigurationChange",
+            "installTap",
+            "AVAudioEngine.start",
+        ])
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertEqual(status.deviceEpoch, 42)
+        XCTAssertNil(status.failureCode)
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureUndeterminedPermissionIsPendingNotDenied() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .undetermined, currentDeviceID: 64)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertNil(status.failureCode)
+        XCTAssertNil(health.failure(for: .microphone))
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureDeniedPermissionReportsRawTerminalFact() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .denied, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        XCTAssertThrowsError(
+            try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        ) { error in
+            XCTAssertEqual(error as? NativeCaptureError, .permissionDenied("microphone"))
+        }
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(driver.events, ["recordPermission"])
+        XCTAssertEqual(status.state, "failed")
+        XCTAssertEqual(status.failureCode, "macos_permission_denied")
+    }
+
+    func testMicrophoneCaptureConfigurationChangeUpdatesCurrentDeviceWithoutFailure() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        driver.currentDeviceID = 77
+        driver.emit(.configurationChanged)
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertEqual(status.deviceEpoch, 77)
+        XCTAssertNil(status.failureCode)
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureOverloadIsRawNonTerminalFact() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        driver.emit(.engineOverloaded)
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertNil(status.failureCode)
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureReportsPostStartAbnormalStopThroughHealth() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        driver.emit(.engineRunning(false))
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "failed")
+        XCTAssertEqual(status.failureCode, "macos_io_stopped_abnormally")
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureStaleGenerationIgnoredAfterStop() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        health.invalidateGeneration()
+        microphone.stop()
+        driver.emit(.engineRunning(false))
+
+        let status = try XCTUnwrap(
+            health.statuses(running: false).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "stopped")
+        XCTAssertNil(status.failureCode)
+    }
+
+    func testMicrophoneCaptureUsesInputAudioUnitCurrentDeviceWithoutDefaultLookup() throws {
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources/MOSSCaptureCore/MicrophoneCapture.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(source.contains("kAudioOutputUnitProperty_CurrentDevice"))
+        XCTAssertFalse(source.contains("kAudioHardwarePropertyDefaultInputDevice"))
     }
 
     func testNativeRuntimeErrorsAreTyped() throws {
@@ -1848,6 +2036,69 @@ private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
 
     func emit(_ observation: SystemAudioTapDeviceObservation) {
         lifecycleHandler?(observation)
+    }
+}
+
+private final class RecordingMicrophoneCaptureDriver: MicrophoneCaptureDriver {
+    private(set) var events: [String] = []
+    private var permission: NativeLanePermissionFact
+    var currentDeviceID: AudioDeviceID
+    var startError: Error?
+    private var observationHandler: (@Sendable (MicrophoneCaptureEngineObservation) -> Void)?
+
+    init(
+        permission: NativeLanePermissionFact,
+        currentDeviceID: AudioDeviceID,
+        startError: Error? = nil
+    ) {
+        self.permission = permission
+        self.currentDeviceID = currentDeviceID
+        self.startError = startError
+    }
+
+    func recordPermission() -> NativeLanePermissionFact {
+        events.append("recordPermission")
+        return permission
+    }
+
+    func currentInputDeviceID() throws -> AudioDeviceID {
+        events.append("kAudioOutputUnitProperty_CurrentDevice")
+        return currentDeviceID
+    }
+
+    func installConfigurationChangeHandler(
+        _ handler: @escaping @Sendable (MicrophoneCaptureEngineObservation) -> Void
+    ) throws {
+        events.append("AVAudioEngineConfigurationChange")
+        observationHandler = handler
+    }
+
+    func removeConfigurationChangeHandler() {
+        events.append("removeConfigurationChangeHandler")
+        observationHandler = nil
+    }
+
+    func installTap(queue: RealTimeNativeAudioBufferQueue, deviceEpoch: UInt64) throws {
+        events.append("installTap")
+    }
+
+    func startEngine() throws {
+        events.append("AVAudioEngine.start")
+        if let startError {
+            throw startError
+        }
+    }
+
+    func stopEngine() {
+        events.append("AVAudioEngine.stop")
+    }
+
+    func removeTap() {
+        events.append("removeTap")
+    }
+
+    func emit(_ observation: MicrophoneCaptureEngineObservation) {
+        observationHandler?(observation)
     }
 }
 
