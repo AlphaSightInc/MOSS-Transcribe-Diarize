@@ -6,6 +6,7 @@ import binascii
 import time
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import unquote
 
 from starlette.requests import Request
 
@@ -55,6 +56,11 @@ from .live_session import (
 from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
 
 
+_HELPER_HEARTBEAT_ROUTE = "/api/live/sessions/{session_id}/heartbeat"
+_HELPER_HEARTBEAT_PREFIX = "/api/live/sessions/"
+_HELPER_HEARTBEAT_SUFFIX = "/heartbeat"
+
+
 def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegistry) -> None:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
@@ -67,6 +73,19 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
     app.state.live_v2_sessions = v2_sessions
     app.state.live_v2_mixers = v2_mixers
     app.state.live_helper_presence = helper_presence
+
+    @app.middleware("http")
+    async def live_helper_heartbeat_middleware(request: Request, call_next):
+        if request.method == "POST":
+            session_id = _helper_heartbeat_session_id(request.url.path)
+            if session_id is not None:
+                return await _accept_live_helper_heartbeat(
+                    request,
+                    session_id,
+                    access=access,
+                    helper_presence=helper_presence,
+                )
+        return await call_next(request)
 
     @app.get("/api/live/descriptor")
     def live_descriptor(
@@ -235,28 +254,6 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
                 {"detail": str(exc), "failure": exc.failure.to_dict(), "snapshot": _snapshot_payload(runtime, session_id)},
                 status_code=status_code,
             )
-
-    @app.post("/api/live/sessions/{session_id}/heartbeat")
-    async def accept_live_helper_heartbeat(session_id: str, request: Request):
-        try:
-            access.authorize(
-                _peer_from_request(request),
-                _bearer_from_request(request),
-                "heartbeat",
-                session_id,
-                now=_request_now(),
-            )
-            heartbeat = HelperHeartbeat.from_dict(await request.json())
-            snapshot = helper_presence.observe(session_id, heartbeat)
-            return {"helper_presence": snapshot.to_dict()}
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        except LiveAccessError as exc:
-            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
-        except HelperPresenceConflict as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/live/sessions/{session_id}/snapshot")
     def live_snapshot(request: Request, session_id: str, since_version: int | None = None):
@@ -545,6 +542,45 @@ def _bearer_from_request(request: Request) -> str | None:
     if scheme.lower() != "bearer" or not token:
         return None
     return token
+
+
+def _helper_heartbeat_session_id(path: str) -> str | None:
+    if not path.startswith(_HELPER_HEARTBEAT_PREFIX) or not path.endswith(_HELPER_HEARTBEAT_SUFFIX):
+        return None
+    encoded = path[len(_HELPER_HEARTBEAT_PREFIX) : -len(_HELPER_HEARTBEAT_SUFFIX)]
+    if not encoded or "/" in encoded:
+        return None
+    return unquote(encoded)
+
+
+async def _accept_live_helper_heartbeat(
+    request: Request,
+    session_id: str,
+    *,
+    access: LiveAccessRegistry,
+    helper_presence: HelperPresenceRegistry,
+):
+    from fastapi.responses import JSONResponse
+
+    try:
+        access.authorize(
+            _peer_from_request(request),
+            _bearer_from_request(request),
+            "heartbeat",
+            session_id,
+            now=_request_now(),
+        )
+        heartbeat = HelperHeartbeat.from_dict(await request.json())
+        snapshot = helper_presence.observe(session_id, heartbeat)
+        return JSONResponse({"helper_presence": snapshot.to_dict()})
+    except KeyError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=404)
+    except LiveAccessError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=exc.status_code)
+    except HelperPresenceConflict as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    except ValueError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
 
 
 def _request_now() -> float:
