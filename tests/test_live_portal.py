@@ -25,6 +25,7 @@ EXPECTED_LIVE_API = {
     ("POST", "/api/live/pairings"),
     ("POST", "/api/live/sessions"),
     ("POST", "/api/live/sessions/{session_id}/frames"),
+    ("POST", "/api/live/sessions/{session_id}/heartbeat"),
     ("GET", "/api/live/sessions/{session_id}/snapshot"),
     ("GET", "/api/live/sessions/{session_id}/events"),
     ("POST", "/api/live/sessions/{session_id}/stop"),

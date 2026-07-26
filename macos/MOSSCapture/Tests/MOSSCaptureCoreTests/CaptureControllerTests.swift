@@ -1,4 +1,5 @@
 import CryptoKit
+import CoreAudio
 import Foundation
 import Security
 @testable import MOSSCaptureCore
@@ -62,9 +63,137 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.emissions.count, 1)
         XCTAssertEqual(health.emissions.first?.configuration, configuration)
         XCTAssertEqual(health.emissions.first?.sentMonotonicNS, 100)
-        XCTAssertEqual(scheduler.labels, ["moss.capture.health"])
+        XCTAssertEqual(scheduler.labels, ["moss.capture.pump"])
         XCTAssertFalse(stopped.running)
         XCTAssertNil(controller.status().sessionID)
+    }
+
+    func testContinuousPumpPublishesAcrossTicks() throws {
+        let firstSystem = CaptureFrame(
+            lane: CaptureLane.system,
+            sequence: 0,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 10,
+            deviceEpoch: 1,
+            silent: false,
+            discontinuity: false,
+            pcm16: Data([1, 0])
+        )
+        let firstMicrophone = CaptureFrame(
+            lane: CaptureLane.microphone,
+            sequence: 0,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 20,
+            deviceEpoch: 7,
+            silent: true,
+            discontinuity: false,
+            pcm16: Data([0, 0])
+        )
+        let secondSystem = CaptureFrame(
+            lane: CaptureLane.system,
+            sequence: 1,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 30,
+            deviceEpoch: 1,
+            silent: false,
+            discontinuity: false,
+            pcm16: Data([2, 0])
+        )
+        let secondMicrophone = CaptureFrame(
+            lane: CaptureLane.microphone,
+            sequence: 1,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 40,
+            deviceEpoch: 7,
+            silent: false,
+            discontinuity: true,
+            pcm16: Data([3, 0])
+        )
+        let source = FakeCaptureSourceAdapter(frames: [firstSystem])
+        let transport = FakeCaptureTransportAdapter()
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = FakeCaptureHealthAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300, 400]),
+            scheduler: scheduler,
+            health: health
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://127.0.0.1/live")!
+        )
+
+        try controller.start(configuration: configuration)
+        source.enqueue(frames: [firstMicrophone, secondSystem])
+        scheduler.runScheduledOperation()
+        source.enqueue(frames: [secondMicrophone])
+        scheduler.runScheduledOperation()
+        scheduler.runScheduledOperation()
+
+        XCTAssertEqual(
+            transport.publishedFrames.map(\.lane),
+            [CaptureLane.system, CaptureLane.microphone, CaptureLane.system, CaptureLane.microphone]
+        )
+        XCTAssertEqual(transport.publishedFrames.map(\.sequence), [0, 0, 1, 1])
+        XCTAssertEqual(transport.publishedFrames.map(\.captureTimestampNS), [10, 20, 30, 40])
+        XCTAssertEqual(health.emissions.map(\.sentMonotonicNS), [100, 200, 300, 400])
+        XCTAssertEqual(health.emissions.map(\.status.publishedFrameCount), [1, 3, 4, 4])
+        XCTAssertEqual(controller.status().publishedFrameCount, 4)
+    }
+
+    func testPumpFailureIsTypedAndLaterTicksContinue() throws {
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = FailOnceScheduledHealthAdapter()
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        scheduler.runScheduledOperation()
+        let failed = controller.status()
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertTrue(failed.running)
+        XCTAssertEqual(failed.pumpFailure, .transportUnavailable)
+        XCTAssertEqual(failed.lastHealthSequence, 2)
+        XCTAssertEqual(
+            ControlChannelResponse(status: failed).pumpFailure,
+            .transportUnavailable
+        )
+        XCTAssertTrue(recovered.running)
+        XCTAssertNil(recovered.pumpFailure)
+        XCTAssertEqual(recovered.lastHealthSequence, 3)
+        XCTAssertEqual(health.attemptCount, 3)
+    }
+
+    func testRepeatingSchedulerContinuesUntilExplicitCancellation() throws {
+        let scheduler = RepeatingCaptureSchedulerAdapter(interval: 0.01)
+        let repeated = expectation(description: "repeating scheduler fired three times")
+        repeated.expectedFulfillmentCount = 3
+        let cancellation = scheduler.schedule(label: "moss.capture.test-repeating") {
+            repeated.fulfill()
+        }
+
+        wait(for: [repeated], timeout: 1)
+        cancellation.cancel()
     }
 
     func testStartRequiresControlSecretAndRejectsSecondStart() throws {
@@ -105,6 +234,137 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(MicrophoneCapture.sourceVector.engine, "AVAudioEngine")
         XCTAssertEqual(MicrophoneCapture.sourceVector.input, "inputNode")
         XCTAssertEqual(MicrophoneCapture.sourceVector.tap, "installTap")
+    }
+
+    func testNativeDualCaptureSourceComposesTwoSourcesAndDrainsEachBufferOnce() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 12, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let secondDrain = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+        let stoppedStatus = source.status()
+
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(frames.map(\.lane), [.system, .microphone])
+        XCTAssertEqual(frames.map(\.sequence), [0, 0])
+        XCTAssertEqual(frames.map(\.captureTimestampNS), [10, 12])
+        XCTAssertEqual(frames.map(\.deviceEpoch), [1, 7])
+        XCTAssertEqual(frames.map(\.silent), [false, true])
+        XCTAssertTrue(secondDrain.isEmpty)
+        XCTAssertEqual(runningStatus.map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(runningStatus.map(\.deviceEpoch), [1, 7])
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(stoppedStatus.map(\.state), ["stopped", "stopped"])
+    }
+
+    func testNativeDualCaptureSourceUnwindsSystemWhenMicrophoneStartFails() throws {
+        let system = RecordingNativeCaptureComponent()
+        let microphone = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.permissionDenied("microphone")
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        XCTAssertThrowsError(
+            try source.start(
+                configuration: CaptureConfiguration(
+                    sessionID: "session-a",
+                    serverURL: URL(string: "https://moss.example")!
+                )
+            )
+        ) { error in
+            XCTAssertEqual(error as? NativeCaptureError, .permissionDenied("microphone"))
+        }
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(microphone.stopCount, 0)
+        XCTAssertEqual(source.status().map(\.state), ["stopped", "stopped"])
+    }
+
+    func testSystemAudioTapStartsStopsAndDestroysCoreAudioInOrder() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(driver: driver)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        tap.stop()
+        tap.stop()
+
+        XCTAssertEqual(driver.events, [
+            "AudioHardwareCreateProcessTap",
+            "AudioHardwareCreateAggregateDevice",
+            "AudioDeviceCreateIOProcIDWithBlock",
+            "AudioDeviceStart",
+            "AudioDeviceStop",
+            "AudioDeviceDestroyIOProcID",
+            "AudioHardwareDestroyAggregateDevice",
+            "AudioHardwareDestroyProcessTap",
+        ])
+    }
+
+    func testSystemAudioTapPartialStartUnwindsCreatedResourcesInReverseOrder() throws {
+        let driver = RecordingSystemAudioTapDriver(
+            startError: NativeCaptureError.deviceUnavailable("AudioDeviceStart")
+        )
+        let tap = SystemAudioTap(driver: driver)
+
+        XCTAssertThrowsError(
+            try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        ) { error in
+            XCTAssertEqual(error as? NativeCaptureError, .deviceUnavailable("AudioDeviceStart"))
+        }
+        tap.stop()
+
+        XCTAssertEqual(driver.events, [
+            "AudioHardwareCreateProcessTap",
+            "AudioHardwareCreateAggregateDevice",
+            "AudioDeviceCreateIOProcIDWithBlock",
+            "AudioDeviceStart",
+            "AudioDeviceDestroyIOProcID",
+            "AudioHardwareDestroyAggregateDevice",
+            "AudioHardwareDestroyProcessTap",
+        ])
+    }
+
+    func testNativeRuntimeErrorsAreTyped() throws {
+        XCTAssertEqual(
+            NativeCaptureError.permissionDenied("microphone"),
+            .permissionDenied("microphone")
+        )
+        XCTAssertEqual(
+            NativeCaptureError.deviceUnavailable("aggregate"),
+            .deviceUnavailable("aggregate")
+        )
+        XCTAssertEqual(
+            NativeCaptureError.transportUnavailable("heartbeat"),
+            .transportUnavailable("heartbeat")
+        )
     }
 
     func testRealtimeQueueIsBoundedAndFrameEmitterKeepsLaneStateIndependent() throws {
@@ -409,6 +669,9 @@ final class CaptureControllerTests: XCTestCase {
             source.range(of: "public final class CaptureController {")
         )
         let controllerSource = String(source[classStart.lowerBound...])
+        let declarationLine = try XCTUnwrap(
+            controllerSource.split(separator: "\n", maxSplits: 1).first
+        )
         let methodPattern = try NSRegularExpression(
             pattern: #"\bpublic\s+func\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("#
         )
@@ -427,9 +690,34 @@ final class CaptureControllerTests: XCTestCase {
             in: controllerSource,
             range: NSRange(controllerSource.startIndex..., in: controllerSource)
         )
+        let storagePattern = try NSRegularExpression(
+            pattern: #"\bpublic(?:\s+private\(set\))?\s+(?:var|let)\s+[A-Za-z_][A-Za-z0-9_]*"#
+        )
+        let storageMatches = storagePattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
+        let publicSubscriptPattern = try NSRegularExpression(
+            pattern: #"\bpublic\s+subscript\s*\("#
+        )
+        let publicSubscriptMatches = publicSubscriptPattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
+        let nestedPublicTypePattern = try NSRegularExpression(
+            pattern: #"\bpublic\s+(?:class|struct|enum|actor|protocol|typealias)\s+[A-Za-z_][A-Za-z0-9_]*"#
+        )
+        let nestedPublicTypeMatches = nestedPublicTypePattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
 
         XCTAssertEqual(methodNames.sorted(), ["start", "status", "stop"])
         XCTAssertEqual(initMatches.count, 1)
+        XCTAssertTrue(storageMatches.isEmpty)
+        XCTAssertTrue(publicSubscriptMatches.isEmpty)
+        XCTAssertTrue(nestedPublicTypeMatches.isEmpty)
+        XCTAssertFalse(declarationLine.contains(":"))
     }
 
     func testSameUserUDSAuthenticatorRequiresPrivateSocketPeerUIDAndSecret() throws {
@@ -471,6 +759,309 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertFalse(client.socketPath.contains("control-secret"))
     }
 
+    func testUnixDomainControlRoundTrip() throws {
+        let socketPath = temporarySocketPath()
+        let serverFinished = expectation(description: "server finished one request")
+        let serverError = TestErrorBox()
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"))
+        ) { request in
+            XCTAssertEqual(request.command, "status")
+            return ControlChannelResponse(ok: true, running: false)
+        }
+
+        DispatchQueue.global().async {
+            do {
+                try server.serveOnce()
+            } catch {
+                serverError.store(error)
+            }
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let client = UnixDomainControlClient(
+            socketPath: socketPath,
+            secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+        )
+        let response = try client.sendRequest(ControlChannelRequest(command: "status"))
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertNil(serverError.load())
+        XCTAssertTrue(response.ok)
+        XCTAssertEqual(response.running, false)
+    }
+
+    func testControlServerRejectsWrongSecretBeforeMutation() throws {
+        let socketPath = temporarySocketPath()
+        let serverFinished = expectation(description: "server rejected one request")
+        var mutationCount = 0
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"))
+        ) { _ in
+            mutationCount += 1
+            return ControlChannelResponse(ok: true)
+        }
+
+        DispatchQueue.global().async {
+            try? server.serveOnce()
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let client = UnixDomainControlClient(
+            socketPath: socketPath,
+            secrets: FakeCaptureKeyStoreAdapter(secret: "wrong-secret")
+        )
+        let response = try client.sendRequest(ControlChannelRequest(command: "start"))
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertFalse(response.ok)
+        XCTAssertEqual(mutationCount, 0)
+    }
+
+    func testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation() throws {
+        struct BadFrameCase {
+            var name: String
+            var payload: Data
+            var maxFrameBytes: Int
+            var halfCloseWrite: Bool
+            var expectedError: String
+        }
+
+        let validEnvelope = try rawControlFrame(command: "status")
+        let cases = [
+            BadFrameCase(
+                name: "malformed",
+                payload: rawFrame(Data("not-json".utf8)),
+                maxFrameBytes: 64,
+                halfCloseWrite: false,
+                expectedError: "malformedRequest"
+            ),
+            BadFrameCase(
+                name: "partial",
+                payload: rawLengthPrefix(16) + Data("{}".utf8),
+                maxFrameBytes: 64,
+                halfCloseWrite: true,
+                expectedError: "malformedRequest"
+            ),
+            BadFrameCase(
+                name: "oversized",
+                payload: rawLengthPrefix(65),
+                maxFrameBytes: 64,
+                halfCloseWrite: false,
+                expectedError: "oversizedRequest"
+            ),
+            BadFrameCase(
+                name: "trailing",
+                payload: validEnvelope + Data([0]),
+                maxFrameBytes: 64,
+                halfCloseWrite: false,
+                expectedError: "trailingRequestBytes"
+            ),
+        ]
+
+        for badFrame in cases {
+            let socketPath = temporarySocketPath()
+            let serverFinished = expectation(description: "server rejected \(badFrame.name)")
+            var mutationCount = 0
+            let server = UnixDomainControlServer(
+                socketPath: socketPath,
+                authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")),
+                maxFrameBytes: badFrame.maxFrameBytes
+            ) { _ in
+                mutationCount += 1
+                return ControlChannelResponse(ok: true)
+            }
+
+            DispatchQueue.global().async {
+                try? server.serveOnce()
+                serverFinished.fulfill()
+            }
+            try waitForSocket(at: socketPath)
+
+            let response = try sendRawControlPayload(
+                badFrame.payload,
+                socketPath: socketPath,
+                halfCloseWrite: badFrame.halfCloseWrite
+            )
+
+            wait(for: [serverFinished], timeout: 2)
+            XCTAssertFalse(response.ok, badFrame.name)
+            XCTAssertEqual(response.error, badFrame.expectedError, badFrame.name)
+            XCTAssertEqual(mutationCount, 0, badFrame.name)
+        }
+    }
+
+    func testControlServerRejectsUnknownCommandAndMissingConfigurationWithoutControllerMutation() throws {
+        let cases = [
+            ("unknown", ControlChannelRequest(command: "restart"), "unknownCommand(\"restart\")"),
+            ("missing configuration", ControlChannelRequest(command: "start"), "missingCaptureConfiguration"),
+        ]
+
+        for controlCase in cases {
+            let controller = CaptureController.fakeForLocalDevelopment()
+            let dispatcher = ControlCommandDispatcher(
+                controller: controller,
+                pairingExchange: RecordingPairingExchange()
+            )
+            let socketPath = temporarySocketPath()
+            let serverFinished = expectation(description: "server rejected \(controlCase.0)")
+            let server = UnixDomainControlServer(
+                socketPath: socketPath,
+                authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"))
+            ) { request in
+                try dispatcher.dispatch(request)
+            }
+
+            DispatchQueue.global().async {
+                try? server.serveOnce()
+                serverFinished.fulfill()
+            }
+            try waitForSocket(at: socketPath)
+
+            let response = try sendRawControlPayload(
+                try rawControlFrame(request: controlCase.1),
+                socketPath: socketPath
+            )
+
+            wait(for: [serverFinished], timeout: 2)
+            XCTAssertFalse(response.ok, controlCase.0)
+            XCTAssertEqual(response.error, controlCase.2, controlCase.0)
+            XCTAssertFalse(controller.status().running, controlCase.0)
+        }
+    }
+
+    func testPairingPayloadReachesApp() throws {
+        let exchange = RecordingPairingExchange()
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: exchange
+        )
+        let payload = Data([1, 2, 3, 4])
+        let serverURL = URL(string: "https://moss.example")!
+
+        let response = try dispatcher.dispatch(
+            ControlChannelRequest(
+                command: "pair",
+                serverURL: serverURL,
+                pairingPayload: payload
+            )
+        )
+
+        XCTAssertTrue(response.ok)
+        XCTAssertEqual(response.sessionID, "session-from-pairing")
+        XCTAssertEqual(exchange.serverURL, serverURL)
+        XCTAssertEqual(exchange.pairingPayload, payload)
+    }
+
+    func testPromotedSwiftTestIdentifiersRemainCollected() throws {
+        let testRoot = packageRoot().appendingPathComponent("Tests")
+        let sources = try swiftSources(under: testRoot)
+        let identifiers = Set(
+            try matches(
+                pattern: #"(?m)^\s*func\s+(test[A-Za-z0-9_]+)\s*\("#,
+                in: sources
+            )
+        )
+        let required = Set([
+            "testUnixDomainControlRoundTrip",
+            "testCLIAppLaunchDecisionAndFailureArePropagated",
+            "testCLIPairingPayloadCrossesStdinThroughRealUDSWithoutOutputLeak",
+            "testPumpFailureIsTypedAndLaterTicksContinue",
+            "testRepeatingSchedulerContinuesUntilExplicitCancellation",
+            "testFullCertificatePinValidatorRequiresExactValidSHA256",
+        ])
+
+        XCTAssertTrue(required.isSubset(of: identifiers), "missing \(required.subtracting(identifiers))")
+        XCTAssertGreaterThanOrEqual(identifiers.count, 32)
+    }
+
+    func testIDEA042ContextKeepsEvidenceTierMissingFence() throws {
+        let repositoryRoot = packageRoot()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let context = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("CONTEXT.md"),
+            encoding: .utf8
+        )
+        let marker = "- **Runnable local helper bridge (IDEA-042)**:"
+        let paragraph = try XCTUnwrap(
+            context.components(separatedBy: marker).dropFirst().first?
+                .components(separatedBy: "\n- **").first
+        )
+        let normalizedParagraph = paragraph
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        for missingFact in [
+            "signing",
+            "notarization",
+            "TCC",
+            "Keychain access-group runtime",
+            "deployed certificate pinning",
+            "real devices",
+            "permission continuity",
+            "deployment",
+            "duration",
+            "canary",
+            "live enablement",
+        ] {
+            XCTAssertTrue(normalizedParagraph.contains(missingFact), missingFact)
+        }
+        XCTAssertTrue(normalizedParagraph.contains("remain Missing"))
+        XCTAssertFalse(normalizedParagraph.contains("proven by the local unsigned build"))
+        XCTAssertFalse(normalizedParagraph.contains("deployment and enablement are ready"))
+    }
+
+    func testIDEA042ResidualKillNodesNameExistingActualTests() throws {
+        let repositoryRoot = packageRoot()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let adr = try String(
+            contentsOf: repositoryRoot
+                .appendingPathComponent("docs")
+                .appendingPathComponent("adr")
+                .appendingPathComponent("0001-live-v2-json-http-contract.md"),
+            encoding: .utf8
+        )
+        let section = try XCTUnwrap(
+            adr.components(separatedBy: "## IDEA-042 Residual Kill Nodes").dropFirst().first?
+                .components(separatedBy: "\n## ").first
+        )
+        let namedTests = Set(
+            try matches(pattern: #"`(test[A-Za-z0-9_]+)`"#, in: section)
+        )
+        let swiftTests = try swiftSources(
+            under: repositoryRoot
+                .appendingPathComponent("macos")
+                .appendingPathComponent("MOSSCapture")
+                .appendingPathComponent("Tests")
+        )
+        let pythonTests = try textSources(
+            under: repositoryRoot.appendingPathComponent("tests"),
+            pathExtension: "py"
+        )
+        let testSources = swiftTests + "\n" + pythonTests
+
+        XCTAssertTrue(
+            section.contains("- N2: `testFullCertificatePinValidatorRequiresExactValidSHA256`")
+        )
+        XCTAssertFalse(
+            section.contains("- N2: `testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory`")
+        )
+        for testName in namedTests {
+            let escaped = NSRegularExpression.escapedPattern(for: testName)
+            let declaration = #"(?:func|def)\s+("# + escaped + #")\s*\("#
+            XCTAssertFalse(
+                try matches(pattern: declaration, in: testSources).isEmpty,
+                "\(testName) is not a real Swift/Python test declaration"
+            )
+        }
+    }
+
     private func testCertificate() throws -> SecCertificate {
         let fixture = """
         MIIBvzCCASgCCQCWZwVkxZUDQDANBgkqhkiG9w0BAQsFADAkMSIwIAYDVQQDDBlN
@@ -498,10 +1089,257 @@ final class CaptureControllerTests: XCTestCase {
         return url
     }
 
+    private func swiftSources(under root: URL) throws -> String {
+        try textSources(under: root, pathExtension: "swift")
+    }
+
+    private func textSources(under root: URL, pathExtension: String) throws -> String {
+        let enumerator = try XCTUnwrap(
+            FileManager.default.enumerator(
+                at: root,
+                includingPropertiesForKeys: [.isRegularFileKey]
+            )
+        )
+        var sources: [String] = []
+        for case let url as URL in enumerator where url.pathExtension == pathExtension {
+            sources.append(try String(contentsOf: url, encoding: .utf8))
+        }
+        return sources.joined(separator: "\n")
+    }
+
+    private func matches(pattern: String, in source: String) throws -> [String] {
+        let regex = try NSRegularExpression(pattern: pattern)
+        let range = NSRange(source.startIndex..., in: source)
+        return regex.matches(in: source, range: range).compactMap { match in
+            guard match.numberOfRanges > 1,
+                  let capture = Range(match.range(at: 1), in: source) else {
+                return nil
+            }
+            return String(source[capture])
+        }
+    }
+
+    private func temporarySocketPath() -> String {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-control-\(UUID().uuidString).sock")
+            .path
+    }
+
+    private func waitForSocket(at path: String) throws {
+        let deadline = Date(timeIntervalSinceNow: 2)
+        while Date() < deadline {
+            if FileManager.default.fileExists(atPath: path) {
+                return
+            }
+            Thread.sleep(forTimeInterval: 0.01)
+        }
+        XCTFail("socket was not created")
+    }
+
+    private struct RawControlEnvelope: Encodable {
+        var secret: String
+        var request: ControlChannelRequest
+    }
+
+    private func rawControlFrame(command: String) throws -> Data {
+        try rawControlFrame(request: ControlChannelRequest(command: command))
+    }
+
+    private func rawControlFrame(request: ControlChannelRequest) throws -> Data {
+        try rawFrame(JSONEncoder().encode(RawControlEnvelope(secret: "control-secret", request: request)))
+    }
+
+    private func rawFrame(_ body: Data) -> Data {
+        rawLengthPrefix(body.count) + body
+    }
+
+    private func rawLengthPrefix(_ byteCount: Int) -> Data {
+        var length = UInt32(byteCount).bigEndian
+        var data = Data()
+        withUnsafeBytes(of: &length) { bytes in
+            data.append(contentsOf: bytes)
+        }
+        return data
+    }
+
+    private func sendRawControlPayload(
+        _ payload: Data,
+        socketPath: String,
+        halfCloseWrite: Bool = false
+    ) throws -> ControlChannelResponse {
+        let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
+        XCTAssertGreaterThanOrEqual(fileDescriptor, 0)
+        defer { close(fileDescriptor) }
+
+        try connectRawSocket(fileDescriptor, socketPath: socketPath)
+        try writeRawPayload(payload, to: fileDescriptor)
+        if halfCloseWrite {
+            shutdown(fileDescriptor, SHUT_WR)
+        }
+        let body = try readRawFrame(from: fileDescriptor)
+        return try JSONDecoder().decode(ControlChannelResponse.self, from: body)
+    }
+
+    private func connectRawSocket(_ fileDescriptor: Int32, socketPath: String) throws {
+        let pathBytes = Array(socketPath.utf8)
+        var address = sockaddr_un()
+        address.sun_family = sa_family_t(AF_UNIX)
+        #if os(macOS)
+        address.sun_len = UInt8(MemoryLayout<sockaddr_un>.size)
+        #endif
+        withUnsafeMutableBytes(of: &address.sun_path) { rawBuffer in
+            for index in pathBytes.indices {
+                rawBuffer[index] = pathBytes[index]
+            }
+            rawBuffer[pathBytes.count] = 0
+        }
+        let length = socklen_t(MemoryLayout<sa_family_t>.size + pathBytes.count + 1)
+        let result = withUnsafePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { socketAddress in
+                Darwin.connect(fileDescriptor, socketAddress, length)
+            }
+        }
+        XCTAssertEqual(result, 0)
+    }
+
+    private func writeRawPayload(_ payload: Data, to fileDescriptor: Int32) throws {
+        payload.withUnsafeBytes { rawBuffer in
+            var offset = 0
+            while offset < payload.count {
+                let count = Darwin.write(
+                    fileDescriptor,
+                    rawBuffer.baseAddress!.advanced(by: offset),
+                    payload.count - offset
+                )
+                XCTAssertGreaterThan(count, 0)
+                offset += count
+            }
+        }
+    }
+
+    private func readRawFrame(from fileDescriptor: Int32) throws -> Data {
+        let prefix = try readRawBytes(4, from: fileDescriptor)
+        let length = prefix.withUnsafeBytes { rawBuffer in
+            UInt32(bigEndian: rawBuffer.load(as: UInt32.self))
+        }
+        return try readRawBytes(Int(length), from: fileDescriptor)
+    }
+
+    private func readRawBytes(_ byteCount: Int, from fileDescriptor: Int32) throws -> Data {
+        var data = Data(count: byteCount)
+        var offset = 0
+        while offset < byteCount {
+            let count = data.withUnsafeMutableBytes { rawBuffer in
+                Darwin.read(fileDescriptor, rawBuffer.baseAddress!.advanced(by: offset), byteCount - offset)
+            }
+            XCTAssertGreaterThan(count, 0)
+            offset += count
+        }
+        return data
+    }
+
+    private func nativeBuffer(
+        lane: CaptureLane,
+        timestamp: UInt64,
+        deviceEpoch: UInt64,
+        samples: [Float]
+    ) -> NativeCapturedAudioBuffer {
+        NativeCapturedAudioBuffer(
+            lane: lane,
+            sampleRate: 16_000,
+            channelCount: 1,
+            frameCount: samples.count,
+            firstSampleMonotonicNS: timestamp,
+            deviceEpoch: deviceEpoch,
+            discontinuity: false,
+            samples: samples
+        )
+    }
+
     private func jsonBody(_ request: URLRequest) throws -> [String: Any] {
         let data = try XCTUnwrap(request.httpBody)
         let object = try JSONSerialization.jsonObject(with: data)
         return try XCTUnwrap(object as? [String: Any])
+    }
+}
+
+private final class RecordingNativeCaptureComponent: NativeAudioCaptureComponent {
+    private let buffersOnStart: [NativeCapturedAudioBuffer]
+    private let startError: Error?
+    private(set) var startCount = 0
+    private(set) var stopCount = 0
+
+    init(
+        buffersOnStart: [NativeCapturedAudioBuffer] = [],
+        startError: Error? = nil
+    ) {
+        self.buffersOnStart = buffersOnStart
+        self.startError = startError
+    }
+
+    func start(queue: RealTimeNativeAudioBufferQueue) throws {
+        startCount += 1
+        if let startError {
+            throw startError
+        }
+        for buffer in buffersOnStart {
+            queue.enqueueFromRealtimeCallback(buffer)
+        }
+    }
+
+    func stop() {
+        stopCount += 1
+    }
+}
+
+private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
+    private let startError: Error?
+    private(set) var events: [String] = []
+
+    init(startError: Error? = nil) {
+        self.startError = startError
+    }
+
+    func createProcessTap(description: CATapDescription) throws -> AudioObjectID {
+        events.append("AudioHardwareCreateProcessTap")
+        return AudioObjectID(101)
+    }
+
+    func createAggregateDevice(for description: CATapDescription) throws -> AudioObjectID {
+        events.append("AudioHardwareCreateAggregateDevice")
+        return AudioObjectID(202)
+    }
+
+    func createIOProc(
+        on aggregateDeviceID: AudioObjectID,
+        queue: RealTimeNativeAudioBufferQueue,
+        sampleRate: Int,
+        deviceEpoch: UInt64
+    ) throws {
+        events.append("AudioDeviceCreateIOProcIDWithBlock")
+    }
+
+    func startDevice(_ aggregateDeviceID: AudioObjectID) throws {
+        events.append("AudioDeviceStart")
+        if let startError {
+            throw startError
+        }
+    }
+
+    func stopDevice(_ aggregateDeviceID: AudioObjectID) {
+        events.append("AudioDeviceStop")
+    }
+
+    func destroyIOProc(on aggregateDeviceID: AudioObjectID) {
+        events.append("AudioDeviceDestroyIOProcID")
+    }
+
+    func destroyAggregateDevice(_ aggregateDeviceID: AudioObjectID) {
+        events.append("AudioHardwareDestroyAggregateDevice")
+    }
+
+    func destroyProcessTap(_ tapID: AudioObjectID) {
+        events.append("AudioHardwareDestroyProcessTap")
     }
 }
 
@@ -512,5 +1350,48 @@ private final class RecordingCaptureHTTPClient: CaptureHTTPClient {
     func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
         requests.append(request)
         return response
+    }
+}
+
+private final class FailOnceScheduledHealthAdapter: CaptureHealthAdapter {
+    private(set) var attemptCount = 0
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        attemptCount += 1
+        if attemptCount == 2 {
+            throw NativeCaptureError.transportUnavailable("heartbeat")
+        }
+    }
+}
+
+private final class RecordingPairingExchange: CapturePairingExchangeAdapter {
+    private(set) var serverURL: URL?
+    private(set) var pairingPayload: Data?
+
+    func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
+        self.serverURL = serverURL
+        self.pairingPayload = pairingPayload
+        return CapturePairingResult(sessionID: "session-from-pairing", captureBearerToken: "capture-token")
+    }
+}
+
+private final class TestErrorBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var error: Error?
+
+    func store(_ error: Error) {
+        lock.lock()
+        self.error = error
+        lock.unlock()
+    }
+
+    func load() -> Error? {
+        lock.lock()
+        defer { lock.unlock() }
+        return error
     }
 }

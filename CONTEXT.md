@@ -147,6 +147,13 @@
   sequence only; exact duplicates are idempotent without freshness refresh.
   Regressions, changed duplicates, non-advancing helper time, and helper
   instance switches reject without mutating stored presence.
+- **Runnable local helper bridge (IDEA-042)**: Unsigned local macOS bridge that
+  composes native system/microphone capture, strict v2 transport, helper
+  health, and authenticated same-user UDS control behind the existing
+  `CaptureController.start/status/stop` interface. Local green proves runnable
+  unsigned mechanics only; signing, notarization, TCC, Keychain access-group
+  runtime, deployed certificate pinning, real devices, permission continuity,
+  deployment, duration, canary, and live enablement remain Missing.
 - **IDEA-035 mutation kill node**: Reviewer-owned check that mutates exactly
   one helper or presence obligation and expects a named source inventory,
   Swift test, Python test, discriminator check, protected-diff gate, or docs

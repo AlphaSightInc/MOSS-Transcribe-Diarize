@@ -113,6 +113,22 @@ behind one interface. Authorized snapshots add `helper_presence` as data only.
 Clean stop, abort, terminal failure release, failed-stop release, and device
 revocation release the presence record with the rest of session-owned state.
 
+IDEA-042 turns the promoted helper contracts into an unsigned runnable local
+macOS bridge without changing the external live contract. One
+`CaptureController` deep module keeps exactly `start/status/stop`; production
+native, HTTP, health, scheduling, security, and shutdown adapters remain behind
+that interface. `MOSSCaptureApp` is the long-lived composition root and
+authenticated same-user UDS control server. `mtd-capture` is only a
+LaunchServices plus bounded UDS client, including stdin pairing transit into
+the app-owned exchange. The helper heartbeat is now an ordinary registered
+`POST /api/live/sessions/{session_id}/heartbeat` route that calls the same
+capture-authorized presence handler; this replaces middleware path sniffing and
+does not add timeout, abandonment, failure, expiry, stop, abort, recovery, or
+enablement policy. An off-callback publish or health failure is exposed as a
+typed `pumpFailure` status fact; the repeating pump remains active and clears
+that fact after a later successful tick. This is local retry/observability, not
+server lane-failure, expiry, abandonment, or recovery policy.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
 ## IDEA-035 Mutation Kill Nodes
@@ -148,6 +164,33 @@ single-obligation mutation; they do not claim mutation review has run.
 | M23 | This ADR, `CONTEXT.md`, and `repro.py` docs gates reject treating unsigned local compile/tests as signing, notarization, TCC, real-capture, device, deployment, 60/300, canary, or enablement proof. |
 | M24 | Git inventory, `.gitignore`, protected diff, and `git diff --check` reject committed `.build`, `.app`, credentials, pins, PCM, transcripts, signing artifacts, or generated helper artifacts. |
 | M25 | Swift test identifiers, Python test collection/count floors, promoted suite floors, and full-suite gates reject deleting, narrowing, renaming out of collection, or weakening promoted coverage. |
+
+## IDEA-042 Residual Kill Nodes
+
+- N1: `testCaptureControllerPublicInterfaceIsLimitedToStartStatusStop` plus
+  `repro.py` inspect the whole `CaptureController` public surface, including
+  initializer count, methods, storage/properties, subscripts, nested public
+  types, and conformances.
+- N2: `testFullCertificatePinValidatorRequiresExactValidSHA256` exercises the
+  real full-certificate pin comparator and rejects mismatch or malformed pin
+  inputs.
+- N5: `test_live_portal_is_enabled_no_store_and_does_not_add_live_api_routes`
+  inventories registered FastAPI routes and requires
+  `POST /api/live/sessions/{session_id}/heartbeat`.
+- Fix-cycle CLI nodes:
+  `testCLIAppLaunchDecisionAndFailureArePropagated`,
+  `testLaunchServicesAdapterInvokesInjectedOpenAndPropagatesFailure`,
+  `testCLIPairingPayloadCrossesStdinThroughRealUDSWithoutOutputLeak`, and
+  `testCLIPrintsAppFailureResponseAndReturnsNonzeroWithoutSecretLeak` drive
+  launch decisions, the launcher adapter, real UDS pairing transit, exact app
+  responses, exit codes, and output-channel secrecy.
+- Fix-cycle pump/evidence nodes:
+  `testPumpFailureIsTypedAndLaterTicksContinue`,
+  `testRepeatingSchedulerContinuesUntilExplicitCancellation`,
+  `testPromotedSwiftTestIdentifiersRemainCollected`,
+  `testIDEA042ContextKeepsEvidenceTierMissingFence`, and
+  `testIDEA042ResidualKillNodesNameExistingActualTests` pin typed retry state,
+  collection floors, the local-only Missing fence, and this node map.
 
 ## Consequences
 
