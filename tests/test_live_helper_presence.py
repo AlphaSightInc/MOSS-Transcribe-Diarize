@@ -30,13 +30,14 @@ def heartbeat_payload(
     sent_monotonic_ns: int = 10,
     state: str = "capturing",
     lane_state: str = "capturing",
+    failure_code: str | None = None,
 ) -> dict:
     lane = {
         "state": lane_state,
         "device_epoch": 0,
         "dropped_frames": 0,
         "discontinuities": 0,
-        "failure_code": None,
+        "failure_code": failure_code,
     }
     return {
         "schema": HELPER_HEALTH_SCHEMA,
@@ -92,7 +93,13 @@ def test_new_sequence_advances_injected_server_last_seen_and_may_skip_values():
     advanced = registry.observe(
         "session-a",
         HelperHeartbeat.from_dict(
-            heartbeat_payload(sequence=2, sent_monotonic_ns=30, state="degraded", lane_state="failed")
+            heartbeat_payload(
+                sequence=2,
+                sent_monotonic_ns=30,
+                state="degraded",
+                lane_state="failed",
+                failure_code="permission_denied",
+            )
         ),
     )
 
@@ -148,6 +155,7 @@ def test_helper_heartbeat_route_is_capture_owned_and_visible_in_authorized_snaps
             live_runtime_factory=lambda: make_live_runtime(),
             live_auth_state_path=Path(tmpdir) / "live-auth.json",
             live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+            live_helper_lease_seconds=30.0,
         )
         client = _paired_client(app)
         created = client.post("/api/live/sessions")
@@ -156,6 +164,7 @@ def test_helper_heartbeat_route_is_capture_owned_and_visible_in_authorized_snaps
         view_client = AuthorizedLiveClient(app, created.json()["view_token"])
         clock = iter((100, 999, 1_000))
         app.state.live_helper_presence._monotonic_ns = lambda: next(clock)
+        app.state.live_helper_failures._timer._monotonic_ns = lambda: 100
 
         accepted = client.post(
             f"/api/live/sessions/{session_id}/heartbeat",
@@ -211,6 +220,7 @@ def test_helper_presence_releases_on_terminal_and_revocation_paths(terminal_acti
             live_runtime_factory=lambda: make_live_runtime(session_id=f"{terminal_action}-session"),
             live_auth_state_path=Path(tmpdir) / "live-auth.json",
             live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+            live_helper_lease_seconds=30.0,
         )
         client = _paired_client(app)
         local = TestClient(

@@ -56,12 +56,20 @@ public struct CaptureLaneStatus: Equatable {
     public var sequence: UInt64
     public var deviceEpoch: UInt64
     public var state: String
+    public var failureCode: String?
 
-    public init(lane: CaptureLane, sequence: UInt64, deviceEpoch: UInt64, state: String) {
+    public init(
+        lane: CaptureLane,
+        sequence: UInt64,
+        deviceEpoch: UInt64,
+        state: String,
+        failureCode: String? = nil
+    ) {
         self.lane = lane
         self.sequence = sequence
         self.deviceEpoch = deviceEpoch
         self.state = state
+        self.failureCode = failureCode
     }
 }
 
@@ -161,13 +169,7 @@ public final class CaptureController {
     private let clock: CaptureClockAdapter
     private let scheduler: CaptureSchedulerAdapter
     private let health: CaptureHealthAdapter
-
-    private var configuration: CaptureConfiguration?
-    private var running = false
-    private var publishedFrameCount = 0
-    private var healthSequence: UInt64?
-    private var healthTask: CaptureCancellation?
-    private var pumpFailure: CapturePumpFailure?
+    private let state = CaptureControllerState()
 
     public init(
         source: CaptureSourceAdapter,
@@ -187,84 +189,174 @@ public final class CaptureController {
 
     @discardableResult
     public func start(configuration: CaptureConfiguration) throws -> CaptureStatus {
-        guard !running else {
-            throw CaptureControllerError.alreadyRunning
-        }
         guard try keyStore.loadControlSecret() != nil else {
             throw CaptureControllerError.missingControlSecret
         }
 
-        try source.start(configuration: configuration)
-        self.configuration = configuration
-        running = true
+        try state.beginStart(configuration: configuration)
+        do {
+            try source.start(configuration: configuration)
+        } catch {
+            state.rollbackStart()
+            throw error
+        }
         try publishPendingFrames(configuration: configuration)
-        let status = try emitHealth()
-        healthTask = scheduler.schedule(label: "moss.capture.pump") { [weak self] in
+        let status = try emitHealth(configuration: configuration)
+        let task = scheduler.schedule(label: "moss.capture.pump") { [weak self] in
             guard let self else { return }
-            guard self.running, let configuration = self.configuration else {
+            guard let configuration = self.state.runningConfiguration() else {
                 return
             }
             do {
                 try self.publishPendingFrames(configuration: configuration)
-                _ = try self.emitHealth()
-                self.pumpFailure = nil
+                _ = try self.emitHealth(configuration: configuration)
+                self.state.clearPumpFailure()
             } catch {
-                self.pumpFailure = CapturePumpFailure(error: error)
+                self.state.recordPumpFailure(CapturePumpFailure(error: error))
             }
         }
+        state.storeHealthTask(task)
         return status
     }
 
     public func status() -> CaptureStatus {
-        CaptureStatus(
-            running: running,
-            sessionID: configuration?.sessionID,
-            lanes: source.status(),
-            publishedFrameCount: publishedFrameCount,
-            lastHealthSequence: healthSequence,
-            pumpFailure: pumpFailure
-        )
+        state.snapshot(lanes: source.status())
     }
 
     @discardableResult
     public func stop(deadline: Date) throws -> CaptureStatus {
-        guard running else {
-            throw CaptureControllerError.notRunning
-        }
+        try state.requireRunning()
         try source.stop(deadline: deadline)
-        healthTask?.cancel()
-        healthTask = nil
-        running = false
-        let stopped = CaptureStatus(
-            running: false,
-            sessionID: configuration?.sessionID,
-            lanes: source.status(),
-            publishedFrameCount: publishedFrameCount,
-            lastHealthSequence: healthSequence,
-            pumpFailure: pumpFailure
-        )
-        configuration = nil
+        let lanes = source.status()
+        let (task, stopped) = state.finishStop(lanes: lanes)
+        task?.cancel()
         return stopped
     }
 
     private func publishPendingFrames(configuration: CaptureConfiguration) throws {
         for frame in try source.pendingFrames() {
             try transport.publish(frame: frame, configuration: configuration)
-            publishedFrameCount += 1
+            state.recordPublishedFrame()
         }
     }
 
-    private func emitHealth() throws -> CaptureStatus {
-        guard let configuration else {
-            throw CaptureControllerError.notRunning
-        }
-        healthSequence = (healthSequence ?? 0) + 1
-        let current = status()
+    private func emitHealth(configuration: CaptureConfiguration) throws -> CaptureStatus {
+        state.recordHealthEmissionAttempt()
+        let current = state.snapshot(lanes: source.status())
         try health.emit(
             status: current,
             configuration: configuration,
             sentMonotonicNS: clock.monotonicNanoseconds()
         )
         return current
+    }
+}
+
+private final class CaptureControllerState {
+    private let lock = NSLock()
+    private var configuration: CaptureConfiguration?
+    private var running = false
+    private var publishedFrameCount = 0
+    private var healthSequence: UInt64?
+    private var healthTask: CaptureCancellation?
+    private var pumpFailure: CapturePumpFailure?
+
+    func beginStart(configuration: CaptureConfiguration) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !running else {
+            throw CaptureControllerError.alreadyRunning
+        }
+        self.configuration = configuration
+        running = true
+        pumpFailure = nil
+    }
+
+    func rollbackStart() {
+        lock.lock()
+        configuration = nil
+        running = false
+        pumpFailure = nil
+        lock.unlock()
+    }
+
+    func runningConfiguration() -> CaptureConfiguration? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard running else {
+            return nil
+        }
+        return configuration
+    }
+
+    func requireRunning() throws {
+        lock.lock()
+        defer { lock.unlock() }
+        guard running else {
+            throw CaptureControllerError.notRunning
+        }
+    }
+
+    func storeHealthTask(_ task: CaptureCancellation) {
+        lock.lock()
+        healthTask = task
+        lock.unlock()
+    }
+
+    func recordPublishedFrame() {
+        lock.lock()
+        publishedFrameCount += 1
+        lock.unlock()
+    }
+
+    func recordHealthEmissionAttempt() {
+        lock.lock()
+        healthSequence = (healthSequence ?? 0) + 1
+        lock.unlock()
+    }
+
+    func clearPumpFailure() {
+        lock.lock()
+        pumpFailure = nil
+        lock.unlock()
+    }
+
+    func recordPumpFailure(_ failure: CapturePumpFailure) {
+        lock.lock()
+        if running {
+            pumpFailure = failure
+        }
+        lock.unlock()
+    }
+
+    func snapshot(lanes: [CaptureLaneStatus]) -> CaptureStatus {
+        lock.lock()
+        defer { lock.unlock() }
+        return CaptureStatus(
+            running: running,
+            sessionID: configuration?.sessionID,
+            lanes: lanes,
+            publishedFrameCount: publishedFrameCount,
+            lastHealthSequence: healthSequence,
+            pumpFailure: pumpFailure
+        )
+    }
+
+    func finishStop(lanes: [CaptureLaneStatus]) -> (CaptureCancellation?, CaptureStatus) {
+        lock.lock()
+        let stopped = CaptureStatus(
+            running: false,
+            sessionID: configuration?.sessionID,
+            lanes: lanes,
+            publishedFrameCount: publishedFrameCount,
+            lastHealthSequence: healthSequence,
+            pumpFailure: pumpFailure
+        )
+        let task = healthTask
+        healthTask = nil
+        configuration = nil
+        running = false
+        lock.unlock()
+        return (task, stopped)
     }
 }

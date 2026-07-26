@@ -147,6 +147,28 @@
   sequence only; exact duplicates are idempotent without freshness refresh.
   Regressions, changed duplicates, non-advancing helper time, and helper
   instance switches reject without mutating stored presence.
+- **IDEA-036 explicit helper lease**: Default-off live mode requires a
+  caller-supplied strictly positive `live_helper_lease_seconds`, forwarded by
+  `ops/start-web.sh` from `MOSS_LIVE_HELPER_LEASE_SECONDS` as
+  `--live-helper-lease-seconds`. There is no product, environment, scheduler,
+  replay, or documentation default. The local configured lease is the only
+  abandonment authority in this slice; production lease selection, signed
+  hardware evidence, notarization, TCC continuity, deployed device behavior,
+  60/300 evidence, canary, deployment, and live enablement remain Missing.
+- **Live helper failure coordinator**: One deep
+  `LiveHelperFailureCoordinator` owns `observe(session_id, heartbeat)` and
+  `release(session_id)` at the capture-authorized heartbeat seam. It renews
+  only on newly accepted increasing heartbeats using server-monotonic receipt
+  time, fences scheduled expiry by sequence/generation, maps explicit typed
+  one-lane failure to `LiveV2Session.fail_lane`, and maps helper failure,
+  all-lane failure, or generation-matched lease expiry to v2 expiry, mono
+  abort, mixer/presence/access/timer release, and idempotent cleanup.
+- **IDEA-036 mutation efficacy node**: Reviewer-owned check that mutates
+  exactly one explicit-lease or helper-failure obligation and requires an
+  actual killing node to fail. A mutation apply error, no-op anchor, missing
+  node, renamed-out test, green survivor, or generated/secret artifact is red.
+  ADR-0001 records the current M01-M25 node map; local green gates are control
+  evidence, not proof that the Reviewer mutation battery has run.
 - **Runnable local helper bridge (IDEA-042)**: Unsigned local macOS bridge that
   composes native system/microphone capture, strict v2 transport, helper
   health, and authenticated same-user UDS control behind the existing

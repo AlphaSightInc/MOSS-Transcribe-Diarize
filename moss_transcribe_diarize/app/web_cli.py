@@ -53,6 +53,12 @@ def parse_args() -> argparse.Namespace:
         "--live-tls-keyfile",
         help="TLS private key file required when --live is enabled.",
     )
+    parser.add_argument(
+        "--live-helper-lease-seconds",
+        type=float,
+        default=None,
+        help="Strictly positive helper lease required when --live is enabled.",
+    )
     parser.add_argument("--runs-dir", default="runs")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7860)
@@ -115,6 +121,7 @@ def _live_startup_config(args: argparse.Namespace) -> dict[str, object]:
         return {
             "live_auth_state_path": None,
             "live_server_cert_sha256": None,
+            "live_helper_lease_seconds": None,
             "ssl_certfile": None,
             "ssl_keyfile": None,
         }
@@ -127,12 +134,17 @@ def _live_startup_config(args: argparse.Namespace) -> dict[str, object]:
         )
         if not value
     ]
+    if args.live_helper_lease_seconds is None:
+        missing.append("--live-helper-lease-seconds")
     if missing:
         raise SystemExit(f"{', '.join(missing)} are required when --live is enabled.")
+    if args.live_helper_lease_seconds <= 0:
+        raise SystemExit("--live-helper-lease-seconds must be positive when --live is enabled.")
     certfile = Path(args.live_tls_certfile).expanduser()
     return {
         "live_auth_state_path": Path(args.live_auth_state).expanduser(),
         "live_server_cert_sha256": _certificate_sha256(certfile),
+        "live_helper_lease_seconds": args.live_helper_lease_seconds,
         "ssl_certfile": str(certfile),
         "ssl_keyfile": str(Path(args.live_tls_keyfile).expanduser()),
     }
@@ -180,6 +192,7 @@ def main() -> None:
         live_runtime_factory=live_runtime_factory,
         live_auth_state_path=live_startup["live_auth_state_path"],
         live_server_cert_sha256=live_startup["live_server_cert_sha256"],
+        live_helper_lease_seconds=live_startup["live_helper_lease_seconds"],
     )
     uvicorn.run(
         app,

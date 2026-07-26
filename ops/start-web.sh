@@ -32,12 +32,14 @@ case "${MOSS_LIVE_ENABLED:-0}" in
     : "${MOSS_LIVE_AUTH_STATE:?MOSS_LIVE_AUTH_STATE is required when live mode is enabled}"
     : "${MOSS_LIVE_TLS_CERTFILE:?MOSS_LIVE_TLS_CERTFILE is required when live mode is enabled}"
     : "${MOSS_LIVE_TLS_KEYFILE:?MOSS_LIVE_TLS_KEYFILE is required when live mode is enabled}"
+    : "${MOSS_LIVE_HELPER_LEASE_SECONDS:?MOSS_LIVE_HELPER_LEASE_SECONDS is required when live mode is enabled}"
     live_args+=(
       --live
       --live-provider-manifest "${MOSS_LIVE_PROVIDER_MANIFEST}"
       --live-auth-state "${MOSS_LIVE_AUTH_STATE}"
       --live-tls-certfile "${MOSS_LIVE_TLS_CERTFILE}"
       --live-tls-keyfile "${MOSS_LIVE_TLS_KEYFILE}"
+      --live-helper-lease-seconds "${MOSS_LIVE_HELPER_LEASE_SECONDS}"
     )
     ;;
   *)

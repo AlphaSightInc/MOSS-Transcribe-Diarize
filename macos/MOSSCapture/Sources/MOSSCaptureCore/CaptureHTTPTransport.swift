@@ -219,7 +219,8 @@ private struct HelperHeartbeatPayload: Encodable {
                     lane.rawValue,
                     HelperLanePayload(
                         state: laneStatus?.state ?? "stopped",
-                        deviceEpoch: laneStatus?.deviceEpoch ?? 0
+                        deviceEpoch: laneStatus?.deviceEpoch ?? 0,
+                        failureCode: laneStatus?.failureCode
                     )
                 )
             }

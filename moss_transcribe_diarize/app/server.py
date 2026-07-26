@@ -10,6 +10,7 @@ from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager
 from .live_session import LIVE_SAMPLE_RATE
 from .live_auth import LiveAccessRegistry
+from .live_helper_failure import LiveHelperLeaseConfigError
 from .live_portal import attach_live_portal
 from .live_service_runtime import LiveServiceRuntime
 from .live_transport import attach_live_routes
@@ -48,6 +49,7 @@ def create_app(
     live_runtime_factory: Callable[[], LiveServiceRuntime] | None = None,
     live_auth_state_path: str | Path | None = None,
     live_server_cert_sha256: str | None = None,
+    live_helper_lease_seconds: float | None = None,
     live_access_registry: LiveAccessRegistry | None = None,
 ):
     try:
@@ -93,6 +95,8 @@ def create_app(
     if live_enabled:
         if live_runtime_factory is None:
             raise ValueError("live_runtime_factory is required when live mode is enabled.")
+        if live_helper_lease_seconds is None:
+            raise ValueError("live_helper_lease_seconds is required when live mode is enabled.")
         if live_access_registry is None:
             if live_auth_state_path is None:
                 raise ValueError("live_auth_state_path is required when live mode is enabled.")
@@ -105,7 +109,15 @@ def create_app(
         live_runtime = live_runtime_factory()
         app.state.live_runtime = live_runtime
         app.state.live_access_registry = live_access_registry
-        attach_live_routes(app, live_runtime, live_access_registry)
+        try:
+            attach_live_routes(
+                app,
+                live_runtime,
+                live_access_registry,
+                live_helper_lease_seconds=live_helper_lease_seconds,
+            )
+        except LiveHelperLeaseConfigError as exc:
+            raise ValueError(str(exc)) from exc
         attach_live_portal(app)
 
     @app.get("/", response_class=HTMLResponse)

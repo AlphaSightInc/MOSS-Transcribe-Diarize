@@ -44,6 +44,10 @@ class HelperLaneHealth:
         failure_code = payload["failure_code"]
         if failure_code is not None and not isinstance(failure_code, str):
             raise ValueError("helper lane failure_code must be null or string.")
+        if failure_code == "":
+            raise ValueError("helper lane failure_code must be non-empty when provided.")
+        if state == "failed" and failure_code is None:
+            raise ValueError("failed helper lane requires failure_code.")
         return cls(
             state=state,
             device_epoch=_parse_non_negative_int(payload["device_epoch"], "device_epoch"),
