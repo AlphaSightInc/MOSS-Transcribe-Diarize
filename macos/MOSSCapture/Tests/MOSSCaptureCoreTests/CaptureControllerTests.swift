@@ -565,6 +565,102 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(nextSystem.first?.sequence, 1)
     }
 
+    func testNativeLaneHealthStableCodeVocabularyIsClosed() throws {
+        XCTAssertEqual(
+            NativeLaneFailureCode.allCases.map(\.rawValue),
+            [
+                "macos_permission_denied",
+                "macos_device_unavailable",
+                "macos_io_stopped_abnormally",
+                "macos_callback_stalled",
+                "macos_buffer_overrun",
+                "macos_unexpected_capture_error",
+            ]
+        )
+    }
+
+    func testNativeLaneHealthMailboxOrderAndFirstCauseStickiness() throws {
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        health.enqueue(.deviceEpoch(4), lane: .system, generation: generation)
+        health.enqueue(.startFailed(.permissionDenied("screen capture permission")), lane: .system, generation: generation)
+        health.enqueue(.startFailed(.deviceUnavailable("later device miss")), lane: .system, generation: generation)
+        health.enqueue(.deviceEpoch(9), lane: .microphone, generation: generation)
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let statuses = health.statuses(running: true)
+        let system = try XCTUnwrap(statuses.first { $0.lane == .system })
+        let microphone = try XCTUnwrap(statuses.first { $0.lane == .microphone })
+
+        XCTAssertEqual(system.state, "failed")
+        XCTAssertEqual(system.failureCode, "macos_permission_denied")
+        XCTAssertEqual(health.failure(for: .system)?.cause, "screen capture permission")
+        XCTAssertEqual(microphone.state, "capturing")
+        XCTAssertNil(microphone.failureCode)
+        XCTAssertEqual(microphone.deviceEpoch, 9)
+    }
+
+    func testNativeLaneHealthGenerationFenceRejectsDelayedFactsAfterStop() throws {
+        let health = NativeLaneHealth()
+        let oldGeneration = health.beginGeneration()
+        health.enqueue(.admitted, lane: .system, generation: oldGeneration)
+        _ = health.statuses(running: true)
+
+        health.invalidateGeneration()
+        health.enqueue(.unexpectedCaptureError("late callback"), lane: .system, generation: oldGeneration)
+        let currentGeneration = health.beginGeneration()
+        health.enqueue(.admitted, lane: .system, generation: currentGeneration)
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "capturing")
+        XCTAssertNil(system.failureCode)
+        XCTAssertNil(health.failure(for: .system))
+    }
+
+    func testNativeLaneHealthIgnoresNonFailureFacts() throws {
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+
+        health.enqueue(.permission(.undetermined), lane: .microphone, generation: generation)
+        health.enqueue(.permission(.granted), lane: .microphone, generation: generation)
+        health.enqueue(.bufferOverrun(droppedBuffers: 0), lane: .microphone, generation: generation)
+        health.enqueue(.startFailed(.transportUnavailable("transient heartbeat")), lane: .microphone, generation: generation)
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let microphone = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(microphone.state, "capturing")
+        XCTAssertNil(microphone.failureCode)
+        XCTAssertNil(health.failure(for: .microphone))
+    }
+
+    func testNativeLaneHealthMapsNativeTerminalFactsToStableCodes() throws {
+        let facts: [(NativeLaneFact, NativeLaneFailureCode)] = [
+            (.startFailed(.deviceUnavailable("aggregate")), .deviceUnavailable),
+            (.startFailed(.osStatus("AudioHardwareCreateProcessTap", -50)), .unexpectedCaptureError),
+            (.ioStoppedAbnormally("HAL stopped"), .ioStoppedAbnormally),
+            (.bufferOverrun(droppedBuffers: 1), .bufferOverrun),
+            (.unexpectedCaptureError("uncaught native error"), .unexpectedCaptureError),
+        ]
+
+        for (fact, code) in facts {
+            let health = NativeLaneHealth()
+            let generation = health.beginGeneration()
+            health.enqueue(fact, lane: .system, generation: generation)
+
+            let system = try XCTUnwrap(
+                health.statuses(running: true).first { $0.lane == .system }
+            )
+            XCTAssertEqual(system.state, "failed")
+            XCTAssertEqual(system.failureCode, code.rawValue)
+        }
+    }
+
     func testRealtimeCallbacksOnlyCopyAndEnqueueNativeBuffers() throws {
         let root = packageRoot()
         let system = try String(
