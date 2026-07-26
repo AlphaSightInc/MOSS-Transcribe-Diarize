@@ -183,7 +183,14 @@
   gates are the control, not proof that mutation review has run.
 - **Device revocation**: Explicit loopback operator action that durably
   invalidates one capture device and its owned view authorities.
-- **Deferred production caller**: No production caller detects helper loss or
-  invokes lane failure. Heartbeats, last-seen expiry, native helper failure
-  signaling, endpoint recovery, deployment evidence, and live enablement remain
-  open work outside this glossary.
+- **Native typed lane failure (IDEA-043)**: The source-owned `NativeLaneHealth`
+  module inside the native dual capture source is the only native lane-failure
+  policy owner. System-tap and microphone adapters enqueue native typed raw
+  facts into generation-fenced ordered lane mailboxes; the reducer alone
+  projects lane state, counters, first-cause sticky failure, and stable
+  `macos_*` `failure_code` values for `moss-live-helper-health.v1`. Heartbeat
+  serialization, HTTP transport, server routes, mixer, and public
+  `CaptureController.start/status/stop` remain interface-compatible consumers,
+  not native policy owners. Signing, notarization, TCC continuity, endpoint
+  recovery, deployed device behavior, 60/300 evidence, canary, deployment, and
+  live enablement remain Missing.

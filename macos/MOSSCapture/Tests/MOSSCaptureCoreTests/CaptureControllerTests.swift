@@ -1181,7 +1181,9 @@ final class CaptureControllerTests: XCTestCase {
                     sequence: 4,
                     deviceEpoch: 2,
                     state: "failed",
-                    failureCode: CapturePumpFailure.permissionDenied.rawValue
+                    droppedFrames: 1,
+                    discontinuities: 2,
+                    failureCode: "macos_permission_denied"
                 ),
                 CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
             ],
@@ -1204,7 +1206,9 @@ final class CaptureControllerTests: XCTestCase {
         let system = try XCTUnwrap(lanes["system"])
         let microphone = try XCTUnwrap(lanes["microphone"])
         XCTAssertEqual(system["state"] as? String, "failed")
-        XCTAssertEqual(system["failure_code"] as? String, "permissionDenied")
+        XCTAssertEqual(system["dropped_frames"] as? Int, 1)
+        XCTAssertEqual(system["discontinuities"] as? Int, 2)
+        XCTAssertEqual(system["failure_code"] as? String, "macos_permission_denied")
         XCTAssertTrue(microphone["failure_code"] is NSNull)
     }
 
@@ -1691,6 +1695,39 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(normalizedParagraph.contains("remain Missing"))
         XCTAssertFalse(normalizedParagraph.contains("proven by the local unsigned build"))
         XCTAssertFalse(normalizedParagraph.contains("deployment and enablement are ready"))
+    }
+
+    func testIDEA043ContextAndADRUseSourceOwnedNativeTypedVocabulary() throws {
+        let repositoryRoot = packageRoot()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let context = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("CONTEXT.md"),
+            encoding: .utf8
+        )
+        let adr = try String(
+            contentsOf: repositoryRoot
+                .appendingPathComponent("docs")
+                .appendingPathComponent("adr")
+                .appendingPathComponent("0001-live-v2-json-http-contract.md"),
+            encoding: .utf8
+        )
+        let marker = "- **Native typed lane failure (IDEA-043)**:"
+        let paragraph = try XCTUnwrap(
+            context.components(separatedBy: marker).dropFirst().first?
+                .components(separatedBy: "\n- **").first
+        )
+        let normalizedParagraph = paragraph
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        XCTAssertTrue(normalizedParagraph.contains("source-owned `NativeLaneHealth`"))
+        XCTAssertTrue(normalizedParagraph.contains("native typed raw facts"))
+        XCTAssertTrue(normalizedParagraph.contains("`moss-live-helper-health.v1`"))
+        XCTAssertTrue(normalizedParagraph.contains("remain Missing"))
+        XCTAssertFalse(context.contains("No production caller detects helper loss or invokes lane failure"))
+        XCTAssertTrue(adr.contains("IDEA-043 adds source-owned native lane failure ownership"))
+        XCTAssertTrue(adr.contains("stable `macos_*` failure codes"))
     }
 
     func testIDEA042ResidualKillNodesNameExistingActualTests() throws {
