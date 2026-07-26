@@ -132,10 +132,10 @@ final class CaptureControllerTests: XCTestCase {
 
         try controller.start(configuration: configuration)
         source.enqueue(frames: [firstMicrophone, secondSystem])
-        try scheduler.runScheduledOperation()
+        scheduler.runScheduledOperation()
         source.enqueue(frames: [secondMicrophone])
-        try scheduler.runScheduledOperation()
-        try scheduler.runScheduledOperation()
+        scheduler.runScheduledOperation()
+        scheduler.runScheduledOperation()
 
         XCTAssertEqual(
             transport.publishedFrames.map(\.lane),
@@ -146,6 +146,42 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.emissions.map(\.sentMonotonicNS), [100, 200, 300, 400])
         XCTAssertEqual(health.emissions.map(\.status.publishedFrameCount), [1, 3, 4, 4])
         XCTAssertEqual(controller.status().publishedFrameCount, 4)
+    }
+
+    func testPumpFailureIsTypedAndLaterTicksContinue() throws {
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = FailOnceScheduledHealthAdapter()
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        scheduler.runScheduledOperation()
+        let failed = controller.status()
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertTrue(failed.running)
+        XCTAssertEqual(failed.pumpFailure, .transportUnavailable)
+        XCTAssertEqual(failed.lastHealthSequence, 2)
+        XCTAssertEqual(
+            ControlChannelResponse(status: failed).pumpFailure,
+            .transportUnavailable
+        )
+        XCTAssertTrue(recovered.running)
+        XCTAssertNil(recovered.pumpFailure)
+        XCTAssertEqual(recovered.lastHealthSequence, 3)
+        XCTAssertEqual(health.attemptCount, 3)
     }
 
     func testStartRequiresControlSecretAndRejectsSecondStart() throws {
@@ -909,6 +945,110 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(exchange.pairingPayload, payload)
     }
 
+    func testPromotedSwiftTestIdentifiersRemainCollected() throws {
+        let testRoot = packageRoot().appendingPathComponent("Tests")
+        let sources = try swiftSources(under: testRoot)
+        let identifiers = Set(
+            try matches(
+                pattern: #"(?m)^\s*func\s+(test[A-Za-z0-9_]+)\s*\("#,
+                in: sources
+            )
+        )
+        let required = Set([
+            "testUnixDomainControlRoundTrip",
+            "testCLIAppLaunchDecisionAndFailureArePropagated",
+            "testCLIPairingPayloadCrossesStdinThroughRealUDSWithoutOutputLeak",
+            "testPumpFailureIsTypedAndLaterTicksContinue",
+            "testFullCertificatePinValidatorRequiresExactValidSHA256",
+        ])
+
+        XCTAssertTrue(required.isSubset(of: identifiers), "missing \(required.subtracting(identifiers))")
+        XCTAssertGreaterThanOrEqual(identifiers.count, 32)
+    }
+
+    func testIDEA042ContextKeepsEvidenceTierMissingFence() throws {
+        let repositoryRoot = packageRoot()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let context = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("CONTEXT.md"),
+            encoding: .utf8
+        )
+        let marker = "- **Runnable local helper bridge (IDEA-042)**:"
+        let paragraph = try XCTUnwrap(
+            context.components(separatedBy: marker).dropFirst().first?
+                .components(separatedBy: "\n- **").first
+        )
+        let normalizedParagraph = paragraph
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        for missingFact in [
+            "signing",
+            "notarization",
+            "TCC",
+            "Keychain access-group runtime",
+            "deployed certificate pinning",
+            "real devices",
+            "permission continuity",
+            "deployment",
+            "duration",
+            "canary",
+            "live enablement",
+        ] {
+            XCTAssertTrue(normalizedParagraph.contains(missingFact), missingFact)
+        }
+        XCTAssertTrue(normalizedParagraph.contains("remain Missing"))
+        XCTAssertFalse(normalizedParagraph.contains("proven by the local unsigned build"))
+        XCTAssertFalse(normalizedParagraph.contains("deployment and enablement are ready"))
+    }
+
+    func testIDEA042ResidualKillNodesNameExistingActualTests() throws {
+        let repositoryRoot = packageRoot()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let adr = try String(
+            contentsOf: repositoryRoot
+                .appendingPathComponent("docs")
+                .appendingPathComponent("adr")
+                .appendingPathComponent("0001-live-v2-json-http-contract.md"),
+            encoding: .utf8
+        )
+        let section = try XCTUnwrap(
+            adr.components(separatedBy: "## IDEA-042 Residual Kill Nodes").dropFirst().first?
+                .components(separatedBy: "\n## ").first
+        )
+        let namedTests = Set(
+            try matches(pattern: #"`(test[A-Za-z0-9_]+)`"#, in: section)
+        )
+        let swiftTests = try swiftSources(
+            under: repositoryRoot
+                .appendingPathComponent("macos")
+                .appendingPathComponent("MOSSCapture")
+                .appendingPathComponent("Tests")
+        )
+        let pythonTests = try textSources(
+            under: repositoryRoot.appendingPathComponent("tests"),
+            pathExtension: "py"
+        )
+        let testSources = swiftTests + "\n" + pythonTests
+
+        XCTAssertTrue(
+            section.contains("- N2: `testFullCertificatePinValidatorRequiresExactValidSHA256`")
+        )
+        XCTAssertFalse(
+            section.contains("- N2: `testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory`")
+        )
+        for testName in namedTests {
+            let escaped = NSRegularExpression.escapedPattern(for: testName)
+            let declaration = #"(?:func|def)\s+("# + escaped + #")\s*\("#
+            XCTAssertFalse(
+                try matches(pattern: declaration, in: testSources).isEmpty,
+                "\(testName) is not a real Swift/Python test declaration"
+            )
+        }
+    }
+
     private func testCertificate() throws -> SecCertificate {
         let fixture = """
         MIIBvzCCASgCCQCWZwVkxZUDQDANBgkqhkiG9w0BAQsFADAkMSIwIAYDVQQDDBlN
@@ -934,6 +1074,36 @@ final class CaptureControllerTests: XCTestCase {
             url.deleteLastPathComponent()
         }
         return url
+    }
+
+    private func swiftSources(under root: URL) throws -> String {
+        try textSources(under: root, pathExtension: "swift")
+    }
+
+    private func textSources(under root: URL, pathExtension: String) throws -> String {
+        let enumerator = try XCTUnwrap(
+            FileManager.default.enumerator(
+                at: root,
+                includingPropertiesForKeys: [.isRegularFileKey]
+            )
+        )
+        var sources: [String] = []
+        for case let url as URL in enumerator where url.pathExtension == pathExtension {
+            sources.append(try String(contentsOf: url, encoding: .utf8))
+        }
+        return sources.joined(separator: "\n")
+    }
+
+    private func matches(pattern: String, in source: String) throws -> [String] {
+        let regex = try NSRegularExpression(pattern: pattern)
+        let range = NSRange(source.startIndex..., in: source)
+        return regex.matches(in: source, range: range).compactMap { match in
+            guard match.numberOfRanges > 1,
+                  let capture = Range(match.range(at: 1), in: source) else {
+                return nil
+            }
+            return String(source[capture])
+        }
     }
 
     private func temporarySocketPath() -> String {
@@ -1167,6 +1337,21 @@ private final class RecordingCaptureHTTPClient: CaptureHTTPClient {
     func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
         requests.append(request)
         return response
+    }
+}
+
+private final class FailOnceScheduledHealthAdapter: CaptureHealthAdapter {
+    private(set) var attemptCount = 0
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        attemptCount += 1
+        if attemptCount == 2 {
+            throw NativeCaptureError.transportUnavailable("heartbeat")
+        }
     }
 }
 

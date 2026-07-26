@@ -144,6 +144,7 @@ public struct ControlChannelResponse: Codable, Equatable {
     public var running: Bool?
     public var sessionID: String?
     public var publishedFrameCount: Int?
+    public var pumpFailure: CapturePumpFailure?
     public var error: String?
 
     public init(
@@ -151,12 +152,14 @@ public struct ControlChannelResponse: Codable, Equatable {
         running: Bool? = nil,
         sessionID: String? = nil,
         publishedFrameCount: Int? = nil,
+        pumpFailure: CapturePumpFailure? = nil,
         error: String? = nil
     ) {
         self.ok = ok
         self.running = running
         self.sessionID = sessionID
         self.publishedFrameCount = publishedFrameCount
+        self.pumpFailure = pumpFailure
         self.error = error
     }
 
@@ -165,7 +168,8 @@ public struct ControlChannelResponse: Codable, Equatable {
             ok: true,
             running: status.running,
             sessionID: status.sessionID,
-            publishedFrameCount: status.publishedFrameCount
+            publishedFrameCount: status.publishedFrameCount,
+            pumpFailure: status.pumpFailure
         )
     }
 }

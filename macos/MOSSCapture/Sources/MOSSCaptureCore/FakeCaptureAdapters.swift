@@ -93,18 +93,18 @@ public final class FakeCaptureClockAdapter: CaptureClockAdapter {
 
 public final class FakeCaptureSchedulerAdapter: CaptureSchedulerAdapter {
     public private(set) var labels: [String] = []
-    private var operations: [() throws -> Void] = []
+    private var operations: [() -> Void] = []
 
     public init() {}
 
-    public func schedule(label: String, operation: @escaping () throws -> Void) -> CaptureCancellation {
+    public func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation {
         labels.append(label)
         operations.append(operation)
         return FakeCaptureCancellation()
     }
 
-    public func runScheduledOperation(at index: Int = 0) throws {
-        try operations[index]()
+    public func runScheduledOperation(at index: Int = 0) {
+        operations[index]()
     }
 }
 

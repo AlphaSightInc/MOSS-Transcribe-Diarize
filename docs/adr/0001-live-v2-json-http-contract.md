@@ -124,7 +124,10 @@ the app-owned exchange. The helper heartbeat is now an ordinary registered
 `POST /api/live/sessions/{session_id}/heartbeat` route that calls the same
 capture-authorized presence handler; this replaces middleware path sniffing and
 does not add timeout, abandonment, failure, expiry, stop, abort, recovery, or
-enablement policy.
+enablement policy. An off-callback publish or health failure is exposed as a
+typed `pumpFailure` status fact; the repeating pump remains active and clears
+that fact after a later successful tick. This is local retry/observability, not
+server lane-failure, expiry, abandonment, or recovery policy.
 
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
@@ -174,6 +177,19 @@ single-obligation mutation; they do not claim mutation review has run.
 - N5: `test_live_portal_is_enabled_no_store_and_does_not_add_live_api_routes`
   inventories registered FastAPI routes and requires
   `POST /api/live/sessions/{session_id}/heartbeat`.
+- Fix-cycle CLI nodes:
+  `testCLIAppLaunchDecisionAndFailureArePropagated`,
+  `testLaunchServicesAdapterInvokesInjectedOpenAndPropagatesFailure`,
+  `testCLIPairingPayloadCrossesStdinThroughRealUDSWithoutOutputLeak`, and
+  `testCLIPrintsAppFailureResponseAndReturnsNonzeroWithoutSecretLeak` drive
+  launch decisions, the launcher adapter, real UDS pairing transit, exact app
+  responses, exit codes, and output-channel secrecy.
+- Fix-cycle pump/evidence nodes:
+  `testPumpFailureIsTypedAndLaterTicksContinue`,
+  `testPromotedSwiftTestIdentifiersRemainCollected`,
+  `testIDEA042ContextKeepsEvidenceTierMissingFence`, and
+  `testIDEA042ResidualKillNodesNameExistingActualTests` pin typed retry state,
+  collection floors, the local-only Missing fence, and this node map.
 
 ## Consequences
 

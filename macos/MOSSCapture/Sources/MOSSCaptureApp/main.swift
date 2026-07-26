@@ -89,15 +89,11 @@ final class RepeatingCaptureSchedulerAdapter: CaptureSchedulerAdapter {
         self.interval = interval
     }
 
-    func schedule(label: String, operation: @escaping () throws -> Void) -> CaptureCancellation {
+    func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: label))
         timer.schedule(deadline: .now() + interval, repeating: interval)
         timer.setEventHandler {
-            do {
-                try operation()
-            } catch {
-                timer.cancel()
-            }
+            operation()
         }
         timer.resume()
         return TimerCancellation(timer: timer)

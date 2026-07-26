@@ -71,19 +71,44 @@ public struct CaptureStatus: Equatable {
     public var lanes: [CaptureLaneStatus]
     public var publishedFrameCount: Int
     public var lastHealthSequence: UInt64?
+    public var pumpFailure: CapturePumpFailure?
 
     public init(
         running: Bool,
         sessionID: String?,
         lanes: [CaptureLaneStatus],
         publishedFrameCount: Int,
-        lastHealthSequence: UInt64?
+        lastHealthSequence: UInt64?,
+        pumpFailure: CapturePumpFailure? = nil
     ) {
         self.running = running
         self.sessionID = sessionID
         self.lanes = lanes
         self.publishedFrameCount = publishedFrameCount
         self.lastHealthSequence = lastHealthSequence
+        self.pumpFailure = pumpFailure
+    }
+}
+
+public enum CapturePumpFailure: String, Codable, Equatable {
+    case permissionDenied
+    case deviceUnavailable
+    case transportUnavailable
+    case unexpected
+
+    init(error: Error) {
+        switch error {
+        case NativeCaptureError.permissionDenied(_):
+            self = .permissionDenied
+        case NativeCaptureError.deviceUnavailable(_):
+            self = .deviceUnavailable
+        case NativeCaptureError.transportUnavailable(_):
+            self = .transportUnavailable
+        case is CaptureHTTPTransportError:
+            self = .transportUnavailable
+        default:
+            self = .unexpected
+        }
     }
 }
 
@@ -108,7 +133,7 @@ public protocol CaptureClockAdapter {
 }
 
 public protocol CaptureSchedulerAdapter {
-    func schedule(label: String, operation: @escaping () throws -> Void) -> CaptureCancellation
+    func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation
 }
 
 public protocol CaptureCancellation {
@@ -142,6 +167,7 @@ public final class CaptureController {
     private var publishedFrameCount = 0
     private var healthSequence: UInt64?
     private var healthTask: CaptureCancellation?
+    private var pumpFailure: CapturePumpFailure?
 
     public init(
         source: CaptureSourceAdapter,
@@ -176,10 +202,15 @@ public final class CaptureController {
         healthTask = scheduler.schedule(label: "moss.capture.pump") { [weak self] in
             guard let self else { return }
             guard self.running, let configuration = self.configuration else {
-                throw CaptureControllerError.notRunning
+                return
             }
-            try self.publishPendingFrames(configuration: configuration)
-            _ = try self.emitHealth()
+            do {
+                try self.publishPendingFrames(configuration: configuration)
+                _ = try self.emitHealth()
+                self.pumpFailure = nil
+            } catch {
+                self.pumpFailure = CapturePumpFailure(error: error)
+            }
         }
         return status
     }
@@ -190,7 +221,8 @@ public final class CaptureController {
             sessionID: configuration?.sessionID,
             lanes: source.status(),
             publishedFrameCount: publishedFrameCount,
-            lastHealthSequence: healthSequence
+            lastHealthSequence: healthSequence,
+            pumpFailure: pumpFailure
         )
     }
 
@@ -208,7 +240,8 @@ public final class CaptureController {
             sessionID: configuration?.sessionID,
             lanes: source.status(),
             publishedFrameCount: publishedFrameCount,
-            lastHealthSequence: healthSequence
+            lastHealthSequence: healthSequence,
+            pumpFailure: pumpFailure
         )
         configuration = nil
         return stopped
