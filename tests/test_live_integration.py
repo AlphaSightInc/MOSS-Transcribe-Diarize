@@ -48,5 +48,17 @@ def test_local_integration_replay_reports_http_only_helper_view_scenario():
         ("view:snapshot:failed-lane", 200),
         ("view:stop", 409),
     }
+    cli_probes = {probe.action: probe for probe in report.cli_probes}
+    assert cli_probes["cli:usage"].return_code == 64
+    assert "usage: mtd-capture" in cli_probes["cli:usage"].stderr
+    assert cli_probes["cli:usage"].stdout == ""
+    assert cli_probes["cli:missing-app-socket-status"].return_code == 70
+    assert cli_probes["cli:missing-app-socket-status"].stdout == ""
+    assert cli_probes["cli:missing-app-socket-status"].stderr == "{\"ok\":false}\n"
+    combined_cli_output = "".join(
+        probe.stdout + probe.stderr for probe in report.cli_probes
+    )
+    for secret_marker in ("capture-bearer", "certificate-pin", "pairing-secret"):
+        assert secret_marker not in combined_cli_output
     with pytest.raises(FrozenInstanceError):
         report.stop_deadline = 0.0

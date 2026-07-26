@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -59,6 +61,14 @@ class EventReport:
 
 
 @dataclass(frozen=True, slots=True)
+class CLIProbeReport:
+    action: str
+    return_code: int
+    stdout: str
+    stderr: str
+
+
+@dataclass(frozen=True, slots=True)
 class LocalIntegrationReplayReport:
     session_created: bool
     transcript_lines: tuple[str, ...]
@@ -78,6 +88,7 @@ class LocalIntegrationReplayReport:
     terminal_reason: str | None
     authority_redaction_checked: bool
     exchanges: tuple[HttpExchangeReport, ...]
+    cli_probes: tuple[CLIProbeReport, ...]
 
 
 class _BearerJsonClient:
@@ -136,6 +147,7 @@ class LocalIntegrationReplay:
     def __init__(self, *, tmpdir: str | Path):
         from moss_transcribe_diarize.app.server import create_app
 
+        self._tmpdir = Path(tmpdir)
         self._app = create_app(
             model_path="fake-model",
             runs_dir=tmpdir,
@@ -212,6 +224,7 @@ class LocalIntegrationReplay:
 
         stop_response = self._record("view:stop", portal.stop(deadline=5.0))
         stopped = self._json(stop_response)
+        cli_probes = self._run_cli_probes()
         report = LocalIntegrationReplayReport(
             session_created=True,
             transcript_lines=_transcript_lines(transcript_snapshot),
@@ -235,6 +248,7 @@ class LocalIntegrationReplay:
             terminal_reason=stopped["v2_session"]["terminal_reason"],
             authority_redaction_checked=False,
             exchanges=tuple(self._exchanges),
+            cli_probes=cli_probes,
         )
         return _with_redaction_check(report, secrets)
 
@@ -296,6 +310,19 @@ class LocalIntegrationReplay:
         if isinstance(exchange, HttpExchangeReport):
             raise TypeError("response object required, not report")
         return exchange.json()
+
+    def _run_cli_probes(self) -> tuple[CLIProbeReport, ...]:
+        executable = _mtd_capture_executable()
+        missing_socket = self._tmpdir / "missing-control.sock"
+        env = os.environ.copy()
+        env.pop("MOSS_CAPTURE_APP_URL", None)
+        env.pop("MOSS_CAPTURE_SKIP_LAUNCH", None)
+        env["MOSS_CAPTURE_CONTROL_SOCKET"] = str(missing_socket)
+
+        return (
+            _run_cli_probe(executable, (), env=env, action="cli:usage"),
+            _run_cli_probe(executable, ("status",), env=env, action="cli:missing-app-socket-status"),
+        )
 
 
 def _ack(payload: dict[str, Any]) -> AckReport:
@@ -376,4 +403,39 @@ def _with_redaction_check(
         terminal_reason=report.terminal_reason,
         authority_redaction_checked=True,
         exchanges=report.exchanges,
+        cli_probes=report.cli_probes,
+    )
+
+
+def _mtd_capture_executable() -> Path:
+    root = Path(os.environ.get("MOSS_TARGET_REPO", Path(__file__).resolve().parents[1]))
+    executable = root / "macos" / "MOSSCapture" / ".build" / "debug" / "mtd-capture"
+    if not executable.exists():
+        raise AssertionError(
+            "mtd-capture executable missing; run "
+            "`swift build --package-path macos/MOSSCapture --product mtd-capture` first"
+        )
+    return executable
+
+
+def _run_cli_probe(
+    executable: Path,
+    arguments: tuple[str, ...],
+    *,
+    env: dict[str, str],
+    action: str,
+) -> CLIProbeReport:
+    completed = subprocess.run(
+        (str(executable), *arguments),
+        check=False,
+        capture_output=True,
+        env=env,
+        text=True,
+        timeout=5,
+    )
+    return CLIProbeReport(
+        action=action,
+        return_code=completed.returncode,
+        stdout=completed.stdout,
+        stderr=completed.stderr,
     )
