@@ -1,4 +1,6 @@
+import CryptoKit
 import Foundation
+import Security
 @testable import MOSSCaptureCore
 import XCTest
 
@@ -356,6 +358,80 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(source.contains("constantTimeEquals"))
     }
 
+    func testFullCertificatePinValidatorRequiresExactValidSHA256() throws {
+        let certificate = try testCertificate()
+        let certificateData = SecCertificateCopyData(certificate) as Data
+        let expectedHash = SHA256.hash(data: certificateData)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        let replacementLastByte = expectedHash.hasSuffix("00") ? "ff" : "00"
+        let singleByteMismatch = expectedHash.dropLast(2) + replacementLastByte
+        let validator = FullCertificatePinValidator()
+
+        XCTAssertNoThrow(
+            try validator.validate(
+                certificate: certificate,
+                expectedSHA256Hex: expectedHash.uppercased()
+            )
+        )
+        XCTAssertThrowsError(
+            try validator.validate(
+                certificate: certificate,
+                expectedSHA256Hex: String(singleByteMismatch)
+            )
+        ) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .pinMismatch)
+        }
+        for invalidHash in [
+            String(repeating: "0", count: 63),
+            String(repeating: "g", count: 64),
+        ] {
+            XCTAssertThrowsError(
+                try validator.validate(
+                    certificate: certificate,
+                    expectedSHA256Hex: invalidHash
+                )
+            ) { error in
+                XCTAssertEqual(error as? CaptureSecurityError, .invalidPinnedHash)
+            }
+        }
+    }
+
+    func testCaptureControllerPublicInterfaceIsLimitedToStartStatusStop() throws {
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureCore")
+                .appendingPathComponent("CaptureController.swift"),
+            encoding: .utf8
+        )
+        let classStart = try XCTUnwrap(
+            source.range(of: "public final class CaptureController {")
+        )
+        let controllerSource = String(source[classStart.lowerBound...])
+        let methodPattern = try NSRegularExpression(
+            pattern: #"\bpublic\s+func\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("#
+        )
+        let methodMatches = methodPattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
+        let methodNames = methodMatches.compactMap { match -> String? in
+            guard let range = Range(match.range(at: 1), in: controllerSource) else {
+                return nil
+            }
+            return String(controllerSource[range])
+        }
+        let initPattern = try NSRegularExpression(pattern: #"\bpublic\s+init\s*\("#)
+        let initMatches = initPattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
+
+        XCTAssertEqual(methodNames.sorted(), ["start", "status", "stop"])
+        XCTAssertEqual(initMatches.count, 1)
+    }
+
     func testSameUserUDSAuthenticatorRequiresPrivateSocketPeerUIDAndSecret() throws {
         let authenticator = SameUserUDSAuthenticator(
             secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"),
@@ -393,6 +469,25 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(body.contains("\"command\":\"start\""))
         XCTAssertTrue(body.contains("\"label\":\"local\""))
         XCTAssertFalse(client.socketPath.contains("control-secret"))
+    }
+
+    private func testCertificate() throws -> SecCertificate {
+        let fixture = """
+        MIIBvzCCASgCCQCWZwVkxZUDQDANBgkqhkiG9w0BAQsFADAkMSIwIAYDVQQDDBlN
+        T1NTIENhcHR1cmUgVGVzdCBGaXh0dXJlMB4XDTI2MDcyNjAyMjMxOFoXDTI2MDcy
+        NzAyMjMxOFowJDEiMCAGA1UEAwwZTU9TUyBDYXB0dXJlIFRlc3QgRml4dHVyZTCB
+        nzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEApC3PW4Izr+VU+uJmE9+1uKV9VVo
+        glHQFIkOBKZ3UO218L35QVRo+V67IgDIuxKTEQsjqIFWi/pFAeTJtykP4nWDvqDJ
+        4XMmJVsTTOGwfQ7Q6CoafBBV0DcvvgqvUMezLQihmfrensrPhGb06kEJgId7q0LA
+        bow6DLcBtKSKm3OsCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBS61haY4bsxRuxgxxH
+        TXw2BHz6rooSSKktJ5SUCw03TffObW9LFWS+i7Aw/ddaMJHI03LM2lOPz9ZiC2FX
+        pv/6V2MCyiBvtMJ/vNht7BNFxzYwyeMNLm1QNGwiGo6NZ/G7U9rgqrw2z/lEJ+6E
+        hspPHgHJi69E6fC2EU4JUs3MCQ==
+        """
+        let der = try XCTUnwrap(
+            Data(base64Encoded: fixture, options: .ignoreUnknownCharacters)
+        )
+        return try XCTUnwrap(SecCertificateCreateWithData(nil, der as CFData))
     }
 
     private func packageRoot() -> URL {

@@ -57,8 +57,9 @@ from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
 
 
 _HELPER_HEARTBEAT_ROUTE = "/api/live/sessions/{session_id}/heartbeat"
-_HELPER_HEARTBEAT_PREFIX = "/api/live/sessions/"
-_HELPER_HEARTBEAT_SUFFIX = "/heartbeat"
+_HELPER_HEARTBEAT_PREFIX, _HELPER_HEARTBEAT_SUFFIX = _HELPER_HEARTBEAT_ROUTE.split(
+    "{session_id}"
+)
 
 
 def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegistry) -> None:
