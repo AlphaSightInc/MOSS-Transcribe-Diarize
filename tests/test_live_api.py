@@ -14,6 +14,7 @@ from pathlib import Path
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW, LiveLane
+from moss_transcribe_diarize.app.live_helper_presence import HELPER_HEALTH_SCHEMA
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -88,6 +89,59 @@ def v2_frame_payload(
         "silent": False,
         "discontinuity": False,
     }
+
+
+def helper_heartbeat_payload(
+    *,
+    sequence: int = 0,
+    sent_monotonic_ns: int = 10,
+    state: str = "capturing",
+    lane_state: str = "capturing",
+    failed_lane: str | None = None,
+    failure_code: str | None = None,
+) -> dict:
+    lane = {
+        "state": lane_state,
+        "device_epoch": 0,
+        "dropped_frames": 0,
+        "discontinuities": 0,
+        "failure_code": failure_code if lane_state == "failed" else None,
+    }
+    lanes = {"system": dict(lane), "microphone": dict(lane)}
+    if failed_lane is not None:
+        lanes[failed_lane]["state"] = "failed"
+        lanes[failed_lane]["failure_code"] = failure_code
+    return {
+        "schema": HELPER_HEALTH_SCHEMA,
+        "instance_id": "helper-a",
+        "sequence": sequence,
+        "sent_monotonic_ns": sent_monotonic_ns,
+        "helper_version": "0.1.0",
+        "state": state,
+        "lanes": lanes,
+    }
+
+
+class _FakeTimerHandle:
+    def __init__(self, callback):
+        self.callback = callback
+        self.cancelled = False
+
+    def cancel(self) -> None:
+        self.cancelled = True
+
+    def fire(self) -> None:
+        self.callback()
+
+
+class _FakeTimer:
+    def __init__(self) -> None:
+        self.scheduled: list[tuple[int, _FakeTimerHandle]] = []
+
+    def schedule(self, deadline_monotonic_ns: int, callback) -> _FakeTimerHandle:
+        handle = _FakeTimerHandle(callback)
+        self.scheduled.append((deadline_monotonic_ns, handle))
+        return handle
 
 
 def _digest(label: str) -> str:
@@ -885,6 +939,147 @@ class LiveApiTest(unittest.TestCase):
             self.assertNotIn(session_id, app.state.live_v2_sessions)
             with self.assertRaises(KeyError):
                 app.state.live_v2_mixers.get(session_id)
+
+    def test_explicit_failed_lane_heartbeat_calls_v2_fail_lane_without_releasing_peer(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            heartbeat = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(
+                    failed_lane="microphone",
+                    failure_code="permission_denied",
+                ),
+            )
+            peer_frame = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(0, 2, lane="system"),
+            )
+
+            self.assertEqual(heartbeat.status_code, 200)
+            self.assertEqual(peer_frame.status_code, 200)
+            v2_snapshot = app.state.live_v2_sessions.get(session_id).snapshot().to_dict()
+            self.assertEqual(v2_snapshot["lanes"]["microphone"]["health"], "failed")
+            self.assertEqual(
+                v2_snapshot["lanes"]["microphone"]["failure_code"],
+                "permission_denied",
+            )
+            self.assertIn(session_id, app.state.live_v2_sessions)
+
+    def test_helper_lease_expiry_aborts_mono_expires_v2_and_releases_cleanup(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            timer = _FakeTimer()
+            app.state.live_helper_failures._timer = timer
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            heartbeat = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(),
+            )
+            timer.scheduled[0][1].fire()
+            late_frame = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(0, 1, lane="system"),
+            )
+
+            self.assertEqual(heartbeat.status_code, 200)
+            self.assertEqual(late_frame.status_code, 403)
+            self.assertNotIn(session_id, app.state.live_v2_sessions)
+            with self.assertRaises(KeyError):
+                app.state.live_v2_mixers.get(session_id)
+            self.assertIsNone(app.state.live_helper_presence.snapshot(session_id))
+            self.assertEqual(
+                app.state.live_runtime.snapshot(session_id).session.status,
+                "aborted",
+            )
+
+    def test_stale_lease_callback_after_renewal_does_not_abort_live_session(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            timer = _FakeTimer()
+            app.state.live_helper_failures._timer = timer
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(),
+            )
+            renewed = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(sequence=1, sent_monotonic_ns=20),
+            )
+
+            timer.scheduled[0][1].fire()
+            peer_frame = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(0, 1, lane="system"),
+            )
+
+            self.assertEqual(renewed.status_code, 200)
+            self.assertEqual(peer_frame.status_code, 200)
+            self.assertIn(session_id, app.state.live_v2_sessions)
+            self.assertEqual(app.state.live_runtime.snapshot(session_id).session.status, "active")
+            self.assertTrue(timer.scheduled[0][1].cancelled)
+            self.assertFalse(timer.scheduled[1][1].cancelled)
+
+    def test_muted_alive_degraded_recovering_do_not_fail_live_session(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            degraded = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(state="degraded"),
+            )
+            recovering = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(
+                    sequence=1,
+                    sent_monotonic_ns=20,
+                    state="recovering",
+                ),
+            )
+
+            self.assertEqual(degraded.status_code, 200)
+            self.assertEqual(recovering.status_code, 200)
+            self.assertIn(session_id, app.state.live_v2_sessions)
+            self.assertEqual(app.state.live_runtime.snapshot(session_id).session.status, "active")
 
     def test_v2_http_streams_320_single_lane_frames_across_ack_window_without_mono_bypass(self):
         from fastapi.testclient import TestClient

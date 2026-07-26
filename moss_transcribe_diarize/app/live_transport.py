@@ -72,7 +72,12 @@ def attach_live_routes(
     v2_mixers = LiveCompatibilityMixerRegistry()
     helper_presence = HelperPresenceRegistry()
     helper_failures = LiveHelperFailureCoordinator(
-        live_helper_lease_seconds=live_helper_lease_seconds
+        live_helper_lease_seconds=live_helper_lease_seconds,
+        v2_sessions=v2_sessions,
+        v2_mixers=v2_mixers,
+        helper_presence=helper_presence,
+        access=access,
+        abort_mono=runtime.abort,
     )
     app.state.live_v2_sessions = v2_sessions
     app.state.live_v2_mixers = v2_mixers
@@ -571,7 +576,7 @@ async def _accept_live_helper_heartbeat(
         )
         heartbeat = HelperHeartbeat.from_dict(await request.json())
         snapshot = helper_presence.observe(session_id, heartbeat)
-        helper_failures.observe(session_id, snapshot)
+        await helper_failures.observe(session_id, snapshot)
         return JSONResponse({"helper_presence": snapshot.to_dict()})
     except KeyError as exc:
         return JSONResponse({"detail": str(exc)}, status_code=404)
