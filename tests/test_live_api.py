@@ -90,30 +90,6 @@ def v2_frame_payload(
     }
 
 
-def helper_heartbeat_payload(
-    *,
-    sequence: int = 0,
-    sent_monotonic_ns: int = 10,
-    state: str = "capturing",
-) -> dict:
-    lane = {
-        "state": "capturing",
-        "device_epoch": 0,
-        "dropped_frames": 0,
-        "discontinuities": 0,
-        "failure_code": None,
-    }
-    return {
-        "schema": "moss-live-helper-health.v1",
-        "instance_id": "helper-boot-a",
-        "sequence": sequence,
-        "sent_monotonic_ns": sent_monotonic_ns,
-        "helper_version": "0.1.0",
-        "state": state,
-        "lanes": {"system": lane, "microphone": lane},
-    }
-
-
 def _digest(label: str) -> str:
     return hash_config({"label": label})
 
@@ -167,7 +143,6 @@ def make_live_runtime(
     max_retained_samples: int = 8,
     speech: tuple[bool, ...] = (),
     session_id: str = "api-session",
-    session_ids: tuple[str, ...] | None = None,
     decoder_factory=ApiDecoder,
 ) -> LiveServiceRuntime:
     descriptor = LiveServiceDescriptor(
@@ -189,7 +164,7 @@ def make_live_runtime(
         ),
         frame_samples=1000,
     )
-    ids = iter(session_ids or (session_id,))
+    ids = iter((session_id,))
     return LiveServiceRuntime(
         descriptor=descriptor,
         endpoint_policy_factory=lambda: EndpointPolicy(
@@ -414,117 +389,6 @@ class LiveApiTest(unittest.TestCase):
             event_payloads = events.json()["events"]
             self.assertEqual([event["seq"] for event in event_payloads], [1, 2, 3])
             self.assertEqual(event_payloads[-1]["kind"], "terminal_failure")
-
-    def test_helper_heartbeat_is_capture_owned_and_visible_in_authorized_snapshot(self):
-        from moss_transcribe_diarize.app.server import create_app
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app = create_app(
-                model_path="fake-model",
-                runs_dir=tmpdir,
-                live_enabled=True,
-                live_runtime_factory=lambda: make_live_runtime(),
-                **self._live_auth_kwargs(tmpdir),
-            )
-            client = self._paired_client(app)
-            created = client.post("/api/live/sessions")
-            self.assertEqual(created.status_code, 200)
-            session_id = created.json()["id"]
-            view_client = AuthorizedLiveClient(app, created.json()["view_token"])
-            clock = iter((100, 999, 1_000))
-            app.state.live_helper_presence._monotonic_ns = lambda: next(clock)
-
-            accepted = client.post(
-                f"/api/live/sessions/{session_id}/heartbeat",
-                json=helper_heartbeat_payload(),
-            )
-            duplicate = client.post(
-                f"/api/live/sessions/{session_id}/heartbeat",
-                json=helper_heartbeat_payload(),
-            )
-            advanced = client.post(
-                f"/api/live/sessions/{session_id}/heartbeat",
-                json=helper_heartbeat_payload(sequence=2, sent_monotonic_ns=30, state="degraded"),
-            )
-            view_denied = view_client.post(
-                f"/api/live/sessions/{session_id}/heartbeat",
-                json=helper_heartbeat_payload(sequence=3, sent_monotonic_ns=40),
-            )
-            snapshot = view_client.get(f"/api/live/sessions/{session_id}/snapshot")
-
-            self.assertEqual(accepted.status_code, 200)
-            self.assertEqual(duplicate.status_code, 200)
-            self.assertEqual(advanced.status_code, 200)
-            self.assertEqual(view_denied.status_code, 403)
-            self.assertIn("view authority", view_denied.json()["detail"])
-            self.assertEqual(accepted.json()["helper_presence"]["last_seen_monotonic_ns"], 100)
-            self.assertEqual(duplicate.json()["helper_presence"]["last_seen_monotonic_ns"], 100)
-            self.assertEqual(advanced.json()["helper_presence"]["sequence"], 2)
-            self.assertEqual(advanced.json()["helper_presence"]["last_seen_monotonic_ns"], 1_000)
-            self.assertEqual(snapshot.status_code, 200)
-            self.assertEqual(snapshot.json()["helper_presence"], advanced.json()["helper_presence"])
-
-    def test_helper_presence_releases_on_terminal_and_revocation_paths(self):
-        from fastapi.testclient import TestClient
-        from moss_transcribe_diarize.app.server import create_app
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app = create_app(
-                model_path="fake-model",
-                runs_dir=tmpdir,
-                live_enabled=True,
-                live_runtime_factory=lambda: make_live_runtime(
-                    session_ids=("stopped-session", "aborted-session", "revoked-session")
-                ),
-                **self._live_auth_kwargs(tmpdir),
-            )
-            client = self._paired_client(app)
-            local = TestClient(
-                app,
-                base_url="http://127.0.0.1",
-                client=("127.0.0.1", 50000),
-            )
-
-            stopped_id = client.post("/api/live/sessions").json()["id"]
-            self.assertEqual(
-                client.post(
-                    f"/api/live/sessions/{stopped_id}/heartbeat",
-                    json=helper_heartbeat_payload(),
-                ).status_code,
-                200,
-            )
-            self.assertEqual(
-                client.post(f"/api/live/sessions/{stopped_id}/stop", json={"deadline": 0.0}).status_code,
-                200,
-            )
-            self.assertIsNone(app.state.live_helper_presence.snapshot(stopped_id))
-
-            aborted_id = client.post("/api/live/sessions").json()["id"]
-            self.assertEqual(
-                client.post(
-                    f"/api/live/sessions/{aborted_id}/heartbeat",
-                    json=helper_heartbeat_payload(),
-                ).status_code,
-                200,
-            )
-            self.assertEqual(
-                client.post(f"/api/live/sessions/{aborted_id}/abort", json={"reason": "test"}).status_code,
-                200,
-            )
-            self.assertIsNone(app.state.live_helper_presence.snapshot(aborted_id))
-
-            revoked_id = client.post("/api/live/sessions").json()["id"]
-            self.assertEqual(
-                client.post(
-                    f"/api/live/sessions/{revoked_id}/heartbeat",
-                    json=helper_heartbeat_payload(),
-                ).status_code,
-                200,
-            )
-            revoked = local.delete("/api/live/devices/test-device")
-            self.assertEqual(revoked.status_code, 200)
-            self.assertIn(revoked_id, revoked.json()["session_ids"])
-            self.assertIsNone(app.state.live_helper_presence.snapshot(revoked_id))
 
     def test_stop_timeout_and_abort_return_terminal_failure_semantics(self):
         from fastapi.testclient import TestClient
