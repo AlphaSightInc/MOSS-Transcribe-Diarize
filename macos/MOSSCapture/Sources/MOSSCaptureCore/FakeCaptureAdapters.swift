@@ -1,11 +1,18 @@
 import Foundation
 
 public final class FakeCaptureSourceAdapter: CaptureSourceAdapter {
-    private let frames: [CaptureFrame]
+    private var queuedFrames: [CaptureFrame]
+    private var observedFrames: [CaptureFrame]
     private var started = false
 
     public init(frames: [CaptureFrame]) {
-        self.frames = frames
+        self.queuedFrames = frames
+        self.observedFrames = frames
+    }
+
+    public func enqueue(frames: [CaptureFrame]) {
+        queuedFrames.append(contentsOf: frames)
+        observedFrames.append(contentsOf: frames)
     }
 
     public func start(configuration: CaptureConfiguration) throws {
@@ -13,12 +20,17 @@ public final class FakeCaptureSourceAdapter: CaptureSourceAdapter {
     }
 
     public func pendingFrames() throws -> [CaptureFrame] {
-        started ? frames : []
+        guard started else {
+            return []
+        }
+        let frames = queuedFrames
+        queuedFrames.removeAll()
+        return frames
     }
 
     public func status() -> [CaptureLaneStatus] {
         CaptureLane.allCases.map { lane in
-            let laneFrames = frames.filter { $0.lane == lane }
+            let laneFrames = observedFrames.filter { $0.lane == lane }
             let last = laneFrames.last
             return CaptureLaneStatus(
                 lane: lane,
@@ -81,18 +93,18 @@ public final class FakeCaptureClockAdapter: CaptureClockAdapter {
 
 public final class FakeCaptureSchedulerAdapter: CaptureSchedulerAdapter {
     public private(set) var labels: [String] = []
-    private var operations: [() -> Void] = []
+    private var operations: [() throws -> Void] = []
 
     public init() {}
 
-    public func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation {
+    public func schedule(label: String, operation: @escaping () throws -> Void) -> CaptureCancellation {
         labels.append(label)
         operations.append(operation)
         return FakeCaptureCancellation()
     }
 
-    public func runScheduledOperation(at index: Int = 0) {
-        operations[index]()
+    public func runScheduledOperation(at index: Int = 0) throws {
+        try operations[index]()
     }
 }
 

@@ -108,7 +108,7 @@ public protocol CaptureClockAdapter {
 }
 
 public protocol CaptureSchedulerAdapter {
-    func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation
+    func schedule(label: String, operation: @escaping () throws -> Void) -> CaptureCancellation
 }
 
 public protocol CaptureCancellation {
@@ -173,9 +173,13 @@ public final class CaptureController {
         running = true
         try publishPendingFrames(configuration: configuration)
         let status = try emitHealth()
-        healthTask = scheduler.schedule(label: "moss.capture.health") { [weak self] in
+        healthTask = scheduler.schedule(label: "moss.capture.pump") { [weak self] in
             guard let self else { return }
-            _ = try? self.emitHealth()
+            guard self.running, let configuration = self.configuration else {
+                throw CaptureControllerError.notRunning
+            }
+            try self.publishPendingFrames(configuration: configuration)
+            _ = try self.emitHealth()
         }
         return status
     }

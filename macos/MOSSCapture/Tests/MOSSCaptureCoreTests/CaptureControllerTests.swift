@@ -62,9 +62,89 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.emissions.count, 1)
         XCTAssertEqual(health.emissions.first?.configuration, configuration)
         XCTAssertEqual(health.emissions.first?.sentMonotonicNS, 100)
-        XCTAssertEqual(scheduler.labels, ["moss.capture.health"])
+        XCTAssertEqual(scheduler.labels, ["moss.capture.pump"])
         XCTAssertFalse(stopped.running)
         XCTAssertNil(controller.status().sessionID)
+    }
+
+    func testContinuousPumpPublishesAcrossTicks() throws {
+        let firstSystem = CaptureFrame(
+            lane: CaptureLane.system,
+            sequence: 0,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 10,
+            deviceEpoch: 1,
+            silent: false,
+            discontinuity: false,
+            pcm16: Data([1, 0])
+        )
+        let firstMicrophone = CaptureFrame(
+            lane: CaptureLane.microphone,
+            sequence: 0,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 20,
+            deviceEpoch: 7,
+            silent: true,
+            discontinuity: false,
+            pcm16: Data([0, 0])
+        )
+        let secondSystem = CaptureFrame(
+            lane: CaptureLane.system,
+            sequence: 1,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 30,
+            deviceEpoch: 1,
+            silent: false,
+            discontinuity: false,
+            pcm16: Data([2, 0])
+        )
+        let secondMicrophone = CaptureFrame(
+            lane: CaptureLane.microphone,
+            sequence: 1,
+            sampleRate: 16_000,
+            sampleCount: 1,
+            captureTimestampNS: 40,
+            deviceEpoch: 7,
+            silent: false,
+            discontinuity: true,
+            pcm16: Data([3, 0])
+        )
+        let source = FakeCaptureSourceAdapter(frames: [firstSystem])
+        let transport = FakeCaptureTransportAdapter()
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = FakeCaptureHealthAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300, 400]),
+            scheduler: scheduler,
+            health: health
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://127.0.0.1/live")!
+        )
+
+        try controller.start(configuration: configuration)
+        source.enqueue(frames: [firstMicrophone, secondSystem])
+        try scheduler.runScheduledOperation()
+        source.enqueue(frames: [secondMicrophone])
+        try scheduler.runScheduledOperation()
+        try scheduler.runScheduledOperation()
+
+        XCTAssertEqual(
+            transport.publishedFrames.map(\.lane),
+            [CaptureLane.system, CaptureLane.microphone, CaptureLane.system, CaptureLane.microphone]
+        )
+        XCTAssertEqual(transport.publishedFrames.map(\.sequence), [0, 0, 1, 1])
+        XCTAssertEqual(transport.publishedFrames.map(\.captureTimestampNS), [10, 20, 30, 40])
+        XCTAssertEqual(health.emissions.map(\.sentMonotonicNS), [100, 200, 300, 400])
+        XCTAssertEqual(health.emissions.map(\.status.publishedFrameCount), [1, 3, 4, 4])
+        XCTAssertEqual(controller.status().publishedFrameCount, 4)
     }
 
     func testStartRequiresControlSecretAndRejectsSecondStart() throws {
@@ -409,6 +489,9 @@ final class CaptureControllerTests: XCTestCase {
             source.range(of: "public final class CaptureController {")
         )
         let controllerSource = String(source[classStart.lowerBound...])
+        let declarationLine = try XCTUnwrap(
+            controllerSource.split(separator: "\n", maxSplits: 1).first
+        )
         let methodPattern = try NSRegularExpression(
             pattern: #"\bpublic\s+func\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("#
         )
@@ -427,9 +510,34 @@ final class CaptureControllerTests: XCTestCase {
             in: controllerSource,
             range: NSRange(controllerSource.startIndex..., in: controllerSource)
         )
+        let storagePattern = try NSRegularExpression(
+            pattern: #"\bpublic(?:\s+private\(set\))?\s+(?:var|let)\s+[A-Za-z_][A-Za-z0-9_]*"#
+        )
+        let storageMatches = storagePattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
+        let publicSubscriptPattern = try NSRegularExpression(
+            pattern: #"\bpublic\s+subscript\s*\("#
+        )
+        let publicSubscriptMatches = publicSubscriptPattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
+        let nestedPublicTypePattern = try NSRegularExpression(
+            pattern: #"\bpublic\s+(?:class|struct|enum|actor|protocol|typealias)\s+[A-Za-z_][A-Za-z0-9_]*"#
+        )
+        let nestedPublicTypeMatches = nestedPublicTypePattern.matches(
+            in: controllerSource,
+            range: NSRange(controllerSource.startIndex..., in: controllerSource)
+        )
 
         XCTAssertEqual(methodNames.sorted(), ["start", "status", "stop"])
         XCTAssertEqual(initMatches.count, 1)
+        XCTAssertTrue(storageMatches.isEmpty)
+        XCTAssertTrue(publicSubscriptMatches.isEmpty)
+        XCTAssertTrue(nestedPublicTypeMatches.isEmpty)
+        XCTAssertFalse(declarationLine.contains(":"))
     }
 
     func testSameUserUDSAuthenticatorRequiresPrivateSocketPeerUIDAndSecret() throws {
