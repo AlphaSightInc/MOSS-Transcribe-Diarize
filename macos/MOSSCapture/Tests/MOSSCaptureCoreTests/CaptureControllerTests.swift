@@ -774,6 +774,118 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(mutationCount, 0)
     }
 
+    func testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation() throws {
+        struct BadFrameCase {
+            var name: String
+            var payload: Data
+            var maxFrameBytes: Int
+            var halfCloseWrite: Bool
+            var expectedError: String
+        }
+
+        let validEnvelope = try rawControlFrame(command: "status")
+        let cases = [
+            BadFrameCase(
+                name: "malformed",
+                payload: rawFrame(Data("not-json".utf8)),
+                maxFrameBytes: 64,
+                halfCloseWrite: false,
+                expectedError: "malformedRequest"
+            ),
+            BadFrameCase(
+                name: "partial",
+                payload: rawLengthPrefix(16) + Data("{}".utf8),
+                maxFrameBytes: 64,
+                halfCloseWrite: true,
+                expectedError: "malformedRequest"
+            ),
+            BadFrameCase(
+                name: "oversized",
+                payload: rawLengthPrefix(65),
+                maxFrameBytes: 64,
+                halfCloseWrite: false,
+                expectedError: "oversizedRequest"
+            ),
+            BadFrameCase(
+                name: "trailing",
+                payload: validEnvelope + Data([0]),
+                maxFrameBytes: 64,
+                halfCloseWrite: false,
+                expectedError: "trailingRequestBytes"
+            ),
+        ]
+
+        for badFrame in cases {
+            let socketPath = temporarySocketPath()
+            let serverFinished = expectation(description: "server rejected \(badFrame.name)")
+            var mutationCount = 0
+            let server = UnixDomainControlServer(
+                socketPath: socketPath,
+                authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")),
+                maxFrameBytes: badFrame.maxFrameBytes
+            ) { _ in
+                mutationCount += 1
+                return ControlChannelResponse(ok: true)
+            }
+
+            DispatchQueue.global().async {
+                try? server.serveOnce()
+                serverFinished.fulfill()
+            }
+            try waitForSocket(at: socketPath)
+
+            let response = try sendRawControlPayload(
+                badFrame.payload,
+                socketPath: socketPath,
+                halfCloseWrite: badFrame.halfCloseWrite
+            )
+
+            wait(for: [serverFinished], timeout: 2)
+            XCTAssertFalse(response.ok, badFrame.name)
+            XCTAssertEqual(response.error, badFrame.expectedError, badFrame.name)
+            XCTAssertEqual(mutationCount, 0, badFrame.name)
+        }
+    }
+
+    func testControlServerRejectsUnknownCommandAndMissingConfigurationWithoutControllerMutation() throws {
+        let cases = [
+            ("unknown", ControlChannelRequest(command: "restart"), "unknownCommand(\"restart\")"),
+            ("missing configuration", ControlChannelRequest(command: "start"), "missingCaptureConfiguration"),
+        ]
+
+        for controlCase in cases {
+            let controller = CaptureController.fakeForLocalDevelopment()
+            let dispatcher = ControlCommandDispatcher(
+                controller: controller,
+                pairingExchange: RecordingPairingExchange()
+            )
+            let socketPath = temporarySocketPath()
+            let serverFinished = expectation(description: "server rejected \(controlCase.0)")
+            let server = UnixDomainControlServer(
+                socketPath: socketPath,
+                authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"))
+            ) { request in
+                try dispatcher.dispatch(request)
+            }
+
+            DispatchQueue.global().async {
+                try? server.serveOnce()
+                serverFinished.fulfill()
+            }
+            try waitForSocket(at: socketPath)
+
+            let response = try sendRawControlPayload(
+                try rawControlFrame(request: controlCase.1),
+                socketPath: socketPath
+            )
+
+            wait(for: [serverFinished], timeout: 2)
+            XCTAssertFalse(response.ok, controlCase.0)
+            XCTAssertEqual(response.error, controlCase.2, controlCase.0)
+            XCTAssertFalse(controller.status().running, controlCase.0)
+        }
+    }
+
     func testPairingPayloadReachesApp() throws {
         let exchange = RecordingPairingExchange()
         let dispatcher = ControlCommandDispatcher(
@@ -839,6 +951,108 @@ final class CaptureControllerTests: XCTestCase {
             Thread.sleep(forTimeInterval: 0.01)
         }
         XCTFail("socket was not created")
+    }
+
+    private struct RawControlEnvelope: Encodable {
+        var secret: String
+        var request: ControlChannelRequest
+    }
+
+    private func rawControlFrame(command: String) throws -> Data {
+        try rawControlFrame(request: ControlChannelRequest(command: command))
+    }
+
+    private func rawControlFrame(request: ControlChannelRequest) throws -> Data {
+        try rawFrame(JSONEncoder().encode(RawControlEnvelope(secret: "control-secret", request: request)))
+    }
+
+    private func rawFrame(_ body: Data) -> Data {
+        rawLengthPrefix(body.count) + body
+    }
+
+    private func rawLengthPrefix(_ byteCount: Int) -> Data {
+        var length = UInt32(byteCount).bigEndian
+        var data = Data()
+        withUnsafeBytes(of: &length) { bytes in
+            data.append(contentsOf: bytes)
+        }
+        return data
+    }
+
+    private func sendRawControlPayload(
+        _ payload: Data,
+        socketPath: String,
+        halfCloseWrite: Bool = false
+    ) throws -> ControlChannelResponse {
+        let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
+        XCTAssertGreaterThanOrEqual(fileDescriptor, 0)
+        defer { close(fileDescriptor) }
+
+        try connectRawSocket(fileDescriptor, socketPath: socketPath)
+        try writeRawPayload(payload, to: fileDescriptor)
+        if halfCloseWrite {
+            shutdown(fileDescriptor, SHUT_WR)
+        }
+        let body = try readRawFrame(from: fileDescriptor)
+        return try JSONDecoder().decode(ControlChannelResponse.self, from: body)
+    }
+
+    private func connectRawSocket(_ fileDescriptor: Int32, socketPath: String) throws {
+        let pathBytes = Array(socketPath.utf8)
+        var address = sockaddr_un()
+        address.sun_family = sa_family_t(AF_UNIX)
+        #if os(macOS)
+        address.sun_len = UInt8(MemoryLayout<sockaddr_un>.size)
+        #endif
+        withUnsafeMutableBytes(of: &address.sun_path) { rawBuffer in
+            for index in pathBytes.indices {
+                rawBuffer[index] = pathBytes[index]
+            }
+            rawBuffer[pathBytes.count] = 0
+        }
+        let length = socklen_t(MemoryLayout<sa_family_t>.size + pathBytes.count + 1)
+        let result = withUnsafePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { socketAddress in
+                Darwin.connect(fileDescriptor, socketAddress, length)
+            }
+        }
+        XCTAssertEqual(result, 0)
+    }
+
+    private func writeRawPayload(_ payload: Data, to fileDescriptor: Int32) throws {
+        payload.withUnsafeBytes { rawBuffer in
+            var offset = 0
+            while offset < payload.count {
+                let count = Darwin.write(
+                    fileDescriptor,
+                    rawBuffer.baseAddress!.advanced(by: offset),
+                    payload.count - offset
+                )
+                XCTAssertGreaterThan(count, 0)
+                offset += count
+            }
+        }
+    }
+
+    private func readRawFrame(from fileDescriptor: Int32) throws -> Data {
+        let prefix = try readRawBytes(4, from: fileDescriptor)
+        let length = prefix.withUnsafeBytes { rawBuffer in
+            UInt32(bigEndian: rawBuffer.load(as: UInt32.self))
+        }
+        return try readRawBytes(Int(length), from: fileDescriptor)
+    }
+
+    private func readRawBytes(_ byteCount: Int, from fileDescriptor: Int32) throws -> Data {
+        var data = Data(count: byteCount)
+        var offset = 0
+        while offset < byteCount {
+            let count = data.withUnsafeMutableBytes { rawBuffer in
+                Darwin.read(fileDescriptor, rawBuffer.baseAddress!.advanced(by: offset), byteCount - offset)
+            }
+            XCTAssertGreaterThan(count, 0)
+            offset += count
+        }
+        return data
     }
 
     private func nativeBuffer(

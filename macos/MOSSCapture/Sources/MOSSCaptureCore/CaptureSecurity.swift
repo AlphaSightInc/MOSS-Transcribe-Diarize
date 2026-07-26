@@ -422,7 +422,8 @@ public final class UnixDomainControlServer {
         let response: ControlChannelResponse
         do {
             let body = try readFrame(from: acceptedFileDescriptor, maxFrameBytes: maxFrameBytes)
-            let envelope = try JSONDecoder().decode(Envelope.self, from: body)
+            try rejectTrailingRequestBytes(on: acceptedFileDescriptor)
+            let envelope = try decodeEnvelope(from: body)
             try authenticator.validatePeerCredentials(
                 fileDescriptor: acceptedFileDescriptor,
                 presentedSecret: envelope.secret
@@ -437,6 +438,14 @@ public final class UnixDomainControlServer {
     private struct Envelope: Decodable {
         var secret: String
         var request: ControlChannelRequest
+    }
+
+    private func decodeEnvelope(from body: Data) throws -> Envelope {
+        do {
+            return try JSONDecoder().decode(Envelope.self, from: body)
+        } catch {
+            throw CaptureSecurityError.malformedRequest
+        }
     }
 }
 
@@ -546,6 +555,23 @@ private func readFrame(from fileDescriptor: Int32, maxFrameBytes: Int) throws ->
         throw CaptureSecurityError.oversizedRequest
     }
     return try readExactly(Int(length), from: fileDescriptor)
+}
+
+private func rejectTrailingRequestBytes(on fileDescriptor: Int32) throws {
+    var byte: UInt8 = 0
+    let count = withUnsafeMutableBytes(of: &byte) { rawBuffer in
+        recv(fileDescriptor, rawBuffer.baseAddress, 1, MSG_PEEK | MSG_DONTWAIT)
+    }
+    if count > 0 {
+        throw CaptureSecurityError.trailingRequestBytes
+    }
+    if count == 0 {
+        return
+    }
+    if errno == EAGAIN || errno == EWOULDBLOCK {
+        return
+    }
+    throw CaptureSecurityError.socketStatus(errno)
 }
 
 private func readExactly(_ byteCount: Int, from fileDescriptor: Int32) throws -> Data {
