@@ -17,6 +17,10 @@ from test_live_api import (
     v2_frame_payload,
 )
 
+_SWIFT_PACKAGE_PATH = "macos/MOSSCapture"
+_MTD_CAPTURE_PRODUCT = "mtd-capture"
+_SHOW_BIN_PATH_ARGV = tuple("swift build --show-bin-path".split())
+
 
 @dataclass(frozen=True, slots=True)
 class HttpExchangeReport:
@@ -63,6 +67,7 @@ class EventReport:
 @dataclass(frozen=True, slots=True)
 class CLIProbeReport:
     action: str
+    executable: str
     return_code: int
     stdout: str
     stderr: str
@@ -407,13 +412,37 @@ def _with_redaction_check(
     )
 
 
-def _mtd_capture_executable() -> Path:
+def _swift_bin_path() -> Path:
+    """Ask the Swift package for its real bin path instead of assuming a configuration."""
     root = Path(os.environ.get("MOSS_TARGET_REPO", Path(__file__).resolve().parents[1]))
-    executable = root / "macos" / "MOSSCapture" / ".build" / "debug" / "mtd-capture"
+    argv = (
+        *_SHOW_BIN_PATH_ARGV,
+        "--package-path",
+        str(root / _SWIFT_PACKAGE_PATH),
+    )
+    try:
+        completed = subprocess.run(
+            argv,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except FileNotFoundError as error:
+        raise AssertionError(f"swift toolchain required to resolve {_MTD_CAPTURE_PRODUCT}: {error}")
+    if completed.returncode != 0:
+        raise AssertionError(
+            f"`{' '.join(argv)}` failed: rc={completed.returncode} {completed.stderr.strip()}"
+        )
+    return Path(completed.stdout.strip())
+
+
+def _mtd_capture_executable() -> Path:
+    executable = _swift_bin_path() / _MTD_CAPTURE_PRODUCT
     if not executable.exists():
         raise AssertionError(
-            "mtd-capture executable missing; run "
-            "`swift build --package-path macos/MOSSCapture --product mtd-capture` first"
+            f"{_MTD_CAPTURE_PRODUCT} executable missing at {executable}; run "
+            f"`swift build --package-path {_SWIFT_PACKAGE_PATH} --product {_MTD_CAPTURE_PRODUCT}` first"
         )
     return executable
 
@@ -435,6 +464,7 @@ def _run_cli_probe(
     )
     return CLIProbeReport(
         action=action,
+        executable=str(executable),
         return_code=completed.returncode,
         stdout=completed.stdout,
         stderr=completed.stderr,

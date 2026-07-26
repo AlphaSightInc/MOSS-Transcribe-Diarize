@@ -180,7 +180,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         pollController: null,
         controlController: null,
         renderedEvents: new Set(),
-        eventOrder: [],
+        renderedEventOrder: [],
       };
 
       function setText(node, value) {
@@ -241,7 +241,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.snapshotVersion = 0;
         state.eventSequence = 0;
         state.renderedEvents.clear();
-        state.eventOrder = [];
+        state.renderedEventOrder = [];
         nodes.sessionId.value = "";
         nodes.viewToken.value = "";
       }
@@ -426,16 +426,25 @@ LIVE_PORTAL_HTML = """<!doctype html>
         return session;
       }
 
+      function renderedEventBounds() {
+        return {
+          cap: maxRenderedEvents,
+          identity: state.renderedEvents.size,
+          order: state.renderedEventOrder.length,
+          dom: nodes.events.children.length,
+        };
+      }
+
       function retainRenderedEvent(row, sequence) {
         nodes.events.appendChild(row);
         state.renderedEvents.add(sequence);
-        state.eventOrder.push(sequence);
-        while (state.eventOrder.length > maxRenderedEvents) {
-          const removed = state.eventOrder.shift();
+        state.renderedEventOrder.push(sequence);
+        while (state.renderedEventOrder.length > maxRenderedEvents) {
+          const removed = state.renderedEventOrder.shift();
           state.renderedEvents.delete(removed);
-          if (nodes.events.firstChild) {
-            nodes.events.removeChild(nodes.events.firstChild);
-          }
+        }
+        while (nodes.events.children.length > maxRenderedEvents) {
+          nodes.events.removeChild(nodes.events.children[0]);
         }
       }
 
@@ -598,7 +607,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.snapshotVersion = 0;
         state.eventSequence = 0;
         state.renderedEvents.clear();
-        state.eventOrder = [];
+        state.renderedEventOrder = [];
         setText(nodes.events, "");
         setText(nodes.transcript, "");
         setControls(state.connected);
@@ -616,7 +625,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
       nodes.abort.addEventListener("click", () => void control("abort"));
       window.addEventListener("pagehide", clearAuthority);
 
-      window.mossLivePortal = { endpoints };
+      window.mossLivePortal = { endpoints, renderedEventBounds };
     })();
   </script>
 </body>

@@ -34,6 +34,69 @@ EXPECTED_LIVE_API = {
 }
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+# Every fact the IDEA-038 acceptance package holds at evidence tier `Missing`.
+# The fence below requires the whole claim set in each document, not a token.
+IDEA_038_MISSING_FACTS = (
+    "secure automated browser handoff",
+    "signing",
+    "notarization",
+    "TCC",
+    "Keychain runtime",
+    "real permission/device/tap behavior",
+    "real lease value",
+    "history/artifacts",
+    "deployment",
+    "60/300 evidence",
+    "Windows production",
+    "canary",
+    "live enablement",
+)
+IDEA_038_REQUIRED_CLAIMS = (
+    "5-second stop-drain",
+    "10-second poll request timeout",
+    "10-second control request timeout",
+    "renderedEventOrder",
+    "events DOM row count",
+    "terminal snapshot or event, not durable portal history or artifacts",
+    "remain Missing",
+)
+IDEA_038_REJECTED_CERTIFICATIONS = (
+    r"certif",
+    r"production proof",
+    r"sufficient",
+    r"prove[sd]?\s+(signing|notarization|TCC|deployment|enablement|production)",
+    r"ready for (production|deployment|notarization)",
+)
+
+
+def _flatten(lines) -> str:
+    return " ".join(" ".join(lines).split())
+
+
+def _context_idea_038_claim_block() -> str:
+    lines = (REPO_ROOT / "CONTEXT.md").read_text(encoding="utf-8").splitlines()
+    starts = [
+        index
+        for index, line in enumerate(lines)
+        if line.startswith("- **Local portal/helper integration (IDEA-038)**")
+    ]
+    if len(starts) != 1:
+        raise AssertionError(f"expected one IDEA-038 CONTEXT.md entry, found {len(starts)}")
+    end = starts[0] + 1
+    while end < len(lines) and not lines[end].startswith("- "):
+        end += 1
+    return _flatten(lines[starts[0]:end])
+
+
+def _adr_idea_038_claim_block() -> str:
+    text = (REPO_ROOT / "docs/adr/0001-live-v2-json-http-contract.md").read_text(encoding="utf-8")
+    paragraphs = [block for block in text.split("\n\n") if block.startswith("IDEA-038 ")]
+    if len(paragraphs) != 1:
+        raise AssertionError(f"expected one IDEA-038 ADR paragraph, found {len(paragraphs)}")
+    return _flatten(paragraphs[0].splitlines())
+
+
 def _make_live_app(tmpdir: str | Path):
     from moss_transcribe_diarize.app.server import create_app
 
@@ -357,6 +420,41 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["lastRow"], "seq: 206 | kind: tail | snapshot: 4")
         self.assertEqual(probe["seq200Rows"], 1)
         self.assertIn("since_seq=205", probe["secondEventsUrl"])
+        # Identity, order and DOM are three separately enforced bounds: losing
+        # any one of them must fail on its own, not only in combination.
+        self.assertEqual(probe["cap"], 200)
+        self.assertEqual(probe["identitySize"], 200)
+        self.assertEqual(probe["orderLength"], 200)
+        self.assertEqual(probe["domRowCount"], 200)
+        self.assertEqual(probe["domRowCount"], probe["rowCount"])
+
+    def test_idea_038_context_and_adr_keep_portal_constants_and_evidence_tier_missing(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        # The documented constants are the ones the portal actually ships.
+        self.assertIn("stopDrainDeadlineSeconds = 5.0", html)
+        self.assertIn("pollRequestTimeoutMs = 10000", html)
+        self.assertIn("controlRequestTimeoutMs = 10000", html)
+        self.assertIn("maxRenderedEvents = 200", html)
+
+        blocks = {
+            "CONTEXT.md": _context_idea_038_claim_block(),
+            "ADR-0001": _adr_idea_038_claim_block(),
+        }
+        for name, block in blocks.items():
+            with self.subTest(document=name):
+                for claim in IDEA_038_REQUIRED_CLAIMS:
+                    self.assertIn(claim, block, f"{name} dropped the claim {claim!r}")
+                for fact in IDEA_038_MISSING_FACTS:
+                    self.assertIn(fact, block, f"{name} dropped the Missing fact {fact!r}")
+                for pattern in IDEA_038_REJECTED_CERTIFICATIONS:
+                    self.assertIsNone(
+                        re.search(pattern, block, flags=re.IGNORECASE),
+                        f"{name} certifies evidence this slice does not produce: {pattern!r}",
+                    )
 
 
 def test_live_portal_caplog_and_root_logging_do_not_emit_authority_or_audio_secrets(caplog, capsys):
@@ -838,12 +936,17 @@ async function runEventRetention() {{
   await env.runNextTimer();
   await env.runNextTimer();
   const rows = env.nodes.events.children.map((node) => node.textContent);
+  const bounds = window.mossLivePortal.renderedEventBounds();
   console.log(JSON.stringify({{
     rowCount: rows.length,
     firstRow: rows[0],
     lastRow: rows[rows.length - 1],
     seq200Rows: rows.filter((row) => row.startsWith("seq: 200 ")).length,
     secondEventsUrl: env.requests[3].url,
+    cap: bounds.cap,
+    identitySize: bounds.identity,
+    orderLength: bounds.order,
+    domRowCount: bounds.dom,
   }}));
 }}
 
