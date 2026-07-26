@@ -12,6 +12,25 @@ public struct SystemAudioTapSourceVector: Equatable, Sendable {
 public enum NativeCaptureError: Error, Equatable {
     case unavailable(String)
     case osStatus(String, Int32)
+    case permissionDenied(String)
+    case deviceUnavailable(String)
+    case transportUnavailable(String)
+}
+
+protocol SystemAudioTapDriver: AnyObject {
+    func createProcessTap(description: CATapDescription) throws -> AudioObjectID
+    func createAggregateDevice(for description: CATapDescription) throws -> AudioObjectID
+    func createIOProc(
+        on aggregateDeviceID: AudioObjectID,
+        queue: RealTimeNativeAudioBufferQueue,
+        sampleRate: Int,
+        deviceEpoch: UInt64
+    ) throws
+    func startDevice(_ aggregateDeviceID: AudioObjectID) throws
+    func stopDevice(_ aggregateDeviceID: AudioObjectID)
+    func destroyIOProc(on aggregateDeviceID: AudioObjectID)
+    func destroyAggregateDevice(_ aggregateDeviceID: AudioObjectID)
+    func destroyProcessTap(_ tapID: AudioObjectID)
 }
 
 public final class SystemAudioTap {
@@ -25,13 +44,26 @@ public final class SystemAudioTap {
 
     private let sampleRate: Int
     private let deviceEpoch: UInt64
+    private let driver: SystemAudioTapDriver
     private var tapID = AudioObjectID(kAudioObjectUnknown)
     private var aggregateDeviceID = AudioObjectID(kAudioObjectUnknown)
-    private var ioProcID: AudioDeviceIOProcID?
+    private var ioProcInstalled = false
+    private var ioStarted = false
 
     public init(sampleRate: Int = 48_000, deviceEpoch: UInt64 = 0) {
         self.sampleRate = sampleRate
         self.deviceEpoch = deviceEpoch
+        self.driver = CoreAudioSystemTapDriver()
+    }
+
+    init(
+        sampleRate: Int = 48_000,
+        deviceEpoch: UInt64 = 0,
+        driver: SystemAudioTapDriver
+    ) {
+        self.sampleRate = sampleRate
+        self.deviceEpoch = deviceEpoch
+        self.driver = driver
     }
 
     public func makeTapDescription(name: String = "MOSS System Audio Tap") -> CATapDescription {
@@ -46,37 +78,62 @@ public final class SystemAudioTap {
         return description
     }
 
-    @available(macOS 14.2, *)
     public func start(queue: RealTimeNativeAudioBufferQueue) throws {
         let description = makeTapDescription()
-        var createdTapID = AudioObjectID(kAudioObjectUnknown)
-        let tapStatus = AudioHardwareCreateProcessTap(description, &createdTapID)
-        guard tapStatus == noErr else {
-            throw NativeCaptureError.osStatus("AudioHardwareCreateProcessTap", tapStatus)
+        do {
+            tapID = try driver.createProcessTap(description: description)
+            aggregateDeviceID = try driver.createAggregateDevice(for: description)
+            try driver.createIOProc(
+                on: aggregateDeviceID,
+                queue: queue,
+                sampleRate: sampleRate,
+                deviceEpoch: deviceEpoch
+            )
+            ioProcInstalled = true
+            try driver.startDevice(aggregateDeviceID)
+            ioStarted = true
+        } catch {
+            stop()
+            throw error
         }
-        tapID = createdTapID
-        aggregateDeviceID = try createTransientAggregateDevice(for: description)
-        try installHALCallback(on: aggregateDeviceID, queue: queue)
     }
 
     public func stop() {
-        if let ioProcID {
-            AudioDeviceDestroyIOProcID(aggregateDeviceID, ioProcID)
-            self.ioProcID = nil
+        if ioStarted {
+            driver.stopDevice(aggregateDeviceID)
+            ioStarted = false
+        }
+        if ioProcInstalled {
+            driver.destroyIOProc(on: aggregateDeviceID)
+            ioProcInstalled = false
         }
         if aggregateDeviceID != AudioObjectID(kAudioObjectUnknown) {
-            AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
+            driver.destroyAggregateDevice(aggregateDeviceID)
             aggregateDeviceID = AudioObjectID(kAudioObjectUnknown)
         }
         if tapID != AudioObjectID(kAudioObjectUnknown) {
-            if #available(macOS 14.2, *) {
-                AudioHardwareDestroyProcessTap(tapID)
-            }
+            driver.destroyProcessTap(tapID)
             tapID = AudioObjectID(kAudioObjectUnknown)
         }
     }
+}
 
-    private func createTransientAggregateDevice(for description: CATapDescription) throws -> AudioObjectID {
+private final class CoreAudioSystemTapDriver: SystemAudioTapDriver {
+    private var ioProcID: AudioDeviceIOProcID?
+
+    func createProcessTap(description: CATapDescription) throws -> AudioObjectID {
+        guard #available(macOS 14.2, *) else {
+            throw NativeCaptureError.unavailable("macOS 14.2 process taps required")
+        }
+        var createdTapID = AudioObjectID(kAudioObjectUnknown)
+        let status = AudioHardwareCreateProcessTap(description, &createdTapID)
+        guard status == noErr else {
+            throw NativeCaptureError.osStatus("AudioHardwareCreateProcessTap", status)
+        }
+        return createdTapID
+    }
+
+    func createAggregateDevice(for description: CATapDescription) throws -> AudioObjectID {
         let tapUID = description.uuid.uuidString
         let aggregateUID = "moss.capture.aggregate.\(UUID().uuidString)"
         let tap: [String: Any] = [
@@ -99,13 +156,13 @@ public final class SystemAudioTap {
         return deviceID
     }
 
-    private func installHALCallback(
+    func createIOProc(
         on aggregateDeviceID: AudioObjectID,
-        queue: RealTimeNativeAudioBufferQueue
+        queue: RealTimeNativeAudioBufferQueue,
+        sampleRate: Int,
+        deviceEpoch: UInt64
     ) throws {
         var createdIOProcID: AudioDeviceIOProcID?
-        let sampleRate = self.sampleRate
-        let deviceEpoch = self.deviceEpoch
         let status = AudioDeviceCreateIOProcIDWithBlock(
             &createdIOProcID,
             aggregateDeviceID,
@@ -124,6 +181,34 @@ public final class SystemAudioTap {
             throw NativeCaptureError.osStatus("AudioDeviceCreateIOProcIDWithBlock", status)
         }
         ioProcID = createdIOProcID
+    }
+
+    func startDevice(_ aggregateDeviceID: AudioObjectID) throws {
+        let status = AudioDeviceStart(aggregateDeviceID, ioProcID)
+        guard status == noErr else {
+            throw NativeCaptureError.osStatus("AudioDeviceStart", status)
+        }
+    }
+
+    func stopDevice(_ aggregateDeviceID: AudioObjectID) {
+        _ = AudioDeviceStop(aggregateDeviceID, ioProcID)
+    }
+
+    func destroyIOProc(on aggregateDeviceID: AudioObjectID) {
+        if let ioProcID {
+            AudioDeviceDestroyIOProcID(aggregateDeviceID, ioProcID)
+            self.ioProcID = nil
+        }
+    }
+
+    func destroyAggregateDevice(_ aggregateDeviceID: AudioObjectID) {
+        AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
+    }
+
+    func destroyProcessTap(_ tapID: AudioObjectID) {
+        if #available(macOS 14.2, *) {
+            AudioHardwareDestroyProcessTap(tapID)
+        }
     }
 }
 

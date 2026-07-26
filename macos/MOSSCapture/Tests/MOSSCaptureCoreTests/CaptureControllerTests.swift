@@ -1,4 +1,5 @@
 import CryptoKit
+import CoreAudio
 import Foundation
 import Security
 @testable import MOSSCaptureCore
@@ -185,6 +186,137 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(MicrophoneCapture.sourceVector.engine, "AVAudioEngine")
         XCTAssertEqual(MicrophoneCapture.sourceVector.input, "inputNode")
         XCTAssertEqual(MicrophoneCapture.sourceVector.tap, "installTap")
+    }
+
+    func testNativeDualCaptureSourceComposesTwoSourcesAndDrainsEachBufferOnce() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 12, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let secondDrain = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+        let stoppedStatus = source.status()
+
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(frames.map(\.lane), [.system, .microphone])
+        XCTAssertEqual(frames.map(\.sequence), [0, 0])
+        XCTAssertEqual(frames.map(\.captureTimestampNS), [10, 12])
+        XCTAssertEqual(frames.map(\.deviceEpoch), [1, 7])
+        XCTAssertEqual(frames.map(\.silent), [false, true])
+        XCTAssertTrue(secondDrain.isEmpty)
+        XCTAssertEqual(runningStatus.map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(runningStatus.map(\.deviceEpoch), [1, 7])
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(stoppedStatus.map(\.state), ["stopped", "stopped"])
+    }
+
+    func testNativeDualCaptureSourceUnwindsSystemWhenMicrophoneStartFails() throws {
+        let system = RecordingNativeCaptureComponent()
+        let microphone = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.permissionDenied("microphone")
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        XCTAssertThrowsError(
+            try source.start(
+                configuration: CaptureConfiguration(
+                    sessionID: "session-a",
+                    serverURL: URL(string: "https://moss.example")!
+                )
+            )
+        ) { error in
+            XCTAssertEqual(error as? NativeCaptureError, .permissionDenied("microphone"))
+        }
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(microphone.stopCount, 0)
+        XCTAssertEqual(source.status().map(\.state), ["stopped", "stopped"])
+    }
+
+    func testSystemAudioTapStartsStopsAndDestroysCoreAudioInOrder() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(driver: driver)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        tap.stop()
+        tap.stop()
+
+        XCTAssertEqual(driver.events, [
+            "AudioHardwareCreateProcessTap",
+            "AudioHardwareCreateAggregateDevice",
+            "AudioDeviceCreateIOProcIDWithBlock",
+            "AudioDeviceStart",
+            "AudioDeviceStop",
+            "AudioDeviceDestroyIOProcID",
+            "AudioHardwareDestroyAggregateDevice",
+            "AudioHardwareDestroyProcessTap",
+        ])
+    }
+
+    func testSystemAudioTapPartialStartUnwindsCreatedResourcesInReverseOrder() throws {
+        let driver = RecordingSystemAudioTapDriver(
+            startError: NativeCaptureError.deviceUnavailable("AudioDeviceStart")
+        )
+        let tap = SystemAudioTap(driver: driver)
+
+        XCTAssertThrowsError(
+            try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        ) { error in
+            XCTAssertEqual(error as? NativeCaptureError, .deviceUnavailable("AudioDeviceStart"))
+        }
+        tap.stop()
+
+        XCTAssertEqual(driver.events, [
+            "AudioHardwareCreateProcessTap",
+            "AudioHardwareCreateAggregateDevice",
+            "AudioDeviceCreateIOProcIDWithBlock",
+            "AudioDeviceStart",
+            "AudioDeviceDestroyIOProcID",
+            "AudioHardwareDestroyAggregateDevice",
+            "AudioHardwareDestroyProcessTap",
+        ])
+    }
+
+    func testNativeRuntimeErrorsAreTyped() throws {
+        XCTAssertEqual(
+            NativeCaptureError.permissionDenied("microphone"),
+            .permissionDenied("microphone")
+        )
+        XCTAssertEqual(
+            NativeCaptureError.deviceUnavailable("aggregate"),
+            .deviceUnavailable("aggregate")
+        )
+        XCTAssertEqual(
+            NativeCaptureError.transportUnavailable("heartbeat"),
+            .transportUnavailable("heartbeat")
+        )
     }
 
     func testRealtimeQueueIsBoundedAndFrameEmitterKeepsLaneStateIndependent() throws {
@@ -606,10 +738,108 @@ final class CaptureControllerTests: XCTestCase {
         return url
     }
 
+    private func nativeBuffer(
+        lane: CaptureLane,
+        timestamp: UInt64,
+        deviceEpoch: UInt64,
+        samples: [Float]
+    ) -> NativeCapturedAudioBuffer {
+        NativeCapturedAudioBuffer(
+            lane: lane,
+            sampleRate: 16_000,
+            channelCount: 1,
+            frameCount: samples.count,
+            firstSampleMonotonicNS: timestamp,
+            deviceEpoch: deviceEpoch,
+            discontinuity: false,
+            samples: samples
+        )
+    }
+
     private func jsonBody(_ request: URLRequest) throws -> [String: Any] {
         let data = try XCTUnwrap(request.httpBody)
         let object = try JSONSerialization.jsonObject(with: data)
         return try XCTUnwrap(object as? [String: Any])
+    }
+}
+
+private final class RecordingNativeCaptureComponent: NativeAudioCaptureComponent {
+    private let buffersOnStart: [NativeCapturedAudioBuffer]
+    private let startError: Error?
+    private(set) var startCount = 0
+    private(set) var stopCount = 0
+
+    init(
+        buffersOnStart: [NativeCapturedAudioBuffer] = [],
+        startError: Error? = nil
+    ) {
+        self.buffersOnStart = buffersOnStart
+        self.startError = startError
+    }
+
+    func start(queue: RealTimeNativeAudioBufferQueue) throws {
+        startCount += 1
+        if let startError {
+            throw startError
+        }
+        for buffer in buffersOnStart {
+            queue.enqueueFromRealtimeCallback(buffer)
+        }
+    }
+
+    func stop() {
+        stopCount += 1
+    }
+}
+
+private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
+    private let startError: Error?
+    private(set) var events: [String] = []
+
+    init(startError: Error? = nil) {
+        self.startError = startError
+    }
+
+    func createProcessTap(description: CATapDescription) throws -> AudioObjectID {
+        events.append("AudioHardwareCreateProcessTap")
+        return AudioObjectID(101)
+    }
+
+    func createAggregateDevice(for description: CATapDescription) throws -> AudioObjectID {
+        events.append("AudioHardwareCreateAggregateDevice")
+        return AudioObjectID(202)
+    }
+
+    func createIOProc(
+        on aggregateDeviceID: AudioObjectID,
+        queue: RealTimeNativeAudioBufferQueue,
+        sampleRate: Int,
+        deviceEpoch: UInt64
+    ) throws {
+        events.append("AudioDeviceCreateIOProcIDWithBlock")
+    }
+
+    func startDevice(_ aggregateDeviceID: AudioObjectID) throws {
+        events.append("AudioDeviceStart")
+        if let startError {
+            throw startError
+        }
+    }
+
+    func stopDevice(_ aggregateDeviceID: AudioObjectID) {
+        events.append("AudioDeviceStop")
+    }
+
+    func destroyIOProc(on aggregateDeviceID: AudioObjectID) {
+        events.append("AudioDeviceDestroyIOProcID")
+    }
+
+    func destroyAggregateDevice(_ aggregateDeviceID: AudioObjectID) {
+        events.append("AudioHardwareDestroyAggregateDevice")
+    }
+
+    func destroyProcessTap(_ tapID: AudioObjectID) {
+        events.append("AudioHardwareDestroyProcessTap")
     }
 }
 

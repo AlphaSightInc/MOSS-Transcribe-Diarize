@@ -38,7 +38,12 @@ public final class MicrophoneCapture {
                 )
             )
         }
-        try engine.start()
+        do {
+            try engine.start()
+        } catch let error as NSError {
+            inputNode.removeTap(onBus: 0)
+            throw NativeCaptureError.osStatus("AVAudioEngine.start", Int32(error.code))
+        }
     }
 
     public func stop() {
