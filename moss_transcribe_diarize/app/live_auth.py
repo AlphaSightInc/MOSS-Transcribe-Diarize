@@ -15,7 +15,7 @@ VIEW_TTL_SECONDS = 900
 PAIRING_PAYLOAD_PREFIX = "mtd1"
 SECRET_BYTES = 32
 
-CAPTURE_ACTIONS = frozenset({"create", "frame", "snapshot", "events", "stop", "abort"})
+CAPTURE_ACTIONS = frozenset({"create", "frame", "heartbeat", "snapshot", "events", "stop", "abort"})
 VIEW_ACTIONS = frozenset({"snapshot", "events", "stop", "abort"})
 
 _ALLOWED_PEER_NETWORKS = tuple(

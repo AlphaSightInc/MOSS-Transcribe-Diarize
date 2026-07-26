@@ -6,6 +6,7 @@ import binascii
 import time
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import unquote
 
 from starlette.requests import Request
 
@@ -29,6 +30,11 @@ from .live_lane_contract import (
     LiveV2PrunedReplayError,
     negotiate_v2_protocol,
 )
+from .live_helper_presence import (
+    HelperHeartbeat,
+    HelperPresenceConflict,
+    HelperPresenceRegistry,
+)
 from .live_mixer import (
     LiveCompatibilityMixerRegistry,
     LiveMixIntegrityError,
@@ -50,6 +56,12 @@ from .live_session import (
 from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
 
 
+_HELPER_HEARTBEAT_ROUTE = "/api/live/sessions/{session_id}/heartbeat"
+_HELPER_HEARTBEAT_PREFIX, _HELPER_HEARTBEAT_SUFFIX = _HELPER_HEARTBEAT_ROUTE.split(
+    "{session_id}"
+)
+
+
 def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegistry) -> None:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
@@ -58,8 +70,23 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
     )
     v2_mixers = LiveCompatibilityMixerRegistry()
+    helper_presence = HelperPresenceRegistry()
     app.state.live_v2_sessions = v2_sessions
     app.state.live_v2_mixers = v2_mixers
+    app.state.live_helper_presence = helper_presence
+
+    @app.middleware("http")
+    async def live_helper_heartbeat_middleware(request: Request, call_next):
+        if request.method == "POST":
+            session_id = _helper_heartbeat_session_id(request.url.path)
+            if session_id is not None:
+                return await _accept_live_helper_heartbeat(
+                    request,
+                    session_id,
+                    access=access,
+                    helper_presence=helper_presence,
+                )
+        return await call_next(request)
 
     @app.get("/api/live/descriptor")
     def live_descriptor(
@@ -242,6 +269,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
             return _snapshot_response(
                 runtime,
                 v2_sessions,
+                helper_presence,
                 session_id,
                 since_version=since_version,
             )
@@ -307,6 +335,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
                 if v2_snapshot.status == "failed":
                     v2_sessions.release(session_id)
                     v2_mixers.release(session_id)
+                    helper_presence.release(session_id)
                     access.release_session(session_id)
                     status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
                     failure["snapshot"] = _snapshot_payload(runtime, session_id)
@@ -317,6 +346,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
             stopped = await runtime.stop(session_id, deadline)
             v2_sessions.release(session_id)
             v2_mixers.release(session_id)
+            helper_presence.release(session_id)
             access.release_session(session_id)
             release_v2_on_error = False
             response = {"snapshot": stopped.to_dict()}
@@ -354,6 +384,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
             if release_v2_on_error:
                 v2_sessions.release(session_id)
                 v2_mixers.release(session_id)
+                helper_presence.release(session_id)
 
     @app.post("/api/live/sessions/{session_id}/abort")
     async def abort_live_session(session_id: str, request: Request):
@@ -379,6 +410,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
                     pass
                 v2_sessions.release(session_id)
                 v2_mixers.release(session_id)
+            helper_presence.release(session_id)
             access.release_session(session_id)
             return {"snapshot": snapshot.to_dict()}
         except KeyError as exc:
@@ -403,6 +435,7 @@ def attach_live_routes(app, runtime: LiveServiceRuntime, access: LiveAccessRegis
                 pass
             v2_sessions.release(session_id)
             v2_mixers.release(session_id)
+            helper_presence.release(session_id)
             access.release_session(session_id)
         return {"device_id": revoked.device_id, "session_ids": list(revoked.session_ids)}
 
@@ -512,6 +545,45 @@ def _bearer_from_request(request: Request) -> str | None:
     return token
 
 
+def _helper_heartbeat_session_id(path: str) -> str | None:
+    if not path.startswith(_HELPER_HEARTBEAT_PREFIX) or not path.endswith(_HELPER_HEARTBEAT_SUFFIX):
+        return None
+    encoded = path[len(_HELPER_HEARTBEAT_PREFIX) : -len(_HELPER_HEARTBEAT_SUFFIX)]
+    if not encoded or "/" in encoded:
+        return None
+    return unquote(encoded)
+
+
+async def _accept_live_helper_heartbeat(
+    request: Request,
+    session_id: str,
+    *,
+    access: LiveAccessRegistry,
+    helper_presence: HelperPresenceRegistry,
+):
+    from fastapi.responses import JSONResponse
+
+    try:
+        access.authorize(
+            _peer_from_request(request),
+            _bearer_from_request(request),
+            "heartbeat",
+            session_id,
+            now=_request_now(),
+        )
+        heartbeat = HelperHeartbeat.from_dict(await request.json())
+        snapshot = helper_presence.observe(session_id, heartbeat)
+        return JSONResponse({"helper_presence": snapshot.to_dict()})
+    except KeyError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=404)
+    except LiveAccessError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=exc.status_code)
+    except HelperPresenceConflict as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    except ValueError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
 def _request_now() -> float:
     return time.time()
 
@@ -533,6 +605,7 @@ def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:
 def _snapshot_response(
     runtime: LiveServiceRuntime,
     v2_sessions: LiveV2SessionRegistry,
+    helper_presence: HelperPresenceRegistry,
     session_id: str,
     *,
     since_version: int | None = None,
@@ -542,6 +615,7 @@ def _snapshot_response(
         "snapshot": None if snapshot is None else snapshot.to_dict(),
         "unchanged": snapshot is None,
         "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
+        "helper_presence": _helper_presence_payload(helper_presence, session_id),
     }
 
 
@@ -561,6 +635,14 @@ def _v2_snapshot_payload(
         return v2_sessions.get(session_id).snapshot().to_dict()
     except KeyError:
         return None
+
+
+def _helper_presence_payload(
+    helper_presence: HelperPresenceRegistry,
+    session_id: str,
+) -> dict[str, Any] | None:
+    snapshot = helper_presence.snapshot(session_id)
+    return None if snapshot is None else snapshot.to_dict()
 
 
 def _failure_status(exc: LiveServiceError) -> int:

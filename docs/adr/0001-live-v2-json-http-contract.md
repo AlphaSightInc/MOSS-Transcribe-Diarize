@@ -103,7 +103,51 @@ headers only. Browser cursors advance only after successful parse and render,
 replayed events render once, bounded retry remains single-flight, and terminal
 `closed`, `failed`, or `aborted` state stops polling and clears authority.
 
+IDEA-035 adds an observation-only helper heartbeat side channel at the same
+default-off live HTTP seam. The owning capture authority may post strict
+`moss-live-helper-health.v1` JSON to
+`/api/live/sessions/{session_id}/heartbeat`; view authority cannot write it.
+`HelperPresenceRegistry.observe/snapshot/release` validates exact schema,
+ordering, idempotency, helper-instance stability, and server-monotonic receipt
+behind one interface. Authorized snapshots add `helper_presence` as data only.
+Clean stop, abort, terminal failure release, failed-stop release, and device
+revocation release the presence record with the rest of session-owned state.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
+
+## IDEA-035 Mutation Kill Nodes
+
+These nodes are the Reviewer mutation contract for the native macOS helper and
+observation-only presence slice. They name the expected killing check for each
+single-obligation mutation; they do not claim mutation review has run.
+
+| ID | Killing node |
+|---|---|
+| M01 | `repro.py` source inventory plus `swift test --package-path macos/MOSSCapture` reject ScreenCaptureKit, virtual-driver, or client-premix replacement. |
+| M02 | `testNativeSourceVectorsUseRequiredMacOSCapturePaths` and `repro.py` reject a muted system tap or missing private transient aggregate/HAL callback path. |
+| M03 | `testRealtimeCallbacksOnlyCopyAndEnqueueNativeBuffers` and the source fence reject resample, encode, network, disk, Keychain, or logging in callback sources. |
+| M04 | `testNativeSourceVectorsUseRequiredMacOSCapturePaths` and `repro.py` reject microphone capture that is not `AVAudioEngine.inputNode.installTap`. |
+| M05 | `testStartStatusStopPublishesIndependentFakeLaneFrames`, `testRealtimeQueueIsBoundedAndFrameEmitterKeepsLaneStateIndependent`, and `repro.py` reject shared lane sequence or epoch state. |
+| M06 | `testShimCommandsStayControlOnlyAndAudioFrameworkFree` and `repro.py` reject CLI audio-framework imports, TCC ownership, frame ownership, or bearer ownership. |
+| M07 | `testHTTPTransportPostsStrictV2FramesWithBearerHeaderOnly`, `testHTTPHealthPostsVersionedHeartbeatWithoutBearerLeakage`, `testUnixDomainControlClientUsesStoredControlSecretOnlyInUDSPayload`, CLI channel assertions, and `git diff --check` reject secrets or PCM in query/body/output/log/git channels. |
+| M08 | `testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory`, HTTP bearer tests, and `repro.py` reject non-Keychain device secret storage or missing full-certificate SHA-256 pin comparison. |
+| M09 | `testSameUserUDSAuthenticatorRequiresPrivateSocketPeerUIDAndSecret` and `repro.py` reject group/world-readable sockets, skipped local peer checks, skipped control-secret checks, or different uid acceptance. |
+| M10 | `repro.py` controller inventory and Swift interface tests reject expanding the helper external interface beyond `start/status/stop` or moving private choreography into callers. |
+| M11 | `testBundleMetadataPinsHelperContractWithoutSandbox` and `repro.py` reject missing `LSUIElement`, bundle identity, macOS 14.2 floor, purpose strings, audio-input entitlement, Keychain group, or added App Sandbox. |
+| M12 | `test_versioned_health_parser_rejects_unknown_missing_or_invalid_fields` and `repro.py` reject schema/version drift, unknown or missing fields, invalid lanes, invalid states, or invalid counters. |
+| M13 | `test_new_sequence_advances_injected_server_last_seen_and_may_skip_values` and route snapshot assertions reject wall time or helper-sent time as server freshness authority. |
+| M14 | `test_new_sequence_advances_injected_server_last_seen_and_may_skip_values`, route duplicate assertions, and `repro.py` reject duplicate heartbeats that refresh `last_seen_monotonic_ns`. |
+| M15 | `test_regression_changed_duplicate_non_advancing_time_and_instance_switch_fail_closed` and route conflict assertions reject lower sequence, changed duplicate, non-advancing helper time, or helper instance switch mutations without state mutation. |
+| M16 | `test_new_sequence_advances_injected_server_last_seen_and_may_skip_values` and `repro.py` reject contiguous-sequence requirements by accepting sequence `0 -> 2`. |
+| M17 | `test_heartbeat_is_capture_only_authority`, route ownership assertions, and `repro.py` reject view-authority heartbeat writes or cross-device capture writes. |
+| M18 | `test_helper_heartbeat_route_is_capture_owned_and_visible_in_authorized_snapshot` and `repro.py` reject missing authorized `helper_presence` snapshot exposure. |
+| M19 | `test_helper_presence_releases_on_terminal_and_revocation_paths`, failed-stop release coverage, and `repro.py` reject retained presence after clean stop, abort, failed stop release, terminal release, or device revocation. |
+| M20 | `test_release_removes_snapshot_without_policy_side_effects`, `repro.py`, and the protected source fence reject mapping reported health to `.fail_lane(`, `.expire(`, stop, abort, or lifecycle transition. |
+| M21 | `repro.py`, ADR/context no-policy text, and protected diff gates reject heartbeat timeout, grace deadline, background detector, abandonment closure, or CTR-066 closure claims. |
+| M22 | The fixed-base protected diff command plus promoted mixer/lifecycle/Windows/portal and full-suite gates reject v2 frame/ack/descriptor, ingress, lifecycle, mixer, runtime, portal, batch, provider, ops, dependency, frontend, or default-off changes. |
+| M23 | This ADR, `CONTEXT.md`, and `repro.py` docs gates reject treating unsigned local compile/tests as signing, notarization, TCC, real-capture, device, deployment, 60/300, canary, or enablement proof. |
+| M24 | Git inventory, `.gitignore`, protected diff, and `git diff --check` reject committed `.build`, `.app`, credentials, pins, PCM, transcripts, signing artifacts, or generated helper artifacts. |
+| M25 | Swift test identifiers, Python test collection/count floors, promoted suite floors, and full-suite gates reject deleting, narrowing, renaming out of collection, or weakening promoted coverage. |
 
 ## Consequences
 
@@ -155,3 +199,7 @@ Binary framing and non-HTTP transports are deferred to protocol v3.
   feed, pair, exchange, revoke, list sessions, contact a helper or localhost
   bridge, persist secrets, expose history or artifacts, or automate secure
   helper-to-browser bootstrap.
+- A helper heartbeat is telemetry, not liveness policy. A delayed exact
+  duplicate does not refresh last-seen; helper-sent time and wall time are not
+  server freshness authority; failed/degraded health does not call lane
+  failure, expiry, stop, abort, recovery, abandonment, or enablement logic.

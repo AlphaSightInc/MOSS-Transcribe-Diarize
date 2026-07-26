@@ -137,6 +137,21 @@
   `closing` remains non-terminal.
 - **Live session ownership**: Exact binding between one capture device and one
   live session. Ownership gates feed, watch, stop, and abort authority.
+- **Helper heartbeat**: Strict `moss-live-helper-health.v1` helper health
+  observation sent by the owning capture authority to the capture-owned
+  heartbeat route. It records helper identity, sequence, helper monotonic send
+  time, version, state, and exact system/microphone lane health facts.
+- **Helper presence**: Additive authorized snapshot fact produced by
+  `HelperPresenceRegistry.observe/snapshot/release`. Server last-seen is the
+  injected monotonic receipt time for a newly accepted increasing heartbeat
+  sequence only; exact duplicates are idempotent without freshness refresh.
+  Regressions, changed duplicates, non-advancing helper time, and helper
+  instance switches reject without mutating stored presence.
+- **IDEA-035 mutation kill node**: Reviewer-owned check that mutates exactly
+  one helper or presence obligation and expects a named source inventory,
+  Swift test, Python test, discriminator check, protected-diff gate, or docs
+  gate to fail. ADR-0001 records the concrete M01-M25 node map; local green
+  gates are the control, not proof that mutation review has run.
 - **Device revocation**: Explicit loopback operator action that durably
   invalidates one capture device and its owned view authorities.
 - **Deferred production caller**: No production caller detects helper loss or
