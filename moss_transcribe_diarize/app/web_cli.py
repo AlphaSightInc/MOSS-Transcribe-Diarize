@@ -131,10 +131,11 @@ def _live_startup_config(args: argparse.Namespace) -> dict[str, object]:
             ("--live-auth-state", args.live_auth_state),
             ("--live-tls-certfile", args.live_tls_certfile),
             ("--live-tls-keyfile", args.live_tls_keyfile),
-            ("--live-helper-lease-seconds", args.live_helper_lease_seconds),
         )
-        if value is None
+        if not value
     ]
+    if args.live_helper_lease_seconds is None:
+        missing.append("--live-helper-lease-seconds")
     if missing:
         raise SystemExit(f"{', '.join(missing)} are required when --live is enabled.")
     if args.live_helper_lease_seconds <= 0:

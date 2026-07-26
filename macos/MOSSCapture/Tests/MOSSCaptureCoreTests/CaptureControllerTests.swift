@@ -185,6 +185,36 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.attemptCount, 3)
     }
 
+    func testPumpMapsCaptureHTTPTransportErrorToTransportUnavailableAndRecovers() throws {
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = FailOnceHTTPTransportHealthAdapter()
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        scheduler.runScheduledOperation()
+        let failed = controller.status()
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertEqual(failed.pumpFailure, .transportUnavailable)
+        XCTAssertNotEqual(failed.pumpFailure, .deviceUnavailable)
+        XCTAssertNil(recovered.pumpFailure)
+        XCTAssertEqual(recovered.lastHealthSequence, 3)
+        XCTAssertEqual(health.attemptCount, 3)
+    }
+
     func testControllerSharedStatusIsSynchronizedUnderConcurrentPumpStatus() throws {
         let source = ConcurrentEmptyCaptureSource()
         let scheduler = ConcurrentCaptureScheduler()
@@ -239,6 +269,48 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertFalse(stopped.running)
         XCTAssertEqual(stopped.sessionID, "session-a")
         XCTAssertNil(controller.status().sessionID)
+    }
+
+    func testCaptureControllerStateSharedAccessInventoryIsLockFenced() throws {
+        let sourceURL = packageRoot()
+            .appendingPathComponent("Sources/MOSSCaptureCore/CaptureController.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let stateSource = try XCTUnwrap(
+            source.components(
+                separatedBy: "private final class CaptureControllerState {"
+            ).dropFirst().first
+        )
+        let expectedMethods = Set([
+            "beginStart",
+            "rollbackStart",
+            "runningConfiguration",
+            "requireRunning",
+            "storeHealthTask",
+            "recordPublishedFrame",
+            "recordHealthEmissionAttempt",
+            "clearPumpFailure",
+            "recordPumpFailure",
+            "snapshot",
+            "finishStop",
+        ])
+        let actualMethods = Set(
+            try matches(
+                pattern: #"(?m)^\s{4}func\s+([A-Za-z0-9_]+)\s*\("#,
+                in: stateSource
+            )
+        )
+        XCTAssertEqual(actualMethods, expectedMethods)
+
+        for method in expectedMethods {
+            let methodSource = try XCTUnwrap(
+                stateSource.components(
+                    separatedBy: "    func \(method)("
+                ).dropFirst().first?
+                    .components(separatedBy: "\n    func ").first
+            )
+            XCTAssertTrue(methodSource.contains("lock.lock()"), method)
+            XCTAssertTrue(methodSource.contains("lock.unlock()"), method)
+        }
     }
 
     func testRepeatingSchedulerContinuesUntilExplicitCancellation() throws {
@@ -1082,6 +1154,41 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(identifiers.count, 32)
     }
 
+    func testIDEA036ContextKeepsEvidenceTierMissingFence() throws {
+        let repositoryRoot = packageRoot()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let context = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("CONTEXT.md"),
+            encoding: .utf8
+        )
+        let marker = "- **IDEA-036 explicit helper lease**:"
+        let paragraph = try XCTUnwrap(
+            context.components(separatedBy: marker).dropFirst().first?
+                .components(separatedBy: "\n- **").first
+        )
+        let normalizedParagraph = paragraph
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        for missingFact in [
+            "production lease selection",
+            "signed hardware evidence",
+            "notarization",
+            "TCC continuity",
+            "deployed device behavior",
+            "60/300 evidence",
+            "canary",
+            "deployment",
+            "live enablement",
+        ] {
+            XCTAssertTrue(normalizedParagraph.contains(missingFact), missingFact)
+        }
+        XCTAssertTrue(normalizedParagraph.contains("remain Missing"))
+        XCTAssertFalse(normalizedParagraph.contains("local green gates certify"))
+        XCTAssertFalse(normalizedParagraph.contains("certifies production"))
+    }
+
     func testIDEA042ContextKeepsEvidenceTierMissingFence() throws {
         let repositoryRoot = packageRoot()
             .deletingLastPathComponent()
@@ -1467,6 +1574,21 @@ private final class FailOnceScheduledHealthAdapter: CaptureHealthAdapter {
         attemptCount += 1
         if attemptCount == 2 {
             throw NativeCaptureError.transportUnavailable("heartbeat")
+        }
+    }
+}
+
+private final class FailOnceHTTPTransportHealthAdapter: CaptureHealthAdapter {
+    private(set) var attemptCount = 0
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        attemptCount += 1
+        if attemptCount == 2 {
+            throw CaptureHTTPTransportError.nonSuccessStatus(503)
         }
     }
 }

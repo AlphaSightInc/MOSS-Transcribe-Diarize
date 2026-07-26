@@ -677,6 +677,37 @@ def test_web_cli_live_startup_names_each_missing_security_input(
     assert missing_flag in str(exc_info.value)
 
 
+@pytest.mark.parametrize(
+    ("empty_attribute", "empty_flag"),
+    [
+        ("live_auth_state", "--live-auth-state"),
+        ("live_tls_certfile", "--live-tls-certfile"),
+        ("live_tls_keyfile", "--live-tls-keyfile"),
+    ],
+)
+def test_web_cli_live_startup_rejects_empty_security_path(
+    tmp_path,
+    empty_attribute,
+    empty_flag,
+):
+    from moss_transcribe_diarize.app.web_cli import _live_startup_config
+
+    certfile = tmp_path / "live.der"
+    certfile.write_bytes(b"configured leaf cert")
+    values = {
+        "live_auth_state": str(tmp_path / "live-auth.json"),
+        "live_tls_certfile": str(certfile),
+        "live_tls_keyfile": str(tmp_path / "live.key"),
+        "live_helper_lease_seconds": 30.0,
+    }
+    values[empty_attribute] = ""
+
+    with pytest.raises(SystemExit) as exc_info:
+        _live_startup_config(SimpleNamespace(live=True, **values))
+
+    assert empty_flag in str(exc_info.value)
+
+
 def test_web_cli_live_startup_rejects_non_positive_helper_lease(tmp_path):
     from moss_transcribe_diarize.app.web_cli import _live_startup_config
 
