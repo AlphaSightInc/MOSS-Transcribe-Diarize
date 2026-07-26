@@ -409,8 +409,86 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(stoppedStatus.map(\.state), ["stopped", "stopped"])
     }
 
-    func testNativeDualCaptureSourceUnwindsSystemWhenMicrophoneStartFails() throws {
-        let system = RecordingNativeCaptureComponent()
+    func testNativeDualCaptureSourceSystemSurvivesMicrophoneStartFail() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.permissionDenied("microphone")
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(frames.map(\.lane), [.system])
+        XCTAssertEqual(runningStatus.map(\.state), ["capturing", "failed"])
+        XCTAssertNil(runningStatus.first { $0.lane == .system }?.failureCode)
+        XCTAssertEqual(
+            runningStatus.first { $0.lane == .microphone }?.failureCode,
+            "macos_permission_denied"
+        )
+    }
+
+    func testNativeDualCaptureSourceMicrophoneSurvivesSystemStartFail() throws {
+        let system = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.deviceUnavailable("system")
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 12, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(frames.map(\.lane), [.microphone])
+        XCTAssertEqual(runningStatus.map(\.state), ["failed", "capturing"])
+        XCTAssertEqual(
+            runningStatus.first { $0.lane == .system }?.failureCode,
+            "macos_device_unavailable"
+        )
+        XCTAssertNil(runningStatus.first { $0.lane == .microphone }?.failureCode)
+    }
+
+    func testNativeDualCaptureSourceUnwindsBothLanesWhenEveryStartFails() throws {
+        let system = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.deviceUnavailable("system")
+        )
         let microphone = RecordingNativeCaptureComponent(
             startError: NativeCaptureError.permissionDenied("microphone")
         )
@@ -428,13 +506,14 @@ final class CaptureControllerTests: XCTestCase {
                 )
             )
         ) { error in
-            XCTAssertEqual(error as? NativeCaptureError, .permissionDenied("microphone"))
+            XCTAssertEqual(error as? NativeCaptureError, .deviceUnavailable("system"))
         }
+
         XCTAssertEqual(system.startCount, 1)
         XCTAssertEqual(system.stopCount, 1)
         XCTAssertEqual(microphone.startCount, 1)
-        XCTAssertEqual(microphone.stopCount, 0)
-        XCTAssertEqual(source.status().map(\.state), ["stopped", "stopped"])
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(source.status().map(\.state), ["failed", "failed"])
     }
 
     func testSystemAudioTapStartsStopsAndDestroysCoreAudioInOrder() throws {
