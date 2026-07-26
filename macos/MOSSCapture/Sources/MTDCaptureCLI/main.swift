@@ -1,5 +1,8 @@
 import Foundation
 import MOSSCaptureCore
+#if canImport(AppKit)
+import AppKit
+#endif
 
 enum MTDCaptureCommand: String {
     case pair
@@ -19,8 +22,7 @@ struct MTDCaptureCLI {
         }
 
         let client = UnixDomainControlClient(
-            socketPath: ProcessInfo.processInfo.environment["MOSS_CAPTURE_CONTROL_SOCKET"]
-                ?? "/tmp/moss-capture/control.sock",
+            socketPath: ControlSocketDefaults.socketPath(),
             secrets: KeychainCaptureSecretStore()
         )
 
@@ -37,7 +39,14 @@ struct MTDCaptureCLI {
                 writeError("pairing payload required on stdin\n")
                 Foundation.exit(65)
             }
-            run(command: ControlChannelRequest(command: "pair", serverURL: serverURL), client: client)
+            run(
+                command: ControlChannelRequest(
+                    command: "pair",
+                    serverURL: serverURL,
+                    pairingPayload: pairingPayload
+                ),
+                client: client
+            )
         case .start:
             run(
                 command: ControlChannelRequest(command: "start", label: value(after: "--label", in: arguments)),
@@ -52,9 +61,12 @@ struct MTDCaptureCLI {
 
     private static func run(command: ControlChannelRequest, client: UnixDomainControlClient) {
         do {
-            try ensureCaptureAppLaunchedWithLaunchServices()
-            _ = try client.encodeRequest(command)
-            print("{\"ok\":true}")
+            try ensureCaptureAppLaunchedWithLaunchServices(socketPath: client.socketPath)
+            let response = try client.sendRequest(command)
+            try writeResponse(response)
+            if !response.ok {
+                Foundation.exit(70)
+            }
         } catch {
             writeError("{\"ok\":false}\n")
             Foundation.exit(70)
@@ -69,11 +81,62 @@ struct MTDCaptureCLI {
         return arguments[arguments.index(after: index)]
     }
 
-    private static func ensureCaptureAppLaunchedWithLaunchServices() throws {
+    private static func ensureCaptureAppLaunchedWithLaunchServices(socketPath: String) throws {
+        if FileManager.default.fileExists(atPath: socketPath)
+            || ProcessInfo.processInfo.environment["MOSS_CAPTURE_SKIP_LAUNCH"] == "1" {
+            return
+        }
+        guard let rawAppURL = ProcessInfo.processInfo.environment["MOSS_CAPTURE_APP_URL"] else {
+            throw MTDCaptureCLIError.launchServicesUnavailable
+        }
+        let appURL = URL(fileURLWithPath: rawAppURL)
+        #if canImport(AppKit)
+        let configuration = NSWorkspace.OpenConfiguration()
+        let semaphore = DispatchSemaphore(value: 0)
+        let launchResult = LaunchResultBox()
+        NSWorkspace.shared.openApplication(at: appURL, configuration: configuration) { _, error in
+            launchResult.store(error)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        if let launchError = launchResult.load() {
+            throw launchError
+        }
+        #else
+        _ = appURL
+        throw MTDCaptureCLIError.launchServicesUnavailable
+        #endif
         _ = "LaunchServices"
+    }
+
+    private static func writeResponse(_ response: ControlChannelResponse) throws {
+        let data = try JSONEncoder().encode(response)
+        FileHandle.standardOutput.write(data)
+        FileHandle.standardOutput.write(Data("\n".utf8))
     }
 
     private static func writeError(_ message: String) {
         FileHandle.standardError.write(Data(message.utf8))
+    }
+}
+
+enum MTDCaptureCLIError: Error {
+    case launchServicesUnavailable
+}
+
+final class LaunchResultBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var error: Error?
+
+    func store(_ error: Error?) {
+        lock.lock()
+        self.error = error
+        lock.unlock()
+    }
+
+    func load() -> Error? {
+        lock.lock()
+        defer { lock.unlock() }
+        return error
     }
 }

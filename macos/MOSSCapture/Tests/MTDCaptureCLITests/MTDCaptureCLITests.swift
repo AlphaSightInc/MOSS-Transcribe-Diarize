@@ -17,6 +17,7 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(source.contains("status"))
         XCTAssertTrue(source.contains("LaunchServices"))
         XCTAssertTrue(source.contains("UnixDomainControlClient"))
+        XCTAssertTrue(source.contains("sendRequest"))
         XCTAssertTrue(source.contains("readDataToEndOfFile"))
         XCTAssertTrue(source.contains("--server"))
         XCTAssertTrue(source.contains("--label"))
@@ -26,6 +27,23 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertFalse(source.contains("CaptureController.fakeForLocalDevelopment"))
         XCTAssertFalse(source.contains("capture-token"))
         XCTAssertFalse(source.contains("\"command\":\"status\""))
+        XCTAssertFalse(source.contains("print(\"{\\\"ok\\\":true}\")"))
+    }
+
+    func testCLIPropagatesControlResponse() throws {
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MTDCaptureCLI")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(source.contains("writeResponse(response)"))
+        XCTAssertTrue(source.contains("if !response.ok"))
+        XCTAssertTrue(source.contains("Foundation.exit(70)"))
+        XCTAssertFalse(source.contains("CoreAudio"))
+        XCTAssertFalse(source.contains("AVFAudio"))
     }
 
     func testBundleMetadataPinsHelperContractWithoutSandbox() throws {

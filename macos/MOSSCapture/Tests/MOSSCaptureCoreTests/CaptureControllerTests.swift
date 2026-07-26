@@ -711,6 +711,92 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertFalse(client.socketPath.contains("control-secret"))
     }
 
+    func testUnixDomainControlRoundTrip() throws {
+        let socketPath = temporarySocketPath()
+        let serverFinished = expectation(description: "server finished one request")
+        let serverError = TestErrorBox()
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"))
+        ) { request in
+            XCTAssertEqual(request.command, "status")
+            return ControlChannelResponse(ok: true, running: false)
+        }
+
+        DispatchQueue.global().async {
+            do {
+                try server.serveOnce()
+            } catch {
+                serverError.store(error)
+            }
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let client = UnixDomainControlClient(
+            socketPath: socketPath,
+            secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+        )
+        let response = try client.sendRequest(ControlChannelRequest(command: "status"))
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertNil(serverError.load())
+        XCTAssertTrue(response.ok)
+        XCTAssertEqual(response.running, false)
+    }
+
+    func testControlServerRejectsWrongSecretBeforeMutation() throws {
+        let socketPath = temporarySocketPath()
+        let serverFinished = expectation(description: "server rejected one request")
+        var mutationCount = 0
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"))
+        ) { _ in
+            mutationCount += 1
+            return ControlChannelResponse(ok: true)
+        }
+
+        DispatchQueue.global().async {
+            try? server.serveOnce()
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let client = UnixDomainControlClient(
+            socketPath: socketPath,
+            secrets: FakeCaptureKeyStoreAdapter(secret: "wrong-secret")
+        )
+        let response = try client.sendRequest(ControlChannelRequest(command: "start"))
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertFalse(response.ok)
+        XCTAssertEqual(mutationCount, 0)
+    }
+
+    func testPairingPayloadReachesApp() throws {
+        let exchange = RecordingPairingExchange()
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: exchange
+        )
+        let payload = Data([1, 2, 3, 4])
+        let serverURL = URL(string: "https://moss.example")!
+
+        let response = try dispatcher.dispatch(
+            ControlChannelRequest(
+                command: "pair",
+                serverURL: serverURL,
+                pairingPayload: payload
+            )
+        )
+
+        XCTAssertTrue(response.ok)
+        XCTAssertEqual(response.sessionID, "session-from-pairing")
+        XCTAssertEqual(exchange.serverURL, serverURL)
+        XCTAssertEqual(exchange.pairingPayload, payload)
+    }
+
     private func testCertificate() throws -> SecCertificate {
         let fixture = """
         MIIBvzCCASgCCQCWZwVkxZUDQDANBgkqhkiG9w0BAQsFADAkMSIwIAYDVQQDDBlN
@@ -736,6 +822,23 @@ final class CaptureControllerTests: XCTestCase {
             url.deleteLastPathComponent()
         }
         return url
+    }
+
+    private func temporarySocketPath() -> String {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-control-\(UUID().uuidString).sock")
+            .path
+    }
+
+    private func waitForSocket(at path: String) throws {
+        let deadline = Date(timeIntervalSinceNow: 2)
+        while Date() < deadline {
+            if FileManager.default.fileExists(atPath: path) {
+                return
+            }
+            Thread.sleep(forTimeInterval: 0.01)
+        }
+        XCTFail("socket was not created")
     }
 
     private func nativeBuffer(
@@ -850,5 +953,33 @@ private final class RecordingCaptureHTTPClient: CaptureHTTPClient {
     func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
         requests.append(request)
         return response
+    }
+}
+
+private final class RecordingPairingExchange: CapturePairingExchangeAdapter {
+    private(set) var serverURL: URL?
+    private(set) var pairingPayload: Data?
+
+    func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
+        self.serverURL = serverURL
+        self.pairingPayload = pairingPayload
+        return CapturePairingResult(sessionID: "session-from-pairing", captureBearerToken: "capture-token")
+    }
+}
+
+private final class TestErrorBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var error: Error?
+
+    func store(_ error: Error) {
+        lock.lock()
+        self.error = error
+        lock.unlock()
+    }
+
+    func load() -> Error? {
+        lock.lock()
+        defer { lock.unlock() }
+        return error
     }
 }
