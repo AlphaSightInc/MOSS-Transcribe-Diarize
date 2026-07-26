@@ -583,8 +583,10 @@ MOSS_LIVE_ENABLED=0
 `ops/start-web.sh` is the only deployment environment adapter. It accepts exactly
 `MOSS_LIVE_ENABLED=0` or `MOSS_LIVE_ENABLED=1`. Enabled mode also requires
 `MOSS_LIVE_PROVIDER_MANIFEST`, `MOSS_LIVE_AUTH_STATE`,
-`MOSS_LIVE_TLS_CERTFILE`, and `MOSS_LIVE_TLS_KEYFILE`, then translates that state
-into explicit CLI flags:
+`MOSS_LIVE_TLS_CERTFILE`, `MOSS_LIVE_TLS_KEYFILE`, and
+`MOSS_LIVE_HELPER_LEASE_SECONDS`, then translates that state into explicit CLI
+flags. The production lease value remains `Missing`; callers must supply a
+strictly positive value and this document does not choose one:
 
 ```ini
 MOSS_LIVE_ENABLED=1
@@ -592,6 +594,7 @@ MOSS_LIVE_PROVIDER_MANIFEST=/path/to/live-provider-manifest.json
 MOSS_LIVE_AUTH_STATE=/path/to/live-auth.json
 MOSS_LIVE_TLS_CERTFILE=/path/to/live.crt
 MOSS_LIVE_TLS_KEYFILE=/path/to/live.key
+MOSS_LIVE_HELPER_LEASE_SECONDS=Missing
 ```
 
 ```bash
@@ -600,15 +603,16 @@ mtd-subtitle-web ... \
   --live-provider-manifest /path/to/live-provider-manifest.json \
   --live-auth-state /path/to/live-auth.json \
   --live-tls-certfile /path/to/live.crt \
-  --live-tls-keyfile /path/to/live.key
+  --live-tls-keyfile /path/to/live.key \
+  --live-helper-lease-seconds Missing
 ```
 
 Rollback is setting `MOSS_LIVE_ENABLED=0`, removing or ignoring
-the live provider, auth-state, certificate, and key environment variables, and
-restarting only after the reviewed operator handoff permits a restart. Invalid
-enablement exits before web app construction, routes, sessions, or job
-admission. Auth-state files and certificate private keys are operator-owned
-secret files and must not be committed.
+the live provider, auth-state, certificate, key, and helper lease environment
+variables, and restarting only after the reviewed operator handoff permits a
+restart. Invalid enablement exits before web app construction, routes, sessions,
+or job admission. Auth-state files and certificate private keys are
+operator-owned secret files and must not be committed.
 
 Provider-blind truth and calibration are separate from bundle assembly. Truth
 uses 16 kHz integer sample intervals with independent annotation and review

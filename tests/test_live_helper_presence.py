@@ -148,6 +148,7 @@ def test_helper_heartbeat_route_is_capture_owned_and_visible_in_authorized_snaps
             live_runtime_factory=lambda: make_live_runtime(),
             live_auth_state_path=Path(tmpdir) / "live-auth.json",
             live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+            live_helper_lease_seconds=30.0,
         )
         client = _paired_client(app)
         created = client.post("/api/live/sessions")
@@ -211,6 +212,7 @@ def test_helper_presence_releases_on_terminal_and_revocation_paths(terminal_acti
             live_runtime_factory=lambda: make_live_runtime(session_id=f"{terminal_action}-session"),
             live_auth_state_path=Path(tmpdir) / "live-auth.json",
             live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+            live_helper_lease_seconds=30.0,
         )
         client = _paired_client(app)
         local = TestClient(

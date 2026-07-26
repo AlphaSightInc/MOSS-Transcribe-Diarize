@@ -578,6 +578,7 @@ class LiveServiceReplayContractTest(unittest.TestCase):
             runs_dir=tempfile.mkdtemp(),
             live_enabled=True,
             live_access_registry=registry,
+            live_helper_lease_seconds=30.0,
             live_runtime_factory=lambda: _runtime(
                 descriptor=descriptor,
                 speech=(True, False),

@@ -183,6 +183,7 @@ class LiveApiTest(unittest.TestCase):
         return {
             "live_auth_state_path": Path(tmpdir) / "live-auth.json",
             "live_server_cert_sha256": LIVE_AUTH_FINGERPRINT,
+            "live_helper_lease_seconds": 30.0,
         }
 
     def _paired_client(self, app) -> AuthorizedLiveClient:
@@ -226,6 +227,25 @@ class LiveApiTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             with self.assertRaisesRegex(ValueError, "live_runtime_factory is required"):
                 create_app(model_path="fake-model", runs_dir=tmpdir, live_enabled=True)
+
+    def test_live_enablement_requires_positive_helper_lease(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            required = {
+                "model_path": "fake-model",
+                "runs_dir": tmpdir,
+                "live_enabled": True,
+                "live_runtime_factory": lambda: make_live_runtime(),
+                "live_auth_state_path": Path(tmpdir) / "live-auth.json",
+                "live_server_cert_sha256": LIVE_AUTH_FINGERPRINT,
+            }
+            with self.assertRaisesRegex(ValueError, "live_helper_lease_seconds is required"):
+                create_app(**required)
+            for value in (0, -1):
+                with self.subTest(value=value):
+                    with self.assertRaisesRegex(ValueError, "live_helper_lease_seconds must be positive"):
+                        create_app(**required, live_helper_lease_seconds=value)
 
     def test_forwarding_headers_cannot_grant_loopback_admin_authority(self):
         from fastapi.testclient import TestClient

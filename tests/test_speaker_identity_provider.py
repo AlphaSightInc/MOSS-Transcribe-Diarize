@@ -537,6 +537,7 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     monkeypatch.setenv("MOSS_LIVE_AUTH_STATE", "/env/live-auth.json")
     monkeypatch.setenv("MOSS_LIVE_TLS_CERTFILE", "/env/live.crt")
     monkeypatch.setenv("MOSS_LIVE_TLS_KEYFILE", "/env/live.key")
+    monkeypatch.setenv("MOSS_LIVE_HELPER_LEASE_SECONDS", "30")
     monkeypatch.setattr(sys, "argv", ["mtd-subtitle-web"])
 
     disabled = parse_args()
@@ -549,6 +550,7 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert disabled.live_auth_state is None
     assert disabled.live_tls_certfile is None
     assert disabled.live_tls_keyfile is None
+    assert disabled.live_helper_lease_seconds is None
 
     monkeypatch.setattr(
         sys,
@@ -569,6 +571,8 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
             "/cli/live.crt",
             "--live-tls-keyfile",
             "/cli/live.key",
+            "--live-helper-lease-seconds",
+            "30",
         ],
     )
     enabled = parse_args()
@@ -581,6 +585,7 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert enabled.live_auth_state == "/cli/live-auth.json"
     assert enabled.live_tls_certfile == "/cli/live.crt"
     assert enabled.live_tls_keyfile == "/cli/live.key"
+    assert enabled.live_helper_lease_seconds == 30.0
 
 
 def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path, monkeypatch):
@@ -614,6 +619,8 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
             str(certfile),
             "--live-tls-keyfile",
             str(keyfile),
+            "--live-helper-lease-seconds",
+            "30",
         ],
     )
     monkeypatch.setattr(web_cli, "_live_runtime_factory", lambda args: "runtime-factory")
@@ -625,6 +632,7 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
     assert calls["create_app"]["live_runtime_factory"] == "runtime-factory"
     assert calls["create_app"]["live_auth_state_path"] == state
     assert calls["create_app"]["live_server_cert_sha256"] == hashlib.sha256(b"configured leaf cert").hexdigest()
+    assert calls["create_app"]["live_helper_lease_seconds"] == 30.0
     assert calls["uvicorn"] == (
         "app",
         {
@@ -643,6 +651,7 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
         ("live_auth_state", "--live-auth-state"),
         ("live_tls_certfile", "--live-tls-certfile"),
         ("live_tls_keyfile", "--live-tls-keyfile"),
+        ("live_helper_lease_seconds", "--live-helper-lease-seconds"),
     ],
 )
 def test_web_cli_live_startup_names_each_missing_security_input(
@@ -658,6 +667,7 @@ def test_web_cli_live_startup_names_each_missing_security_input(
         "live_auth_state": str(tmp_path / "live-auth.json"),
         "live_tls_certfile": str(certfile),
         "live_tls_keyfile": str(tmp_path / "live.key"),
+        "live_helper_lease_seconds": 30.0,
     }
     values[missing_attribute] = None
 
@@ -665,6 +675,22 @@ def test_web_cli_live_startup_names_each_missing_security_input(
         _live_startup_config(SimpleNamespace(live=True, **values))
 
     assert missing_flag in str(exc_info.value)
+
+
+def test_web_cli_live_startup_rejects_non_positive_helper_lease(tmp_path):
+    from moss_transcribe_diarize.app.web_cli import _live_startup_config
+
+    certfile = tmp_path / "live.der"
+    certfile.write_bytes(b"configured leaf cert")
+    values = {
+        "live": True,
+        "live_auth_state": str(tmp_path / "live-auth.json"),
+        "live_tls_certfile": str(certfile),
+        "live_tls_keyfile": str(tmp_path / "live.key"),
+    }
+    for lease in (0, -1):
+        with pytest.raises(SystemExit, match="--live-helper-lease-seconds must be positive"):
+            _live_startup_config(SimpleNamespace(**values, live_helper_lease_seconds=lease))
 
 
 def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch):
@@ -739,6 +765,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "MOSS_LIVE_AUTH_STATE": "/provider/live-auth.json",
         "MOSS_LIVE_TLS_CERTFILE": "/provider/live.crt",
         "MOSS_LIVE_TLS_KEYFILE": "/provider/live.key",
+        "MOSS_LIVE_HELPER_LEASE_SECONDS": "30",
     }
 
     enabled = subprocess.run(
@@ -751,7 +778,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
 
     assert enabled.returncode == 0, enabled.stderr
     enabled_args = capture_path.read_text(encoding="utf-8").splitlines()
-    assert enabled_args[-14:] == [
+    assert enabled_args[-16:] == [
         "--speaker-identity-tier-b",
         "--speaker-identity-state",
         "/provider/state.pt",
@@ -766,6 +793,8 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "/provider/live.crt",
         "--live-tls-keyfile",
         "/provider/live.key",
+        "--live-helper-lease-seconds",
+        "30",
     ]
 
     disabled = subprocess.run(
@@ -780,6 +809,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
     assert not any(arg.startswith("--speaker-identity") for arg in disabled_args)
     assert "--live" not in disabled_args
     assert "--live-provider-manifest" not in disabled_args
+    assert "--live-helper-lease-seconds" not in disabled_args
 
     invalid = subprocess.run(
         ["bash", "ops/start-web.sh"],
@@ -810,6 +840,20 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
     )
     assert missing_live_manifest.returncode != 0
     assert "MOSS_LIVE_PROVIDER_MANIFEST is required" in missing_live_manifest.stderr
+
+    missing_live_lease = subprocess.run(
+        ["bash", "ops/start-web.sh"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env={
+            key: value
+            for key, value in (env | {"MOSS_LIVE_ENABLED": "1"}).items()
+            if key != "MOSS_LIVE_HELPER_LEASE_SECONDS"
+        },
+    )
+    assert missing_live_lease.returncode != 0
+    assert "MOSS_LIVE_HELPER_LEASE_SECONDS is required" in missing_live_lease.stderr
 
 
 def _spec_for(path: Path) -> TierBAssetSpec:

@@ -44,6 +44,7 @@ def _make_live_app(tmpdir: str | Path):
         live_runtime_factory=lambda: make_live_runtime(max_retained_samples=16),
         live_auth_state_path=Path(tmpdir) / "live-auth.json",
         live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+        live_helper_lease_seconds=30.0,
     )
 
 
@@ -110,6 +111,7 @@ class LivePortalRouteTest(unittest.TestCase):
                 live_runtime_factory=lambda: make_live_runtime(max_retained_samples=16),
                 live_auth_state_path=Path(tmpdir) / "live-auth.json",
                 live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+                live_helper_lease_seconds=30.0,
             )
             client = TestClient(app)
 
@@ -176,6 +178,7 @@ class LivePortalRouteTest(unittest.TestCase):
                     ),
                     live_auth_state_path=Path(tmpdir) / "live-auth.json",
                     live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+                    live_helper_lease_seconds=30.0,
                 )
                 client = _paired_live_client(app)
                 session_id = client.post("/api/live/sessions").json()["id"]
