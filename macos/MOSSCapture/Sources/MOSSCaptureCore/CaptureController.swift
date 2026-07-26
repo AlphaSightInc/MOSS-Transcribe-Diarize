@@ -56,6 +56,8 @@ public struct CaptureLaneStatus: Equatable {
     public var sequence: UInt64
     public var deviceEpoch: UInt64
     public var state: String
+    public var droppedFrames: UInt64
+    public var discontinuities: UInt64
     public var failureCode: String?
 
     public init(
@@ -63,12 +65,16 @@ public struct CaptureLaneStatus: Equatable {
         sequence: UInt64,
         deviceEpoch: UInt64,
         state: String,
+        droppedFrames: UInt64 = 0,
+        discontinuities: UInt64 = 0,
         failureCode: String? = nil
     ) {
         self.lane = lane
         self.sequence = sequence
         self.deviceEpoch = deviceEpoch
         self.state = state
+        self.droppedFrames = droppedFrames
+        self.discontinuities = discontinuities
         self.failureCode = failureCode
     }
 }

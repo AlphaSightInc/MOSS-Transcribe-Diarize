@@ -35,6 +35,8 @@ public final class RealTimeNativeAudioBufferQueue {
     private let capacity: Int
     private let lock = NSLock()
     private var buffers: [NativeCapturedAudioBuffer] = []
+    private var bufferedBuffersByLane: [CaptureLane: Int] = [:]
+    private var droppedBuffersByLane: [CaptureLane: UInt64] = [:]
     public private(set) var droppedBuffers: UInt64 = 0
 
     public init(capacity: Int) {
@@ -44,11 +46,14 @@ public final class RealTimeNativeAudioBufferQueue {
 
     public func enqueueFromRealtimeCallback(_ buffer: NativeCapturedAudioBuffer) {
         lock.lock()
-        if buffers.count == capacity {
-            buffers.removeFirst()
+        if bufferedBuffersByLane[buffer.lane, default: 0] == capacity {
             droppedBuffers += 1
+            droppedBuffersByLane[buffer.lane, default: 0] += 1
+            lock.unlock()
+            return
         }
         buffers.append(buffer)
+        bufferedBuffersByLane[buffer.lane, default: 0] += 1
         lock.unlock()
     }
 
@@ -56,8 +61,16 @@ public final class RealTimeNativeAudioBufferQueue {
         lock.lock()
         let drained = buffers
         buffers.removeAll(keepingCapacity: true)
+        bufferedBuffersByLane.removeAll(keepingCapacity: true)
         lock.unlock()
         return drained
+    }
+
+    public func droppedBuffersByLaneSnapshot() -> [CaptureLane: UInt64] {
+        lock.lock()
+        let snapshot = droppedBuffersByLane
+        lock.unlock()
+        return snapshot
     }
 }
 

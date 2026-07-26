@@ -409,8 +409,179 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(stoppedStatus.map(\.state), ["stopped", "stopped"])
     }
 
-    func testNativeDualCaptureSourceUnwindsSystemWhenMicrophoneStartFails() throws {
-        let system = RecordingNativeCaptureComponent()
+    func testNativeDualCaptureSourceSystemSurvivesMicrophoneStartFail() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.permissionDenied("microphone")
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(frames.map(\.lane), [.system])
+        XCTAssertEqual(runningStatus.map(\.state), ["capturing", "failed"])
+        XCTAssertNil(runningStatus.first { $0.lane == .system }?.failureCode)
+        XCTAssertEqual(
+            runningStatus.first { $0.lane == .microphone }?.failureCode,
+            "macos_permission_denied"
+        )
+    }
+
+    func testNativeDualCaptureSourceMicrophoneSurvivesSystemStartFail() throws {
+        let system = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.deviceUnavailable("system")
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 12, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(frames.map(\.lane), [.microphone])
+        XCTAssertEqual(runningStatus.map(\.state), ["failed", "capturing"])
+        XCTAssertEqual(
+            runningStatus.first { $0.lane == .system }?.failureCode,
+            "macos_device_unavailable"
+        )
+        XCTAssertNil(runningStatus.first { $0.lane == .microphone }?.failureCode)
+    }
+
+    func testNativeDualCaptureSourceAttributesLaneOverrunAndDiscontinuityCounters() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5]),
+                nativeBuffer(lane: .system, timestamp: 12, deviceEpoch: 1, samples: [0.25], discontinuity: true),
+                nativeBuffer(lane: .system, timestamp: 13, deviceEpoch: 1, samples: [0.75]),
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 11, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 2)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        _ = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        let systemStatus = try XCTUnwrap(runningStatus.first { $0.lane == .system })
+        let microphoneStatus = try XCTUnwrap(runningStatus.first { $0.lane == .microphone })
+        XCTAssertEqual(systemStatus.state, "failed")
+        XCTAssertEqual(systemStatus.failureCode, "macos_buffer_overrun")
+        XCTAssertEqual(systemStatus.droppedFrames, 1)
+        XCTAssertEqual(systemStatus.discontinuities, 1)
+        XCTAssertEqual(microphoneStatus.state, "capturing")
+        XCTAssertNil(microphoneStatus.failureCode)
+        XCTAssertEqual(microphoneStatus.droppedFrames, 0)
+        XCTAssertEqual(microphoneStatus.discontinuities, 0)
+    }
+
+    func testNativeDualCaptureSourceInvalidatesGenerationBeforeComponentTeardown() throws {
+        let system = RecordingNativeCaptureComponent(emitLateFactOnStop: true)
+        let microphone = RecordingNativeCaptureComponent()
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 2)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(system.lateFactWasRejected, true)
+    }
+
+    func testNativeDualCaptureSourceSilenceIsNonTerminal() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0])
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 12, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        let frames = try source.pendingFrames()
+        let status = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(frames.map(\.silent), [true, true])
+        XCTAssertEqual(status.map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(status.map(\.failureCode), [nil, nil])
+    }
+
+    func testNativeDualCaptureSourceUnwindsBothLanesWhenEveryStartFails() throws {
+        let system = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.deviceUnavailable("system")
+        )
         let microphone = RecordingNativeCaptureComponent(
             startError: NativeCaptureError.permissionDenied("microphone")
         )
@@ -428,13 +599,14 @@ final class CaptureControllerTests: XCTestCase {
                 )
             )
         ) { error in
-            XCTAssertEqual(error as? NativeCaptureError, .permissionDenied("microphone"))
+            XCTAssertEqual(error as? NativeCaptureError, .deviceUnavailable("system"))
         }
+
         XCTAssertEqual(system.startCount, 1)
         XCTAssertEqual(system.stopCount, 1)
         XCTAssertEqual(microphone.startCount, 1)
-        XCTAssertEqual(microphone.stopCount, 0)
-        XCTAssertEqual(source.status().map(\.state), ["stopped", "stopped"])
+        XCTAssertEqual(microphone.stopCount, 1)
+        XCTAssertEqual(source.status().map(\.state), ["failed", "failed"])
     }
 
     func testSystemAudioTapStartsStopsAndDestroysCoreAudioInOrder() throws {
@@ -448,9 +620,11 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(driver.events, [
             "AudioHardwareCreateProcessTap",
             "AudioHardwareCreateAggregateDevice",
+            "AudioObjectAddPropertyListenerBlock",
             "AudioDeviceCreateIOProcIDWithBlock",
             "AudioDeviceStart",
             "AudioDeviceStop",
+            "AudioObjectRemovePropertyListenerBlock",
             "AudioDeviceDestroyIOProcID",
             "AudioHardwareDestroyAggregateDevice",
             "AudioHardwareDestroyProcessTap",
@@ -473,12 +647,275 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(driver.events, [
             "AudioHardwareCreateProcessTap",
             "AudioHardwareCreateAggregateDevice",
+            "AudioObjectAddPropertyListenerBlock",
             "AudioDeviceCreateIOProcIDWithBlock",
             "AudioDeviceStart",
+            "AudioObjectRemovePropertyListenerBlock",
             "AudioDeviceDestroyIOProcID",
             "AudioHardwareDestroyAggregateDevice",
             "AudioHardwareDestroyProcessTap",
         ])
+    }
+
+    func testSystemAudioTapReportsPostStartFailureThroughSourceHealth() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(deviceEpoch: 3, driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        tap.attachHealthSink(health, lane: .system, generation: generation)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        driver.emit(.isRunning(false))
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "failed")
+        XCTAssertEqual(system.failureCode, "macos_io_stopped_abnormally")
+        XCTAssertEqual(system.deviceEpoch, 3)
+        tap.stop()
+    }
+
+    func testSystemAudioTapConfigurationChangeIsNonTerminal() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(deviceEpoch: 4, driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        tap.attachHealthSink(health, lane: .system, generation: generation)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        driver.emit(.configurationChanged)
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "capturing")
+        XCTAssertNil(system.failureCode)
+        XCTAssertEqual(system.deviceEpoch, 4)
+        tap.stop()
+    }
+
+    func testSystemAudioTapStaleGenerationIgnoredAfterStop() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        tap.attachHealthSink(health, lane: .system, generation: generation)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        health.invalidateGeneration()
+        tap.stop()
+        driver.emitAfterRemoval(.isAlive(false))
+
+        let system = try XCTUnwrap(
+            health.statuses(running: false).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "stopped")
+        XCTAssertNil(system.failureCode)
+    }
+
+    func testMicrophoneCaptureReportsPermissionAndCurrentInputDevice() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(driver.events, [
+            "recordPermission",
+            "kAudioOutputUnitProperty_CurrentDevice",
+            "AVAudioEngineConfigurationChange",
+            "installTap",
+            "AVAudioEngine.start",
+        ])
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertEqual(status.deviceEpoch, 42)
+        XCTAssertNil(status.failureCode)
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureUndeterminedPermissionIsPendingNotDenied() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .undetermined, currentDeviceID: 64)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertNil(status.failureCode)
+        XCTAssertNil(health.failure(for: .microphone))
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureDeniedPermissionReportsRawTerminalFact() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .denied, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        XCTAssertThrowsError(
+            try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        ) { error in
+            XCTAssertEqual(error as? NativeCaptureError, .permissionDenied("microphone"))
+        }
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(driver.events, ["recordPermission"])
+        XCTAssertEqual(status.state, "failed")
+        XCTAssertEqual(status.failureCode, "macos_permission_denied")
+    }
+
+    func testMicrophoneCaptureConfigurationChangeUpdatesCurrentDeviceWithoutFailure() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let scheduler = RecordingMicrophoneCaptureReconciliationScheduler()
+        let microphone = MicrophoneCapture(
+            driver: driver,
+            reconciliationScheduler: scheduler
+        )
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        driver.currentDeviceID = 77
+        driver.emit(.configurationChanged)
+
+        let recovering = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(recovering.state, "recovering")
+        XCTAssertEqual(recovering.deviceEpoch, 42)
+        XCTAssertEqual(scheduler.pendingCount, 1)
+        XCTAssertFalse(driver.events.contains("AVAudioEngine.stop"))
+        XCTAssertFalse(driver.events.contains("removeTap"))
+
+        scheduler.runNext()
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertEqual(status.deviceEpoch, 77)
+        XCTAssertNil(status.failureCode)
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureFailedDeviceQueryStaysRecoveringOffCallback() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let scheduler = RecordingMicrophoneCaptureReconciliationScheduler()
+        let microphone = MicrophoneCapture(
+            driver: driver,
+            reconciliationScheduler: scheduler
+        )
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        driver.currentDeviceError = NativeCaptureError.deviceUnavailable("query unavailable")
+        driver.emit(.configurationChanged)
+
+        XCTAssertEqual(scheduler.pendingCount, 1)
+        XCTAssertFalse(driver.events.contains("AVAudioEngine.stop"))
+        XCTAssertFalse(driver.events.contains("removeTap"))
+        scheduler.runNext()
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "recovering")
+        XCTAssertEqual(status.deviceEpoch, 42)
+        XCTAssertNil(status.failureCode)
+        XCTAssertNil(health.failure(for: .microphone))
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureOverloadIsRawNonTerminalFact() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        driver.emit(.engineOverloaded)
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "capturing")
+        XCTAssertNil(status.failureCode)
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureReportsPostStartAbnormalStopThroughHealth() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        driver.emit(.engineRunning(false))
+
+        let status = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "failed")
+        XCTAssertEqual(status.failureCode, "macos_io_stopped_abnormally")
+        microphone.stop()
+    }
+
+    func testMicrophoneCaptureStaleGenerationIgnoredAfterStop() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .granted, currentDeviceID: 42)
+        let microphone = MicrophoneCapture(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        microphone.attachHealthSink(health, lane: .microphone, generation: generation)
+
+        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        health.invalidateGeneration()
+        microphone.stop()
+        driver.emitAfterRemoval(.engineRunning(false))
+
+        let status = try XCTUnwrap(
+            health.statuses(running: false).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(status.state, "stopped")
+        XCTAssertNil(status.failureCode)
+    }
+
+    func testMicrophoneCaptureUsesInputAudioUnitCurrentDeviceWithoutDefaultLookup() throws {
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources/MOSSCaptureCore/MicrophoneCapture.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(source.contains("kAudioOutputUnitProperty_CurrentDevice"))
+        XCTAssertFalse(source.contains("kAudioHardwarePropertyDefaultInputDevice"))
     }
 
     func testNativeRuntimeErrorsAreTyped() throws {
@@ -534,19 +971,35 @@ final class CaptureControllerTests: XCTestCase {
                 samples: [-0.25]
             )
         )
+        queue.enqueueFromRealtimeCallback(
+            NativeCapturedAudioBuffer(
+                lane: .system,
+                sampleRate: 16_000,
+                channelCount: 1,
+                frameCount: 1,
+                firstSampleMonotonicNS: 13,
+                deviceEpoch: 1,
+                discontinuity: false,
+                samples: [0.5]
+            )
+        )
 
         let emitter = NativeLaneFrameEmitter()
         let frames = emitter.frames(from: queue.drain())
 
         XCTAssertEqual(queue.droppedBuffers, 1)
-        XCTAssertEqual(frames.map(\.lane), [.microphone, .system])
-        XCTAssertEqual(frames.map(\.sequence), [0, 0])
-        XCTAssertEqual(frames.map(\.deviceEpoch), [7, 1])
-        XCTAssertEqual(frames.map(\.captureTimestampNS), [11, 12])
-        XCTAssertEqual(frames.map(\.silent), [true, false])
-        XCTAssertEqual(frames.map(\.discontinuity), [false, true])
-        XCTAssertEqual(frames.map(\.sampleCount), [1, 1])
-        XCTAssertEqual(frames.map(\.pcm16.count), [2, 2])
+        XCTAssertEqual(
+            queue.droppedBuffersByLaneSnapshot(),
+            [.system: 1]
+        )
+        XCTAssertEqual(frames.map(\.lane), [.system, .microphone, .system])
+        XCTAssertEqual(frames.map(\.sequence), [0, 0, 1])
+        XCTAssertEqual(frames.map(\.deviceEpoch), [1, 7, 1])
+        XCTAssertEqual(frames.map(\.captureTimestampNS), [10, 11, 12])
+        XCTAssertEqual(frames.map(\.silent), [false, true, false])
+        XCTAssertEqual(frames.map(\.discontinuity), [false, false, true])
+        XCTAssertEqual(frames.map(\.sampleCount), [1, 1, 1])
+        XCTAssertEqual(frames.map(\.pcm16.count), [2, 2, 2])
 
         let nextSystem = emitter.frames(
             from: [
@@ -562,7 +1015,167 @@ final class CaptureControllerTests: XCTestCase {
                 )
             ]
         )
-        XCTAssertEqual(nextSystem.first?.sequence, 1)
+        XCTAssertEqual(nextSystem.first?.sequence, 2)
+    }
+
+    func testNativeLaneHealthStableCodeVocabularyIsClosed() throws {
+        XCTAssertEqual(
+            NativeLaneFailureCode.allCases.map(\.rawValue),
+            [
+                "macos_permission_denied",
+                "macos_device_unavailable",
+                "macos_io_stopped_abnormally",
+                "macos_callback_stalled",
+                "macos_buffer_overrun",
+                "macos_unexpected_capture_error",
+            ]
+        )
+    }
+
+    func testNativeLaneHealthMailboxOrderAndFirstCauseStickiness() throws {
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        health.enqueue(.deviceEpoch(4), lane: .system, generation: generation)
+        health.enqueue(.startFailed(.permissionDenied("screen capture permission")), lane: .system, generation: generation)
+        health.enqueue(.startFailed(.deviceUnavailable("later device miss")), lane: .system, generation: generation)
+        health.enqueue(.deviceEpoch(9), lane: .microphone, generation: generation)
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let statuses = health.statuses(running: true)
+        let system = try XCTUnwrap(statuses.first { $0.lane == .system })
+        let microphone = try XCTUnwrap(statuses.first { $0.lane == .microphone })
+
+        XCTAssertEqual(system.state, "failed")
+        XCTAssertEqual(system.failureCode, "macos_permission_denied")
+        XCTAssertEqual(health.failure(for: .system)?.cause, "screen capture permission")
+        XCTAssertEqual(microphone.state, "capturing")
+        XCTAssertNil(microphone.failureCode)
+        XCTAssertEqual(microphone.deviceEpoch, 9)
+    }
+
+    func testNativeLaneHealthGenerationFenceRejectsDelayedFactsAfterStop() throws {
+        let health = NativeLaneHealth()
+        let oldGeneration = health.beginGeneration()
+        health.enqueue(.admitted, lane: .system, generation: oldGeneration)
+        _ = health.statuses(running: true)
+
+        health.invalidateGeneration()
+        health.enqueue(.unexpectedCaptureError("late callback"), lane: .system, generation: oldGeneration)
+
+        let system = try XCTUnwrap(
+            health.statuses(running: false).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "stopped")
+        XCTAssertNil(system.failureCode)
+        XCTAssertNil(health.failure(for: .system))
+    }
+
+    func testNativeLaneMailboxLinearizationBeatsCallbackTimestamp() throws {
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        health.enqueue(
+            .deviceEpoch(4),
+            lane: .system,
+            generation: generation,
+            callbackMonotonicNS: 200
+        )
+        health.enqueue(
+            .deviceEpoch(9),
+            lane: .system,
+            generation: generation,
+            callbackMonotonicNS: 100
+        )
+
+        let batches = health.detachAcceptedFacts()
+        let systemBatch = try XCTUnwrap(batches.first { $0.lane == .system })
+        XCTAssertEqual(systemBatch.entries.map(\.mailboxOrder), [0, 1])
+        XCTAssertEqual(systemBatch.entries.map(\.callbackMonotonicNS), [200, 100])
+        health.applyDetachedFacts(batches)
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.deviceEpoch, 9)
+    }
+
+    func testNativeLaneMailboxTerminalFenceCannotBeDroppedAtCapacity() throws {
+        let health = NativeLaneHealth(mailboxCapacity: 2)
+        let generation = health.beginGeneration()
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        health.enqueue(.deviceEpoch(7), lane: .system, generation: generation)
+        health.enqueue(.deviceEpoch(8), lane: .system, generation: generation)
+        health.enqueue(.deviceEpoch(9), lane: .system, generation: generation)
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "failed")
+        XCTAssertEqual(system.deviceEpoch, 7)
+        XCTAssertEqual(system.droppedFrames, 1)
+        XCTAssertEqual(system.failureCode, "macos_buffer_overrun")
+    }
+
+    func testNativeLaneReducerDeferredBatchCannotCrossGeneration() throws {
+        let health = NativeLaneHealth()
+        let oldGeneration = health.beginGeneration()
+        health.enqueue(
+            .unexpectedCaptureError("detached old callback"),
+            lane: .system,
+            generation: oldGeneration
+        )
+        let detached = health.detachAcceptedFacts()
+
+        let currentGeneration = health.beginGeneration()
+        health.enqueue(.admitted, lane: .system, generation: currentGeneration)
+        health.applyDetachedFacts(detached)
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "capturing")
+        XCTAssertNil(system.failureCode)
+    }
+
+    func testNativeLaneHealthIgnoresNonFailureFacts() throws {
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+
+        health.enqueue(.permission(.undetermined), lane: .microphone, generation: generation)
+        health.enqueue(.permission(.granted), lane: .microphone, generation: generation)
+        health.enqueue(.bufferOverrun(droppedBuffers: 0), lane: .microphone, generation: generation)
+        health.enqueue(.startFailed(.transportUnavailable("transient heartbeat")), lane: .microphone, generation: generation)
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+
+        let microphone = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .microphone }
+        )
+        XCTAssertEqual(microphone.state, "capturing")
+        XCTAssertNil(microphone.failureCode)
+        XCTAssertNil(health.failure(for: .microphone))
+    }
+
+    func testNativeLaneHealthMapsNativeTerminalFactsToStableCodes() throws {
+        let facts: [(NativeLaneFact, NativeLaneFailureCode)] = [
+            (.startFailed(.deviceUnavailable("aggregate")), .deviceUnavailable),
+            (.startFailed(.osStatus("AudioHardwareCreateProcessTap", -50)), .unexpectedCaptureError),
+            (.ioStoppedAbnormally("HAL stopped"), .ioStoppedAbnormally),
+            (.bufferOverrun(droppedBuffers: 1), .bufferOverrun),
+            (.unexpectedCaptureError("uncaught native error"), .unexpectedCaptureError),
+        ]
+
+        for (fact, code) in facts {
+            let health = NativeLaneHealth()
+            let generation = health.beginGeneration()
+            health.enqueue(fact, lane: .system, generation: generation)
+
+            let system = try XCTUnwrap(
+                health.statuses(running: true).first { $0.lane == .system }
+            )
+            XCTAssertEqual(system.state, "failed")
+            XCTAssertEqual(system.failureCode, code.rawValue)
+        }
     }
 
     func testRealtimeCallbacksOnlyCopyAndEnqueueNativeBuffers() throws {
@@ -714,7 +1327,9 @@ final class CaptureControllerTests: XCTestCase {
                     sequence: 4,
                     deviceEpoch: 2,
                     state: "failed",
-                    failureCode: CapturePumpFailure.permissionDenied.rawValue
+                    droppedFrames: 1,
+                    discontinuities: 2,
+                    failureCode: "macos_permission_denied"
                 ),
                 CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
             ],
@@ -737,7 +1352,9 @@ final class CaptureControllerTests: XCTestCase {
         let system = try XCTUnwrap(lanes["system"])
         let microphone = try XCTUnwrap(lanes["microphone"])
         XCTAssertEqual(system["state"] as? String, "failed")
-        XCTAssertEqual(system["failure_code"] as? String, "permissionDenied")
+        XCTAssertEqual(system["dropped_frames"] as? Int, 1)
+        XCTAssertEqual(system["discontinuities"] as? Int, 2)
+        XCTAssertEqual(system["failure_code"] as? String, "macos_permission_denied")
         XCTAssertTrue(microphone["failure_code"] is NSNull)
     }
 
@@ -1226,6 +1843,39 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertFalse(normalizedParagraph.contains("deployment and enablement are ready"))
     }
 
+    func testIDEA043ContextAndADRUseSourceOwnedNativeTypedVocabulary() throws {
+        let repositoryRoot = packageRoot()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let context = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("CONTEXT.md"),
+            encoding: .utf8
+        )
+        let adr = try String(
+            contentsOf: repositoryRoot
+                .appendingPathComponent("docs")
+                .appendingPathComponent("adr")
+                .appendingPathComponent("0001-live-v2-json-http-contract.md"),
+            encoding: .utf8
+        )
+        let marker = "- **Native typed lane failure (IDEA-043)**:"
+        let paragraph = try XCTUnwrap(
+            context.components(separatedBy: marker).dropFirst().first?
+                .components(separatedBy: "\n- **").first
+        )
+        let normalizedParagraph = paragraph
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        XCTAssertTrue(normalizedParagraph.contains("source-owned `NativeLaneHealth`"))
+        XCTAssertTrue(normalizedParagraph.contains("native typed raw facts"))
+        XCTAssertTrue(normalizedParagraph.contains("`moss-live-helper-health.v1`"))
+        XCTAssertTrue(normalizedParagraph.contains("remain Missing"))
+        XCTAssertFalse(context.contains("No production caller detects helper loss or invokes lane failure"))
+        XCTAssertTrue(adr.contains("IDEA-043 adds source-owned native lane failure ownership"))
+        XCTAssertTrue(adr.contains("stable `macos_*` failure codes"))
+    }
+
     func testIDEA042ResidualKillNodesNameExistingActualTests() throws {
         let repositoryRoot = packageRoot()
             .deletingLastPathComponent()
@@ -1452,7 +2102,8 @@ final class CaptureControllerTests: XCTestCase {
         lane: CaptureLane,
         timestamp: UInt64,
         deviceEpoch: UInt64,
-        samples: [Float]
+        samples: [Float],
+        discontinuity: Bool = false
     ) -> NativeCapturedAudioBuffer {
         NativeCapturedAudioBuffer(
             lane: lane,
@@ -1461,7 +2112,7 @@ final class CaptureControllerTests: XCTestCase {
             frameCount: samples.count,
             firstSampleMonotonicNS: timestamp,
             deviceEpoch: deviceEpoch,
-            discontinuity: false,
+            discontinuity: discontinuity,
             samples: samples
         )
     }
@@ -1473,18 +2124,38 @@ final class CaptureControllerTests: XCTestCase {
     }
 }
 
-private final class RecordingNativeCaptureComponent: NativeAudioCaptureComponent {
+private final class RecordingNativeCaptureComponent:
+    NativeAudioCaptureComponent,
+    NativeLaneHealthReportingComponent
+{
     private let buffersOnStart: [NativeCapturedAudioBuffer]
     private let startError: Error?
+    private let emitLateFactOnStop: Bool
+    private weak var healthSink: NativeLaneHealthFactSink?
+    private var healthLane = CaptureLane.system
+    private var healthGeneration: UInt64 = 0
     private(set) var startCount = 0
     private(set) var stopCount = 0
+    private(set) var lateFactWasRejected: Bool?
 
     init(
         buffersOnStart: [NativeCapturedAudioBuffer] = [],
-        startError: Error? = nil
+        startError: Error? = nil,
+        emitLateFactOnStop: Bool = false
     ) {
         self.buffersOnStart = buffersOnStart
         self.startError = startError
+        self.emitLateFactOnStop = emitLateFactOnStop
+    }
+
+    func attachHealthSink(
+        _ sink: NativeLaneHealthFactSink,
+        lane: CaptureLane,
+        generation: UInt64
+    ) {
+        healthSink = sink
+        healthLane = lane
+        healthGeneration = generation
     }
 
     func start(queue: RealTimeNativeAudioBufferQueue) throws {
@@ -1499,12 +2170,24 @@ private final class RecordingNativeCaptureComponent: NativeAudioCaptureComponent
 
     func stop() {
         stopCount += 1
+        guard emitLateFactOnStop, let healthSink else {
+            return
+        }
+        healthSink.enqueue(
+            .unexpectedCaptureError("late component teardown callback"),
+            lane: healthLane,
+            generation: healthGeneration
+        )
+        lateFactWasRejected =
+            (healthSink as? NativeLaneHealth)?.failure(for: healthLane) == nil
     }
 }
 
 private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
     private let startError: Error?
     private(set) var events: [String] = []
+    private var lifecycleHandler: ((SystemAudioTapDeviceObservation) -> Void)?
+    private var removedLifecycleHandler: ((SystemAudioTapDeviceObservation) -> Void)?
 
     init(startError: Error? = nil) {
         self.startError = startError
@@ -1518,6 +2201,20 @@ private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
     func createAggregateDevice(for description: CATapDescription) throws -> AudioObjectID {
         events.append("AudioHardwareCreateAggregateDevice")
         return AudioObjectID(202)
+    }
+
+    func installDeviceLifecycleListeners(
+        on aggregateDeviceID: AudioObjectID,
+        handler: @escaping (SystemAudioTapDeviceObservation) -> Void
+    ) throws {
+        events.append("AudioObjectAddPropertyListenerBlock")
+        lifecycleHandler = handler
+    }
+
+    func removeDeviceLifecycleListeners(on aggregateDeviceID: AudioObjectID) {
+        events.append("AudioObjectRemovePropertyListenerBlock")
+        removedLifecycleHandler = lifecycleHandler
+        lifecycleHandler = nil
     }
 
     func createIOProc(
@@ -1550,6 +2247,115 @@ private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
 
     func destroyProcessTap(_ tapID: AudioObjectID) {
         events.append("AudioHardwareDestroyProcessTap")
+    }
+
+    func emit(_ observation: SystemAudioTapDeviceObservation) {
+        lifecycleHandler?(observation)
+    }
+
+    func emitAfterRemoval(_ observation: SystemAudioTapDeviceObservation) {
+        removedLifecycleHandler?(observation)
+    }
+}
+
+private final class RecordingMicrophoneCaptureDriver: MicrophoneCaptureDriver {
+    private(set) var events: [String] = []
+    private var permission: NativeLanePermissionFact
+    var currentDeviceID: AudioDeviceID
+    var currentDeviceError: Error?
+    var startError: Error?
+    private var observationHandler: (@Sendable (MicrophoneCaptureEngineObservation) -> Void)?
+    private var removedObservationHandler: (@Sendable (MicrophoneCaptureEngineObservation) -> Void)?
+
+    init(
+        permission: NativeLanePermissionFact,
+        currentDeviceID: AudioDeviceID,
+        startError: Error? = nil
+    ) {
+        self.permission = permission
+        self.currentDeviceID = currentDeviceID
+        self.startError = startError
+    }
+
+    func recordPermission() -> NativeLanePermissionFact {
+        events.append("recordPermission")
+        return permission
+    }
+
+    func currentInputDeviceID() throws -> AudioDeviceID {
+        events.append("kAudioOutputUnitProperty_CurrentDevice")
+        if let currentDeviceError {
+            throw currentDeviceError
+        }
+        return currentDeviceID
+    }
+
+    func installConfigurationChangeHandler(
+        _ handler: @escaping @Sendable (MicrophoneCaptureEngineObservation) -> Void
+    ) throws {
+        events.append("AVAudioEngineConfigurationChange")
+        observationHandler = handler
+    }
+
+    func removeConfigurationChangeHandler() {
+        events.append("removeConfigurationChangeHandler")
+        removedObservationHandler = observationHandler
+        observationHandler = nil
+    }
+
+    func installTap(queue: RealTimeNativeAudioBufferQueue, deviceEpoch: UInt64) throws {
+        events.append("installTap")
+    }
+
+    func startEngine() throws {
+        events.append("AVAudioEngine.start")
+        if let startError {
+            throw startError
+        }
+    }
+
+    func stopEngine() {
+        events.append("AVAudioEngine.stop")
+    }
+
+    func removeTap() {
+        events.append("removeTap")
+    }
+
+    func emit(_ observation: MicrophoneCaptureEngineObservation) {
+        observationHandler?(observation)
+    }
+
+    func emitAfterRemoval(_ observation: MicrophoneCaptureEngineObservation) {
+        removedObservationHandler?(observation)
+    }
+}
+
+private final class RecordingMicrophoneCaptureReconciliationScheduler:
+    MicrophoneCaptureReconciliationScheduling,
+    @unchecked Sendable
+{
+    private let lock = NSLock()
+    private var operations: [@Sendable () -> Void] = []
+
+    var pendingCount: Int {
+        lock.lock()
+        let count = operations.count
+        lock.unlock()
+        return count
+    }
+
+    func schedule(_ operation: @escaping @Sendable () -> Void) {
+        lock.lock()
+        operations.append(operation)
+        lock.unlock()
+    }
+
+    func runNext() {
+        lock.lock()
+        let operation = operations.removeFirst()
+        lock.unlock()
+        operation()
     }
 }
 

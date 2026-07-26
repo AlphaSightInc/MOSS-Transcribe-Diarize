@@ -1,4 +1,7 @@
-import AVFAudio
+import AudioToolbox
+import AVFoundation
+@preconcurrency import AVFAudio
+import CoreAudio
 import Foundation
 
 public struct MicrophoneCaptureSourceVector: Equatable, Sendable {
@@ -16,18 +19,265 @@ public final class MicrophoneCapture {
         realtimeCallbackWork: ["copy native buffer", "enqueue monotonic first-sample time"]
     )
 
-    private let engine: AVAudioEngine
-    private let deviceEpoch: UInt64
+    private let driver: MicrophoneCaptureDriver
+    private let reconciliationScheduler: MicrophoneCaptureReconciliationScheduling
+    private let lock = NSLock()
+    private weak var healthSink: NativeLaneHealthFactSink?
+    private var healthLane = CaptureLane.microphone
+    private var healthGeneration: UInt64 = 0
+    private var tapInstalled = false
+    private var configurationHandlerInstalled = false
+    private var engineStarted = false
+    private var reconciliationPending = false
+    private var stopping = false
 
     public init(engine: AVAudioEngine = AVAudioEngine(), deviceEpoch: UInt64 = 0) {
-        self.engine = engine
-        self.deviceEpoch = deviceEpoch
+        _ = deviceEpoch
+        self.driver = AVAudioEngineMicrophoneDriver(engine: engine)
+        self.reconciliationScheduler = DispatchMicrophoneCaptureReconciliationScheduler()
+    }
+
+    init(
+        driver: MicrophoneCaptureDriver,
+        reconciliationScheduler: MicrophoneCaptureReconciliationScheduling =
+            DispatchMicrophoneCaptureReconciliationScheduler()
+    ) {
+        self.driver = driver
+        self.reconciliationScheduler = reconciliationScheduler
+    }
+
+    func attachHealthSink(_ sink: NativeLaneHealthFactSink, lane: CaptureLane, generation: UInt64) {
+        lock.lock()
+        healthSink = sink
+        healthLane = lane
+        healthGeneration = generation
+        lock.unlock()
     }
 
     public func start(queue: RealTimeNativeAudioBufferQueue) throws {
+        setStopping(false)
+        do {
+            let permission = driver.recordPermission()
+            emit(.permission(permission))
+            if permission == .denied {
+                throw NativeCaptureError.permissionDenied("microphone")
+            }
+            let currentDeviceID = try driver.currentInputDeviceID()
+            try driver.installConfigurationChangeHandler { [weak self] observation in
+                self?.handleEngineObservation(observation)
+            }
+            configurationHandlerInstalled = true
+            try driver.installTap(queue: queue, deviceEpoch: UInt64(currentDeviceID))
+            tapInstalled = true
+            try driver.startEngine()
+            setEngineStarted(true)
+            emit(.deviceEpoch(UInt64(currentDeviceID)))
+        } catch {
+            stop()
+            throw error
+        }
+    }
+
+    public func stop() {
+        setStopping(true)
+        if configurationHandlerInstalled {
+            driver.removeConfigurationChangeHandler()
+            configurationHandlerInstalled = false
+        }
+        if tapInstalled {
+            driver.removeTap()
+            tapInstalled = false
+        }
+        if isEngineStarted() {
+            driver.stopEngine()
+            setEngineStarted(false)
+        }
+        setStopping(false)
+    }
+
+    private func handleEngineObservation(_ observation: MicrophoneCaptureEngineObservation) {
+        switch observation {
+        case .configurationChanged:
+            setReconciliationPending(true)
+            emit(.configurationChanged)
+            reconciliationScheduler.schedule { [weak self] in
+                self?.reconcileCurrentInputDevice()
+            }
+        case .engineRunning(false):
+            if isEngineStarted() && !isStopping() && !isReconciliationPending() {
+                emit(.ioStoppedAbnormally("microphone engine stopped unexpectedly"))
+            }
+        case .engineOverloaded:
+            emit(.overload(count: 1))
+        case .engineRunning(true):
+            break
+        }
+    }
+
+    private func reconcileCurrentInputDevice() {
+        do {
+            let deviceID = try driver.currentInputDeviceID()
+            emit(.deviceEpoch(UInt64(deviceID)))
+        } catch {
+            emit(.reconciliationUnresolved(String(describing: error)))
+        }
+        setReconciliationPending(false)
+    }
+
+    private func emit(_ fact: NativeLaneFact) {
+        let snapshot: (NativeLaneHealthFactSink?, CaptureLane, UInt64)
+        lock.lock()
+        snapshot = (healthSink, healthLane, healthGeneration)
+        lock.unlock()
+        snapshot.0?.enqueue(fact, lane: snapshot.1, generation: snapshot.2)
+    }
+
+    private func setStopping(_ value: Bool) {
+        lock.lock()
+        stopping = value
+        lock.unlock()
+    }
+
+    private func isStopping() -> Bool {
+        lock.lock()
+        let value = stopping
+        lock.unlock()
+        return value
+    }
+
+    private func isEngineStarted() -> Bool {
+        lock.lock()
+        let value = engineStarted
+        lock.unlock()
+        return value
+    }
+
+    private func setEngineStarted(_ value: Bool) {
+        lock.lock()
+        engineStarted = value
+        lock.unlock()
+    }
+
+    private func setReconciliationPending(_ value: Bool) {
+        lock.lock()
+        reconciliationPending = value
+        lock.unlock()
+    }
+
+    private func isReconciliationPending() -> Bool {
+        lock.lock()
+        let value = reconciliationPending
+        lock.unlock()
+        return value
+    }
+}
+
+extension MicrophoneCapture: @unchecked Sendable {}
+
+enum MicrophoneCaptureEngineObservation: Equatable {
+    case configurationChanged
+    case engineRunning(Bool)
+    case engineOverloaded
+}
+
+protocol MicrophoneCaptureDriver: AnyObject {
+    func recordPermission() -> NativeLanePermissionFact
+    func currentInputDeviceID() throws -> AudioDeviceID
+    func installConfigurationChangeHandler(
+        _ handler: @escaping @Sendable (MicrophoneCaptureEngineObservation) -> Void
+    ) throws
+    func removeConfigurationChangeHandler()
+    func installTap(queue: RealTimeNativeAudioBufferQueue, deviceEpoch: UInt64) throws
+    func startEngine() throws
+    func stopEngine()
+    func removeTap()
+}
+
+protocol MicrophoneCaptureReconciliationScheduling: Sendable {
+    func schedule(_ operation: @escaping @Sendable () -> Void)
+}
+
+private struct DispatchMicrophoneCaptureReconciliationScheduler:
+    MicrophoneCaptureReconciliationScheduling
+{
+    private let queue = DispatchQueue(label: "moss.capture.microphone.reconciliation")
+
+    func schedule(_ operation: @escaping @Sendable () -> Void) {
+        queue.async(execute: operation)
+    }
+}
+
+private final class AVAudioEngineMicrophoneDriver: MicrophoneCaptureDriver {
+    private static let configurationChangeNotification =
+        Notification.Name("AVAudioEngineConfigurationChangeNotification")
+    private let engine: AVAudioEngine
+    private let notificationCenter: NotificationCenter
+    private var configurationObserver: NSObjectProtocol?
+
+    init(
+        engine: AVAudioEngine,
+        notificationCenter: NotificationCenter = .default
+    ) {
+        self.engine = engine
+        self.notificationCenter = notificationCenter
+    }
+
+    func recordPermission() -> NativeLanePermissionFact {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .notDetermined:
+            return .undetermined
+        case .authorized:
+            return .granted
+        case .denied, .restricted:
+            return .denied
+        @unknown default:
+            return .undetermined
+        }
+    }
+
+    func currentInputDeviceID() throws -> AudioDeviceID {
+        guard let audioUnit = engine.inputNode.audioUnit else {
+            throw NativeCaptureError.deviceUnavailable("microphone input audio unit unavailable")
+        }
+        var deviceID = AudioDeviceID(kAudioObjectUnknown)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        let status = AudioUnitGetProperty(
+            audioUnit,
+            kAudioOutputUnitProperty_CurrentDevice,
+            kAudioUnitScope_Global,
+            0,
+            &deviceID,
+            &size
+        )
+        guard status == noErr, deviceID != AudioDeviceID(kAudioObjectUnknown) else {
+            throw NativeCaptureError.osStatus("kAudioOutputUnitProperty_CurrentDevice", status)
+        }
+        return deviceID
+    }
+
+    func installConfigurationChangeHandler(
+        _ handler: @escaping @Sendable (MicrophoneCaptureEngineObservation) -> Void
+    ) throws {
+        configurationObserver = notificationCenter.addObserver(
+            forName: Self.configurationChangeNotification,
+            object: engine,
+            queue: nil
+        ) { [weak engine] _ in
+            handler(.configurationChanged)
+            handler(.engineRunning(engine?.isRunning ?? false))
+        }
+    }
+
+    func removeConfigurationChangeHandler() {
+        if let configurationObserver {
+            notificationCenter.removeObserver(configurationObserver)
+            self.configurationObserver = nil
+        }
+    }
+
+    func installTap(queue: RealTimeNativeAudioBufferQueue, deviceEpoch: UInt64) throws {
         let inputNode = engine.inputNode
         let format = inputNode.inputFormat(forBus: 0)
-        let deviceEpoch = self.deviceEpoch
         inputNode.installTap(onBus: 0, bufferSize: 1_024, format: format) { buffer, time in
             queue.enqueueFromRealtimeCallback(
                 NativeCapturedAudioBuffer.copyFromAVAudioPCMBuffer(
@@ -38,17 +288,22 @@ public final class MicrophoneCapture {
                 )
             )
         }
+    }
+
+    func startEngine() throws {
         do {
             try engine.start()
         } catch let error as NSError {
-            inputNode.removeTap(onBus: 0)
             throw NativeCaptureError.osStatus("AVAudioEngine.start", Int32(error.code))
         }
     }
 
-    public func stop() {
-        engine.inputNode.removeTap(onBus: 0)
+    func stopEngine() {
         engine.stop()
+    }
+
+    func removeTap() {
+        engine.inputNode.removeTap(onBus: 0)
     }
 }
 

@@ -129,6 +129,20 @@ typed `pumpFailure` status fact; the repeating pump remains active and clears
 that fact after a later successful tick. This is local retry/observability, not
 server lane-failure, expiry, abandonment, or recovery policy.
 
+IDEA-043 adds source-owned native lane failure ownership inside the native dual
+capture source without changing the public controller, helper health JSON,
+parser, routes, server lifecycle, or mixer. `NativeLaneHealth` owns
+generation-fenced ordered lane mailboxes and the reducer that projects
+admitted/capturing/failed state, counters, first-cause sticky failure, and
+stable `macos_*` failure codes. The system-tap and microphone adapters enqueue
+raw lifecycle, permission, device, overload, and abnormal-stop facts only; they
+do not own failure policy, generation policy, status projection, teardown, or
+server recovery. Heartbeat publication carries the resulting lane health facts
+through the existing `moss-live-helper-health.v1` shape. Local unsigned tests
+and builds do not prove signing, notarization, TCC continuity, endpoint
+recovery, deployed device behavior, 60/300 evidence, canary, deployment, or live
+enablement; those remain Missing.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
 ## IDEA-035 Mutation Kill Nodes
