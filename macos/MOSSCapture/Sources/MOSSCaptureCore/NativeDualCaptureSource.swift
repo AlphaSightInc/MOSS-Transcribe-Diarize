@@ -9,6 +9,7 @@ extension SystemAudioTap: NativeAudioCaptureComponent {}
 extension MicrophoneCapture: NativeAudioCaptureComponent {}
 
 public final class NativeDualCaptureSource: CaptureSourceAdapter {
+    private let lock = NSLock()
     private let system: NativeAudioCaptureComponent
     private let microphone: NativeAudioCaptureComponent
     private let queue: RealTimeNativeAudioBufferQueue
@@ -44,7 +45,9 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
         try system.start(queue: queue)
         do {
             try microphone.start(queue: queue)
+            lock.lock()
             started = true
+            lock.unlock()
         } catch {
             system.stop()
             throw error
@@ -52,24 +55,33 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
     }
 
     public func pendingFrames() throws -> [CaptureFrame] {
-        guard started else {
+        lock.lock()
+        let isStarted = started
+        lock.unlock()
+        guard isStarted else {
             return []
         }
         let frames = emitter.frames(from: queue.drain())
+        lock.lock()
         for frame in frames {
             latestFrames[frame.lane] = frame
         }
+        lock.unlock()
         return frames
     }
 
     public func status() -> [CaptureLaneStatus] {
-        CaptureLane.allCases.map { lane in
-            let latest = latestFrames[lane]
+        lock.lock()
+        let isStarted = started
+        let framesByLane = latestFrames
+        lock.unlock()
+        return CaptureLane.allCases.map { lane in
+            let latest = framesByLane[lane]
             return CaptureLaneStatus(
                 lane: lane,
                 sequence: latest?.sequence ?? 0,
                 deviceEpoch: latest?.deviceEpoch ?? 0,
-                state: started ? "capturing" : "stopped"
+                state: isStarted ? "capturing" : "stopped"
             )
         }
     }
@@ -77,6 +89,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
     public func stop(deadline: Date) throws {
         microphone.stop()
         system.stop()
+        lock.lock()
         started = false
+        lock.unlock()
     }
 }

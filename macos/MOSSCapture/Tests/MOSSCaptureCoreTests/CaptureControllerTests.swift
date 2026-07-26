@@ -174,6 +174,7 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(failed.running)
         XCTAssertEqual(failed.pumpFailure, .transportUnavailable)
         XCTAssertEqual(failed.lastHealthSequence, 2)
+        XCTAssertEqual(failed.lanes.map(\.state), ["capturing", "capturing"], "transportUnavailable is degraded/recovering policy, not lane failure")
         XCTAssertEqual(
             ControlChannelResponse(status: failed).pumpFailure,
             .transportUnavailable
@@ -182,6 +183,62 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertNil(recovered.pumpFailure)
         XCTAssertEqual(recovered.lastHealthSequence, 3)
         XCTAssertEqual(health.attemptCount, 3)
+    }
+
+    func testControllerSharedStatusIsSynchronizedUnderConcurrentPumpStatus() throws {
+        let source = ConcurrentEmptyCaptureSource()
+        let scheduler = ConcurrentCaptureScheduler()
+        let health = ConcurrentCaptureHealth()
+        let controller = CaptureController(
+            source: source,
+            transport: NoOpCaptureTransport(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: IncrementingCaptureClock(),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        let queue = DispatchQueue(label: "moss.capture.test.concurrent", attributes: .concurrent)
+        let group = DispatchGroup()
+        let snapshots = CaptureStatusBox()
+        let pumpRunner = ScheduledPumpRunner(scheduler: scheduler)
+        let statusReader = CaptureStatusReader(controller: controller)
+        for _ in 0..<20 {
+            group.enter()
+            queue.async {
+                pumpRunner.run()
+                group.leave()
+            }
+        }
+        for _ in 0..<100 {
+            group.enter()
+            queue.async {
+                snapshots.append(statusReader.status())
+                group.leave()
+            }
+        }
+
+        XCTAssertEqual(group.wait(timeout: .now() + 2), .success)
+        let current = controller.status()
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertTrue(current.running)
+        XCTAssertEqual(current.sessionID, "session-a")
+        XCTAssertEqual(current.publishedFrameCount, 0)
+        XCTAssertEqual(current.lastHealthSequence, 21)
+        XCTAssertNil(current.pumpFailure)
+        XCTAssertEqual(health.emissionCount(), 21)
+        XCTAssertTrue(snapshots.load().allSatisfy { $0.running && $0.sessionID == "session-a" })
+        XCTAssertTrue(snapshots.load().allSatisfy { $0.publishedFrameCount == 0 })
+        XCTAssertFalse(stopped.running)
+        XCTAssertEqual(stopped.sessionID, "session-a")
+        XCTAssertNil(controller.status().sessionID)
     }
 
     func testRepeatingSchedulerContinuesUntilExplicitCancellation() throws {
@@ -566,6 +623,50 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(system["failure_code"] is NSNull)
         XCTAssertTrue(microphone["failure_code"] is NSNull)
         XCTAssertFalse(String(data: request.httpBody ?? Data(), encoding: .utf8)?.contains("capture-token") ?? true)
+    }
+
+    func testHTTPHealthSerializesTypedLaneFailureCode() throws {
+        let client = RecordingCaptureHTTPClient()
+        let health = CaptureHTTPHealthAdapter(
+            client: client,
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token"),
+            instanceID: "boot-a",
+            helperVersion: "0.1.0"
+        )
+        let status = CaptureStatus(
+            running: true,
+            sessionID: "session-a",
+            lanes: [
+                CaptureLaneStatus(
+                    lane: .system,
+                    sequence: 4,
+                    deviceEpoch: 2,
+                    state: "failed",
+                    failureCode: CapturePumpFailure.permissionDenied.rawValue
+                ),
+                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
+            ],
+            publishedFrameCount: 10,
+            lastHealthSequence: 5
+        )
+
+        try health.emit(
+            status: status,
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            ),
+            sentMonotonicNS: 900
+        )
+
+        let request = try XCTUnwrap(client.requests.first)
+        let body = try jsonBody(request)
+        let lanes = try XCTUnwrap(body["lanes"] as? [String: [String: Any]])
+        let system = try XCTUnwrap(lanes["system"])
+        let microphone = try XCTUnwrap(lanes["microphone"])
+        XCTAssertEqual(system["state"] as? String, "failed")
+        XCTAssertEqual(system["failure_code"] as? String, "permissionDenied")
+        XCTAssertTrue(microphone["failure_code"] is NSNull)
     }
 
     func testHTTPTransportRejectsMissingBearerBeforeRequest() throws {
@@ -973,6 +1074,8 @@ final class CaptureControllerTests: XCTestCase {
             "testPumpFailureIsTypedAndLaterTicksContinue",
             "testRepeatingSchedulerContinuesUntilExplicitCancellation",
             "testFullCertificatePinValidatorRequiresExactValidSHA256",
+            "testHTTPHealthSerializesTypedLaneFailureCode",
+            "testControllerSharedStatusIsSynchronizedUnderConcurrentPumpStatus",
         ])
 
         XCTAssertTrue(required.isSubset(of: identifiers), "missing \(required.subtracting(identifiers))")
@@ -1393,5 +1496,142 @@ private final class TestErrorBox: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return error
+    }
+}
+
+private final class CaptureStatusBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var statuses: [CaptureStatus] = []
+
+    func append(_ status: CaptureStatus) {
+        lock.lock()
+        statuses.append(status)
+        lock.unlock()
+    }
+
+    func load() -> [CaptureStatus] {
+        lock.lock()
+        defer { lock.unlock() }
+        return statuses
+    }
+}
+
+private final class ScheduledPumpRunner: @unchecked Sendable {
+    private let scheduler: ConcurrentCaptureScheduler
+
+    init(scheduler: ConcurrentCaptureScheduler) {
+        self.scheduler = scheduler
+    }
+
+    func run() {
+        scheduler.runScheduledOperation()
+    }
+}
+
+private final class ConcurrentEmptyCaptureSource: CaptureSourceAdapter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var started = false
+
+    func start(configuration: CaptureConfiguration) throws {
+        lock.lock()
+        started = true
+        lock.unlock()
+    }
+
+    func pendingFrames() throws -> [CaptureFrame] {
+        []
+    }
+
+    func status() -> [CaptureLaneStatus] {
+        lock.lock()
+        let isStarted = started
+        lock.unlock()
+        return CaptureLane.allCases.map {
+            CaptureLaneStatus(
+                lane: $0,
+                sequence: 0,
+                deviceEpoch: 0,
+                state: isStarted ? "capturing" : "stopped"
+            )
+        }
+    }
+
+    func stop(deadline: Date) throws {
+        lock.lock()
+        started = false
+        lock.unlock()
+    }
+}
+
+private final class NoOpCaptureTransport: CaptureTransportAdapter, @unchecked Sendable {
+    func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {}
+}
+
+private final class IncrementingCaptureClock: CaptureClockAdapter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var tick: UInt64 = 100
+
+    func now() -> Date {
+        Date(timeIntervalSince1970: 0)
+    }
+
+    func monotonicNanoseconds() -> UInt64 {
+        lock.lock()
+        defer { lock.unlock() }
+        let current = tick
+        tick += 1
+        return current
+    }
+}
+
+private final class ConcurrentCaptureScheduler: CaptureSchedulerAdapter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var operation: (() -> Void)?
+
+    func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation {
+        lock.lock()
+        self.operation = operation
+        lock.unlock()
+        return FakeCaptureCancellation()
+    }
+
+    func runScheduledOperation() {
+        lock.lock()
+        let operation = operation
+        lock.unlock()
+        operation?()
+    }
+}
+
+private final class ConcurrentCaptureHealth: CaptureHealthAdapter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var emissions: [CaptureStatus] = []
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        lock.lock()
+        emissions.append(status)
+        lock.unlock()
+    }
+
+    func emissionCount() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return emissions.count
+    }
+}
+
+private final class CaptureStatusReader: @unchecked Sendable {
+    private let controller: CaptureController
+
+    init(controller: CaptureController) {
+        self.controller = controller
+    }
+
+    func status() -> CaptureStatus {
+        controller.status()
     }
 }
