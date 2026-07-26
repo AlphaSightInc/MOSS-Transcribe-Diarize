@@ -5,7 +5,12 @@ protocol NativeAudioCaptureComponent: AnyObject {
     func stop()
 }
 
+protocol NativeLaneHealthReportingComponent: AnyObject {
+    func attachHealthSink(_ sink: NativeLaneHealthFactSink, lane: CaptureLane, generation: UInt64)
+}
+
 extension SystemAudioTap: NativeAudioCaptureComponent {}
+extension SystemAudioTap: NativeLaneHealthReportingComponent {}
 extension MicrophoneCapture: NativeAudioCaptureComponent {}
 
 public final class NativeDualCaptureSource: CaptureSourceAdapter {
@@ -125,6 +130,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
         lane: CaptureLane,
         generation: UInt64
     ) -> Error? {
+        (component as? NativeLaneHealthReportingComponent)?
+            .attachHealthSink(health, lane: lane, generation: generation)
         do {
             try component.start(queue: queue)
             health.enqueue(.admitted, lane: lane, generation: generation)

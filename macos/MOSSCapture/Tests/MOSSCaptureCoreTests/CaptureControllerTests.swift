@@ -567,9 +567,11 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(driver.events, [
             "AudioHardwareCreateProcessTap",
             "AudioHardwareCreateAggregateDevice",
+            "AudioObjectAddPropertyListenerBlock",
             "AudioDeviceCreateIOProcIDWithBlock",
             "AudioDeviceStart",
             "AudioDeviceStop",
+            "AudioObjectRemovePropertyListenerBlock",
             "AudioDeviceDestroyIOProcID",
             "AudioHardwareDestroyAggregateDevice",
             "AudioHardwareDestroyProcessTap",
@@ -592,12 +594,74 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(driver.events, [
             "AudioHardwareCreateProcessTap",
             "AudioHardwareCreateAggregateDevice",
+            "AudioObjectAddPropertyListenerBlock",
             "AudioDeviceCreateIOProcIDWithBlock",
             "AudioDeviceStart",
+            "AudioObjectRemovePropertyListenerBlock",
             "AudioDeviceDestroyIOProcID",
             "AudioHardwareDestroyAggregateDevice",
             "AudioHardwareDestroyProcessTap",
         ])
+    }
+
+    func testSystemAudioTapReportsPostStartFailureThroughSourceHealth() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(deviceEpoch: 3, driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        tap.attachHealthSink(health, lane: .system, generation: generation)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        driver.emit(.isRunning(false))
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "failed")
+        XCTAssertEqual(system.failureCode, "macos_io_stopped_abnormally")
+        XCTAssertEqual(system.deviceEpoch, 3)
+        tap.stop()
+    }
+
+    func testSystemAudioTapConfigurationChangeIsNonTerminal() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(deviceEpoch: 4, driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        tap.attachHealthSink(health, lane: .system, generation: generation)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        driver.emit(.configurationChanged)
+
+        let system = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "capturing")
+        XCTAssertNil(system.failureCode)
+        XCTAssertEqual(system.deviceEpoch, 4)
+        tap.stop()
+    }
+
+    func testSystemAudioTapStaleGenerationIgnoredAfterStop() throws {
+        let driver = RecordingSystemAudioTapDriver()
+        let tap = SystemAudioTap(driver: driver)
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        tap.attachHealthSink(health, lane: .system, generation: generation)
+
+        try tap.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        health.invalidateGeneration()
+        tap.stop()
+        driver.emit(.isAlive(false))
+
+        let system = try XCTUnwrap(
+            health.statuses(running: false).first { $0.lane == .system }
+        )
+        XCTAssertEqual(system.state, "stopped")
+        XCTAssertNil(system.failureCode)
     }
 
     func testNativeRuntimeErrorsAreTyped() throws {
@@ -1721,6 +1785,7 @@ private final class RecordingNativeCaptureComponent: NativeAudioCaptureComponent
 private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
     private let startError: Error?
     private(set) var events: [String] = []
+    private var lifecycleHandler: ((SystemAudioTapDeviceObservation) -> Void)?
 
     init(startError: Error? = nil) {
         self.startError = startError
@@ -1734,6 +1799,19 @@ private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
     func createAggregateDevice(for description: CATapDescription) throws -> AudioObjectID {
         events.append("AudioHardwareCreateAggregateDevice")
         return AudioObjectID(202)
+    }
+
+    func installDeviceLifecycleListeners(
+        on aggregateDeviceID: AudioObjectID,
+        handler: @escaping (SystemAudioTapDeviceObservation) -> Void
+    ) throws {
+        events.append("AudioObjectAddPropertyListenerBlock")
+        lifecycleHandler = handler
+    }
+
+    func removeDeviceLifecycleListeners(on aggregateDeviceID: AudioObjectID) {
+        events.append("AudioObjectRemovePropertyListenerBlock")
+        lifecycleHandler = nil
     }
 
     func createIOProc(
@@ -1766,6 +1844,10 @@ private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
 
     func destroyProcessTap(_ tapID: AudioObjectID) {
         events.append("AudioHardwareDestroyProcessTap")
+    }
+
+    func emit(_ observation: SystemAudioTapDeviceObservation) {
+        lifecycleHandler?(observation)
     }
 }
 

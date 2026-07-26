@@ -15,7 +15,7 @@ enum NativeLanePermissionFact: Equatable {
     case denied
 }
 
-enum NativeLaneFact: Equatable {
+enum NativeLaneObservation: Equatable {
     case admitted
     case permission(NativeLanePermissionFact)
     case startFailed(NativeCaptureError)
@@ -27,6 +27,8 @@ enum NativeLaneFact: Equatable {
     case deviceEpoch(UInt64)
     case stoppedCleanly
 }
+
+typealias NativeLaneFact = NativeLaneObservation
 
 struct NativeLaneFailure: Equatable {
     var code: NativeLaneFailureCode
@@ -131,14 +133,20 @@ final class NativeLaneHealth: NativeLaneHealthFactSink {
             mailbox.facts.removeAll(keepingCapacity: true)
             mailboxes[lane] = mailbox
             for fact in facts {
-                reduce(fact, lane: lane)
+                NativeLaneHealthReducer.reduce(fact, lane: lane, into: &lanes)
             }
         }
     }
+}
 
-    private func reduce(_ fact: NativeLaneFact, lane: CaptureLane) {
+private struct NativeLaneHealthReducer {
+    static func reduce(
+        _ observation: NativeLaneObservation,
+        lane: CaptureLane,
+        into lanes: inout [CaptureLane: NativeLaneProjection]
+    ) {
         var projection = lanes[lane, default: NativeLaneProjection()]
-        switch fact {
+        switch observation {
         case .admitted:
             if projection.failure == nil {
                 projection.state = "capturing"

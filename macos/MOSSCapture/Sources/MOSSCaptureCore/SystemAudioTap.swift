@@ -20,6 +20,11 @@ public enum NativeCaptureError: Error, Equatable {
 protocol SystemAudioTapDriver: AnyObject {
     func createProcessTap(description: CATapDescription) throws -> AudioObjectID
     func createAggregateDevice(for description: CATapDescription) throws -> AudioObjectID
+    func installDeviceLifecycleListeners(
+        on aggregateDeviceID: AudioObjectID,
+        handler: @escaping (SystemAudioTapDeviceObservation) -> Void
+    ) throws
+    func removeDeviceLifecycleListeners(on aggregateDeviceID: AudioObjectID)
     func createIOProc(
         on aggregateDeviceID: AudioObjectID,
         queue: RealTimeNativeAudioBufferQueue,
@@ -33,6 +38,12 @@ protocol SystemAudioTapDriver: AnyObject {
     func destroyProcessTap(_ tapID: AudioObjectID)
 }
 
+enum SystemAudioTapDeviceObservation: Equatable {
+    case isAlive(Bool)
+    case isRunning(Bool)
+    case configurationChanged
+}
+
 public final class SystemAudioTap {
     public static let sourceVector = SystemAudioTapSourceVector(
         tapDescription: "private unmuted CATapDescription",
@@ -42,13 +53,19 @@ public final class SystemAudioTap {
         realtimeCallbackWork: ["copy native buffer", "enqueue monotonic first-sample time"]
     )
 
+    private let lock = NSLock()
     private let sampleRate: Int
     private let deviceEpoch: UInt64
     private let driver: SystemAudioTapDriver
+    private weak var healthSink: NativeLaneHealthFactSink?
+    private var healthLane = CaptureLane.system
+    private var healthGeneration: UInt64 = 0
     private var tapID = AudioObjectID(kAudioObjectUnknown)
     private var aggregateDeviceID = AudioObjectID(kAudioObjectUnknown)
+    private var lifecycleListenersInstalled = false
     private var ioProcInstalled = false
     private var ioStarted = false
+    private var stopping = false
 
     public init(sampleRate: Int = 48_000, deviceEpoch: UInt64 = 0) {
         self.sampleRate = sampleRate
@@ -78,11 +95,24 @@ public final class SystemAudioTap {
         return description
     }
 
+    func attachHealthSink(_ sink: NativeLaneHealthFactSink, lane: CaptureLane, generation: UInt64) {
+        lock.lock()
+        healthSink = sink
+        healthLane = lane
+        healthGeneration = generation
+        lock.unlock()
+    }
+
     public func start(queue: RealTimeNativeAudioBufferQueue) throws {
         let description = makeTapDescription()
+        setStopping(false)
         do {
             tapID = try driver.createProcessTap(description: description)
             aggregateDeviceID = try driver.createAggregateDevice(for: description)
+            try driver.installDeviceLifecycleListeners(on: aggregateDeviceID) { [weak self] observation in
+                self?.handleDeviceObservation(observation)
+            }
+            lifecycleListenersInstalled = true
             try driver.createIOProc(
                 on: aggregateDeviceID,
                 queue: queue,
@@ -91,7 +121,8 @@ public final class SystemAudioTap {
             )
             ioProcInstalled = true
             try driver.startDevice(aggregateDeviceID)
-            ioStarted = true
+            setIOStarted(true)
+            emit(.deviceEpoch(deviceEpoch))
         } catch {
             stop()
             throw error
@@ -99,9 +130,14 @@ public final class SystemAudioTap {
     }
 
     public func stop() {
-        if ioStarted {
+        setStopping(true)
+        if isIOStarted() {
             driver.stopDevice(aggregateDeviceID)
-            ioStarted = false
+            setIOStarted(false)
+        }
+        if lifecycleListenersInstalled {
+            driver.removeDeviceLifecycleListeners(on: aggregateDeviceID)
+            lifecycleListenersInstalled = false
         }
         if ioProcInstalled {
             driver.destroyIOProc(on: aggregateDeviceID)
@@ -115,11 +151,61 @@ public final class SystemAudioTap {
             driver.destroyProcessTap(tapID)
             tapID = AudioObjectID(kAudioObjectUnknown)
         }
+        setStopping(false)
+    }
+
+    private func handleDeviceObservation(_ observation: SystemAudioTapDeviceObservation) {
+        let shouldReportAbnormalStop: Bool
+        lock.lock()
+        shouldReportAbnormalStop = ioStarted && !stopping
+        lock.unlock()
+
+        switch observation {
+        case .isAlive(false):
+            emit(.deviceUnavailable("system tap aggregate device is not alive"))
+        case .isRunning(false):
+            if shouldReportAbnormalStop {
+                emit(.ioStoppedAbnormally("system tap aggregate device stopped unexpectedly"))
+            }
+        case .configurationChanged:
+            emit(.deviceEpoch(deviceEpoch))
+        case .isAlive(true), .isRunning(true):
+            break
+        }
+    }
+
+    private func emit(_ fact: NativeLaneFact) {
+        let snapshot: (NativeLaneHealthFactSink?, CaptureLane, UInt64)
+        lock.lock()
+        snapshot = (healthSink, healthLane, healthGeneration)
+        lock.unlock()
+        snapshot.0?.enqueue(fact, lane: snapshot.1, generation: snapshot.2)
+    }
+
+    private func setStopping(_ value: Bool) {
+        lock.lock()
+        stopping = value
+        lock.unlock()
+    }
+
+    private func isIOStarted() -> Bool {
+        lock.lock()
+        let value = ioStarted
+        lock.unlock()
+        return value
+    }
+
+    private func setIOStarted(_ value: Bool) {
+        lock.lock()
+        ioStarted = value
+        lock.unlock()
     }
 }
 
 private final class CoreAudioSystemTapDriver: SystemAudioTapDriver {
     private var ioProcID: AudioDeviceIOProcID?
+    private let listenerQueue = DispatchQueue(label: "moss.capture.system-tap.lifecycle")
+    private var listenerBlocks: [AudioObjectPropertySelector: AudioObjectPropertyListenerBlock] = [:]
 
     func createProcessTap(description: CATapDescription) throws -> AudioObjectID {
         guard #available(macOS 14.2, *) else {
@@ -154,6 +240,68 @@ private final class CoreAudioSystemTapDriver: SystemAudioTapDriver {
             throw NativeCaptureError.osStatus("AudioHardwareCreateAggregateDevice", status)
         }
         return deviceID
+    }
+
+    func installDeviceLifecycleListeners(
+        on aggregateDeviceID: AudioObjectID,
+        handler: @escaping (SystemAudioTapDeviceObservation) -> Void
+    ) throws {
+        let listenerSpecs: [(AudioObjectPropertySelector, SystemAudioTapDeviceObservation?)] = [
+            (kAudioDevicePropertyDeviceIsAlive, nil),
+            (kAudioDevicePropertyDeviceIsRunning, nil),
+            (kAudioDevicePropertyDeviceHasChanged, .configurationChanged),
+        ]
+        for (selector, fixedObservation) in listenerSpecs {
+            var address = AudioObjectPropertyAddress(
+                mSelector: selector,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            let block: AudioObjectPropertyListenerBlock = { [weak self] count, addresses in
+                guard let self else {
+                    return
+                }
+                let changed = UnsafeBufferPointer(start: addresses, count: Int(count))
+                guard changed.contains(where: { $0.mSelector == selector }) else {
+                    return
+                }
+                if let fixedObservation {
+                    handler(fixedObservation)
+                } else if selector == kAudioDevicePropertyDeviceIsAlive {
+                    handler(.isAlive(self.readBooleanProperty(selector, on: aggregateDeviceID) ?? false))
+                } else if selector == kAudioDevicePropertyDeviceIsRunning {
+                    handler(.isRunning(self.readBooleanProperty(selector, on: aggregateDeviceID) ?? false))
+                }
+            }
+            let status = AudioObjectAddPropertyListenerBlock(
+                aggregateDeviceID,
+                &address,
+                listenerQueue,
+                block
+            )
+            guard status == noErr else {
+                removeDeviceLifecycleListeners(on: aggregateDeviceID)
+                throw NativeCaptureError.osStatus("AudioObjectAddPropertyListenerBlock", status)
+            }
+            listenerBlocks[selector] = block
+        }
+    }
+
+    func removeDeviceLifecycleListeners(on aggregateDeviceID: AudioObjectID) {
+        for (selector, block) in listenerBlocks {
+            var address = AudioObjectPropertyAddress(
+                mSelector: selector,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            AudioObjectRemovePropertyListenerBlock(
+                aggregateDeviceID,
+                &address,
+                listenerQueue,
+                block
+            )
+        }
+        listenerBlocks.removeAll(keepingCapacity: true)
     }
 
     func createIOProc(
@@ -209,6 +357,24 @@ private final class CoreAudioSystemTapDriver: SystemAudioTapDriver {
         if #available(macOS 14.2, *) {
             AudioHardwareDestroyProcessTap(tapID)
         }
+    }
+
+    private func readBooleanProperty(
+        _ selector: AudioObjectPropertySelector,
+        on objectID: AudioObjectID
+    ) -> Bool? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: selector,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        let status = AudioObjectGetPropertyData(objectID, &address, 0, nil, &size, &value)
+        guard status == noErr else {
+            return nil
+        }
+        return value != 0
     }
 }
 
