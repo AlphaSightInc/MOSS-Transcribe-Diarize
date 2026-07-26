@@ -22,6 +22,7 @@ enum NativeLaneFact: Equatable {
     case deviceUnavailable(String)
     case ioStoppedAbnormally(String)
     case bufferOverrun(droppedBuffers: UInt64)
+    case discontinuity(count: UInt64)
     case unexpectedCaptureError(String)
     case deviceEpoch(UInt64)
     case stoppedCleanly
@@ -89,6 +90,8 @@ final class NativeLaneHealth: NativeLaneHealthFactSink {
                 sequence: projection.sequence,
                 deviceEpoch: projection.deviceEpoch,
                 state: state,
+                droppedFrames: projection.droppedFrames,
+                discontinuities: projection.discontinuities,
                 failureCode: projection.failure?.code.rawValue
             )
         }
@@ -153,9 +156,12 @@ final class NativeLaneHealth: NativeLaneHealthFactSink {
         case .ioStoppedAbnormally(let cause):
             projection.recordFailure(.ioStoppedAbnormally, cause: cause)
         case .bufferOverrun(let droppedBuffers):
+            projection.droppedFrames += droppedBuffers
             if droppedBuffers > 0 {
                 projection.recordFailure(.bufferOverrun, cause: "dropped buffers: \(droppedBuffers)")
             }
+        case .discontinuity(let count):
+            projection.discontinuities += count
         case .unexpectedCaptureError(let cause):
             projection.recordFailure(.unexpectedCaptureError, cause: cause)
         case .deviceEpoch(let deviceEpoch):
@@ -194,6 +200,8 @@ private struct NativeLaneProjection {
     var state = "stopped"
     var sequence: UInt64 = 0
     var deviceEpoch: UInt64 = 0
+    var droppedFrames: UInt64 = 0
+    var discontinuities: UInt64 = 0
     var failure: NativeLaneFailure?
 
     mutating func recordFailure(_ code: NativeLaneFailureCode, cause: String) {

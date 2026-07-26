@@ -16,6 +16,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
     private let emitter: NativeLaneFrameEmitter
     private let health = NativeLaneHealth()
     private var started = false
+    private var activeGeneration: UInt64?
+    private var reportedDroppedBuffers: [CaptureLane: UInt64] = [:]
     private var latestFrames: [CaptureLane: CaptureFrame] = [:]
 
     public convenience init(queueCapacity: Int = 128) {
@@ -46,6 +48,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
         let generation = health.beginGeneration()
         lock.lock()
         latestFrames.removeAll(keepingCapacity: true)
+        activeGeneration = generation
+        reportedDroppedBuffers.removeAll(keepingCapacity: true)
         lock.unlock()
 
         let systemError = start(system, lane: .system, generation: generation)
@@ -75,10 +79,14 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
         }
         let frames = emitter.frames(from: queue.drain())
         lock.lock()
+        let generation = activeGeneration
         for frame in frames {
             latestFrames[frame.lane] = frame
         }
         lock.unlock()
+        if let generation {
+            enqueueCounterFacts(for: frames, generation: generation)
+        }
         return frames
     }
 
@@ -95,6 +103,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
                 sequence: latest?.sequence ?? status.sequence,
                 deviceEpoch: latest?.deviceEpoch ?? status.deviceEpoch,
                 state: state,
+                droppedFrames: status.droppedFrames,
+                discontinuities: status.discontinuities,
                 failureCode: status.failureCode
             )
         }
@@ -106,6 +116,7 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
         system.stop()
         lock.lock()
         started = false
+        activeGeneration = nil
         lock.unlock()
     }
 
@@ -125,6 +136,32 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter {
                 health.enqueue(.unexpectedCaptureError(String(describing: error)), lane: lane, generation: generation)
             }
             return error
+        }
+    }
+
+    private func enqueueCounterFacts(for frames: [CaptureFrame], generation: UInt64) {
+        let droppedByLane = queue.droppedBuffersByLaneSnapshot()
+        let discontinuitiesByLane = Dictionary(
+            grouping: frames.filter(\.discontinuity),
+            by: \.lane
+        ).mapValues { UInt64($0.count) }
+        var facts: [(CaptureLane, NativeLaneFact)] = []
+        lock.lock()
+        for lane in CaptureLane.allCases {
+            let lastReportedDropped = reportedDroppedBuffers[lane, default: 0]
+            let dropped = droppedByLane[lane, default: 0]
+            if dropped > lastReportedDropped {
+                facts.append((lane, .bufferOverrun(droppedBuffers: dropped - lastReportedDropped)))
+                reportedDroppedBuffers[lane] = dropped
+            }
+            let discontinuities = discontinuitiesByLane[lane, default: 0]
+            if discontinuities > 0 {
+                facts.append((lane, .discontinuity(count: discontinuities)))
+            }
+        }
+        lock.unlock()
+        for (lane, fact) in facts {
+            health.enqueue(fact, lane: lane, generation: generation)
         }
     }
 }

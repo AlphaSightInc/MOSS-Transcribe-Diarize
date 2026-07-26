@@ -485,6 +485,46 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertNil(runningStatus.first { $0.lane == .microphone }?.failureCode)
     }
 
+    func testNativeDualCaptureSourceAttributesLaneOverrunAndDiscontinuityCounters() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5]),
+                nativeBuffer(lane: .system, timestamp: 12, deviceEpoch: 1, samples: [0.25], discontinuity: true),
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 11, deviceEpoch: 7, samples: [0])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 2)
+        )
+
+        try source.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://moss.example")!
+            )
+        )
+        _ = try source.pendingFrames()
+        let runningStatus = source.status()
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        let systemStatus = try XCTUnwrap(runningStatus.first { $0.lane == .system })
+        let microphoneStatus = try XCTUnwrap(runningStatus.first { $0.lane == .microphone })
+        XCTAssertEqual(systemStatus.state, "failed")
+        XCTAssertEqual(systemStatus.failureCode, "macos_buffer_overrun")
+        XCTAssertEqual(systemStatus.droppedFrames, 1)
+        XCTAssertEqual(systemStatus.discontinuities, 1)
+        XCTAssertEqual(microphoneStatus.state, "capturing")
+        XCTAssertNil(microphoneStatus.failureCode)
+        XCTAssertEqual(microphoneStatus.droppedFrames, 0)
+        XCTAssertEqual(microphoneStatus.discontinuities, 0)
+    }
+
     func testNativeDualCaptureSourceUnwindsBothLanesWhenEveryStartFails() throws {
         let system = RecordingNativeCaptureComponent(
             startError: NativeCaptureError.deviceUnavailable("system")
@@ -1627,7 +1667,8 @@ final class CaptureControllerTests: XCTestCase {
         lane: CaptureLane,
         timestamp: UInt64,
         deviceEpoch: UInt64,
-        samples: [Float]
+        samples: [Float],
+        discontinuity: Bool = false
     ) -> NativeCapturedAudioBuffer {
         NativeCapturedAudioBuffer(
             lane: lane,
@@ -1636,7 +1677,7 @@ final class CaptureControllerTests: XCTestCase {
             frameCount: samples.count,
             firstSampleMonotonicNS: timestamp,
             deviceEpoch: deviceEpoch,
-            discontinuity: false,
+            discontinuity: discontinuity,
             samples: samples
         )
     }
