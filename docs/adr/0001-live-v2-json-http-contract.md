@@ -165,6 +165,43 @@ single-obligation mutation; they do not claim mutation review has run.
 | M24 | Git inventory, `.gitignore`, protected diff, and `git diff --check` reject committed `.build`, `.app`, credentials, pins, PCM, transcripts, signing artifacts, or generated helper artifacts. |
 | M25 | Swift test identifiers, Python test collection/count floors, promoted suite floors, and full-suite gates reject deleting, narrowing, renaming out of collection, or weakening promoted coverage. |
 
+## IDEA-036 Mutation Efficacy Nodes
+
+These nodes are the Reviewer mutation contract for the explicit helper-lease
+failure-policy slice. They name the expected actual killing node for each
+single-obligation mutation. They do not claim mutation review has run: every
+row still needs a non-no-op patch, byte-identical restore, and observed failing
+command. A mutation apply error, missing node, renamed-out test, or green
+survivor is red.
+
+| ID | Actual killing node |
+|---|---|
+| M01 | `test_live_enablement_requires_positive_helper_lease`, `test_web_cli_live_startup_names_each_missing_security_input`, `test_web_cli_live_startup_rejects_non_positive_helper_lease`, `test_start_web_is_the_single_environment_adapter`, and `repro.py` reject a default, omitted, or non-positive live helper lease. |
+| M02 | `test_muted_alive_duplicate_heartbeat_does_not_renew_lease`, `test_new_sequence_advances_injected_server_last_seen_and_may_skip_values`, and `repro.py` reject duplicate renewal or helper/wall-time freshness. |
+| M03 | `test_stale_lease_callback_after_renewal_is_noop`, `test_stale_lease_callback_after_renewal_does_not_abort_live_session`, and `repro.py` reject stale timer expiry after renewal. |
+| M04 | `test_muted_alive_degraded_recovering_do_not_fail_live_session`, `test_degraded_and_recovering_health_renew_without_lifecycle_mutation`, `testPumpFailureIsTypedAndLaterTicksContinue`, and `repro.py` reject silence, degraded, recovering, or transient transport facts as direct failure triggers. |
+| M05 | `test_explicit_failed_lane_requires_stable_non_empty_code`, `test_versioned_health_parser_rejects_unknown_missing_or_invalid_fields`, and `repro.py` reject a failed lane without a stable non-empty `failure_code`. |
+| M06 | `test_explicit_failed_lane_calls_fail_lane_once_and_keeps_peer_timer_live`, `test_explicit_failed_lane_heartbeat_calls_v2_fail_lane_without_releasing_peer`, and `repro.py` reject missing `LiveV2Session.fail_lane` on explicit lane failure. |
+| M07 | `test_typed_lane_failure_conserves_retained_samples_and_keeps_sibling_usable`, `test_failed_lane_contributes_silence_while_sealed_peer_admits_and_accounts`, and `repro.py` reject failing both lanes for one explicit failed lane. |
+| M08 | `testPumpFailureIsTypedAndLaterTicksContinue`, `testRepeatingSchedulerContinuesUntilExplicitCancellation`, `testHTTPHealthSerializesTypedLaneFailureCode`, route behavior tests, and `repro.py` reject transport unavailability as native lane failure instead of degraded/retrying until lease expiry. |
+| M09 | `test_helper_failed_and_all_lanes_failed_are_terminal_without_renewing_timer`, `test_helper_lease_expiry_aborts_mono_expires_v2_and_releases_cleanup`, and `repro.py` reject helper or all-lane failure that avoids terminal expiry. |
+| M10 | `test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once`, `test_registry_expiry_returns_terminal_snapshot_and_releases_session`, and `repro.py` reject lease expiry without the real `LiveV2SessionRegistry.expire` path. |
+| M11 | `test_helper_lease_expiry_aborts_mono_expires_v2_and_releases_cleanup`, mono late-commit assertions, and `repro.py` reject expiry that leaves the mono runtime able to commit late output. |
+| M12 | `test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once`, `test_helper_presence_releases_on_terminal_and_revocation_paths`, and `repro.py` reject omitted mixer, presence, access, or timer cleanup after terminal failure. |
+| M13 | `test_explicit_failed_lane_calls_fail_lane_once_and_keeps_peer_timer_live`, `test_explicit_failed_lane_heartbeat_calls_v2_fail_lane_without_releasing_peer`, and `test_failed_lane_contributes_silence_while_sealed_peer_admits_and_accounts` reject release on partial lane failure. |
+| M14 | `test_helper_lease_expiry_is_cancelled_by_release`, `test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once`, stale-timer tests, and `repro.py` reject duplicate terminal actions or non-idempotent release. |
+| M15 | `testControllerSharedStatusIsSynchronizedUnderConcurrentPumpStatus`, the `CaptureController` synchronization source fence, and `repro.py` reject shared running/configuration/counter/health/failure state outside the private synchronization owner. |
+| M16 | `testHTTPHealthSerializesTypedLaneFailureCode`, `test_versioned_health_parser_rejects_unknown_missing_or_invalid_fields`, and `repro.py` reject dropped or untyped lane failure codes. |
+| M17 | `testNativeRuntimeErrorsAreTyped`, `testHTTPHealthSerializesTypedLaneFailureCode`, and native lane-health transition coverage reject swallowing permission/device failure as healthy or stopped. |
+| M18 | `testPumpFailureIsTypedAndLaterTicksContinue`, `testRepeatingSchedulerContinuesUntilExplicitCancellation`, and `repro.py` reject stopping the helper pump after transient transport failure or clearing failure before a later successful tick. |
+| M19 | `testCaptureControllerPublicInterfaceIsLimitedToStartStatusStop` and `repro.py` reject expanding public `CaptureController` beyond `start/status/stop`. |
+| M20 | `repro.py` module/interface/seam source fences and route tests reject putting lease/failure policy in HTTP routes, portal, mixer, or native adapters instead of `LiveHelperFailureCoordinator`. |
+| M21 | Protected diff, promoted focused gates, and full-suite gates reject v2 audio schema, v1, batch, mixer DSP, access scope, portal, provider, frontend, grammar, dependency, ops, or default-off drift outside the lease-forwarding repair. |
+| M22 | `CONTEXT.md`, this ADR, deployment-doc gates, configuration tests, and `repro.py` reject a scheduler-derived grace value or any claim that local green certifies a production timeout. |
+| M23 | `CONTEXT.md`, this ADR, `testIDEA042ContextKeepsEvidenceTierMissingFence`, and `repro.py` reject treating local unsigned tests as signing, notarization, TCC, real device behavior, deployment, 60/300 evidence, canary, or enablement proof; all remain Missing. |
+| M24 | Reviewer mutation-efficacy audit rejects any row whose named node stays green, applies nowhere, or changes no bytes. |
+| M25 | `testPromotedSwiftTestIdentifiersRemainCollected`, Python collection/count floors, Git artifact fences, and `git diff --check` reject weakened coverage or committed generated, credential, pin, audio, socket, signing, or transcript artifacts. |
+
 ## IDEA-042 Residual Kill Nodes
 
 - N1: `testCaptureControllerPublicInterfaceIsLimitedToStartStatusStop` plus
