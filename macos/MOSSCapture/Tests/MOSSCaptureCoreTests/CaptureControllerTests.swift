@@ -337,6 +337,64 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(client.requests.isEmpty)
     }
 
+    func testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory() throws {
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureCore")
+                .appendingPathComponent("CaptureSecurity.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(source.contains("SecItemAdd"))
+        XCTAssertTrue(source.contains("SecItemCopyMatching"))
+        XCTAssertTrue(source.contains("SecCertificateCopyData"))
+        XCTAssertTrue(source.contains("SHA256"))
+        XCTAssertTrue(source.contains("AF_UNIX"))
+        XCTAssertTrue(source.contains("SOCK_STREAM"))
+        XCTAssertTrue(source.contains("LOCAL_PEERCRED"))
+        XCTAssertTrue(source.contains("constantTimeEquals"))
+    }
+
+    func testSameUserUDSAuthenticatorRequiresPrivateSocketPeerUIDAndSecret() throws {
+        let authenticator = SameUserUDSAuthenticator(
+            secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret"),
+            expectedUID: 501
+        )
+
+        XCTAssertNoThrow(try authenticator.validateSocketPermissions(0o600))
+        XCTAssertThrowsError(try authenticator.validateSocketPermissions(0o660)) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .socketPathNotPrivate)
+        }
+        XCTAssertNoThrow(try authenticator.validate(peerUID: 501, presentedSecret: "control-secret"))
+        XCTAssertThrowsError(try authenticator.validate(peerUID: 502, presentedSecret: "control-secret")) { error in
+            XCTAssertEqual(
+                error as? CaptureSecurityError,
+                .peerUIDMismatch(expected: 501, actual: 502)
+            )
+        }
+        XCTAssertThrowsError(try authenticator.validate(peerUID: 501, presentedSecret: "wrong")) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .controlSecretMismatch)
+        }
+    }
+
+    func testUnixDomainControlClientUsesStoredControlSecretOnlyInUDSPayload() throws {
+        let client = UnixDomainControlClient(
+            socketPath: "/tmp/moss-capture/control.sock",
+            secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+        )
+
+        let payload = try client.encodeRequest(
+            ControlChannelRequest(command: "start", label: "local")
+        )
+        let body = try XCTUnwrap(String(data: payload, encoding: .utf8))
+
+        XCTAssertTrue(body.contains("\"secret\":\"control-secret\""))
+        XCTAssertTrue(body.contains("\"command\":\"start\""))
+        XCTAssertTrue(body.contains("\"label\":\"local\""))
+        XCTAssertFalse(client.socketPath.contains("control-secret"))
+    }
+
     private func packageRoot() -> URL {
         var url = URL(fileURLWithPath: #filePath)
         for _ in 0..<3 {

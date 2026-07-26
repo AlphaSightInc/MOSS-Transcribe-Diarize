@@ -15,9 +15,17 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(source.contains("start"))
         XCTAssertTrue(source.contains("stop"))
         XCTAssertTrue(source.contains("status"))
+        XCTAssertTrue(source.contains("LaunchServices"))
+        XCTAssertTrue(source.contains("UnixDomainControlClient"))
+        XCTAssertTrue(source.contains("readDataToEndOfFile"))
+        XCTAssertTrue(source.contains("--server"))
+        XCTAssertTrue(source.contains("--label"))
         XCTAssertFalse(source.contains("CoreAudio"))
         XCTAssertFalse(source.contains("AVFAudio"))
         XCTAssertFalse(source.contains("AudioHardwareCreateProcessTap"))
+        XCTAssertFalse(source.contains("CaptureController.fakeForLocalDevelopment"))
+        XCTAssertFalse(source.contains("capture-token"))
+        XCTAssertFalse(source.contains("\"command\":\"status\""))
     }
 
     func testBundleMetadataPinsHelperContractWithoutSandbox() throws {
