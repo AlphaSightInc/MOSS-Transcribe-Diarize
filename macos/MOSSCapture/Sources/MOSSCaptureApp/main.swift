@@ -81,33 +81,3 @@ final class SystemCaptureClockAdapter: CaptureClockAdapter {
         return UInt64(time.tv_sec) * 1_000_000_000 + UInt64(time.tv_nsec)
     }
 }
-
-final class RepeatingCaptureSchedulerAdapter: CaptureSchedulerAdapter {
-    private let interval: TimeInterval
-
-    init(interval: TimeInterval) {
-        self.interval = interval
-    }
-
-    func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation {
-        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: label))
-        timer.schedule(deadline: .now() + interval, repeating: interval)
-        timer.setEventHandler {
-            operation()
-        }
-        timer.resume()
-        return TimerCancellation(timer: timer)
-    }
-}
-
-final class TimerCancellation: CaptureCancellation {
-    private let timer: DispatchSourceTimer
-
-    init(timer: DispatchSourceTimer) {
-        self.timer = timer
-    }
-
-    func cancel() {
-        timer.cancel()
-    }
-}

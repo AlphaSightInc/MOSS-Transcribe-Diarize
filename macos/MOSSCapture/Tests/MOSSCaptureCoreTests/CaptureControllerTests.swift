@@ -184,6 +184,18 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.attemptCount, 3)
     }
 
+    func testRepeatingSchedulerContinuesUntilExplicitCancellation() throws {
+        let scheduler = RepeatingCaptureSchedulerAdapter(interval: 0.01)
+        let repeated = expectation(description: "repeating scheduler fired three times")
+        repeated.expectedFulfillmentCount = 3
+        let cancellation = scheduler.schedule(label: "moss.capture.test-repeating") {
+            repeated.fulfill()
+        }
+
+        wait(for: [repeated], timeout: 1)
+        cancellation.cancel()
+    }
+
     func testStartRequiresControlSecretAndRejectsSecondStart() throws {
         let configuration = CaptureConfiguration(
             sessionID: "session-a",
@@ -959,6 +971,7 @@ final class CaptureControllerTests: XCTestCase {
             "testCLIAppLaunchDecisionAndFailureArePropagated",
             "testCLIPairingPayloadCrossesStdinThroughRealUDSWithoutOutputLeak",
             "testPumpFailureIsTypedAndLaterTicksContinue",
+            "testRepeatingSchedulerContinuesUntilExplicitCancellation",
             "testFullCertificatePinValidatorRequiresExactValidSHA256",
         ])
 

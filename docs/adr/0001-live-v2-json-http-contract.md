@@ -186,6 +186,7 @@ single-obligation mutation; they do not claim mutation review has run.
   responses, exit codes, and output-channel secrecy.
 - Fix-cycle pump/evidence nodes:
   `testPumpFailureIsTypedAndLaterTicksContinue`,
+  `testRepeatingSchedulerContinuesUntilExplicitCancellation`,
   `testPromotedSwiftTestIdentifiersRemainCollected`,
   `testIDEA042ContextKeepsEvidenceTierMissingFence`, and
   `testIDEA042ResidualKillNodesNameExistingActualTests` pin typed retry state,
