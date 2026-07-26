@@ -142,6 +142,10 @@ class LivePortalRouteTest(unittest.TestCase):
             self.assertIn("since_seq", html)
             self.assertIn("disconnected", html)
             self.assertIn("reconnecting", html)
+            self.assertIn('role="status"', html)
+            self.assertIn('aria-live="polite"', html)
+            self.assertIn("controlRequestTimeoutMs = 10000", html)
+            self.assertIn("maxRenderedEvents = 200", html)
             self.assertNotIn("localhost", lower)
             self.assertNotIn("127.0.0.1", lower)
             self.assertNotIn("websocket", lower)
@@ -230,6 +234,13 @@ class LivePortalRouteTest(unittest.TestCase):
                     "accounted samples: 12",
                     "retained samples: 2",
                     "pending work: 0",
+                    "helper: capturing",
+                    "helper sequence: 2",
+                    "helper microphone: failed | epoch: 1 | dropped: 3 | discontinuities: 1 | code: permission_denied",
+                    "helper system: capturing | epoch: 1 | dropped: 0 | discontinuities: 0",
+                    "v2 status: active",
+                    "v2 microphone: failed | next: 2 | accepted: 8 | accounted: 4 | failed: 4 | retained: 0 | epoch: 1 | code: permission_denied",
+                    "v2 system: active | next: 2 | accepted: 8 | accounted: 8 | failed: 0 | retained: 0 | epoch: 1",
                 )
             ),
         )
@@ -316,6 +327,36 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertIn(500, probe["timerDelays"])
         self.assertEqual(probe["requestCount"], 3)
         self.assertEqual(probe["connectionState"], "disconnected")
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_control_timeout_uses_independent_10_second_abort(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        probe = _run_control_timeout_contract_probe(html)
+
+        self.assertTrue(probe["controlAborted"])
+        self.assertEqual(probe["requestCount"], 1)
+        self.assertEqual(probe["pendingPollTimers"], [0])
+        self.assertEqual(probe["statusAfterTimeout"], "stop failed: request timed out")
+        self.assertEqual(probe["controlTimerDelays"], [10000])
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_event_identity_order_and_dom_share_one_cap(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        probe = _run_event_retention_contract_probe(html)
+
+        self.assertEqual(probe["rowCount"], 200)
+        self.assertEqual(probe["firstRow"], "seq: 7 | kind: replay | snapshot: 4")
+        self.assertEqual(probe["lastRow"], "seq: 206 | kind: tail | snapshot: 4")
+        self.assertEqual(probe["seq200Rows"], 1)
+        self.assertIn("since_seq=205", probe["secondEventsUrl"])
 
 
 def test_live_portal_caplog_and_root_logging_do_not_emit_authority_or_audio_secrets(caplog, capsys):
@@ -405,14 +446,31 @@ function makeNode(id) {{
       this.listeners[type] = handler;
     }},
     appendChild(child) {{
-      const incoming = child.childNodes || [child];
+      const incoming = child.childNodes && child.childNodes.length ? child.childNodes : [child];
       for (const item of incoming) {{
         this.childNodes.push(item);
         this.children.push(item);
       }}
       this._text = this.childNodes.map((item) => item.textContent || "").join("");
     }},
+    removeChild(child) {{
+      const nodeIndex = this.childNodes.indexOf(child);
+      if (nodeIndex >= 0) {{
+        this.childNodes.splice(nodeIndex, 1);
+      }}
+      const childIndex = this.children.indexOf(child);
+      if (childIndex >= 0) {{
+        this.children.splice(childIndex, 1);
+      }}
+      this._text = this.childNodes.map((item) => item.textContent || "").join("");
+      return child;
+    }},
   }};
+  Object.defineProperty(node, "firstChild", {{
+    get() {{
+      return this.childNodes.length ? this.childNodes[0] : null;
+    }},
+  }});
   Object.defineProperty(node, "textContent", {{
     get() {{
       return this._text || "";
@@ -544,15 +602,51 @@ function installPortal(responses) {{
     }}
     await flush();
   }}
-  return {{ nodes, requests, timers, timerDelays, storageWrites, windowListeners, runNextTimer, flush, maxPendingTimers: () => maxPendingTimers, activeTimerCount: () => timers.filter((item) => !clearedTimers.has(item.id)).length }};
+  async function runTimerWithDelay(delay) {{
+    const index = timers.findIndex((timer) => timer.delay === delay && !clearedTimers.has(timer.id));
+    if (index < 0) {{
+      throw new Error(`expected scheduled timer with delay ${{delay}}`);
+    }}
+    const timer = timers.splice(index, 1)[0];
+    timer.handler();
+    await flush();
+  }}
+  return {{ nodes, requests, timers, timerDelays, storageWrites, windowListeners, runNextTimer, runTimerWithDelay, flush, maxPendingTimers: () => maxPendingTimers, activeTimerCount: () => timers.filter((item) => !clearedTimers.has(item.id)).length }};
+}}
+
+function helperPresence(state, sequence) {{
+  return {{
+    schema: "moss-live-helper-health.v1",
+    instance_id: "helper-instance",
+    sequence,
+    sent_monotonic_ns: sequence * 100,
+    last_seen_monotonic_ns: sequence * 100 + 1,
+    helper_version: "test-helper",
+    state,
+    lanes: {{
+      microphone: {{ state: "failed", device_epoch: 1, dropped_frames: 3, discontinuities: 1, failure_code: "permission_denied" }},
+      system: {{ state: "capturing", device_epoch: 1, dropped_frames: 0, discontinuities: 0, failure_code: null }},
+    }},
+  }};
+}}
+
+function v2Session(status) {{
+  return {{
+    status,
+    terminal_reason: null,
+    lanes: {{
+      microphone: {{ lane: "microphone", next_sequence: 2, accepted_samples: 8, accounted_samples: 4, failed_samples: 4, retained_samples: 0, current_device_epoch: 1, pruned_through_sequence: 1, health: "failed", failure_code: "permission_denied" }},
+      system: {{ lane: "system", next_sequence: 2, accepted_samples: 8, accounted_samples: 8, failed_samples: 0, retained_samples: 0, current_device_epoch: 1, pruned_through_sequence: 1, health: "active", failure_code: null }},
+    }},
+  }};
 }}
 
 const snapshots = {{
-  active2: {{ snapshot: {{ session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 8, retained_samples: 4, committed: [{{ transcript: "hello <script>" }}], provisional: {{ transcript: "draft & safe" }} }}, pending_work_items: 1 }} }},
-  active4: {{ snapshot: {{ session: {{ status: "active", version: 4, accepted_samples: 12, accounted_samples: 12, retained_samples: 2, committed: [{{ transcript: "hello <script>" }}], provisional: null }}, pending_work_items: 0 }} }},
-  closing5: {{ snapshot: {{ session: {{ status: "closing", version: 5, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }} }},
-  aborted6: {{ snapshot: {{ session: {{ status: "aborted", version: 6, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null, failure_reason: "operator abort" }}, terminal_failure: {{ kind: "operator", code: "abort", detail: "typed failure" }}, pending_work_items: 0 }} }},
-  closed7: {{ snapshot: {{ session: {{ status: "closed", version: 7, accepted_samples: 0, accounted_samples: 0, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }} }},
+  active2: {{ snapshot: {{ session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 8, retained_samples: 4, committed: [{{ transcript: "hello <script>" }}], provisional: {{ transcript: "draft & safe" }} }}, pending_work_items: 1 }}, helper_presence: helperPresence("capturing", 1), v2_session: v2Session("active") }},
+  active4: {{ snapshot: {{ session: {{ status: "active", version: 4, accepted_samples: 12, accounted_samples: 12, retained_samples: 2, committed: [{{ transcript: "hello <script>" }}], provisional: null }}, pending_work_items: 0 }}, helper_presence: helperPresence("capturing", 2), v2_session: v2Session("active") }},
+  closing5: {{ snapshot: {{ session: {{ status: "closing", version: 5, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }}, helper_presence: helperPresence("capturing", 3), v2_session: v2Session("closing") }},
+  aborted6: {{ snapshot: {{ session: {{ status: "aborted", version: 6, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null, failure_reason: "operator abort" }}, terminal_failure: {{ kind: "operator", code: "abort", detail: "typed failure" }}, pending_work_items: 0 }}, helper_presence: null, v2_session: v2Session("aborted") }},
+  closed7: {{ snapshot: {{ session: {{ status: "closed", version: 7, accepted_samples: 0, accounted_samples: 0, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }}, helper_presence: null, v2_session: null }},
 }};
 
 async function runHappy() {{
@@ -706,6 +800,53 @@ async function runTimeout() {{
   }}));
 }}
 
+async function runControlTimeout() {{
+  const env = installPortal([
+    {{ hang: true }},
+    {{ hang: true }},
+  ]);
+  env.nodes.sessionId.value = "control-timeout-session";
+  env.nodes.viewToken.value = "control-timeout-token";
+  env.nodes.connectButton.listeners.click();
+  env.nodes.stopButton.listeners.click();
+  await env.flush();
+  await env.runTimerWithDelay(10000);
+  await env.flush();
+  console.log(JSON.stringify({{
+    controlAborted: env.requests[0].aborted,
+    requestCount: env.requests.length,
+    pendingPollTimers: env.timers.filter((timer) => timer.delay === 0).map((timer) => timer.delay),
+    statusAfterTimeout: env.nodes.statusDetail.textContent,
+    controlTimerDelays: env.timerDelays.filter((delay) => delay === 10000),
+  }}));
+}}
+
+async function runEventRetention() {{
+  const manyEvents = Array.from({{ length: 205 }}, (_, index) => {{
+    const seq = index + 1;
+    return {{ seq, kind: "replay", snapshot_version: 4 }};
+  }});
+  const env = installPortal([
+    {{ payload: snapshots.active2 }},
+    {{ payload: {{ events: manyEvents }} }},
+    {{ payload: snapshots.active4 }},
+    {{ payload: {{ events: [{{ seq: 200, kind: "replay", snapshot_version: 4 }}, {{ seq: 206, kind: "tail", snapshot_version: 4 }}] }} }},
+  ]);
+  env.nodes.sessionId.value = "retention-session";
+  env.nodes.viewToken.value = "retention-token";
+  env.nodes.connectButton.listeners.click();
+  await env.runNextTimer();
+  await env.runNextTimer();
+  const rows = env.nodes.events.children.map((node) => node.textContent);
+  console.log(JSON.stringify({{
+    rowCount: rows.length,
+    firstRow: rows[0],
+    lastRow: rows[rows.length - 1],
+    seq200Rows: rows.filter((row) => row.startsWith("seq: 200 ")).length,
+    secondEventsUrl: env.requests[3].url,
+  }}));
+}}
+
 const scenarios = {{
   happy: runHappy,
   retry: runRetry,
@@ -713,6 +854,8 @@ const scenarios = {{
   overlap: runOverlap,
   disconnectOverlap: runDisconnectOverlap,
   timeout: runTimeout,
+  controlTimeout: runControlTimeout,
+  eventRetention: runEventRetention,
 }};
 scenarios[scenario]().catch((error) => {{
   console.error(error && error.stack ? error.stack : String(error));
@@ -754,3 +897,11 @@ def _run_disconnect_overlap_contract_probe(html: str) -> dict:
 
 def _run_timeout_contract_probe(html: str) -> dict:
     return _run_node_probe(html, "timeout")
+
+
+def _run_control_timeout_contract_probe(html: str) -> dict:
+    return _run_node_probe(html, "controlTimeout")
+
+
+def _run_event_retention_contract_probe(html: str) -> dict:
+    return _run_node_probe(html, "eventRetention")
