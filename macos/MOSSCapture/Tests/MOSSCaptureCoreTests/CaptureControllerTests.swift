@@ -58,6 +58,7 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(transport.publishedFrames.map(\.sequence), [0, 0])
         XCTAssertEqual(transport.sessionIDs, ["session-a", "session-a"])
         XCTAssertEqual(health.emissions.count, 1)
+        XCTAssertEqual(health.emissions.first?.configuration, configuration)
         XCTAssertEqual(health.emissions.first?.sentMonotonicNS, 100)
         XCTAssertEqual(scheduler.labels, ["moss.capture.health"])
         XCTAssertFalse(stopped.running)
@@ -193,11 +194,170 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertFalse(callbackSources.contains("JSONEncoder"))
     }
 
+    func testHTTPTransportPostsStrictV2FramesWithBearerHeaderOnly() throws {
+        let client = RecordingCaptureHTTPClient()
+        let transport = CaptureV2HTTPTransportAdapter(
+            client: client,
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token")
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://moss.example")!
+        )
+
+        try transport.publish(
+            frame: CaptureFrame(
+                lane: .system,
+                sequence: 3,
+                sampleRate: 16_000,
+                sampleCount: 2,
+                captureTimestampNS: 123,
+                deviceEpoch: 9,
+                silent: false,
+                discontinuity: true,
+                pcm16: Data([1, 0, 2, 0])
+            ),
+            configuration: configuration
+        )
+
+        let request = try XCTUnwrap(client.requests.first)
+        let body = try jsonBody(request)
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.url?.absoluteString, "https://moss.example/api/live/sessions/session-a/frames")
+        XCTAssertNil(request.url?.query)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer capture-token")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        XCTAssertEqual(Set(body.keys), [
+            "lane",
+            "sequence",
+            "capture_timestamp_ns",
+            "device_epoch",
+            "silent",
+            "discontinuity",
+            "sample_rate",
+            "sample_count",
+            "pcm_base64",
+        ])
+        XCTAssertEqual(body["lane"] as? String, "system")
+        XCTAssertEqual(body["sequence"] as? Int, 3)
+        XCTAssertEqual(body["capture_timestamp_ns"] as? Int, 123)
+        XCTAssertEqual(body["device_epoch"] as? Int, 9)
+        XCTAssertEqual(body["silent"] as? Bool, false)
+        XCTAssertEqual(body["discontinuity"] as? Bool, true)
+        XCTAssertEqual(body["sample_rate"] as? Int, 16_000)
+        XCTAssertEqual(body["sample_count"] as? Int, 2)
+        XCTAssertEqual(body["pcm_base64"] as? String, Data([1, 0, 2, 0]).base64EncodedString())
+        XCTAssertFalse(String(data: request.httpBody ?? Data(), encoding: .utf8)?.contains("capture-token") ?? true)
+    }
+
+    func testHTTPHealthPostsVersionedHeartbeatWithoutBearerLeakage() throws {
+        let client = RecordingCaptureHTTPClient()
+        let health = CaptureHTTPHealthAdapter(
+            client: client,
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token"),
+            instanceID: "boot-a",
+            helperVersion: "0.1.0"
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://moss.example")!
+        )
+        let status = CaptureStatus(
+            running: true,
+            sessionID: "session-a",
+            lanes: [
+                CaptureLaneStatus(lane: .system, sequence: 4, deviceEpoch: 2, state: "capturing"),
+                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
+            ],
+            publishedFrameCount: 10,
+            lastHealthSequence: 5
+        )
+
+        try health.emit(status: status, configuration: configuration, sentMonotonicNS: 900)
+
+        let request = try XCTUnwrap(client.requests.first)
+        let body = try jsonBody(request)
+        let lanes = try XCTUnwrap(body["lanes"] as? [String: [String: Any]])
+        let system = try XCTUnwrap(lanes["system"])
+        let microphone = try XCTUnwrap(lanes["microphone"])
+        XCTAssertEqual(request.url?.absoluteString, "https://moss.example/api/live/sessions/session-a/heartbeat")
+        XCTAssertNil(request.url?.query)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer capture-token")
+        XCTAssertEqual(Set(body.keys), [
+            "schema",
+            "instance_id",
+            "sequence",
+            "sent_monotonic_ns",
+            "helper_version",
+            "state",
+            "lanes",
+        ])
+        XCTAssertEqual(body["schema"] as? String, "moss-live-helper-health.v1")
+        XCTAssertEqual(body["instance_id"] as? String, "boot-a")
+        XCTAssertEqual(body["sequence"] as? Int, 5)
+        XCTAssertEqual(body["sent_monotonic_ns"] as? Int, 900)
+        XCTAssertEqual(body["helper_version"] as? String, "0.1.0")
+        XCTAssertEqual(body["state"] as? String, "capturing")
+        XCTAssertEqual(Set(lanes.keys), ["system", "microphone"])
+        XCTAssertEqual(system["device_epoch"] as? Int, 2)
+        XCTAssertEqual(microphone["device_epoch"] as? Int, 8)
+        XCTAssertTrue(system["failure_code"] is NSNull)
+        XCTAssertTrue(microphone["failure_code"] is NSNull)
+        XCTAssertFalse(String(data: request.httpBody ?? Data(), encoding: .utf8)?.contains("capture-token") ?? true)
+    }
+
+    func testHTTPTransportRejectsMissingBearerBeforeRequest() throws {
+        let client = RecordingCaptureHTTPClient()
+        let transport = CaptureV2HTTPTransportAdapter(
+            client: client,
+            bearerToken: StaticCaptureBearerTokenAdapter(token: nil)
+        )
+
+        XCTAssertThrowsError(
+            try transport.publish(
+                frame: CaptureFrame(
+                    lane: .system,
+                    sequence: 0,
+                    sampleRate: 16_000,
+                    sampleCount: 1,
+                    captureTimestampNS: 0,
+                    deviceEpoch: 0,
+                    silent: true,
+                    discontinuity: false,
+                    pcm16: Data([0, 0])
+                ),
+                configuration: CaptureConfiguration(
+                    sessionID: "session-a",
+                    serverURL: URL(string: "https://moss.example")!
+                )
+            )
+        ) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .missingCaptureBearer)
+        }
+        XCTAssertTrue(client.requests.isEmpty)
+    }
+
     private func packageRoot() -> URL {
         var url = URL(fileURLWithPath: #filePath)
         for _ in 0..<3 {
             url.deleteLastPathComponent()
         }
         return url
+    }
+
+    private func jsonBody(_ request: URLRequest) throws -> [String: Any] {
+        let data = try XCTUnwrap(request.httpBody)
+        let object = try JSONSerialization.jsonObject(with: data)
+        return try XCTUnwrap(object as? [String: Any])
+    }
+}
+
+private final class RecordingCaptureHTTPClient: CaptureHTTPClient {
+    private(set) var requests: [URLRequest] = []
+    var response = CaptureHTTPResponse(statusCode: 200)
+
+    func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
+        requests.append(request)
+        return response
     }
 }

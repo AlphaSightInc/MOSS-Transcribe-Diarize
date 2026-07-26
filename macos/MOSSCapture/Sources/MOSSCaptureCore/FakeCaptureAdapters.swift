@@ -107,12 +107,24 @@ public final class FakeCaptureCancellation: CaptureCancellation {
 }
 
 public final class FakeCaptureHealthAdapter: CaptureHealthAdapter {
-    public private(set) var emissions: [(status: CaptureStatus, sentMonotonicNS: UInt64)] = []
+    public private(set) var emissions: [(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    )] = []
 
     public init() {}
 
-    public func emit(status: CaptureStatus, sentMonotonicNS: UInt64) throws {
-        emissions.append((status: status, sentMonotonicNS: sentMonotonicNS))
+    public func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        emissions.append((
+            status: status,
+            configuration: configuration,
+            sentMonotonicNS: sentMonotonicNS
+        ))
     }
 }
 

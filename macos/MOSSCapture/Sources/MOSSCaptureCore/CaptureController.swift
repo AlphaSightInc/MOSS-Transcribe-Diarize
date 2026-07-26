@@ -116,7 +116,11 @@ public protocol CaptureCancellation {
 }
 
 public protocol CaptureHealthAdapter {
-    func emit(status: CaptureStatus, sentMonotonicNS: UInt64) throws
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws
 }
 
 public enum CaptureControllerError: Error, Equatable {
@@ -214,9 +218,16 @@ public final class CaptureController {
     }
 
     private func emitHealth() throws -> CaptureStatus {
+        guard let configuration else {
+            throw CaptureControllerError.notRunning
+        }
         healthSequence = (healthSequence ?? 0) + 1
         let current = status()
-        try health.emit(status: current, sentMonotonicNS: clock.monotonicNanoseconds())
+        try health.emit(
+            status: current,
+            configuration: configuration,
+            sentMonotonicNS: clock.monotonicNanoseconds()
+        )
         return current
     }
 }
