@@ -15,6 +15,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -27,6 +28,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "macos" / "MOSSCapture"
 TIMEOUT = 8.0
+BUILD_TIMEOUT = 120.0
+ALLOWED_PEER_NETWORKS = tuple(
+    ipaddress.ip_network(value)
+    for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10")
+)
 
 
 def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
@@ -51,8 +57,10 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
     assert app_exe.is_file(), f"built app product missing: {app_exe}"
     assert cli_exe.is_file(), f"built CLI product missing: {cli_exe}"
 
+    tmp_root: Path | None = None
     with tempfile.TemporaryDirectory(prefix="mtd5-", dir="/tmp") as tmp:
         tmp_path = Path(tmp)
+        tmp_root = tmp_path
         cert = tmp_path / "live.pem"
         key = tmp_path / "live.key"
         _make_certificate(cert=cert, key=key, private_ip=private_ip)
@@ -60,8 +68,10 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
         server_script = _write_server_script(tmp_path)
         socket_path = tmp_path / "control.sock"
         store_path = tmp_path / "secrets.json"
+        artifact_dir = tmp_path / "artifacts"
         app_log = tmp_path / "app.log"
         server_log = tmp_path / "server.log"
+        pasteboard_name = f"com.alphasight.moss.capture.tracer.{os.getpid()}.{time.monotonic_ns()}"
         bundled_app_exe = _make_temp_app_bundle(app_exe, tmp_path)
         _assert_bundled_product_identity(
             bundled_app_exe,
@@ -92,6 +102,7 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                 {
                     "MOSS_CAPTURE_CONTROL_SOCKET": str(socket_path),
                     "MOSS_CAPTURE_SECRET_STORE_PATH": str(store_path),
+                    "MOSS_CAPTURE_PASTEBOARD_NAME": pasteboard_name,
                     "MOSS_CAPTURE_SKIP_LAUNCH": "1",
                 }
             )
@@ -104,6 +115,7 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                 control_secret=control_secret,
             )
             _write_secret_clean_artifact(
+                artifact_dir,
                 "status-response.bin",
                 status_artifact,
                 secrets=(control_secret,),
@@ -127,7 +139,14 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
             assert persisted["capture-device-id"]
             assert persisted["capture-bearer"]
             assert view_token
-            _assert_secret_absent(pair.output, view_token)
+            for secret in (
+                control_secret,
+                pairing_payload.decode("utf-8"),
+                cert_pin,
+                persisted["capture-bearer"],
+                view_token,
+            ):
+                _assert_secret_absent(pair.output, secret)
 
             first_device_id = persisted["capture-device-id"]
             auth_state = json.loads((tmp_path / "live-auth.json").read_text(encoding="utf-8"))
@@ -142,44 +161,137 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                 control_secret=control_secret,
             )
             _write_secret_clean_artifact(
+                artifact_dir,
                 "status-after-restart.bin",
                 restarted_status,
-                secrets=(control_secret,),
+                secrets=(
+                    control_secret,
+                    pairing_payload.decode("utf-8"),
+                    cert_pin,
+                    persisted["capture-bearer"],
+                    persisted["capture-view-token"],
+                ),
             )
 
             restarted = _read_store(store_path)
             assert restarted["capture-device-id"] == first_device_id
             start = _run_cli(cli_exe, ["start", "--label", "tracer"], env=env)
-            if start.returncode == 0:
-                pytest.fail(
-                    "Darwin real UDS tracer requires typed no-TCC failure; "
-                    f"native capture unexpectedly started: {start.diagnostic}"
-                )
-            assert start.returncode == 70, start.diagnostic
-            start_body = start.json()
-            assert start_body["ok"] is False
-            assert start_body["error"] != "missingCaptureConfiguration"
-            assert "permissionDenied" in start_body["error"]
+            if start.returncode != 0:
+                assert start.returncode == 70, start.diagnostic
+                start_body = start.json()
+                assert start_body["ok"] is False
+                assert start_body["error"] != "missingCaptureConfiguration"
+                assert "permissionDenied" in start_body["error"]
 
-            stopped_at = time.monotonic()
-            stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
-            assert time.monotonic() - stopped_at < 5.0
-            assert stop.returncode == 70, stop.diagnostic
-            assert stop.json() == {"ok": False, "error": "notRunning"}
+                stopped_at = time.monotonic()
+                stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
+                assert time.monotonic() - stopped_at < 5.0
+                assert stop.returncode == 70, stop.diagnostic
+                assert stop.json() == {"ok": False, "error": "notRunning"}
+
+                status = _run_cli(cli_exe, ["status"], env=env)
+                assert status.returncode == 0, status.diagnostic
+                assert status.json()["ok"] is True
+            else:
+                start_body = start.json()
+                assert start_body["ok"] is True
+                assert start_body["running"] is True
+                snapshot = _wait_for_server_observed_dual_lane_frames(
+                    server_url=server_url,
+                    session_id="macos-tracer-session",
+                    bearer_token=restarted["capture-bearer"],
+                )
+                _assert_server_observed_dual_lane_frames(snapshot)
+
+                status = _run_cli(cli_exe, ["status"], env=env, timeout=5.0)
+                assert status.returncode == 0, status.diagnostic
+                assert status.json()["ok"] is True
+                assert status.json()["running"] is True
+
+                stopped_at = time.monotonic()
+                stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
+                assert time.monotonic() - stopped_at < 5.0
+                assert stop.returncode == 0, stop.diagnostic
+                assert stop.json()["ok"] is True
+                assert stop.json()["running"] is False
+
+            _replace_store_value(
+                store_path,
+                key="capture-certificate-pin",
+                value="0" * 64,
+            )
+            second_pairing_payload = _issue_pairing(loopback_url)
+            second_pair = _run_cli(
+                cli_exe,
+                ["pair", "--server", server_url],
+                env=env,
+                stdin=second_pairing_payload,
+            )
+            assert second_pair.returncode == 0, second_pair.diagnostic
+            _assert_secret_absent(
+                second_pair.output,
+                second_pairing_payload.decode("utf-8"),
+            )
+            repinned = _read_store(store_path)
+            assert repinned["capture-device-id"] == first_device_id
+            assert repinned["capture-certificate-pin"] == cert_pin
+            assert repinned["capture-session-id"] == "macos-tracer-session-repin"
+            for secret in (
+                control_secret,
+                second_pairing_payload.decode("utf-8"),
+                cert_pin,
+                repinned["capture-bearer"],
+                repinned["capture-view-token"],
+            ):
+                _assert_secret_absent(second_pair.output, secret)
+            auth_state = json.loads((tmp_path / "live-auth.json").read_text(encoding="utf-8"))
+            assert set(auth_state["devices"]) == {first_device_id}
+
+            handoff = _run_cli(cli_exe, ["handoff"], env=env)
+            assert handoff.returncode == 0, handoff.diagnostic
+            handoff_body = handoff.json()
+            assert handoff_body == {
+                "ok": True,
+                "sessionID": "macos-tracer-session-repin",
+                "portalURL": f"{server_url}/live",
+                "viewAuthority": "copied-to-pasteboard",
+            }
+            for secret in (
+                control_secret,
+                second_pairing_payload.decode("utf-8"),
+                cert_pin,
+                repinned["capture-bearer"],
+                repinned["capture-view-token"],
+            ):
+                _assert_secret_absent(handoff.output, secret)
+            _assert_named_pasteboard_matches_store(
+                pasteboard_name=pasteboard_name,
+                store_path=store_path,
+            )
 
             status = _run_cli(cli_exe, ["status"], env=env)
             assert status.returncode == 0, status.diagnostic
             assert status.json()["ok"] is True
             _write_secret_clean_artifact(
+                artifact_dir,
                 "cli-status-output.bin",
                 status.output,
                 secrets=(
                     control_secret,
                     pairing_payload.decode("utf-8"),
+                    second_pairing_payload.decode("utf-8"),
+                    cert_pin,
                     persisted["capture-bearer"],
                     persisted["capture-view-token"],
+                    repinned["capture-bearer"],
+                    repinned["capture-view-token"],
                 ),
             )
+            assert sorted(path.name for path in artifact_dir.iterdir()) == [
+                "cli-status-output.bin",
+                "status-after-restart.bin",
+                "status-response.bin",
+            ]
         finally:
             if app is not None:
                 _terminate(app)
@@ -192,6 +304,58 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
             assert app is None or not _pid_alive(app.pid)
             assert not socket_path.exists()
             assert not store_path.exists()
+    assert tmp_root is not None and not tmp_root.exists()
+
+
+def test_permission_denial_contract_isolated_from_real_capture_path():
+    if platform.system() != "Darwin":
+        pytest.skip("macOS permission-denial CLI harness is Darwin-only.")
+
+    cli_exe = _swift_bin_dir() / "mtd-capture"
+    assert cli_exe.is_file(), f"built CLI product missing: {cli_exe}"
+    with tempfile.TemporaryDirectory(prefix="mtd5-denied-", dir="/tmp") as tmp:
+        tmp_path = Path(tmp)
+        socket_path = tmp_path / "control.sock"
+        store_path = tmp_path / "secrets.json"
+        control_secret = "isolated-denial-control-secret"
+        store_path.write_text(
+            json.dumps({"values": {"local-control-secret": control_secret}}),
+            encoding="utf-8",
+        )
+        store_path.chmod(0o600)
+        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        server.bind(str(socket_path))
+        socket_path.chmod(0o600)
+        server.listen(1)
+        errors: list[BaseException] = []
+        thread = threading.Thread(
+            target=_serve_permission_denial_once,
+            args=(server, control_secret, errors),
+            daemon=True,
+        )
+        thread.start()
+        env = os.environ.copy()
+        env.update(
+            {
+                "MOSS_CAPTURE_CONTROL_SOCKET": str(socket_path),
+                "MOSS_CAPTURE_SECRET_STORE_PATH": str(store_path),
+                "MOSS_CAPTURE_SKIP_LAUNCH": "1",
+            }
+        )
+        try:
+            start = _run_cli(cli_exe, ["start", "--label", "denied-harness"], env=env)
+            if start.returncode == 0:
+                pytest.fail("isolated permission-denial harness accepted capture start")
+            assert start.returncode == 70, start.diagnostic
+            assert start.json() == {
+                "ok": False,
+                "error": 'permissionDenied("microphone")',
+            }
+        finally:
+            server.close()
+            thread.join(timeout=2.0)
+        assert not thread.is_alive()
+        assert not errors
 
 
 class _CLIResult:
@@ -212,13 +376,29 @@ class _CLIResult:
 
 
 def _swift_bin_dir() -> Path:
+    for product in ("MOSSCaptureApp", "mtd-capture"):
+        subprocess.run(
+            [
+                "swift",
+                "build",
+                "--package-path",
+                str(PACKAGE_ROOT),
+                "--product",
+                product,
+            ],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=BUILD_TIMEOUT,
+        )
     completed = subprocess.run(
         ["swift", "build", "--package-path", str(PACKAGE_ROOT), "--show-bin-path"],
         cwd=ROOT,
         check=True,
         capture_output=True,
         text=True,
-        timeout=TIMEOUT,
+        timeout=BUILD_TIMEOUT,
     )
     return Path(completed.stdout.strip())
 
@@ -268,7 +448,9 @@ def _private_non_loopback_ipv4() -> str | None:
                 address = ipaddress.ip_address(parts[1])
             except ValueError:
                 continue
-            if address.version == 4 and address.is_private and not address.is_loopback:
+            if address.version == 4 and any(
+                address in network for network in ALLOWED_PEER_NETWORKS
+            ):
                 return str(address)
     return None
 
@@ -370,6 +552,8 @@ app = create_app(
         session_id="macos-tracer-session",
     ),
 )
+session_ids = iter(("macos-tracer-session", "macos-tracer-session-repin"))
+app.state.live_runtime._session_id_factory = lambda: next(session_ids)
 
 server_source = Path(inspect.getsourcefile(create_app)).resolve()
 assert create_app.__module__ == "moss_transcribe_diarize.app.server"
@@ -481,19 +665,37 @@ def _server_snapshot(*, server_url: str, session_id: str, bearer_token: str) -> 
     )
 
 
-def _assert_server_observed_lane_frames(snapshot: dict[str, Any]) -> int:
+def _assert_server_observed_dual_lane_frames(snapshot: dict[str, Any]) -> int:
     v2_session = snapshot["v2_session"]
     assert v2_session["status"] == "active"
     lanes = v2_session["lanes"]
     observed_samples = 0
-    observed_lanes = 0
     for lane_name in ("system", "microphone"):
         accepted = int(lanes[lane_name]["accepted_samples"])
-        if accepted > 0:
-            observed_lanes += 1
-            observed_samples += accepted
-    assert observed_lanes >= 1
+        assert accepted > 0, f"server observed no native samples for {lane_name}"
+        observed_samples += accepted
     return observed_samples
+
+
+def _wait_for_server_observed_dual_lane_frames(
+    *,
+    server_url: str,
+    session_id: str,
+    bearer_token: str,
+) -> dict[str, Any]:
+    deadline = time.monotonic() + TIMEOUT
+    last_snapshot: dict[str, Any] | None = None
+    while time.monotonic() < deadline:
+        last_snapshot = _server_snapshot(
+            server_url=server_url,
+            session_id=session_id,
+            bearer_token=bearer_token,
+        )
+        lanes = last_snapshot["v2_session"]["lanes"]
+        if all(int(lanes[lane]["accepted_samples"]) > 0 for lane in ("system", "microphone")):
+            return last_snapshot
+        time.sleep(0.1)
+    pytest.fail(f"server did not observe native samples on both lanes: {last_snapshot}")
 
 
 def _assert_production_server_runtime(runtime: dict[str, Any]) -> None:
@@ -584,6 +786,13 @@ def _read_store(path: Path) -> dict[str, str]:
     return values
 
 
+def _replace_store_value(path: Path, *, key: str, value: str) -> None:
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["values"][key] = value
+    path.write_text(json.dumps(document, separators=(",", ":")), encoding="utf-8")
+    path.chmod(0o600)
+
+
 def _assert_secret_absent(output: bytes, secret: str) -> None:
     assert secret
     assert secret.encode("utf-8") not in output
@@ -591,7 +800,7 @@ def _assert_secret_absent(output: bytes, secret: str) -> None:
         decoded = json.loads(output)
     except (json.JSONDecodeError, UnicodeDecodeError):
         return
-    assert all(value != secret for value in _json_strings(decoded))
+    assert all(secret not in value for value in _json_strings(decoded))
 
 
 def _json_strings(value: Any):
@@ -672,7 +881,66 @@ def _recv_exact(stream: socket.socket, count: int) -> bytes:
     return bytes(chunks)
 
 
+def _serve_permission_denial_once(
+    server: socket.socket,
+    control_secret: str,
+    errors: list[BaseException],
+) -> None:
+    try:
+        connection, _ = server.accept()
+        with connection:
+            connection.settimeout(2.0)
+            length = struct.unpack(">I", _recv_exact(connection, 4))[0]
+            assert 0 < length <= 65_536
+            envelope = json.loads(_recv_exact(connection, length).decode("utf-8"))
+            assert envelope["secret"] == control_secret
+            assert envelope["request"]["command"] == "start"
+            response = json.dumps(
+                {
+                    "ok": False,
+                    "error": 'permissionDenied("microphone")',
+                },
+                separators=(",", ":"),
+            ).encode("utf-8")
+            connection.sendall(struct.pack(">I", len(response)) + response)
+    except BaseException as exc:  # noqa: BLE001
+        errors.append(exc)
+
+
+def _assert_named_pasteboard_matches_store(
+    *,
+    pasteboard_name: str,
+    store_path: Path,
+) -> None:
+    program = """
+import AppKit
+import Foundation
+
+let name = NSPasteboard.Name(CommandLine.arguments[1])
+let store = URL(fileURLWithPath: CommandLine.arguments[2])
+let document = try JSONSerialization.jsonObject(with: Data(contentsOf: store)) as! [String: Any]
+let values = document["values"] as! [String: String]
+let pasteboard = NSPasteboard(name: name)
+guard pasteboard.string(forType: .string) == values["capture-view-token"] else {
+    Foundation.exit(1)
+}
+pasteboard.clearContents()
+""".strip()
+    completed = subprocess.run(
+        ["swift", "-e", program, pasteboard_name, str(store_path)],
+        cwd=ROOT,
+        capture_output=True,
+        timeout=BUILD_TIMEOUT,
+    )
+    assert completed.returncode == 0, (
+        f"named pasteboard did not contain persisted view authority: "
+        f"stdout={completed.stdout!r} stderr={completed.stderr!r}"
+    )
+    assert completed.stdout == b""
+
+
 def _write_secret_clean_artifact(
+    artifact_dir: Path,
     name: str,
     payload: bytes,
     *,
@@ -680,9 +948,6 @@ def _write_secret_clean_artifact(
 ) -> None:
     for secret in secrets:
         _assert_secret_absent(payload, secret)
-    artifact_dir = Path(
-        os.environ.get("MOSS_TRACER_ARTIFACTS", str(ROOT / ".tracer-artifacts"))
-    )
     artifact_dir.mkdir(parents=True, exist_ok=True)
     (artifact_dir / name).write_bytes(payload)
 

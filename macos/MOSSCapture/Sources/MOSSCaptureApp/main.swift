@@ -1,5 +1,3 @@
-import AVFoundation
-import CoreGraphics
 import Foundation
 import Darwin
 import MOSSCaptureCore
@@ -56,12 +54,7 @@ final class ProductionCaptureRuntime {
             server: UnixDomainControlServer(
                 socketPath: ControlSocketDefaults.socketPath(),
                 authenticator: SameUserUDSAuthenticator(secrets: keyStore),
-                handler: { request in
-                    if request.command == "start" {
-                        try requireDualCaptureAuthorization()
-                    }
-                    return try dispatcher.dispatch(request)
-                }
+                handler: dispatcher.dispatch
             )
         )
     }
@@ -79,16 +72,6 @@ final class ProductionCaptureRuntime {
             throw CaptureSecurityError.missingSecret
         }
         try keyStore.saveControlSecret(Data(bytes).base64EncodedString())
-    }
-
-    private static func requireDualCaptureAuthorization() throws {
-        guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized,
-              CGPreflightScreenCaptureAccess()
-        else {
-            throw NativeCaptureError.permissionDenied(
-                "microphone and system-audio authorization required"
-            )
-        }
     }
 }
 

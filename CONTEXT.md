@@ -127,11 +127,20 @@
   same-origin live `snapshot`, `events`, `stop`, and `abort` routes, not a new
   backend API or frontend app.
 - **Manual capture portal handoff (IDEA-044)**: Operator workflow where the
-  local capture client returns the server-hosted live portal URL and live
-  session id, while the view authority remains separate from URL, output, log,
-  cookie, storage, and DOM channels. The unsigned real app/CLI tracer proof,
-  signing, notarization, TCC, Keychain runtime, real device/tap behavior,
-  deployment, 60/300 evidence, canary, and live enablement remain Missing.
+  explicit `mtd-capture handoff` command first checks the real app over its
+  authenticated UDS, then copies the persisted view authority to the macOS
+  pasteboard and returns only a non-secret confirmation, server-hosted live
+  portal URL, and live session id. The view authority never enters a URL,
+  argv, stdout/stderr, log, cookie, browser storage, or DOM channel. Production
+  `start` adds no Screen Recording preflight: Core Audio system-tap and
+  microphone permission facts remain lane-specific, and microphone
+  `notDetermined` stays prompt-capable after the explicit start action rather
+  than becoming denial. The unsigned tracer keeps deterministic permission
+  denial isolated from real capture; a real success is accepted only after
+  both native lanes reach the server plus real CLI `status` and bounded
+  `stop`. Signing, notarization, TCC continuity, Keychain runtime, deployed
+  device/tap behavior, deployment, 60/300 evidence, canary, and live
+  enablement remain Missing.
 - **Portal handoff URL**: Non-authority `/live` URL derived from the paired live
   server origin and path without query or fragment credentials.
 - **Live portal view token**: Manually entered view token retained only in page

@@ -2206,6 +2206,21 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(exchange.pairingPayload, payload)
     }
 
+    func testProductionStartDefersPermissionStateToIndependentNativeLanes() throws {
+        let appMain = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureApp")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(appMain.contains("handler: dispatcher.dispatch"))
+        XCTAssertFalse(appMain.contains("CGPreflightScreenCaptureAccess"))
+        XCTAssertFalse(appMain.contains("CoreGraphics"))
+        XCTAssertFalse(appMain.contains("authorizationStatus(for: .audio)"))
+    }
+
     func testPromotedSwiftTestIdentifiersRemainCollected() throws {
         let testRoot = packageRoot().appendingPathComponent("Tests")
         let sources = try swiftSources(under: testRoot)
