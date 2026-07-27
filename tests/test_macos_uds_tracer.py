@@ -11,6 +11,7 @@ import shutil
 import socket
 import ssl
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -56,29 +57,34 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
         key = tmp_path / "live.key"
         _make_certificate(cert=cert, key=key, private_ip=private_ip)
         cert_pin = _certificate_sha256(cert)
-        port = _reserve_port()
-        server_url = f"https://{private_ip}:{port}"
-        loopback_url = f"https://127.0.0.1:{port}"
         server_script = _write_server_script(tmp_path)
         socket_path = tmp_path / "control.sock"
         store_path = tmp_path / "secrets.json"
         app_log = tmp_path / "app.log"
         server_log = tmp_path / "server.log"
         bundled_app_exe = _make_temp_app_bundle(app_exe, tmp_path)
-
-        server = _start_server(
-            server_script=server_script,
-            host="0.0.0.0",
-            port=port,
-            cert=cert,
-            key=key,
-            cert_pin=cert_pin,
-            log=server_log,
-            tmp_path=tmp_path,
+        _assert_bundled_product_identity(
+            bundled_app_exe,
+            built_product=app_exe,
+            expected_bundle=tmp_path / "MOSSCaptureTracer.app",
         )
+
+        server = None
         app = None
         try:
-            _wait_for_https(f"{loopback_url}/api/runtime", server, server_log)
+            server, port = _start_server(
+                server_script=server_script,
+                host="0.0.0.0",
+                cert=cert,
+                key=key,
+                cert_pin=cert_pin,
+                log=server_log,
+                tmp_path=tmp_path,
+            )
+            server_url = f"https://{private_ip}:{port}"
+            loopback_url = f"https://127.0.0.1:{port}"
+            runtime = _wait_for_https(f"{loopback_url}/api/runtime", server, server_log)
+            _assert_production_server_runtime(runtime)
             pairing_payload = _issue_pairing(loopback_url)
 
             env = os.environ.copy()
@@ -90,6 +96,18 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                 }
             )
             app = _start_app(bundled_app_exe, env=env, log=app_log, socket_path=socket_path)
+            initial_store = _read_store(store_path)
+            control_secret = initial_store["local-control-secret"]
+            status_artifact = _assert_uds_product_server_identity(
+                socket_path,
+                expected_pid=app.pid,
+                control_secret=control_secret,
+            )
+            _write_secret_clean_artifact(
+                "status-response.bin",
+                status_artifact,
+                secrets=(control_secret,),
+            )
 
             pair = _run_cli(cli_exe, ["pair", "--server", server_url], env=env, stdin=pairing_payload)
             assert pair.returncode == 0, pair.diagnostic
@@ -112,71 +130,65 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
             _assert_secret_absent(pair.output, view_token)
 
             first_device_id = persisted["capture-device-id"]
+            auth_state = json.loads((tmp_path / "live-auth.json").read_text(encoding="utf-8"))
+            assert set(auth_state["devices"]) == {first_device_id}
             _terminate(app)
             app = None
             _remove_socket(socket_path)
             app = _start_app(bundled_app_exe, env=env, log=app_log, socket_path=socket_path)
+            restarted_status = _assert_uds_product_server_identity(
+                socket_path,
+                expected_pid=app.pid,
+                control_secret=control_secret,
+            )
+            _write_secret_clean_artifact(
+                "status-after-restart.bin",
+                restarted_status,
+                secrets=(control_secret,),
+            )
 
             restarted = _read_store(store_path)
             assert restarted["capture-device-id"] == first_device_id
             start = _run_cli(cli_exe, ["start", "--label", "tracer"], env=env)
             if start.returncode == 0:
-                body = start.json()
-                assert body["ok"] is True
-                assert body["running"] is True
-                assert int(body["publishedFrameCount"]) > 0
-                snapshot = _server_snapshot(
-                    server_url=server_url,
-                    session_id="macos-tracer-session",
-                    bearer_token=persisted["capture-bearer"],
+                pytest.fail(
+                    "Darwin real UDS tracer requires typed no-TCC failure; "
+                    f"native capture unexpectedly started: {start.diagnostic}"
                 )
-                observed_samples = _assert_server_observed_lane_frames(snapshot)
-                status = _run_cli(cli_exe, ["status"], env=env, timeout=5.0)
-                assert status.returncode == 0, status.diagnostic
-                status_body = status.json()
-                assert status_body["ok"] is True
-                assert status_body["running"] is True
-                cleanup_started = time.monotonic()
-                try:
-                    cleanup_stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
-                    cleanup_elapsed = time.monotonic() - cleanup_started
-                except subprocess.TimeoutExpired as exc:
-                    pytest.fail(
-                        "Darwin real UDS tracer requires the no-TCC path, but native start "
-                        "succeeded and bounded cleanup stop timed out: "
-                        f"publishedFrameCount={body.get('publishedFrameCount')}: {exc}"
-                    )
-                assert cleanup_elapsed < 5.0, cleanup_stop.diagnostic
-                stop_body = cleanup_stop.json()
-                assert cleanup_stop.returncode == 0, cleanup_stop.diagnostic
-                assert stop_body["ok"] is True
-                assert stop_body["running"] is False
-                assert int(stop_body["publishedFrameCount"]) >= int(body["publishedFrameCount"])
-                assert observed_samples > 0
-            else:
-                assert start.returncode == 70, start.diagnostic
-                start_body = start.json()
-                assert start_body["ok"] is False
-                assert start_body["error"] != "missingCaptureConfiguration"
-                assert "permissionDenied" in start_body["error"]
+            assert start.returncode == 70, start.diagnostic
+            start_body = start.json()
+            assert start_body["ok"] is False
+            assert start_body["error"] != "missingCaptureConfiguration"
+            assert "permissionDenied" in start_body["error"]
 
-                stopped_at = time.monotonic()
-                stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
-                assert time.monotonic() - stopped_at < 5.0
-                assert stop.returncode == 70, stop.diagnostic
-                assert stop.json() == {"ok": False, "error": "notRunning"}
+            stopped_at = time.monotonic()
+            stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
+            assert time.monotonic() - stopped_at < 5.0
+            assert stop.returncode == 70, stop.diagnostic
+            assert stop.json() == {"ok": False, "error": "notRunning"}
 
-                status = _run_cli(cli_exe, ["status"], env=env)
-                assert status.returncode == 0, status.diagnostic
-                assert status.json()["ok"] is True
+            status = _run_cli(cli_exe, ["status"], env=env)
+            assert status.returncode == 0, status.diagnostic
+            assert status.json()["ok"] is True
+            _write_secret_clean_artifact(
+                "cli-status-output.bin",
+                status.output,
+                secrets=(
+                    control_secret,
+                    pairing_payload.decode("utf-8"),
+                    persisted["capture-bearer"],
+                    persisted["capture-view-token"],
+                ),
+            )
         finally:
             if app is not None:
                 _terminate(app)
-            _terminate(server)
+            if server is not None:
+                _terminate(server)
             _remove_socket(socket_path)
             if store_path.exists():
                 store_path.unlink()
-            assert not _pid_alive(server.pid)
+            assert server is None or not _pid_alive(server.pid)
             assert app is None or not _pid_alive(app.pid)
             assert not socket_path.exists()
             assert not store_path.exists()
@@ -261,12 +273,6 @@ def _private_non_loopback_ipv4() -> str | None:
     return None
 
 
-def _reserve_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("", 0))
-        return int(sock.getsockname()[1])
-
-
 def _make_certificate(*, cert: Path, key: Path, private_ip: str) -> None:
     config = cert.with_suffix(".cnf")
     config.write_text(
@@ -328,6 +334,8 @@ def _write_server_script(tmp_path: Path) -> Path:
 from __future__ import annotations
 
 import importlib.util
+import inspect
+import socket
 import sys
 from pathlib import Path
 
@@ -335,12 +343,12 @@ import uvicorn
 
 root = Path(sys.argv[1])
 host = sys.argv[2]
-port = int(sys.argv[3])
-cert = sys.argv[4]
-key = sys.argv[5]
-cert_pin = sys.argv[6]
-state = Path(sys.argv[7])
-runs = Path(sys.argv[8])
+cert = sys.argv[3]
+key = sys.argv[4]
+cert_pin = sys.argv[5]
+state = Path(sys.argv[6])
+runs = Path(sys.argv[7])
+port_file = Path(sys.argv[8])
 
 sys.path.insert(0, str(root))
 spec = importlib.util.spec_from_file_location("moss_live_api_helpers", root / "tests" / "test_live_api.py")
@@ -363,15 +371,26 @@ app = create_app(
     ),
 )
 
-uvicorn.run(
+server_source = Path(inspect.getsourcefile(create_app)).resolve()
+assert create_app.__module__ == "moss_transcribe_diarize.app.server"
+assert server_source == (root / "moss_transcribe_diarize" / "app" / "server.py").resolve()
+
+listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+listener.bind((host, 0))
+listener.listen(socket.SOMAXCONN)
+port_file.write_text(str(listener.getsockname()[1]), encoding="ascii")
+
+config = uvicorn.Config(
     app,
     host=host,
-    port=port,
+    port=0,
     ssl_certfile=cert,
     ssl_keyfile=key,
     proxy_headers=False,
     log_level="warning",
 )
+uvicorn.Server(config).run(sockets=[listener])
 """.lstrip(),
         encoding="utf-8",
     )
@@ -382,43 +401,65 @@ def _start_server(
     *,
     server_script: Path,
     host: str,
-    port: int,
     cert: Path,
     key: Path,
     cert_pin: str,
     log: Path,
     tmp_path: Path,
-) -> subprocess.Popen[bytes]:
-    handle = log.open("ab")
-    return subprocess.Popen(
-        [
-            sys.executable,
-            str(server_script),
-            str(ROOT),
-            host,
-            str(port),
-            str(cert),
-            str(key),
-            cert_pin,
-            str(tmp_path / "live-auth.json"),
-            str(tmp_path / "runs"),
-        ],
-        cwd=ROOT,
-        stdout=handle,
-        stderr=subprocess.STDOUT,
-        close_fds=True,
-    )
+) -> tuple[subprocess.Popen[bytes], int]:
+    port_file = tmp_path / "server.port"
+    process = None
+    try:
+        with log.open("ab") as handle:
+            process = subprocess.Popen(
+                [
+                    sys.executable,
+                    str(server_script),
+                    str(ROOT),
+                    host,
+                    str(cert),
+                    str(key),
+                    cert_pin,
+                    str(tmp_path / "live-auth.json"),
+                    str(tmp_path / "runs"),
+                    str(port_file),
+                ],
+                cwd=ROOT,
+                stdout=handle,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+            )
+        deadline = time.monotonic() + TIMEOUT
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                pytest.fail(
+                    f"uvicorn exited before binding with {process.returncode}: "
+                    f"{log.read_text(errors='replace')}"
+                )
+            if port_file.exists():
+                port = int(port_file.read_text(encoding="ascii"))
+                assert 0 < port < 65_536
+                return process, port
+            time.sleep(0.05)
+        pytest.fail(f"uvicorn did not report its bound port: {log.read_text(errors='replace')}")
+    except BaseException:
+        if process is not None:
+            _terminate(process)
+        raise
 
 
-def _wait_for_https(url: str, process: subprocess.Popen[bytes], log: Path) -> None:
+def _wait_for_https(
+    url: str,
+    process: subprocess.Popen[bytes],
+    log: Path,
+) -> dict[str, Any]:
     deadline = time.monotonic() + TIMEOUT
     last_error: Exception | None = None
     while time.monotonic() < deadline:
         if process.poll() is not None:
             pytest.fail(f"uvicorn exited early with {process.returncode}: {log.read_text(errors='replace')}")
         try:
-            _json_request("GET", url)
-            return
+            return _json_request("GET", url)
         except Exception as exc:  # noqa: BLE001
             last_error = exc
             time.sleep(0.05)
@@ -455,6 +496,17 @@ def _assert_server_observed_lane_frames(snapshot: dict[str, Any]) -> int:
     return observed_samples
 
 
+def _assert_production_server_runtime(runtime: dict[str, Any]) -> None:
+    assert {"ffmpeg", "model", "inference", "live"}.issubset(runtime)
+    live = runtime["live"]
+    assert live["enabled"] is True
+    descriptor = live["descriptor"]
+    assert descriptor["schema_version"] == 1
+    assert descriptor["source_revision"] == "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+    assert descriptor["provider_name"] == "api-fake"
+    assert descriptor["live_protocol_version"] == "moss-live-service.v1"
+
+
 def _json_request(method: str, url: str, *, bearer_token: str | None = None) -> dict[str, Any]:
     request = urllib.request.Request(url, method=method)
     if bearer_token is not None:
@@ -473,25 +525,35 @@ def _start_app(
 ) -> subprocess.Popen[bytes]:
     if socket_path.exists():
         pytest.fail(f"refusing doubled app over existing socket: {socket_path}")
-    handle = log.open("ab")
-    app = subprocess.Popen(
-        [str(app_exe)],
-        cwd=ROOT,
-        env=env,
-        stdout=handle,
-        stderr=subprocess.STDOUT,
-        close_fds=True,
-    )
-    deadline = time.monotonic() + TIMEOUT
-    while time.monotonic() < deadline:
-        if app.poll() is not None:
-            pytest.fail(f"MOSSCaptureApp exited early with {app.returncode}: {log.read_text(errors='replace')}")
-        if socket_path.exists():
-            mode = stat.S_IMODE(socket_path.stat().st_mode)
-            assert mode == 0o600
-            return app
-        time.sleep(0.05)
-    pytest.fail(f"MOSSCaptureApp did not bind UDS: {log.read_text(errors='replace')}")
+    app = None
+    try:
+        with log.open("ab") as handle:
+            app = subprocess.Popen(
+                [str(app_exe)],
+                cwd=ROOT,
+                env=env,
+                stdout=handle,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+            )
+        deadline = time.monotonic() + TIMEOUT
+        while time.monotonic() < deadline:
+            if app.poll() is not None:
+                pytest.fail(
+                    f"MOSSCaptureApp exited early with {app.returncode}: "
+                    f"{log.read_text(errors='replace')}"
+                )
+            if socket_path.exists():
+                mode = stat.S_IMODE(socket_path.stat().st_mode)
+                assert mode == 0o600
+                return app
+            time.sleep(0.05)
+        pytest.fail(f"MOSSCaptureApp did not bind UDS: {log.read_text(errors='replace')}")
+    except BaseException:
+        if app is not None:
+            _terminate(app)
+        _remove_socket(socket_path)
+        raise
 
 
 def _run_cli(
@@ -523,7 +585,106 @@ def _read_store(path: Path) -> dict[str, str]:
 
 
 def _assert_secret_absent(output: bytes, secret: str) -> None:
+    assert secret
     assert secret.encode("utf-8") not in output
+    try:
+        decoded = json.loads(output)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return
+    assert all(value != secret for value in _json_strings(decoded))
+
+
+def _json_strings(value: Any):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            yield from _json_strings(key)
+            yield from _json_strings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _json_strings(item)
+
+
+def _assert_bundled_product_identity(
+    executable: Path,
+    *,
+    built_product: Path,
+    expected_bundle: Path,
+) -> None:
+    assert executable.resolve().is_relative_to(expected_bundle.resolve())
+    assert _macho_uuid(executable) == _macho_uuid(built_product)
+    verified = subprocess.run(
+        ["codesign", "--verify", "--strict", str(expected_bundle)],
+        cwd=ROOT,
+        capture_output=True,
+        timeout=TIMEOUT,
+    )
+    assert verified.returncode == 0, verified.stderr.decode("utf-8", errors="replace")
+
+
+def _macho_uuid(executable: Path) -> str:
+    completed = subprocess.run(
+        ["dwarfdump", "--uuid", str(executable)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=TIMEOUT,
+    )
+    assert completed.returncode == 0, completed.stderr
+    fields = completed.stdout.split()
+    assert len(fields) >= 2 and fields[0] == "UUID:", completed.stdout
+    return fields[1]
+
+
+def _assert_uds_product_server_identity(
+    socket_path: Path,
+    *,
+    expected_pid: int,
+    control_secret: str,
+) -> bytes:
+    request_body = json.dumps(
+        {"secret": control_secret, "request": {"command": "status"}},
+        separators=(",", ":"),
+    ).encode("utf-8")
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+        client.settimeout(2.0)
+        client.connect(str(socket_path))
+        peer_pid = struct.unpack("i", client.getsockopt(0, 0x002, 4))[0]
+        assert peer_pid == expected_pid
+        client.sendall(struct.pack(">I", len(request_body)) + request_body)
+        length = struct.unpack(">I", _recv_exact(client, 4))[0]
+        assert 0 < length <= 65_536
+        response_body = _recv_exact(client, length)
+    response = json.loads(response_body.decode("utf-8"))
+    assert response["ok"] is True
+    assert response["running"] is False
+    _assert_secret_absent(response_body, control_secret)
+    return response_body
+
+
+def _recv_exact(stream: socket.socket, count: int) -> bytes:
+    chunks = bytearray()
+    while len(chunks) < count:
+        chunk = stream.recv(count - len(chunks))
+        assert chunk
+        chunks.extend(chunk)
+    return bytes(chunks)
+
+
+def _write_secret_clean_artifact(
+    name: str,
+    payload: bytes,
+    *,
+    secrets: tuple[str, ...],
+) -> None:
+    for secret in secrets:
+        _assert_secret_absent(payload, secret)
+    artifact_dir = Path(
+        os.environ.get("MOSS_TRACER_ARTIFACTS", str(ROOT / ".tracer-artifacts"))
+    )
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    (artifact_dir / name).write_bytes(payload)
 
 
 def _terminate(process: subprocess.Popen[bytes]) -> None:

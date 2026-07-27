@@ -1542,6 +1542,7 @@ final class CaptureControllerTests: XCTestCase {
         let invalidCases: [(String, CaptureSecurityError)] = [
             ("", .missingPairingPayload),
             ("secret.\(String(repeating: "a", count: 64))", .invalidPairingPayload),
+            ("mtd1.secret", .invalidPairingPayload),
             ("mtd1..\(String(repeating: "a", count: 64))", .invalidPairingPayload),
             ("mtd1.secret.\(String(repeating: "a", count: 64)).extra", .invalidPairingPayload),
             ("mtd1.secret.\(String(repeating: "a", count: 63))", .invalidPinnedHash),
@@ -2025,6 +2026,50 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(mutationCount, 0)
     }
 
+    func testControlServerSanitizesUnknownErrorInActualResponseArtifact() throws {
+        let socketPath = temporarySocketPath()
+        let artifact = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-control-response-\(UUID().uuidString).bin")
+        let secret = "raw-error-secret-\(UUID().uuidString)"
+        defer {
+            try? FileManager.default.removeItem(at: artifact)
+        }
+        let serverFinished = expectation(description: "server sanitized one error")
+        let serverError = TestErrorBox()
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(
+                secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+            )
+        ) { _ in
+            throw SecretBearingControlError(secret: secret)
+        }
+
+        DispatchQueue.global().async {
+            do {
+                try server.serveOnce()
+            } catch {
+                serverError.store(error)
+            }
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let responseBody = try sendRawControlPayloadBody(
+            try rawControlFrame(command: "status"),
+            socketPath: socketPath
+        )
+        try responseBody.write(to: artifact, options: .atomic)
+        let response = try JSONDecoder().decode(ControlChannelResponse.self, from: responseBody)
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertNil(serverError.load())
+        XCTAssertFalse(response.ok)
+        XCTAssertEqual(response.error, "control_failed")
+        XCTAssertNil(responseBody.range(of: Data(secret.utf8)))
+        XCTAssertEqual(try Data(contentsOf: artifact), responseBody)
+    }
+
     func testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation() throws {
         struct BadFrameCase {
             var name: String
@@ -2467,6 +2512,19 @@ final class CaptureControllerTests: XCTestCase {
         socketPath: String,
         halfCloseWrite: Bool = false
     ) throws -> ControlChannelResponse {
+        let body = try sendRawControlPayloadBody(
+            payload,
+            socketPath: socketPath,
+            halfCloseWrite: halfCloseWrite
+        )
+        return try JSONDecoder().decode(ControlChannelResponse.self, from: body)
+    }
+
+    private func sendRawControlPayloadBody(
+        _ payload: Data,
+        socketPath: String,
+        halfCloseWrite: Bool = false
+    ) throws -> Data {
         let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
         XCTAssertGreaterThanOrEqual(fileDescriptor, 0)
         defer { close(fileDescriptor) }
@@ -2476,8 +2534,7 @@ final class CaptureControllerTests: XCTestCase {
         if halfCloseWrite {
             shutdown(fileDescriptor, SHUT_WR)
         }
-        let body = try readRawFrame(from: fileDescriptor)
-        return try JSONDecoder().decode(ControlChannelResponse.self, from: body)
+        return try readRawFrame(from: fileDescriptor)
     }
 
     private func connectRawSocket(_ fileDescriptor: Int32, socketPath: String) throws {
@@ -2965,6 +3022,14 @@ private final class TestErrorBox: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return error
+    }
+}
+
+private struct SecretBearingControlError: Error, CustomStringConvertible {
+    let secret: String
+
+    var description: String {
+        secret
     }
 }
 

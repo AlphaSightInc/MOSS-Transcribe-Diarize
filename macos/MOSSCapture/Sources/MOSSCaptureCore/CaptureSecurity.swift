@@ -1050,6 +1050,8 @@ private func sanitizedControlError(_ error: Error) -> String {
         return String(describing: controllerError)
     case let transportError as CaptureHTTPTransportError:
         return String(describing: transportError)
+    case let nativeError as NativeCaptureError:
+        return String(describing: nativeError)
     default:
         return "control_failed"
     }
