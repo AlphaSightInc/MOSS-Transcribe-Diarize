@@ -30,3 +30,24 @@ designated requirement stable across rebuilds); the login keychain is locked to 
 neither the existing `LiveTranscribe Local Dev` identity nor the Keychain secret store can be used
 non-interactively. The only irreducible human step is two TCC clicks on m4mbp — park and report
 there. This loop is the single writer on this repo; the governed aisight-coding-loop stays halted.
+
+## Prelaunch audit - phase and launcher repair
+- Target: independent implementation/launch-readiness audit before iteration 1
+- Files: `scripts/ralph-afk/*`
+- Validation: read-only server probe -> 4070Ti repo `main@163e969`, origin equal, vLLM/web active;
+  raw preflight -> failed because bare `python3` was 3.9.6; pyenv 3.12 dry-run -> passed
+- Learned: prior W1 mixed IDEA-044's Keychain-default/13-path gate with later
+  File-default/outbox/resampler work, making the advertised 16/16 final gate impossible; preserve
+  the historical green checkpoint, then supersede it explicitly and merge once
+- Next: commit/review this bundle, require a clean `ralph/live-meeting-mvp` launch, then start A1
+
+## Prelaunch final cross-artifact audit - revision 4
+- Target: exact plan/Ralph agreement and safe completion/resume semantics
+- Files: revision-4 plan; `scripts/ralph-afk/*`
+- Validation: shell syntax/diff checks/preflight/locality/Claude+Codex dry-runs -> PASS;
+  merge-keeper dry-run -> PASS; dirty launch -> refused; product baseline remains Python
+  454 passed/2 skipped/346 subtests and Swift 67 passed
+- Learned: all tracked deploy/install artifacts must land before the sole merge; the primary
+  loop must stay on the feature branch so post-merge evidence/finish commits cannot change the
+  deployed main SHA; blocked TCC is distinct from complete; >15 minutes needs a real 16-minute soak
+- Next: review and commit all control-plane/Ralph changes, then launch clean from the feature branch

@@ -10,29 +10,37 @@
 >
 > The authoritative plan, with measured evidence and the committed design decisions D1-D13, is
 > `/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/docs/live-capture-gap-and-execution-plan-20260727.md`
-> (revision 3). Read it before the first change of any work item. This PRD is the acceptance
-> contract; that document is the design rationale.
+> (current controlling revision). Read it before the first change of any work item. This PRD is
+> the acceptance contract; that document is the design rationale.
 
 ## Acceptance bar
 
 The loop is complete only when every point below holds, with evidence (commands run, artifacts
 inspected, before/after deltas) recorded in progress.txt:
 
-- **W1 keeper merged to `main`:** the *built* `MOSSCaptureApp` and *built* `mtd-capture` complete
-  the real two-step pairing (`/api/live/pairing-codes` → `/api/live/pairings` →
-  `/api/live/sessions`) against a real TLS server over real same-user UDS, with full-certificate
-  pinning; the **app** (never the CLI) reads view authority and writes the pasteboard; microphone
-  and system-audio permissions have explicit per-lane request → pending → granted-or-denied
-  transitions; a denied lane emits a typed lane failure rather than staying absent; frames are
-  retained until acknowledged; lanes are converted to 16 kHz mono on the Mac. Verified by: Swift
-  suite green, full Python suite green, the darwin real-process tracer passing with zero skips,
-  and the new-scope discriminator red before / green after.
-- **W2 keeper merged to `main`:** view authority is bound to the session lifecycle (active +
-  2 h finalization grace + 12 h absolute cap + immediate revoke) and a 900-second fixed expiry is
-  unreachable; a failed or ambiguous frame send cannot silently lose accepted audio. Verified by
-  deterministic tests covering virtual 60-minute duration, cap boundary, grace boundary,
-  revoke-on-abort, 5-second outage, ambiguous-success retry, duplicate retry, 429, and outbox
-  overflow surfacing a typed degraded state.
+- **IDEA-044 compatibility checkpoint recorded before production supersession:** the accepted
+  A-034 pairing/pinning/tracer mechanics plus app-owned handoff and explicit permission
+  transitions reach the registered **10/10 and 16/16** controls and all eleven historical
+  commands while changes remain inside the registered thirteen product/doc paths. Record that
+  green commit in progress.txt; do not merge or push it yet.
+- **Production client gate green:** the *built* `MOSSCaptureApp` and *built* `mtd-capture`
+  complete real two-step pairing (`/api/live/pairing-codes` → `/api/live/pairings` →
+  `/api/live/sessions`) against a real TLS server over real same-user UDS, with
+  full-certificate pinning; the **app** (never the CLI) reads view authority and writes the
+  pasteboard; microphone and system-audio permissions have explicit per-lane request → pending
+  → granted-or-denied transitions; a denied lane emits a typed lane failure rather than staying
+  absent; frames remain queued until acknowledged; and both lanes leave the Mac as 16 kHz mono.
+  Swift and Python suites are green and the Darwin real-process tracer passes with zero skips.
+- **Server meeting-reliability gate green:** view authority is bound to the session lifecycle
+  (active session only + 12 h absolute cap + immediate terminal/device/operator revoke) and a
+  900-second fixed expiry is unreachable. Deterministic tests cover virtual 60-minute duration,
+  exact cap and terminal/revocation boundaries, 5-second outage, ambiguous-success retry,
+  duplicate retry, 429, and outbox overflow surfacing a typed degraded state.
+- **One reviewed keeper merge:** only after all three gates above, merge
+  `ralph/live-meeting-mvp` once into `main`, run the full post-merge suite, and record both the
+  feature tip and merge SHA. All tracked deployment templates, manifest/TLS/pairing tools,
+  Windows networking changes, Mac packaging/install scripts, and docs must be reviewed before
+  this merge. No intermediate merge and no tracked product work directly on `main`.
 - **One exact SHA everywhere:** `git rev-parse HEAD` is identical for local `main`,
   `origin/main`, the server checkout at `/mnt/d/Coding/MOSS-Transcribe-Diarize`, and the m4mbp
   checkout; the value is recorded in progress.txt.
@@ -51,8 +59,10 @@ inspected, before/after deltas) recorded in progress.txt:
 - **300-second locked certification passes:** simultaneous lanes, silence/mute, a 5-second
   network interruption, ambiguous retry, duplicate retry, two speakers, clean stop/drain — plus a
   separate mic-granted / system-audio-denied run that still produces transcript. Committed
-  p95 ≤ 6 s; decoder p95 RTF < 1; zero accepted-audio loss; viewer still authorized past 15
-  minutes and through the grace window; outbox and memory bounded.
+  p95 ≤ 6 s; decoder p95 RTF < 1; zero accepted-audio loss; outbox and memory bounded.
+- **16-minute active-view soak passes:** capture remains active with periodic accepted audio and
+  `/live` polling; the same view authority works after minute 15, then clean stop immediately
+  revokes it.
 - **Secret hygiene proven:** no bearer token, device token, view token, or pairing payload
   appears in any CLI output, log, URL, telemetry file, or browser storage; no raw audio is
   persisted.
@@ -68,7 +78,8 @@ Non-negotiable, in addition to the rules in prompt.md:
   16000 Hz; lanes exactly `system` and `microphone`; live frame size 8000 samples (0.5 s); pump
   interval 0.5 s; `hard_cap_samples` 40000 (2.5 s); `min_silence_samples` 8000 (0.5 s);
   `max_retained_samples` 960000 (60 s); client outbox 15 s per lane; helper lease 30 s; view
-  grace 2 h; view absolute cap 12 h; batch port 7860 plaintext; live port 7861 TLS; bundle id
+  authority active-session-only; view absolute cap 12 h; batch port 7860 plaintext; live port
+  7861 TLS; bundle id
   `com.alphasight.moss.capture`; app path `/Applications/MOSSCapture.app`.
 - **One writer.** This loop is the only autonomous writer on this repo. The governed
   `aisight-coding-loop` control plane must stay halted — its `.stop-after-current-role` sentinel
@@ -87,7 +98,15 @@ Non-negotiable, in addition to the rules in prompt.md:
   progress.txt as a blocker and move to another candidate — never retry, never attempt to write
   the TCC database.
 - **Deploy only a reviewed SHA.** Push and deploy only after the relevant work item's gate is
-  green. Never deploy from a feature branch, never force-push.
+  green and the one keeper merge is complete. Never deploy from a feature branch, never
+  force-push.
+- **Preserve the historical IDEA-044 checkpoint without making it the final production
+  contract.** The registered eleven-command gate requires Keychain to remain the default and
+  restricts product changes to thirteen paths. Run and record that gate before changing the
+  production secret-store default, outbox, pacing, resampling, server authority, or ops. Those
+  later authorized changes deliberately supersede the lab-only source/locality expectations;
+  they require their own behavioral tests and full-suite gate. Never weaken or rewrite the
+  historical controls to manufacture a green result.
 - **Reversibility.** Every server or Mac mutation must have its rollback command recorded in
   progress.txt before it is applied.
 - **Out of scope** (see plan D12): the RTX 4090, durable transcript persistence and export,
@@ -98,8 +117,8 @@ Non-negotiable, in addition to the rules in prompt.md:
 ## Budget and stop
 
 - The launcher argument sets the iteration budget; one logical change per iteration.
-- Stop early only via the completion contract: acceptance bar met with evidence, or every
-  remaining item blocked on input the loop cannot obtain (in practice: the TCC clicks), recorded
-  in progress.txt.
+- `<promise>COMPLETE</promise>` is permitted only after the full acceptance bar is met.
+- If every remaining item depends on input the loop cannot obtain (normally physical TCC clicks),
+  record the exact blocker and emit `<promise>BLOCKED</promise>` instead. Blocked is not complete.
 - A blocker ends the iteration, not the loop: record it, commit anything useful, and let the next
   iteration attack it or route around it.

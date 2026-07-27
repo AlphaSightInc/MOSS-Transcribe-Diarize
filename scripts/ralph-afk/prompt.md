@@ -41,6 +41,10 @@ Then perform exactly one iteration:
 Rules:
 
 - One logical change per iteration; no drive-by edits to unrelated systems.
+- Respect the phase gates in context.md. Do not start production-reliability
+  work until the IDEA-044 compatibility checkpoint is recorded green. Do not
+  checkout, merge, push, deploy, restart a service, install an app, or mutate a
+  remote host unless the selected candidate explicitly authorizes that action.
 - Generalize. Never hard-code instance-specific values — identifiers, proper
   names, labels, thresholds, or locale/language-specific strings — into
   general logic. Implement the general rule that makes the instance behave,

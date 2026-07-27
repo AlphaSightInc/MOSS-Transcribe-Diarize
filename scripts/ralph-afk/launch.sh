@@ -16,13 +16,35 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# The host login shell currently resolves /usr/bin/python3 (3.9), while this
+# repository's validated environment is pyenv Python 3.12. Resolve it
+# deliberately so the launcher, preflight, engine, and iteration agents all
+# see the same interpreter.
+if [[ -n "${RALPH_PYTHON:-}" ]]; then
+  ralph_python="$RALPH_PYTHON"
+elif command -v pyenv >/dev/null 2>&1; then
+  ralph_python="$(pyenv which python3)"
+else
+  ralph_python="$(command -v python3)"
+fi
+"$ralph_python" - <<'PY'
+import sys
+assert sys.version_info[:2] == (3, 12), (
+    f"Ralph requires Python 3.12, got {sys.version.split()[0]}"
+)
+PY
+export PATH="$(cd "$(dirname "$ralph_python")" && pwd):$PATH"
+export RALPH_PYTHON="$ralph_python"
+
 # Opus, not the engine default: this loop writes Swift + Python + ops changes and
 # reasons about a multi-host deployment contract.
 export RALPH_MODEL="${RALPH_MODEL:-opus}"
 
-# Local toolchain sanity only; host reachability is probed per candidate so a
-# transient tailnet blip cannot flip the loop's preflight signal.
+# Local deterministic gates are required. Host reachability is still probed per
+# candidate so a transient tailnet blip cannot flip the loop's preflight signal.
 export RALPH_PREFLIGHT_CMD="${RALPH_PREFLIGHT_CMD:-$here/preflight.sh}"
-export RALPH_PREFLIGHT_REQUIRED="${RALPH_PREFLIGHT_REQUIRED:-0}"
+export RALPH_PREFLIGHT_REQUIRED="${RALPH_PREFLIGHT_REQUIRED:-1}"
+export RALPH_EXPECTED_BRANCH="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
+export RALPH_REQUIRED_ANCESTOR="${RALPH_REQUIRED_ANCESTOR:-af3ac3667393a0411616f52f76339eff01dc13e2}"
 
 exec "$here/ralph-afk.sh" "${1:-30}"

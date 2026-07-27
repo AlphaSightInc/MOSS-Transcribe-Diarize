@@ -32,12 +32,15 @@
 #   RALPH_PREFLIGHT_CMD='curl ...'       # run before each iteration; status injected into prompt
 #   RALPH_PREFLIGHT_REQUIRED=0           # 1 = stop the loop when preflight fails
 #   RALPH_ALLOW_PLACEHOLDERS=0           # 1 = template smoke tests only
+#   RALPH_ALLOW_DIRTY=0                  # 1 = explicitly permit a dirty launch
+#   RALPH_EXPECTED_BRANCH=name           # optional launch-time branch fence
+#   RALPH_REQUIRED_ANCESTOR=sha          # optional launch-time ancestry fence
 #
 # Stop controls:
 #   touch <this dir>/.stop               # graceful stop after the current iteration
 #   INT/TERM to the launcher             # same
 #
-# Exit codes: 0 complete/stopped/budget, 1 error, 2 no-progress cutoff.
+# Exit codes: 0 complete/stopped, 1 error, 2 blocked/stalled/incomplete budget.
 
 set -uo pipefail
 
@@ -76,7 +79,11 @@ MAX_STALLS="${RALPH_MAX_STALLS:-3}"
 FAIL_BACKOFF="${RALPH_FAIL_BACKOFF_SECONDS:-30}"
 PREFLIGHT_CMD="${RALPH_PREFLIGHT_CMD:-}"
 PREFLIGHT_REQUIRED="${RALPH_PREFLIGHT_REQUIRED:-0}"
+ALLOW_DIRTY="${RALPH_ALLOW_DIRTY:-0}"
+EXPECTED_BRANCH="${RALPH_EXPECTED_BRANCH:-}"
+REQUIRED_ANCESTOR="${RALPH_REQUIRED_ANCESTOR:-}"
 COMPLETE_TOKEN='<promise>COMPLETE</promise>'
+BLOCKED_TOKEN='<promise>BLOCKED</promise>'
 PROGRESS_PATH="$REL_DIR/progress.txt"
 
 [[ "$SLEEP_SECONDS" =~ ^[0-9]+([.][0-9]+)?$ ]] || fail "RALPH_SLEEP_SECONDS must be a non-negative number"
@@ -85,6 +92,7 @@ PROGRESS_PATH="$REL_DIR/progress.txt"
 [[ "$PREFLIGHT_REQUIRED" =~ ^[01]$ ]] || fail "RALPH_PREFLIGHT_REQUIRED must be 0 or 1"
 [[ "${RALPH_DRY_RUN:-0}" =~ ^[01]$ ]] || fail "RALPH_DRY_RUN must be 0 or 1"
 [[ "${RALPH_ALLOW_PLACEHOLDERS:-0}" =~ ^[01]$ ]] || fail "RALPH_ALLOW_PLACEHOLDERS must be 0 or 1"
+[[ "$ALLOW_DIRTY" =~ ^[01]$ ]] || fail "RALPH_ALLOW_DIRTY must be 0 or 1"
 
 for f in "$PROMPT_FILE" "$PRD_FILE" "$CONTEXT_FILE"; do
   [[ -f "$f" ]] || fail "missing $f"
@@ -218,11 +226,15 @@ build_prompt() {
     echo
     printf '%s\n' "$body"
     echo
-    echo "Completion contract: only if the acceptance bar in $REL_DIR/prd.md is met with evidence recorded in $REL_DIR/progress.txt, or every remaining item is blocked on input the loop cannot obtain and that is recorded there, end your reply with this exact line on its own:"
+    echo "Completion contract: only if the full acceptance bar in $REL_DIR/prd.md is met with evidence recorded in $REL_DIR/progress.txt, end your reply with this exact line on its own:"
     echo
     echo "$COMPLETE_TOKEN"
     echo
-    echo "Otherwise do not output that token anywhere."
+    echo "If every remaining item is blocked on specific input the loop cannot obtain, record the blocker in $REL_DIR/progress.txt and end with this exact line instead:"
+    echo
+    echo "$BLOCKED_TOKEN"
+    echo
+    echo "Otherwise do not output either token anywhere."
   }
 }
 
@@ -314,6 +326,18 @@ PY
 # --- launch -------------------------------------------------------------------
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+if [[ -n "$EXPECTED_BRANCH" && "$BRANCH" != "$EXPECTED_BRANCH" ]]; then
+  fail "expected launch branch $EXPECTED_BRANCH, got $BRANCH"
+fi
+if [[ -n "$REQUIRED_ANCESTOR" ]]; then
+  git cat-file -e "$REQUIRED_ANCESTOR^{commit}" 2>/dev/null \
+    || fail "required ancestor is not a commit: $REQUIRED_ANCESTOR"
+  git merge-base --is-ancestor "$REQUIRED_ANCESTOR" HEAD \
+    || fail "HEAD does not descend from required ancestor $REQUIRED_ANCESTOR"
+fi
+if [[ "$ALLOW_DIRTY" != "1" && -n "$(git status --porcelain 2>/dev/null | head -n 1)" ]]; then
+  fail "working tree is dirty; commit/review it before launch (RALPH_ALLOW_DIRTY=1 only for an intentional recovery)"
+fi
 
 echo "Ralph AFK loop"
 echo "  repo      : $REPO_ROOT ($BRANCH)"
@@ -420,6 +444,9 @@ for ((i = 1; i <= ITERATIONS; i++)); do
   if grep -qE '^[[:space:]]*<promise>COMPLETE</promise>[[:space:]]*$' "$ITER_RESULT" 2>/dev/null; then
     finish 0 "complete at iteration $i"
   fi
+  if grep -qE '^[[:space:]]*<promise>BLOCKED</promise>[[:space:]]*$' "$ITER_RESULT" 2>/dev/null; then
+    finish 2 "blocked at iteration $i"
+  fi
 
   # Transient agent failures (rate limits, network blips) must not kill an
   # unattended run: failures are surfaced, backed off, and counted toward the
@@ -456,4 +483,4 @@ done
 if (( AGENT_STATUS != 0 )); then
   finish 1 "budget exhausted after $ITERATIONS iterations with unresolved agent failure (last agent exit: $AGENT_STATUS)"
 fi
-finish 0 "budget exhausted after $ITERATIONS iterations"
+finish 2 "budget exhausted after $ITERATIONS iterations without completion"

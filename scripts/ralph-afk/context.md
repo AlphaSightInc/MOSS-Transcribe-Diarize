@@ -3,15 +3,17 @@
 ## Ground
 
 - Repo: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` — branch
-  `ralph/live-meeting-mvp` (cut from `main af3ac36`). Merge to `main` only at the W1 and W2 gates.
+  `ralph/live-meeting-mvp` (cut from `main af3ac36`). Keep all client and server implementation
+  on this branch; merge **once** only after Phase A, production-client, server-reliability, and
+  tracked deployment/install-artifact gates are all green.
 - Orchestrator host: MacStudio. `python3` = pyenv 3.12.10 (pytest 9.0.2); `swift` 6.3.2.
   Do **not** use `/usr/bin/python3` (3.9.6).
 - Read before editing:
   - `/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/docs/live-capture-gap-and-execution-plan-20260727.md`
-    — revision 3, the design rationale and decisions D1-D13. Authoritative.
+    — current controlling revision, the design rationale and decisions D1-D13. Authoritative.
   - `CONTEXT.md` (repo glossary — lane, mixer, v2 contract, portal, helper terms)
   - `docs/adr/0001-live-v2-json-http-contract.md`
-  - `LOCAL_DEPLOYMENT.md` (server layout; W3 updates it)
+  - `LOCAL_DEPLOYMENT.md` (server layout; Phase C updates it)
 - **Ignore `scripts/aisight-coding-loop/`** — an inert older loop bundle with identically named
   `prd.md`/`context.md`/`prompt.md`/`progress.txt`. This loop lives only in `scripts/ralph-afk/`.
 - Key code paths:
@@ -32,11 +34,13 @@ Measured 2026-07-27 from MacStudio against the live hosts. Anchors are file:line
 unless stated.
 
 **Feasibility — settled, do not re-litigate.**
-- Decode is nearly free: 7.5 s span → **0.233 s** median on the running 4070Ti engine
-  (RTF 0.031); 5 s → 0.137 s; 2.5 s → 0.162 s. Output already carries `[t][S01]` speaker labels.
+- Warm 12-run decode p95: 7.5 s span → **0.241 s**; 2.5 s → **0.162 s**. One pre-warm
+  2.5 s request took 3.851 s, so certification must warm the resident engine before timing.
+  Output already carries `[t][S01]` speaker labels.
 - Live decode reuses the **already-resident** vLLM engine (`web_cli.py:87-98`) → **no extra
-  VRAM**. GPU free 1360 MiB of 16376 is not a blocker.
-- m4mbp → server tailnet: HTTP 200, connect 20 ms, ping avg **27 ms** (max 49, stddev 15.6).
+  VRAM**. GPU free 1328 MiB of 16376 after the probe is not a blocker.
+- Latest m4mbp → 4070Ti tailnet probe: ping avg **72 ms**, max **146 ms**. Treat callback cadence
+  and tailnet latency as variable; no fixed request-rate assumption is valid.
 - Uplink: 48 kHz lanes = 2.05 Mbit/s of base64 JSON; 16 kHz lanes = 0.68 Mbit/s.
 
 **Confirmed defects.**
@@ -52,8 +56,10 @@ unless stated.
    remaining drained frames on a throw (`CaptureController.swift:242-247`).
 4. Viewer expiry — `VIEW_TTL_SECONDS = 900` fixed at `bind_session`, no renewal. Reproduced:
    authorized at t=899, rejected at t=3600.
-5. Sequential blocking POSTs — `URLSessionCaptureHTTPClient.send` blocks on a semaphore and
-   `publishPendingFrames` iterates serially; 8 POSTs per 250 ms pump ≈ 240-720 ms at measured RTT.
+5. Unbounded callback-shaped blocking POSTs — native queue emission follows Core Audio callback
+   sizes rather than fixed 0.5 s frames; `URLSessionCaptureHTTPClient.send` blocks on a semaphore
+   and `publishPendingFrames` iterates serially. Request rate therefore varies with device
+   callback cadence and can outrun the pump at the measured 72 ms average / 146 ms max RTT.
 6. Secret store broken — code requests access group `com.alphasight.moss.capture.shared`
    (`CaptureSecurity.swift:32,89-90`) but the entitlement declares
    `$(AppIdentifierPrefix)com.alphasight.moss.capture`; strings differ and a self-signed identity
@@ -106,12 +112,13 @@ python3 -m pytest tests/test_macos_uds_tracer.py -q
 python3 -m pytest -q
 
 # --- server (read-only probe) -------------------------------------------
-cat > /tmp/probe.sh <<'EOS'
-systemctl --user is-active moss-vllm.service moss-web.service
-cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git log --oneline -1
-nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv
-EOS
-ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s" < /tmp/probe.sh
+printf '%s\n' \
+  'set -e' \
+  'systemctl --user is-active moss-vllm.service moss-web.service' \
+  'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git log --oneline -1' \
+  'nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv' |
+  ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
+    "wsl.exe -d Ubuntu -- bash -s"
 
 # --- service reachability ------------------------------------------------
 curl -s -o /dev/null -w '%{http_code}\n' http://192.168.68.38:7860/                 # batch, must stay 200
@@ -122,95 +129,124 @@ curl -sk https://100.64.0.8:7861/api/live/descriptor | head -c 200
 ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOSSCapture.app; \
   codesign -dv /Applications/MOSSCapture.app 2>&1 | head -5; codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1'
 
-# --- manifest hashes: regenerate, never hand-edit -----------------------
-python3 - <<'PY'
-import json, sys
-from moss_transcribe_diarize.app.live_provider_bundle import (
-    LiveProviderBundleConfig, compute_live_provider_bundle_hashes)
-cfg = LiveProviderBundleConfig.from_manifest(sys.argv[1] if len(sys.argv)>1 else "manifest.json")
-print(json.dumps(compute_live_provider_bundle_hashes(cfg), indent=2, sort_keys=True))
-PY
+# --- host manifest finalization (tool arrives in Phase C) ----------------
+printf '%s\n' \
+  'set -euo pipefail' \
+  'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
+  'python3 ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000' |
+  ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
+    "wsl.exe -d Ubuntu -- bash -s"
 
-# --- gate merge (W1/W2 only, after the item's gate is green) -------------
-git checkout main && git merge --no-ff ralph/live-meeting-mvp && python3 -m pytest -q
+# --- Phase A compatibility checkpoint ------------------------------------
+# Run the exact eleven registered commands from:
+# /Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/context/VALIDATION_COMMANDS.md
+# section "IDEA-044 attempt-2 exact commands", then:
+bash scripts/ralph-afk/validate-phase-a-locality.sh
+
+# --- one keeper merge, primary worktree stays on the feature branch -------
+swift test --package-path macos/MOSSCapture
+python3 -m pytest tests -q -p no:cacheprovider
+test -z "$(git status --porcelain)"
+bash scripts/ralph-afk/merge-keeper.sh
 ```
 
 ## Candidates
 
-Ranked, highest leverage first. Mark outcomes inline (`[done <commit>]`, `[dead: <why>]`) and
-prune once recorded in progress.txt.
+Strictly ordered by phase. Mark outcomes inline (`[done <commit>]`, `[dead: <why>]`) and prune
+only after the durable result is in progress.txt.
 
-1. **W1a — graft A-034's accepted mechanics** onto `ralph/live-meeting-mvp`: two-step pairing +
-   session create, `PinnedCertificateURLSessionDelegate`, `FullCertificatePinValidator`,
-   `FileCaptureSecretStore` + `CaptureSecretStoreSelection`, restart-safe authority persistence,
-   and `tests/test_macos_uds_tracer.py`. Evidence: defects 1, 2, 6 above; A-034 diff is 10 files /
-   +2434 lines. Validate: `swift test`, `python3 -m pytest -q`, tracer green.
-2. **W1b — make `FileCaptureSecretStore` the production default** and remove the mismatched
-   keychain access group so it cannot fail silently. Evidence: defect 6; `-25308` measured.
-   Validate: app and CLI share one store in the tracer; no `kSecAttrAccessGroup` left in the
-   production path.
-3. **W1c — app-owned UDS `handoff`**: the app reads view authority and writes the pasteboard; the
-   CLI loses all access to the view token and pasteboard and relays only non-secret status.
-   Evidence: control-plane CTR-086 rejected A-034 for exactly this. Validate: a test proves the CLI
-   cannot obtain the view token; tracer exercises `handoff`.
-4. **W1d — explicit per-lane permission transitions**: `AVCaptureDevice.requestAccess(for:
-   .audio)` for the microphone plus a system-audio tap-start transition, generation-fenced, with
-   pending/granted/denied per lane, duplicate `start` idempotent, stop-during-prompt safe, late
-   callbacks harmless. **A denied lane must emit a typed lane failure** — a never-observed lane
-   stalls the mixer frontier forever. Validate: state/race tests including the denied-lane path.
-5. **W1e — retained-until-ACK outbox**, 15 s per lane keyed by `(lane, sequence)`, idempotent
-   retry on timeout/429/ambiguous, drop only on successful ack, typed degraded state on overflow.
-   Evidence: defect 3. Validate: tests for outage, ambiguous ack, duplicate retry, overflow.
-6. **W1f — transport pacing**: 0.5 s frames, 0.5 s pump, two lanes posted concurrently on a
-   keep-alive session. Evidence: defect 5, 27 ms RTT. Validate: a test asserting per-pump wall
-   time and that lane posts are concurrent.
-7. **W1g — 16 kHz mono conversion on the Mac** via `AVAudioConverter` for both lanes. Evidence:
-   defect 7; 3× uplink reduction; makes the mixer grid 1:1. Validate: emitted frames report
-   `sample_rate: 16000` and `sample_count` 8000; a conversion unit test.
-8. **W1 gate + merge** — full suites, tracer zero skips, discriminator red→green, then merge to
-   `main`.
-9. **W2a — session-lifecycle view authority**: active + 2 h grace + 12 h cap + immediate revoke on
-   abort/device-revocation/operator revoke, replacing the fixed 900 s. Evidence: defect 4.
-   Validate: tests at the cap boundary, grace boundary, revoke, and a virtual 60-minute run.
-10. **W2b — bounds retune** in the provider manifest: `hard_cap_samples` 40000,
-    `max_retained_samples` 960000, `frame_samples` 8000. Evidence: 7.5 s cap gives p95 ≈ 9.2 s and
-    fails the 6 s gate; 2.5 s gives ≈ 4.6 s. Validate: descriptor reflects the values; latency
-    recomputed in the canary.
-11. **W2 gate + merge** — deterministic reliability tests green, then merge to `main`.
-12. **W3a — publish**: push `main` (84 commits) to `origin`, then fetch and checkout the exact SHA
-    on the server. Validate: three-way `git rev-parse HEAD` equality.
-13. **W3b — final provider manifest** from the provisional one: real `source_revision`, retuned
-    bounds, hashes regenerated with `compute_live_provider_bundle_hashes`, assets keeping their
-    verified sha256. Validate: `LiveProviderBundleConfig.from_manifest(...).preflight()` clean on
-    the server.
-14. **W3c — reissue TLS** with `DNS:ga0-alienware-rtx4070ti.tailnet.aisight.us,
-    DNS:ga0-alienware-rtx4070ti.local, IP:100.64.0.8, IP:192.168.68.38`; record the new pin hash.
-    Validate: `openssl x509 -noout -ext subjectAltName -fingerprint -sha256`.
-15. **W3d — dedicated live service**: `ops/moss-live.env` + `ops/systemd/moss-live-web.service` on
-    port 7861 with its own runs dir, `MOSS_LIVE_ENABLED=1`, lease 30 s, auth state 0600; teach
-    `ops/start-web.sh` to honour port and runs-dir overrides. Evidence: `--live` turns the whole
-    port to HTTPS and would break plaintext 7860. Validate: 7861 → 200 and 7860 → 200 plaintext.
-16. **W3e — Windows forwarding for 7861**: extend `ops/configure-windows-network.ps1` (currently a
-    single scalar `$listenPort`) to portproxy and firewall both ports. Validate: from m4mbp,
-    `curl -sk https://100.64.0.8:7861/live`.
-17. **W3f — `ops/live-pair.sh`**: mint a pairing payload from server loopback, print it once with
-    the current pin hash, never to a log or file. Validate: run it, confirm no secret lands on disk.
-18. **W3g — update `LOCAL_DEPLOYMENT.md`**: addresses, the 7860/7861 split, rollback commands.
-19. **W4a — `macos/scripts/bootstrap-signing-identity.sh`**: idempotent self-signed codeSigning
-    identity in a dedicated keychain with a 0600 password file, `set-key-partition-list` for
-    codesign, reusing an existing cert so the designated requirement never changes. Validate:
-    `codesign` exit 0 and a stable DR across two builds — **not** `find-identity`.
-20. **W4b — `macos/scripts/build-app.sh`**: assemble `MOSSCapture.app` (Info.plist, entitlements),
-    sign `--options runtime`, verify bundle id / entitlements / DR, print the DR hash.
-21. **W4c — install**: add the AlphaSight fork as a remote on m4mbp, fast-forward to the exact SHA,
-    install the app to `/Applications/MOSSCapture.app` and the CLI to `/usr/local/bin/mtd-capture`.
-22. **W4d — TCC grants (human step)**: launch from the GUI, one `start`, then physical clicks for
-    Microphone and System Audio Recording. Record the exact click sequence as a blocker and move
-    on; never retry, never touch the TCC database.
-23. **W5a — 60-second canary** per prd.md acceptance bar.
-24. **W5b — 300-second locked certification**, including the 5-second interruption and the
-    mic-granted / system-audio-denied variant.
-25. **W5c — rehearse and record rollback**, then restore.
+### Phase A — preserve and close IDEA-044 before widening scope
+
+1. **A1 — graft A-034's accepted mechanics**: two-step pairing/session create,
+   `PinnedCertificateURLSessionDelegate`, `FullCertificatePinValidator`, restart-safe authority
+   persistence, environment-selected `FileCaptureSecretStore`, and
+   `tests/test_macos_uds_tracer.py`. Keep Keychain the unconditional production default in this
+   phase. Graft from `acl/IDEA-044--A-034@67a27b8`; do not rewrite.
+2. **A2 — app-owned UDS `handoff`**: app reads view authority and writes pasteboard; CLI sends one
+   authenticated UDS request and relays non-secret status only.
+3. **A3 — explicit per-lane permission coordinator**: microphone `requestAccess(.audio)`,
+   user-started system tap transition, generation-fenced pending/granted/denied, duplicate-start
+   idempotence, stop-during-prompt, late-callback rejection, and typed denied-lane failure.
+4. **A4 — compatibility checkpoint**: run the exact eleven registered IDEA-044 attempt-2
+   commands plus `bash scripts/ralph-afk/validate-phase-a-locality.sh`. Required: 10/10, 16/16,
+   zero Darwin skips, all other commands green. Commit and record the exact SHA. **Do not merge,
+   push, or begin Phase B until this is green.**
+
+### Phase B — production Mac reliability
+
+5. **B1 — production file secret store**: now make `FileCaptureSecretStore` the default at
+   `~/Library/Application Support/MOSSCapture/`; directory 0700, files 0600, atomic replacement,
+   app/CLI same path. Remove the mismatched access group from the dormant Keychain opt-in.
+   Replace the lab-default source assertions with behavioral permission/secrecy tests; do not
+   edit the historical control-plane discriminator.
+6. **B2 — retained-until-ACK outbox**: 15 s/lane keyed by `(lane, sequence)`; retry identical
+   frames on timeout/429/ambiguous result; release only after ACK; typed degraded state on
+   overflow. Test 5 s outage, ambiguous success, duplicate retry, 429, and overflow.
+7. **B3 — 16 kHz mono conversion/coalescing**: one stateful `AVAudioConverter` per lane,
+   callback work still copy/enqueue only, timestamps/sample counts preserved. Test 48 kHz and
+   44.1 kHz inputs, output rate 16000, exact steady 8000-sample frames, partial terminal flush,
+   duration conservation, and no callback-thread DSP.
+8. **B4 — bounded concurrent transport**: 0.5 s pump; persistent URLSession; at most one
+   in-flight POST per lane, lanes concurrent; no overlapping pump re-entry. Test bounded
+   in-flight work and wall time—never use a sleep-only timing assertion.
+9. **B5 — tracked Mac packaging/install tools**:
+   `macos/scripts/bootstrap-signing-identity.sh`, `build-app.sh`, and `install-app.sh`;
+   idempotent, scratch-path testable, no real keychain/app/install mutation during tests.
+10. **B6 — client gate**: both Swift products build; Swift suite and full Python suite green;
+   Darwin built-process tracer zero skips; retry/concurrency/conversion tests green; leak scan
+   clean. Record the exact SHA. The Phase-A source discriminators are historical evidence, not
+   final gates after the deliberate B1–B5 production changes.
+
+### Phase C — server meeting reliability, then one merge
+
+11. **C1 — session-lifecycle view authority**: active-session-only + 12 h cap + immediate revoke
+    on clean terminal, abort, device revocation, or operator revoke. Test virtual 60 minutes,
+    exact cap, every terminal/revocation boundary, and restart behavior. Keep tokens out of
+    URL/storage/logs; do not invent post-terminal grace without persistence.
+12. **C2 — bounds retune**: `hard_cap_samples=40000`,
+    `max_retained_samples=960000`, `frame_samples=8000`; generated bundle hashes, never hand
+    edited. Test descriptor/config admission and capacity headroom.
+13. **C3 — tracked deployment bundle**: manifest finalizer, TLS generator, live env/service
+    templates, start-web overrides, two-port Windows networking, loopback pairing helper, and
+    deployment docs. Test generation/default-off/secrecy/7860-preservation without host mutation.
+14. **C4 — final local gate and single keeper merge**: Swift/full Python/tracer/reliability
+    gates green on the feature tip; then run `scripts/ralph-afk/merge-keeper.sh`. It creates and
+    tests the one no-ff merge in a temporary `main` worktree while the primary Ralph worktree
+    remains on the feature branch. Record feature + merge SHAs. After this point, only Ralph
+    evidence files may change on the feature branch; no tracked product source may change.
+
+### Phase D — publish and enable the 4070Ti
+
+15. **D1 — publish reviewed `main`**: push the merge SHA to `origin`, then fetch/checkout that
+    exact SHA at `/mnt/d/Coding/MOSS-Transcribe-Diarize` on
+    `gyauo@ga0-alienware-rtx4070ti.local`. Record rollback before mutation; verify three-way SHA
+    equality.
+16. **D2 — host manifest/TLS**: run the reviewed finalizer and TLS generator; verify merge SHA,
+    generated hashes, four SANs, and fingerprint; rotate pin/pairing together.
+17. **D3 — install reviewed live service/networking**: create host-local env/auth state, install
+    reviewed 7861 unit, apply reviewed two-port forwarding/firewall, start only live service.
+18. **D4 — verify/pair**: 7861 TLS live + descriptor 200, 7860 plaintext batch 200, use reviewed
+    loopback helper once, verify no secret artifact. No tracked product/deployment edits after
+    merge; only Ralph evidence may advance on the feature branch.
+
+### Phase E — Mac install and human permission boundary
+
+19. **E1 — run reviewed signing tool**: create/reuse dedicated-keychain self-signed identity;
+    validate `codesign` and stable designated requirement, never `find-identity`.
+20. **E2 — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin; add
+    AlphaSight remote on m4mbp; fast-forward exact SHA; install app and CLI. Record rollback first.
+21. **E3 — TCC human step**: GUI launch and one `start`; report exact Microphone and System Audio
+    Recording clicks. Never touch TCC DB or retry autonomously. Continue only after operator
+    confirms both grants.
+
+### Phase F — certification and rollback
+
+22. **F1 — 60 s canary** per prd.md.
+23. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
+24. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
+    two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
+25. **F4 — rehearse/record rollback, restore service, and close** only when every PRD acceptance
+    item has evidence.
 
 ## Non-candidates
 
@@ -219,7 +255,7 @@ prune once recorded in progress.txt.
   two autonomous writers would interleave branches and promotions.
 - **Provisional/partial decode.** Measured decode makes span-cap tuning sufficient;
   `begin_provisional`/`publish_provisional` stay test-only.
-- **Server-side resampler rework.** Converting on the Mac (candidate 7) makes the mixer grid 1:1,
+- **Server-side resampler rework.** Phase-B conversion makes the mixer grid 1:1,
   so the linear-interpolation path stops mattering.
 - **Durable transcript persistence, export, speaker rename/merge, search, browser-initiated
   capture start, linking `/live` from the batch UI.** Post-MVP.
@@ -228,4 +264,4 @@ prune once recorded in progress.txt.
 - **Windows client / IDEA-041.** Deferred until the Mac path is certified.
 - **Intermittent-speaker identity calibration (CTR-043 / IDEA-027).** A pre-existing batch quality
   issue, not a live blocker.
-- **30-minute live soaks.** Certification is 60 s and 300 s only.
+- **30-minute live soaks.** Certification is 60 s, 300 s, and one 16-minute active-view soak.
