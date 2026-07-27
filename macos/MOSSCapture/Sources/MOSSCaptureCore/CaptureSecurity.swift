@@ -7,7 +7,8 @@ private enum CaptureSecretStoreAccount {
     static let controlSecret = "local-control-secret"
     static let captureBearer = "capture-bearer"
     static let certificatePin = "capture-certificate-pin"
-    static let deviceID = "capture-device-id"
+    static let deviceIDAccount = "capture-device-id"
+    static let deviceID = deviceIDAccount
     static let serverURL = "capture-server-url"
     static let sessionID = "capture-session-id"
     static let viewToken = "capture-view-token"
@@ -169,10 +170,12 @@ public enum CaptureSecretStoreSelection {
     public static let environmentKey = "MOSS_CAPTURE_SECRET_STORE_PATH"
 
     public static func makeDefault(
-        environment: [String: String] = ProcessInfo.processInfo.environment
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        environmentKey: String = environmentKey,
+        keychainDefault: @autoclosure () -> KeychainCaptureSecretStore = KeychainCaptureSecretStore()
     ) throws -> any CaptureSecretStoreAdapter {
         guard let path = environment[environmentKey], !path.isEmpty else {
-            return KeychainCaptureSecretStore()
+            return keychainDefault()
         }
         return try FileCaptureSecretStore(path: path)
     }

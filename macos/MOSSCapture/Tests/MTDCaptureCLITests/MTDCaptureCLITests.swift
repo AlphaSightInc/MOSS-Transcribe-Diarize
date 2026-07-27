@@ -268,12 +268,12 @@ final class MTDCaptureCLITests: XCTestCase {
             encoding: .utf8
         )
 
-        XCTAssertTrue(appMain.contains("CaptureSecretStoreSelection.makeDefault()"))
-        XCTAssertTrue(cliMain.contains("CaptureSecretStoreSelection.makeDefault()"))
+        XCTAssertTrue(appMain.contains("environmentKey: \"MOSS_CAPTURE_SECRET_STORE_PATH\""))
+        XCTAssertTrue(cliMain.contains("environmentKey: \"MOSS_CAPTURE_SECRET_STORE_PATH\""))
+        XCTAssertTrue(appMain.contains("keychainDefault: KeychainCaptureSecretStore()"))
+        XCTAssertTrue(cliMain.contains("keychainDefault: KeychainCaptureSecretStore()"))
         XCTAssertTrue(coreSecurity.contains("MOSS_CAPTURE_SECRET_STORE_PATH"))
-        XCTAssertTrue(coreSecurity.contains("return KeychainCaptureSecretStore()"))
-        XCTAssertFalse(appMain.contains("KeychainCaptureSecretStore()"))
-        XCTAssertFalse(cliMain.contains("KeychainCaptureSecretStore()"))
+        XCTAssertTrue(coreSecurity.contains("keychainDefault()"))
     }
 
     private func packageRoot() -> URL {
