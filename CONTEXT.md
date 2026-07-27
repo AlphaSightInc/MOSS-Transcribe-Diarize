@@ -194,3 +194,22 @@
   not native policy owners. Signing, notarization, TCC continuity, endpoint
   recovery, deployed device behavior, 60/300 evidence, canary, deployment, and
   live enablement remain Missing.
+- **Local portal/helper integration (IDEA-038)**: Test-only
+  `LocalIntegrationReplay` composes pairing, session create, independent
+  strict-v2 lane frames, helper heartbeat, authorized snapshot and events,
+  reconnect replay, typed one-lane failure, healthy-peer continuation,
+  stop/drain, and terminal final into one immutable report at the existing
+  authenticated JSON/HTTP interface. It executes the real built `mtd-capture`
+  binary resolved from the Swift package bin path rather than an assumed build
+  configuration. Portal timing constants are fixed and documented: the
+  5-second stop-drain deadline is the only value the portal sends in a stop
+  request body, while a 10-second poll request timeout and an independent
+  10-second control request timeout bound every browser fetch, each aborted on
+  its own controller. Rendered events share one finite cap of 200
+  enforced as three separately checked bounds — the rendered identity set,
+  `renderedEventOrder`, and the events DOM row count. Final means the terminal
+  snapshot or event, not durable portal history or artifacts. Local green proves
+  unsigned local coordination mechanics only: secure automated browser handoff,
+  signing, notarization, TCC, Keychain runtime, real permission/device/tap
+  behavior, real lease value, history/artifacts, deployment, 60/300 evidence,
+  Windows production, canary, and live enablement remain Missing.

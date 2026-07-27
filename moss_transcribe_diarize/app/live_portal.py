@@ -114,7 +114,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
   <div id="livePortal">
     <header>
       <h1>MOSS Live Portal</h1>
-      <span id="connectionState" class="status">disconnected</span>
+      <span id="connectionState" class="status" role="status" aria-live="polite">disconnected</span>
     </header>
     <main>
       <aside>
@@ -129,9 +129,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
         <div class="toolbar">
           <button id="stopButton" type="button" disabled>Stop</button>
           <button id="abortButton" class="warn" type="button" disabled>Abort</button>
-          <span id="serverState" class="status">disconnected</span>
+          <span id="serverState" class="status" role="status" aria-live="polite">disconnected</span>
         </div>
-        <div id="statusDetail" class="panel empty"></div>
+        <div id="statusDetail" class="panel empty" role="status" aria-live="polite"></div>
         <div id="transcript" class="panel empty"></div>
         <div id="events" class="panel empty"></div>
       </section>
@@ -145,7 +145,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
       const retryDelaysMs = [500, 1000, 2000, 5000];
       const pollDelayMs = 1000;
       const pollRequestTimeoutMs = 10000;
+      const controlRequestTimeoutMs = 10000;
       const stopDrainDeadlineSeconds = 5.0;
+      const maxRenderedEvents = 200;
       const endpoints = {
         snapshot: (sessionId, snapshotVersion) => `/api/live/sessions/${encodeURIComponent(sessionId)}/snapshot?since_version=${snapshotVersion}`,
         events: (sessionId, eventSequence) => `/api/live/sessions/${encodeURIComponent(sessionId)}/events?since_seq=${eventSequence}`,
@@ -178,6 +180,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         pollController: null,
         controlController: null,
         renderedEvents: new Set(),
+        renderedEventOrder: [],
       };
 
       function setText(node, value) {
@@ -238,6 +241,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.snapshotVersion = 0;
         state.eventSequence = 0;
         state.renderedEvents.clear();
+        state.renderedEventOrder = [];
         nodes.sessionId.value = "";
         nodes.viewToken.value = "";
       }
@@ -296,12 +300,12 @@ LIVE_PORTAL_HTML = """<!doctype html>
         return readJson(response);
       }
 
-      async function fetchPollJson(url, options, generation, controller) {
+      async function fetchTimedJson(url, options, generation, controller, timeoutMs) {
         let timedOut = false;
         const timeout = window.setTimeout(() => {
           timedOut = true;
           controller.abort();
-        }, pollRequestTimeoutMs);
+        }, timeoutMs);
         try {
           return await fetchJson(url, options, generation, controller.signal);
         } catch (error) {
@@ -314,11 +318,67 @@ LIVE_PORTAL_HTML = """<!doctype html>
         }
       }
 
+      async function fetchPollJson(url, options, generation, controller) {
+        return fetchTimedJson(url, options, generation, controller, pollRequestTimeoutMs);
+      }
+
+      async function fetchControlJson(url, options, generation, controller) {
+        return fetchTimedJson(url, options, generation, controller, controlRequestTimeoutMs);
+      }
+
       function line(label, value) {
         if (value === undefined || value === null || value === "") {
           return "";
         }
         return `${label}: ${value}`;
+      }
+
+      function laneLine(prefix, lane, payload) {
+        if (!payload || typeof payload !== "object") {
+          return "";
+        }
+        return [
+          `${prefix} ${lane}: ${payload.health || payload.state || "unknown"}`,
+          line("next", payload.next_sequence),
+          line("accepted", payload.accepted_samples),
+          line("accounted", payload.accounted_samples),
+          line("failed", payload.failed_samples),
+          line("retained", payload.retained_samples),
+          line("epoch", payload.current_device_epoch ?? payload.device_epoch),
+          line("dropped", payload.dropped_frames),
+          line("discontinuities", payload.discontinuities),
+          line("code", payload.failure_code),
+        ].filter(Boolean).join(" | ");
+      }
+
+      function helperLines(helper) {
+        if (!helper || typeof helper !== "object") {
+          return ["helper: missing"];
+        }
+        const lines = [
+          line("helper", helper.state),
+          line("helper sequence", helper.sequence),
+        ].filter(Boolean);
+        const lanes = helper.lanes || {};
+        for (const lane of Object.keys(lanes).sort()) {
+          lines.push(laneLine("helper", lane, lanes[lane]));
+        }
+        return lines;
+      }
+
+      function v2Lines(v2Session) {
+        if (!v2Session || typeof v2Session !== "object") {
+          return ["v2 status: missing"];
+        }
+        const lines = [
+          line("v2 status", v2Session.status),
+          line("v2 terminal reason", v2Session.terminal_reason),
+        ].filter(Boolean);
+        const lanes = v2Session.lanes || {};
+        for (const lane of Object.keys(lanes).sort()) {
+          lines.push(laneLine("v2", lane, lanes[lane]));
+        }
+        return lines;
       }
 
       function renderTranscript(snapshot) {
@@ -358,10 +418,34 @@ LIVE_PORTAL_HTML = """<!doctype html>
           line("failure kind", failure.kind),
           line("failure code", failure.code),
           line("failure detail", failure.detail),
+          ...helperLines(payload.helper_presence),
+          ...v2Lines(payload.v2_session),
         ].filter(Boolean);
         setText(nodes.statusDetail, details.join("\\n"));
         renderTranscript(snapshot);
         return session;
+      }
+
+      function renderedEventBounds() {
+        return {
+          cap: maxRenderedEvents,
+          identity: state.renderedEvents.size,
+          order: state.renderedEventOrder.length,
+          dom: nodes.events.children.length,
+        };
+      }
+
+      function retainRenderedEvent(row, sequence) {
+        nodes.events.appendChild(row);
+        state.renderedEvents.add(sequence);
+        state.renderedEventOrder.push(sequence);
+        while (state.renderedEventOrder.length > maxRenderedEvents) {
+          const removed = state.renderedEventOrder.shift();
+          state.renderedEvents.delete(removed);
+        }
+        while (nodes.events.children.length > maxRenderedEvents) {
+          nodes.events.removeChild(nodes.events.children[0]);
+        }
       }
 
       function renderEvents(payload) {
@@ -369,23 +453,31 @@ LIVE_PORTAL_HTML = """<!doctype html>
           throw new Error("malformed events response");
         }
         let highest = null;
-        const fragment = document.createDocumentFragment();
+        const rows = [];
+        const batchEvents = new Set();
         for (const event of payload.events) {
-          if (!Number.isInteger(event.seq) || state.renderedEvents.has(event.seq)) {
+          if (
+            !Number.isInteger(event.seq)
+            || event.seq <= state.eventSequence
+            || batchEvents.has(event.seq)
+            || state.renderedEvents.has(event.seq)
+          ) {
             continue;
           }
+          batchEvents.add(event.seq);
           const row = document.createElement("div");
           row.textContent = [
             line("seq", event.seq),
             line("kind", event.kind),
             line("snapshot", event.snapshot_version),
           ].filter(Boolean).join(" | ");
-          fragment.appendChild(row);
-          state.renderedEvents.add(event.seq);
+          rows.push({ row, sequence: event.seq });
           highest = highest === null ? event.seq : Math.max(highest, event.seq);
         }
-        if (fragment.childNodes.length) {
-          nodes.events.appendChild(fragment);
+        if (rows.length) {
+          for (const item of rows) {
+            retainRenderedEvent(item.row, item.sequence);
+          }
           nodes.events.classList.remove("empty");
         }
         return highest;
@@ -472,7 +564,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         const controller = new AbortController();
         state.controlController = controller;
         try {
-          const payload = await fetchJson(
+          const payload = await fetchControlJson(
             url,
             {
               method: "POST",
@@ -481,7 +573,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
               ),
             },
             generation,
-            controller.signal,
+            controller,
           );
           const session = renderSnapshot(payload);
           if (session) {
@@ -515,6 +607,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.snapshotVersion = 0;
         state.eventSequence = 0;
         state.renderedEvents.clear();
+        state.renderedEventOrder = [];
         setText(nodes.events, "");
         setText(nodes.transcript, "");
         setControls(state.connected);
@@ -532,7 +625,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
       nodes.abort.addEventListener("click", () => void control("abort"));
       window.addEventListener("pagehide", clearAuthority);
 
-      window.mossLivePortal = { endpoints };
+      window.mossLivePortal = { endpoints, renderedEventBounds };
     })();
   </script>
 </body>

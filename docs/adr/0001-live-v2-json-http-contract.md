@@ -143,6 +143,28 @@ and builds do not prove signing, notarization, TCC continuity, endpoint
 recovery, deployed device behavior, 60/300 evidence, canary, deployment, or live
 enablement; those remain Missing.
 
+IDEA-038 closes the local portal/helper integration loop without changing the
+v2 wire contract, the mono `live_service_replay.py` interface, or the portal
+endpoint inventory. One test-only `LocalIntegrationReplay` composes pairing,
+session create, independent strict-v2 lane frames, helper heartbeat, authorized
+snapshot and events, reconnect replay, typed one-lane failure, healthy-peer
+continuation, stop/drain, and terminal final into one immutable report at the
+existing authenticated JSON/HTTP interface, and it executes the real built
+`mtd-capture` binary resolved from the Swift package bin path rather than an
+assumed build configuration. Portal timing constants are fixed and documented:
+the 5-second stop-drain deadline is the only value the portal sends in a stop
+request body, while a 10-second poll request timeout and an independent
+10-second control request timeout bound every browser fetch on its own
+controller. Rendered events share one finite cap of 200 enforced as three
+separately checked bounds — the rendered identity set, `renderedEventOrder`,
+and the events DOM row count — so losing any one bound is observable on its
+own. Final means the terminal snapshot or event, not durable portal history or
+artifacts. Local green proves unsigned local coordination mechanics only:
+secure automated browser handoff, signing, notarization, TCC, Keychain runtime,
+real permission/device/tap behavior, real lease value, history/artifacts,
+deployment, 60/300 evidence, Windows production, canary, and live enablement
+remain Missing.
+
 Binary framing and non-HTTP transports are deferred to protocol v3.
 
 ## IDEA-035 Mutation Kill Nodes
@@ -242,6 +264,23 @@ survivor is red.
   `testIDEA042ContextKeepsEvidenceTierMissingFence`, and
   `testIDEA042ResidualKillNodesNameExistingActualTests` pin typed retry state,
   collection floors, the local-only Missing fence, and this node map.
+
+## IDEA-038 Portal/Helper Integration Kill Nodes
+
+These nodes are the Reviewer mutation contract for the local portal/helper
+integration slice. They name the expected killing check for each
+single-obligation mutation; they do not claim mutation review has run.
+
+| ID | Killing node |
+| --- | --- |
+| M05 | `test_built_mtd_capture_executable_is_resolved_from_the_package_bin_path` re-resolves the package bin path in the test module and rejects any probe executable that is not the real built `mtd-capture`. |
+| M06 | `test_built_cli_usage_and_missing_app_socket_probes_stay_silent_about_authority` and the resolved-executable node reject removing the built CLI usage and missing-app/socket process probes. |
+| M19 | `test_live_portal_event_identity_order_and_dom_share_one_cap` rejects an unbounded rendered-event identity set after over-cap replay. |
+| M20 | The same node's DOM-row bound rejects pruning identity/order while leaving `nodes.events.children` unbounded. |
+| M21 | The same node's identity and order bounds reject pruning only the DOM while identity/order state grows. |
+| M23 | `test_live_portal_browser_contract_polls_renders_controls_and_stops`, `test_live_portal_control_timeout_uses_independent_10_second_abort`, and `test_idea_038_context_and_adr_keep_portal_constants_and_evidence_tier_missing` reject a stop drain other than 5 seconds or a poll/control timeout other than 10 seconds. |
+| M24 | The terminal-final assertions in `test_reconnect_replay_typed_failure_and_final_terminal_state` plus the documented "terminal snapshot or event, not durable portal history or artifacts" claim reject treating final as durable history. |
+| M25 | `test_idea_038_context_and_adr_keep_portal_constants_and_evidence_tier_missing` requires every `Missing` fact in both documents and rejects certification phrasings. |
 
 ## Consequences
 
