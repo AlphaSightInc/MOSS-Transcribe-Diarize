@@ -27,14 +27,14 @@ final class ProductionCaptureRuntime {
         let controller = CaptureController(
             source: NativeDualCaptureSource(),
             transport: CaptureV2HTTPTransportAdapter(
-                client: URLSessionCaptureHTTPClient(),
+                certificatePin: keyStore,
                 bearerToken: keyStore
             ),
             keyStore: keyStore,
             clock: SystemCaptureClockAdapter(),
             scheduler: RepeatingCaptureSchedulerAdapter(interval: 0.25),
             health: CaptureHTTPHealthAdapter(
-                client: URLSessionCaptureHTTPClient(),
+                certificatePin: keyStore,
                 bearerToken: keyStore,
                 instanceID: ProcessInfo.processInfo.globallyUniqueString,
                 helperVersion: "0.1.0"
@@ -43,7 +43,8 @@ final class ProductionCaptureRuntime {
         let dispatcher = ControlCommandDispatcher(
             controller: controller,
             pairingExchange: URLSessionCapturePairingExchangeAdapter(),
-            captureTokenStore: keyStore
+            captureTokenStore: keyStore,
+            certificatePinStore: keyStore
         )
         return ProductionCaptureRuntime(
             server: UnixDomainControlServer(
