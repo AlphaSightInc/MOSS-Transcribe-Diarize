@@ -22,7 +22,7 @@ final class ProductionCaptureRuntime {
     }
 
     static func makeDefault() throws -> ProductionCaptureRuntime {
-        let keyStore = KeychainCaptureSecretStore()
+        let keyStore = try CaptureSecretStoreSelection.makeDefault()
         try ensureControlSecret(in: keyStore)
         let controller = CaptureController(
             source: NativeDualCaptureSource(),
@@ -42,9 +42,10 @@ final class ProductionCaptureRuntime {
         )
         let dispatcher = ControlCommandDispatcher(
             controller: controller,
-            pairingExchange: URLSessionCapturePairingExchangeAdapter(),
+            pairingExchange: URLSessionCapturePairingExchangeAdapter(deviceIdentity: keyStore),
             captureTokenStore: keyStore,
-            certificatePinStore: keyStore
+            certificatePinStore: keyStore,
+            sessionStore: keyStore
         )
         return ProductionCaptureRuntime(
             server: UnixDomainControlServer(
@@ -59,7 +60,7 @@ final class ProductionCaptureRuntime {
         try server.serve()
     }
 
-    private static func ensureControlSecret(in keyStore: KeychainCaptureSecretStore) throws {
+    private static func ensureControlSecret(in keyStore: any CaptureSecretStoreAdapter) throws {
         if try keyStore.loadControlSecret() != nil {
             return
         }

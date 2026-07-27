@@ -1,5 +1,6 @@
 import CryptoKit
 import CoreAudio
+import Darwin
 import Foundation
 import Security
 @testable import MOSSCaptureCore
@@ -1666,6 +1667,110 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(transport.configurations.isEmpty)
     }
 
+    func testFileSecretStorePersistsRestartSafeAuthorityWithPrivateMode() throws {
+        let path = temporarySecretStorePath()
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let store = try FileCaptureSecretStore(path: path)
+        let pin = String(repeating: "d", count: 64)
+        let serverURL = URL(string: "https://moss.example")!
+
+        try store.saveControlSecret("control-secret")
+        try store.saveCaptureBearerToken("capture-token")
+        try store.saveCaptureCertificatePin(pin)
+        try store.saveCaptureServerURL(serverURL)
+        try store.saveCaptureSessionID("session-a")
+        try store.saveCaptureViewToken("view-token")
+        let deviceID = try store.loadDeviceID()
+
+        let reloaded = try FileCaptureSecretStore(path: path)
+        XCTAssertEqual(try reloaded.loadControlSecret(), "control-secret")
+        XCTAssertEqual(try reloaded.loadCaptureBearerToken(), "capture-token")
+        XCTAssertEqual(try reloaded.loadCaptureCertificatePin(), pin)
+        XCTAssertEqual(try reloaded.loadCaptureServerURL(), serverURL)
+        XCTAssertEqual(try reloaded.loadCaptureSessionID(), "session-a")
+        XCTAssertEqual(try reloaded.loadCaptureViewToken(), "view-token")
+        XCTAssertEqual(try reloaded.loadDeviceID(), deviceID)
+        XCTAssertEqual(try fileMode(at: path), 0o600)
+    }
+
+    func testDispatcherPersistsPairingAuthorityAndReloadsStartConfiguration() throws {
+        let path = temporarySecretStorePath()
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let store = try FileCaptureSecretStore(path: path)
+        try store.saveControlSecret("control-secret")
+        let serverURL = URL(string: "https://moss.example")!
+        let pin = String(repeating: "e", count: 64)
+        let firstController = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: RecordingCaptureTransportAdapter(),
+            keyStore: store,
+            clock: FakeCaptureClockAdapter(ticks: [1]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        let firstDispatcher = ControlCommandDispatcher(
+            controller: firstController,
+            pairingExchange: StaticPairingExchange(
+                result: CapturePairingResult(
+                    sessionID: "session-persisted",
+                    viewToken: "view-token",
+                    captureBearerToken: "capture-token",
+                    certificatePinSHA256Hex: pin
+                )
+            ),
+            captureTokenStore: store,
+            certificatePinStore: store,
+            sessionStore: store
+        )
+
+        let pairResponse = try firstDispatcher.dispatch(ControlChannelRequest(
+            command: "pair",
+            serverURL: serverURL,
+            pairingPayload: Data("mtd1.secret.\(pin)".utf8)
+        ))
+
+        let encodedResponse = String(decoding: try JSONEncoder().encode(pairResponse), as: UTF8.self)
+        XCTAssertEqual(pairResponse.sessionID, "session-persisted")
+        XCTAssertFalse(encodedResponse.contains("view-token"))
+        XCTAssertFalse(encodedResponse.contains("capture-token"))
+        XCTAssertEqual(try store.loadCaptureServerURL(), serverURL)
+        XCTAssertEqual(try store.loadCaptureSessionID(), "session-persisted")
+        XCTAssertEqual(try store.loadCaptureViewToken(), "view-token")
+
+        let transport = RecordingCaptureTransportAdapter()
+        let secondController = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: [
+                CaptureFrame(
+                    lane: .system,
+                    sequence: 0,
+                    sampleRate: 16_000,
+                    sampleCount: 1,
+                    captureTimestampNS: 0,
+                    deviceEpoch: 0,
+                    silent: true,
+                    discontinuity: false,
+                    pcm16: Data([0, 0])
+                )
+            ]),
+            transport: transport,
+            keyStore: store,
+            clock: FakeCaptureClockAdapter(ticks: [2]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        let secondDispatcher = ControlCommandDispatcher(
+            controller: secondController,
+            pairingExchange: StaticPairingExchange(result: CapturePairingResult(sessionID: "unused")),
+            sessionStore: store
+        )
+
+        _ = try secondDispatcher.dispatch(ControlChannelRequest(command: "start", label: "restart"))
+
+        XCTAssertEqual(transport.configurations.map(\.sessionID), ["session-persisted"])
+        XCTAssertEqual(transport.configurations.map(\.serverURL), [serverURL])
+        XCTAssertEqual(transport.configurations.map(\.label), ["restart"])
+    }
+
     func testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory() throws {
         let source = try String(
             contentsOf: packageRoot()
@@ -2297,6 +2402,21 @@ final class CaptureControllerTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("moss-control-\(UUID().uuidString).sock")
             .path
+    }
+
+    private func temporarySecretStorePath() -> String {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-capture-store-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+    }
+
+    private func fileMode(at path: String) throws -> UInt16 {
+        var info = stat()
+        guard stat(path, &info) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        return UInt16(info.st_mode & 0o777)
     }
 
     private func waitForSocket(at path: String) throws {

@@ -4,9 +4,15 @@ import MOSSCaptureCore
 @main
 struct MTDCaptureCLI {
     static func main() {
+        let secretStore: any CaptureSecretStoreAdapter
+        do {
+            secretStore = try CaptureSecretStoreSelection.makeDefault()
+        } catch {
+            Foundation.exit(70)
+        }
         let sendRequestClient = UnixDomainControlClient(
             socketPath: ControlSocketDefaults.socketPath(),
-            secrets: KeychainCaptureSecretStore()
+            secrets: secretStore
         )
         let pairingPayloadInput = StandardInput()
         let commandLine = CaptureCommandLine(

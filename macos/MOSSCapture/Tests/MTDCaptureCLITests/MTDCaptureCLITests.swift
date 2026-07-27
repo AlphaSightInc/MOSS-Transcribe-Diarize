@@ -221,6 +221,50 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertFalse(entitlements.contains("com.apple.security.app-sandbox"))
     }
 
+    func testProductEntrypointsShareExplicitLabStoreResolverAndKeepKeychainDefault() throws {
+        let defaultStore = try CaptureSecretStoreSelection.makeDefault(environment: [:])
+        XCTAssertTrue(defaultStore is KeychainCaptureSecretStore)
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-cli-store-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let selectedStore = try CaptureSecretStoreSelection.makeDefault(
+            environment: [CaptureSecretStoreSelection.environmentKey: path]
+        )
+        XCTAssertTrue(selectedStore is FileCaptureSecretStore)
+
+        let package = packageRoot()
+        let appMain = try String(
+            contentsOf: package
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureApp")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+        let cliMain = try String(
+            contentsOf: package
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MTDCaptureCLI")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+        let coreSecurity = try String(
+            contentsOf: package
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureCore")
+                .appendingPathComponent("CaptureSecurity.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(appMain.contains("CaptureSecretStoreSelection.makeDefault()"))
+        XCTAssertTrue(cliMain.contains("CaptureSecretStoreSelection.makeDefault()"))
+        XCTAssertTrue(coreSecurity.contains("MOSS_CAPTURE_SECRET_STORE_PATH"))
+        XCTAssertTrue(coreSecurity.contains("return KeychainCaptureSecretStore()"))
+        XCTAssertFalse(appMain.contains("KeychainCaptureSecretStore()"))
+        XCTAssertFalse(cliMain.contains("KeychainCaptureSecretStore()"))
+    }
+
     private func packageRoot() -> URL {
         var url = URL(fileURLWithPath: #filePath)
         for _ in 0..<3 {
