@@ -255,17 +255,42 @@ public final class UnixDomainControlClient {
 }
 
 public struct CapturePairingResult: Equatable {
+    public var deviceID: String
     public var sessionID: String
+    public var viewToken: String?
     public var captureBearerToken: String?
 
-    public init(sessionID: String, captureBearerToken: String? = nil) {
+    public init(
+        deviceID: String = "",
+        sessionID: String,
+        viewToken: String? = nil,
+        captureBearerToken: String? = nil
+    ) {
+        self.deviceID = deviceID
         self.sessionID = sessionID
+        self.viewToken = viewToken
         self.captureBearerToken = captureBearerToken
     }
 }
 
 public protocol CapturePairingExchangeAdapter {
     func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult
+}
+
+public protocol CaptureDeviceIdentityAdapter {
+    func loadDeviceID() throws -> String
+}
+
+public final class GeneratedCaptureDeviceIdentityAdapter: CaptureDeviceIdentityAdapter {
+    private let deviceID: String
+
+    public init(deviceID: String = UUID().uuidString) {
+        self.deviceID = deviceID
+    }
+
+    public func loadDeviceID() throws -> String {
+        deviceID
+    }
 }
 
 public protocol CaptureBearerTokenStoreAdapter {
@@ -463,31 +488,101 @@ public enum ControlSocketDefaults {
 
 public final class URLSessionCapturePairingExchangeAdapter: CapturePairingExchangeAdapter {
     private let client: CaptureHTTPClient
+    private let deviceIdentity: CaptureDeviceIdentityAdapter
 
-    public init(client: CaptureHTTPClient = URLSessionCaptureHTTPClient()) {
+    public init(
+        client: CaptureHTTPClient = URLSessionCaptureHTTPClient(),
+        deviceIdentity: CaptureDeviceIdentityAdapter = GeneratedCaptureDeviceIdentityAdapter()
+    ) {
         self.client = client
+        self.deviceIdentity = deviceIdentity
     }
 
     public func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
-        var request = URLRequest(url: serverURL.appendingPathComponent("api").appendingPathComponent("live").appendingPathComponent("pair"))
+        guard let payload = String(data: pairingPayload, encoding: .utf8), !payload.isEmpty else {
+            throw CaptureSecurityError.missingPairingPayload
+        }
+        let deviceID = try deviceIdentity.loadDeviceID()
+        let pairing = try postPairing(serverURL: serverURL, deviceID: deviceID, pairingPayload: payload)
+        let session = try postSession(serverURL: serverURL, deviceToken: pairing.deviceToken)
+        return CapturePairingResult(
+            deviceID: pairing.deviceID,
+            sessionID: session.id,
+            viewToken: session.viewToken,
+            captureBearerToken: pairing.deviceToken
+        )
+    }
+
+    private func postPairing(
+        serverURL: URL,
+        deviceID: String,
+        pairingPayload: String
+    ) throws -> PairingResponseBody {
+        var request = URLRequest(
+            url: serverURL
+                .appendingPathComponent("api")
+                .appendingPathComponent("live")
+                .appendingPathComponent("pairings")
+        )
         request.httpMethod = "POST"
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        request.httpBody = pairingPayload
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(
+            PairingRequestBody(deviceID: deviceID, pairingPayload: pairingPayload)
+        )
         let response = try client.send(request)
         guard (200..<300).contains(response.statusCode) else {
             throw CaptureHTTPTransportError.nonSuccessStatus(response.statusCode)
         }
-        let body = try JSONDecoder().decode(PairingResponseBody.self, from: response.body)
-        return CapturePairingResult(sessionID: body.sessionID, captureBearerToken: body.captureBearerToken)
+        return try JSONDecoder().decode(PairingResponseBody.self, from: response.body)
+    }
+
+    private func postSession(serverURL: URL, deviceToken: String) throws -> SessionResponseBody {
+        var request = URLRequest(
+            url: serverURL
+                .appendingPathComponent("api")
+                .appendingPathComponent("live")
+                .appendingPathComponent("sessions")
+        )
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(deviceToken)", forHTTPHeaderField: "Authorization")
+        let response = try client.send(request)
+        guard (200..<300).contains(response.statusCode) else {
+            throw CaptureHTTPTransportError.nonSuccessStatus(response.statusCode)
+        }
+        return try JSONDecoder().decode(SessionResponseBody.self, from: response.body)
+    }
+
+    private struct PairingRequestBody: Encodable {
+        var deviceID: String
+        var pairingPayload: String
+
+        enum CodingKeys: String, CodingKey {
+            case deviceID = "device_id"
+            case pairingPayload = "pairing_payload"
+        }
     }
 
     private struct PairingResponseBody: Decodable {
-        var sessionID: String
-        var captureBearerToken: String?
+        var deviceID: String
+        var deviceToken: String
 
         enum CodingKeys: String, CodingKey {
-            case sessionID = "session_id"
-            case captureBearerToken = "capture_bearer"
+            case deviceID = "device_id"
+            case deviceToken = "device_token"
+        }
+    }
+
+    private struct SessionResponseBody: Decodable {
+        var id: String
+        var ownerDeviceID: String
+        var viewToken: String
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case ownerDeviceID = "owner_device_id"
+            case viewToken = "view_token"
         }
     }
 }

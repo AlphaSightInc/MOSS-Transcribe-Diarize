@@ -1389,6 +1389,83 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(client.requests.isEmpty)
     }
 
+    func testPairingExchangeUsesServerPairingThenAuthenticatedSessionContract() throws {
+        let client = QueuedCaptureHTTPClient(responses: [
+            CaptureHTTPResponse(
+                statusCode: 200,
+                body: try JSONEncoder().encode(TestPairingResponseBody(
+                    deviceID: "device-a",
+                    deviceToken: "device-token"
+                ))
+            ),
+            CaptureHTTPResponse(
+                statusCode: 200,
+                body: try JSONEncoder().encode(TestSessionResponseBody(
+                    id: "session-a",
+                    ownerDeviceID: "device-a",
+                    viewToken: "view-token"
+                ))
+            ),
+        ])
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            client: client,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+
+        let result = try exchange.pair(
+            serverURL: URL(string: "https://moss.example")!,
+            pairingPayload: Data("mtd1.secret.\(String(repeating: "a", count: 64))".utf8)
+        )
+
+        XCTAssertEqual(result.deviceID, "device-a")
+        XCTAssertEqual(result.sessionID, "session-a")
+        XCTAssertEqual(result.viewToken, "view-token")
+        XCTAssertEqual(result.captureBearerToken, "device-token")
+        XCTAssertEqual(client.requests.count, 2)
+        let pairingRequest = try XCTUnwrap(client.requests.first)
+        let sessionRequest = try XCTUnwrap(client.requests.dropFirst().first)
+        let pairingBody = try jsonBody(pairingRequest)
+        XCTAssertEqual(pairingRequest.httpMethod, "POST")
+        XCTAssertEqual(pairingRequest.url?.absoluteString, "https://moss.example/api/live/pairings")
+        XCTAssertEqual(pairingRequest.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        XCTAssertEqual(pairingRequest.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertNil(pairingRequest.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertEqual(pairingBody["device_id"] as? String, "device-a")
+        XCTAssertEqual(
+            pairingBody["pairing_payload"] as? String,
+            "mtd1.secret.\(String(repeating: "a", count: 64))"
+        )
+        XCTAssertEqual(sessionRequest.httpMethod, "POST")
+        XCTAssertEqual(sessionRequest.url?.absoluteString, "https://moss.example/api/live/sessions")
+        XCTAssertEqual(sessionRequest.value(forHTTPHeaderField: "Authorization"), "Bearer device-token")
+        XCTAssertEqual(sessionRequest.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertNil(sessionRequest.httpBody)
+        XCTAssertFalse(
+            String(decoding: pairingRequest.httpBody ?? Data(), as: UTF8.self).contains("device-token")
+        )
+    }
+
+    func testPairingExchangeStopsBeforeSessionWhenPairingFails() throws {
+        let client = QueuedCaptureHTTPClient(responses: [
+            CaptureHTTPResponse(statusCode: 403, body: Data())
+        ])
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            client: client,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+
+        XCTAssertThrowsError(
+            try exchange.pair(
+                serverURL: URL(string: "https://moss.example")!,
+                pairingPayload: Data("mtd1.secret.\(String(repeating: "a", count: 64))".utf8)
+            )
+        ) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .nonSuccessStatus(403))
+        }
+        XCTAssertEqual(client.requests.count, 1)
+        XCTAssertEqual(client.requests.first?.url?.absoluteString, "https://moss.example/api/live/pairings")
+    }
+
     func testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory() throws {
         let source = try String(
             contentsOf: packageRoot()
@@ -2366,6 +2443,50 @@ private final class RecordingCaptureHTTPClient: CaptureHTTPClient {
     func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
         requests.append(request)
         return response
+    }
+}
+
+private final class QueuedCaptureHTTPClient: CaptureHTTPClient {
+    private(set) var requests: [URLRequest] = []
+    private var responses: [CaptureHTTPResponse]
+
+    init(responses: [CaptureHTTPResponse]) {
+        self.responses = responses
+    }
+
+    func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
+        requests.append(request)
+        return responses.removeFirst()
+    }
+}
+
+private struct StaticCaptureDeviceIdentityAdapter: CaptureDeviceIdentityAdapter {
+    var deviceID: String
+
+    func loadDeviceID() throws -> String {
+        deviceID
+    }
+}
+
+private struct TestPairingResponseBody: Encodable {
+    var deviceID: String
+    var deviceToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case deviceID = "device_id"
+        case deviceToken = "device_token"
+    }
+}
+
+private struct TestSessionResponseBody: Encodable {
+    var id: String
+    var ownerDeviceID: String
+    var viewToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case ownerDeviceID = "owner_device_id"
+        case viewToken = "view_token"
     }
 }
 
