@@ -37,7 +37,16 @@ git cat-file -e af3ac3667393a0411616f52f76339eff01dc13e2^{commit} 2>/dev/null \
 git cat-file -e 67a27b88e5fab10dcb81ea28abd4628859ce33e8^{commit} 2>/dev/null \
   || die "A-034 graft source 67a27b8 is missing from this repo"
 
-python3 - <<'PY' || die "python3 must be pyenv 3.12 with pytest importable (launch.sh resolves it)"
+preflight_python="${RALPH_PYTHON:-}"
+if [[ -z "$preflight_python" ]] && command -v pyenv >/dev/null 2>&1; then
+  preflight_python="$(pyenv which python3 2>/dev/null || true)"
+fi
+if [[ -z "$preflight_python" ]]; then
+  preflight_python="$(command -v python3 2>/dev/null || true)"
+fi
+[[ -n "$preflight_python" ]] || die "python3 is missing"
+"$preflight_python" - <<'PY' \
+  || die "python3 must be pyenv 3.12 with pytest importable"
 import sys
 assert sys.version_info[:2] == (3, 12), f"python3 must be 3.12, got {sys.version.split()[0]}"
 import pytest  # noqa: F401
@@ -47,7 +56,9 @@ command -v swift >/dev/null 2>&1 || die "swift toolchain not on PATH"
 
 control_plane="${RALPH_CONTROL_PLANE:-/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize}"
 plan="${RALPH_PLAN_PATH:-$control_plane/docs/live-capture-gap-and-execution-plan-20260727.md}"
-min_revision="${RALPH_PLAN_MIN_REVISION:-5}"
+min_revision="${RALPH_PLAN_MIN_REVISION:-6}"
+expected_contract="${RALPH_PLAN_CONTRACT:-moss-live-meeting-v1}"
+expected_server="${RALPH_SERVER_HOST:-ga0-alienware-rtx4070ti}"
 
 [[ -r "$plan" ]] || die "authoritative plan is not readable: $plan"
 
@@ -59,8 +70,17 @@ revision="$(sed -n 's/^\*\*Revision:\*\* \([0-9][0-9]*\).*/\1/p' "$plan" | head 
 (( revision >= min_revision )) \
   || die "plan revision $revision is older than the required minimum $min_revision"
 
-grep -q 'ga0-alienware-rtx4070ti' "$plan" \
-  || die "plan does not target ga0-alienware-rtx4070ti; refusing to run against a retargeted plan"
+# A minimum revision rejects stale plans, while this exact compatibility marker
+# rejects a newer plan whose execution contract changed without a Ralph review.
+contract="$(sed -n 's/^\*\*Ralph contract:\*\* `\([^`][^`]*\)`.*/\1/p' "$plan" | head -n 1)"
+[[ "$contract" == "$expected_contract" ]] \
+  || die "plan contract must be $expected_contract, got: ${contract:-<missing>}"
+
+# Parse authoritative metadata; a broad grep could be satisfied by historical
+# references to the old host after the plan itself had been retargeted.
+server_host="$(sed -n 's/^\*\*Transcription server:\*\* `\([^`][^`]*\)`.*/\1/p' "$plan" | head -n 1)"
+[[ "$server_host" == "$expected_server" ]] \
+  || die "plan server must be $expected_server, got: ${server_host:-<missing>}"
 
 # One-writer rule: the governed aisight-coding-loop must stay halted while Ralph owns this repo.
 [[ -f "$control_plane/.stop-after-current-role" ]] \

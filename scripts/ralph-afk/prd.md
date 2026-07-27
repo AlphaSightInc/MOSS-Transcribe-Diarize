@@ -8,7 +8,7 @@
 > page shows the transcript with speaker labels continuously — for meetings longer than 15
 > minutes, surviving a 5-second network interruption without silently losing accepted audio.
 >
-> The authoritative plan, with measured evidence and the committed design decisions D1-D13, is
+> The authoritative plan, with measured evidence and the committed design decisions D1-D14, is
 > `/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/docs/live-capture-gap-and-execution-plan-20260727.md`
 > (current controlling revision). Read it before the first change of any work item. This PRD is
 > the acceptance contract; that document is the design rationale.
@@ -29,8 +29,9 @@ inspected, before/after deltas) recorded in progress.txt:
   full-certificate pinning; the **app** (never the CLI) reads view authority and writes the
   pasteboard; microphone and system-audio permissions have explicit per-lane request → pending
   → granted-or-denied transitions; a denied lane emits a typed lane failure rather than staying
-  absent; frames remain queued until acknowledged; and both lanes leave the Mac as 16 kHz mono.
-  Swift and Python suites are green and the Darwin real-process tracer passes with zero skips.
+  absent; frames remain queued until acknowledged; and both lanes leave the Mac as 16 kHz mono
+  with `capture_timestamp_ns` converted from Mach host ticks to real nanoseconds. Swift and
+  Python suites are green and the Darwin real-process tracer passes with zero skips.
 - **Server meeting-reliability gate green:** view authority is bound to the session lifecycle
   (active session only + 12 h absolute cap + immediate terminal/device/operator revoke) and a
   900-second fixed expiry is unreachable. Deterministic tests cover virtual 60-minute duration,
@@ -39,8 +40,9 @@ inspected, before/after deltas) recorded in progress.txt:
 - **One reviewed keeper merge:** only after all three gates above, merge
   `ralph/live-meeting-mvp` once into `main`, run the full post-merge suite, and record both the
   feature tip and merge SHA. All tracked deployment templates, manifest/TLS/pairing tools,
-  Windows networking changes, Mac packaging/install scripts, and docs must be reviewed before
-  this merge. No intermediate merge and no tracked product work directly on `main`.
+  Windows networking changes, Mac packaging/install scripts, app-owned latency probe, and docs
+  must be reviewed before this merge. No intermediate merge and no tracked product work directly
+  on `main`.
 - **One exact SHA everywhere:** `git rev-parse HEAD` is identical for local `main`,
   `origin/main`, the server checkout at `/mnt/d/Coding/MOSS-Transcribe-Diarize`, and the m4mbp
   checkout; the value is recorded in progress.txt.
@@ -60,8 +62,8 @@ inspected, before/after deltas) recorded in progress.txt:
   decoder p95 RTF < 1; both lanes accepted and accounted with zero loss and zero double count.
 - **300-second locked certification passes:** simultaneous lanes, silence/mute, a 5-second
   network interruption, ambiguous retry, duplicate retry, two speakers, clean stop/drain — plus a
-  separate mic-granted / system-audio-denied run that still produces transcript. Committed
-  **user-visible p95 ≤ 6 s** by the same Phase F procedure; decoder p95 RTF < 1; zero
+  separate mic-granted / system-audio-denied run that still produces transcript.
+  **User-visible p95 ≤ 6 s** by the same Phase F procedure; decoder p95 RTF < 1; zero
   accepted-audio loss; outbox and memory bounded. A latency miss is answered by the plan's
   ordered remedies (2.0 s span cap, then 0.5 s poll interval), never by relaxing the gate.
 - **16-minute active-view soak passes:** capture remains active with periodic accepted audio and
@@ -85,6 +87,10 @@ Non-negotiable, in addition to the rules in prompt.md:
   authority active-session-only; view absolute cap 12 h; batch port 7860 plaintext; live port
   7861 TLS; bundle id
   `com.alphasight.moss.capture`; app path `/Applications/MOSSCapture.app`.
+- **Timestamp units are contractual.** `capture_timestamp_ns` is converted nanoseconds in one
+  Mac host-time domain, never raw `hostTime`/`mHostTime` ticks. The app-owned latency probe may
+  use view authority internally but must expose only aggregate timing evidence; the CLI never
+  receives the token.
 - **One writer.** This loop is the only autonomous writer on this repo. The governed
   `aisight-coding-loop` control plane must stay halted — its `.stop-after-current-role` sentinel
   must not be removed. Never invoke `scripts/promote-keeper.sh`, `scripts/revert-feature.sh`, or

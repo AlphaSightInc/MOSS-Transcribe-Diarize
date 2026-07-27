@@ -1,6 +1,6 @@
 # Ralph AFK loop — MOSS live meeting transcription MVP
 
-Executes revision 5 of
+Executes the `moss-live-meeting-v1` contract from revision 6 or later of
 `/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/docs/live-capture-gap-and-execution-plan-20260727.md`.
 `prd.md` is the acceptance contract, `context.md` is living working memory, `progress.txt` is the
 append-only journal, `prompt.md` is the per-iteration procedure.
@@ -21,7 +21,7 @@ through it too, so the fences cannot be bypassed by choosing the other agent.
 ```bash
 touch scripts/ralph-afk/.stop                        # graceful stop after the current iteration
 tail -f scripts/ralph-afk/telemetry/run-*/iter-*.log # watch
-./scripts/ralph-afk/preflight.sh                     # prints which environment check fails
+./scripts/ralph-afk/preflight.sh                     # self-resolves pyenv; names a failed check
 ```
 
 ## Launch fences
@@ -34,8 +34,9 @@ All are fail-closed. `launch.sh` sets them; the engine and `preflight.sh` enforc
 | HEAD descends from `af3ac36` | engine (`RALPH_REQUIRED_ANCESTOR`) | refuses an unrelated or rewritten history |
 | working tree clean | engine (`RALPH_ALLOW_DIRTY=0`) | no stray edit contaminates a checkpoint |
 | preflight mandatory | `RALPH_PREFLIGHT_REQUIRED=1` | a broken interpreter or missing ref stops the run instead of producing garbage |
-| plan revision ≥ `RALPH_PLAN_MIN_REVISION` | `preflight.sh` | refuses to execute a superseded plan. A **minimum**, never an equality — the plan is expected to advance, and an equality fence would block every launch the moment it did |
-| plan targets `ga0-alienware-rtx4070ti` | `preflight.sh` | refuses a retargeted plan |
+| plan revision ≥ `RALPH_PLAN_MIN_REVISION` | `preflight.sh` | refuses a stale plan without blocking compatible editorial revisions |
+| plan contract exactly `RALPH_PLAN_CONTRACT` | `preflight.sh` | refuses a newer but execution-incompatible plan until this bundle is reconciled |
+| authoritative server metadata exactly `RALPH_SERVER_HOST` | `preflight.sh` | refuses a retargeted plan; historical mentions cannot satisfy the fence |
 | governed loop still halted | `preflight.sh` | one writer per repo; the `aisight-coding-loop` sentinel must stay |
 
 ## Exit codes (this instance)
@@ -59,7 +60,7 @@ SIP-protected and cannot be scripted. The journal will name the exact clicks.
 | `launch.sh` | the only supported entry point; resolves Python, pins model, sets fences |
 | `preflight.sh` | per-iteration environment facts only — never code style or work-in-progress state, because a cosmetic failure would halt an unattended run |
 | `validate-phase-a-locality.sh` | Phase A only: fails if changes leave IDEA-044's registered thirteen product/doc paths. Later phases intentionally widen scope, so stop using it after the Phase A checkpoint |
-| `merge-keeper.sh` | the single reviewed `main` merge, performed in a temporary worktree so the primary worktree stays on the feature branch. Builds both Swift executable products before testing (`swift test` does not build them, and the integration tests error without them) |
+| `merge-keeper.sh` | the single reviewed `main` merge, performed in a temporary worktree so the primary worktree stays on the feature branch. Builds both Swift executable products as explicit gates before Swift/Python testing |
 
 ## Manual recovery paths
 
@@ -68,8 +69,9 @@ SIP-protected and cannot be scripted. The journal will name the exact clicks.
   post-commit assertion failed, and only then re-run with
   `RALPH_MERGE_MAIN_BEFORE=<current main sha>`. Do not delete or reset `main`.
 - **Preflight blocks the launch.** Run it directly; it names the failing check.
-- **A later plan revision lands.** Reconcile this bundle with it, then bump
-  `RALPH_PLAN_MIN_REVISION` in `launch.sh`.
+- **A later plan revision lands.** A compatible revision keeps the same Ralph contract and
+  passes the minimum. An execution-contract change must change the marker in the plan; reconcile
+  this bundle, then update `RALPH_PLAN_CONTRACT` in `launch.sh`.
 
 ## Maintainer warning
 

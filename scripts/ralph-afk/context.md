@@ -10,7 +10,7 @@
   Do **not** use `/usr/bin/python3` (3.9.6).
 - Read before editing:
   - `/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/docs/live-capture-gap-and-execution-plan-20260727.md`
-    — current controlling revision, the design rationale and decisions D1-D13. Authoritative.
+    — current controlling revision, the design rationale and decisions D1-D14. Authoritative.
   - `CONTEXT.md` (repo glossary — lane, mixer, v2 contract, portal, helper terms)
   - `docs/adr/0001-live-v2-json-http-contract.md`
   - `LOCAL_DEPLOYMENT.md` (server layout; Phase C updates it)
@@ -68,6 +68,12 @@ unless stated.
 7. No client-side 16 kHz conversion — tap defaults 48 kHz (`SystemAudioTap.swift:70`), mic uses
    device rate (`MicrophoneCapture.swift:332`); mixer resamples by linear interpolation with no
    anti-alias filter (`live_mixer.py:305-327`).
+8. Wire timestamps are mislabeled — microphone assigns `AVAudioTime.hostTime` and system audio
+   assigns `AudioTimeStamp.mHostTime` directly to `firstSampleMonotonicNS`, which becomes
+   `capture_timestamp_ns` without conversion. These values are Mach host ticks, not nanoseconds;
+   the observed timebase is 125/3. Convert with `AudioConvertHostTimeToNanos` before transport,
+   then preserve the converted first-sample timestamp through resampling/coalescing. Reject
+   zero/invalid host time as typed discontinuity/failure.
 
 **Server state.** Deployed `163e969`; `origin/main` also `163e969`; local `main` is +84.
 `/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0`. `webrtcvad-wheels 2.0.14` and
@@ -109,10 +115,9 @@ swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real pr
 python3 -m pytest tests/test_macos_uds_tracer.py -q
 
 # --- wide checkpoint -----------------------------------------------------
-# NOT self-sufficient. tests/test_live_integration.py (and the A-034 tracer) execute the
-# real binaries and ERROR — not skip — when they are absent, and `swift test` never builds
-# them because Package.swift's test targets depend only on MOSSCaptureCore. Verified in a
-# fresh worktree: 5 errors without these two builds, 5 passed with them (~8 s).
+# Keep executable builds explicit because tests/test_live_integration.py and the A-034 tracer
+# execute the real products and error when they are absent. Swift 6.3 currently builds both
+# executables incidentally during `swift test`; the gate must not depend on that behavior.
 swift build --package-path macos/MOSSCapture --product mtd-capture
 swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
 python3 -m pytest -q
@@ -191,10 +196,13 @@ only after the durable result is in progress.txt.
 6. **B2 — retained-until-ACK outbox**: 15 s/lane keyed by `(lane, sequence)`; retry identical
    frames on timeout/429/ambiguous result; release only after ACK; typed degraded state on
    overflow. Test 5 s outage, ambiguous success, duplicate retry, 429, and overflow.
-7. **B3 — 16 kHz mono conversion/coalescing**: one stateful `AVAudioConverter` per lane,
-   callback work still copy/enqueue only, timestamps/sample counts preserved. Test 48 kHz and
-   44.1 kHz inputs, output rate 16000, exact steady 8000-sample frames, partial terminal flush,
-   duration conservation, and no callback-thread DSP.
+7. **B3 — 16 kHz mono conversion/coalescing + real nanosecond timestamps**: convert raw
+   `hostTime`/`mHostTime` ticks with `AudioConvertHostTimeToNanos`; one stateful
+   `AVAudioConverter` per lane; callback work still copy/enqueue only; preserve the converted
+   first-sample timestamp through coalescing. Test the 125/3 timebase, cross-lane clock
+   consistency, 48 kHz and 44.1 kHz inputs, output rate 16000, exact steady 8000-sample frames,
+   invalid/zero timestamp rejection, partial terminal flush, duration conservation, and no
+   callback-thread DSP.
 8. **B4 — bounded concurrent transport**: 0.5 s pump; persistent URLSession; at most one
    in-flight POST per lane, lanes concurrent; no overlapping pump re-entry. Test bounded
    in-flight work and wall time—never use a sleep-only timing assertion.
@@ -215,9 +223,13 @@ only after the durable result is in progress.txt.
 12. **C2 — bounds retune**: `hard_cap_samples=40000`,
     `max_retained_samples=960000`, `frame_samples=8000`; generated bundle hashes, never hand
     edited. Test descriptor/config admission and capacity headroom.
-13. **C3 — tracked deployment bundle**: manifest finalizer, TLS generator, live env/service
-    templates, start-web overrides, two-port Windows networking, loopback pairing helper, and
-    deployment docs. Test generation/default-off/secrecy/7860-preservation without host mutation.
+13. **C3 — tracked deployment and certification bundle**: manifest finalizer, TLS generator,
+    live env/service templates, start-web overrides, two-port Windows networking, loopback
+    pairing helper, deployment docs, and an **app-owned latency probe**. The app—not the CLI—
+    uses view authority, maps `committed_samples` to converted client capture timestamps, and
+    emits only redacted p50/p95/max plus snapshot/events fetch timings. Test
+    generation/default-off/secrecy/7860-preservation and deterministic latency math without host
+    mutation.
 14. **C4 — final local gate and single keeper merge**: Swift/full Python/tracer/reliability
     gates green on the feature tip; then run `scripts/ralph-afk/merge-keeper.sh`. It creates and
     tests the one no-ff merge in a temporary `main` worktree while the primary Ralph worktree

@@ -74,3 +74,19 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   post-stop viewer grace is confirmed correct: `release_session` runs on stop/abort and the portal
   clears authority at terminal, so the grace was dead state.
 - Next: launch clean from `ralph/live-meeting-mvp` via `./scripts/ralph-afk/launch.sh 30`, then A1
+
+## Prelaunch independent audit - revision 6
+- Target: verify every revision-5 claim and close remaining execution-contract gaps
+- Files: controlling plan revision 6; `scripts/ralph-afk/{README.md,context.md,launch.sh,
+  merge-keeper.sh,prd.md,preflight.sh,progress.txt}`
+- Validation: fresh detached worktree -> `swift test` built/linked both executable products and
+  left both executable files present; preflight minimum/stale tests -> PASS with named failures;
+  source trace -> raw `hostTime`/`mHostTime` flows unchanged into `capture_timestamp_ns`, while
+  `mach_timebase_info` is 125/3
+- Learned: revision 5's highest-stakes diagnosis was false—the original keeper order already ran
+  `swift test` before Python, and current SwiftPM builds both executables. Explicit product builds
+  remain as durable acceptance gates, not as a repaired blocker. A revision minimum alone accepts
+  unreviewed newer contracts; add an exact contract marker and authoritative-host parse. The
+  latency procedure also needs a tracked app-owned probe before the sole merge, and it must use
+  converted capture timestamps rather than infer capture time from first send.
+- Next: validate revision-6 fences, complete clean dry-runs/full baselines, then launch A1
