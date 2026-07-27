@@ -379,6 +379,7 @@ public struct ControlChannelResponse: Codable, Equatable {
     public var ok: Bool
     public var running: Bool?
     public var sessionID: String?
+    public var portalURL: URL?
     public var publishedFrameCount: Int?
     public var pumpFailure: CapturePumpFailure?
     public var error: String?
@@ -387,6 +388,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         ok: Bool,
         running: Bool? = nil,
         sessionID: String? = nil,
+        portalURL: URL? = nil,
         publishedFrameCount: Int? = nil,
         pumpFailure: CapturePumpFailure? = nil,
         error: String? = nil
@@ -394,6 +396,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.ok = ok
         self.running = running
         self.sessionID = sessionID
+        self.portalURL = portalURL
         self.publishedFrameCount = publishedFrameCount
         self.pumpFailure = pumpFailure
         self.error = error
@@ -622,7 +625,12 @@ public final class ControlCommandDispatcher {
                 serverURL: serverURL,
                 label: request.label
             )
-            return ControlChannelResponse(ok: true, running: controller.status().running, sessionID: result.sessionID)
+            return ControlChannelResponse(
+                ok: true,
+                running: controller.status().running,
+                sessionID: result.sessionID,
+                portalURL: livePortalURL(from: serverURL)
+            )
         case "start":
             let configuration = try captureConfiguration(from: request)
             return ControlChannelResponse(status: try controller.start(configuration: configuration))
@@ -652,6 +660,13 @@ public final class ControlCommandDispatcher {
         }
         throw CaptureSecurityError.missingCaptureConfiguration
     }
+}
+
+private func livePortalURL(from serverURL: URL) -> URL {
+    var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: false)
+    components?.query = nil
+    components?.fragment = nil
+    return (components?.url ?? serverURL).appendingPathComponent("live")
 }
 
 public final class UnixDomainControlServer {

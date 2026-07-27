@@ -1731,8 +1731,13 @@ final class CaptureControllerTests: XCTestCase {
 
         let encodedResponse = String(decoding: try JSONEncoder().encode(pairResponse), as: UTF8.self)
         XCTAssertEqual(pairResponse.sessionID, "session-persisted")
+        XCTAssertEqual(pairResponse.portalURL, serverURL.appendingPathComponent("live"))
+        XCTAssertNil(pairResponse.portalURL?.query)
+        XCTAssertNil(pairResponse.portalURL?.fragment)
         XCTAssertFalse(encodedResponse.contains("view-token"))
         XCTAssertFalse(encodedResponse.contains("capture-token"))
+        XCTAssertFalse(encodedResponse.contains("?"))
+        XCTAssertFalse(encodedResponse.contains("#"))
         XCTAssertEqual(try store.loadCaptureServerURL(), serverURL)
         XCTAssertEqual(try store.loadCaptureSessionID(), "session-persisted")
         XCTAssertEqual(try store.loadCaptureViewToken(), "view-token")
@@ -2151,6 +2156,7 @@ final class CaptureControllerTests: XCTestCase {
 
         XCTAssertTrue(response.ok)
         XCTAssertEqual(response.sessionID, "session-from-pairing")
+        XCTAssertEqual(response.portalURL, serverURL.appendingPathComponent("live"))
         XCTAssertEqual(exchange.serverURL, serverURL)
         XCTAssertEqual(exchange.pairingPayload, payload)
     }

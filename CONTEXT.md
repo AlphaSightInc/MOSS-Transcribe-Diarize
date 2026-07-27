@@ -126,6 +126,14 @@
   live-enabled FastAPI app. It is a pull-only view adapter to the existing
   same-origin live `snapshot`, `events`, `stop`, and `abort` routes, not a new
   backend API or frontend app.
+- **Manual capture portal handoff (IDEA-044)**: Operator workflow where the
+  local capture client returns the server-hosted live portal URL and live
+  session id, while the view authority remains separate from URL, output, log,
+  cookie, storage, and DOM channels. The unsigned real app/CLI tracer proof,
+  signing, notarization, TCC, Keychain runtime, real device/tap behavior,
+  deployment, 60/300 evidence, canary, and live enablement remain Missing.
+- **Portal handoff URL**: Non-authority `/live` URL derived from the paired live
+  server origin and path without query or fragment credentials.
 - **Live portal view token**: Manually entered view token retained only in page
   memory and sent only as an `Authorization` bearer header. It is cleared from
   inputs immediately after connect and from memory on disconnect, reload, or a

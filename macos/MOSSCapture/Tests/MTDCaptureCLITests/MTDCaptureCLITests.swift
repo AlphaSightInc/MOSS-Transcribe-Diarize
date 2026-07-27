@@ -92,7 +92,12 @@ final class MTDCaptureCLITests: XCTestCase {
             )
         ) { request in
             receivedRequest.store(request)
-            return ControlChannelResponse(ok: true, running: false, sessionID: "session-from-app")
+            return ControlChannelResponse(
+                ok: true,
+                running: false,
+                sessionID: "session-from-app",
+                portalURL: serverURL.appendingPathComponent("live")
+            )
         }
         DispatchQueue.global().async {
             try? server.serveOnce()
@@ -129,7 +134,12 @@ final class MTDCaptureCLITests: XCTestCase {
                 ControlChannelResponse.self,
                 from: standardOutput.data.dropTrailingNewline()
             ),
-            ControlChannelResponse(ok: true, running: false, sessionID: "session-from-app")
+            ControlChannelResponse(
+                ok: true,
+                running: false,
+                sessionID: "session-from-app",
+                portalURL: serverURL.appendingPathComponent("live")
+            )
         )
         XCTAssertTrue(standardError.data.isEmpty)
         let combinedOutput = standardOutput.data + standardError.data
@@ -138,6 +148,7 @@ final class MTDCaptureCLITests: XCTestCase {
             "control-secret",
             "capture-bearer",
             "certificate-pin",
+            "view-token",
         ] {
             XCTAssertFalse(String(decoding: combinedOutput, as: UTF8.self).contains(secret))
         }

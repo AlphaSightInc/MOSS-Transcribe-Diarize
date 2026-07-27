@@ -103,6 +103,20 @@ headers only. Browser cursors advance only after successful parse and render,
 replayed events render once, bounded retry remains single-flight, and terminal
 `closed`, `failed`, or `aborted` state stops polling and clears authority.
 
+IDEA-044 keeps the macOS client on the existing JSON/HTTP contract. The shipped
+client exchanges `mtd1.<secret>.<64-hex-pin>` at `POST /api/live/pairings`,
+creates the live session with capture bearer authority at
+`POST /api/live/sessions`, and pins helper HTTPS to the pairing payload's full
+certificate SHA-256. `CaptureSecretStore` is the single persistence seam:
+Keychain is the unconditional product adapter, while an explicit same-user
+`0600` file adapter is allowed only for unattended local lab runs. The manual
+portal handoff returns only the non-authority `/live` portal URL and live
+session id; the view token is persisted for separate manual entry and is never
+placed in a URL, process argument, CLI output, log, cookie, browser storage, or
+DOM channel. Local unsigned tests do not prove signing, notarization, TCC,
+Keychain runtime, real device/tap behavior, deployment, 60/300 evidence,
+canary, or live enablement; those remain Missing.
+
 IDEA-035 adds an observation-only helper heartbeat side channel at the same
 default-off live HTTP seam. The owning capture authority may post strict
 `moss-live-helper-health.v1` JSON to
