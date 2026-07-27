@@ -6,6 +6,7 @@ import ipaddress
 import json
 import os
 import platform
+import plistlib
 import shutil
 import socket
 import ssl
@@ -36,6 +37,8 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
         pytest.fail("fastapi is required for the Darwin real UDS tracer.")
     if shutil.which("openssl") is None:
         pytest.fail("openssl is required to create the per-test TLS certificate.")
+    if shutil.which("codesign") is None:
+        pytest.fail("codesign is required to ad-hoc sign the per-test app bundle.")
 
     private_ip = _private_non_loopback_ipv4()
     if private_ip is None:
@@ -61,6 +64,7 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
         store_path = tmp_path / "secrets.json"
         app_log = tmp_path / "app.log"
         server_log = tmp_path / "server.log"
+        bundled_app_exe = _make_temp_app_bundle(app_exe, tmp_path)
 
         server = _start_server(
             server_script=server_script,
@@ -85,7 +89,7 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                     "MOSS_CAPTURE_SKIP_LAUNCH": "1",
                 }
             )
-            app = _start_app(app_exe, env=env, log=app_log, socket_path=socket_path)
+            app = _start_app(bundled_app_exe, env=env, log=app_log, socket_path=socket_path)
 
             pair = _run_cli(cli_exe, ["pair", "--server", server_url], env=env, stdin=pairing_payload)
             assert pair.returncode == 0, pair.diagnostic
@@ -111,13 +115,27 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
             _terminate(app)
             app = None
             _remove_socket(socket_path)
-            app = _start_app(app_exe, env=env, log=app_log, socket_path=socket_path)
+            app = _start_app(bundled_app_exe, env=env, log=app_log, socket_path=socket_path)
 
             restarted = _read_store(store_path)
             assert restarted["capture-device-id"] == first_device_id
             start = _run_cli(cli_exe, ["start", "--label", "tracer"], env=env)
             if start.returncode == 0:
                 body = start.json()
+                assert body["ok"] is True
+                assert body["running"] is True
+                assert int(body["publishedFrameCount"]) > 0
+                snapshot = _server_snapshot(
+                    server_url=server_url,
+                    session_id="macos-tracer-session",
+                    bearer_token=persisted["capture-bearer"],
+                )
+                observed_samples = _assert_server_observed_lane_frames(snapshot)
+                status = _run_cli(cli_exe, ["status"], env=env, timeout=5.0)
+                assert status.returncode == 0, status.diagnostic
+                status_body = status.json()
+                assert status_body["ok"] is True
+                assert status_body["running"] is True
                 cleanup_started = time.monotonic()
                 try:
                     cleanup_stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
@@ -129,27 +147,28 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                         f"publishedFrameCount={body.get('publishedFrameCount')}: {exc}"
                     )
                 assert cleanup_elapsed < 5.0, cleanup_stop.diagnostic
-                pytest.fail(
-                    "Darwin real UDS tracer requires the no-TCC path, but native start succeeded "
-                    f"with publishedFrameCount={body.get('publishedFrameCount')}; cleanupStop="
-                    f"{cleanup_stop.diagnostic}; cleanupElapsed={cleanup_elapsed:.3f}s: "
-                    f"{start.diagnostic}"
-                )
-            assert start.returncode == 70, start.diagnostic
-            start_body = start.json()
-            assert start_body["ok"] is False
-            assert start_body["error"] != "missingCaptureConfiguration"
-            assert "permissionDenied" in start_body["error"]
+                stop_body = cleanup_stop.json()
+                assert cleanup_stop.returncode == 0, cleanup_stop.diagnostic
+                assert stop_body["ok"] is True
+                assert stop_body["running"] is False
+                assert int(stop_body["publishedFrameCount"]) >= int(body["publishedFrameCount"])
+                assert observed_samples > 0
+            else:
+                assert start.returncode == 70, start.diagnostic
+                start_body = start.json()
+                assert start_body["ok"] is False
+                assert start_body["error"] != "missingCaptureConfiguration"
+                assert "permissionDenied" in start_body["error"]
 
-            stopped_at = time.monotonic()
-            stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
-            assert time.monotonic() - stopped_at < 5.0
-            assert stop.returncode == 70, stop.diagnostic
-            assert stop.json() == {"ok": False, "error": "notRunning"}
+                stopped_at = time.monotonic()
+                stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
+                assert time.monotonic() - stopped_at < 5.0
+                assert stop.returncode == 70, stop.diagnostic
+                assert stop.json() == {"ok": False, "error": "notRunning"}
 
-            status = _run_cli(cli_exe, ["status"], env=env)
-            assert status.returncode == 0, status.diagnostic
-            assert status.json()["ok"] is True
+                status = _run_cli(cli_exe, ["status"], env=env)
+                assert status.returncode == 0, status.diagnostic
+                assert status.json()["ok"] is True
         finally:
             if app is not None:
                 _terminate(app)
@@ -190,6 +209,36 @@ def _swift_bin_dir() -> Path:
         timeout=TIMEOUT,
     )
     return Path(completed.stdout.strip())
+
+
+def _make_temp_app_bundle(app_exe: Path, tmp_path: Path) -> Path:
+    bundle_id = f"com.alphasight.moss.capture.tracer.{os.getpid()}.{time.monotonic_ns()}"
+    bundle = tmp_path / "MOSSCaptureTracer.app"
+    contents = bundle / "Contents"
+    macos = contents / "MacOS"
+    macos.mkdir(parents=True)
+    bundled_exe = macos / "MOSSCaptureApp"
+    shutil.copy2(app_exe, bundled_exe)
+    os.chmod(bundled_exe, 0o755)
+
+    source_info = plistlib.loads((PACKAGE_ROOT / "Resources" / "Info.plist").read_bytes())
+    source_info.update(
+        {
+            "CFBundleIdentifier": bundle_id,
+            "CFBundleExecutable": "MOSSCaptureApp",
+            "CFBundlePackageType": "APPL",
+        }
+    )
+    (contents / "Info.plist").write_bytes(plistlib.dumps(source_info, sort_keys=False))
+
+    subprocess.run(
+        ["codesign", "--force", "--sign", "-", str(bundle)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        timeout=TIMEOUT,
+    )
+    return bundled_exe
 
 
 def _private_non_loopback_ipv4() -> str | None:
@@ -383,8 +432,33 @@ def _issue_pairing(loopback_url: str) -> bytes:
     return payload.encode("utf-8")
 
 
-def _json_request(method: str, url: str) -> dict[str, Any]:
+def _server_snapshot(*, server_url: str, session_id: str, bearer_token: str) -> dict[str, Any]:
+    return _json_request(
+        "GET",
+        f"{server_url}/api/live/sessions/{session_id}/snapshot?since_version=0",
+        bearer_token=bearer_token,
+    )
+
+
+def _assert_server_observed_lane_frames(snapshot: dict[str, Any]) -> int:
+    v2_session = snapshot["v2_session"]
+    assert v2_session["status"] == "active"
+    lanes = v2_session["lanes"]
+    observed_samples = 0
+    observed_lanes = 0
+    for lane_name in ("system", "microphone"):
+        accepted = int(lanes[lane_name]["accepted_samples"])
+        if accepted > 0:
+            observed_lanes += 1
+            observed_samples += accepted
+    assert observed_lanes >= 1
+    return observed_samples
+
+
+def _json_request(method: str, url: str, *, bearer_token: str | None = None) -> dict[str, Any]:
     request = urllib.request.Request(url, method=method)
+    if bearer_token is not None:
+        request.add_header("Authorization", f"Bearer {bearer_token}")
     context = ssl._create_unverified_context()
     with urllib.request.urlopen(request, context=context, timeout=2.0) as response:
         return json.loads(response.read().decode("utf-8"))
