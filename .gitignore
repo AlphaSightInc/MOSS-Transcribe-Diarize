@@ -25,3 +25,10 @@ runs/
 *.pem
 *live-auth*.json
 *pairing-payload*
+
+# Code-signing material for the local macOS capture app. A .p12 carries a private
+# key and a .keychain-db carries the signing identity; neither may ever be committed.
+*.p12
+*.crt
+*.keychain-db
+*.keychain

@@ -1,0 +1,32 @@
+# Ralph Progress Journal - MOSS live meeting transcription MVP
+
+Append-only. Agents add one entry per iteration; the launcher adds one-line
+"[loop <run-id>] ..." markers at run boundaries. Never rewrite or delete
+entries — context.md is the place for current state, this file is history.
+
+Entry format (concise, a few lines each):
+
+  ## Iteration <n> - <short focus>
+  - Target: <candidate from context.md, or off-list + justification>
+  - Files: <paths>
+  - Validation: <command> -> <result>
+  - Evidence: <artifact/log paths>
+  - Learned: <what changed in understanding>
+  - Next: <recommended next step>
+
+Started: 2026-07-27 - Branch `ralph/live-meeting-mvp` cut from `main af3ac36` (clean tree). The
+loop executes revision 3 of
+`/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/docs/live-capture-gap-and-execution-plan-20260727.md`.
+Feasibility is settled by measurement, not assumption: MOSS decodes a 7.5 s span in 0.233 s
+(RTF 0.031) on the already-resident 4070Ti vLLM engine, so live transcription needs no extra VRAM
+and latency is governed by the endpoint span cap alone. Seven defects are confirmed with
+file:line anchors (pairing contract, no pinning, destructive frame drain, 900 s viewer expiry,
+sequential blocking POSTs, mismatched keychain access group, no client-side 16 kHz conversion);
+two of them are already fixed on `acl/IDEA-044--A-034@67a27b8` and are to be grafted rather than
+rewritten. The server runs `163e969` with live disabled and 84 unpushed commits behind local
+`main`; the MacBook has no installed app and its checkout points at OpenMOSS upstream. Mac code
+signing is solved by a scripted self-signed identity in a dedicated keychain (proven over SSH,
+designated requirement stable across rebuilds); the login keychain is locked to SSH sessions, so
+neither the existing `LiveTranscribe Local Dev` identity nor the Keychain secret store can be used
+non-interactively. The only irreducible human step is two TCC clicks on m4mbp — park and report
+there. This loop is the single writer on this repo; the governed aisight-coding-loop stays halted.
