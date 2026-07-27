@@ -54,12 +54,16 @@ inspected, before/after deltas) recorded in progress.txt:
 - **Permissions granted:** Microphone and System Audio Recording are granted on m4mbp and
   `mtd-capture status` reports both lanes active.
 - **60-second canary passes:** two speakers plus identifiable system audio produce a
-  continuously updating transcript with speaker labels in the browser; committed p95 ≤ 4 s;
+  continuously updating transcript with speaker labels in the browser; **user-visible p95 ≤ 4 s**
+  measured by the plan's Phase F procedure (single-clock committed latency + analytic portal
+  render bound + one human marker cross-check), with both components recorded separately;
   decoder p95 RTF < 1; both lanes accepted and accounted with zero loss and zero double count.
 - **300-second locked certification passes:** simultaneous lanes, silence/mute, a 5-second
   network interruption, ambiguous retry, duplicate retry, two speakers, clean stop/drain — plus a
   separate mic-granted / system-audio-denied run that still produces transcript. Committed
-  p95 ≤ 6 s; decoder p95 RTF < 1; zero accepted-audio loss; outbox and memory bounded.
+  **user-visible p95 ≤ 6 s** by the same Phase F procedure; decoder p95 RTF < 1; zero
+  accepted-audio loss; outbox and memory bounded. A latency miss is answered by the plan's
+  ordered remedies (2.0 s span cap, then 0.5 s poll interval), never by relaxing the gate.
 - **16-minute active-view soak passes:** capture remains active with periodic accepted audio and
   `/live` polling; the same view authority works after minute 15, then clean stop immediately
   revokes it.

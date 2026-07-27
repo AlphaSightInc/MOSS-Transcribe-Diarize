@@ -50,6 +50,13 @@ git worktree add --quiet "$merge_worktree" main
 git -C "$merge_worktree" merge --no-ff --no-commit "$feature_sha"
 (
   cd "$merge_worktree"
+  # The executable products must be built explicitly: Package.swift's test targets
+  # depend only on MOSSCaptureCore, so `swift test` never produces mtd-capture or
+  # MOSSCaptureApp. tests/test_live_integration.py (and the A-034 tracer) execute the
+  # real binaries and ERROR rather than skip when they are absent — verified in a
+  # fresh worktree: 5 errors without these builds, 5 passed with them.
+  swift build --package-path macos/MOSSCapture --product mtd-capture
+  swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
   swift test --package-path macos/MOSSCapture
   PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
 )

@@ -109,6 +109,12 @@ swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real pr
 python3 -m pytest tests/test_macos_uds_tracer.py -q
 
 # --- wide checkpoint -----------------------------------------------------
+# NOT self-sufficient. tests/test_live_integration.py (and the A-034 tracer) execute the
+# real binaries and ERROR — not skip — when they are absent, and `swift test` never builds
+# them because Package.swift's test targets depend only on MOSSCaptureCore. Verified in a
+# fresh worktree: 5 errors without these two builds, 5 passed with them (~8 s).
+swift build --package-path macos/MOSSCapture --product mtd-capture
+swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
 python3 -m pytest -q
 
 # --- server (read-only probe) -------------------------------------------
@@ -144,10 +150,13 @@ printf '%s\n' \
 bash scripts/ralph-afk/validate-phase-a-locality.sh
 
 # --- one keeper merge, primary worktree stays on the feature branch -------
+swift build --package-path macos/MOSSCapture --product mtd-capture
+swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
 swift test --package-path macos/MOSSCapture
 python3 -m pytest tests -q -p no:cacheprovider
 test -z "$(git status --porcelain)"
-bash scripts/ralph-afk/merge-keeper.sh
+RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # fences only, no merge
+bash scripts/ralph-afk/merge-keeper.sh                          # builds products itself in the temp worktree
 ```
 
 ## Candidates

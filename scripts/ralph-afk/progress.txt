@@ -51,3 +51,26 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   loop must stay on the feature branch so post-merge evidence/finish commits cannot change the
   deployed main SHA; blocked TCC is distinct from complete; >15 minutes needs a real 16-minute soak
 - Next: review and commit all control-plane/Ralph changes, then launch clean from the feature branch
+
+## Prelaunch verification pass - revision 5
+- Target: independent review of the revision-4 plan and Ralph bundle before launch
+- Files: `scripts/ralph-afk/{merge-keeper.sh,preflight.sh,launch.sh,context.md,prd.md,README.md}`;
+  control-plane plan revision 5
+- Validation: fresh-worktree probe -> `tests/test_live_integration.py` **5 errors** before the fix
+  and **5 passed** after building both Swift products (~8 s); `bash -n` on all six scripts -> OK;
+  preflight -> PASS, and -> a named failure when the plan-revision minimum is not met;
+  Phase A locality -> PASS
+- Evidence: plan revision 5 section 0; `Package.swift` shows both test targets depend only on
+  `MOSSCaptureCore`
+- Learned: three execution-time defects. (1) `swift test` never builds `mtd-capture` or
+  `MOSSCaptureApp`, and the integration tests execute the real binary and ERROR rather than skip,
+  so the sole keeper merge would have failed inside its temporary worktree; the wide checkpoint
+  `python3 -m pytest -q` is likewise not self-sufficient. (2) Preflight pinned the plan to
+  `Revision: 4` by equality while preflight is mandatory, so any later revision - including this
+  one - would have refused every launch; it is now a `>=` minimum set once in `launch.sh`.
+  (3) The Phase F latency gate had no measurement procedure and `LiveServiceEvent` carries no
+  timestamp, so it was unfalsifiable; it now uses a single-clock client measurement plus an
+  analytic portal-render bound, gated on user-visible latency. Revision 4's removal of the
+  post-stop viewer grace is confirmed correct: `release_session` runs on stop/abort and the portal
+  clears authority at terminal, so the grace was dead state.
+- Next: launch clean from `ralph/live-meeting-mvp` via `./scripts/ralph-afk/launch.sh 30`, then A1

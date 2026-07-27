@@ -47,4 +47,12 @@ export RALPH_PREFLIGHT_REQUIRED="${RALPH_PREFLIGHT_REQUIRED:-1}"
 export RALPH_EXPECTED_BRANCH="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 export RALPH_REQUIRED_ANCESTOR="${RALPH_REQUIRED_ANCESTOR:-af3ac3667393a0411616f52f76339eff01dc13e2}"
 
+# The plan-revision fence lives here, in one place, and is a MINIMUM rather than an
+# equality: the controlling plan is expected to keep advancing, and a pinned revision
+# would hard-block every launch (preflight is mandatory) the moment it does. Bump this
+# only after reconciling this bundle with the newer revision.
+export RALPH_CONTROL_PLANE="${RALPH_CONTROL_PLANE:-/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize}"
+export RALPH_PLAN_PATH="${RALPH_PLAN_PATH:-$RALPH_CONTROL_PLANE/docs/live-capture-gap-and-execution-plan-20260727.md}"
+export RALPH_PLAN_MIN_REVISION="${RALPH_PLAN_MIN_REVISION:-5}"
+
 exec "$here/ralph-afk.sh" "${1:-30}"
