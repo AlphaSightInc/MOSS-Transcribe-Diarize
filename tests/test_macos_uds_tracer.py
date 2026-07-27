@@ -118,9 +118,22 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
             start = _run_cli(cli_exe, ["start", "--label", "tracer"], env=env)
             if start.returncode == 0:
                 body = start.json()
+                cleanup_started = time.monotonic()
+                try:
+                    cleanup_stop = _run_cli(cli_exe, ["stop"], env=env, timeout=5.0)
+                    cleanup_elapsed = time.monotonic() - cleanup_started
+                except subprocess.TimeoutExpired as exc:
+                    pytest.fail(
+                        "Darwin real UDS tracer requires the no-TCC path, but native start "
+                        "succeeded and bounded cleanup stop timed out: "
+                        f"publishedFrameCount={body.get('publishedFrameCount')}: {exc}"
+                    )
+                assert cleanup_elapsed < 5.0, cleanup_stop.diagnostic
                 pytest.fail(
                     "Darwin real UDS tracer requires the no-TCC path, but native start succeeded "
-                    f"with publishedFrameCount={body.get('publishedFrameCount')}: {start.diagnostic}"
+                    f"with publishedFrameCount={body.get('publishedFrameCount')}; cleanupStop="
+                    f"{cleanup_stop.diagnostic}; cleanupElapsed={cleanup_elapsed:.3f}s: "
+                    f"{start.diagnostic}"
                 )
             assert start.returncode == 70, start.diagnostic
             start_body = start.json()
