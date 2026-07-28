@@ -13108,3 +13108,42 @@ cause is NOT the decode and the plan's two ordered remedies become live for the 
 If m4mbp is still gone, the remaining non-host work is evidence repair - context.md is now
 ~205 KB, so candidate 52's retirement pass is the honest fallback, accepting that the record
 defers it until F1/F3 pass.
+
+================================================================================
+run 20260728-181020 iteration 25 - PRE-RECORD: the decode-cap TRUNCATION probe's
+no-mutation contract, written and committed BEFORE the host is touched
+================================================================================
+
+WHAT WILL RUN. scripts/ralph-afk/decode-cap-truncation-probe.py, shipped on stdin into a
+mktemp directory under /tmp on the server and run with the service venv python against the
+deployed checkout /mnt/d/Coding/MOSS-Transcribe-Diarize (HEAD 77e0014, re-verified in the
+same invocation). Its spans come from THIS host's /tmp/ralph-f1-evidence/snapshot.tsv,
+shipped beside it.
+
+WHY IT IS READ-ONLY, stated per surface rather than asserted once:
+  - the live service   : never contacted. No pairing code, no device, no session, no frame,
+                         no heartbeat, no view token. The probe makes no TLS call at all.
+  - the vLLM engine    : two POSTs to /tokenize and /detokenize, which are tokenizer routes.
+                         No audio, no /v1/audio/transcriptions, no GPU work, no engine state.
+  - the checkout       : imported, never written. No git command but `rev-parse`.
+  - systemd            : untouched. No restart, no enable, no disable.
+  - the device store   : untouched - the probe creates no device, so unlike iteration 23's
+                         run there is nothing to revoke afterwards.
+  - the filesystem     : one mktemp -d holding the script and the spans JSON, removed by the
+                         same invocation that created it; `wavs_left`-style check is
+                         `ls "$scratch"` after the rm, expected to fail with "No such file".
+
+ROLLBACK, should any of the above turn out to be wrong:
+  - probe scratch left behind : rm -rf /tmp/mtd-dc-trunc.*
+  - nothing else has a rollback because nothing else is mutated. If the baseline/after
+    comparison below disagrees on ANY line, stop and record it rather than continuing.
+
+BASELINE/AFTER COMPARISON (the same list iterations 23 and 24 used):
+  HEAD 77e0014; moss-live-web MainPID 350731; moss-web 301112; moss-vllm 322117; all
+  NRestarts=0; live-runs 0 entries; no /tmp/mtd-live-*; 0 journal tracebacks; batch
+  http://192.168.68.38:7860/ still 200; device store 10 devices / 1 unrevoked (m4mbp's).
+
+NO Mac action of any kind: m4mbp is unreachable for the fifth consecutive iteration and
+this probe does not need it. No checkout, no merge, no push, no deploy, no restart, no app
+install, and no tracked product source is touched - the post-merge freeze holds and the only
+file this iteration adds is under scripts/ralph-afk/.
