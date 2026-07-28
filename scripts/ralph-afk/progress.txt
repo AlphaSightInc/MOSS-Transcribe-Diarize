@@ -5712,3 +5712,5 @@ BLOCKED - not complete. No further machine work advances any acceptance clause.
   failure - once `status` names the codes, the cause becomes an ordinary candidate.
 - Host state left clean: no product source changed by the supervisor; server `6a540fe`, all three
   services active `NRestarts=0`, `live-runs/` empty, batch 200 and live 200; four-way SHA still 4/4.
+
+[loop 20260728-181020-14512] start budget=30 agent=claude branch=ralph/live-meeting-mvp
