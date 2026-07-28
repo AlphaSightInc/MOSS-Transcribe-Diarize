@@ -71,15 +71,19 @@ within that amendment's scope; iteration 2 landed H1 (the empty-span decode cont
 iteration 3 landed H2 (the span-cap authority contract), which closes the last of F0's three
 blockers. Iteration 4 ran the **H4 gate green** at `8b852f2`, reviewed the merge payload against the
 amendment's scope and proved the deployed manifest still admits under H2's and H3's new refusals; it
-changed no tracked file. **H4's remaining half — merge, publish, redeploy, then the probe — is the
-only Phase H item open.**
+changed no tracked file. Iteration 5 made **the second amendment's one authorized merge** at
+`b817871` (see the third-keeper-merge block) and changed no tracked product source — only
+`merge-keeper.sh`'s guard. **The post-merge freeze has resumed: from `9e0780a` on, the feature branch
+may again carry only `scripts/ralph-afk/*`.** H4's remaining steps — publish, redeploy, then the
+probe — are the only Phase H items open.
 
-**PRD acceptance scoreboard after iteration 10.** Green with evidence: IDEA-044 checkpoint, production
-client gate, server meeting-reliability gate, the one reviewed keeper merge (plus the amendment's one
-authorized follow-up merge), one exact SHA everywhere, live service answering, batch service
-unharmed, signed app installed, **rollback rehearsed and recorded**. Open: permissions granted, the
-60 s canary, the 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and
-the final close.
+**PRD acceptance scoreboard after iteration 5 of run 20260728-112922.** Green with evidence:
+IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
+merge (plus both amendments' authorized follow-up merges), live service answering, batch service
+unharmed, signed app installed, **rollback rehearsed and recorded**. **One exact SHA everywhere is
+temporarily red by design** — local `main` is `b817871` while `origin/main`, the host checkout and
+m4mbp are still `317df4d`; H4 step (c) restores it. Open: permissions granted, the 60 s canary, the
+300 s certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
 
 **Those open items are no longer merely waiting on E3 — iterations 9 and 10 proved they cannot pass
 on the deployed build at all, and that the deployed build fails *sooner* on realistic input than on
@@ -158,19 +162,46 @@ behavior and needs no service restart.
 alone **4 passed / 0 skips** in 16.5 s. Both Swift products built there first, separate invocations.
 **Not pushed** — `origin/main` is still `f9285d6`.
 
-**How the two fences were satisfied (iteration 5), and what they now do.**
-1. *History join.* `git merge --no-ff main` on the feature branch → `502a49a`. Proven content-free
-   **before** running it: `git merge-tree --write-tree main HEAD` returned HEAD's own tree
-   `5963a2b0…`, and afterwards `git diff --stat 0b5383f HEAD -- .` and
-   `git diff --name-only 23dc163 HEAD -- ':!scripts/ralph-afk'` were both empty. Only then was
+**Third keeper merge — the SECOND amendment's ONE authorized merge: DONE at `b817871` (run
+20260728-112922 iteration 5).** Feature tip `9e0780a69ef8438fd1ece0e93652b4c461dd68d3`, merge
+`b817871414fcc8f609c6f5eb2898ec2957c7768c`, `main^1 = 317df4d…` (the second merge),
+`main^2 = 9e0780a…`. `git diff HEAD main` is **empty** and both trees are
+`eb26fa9131fbf172125112c7f51e165935739399`, so the merge commit carries exactly the feature tree.
+Against the published `317df4d` the whole delta is **21 files**: the H4a-reviewed fifteen (nine
+`moss_transcribe_diarize/`, six tests, +917/-106) plus six `scripts/ralph-afk/*`
+(`context`, `prd`, `progress`, `merge-keeper`, and the two probes `live-hardcap-repro.py` /
+`live-pipeline-probe.py`). `git diff --name-only 317df4d b817871 -- macos ops docs LOCAL_DEPLOYMENT.md
+CONTEXT.md` is **empty** — unlike the second merge, this one is *server-only*, so the deployed
+service **does** change behavior and the redeploy in step (c) **does** need a
+`moss-live-web.service` restart. No Mac rebuild is needed: `macos/` is byte-identical, so the app
+installed on m4mbp in G6 is still current at this SHA.
+*The suite on the merged tree, measured inside the merge worktree (the script's own gate):* both
+Swift products built there first in separate invocations (`mtd-capture` 7.33 s, `MOSSCaptureApp`
+0.63 s); `swift test` **139 passed / 0 failures**; `pytest tests` **551 passed / 2 skipped**.
+The run completed in ~3 min with no stall — the iteration-5 hang of run `20260728-072601` did not
+recur, and it stayed unexplained rather than diagnosed.
+**Not pushed** — `origin/main` is still `317df4d`; publishing is H4 step (c).
+*The guard is live and was rehearsed non-vacuously after the merge:* the same dry run now prints
+`ERROR: main moved from expected pre-merge SHA 317df4d…`, rc=1, so a **fourth** merge is refused.
+
+**How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
+merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
+iteration 5); the SHAs below are the second merge's, and the third's are in its own block above.
+1. *History join.* `git merge --no-ff main` on the feature branch → `502a49a` (third merge:
+   `9f1552e`). Proven content-free **before** running it: `git merge-tree --write-tree main HEAD`
+   returned HEAD's own tree `5963a2b0…` (third: `bbb84f24…`), and afterwards
+   `git diff --stat <pre-join HEAD> HEAD -- .` and
+   `git diff --name-only <gate SHA> HEAD -- ':!scripts/ralph-afk'` were both empty. Only then was
    `merge-base --is-ancestor main HEAD` honestly true. Do **not** loosen fence 2; join first.
 2. *`expected_main` advanced in the script*, not by env override, with a comment citing the
-   2026-07-28 amendment — so the guard is still live and its reason reviewable. Rehearsed
-   **non-vacuously after the merge**: the same dry run now prints
-   `ERROR: main moved from expected pre-merge SHA f9285d6…`, rc=1, so a **third** merge is refused.
-3. *Fence 2 now speaks.* It was a bare command under `set -e` that exited 1 printing nothing; it is
+   authorizing amendment — so the guard is still live and its reason reviewable. Rehearsed
+   **non-vacuously after each merge**: the dry run then names the superseded SHA and exits 1, so the
+   next merge is refused until another amendment advances the line again.
+3. *Fence 2 speaks.* It was a bare command under `set -e` that exited 1 printing nothing; it is
    now `|| { echo ERROR …; exit 1; }` naming both SHAs and the fix. Rehearsed against a dangling
    `git commit-tree` object (no ref created): both lines print, rc=1.
+*Order that matters:* advance `expected_main` and **commit** it before running the script — the real
+run refuses a dirty tree, and the commit becomes the feature tip the merge captures.
 
 **Run `merge-keeper.sh` in the BACKGROUND, never in a time-capped foreground shell (iteration 5).**
 The first attempt was killed by a 10-minute foreground cap. The kill does not run the script's EXIT
@@ -2221,22 +2252,26 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
        (139 / 551+2 / tracer 4 / 10/10 / leak-scan clean), merge payload reviewed as exactly the
        three blockers and their tests, deployed manifest proven to admit under both new refusals.
        See the H4 gate block above.
-    b. *Merge* `[open - next]`. The single merge authorized by the second amendment, through
-       `merge-keeper.sh`: join `main` into the feature branch first (prove it content-free with
-       `git merge-tree --write-tree` before running it), then advance `expected_main` from
-       `317df4d...` **in-script** with a comment citing the second amendment, exactly as G4 did -
-       never by CLI override. Run the script in the **BACKGROUND**; a foreground timeout kill skips
-       its EXIT trap and strands a worktree holding `main`.
-    c. *Publish and redeploy* `[open]`. `git push origin main` (fast-forward only, never force),
-       then move the host checkout to the new SHA and restart `moss-live-web.service`; record the
-       rollback (`git -C /mnt/d/... checkout 317df4d…` + restart) before touching the host. Then
-       re-run the four-way SHA check so local/origin/host/m4mbp are one SHA again. The served leaf
-       must still hash to the D2 pin `a35ca9fc…` afterwards, or every paired Mac is broken.
+    b. *Merge* `[done - run 20260728-112922 iteration 5]`. `b817871`, feature tip `9e0780a`,
+       `main^1 = 317df4d`, `main^2 = 9e0780a`, trees identical, delta exactly the fifteen reviewed
+       files plus `scripts/ralph-afk/*`. The guard now refuses a fourth merge. See the
+       third-keeper-merge block above. **The freeze has resumed** - tracked product source may not
+       change on this branch again without a further amendment.
+    c. *Publish and redeploy* `[open - next]`. `git push origin main` (fast-forward only, never
+       force), then move the host checkout to the new SHA and restart `moss-live-web.service`;
+       record the rollback (`git -C /mnt/d/... checkout 317df4d…` + restart) before touching the
+       host. **This merge is server-only, so unlike the second one the restart is mandatory** -
+       and it is the first restart under H2's `_require_one_span_cap` and H3's construction
+       refusal, both of which fail the service **closed**. Re-run the deployed-manifest check
+       recorded in Validation *before* restarting, not after. No Mac rebuild: `macos/` is
+       byte-identical to `317df4d`, so m4mbp needs only `git fetch && git checkout` to rejoin the
+       four-way SHA check. The served leaf must still hash to the D2 pin `a35ca9fc…` afterwards, or
+       every paired Mac is broken.
     d. *Probe* `[open]` - the amendment's actual gate. Re-run `live-pipeline-probe.py` against the
        redeployed service and require a run that survives its full plan with committed samples
        advancing. Only after that is E3 worth the operator's clicks.
     **Until (c) lands the deployed service is still the unfixed `317df4d`** - all three fixes exist
-    only on this branch, so a probe run before then still dies at the first unaligned frame.
+    only in `b817871`, so a probe run before then still dies at the first unaligned frame.
 
 36. **A transient decoder failure ends the meeting** `[open; out of the amendment's scope, do not
     start without authorization]`. One vLLM timeout or one reset socket is now a named

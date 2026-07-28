@@ -3998,3 +3998,86 @@ before a restart, not after one. Recorded as a standing command in context.md's 
   holding `main` and blocks the retry; recover with `git -C <wt> merge --abort && git worktree
   remove --force <wt>`). Then (c) publish + redeploy + four-way SHA, and only then (d) the
   probe, which is the amendment's actual gate.
+
+================================================================================
+run 20260728-112922 | iteration 5 | H4 step (b) - the second amendment's one authorized merge
+================================================================================
+Target: candidate 35(b) - merge `ralph/live-meeting-mvp` into `main` through
+`scripts/ralph-afk/merge-keeper.sh`, the single merge authorized by the prd.md amendment of
+2026-07-28 (server decode-seam fix cycle). This is the only Phase H item that was open behind
+publish/redeploy/probe.
+
+Result: **MERGED at b817871414fcc8f609c6f5eb2898ec2957c7768c.**
+  feature tip  9e0780a69ef8438fd1ece0e93652b4c461dd68d3
+  main^1       317df4d728b6765dbe365a3166158ba581299557   (the second merge)
+  main^2       9e0780a69ef8438fd1ece0e93652b4c461dd68d3   (== feature tip)
+  tree(main) == tree(HEAD) == eb26fa9131fbf172125112c7f51e165935739399
+  `git diff HEAD main` -> empty, so the merge commit carries exactly the feature tree.
+**Not pushed.** `origin/main` is still 317df4d; publishing is step (c).
+
+Files touched (all under scripts/ralph-afk/, no product source):
+  merge-keeper.sh   expected_main advanced f9285d6... -> 317df4d..., in-script, with a comment
+                    citing the SECOND amendment and naming its three fixes.
+  context.md        third-keeper-merge block; branch-state and scoreboard updated; the two-fence
+                    block generalized into a standing procedure; candidate 35(b) closed, (c) next.
+  progress.txt      this entry.
+
+### The three steps, in the order the fences require
+1. **History join, proven content-free BEFORE it was made.**
+   `git merge-tree --write-tree main HEAD` -> bbb84f245a2a8850a4e084e4619e0d8f410632c7, which is
+   HEAD's own tree. Only then `git merge --no-ff main` -> 9f1552e, whose tree is the same
+   bbb84f24. Verified after: `git diff --stat d9a5e61 HEAD -- .` empty,
+   `git diff --name-only 8b852f2 HEAD -- ':!scripts/ralph-afk'` empty (i.e. the H4a gate SHA still
+   describes the product tree), `git merge-base --is-ancestor main HEAD` -> YES.
+   The join is needed because 317df4d lives only on main; fence 2 is false by construction after
+   any prior keeper merge and must be satisfied by joining, never by loosening.
+2. **expected_main advanced in-script and committed** (9e0780a). Never RALPH_MERGE_MAIN_BEFORE:
+   an env override passes the guard leaving no record of why. The script refuses a dirty tree on
+   the real run, so this had to be committed first - and that commit is the tip the merge captured.
+   Dry run before the merge: `Keeper merge dry-run: PASS feature=9f1552e... main_before=317df4d...`
+3. **merge-keeper.sh run in the BACKGROUND** (never a time-capped foreground shell; a kill skips
+   the EXIT trap and strands a worktree holding main). Log /tmp/ralph-h4b-merge.log:
+     mtd-capture build 7.33 s, MOSSCaptureApp build 0.63 s, separate invocations
+     swift test        -> 139 passed / 0 failures
+     pytest tests      -> 551 passed / 2 skipped
+     Keeper merge: PASS feature=9e0780a... main=b817871...  rc=0
+   Completed in ~3 min. `git worktree list` afterwards shows only the primary worktree, so the
+   EXIT trap cleaned up; `git status --porcelain` clean.
+
+### The merge payload against the published SHA
+`git diff --name-only 317df4d b817871` = 21 files: the fifteen H4a reviewed (nine
+moss_transcribe_diarize/: live_adapters, live_coordinator, live_portal, live_provider_bundle,
+live_service_runtime, live_session, transcription_outcome, vllm_runner, live_replay; six tests:
+test_live_pipeline_seams (new, 554 lines), test_live_api, test_live_identity,
+test_live_provider_bundle, test_live_service_runtime, test_live_session; +917/-106) plus six
+scripts/ralph-afk/ files (context, prd, progress, merge-keeper, live-hardcap-repro,
+live-pipeline-probe).
+`git diff --name-only 317df4d b817871 -- macos ops docs LOCAL_DEPLOYMENT.md CONTEXT.md` -> **empty**.
+
+### Guard rehearsed non-vacuously AFTER the merge
+`RALPH_MERGE_DRY_RUN=1 RALPH_MERGE_ALLOW_DIRTY=1 scripts/ralph-afk/merge-keeper.sh`
+  -> `ERROR: main moved from expected pre-merge SHA 317df4d728b6765dbe365a3166158ba581299557`, rc=1
+A fourth merge is refused. The freeze has resumed: from 9e0780a on, this branch may carry only
+scripts/ralph-afk/*.
+
+### Learned
+1. **This merge is server-only, and that inverts the second merge's redeploy conclusion.** The
+   second merge (317df4d) was Mac-only, so publishing it could not change server behavior and
+   needed no restart. Here macos/ is byte-identical and moss_transcribe_diarize/ is not, so step
+   (c) **must** restart moss-live-web.service - and m4mbp needs no rebuild, only a checkout, to
+   rejoin the four-way SHA check. The same "which half of the tree moved" question answers both
+   "must I restart" and "must I rebuild", in opposite directions each time; ask it explicitly
+   rather than copying the previous cycle's steps.
+2. **The 10-minute stall of run 20260728-072601 iteration 5 did not recur** - this run took ~3 min
+   start to finish. It stays unexplained, not diagnosed; the `sample`-before-kill instruction
+   remains the standing plan if it happens again.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - the
+  deployed service is still 317df4d and carries none of H1/H2/H3.
+- Next: **H4 step (c)** - publish and redeploy. Record the rollback before touching the host
+  (`git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 317df4d` + `systemctl --user restart
+  moss-live-web.service`). Re-run the deployed-manifest admission check (endpoint/bounds
+  hard_cap_samples both 40000, speech_provider.frame_samples 160, no session_hard_cap_samples)
+  BEFORE the restart, because both new refusals fail the service closed. Then `git push origin
+  main` fast-forward only, move the host and m4mbp checkouts, confirm the served leaf still hashes
+  to the D2 pin a35ca9fc..., and re-run the four-way SHA check. Only then step (d), the probe.
