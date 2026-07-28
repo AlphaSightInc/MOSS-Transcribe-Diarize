@@ -11042,3 +11042,168 @@ F2 itself.
 - Supervisor state check at authorization time: loop RUNNING (pid 14512, run 20260728-181020,
   iteration 12 of 30), `main` `fc7097d`, tree clean, 0 tracked product files changed since the fifth
   merge, four-way SHA 4/4. The loop will pick this amendment up on its next iteration; no relaunch.
+
+================================================================================
+run 20260728-181020 | iteration 12 | PRE-RUN ROLLBACK RECORD (written BEFORE any
+                                    host mutation, per prd.md "Reversibility")
+================================================================================
+Target: candidate 51 - give the two capture lanes DIFFERENT content, and land the certification
+harness in the repo instead of /tmp. One real canary run on the real hosts is the validation.
+
+Observed host state BEFORE anything is touched (2026-07-28, iteration 12):
+- m4mbp: output volume 50, output muted = false, default OUTPUT device "G@0 AirPods Pro #2"
+  (Bluetooth), default INPUT device "G@0 AirPods Pro #2" (Bluetooth, 24 kHz). NOTE: this is a
+  CHANGE from F1/F3, which ran with the built-in speakers and the built-in microphone. No
+  MOSSCaptureApp process running; `mtd-capture status` -> {"ok":false} (no control socket).
+  Pasteboard holds 27 bytes of unknown operator content (NOT read - it may be a secret).
+- m4mbp tools: no SwitchAudioSource, no sox, no ffmpeg. Only `say`, `afplay`, `osascript`, `jq`.
+  So the default output device CANNOT be switched from the command line; muting is the only
+  device-independent way to keep the program out of the room.
+- MacStudio: output volume 20, not muted, default output "Mac Studio Speakers".
+
+Mutations this iteration will make, each with its rollback command, recorded BEFORE it is applied:
+1. m4mbp output muted for the duration of the program.
+   ROLLBACK: ssh ga0@m4mbp 'osascript -e "set volume without output muted"'
+   (also in live-canary.sh's own EXIT/INT/TERM trap, and re-asserted at step 15)
+2. MOSSCapture.app launched on m4mbp.
+   ROLLBACK: ssh ga0@m4mbp 'pkill -x MOSSCaptureApp'
+3. One capture session started on m4mbp.
+   ROLLBACK: ssh ga0@m4mbp '~/.local/bin/mtd-capture stop'   (the driver stops and drains itself)
+4. Scratch files /tmp/live-canary.sh and /tmp/ralph-canary/ on m4mbp.
+   ROLLBACK: ssh ga0@m4mbp 'rm -rf /tmp/ralph-canary /tmp/live-canary.sh'
+5. MacStudio output volume raised so its speaker can supply the microphone lane's room content.
+   ROLLBACK: osascript -e "set volume output volume 20"
+6. One pairing code minted on the server loopback and consumed by m4mbp's EXISTING device row
+   (K5d: `pair` reuses the stored capture-device-id and only refreshes `paired_at`).
+   NO rollback needed and NONE is to be applied: per the standing fence the m4mbp device is
+   NOT revoked. No service is restarted, no checkout moves, nothing is deployed.
+7. m4mbp pasteboard is overwritten by `handoff` and cleared to 0 bytes at the end. The 27 bytes
+   found there are lost. This is an accepted, already-established cost of the handoff step
+   (F1 and F3 did the same); it cannot be preserved without reading content that may be secret.
+
+NOT mutated, and not permitted to be: no tracked product source, no branch, no merge, no push,
+no deploy, no service restart, no TCC write, no device revoke.
+
+================================================================================
+run 20260728-181020 | iteration 12 | candidate 51 DONE - the two lanes now carry
+                                    different content, and it corrects F1 twice
+================================================================================
+Target: candidate 51, the only open Ralph-only item and the one the fifth amendment's gate names
+as a precondition ("re-run F1 and F3 and require both green, WITH CANDIDATE 51'S HARNESS FIX IN
+PLACE so the label clause is meaningfully verified"). The pre-run rollback record for every host
+mutation is the block immediately above this one.
+
+CHANGE: two new files, both Ralph-only, no tracked product source, no test, no branch/merge/push.
+  scripts/ralph-afk/live-canary.sh          the lane-separating certification driver
+  scripts/ralph-afk/live-canary-analyze.py  its reducer
+The old driver lived only in /tmp on two hosts, so it was one reboot away from having to be
+rewritten; it is now in the repo, which is also what makes this fix reviewable.
+
+THE MECHANISM, and it was a hypothesis the run had to test, not an assumption. m4mbp has no
+SwitchAudioSource, no sox, no ffmpeg and no virtual audio device, so the program cannot be routed
+to a device the microphone cannot hear. What is available is MUTING the system output. That only
+separates the lanes if the process tap sits UPSTREAM of the output mute - if it sits downstream,
+muting silences the system lane and the whole idea is wrong. MEASURED: with the room hearing
+nothing, the entire program still transcribed ("Good afternoon, everyone." / "Begin weekly
+transcription status review." / "Thank you. Returning to the system audio." / "That concludes the
+agenda."). The tap is upstream. Muting is a valid, device-independent lane-separation mechanism.
+
+RESULT, on the real hosts at fc7097d. Session c06fa7c5457c476487d48eca13454964, label
+ralph-c51-20260728T210237Z, 86.8 s of accepted audio, 46 committed spans, version 0 -> 314.
+- ECHO GONE: 0 of 46 spans carry a repeated fragment, against F1's 3 of 42 (F1's span 1 rendered
+  "Good afternoon everyone." twice). 49 fragments this run vs 304 in F1 for a comparable program.
+- THE LABEL CLAUSE IS VERIFIED FOR THE FIRST TIME: in the final program phase - after the
+  microphone lane had had its own 28 s turn - the two voices are exactly S04 x4 and S06 x2, stable
+  and distinct, with no new speaker invented. Per-phase labels:
+    program-a   (system) S01 2, S02 1, S03 1, S04 3, S05 1, S06 3, S07..S12 1 each
+    room-window (mic)    S00 15, S13 1, S14 1, S15 1, S16 1
+    program-c   (system) S00 2, S04 4, S06 2
+- CLEAN MEETING: no macos_buffer_overrun, both lanes capturing throughout and stopped on a clean
+  stop, publishedFrameCount 350 with the outbox drained to 0, sessionRefusal / pumpFailure /
+  outboxDegradation all null.
+- CANDIDATE 50 REPRODUCES A FOURTH TIME: committed p95 8342.7 ms, user-visible 9705.3 ms, joining
+  K5d 9089, F1 9053, F3 9148.
+
+CORRECTION 1, and it is worth more than the fix. F1 blamed the echo for "16 canonical speakers for
+2 real voices". THIS ECHO-FREE RUN ALSO REACHES 16, saturating the max_identity_speakers bound at
+t+45.5 s of an 89 s run - and re-reducing F1's OWN evidence with the new reducer shows F1 saturated
+at t+51.8 s. So the echo was never the explanation. The consumer is low-content fragments, mostly
+the microphone lane's ambient noise, each minting a canonical speaker. Recorded as candidate 55:
+after saturation a participant who first speaks at minute 5 can never be labelled, it degrades
+quality without ending a session, and therefore no existing gate sees it - exactly like 50.
+
+CORRECTION 2. The marker cross-check failed a SECOND time with a second word: `umbrella` went the
+way of `pineapple`. Two words, two failures is a pattern, not bad luck - a rare noun inside a
+fluent sentence is reliably rewritten by the decoder's language model. The driver now speaks the
+marker ALONE, three times, at -r 130. That edit is WRITTEN BUT NOT YET EXERCISED BY A RUN; do not
+record the marker clause as solved until a run shows the word.
+
+WHAT DID NOT WORK, stated because it bounds what the harness can promise. The plan was for
+MacStudio's speaker to give the microphone lane content of its own. At volume 60 it never arrived:
+`elephant` appears nowhere, and the room window produced only filler (S00 x15 plus four one-hit
+labels). The microphone lane is bound to AirPods Pro over Bluetooth at 24 kHz, not the built-in
+mic. So a run separates the lanes as PROGRAM vs ROOM, which is what candidate 51 explicitly allows
+("accept that one lane is the program and the other is the room and say so in the record"), but the
+room is not yet a second speaker. Finding an external source the capture Mac's own microphone can
+hear is still open and needs no authorization.
+
+OPERATOR STATE, worth knowing before the next run. m4mbp's default INPUT and OUTPUT are both
+AirPods Pro now; F1 and F3 ran on the built-in speakers and microphone, so those runs and this one
+are not the same acoustic experiment. The output volume moved 50 -> 64 -> 50 while the loop worked
+and 238 bytes appeared on the pasteboard after the driver had cleared it to 0 - the operator was
+using the machine during the run. The driver therefore records topology-before.txt /
+topology-after.txt every run, and a post-run pasteboard must not be read as this run's leak.
+
+Files touched: scripts/ralph-afk/live-canary.sh (new), scripts/ralph-afk/live-canary-analyze.py
+(new), scripts/ralph-afk/{context.md,progress.txt}. No tracked product source; freeze holds.
+
+Validation:
+- bash -n scripts/ralph-afk/live-canary.sh -> ok.
+- the real run: DRIVER_EXIT=0, start_rc=0, stop_rc=0, portal 200/21282 bytes over the pinned leaf,
+  leaf sha256 == the D2 pin before any authenticated request.
+- python3 scripts/ralph-afk/live-canary-analyze.py <evidence> --voices 2 -> rc=5 (neither marker
+  landed), which is the honest verdict and is NOT the same as the fix failing: the reducer now
+  separates "the mute killed the tap" from "the decoder rewrote the marker word" and prints the
+  latter, because the system phases produced 25 labelled fragments in a MUTED run.
+- the reducer was validated against KNOWN data before being trusted: run on F1's evidence it
+  reproduces F1's recorded facts exactly - 16 canonical speakers, and the doubling in spans 1 and
+  27 that the F1 block names by hand.
+- server untouched: deployed SHA fc7097d, moss-live-web MainPID 346453 and moss-web MainPID 301112
+  both ActiveState=active with NRestarts=0, live-runs/ 0 entries, no /tmp/mtd-live-*.
+- batch unharmed: http://192.168.68.38:7860/ -> 200 before the run.
+- scripts/ralph-afk/preflight.sh rc=0.
+
+ROLLBACKS ALL APPLIED AND VERIFIED (each was recorded before it was applied, in the block above):
+app_running=0, scratch_removed=0, m4mbp muted=false, MacStudio volume=20 muted=false, both TCC
+grants still auth_value=2. The m4mbp device was NOT revoked, per the standing fence. Pasteboard:
+the driver verified 0 bytes at its own end; the 238 bytes present afterwards are concurrent
+operator activity, not this run's output.
+
+Evidence paths: scripts/ralph-afk/live-canary.sh + live-canary-analyze.py (self-documenting,
+re-runnable, no secret); /tmp/ralph-c51-evidence/ralph-canary/ on MacStudio (snapshot/events/status
+TSVs, phases.tsv, topology before+after, times.env); /tmp/ralph-c51/driver.log; context.md's block
+"The lanes are separated, and it corrects two things F1 concluded" and its Validation-fence recipe.
+
+THE FIFTH AMENDMENT LANDED DURING THIS ITERATION. The working tree was behind HEAD when the
+iteration started - the prd.md and context.md I first read were the pre-amendment versions - and
+synced while the canary was running. Candidates 48, 49, 50 and 53 are now AUTHORIZED, 54 is closed,
+and the cycle's gate is exactly what this iteration was building for. Every edit made here was a
+surgical string replacement, so none of the operator's text was clobbered; verified by grep after.
+LESSON: re-read prd.md at the point of writing the record, not only at the start of the iteration.
+
+Learned. (1) A mechanism that cannot be routed around can often be muted instead - but "muting the
+output silences the tap too" was a real 50/50 and the run existed to settle it, not to confirm it.
+(2) Validate the instrument against data whose answer is already known BEFORE trusting it on new
+data; running the new reducer over F1's evidence reproduced F1's hand-written facts and is what
+makes the "0 of 46" number credible. (3) The same measurement that finds a defect can exonerate the
+explanation: removing the echo did not move the speaker count, which is how a two-run comparison
+turned a plausible story into candidate 55. (4) Two independent marker words failing the same way
+is a property of the decoder, not of the words - stop picking better nouns.
+
+Next: the fifth amendment's cycle - candidates 53, 48, 49, 50 - is now the critical path, and it
+opens with three decisions that must be RECORDED BEFORE THE PATCH (overrun = failure or
+degradation; may a failed lane recover; what bounds a runaway decode). Take those decisions as an
+iteration of their own, in writing, before touching macos/ or moss_transcribe_diarize/ - all three
+have been reasoned about across F1, F3 and the lane-refusal probe, so the evidence is already in
+hand. Candidate 55 stays OUT of that cycle and needs its own authorization. The remaining
+Ralph-only work is the room-lane source and one run to exercise the isolated-marker change.

@@ -69,7 +69,7 @@ progress.txt archive.
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
 | 60 s canary (F1) | **RED** — see the F1 block |
-| 300 s certification (F2) | not run; gated behind candidate 51 and would die at candidate 53's wall |
+| 300 s certification (F2) | not run; **candidate 51 is now closed** (iteration 12) so the harness is ready, but F2 would still die at candidate 53's wall |
 | 16-minute soak (F3) | **RED** — see the F3 block |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
@@ -81,10 +81,14 @@ progress.txt archive.
 - **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** Two of 42 spans decoded
   at RTF ≈ 3.4 and stalled the serial queue behind them; committed p95 9053 ms with a median lag of
   ≈ 0 s. Three independent runs agree to within ~100 ms (K5d 9089, F1 9053, F3 9148).
-Both are tracked product source under the post-merge freeze. **Candidate 54 is ANSWERED** (iteration
-11) without spending an authorization: the 409 is `LiveV2SessionTerminalError` —
-`"v2 system lane is failed."` — armed by the client's *own* heartbeat, **not** the
-`v2_out_of_order_frame` that was on record as likeliest. See the lane-refusal block and Phase M.
+- **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
+  16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
+  never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
+All three are tracked product source under the post-merge freeze. **Candidate 54 is ANSWERED**
+(iteration 11) and **candidate 51 is DONE** (iteration 12), neither spending an authorization: the
+409 is `LiveV2SessionTerminalError` — `"v2 system lane is failed."` — armed by the client's *own*
+heartbeat, **not** the `v2_out_of_order_frame` that was on record as likeliest; and the two lanes
+now carry different content, which took no product change at all. See those two blocks and Phase M.
 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
@@ -235,6 +239,9 @@ i.e. an ASR-accuracy miss, not a pipeline miss. The two red clauses above are **
 by the echo — the latency mechanism reproduced on K5d's echo-free run — but the label and marker
 clauses are, and F2 must fix the harness: give the two lanes **different** content, which is what a
 real meeting is.
+> **Corrected by iteration 12's echo-free run.** The echo was real and is now removed, but it was
+> **not** what produced 16 canonical speakers. An echo-free run saturates the same 16-speaker bound
+> at t+45.5 s (F1 saturated at t+51.8 s). See "The lanes are separated" below.
 
 *Reusable.* The canary driver is `/tmp/ralph-f1-canary.sh` on m4mbp (sha256 `e768a6dc…`, also at
 `/tmp/ralph-f1-canary.sh` on MacStudio) with its evidence in `/tmp/ralph-f1/` there and a pulled copy
@@ -324,6 +331,58 @@ run at 9.1 s committed p95 (K5d 9089, F1 9053) on a fourth audio program.
 Neither holds a secret. `log show` needs a **script file** on m4mbp — an inline `log show --predicate`
 over `ssh` hits zsh's own `log` builtin and dies with `zsh:log:1: too many arguments`, printing
 nothing, which reads exactly like an absent log line.
+
+**The lanes are separated, and it corrects two things F1 concluded (new, run 20260728-181020
+iteration 12). READ THIS BEFORE F2.** Session `c06fa7c5457c476487d48eca13454964`, label
+`ralph-c51-20260728T210237Z`, 86.8 s of accepted audio on the real hosts at `fc7097d`, driven by the
+new in-repo `scripts/ralph-afk/live-canary.sh` with `OUTPUT_MODE=muted`.
+
+*The mechanism, and it is now measured rather than assumed.* A stock Mac has no way to route the
+program away from the room — no `SwitchAudioSource`, no `sox`, no virtual device on m4mbp — so the
+driver **mutes the system output** for the program. **The process tap is upstream of the output
+mute**: with the room hearing nothing, the whole program still transcribed ("Good afternoon,
+everyone.", "Begin weekly transcription status review.", "Thank you. Returning to the system
+audio.", "That concludes the agenda."). Muting is therefore a valid, device-independent
+lane-separation mechanism, and it is what F2 should use.
+
+*The echo is gone, measured on the same instrument that found it.* **0 of 46 spans carry a repeated
+fragment** (F1: 3 of 42, including "Good afternoon everyone." twice inside span 1), and the run
+produced **49 fragments** where F1 produced **304** for a comparable program.
+
+*The speaker-label clause is verified for the first time.* After the identity preparer settles, the
+two program voices hold **stable, distinct labels across the whole meeting**: in the final program
+phase — *after* the microphone lane had had its own 28-second turn — the labels are exactly
+`S04 ×4` (voice A) and `S06 ×2` (voice B), with no new speaker invented.
+
+***Correction 1, and it matters more than the fix.*** F1 blamed the echo for **16 canonical
+speakers**. This echo-free run **also** reaches 16, saturating the `max_identity_speakers` bound at
+**t+45.5 s** of an 89 s run; re-reducing F1's own evidence shows it saturated at **t+51.8 s**. The
+driver is low-content fragments minting a canonical speaker each, mostly from the microphone lane's
+ambient noise — not the echo. See candidate 55.
+
+***Correction 2.*** The marker cross-check failed a **second** time, with a second word: `umbrella`
+went the way of `pineapple`. Two words, two failures — a rare noun inside a fluent sentence is
+reliably rewritten by the decoder's language model. The harness now says the marker **alone,
+repeated three times at `-r 130`**; that change is written but **not yet exercised by a run**.
+
+*What did NOT work, stated because it bounds what the harness can promise.* MacStudio's speaker at
+volume 60 was supposed to give the microphone lane content of its own. `elephant` never appears.
+The room window produced only filler (`S00 ×15` — J2's unattributed marker — plus four one-hit
+labels): the mic lane is bound to **AirPods Pro over Bluetooth at 24 kHz**, not the built-in mic.
+So the run separates the lanes as *program vs room* but the room is not yet a second speaker. An
+external source that the capture Mac's own microphone can actually hear is still unfound.
+
+*Topology is transient operator state and must be recorded every run.* This run found m4mbp's
+default **input and output both** on AirPods Pro; F1 and F3 ran on the built-in speakers and
+microphone. Output volume also moved 50 → 64 → 50 while the loop was working, and 238 bytes
+appeared on the pasteboard after the driver had cleared it to 0 — **the operator was using the
+machine during the run**. The driver now writes `topology-before.txt` / `topology-after.txt`.
+
+*Clean meeting, and candidate 50 reproduces a fourth time.* No `macos_buffer_overrun`; both lanes
+`capturing` throughout and `stopped` on a clean stop; `publishedFrameCount` 350 with the outbox
+drained to 0; `sessionRefusal`, `pumpFailure`, `outboxDegradation` all null. Committed p95
+**8342.7 ms**, user-visible **9705.3 ms** — a fourth independent run in the 8.3–9.1 s band
+(K5d 9089, F1 9053, F3 9148).
 
 **The 409 is NAMED, and the meeting was survivable (new, run 20260728-181020 iteration 11).
 READ THIS BEFORE DESIGNING CANDIDATE 53'S FIX.** F3 left "which 409" undetermined and recorded
@@ -1378,6 +1437,32 @@ ssh ga0@m4mbp 'osascript -e "set volume output volume 45"; open -a /Applications
 #   grep "$SID" journal | grep -oE '(POST|GET) /api/live/sessions/[a-z0-9]+/[a-z_]+[^ ]* HTTP/1.1" [0-9]{3}' \
 #     | sed -E 's#/api/live/sessions/[a-z0-9]+/##; s#\?[^ ]*##' | sort | uniq -c
 
+# --- the LANE-SEPARATING canary (iteration 12). This supersedes the /tmp F1 driver above for any
+#     NEW run: it is in the repo, it keeps the program out of the room, and it phases its evidence.
+#     Same launch/mint/pair prelude as F1. ~3 min, no operator input. -------------------------
+scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
+  "MARKER_SYSTEM=umbrella MARKER_ROOM=elephant OUTPUT_MODE=muted ROOM_WINDOW_SECONDS=28 \
+   bash /tmp/live-canary.sh ralph-c51-$(date -u +%Y%m%dT%H%M%SZ)"
+# Run it from MacStudio with stdout redirected to a local log and WATCH THAT LOG: the driver
+# announces `ROOM_WINDOW_OPEN` and then stays silent for ROOM_WINDOW_SECONDS, which is when an
+# external sound source must supply the microphone lane. Nothing on the capture Mac can do this -
+# by construction, since the whole point is that the room and the program are different sources.
+# `OUTPUT_MODE=muted` is the mechanism: the process tap is UPSTREAM of the output mute (measured),
+# so the program reaches the system lane and never the room. `OUTPUT_MODE=audible` reproduces the
+# old confound on purpose. The driver mutes, and its EXIT/INT/TERM trap unmutes - it restores
+# whatever it found, so never leave the mute to a follow-up command.
+# Pull the whole directory (scp of a brace list does NOT expand remotely - use `scp -r`):
+#   scp -r ga0@m4mbp:/tmp/ralph-canary/ /tmp/ralph-c51-evidence/
+#   python3 scripts/ralph-afk/live-canary-analyze.py /tmp/ralph-c51-evidence/ralph-canary --voices 2
+# rc 0 both markers landed / 3 no system marker / 4 no room marker / 5 neither. rc is NOT the whole
+# answer: read section 1's prose, which separates "the mute killed the tap" from "the decoder
+# rewrote the marker word" - those look identical in a marker-only check and mean opposite things.
+# ALWAYS afterwards, exactly as F1: `pkill -x MOSSCaptureApp`, `rm -rf /tmp/ralph-canary
+# /tmp/live-canary.sh`, both TCC grants re-checked (auth_value=2), mute and volume back.
+# The operator uses m4mbp while the loop runs: volume moved 50 -> 64 -> 50 during iteration 12 and
+# the pasteboard refilled after the driver cleared it. Read topology-before/after.txt, and do not
+# read a post-run pasteboard as this run's leak.
+
 # --- F3 soak on the real hosts (RUN in iteration 9 of run 20260728-181020; re-runnable, ~19 min,
 #     costs no operator input). Same launch/mint/pair prelude as F1 above, then: -----------------
 #   scp /tmp/ralph-f3-soak.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp "bash /tmp/ralph-f3-soak.sh ralph-f3-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -1501,7 +1586,10 @@ only reachable through the first.
     **server** for the rest of the meeting with no way back. So the classification is not a reporting
     detail - it is what makes candidate 53's wedge permanent. See the lane-refusal block.
 
-### Phase M - what F1 and F3 found. 50/53 are NOT AUTHORIZED; 51 is Ralph-only and open (52, 54 done)
+### Phase M - what F1 and F3 found. 50/53 AUTHORIZED by the fifth amendment; 51/52/54 done; 55 open
+
+**55 is NOT in the fifth amendment's scope.** Do not fold it into that cycle; it needs its own
+authorization, and the cycle's gate (F1 and F3 both green) does not depend on it.
 
 50. **A decode that runs away is unbounded, and it is what fails the latency gate** `[open - needs
     authorization; tracked server source under the post-merge freeze]`. Measured in F1: two of 42
@@ -1519,7 +1607,18 @@ only reachable through the first.
     per-span deadline needs a decision about what a timed-out span publishes, exactly as H1 needed
     one for an unparseable span - decide it once and record it, as H1 did.
 51. **The canary harness puts the SAME audio on both lanes, which confounds the label clause**
-    `[open - Ralph-only, no product source, no authorization needed]`. `say` through the MacBook
+    `[done - run 20260728-181020 iteration 12; see "The lanes are separated" above]`. Fixed by
+    **muting the system output for the program**, which a run proved the process tap is upstream
+    of. Echo gone (0 of 46 spans with a repeated fragment, vs F1's 3 of 42; 49 fragments vs 304)
+    and the label clause verified for the first time (`S04`/`S06` stable for the two voices across
+    the whole meeting). The harness is now **in the repo**, not `/tmp`:
+    `scripts/ralph-afk/live-canary.sh` + `live-canary-analyze.py`. **Two things it did not buy,
+    both now measured:** the microphone lane still has no content of its own (MacStudio's speaker
+    at volume 60 never reached it — the mic is AirPods Pro over Bluetooth), so a run is *program vs
+    room*, not two speakers; and the marker cross-check failed a second time (`umbrella` after
+    `pineapple`), so the driver now says the marker alone and repeated — **written, not yet
+    exercised**. Original text kept below because F2 still has to honour it.
+    `[superseded]` `say` through the MacBook
     speakers reaches the system tap directly *and* the microphone acoustically, so the mixer sums the
     program with its own echo: 16 canonical speakers for 2 voices, duplicated sentences in the
     transcript, and a marker word ("pineapple" → "Hi Apple") that could not be cross-checked. Fix the
@@ -1591,6 +1690,21 @@ only reachable through the first.
     `failure.code`, and the client discards the body by G3's contract - so a future authorization may
     log the refusal server-side, give it a typed code, or stop discarding it client-side. Pick one
     when 53 is authorized; nothing is blocked on it now.
+55. **Identity capacity saturates in the first minute, so no later voice can ever be labelled**
+    `[open - needs authorization; tracked server source under the post-merge freeze; found in
+    iteration 12]`. `max_identity_speakers` is **16** (a domain-contract bound). Two independent
+    runs reach it mid-meeting: the echo-free canary at **t+45.5 s** of 89 s, and F1 - re-reduced -
+    at **t+51.8 s** of 89 s. The consumer is low-content fragments, mostly the microphone lane's
+    ambient noise, each minting a fresh canonical speaker. After saturation `live_identity.py:121`
+    (exhausted speaker capacity) is the designed outcome, so a participant who first speaks at
+    minute 5 of a real meeting can **never** receive a label. This is what actually produces F1's
+    "16 canonical speakers for 2 voices"; the echo was the wrong explanation. *Shape of the fix,
+    not a decision:* the capacity is a contract value and must **not** be raised to hide this - the
+    question is what may **consume** a slot (a minimum span energy or duration before a fragment
+    may mint a speaker; reuse or eviction of slots that never recur). Same class the third
+    amendment settled for terminal failures: a condition the design contemplates quietly degrades
+    the meeting. It does **not** end a session - J's cycle already made `abstain` non-terminal - so
+    no existing gate sees it, exactly like candidate 50.
 
 ### Phase M - survive a lane fault (2026-07-28, fifth amendment: 48, 49, 50, 53 AUTHORIZED)
 
