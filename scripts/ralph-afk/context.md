@@ -52,11 +52,11 @@ m4mbp checkout with the published SHA (E2a), iteration 21 created the signing id
 and iteration 22 built, signed and installed the app there (E2b) — none of 17-22 changed a tracked
 file. Iteration 23 recorded the E3 blocker. **The post-merge freeze is then reopened exactly once**
 by the prd.md amendment of 2026-07-28: run `20260728-072601` iteration 1 landed G1 (the ATS
-declaration plus its gates) and iteration 2 landed G2 (the pairing-payload trim and the canonical
-wire form), so the branch carries tracked product source again, strictly within the amendment's
-four items.
-Test totals on the branch: Swift **134 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134); Python **537 passed / 2 skipped / 368 subtests**
+declaration plus its gates), iteration 2 landed G2 (the pairing-payload trim and the canonical
+wire form) and iteration 3 landed G3 (control-channel failure classification and logging), so the
+branch carries tracked product source again, strictly within the amendment's four items.
+Test totals on the branch: Swift **139 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -461,6 +461,40 @@ internal-whitespace guard removed the same input reproduces the shipped signatur
 `invalidPinnedHash`; with the wire form reverted to the raw bytes the body assertion fails showing
 `…aaaa\n` on the wire.
 
+**Control-channel failure contract (new, run 20260728-072601 iteration 3 / G3).** A failure the
+control channel cannot name now says *which* failure it is. `classifyControlError` replaces
+`sanitizedControlError` and returns `(name, detail)`: the four typed families
+(`CaptureSecurityError`, `CaptureControllerError`, `CaptureHTTPTransportError`,
+`NativeCaptureError`) keep their exact `String(describing:)` names and get **no** detail — their
+cases carry only what this process put in them, so the name is already the evidence — while
+anything else keeps the bare `control_failed` it always had **plus** a
+`ControlChannelErrorDetail`.
+*The detail is a domain and integers, and that is the whole safety argument.* It is built from
+`error as NSError`, so it needs no per-type list: `URLError`, `POSIXError` and a bare Swift struct
+all answer, which is what makes it a backstop rather than another list the next unfamiliar error
+falls off the end of. `underlyingCode` is `_kCFStreamErrorCodeKey` when non-zero, else
+`NSUnderlyingError.code`, else **absent** — never zeroed, because zero is a code an error can
+really have. Nothing else is copied out: a `URLError`'s `userInfo` carries
+`NSURLErrorFailingURLStringErrorKey` and a localized message, and the mutation that replaced
+`nsError.domain` with `nsError.description` put `https://100.64.0.8:7861/api/live/pairings` and the
+whole SSL message on the wire — caught by the node's absence assertions.
+*Logging.* `UnixDomainControlServer` takes an optional `ControlChannelFailureLogging` and calls it
+**only** for a detail-bearing (i.e. unclassified) failure; `MOSSCaptureApp/main.swift` wires
+`OSLogControlChannelFailureLog()` and the CLI has no control server at all. Unified logging is the
+only place an `LSUIElement` app can leave a record — no window, and Launch Services gives it no
+usable stderr. Read it with
+`log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m`.
+Everything the line marks `.public` is provably non-secret: the detail is numbers and a constant,
+and the command word is reduced to `ControlChannelCommands.all` (the CLI's own vocabulary, now one
+constant instead of two literals) or the literal `other`/`unknown`. An unrecognised command never
+reaches this path — it throws the named `unknownCommand` — which is exactly why that guard is
+structural rather than assumed.
+*The signature this makes readable:* the tracer's real-process pin refusal is `control_failed` +
+`{domain: NSURLErrorDomain, code: -999}` with **no** `underlyingCode` — -999 is
+`NSURLErrorCancelled`, i.e. *this client* refused the leaf — whereas the ATS block G1 fixed is
+-1200 with underlying -9802, i.e. the *OS* refused the connection. Same `control_failed` for both;
+only the detail tells them apart, and that distinction is what nobody could make in E3.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -842,6 +876,14 @@ python3 -m pytest tests/test_macos_uds_tracer.py -q -k 'immutable_first_install 
 #     covered at no extra runtime). ---------------------------------------------------------------
 swift test --package-path macos/MOSSCapture --filter 'PairingPayloadTrims|PairingPayloadWhitespace'
 python3 -m pytest tests/test_macos_uds_tracer.py -q -k cross_real_uds
+# --- G3 control-channel classification + logging (5 Swift nodes: the three unclassified NSError
+#     shapes with no message/URL on the wire, the four typed families keeping their names with no
+#     detail and no log line, one log record per unclassified failure with its command, the log
+#     line's fixed vocabulary, and the app-wires-it/CLI-does-not entrypoint scan). The real-process
+#     half is the tracer's pin refusal, strengthened in place to assert -999 with no underlying. ---
+swift test --package-path macos/MOSSCapture \
+  --filter 'UnclassifiedTransportFailure|AlreadyNamedControlFailures|UnclassifiedControlFailureIsLogged|AppFailureLogWritesOnly|WiresTheControlChannelFailureLog'
+python3 -m pytest tests/test_macos_uds_tracer.py -q -k unpinned_leaf
 
 # Reproducing the failure itself needs a REMOTE non-exempt peer, i.e. m4mbp -> 100.64.0.8. The
 # ad-hoc probe that measured the matrix is disposable; rebuild it in /tmp when needed, never in
@@ -1438,22 +1480,29 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     recorded in progress.txt, one of which reproduces the shipped `invalidPinnedHash` exactly.
     Residue for G4: nothing - this item needs no host work; the fix ships to m4mbp with the same
     E2b re-run G1 already requires.
-28. **G3 - classify and log control-channel failures.** `sanitizedControlError`
-    (`CaptureSecurity.swift:1243-1256`) maps every unrecognised error to the bare string
-    `control_failed`, and `MOSSCaptureApp/main.swift` has no logging of any kind - no `os_log`, no
-    stderr, no `print`. A `URLError` therefore reaches the operator with its domain, code and
-    underlying `_kCFStreamErrorCodeKey` all discarded, and nothing anywhere records them. That is
-    what hid G1. Classify `URLError`/`NSError` into a typed non-secret shape (domain + code, never
-    a token or payload) and log unclassified failures.
+28. **G3 - classify and log control-channel failures** `[done - iteration 3 of run
+    20260728-072601]`: `classifyControlError` + `ControlChannelErrorDetail` +
+    `ControlChannelFailureLogging` / `OSLogControlChannelFailureLog`, wired in
+    `MOSSCaptureApp/main.swift` - see the control-channel failure contract above. Five Swift nodes
+    plus the tracer's real-process pin refusal strengthened in place; four mutation rehearsals
+    recorded in progress.txt, one of which puts the failing URL and the SSL message on the wire.
+    `ControlChannelCommands.all` replaces the CLI's duplicate command literal so the log's public
+    vocabulary and the CLI's accepted set cannot drift.
+    Residue for G4: nothing new - it ships to m4mbp with the same E2b re-run G1 already requires,
+    and the `log show` predicate above is what E3 reads if the rebuilt app still fails.
 29. **G4 - regression tests, then one further reviewed merge.** Tests must fail before each fix and
     pass after. The `100.64.0.0/10` tracer case this item asked for is **done** (iteration 1 of run
     20260728-072601) - but measurement showed it cannot be the ATS gate, because a server this
     tracer starts is always reached over loopback. See the ATS contract block; the node it became
     proves the pin instead, and the declaration is gated by shape in three places. G2's regression
-    tests are **done** (iteration 2), red/green rehearsed. Remaining for G4: G3's own regression
-    tests, then re-run the full client gate and perform the single authorized merge through
-    `merge-keeper.sh`. After it, the post-merge freeze resumes and E2b must be re-run on m4mbp so
-    the installed app carries G1+G2+G3.
+    tests are **done** (iteration 2) and G3's are **done** (iteration 3), red/green rehearsed for
+    both. Remaining for G4: re-run the full client gate (both products from an empty scratch path,
+    `swift test`, `pytest tests`, tracer, discriminator, leak-scan, clean tree) and perform the
+    single authorized merge through `merge-keeper.sh`. Note `merge-keeper.sh` fences on a
+    pre-merge `main` SHA and `main` is now `f9285d6`, so that fence has to be satisfied honestly
+    for this second authorized merge - read the script before the merge iteration and record what
+    it requires; do **not** work around it. After the merge the post-merge freeze resumes and E2b
+    must be re-run on m4mbp so the installed app carries G1+G2+G3.
 
 ## Non-candidates
 

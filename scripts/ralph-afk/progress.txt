@@ -2441,3 +2441,87 @@ pin, so canonicalization cannot eat a legitimate character.
   which is what would have shown `-1200/-9802` on the first attempt; then G4's full client gate and
   the single authorized merge through `merge-keeper.sh`. After the merge, re-run E2b on m4mbp so the
   installed app carries G1+G2+G3, then the corrected E3 order (pair first, then start, then clicks).
+
+## Iteration 3 (run 20260728-072601-15601) - G3: a failure the control channel cannot name now
+## says which failure it is, and the app records it
+- Target: candidate G3 from the prd.md amendment of 2026-07-28 - `sanitizedControlError` mapped
+  every unrecognised error to the bare string `control_failed` and `MOSSCaptureApp/main.swift`
+  logged nothing at all, so the ATS block reached the operator as four words and survived a merge.
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureSecurity.swift` (+148/-9),
+  `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureCommandLine.swift` (+1/-1),
+  `macos/MOSSCapture/Sources/MOSSCaptureApp/main.swift` (+3),
+  `macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift` (+307),
+  `tests/test_macos_uds_tracer.py` (+19), `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### What was built
+`classifyControlError` replaces `sanitizedControlError` and returns `(name, detail)`. The four
+typed families keep their exact `String(describing:)` names and get **no** detail - their cases
+carry only what this process put in them, so the name already is the evidence, and a detail beside
+one would be noise. Everything else keeps the bare `control_failed` it always had **plus** a
+`ControlChannelErrorDetail{domain, code, underlyingCode?}` built from `error as NSError`. Building
+it from the bridge rather than from a type list is the point: `URLError`, `POSIXError` and a bare
+Swift struct all answer, so this is a backstop instead of another list the next unfamiliar error
+falls off the end of. `underlyingCode` is `_kCFStreamErrorCodeKey` when non-zero, else
+`NSUnderlyingError.code`, else absent - never zeroed, because zero is a code an error can have.
+`UnixDomainControlServer` gained an optional `ControlChannelFailureLogging` and calls it **only**
+for a detail-bearing failure; the app wires `OSLogControlChannelFailureLog()`, the CLI has no
+control server. Unified logging is the only surface an `LSUIElement` app has - no window, and
+Launch Services gives it no usable stderr:
+  log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m
+Everything that line marks `.public` is provably non-secret. The detail is numbers and a constant;
+the command word is reduced to `ControlChannelCommands.all` or the literal `other`. That constant
+also replaced the CLI's duplicate command literal, so the log's public vocabulary and the CLI's
+accepted set are now one list rather than two that can drift.
+
+### The distinction this buys, measured through the real process
+The tracer's pin refusal answers `control_failed` + `{domain: NSURLErrorDomain, code: -999}` with
+no `underlyingCode`. -999 is `NSURLErrorCancelled`: the pinning delegate cancelled the challenge,
+so *this client* refused the leaf. The ATS block G1 fixed is -1200 with underlying -9802: the *OS*
+refused the connection. Both were `control_failed` before this iteration, and telling them apart
+is exactly the diagnosis nobody could make in E3. The tracer node was strengthened in place to
+assert that signature rather than only `returncode != 0`.
+
+### Validation
+- `swift test --package-path macos/MOSSCapture` -> **139 passed / 0 failures** (was 134).
+- `python3 -m pytest tests/test_macos_uds_tracer.py -q` -> **4 passed**, 0 skips, 14.9 s.
+- `python3 -m pytest tests -q -p no:cacheprovider` -> **537 passed / 2 skipped / 368 subtests** in
+  63.1 s (unchanged count: the tracer node was strengthened in place, not added to).
+- Both Swift products from an **empty** scratch path, separate invocations: mtd-capture 8.2 s,
+  MOSSCaptureApp 0.7 s, **zero warnings**.
+- Phase A attempt-2 discriminator **10/10**; `leak-scan: clean`.
+- Mutation rehearsals, each applied and reverted:
+  1. default branch returns a nil detail -> **2 nodes / 7 assertions** fail across all three
+     NSError shapes and the log node.
+  2. the `failureLog?.recordUnclassifiedFailure` call removed -> the log node fails with 0 records
+     against 2; the response node still passes, so the two halves are gated independently.
+  3. the log emits the raw command instead of the bounded one -> the fixed-vocabulary node fails
+     showing `control command status; token=sk-live-do-not-log …` in the emitted line.
+  4. `domain = nsError.description` instead of `nsError.domain` -> the absence assertions fire with
+     `https://100.64.0.8:7861/api/live/pairings` and the whole SSL message on the wire. That is the
+     leak this shape exists to prevent, reproduced rather than argued.
+- Nothing outside the repo was mutated: no host touched, no service restarted, no payload minted,
+  no app rebuilt or reinstalled on m4mbp. Nothing was written to the unified log by the suite - the
+  log node drives the injected `emit`, not `Logger`.
+
+### Learned
+1. **The classifier's default branch is where the diagnosis dies, and it is reachable by
+   construction.** Four typed families were listed; everything the OS raises fell through. Building
+   the fallback from the `NSError` bridge instead of from a fifth `case` is what stops the same
+   hole reopening for the next unfamiliar error type.
+2. **Deciding what is safe to log is easier than sanitising what was logged.** The protocol is
+   handed a command word and a `ControlChannelErrorDetail` and nothing else, so an implementation
+   cannot write a payload even by accident. Mutation 4 shows the alternative: one field widened
+   from `domain` to `description` and the deployment's URL is on the wire.
+3. **Bound the public vocabulary even where the input cannot currently be hostile.** An unknown
+   command throws a named error and never reaches the log, so the `other` guard is unreachable
+   today - and it is the guard that keeps the claim "everything public here is non-secret" true if
+   that ever changes.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp. G3 does not need them.
+- Next: **G4** - the amendment's last item. Re-run the full client gate (both products from an
+  empty scratch path, `swift test`, `pytest tests`, tracer, discriminator, leak-scan, clean tree)
+  and perform the single authorized merge through `merge-keeper.sh`. Read that script first: it
+  fences on a pre-merge `main` SHA and `main` is now `f9285d6`, so record what the fence requires
+  and satisfy it honestly rather than raising `RALPH_MERGE_MAIN_BEFORE` to get past it. After the
+  merge, re-run E2b on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order
+  (pair first, then start, then the clicks), reading `log show --predicate 'subsystem ==
+  "com.alphasight.moss.capture"'` if the rebuilt app still fails.

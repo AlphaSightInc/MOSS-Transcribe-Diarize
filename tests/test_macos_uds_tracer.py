@@ -561,6 +561,25 @@ def test_bundled_app_on_the_production_address_range_still_refuses_an_unpinned_l
                 "the pinned transport accepted a leaf its pin does not describe: "
                 f"{refused.diagnostic}"
             )
+            # A refusal the operator cannot name is how the ATS block survived a whole merge.
+            # This is the same shape of failure — URLSession cancels the task, so the error that
+            # comes back is an NSURLErrorDomain code the app has never reasoned about — measured
+            # here through the real process rather than through a stub.
+            refusal = refused.json()
+            assert refusal["ok"] is False, refused.diagnostic
+            assert refusal["error"] == "control_failed", refused.diagnostic
+            detail = refusal["errorDetail"]
+            assert detail["domain"] == "NSURLErrorDomain", refused.diagnostic
+            # -999 is NSURLErrorCancelled: the pinning delegate cancelled the challenge, so *this
+            # client* refused the leaf. That is exactly the distinction the operator could not
+            # make before — a connection the OS refused instead arrives as -1200 with an
+            # underlying stream code. Same bare `control_failed` for both; different detail.
+            assert detail["code"] == -999, refused.diagnostic
+            # Omitted, not zeroed: a cancelled challenge has no underlying reason to report.
+            assert "underlyingCode" not in detail, refused.diagnostic
+            # Numbers and one constant: the detail names the fault without naming the deployment.
+            assert set(detail) == {"domain", "code"}, refused.diagnostic
+            assert str(peer_ip) not in json.dumps(detail), refused.diagnostic
             # The refusal is the client's: the server would have accepted this payload, since the
             # pin it carries is the one that server was configured with.
             unchanged = _read_store(store_path)

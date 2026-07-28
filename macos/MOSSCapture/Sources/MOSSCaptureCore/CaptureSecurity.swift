@@ -2,6 +2,7 @@ import CryptoKit
 import Darwin
 import Foundation
 import Security
+import os
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -429,6 +430,14 @@ public protocol ControlSecretStoreAdapter: ControlSecretAdapter {
     func saveControlSecret(_ secret: String) throws
 }
 
+public enum ControlChannelCommands {
+    /// The whole command vocabulary. The CLI refuses anything outside it before it opens the
+    /// socket, and the failure log will not put anything outside it into the system log — so the
+    /// one string either of them treats as public is one of these six literals, never whatever a
+    /// caller happened to send.
+    public static let all = ["pair", "start", "stop", "status", "handoff", "latency"]
+}
+
 public struct ControlChannelRequest: Codable, Equatable {
     public var command: String
     public var label: String?
@@ -451,6 +460,102 @@ public struct ControlChannelRequest: Codable, Equatable {
     }
 }
 
+/// The non-secret identity of a control-channel failure that has no name of its own.
+///
+/// Only a domain and integers. That is deliberate and it is the whole safety argument: an
+/// `NSError` from a pinned `URLSession` carries the failing URL and a localized message in its
+/// `userInfo`, and an arbitrary Swift error can carry anything at all in its associated values, so
+/// nothing is copied out of an error except its domain — a compile-time constant for `NSError` and
+/// the bridged type name for a Swift error — and its numeric codes.
+///
+/// It exists because a code alone is not a diagnosis: TLS failures arrive as `NSURLErrorDomain`
+/// `-1200` ("secure connection failed") and the reason lives one level down in the underlying
+/// stream code. Reporting `-1200` without `-9802` is what left a whole merge's worth of pinned
+/// connections unexplained.
+public struct ControlChannelErrorDetail: Codable, Equatable, Sendable {
+    public var domain: String
+    public var code: Int
+    /// The transport-level code this failure wraps, when it wraps one. `nil` means the error
+    /// reported no underlying reason — never zero, because zero is a code an error can really
+    /// have.
+    public var underlyingCode: Int?
+
+    public init(domain: String, code: Int, underlyingCode: Int? = nil) {
+        self.domain = domain
+        self.code = code
+        self.underlyingCode = underlyingCode
+    }
+
+    /// Reads the identity of an error the control channel could not name.
+    ///
+    /// Every `Error` bridges to `NSError`, so this needs no per-type knowledge: `URLError`,
+    /// `POSIXError` and a bare Swift `struct` all answer here, which is what makes it a backstop
+    /// rather than another list that the next unfamiliar error falls off the end of.
+    public init(unclassified error: Error) {
+        let nsError = error as NSError
+        domain = nsError.domain
+        code = nsError.code
+        // CFNetwork reports the real reason as a stream code beside the URL error; other layers
+        // nest an NSError. Both are numbers, and either one is the answer to "why".
+        if let streamCode = nsError.userInfo[kCFStreamErrorCodeKey] as? Int, streamCode != 0 {
+            underlyingCode = streamCode
+        } else if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            underlyingCode = underlying.code
+        } else {
+            underlyingCode = nil
+        }
+    }
+}
+
+/// `_kCFStreamErrorCodeKey` is where CFNetwork puts the code that says why a `-1200` happened. It
+/// is not exported as a symbol, so the string is the interface.
+private let kCFStreamErrorCodeKey = "_kCFStreamErrorCodeKey"
+
+/// Records control-channel failures the server had no name for.
+///
+/// It is handed the command word and the non-secret detail and nothing else: an implementation
+/// cannot write a payload, a token or a URL even by accident, because it is never given one.
+public protocol ControlChannelFailureLogging: AnyObject, Sendable {
+    func recordUnclassifiedFailure(command: String?, detail: ControlChannelErrorDetail)
+}
+
+/// The app's failure log.
+///
+/// Unified logging is the only place `MOSSCaptureApp` can leave a record an operator can read
+/// afterwards: it is `LSUIElement`, so it has no window, and its stderr goes nowhere when Launch
+/// Services starts it. Read it back with
+/// `log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m`.
+///
+/// Everything interpolated here is marked public because everything interpolated here is provably
+/// non-secret: the command is one of `ControlChannelCommands.all` or the literal `other`, and the
+/// rest is a `ControlChannelErrorDetail`.
+public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging {
+    private let emit: @Sendable (String) -> Void
+
+    public convenience init(
+        subsystem: String = "com.alphasight.moss.capture",
+        category: String = "control-channel"
+    ) {
+        let logger = Logger(subsystem: subsystem, category: category)
+        self.init { line in
+            logger.error("\(line, privacy: .public)")
+        }
+    }
+
+    init(emit: @escaping @Sendable (String) -> Void) {
+        self.emit = emit
+    }
+
+    public func recordUnclassifiedFailure(command: String?, detail: ControlChannelErrorDetail) {
+        let named = command.map { ControlChannelCommands.all.contains($0) ? $0 : "other" } ?? "unknown"
+        let underlying = detail.underlyingCode.map(String.init) ?? "none"
+        emit(
+            "control command \(named) failed with an unclassified error: "
+                + "domain=\(detail.domain) code=\(detail.code) underlying=\(underlying)"
+        )
+    }
+}
+
 public struct ControlChannelResponse: Codable, Equatable {
     public var ok: Bool
     public var running: Bool?
@@ -467,6 +572,9 @@ public struct ControlChannelResponse: Codable, Equatable {
     /// authority the measurement uses stays inside the app.
     public var latency: CaptureLatencyReport?
     public var error: String?
+    /// Present only when `error` is a name the control channel had to invent, and then carrying
+    /// the numbers that actually identify the fault.
+    public var errorDetail: ControlChannelErrorDetail?
 
     public init(
         ok: Bool,
@@ -479,7 +587,8 @@ public struct ControlChannelResponse: Codable, Equatable {
         outboxRetainedFrames: Int? = nil,
         outboxDegradation: CaptureOutboxDegradation? = nil,
         latency: CaptureLatencyReport? = nil,
-        error: String? = nil
+        error: String? = nil,
+        errorDetail: ControlChannelErrorDetail? = nil
     ) {
         self.ok = ok
         self.running = running
@@ -492,6 +601,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.outboxDegradation = outboxDegradation
         self.latency = latency
         self.error = error
+        self.errorDetail = errorDetail
     }
 
     public init(status: CaptureStatus) {
@@ -901,6 +1011,7 @@ public final class UnixDomainControlServer {
     private let socketPath: String
     private let authenticator: SameUserUDSAuthenticator
     private let maxFrameBytes: Int
+    private let failureLog: (any ControlChannelFailureLogging)?
     private let handler: (ControlChannelRequest) throws -> ControlChannelResponse
     private var serverFileDescriptor: Int32 = -1
     private var stopped = false
@@ -909,11 +1020,13 @@ public final class UnixDomainControlServer {
         socketPath: String,
         authenticator: SameUserUDSAuthenticator,
         maxFrameBytes: Int = 65_536,
+        failureLog: (any ControlChannelFailureLogging)? = nil,
         handler: @escaping (ControlChannelRequest) throws -> ControlChannelResponse
     ) {
         self.socketPath = socketPath
         self.authenticator = authenticator
         self.maxFrameBytes = maxFrameBytes
+        self.failureLog = failureLog
         self.handler = handler
     }
 
@@ -986,17 +1099,29 @@ public final class UnixDomainControlServer {
         defer { close(acceptedFileDescriptor) }
 
         let response: ControlChannelResponse
+        // Known before the failure is classified, so the log can say which command failed even
+        // though the throw itself carries no such context.
+        var command: String?
         do {
             let body = try readFrame(from: acceptedFileDescriptor, maxFrameBytes: maxFrameBytes)
             try rejectTrailingRequestBytes(on: acceptedFileDescriptor)
             let envelope = try decodeEnvelope(from: body)
+            command = envelope.request.command
             try authenticator.validatePeerCredentials(
                 fileDescriptor: acceptedFileDescriptor,
                 presentedSecret: envelope.secret
             )
             response = try handler(envelope.request)
         } catch {
-            response = ControlChannelResponse(ok: false, error: sanitizedControlError(error))
+            let classified = classifyControlError(error)
+            if let detail = classified.detail {
+                failureLog?.recordUnclassifiedFailure(command: command, detail: detail)
+            }
+            response = ControlChannelResponse(
+                ok: false,
+                error: classified.name,
+                errorDetail: classified.detail
+            )
         }
         try writeAll(try encodeFrame(JSONEncoder().encode(response)), to: acceptedFileDescriptor)
     }
@@ -1268,17 +1393,24 @@ private func socketPermissions(at path: String) throws -> UInt16 {
     return UInt16(info.st_mode & 0o777)
 }
 
-private func sanitizedControlError(_ error: Error) -> String {
+/// Names a failure for the operator, and says whether the name was invented.
+///
+/// The four typed families describe themselves: their cases carry only what this process chose to
+/// put in them, so their names are both safe and sufficient and a detail beside one would be
+/// noise. Anything else is a failure this code has never reasoned about — it gets the bare
+/// `control_failed` it always got, plus the domain and codes that identify it, and the caller logs
+/// it precisely because nobody classified it.
+private func classifyControlError(_ error: Error) -> (name: String, detail: ControlChannelErrorDetail?) {
     switch error {
     case let securityError as CaptureSecurityError:
-        return String(describing: securityError)
+        return (String(describing: securityError), nil)
     case let controllerError as CaptureControllerError:
-        return String(describing: controllerError)
+        return (String(describing: controllerError), nil)
     case let transportError as CaptureHTTPTransportError:
-        return String(describing: transportError)
+        return (String(describing: transportError), nil)
     case let nativeError as NativeCaptureError:
-        return String(describing: nativeError)
+        return (String(describing: nativeError), nil)
     default:
-        return "control_failed"
+        return ("control_failed", ControlChannelErrorDetail(unclassified: error))
     }
 }
