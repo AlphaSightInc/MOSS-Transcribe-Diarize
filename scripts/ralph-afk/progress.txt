@@ -3114,3 +3114,111 @@ safer verb - a disabled unit cannot be pulled in by `default.target` if anything
    names three things and none of them is the Windows forward, and removing it would risk the
    sign-in task for no acceptance credit. The client-side probe while the service is down covers the
    part that matters behaviorally: a portproxy row with nothing behind it serves nothing.
+
+### Result - F4a DONE: the PRD's "Rollback rehearsed and recorded" clause is GREEN
+The clause has three assertions. All three were made for real on the server, in the order the
+hazard above requires, and then undone.
+
+**1. Live service disabled.** `systemctl --user disable --now moss-live-web.service` ->
+`Removed "…/default.target.wants/moss-live-web.service"`; afterwards `is-enabled`=**disabled**
+(rc=1), `is-active`=**inactive** (rc=3), `MainPID=0`, `SubState=dead`, **`Result=success`** (a clean
+shutdown, not a kill - the journal shows `Shutting down` / `Waiting for application shutdown` /
+`Application shutdown complete` / `Finished server process [334346]`). The 7861 listener vanished;
+only `0.0.0.0:7860` pid 301112 remained. The unit **file** was left in place (sha256 `090b7d98…`).
+From MacStudio, with the portproxy row still in place: `https://100.64.0.8:7861/live` **000**,
+`http://100.64.0.8:7861/live` **000**, `https://192.168.68.38:7861/live` **000**, and
+`openssl s_client` to 100.64.0.8:7861 fails `write:errno=54`. A forward with nothing behind it
+serves nothing - which is why the Windows half did not need to be torn down to prove the rollback.
+
+**2. Server checkout reverted to `163e969`.** `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout
+163e969` -> `HEAD` `163e969a054dd7f894e550ff611e9c5a7620ae4d`, tree `4b4de55db114094e413205b8bc0af6a60e33975d`,
+`main` still `163e969` (no ref written). Verified the live surface really left the disk:
+`ops/systemd/moss-live-web.service`, `ops/live-pair.sh`, `ops/generate-live-tls.sh`,
+`moss_transcribe_diarize/app/live_auth.py`, `macos/scripts/build-app.sh` and
+`ops/moss-live.env.example` all **absent**. Untracked host state survived untouched: `runs/` still
+143 dirs, `live-runs/` and `ops/moss-live.env` still present, and the four files under
+`~/.local/share/moss-transcribe-diarize/live/` kept **both** inode and sha256
+(`live-auth.json` 11374/`9d306766…`, `live.crt` 12436/`1839a186…`, `live.key` 12123/`7bb3173f…`,
+`live-provider-manifest.json` 10565/`8bef5c36…`).
+
+**3. `http://192.168.68.38:7860/` still serving**, measured from MacStudio while rolled back:
+root **200**, `/api/jobs` **200** returning **141** real jobs, `/api/runtime` **200** with the vLLM
+backend still answering (`backend: vllm`, `base_url http://127.0.0.1:8000/v1`). `moss-vllm` MainPID
+**322117** and `moss-web` MainPID **301112**, both `active`, `NRestarts=0`, ActiveEnterTimestamps
+unchanged at 2026-07-26 22:05:29 / 2026-07-24 21:37:11 - **no batch service was restarted at any
+point in this rehearsal.**
+*And the next restart would be healthy too, measured at the rolled-back SHA:* the read-only argv
+probe (last `exec` line asserted first, then rewritten in a `/tmp` copy, so it can never launch a
+server) run against `163e969`'s own `ops/start-web.sh` with the host's real `ops/moss.env` derives
+exactly `tests/test_live_service_deployment.py:51-62`'s `BATCH_ARGV` - port 7860, runs dir
+`<checkout>/runs`, **no `--live` flag**.
+
+**Then restored, in the reverse order.** `git checkout 317df4d…` -> HEAD `317df4d7…`, tree
+`3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`, `git status --porcelain` **empty**, all six probed files
+back, and the installed unit still byte-identical to the restored tracked
+`ops/systemd/moss-live-web.service`. Then `systemctl --user enable --now moss-live-web.service` ->
+symlink recreated, `active`/`running`/`enabled`, `NRestarts=0`, **MainPID 336320**,
+ActiveEnterTimestamp 2026-07-28 05:06:05, listening TLS on `0.0.0.0:7861`.
+Post-restore from MacStudio: the served leaf is **byte-identical** to the one captured before the
+rehearsal and still hashes to `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`
+(stop condition not triggered); `/live` **200**, `/api/live/descriptor` **200** over the pin, and the
+descriptor body is unchanged - `sample_rate 16000`, `frame_samples 8000`,
+`provider_manifest_hash 61d97ffe…`, `source_revision f9285d69…` (the known benign divergence,
+neither fixed nor worsened). Plaintext 7861 back to **000**; batch root/`api/jobs`/`api/runtime`
+**200/200/200** with the same 141 jobs.
+
+### What the rehearsal cost, and what it deliberately did not touch
+- **Cost:** the two stale 2026-07-28T03:10 in-memory live sessions, which died with PID 334346.
+  Accepted in the pre-record above; E3 pairs first anyway. The on-disk device state is provably
+  intact (`live-auth.json` same inode, same sha256), so nothing needs re-pairing that did not
+  already need it. This is the persistence split the view-authority contract asserts - devices
+  durable, sessions memory-only - observed on the real host for the first time, though only the
+  durable half is directly measured; the session loss is inferred from the new MainPID plus the
+  memory-only contract.
+- **Not touched:** the Windows portproxy/firewall/scheduled task (out of the clause's scope, and the
+  000s above show the forward is inert without a listener), the batch units, the TLS pair, the
+  manifest, `runs/`, `live-runs/`, `ops/moss-live.env`, and every Mac.
+
+### Validation
+- `systemctl --user disable --now` rc=0; state went enabled/active -> disabled/inactive with
+  `Result=success`; `enable --now` rc=0; state back to enabled/active with a new MainPID.
+- `git checkout 163e969` rc=0 and `git checkout 317df4d…` rc=0; tree hash back to `3b37815f…`,
+  `git status --porcelain` empty at the end.
+- 12 client-side probes across the three phases (before / rolled back / restored): pinned `/live`
+  200 -> 000 -> 200, `/api/live/descriptor` 200 -> 000 -> 200, plaintext 7861 000 -> 000 -> 000,
+  batch root 200 -> 200 -> 200, `/api/jobs` 200/141 jobs throughout, `/api/runtime` 200 throughout.
+- Leaf `cmp` before vs after: identical bytes; DER sha256 equals the D2 pin both times.
+- No tracked file changed this iteration; the loop wrote only
+  `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### Learned
+1. **The live service needs ~10 s from `enable --now` to a bound listener** (05:06:05 started ->
+   05:06:15 `Uvicorn running on https://0.0.0.0:7861`), because the app imports the ONNX/decoder
+   stack on startup. The first post-restore probe was taken at 6 s and returned **000** - i.e. a
+   correct restore that reads exactly like a failed one. Poll for 200 with a timeout; never sample
+   once and conclude. This is the single most likely way a real rollback-and-restore would be
+   misread as broken.
+2. **`163e969` is "before the MVP", not "before anything named live".**
+   `moss_transcribe_diarize/app/live_transport.py` **exists** at that SHA while `live_auth.py` does
+   not. Anyone verifying the rollback by looking for `live*` files will get a confusing answer;
+   check for the files the MVP actually added.
+3. **A rolled-back checkout is not a clean checkout, and that is expected.** `163e969`'s
+   `.gitignore` predates the `ops/moss-live.env` entry, so while rolled back
+   `git status --porcelain` reports `?? ops/moss-live.env`. The checkout does not delete the
+   profile - only a `git clean` would, and that is forbidden - but an operator who reflexively
+   tidies an "unclean" tree there would destroy the live profile and with it the ability to restore
+   in one command.
+4. **The "batch unharmed" contract was verified against its own origin for the first time.**
+   `BATCH_ARGV` is documented as "recorded from `ops/start-web.sh` before the live service existed";
+   until now every check ran it against the post-merge adapter. Running the probe at `163e969` on
+   the real host reproduces it byte for byte, so the two-profile claim is now anchored at both ends.
+5. **Rehearsing the rollback before certification was the cheap moment.** Nothing was in flight, no
+   capture session existed, and the only casualty was two stale sessions the runbook already
+   planned to replace. After F1-F3 the same rehearsal would have to disturb a certified state.
+- Blocker: **unchanged** - E3's human TCC step on m4mbp (pair -> start -> two GUI clicks) is still
+  the only thing between here and Phase F. The exact runbook is in iteration 7's entry and in
+  context.md's E3 blocks. This iteration did not touch it and could not.
+- Next: with F4a closed, **every remaining PRD acceptance item depends on the operator**: permissions
+  granted, the 60 s canary, the 300 s certification, the 16-minute soak, the run-time half of secret
+  hygiene, and F4b's final close. There is no further loop-runnable product or evidence work; the
+  honest next action is to hold at the E3 blocker.

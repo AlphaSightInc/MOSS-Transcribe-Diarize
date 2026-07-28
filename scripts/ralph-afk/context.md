@@ -58,9 +58,18 @@ branch carries tracked product source again, strictly within the amendment's fou
 Iteration 4 re-ran the full client gate green and changed no tracked source (see the G4 gate block),
 and iteration 5 made **the amendment's one authorized follow-up merge** (see the second-keeper-merge
 block). The post-merge freeze has resumed: from `23aabe6` on, the feature branch may again carry only
-`scripts/ralph-afk/*`. Iteration 6 published that merge to all four checkouts (G5) and iteration 7
-rebuilt and reinstalled the signed app on m4mbp (G6's automatable half); neither changed a tracked
-file, and the *product* on the Mac now carries G1+G2+G3.
+`scripts/ralph-afk/*`. Iteration 6 published that merge to all four checkouts (G5), iteration 7
+rebuilt and reinstalled the signed app on m4mbp (G6's automatable half), and iteration 8 rehearsed
+and restored the server rollback (F4a); none of the three changed a tracked file, and the *product*
+on the Mac now carries G1+G2+G3.
+
+**PRD acceptance scoreboard after iteration 8.** Green with evidence: IDEA-044 checkpoint, production
+client gate, server meeting-reliability gate, the one reviewed keeper merge (plus the amendment's one
+authorized follow-up merge), one exact SHA everywhere, live service answering, batch service
+unharmed, signed app installed, **rollback rehearsed and recorded**. Open: permissions granted, the
+60 s canary, the 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and
+the final close — **every one of them downstream of E3's physical TCC clicks.** There is no
+loop-runnable acceptance work left.
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
@@ -670,10 +679,11 @@ server checkout and the m4mbp checkout were all measured at that value in iterat
 checkouts are **detached** on purpose: the server's local `main` ref is still `163e969` and m4mbp's
 is still upstream `40cf854`, so
 `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete one-command rollback
-that moves nothing but `HEAD`. Tree clean; `moss-vllm` MainPID 322117 and `moss-web` MainPID 301112
+that moves nothing but `HEAD` — **rehearsed for real and undone in iteration 8 (F4a)**, see the
+rollback-rehearsal block below. Tree clean; `moss-vllm` MainPID 322117 and `moss-web` MainPID 301112
 still `active` with `NRestarts=0` and `ActiveEnterTimestamp` 2026-07-26 22:05:29 / 2026-07-24
-21:37:11 — **neither batch service has been restarted** by D1, D2, D3 or G5, and those four values
-are what every later probe must still show.
+21:37:11 — **neither batch service has been restarted** by D1, D2, D3, G5 or F4a, and those four
+values are what every later probe must still show.
 *Why G5 needed no restart, measured rather than assumed:* the server-visible tree is byte-identical
 across the two SHAs (`git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk'
 ':!tests/test_macos_*'` is empty), and the tree objects differ only because the amendment's twelve
@@ -684,9 +694,10 @@ Mac/evidence files do (`815f23b0…` → `3b37815f…`).
 whose server tree is byte-identical, so it still honestly describes the running code. Re-running the
 finalizer to restamp it would rotate a file every paired client hashes, for no behavioral gain — do
 not do it as a tidy-up; only as part of a deployment that has another reason to regenerate.
-**The live service is up since D3 (iteration 19).** `moss-live-web.service` is installed
-(byte-identical to `ops/systemd/`), `enabled`, `active`, MainPID 334346 since 2026-07-28 00:50:29,
-listening on `0.0.0.0:7861` **TLS**; `/live` and `/api/live/descriptor` both return 200 from
+**The live service is up since D3 (iteration 19); its PID changed once, in F4a.**
+`moss-live-web.service` is installed (byte-identical to `ops/systemd/`), `enabled`, `active`,
+**MainPID 336320 since 2026-07-28 05:06:05** (it was 334346 since 00:50:29 until the iteration-8
+rollback rehearsal disabled and re-enabled it), listening on `0.0.0.0:7861` **TLS**; `/live` and `/api/live/descriptor` both return 200 from
 MacStudio *and from m4mbp*, and plaintext on 7861 gets nothing (`000`). The served leaf hashes to
 the D2 pin on both hosts. `ops/moss-live.env` now exists on the host (untracked, `.gitignore:32`),
 `MOSS_LIVE_ENABLED=0` stays in `ops/moss.env` and is overridden only by that profile.
@@ -705,20 +716,26 @@ blocks were never corrected. The live journal since 02:00 agrees and is the inde
 /api/live/sessions`, 13 `GET /api/live/descriptor` — and **zero** frame posts, so no session has
 ever received audio. (That journal is a uvicorn access log: paths only, no bodies, no token.)
 *Four consequences, all measured or read out of the source this iteration:*
-1. **The two 03:10 sessions are still in memory.** `moss-live-web` has not restarted (MainPID 334346
-   since 00:50:29) and sessions are memory-only, so they live until the 12 h view cap (~15:10) or a
-   restart.
-2. **They do not block anything.** `LiveServiceRuntime.create` (`live_service_runtime.py:430`) just
-   inserts into `self._sessions`; there is no single-session refusal, so D4/G6 can create a fresh
-   session beside them.
-3. **m4mbp is no longer "unpaired", so `start` no longer fails closed.** The store holds
+1. ~~**The two 03:10 sessions are still in memory.**~~ **Gone since iteration 8 (F4a).** The
+   rollback rehearsal stopped and restarted the live service (MainPID 334346 → **336320**), and
+   sessions are memory-only, so both died with the old process. `live-auth.json` came through the
+   cycle with the **same inode (11374) and the same sha256 (`9d306766…`)**, so the *device* pairing
+   is untouched — the durable/ephemeral split the view-authority contract asserts, now observed on
+   the real host.
+2. **They did not block anything, and their absence does not either.**
+   `LiveServiceRuntime.create` (`live_service_runtime.py:430`) just
+   inserts into `self._sessions`; there is no single-session refusal, so E3 can create a fresh
+   session whether or not an old one is resident.
+3. **m4mbp is no longer "unpaired", so `start` no longer fails closed** — and since F4a the session
+   its store names is one the *server* has forgotten, so a bare `start` there now raises both TCC
+   prompts and then fails on the wire instead of publishing anywhere. Either way the instruction is
+   the same and now doubly so: **pair first**. The store holds
    `capture-bearer` (43), `capture-certificate-pin` (64), `capture-device-id` (36),
    `capture-server-url` (23 = `https://100.64.0.8:7861`), `capture-session-id` (32),
    `capture-view-token` (43) and `local-control-secret` (44). The supervisor entry's finding — that
    `captureConfiguration(from:)` throws `missingCaptureConfiguration` before
    `CaptureController.start` — was measured against an *empty* store and is now inapplicable on this
-   host: a bare `start` would resolve, raise both TCC prompts, and publish into the **stale 03:10
-   session**. Do not let a G6 run drift into that: pair first, so the fresh
+   host: a bare `start` resolves. Do not let an E3 run drift into that: pair first, so the fresh
    `pairings` → `sessions` exchange overwrites the session id and bearer, and the canary measures a
    session this app created.
 4. **The paired device is why D4 is cheap now.** Device pairings persist; only the payload mint and
@@ -744,6 +761,32 @@ did that without restarting anything: the deployed `ops/start-web.sh` sourced wi
 52-62`), port 7860, runs dir `<checkout>/runs`, **no live flag**. Re-run after D3 with the live
 profile also sourced: the batch argv is byte-identical and the live argv is the complete
 `--live …` form, so the two profiles really are one adapter.
+
+**Rollback rehearsal — the PRD clause is GREEN (new, iteration 8 / F4a).** Disabled → reverted →
+proved batch → restored, all on the real server, batch never restarted. Four durable facts came out
+of it, and they are the reasons to read this block rather than re-derive it:
+1. **Order is forced by `ExecStart`.** The live unit runs `ops/start-web.sh` *from the checkout*, and
+   at `163e969` that script predates `MOSS_WEB_PORT`/`MOSS_RUNS_DIR` — a live unit started while the
+   checkout is rolled back would ignore the live profile and try to bring up a **batch** server.
+   So: `disable --now` **before** the checkout moves back, restore the checkout **before**
+   `enable --now`. Use `disable`, not `stop`, so `default.target` cannot pull it back in.
+2. **A correct restore reads as a broken one for ~10 s.** `enable --now` at 05:06:05 →
+   `Uvicorn running on https://0.0.0.0:7861` at 05:06:15; a probe at 6 s returned **000**. Poll for
+   200, never sample once.
+3. **A rolled-back tree is not a clean tree.** `163e969`'s `.gitignore` predates the
+   `ops/moss-live.env` entry, so while rolled back `git status --porcelain` reports
+   `?? ops/moss-live.env`. The checkout does not delete the profile; only `git clean` would, and an
+   operator tidying the "unclean" tree would destroy the one file the restore depends on.
+4. **Nothing that a paired Mac hashes can move.** The TLS pair, the manifest and `live-auth.json`
+   live under `~/.local/share/…/live` on ext4, outside the repo: after the whole cycle all four kept
+   inode *and* sha256, the served leaf was byte-identical, and the descriptor still reported
+   `provider_manifest_hash 61d97ffe…` / `source_revision f9285d69…`. That is why this rollback is
+   safe to run against already-paired devices — and the stop condition for any future run is the pin
+   changing.
+`163e969` is "before the MVP", not "before anything named live": `live_transport.py` exists there,
+`live_auth.py` does not. The Windows portproxy/firewall half was deliberately **not** torn down —
+it is outside the PRD clause, and the client probes showed a forward with no listener behind it
+answers `000` anyway.
 
 **Gotcha — file modes are unenforceable inside the host checkout (found by D3).** `/mnt/d` is a 9p
 `drvfs` mount **without** the `metadata` option, so every file under
@@ -1313,7 +1356,23 @@ ssh -o BatchMode=yes ga0@m4mbp \
 #   rm -rf /mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs
 #   rm -f "$HOME/.local/share/moss-transcribe-diarize/live/live-auth.json"
 #   rm -f /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env
-# That sequence is also F4's "live service disabled" rehearsal — F4 additionally checks out 163e969.
+
+# --- F4a: the rollback rehearsal (SPENT in iteration 8; re-runnable, and re-run it exactly in this
+#     order — see the rollback-rehearsal block for why ExecStart forces it). Everything below is on
+#     the server; pipe each as a script on stdin per the remote-quoting gotcha. -------------------
+systemctl --user disable --now moss-live-web.service          # rollback: enable --now
+git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969  # rollback: checkout 317df4d…
+# ... assert from a client: 7861 dead (000) on tailnet AND LAN, http://192.168.68.38:7860/ 200,
+#     /api/jobs 200 (141 jobs), /api/runtime 200; batch MainPIDs 322117/301112 with NRestarts=0.
+# ... optional, and worth it: the batch-restart argv probe below, run at 163e969, must still print
+#     tests/test_live_service_deployment.py:51-62's BATCH_ARGV.
+git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 317df4d728b6765dbe365a3166158ba581299557
+systemctl --user enable --now moss-live-web.service
+# Then POLL (~10 s) for https://127.0.0.1:7861/live -> 200; a single probe at 6 s returns 000.
+# Stop condition: the served leaf must still hash to the D2 pin a35ca9fc…, else every paired Mac
+# is broken — do not proceed, record a blocker.
+# While rolled back, `git status --porcelain` reports `?? ops/moss-live.env`. That is expected.
+# NEVER `git clean` there: it would delete the untracked live profile the restore depends on.
 
 # --- pinned live reachability from any client host (read-only; run from MacStudio or m4mbp) ----
 # Pin first, then trust exactly that leaf — this is what the Mac client's full-certificate pin does.
@@ -1605,12 +1664,24 @@ own, which no later step does.
 
 ### Phase F — certification and rollback
 
-24. **F1 — 60 s canary** per prd.md.
+24. **F1 — 60 s canary** per prd.md. `[blocked on E3]`
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
+    `[blocked on E3]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-27. **F4 — rehearse/record rollback, restore service, and close** only when every PRD acceptance
-    item has evidence.
+    `[blocked on E3]`
+**F4 was split by evidence in iteration 8**, the way iteration 20 split E2: its rollback rehearsal
+needs no operator, closes a PRD acceptance clause on its own, and is *cheaper before* certification
+than after (nothing in flight to disturb). Its close half still waits on everything else.
+32a. **F4a — rehearse and record the rollback** `[done — iteration 8 of run 20260728-072601]`:
+    live service disabled (clean `Result=success`, 7861 dead from the client on both addresses),
+    checkout reverted to `163e969`, `http://192.168.68.38:7860/` + `/api/jobs` (141 jobs) +
+    `/api/runtime` all 200 while rolled back and the pre-live `start-web.sh` still derives the exact
+    contract `BATCH_ARGV`, then both mutations undone and the pinned live surface re-verified
+    byte-identical. See the rollback-rehearsal block above. **The PRD's "Rollback rehearsed and
+    recorded" clause is GREEN.**
+32b. **F4b — close the loop** only when every other PRD acceptance item has evidence.
+    `[blocked on E3 → F1–F3]`
 
 ### Phase G - authorized post-merge fix cycle (2026-07-28)
 
