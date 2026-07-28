@@ -5029,3 +5029,107 @@ No Swift source changed, so `swift test` was not re-run; J5's gate re-measures i
 - Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
 - Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
   green - the same rule that has now held six times.
+
+================================================================================
+run 20260728-112922 | iteration 13 | J5 step (a) - the gate before Phase J's authorized merge
+================================================================================
+Target: candidate 42, step (a) - review the real-seam coverage against the third amendment's list
+and run the full Swift/Python gate. Chosen because J1-J4 all landed and J5 is the only Phase J item
+left; split gate-then-merge exactly as H4 split (a) from (b) and G4 from G5, so the gate is recorded
+evidence rather than a step hidden inside the merge script. **No tracked file changed this
+iteration** - only scripts/ralph-afk/{context.md,progress.txt}.
+
+### The gate, measured on MacStudio 2026-07-28 at 517306b (tree clean before and after)
+- Both Swift products from an EMPTY scratch path (`ls -A "$SCRATCH" | wc -l` -> 0), separate
+  invocations: mtd-capture 8.49 s wall / 18.65 s user, MOSSCaptureApp 0.96 s / 1.04 s.
+  `grep -c 'warning:'` over the whole build log -> 0.
+- swift test --package-path macos/MOSSCapture -> 139 passed / 0 failures in 1.02 s. UNCHANGED from
+  H4a, which is itself the evidence Phase J stayed server-side.
+- PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider -rs
+    -> 590 passed / 2 skipped / 368 subtests in 60.93 s   (H4a: 551/2/368; delta +39 = 11+9+12+7)
+    -rs names the skips: tests/test_large_upload.py:155,175 "Python 3.10 compatibility contract",
+    the same pre-existing pair as every prior gate - not Darwin skips.
+- pytest tests/test_macos_uds_tracer.py -> 4 passed / 0 skips in 14.82 s
+- attempt-2 discriminator --target "$PWD" -> 10/10 true
+- leak-scan.sh -> leak-scan: clean
+- python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 -> rc=0, "survived 8 frames"
+- test -z "$(git status --porcelain)" -> clean
+- RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh
+    -> rc=1, "ERROR: main moved from expected pre-merge SHA 317df4d..."  (guard still live)
+- read-only host check (the standing pre-redeploy command):
+    caps equal = True 40000 | vad frame_samples = 160 | retired knob present = False
+
+### The coverage review - the whole file is accounted for
+Five -k selections over tests/test_live_pipeline_seams.py cover 50 of 50 collected nodes
+(12+12+8+13+6 = 51 selections minus the one node two clauses share):
+  H1/H2/H3 seams still green ......... 12
+  "timestamp tolerance, decided once"  12   (J1)
+  "non-`prepared` preparations" ......  8   (J2)
+  "candidate 36, in the same pass" ... 13   (J3)
+  "diagnosability, `reason` must reach both"  6  (J4)
+Shared node, found by collecting each selection and `sort | uniq -d`:
+  test_an_unattributed_rendering_keeps_the_words_and_drops_only_the_speaker[still_clamped_into_the_span]
+  - J2's rendering going through J1's clamp. Two rules meeting on one span is the right shape.
+Outside that file, three more the amendment's list implies, all passing:
+  test_live_identity.py::test_a_refused_canonical_submission_cannot_be_built_without_naming_itself
+  test_live_identity.py::test_prepared_canonical_rejects_invalid_preparations_without_mutation
+  test_live_replay.py::test_live_replay_publishes_a_span_identity_could_not_resolve
+THE SEAM IS REAL ON BOTH SIDES, which was the amendment's actual complaint ("nothing in the repo
+puts the real decoder's timestamps under the real identity preparer"). `_decode_seam_runtime` builds
+the product LiveServiceRuntime, LiveCoordinator, LiveSession, EndpointPolicy,
+RunnerBoundedWavInference over the real VllmRunner, and the real BoundedCausalIdentityPreparer; the
+`prepared_by` hook WRAPS the real preparer rather than replacing it. Exactly two things are stubbed,
+both genuinely off-host: the native webrtcvad wheel (by a class enforcing only its documented
+10/20/30 ms length contract) and urllib.request.urlopen.
+
+### The governing rule, checked by reading rather than by counting tests
+After J1-J4 nothing the DECODER PRODUCES can end a meeting: a timestamp outside the span is clamped,
+an empty or unparseable transcript commits empty, a transient failure retries then commits empty, and
+every preparation the preparer returns publishes - `BoundedCausalIdentityPreparer.prepare` has no
+`raise` path at all, its one LiveIdentityError is caught and turned into an abstention. What remains
+terminal is session state or a genuine outage: stale_epoch / unknown_span / span_out_of_order /
+span_sample_mismatch, a stale identity base version, a permanent decoder refusal, three consecutive
+unanswered spans, unqueued_frozen_span, and the stop-drain deadline. Each is a session that cannot
+continue, which is exactly what the third amendment asked for.
+
+### The merge payload, reviewed against Phase J's scope
+git diff --name-only main HEAD -- ':!scripts/ralph-afk' ':!moss_transcribe_diarize' ':!tests'
+  -> EMPTY
+git diff --name-only main HEAD -- macos ops docs LOCAL_DEPLOYMENT.md CONTEXT.md
+  -> EMPTY  (server-only, like H4: (c) needs a moss-live-web.service restart and NO Mac rebuild)
+Payload is exactly 15 files, +1475/-134: nine under moss_transcribe_diarize/ (live_adapters,
+live_coordinator, live_identity, live_service_runtime, live_session, the new leaf live_span_bounds,
+the leaf transcription_outcome, vllm_runner, live_replay) and six tests (test_live_coordinator,
+test_live_identity, test_live_pipeline_seams, test_live_replay, test_live_service_replay,
+test_live_service_runtime). The four a reviewer would not predict from the blocker names were read
+in full and are in scope: vllm_runner + transcription_outcome are J3's classification at the point
+the status code is still in hand; live_replay is J4's lab harness recording both refusal words; the
+three re-pointed test files are J2's honest cost.
+
+### Learned
+1. UNLIKE H4a, THERE IS NO PRE-REDEPLOY CONFIGURATION RISK THIS TIME, and that is worth stating
+   rather than assuming. H1/H2/H3 each added a refusal the deployed manifest had to satisfy, so a
+   redeploy could have failed the service closed. Grepping the product diff for new admission
+   refusals finds none - Phase J adds no configuration constraint, only policy inside the session.
+   The read-only manifest check was run anyway (it costs one ssh and it proves J5c's path is live),
+   but the risk it guards is absent here.
+2. THE COVERAGE REVIEW WAS WORTH DOING AS ARITHMETIC, NOT AS PROSE. Selecting each amendment clause
+   with -k and summing gave 51 against a 50-node file, and `sort | uniq -d` over the collections
+   named the single overlap in one command. That is a much stronger statement than "the nodes look
+   comprehensive": every node in the file belongs to a clause the amendment names, and no clause is
+   unrepresented.
+3. THE SWIFT COUNT NOT MOVING IS EVIDENCE, NOT A NON-EVENT. 139 unchanged across H4a and J5a is how
+   a server-only cycle proves it stayed server-only; a moved Swift count would mean the amendment's
+   scope leaked into macos/.
+
+- Next: J5 step (b) - the merge. Join main into the feature branch first and prove it content-free
+  with `git merge-tree --write-tree` BEFORE running it; advance expected_main from 317df4d... to
+  b817871... IN-SCRIPT with a comment citing the third amendment (never by CLI override) and COMMIT
+  that before running - the script refuses a dirty tree and the commit becomes the feature tip the
+  merge captures; run merge-keeper.sh in the BACKGROUND (a foreground kill skips its EXIT trap and
+  strands a worktree holding main, which then blocks the retry; recover with
+  `git -C <wt> merge --abort && git worktree remove --force <wt>`). Then (c) publish + redeploy, and
+  only then (d) both probes, which are the amendment's actual gate.
+- Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
+- Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
+  green - the same rule that has now held seven times.

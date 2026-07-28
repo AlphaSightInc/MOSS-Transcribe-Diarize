@@ -96,10 +96,14 @@ blocker-4 input class on this path. See the unresolved-identity contract block. 
 degraded rather than made terminal — which closes candidate 36 and leaves J4 and J5 in Phase J. See
 the transient-decode contract block. Iteration 12 landed **J4** — every refusal on the live path now
 carries the word that names it out of the process, in the event and in the failure detail — which
-leaves **J5 alone** in Phase J. See the named-refusal contract block.
+leaves **J5 alone** in Phase J. See the named-refusal contract block. Iteration 13 ran **J5 step
+(a)**: the full Swift/Python gate green at `517306b`, the seam coverage reviewed clause by clause
+against the third amendment, and the merge payload reviewed against Phase J's scope; it changed no
+tracked file outside `scripts/ralph-afk/`. See the J5a gate block.
 
-**PRD acceptance scoreboard after iteration 12 of run 20260728-112922** (iteration 12 moved no
-scoreboard line either — J1-J4 are fixes awaiting Phase J's gate, merge and redeploy).
+**PRD acceptance scoreboard after iteration 13 of run 20260728-112922** (iteration 13 moved no
+scoreboard line either — J1-J4 are fixes awaiting Phase J's merge and redeploy; the local gate is
+now green but the *host* still runs `b817871`).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
@@ -528,6 +532,78 @@ six J4 nodes red and leaves the other 44 green. Restore sha256-verified (`fba8c4
 `live-hardcap-repro.py --frames 8` unchanged at rc=0.
 **Not yet observed on the host.** Like J1-J3, real confirmation belongs to J5's gate — where this
 one pays for itself: if J5's probe run finds a fifth blocker, the 409 now carries the word.
+
+**J5a gate: GREEN at `517306b` (new, iteration 13).** The third amendment's local gate, measured on
+MacStudio 2026-07-28, tree clean before and after. **No tracked file changed this iteration.**
+- Both Swift products from an **empty** scratch path (`ls -A` printed 0), separate invocations —
+  never one `swift build --product A --product B`, which silently builds only B: `mtd-capture`
+  8.49 s wall / 18.65 s user, `MOSSCaptureApp` 0.96 s / 1.04 s. **Zero `warning:` lines** in the
+  whole log.
+- `swift test --package-path macos/MOSSCapture` → **139 passed / 0 failures** in 1.02 s. Unchanged
+  from H4a, which is itself the evidence Phase J stayed server-side: a moved Swift count would mean
+  the amendment's scope leaked.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider -rs` → **590 passed / 2 skipped /
+  368 subtests** in 60.9 s (H4a was 551/2/368; **+39** = J1's 11, J2's 9, J3's 12, J4's 7). `-rs`
+  names the two skips as `tests/test_large_upload.py:155,175` "Python 3.10 compatibility contract" —
+  the same pre-existing pair as every prior gate, **not** Darwin skips.
+- `pytest tests/test_macos_uds_tracer.py` alone → **4 passed / 0 skips** in 14.8 s.
+- attempt-2 discriminator (`--target "$PWD"`) → **10/10 true**. `leak-scan.sh` → `leak-scan: clean`.
+- `live-hardcap-repro.py --frames 8` → rc=0, `survived 8 frames`. `git status --porcelain` empty.
+- `RALPH_MERGE_DRY_RUN=1 merge-keeper.sh` → rc=1, `ERROR: main moved from expected pre-merge SHA
+  317df4d…`. The guard is still live; J5b advances `expected_main` to `b817871…` **in-script**.
+
+*The seam coverage, reviewed clause by clause against the third amendment — and the whole file is
+accounted for.* Five `-k` selections over `tests/test_live_pipeline_seams.py` cover **50 of 50**
+collected nodes (12+12+8+13+6 = 51 selections, minus the one node two clauses share):
+| amendment clause | nodes | selection |
+| --- | --- | --- |
+| the earlier amendments' seams (H1/H2/H3), still green | 12 | `webrtcvad`, `carried_tail`, `sub_vad`, `aligned_frames`, `manifest_frame_length`, `deployed_hard_cap`, `two_different_span_caps`, `leading_silence`, `pure_silence`, `no_speech_answer`, `unparseable_text_without_raising` |
+| "timestamp tolerance, decided once … in **both** places" | 12 | `span_bound`, `clamped`, `negative_timestamp`, `unparseable_transcript_is_still`, `hard_cap_span_whose_speech` |
+| "non-`prepared` preparations" | 8 | `abstaining`, `could_not_get_evidence`, `unresolved_span_stops`, `decoder_s_own_labels`, `unattributed_rendering` |
+| "candidate 36, in the same pass" | 13 | `later_attempt_could_answer`, `blinks`, `outlives_transience`, `resets_the_outage`, `refuses_on_its_merits_is_terminal`, `not_a_span_with_nothing` |
+| "diagnosability … `reason` must reach both" | 6 | `says_why_identity`, `names_the_refusal`, `facts_as_fields`, `named_the_same_way`, `names_nothing` |
+Outside the file, three more nodes the amendment's list implies: `test_live_identity.py::
+test_a_refused_canonical_submission_cannot_be_built_without_naming_itself` and
+`…::test_prepared_canonical_rejects_invalid_preparations_without_mutation` (2 passed) and
+`test_live_replay.py::test_live_replay_publishes_a_span_identity_could_not_resolve` (1 passed).
+*The one node two clauses share* is
+`test_an_unattributed_rendering_keeps_the_words_and_drops_only_the_speaker[still_clamped_into_the_span]`
+— J2's rendering going through J1's clamp — which is the right shape: the two rules meet on one span.
+*The seam is real on both sides*, which was the amendment's actual complaint. `_decode_seam_runtime`
+builds the product `LiveServiceRuntime`, `LiveCoordinator`, `LiveSession`, `EndpointPolicy`,
+`RunnerBoundedWavInference` over the real `VllmRunner`, and the real
+`BoundedCausalIdentityPreparer`; `prepared_by` **wraps** the real preparer rather than replacing it.
+Only two things are stubbed, both genuinely off-host: the native `webrtcvad` wheel (by a class that
+enforces its documented 10/20/30 ms length contract and nothing else) and `urllib.request.urlopen`
+(J3 moved the stub down to there from `_post_multipart`, so the runner's request build, response
+unpack and status classification are all product code).
+*The governing rule, checked by reading rather than by test count.* After J1-J4 nothing the **decoder
+produces** can end a meeting: a timestamp outside the span is clamped, an empty or unparseable
+transcript commits empty, a transient failure retries then commits empty, and every preparation the
+preparer returns publishes (`prepare` has no `raise` path — its one `LiveIdentityError` is caught and
+turned into an abstention). What remains terminal is session state or a genuine outage:
+`stale_epoch` / `unknown_span` / `span_out_of_order` / `span_sample_mismatch`, a stale identity base
+version, a permanent decoder refusal, three consecutive unanswered spans, `unqueued_frozen_span`, and
+the stop-drain deadline. Each of those is a session that cannot continue, which is what the amendment
+asked for.
+
+*The merge payload, reviewed against Phase J's scope.* `git diff --name-only main HEAD -- ':!scripts/
+ralph-afk' ':!moss_transcribe_diarize' ':!tests'` is **empty**, and so is the same query restricted to
+`macos ops docs LOCAL_DEPLOYMENT.md CONTEXT.md` — this cycle, like H4's, is **server-only**, so J5c's
+redeploy needs a `moss-live-web.service` restart and needs **no** Mac rebuild. The payload is exactly
+**15 files, +1475/-134**: nine under `moss_transcribe_diarize/` (`live_adapters`, `live_coordinator`,
+`live_identity`, `live_service_runtime`, `live_session`, the new leaf `live_span_bounds`, the leaf
+`transcription_outcome`, `vllm_runner`, `live_replay`) and six tests (`test_live_coordinator`,
+`test_live_identity`, `test_live_pipeline_seams`, `test_live_replay`, `test_live_service_replay`,
+`test_live_service_runtime`). The four a reviewer would not predict from the blocker names were read
+and are in scope: `vllm_runner` + `transcription_outcome` are J3's classification at the point the
+status code is still in hand; `live_replay` is J4's lab harness recording both refusal words; and the
+three re-pointed test files are J2's honest cost (an abstention can no longer manufacture a terminal
+failure, so those nodes now use a genuinely stale preparation).
+*Unlike H4a, the pre-redeploy manifest check is a formality here* — `grep`ping the product diff for
+new admission refusals finds none; Phase J adds no configuration constraint. It was run anyway
+(read-only, the standing command): `caps equal = True 40000`, `vad frame_samples = 160`,
+`retired knob present = False`. The host answered, so J5c's ssh path is live.
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -2822,19 +2898,38 @@ and 37 are folded in here; settle them together or the next gate run finds the f
     reaches the `canonical_processed` event, which is now the only thing distinguishing an abstention
     from an evidence-provider outage. Six nodes; a reachable empty-message defect in the failure path
     was found and fixed on the way. See the named-refusal contract block above.
-42. **J5 - review the seam coverage, then gate/merge/redeploy** `[open - do this next]`. The
-    real-seam nodes the amendment asked for were written **with** each fix (J1 +11, J2 +9, J3 +12,
-    J4 +7, each red before and green after with an sha256-verified restore), so what is left here is
-    a review that they cover the amendment's list, not a new test-writing pass. Then: **both** probes
-    against the deployed service - a full-plan survival with committed spans advancing and speaker
-    labels present - plus the full Swift/Python gate; then the single authorized merge
-    (`expected_main` is now `317df4d...`; advance it in-script), push, redeploy.
-    *Order note, learned in H4:* the amendment lists the probes before the merge, but the branch's
+42. **J5 - review the seam coverage, then gate/merge/redeploy/probe.** Split into four steps, run in
+    this order (learned in H4: the amendment lists the probes before the merge, but the branch's
     fixes are not on the host, so a probe run before the redeploy measures `b817871` and dies at
-    blocker 4 no matter what the branch says. H4 therefore ran gate -> merge -> redeploy -> probe
-    (iterations 4, 5, 6, 7), and Phase J must run the same order. **Nothing is dropped:** both probes
-    green against the redeployed SHA is still the acceptance evidence, and if they are red the merge
-    is answered by the next amendment, exactly as H4d's red was.
+    blocker 4 no matter what the branch says; H4 ran gate -> merge -> redeploy -> probe in
+    iterations 4, 5, 6, 7). **Nothing is dropped:** both probes green against the redeployed SHA is
+    still the acceptance evidence, and if they are red the merge is answered by the next amendment,
+    exactly as H4d's red was.
+    - **(a) coverage review + full local gate** `[done - run 20260728-112922 iteration 13]`. The
+      real-seam nodes were written **with** each fix (J1 +11, J2 +9, J3 +12, J4 +7, each red before
+      and green after with an sha256-verified restore), so this was a review, not a test-writing
+      pass: five `-k` selections account for **50 of 50** nodes in `test_live_pipeline_seams.py`
+      against the amendment's clauses, plus three nodes elsewhere. Gate green at `517306b`
+      (139 / 590+2 / tracer 4 / 10/10 / leak-scan clean / repro rc=0 / tree clean); payload reviewed
+      as exactly 15 server+test files, no `macos/`, no `ops/`, no doc. See the J5a gate block.
+    - **(b) the merge** `[open - do this next]`. Join `main` into the feature branch first and prove
+      it content-free with `git merge-tree --write-tree` **before** running it; advance
+      `expected_main` from `317df4d...` to `b817871...` **in-script** with a comment citing the third
+      amendment (never by CLI override) and **commit that** before running; run `merge-keeper.sh` in
+      the **BACKGROUND**. The dry run currently refuses (rc=1), which is the proof no unauthorized
+      merge can slip through.
+    - **(c) publish + redeploy.** `git push origin main`, fetch/detach the host checkout, restart
+      `moss-live-web.service` (this cycle is **server-only**, so the restart is required and no Mac
+      rebuild is needed), then poll `/live` - a single probe before ~10 s returns 000. Re-verify the
+      served leaf still hashes to the D2 pin `a35ca9fc…` and that the batch unit's MainPID did not
+      move. Confirm the deployed code carries J1-J4 by **venv introspection**, not by the SHA and
+      never by `/api/live/descriptor`'s `source_revision` (a stamped manifest field that does not
+      move on redeploy).
+    - **(d) the amendment's gate: both probes.** `live-pipeline-probe.py` and `live-hardcap-repro.py`
+      against the redeployed service, requiring a run that survives its full plan with committed
+      spans advancing and speaker labels present. J1's real-audio confirmation is the sweep's two
+      known-failing spans (`12208+10*8000` and `12208+32*8000`); J4 pays for itself here - if a fifth
+      blocker appears, the 409 now carries the word that names it.
 
 Reusable facts from H4d: rebuilding the probe's own span 1 from its schedule reproduced the defect
 first try, while `golden.wav` decodes to empty and proves nothing - reproduce the exact input, not a
