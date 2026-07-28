@@ -5864,3 +5864,97 @@ reason and skips `_fail_lane`, so the codes the client sent are discarded at the
 most; `_failed_lanes` at :237-245 already has them in hand. Then K4 (a released session must not
 answer `running: true`), then K5 (full gate, one merge with `expected_main` advanced in-script,
 push, redeploy, re-read the codes on m4mbp). Do not guess the lane-failure cause before K5.
+
+================================================================================
+run 20260728-181020 | iteration 3 | K3 - the teardown carries the codes that caused it
+================================================================================
+Target: candidate K3 (fourth amendment, lane observability). The terminal path in
+`live_helper_failure.observe` computed `_failed_lanes` - the typed code each lane sent - used it
+only to decide *whether* to end the session, and then threw it away: `_fail_lane` runs on the
+surviving path only, `_expire_v2`/`_abort_mono` got a generic reason, and nothing was logged. The
+attended m4mbp session died exactly there, and no surface on either host named a cause.
+
+Design decisions, recorded rather than left implicit:
+- **The codes travel INTO the teardown, not around it.** One helper builds one
+  `LiveHelperTerminalRecord` (session id, reason, typed codes in `LiveLane` order) and
+  `_terminal_failure` hands the same record to all three sinks, so the host journal, the runtime
+  journal and the v2 expiry cannot disagree about what killed the session.
+- **Every terminal transition, not just the heartbeat one.** Recording inside `_terminal_failure`
+  covers the lease expiry too, at the cost of one `lane_failures={}` argument; a lease that ran out
+  and a session whose lanes both failed are different diagnoses and now read differently
+  (`lanes=none` vs two `lane.<lane>=<code>` fields).
+- **ERROR, not INFO.** The live service installs no logging configuration, so
+  `logging.lastResort` (WARNING and above) is the only thing that carries the line to stderr and
+  thence to journald. Measured, not assumed - see validation.
+- **The default sink is the module's own function.** Unlike K2's decorator there is no composition
+  root to wire, so there is no wiring line a later edit can drop; `on_terminal` exists for tests.
+- **`runtime.abort(..., detail=)` rather than a sentence.** J4's rule: the word that names the
+  condition travels typed. The detail reaches the `session_aborted` event and the session's terminal
+  failure record - the record that outlives every registry the teardown releases.
+- **What can reach the journal is bounded structurally.** `LiveHelperTerminalRecord` is
+  `session_id` / `reason` / `lane_failures` and has no free-form field; a node asserts the
+  extra-kwarg constructor raises. Same argument as G3's `ControlChannelErrorDetail` and K2's
+  `CaptureLaneStatus`.
+- **Expiry stamps the client's code even for a lane with zero frames.** `failed_samples` counts
+  retained audio and the observed session posted none, so both lanes expired `health: "active"` with
+  no code - the one state an operator needs was the one the snapshot could not express. Precedence:
+  the lane's own code, then the client's, then the generic reason.
+  *Recorded honestly:* `registry.expire` pops the session and `_expire_v2` discards the snapshot, so
+  this stamp has **no reader today**. It makes the lifecycle authority's own answer true; the
+  records that are actually read are the runtime journal and the host log.
+
+Files touched (tracked server source, inside Phase K's scope; no `macos/` change):
+- `moss_transcribe_diarize/app/live_helper_failure.py` - `LiveHelperTerminalRecord`,
+  `log_live_helper_terminal`, `_terminal_record`, `on_terminal` injection; `_terminal_failure`,
+  `_expire_v2`, `_abort_mono_runtime` now take the failed lanes; `_MonoAbort` protocol.
+- `moss_transcribe_diarize/app/live_v2_session.py` - `expire(..., lane_failure_codes=...)` on both
+  the session and the registry, `_assert_lane_failure_codes`/`_assert_failure_code` (the latter also
+  replaces `fail_lane`'s inline copy of the same check).
+- `moss_transcribe_diarize/app/live_service_runtime.py` - `abort(..., detail=)`, optional keyword,
+  every existing caller unchanged.
+- Tests: `tests/test_live_helper_failure.py` +4 nodes +2 doubles, `tests/test_live_session_v2.py`
+  +3 nodes, `tests/test_live_pipeline_seams.py` +2 nodes (new helper-terminal seam section).
+
+Validation (MacStudio, pyenv 3.12.10 / pytest 9.0.2):
+- `python3 -m pytest tests -q --ignore=tests/test_macos_uds_tracer.py`: **594 passed, 2 skipped,
+  368 subtests** in 48.81s (the tracer is Swift-only and this iteration changed no `macos/` file).
+- Narrow: `tests/test_live_helper_failure.py tests/test_live_session_v2.py
+  tests/test_live_pipeline_seams.py` -> **77 passed** (was 68; +9 nodes).
+- **The ERROR-level claim, measured under the deployed logging config** rather than asserted:
+  `logging.config.dictConfig(uvicorn.config.LOGGING_CONFIG)` then one record -> the line appears on
+  **stderr**. uvicorn's config carries `disable_existing_loggers: False` and configures only
+  `uvicorn`, `uvicorn.access`, `uvicorn.error`, so nothing suppresses this logger in the unit.
+- Red-before, in a scratch copy under /tmp (repo never mutated, copy deleted afterwards):
+  1. **Sources at HEAD + the new tests** -> `tests/test_live_helper_failure.py` fails to import
+     (`cannot import name 'LiveHelperTerminalRecord'`); the other two files give **4 failures** -
+     three `expire()` nodes (unexpected keyword) and the seam node on
+     `assert None == {...'lane_failures': {...}}`. That last one is the shipped defect exactly: the
+     abort that ended the meeting recorded nothing about why.
+  2. **M1 - the terminal path drops the codes again** (no `lane_failures=failed_lanes`) -> 3 nodes
+     fail; the host line degrades to `lanes=none` while both lanes had in fact failed.
+  3. **M2 - expiry ignores a reported code when `failed_samples == 0`** -> the zero-frame node fails
+     `assert 'active' == 'failed'`. That is the observed session's exact shape.
+  4. **M3 - log at INFO instead of ERROR** -> both journal nodes fail with *no* record captured: an
+     unconfigured logger drops it, which is what would have happened in the unit.
+  5. **M4 - `abort()` builds its failure without the detail** -> the seam node fails; the runtime
+     journal goes back to naming the effect and not the cause.
+  6. **Survivor, measured and accepted: recording AFTER the teardown instead of before.** No node
+     fails. Not a coverage gap worth a node - both teardown steps swallow the only errors they can
+     realistically raise (`KeyError`, `LiveV2SessionTerminalError`), so no constructible case loses
+     the line. The ordering stays for the same reason K2's does.
+
+Learned: the suite had never put the helper coordinator, the v2 registry and the runtime in one
+test - the same class of gap that hid every F0/H4d blocker. Assembling them is what turned "both
+lanes report failed and nothing says why" from a host-only observation into two regression nodes,
+and it is why the new section lives in `test_live_pipeline_seams.py` beside the decode seams.
+
+Evidence paths: moss_transcribe_diarize/app/{live_helper_failure,live_v2_session,
+live_service_runtime}.py; tests/{test_live_helper_failure,test_live_session_v2,
+test_live_pipeline_seams}.py.
+
+Next: **K4** - a dead session must not look healthy. After the server releases the session the
+client still answers `running: true` while every request 403s; `mtd-capture status` must say the
+session is gone. Then K5 (full Swift/Python gate, one merge with `expected_main` advanced in-script,
+push, redeploy, then re-run pair -> start on m4mbp and READ the codes: `journalctl` on the server
+now prints `live helper terminal: session=… reason=… lane.<lane>=<code>`, and `log show` on the Mac
+prints K2's line). Do not guess the lane-failure cause before K5 reports it.

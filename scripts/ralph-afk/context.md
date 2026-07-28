@@ -115,7 +115,11 @@ found both capture lanes reporting `failed` with the code recorded nowhere: run
 `20260728-181020` iteration 1 landed **K1** — `ControlChannelResponse.lanes` and the shared
 `CaptureStatus.reportedLanes()` projection — and iteration 2 landed **K2**, the app-side log of a
 typed lane failure, so the branch carries tracked `macos/` source again, strictly within Phase K's
-scope. See the lane-reporting and lane-failure-log contract blocks.
+scope. Iteration 3 landed **K3**, the server half: the failed lanes' typed codes now reach the v2
+expiry, the runtime journal and one host-journal line instead of being dropped at the teardown, and
+the suite finally assembles the helper coordinator, the v2 registry and the runtime together — the
+seam that hid this. See the lane-reporting, lane-failure-log and terminal-record contract blocks.
+**K4 and K5 remain.**
 
 **PRD acceptance scoreboard after iteration 16 of run 20260728-112922** ("one exact SHA everywhere"
 is GREEN 4/4 at `6a540fe` since iteration 15; iteration 16 closed the last *machine* gate — Phase J's
@@ -1378,6 +1382,41 @@ suite. It is an equivalent mutant, not a coverage gap: an unreported lane projec
 it is never logged either way. `reportedLanes()` is used for the structural reason — one projection,
 now three surfaces.
 
+**Terminal-record contract (new, run 20260728-181020 iteration 3 / K3).** *The heartbeat that ends
+the meeting is the one that says why, so its codes travel into the teardown instead of being dropped
+at it.* One helper, `_terminal_record(session_id, reason, lane_failures)`
+(`live_helper_failure.py`), builds `LiveHelperTerminalRecord` — session id, reason, and typed codes
+in `LiveLane` order — and every terminal transition the coordinator drives passes through
+`_terminal_failure`, which records once before delegating and then hands the same codes to three
+places:
+- `LiveV2Session.expire(reason, lane_failure_codes=...)` stamps each reported lane `failed` with the
+  client's own code. **This is what made the observed session unreadable:** `failed_samples` counts
+  retained audio, and that session died with **zero frames posted**, so both lanes expired
+  `health: "active"` with no code. Precedence is the lane's own code, then the client's, then the
+  generic reason — most specific answer wins. Caveat, recorded honestly: `registry.expire` pops the
+  session and `_expire_v2` discards the snapshot, so **today this stamp has no reader**; it makes
+  the lifecycle authority's own answer true, and it is where a future "why is this session gone"
+  surface would read.
+- `runtime.abort(session_id, reason, detail=...)` — new keyword, every existing caller unchanged —
+  puts the record in the `session_aborted` event and the session's terminal failure. That is the
+  record that **outlives** the released registries.
+- One host-journal line, `live helper terminal: session=… reason=… lane.<lane>=<code>`, at **ERROR**
+  and not INFO: the live service installs no logging config, so `logging.lastResort` (WARNING+) is
+  what carries it to stderr → journald. Verified under uvicorn's real `LOGGING_CONFIG`
+  (`disable_existing_loggers: False`, it configures only the three `uvicorn*` loggers), so the line
+  reaches the journal in production, not just in pytest's `caplog`.
+*No wiring to forget.* The sink is the module default (`log_live_helper_terminal`), injectable only
+for tests — unlike K2's decorator, there is no composition-root line a future edit can drop.
+*What can reach the journal is bounded by the type.* `LiveHelperTerminalRecord` has session id,
+reason and typed codes and **no free-form field**; a node asserts the extra-kwarg constructor raises.
+Same structural argument as G3's `ControlChannelErrorDetail` and K2's `CaptureLaneStatus`.
+*A terminal transition with no failed lane says `lanes=none`* rather than omitting the subject — a
+lease expiry and an all-lanes-failed death are different diagnoses.
+*Measured mutation residue:* moving the record **after** the teardown survives the suite. Not a
+coverage gap worth a node: both teardown steps swallow the only errors they can realistically raise
+(`KeyError`, `LiveV2SessionTerminalError`), so no constructible case loses the line. The ordering
+stays for the same reason K2's does.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -2005,6 +2044,17 @@ python3 -m pytest tests/test_live_service_runtime.py tests/test_live_provider_bu
 #     revoke, restart, clean stop, failed stop, loopback-only route) ----------------------------
 python3 -m pytest tests/test_live_auth.py tests/test_live_api.py -q \
   -k 'view_authority or view_revocation or revokes_the_view'
+
+# --- K3 terminal record (8 nodes: the terminal heartbeat's codes into expiry/journal/log, the
+#     lease expiry's `lanes=none`, the record's bounded shape, the default sink's level, three
+#     expiry-stamp nodes, and the real coordinator+v2 registry+runtime seam plus its
+#     one-failed-lane guard). ~4 s. --------------------------------------------------------------
+python3 -m pytest tests/test_live_helper_failure.py tests/test_live_session_v2.py \
+  tests/test_live_pipeline_seams.py -q
+# Proof the line survives the deployed logging config (prints to stderr; no service needed):
+python3 -c "import logging.config,uvicorn.config as u; \
+from moss_transcribe_diarize.app.live_helper_failure import LiveHelperTerminalRecord as R, log_live_helper_terminal as L; \
+logging.config.dictConfig(u.LOGGING_CONFIG); L(R(session_id='s1',reason='helper_all_lanes_failed',lane_failures={'system':'device_unavailable'}))"
 
 # --- narrow: Mac client --------------------------------------------------
 swift build --package-path macos/MOSSCapture --product mtd-capture
@@ -3249,9 +3299,11 @@ An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox fl
     `CaptureLaneFailureLogging` + `OSLogControlChannelFailureLog.recordLaneFailure` +
     `LaneFailureLoggingHealthAdapter` wrapping the app's heartbeat adapter, plus the one
     `CaptureLaneStates` vocabulary. See the lane-failure-log contract block.
-45. **K3 - record the terminal reason and per-lane codes server-side.** The terminal path in
-    `live_helper_failure.observe` marks the session, calls `_terminal_failure` with a generic
-    reason and **skips `_fail_lane`**, so the codes the client sent are discarded. Log them.
+45. **K3 - record the terminal reason and per-lane codes server-side**
+    `[done - run 20260728-181020 iteration 3]`: the failed lanes now travel *into* the teardown -
+    into `LiveV2Session.expire(lane_failure_codes=...)`, into `runtime.abort(detail=...)` and its
+    `session_aborted` event, and into one host-journal line per terminal transition. See the
+    terminal-record contract block.
 46. **K4 - a dead session must not look healthy.** After the release the client still answers
     `running: true` while every request 403s. Surface it in `status`.
 47. **K5 - gate, merge, redeploy, re-read.** Regression nodes red-before/green-after; full
