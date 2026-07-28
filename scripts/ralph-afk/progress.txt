@@ -11388,3 +11388,32 @@ the publish at :387-402 with the start path recording a sessionRefusal. Then D-a
 NativeLaneHealth (with the K2 log line kept and the mailbox overload given its own code), then 50 per
 D-c, then the coverage gap at tests/test_live_api.py:1055 (post a frame ON the lane that failed),
 then the full gate, the lane-refusal probe, and re-runs of F1 and F3.
+
+## Supervisor - operator authorizes the live speaker-identity cycle (2026-07-28)
+- Recorded as the sixth prd.md amendment and Phase N (candidates 55-59). It **overrides** the
+  out-of-scope entry for intermittent-speaker identity calibration: identity is the project's
+  purpose and the live path currently cannot do it.
+- **Sequenced AFTER Phase M's gate, deliberately.** Identity quality cannot be certified on a
+  meeting that dies at minute 14.6, so 53/48/49/50 finish first. Do not preempt Phase M.
+- Evidence is measurement, not opinion. Supervisor ran `voxceleb_resnet152_LM.onnx` on the 4070Ti
+  through the exact production frontend (`speaker_identity.py:654-677`) with four verified-distinct
+  voices. Two findings decide the design:
+  1. **The 0.5 s enrollment floor is below the noise floor.** Same-speaker agreement at 0.5 s is
+     **0.378** (min -0.119) while cross-speaker reaches **0.360**, and 0.378 is itself below the
+     deployed `min_match_score` 0.5. Separation appears at ~2 s (0.715 vs 0.289), clean by ~4 s.
+  2. **Replacement drifts; a centroid does not.** Over one span stream: A (today) 0.770 oracle
+     alignment and oscillating 0.95 -> 0.51 between spans; B (re-embed 0..t) 0.999 but quadratic
+     (~23 min of compute for a 16-min four-speaker meeting) and the *worst* short-probe matcher
+     (0.575); C (duration-weighted centroid) **0.975 at 2.93 s vs A's 2.66 s**; D (bank) 0.973.
+- The operator's own proposal - accumulate all audio and re-embed 0..t - is **directionally right
+  and rejected as specified**: C captures 97.5% of its benefit at ~1.1x today's cost, and B is
+  worse at the actual matching task. That is recorded so the idea is not silently dropped.
+- The core fix is an asymmetry that does not exist today: **matching is not enrollment.** A short
+  span may be labelled against a prototype; it must never become one.
+- Watch the units: `identity_provider.min_segment_samples` is NOT a domain-contract value. The
+  contractual 8000 is the *live frame size*, a different quantity sharing the number.
+- Honest limit, stated in the amendment: the supervisor's speakers were synthetic TTS, cleaner than
+  humans in a room. The curve shape and strategy ranking hold; absolute numbers will be worse. 2.0 s
+  is a lower bound, not a target.
+- Supervisor state at authorization: loop RUNNING (pid 14512, iteration 14 of 30, mid Phase M),
+  `main` fc7097d, tree clean, four-way SHA 4/4. No relaunch; the loop picks this up next iteration.

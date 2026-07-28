@@ -1818,6 +1818,42 @@ the lane that failed** - the same shape as every blocker in Phases H and J.
 green**, with candidate 51's harness fix in place so the label clause is meaningfully verified.
 Then one merge (`expected_main` is `6a540fe…` -> advance in-script), push, redeploy.
 
+### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)
+
+Authorized by the sixth prd.md amendment, which **overrides** the out-of-scope entry for
+intermittent-speaker identity calibration. **Do not start until Phase M's gate is green** - identity
+quality cannot be certified on a meeting that dies at minute 14.6.
+
+Measured by the supervisor on the real encoder (numbers and method in the amendment):
+- deployed enrollment floor 0.5 s gives same-speaker agreement **0.378** against cross-speaker
+  **0.360** - no separation, and below the deployed `min_match_score` 0.5;
+- separation appears at ~2 s (0.715 vs 0.289) and is clean by ~4 s;
+- strategy A (today, `live_provider_bundle.py:597` replacement) oscillates 0.95 -> 0.51 between
+  spans; C (duration-weighted centroid) reaches 0.975 oracle alignment at ~1.1x today's cost;
+  B (re-embed 0..t) reaches 0.999 but is quadratic (~23 min compute for a 16-min meeting) **and**
+  has the worst short-probe match. B is rejected on evidence.
+
+55. **N1 - separate matching from enrollment.** The core defect: one threshold does both jobs, so a
+    0.5 s fragment can overwrite a good prototype. A short span may be *labelled* against a
+    prototype; it must never *become* one. Everything else in this phase depends on this split.
+56. **N2 - duration-weighted centroid (strategy C).** Wire it through the `canonical_embedding` hook
+    that already exists in `WeSpeakerLiveEvidenceProvider.__init__` and that
+    `_identity_evidence_provider` never passes. O(1) memory and compute per span.
+57. **N3 - raise the enrollment minimum to >= 2.0 s.** `identity_provider.min_segment_samples` is
+    **not** a domain-contract value; the contractual 8000 is the *live frame size*, a different
+    quantity sharing the number. Do not change the frame size. Treat 2.0 s as a lower bound - the
+    supervisor's voices were synthetic TTS and cleaner than real humans.
+58. **N4 - bounded bank (strategy D), only if measurement justifies it.** D and C were within 0.2%
+    of each other; adopt D only if a prototype must demonstrably survive a bad patch.
+59. **N5 - gate, merge, redeploy.** A tracked regression reproducing the duration curve that fails
+    if the enrollment floor drops below the measured separation point; C must beat A on oracle
+    alignment **and** same-speaker probe minimum on the real encoder; then F1 and F2 with candidate
+    51's distinct-voice harness and the speaker-label clause **meaningfully verified**; then one
+    merge, push, redeploy.
+
+Keep the abstain path throughout: an ambiguous span stays unlabelled rather than guessing, and J2
+already ruled that an abstain must not end the meeting.
+
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.

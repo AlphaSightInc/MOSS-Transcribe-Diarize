@@ -263,6 +263,74 @@ Scope, inside `macos/`, `moss_transcribe_diarize/`, `ops/` only where required, 
 Exactly one further merge. After it the post-merge freeze resumes. **Never ask the operator for the
 TCC clicks again** - both grants hold `auth_value=2` and survive rebuilds.
 
+## Sixth authorized amendment - 2026-07-28, live speaker identity
+
+**This overrides the out-of-scope entry for intermittent-speaker identity calibration.** Identity is
+the project's purpose; the live path currently cannot do it. Authorized as **Phase N**, and
+**sequenced after Phase M's gate** - identity quality cannot be certified on a meeting that dies at
+minute 14.6, so 53/48/49/50 finish first.
+
+### Measured evidence (supervisor prototype, real encoder, 2026-07-28)
+`voxceleb_resnet152_LM.onnx` on the 4070Ti through the exact production frontend
+(`speaker_identity.py:654-677`), four verified-distinct voices.
+
+Same-speaker cosine by segment duration - **vs** cross-speaker max:
+
+| segment | vs full utterance | same-speaker slice-to-slice | min | cross-speaker max |
+|---|---|---|---|---|
+| **0.5 s** (deployed `min_segment_samples` 8000) | 0.494 | **0.378** | **-0.119** | **0.360** |
+| 2.0 s | 0.825 | 0.715 | 0.347 | 0.289 |
+| 4.0 s | 0.938 | 0.886 | - | ~0.31 |
+| 8.0 s | 0.980 | 0.956 | 0.912 | 0.313 |
+
+At the deployed 0.5 s floor two genuine samples of the **same** speaker agree at **0.378** - below
+the deployed `min_match_score` of 0.5 - while two **different** speakers reach **0.360**. The
+distributions overlap; identity at 0.5 s is close to undefined. Separation appears at ~2 s.
+
+Accumulation strategies over the same 2.5 s span stream, alignment with an oracle embedding of all
+that speaker's audio:
+
+| strategy | oracle alignment | behaviour | encoder wall |
+|---|---|---|---|
+| **A replace** (`live_provider_bundle.py:597`, today) | 0.770 | oscillates 0.95 -> **0.51** between spans | 2.66 s |
+| **B re-embed 0..t** | 0.999 | monotone, but **quadratic** cost and the *worst* short-probe match (0.575) | 15.87 s |
+| **C duration-weighted centroid** | **0.975** | smooth | 2.93 s |
+| **D quality-gated bank (K=5)** | 0.973 | smooth | 2.87 s |
+
+Encoder cost is linear at ~30 ms per audio-second, so B on a 16-minute four-speaker meeting is
+~23 minutes of compute on a GPU the decoder already contends for. **Do not implement B.**
+
+### Scope
+- **The core fix is an asymmetry that does not exist today: matching is not enrollment.** One
+  threshold currently does both jobs, which is why a 0.5 s fragment can overwrite a good prototype.
+  A short span may be *labelled* against a prototype; it must never *become* one.
+- Adopt **C**, a duration-weighted running centroid, wired through the `canonical_embedding` hook
+  that already exists in `WeSpeakerLiveEvidenceProvider.__init__` and is never passed by
+  `_identity_evidence_provider`. Add **D**'s bounded bank only if a prototype must survive a bad
+  patch; justify it with measurement rather than taste.
+- Raise the **enrollment** minimum to >= 2.0 s. Note carefully: `identity_provider.
+  min_segment_samples` is **not** a domain-contract value - the contractual 8000 is the *live frame
+  size*, a different quantity that happens to share the number. Do not change the frame size.
+  `identity_config.min_match_score` / `min_match_margin` are likewise free, but changing them is a
+  decision to record, not a knob to tune until green.
+- Keep the abstain path: an ambiguous span must stay unlabelled rather than guess (J2 already ruled
+  that an abstain must not end the meeting).
+
+### Gate - measured, not asserted
+- A tracked regression that reproduces the duration curve and fails if the enrollment floor is ever
+  lowered below the measured separation point. The supervisor's `embed_measure.py` and
+  `strategy_compare.py` are the starting shape; they live in the scratchpad, so port what is needed.
+- Strategy C must beat A on oracle alignment **and** on same-speaker probe minimum, on the real
+  encoder, with the numbers recorded.
+- Then F1 and F2 with candidate 51's distinct-voice harness, and the **speaker-label clause
+  meaningfully verified** rather than merely present.
+- Then one further reviewed no-ff merge (advance `expected_main` in-script), push, redeploy.
+
+**Honest limit of the evidence:** the supervisor's speakers were synthetic TTS voices, which are
+cleaner and more separable than humans in a room. The shape of the curve and the ranking of
+strategies will hold; the absolute numbers will be worse. Treat 2.0 s as a lower bound, not a
+target, and say so if real audio disagrees.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:
