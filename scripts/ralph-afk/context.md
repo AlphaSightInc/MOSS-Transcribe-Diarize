@@ -103,21 +103,21 @@ tracked file outside `scripts/ralph-afk/`. See the J5a gate block. Iteration 14 
 **the third amendment's one authorized merge** at `6a540fe` — and changed no tracked product source,
 only `merge-keeper.sh`'s guard. **The post-merge freeze has resumed: from `d35be63` on, the feature
 branch may again carry only `scripts/ralph-afk/*`.** See the fourth-keeper-merge block.
+Iteration 15 ran **J5 step (c)** — published `6a540fe`, redeployed the live service, and moved the
+**fourth** checkout too, because m4mbp came back online: see the J5c redeploy block. It changed no
+tracked file.
 
-**PRD acceptance scoreboard after iteration 14 of run 20260728-112922** (iteration 14 moved the
-merge line — Phase J's authorized merge is done at `6a540fe` — and **moved "one exact SHA
-everywhere" backwards on purpose, to 1/4**: local `main` is `6a540fe` while `origin/main`, the host
-checkout and m4mbp all still read `b817871`. That is the expected shape between (b) and (c); J5c
-restores 3/4 by publishing and redeploying).
+**PRD acceptance scoreboard after iteration 15 of run 20260728-112922** (iteration 15 restored the
+SHA line and went past its own prediction: **"one exact SHA everywhere" is GREEN 4/4** at `6a540fe`,
+not the 3/4 that was expected, because m4mbp is reachable again).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
-merge (plus all three amendments' authorized follow-up merges), live service answering (re-measured
-after the H4c redeploy), batch service unharmed, signed app installed, **rollback rehearsed and
+merge (plus all three amendments' authorized follow-up merges), **one exact SHA everywhere (4/4)**,
+live service answering (re-measured after the J5c redeploy **and, for the first time, from m4mbp
+itself** — the host the PRD clause actually names), batch service unharmed, signed app installed
+(re-verified at this SHA: inode `211648186` and the E1 DR both unchanged), **rollback rehearsed and
 recorded**.
-**One exact SHA everywhere is 1/4 until J5c** — and even after it, 3/4, because **m4mbp is offline**
-(re-checked iteration 8: `ping m4mbp.local` and `ping m4mbp` both 100 % loss, `ssh m4mbp` "Operation
-timed out"), so its `git fetch && git checkout 6a540fe` is the one mechanical step left. No Mac
-rebuild is needed for it — this cycle is server-only. Open: permissions granted, the 60 s canary, the
+Open: permissions granted, the 60 s canary, the
 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
 
 **Those open items are still not merely waiting on E3.** Iterations 9 and 10 proved they cannot pass
@@ -126,15 +126,18 @@ deployed them; and iteration 7's gate run then found a **fourth** blocker on the
 H4d block. Phase J is now authorized and **J1 (iteration 9) and J2 (iteration 10) close both of
 blocker 4's input classes on the branch, J3 (iteration 11) closes the transient-decoder class that
 would have been the fifth, and J4 (iteration 12) makes the next one readable without a host-side
-probe**; J5a gated them and J5b (iteration 14) merged them, so the one step between the branch and
-the host is now **J5c's push + redeploy**. So the
-certification path is gated on **Phase J**, not on the operator: E3's physical
-TCC clicks stay unspent, because a canary against a service that dies at the first 2.5 s of
-continuous speech would burn the one irreducible human step for nothing. This is the third time the
+probe**; J5a gated them, J5b (iteration 14) merged them and **J5c (iteration 15) deployed them —
+the four fixes are now running on the host, proven by venv introspection that clamps H4d's own
+overshoot rather than by the SHA**. So the
+certification path is gated on **J5d's probe run**, not on the operator: E3's physical
+TCC clicks stay unspent for one more iteration, because a canary against a service that dies at the
+first 2.5 s of continuous speech would burn the one irreducible human step for nothing. This is the
+third time the
 same rule has held: **spend the human step last**, and only against a build a machine has already
 driven end to end. Iteration 8 put a number on that judgement: at the measured 6.1 % per-span kill
-rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 now would most likely
-buy one aborted run.
+rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 before J5d would most
+likely buy one aborted run. **J5d is the last thing standing between here and spending it**, and it
+costs no human input.
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **590 passed / 2 skipped / 368 subtests**
 including `tests/test_live_pipeline_seams.py` **50 passed** (new in run 20260728-112922 iteration 1,
@@ -258,6 +261,58 @@ join commit `3ba0f74` then left that tree unchanged (`git diff 9d68d2d 3ba0f74 -
 `git diff --name-only 517306b 3ba0f74 -- ':!scripts/ralph-afk'` was empty — i.e. the product tree the
 J5a gate measured is byte-identical to the one merged. Only then was `merge-base --is-ancestor main
 HEAD` honestly true (it printed NO before the join).
+
+**J5c redeploy: DONE at `6a540fe`, and the four-way SHA check is GREEN 4/4 (new, iteration 15).**
+`git push origin main` fast-forwarded `b817871..6a540fe`; the host checkout fetched and detached at
+`6a540fe` (tree `b1f4ab91…`); `systemctl --user restart moss-live-web.service` replaced MainPID
+338545 with **343344**, `NRestarts=0`, `ActiveState=active`, and `/live` answered 200 **9 s** after
+the restart. The batch unit was untouched: `moss-web.service` MainPID stayed **301112**. The journal
+after the restart has **0 traceback lines** — startup complete, only the pre-existing onnxruntime
+GPU-discovery warning.
+*Content parity is hashed on both sides, and the witness is chosen deliberately:* alongside
+`sha256(live_session.py)` `24d156b1…`, the check also hashes **`live_span_bounds.py`**
+(`1b299fd1…`) — J1's new leaf, which **did not exist at `b817871`**, so it distinguishes "the new
+half of the tree landed" from "a stale checkout that happens to agree on a pre-existing file".
+*The pre-restart manifest admission check was run **after** the checkout*, i.e. under the **new**
+code — strictly better than H4c's ordering, at the same zero risk, because the question is whether
+the code about to start accepts the manifest already on disk: `caps equal = True 40000`,
+`vad frame_samples = 160`, `retired knob present = False`, and `_preflight_payload` →
+`available=True, failures=[], manifest_hash 61d97ffe…` (unchanged). Phase J adds no admission
+constraint and breaks none.
+*Post-restart client checks from MacStudio:* served leaf still hashes to the D2 pin
+`a35ca9fc…`, `/live` 200, `/api/live/descriptor` 200, `http://192.168.68.38:7860/` 200,
+`/api/jobs` 200, plaintext `http://100.64.0.8:7861/live` still dead (000, curl rc=52).
+*And, for the first time, the PRD's clause measured **from m4mbp itself*** rather than from
+MacStudio standing in for it: the same leaf hash `a35ca9fc…` (so the client host's stored pin is
+still the served leaf and **no re-pairing is needed**), `/live` 200, `/api/live/descriptor` 200.
+*Positive proof the deployed code carries J1-J4*, taken with the **service's own venv** inside the
+deployed checkout, and J1 exercised with **H4d's input verbatim** rather than by a `hasattr`:
+`span_segments("[0.11][S01] Good morning everyone. This is the microphone.[2.51]",
+sample_count=40000)` → `[(0.11, 2.5)]` — the exact segment that ended the meeting is clamped, not
+refused — and all three consumers call it with no copy of the old bound left (J1);
+`UNATTRIBUTED_SPEAKER == "S00"`, `submit_unlabeled_canonical` present, and
+`unattributed_transcript("[0.11][S01] hello[2.51]", sample_count=40000)` → `'[0.11][S00]hello[2.5]'`
+— words kept, speaker dropped, **and clamped through J1 on the way** (J2);
+`TransientTranscriptionError`/`LiveProviderTransientError` typed, `DECODE_ATTEMPTS_PER_SPAN` 2,
+`MAX_CONSECUTIVE_UNANSWERED_SPANS` 3 (J3); `CanonicalSubmission(submitted=False, refusal=None)`
+raises `ValueError: a refused canonical submission must name its refusal.` and
+`LiveProviderError(…, detail={"span_id": 1}).detail` round-trips (J4).
+*m4mbp closed the fourth checkout with no rebuild and no reinstall*, and the evidence it was not
+needed is positive rather than argued: `/Applications/MOSSCapture.app` inode **211648186** and mtime
+`2026-07-28T04:55:23Z` are **unchanged from G6** (so the TCC-bearing inode was never disturbed), the
+DR is still `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`, and
+`codesign --verify --strict` passes.
+**`origin` is not the same repository on every host, and the PRD's housekeeping note is a trap
+because of it.** Here `origin` is the AlphaSight fork and `upstream` is OpenMOSS; **on m4mbp the
+names are inverted** — `origin` is OpenMOSS, the fork is **`alphasight`**. The literal
+`git fetch origin main` there fetched OpenMOSS and the checkout failed
+`fatal: unable to read tree (6a540fe…)`, which reads like a corrupt object and is really "never
+fetched". Nothing was mutated by the failure. **Resolve the remote by URL, never by the name
+`origin`, on any host but this one.**
+*m4mbp cannot reach the batch service, and that is topology, not a regression:* m4mbp is on
+`192.168.1.240`, the batch address is `192.168.68.38` — a different LAN, 100 % packet loss — and the
+two hosts meet only on the tailnet (`100.64.0.4` → `100.64.0.8`), which is exactly the path the PRD's
+live clause names and the pinned client uses. The batch clause is measured from MacStudio (200).
 
 **H4c redeploy: DONE at `b817871` (run 20260728-112922 iteration 6).** `git push origin main`
 fast-forwarded `317df4d..b817871` on the AlphaSight fork; the host checkout fetched and detached at
@@ -2241,6 +2296,45 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
 # Standing rollback for the host checkout, still valid until D3 changes the host:
 #   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
+# --- J5c: publish + redeploy the fourth merge (SPENT in iteration 15 of run 20260728-112922) -----
+# The push fast-forwarded b817871..6a540fe; never re-run it and never force-push. The host side, in
+# THIS order (the admission check AFTER the checkout, so it exercises the code about to start):
+#   cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git fetch origin main --quiet
+#   git checkout 6a540fe086cf819ba0e07a948da9fec0766202c3   # rollback: checkout b817871…
+#   <the pre-redeploy manifest admission check below, under the venv python>
+#   systemctl --user restart moss-live-web.service          # rollback: restart after the checkout
+#   for i in $(seq 1 40); do curl -sk … https://127.0.0.1:7861/live …; done   # POLL; 200 at 9 s
+# Parity witness: hash a file that DID NOT EXIST at the previous SHA (here
+# moss_transcribe_diarize/app/live_span_bounds.py, sha256 1b299fd1…) alongside a pre-existing one —
+# only the new file distinguishes "the new tree landed" from "a stale checkout that agrees".
+# Prove the DEPLOYED code carries J1-J4 under the service's own venv, and exercise J1 with H4d's
+# input rather than a hasattr (read-only, no server needed, re-runnable any time):
+#   J1: from moss_transcribe_diarize.app.live_span_bounds import span_segments
+#       span_segments("[0.11][S01] Good morning everyone. This is the microphone.[2.51]",
+#                     sample_count=40000) -> [(0.11, 2.5)]        # clamped, not refused
+#   J2: live_session.UNATTRIBUTED_SPEAKER == "S00"; hasattr(LiveSession,"submit_unlabeled_canonical")
+#       live_identity.unattributed_transcript("[0.11][S01] hello[2.51]", sample_count=40000)
+#         -> '[0.11][S00]hello[2.5]'
+#   J3: issubclass(TransientTranscriptionError, RuntimeError);
+#       issubclass(LiveProviderTransientError, LiveProviderError);
+#       live_coordinator.DECODE_ATTEMPTS_PER_SPAN == 2; MAX_CONSECUTIVE_UNANSWERED_SPANS == 3
+#   J4: CanonicalSubmission(submitted=False, refusal=None) raises ValueError;
+#       LiveProviderError("x", detail={"span_id": 1}).detail == {"span_id": 1}
+# NOTE `_preflight_payload` returns a **dict**, not an object: use r["available"], r["failures"],
+# r["manifest_hash"] — `r.available` is an AttributeError, not a failed check.
+# --- m4mbp: `origin` IS NOT THE ALPHASIGHT FORK THERE. The names are INVERTED relative to this
+#     host: on m4mbp `origin` = OpenMOSS upstream and the fork is `alphasight`. `git fetch origin`
+#     there fetches the wrong repo and the checkout then fails `fatal: unable to read tree (<sha>)`,
+#     which looks like corruption and means "never fetched". Resolve the remote by URL:
+ssh -o BatchMode=yes ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize && \
+  git remote -v | grep AlphaSightInc'
+#   then: git fetch alphasight main --quiet && git checkout <sha>     # rollback: checkout 317df4d…
+#   Verify the app was NOT disturbed (the inode carries the TCC grants):
+#     stat -f "inode=%i mtime=%Sm" -t "%Y-%m-%dT%H:%M:%SZ" /Applications/MOSSCapture.app
+#     expect inode=211648186 mtime=2026-07-28T04:55:23Z   (unchanged since G6)
+# --- m4mbp cannot reach the batch service and that is TOPOLOGY, not a regression: m4mbp is
+#     192.168.1.240, the batch address is 192.168.68.38 (different LAN, 100% loss). The hosts meet
+#     only on the tailnet 100.64.0.4 -> 100.64.0.8. Measure the batch clause from MacStudio.
 # --- H4c: publish + redeploy the third merge (SPENT in iteration 6 of run 20260728-112922) -------
 # The push fast-forwarded 317df4d..b817871; do not re-run it and never force-push. The host side,
 # in this exact order (pipe as a script on stdin per the remote-quoting gotcha):
@@ -2260,14 +2354,15 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 #         LiveProviderBundleAdmissionError, while frame_samples=160 constructs.
 #         The constructor is keyword-only and `vad=` is REQUIRED — omitting it raises TypeError,
 #         which looks like a refusal and is not one. Assert the exception TYPE, never just "raised".
-# Four-way SHA check — the PRD clause in full. GREEN at
-# b817871414fcc8f609c6f5eb2898ec2957c7768c for local main + origin/main + the host since iteration 6
-# of run 20260728-112922 (H4c); m4mbp still reads 317df4d because it was offline. It was fully green
-# at 317df4d since G5, and at f9285d6 from iteration 20. Re-run it read-only any
+# Four-way SHA check — the PRD clause in full. **GREEN 4/4 at
+# 6a540fe086cf819ba0e07a948da9fec0766202c3 since iteration 15 of run 20260728-112922 (J5c)**, all
+# four checkouts. It was 3/4 at b817871 (m4mbp offline through H4c), fully green at 317df4d since
+# G5, and at f9285d6 from iteration 20. Re-run it read-only any
 # time — all four lines must print the same 40 hex characters:
 git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
+ssh -o BatchMode=yes ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize && git rev-parse HEAD'
 ssh -o BatchMode=yes ga0@m4mbp \
   'git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize rev-parse HEAD'
 
@@ -2958,14 +3053,17 @@ and 37 are folded in here; settle them together or the next gate run finds the f
       **background**. Merge `6a540fe`, tree identical to the feature tree, payload exactly the
       fifteen J5a predicted at +1475/-134 plus six Ralph files. Guard rehearsed after: a **fifth**
       merge now refuses. See the fourth-keeper-merge block.
-    - **(c) publish + redeploy** `[open - do this next]`. `git push origin main`, fetch/detach the host checkout, restart
-      `moss-live-web.service` (this cycle is **server-only**, so the restart is required and no Mac
-      rebuild is needed), then poll `/live` - a single probe before ~10 s returns 000. Re-verify the
-      served leaf still hashes to the D2 pin `a35ca9fc…` and that the batch unit's MainPID did not
-      move. Confirm the deployed code carries J1-J4 by **venv introspection**, not by the SHA and
-      never by `/api/live/descriptor`'s `source_revision` (a stamped manifest field that does not
-      move on redeploy).
-    - **(d) the amendment's gate: both probes.** `live-pipeline-probe.py` and `live-hardcap-repro.py`
+    - **(c) publish + redeploy** `[done - run 20260728-112922 iteration 15]`. Pushed
+      `b817871..6a540fe`, host detached at `6a540fe`, `moss-live-web.service` restarted (MainPID
+      338545 → 343344) and `/live` polled to 200 at **9 s**; pin, both live routes, the batch pair
+      and the plaintext refusal all re-measured; J1-J4 proven deployed by venv introspection that
+      **clamps H4d's own overshoot**. Two improvements on H4c's procedure, both kept: run the
+      manifest admission check **after** the checkout (it then exercises the new readers), and hash
+      a file that **did not exist at the previous SHA** as the parity witness. m4mbp came back
+      online and took the same SHA with **no rebuild** (inode and DR unchanged), so the four-way SHA
+      check is **4/4** and that blocker is cleared. See the J5c redeploy block — including the
+      `origin`-means-different-repos trap on m4mbp.
+    - **(d) the amendment's gate: both probes** `[open - do this next]`. `live-pipeline-probe.py` and `live-hardcap-repro.py`
       against the redeployed service, requiring a run that survives its full plan with committed
       spans advancing and speaker labels present. J1's real-audio confirmation is the sweep's two
       known-failing spans (`12208+10*8000` and `12208+32*8000`); J4 pays for itself here - if a fifth

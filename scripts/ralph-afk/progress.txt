@@ -5301,3 +5301,135 @@ the unit is bounced, which is what the "fail closed" rule actually requires.
 
 No other mutation is authorized by this candidate: no manifest change, no TLS rotation, no pairing,
 no session, no Mac build/install. Step (d)'s probes are the NEXT iteration, not this one.
+
+--------------------------------------------------------------------------------
+run 20260728-112922 | iteration 15 | J5 step (c) - published, redeployed, and 4/4
+--------------------------------------------------------------------------------
+Result: **PUBLISHED and REDEPLOYED at 6a540fe086cf819ba0e07a948da9fec0766202c3, and the PRD's
+"one exact SHA everywhere" clause is GREEN 4/4 for the first time since G5.** m4mbp came back
+online this iteration, so the step that had been carried as a blocker since H4c closed here too.
+
+Files touched (all under scripts/ralph-afk/, no product source - the freeze holds):
+  progress.txt   the pre-mutation rollback block above, then this entry.
+  context.md     J5c redeploy block; branch state + scoreboard; candidate 42(c) closed and 42(d)
+                 marked next; Validation gained the J5c commands, the corrected m4mbp remote name
+                 and the deployed-code introspection recipe for J1-J4.
+
+### The mutations, in the order the stop conditions require
+1. `git push origin main` -> `b817871..6a540fe  main -> main` (fast-forward, AlphaSight fork).
+   `git ls-remote origin refs/heads/main` now reads 6a540fe. `upstream` (OpenMOSS) untouched.
+2. Host checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize`: `git fetch origin main` (origin/main =
+   6a540fe), `git checkout 6a540fe`.
+     tree b1f4ab91a2bd2f65166540c52d3296c8dbbc4ffb == `git rev-parse 6a540fe^{tree}` here
+     sha256(app/live_session.py)    = 24d156b1a1b3b8f2… on the host AND from `git show` here
+     sha256(app/live_span_bounds.py)= 1b299fd19f88637b… likewise (J1's new leaf, so the file that
+                                      did not exist at b817871 is hash-verified as arriving)
+     `git status --porcelain` empty (ops/moss-live.env is gitignored, so it does not show)
+   Content parity asserted by hash on both sides, never inferred from `git status` on a copy.
+3. Pre-restart manifest admission, read-only and **under the NEW code** (H4c ran it before the
+   checkout, i.e. against the superseded readers; after the checkout is strictly more informative
+   and still before the unit is bounced, which is what "both refusals fail closed" requires):
+     caps equal = True 40000 | vad frame_samples = 160 | retired knob present = False
+     _preflight_payload -> available=True, failures=[], manifest_hash 61d97ffef1bbdc0d… (unchanged)
+     _endpoint_config/_bounds -> hard_cap 40000/40000, min_silence 8000, max_retained 960000
+   i.e. Phase J adds no admission constraint and breaks none, measured rather than asserted.
+4. `systemctl --user restart moss-live-web.service`
+     MainPID 338545 -> 343344, NRestarts=0, ActiveState=active
+     polled: `/live` 200 after **9 s** (H4c measured 11 s; a single probe before ~10 s returns 000)
+     batch `moss-web.service` MainPID unchanged **301112**, NRestarts=0 - untouched, as intended
+     journal after the restart: "Application startup complete", **0 traceback lines**, only the
+     pre-existing onnxruntime GPU-discovery warning.
+5. m4mbp checkout 317df4d -> 6a540fe (it skipped b817871 entirely, having been offline through
+   H4c). tree b1f4ab91…, sha256(live_session.py) 24d156b1… - identical to the host and to here.
+   **No rebuild, no reinstall, and the evidence that it was not needed is positive:**
+     /Applications/MOSSCapture.app inode **211648186**, mtime 2026-07-28T04:55:23Z - UNCHANGED
+     from G6, so the TCC-bearing inode was never disturbed
+     Identifier=com.alphasight.moss.capture
+     designated => identifier "com.alphasight.moss.capture" and certificate leaf =
+       H"e118d874377746c4bd25beb8252bb84302b73e72"      (the E1 DR, unchanged)
+     codesign --verify --strict -> bundle_ok
+
+### Stop conditions, all met (measured from MacStudio after the restart)
+  served leaf sha256 = a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff -> PIN MATCH
+  https://100.64.0.8:7861/live                200
+  https://100.64.0.8:7861/api/live/descriptor 200
+  http://192.168.68.38:7860/                  200     (batch unharmed)
+  http://192.168.68.38:7860/api/jobs          200
+  http://100.64.0.8:7861/live                 000     (plaintext on 7861 still dead, curl rc=52)
+
+### The same clause measured FROM m4mbp, which is what the PRD actually asks for
+Every prior recording of "from m4mbp, /live returns 200" was taken from MacStudio because m4mbp was
+offline. Taken from m4mbp itself this iteration:
+  leaf sha256 seen from m4mbp = a35ca9fc4a0f5b32… -> the SAME pin, so the client host's stored pin
+                                is still the served leaf and no re-pairing is needed
+  https://100.64.0.8:7861/live                200
+  https://100.64.0.8:7861/api/live/descriptor 200
+  http://192.168.68.38:7860/                  000  <- NOT a regression; see Learned 2
+
+### The deployed code carries J1/J2/J3/J4 - proven, not inferred from the SHA
+Run with the SERVICE'S OWN venv from the deployed checkout, and J1 is exercised with **the H4d
+input verbatim** rather than by a hasattr:
+  J1  live_span_bounds importable; LIVE_SAMPLE_RATE 16000 and still re-exported from live_session
+      span_segments("[0.11][S01] Good morning everyone. This is the microphone.[2.51]",
+                    sample_count=40000) -> [(0.11, 2.5)]
+        i.e. THE EXACT SEGMENT THAT ENDED THE MEETING AT H4d IS NOW CLAMPED, NOT REFUSED
+      span_segments("[-0.4][S01]x[1.0]") -> ()   (unparseable, as J1 recorded)
+      live_identity / live_session / live_adapters all call span_segments; none keeps its own bound
+  J2  UNATTRIBUTED_SPEAKER = 'S00'; LiveSession.submit_unlabeled_canonical present;
+      live_identity.unattributed_transcript("[0.11][S01] hello[2.51]", sample_count=40000)
+        -> '[0.11][S00]hello[2.5]'   (words kept, speaker dropped, AND clamped through J1)
+      LiveCoordinator.submit_prepared_work present (the single decision point)
+  J3  TransientTranscriptionError and EmptyTranscriptionError both subclass RuntimeError;
+      LiveProviderTransientError subclasses LiveProviderError;
+      DECODE_ATTEMPTS_PER_SPAN = 2 | MAX_CONSECUTIVE_UNANSWERED_SPANS = 3
+  J4  CanonicalSubmission(submitted=True, refusal=None) builds;
+      CanonicalSubmission(submitted=False, refusal=None) ->
+        ValueError: a refused canonical submission must name its refusal.
+      LiveProviderError("x", detail={"span_id": 1}).detail == {'span_id': 1}
+      LiveServiceRuntime._failure_from_exception present
+
+### Four-way SHA check - GREEN 4/4, the PRD clause in full
+  local main   6a540fe086cf819ba0e07a948da9fec0766202c3
+  origin/main  6a540fe086cf819ba0e07a948da9fec0766202c3
+  host         6a540fe086cf819ba0e07a948da9fec0766202c3
+  m4mbp        6a540fe086cf819ba0e07a948da9fec0766202c3
+
+### Learned
+1. **`origin` DOES NOT MEAN THE SAME REPOSITORY ON EVERY HOST, AND THE PRD'S HOUSEKEEPING NOTE
+   ("git fetch && git checkout <merge sha>") IS A TRAP BECAUSE OF IT.** On MacStudio `origin` is the
+   AlphaSight fork and `upstream` is OpenMOSS; **on m4mbp the names are INVERTED** - `origin` is
+   OpenMOSS and the fork is `alphasight`. The literal command fetched OpenMOSS, moved
+   `refs/remotes/origin/main` to their `0e3d1403 Update README`, and the checkout then failed with
+   `fatal: unable to read tree (6a540fe…)` - which reads like a corrupt object and is really "that
+   commit was never fetched". Nothing was mutated by the failure (HEAD stayed 317df4d, tree
+   3b37815f, porcelain clean, app inode unchanged); `git fetch alphasight main` then worked first
+   try. **Resolve the remote by URL, never by the name `origin`, on any host but this one.**
+2. **m4mbp CANNOT REACH THE BATCH SERVICE, AND THAT IS TOPOLOGY, NOT A REGRESSION.** m4mbp is on
+   `192.168.1.240`; the host's plaintext batch address is `192.168.68.38` - a different LAN - and
+   `ping 192.168.68.38` from m4mbp is 100 % loss. The two hosts meet only on the tailnet
+   (100.64.0.4 -> 100.64.0.8), which is exactly the path the PRD's live clause names and the path
+   the pinned client uses. The PRD's batch clause is measured from MacStudio (200) and is green.
+   Do not "fix" this and do not read the 000 as the batch service being down.
+3. **A FILE THAT DID NOT EXIST AT THE PREVIOUS SHA IS THE BEST DEPLOY-PARITY WITNESS.** Hashing
+   `live_session.py` proves bytes match; hashing `live_span_bounds.py` - new in J1 - proves the
+   *new* half of the tree actually landed, which a hash of a pre-existing file cannot distinguish
+   from a stale checkout that happens to agree.
+4. **RUNNING THE ADMISSION CHECK AFTER THE CHECKOUT BEATS RUNNING IT BEFORE.** H4c ran it before
+   anything moved, so it exercised the superseded readers against the deployed manifest. Run after
+   the checkout and before the restart, it answers the question actually being asked - "will the
+   code I am about to start accept the manifest that is already on disk" - at the same zero risk.
+
+- **Blocker CLEARED:** m4mbp offline. It is reachable, at 6a540fe, with its signed app and DR
+  intact and its inode never touched. "One exact SHA everywhere" is 4/4.
+- **Blocker (unchanged):** E3's physical TCC clicks. Still correct to defer for one more iteration:
+  the deployed service now carries J1-J4, but no probe has yet driven it end to end at this SHA.
+  Step (d) is exactly that run, and it costs no human input.
+- Next: **J5 step (d)** - the third amendment's actual gate. Run `live-pipeline-probe.py` and
+  `live-hardcap-repro.py` against the redeployed service and require a run that survives its FULL
+  plan with committed spans advancing and speaker labels present. J1's real-audio confirmation is
+  the sweep's two known-failing spans (12208+10*8000 and 12208+32*8000). Record the pre-mutation
+  rollback block FIRST (one pairing code, one device - revoke it with
+  `curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<id>` from the host loopback - and one
+  session); the m4mbp device AB600574-FD93-4321-967E-652AB064A70B must stay `revoked: false`.
+  If a fifth blocker appears, J4 means the 409 now carries the word that names it: read
+  `identity_reason` and `submission_refusal` off the failure detail before building any host probe.
