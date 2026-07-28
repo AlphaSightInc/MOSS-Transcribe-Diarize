@@ -558,14 +558,28 @@ class LiveServiceRuntime:
             self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
             return self._snapshot(state)
 
-    async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
+    async def abort(
+        self,
+        session_id: str,
+        reason: str,
+        *,
+        detail: Mapping[str, Any] | None = None,
+    ) -> LiveServiceSnapshot:
+        """End the session on a caller's say-so, recording what the caller knows.
+
+        `detail` is how an aborting caller hands the runtime the facts only it has -- the
+        helper coordinator's per-lane failure codes, for one. It reaches the
+        `session_aborted` event and the session's terminal failure record, so the journal
+        names the cause and not merely the effect.
+        """
+
         reason = reason or "aborted"
         with self._lock:
             state = self._get(session_id)
             if state.terminal_failure is None:
                 self._fail(
                     state,
-                    LiveServiceTransportPacingFailure(reason, code="aborted").failure,
+                    LiveServiceTransportPacingFailure(reason, code="aborted", detail=detail).failure,
                     event_kind="session_aborted",
                 )
         snapshot = await state.session.abort(reason)

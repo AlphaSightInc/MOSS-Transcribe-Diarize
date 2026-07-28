@@ -20,10 +20,16 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # the span-bound clamp answered once, J2 an unresolved identity publishing unattributed
 # words, J3 a transient decoder failure retried then committed empty, J4 every refusal
 # carrying the word that names it, and the real-seam coverage for each) authorizes exactly
-# one further merge, whose pre-merge main is therefore b817871. Advancing this default is a
-# reviewable diff on purpose: a FIFTH merge still fails here, and a command-line
+# one further merge, whose pre-merge main was therefore b817871 and which landed as 6a540fe.
+# The FOURTH prd.md amendment of 2026-07-28 (lane observability: K1 lane state carried on the
+# control channel so `mtd-capture status` can name both lanes, K2 the app logging a typed lane
+# failure as loudly as an unclassified one, K3 the server recording the terminal reason and the
+# per-lane codes that caused it, K4 a released session reported gone instead of merely
+# unreachable, and the real-seam regression coverage for each) authorizes exactly one further
+# merge, whose pre-merge main is therefore 6a540fe. Advancing this default is a
+# reviewable diff on purpose: a SIXTH merge still fails here, and a command-line
 # RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-b817871414fcc8f609c6f5eb2898ec2957c7768c}"
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-6a540fe086cf819ba0e07a948da9fec0766202c3}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

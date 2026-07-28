@@ -170,6 +170,47 @@ Housekeeping, not on the critical path: m4mbp was powered off during H4d, so "on
 everywhere" is 3/4. When that host returns, `git fetch && git checkout <merge sha>` restores it -
 no rebuild or reinstall is needed unless `macos/` changes.
 
+## Fourth authorized amendment - 2026-07-28, lane observability
+
+**The TCC grants are DONE.** `kTCCServiceAudioCapture` and `kTCCServiceMicrophone` both hold
+`auth_value=2` for `com.alphasight.moss.capture`. E3 is closed; never ask the operator for those
+clicks again.
+
+With grants in place the canary still fails: `start` succeeds, the first heartbeat returns 200, the
+server marks the session terminal and releases it, and every later request returns 403 while the
+client still reports `running: true`. `_terminal_reason` fires only on `helper_failed` or all lanes
+failed, and the Swift client never sends a top-level `"failed"`, so **both capture lanes are
+reporting failed**. The failure code is recorded nowhere:
+
+- `ControlChannelResponse.init(status:)` (`CaptureSecurity.swift:607`) drops `status.lanes`, so the
+  response type has no lane data at all;
+- the app logs only *unclassified* failures, and a typed lane failure is silent;
+- the server's terminal path records a generic reason, skips `_fail_lane`, and logs neither.
+
+This also means the PRD clause **"`mtd-capture status` reports both lanes active" is unimplementable
+as shipped** - not failing, but impossible, because the data never reaches the response.
+
+The operator has authorized one scoped cycle, inside `macos/`, `moss_transcribe_diarize/` and
+`tests/`:
+
+- **Surface lane state on the control channel.** Carry each lane's `lane`, `state` and
+  `failureCode` through `ControlChannelResponse` so `mtd-capture status` can satisfy the PRD clause.
+  Counts, states and typed codes only - never audio, never a token.
+- **Log typed lane failures in the app**, alongside G3's unclassified-failure logging. A typed
+  failure that ends a meeting must not be quieter than an unknown one.
+- **Record the terminal reason and per-lane codes server-side** when a helper heartbeat turns a
+  session terminal, so the journal names what killed it.
+- **Surface a dead session to the client.** `running: true` while every request 403s is the same
+  "known but not shown" defect; `status` must report that the session is gone.
+- Regression coverage for each in `tests/test_live_pipeline_seams.py` and the Swift suite, red
+  before and green after.
+- **Gate:** full Swift/Python gate, then one further reviewed no-ff merge through
+  `merge-keeper.sh` (advance `expected_main` in-script), push, redeploy, and re-run the probes.
+
+Everything else stays frozen; exactly one further merge. **This cycle is diagnostic groundwork, not
+the fix for the lane failure itself** - once `status` names the codes, the cause becomes a normal
+candidate and may need its own authorization. Do not guess at the cause before reading the code.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:

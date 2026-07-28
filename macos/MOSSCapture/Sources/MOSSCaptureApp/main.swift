@@ -32,6 +32,10 @@ final class ProductionCaptureRuntime {
         // of the session: it has to be watching from the first acknowledged frame, not from whenever
         // an operator first asks for a figure.
         let latencySampler = CaptureLatencySampler()
+        // This app is LSUIElement and Launch Services gives it no usable stderr, so a failure it
+        // does not put in the unified log is a failure nobody can reconstruct. One log for both
+        // kinds, so one `log show` predicate answers "why did the meeting stop".
+        let failureLog = OSLogControlChannelFailureLog()
         let controller = CaptureController(
             source: NativeDualCaptureSource(),
             transport: CaptureV2HTTPTransportAdapter(
@@ -42,12 +46,17 @@ final class ProductionCaptureRuntime {
             keyStore: keyStore,
             clock: clock,
             scheduler: RepeatingCaptureSchedulerAdapter(interval: CapturePumpContract.interval),
-            health: CaptureHTTPHealthAdapter(
-                clientProvider: httpClients,
-                certificatePin: keyStore,
-                bearerToken: keyStore,
-                instanceID: ProcessInfo.processInfo.globallyUniqueString,
-                helperVersion: "0.1.0"
+            // Wrapped, so every lane failure is recorded on its way to the server — including the
+            // ones the server never receives.
+            health: LaneFailureLoggingHealthAdapter(
+                wrapping: CaptureHTTPHealthAdapter(
+                    clientProvider: httpClients,
+                    certificatePin: keyStore,
+                    bearerToken: keyStore,
+                    instanceID: ProcessInfo.processInfo.globallyUniqueString,
+                    helperVersion: "0.1.0"
+                ),
+                log: failureLog
             ),
             frameObserver: latencySampler
         )
@@ -79,9 +88,7 @@ final class ProductionCaptureRuntime {
             server: UnixDomainControlServer(
                 socketPath: ControlSocketDefaults.socketPath(),
                 authenticator: SameUserUDSAuthenticator(secrets: keyStore),
-                // This app is LSUIElement and Launch Services gives it no usable stderr, so a
-                // failure it does not put in the unified log is a failure nobody can reconstruct.
-                failureLog: OSLogControlChannelFailureLog(),
+                failureLog: failureLog,
                 handler: dispatcher.dispatch
             )
         )

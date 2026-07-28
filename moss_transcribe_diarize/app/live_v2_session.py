@@ -138,8 +138,7 @@ class LiveV2Session:
 
     def fail_lane(self, lane: LiveLane, code: str) -> LiveV2SessionSnapshot:
         lane = _assert_lane(lane)
-        if not isinstance(code, str) or not code:
-            raise ValueError("failure code must be a non-empty string.")
+        code = _assert_failure_code(code)
         with self._lock:
             self._ensure_not_terminal()
             lifecycle = self._lanes[lane]
@@ -195,9 +194,25 @@ class LiveV2Session:
             self._notify_drain_waiters_locked()
             return self._snapshot_locked()
 
-    def expire(self, reason: str) -> LiveV2SessionSnapshot:
+    def expire(
+        self,
+        reason: str,
+        *,
+        lane_failure_codes: Mapping[LiveLane, str] | None = None,
+    ) -> LiveV2SessionSnapshot:
+        """End the session, keeping whatever the client already said about each lane.
+
+        `lane_failure_codes` are the typed codes the helper reported for the lanes it
+        declared failed. Expiry is the last moment they exist: the registry drops the
+        session immediately afterwards, so a code that is not stamped here is gone. It is
+        also the only moment a lane that never sent a frame can be recorded as failed --
+        `failed_samples` counts retained audio, and the session this was written for died
+        with zero frames posted, which is exactly the case that used to record nothing.
+        """
+
         if not isinstance(reason, str) or not reason:
             raise ValueError("expiry reason must be a non-empty string.")
+        reported = _assert_lane_failure_codes(lane_failure_codes)
         with self._lock:
             self._ensure_not_terminal()
             for lane in LiveLane:
@@ -206,9 +221,13 @@ class LiveV2Session:
                 if retained:
                     self._ingress.release_retained_prefix(lane, retained[-1].frame.sequence)
                 lifecycle.failed_samples += sum(item.frame.sample_count for item in retained)
-                if lifecycle.failed_samples:
+                lane_code = reported.get(lane)
+                if lifecycle.failed_samples or lane_code is not None:
                     lifecycle.health = "failed"
-                    lifecycle.failure_code = lifecycle.failure_code or reason
+                    # The lane's own code first, then the client's word for it, and only
+                    # then the generic expiry reason: the most specific answer available
+                    # is the one an operator needs.
+                    lifecycle.failure_code = lifecycle.failure_code or lane_code or reason
             self._status = "failed"
             self._terminal_reason = reason
             self._notify_drain_waiters_locked()
@@ -371,11 +390,17 @@ class LiveV2SessionRegistry:
         with self._lock:
             return self._sessions.pop(session_id, None)
 
-    def expire(self, session_id: str, reason: str) -> LiveV2SessionSnapshot:
+    def expire(
+        self,
+        session_id: str,
+        reason: str,
+        *,
+        lane_failure_codes: Mapping[LiveLane, str] | None = None,
+    ) -> LiveV2SessionSnapshot:
         _session_id(session_id)
         with self._lock:
             session = self.get(session_id)
-            snapshot = session.expire(reason)
+            snapshot = session.expire(reason, lane_failure_codes=lane_failure_codes)
             self._sessions.pop(session_id, None)
             return snapshot
 
@@ -383,6 +408,23 @@ class LiveV2SessionRegistry:
 def _assert_lane(value: LiveLane) -> LiveLane:
     if not isinstance(value, LiveLane):
         raise ValueError("lane must be a canonical v2 live lane.")
+    return value
+
+
+def _assert_lane_failure_codes(
+    value: Mapping[LiveLane, str] | None,
+) -> dict[LiveLane, str]:
+    if value is None:
+        return {}
+    return {
+        _assert_lane(lane): _assert_failure_code(code)
+        for lane, code in value.items()
+    }
+
+
+def _assert_failure_code(value: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("failure code must be a non-empty string.")
     return value
 
 

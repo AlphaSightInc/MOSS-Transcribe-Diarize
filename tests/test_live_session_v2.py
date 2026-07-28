@@ -203,6 +203,67 @@ def test_typed_lane_failure_conserves_retained_samples_and_keeps_sibling_usable(
     )
 
 
+def test_expiry_records_the_reported_code_for_a_lane_that_never_sent_a_frame():
+    """The shape of the session Phase K was written for: failed before the first frame.
+
+    `failed_samples` counts retained audio, so a lane that reported `failed` from its
+    first heartbeat used to expire with `health: active` and no code at all - the one
+    lane state an operator most needs to see was the one the snapshot could not express.
+    """
+
+    registry = LiveV2SessionRegistry(max_retained_samples=4)
+    registry.create("session-1")
+
+    expired = registry.expire(
+        "session-1",
+        "helper_all_lanes_failed",
+        lane_failure_codes={
+            LiveLane.SYSTEM: "device_unavailable",
+            LiveLane.MICROPHONE: "permission_denied",
+        },
+    ).to_dict()
+
+    assert expired["status"] == "failed"
+    assert expired["terminal_reason"] == "helper_all_lanes_failed"
+    assert expired["lanes"]["system"]["health"] == "failed"
+    assert expired["lanes"]["system"]["failure_code"] == "device_unavailable"
+    assert expired["lanes"]["microphone"]["health"] == "failed"
+    assert expired["lanes"]["microphone"]["failure_code"] == "permission_denied"
+    # Nothing was accepted, so nothing is accounted as lost either.
+    assert expired["lanes"]["system"]["failed_samples"] == 0
+
+
+def test_expiry_keeps_a_lanes_own_code_and_never_invents_one_for_a_healthy_lane():
+    registry = LiveV2SessionRegistry(max_retained_samples=4)
+    session = registry.create("session-1")
+    session.accept(frame(LiveLane.SYSTEM, 0, 2))
+    session.fail_lane(LiveLane.SYSTEM, "device_unavailable")
+
+    expired = registry.expire(
+        "session-1",
+        "helper_all_lanes_failed",
+        lane_failure_codes={LiveLane.SYSTEM: "permission_denied"},
+    ).to_dict()
+
+    # The lane failed for a reason the session already recorded; a later report does not
+    # rewrite it.
+    assert expired["lanes"]["system"]["failure_code"] == "device_unavailable"
+    # The microphone reported nothing, so expiry says nothing about it beyond the session
+    # being over.
+    assert expired["lanes"]["microphone"]["health"] == "active"
+    assert expired["lanes"]["microphone"]["failure_code"] is None
+
+
+def test_expiry_refuses_a_lane_code_that_names_nothing():
+    registry = LiveV2SessionRegistry(max_retained_samples=4)
+    registry.create("session-1")
+
+    for codes in ({LiveLane.SYSTEM: ""}, {LiveLane.SYSTEM: None}, {"system": "denied"}):
+        with pytest.raises(ValueError):
+            registry.expire("session-1", "helper_all_lanes_failed", lane_failure_codes=codes)
+    assert "session-1" in registry
+
+
 def test_registry_expiry_returns_terminal_snapshot_and_releases_session():
     registry = LiveV2SessionRegistry(max_retained_samples=4)
     session = registry.create("session-1")

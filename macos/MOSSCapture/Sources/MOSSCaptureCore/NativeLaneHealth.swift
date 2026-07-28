@@ -106,8 +106,8 @@ final class NativeLaneHealth: NativeLaneHealthFactSink {
         let snapshot = CaptureLane.allCases.map { lane in
             let projection = lanes[lane, default: NativeLaneProjection()]
             let state = projection.failure == nil
-                ? (running ? projection.state : "stopped")
-                : "failed"
+                ? (running ? projection.state : CaptureLaneStates.stopped)
+                : CaptureLaneStates.failed
             return CaptureLaneStatus(
                 lane: lane,
                 sequence: projection.sequence,
@@ -192,7 +192,7 @@ private struct NativeLaneHealthReducer {
         switch observation {
         case .admitted:
             if projection.failure == nil {
-                projection.state = "capturing"
+                projection.state = CaptureLaneStates.capturing
             }
         case .permission(.denied):
             projection.recordFailure(.permissionDenied, cause: "permission denied")
@@ -208,7 +208,7 @@ private struct NativeLaneHealthReducer {
             projection.recordFailure(.ioStoppedAbnormally, cause: cause)
         case .configurationChanged:
             if projection.failure == nil {
-                projection.state = "recovering"
+                projection.state = CaptureLaneStates.recovering
             }
         case .reconciliationUnresolved:
             break
@@ -226,11 +226,11 @@ private struct NativeLaneHealthReducer {
         case .deviceEpoch(let deviceEpoch):
             projection.deviceEpoch = deviceEpoch
             if projection.failure == nil {
-                projection.state = "capturing"
+                projection.state = CaptureLaneStates.capturing
             }
         case .stoppedCleanly:
             if projection.failure == nil {
-                projection.state = "stopped"
+                projection.state = CaptureLaneStates.stopped
             }
         }
         lanes[lane] = projection
@@ -328,7 +328,7 @@ private struct NativeLaneMailbox {
 }
 
 private struct NativeLaneProjection {
-    var state = "stopped"
+    var state = CaptureLaneStates.stopped
     var sequence: UInt64 = 0
     var deviceEpoch: UInt64 = 0
     var droppedFrames: UInt64 = 0

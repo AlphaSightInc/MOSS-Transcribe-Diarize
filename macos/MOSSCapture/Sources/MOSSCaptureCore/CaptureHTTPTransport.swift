@@ -386,16 +386,15 @@ private struct HelperHeartbeatPayload: Encodable {
         self.helperVersion = helperVersion
         state = status.running ? "capturing" : "stopped"
         lanes = Dictionary(
-            uniqueKeysWithValues: CaptureLane.allCases.map { lane in
-                let laneStatus = status.lanes.first { $0.lane == lane }
-                return (
-                    lane.rawValue,
+            uniqueKeysWithValues: status.reportedLanes().map { laneStatus in
+                (
+                    laneStatus.lane.rawValue,
                     HelperLanePayload(
-                        state: laneStatus?.state ?? "stopped",
-                        deviceEpoch: laneStatus?.deviceEpoch ?? 0,
-                        droppedFrames: laneStatus?.droppedFrames ?? 0,
-                        discontinuities: laneStatus?.discontinuities ?? 0,
-                        failureCode: laneStatus?.failureCode
+                        state: laneStatus.state,
+                        deviceEpoch: laneStatus.deviceEpoch,
+                        droppedFrames: laneStatus.droppedFrames,
+                        discontinuities: laneStatus.discontinuities,
+                        failureCode: laneStatus.failureCode
                     )
                 )
             }

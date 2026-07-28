@@ -178,6 +178,95 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(standardError.data.isEmpty)
     }
 
+    func testCLIStatusReportsBothLanesAndTheTypedCodeOfAFailedOneAcrossTheRealSocket() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-cli-lanes-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+        defer {
+            try? FileManager.default.removeItem(
+                at: URL(fileURLWithPath: path).deletingLastPathComponent()
+            )
+        }
+        let store = try FileCaptureSecretStore(path: path)
+        try store.saveControlSecret("control-secret")
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController(
+                source: StaticLaneStatusCaptureSource(
+                    lanes: [
+                        CaptureLaneStatus(
+                            lane: .system,
+                            sequence: 0,
+                            deviceEpoch: 1,
+                            state: "failed",
+                            failureCode: "macos_permission_denied"
+                        ),
+                        CaptureLaneStatus(
+                            lane: .microphone,
+                            sequence: 3,
+                            deviceEpoch: 1,
+                            state: "capturing"
+                        ),
+                    ]
+                ),
+                transport: FakeCaptureTransportAdapter(),
+                keyStore: FakeCaptureKeyStoreAdapter(),
+                clock: FakeCaptureClockAdapter(),
+                scheduler: FakeCaptureSchedulerAdapter(),
+                health: FakeCaptureHealthAdapter()
+            ),
+            pairingExchange: UnusedPairingExchange()
+        )
+        let socketPath = temporarySocketPath()
+        let serverFinished = expectation(description: "app answered the CLI status request")
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: store)
+        ) { request in
+            try dispatcher.dispatch(request)
+        }
+        DispatchQueue.global().async {
+            try? server.serveOnce()
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let standardOutput = RecordingCLIOutput()
+        let standardError = RecordingCLIOutput()
+        let commandLine = CaptureCommandLine(
+            launcher: RecordingCaptureAppLauncher(),
+            socketChecker: StaticSocketChecker(exists: true),
+            client: UnixDomainControlClient(socketPath: socketPath, secrets: store),
+            input: StaticCLIInput(data: Data()),
+            standardOutput: standardOutput,
+            standardError: standardError
+        )
+
+        XCTAssertEqual(commandLine.run(arguments: ["status"]), 0)
+
+        wait(for: [serverFinished], timeout: 2)
+        let printed = try JSONDecoder().decode(
+            ControlChannelResponse.self,
+            from: standardOutput.data.dropTrailingNewline()
+        )
+        XCTAssertEqual(
+            printed.lanes,
+            [
+                ControlChannelLaneStatus(
+                    lane: "system",
+                    state: "failed",
+                    failureCode: "macos_permission_denied"
+                ),
+                ControlChannelLaneStatus(lane: "microphone", state: "capturing"),
+            ],
+            "the lane state an operator asks for has to survive the socket, not just exist in the app"
+        )
+        XCTAssertTrue(standardError.data.isEmpty)
+        XCTAssertFalse(
+            String(decoding: standardOutput.data, as: UTF8.self).contains("control-secret")
+        )
+    }
+
     func testCLIHandoffIsOneUDSRequestAndRelaysOnlyTheAppsNonSecretConfirmation() throws {
         let path = FileManager.default.temporaryDirectory
             .appendingPathComponent("moss-cli-handoff-\(UUID().uuidString)")
@@ -612,6 +701,26 @@ private final class RecordingCLIOutput: CaptureCLIOutput {
     func write(_ data: Data) throws {
         self.data.append(data)
     }
+}
+
+private final class StaticLaneStatusCaptureSource: CaptureSourceAdapter {
+    private let lanes: [CaptureLaneStatus]
+
+    init(lanes: [CaptureLaneStatus]) {
+        self.lanes = lanes
+    }
+
+    func start(configuration: CaptureConfiguration) throws {}
+
+    func pendingFrames() throws -> [CaptureFrame] {
+        []
+    }
+
+    func status() -> [CaptureLaneStatus] {
+        lanes
+    }
+
+    func stop(deadline: Date) throws {}
 }
 
 private struct UnusedPairingExchange: CapturePairingExchangeAdapter {

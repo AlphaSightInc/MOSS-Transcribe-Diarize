@@ -195,6 +195,239 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.attemptCount, 3)
     }
 
+    func testControlChannelStatusCarriesEveryLanesStateAndTypedFailureCode() throws {
+        let failed = CaptureStatus(
+            running: true,
+            sessionID: "session-a",
+            lanes: [
+                CaptureLaneStatus(
+                    lane: .system,
+                    sequence: 4,
+                    deviceEpoch: 2,
+                    state: "failed",
+                    droppedFrames: 1,
+                    discontinuities: 2,
+                    failureCode: "macos_permission_denied"
+                ),
+                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
+            ],
+            publishedFrameCount: 10,
+            lastHealthSequence: 5
+        )
+
+        let response = ControlChannelResponse(status: failed)
+
+        XCTAssertEqual(
+            response.lanes,
+            [
+                ControlChannelLaneStatus(
+                    lane: "system",
+                    state: "failed",
+                    failureCode: "macos_permission_denied"
+                ),
+                ControlChannelLaneStatus(lane: "microphone", state: "capturing"),
+            ],
+            "the code that ends a meeting has to reach the operator's status, not only the server"
+        )
+
+        let encoded = try XCTUnwrap(
+            String(data: JSONEncoder().encode(response), encoding: .utf8)
+        )
+        for forbidden in ["pcm", "token", "secret", "cause"] {
+            XCTAssertFalse(
+                encoded.lowercased().contains(forbidden),
+                "lane reporting carries states and typed codes only, never \(forbidden)"
+            )
+        }
+    }
+
+    func testControlChannelStatusNamesALaneTheSourceNeverReported() throws {
+        // A lane the source omits is exactly the case that made the failure unreadable: absent and
+        // failed look the same to an operator. Both surfaces name every lane in the contract.
+        let silent = CaptureStatus(
+            running: true,
+            sessionID: "session-a",
+            lanes: [
+                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
+            ],
+            publishedFrameCount: 0,
+            lastHealthSequence: 1
+        )
+
+        XCTAssertEqual(
+            ControlChannelResponse(status: silent).lanes,
+            [
+                ControlChannelLaneStatus(lane: "system", state: "stopped"),
+                ControlChannelLaneStatus(lane: "microphone", state: "capturing"),
+            ]
+        )
+        XCTAssertEqual(
+            silent.reportedLanes().map(\.lane),
+            CaptureLane.allCases,
+            "the heartbeat and the control channel project the same lane set, in the same order"
+        )
+    }
+
+    func testAReleasedSessionIsReportedGoneInsteadOfMerelyUnreachable() throws {
+        // The attended session's exact shape: the first heartbeat is accepted, the server releases
+        // the session, and every request after that is refused. Before this, `status` answered
+        // `running: true` with a transport failure — the same answer a pulled network cable gives.
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 403)
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        XCTAssertNil(controller.status().sessionRefusal, "an accepted heartbeat refuses nothing")
+
+        scheduler.runScheduledOperation()
+        let refused = controller.status()
+
+        XCTAssertTrue(refused.running, "the microphones really are still open; that is not the lie")
+        XCTAssertEqual(
+            refused.sessionRefusal,
+            .sessionDisowned,
+            "a session the server has released has to be visible as gone, not as unreachable"
+        )
+        XCTAssertEqual(
+            refused.pumpFailure,
+            .transportUnavailable,
+            "the pump answer is still true — it is just not an answer to whether the session exists"
+        )
+        let response = ControlChannelResponse(status: refused)
+        XCTAssertEqual(response.sessionRefusal, .sessionDisowned)
+        let encoded = try XCTUnwrap(String(data: JSONEncoder().encode(response), encoding: .utf8))
+        XCTAssertTrue(
+            encoded.contains("sessionDisowned"),
+            "`mtd-capture status` encodes whatever the app answers, so the word has to be in it"
+        )
+    }
+
+    func testASessionTheServerRefusedStaysRefusedWhenALaterRequestSucceeds() throws {
+        // A pump failure clears on the next good tick because it describes right now. A refusal
+        // describes one session id, and the server's answer about that id is final — a release is
+        // one-way — so it must not be quietly erased by whatever happens next.
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 403, refusedAttempts: [2])
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        scheduler.runScheduledOperation()
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertNil(recovered.pumpFailure, "the transport is working again and says so")
+        XCTAssertEqual(recovered.sessionRefusal, .sessionDisowned)
+
+        // A new session is a new question, so the previous session's verdict does not carry over.
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+        XCTAssertEqual(stopped.sessionRefusal, .sessionDisowned, "the stopped meeting was refused")
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-b",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        XCTAssertNil(controller.status().sessionRefusal)
+    }
+
+    func testStopReportsASessionTheServerRefusedWhileDrainingTheLastFrames() throws {
+        // The final drain's failure is deliberately swallowed — the audio stays queued either way —
+        // but "the server would not take it because the session was already gone" is the one thing
+        // in it an operator needs, and a clean-looking stop is exactly the report that hides it.
+        let tail = laneFrame(.microphone, sampleCount: 341, captureTimestampNS: 1_500_000_000)
+        let transport = ProgrammableCaptureTransport()
+        transport.failure = { _, _ in CaptureHTTPTransportError.nonSuccessStatus(404) }
+        let controller = CaptureController(
+            source: TerminalTailCaptureSource(tail: [tail]),
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(stopped.sessionRefusal, .sessionUnknown)
+        XCTAssertEqual(
+            stopped.outbox.retainedFrames,
+            1,
+            "the refusal is a report, not a licence to drop the audio"
+        )
+        XCTAssertEqual(stopped.publishedFrameCount, 0)
+    }
+
+    func testSessionRefusalNamesOnlyTheAnswersThatMeanTheSessionIsGone() throws {
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 401), .credentialRejected)
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 403), .sessionDisowned)
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 404), .sessionUnknown)
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 410), .sessionGone)
+        XCTAssertEqual(
+            CaptureSessionRefusal(error: CaptureHTTPTransportError.nonSuccessStatus(403)),
+            .sessionDisowned
+        )
+        XCTAssertNil(
+            CaptureSessionRefusal(statusCode: 409),
+            "409 is this wire's answer both for a closed session and for an out-of-sequence frame, "
+                + "so it cannot tell an operator which one happened"
+        )
+        for silent: Error in [
+            CaptureHTTPTransportError.nonSuccessStatus(200),
+            CaptureHTTPTransportError.nonSuccessStatus(400),
+            CaptureHTTPTransportError.nonSuccessStatus(429),
+            CaptureHTTPTransportError.nonSuccessStatus(503),
+            CaptureHTTPTransportError.nonSuccessStatus(0),
+            CaptureHTTPTransportError.missingCaptureBearer,
+            CaptureHTTPTransportError.missingCertificatePin,
+            URLError(.networkConnectionLost),
+            URLError(.secureConnectionFailed),
+            CaptureSecurityError.pinMismatch,
+        ] {
+            XCTAssertNil(CaptureSessionRefusal(error: silent), String(describing: silent))
+        }
+
+        // The two policies read the same status codes and must never both claim one: an answer a
+        // retry can fix is by definition not the server saying the session is gone for good.
+        for statusCode in 0..<600 {
+            let refusal = CaptureSessionRefusal(statusCode: statusCode)
+            let retry = CaptureFrameRetryPolicy.retryReason(forStatusCode: statusCode)
+            XCTAssertFalse(
+                refusal != nil && retry != nil,
+                "status \(statusCode) cannot be both retryable (\(String(describing: retry))) "
+                    + "and a final refusal (\(String(describing: refusal)))"
+            )
+        }
+    }
+
     func testPumpMapsCaptureHTTPTransportErrorToTransportUnavailableAndRecovers() throws {
         let scheduler = FakeCaptureSchedulerAdapter()
         let health = FailOnceHTTPTransportHealthAdapter()
@@ -930,8 +1163,11 @@ final class CaptureControllerTests: XCTestCase {
             "frames, heartbeats and pairing share one provider, so the process holds one session per pin"
         )
         for dependent in ["CaptureV2HTTPTransportAdapter", "CaptureHTTPHealthAdapter"] {
-            XCTAssertTrue(
-                source.contains("\(dependent)(\n                clientProvider: httpClients,"),
+            // The invariant is the argument, not the indentation: a dependent may be nested inside
+            // a decorator, and it still has to be handed the one shared provider.
+            XCTAssertEqual(
+                try matches(pattern: #"(\#(dependent)\(\s*clientProvider: httpClients,)"#, in: source).count,
+                1,
                 "\(dependent) has to be given the shared provider rather than defaulting to its own"
             )
         }
@@ -1037,6 +1273,7 @@ final class CaptureControllerTests: XCTestCase {
             "recordHealthEmissionAttempt",
             "clearPumpFailure",
             "recordPumpFailure",
+            "recordSessionRefusal",
             "snapshot",
             "finishStop",
         ])
@@ -3961,6 +4198,220 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(appMain.contains("failureLog:"))
         XCTAssertFalse(cliMain.contains("OSLogControlChannelFailureLog"))
         XCTAssertFalse(cliMain.contains("UnixDomainControlServer"))
+        // The lane log is the same declaration wired to the other half of the app: the health
+        // adapter the controller heartbeats through. Declaring it and not wrapping the heartbeat
+        // would leave the lane failure exactly as silent as it was.
+        XCTAssertTrue(appMain.contains("LaneFailureLoggingHealthAdapter("))
+        XCTAssertTrue(appMain.contains("log: failureLog"))
+        XCTAssertFalse(cliMain.contains("LaneFailureLoggingHealthAdapter"))
+    }
+
+    /// A lane failure is the one event that ends a meeting, and the app watched two of them happen
+    /// without recording either. It is logged on the health path because the heartbeat is the only
+    /// report the app makes unprompted — an operator who never polls still gets the code.
+    func testEveryLaneFailureIsLoggedOncePerFailureAndTheHeartbeatIsUnchanged() throws {
+        let log = RecordingCaptureLaneFailureLog()
+        let delegate = FakeCaptureHealthAdapter()
+        let adapter = LaneFailureLoggingHealthAdapter(wrapping: delegate, log: log)
+        let configuration = CaptureConfiguration(
+            sessionID: "session-lane-log",
+            serverURL: URL(string: "https://127.0.0.1:7861")!
+        )
+
+        func emit(_ lanes: [CaptureLaneStatus]) throws {
+            try adapter.emit(
+                status: CaptureStatus(
+                    running: true,
+                    sessionID: configuration.sessionID,
+                    lanes: lanes,
+                    publishedFrameCount: 0,
+                    lastHealthSequence: nil
+                ),
+                configuration: configuration,
+                sentMonotonicNS: 0
+            )
+        }
+
+        let capturingBoth = [
+            CaptureLaneStatus(lane: .system, sequence: 1, deviceEpoch: 1, state: "capturing"),
+            CaptureLaneStatus(lane: .microphone, sequence: 1, deviceEpoch: 1, state: "capturing"),
+        ]
+        let microphoneDenied = CaptureLaneStatus(
+            lane: .microphone,
+            sequence: 1,
+            deviceEpoch: 1,
+            state: "failed",
+            failureCode: "macos_permission_denied"
+        )
+
+        try emit(capturingBoth)
+        XCTAssertEqual(log.records, [], "a healthy heartbeat is not evidence of anything")
+
+        try emit([capturingBoth[0], microphoneDenied])
+        // The projection is sticky for the life of a generation, so a 0.5 s pump would write this
+        // line twice a second forever and bury what it exists to preserve.
+        for _ in 0..<4 {
+            try emit([capturingBoth[0], microphoneDenied])
+        }
+        XCTAssertEqual(log.records, [microphoneDenied])
+
+        // A second lane failing is a second failure, not a repeat of the first.
+        let systemUnavailable = CaptureLaneStatus(
+            lane: .system,
+            sequence: 2,
+            deviceEpoch: 1,
+            state: "failed",
+            droppedFrames: 3,
+            failureCode: "macos_device_unavailable"
+        )
+        try emit([systemUnavailable, microphoneDenied])
+        XCTAssertEqual(log.records, [microphoneDenied, systemUnavailable])
+
+        // Recovered and failed again is a new failure: the operator needs both, and a lane that
+        // recovers must not silence the next one.
+        let microphoneRecovered = CaptureLaneStatus(
+            lane: .microphone,
+            sequence: 3,
+            deviceEpoch: 2,
+            state: "capturing"
+        )
+        try emit([systemUnavailable, microphoneRecovered])
+        // The same code again, deliberately: what makes this a second failure is the recovery
+        // between them, so a log that remembers only the code would swallow it.
+        let microphoneDeniedAgain = CaptureLaneStatus(
+            lane: .microphone,
+            sequence: 3,
+            deviceEpoch: 2,
+            state: "failed",
+            failureCode: "macos_permission_denied"
+        )
+        try emit([systemUnavailable, microphoneDeniedAgain])
+        XCTAssertEqual(log.records, [microphoneDenied, systemUnavailable, microphoneDeniedAgain])
+
+        // Watching costs the heartbeat nothing: every emission still reached the real adapter.
+        XCTAssertEqual(delegate.emissions.count, 9)
+        XCTAssertEqual(delegate.emissions.map(\.configuration), Array(repeating: configuration, count: 9))
+    }
+
+    /// A lane the source never reported at all is named, so the log agrees with the control channel
+    /// and the heartbeat about which lanes exist — and a heartbeat the server refuses still leaves
+    /// the record behind, which is the case where it is the only evidence there is.
+    func testTheLaneFailureIsRecordedFromTheSharedProjectionEvenWhenTheHeartbeatFails() throws {
+        let log = RecordingCaptureLaneFailureLog()
+        let delegate = ThrowingCaptureHealthAdapter(
+            error: CaptureHTTPTransportError.nonSuccessStatus(403)
+        )
+        let adapter = LaneFailureLoggingHealthAdapter(wrapping: delegate, log: log)
+        let systemFailed = CaptureLaneStatus(
+            lane: .system,
+            sequence: 1,
+            deviceEpoch: 1,
+            state: "failed",
+            failureCode: "macos_unexpected_capture_error"
+        )
+
+        XCTAssertThrowsError(
+            try adapter.emit(
+                // Only one lane reported: the other is absent, exactly as in the attended session.
+                status: CaptureStatus(
+                    running: true,
+                    sessionID: "session-lane-log",
+                    lanes: [systemFailed],
+                    publishedFrameCount: 0,
+                    lastHealthSequence: nil
+                ),
+                configuration: CaptureConfiguration(
+                    sessionID: "session-lane-log",
+                    serverURL: URL(string: "https://127.0.0.1:7861")!
+                ),
+                sentMonotonicNS: 0
+            )
+        )
+
+        XCTAssertEqual(log.records, [systemFailed])
+        XCTAssertEqual(
+            log.records.map(\.lane),
+            [.system],
+            "an absent lane is stopped, not failed — naming it failed would invent an event"
+        )
+    }
+
+    /// Everything the app's log marks public has to be provably non-secret. The lane, the state and
+    /// the code are vocabulary the capture source minted; the free-form cause behind the code is
+    /// not on `CaptureLaneStatus` at all, so the log is never handed it.
+    func testTheAppLaneFailureLineNamesTheLaneAndTypedCodeAndNeverTheCause() throws {
+        let cause = "cause-that-must-not-be-logged-\(UUID().uuidString)"
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        health.enqueue(.unexpectedCaptureError(cause), lane: .microphone, generation: generation)
+
+        let statuses = health.statuses(running: true)
+        let microphone = try XCTUnwrap(statuses.first { $0.lane == .microphone })
+        XCTAssertEqual(health.failure(for: .microphone)?.cause, cause, "the cause is known here")
+
+        let lines = LoggedLineBox()
+        let log = OSLogControlChannelFailureLog { lines.append($0) }
+        for status in statuses where status.state == "failed" {
+            log.recordLaneFailure(status)
+        }
+
+        XCTAssertEqual(
+            lines.lines,
+            [
+                "capture lane microphone failed: state=failed "
+                    + "code=macos_unexpected_capture_error dropped=0 discontinuities=0"
+            ]
+        )
+        XCTAssertFalse(try XCTUnwrap(lines.lines.first).contains(cause))
+        XCTAssertEqual(microphone.failureCode, "macos_unexpected_capture_error")
+    }
+
+    /// One vocabulary for the lane states. A reporting surface that spells `failed` itself is a
+    /// surface that can silently stop recognising a failure the source still reports.
+    func testEveryReportedLaneStateComesFromTheOneStateVocabulary() throws {
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        health.enqueue(.configurationChanged, lane: .microphone, generation: generation)
+
+        let running = health.statuses(running: true)
+        XCTAssertEqual(
+            running.map(\.state),
+            [CaptureLaneStates.capturing, CaptureLaneStates.recovering]
+        )
+        XCTAssertEqual(
+            health.statuses(running: false).map(\.state),
+            [CaptureLaneStates.stopped, CaptureLaneStates.stopped]
+        )
+
+        health.enqueue(.permission(.denied), lane: .microphone, generation: generation)
+        XCTAssertEqual(
+            health.statuses(running: true).map(\.state),
+            [CaptureLaneStates.capturing, CaptureLaneStates.failed]
+        )
+
+        // The one lane no source reported still answers with the same word.
+        let unreported = CaptureStatus(
+            running: true,
+            sessionID: nil,
+            lanes: [],
+            publishedFrameCount: 0,
+            lastHealthSequence: nil
+        )
+        XCTAssertEqual(
+            unreported.reportedLanes().map(\.state),
+            [CaptureLaneStates.stopped, CaptureLaneStates.stopped]
+        )
+        XCTAssertEqual(
+            [
+                CaptureLaneStates.capturing,
+                CaptureLaneStates.recovering,
+                CaptureLaneStates.stopped,
+                CaptureLaneStates.failed,
+            ],
+            ["capturing", "recovering", "stopped", "failed"]
+        )
     }
 
     func testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation() throws {
@@ -5821,6 +6272,32 @@ private final class FailOnceHTTPTransportHealthAdapter: CaptureHealthAdapter {
     }
 }
 
+/// A server that accepts the first heartbeat and then refuses the session, the way a released
+/// session does. `refusedAttempts` narrows that to named attempts, so a test can also ask what
+/// happens when the refusal is followed by an accepted request.
+private final class ReleasedSessionHealthAdapter: CaptureHealthAdapter {
+    private let refusedStatusCode: Int
+    private let refusedAttempts: Set<Int>?
+    private(set) var attemptCount = 0
+
+    init(refusedStatusCode: Int, refusedAttempts: Set<Int>? = nil) {
+        self.refusedStatusCode = refusedStatusCode
+        self.refusedAttempts = refusedAttempts
+    }
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        attemptCount += 1
+        let refused = refusedAttempts.map { $0.contains(attemptCount) } ?? (attemptCount > 1)
+        if refused {
+            throw CaptureHTTPTransportError.nonSuccessStatus(refusedStatusCode)
+        }
+    }
+}
+
 private final class RecordingPairingExchange: CapturePairingExchangeAdapter {
     private(set) var serverURL: URL?
     private(set) var pairingPayload: Data?
@@ -5901,6 +6378,39 @@ private final class RecordingControlChannelFailureLog: ControlChannelFailureLogg
         lock.lock()
         storage.append(Record(command: command, detail: detail))
         lock.unlock()
+    }
+}
+
+private final class RecordingCaptureLaneFailureLog: CaptureLaneFailureLogging, @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [CaptureLaneStatus] = []
+
+    var records: [CaptureLaneStatus] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    func recordLaneFailure(_ status: CaptureLaneStatus) {
+        lock.lock()
+        storage.append(status)
+        lock.unlock()
+    }
+}
+
+private final class ThrowingCaptureHealthAdapter: CaptureHealthAdapter {
+    private let error: Error
+
+    init(error: Error) {
+        self.error = error
+    }
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        throw error
     }
 }
 

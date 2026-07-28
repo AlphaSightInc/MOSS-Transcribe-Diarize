@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import logging
 import threading
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Mapping, Protocol
 
 from .live_helper_presence import HelperPresenceSnapshot
 from .live_lane_contract import LiveLane
 from .live_v2_session import LiveV2SessionTerminalError
+
+_TERMINAL_LOG = logging.getLogger("moss_transcribe_diarize.live.helper")
 
 
 class LiveHelperLeaseConfigError(ValueError):
@@ -34,7 +37,13 @@ class _V2SessionRegistry(Protocol):
     def get(self, session_id: str) -> Any:
         ...
 
-    def expire(self, session_id: str, reason: str) -> Any:
+    def expire(
+        self,
+        session_id: str,
+        reason: str,
+        *,
+        lane_failure_codes: Mapping[LiveLane, str] | None = None,
+    ) -> Any:
         ...
 
 
@@ -46,6 +55,65 @@ class _SessionReleaseRegistry(Protocol):
 class _AccessRegistry(Protocol):
     def release_session(self, session_id: str) -> Any:
         ...
+
+
+class _MonoAbort(Protocol):
+    def __call__(
+        self,
+        session_id: str,
+        reason: str,
+        *,
+        detail: Mapping[str, Any] | None = None,
+    ) -> Any:
+        ...
+
+
+@dataclass(frozen=True, slots=True)
+class LiveHelperTerminalRecord:
+    """What ended a live session, in words that leave the process.
+
+    Counts, states and typed codes only -- never audio, never a token. The type has no
+    free-form field, so a future caller cannot widen what reaches the host journal by
+    passing a message through it.
+    """
+
+    session_id: str
+    reason: str
+    lane_failures: Mapping[str, str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "session_id": self.session_id,
+            "reason": self.reason,
+            "lane_failures": dict(self.lane_failures),
+        }
+
+    def line(self) -> str:
+        """One line, one vocabulary: session, reason, and one field per failed lane.
+
+        A terminal transition with no failed lane says so rather than omitting the
+        subject: absent and failed read identically to an operator, which is half of
+        what made this failure unreadable in the first place.
+        """
+
+        parts = [f"session={self.session_id}", f"reason={self.reason}"]
+        if self.lane_failures:
+            parts.extend(f"lane.{lane}={code}" for lane, code in self.lane_failures.items())
+        else:
+            parts.append("lanes=none")
+        return " ".join(parts)
+
+
+def log_live_helper_terminal(record: LiveHelperTerminalRecord) -> None:
+    """Write the one line that names what ended the session.
+
+    ERROR, not INFO: the live service installs no logging configuration of its own, so
+    this record reaches the host journal through `logging.lastResort` (WARNING and above)
+    even when nothing has called `basicConfig`. A meeting that ends without anyone asking
+    it to is an error by any reading.
+    """
+
+    _TERMINAL_LOG.error("live helper terminal: %s", record.line())
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,7 +160,8 @@ class LiveHelperFailureCoordinator:
         v2_mixers: _SessionReleaseRegistry | None = None,
         helper_presence: _SessionReleaseRegistry | None = None,
         access: _AccessRegistry | None = None,
-        abort_mono: Callable[[str, str], Any] | None = None,
+        abort_mono: _MonoAbort | None = None,
+        on_terminal: Callable[[LiveHelperTerminalRecord], None] | None = None,
     ) -> None:
         self._lease_ns = _positive_lease_ns(live_helper_lease_seconds)
         self._timer = timer or AsyncioLiveHelperTimer(monotonic_ns=monotonic_ns)
@@ -102,6 +171,7 @@ class LiveHelperFailureCoordinator:
         self._helper_presence = helper_presence
         self._access = access
         self._abort_mono = abort_mono
+        self._on_terminal = on_terminal or log_live_helper_terminal
         self._sessions: dict[str, _LeaseState] = {}
         self._terminal_sessions: set[str] = set()
         self._lock = threading.RLock()
@@ -149,7 +219,14 @@ class LiveHelperFailureCoordinator:
                     deadline_monotonic_ns=deadline,
                 )
         if action == "terminal":
-            await self._terminal_failure(session_id, terminal_reason or "helper_failed")
+            # The failed lanes travel *into* the teardown rather than being dropped at it:
+            # this is the heartbeat that ends the meeting, so its typed codes are the last
+            # evidence of why, and every registry below is about to be released.
+            await self._terminal_failure(
+                session_id,
+                terminal_reason or "helper_failed",
+                lane_failures=failed_lanes,
+            )
             return None
         for lane, code in failed_lanes.items():
             self._fail_lane(session_id, lane, code)
@@ -191,10 +268,29 @@ class LiveHelperFailureCoordinator:
             return
         self._v2_sessions.get(session_id).fail_lane(lane, code)
 
-    async def _terminal_failure(self, session_id: str, reason: str) -> None:
-        self._expire_v2(session_id, reason)
-        await self._abort_mono_runtime(session_id, reason)
+    async def _terminal_failure(
+        self,
+        session_id: str,
+        reason: str,
+        *,
+        lane_failures: Mapping[LiveLane, str] | None = None,
+    ) -> None:
+        lane_failures = dict(lane_failures or {})
+        # Recorded before delegating, exactly once per terminal transition: the teardown
+        # releases the registries an operator could otherwise ask, so a record written
+        # after it can be lost to the same failure it is describing.
+        self._record_terminal(session_id, reason, lane_failures)
+        self._expire_v2(session_id, reason, lane_failures)
+        await self._abort_mono_runtime(session_id, reason, lane_failures)
         self._release_registries(session_id)
+
+    def _record_terminal(
+        self,
+        session_id: str,
+        reason: str,
+        lane_failures: Mapping[LiveLane, str],
+    ) -> None:
+        self._on_terminal(_terminal_record(session_id, reason, lane_failures))
 
     def _schedule_terminal_failure(self, session_id: str, reason: str) -> None:
         result = self._terminal_failure(session_id, reason)
@@ -205,21 +301,35 @@ class LiveHelperFailureCoordinator:
         else:
             loop.create_task(result)
 
-    def _expire_v2(self, session_id: str, reason: str) -> None:
+    def _expire_v2(
+        self,
+        session_id: str,
+        reason: str,
+        lane_failures: Mapping[LiveLane, str],
+    ) -> None:
         if self._v2_sessions is None:
             return
         try:
-            self._v2_sessions.expire(session_id, reason)
+            self._v2_sessions.expire(session_id, reason, lane_failure_codes=lane_failures)
         except KeyError:
             return
         except LiveV2SessionTerminalError:
             return
 
-    async def _abort_mono_runtime(self, session_id: str, reason: str) -> None:
+    async def _abort_mono_runtime(
+        self,
+        session_id: str,
+        reason: str,
+        lane_failures: Mapping[LiveLane, str],
+    ) -> None:
         if self._abort_mono is None:
             return
         try:
-            result = self._abort_mono(session_id, reason)
+            result = self._abort_mono(
+                session_id,
+                reason,
+                detail=_terminal_record(session_id, reason, lane_failures).to_dict(),
+            )
             if inspect.isawaitable(result):
                 await result
         except KeyError:
@@ -232,6 +342,22 @@ class LiveHelperFailureCoordinator:
             self._helper_presence.release(session_id)
         if self._access is not None:
             self._access.release_session(session_id)
+
+
+def _terminal_record(
+    session_id: str,
+    reason: str,
+    lane_failures: Mapping[LiveLane, str],
+) -> LiveHelperTerminalRecord:
+    return LiveHelperTerminalRecord(
+        session_id=session_id,
+        reason=reason,
+        # Lane order is the contract's own, so two runs of the same failure produce the
+        # same line and the same detail.
+        lane_failures={
+            lane.value: lane_failures[lane] for lane in LiveLane if lane in lane_failures
+        },
+    )
 
 
 def _failed_lanes(heartbeat: HelperPresenceSnapshot) -> dict[LiveLane, str]:

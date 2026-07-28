@@ -519,6 +519,16 @@ public protocol ControlChannelFailureLogging: AnyObject, Sendable {
     func recordUnclassifiedFailure(command: String?, detail: ControlChannelErrorDetail)
 }
 
+/// Records a capture lane the app has watched fail.
+///
+/// Same discipline as `ControlChannelFailureLogging`, enforced the same structural way: it is
+/// handed a `CaptureLaneStatus` and nothing else, and that type holds only a lane, a state word,
+/// counters and a typed code. The free-form `NativeLaneFailure.cause` is not on it, so no
+/// implementation can write one even by accident.
+public protocol CaptureLaneFailureLogging: AnyObject, Sendable {
+    func recordLaneFailure(_ status: CaptureLaneStatus)
+}
+
 /// The app's failure log.
 ///
 /// Unified logging is the only place `MOSSCaptureApp` can leave a record an operator can read
@@ -529,7 +539,7 @@ public protocol ControlChannelFailureLogging: AnyObject, Sendable {
 /// Everything interpolated here is marked public because everything interpolated here is provably
 /// non-secret: the command is one of `ControlChannelCommands.all` or the literal `other`, and the
 /// rest is a `ControlChannelErrorDetail`.
-public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging {
+public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging, CaptureLaneFailureLogging {
     private let emit: @Sendable (String) -> Void
 
     public convenience init(
@@ -554,6 +564,39 @@ public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging {
                 + "domain=\(detail.domain) code=\(detail.code) underlying=\(underlying)"
         )
     }
+
+    /// The lane is an enum case and the code is one the capture source minted, so both are
+    /// compile-time vocabulary; the counters are counters. Nothing here can carry a payload.
+    public func recordLaneFailure(_ status: CaptureLaneStatus) {
+        emit(
+            "capture lane \(status.lane.rawValue) failed: "
+                + "state=\(status.state) code=\(status.failureCode ?? "none") "
+                + "dropped=\(status.droppedFrames) discontinuities=\(status.discontinuities)"
+        )
+    }
+}
+
+/// One capture lane as the control channel reports it: which lane, what it is doing, and — when it
+/// failed — the typed code that names the failure. States and codes only; never audio, never a
+/// secret, and never the free-form cause string, which is not a typed value.
+public struct ControlChannelLaneStatus: Codable, Equatable {
+    public var lane: String
+    public var state: String
+    public var failureCode: String?
+
+    public init(lane: String, state: String, failureCode: String? = nil) {
+        self.lane = lane
+        self.state = state
+        self.failureCode = failureCode
+    }
+
+    public init(status: CaptureLaneStatus) {
+        self.init(
+            lane: status.lane.rawValue,
+            state: status.state,
+            failureCode: status.failureCode
+        )
+    }
 }
 
 public struct ControlChannelResponse: Codable, Equatable {
@@ -562,8 +605,16 @@ public struct ControlChannelResponse: Codable, Equatable {
     public var sessionID: String?
     public var portalURL: URL?
     public var viewAuthority: String?
+    /// What each lane is doing. The app already sends this to the server in every heartbeat; the
+    /// control channel reports the same projection so an operator can read a lane failure locally
+    /// instead of inferring it from a session that stopped answering.
+    public var lanes: [ControlChannelLaneStatus]?
     public var publishedFrameCount: Int?
     public var pumpFailure: CapturePumpFailure?
+    /// Present once the server has refused this session outright. `running` reports whether this
+    /// process is still capturing; this reports whether there is still a session to capture into,
+    /// and an operator who sees it knows the meeting is over however healthy the rest looks.
+    public var sessionRefusal: CaptureSessionRefusal?
     /// How much captured audio is still waiting for an acknowledgement, and — once audio has been
     /// lost — the typed reason. Both are counts and codes, never audio and never a secret.
     public var outboxRetainedFrames: Int?
@@ -582,8 +633,10 @@ public struct ControlChannelResponse: Codable, Equatable {
         sessionID: String? = nil,
         portalURL: URL? = nil,
         viewAuthority: String? = nil,
+        lanes: [ControlChannelLaneStatus]? = nil,
         publishedFrameCount: Int? = nil,
         pumpFailure: CapturePumpFailure? = nil,
+        sessionRefusal: CaptureSessionRefusal? = nil,
         outboxRetainedFrames: Int? = nil,
         outboxDegradation: CaptureOutboxDegradation? = nil,
         latency: CaptureLatencyReport? = nil,
@@ -595,8 +648,10 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.sessionID = sessionID
         self.portalURL = portalURL
         self.viewAuthority = viewAuthority
+        self.lanes = lanes
         self.publishedFrameCount = publishedFrameCount
         self.pumpFailure = pumpFailure
+        self.sessionRefusal = sessionRefusal
         self.outboxRetainedFrames = outboxRetainedFrames
         self.outboxDegradation = outboxDegradation
         self.latency = latency
@@ -609,8 +664,10 @@ public struct ControlChannelResponse: Codable, Equatable {
             ok: true,
             running: status.running,
             sessionID: status.sessionID,
+            lanes: status.reportedLanes().map(ControlChannelLaneStatus.init(status:)),
             publishedFrameCount: status.publishedFrameCount,
             pumpFailure: status.pumpFailure,
+            sessionRefusal: status.sessionRefusal,
             outboxRetainedFrames: status.outbox.retainedFrames,
             outboxDegradation: status.outbox.degradation
         )

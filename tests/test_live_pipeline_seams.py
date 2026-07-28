@@ -17,6 +17,7 @@ import asyncio
 import hashlib
 import io
 import json
+import logging
 import urllib.error
 import urllib.request
 from dataclasses import replace
@@ -47,6 +48,12 @@ from moss_transcribe_diarize.app.live_endpoint import (
     EndpointPolicyConfig,
     SpeechObservation,
 )
+from moss_transcribe_diarize.app.live_helper_failure import LiveHelperFailureCoordinator
+from moss_transcribe_diarize.app.live_helper_presence import (
+    HELPER_HEALTH_SCHEMA,
+    HelperHeartbeat,
+    HelperPresenceRegistry,
+)
 from moss_transcribe_diarize.app.live_identity import (
     BoundedCausalIdentityPreparer,
     LiveIdentityConfig,
@@ -74,6 +81,7 @@ from moss_transcribe_diarize.app.live_session import (
     LiveSession,
 )
 from moss_transcribe_diarize.app.live_span_bounds import span_segments
+from moss_transcribe_diarize.app.live_v2_session import LiveV2SessionRegistry
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 
 DEPLOYED_VAD_FRAME_SAMPLES = 160
@@ -1371,3 +1379,134 @@ def test_an_exception_that_names_nothing_is_still_reported_as_a_failure():
     assert failure is not None
     assert (failure.code, failure.message) == ("integrity_error", "ValueError")
     assert failure.detail == {"error_type": "ValueError"}
+
+
+# --------------------------------------------------------------------------------------
+# The helper-terminal seam: the real lease coordinator over the real v2 registry and the
+# real runtime. Every part of the teardown is a product class, because the defect was that
+# the teardown discarded what the client had already said.
+# --------------------------------------------------------------------------------------
+
+
+def _helper_heartbeat(*, lane_codes: dict[str, str], sequence: int = 0, state: str = "capturing") -> HelperHeartbeat:
+    """A heartbeat in the shape the shipped Swift client sends.
+
+    `state` stays `capturing` for a failed lane: `CaptureHTTPTransport` reports the
+    top-level state as `running ? "capturing" : "stopped"` and never sends `"failed"`, so
+    all-lanes-failed is the only way this client can turn a session terminal.
+    """
+
+    def lane(name: str) -> dict:
+        code = lane_codes.get(name)
+        return {
+            "state": "failed" if code else "capturing",
+            "device_epoch": 0,
+            "dropped_frames": 0,
+            "discontinuities": 0,
+            "failure_code": code,
+        }
+
+    return HelperHeartbeat.from_dict(
+        {
+            "schema": HELPER_HEALTH_SCHEMA,
+            "instance_id": "helper-a",
+            "sequence": sequence,
+            "sent_monotonic_ns": 10 + sequence,
+            "helper_version": "0.1.0",
+            "state": state,
+            "lanes": {"system": lane("system"), "microphone": lane("microphone")},
+        }
+    )
+
+
+def _helper_seam(runtime: LiveServiceRuntime, session_id: str):
+    v2_sessions = LiveV2SessionRegistry(max_retained_samples=960000)
+    v2_sessions.create(session_id)
+    presence = HelperPresenceRegistry(monotonic_ns=lambda: 100)
+    coordinator = LiveHelperFailureCoordinator(
+        live_helper_lease_seconds=30.0,
+        v2_sessions=v2_sessions,
+        helper_presence=presence,
+        abort_mono=runtime.abort,
+    )
+    return coordinator, v2_sessions, presence
+
+
+def test_a_helper_that_reports_both_lanes_failed_leaves_the_reason_in_both_journals(caplog):
+    """The Phase K failure, assembled from the products that produced it.
+
+    Observed on m4mbp after both TCC grants were recorded: `start` returned
+    `ok:true, running:true`, one heartbeat returned 200, and every later request 403'd
+    because the session had been released. Both lanes had reported `failed` -- the only
+    terminal condition this client can express -- and the codes it sent reached no surface
+    at all: the terminal path expired the v2 session with a generic reason and skipped the
+    per-lane recording that the surviving path does. Nothing in this repo assembled the
+    coordinator, the v2 registry and the runtime together, so no test could see it.
+    """
+
+    runtime, _runner = _decode_seam_runtime(responses=[], speech=(False,))
+    created = runtime.create()
+    coordinator, v2_sessions, presence = _helper_seam(runtime, created.session_id)
+    snapshot = presence.observe(
+        created.session_id,
+        _helper_heartbeat(
+            lane_codes={"system": "device_unavailable", "microphone": "permission_denied"}
+        ),
+    )
+
+    with caplog.at_level(logging.NOTSET, logger="moss_transcribe_diarize.live.helper"):
+        lease = asyncio.run(coordinator.observe(created.session_id, snapshot))
+
+    assert lease is None
+    # 1. The runtime journal, which outlives every registry the teardown releases.
+    aborted = _events(runtime, created.session_id, "session_aborted")
+    assert [event["failure"]["message"] for event in aborted] == ["helper_all_lanes_failed"]
+    assert aborted[0]["failure"]["detail"] == {
+        "session_id": created.session_id,
+        "reason": "helper_all_lanes_failed",
+        "lane_failures": {
+            "system": "device_unavailable",
+            "microphone": "permission_denied",
+        },
+    }
+    # 2. The session's own terminal record, which is what a later request is refused with.
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert failure.detail["lane_failures"]["microphone"] == "permission_denied"
+    # 3. The host journal, for the operator who cannot ask the service anything anymore.
+    assert [record.getMessage() for record in caplog.records] == [
+        "live helper terminal: session=%s reason=helper_all_lanes_failed "
+        "lane.system=device_unavailable lane.microphone=permission_denied" % created.session_id
+    ]
+    # The v2 session is gone, as it was before: expiry is the last moment its lane codes
+    # exist, which is why they are stamped on the way out rather than read afterwards.
+    assert created.session_id not in v2_sessions
+
+
+def test_one_failed_lane_is_recorded_without_ending_the_meeting():
+    """The mic-granted / system-audio-denied run the PRD certifies still has to work.
+
+    One failed lane is not terminal, so nothing is aborted, nothing is released, and the
+    lane's typed code is recorded on the live session itself -- the surviving path already
+    did this, and the terminal path is what had to be brought up to it.
+    """
+
+    runtime, _runner = _decode_seam_runtime(responses=[], speech=(False,))
+    created = runtime.create()
+    coordinator, v2_sessions, presence = _helper_seam(runtime, created.session_id)
+    snapshot = presence.observe(
+        created.session_id,
+        _helper_heartbeat(lane_codes={"system": "permission_denied"}),
+    )
+
+    lease = asyncio.run(coordinator.observe(created.session_id, snapshot))
+
+    assert lease is not None
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+    assert _events(runtime, created.session_id, "session_aborted") == []
+    lanes = v2_sessions.get(created.session_id).snapshot().to_dict()["lanes"]
+    assert (lanes["system"]["health"], lanes["system"]["failure_code"]) == (
+        "failed",
+        "permission_denied",
+    )
+    assert (lanes["microphone"]["health"], lanes["microphone"]["failure_code"]) == ("active", None)
