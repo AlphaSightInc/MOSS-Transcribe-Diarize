@@ -105,11 +105,14 @@ only `merge-keeper.sh`'s guard. **The post-merge freeze has resumed: from `d35be
 branch may again carry only `scripts/ralph-afk/*`.** See the fourth-keeper-merge block.
 Iteration 15 ran **J5 step (c)** — published `6a540fe`, redeployed the live service, and moved the
 **fourth** checkout too, because m4mbp came back online: see the J5c redeploy block. It changed no
-tracked file.
+tracked file. Iteration 16 ran **J5 step (d)**, the third amendment's own gate, and **it is GREEN**:
+the deployed service survived a full 20 s two-lane plan with nine committed spans and four speaker
+labels, and the two spans the boundary sweep proved fatal now prepare on the host. See the J5d gate
+block. It changed no tracked product source (it repaired the Ralph probe's own reporting).
 
-**PRD acceptance scoreboard after iteration 15 of run 20260728-112922** (iteration 15 restored the
-SHA line and went past its own prediction: **"one exact SHA everywhere" is GREEN 4/4** at `6a540fe`,
-not the 3/4 that was expected, because m4mbp is reachable again).
+**PRD acceptance scoreboard after iteration 16 of run 20260728-112922** ("one exact SHA everywhere"
+is GREEN 4/4 at `6a540fe` since iteration 15; iteration 16 closed the last *machine* gate — Phase J's
+probe — so **every remaining open item now depends on E3's physical TCC clicks**).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus all three amendments' authorized follow-up merges), **one exact SHA everywhere (4/4)**,
@@ -120,24 +123,17 @@ recorded**.
 Open: permissions granted, the 60 s canary, the
 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
 
-**Those open items are still not merely waiting on E3.** Iterations 9 and 10 proved they cannot pass
-on the deployed build; the second amendment fixed those three blockers (H3, H1, H2) and iteration 6
-deployed them; and iteration 7's gate run then found a **fourth** blocker on the same seam — see the
-H4d block. Phase J is now authorized and **J1 (iteration 9) and J2 (iteration 10) close both of
-blocker 4's input classes on the branch, J3 (iteration 11) closes the transient-decoder class that
-would have been the fifth, and J4 (iteration 12) makes the next one readable without a host-side
-probe**; J5a gated them, J5b (iteration 14) merged them and **J5c (iteration 15) deployed them —
-the four fixes are now running on the host, proven by venv introspection that clamps H4d's own
-overshoot rather than by the SHA**. So the
-certification path is gated on **J5d's probe run**, not on the operator: E3's physical
-TCC clicks stay unspent for one more iteration, because a canary against a service that dies at the
-first 2.5 s of continuous speech would burn the one irreducible human step for nothing. This is the
-third time the
-same rule has held: **spend the human step last**, and only against a build a machine has already
-driven end to end. Iteration 8 put a number on that judgement: at the measured 6.1 % per-span kill
-rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 before J5d would most
-likely buy one aborted run. **J5d is the last thing standing between here and spending it**, and it
-costs no human input.
+**Those open items ARE now waiting on E3, and only on E3 — that changed in iteration 16.** For four
+runs the honest answer was "no": iterations 9/10 proved the canary could not pass on the deployed
+build, the second amendment fixed three blockers, iteration 7's gate found a fourth, and Phase J
+settled the whole class (J1 clamp, J2 unattributed publish, J3 transient decode, J4 named refusal).
+J5a gated them, J5b merged them, J5c deployed them, and **J5d drove the deployed service end to end
+and it survived** — 40/40 ticks, nine committed spans, four speaker labels, clean stop with exact
+accounting. See the J5d gate block. **The rule "spend the human step last, and only against a build
+a machine has already driven end to end" has now been satisfied, not deferred:** iteration 8 priced
+the alternative at a ~22 % chance of a 60 s canary finishing, and iteration 16 measured the same
+machine path at 100 % of one full plan. **E3's clicks are the next thing to spend, and nothing in
+this loop can advance without them.**
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **590 passed / 2 skipped / 368 subtests**
 including `tests/test_live_pipeline_seams.py` **50 passed** (new in run 20260728-112922 iteration 1,
@@ -313,6 +309,64 @@ fetched". Nothing was mutated by the failure. **Resolve the remote by URL, never
 `192.168.1.240`, the batch address is `192.168.68.38` — a different LAN, 100 % packet loss — and the
 two hosts meet only on the tailnet (`100.64.0.4` → `100.64.0.8`), which is exactly the path the PRD's
 live clause names and the pinned client uses. The batch clause is measured from MacStudio (200).
+
+**J5d gate: GREEN at `6a540fe` — the deployed pipeline survives a whole meeting and labels it (new,
+iteration 16). THIS IS THE FIRST TIME ANY RUN HAS FINISHED.** The third amendment's own gate, both
+probes, against the redeployed service.
+*Offline half, first because it mutates nothing:* all seven `live-hardcap-repro.py` cases rc=0
+(speech, silence, 1000-sample frames, the retired knob, the endpointing pattern, webrtc 5808 and its
+8000 control) — H2/H3 still closed on the branch.
+*Online half — `live-pipeline-probe.py`, 20 s, `--lead-seconds 1.0 --lane-offset-ms system=137`:*
+**40/40 ticks, 80 frames (40 per lane), `non_200_count` 0, `aborted_at` null, 1 TLS handshake**, then
+`stop` 200 with `status closed, accepted = accounted = committed = 320000, retained 0,
+pending_span_ids 0, pending_work_items 0, terminal_failure null` — the exact accounting equality H1's
+whole design turns on, reached for real. Nine committed spans tile the meeting end to end
+(`0→12208→52208→…→320000`, no gap, no overlap). Compare H4d: 17 frames, dead at 4.08 s.
+*Speaker labels are present and the identity state advanced for real:* committed transcripts carry
+**S01, S02, S03, S04**, `identity_snapshot.version` 0 → **7**, `canonical_speakers` =
+`speaker-0001…0004`. Every span's own `identity_snapshot_version` advances with it.
+*Both degrade-not-die paths fired inside the same green run, which is better evidence than a run
+where nothing went wrong:* span 0 committed **empty** (`identity_status empty_span`,
+`empty_reason decoder_returned_no_transcript` — H1), and span 7 published its words under
+**`S00`** (J2's unattributed marker: `[0.07][S00]Lane is being trans-[0.93][0.94][S00]This is the
+last thing the first-[2.43]`) with the identity version held at 6 across it and resuming at 7 — i.e.
+an unresolved identity cost the label and nothing else, exactly as J2 ruled. Every
+`canonical_processed` event has `submitted: true`; `submission_refusal` is null throughout.
+*Decoder RTF on the host:* **0.055 – 0.431** per span (PRD wants p95 < 1).
+*J1's real-audio confirmation, done deterministically rather than by hoping a span overshoots:* the
+sweep's two known-fatal cuts were rebuilt byte-identically (`build-span-sweep.py --cut 92208:40000
+--cut 268208:40000`; sha256 `844e6eff…` / `038cf855…`) and re-run through
+`live-identity-seam-probe.py` on the host under the **deployed** venv. Same bytes, same manifest,
+same vLLM endpoint, **opposite verdict**:
+| cut | decode | iteration 8 (pre-J1) | now (deployed J1) |
+| --- | --- | --- | --- |
+| `92208` | `…whether[2.42][0.11][S02]…different lanes.[2.51]` | rc=4 `failed / timestamp_outside_span` | **rc=0 `prepared`, would_publish true** |
+| `268208` | `[0.08][S01]This is the last thing the first speaker says before.[2.52]` | rc=4, the **two-tick** worst case | **rc=0 `prepared`** |
+The `92208` transcript is character-for-character iteration 8's recording, so this is the same input,
+not a similar one. Host `/tmp` was cleaned in the same invocation (`wavs_remaining=0`, probe dir
+removed).
+*Nothing on the host moved:* HEAD still `6a540fe`, `moss-live-web` MainPID **343344** and `moss-web`
+MainPID **301112** both with `NRestarts=0`, `live-runs/` 0 entries, no `/tmp/mtd-live-*`, **0
+traceback lines** in the unit's last 25 minutes. Both probe devices
+(`ralph-j5d-probe-20260728T14{4052,4433}Z`) are `revoked: true`; the m4mbp device
+`AB600574-…` is untouched at `revoked: false`. Client-side afterwards: pin still `a35ca9fc…`,
+`/live` 200, `/api/live/descriptor` 200, batch `/` 200 and `/api/jobs` 200.
+*The probe's own reporting was the only thing that had to be repaired, and the bug is worth
+remembering:* a canonical commit carries its speaker **inside** `transcript` (`[start][Sxx]words
+[end]`), not in a `speaker`/`text` field, so the first run reported `"speakers": []` for a perfectly
+labelled meeting. The extractor now parses the wire grammar, reports each commit's transcript,
+speakers and `identity_snapshot_version`, keeps every `canonical_processed` payload (J4's
+`identity_reason` / `submission_refusal`), and **exits 5 when spans commit with no attributed
+speaker** — a survived-but-unlabelled run is a failed gate and now says so in the exit code.
+*Read the tool's shape before trusting its verdict:* `"speakers": []` was a reporting artifact that
+would have been read as "J2 unattributed everything", i.e. a fifth blocker that does not exist.
+*One number this gate does not require but F1 does, and it is over the line — see candidate 43:*
+user-visible p95 was **4240 ms** (run 2) and **5131 ms** (run 1) against the canary's **≤ 4 s**.
+Committed p95 **3010 / 3699 ms** dominates it, and a span cannot commit before it ends, so the 2.5 s
+hard cap is most of the figure; the render bound (1230 / 1432 ms) is the smaller half. This is a
+synthetic pump on MacStudio, not the plan's Phase F procedure with a real Mac — indicative, not the
+verdict — but the margin is negative twice, so treat F1's latency clause as **at risk**, not
+incidental.
 
 **H4c redeploy: DONE at `b817871` (run 20260728-112922 iteration 6).** `git push origin main`
 fast-forwarded `317df4d..b817871` on the AlphaSight fork; the host checkout fetched and detached at
@@ -2248,6 +2302,29 @@ python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-span-sweep \
 # GOTCHA: `sha256sum "$D"/*.wav | head -3` under `set -o pipefail` aborts the whole script with
 # rc=141 - SIGPIPE. Write the digests to a file and count lines instead.
 
+# --- J5d: the third amendment's gate, GREEN in iteration 16. Re-runnable end to end; each run
+#     costs one pairing code, one device (REVOKE IT) and one session, and no service restart. ------
+# 1. offline half first, because it mutates nothing (all seven cases above -> rc=0).
+# 2. online half: mint on the host loopback, pipe the payload on STDIN, never argv, never a file.
+#    The zsh trap applies here too - run the whole thing under `bash -c`, or the probe receives one
+#    argument and argparse rejects it ("unrecognized arguments: --frames 8" for a real option).
+#    printf '%s' "$PAYLOAD" | python3 scripts/ralph-afk/live-pipeline-probe.py \
+#      --host 100.64.0.8 --port 7861 --pin a35ca9fc… --device-id "ralph-j5d-probe-<utc>" \
+#      --seconds 20 --lead-seconds 1.0 --lane-offset-ms system=137 --report /tmp/moss-j5d.json
+#    PASS = rc 0 (rc 5 = spans committed but every speaker is S00; rc 3 = nothing committed),
+#    publish.non_200_count 0, stop.snapshot accepted == accounted == committed, and
+#    transcript.attributed_speakers non-empty. Then REVOKE the device (loopback, on the host).
+# 3. J1 on real audio, deterministically - do NOT wait for a live span to overshoot (only ~6 % do):
+#    python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-j5d-sweep \
+#      --report /tmp/moss-j5d-sweep/index.json --seconds 20 --lead-seconds 1.0 \
+#      --lane-offset-ms system=137 --cut 92208:40000 --cut 268208:40000
+#    sha256 must be 844e6eff… / 038cf855… (the build is byte-deterministic across iterations), then
+#    ship both wavs + live-identity-seam-probe.py in ONE stdin script and run them under the
+#    service venv. Pre-J1 both were rc=4 timestamp_outside_span; deployed they are rc=0 prepared.
+#    `rm -f "$D"/*.wav` in the SAME invocation - audio does not belong in /tmp on the server.
+# 4. after any run: host HEAD unchanged, both MainPIDs unchanged with NRestarts=0, live-runs/ 0,
+#    no /tmp/mtd-live-*, 0 journal tracebacks, both probe devices revoked, m4mbp device NOT revoked.
+
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
 
@@ -2683,12 +2760,13 @@ own, which no later step does.
     "nothing is paired and `~/Library/Application Support/MOSSCapture` does not exist yet". The store
     exists since 2026-07-28 03:10 and a device is paired — see the "A device is ALREADY paired"
     block. `mtd-capture status` still answers `{"ok":false}` until the app is running.
-23. **E3 — TCC human step** `[BLOCKED on the operator — and DO NOT SPEND IT YET: H1 and H2 still
-    stand between the clicks and any transcript, and the deployed service does not yet carry H3]`:
-    the only irreducible human step in the whole loop. **F0 proved the canary it exists to enable
-    cannot pass on the deployed build** (see the F0 block), so asking for the clicks now buys a
-    session that dies in about three seconds. Correct order is: authorize H1/H2 → fix and gate →
-    deploy → *then* E3. The runbook below stays valid and needs no rework. The exact click sequence, the exact
+23. **E3 — TCC human step** `[BLOCKED on the operator — and NOW THE ONLY THING BLOCKING THE LOOP.
+    SPEND IT: J5d proved the deployed service transcribes and labels a whole meeting]`:
+    the only irreducible human step in the whole loop. The reason to hold it back is **gone** —
+    F0/H4d's "the canary cannot pass on the deployed build" was true through iteration 15 and was
+    refuted by measurement in iteration 16 (see the J5d gate block: full plan survived, nine
+    committed spans, four speaker labels, RTF < 0.5). The runbook below stays valid and needs no
+    rework. The exact click sequence, the exact
     commands and the read-only verification are in progress.txt iteration 23 and in the three new
     contract blocks above (TCC-verification, E3 command surface, prompt order). Summary of what
     iteration 23 changed about it:
@@ -2722,13 +2800,14 @@ own, which no later step does.
     `--lane-offset-ms system=137 --lead-seconds 0` spent F0's open caveat and found blocker 3. The
     device was revoked, both batch units and the live unit kept their MainPIDs/NRestarts/timestamps,
     `live-runs/` is still 0 entries and no `/tmp/mtd-live-*` survives. See the H-diagnosis block.
-24. **F1 — 60 s canary** per prd.md. `[blocked on E3 **and** on H1/H2/H3 — it cannot pass on the
-    deployed build]`
+24. **F1 — 60 s canary** per prd.md. `[blocked on E3 ONLY — the server-side blockers are closed and
+    J5d proved it end to end]`. Read candidate 43 before running it: the latency clause is the one
+    part of F1 the machine evidence says is *not* comfortably green.
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-    `[blocked on E3 and H1/H2/H3]`
+    `[blocked on E3 only]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-    `[blocked on E3 and H1/H2/H3]`
+    `[blocked on E3 only]`
 **F4 was split by evidence in iteration 8**, the way iteration 20 split E2: its rollback rehearsal
 needs no operator, closes a PRD acceptance clause on its own, and is *cheaper before* certification
 than after (nothing in flight to disturb). Its close half still waits on everything else.
@@ -3063,11 +3142,30 @@ and 37 are folded in here; settle them together or the next gate run finds the f
       online and took the same SHA with **no rebuild** (inode and DR unchanged), so the four-way SHA
       check is **4/4** and that blocker is cleared. See the J5c redeploy block — including the
       `origin`-means-different-repos trap on m4mbp.
-    - **(d) the amendment's gate: both probes** `[open - do this next]`. `live-pipeline-probe.py` and `live-hardcap-repro.py`
-      against the redeployed service, requiring a run that survives its full plan with committed
-      spans advancing and speaker labels present. J1's real-audio confirmation is the sweep's two
-      known-failing spans (`12208+10*8000` and `12208+32*8000`); J4 pays for itself here - if a fifth
-      blocker appears, the 409 now carries the word that names it.
+    - **(d) the amendment's gate: both probes** `[done - GREEN, run 20260728-112922 iteration 16]`.
+      Seven offline `live-hardcap-repro.py` cases rc=0, then `live-pipeline-probe.py` **survived its
+      full 20 s plan**: 40/40 ticks, 80 frames, 0 non-200, nine committed spans tiling
+      `0…320000` with `accepted = accounted = committed`, speakers **S01-S04**, identity version
+      0 → 7, decoder RTF 0.055-0.431, and H1's empty span plus J2's `S00` span both firing inside
+      the same green run. J1 was confirmed **deterministically** rather than by chance: the sweep's
+      two known-fatal cuts (`92208`, `268208`, byte-identical rebuilds) went rc=4
+      `timestamp_outside_span` → **rc=0 `prepared`** on the deployed venv. See the J5d gate block.
+      **Phase J is closed and the third amendment is spent** - no fifth merge, freeze holds.
+
+43. **The user-visible latency clause is at risk, measured twice** `[open - evidence only; NOT
+    authorized work, and deliberately not acted on]`. J5d's two runs put user-visible p95 at
+    **5131 ms** and **4240 ms** against the 60 s canary's **≤ 4 s** (the 300 s run's ≤ 6 s is met by
+    both). The split says where it lives: committed p95 **3699 / 3010 ms** versus a render bound of
+    **1432 / 1230 ms**. A span cannot commit before it ends, so at a 2.5 s hard cap the committed
+    half is floor-bound near 2.5 s + decode + queueing, and the plan's **first** ordered remedy - a
+    2.0 s span cap - is aimed exactly there; the second (0.5 s poll interval) attacks the smaller
+    half. Two cautions before anyone reaches for either: (i) this is a synthetic pump on MacStudio,
+    **not** the plan's Phase F procedure (single-clock committed latency + analytic render bound +
+    one human marker), so F1's own measurement is the verdict and may differ; (ii) prd.md's
+    constraints list `hard_cap_samples` **40000** as a *domain-contract* value that must be
+    implemented exactly, while the plan lists a 2.0 s cap as the first latency remedy - those two
+    sentences disagree, and **the operator resolves that, not this loop**. Record the F1 number
+    first; change nothing on this evidence alone.
 
 Reusable facts from H4d: rebuilding the probe's own span 1 from its schedule reproduced the defect
 first try, while `golden.wav` decodes to empty and proves nothing - reproduce the exact input, not a

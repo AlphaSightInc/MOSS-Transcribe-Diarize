@@ -5485,3 +5485,128 @@ Stop conditions:
     refuses a fifth merge. That would need a FOURTH amendment.
   - both batch units must keep MainPID 301112 / NRestarts=0 and the live unit MainPID 343344 /
     NRestarts=0; `live-runs/` must still be 0 entries and no `/tmp/mtd-live-*` may survive.
+
+--------------------------------------------------------------------------------
+run 20260728-112922 | iteration 16 | J5 step (d) - the gate RAN and is GREEN
+--------------------------------------------------------------------------------
+Result: **the THIRD amendment's gate PASSED.** The deployed live service was driven end to end from
+a real remote pinned-TLS peer and it **survived its full plan for the first time in this loop**:
+40/40 ticks, nine committed spans, four speaker labels, clean stop with exact accounting. Phase J is
+closed, the amendment is spent, and **E3's physical TCC clicks are now the only thing blocking
+every remaining PRD item**.
+
+Files touched (all under scripts/ralph-afk/, no product source - the freeze holds):
+  live-pipeline-probe.py   report repair ONLY (see "the tool was wrong, not the product" below).
+  context.md               J5d gate block; branch state + scoreboard; candidate 42(d) closed GREEN,
+                           E3 un-deferred, F1-F3 re-scoped to "blocked on E3 only", new candidate 43
+                           (latency at risk); Validation gained the J5d recipe.
+  progress.txt             the rollback block above, then this entry.
+
+### Half one - offline, mutates nothing, run FIRST for that reason
+python3 scripts/ralph-afk/live-hardcap-repro.py <each of the seven recorded cases>   -> ALL rc=0
+  (speech, silence, --frame-samples 1000, the retired --session-hard-cap none, the endpointing
+   pattern 1100, webrtc --frame-samples 5808, and its 8000 control)
+GOTCHA that cost a cycle: the loop was written as `python3 ... $c` under **zsh**, which does not
+word-split, so every case died with `unrecognized arguments: --frames 8` for an option that plainly
+exists. Run these under `bash -c`. Context already carried this warning for build-span-sweep's
+--cut array; it applies to every argument list this loop builds in a variable.
+
+### Half two - the online probe against the deployed 6a540fe
+DEVICE_ID=ralph-j5d-probe-20260728T144433Z   (payload minted on host loopback, piped on stdin)
+python3 scripts/ralph-afk/live-pipeline-probe.py --host 100.64.0.8 --port 7861 --pin a35ca9fc... \
+  --seconds 20 --lead-seconds 1.0 --lane-offset-ms system=137 --report /tmp/moss-j5d-run2.json
+  -> **PROBE_RC=0**, wall 20.0 s, report /tmp/moss-j5d-run2.json
+publish: ticks_planned 40, ticks_run 40, accepted {system 40, microphone 40}, non_200_count **0**,
+         aborted_at **null**, tls_handshakes 1
+stop:    200, status closed, accepted = accounted = committed = **320000**, retained 0,
+         pending_span_ids 0, pending_work_items 0, terminal_failure **null**, failure_reason null
+spans:   nine, tiling 0 -> 12208 -> 52208 -> 92208 -> 132208 -> 172208 -> 212208 -> 252208 ->
+         292208 -> 320000 (no gap, no overlap; committed_items 9)
+identity: snapshot version 0 -> **7**, canonical_speakers speaker-0001..0004
+labels:   S01, S02, S03, S04 attributed; e.g. span 1
+          "[0.11][S01]Good morning everyone. This is the microphone.[2.49]"  <- H4d's own killer
+          span, published this time
+RTF:      canonical_decode_rtf 0.055 - 0.431 per span (PRD wants p95 < 1)
+events:   89 seen; every canonical_processed has submitted=true and submission_refusal=null
+view:     401 after stop, revoked=true (C1 still holds)
+
+**Both degrade-not-die paths fired inside the green run**, which is stronger evidence than a run
+where nothing went wrong:
+  span 0 -> identity_status "empty_span", empty_reason "decoder_returned_no_transcript"  (H1)
+  span 7 -> "[0.07][S00]Lane is being trans-[0.93][0.94][S00]This is the last thing the first-[2.43]"
+            i.e. J2's UNATTRIBUTED_SPEAKER, with identity version held at 6 across it and resuming
+            at 7 on span 8 - the abstention cost the label and nothing else, exactly as J2 ruled.
+
+### J1's real-audio confirmation, made deterministic instead of hoping a span overshoots
+Only ~6 % of hard-cap spans overshoot, so a green 20 s run is weak evidence for the clamp. Instead
+the sweep's two KNOWN-fatal cuts were rebuilt byte-identically and re-run on the host:
+  build: --cut 92208:40000 --cut 268208:40000  (sha256 844e6eff... / 038cf855...)
+  run:   live-identity-seam-probe.py under the SERVICE venv, deployed manifest, deployed vLLM
+  92208  -> "...whether[2.42][0.11][S02]My voice is arriving on different lanes.[2.51]"
+            character-for-character iteration 8's recording, so this is the SAME input
+            iteration 8 (pre-J1): rc=4 failed / timestamp_outside_span
+            now (deployed J1):    **rc=0 prepared, would_publish=true**
+  268208 -> "[0.08][S01]This is the last thing the first speaker says before.[2.52]"  (TWO ticks
+            past a 2.50 s span - iteration 8's worst case)
+            rc=4 -> **rc=0 prepared**
+Host /tmp cleaned in the same invocation: wavs_remaining=0, probe dir removed.
+
+### The tool was wrong, not the product - and it nearly manufactured a fifth blocker
+Run 1 (device ralph-j5d-probe-20260728T144052Z, also rc=0 and also a full 40/40 survival) reported
+`"speakers": []`. Read literally that says J2 unattributed the entire meeting. It was a defect in
+the Ralph probe: a canonical commit carries its speaker INSIDE `transcript` as the wire grammar
+`[start][Sxx]words[end]`, and the extractor was reading `speaker` / `speaker_label` / `text` keys
+that do not exist on `CanonicalCommit` (span_id, start_sample, end_sample, transcript, prefix_hash,
+identity_snapshot_version). The repair, all inside scripts/ralph-afk/:
+  - parse the wire grammar; report per-commit transcript, speakers and identity_snapshot_version;
+  - report identity_snapshot.version and canonical_speakers off the snapshot;
+  - keep every canonical_processed payload (J4's identity_reason / submission_refusal / empty_reason
+    / rtf), which is what made the S00 and empty-span findings above readable at all;
+  - **exit 5** when spans commit but no speaker is attributed. A survived-but-unlabelled run is a
+    failed gate; the tool now says so in its exit code rather than leaving it to a reader.
+Verified by unit-checking the helpers offline (labelled / S00 / empty / two-speaker dedup) before
+the re-run. Lesson: check the tool's own shape against the product's dataclass before reading its
+verdict as a product finding.
+
+### Post-run state - nothing on the host moved
+host HEAD 6a540fe (unchanged) | moss-live-web MainPID 343344, NRestarts=0, active (unchanged)
+moss-web MainPID 301112, NRestarts=0 (unchanged) | live-runs 0 | /tmp/mtd-live-* 0
+journal last 25 min: **0 traceback lines**
+devices: ralph-j5d-probe-20260728T144052Z revoked=True, ...T144433Z revoked=True (both rollbacks
+         applied), m4mbp AB600574-FD93-4321-967E-652AB064A70B revoked=**False** (untouched)
+client:  served leaf sha256 a35ca9fc... (PIN MATCH), https://100.64.0.8:7861/live 200,
+         /api/live/descriptor 200, http://192.168.68.38:7860/ 200, /api/jobs 200
+tree:    git status --porcelain shows only scripts/ralph-afk/live-pipeline-probe.py; the freeze holds
+
+### Learned
+1. **A GREEN RUN IS THE WEAKEST PLACE TO LOOK FOR A RARE FIX.** J1 corrects a condition that fires
+   on ~6 % of hard-cap spans; a 20 s run holds seven of them, so a survival says almost nothing
+   about the clamp. Re-running the two inputs already MEASURED to fail is what turns "it did not
+   break this time" into "the exact bytes that killed it now publish". Prefer a deterministic
+   before/after on a known input over a probabilistic end-to-end.
+2. **THE PROBE'S EXTRACTOR AND THE PRODUCT'S DATACLASS ARE A SEAM, AND IT WAS UNTESTED TOO.** The
+   whole Phase H/J story is "no test put both sides of a seam in one process"; this iteration hit
+   the same shape in the evidence tooling and it pointed at a blocker that did not exist. An
+   evidence tool that reports a field the product never emits reports silence as failure.
+3. **ZSH DOES NOT WORD-SPLIT, AND ARGPARSE'S ERROR MAKES IT LOOK LIKE A MISSING OPTION.**
+   `unrecognized arguments: --frames 8` for an option that exists means the whole string arrived as
+   one argv entry. Build argument lists inside `bash -c`.
+4. **THE HALF THAT MUTATES NOTHING GOES FIRST.** The offline repro cases cost 3 s and need no
+   pairing; running them before the online probe means a red there costs no device, no session and
+   no rollback.
+
+- **Blocker (now the ONLY one): E3's physical TCC clicks on m4mbp.** Microphone and System Audio
+  Recording must be granted by hand; TCC cannot be scripted and this loop must not try. The reason
+  to defer it is spent: for four runs the honest answer was "the canary cannot pass on the deployed
+  build", and iteration 16 measured the opposite. Order is D4 mint -> `pair` -> `start` -> System
+  Audio Recording first, then Microphone (NativeDualCaptureSource.swift:191-192). Both lanes must
+  settle (granted OR denied) before any canary starts - a lane left pending leaves the latency
+  probe's mixer origin unresolved.
+- **New evidence, not authorized work: candidate 43.** User-visible p95 measured 5131 ms (run 1) and
+  4240 ms (run 2) against the 60 s canary's <= 4 s; committed p95 (3699 / 3010 ms) dominates the
+  render bound (1432 / 1230 ms). The plan's first ordered remedy is a 2.0 s span cap, but prd.md's
+  constraints list hard_cap_samples 40000 (2.5 s) as a domain-contract value - those disagree and
+  the operator resolves it. Measure F1 by the plan's own Phase F procedure before touching anything.
+- Next: **E3**, and it needs the human. While waiting, the only useful machine work left is
+  F4b-adjacent bookkeeping (nothing to gate) - do not spend further probe runs; the gate is green
+  and re-running it only adds revoked device rows to live-auth.json.

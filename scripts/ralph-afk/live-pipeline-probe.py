@@ -48,6 +48,7 @@ import hashlib
 import http.client
 import json
 import math
+import re
 import ssl
 import subprocess
 import sys
@@ -298,6 +299,7 @@ def build_schedule(
 def redact_snapshot(snapshot: dict) -> dict:
     """Session facts worth reporting; no tokens live in a snapshot, but be explicit."""
     session = snapshot.get("session") or {}
+    identity = session.get("identity_snapshot") or {}
     return {
         "status": session.get("status"),
         "version": session.get("version"),
@@ -307,10 +309,32 @@ def redact_snapshot(snapshot: dict) -> dict:
         "retained_samples": session.get("retained_samples"),
         "pending_span_ids": len(session.get("pending_span_ids") or ()),
         "committed_items": len(session.get("committed") or ()),
+        "identity_snapshot_version": identity.get("version"),
+        "identity_canonical_speakers": list(identity.get("canonical_speakers") or ()),
         "failure_reason": session.get("failure_reason"),
         "terminal_failure": snapshot.get("terminal_failure"),
         "pending_work_items": snapshot.get("pending_work_items"),
     }
+
+
+# A canonical commit carries its speaker inside the transcript, not as a field: the wire
+# grammar is `[start][Sxx]words[end]`. Reading a `speaker` key instead reports "no labels"
+# for a perfectly labelled meeting, which is what the first J5d run did.
+SPEAKER_TOKEN = re.compile(r"\[(S\d+)\]")
+
+# J2's marker for a span whose identity did not resolve: its words publish, its speaker does
+# not. Restated here rather than imported because this probe deliberately shares no code with
+# the product; if the product ever changes it, this line is the one to move.
+UNATTRIBUTED_SPEAKER = "S00"
+
+
+def speakers_in(transcript: str) -> list[str]:
+    """Canonical speaker labels a committed transcript claims, in first-seen order."""
+    seen: list[str] = []
+    for label in SPEAKER_TOKEN.findall(transcript or ""):
+        if label not in seen:
+            seen.append(label)
+    return seen
 
 
 def transcript_of(snapshot: dict) -> list[dict]:
@@ -457,6 +481,10 @@ def main() -> int:
     last_version = None
     last_seq = 0
     events_seen = 0
+    # J4 makes every refusal on the live path carry the word that names it. Keeping the
+    # canonical_processed payloads is what turns "the run survived" into "and here is why
+    # each span published the way it did" without a host-side probe.
+    canonical_events: list[dict] = []
     started_wall = time.monotonic()
 
     aborted_at: dict | None = None
@@ -544,6 +572,23 @@ def main() -> int:
                 for event in body.get("events") or ():
                     events_seen += 1
                     last_seq = max(last_seq, int(event.get("seq", last_seq)))
+                    if event.get("kind") == "canonical_processed":
+                        payload = event.get("payload") or {}
+                        canonical_events.append(
+                            {
+                                key: payload.get(key)
+                                for key in (
+                                    "span_id",
+                                    "submitted",
+                                    "identity_status",
+                                    "identity_reason",
+                                    "submission_refusal",
+                                    "empty_reason",
+                                    "canonical_decode_rtf",
+                                    "frozen_span_duration_sec",
+                                )
+                            }
+                        )
 
         target = started_wall + (tick + 1) * TICK_SECONDS
         remaining = target - time.monotonic()
@@ -576,20 +621,23 @@ def main() -> int:
 
     # --- the transcript, which is the whole point ------------------------------------
     items = transcript_of(final_snapshot or {})
+    labelled = sorted({label for item in items for label in speakers_in(str(item.get("transcript") or ""))})
     report["transcript"] = {
         "item_count": len(items),
-        "speakers": sorted(
-            {
-                str(item.get("speaker") or item.get("speaker_label") or "")
-                for item in items
-                if item.get("speaker") or item.get("speaker_label")
-            }
+        "speakers": labelled,
+        "attributed_speakers": [label for label in labelled if label != UNATTRIBUTED_SPEAKER],
+        "unattributed_spans": sum(
+            1 for item in items if UNATTRIBUTED_SPEAKER in speakers_in(str(item.get("transcript") or ""))
         ),
+        "empty_spans": sum(1 for item in items if not (item.get("transcript") or "").strip()),
         "items": [
             {
-                key: item.get(key)
-                for key in ("span_id", "speaker", "speaker_label", "text", "start_sample", "end_sample")
-                if key in item
+                "span_id": item.get("span_id"),
+                "start_sample": item.get("start_sample"),
+                "end_sample": item.get("end_sample"),
+                "identity_snapshot_version": item.get("identity_snapshot_version"),
+                "speakers": speakers_in(str(item.get("transcript") or "")),
+                "transcript": item.get("transcript"),
             }
             for item in items
         ],
@@ -613,6 +661,7 @@ def main() -> int:
         report["latency"]["user_visible_ms"] = round(committed_p95 + render_bound, 1)
 
     report["events_seen"] = events_seen
+    report["canonical_events"] = canonical_events
     report["view_authority_after_stop"] = _probe_view_after_stop(client, session_id, view_token)
 
     text = json.dumps(report, indent=2, sort_keys=False)
@@ -620,7 +669,12 @@ def main() -> int:
     if args.report:
         Path(args.report).write_text(text + "\n", encoding="utf-8")
     client.close()
-    return 0 if items else 3
+    if not items:
+        return 3
+    # The PRD's canary asks for a transcript *with speaker labels*, so a run that commits every
+    # span as S00 is a survived run and a failed gate. Say so in the exit code rather than
+    # leaving it for a reader of the JSON.
+    return 0 if report["transcript"]["attributed_speakers"] else 5
 
 
 def _p95(values: list[float]) -> float | None:
