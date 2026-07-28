@@ -6145,3 +6145,48 @@ checkout + `moss-live-web.service` restart + `/live` poll in the J5c block's exa
 rebuild + reinstall of /Applications/MOSSCapture.app, re-verifying both TCC grants across it. Record
 each rollback command before applying it. Then K5d: re-run pair -> start and READ the codes. Do not
 guess the lane-failure cause before K5d reports it.
+
+================================================================================
+Iteration 6 of run 20260728-181020 - K5c PRE-RECORDED ROLLBACKS (written before
+any mutation, per prd.md "Reversibility")
+================================================================================
+
+Target: K5c - publish fc7097d and redeploy it to the server AND to m4mbp (this merge is
+NOT server-only: seven macos/ files changed, so the Mac needs a rebuild + reinstall).
+
+Pre-state measured read-only, all four checkouts at 6a540fe:
+- local main fc7097d (merged, unpushed); origin/main 6a540fe
+- server /mnt/d/Coding/MOSS-Transcribe-Diarize HEAD 6a540fe, clean;
+  moss-live-web MainPID 343344 NRestarts=0 active; moss-web MainPID 301112 NRestarts=0 active
+- m4mbp checkout HEAD 6a540fe; /Applications/MOSSCapture.app inode=211648186
+  mtime=2026-07-28T04:55:23Z (unchanged since G6)
+- fast-forward proven: `git merge-base --is-ancestor 6a540fe fc7097d` true
+- payload scope re-proven at the SHAs being deployed: 3 moss_transcribe_diarize/ files
+  (live_helper_failure, live_service_runtime, live_v2_session), 7 macos/ files,
+  and `git diff --name-only 6a540fe fc7097d -- ops docs LOCAL_DEPLOYMENT.md CONTEXT.md` EMPTY
+
+ROLLBACKS, to be applied in this order if any step fails:
+
+1. Server checkout + service (undoes the redeploy; the running process serves the code it
+   started with, so the checkout alone changes nothing until the restart):
+     git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 6a540fe086cf819ba0e07a948da9fec0766202c3
+     systemctl --user restart moss-live-web.service
+     # then POLL https://127.0.0.1:7861/live for 200 (~10 s; a single probe before 10 s returns 000)
+   NEVER `git clean` there - it would delete the untracked ops/moss-live.env the service needs.
+
+2. m4mbp checkout (main and both remotes are untouched; only HEAD moves):
+     git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize \
+       checkout 6a540fe086cf819ba0e07a948da9fec0766202c3
+
+3. m4mbp app + CLI reinstall (install-app.sh prints its own <utc>-stamped pair; the exact
+   strings it prints are recorded in the iteration body below once it has run):
+     rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-<utc>' '/Applications/MOSSCapture.app'
+     rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-<utc>' '/Users/ga0/.local/bin/mtd-capture'
+   The pre-K5c bytes are ALSO still available as the G6 backups
+   /Applications/MOSSCapture.app.backup-20260728T085551Z and
+   /Users/ga0/.local/bin/mtd-capture.backup-20260728T085551Z, which are the pre-G6 bytes -
+   a different, older product; prefer the K5c-stamped pair.
+
+4. `git push origin main` has NO rollback and none is attempted: force-push is forbidden by
+   prd.md. It is a fast-forward of an already-reviewed, already-merged, gate-green SHA, and
+   every host-side effect is reversible by (1)-(3) independently of what origin holds.
