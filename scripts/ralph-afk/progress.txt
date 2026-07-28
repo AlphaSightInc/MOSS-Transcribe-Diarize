@@ -5672,3 +5672,5 @@ plan names (a 2.0 s span cap) contradicts prd.md's domain-contract hard_cap_samp
 an operator decision, not a loop decision, and F1's own Phase F measurement is the verdict.
 
 BLOCKED - not complete. No further machine work advances any acceptance clause.
+
+[loop 20260728-112922-76267] blocked at iteration 16
