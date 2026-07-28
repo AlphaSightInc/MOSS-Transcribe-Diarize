@@ -3931,3 +3931,70 @@ Files touched (3 tracked product + 6 tests + 1 Ralph tool; `moss_transcribe_diar
   BACKGROUND. Note for the redeploy: the new `_require_one_span_cap` reads the host manifest,
   which D2's finalizer wrote with `hard_cap_samples 40000` in **both** sections, so it passes -
   but verify that before restarting the service, because a mismatch now refuses every session.
+
+================================================================================
+## Iteration 4 (run 20260728-112922) - H4a: the gate before the authorized merge
+================================================================================
+Target: candidate **H4**, step (a) - the full Swift/Python gate plus the merge-payload review
+that has to be honest before the second amendment's one authorized merge. Chosen because H1,
+H2 and H3 all landed and H4 is the only Phase H item left; split gate-then-merge exactly as
+run 20260728-072601 split G4 from G5, so the gate is recorded evidence rather than a step
+inside the merge script. **No tracked file changed this iteration** - only
+`scripts/ralph-afk/{context.md,progress.txt}`.
+
+### The gate, measured on MacStudio 2026-07-28 at 8b852f2 (tree clean before and after)
+- Both Swift products from an **empty** scratch path, separate invocations (never one
+  `--product A --product B`, which silently builds only B): `mtd-capture` 9.08 s wall / 8.08 s
+  build, `MOSSCaptureApp` 0.95 s / 0.62 s, **zero warnings**.
+- `swift test --package-path macos/MOSSCapture` -> **139 passed / 0 failures** (unchanged from
+  G4; Phase H touched no Swift source).
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider -rs` -> **551 passed /
+  2 skipped / 368 subtests** in 59.7 s. The two skips are `tests/test_large_upload.py:155,175`
+  "Python 3.10 compatibility contract", the same pre-existing pair as every prior gate - not
+  Darwin skips.
+- `pytest tests/test_macos_uds_tracer.py` alone -> **4 passed / 0 skips** in 14.7 s.
+- attempt-2 discriminator (`--target "$PWD"`) -> **10/10 true**.
+- `leak-scan.sh` -> `leak-scan: clean`.
+- `test -z "$(git status --porcelain)"` -> clean.
+
+### The merge payload, reviewed against the second amendment's scope
+`git diff --stat main HEAD -- ':!scripts/ralph-afk'` is exactly **15 files, +917/-106**:
+nine under `moss_transcribe_diarize/` (live_adapters, live_coordinator, live_portal,
+live_provider_bundle, live_service_runtime, live_session, the new leaf transcription_outcome,
+vllm_runner, live_replay) and six test files (the new tests/test_live_pipeline_seams.py plus
+test_live_api, test_live_identity, test_live_provider_bundle, test_live_service_runtime,
+test_live_session). **No macos/, no ops/, no deployment template, no doc.** The two entries a
+reviewer would not predict from the blocker names were read in full and are in scope:
+`live_portal.py` is H1's six-line skip of empty commits when joining rows (without it an
+accounted-silent span opens a blank row), and `live_replay.py` is H2's refusal of the retired
+`session_hard_cap_samples` knob.
+
+### The pre-redeploy check iteration 3 asked for - done now, not at restart time
+Read-only against the host's deployed `live-provider-manifest.json`:
+  endpoint_config.hard_cap_samples = 40000, bounds_config.hard_cap_samples = 40000, equal
+  speech_provider = {kind: webrtc, frame_samples: 160}
+  "session_hard_cap_samples" present anywhere in the document = False
+So H2's new `LiveServiceRuntime._require_one_span_cap` admits the deployed manifest instead of
+refusing every session, and H3's construction refusal admits 160 (10 ms at 16 kHz is one of the
+three legal webrtcvad lengths). Both new checks fail the service **closed**, so this belongs
+before a restart, not after one. Recorded as a standing command in context.md's Validation.
+
+### Learned
+1. **Both Phase-H fixes added a refusal that the deployed configuration has to satisfy, and
+   neither is exercised by anything on the host until a session opens.** A manifest that was
+   fine yesterday is now either admitted or fatal, so "does the deployed config still pass the
+   new gate" is a distinct pre-deploy step from "do the tests pass". It cost one read-only ssh
+   here; discovering it from a dead service after the restart would have cost the rollback.
+2. **The gate is unchanged in shape but the numbers moved only on the Python side** (537+2 ->
+   551+2, +14 = the 13 seam nodes plus the session node), which is itself the evidence that the
+   cycle stayed server-side: a Swift count that moved would mean the amendment's scope leaked.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - the
+  deployed service is still `317df4d` and carries none of H1/H2/H3.
+- Next: **H4 step (b)** - the merge. Join `main` into the feature branch first and prove it
+  content-free with `git merge-tree --write-tree` before running it; advance `expected_main`
+  from `317df4d...` **in-script** with a comment citing the second amendment (never by CLI
+  override); run `merge-keeper.sh` in the **BACKGROUND** (a foreground kill strands a worktree
+  holding `main` and blocks the retry; recover with `git -C <wt> merge --abort && git worktree
+  remove --force <wt>`). Then (c) publish + redeploy + four-way SHA, and only then (d) the
+  probe, which is the amendment's actual gate.

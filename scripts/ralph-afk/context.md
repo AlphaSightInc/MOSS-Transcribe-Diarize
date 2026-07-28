@@ -69,7 +69,10 @@ decode-seam cycle): run `20260728-112922` iteration 1 landed H3 — the first tr
 source change on this branch — so the branch now carries `moss_transcribe_diarize/` again, strictly
 within that amendment's scope; iteration 2 landed H1 (the empty-span decode contract) and
 iteration 3 landed H2 (the span-cap authority contract), which closes the last of F0's three
-blockers. **H4 — gate, merge, redeploy — is now the only Phase H item open.**
+blockers. Iteration 4 ran the **H4 gate green** at `8b852f2`, reviewed the merge payload against the
+amendment's scope and proved the deployed manifest still admits under H2's and H3's new refusals; it
+changed no tracked file. **H4's remaining half — merge, publish, redeploy, then the probe — is the
+only Phase H item open.**
 
 **PRD acceptance scoreboard after iteration 10.** Green with evidence: IDEA-044 checkpoint, production
 client gate, server meeting-reliability gate, the one reviewed keeper merge (plus the amendment's one
@@ -508,6 +511,33 @@ coordinator_queued_span_ids`, so the orphan is closed in the same evidence line 
 *Why no test could have caught it, restated for the next fixture author:* every harness in the repo
 gave the policy a cap and the session none, so the deployed shape (both, equal, because C2 requires
 it) existed nowhere. The runtime and API harnesses now declare both.
+
+**H4 gate: GREEN at `8b852f2` (run 20260728-112922 iteration 4).** The second amendment's fix cycle
+measured on MacStudio 2026-07-28, tree clean before and after; the checkpoint commit adds only
+`scripts/ralph-afk/*`, so `git diff --name-only 8b852f2 HEAD -- ':!scripts/ralph-afk'` is empty.
+Both Swift products from an **empty** scratch path in separate invocations (`mtd-capture` 9.08 s
+wall / 8.08 s build, `MOSSCaptureApp` 0.95 s / 0.62 s), **zero warnings**; `swift test`
+**139 passed / 0 failures** (unchanged — Phase H touched no Swift); `pytest tests`
+**551 passed / 2 skipped / 368 subtests** in 59.7 s — the two skips printed with `-rs` are
+`tests/test_large_upload.py:155,175` "Python 3.10 compatibility contract", the same pre-existing
+pair as every prior gate, **not** Darwin skips; tracer alone **4 passed / 0 skips** in 14.7 s;
+attempt-2 discriminator **10/10**; `leak-scan: clean`.
+*The merge payload, reviewed against the second amendment's scope:* `git diff --stat main HEAD --
+':!scripts/ralph-afk'` is exactly **15 files, +917/-106** — nine under `moss_transcribe_diarize/`
+(`live_adapters`, `live_coordinator`, `live_portal`, `live_provider_bundle`,
+`live_service_runtime`, `live_session`, the new leaf `transcription_outcome`, `vllm_runner`,
+`live_replay`) and six test files (the new `tests/test_live_pipeline_seams.py` plus
+`test_live_api`, `test_live_identity`, `test_live_provider_bundle`, `test_live_service_runtime`,
+`test_live_session`). **No `macos/`, no `ops/`, no deployment template, no doc** — the whole delta
+is the three blockers and their tests. The two least obvious entries are in scope by inspection:
+`live_portal.py` is H1's six-line skip of empty commits when joining rows, and `live_replay.py` is
+H2's refusal of the retired `session_hard_cap_samples` knob.
+*Pre-redeploy check the redeploy depends on (read-only, on the host):* the deployed
+`live-provider-manifest.json` carries `endpoint_config.hard_cap_samples == bounds_config.
+hard_cap_samples == 40000`, so H2's new `_require_one_span_cap` admits it instead of refusing every
+session; `speech_provider.frame_samples` is **160** (10 ms at 16 kHz), a legal webrtcvad length, so
+H3's construction refusal admits it too; and the manifest carries no `session_hard_cap_samples`
+anywhere. Verify all three again after any manifest change — each one now fails the service closed.
 
 **Live-credential tool contract (new, iteration 13).** Two tracked tools share
 `ops/moss-ops-lib.sh`, which carries B5's output discipline for the Linux side; the two libraries
@@ -1613,7 +1643,20 @@ bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spik
 # section "IDEA-044 attempt-2 exact commands". `validate-phase-a-locality.sh` belongs to that
 # checkpoint and now fails on the tip by design — see the locality note above.
 
-# --- the client gate, run before either merge (iteration 4 re-ran it green at 23dc163) ---------
+# --- the pre-redeploy manifest admission check (read-only; run before ANY live restart from H2 on).
+#     Both new refusals fail the service closed, so check them before bouncing the unit, not after.
+#     Expect endpoint == bounds == 40000, speech_provider.frame_samples in {160,320,480}, and no
+#     `session_hard_cap_samples` anywhere in the document. -----------------------------------------
+printf '%s\n' 'python3 - <<PY
+import json,pathlib
+d=json.loads((pathlib.Path.home()/".local/share/moss-transcribe-diarize/live/live-provider-manifest.json").read_text())
+print("caps equal =", d["endpoint_config"]["hard_cap_samples"]==d["bounds_config"]["hard_cap_samples"], d["endpoint_config"]["hard_cap_samples"])
+print("vad frame_samples =", d["speech_provider"]["frame_samples"])
+print("retired knob present =", "session_hard_cap_samples" in json.dumps(d))
+PY' | ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
+
+# --- the full gate, run before every merge (iteration 4 of run 20260728-072601 re-ran it green at
+#     23dc163; iteration 4 of run 20260728-112922 re-ran it green at 8b852f2) --------------------
 SCRATCH="$(mktemp -d /tmp/moss-gate-scratch.XXXXXX)"   # must be EMPTY; one dir, two invocations
 swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product mtd-capture
 swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product MOSSCaptureApp
@@ -2172,14 +2215,28 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
     (a probe run that survives its full plan) is unreachable while it stands - it fires ~1.1 s in,
     before blockers 1 and 2 are even approached. Nothing else was touched.
     *Not closed by it:* the classification seam - carried into H1 above.
-35. **H4 - gate, merge, redeploy.** Re-run `live-pipeline-probe.py` against the deployed service and
-    require a run that survives its full plan with committed samples advancing; full Swift/Python
-    gate; then the single merge authorized by the second amendment through `merge-keeper.sh`
-    (`expected_main` is now `317df4d...`, advance it in-script exactly as G4 did, never by CLI
-    override), then push and redeploy so all four checkouts return to one exact SHA. Only after
-    that is E3 worth the operator's clicks. **The deployed service is still the unfixed `317df4d`** -
-    H3 exists only on this branch, so any probe run before H4 will still die at the first unaligned
-    frame.
+35. **H4 - gate, merge, redeploy.** Four steps, in this order, because the amendment's gate (a probe
+    run that survives its full plan) can only be observed against a service that carries the fixes.
+    a. *Gate* `[done - run 20260728-112922 iteration 4]`. Full Swift/Python gate green at `8b852f2`
+       (139 / 551+2 / tracer 4 / 10/10 / leak-scan clean), merge payload reviewed as exactly the
+       three blockers and their tests, deployed manifest proven to admit under both new refusals.
+       See the H4 gate block above.
+    b. *Merge* `[open - next]`. The single merge authorized by the second amendment, through
+       `merge-keeper.sh`: join `main` into the feature branch first (prove it content-free with
+       `git merge-tree --write-tree` before running it), then advance `expected_main` from
+       `317df4d...` **in-script** with a comment citing the second amendment, exactly as G4 did -
+       never by CLI override. Run the script in the **BACKGROUND**; a foreground timeout kill skips
+       its EXIT trap and strands a worktree holding `main`.
+    c. *Publish and redeploy* `[open]`. `git push origin main` (fast-forward only, never force),
+       then move the host checkout to the new SHA and restart `moss-live-web.service`; record the
+       rollback (`git -C /mnt/d/... checkout 317df4d…` + restart) before touching the host. Then
+       re-run the four-way SHA check so local/origin/host/m4mbp are one SHA again. The served leaf
+       must still hash to the D2 pin `a35ca9fc…` afterwards, or every paired Mac is broken.
+    d. *Probe* `[open]` - the amendment's actual gate. Re-run `live-pipeline-probe.py` against the
+       redeployed service and require a run that survives its full plan with committed samples
+       advancing. Only after that is E3 worth the operator's clicks.
+    **Until (c) lands the deployed service is still the unfixed `317df4d`** - all three fixes exist
+    only on this branch, so a probe run before then still dies at the first unaligned frame.
 
 36. **A transient decoder failure ends the meeting** `[open; out of the amendment's scope, do not
     start without authorization]`. One vLLM timeout or one reset socket is now a named
