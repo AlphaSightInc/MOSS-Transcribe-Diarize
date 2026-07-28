@@ -5235,3 +5235,69 @@ regression between (b) and (c), not a defect.
   `git fetch && git checkout 6a540fe` is the one mechanical step left and needs no rebuild.
 - Blocker (unchanged): E3's TCC clicks stay unspent until J5c/J5d are green - the same rule that has
   now held eight times.
+
+================================================================================
+run 20260728-112922 | iteration 15 | J5 step (c) - rollbacks recorded BEFORE the host mutation
+================================================================================
+Target: candidate 42(c) - publish `6a540fe` and redeploy the live service, the third prd.md
+amendment's "push, redeploy". This block is written and committed BEFORE anything on the host, on
+m4mbp or on the remote is touched, per prd.md's reversibility constraint ("every server or Mac
+mutation must have its rollback command recorded in progress.txt before it is applied").
+
+State measured read-only before any mutation:
+  local main   6a540fe086cf819ba0e07a948da9fec0766202c3   (tree b1f4ab91…)
+  origin/main  b817871414fcc8f609c6f5eb2898ec2957c7768c
+  host         b817871414fcc8f609c6f5eb2898ec2957c7768c   (tree eb26fa91…, clean)
+  m4mbp        317df4d728b6765dbe365a3166158ba581299557   -- REACHABLE AGAIN this iteration
+  units        moss-vllm/moss-web/moss-live-web all active;
+               moss-live-web MainPID 338545 NRestarts=0; moss-web MainPID 301112 NRestarts=0
+  `git merge-base --is-ancestor b817871 6a540fe` -> YES, so the push is a fast-forward.
+
+Mutations this iteration intends to make, each with its rollback:
+
+1. `git push origin main` (fast-forward b817871… -> 6a540fe…, AlphaSight fork).
+   **NOT reversible by policy** - the PRD forbids force-push, so there is no rollback command for
+   this line and there must not be one. It is safe to be irreversible because `6a540fe` is the
+   third amendment's ONE authorized merge, reviewed in J5a and carrying a full green suite measured
+   inside the merge worktree in J5b (139 / 590+2). `upstream` is OpenMOSS: never pushed.
+
+2. Host checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize` b817871 -> 6a540fe (detached).
+   Rollback:
+     git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout b817871414fcc8f609c6f5eb2898ec2957c7768c
+   NEVER `git clean` there - it would delete the untracked `ops/moss-live.env` the live unit needs.
+
+3. `systemctl --user restart moss-live-web.service` (MANDATORY here: like H4's, this cycle is
+   server-only - `git diff --name-only b817871 6a540fe -- macos ops docs LOCAL_DEPLOYMENT.md
+   CONTEXT.md` is empty and `moss_transcribe_diarize/` is not - so the running process must be
+   replaced to carry J1-J4).
+   Rollback (apply AFTER rollback 2, in this order):
+     systemctl --user restart moss-live-web.service
+   Full-stop rollback if the restarted unit will not come up at all:
+     systemctl --user disable --now moss-live-web.service
+   (the batch service on 7860 is a separate unit and is untouched by every line above).
+
+4. m4mbp checkout `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`
+   317df4d -> 6a540fe (detached). It skipped b817871 entirely because it was offline through H4c.
+   Rollback:
+     git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout 317df4d728b6765dbe365a3166158ba581299557
+   **No Mac rebuild and no reinstall**, verified for the full two-merge gap rather than assumed:
+   `git diff --name-only 317df4d 6a540fe -- macos ops docs LOCAL_DEPLOYMENT.md CONTEXT.md` is
+   EMPTY, so the app installed in G6 is already current at the new SHA and its TCC-bearing inode
+   must not be disturbed. Nothing else on m4mbp is touched: no build, no install, no keychain, no
+   TCC read that is not already authorized elsewhere.
+
+Stop conditions, checked after the restart, each with the rollback to apply if it fails:
+  - the served leaf on 100.64.0.8:7861 must still hash to the D2 pin
+    a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff, else every paired Mac is
+    broken -> apply rollbacks 2+3 and record a blocker;
+  - `https://100.64.0.8:7861/live` must return 200 (POLL ~10-15 s; a single probe before ~10 s
+    returns 000 - measured 11 s in H4c);
+  - `http://192.168.68.38:7860/` must still return 200 and `moss-web.service` MainPID must stay
+    301112 (batch unharmed).
+The pre-redeploy manifest admission check is run read-only BEFORE the restart, and this time it is
+run **after** the checkout so it exercises the NEW code's readers against the deployed manifest
+rather than the superseded ones - strictly more informative than H4c's ordering, and still before
+the unit is bounced, which is what the "fail closed" rule actually requires.
+
+No other mutation is authorized by this candidate: no manifest change, no TLS rotation, no pairing,
+no session, no Mac build/install. Step (d)'s probes are the NEXT iteration, not this one.
