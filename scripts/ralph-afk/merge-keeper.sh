@@ -7,7 +7,14 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
 expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-af3ac3667393a0411616f52f76339eff01dc13e2}"
+# Pre-merge SHA of the ONE merge this script is currently allowed to make. It was
+# af3ac366… for the first keeper merge; the prd.md amendment of 2026-07-28 authorizes
+# exactly one follow-up fix merge (ATS declaration, pairing-payload trim, control-channel
+# error classification, their regression tests), whose pre-merge main is the first merge
+# commit f9285d6. Advancing this default is a reviewable diff on purpose: a THIRD merge
+# still fails here, and a command-line RALPH_MERGE_MAIN_BEFORE override would leave no
+# record of why the guard was passed.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-f9285d69ed7bcc592bb41b3dcdf29e3221968f44}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
@@ -24,7 +31,16 @@ fi
 }
 
 feature_sha="$(git rev-parse HEAD)"
-git merge-base --is-ancestor main "$feature_sha"
+# The merge must not drop content that exists only on main. As committed this was a bare
+# command under `set -e`, so a false answer exited 1 printing nothing at all — and it is
+# false by construction after any prior keeper merge, because that merge commit lives only
+# on main. Join main into the feature branch first (an empty-diff history join when main
+# carries no exclusive content) rather than loosening this check.
+git merge-base --is-ancestor main "$feature_sha" || {
+  echo "ERROR: main ($(git rev-parse main)) is not an ancestor of $feature_sha;" >&2
+  echo "       merge main into $expected_feature first, then re-run" >&2
+  exit 1
+}
 
 if [[ "$merge_dry_run" == "1" ]]; then
   printf 'Keeper merge dry-run: PASS feature=%s main_before=%s\n' \
