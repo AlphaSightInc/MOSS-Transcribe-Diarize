@@ -5610,3 +5610,65 @@ tree:    git status --porcelain shows only scripts/ralph-afk/live-pipeline-probe
 - Next: **E3**, and it needs the human. While waiting, the only useful machine work left is
   F4b-adjacent bookkeeping (nothing to gate) - do not spend further probe runs; the gate is green
   and re-running it only adds revoked device rows to live-auth.json.
+
+================================================================================
+run 20260728-112922 | iteration 16 | TERMINAL BLOCKER - every remaining PRD item
+                                     now depends on E3's physical TCC clicks
+================================================================================
+State after this iteration: **eight of the PRD's acceptance clauses are green with evidence** -
+IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
+merge plus all three amendments' authorized follow-up merges, one exact SHA everywhere (4/4 at
+6a540fe), live service answering from m4mbp over pinned HTTPS, batch service unharmed, signed app
+installed, rollback rehearsed and recorded. **Six remain, and all six are downstream of two GUI
+clicks this loop is forbidden to make:** permissions granted, the 60 s canary, the 300 s locked
+certification, the 16-minute active-view soak, the run-time half of secret hygiene, and the close.
+
+Why this is a blocker and not a candidate: prd.md's constraints say "TCC cannot be scripted.
+Microphone and System Audio Recording grants require physical GUI clicks on m4mbp ... never retry,
+never attempt to write the TCC database." There is no machine path to the grants and no acceptance
+clause that can be closed without them.
+
+Why the deferral is over: for four runs the honest answer was "do not spend the clicks yet, the
+canary cannot pass on the deployed build" - F0 found three server blockers, H4d found a fourth, and
+iteration 8 priced a premature canary at a ~22 % chance of finishing. Phase J settled the class and
+**iteration 16 measured the deployed service surviving a whole meeting with speaker labels**
+(J5d, above). The precondition the loop set for itself is met.
+
+### The exact operator runbook (all on m4mbp, at the keyboard, in this order)
+0. Preconditions already true, verified this run: /Applications/MOSSCapture.app installed and signed
+   (inode 211648186, DR identifier "com.alphasight.moss.capture" and certificate leaf
+   = H"e118d874377746c4bd25beb8252bb84302b73e72"), checkout at 6a540fe, live service answering.
+1. **Mint the pairing payload ON THE SERVER** (loopback-only route), and keep the five-minute TTL in
+   mind - PAIRING_TTL_SECONDS = 300, so mint it immediately before step 2:
+     ops/live-pair.sh --url https://127.0.0.1:7861 --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
+   Never redirect the `payload:` line to a file.
+2. **Start the app from the GUI session** - Finder double-click /Applications/MOSSCapture.app, or
+   `open -a /Applications/MOSSCapture.app`. NEVER run .../Contents/MacOS/MOSSCaptureApp from a
+   shell: TCC would attribute the grant to the terminal, and the DR-keyed grant would not apply to
+   the app. LSUIElement=true, so nothing appears on screen - that is correct. Confirm with
+   `pgrep -x MOSSCaptureApp` and the socket /tmp/moss-capture-501/control.sock.
+3. **Pair, payload on STDIN, then Ctrl-D** (keeps it out of argv and shell history):
+     ~/.local/bin/mtd-capture pair --server https://100.64.0.8:7861
+   paste the payload, press Ctrl-D. A Return before Ctrl-D is harmless since G2.
+4. **`~/.local/bin/mtd-capture start`** - pair BEFORE start: the store already holds a configuration
+   from the 03:10 unsigned-build pairing, so a bare start would publish into a stale session
+   (CaptureSecurity.swift:847-862 throws missingCaptureConfiguration only when nothing is stored).
+5. **The two clicks, in the order the source fixes** (NativeDualCaptureSource.swift:191-192):
+   **System Audio Recording FIRST** (it has no request API - the tap creation is the request, and it
+   is the only one that can block the control channel), **Microphone SECOND**. Allow both.
+   Both lanes must settle - granted OR denied - before any canary: a lane left *pending* by an
+   unanswered prompt leaves the latency probe's mixer origin unresolved (C3c residue).
+6. **Confirm:** `~/.local/bin/mtd-capture status` reports both lanes active. The read-only TCC check
+   is two sqlite3 queries against ~/Library/Application Support/com.apple.TCC/TCC.db (opens over
+   plain SSH, no Full Disk Access): kTCCServiceAudioCapture and kTCCServiceMicrophone must each hold
+   a row for com.alphasight.moss.capture with auth_value=2, whose FADE0C00 csreq blob decodes to the
+   E1 DR above. Baseline before E3: zero rows match %moss% in either service.
+
+### What the loop does the moment the operator confirms
+F1 (60 s canary) -> F2 (300 s locked certification incl. the mic-granted / system-audio-denied run)
+-> F3 (16-minute active-view soak) -> secret-hygiene run-time scan -> F4b close. Read candidate 43
+first: user-visible p95 measured 4240 / 5131 ms against the canary's <= 4 s bar, and the remedy the
+plan names (a 2.0 s span cap) contradicts prd.md's domain-contract hard_cap_samples 40000. That is
+an operator decision, not a loop decision, and F1's own Phase F measurement is the verdict.
+
+BLOCKED - not complete. No further machine work advances any acceptance clause.
