@@ -90,3 +90,5 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   latency procedure also needs a tracked app-owned probe before the sole merge, and it must use
   converted capture timestamps rather than infer capture time from first send.
 - Next: validate revision-6 fences, complete clean dry-runs/full baselines, then launch A1
+
+[loop 20260728-002458-97091] start budget=30 agent=claude branch=ralph/live-meeting-mvp
