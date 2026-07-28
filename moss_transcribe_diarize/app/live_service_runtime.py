@@ -757,6 +757,8 @@ class LiveServiceRuntime:
                         "frozen_span_sample_count": result.frozen_span_sample_count,
                         "frozen_span_duration_sec": result.frozen_span_duration_sec,
                         "canonical_decode_rtf": result.canonical_decode_rtf,
+                        "canonical_decode_token_cap": result.canonical_decode_token_cap,
+                        "canonical_decode_capped": result.canonical_decode_capped,
                     },
                 )
                 if not result.submitted:

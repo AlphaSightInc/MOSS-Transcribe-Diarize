@@ -102,6 +102,12 @@ class CoordinatorWorkResult:
     frozen_span_sample_count: int | None = None
     frozen_span_duration_sec: float | None = None
     canonical_decode_rtf: float | None = None
+    # What the decode was allowed to generate and whether it used all of it. A capped span
+    # is committed with fewer words rather than abandoned, so the truncation is only
+    # visible if it is reported: an 8 s runaway and a 1 s capped span look the same in the
+    # transcript and mean opposite things about the decoder.
+    canonical_decode_token_cap: int | None = None
+    canonical_decode_capped: bool = False
     empty_reason: str | None = None
     # The two words a reader needs when a span did not publish the way it was meant to.
     # `identity_reason` is the preparer's own answer -- it is the only thing that tells an
@@ -124,6 +130,8 @@ class CoordinatorPreparedWork:
     transcript: str
     preparation: LiveIdentityPreparation | None
     decode_elapsed_sec: float | None = None
+    decode_token_cap: int | None = None
+    decode_capped: bool = False
     empty_reason: str | None = None
 
 
@@ -211,6 +219,8 @@ class LiveCoordinator:
                 transcript="",
                 preparation=None,
                 decode_elapsed_sec=inferred.elapsed_sec,
+                decode_token_cap=inferred.token_cap,
+                decode_capped=inferred.capped,
                 empty_reason=empty_reason,
             )
         preparation = self.identity_preparer.prepare(
@@ -224,6 +234,8 @@ class LiveCoordinator:
             transcript=transcript,
             preparation=preparation,
             decode_elapsed_sec=inferred.elapsed_sec,
+            decode_token_cap=inferred.token_cap,
+            decode_capped=inferred.capped,
         )
 
     def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
@@ -280,6 +292,8 @@ class LiveCoordinator:
             frozen_span_sample_count=measurement["frozen_span_sample_count"],
             frozen_span_duration_sec=measurement["frozen_span_duration_sec"],
             canonical_decode_rtf=measurement["canonical_decode_rtf"],
+            canonical_decode_token_cap=work.decode_token_cap,
+            canonical_decode_capped=work.decode_capped,
             empty_reason=empty_reason,
             identity_reason=None if preparation is None else preparation.reason,
             submission_refusal=submission.refusal,

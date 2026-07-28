@@ -26,6 +26,7 @@ from unittest import mock
 import pytest
 
 from moss_transcribe_diarize.app.live_adapters import (
+    LIVE_DECODE_TOKEN_MARGIN,
     FakeBoundedWavInference,
     FakeStableIdentity,
     FakeVad,
@@ -35,6 +36,7 @@ from moss_transcribe_diarize.app.live_adapters import (
     LiveProviderTransientError,
     RunnerBoundedWavInference,
     admit_live_provider,
+    canonical_decode_token_cap,
 )
 from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter
 from moss_transcribe_diarize.app.live_coordinator import (
@@ -372,9 +374,13 @@ class StubbedTransportVllmRunner(VllmRunner):
         super().__init__(base_url="http://vllm.seam.test:8000", model="moss-seam")
         self.responses = list(responses)
         self.decoded_wav_bytes: list[int] = []
+        # The request the product built, kept so a node can assert what the decoder was
+        # actually told rather than what the caller meant to tell it.
+        self.request_fields: list[dict] = []
 
     def _post_multipart(self, url, *, file_bytes, **kwargs):
         self.decoded_wav_bytes.append(len(file_bytes))
+        self.request_fields.append(dict(kwargs.get("fields") or {}))
         answer = self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
 
         def urlopen(request, timeout=None):
@@ -845,6 +851,130 @@ def test_a_request_the_backend_refuses_on_its_merits_is_terminal_without_a_retry
 
 def _span(span_id: int, sample_count: int) -> FrozenSpan:
     return FrozenSpan(id=span_id, epoch=0, start_sample=0, end_sample=sample_count, reason="hard_cap")
+
+
+# --------------------------------------------------------------------------------------
+# The runaway-decode seam: a decode that answers, but too slowly to be part of a meeting.
+#
+# F1 measured 42 spans, 40 of which decoded in 0.10-0.54 s. The other two ran for 8.49 s
+# and 8.29 s on 2.5 s of audio -- degenerate repeat loops -- and because the decode queue is
+# serial each one delayed every span behind it by up to 8.3 s. That is the whole latency
+# tail: committed p95 9053 ms against a median lag of ~0 s. Neither of the plan's ordered
+# remedies (a 2.0 s span cap, then a 0.5 s poll interval) touches this term, because the
+# floor was never binding.
+# --------------------------------------------------------------------------------------
+
+# The tokenised evidence the cap is derived from: (what it is, span seconds, tokens the
+# deployed decoder generated). Measured 2026-07-28 by tokenising the committed spans of two
+# independent live runs -- the F1 canary and the echo-free canary -- with the deployed
+# decoder's own tokenizer through the vLLM `/tokenize` endpoint on the host. The first two
+# rows are the maxima over 76 spans of real speech; the third is F1's own runaway, which
+# ran to `VllmRunner.transcribe`'s 2048-token default because nothing else bounded it.
+MEASURED_MAX_REAL_SPEECH_SPANS = (
+    ("the densest full span, c51 span 45", 2.5, 54),
+    ("the densest short span, F1 span 28", 0.17, 17),
+)
+MEASURED_RUNAWAY_SPAN_TOKENS = 2024
+
+
+def test_the_token_cap_covers_the_measured_speech_and_still_bounds_a_runaway():
+    """The derivation, held in place by the evidence it came from.
+
+    A bound chosen against a measurement is only as good as the measurement staying in the
+    repository: without this node the two constants are a pair of numbers somebody can tune
+    until a gate goes green, which is exactly what the PRD forbids. So the same spans that
+    produced them are asserted here -- real speech must fit under the cap with the margin
+    the constants claim, and the runaway must not.
+    """
+    for label, duration_sec, tokens in MEASURED_MAX_REAL_SPEECH_SPANS:
+        cap = canonical_decode_token_cap(sample_count=round(duration_sec * LIVE_SAMPLE_RATE))
+        assert cap > tokens, label
+        # The margin is explicit, so it is asserted rather than described. Every one of the
+        # 76 measured spans sits at least 4.8x under its cap; the two maxima are the tight
+        # ones, and if either stops clearing the declared margin the constants are stale.
+        assert cap >= LIVE_DECODE_TOKEN_MARGIN * tokens, label
+
+    hard_cap_cap = canonical_decode_token_cap(sample_count=DEPLOYED_HARD_CAP_SAMPLES)
+    assert hard_cap_cap < MEASURED_RUNAWAY_SPAN_TOKENS / 7
+    # A shorter span gets a smaller budget: the cap is a statement about the audio, not a
+    # single constant that happens to sit above the longest span.
+    assert canonical_decode_token_cap(sample_count=DEPLOYED_MIXED_FRAME_SAMPLES) < hard_cap_cap
+    with pytest.raises(LiveProviderError):
+        canonical_decode_token_cap(sample_count=0)
+
+
+def test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire():
+    """The real runner builds the real request, and the cap is in it.
+
+    `RunnerBoundedWavInference` passed no `max_new_tokens` at all, so every live span was
+    decoded under `VllmRunner.transcribe`'s 2048-token default -- the bound the two runaway
+    spans actually hit. The assertion is made on `max_completion_tokens`, the field the
+    product's own `_build_fields` puts on the wire, because that is what the decoder obeys.
+    """
+    runner = StubbedTransportVllmRunner([GOOD_RESPONSE])
+    decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+
+    for sample_count in (DEPLOYED_HARD_CAP_SAMPLES, DEPLOYED_MIXED_FRAME_SAMPLES):
+        inferred = decoder.transcribe_pcm(span=_span(0, sample_count), pcm=b"\x00\x00" * sample_count)
+        expected = canonical_decode_token_cap(sample_count=sample_count)
+        assert inferred.token_cap == expected
+        assert inferred.capped is False
+        assert runner.request_fields[-1]["max_completion_tokens"] == str(expected)
+
+    # A configured ceiling may only tighten the derived one -- a deployment cannot opt out
+    # of the bound, and it can still ask for less.
+    tight = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES, max_new_tokens=32)
+    tight.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+    assert runner.request_fields[-1]["max_completion_tokens"] == "32"
+
+    loose = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES, max_new_tokens=2048)
+    inferred = loose.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+    assert inferred.token_cap == canonical_decode_token_cap(sample_count=DEPLOYED_HARD_CAP_SAMPLES)
+    assert runner.request_fields[-1]["max_completion_tokens"] != "2048"
+
+
+def test_a_capped_span_commits_its_words_and_says_that_it_was_capped():
+    """D-c, at the seam that has to honour it: cap the decode, commit what came back.
+
+    Abandoning the span, or committing it empty, would remove accepted audio from the
+    transcript -- the loss the PRD's zero-loss clause forbids -- and would break the identity
+    preparer's timeline as well. So the span publishes its words with fewer of them, and the
+    event says so: a capped span and a quiet one are otherwise indistinguishable downstream.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    # The span this speech script produces: 14400 samples of leading silence, then 19200 of
+    # speech. Its cap follows from that duration and nothing else.
+    speech_span_samples = 19200
+    cap = canonical_decode_token_cap(sample_count=speech_span_samples)
+    runaway = "".join("[0.99][S06]uh[1.21]" for _ in range(40))
+    runtime, runner = _decode_seam_runtime(
+        responses=[
+            NO_SPEECH_RESPONSES["zero parsed segments"],
+            {"text": runaway, "usage": {"prompt_tokens": 3, "completion_tokens": cap}},
+        ],
+        speech=(False, False, True, True, False),
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(5):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["frozen_span_sample_count"] for event in processed] == [14400, speech_span_samples]
+    assert [event["canonical_decode_token_cap"] for event in processed] == [
+        canonical_decode_token_cap(sample_count=14400),
+        cap,
+    ]
+    # Only the span that used its whole budget is reported as capped.
+    assert [event["canonical_decode_capped"] for event in processed] == [False, True]
+    assert [event["submitted"] for event in processed] == [True, True]
+    # The words came back and stayed: the capped span is committed, not dropped.
+    assert snapshot.session.committed[1].transcript.count("uh") > 0
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples == 33600
 
 
 # --------------------------------------------------------------------------------------

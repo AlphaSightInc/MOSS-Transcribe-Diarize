@@ -69,24 +69,27 @@ progress.txt archive.
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **RED** — see the F1 block |
-| 300 s certification (F2) | not run; **candidate 51 is now closed** (iteration 12) so the harness is ready, but F2 would still die at candidate 53's wall |
+| 60 s canary (F1) | **RED** — see the F1 block; every defect it named is now fixed and unre-run |
+| 300 s certification (F2) | not run; the harness is ready (candidate 51, iteration 12) and 53/48/49/D-a/D-c have all landed, so the next F1/F3 run is the gate rather than another diagnosis |
 | 16-minute soak (F3) | **RED** — see the F3 block |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
 
-**What stands between the loop and the bar (updated iteration 15).**
+**What stands between the loop and the bar (updated iteration 16).**
 - **Candidate 53 + 48 — a throwing publish stopped the heartbeat, and a throwing start-time
   heartbeat leaked a hot capture.** `[done — iteration 14]`, both, as one shape. Root cause of
   *both* red certification runs. See "The heartbeat is uncoupled from the publish" below.
 - **D-a — an overrun is a degradation, not a lane failure.** `[done — iteration 15]`. The chain
   that ended F1 and F3 is now broken at its first link as well as its fourth. See "D-a is landed"
   below.
-- **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** `[AUTHORIZED, open]`
-  — the **last** open Phase M work item, with D-c already deciding its shape. Two of 42 spans
-  decoded at RTF ≈ 3.4 and stalled the serial queue behind them; committed p95 9053 ms with a
-  median lag of ≈ 0 s. Four independent runs agree within ~800 ms (K5d 9089, F1 9053, F3 9148,
-  c51 8343).
+- **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** `[done —
+  iteration 16]`. D-c implemented: the live decode now carries a token cap derived from the span's
+  own duration, and a capped span commits its words and says so. See "The decode is bounded"
+  below. **The measured latency effect is still unmeasured on real hardware** — it is predicted,
+  and F1/F3 are what will decide it.
+- **Phase M's remaining work is the coverage gap and the gate.** `tests/test_live_api.py:1055`
+  still never posts a frame on the lane that *failed* (see the Phase M list), then full
+  Swift/Python + the lane-refusal probe + F1 and F3 both green, then the sixth merge.
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
@@ -101,9 +104,9 @@ recorded and survive a bundle replacement. **Never ask the operator for those cl
 
 **Test totals on the branch.** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **599 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
+→ 158); Python **602 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Per-file: `test_live_pipeline_seams.py` **53**, `test_live_identity.py` **8**,
+Per-file: `test_live_pipeline_seams.py` **56**, `test_live_identity.py` **8**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
 `test_live_manifest_finalizer.py` **17**, `test_live_deployment_credentials.py` **14**,
 `test_live_service_deployment.py` **30**.
@@ -462,6 +465,53 @@ it. Swift **154 → 158**, Python **598 → 599**, both suites 0 failures; the l
 rc=0 (the server's failed-lane path is untouched and still permanent).
 *What is NOT fixed by this, deliberately:* a lane that genuinely stops producing still fails, still
 closes on the server, and still retries its head frame once per tick — 53's note applies unchanged.
+
+**The decode is bounded — candidate 50 / D-c is landed, and the derivation is measured (new,
+iteration 16; `[done]`). READ THIS BEFORE RE-RUNNING F1 OR F3, AND BEFORE TOUCHING THE TWO
+CONSTANTS.** F1's latency tail was two spans out of 42; this is what stops them.
+- **The bound that was actually in force was `VllmRunner.transcribe`'s own default.**
+  `RunnerBoundedWavInference` passed **no** `max_new_tokens`, so every live span decoded under
+  **2048**. Measured: F1's two runaways generated **2024** and **2019** tokens — they ran to that
+  default and stopped there. The 8.5 s was not a slow decode, it was a *long* one.
+- **The cap is affine in the span's own duration**, `68 + ceil(87 × duration_sec)`, so a 2.5 s
+  span may generate **286** tokens instead of 2048 and a 0.5 s span **112**. Both terms are an
+  observed maximum times an explicit margin of **4**: real speech never exceeded **54 tokens on a
+  full 2.5 s span** (21.6 tokens per audio-second) and never exceeded **17 tokens on a span under
+  0.5 s** — the fixed cost of the transcript's own syntax, which does not shrink with the audio,
+  and the reason a pure rate would have starved short spans. All 76 real spans sit ≥ **4.88×**
+  under their cap. Tuning values, not contract values; `hard_cap_samples` is what they derive from.
+- ***How the tokens were counted, which is the reusable part.*** The committed transcripts of two
+  independent runs (F1's 42 spans, the echo-free canary's 46) were tokenised **by the deployed
+  decoder's own tokenizer**, through the resident vLLM's `/tokenize` endpoint on the host —
+  read-only, no GPU work, no state touched. `POST http://127.0.0.1:8000/tokenize` with
+  `{"model": "OpenMOSS-Team/MOSS-Transcribe-Diarize", "prompt": <text>, "add_special_tokens":
+  false}` answers `{"count": n, …}`; the empty string calibrates to **0** either way, so there is
+  no hidden template overhead in these numbers. Characters would have been a guess: the runaways
+  are 1012 chars/s of audio against real speech's 44, but the ratio that decides a *token* budget
+  is not the same number.
+- **A capped span commits its words** (D-c), and the event says it was capped:
+  `canonical_processed` now carries `canonical_decode_token_cap` and `canonical_decode_capped`
+  beside the RTF. Truncation is stated rather than inferred — a shortened span and a quiet one are
+  otherwise identical downstream.
+- **A configured `max_new_tokens` may only tighten the derived cap** (`min`), never loosen it: the
+  deployment that configures the runner cannot see the serial queue that makes one runaway the
+  whole tail.
+*Red-before/green-after, two probes, both semantic reverts with the file restored and re-hashed
+(`aa481428…` / `a1bbcb82…` both ways).* Probe A — stop passing `max_new_tokens`:
+`assert '2048' == '286'` on the wire field the product's own `_build_fields` builds, which is the
+defect stated in one line. Probe B — drop the two event fields:
+`KeyError: 'canonical_decode_token_cap'`. Python **599 → 602**, `test_live_pipeline_seams.py`
+**53 → 56**, 0 failures.
+*What is NOT fixed by this, deliberately:* the decode queue is still serial, and the latency
+effect is **predicted, not measured** — at the runaways' own generation rate (2024 tokens in
+8.49 s ≈ 238 tok/s) a fully capped 2.5 s span costs ~1.2 s instead of 8.5 s, which should take the
+committed p95 from 9.05 s to near the 1.5 s median lag. F1 is what decides that. If a capped run
+still misses the gate, *then* the plan's ordered remedies apply.
+***And the standing validity argument for the offline probes is now spent.*** This is the first
+Phase M change under `moss_transcribe_diarize/`, so `git diff --name-only main HEAD --
+':!scripts/ralph-afk'` is **no longer empty** and `live-lane-refusal-probe.py` /
+`live-hardcap-repro.py` now speak for the **branch**, not for the deployed service. Any claim
+about the deployed service needs the redeploy, or a probe run against the host.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -1325,11 +1375,28 @@ python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-span-sweep \
 #     rc=0 every recorded expectation held, rc=3 the diagnosis is wrong, rc=2 it could not run.
 #     Valid as evidence about the DEPLOYED service only while the branch carries no product source
 #     and all four checkouts are one SHA - check that first, it is one command.
-git diff --name-only main HEAD -- ':!scripts/ralph-afk'      # must be EMPTY
+#     SPENT since iteration 16: candidate 50 changed moss_transcribe_diarize/, so this diff is NOT
+#     empty any more and the probe now speaks for the BRANCH. It is still the right regression for
+#     the failed-lane path; it is no longer a statement about the running service.
+git diff --name-only main HEAD -- ':!scripts/ralph-afk'      # was EMPTY through iteration 15
 python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-lane-refusal.json
 # It imports tests/test_live_api.py BY FILE PATH (`tests/` is not a package, so
 # `import tests.test_live_api` fails with ModuleNotFoundError) to reuse the tracked payload
 # builders - restating them here would let the probe drift from the shapes the suite asserts.
+
+# --- token accounting for a live transcript, on the host (iteration 16; read-only, no GPU work,
+#     no state touched, ~2 s for 78 spans). This is how candidate 50's cap was derived, and how any
+#     later claim about tokens per second of audio must be re-derived - characters are a different
+#     quantity and would be a guess. The resident vLLM answers `/tokenize` on its ROOT, not /v1. ---
+#   POST http://127.0.0.1:8000/tokenize
+#     {"model": "OpenMOSS-Team/MOSS-Transcribe-Diarize", "prompt": <text>, "add_special_tokens": false}
+#     -> {"count": n, "tokens": [...]}
+#   Calibrate first: the empty string must answer 0 with AND without special tokens, or the counts
+#   carry a chat template nobody asked for. Ship the transcripts to the host base64'd on stdin (the
+#   remote-quoting gotcha applies) and print one JSON line back; the committed spans come out of any
+#   run's snapshot.tsv at `snapshot.session.committed[*].{transcript,start_sample,end_sample}`.
+#   Note what is being counted: the COMMITTED (relabeled) transcript, not the decoder's raw output.
+#   They differ only in the speaker tag, which is why it is a sound proxy for a token budget.
 
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
@@ -1873,8 +1940,10 @@ failed lane does **not** recover inside a generation but **always** does across 
 **duration-derived token cap** whose span still commits.
 
 **D-a is IMPLEMENTED (iteration 15)** - `[done]`, see "D-a is landed" above. D-b needed no code (its
-ruling was that `LiveV2Session` gains no un-fail path, and it has none). **D-c is candidate 50 and
-is the only Phase M work item left.**
+ruling was that `LiveV2Session` gains no un-fail path, and it has none). **D-c is IMPLEMENTED
+(iteration 16)** - `[done]`, see "The decode is bounded" above. **All four authorized candidates
+and all three decisions have landed; what remains in Phase M is the coverage gap below and the
+gate.**
 
 53. **[done - iteration 14]** The tick's `emitHealth` now has its own `do/catch` after the publish's,
     so a throwing publish cannot skip it; the publish's `pumpFailure` is left standing and only a
@@ -1891,15 +1960,15 @@ is the only Phase M work item left.**
     heartbeat. Now re-baselined against the queue; red-before/green-after. See the correction block
     above. **D-a still has to land** - this fix stops a *previous* generation's drops failing a
     lane; it does nothing about the current one's.
-50. **[AUTHORIZED - the only Phase M item still open]** Bound the runaway decode per D-c. Measured
-    in F1: 2 of 42 spans at RTF 3.398/3.318 (8.49 s and 8.29 s for a 2.5 s span), degenerate repeat
-    loops, and the serial queue makes each one the entire latency tail. Neither of the plan's
-    ordered remedies attacks this. **This is the first Phase M item that touches
-    `moss_transcribe_diarize/`** - everything before it was client-side, which is why the server
-    tree is still byte-identical to `main` and the offline probes still speak for the deployed
-    service. Derive the token cap from the committed spans already in the F1/F3/canary evidence
-    (observed max tokens per second of audio for real speech, plus an explicit margin) and record
-    the derivation; a capped span publishes what came back, with the cap on its event.
+50. **[done - iteration 16]** Bounded per D-c: `canonical_decode_token_cap` =
+    `68 + ceil(87 × duration_sec)`, each term an observed maximum times an explicit margin of 4,
+    derived by tokenising F1's and the canary's committed spans with the deployed decoder's own
+    tokenizer. The bound in force before this was `VllmRunner`'s 2048 default, which is exactly
+    where both runaways stopped (2024 / 2019 tokens). A capped span commits its words and the
+    `canonical_processed` event carries `canonical_decode_token_cap` / `canonical_decode_capped`.
+    See "The decode is bounded" above. **This was the first Phase M item to touch
+    `moss_transcribe_diarize/`, so the server tree is no longer byte-identical to `main` and the
+    offline probes no longer speak for the deployed service.**
 D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two code enums, a
     `degraded` state the server's contract already had, the mailbox's overrun fence removed (it
     would have silenced a still-producing lane), the mailbox overflow given its own code, and K2's
@@ -1908,7 +1977,8 @@ D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two
     the server's refusal detail where it must tell a permanent lane-failed 409 from a recoverable
     one; that is the only part of 54 in scope.
 
-**Coverage gap to close deliberately - STILL OPEN after iteration 15:** `tests/test_live_api.py:1055`
+**Coverage gap to close deliberately - STILL OPEN after iteration 16, and it is now the only
+Phase M work item before the gate:** `tests/test_live_api.py:1055`
 fails the microphone lane and then posts a *system* frame, asserting the peer survives. Nothing in
 the suite posts a frame **on the lane that failed** - the same shape as every blocker in Phases H
 and J. D-a's new seam node posts a frame on the lane that **degraded** (and it is accepted, which is

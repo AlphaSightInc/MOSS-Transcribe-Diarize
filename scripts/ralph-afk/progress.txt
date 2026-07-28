@@ -11665,3 +11665,126 @@ margin - record the derivation, and commit the capped span with the cap recorded
 the coverage gap at tests/test_live_api.py:1055 (post a frame ON the lane that FAILED - D-a's node
 covers the degraded lane, not that one), then the full gate, the lane-refusal probe, and re-runs of
 F1 and F3 with scripts/ralph-afk/live-canary.sh.
+
+================================================================================
+run 20260728-181020 iteration 16 - candidate 50 / D-c: the decode is bounded
+================================================================================
+
+Target: candidate 50, the last open work item of the fifth amendment's Phase M and the only one
+that touches `moss_transcribe_diarize/`. D-c (iteration 13) had already decided its shape: cap the
+decode with a bound on GENERATED TOKENS derived from the span's own duration - not a wall-clock
+deadline, not a repetition heuristic - commit what came back, and record the cap on the span's
+event. This iteration derived the constant from measurement and implemented it.
+
+Files touched:
+  moss_transcribe_diarize/app/live_adapters.py         (the two constants + their derivation,
+                                                        canonical_decode_token_cap(), the cap on
+                                                        InferenceTranscript, _token_cap on the
+                                                        runner adapter)
+  moss_transcribe_diarize/app/live_coordinator.py      (carry cap/capped through prepared work
+                                                        into CoordinatorWorkResult)
+  moss_transcribe_diarize/app/live_service_runtime.py  (two fields on `canonical_processed`)
+  tests/test_live_pipeline_seams.py                    (3 nodes added; the stubbed runner now
+                                                        records the request it built)
+  scripts/ralph-afk/{context.md,progress.txt}
+Tracked product source inside moss_transcribe_diarize/ and tests/ - authorized by the fifth
+amendment, which names candidate 50 explicitly. Nothing under macos/ or ops/. No branch, merge,
+push, deploy or host mutation. The one remote action was a READ-ONLY tokenize probe (below), which
+started nothing, wrote nothing and left nothing on the host, so no rollback record was required.
+
+THE DERIVATION, WHICH IS THE HALF THAT MATTERS.
+The bound actually in force on the live path was `VllmRunner.transcribe`'s own default:
+`RunnerBoundedWavInference` passed no `max_new_tokens` at all, so every live span decoded under
+**2048**. F1's two runaway spans generated **2024** and **2019** tokens for 2.5 s of audio. They
+did not decode slowly - they decoded LONG, and they stopped exactly where the only bound they had
+put them. That single fact reframes candidate 50 from "the decoder is slow" to "the decoder was
+never told how much this span could contain".
+Method: the committed transcripts of two independent live runs - F1 (42 spans, /tmp/ralph-f1-
+evidence/snapshot.tsv) and the echo-free canary c51 (46 spans, /tmp/ralph-c51-evidence/) - were
+tokenised BY THE DEPLOYED DECODER'S OWN TOKENIZER, through the resident vLLM's `/tokenize`
+endpoint on the host (POST http://127.0.0.1:8000/tokenize, add_special_tokens both ways; the empty
+string calibrated to 0 in both, so no chat template is hiding in the counts). 78 non-empty spans,
+76 of real speech and the 2 runaways.
+Measured:
+  - real speech, maximum over 76 spans: **54 tokens on a full 2.5 s span** = 21.6 tokens per
+    audio-second (c51 span 45);
+  - short spans, maximum: **17 tokens under 0.5 s** (F1 span 28, 0.17 s) - a fixed cost that does
+    NOT shrink with the audio, which is why a pure per-second rate would starve short spans and
+    the budget has to be affine;
+  - the runaways: 2024 / 2019 tokens, 1012 and 1010 CHARACTERS per audio-second against real
+    speech's 44.
+Chosen: an explicit margin of **4** on each term ->
+  LIVE_DECODE_TOKEN_BUDGET_BASE = 4 x 17 = 68
+  LIVE_DECODE_TOKENS_PER_AUDIO_SECOND = ceil(4 x 21.6) = 87
+  cap(sample_count) = 68 + ceil(87 x sample_count/16000)
+so cap(2.5 s) = **286** (vs 2048), cap(0.5 s) = 112. Every one of the 76 real spans sits at least
+**4.88x** under its own cap, so the margin is not consumed anywhere in the evidence. Tuning
+values, not domain-contract values: `hard_cap_samples` (2.5 s) is what they are derived FROM, and
+the constants are written as `MARGIN x <observed maximum>` so the derivation is executable rather
+than a comment.
+
+Behaviour, per D-c: a capped span publishes what the decoder returned - abandoning it or
+committing it empty would remove ACCEPTED audio from the transcript, which is the loss the PRD's
+zero-loss clause forbids, and would break the identity preparer's timeline as well. The cap and
+the fact of truncation ride the `canonical_processed` event as `canonical_decode_token_cap` and
+`canonical_decode_capped`, so a shortened span is distinguishable from a quiet one. A configured
+`max_new_tokens` may only TIGHTEN the derived cap (`min`): the deployment that configures the
+runner cannot see the serial decode queue that turns one runaway into the whole latency tail.
+
+Validation:
+- RED FIRST, PROBE A - the pre-fix call restored in place (`transcribe(wav_path,
+  **self.transcribe_kwargs)`), keeping the new names so the test module still imports:
+    python3 -m pytest tests/test_live_pipeline_seams.py -q -k 'token_cap or capped or duration_derived'
+    -> 2 failed, 1 passed. The line that states the defect:
+         assert '2048' == '286'
+       on `max_completion_tokens`, i.e. the field the PRODUCT's own `_build_fields` puts on the
+       wire, not a value the test invented; and
+         assert [None, None] == [147, 173]
+       for the two spans' caps on the event. The third node (the derivation guard) passes under
+       the revert, correctly - it is a statement about the constants, not about the plumbing.
+  File restored and verified byte-identical: sha256 aa481428... both ways.
+- RED FIRST, PROBE B - the two event fields removed from live_service_runtime.py:
+    -> KeyError: 'canonical_decode_token_cap'
+  File restored and verified byte-identical: sha256 a1bbcb82... both ways.
+- GREEN AFTER:
+    PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+      -> 602 passed, 2 skipped, 368 subtests (599 -> 602); tests/test_live_pipeline_seams.py
+         53 -> 56. The 2 skips are the pre-existing test_large_upload.py 3.10-compat pair.
+  Swift was not touched this iteration and was not re-run; it stands at 158.
+
+Evidence paths: live_adapters.py `canonical_decode_token_cap` / `OBSERVED_MAX_*` /
+`RunnerBoundedWavInference._token_cap`; live_coordinator.py `CoordinatorPreparedWork.decode_token_
+cap`; live_service_runtime.py `canonical_processed`; tests/test_live_pipeline_seams.py
+test_the_token_cap_covers_the_measured_speech_and_still_bounds_a_runaway /
+test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire /
+test_a_capped_span_commits_its_words_and_says_that_it_was_capped; the per-span token counts in
+/tmp/ralph-i16-tokens.json; context.md block "The decode is bounded".
+
+Learned. (1) THE BOUND THAT WAS IN FORCE WAS A DEFAULT NOBODY CHOSE. Four runs and three
+iterations described this as "a runaway decode"; one token count showed the decoder stopping
+exactly at 2048, i.e. it was obeying the only instruction it had. Before designing a limiter, ask
+what limit is already in force - a library default is a decision somebody made for a different
+workload. (2) A RATE ALONE WOULD HAVE BEEN WRONG. The 17-token floor under 0.5 s is the
+transcript's own syntax and does not scale with the audio; a pure tokens-per-second cap tuned to
+2.5 s spans would have truncated every short span in the meeting. The shape of the model came out
+of the measurement, not out of the plan. (3) COUNT THE QUANTITY THE BOUND IS EXPRESSED IN.
+Characters were free and available and would have given a defensible-looking 23x ratio; tokens
+needed a read-only round trip to the host's own tokenizer and gave the number the decoder actually
+obeys. (4) The standing validity argument for the offline probes is now SPENT: this is the first
+Phase M change under moss_transcribe_diarize/, so `git diff --name-only main HEAD` is no longer
+empty and live-lane-refusal-probe.py / live-hardcap-repro.py speak for the branch, not for the
+deployed service.
+
+Blocker: none. The latency effect is PREDICTED, not measured - at the runaways' own generation
+rate (2024 tokens in 8.49 s ~= 238 tok/s) a fully capped 2.5 s span costs ~1.2 s instead of 8.5 s,
+which should take the committed p95 from 9.05 s toward the ~1.5 s median lag. Only F1 on the real
+hosts can settle that, and it cannot run until this cycle is deployed.
+
+Next: the Phase M coverage gap - tests/test_live_api.py:1055 fails the microphone lane and then
+posts a SYSTEM frame, so nothing in the suite posts a frame ON the lane that failed (D-a's node
+covers the DEGRADED lane, which is now the ordinary case, not that one). Then the fifth
+amendment's gate in order: full Swift/Python, the lane-refusal probe, F1 (60 s canary) and F3
+(16-minute soak) with scripts/ralph-afk/live-canary.sh and BOTH required green, then the sixth
+merge through merge-keeper.sh - whose `expected_main` still holds 6a540fe (merge-keeper.sh:32) and
+must be advanced in-script to today's main, fc7097d, never by the RALPH_MERGE_MAIN_BEFORE env
+override - then push and redeploy so all four checkouts return to one SHA.
