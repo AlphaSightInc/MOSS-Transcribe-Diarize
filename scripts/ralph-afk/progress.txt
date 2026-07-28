@@ -805,3 +805,64 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   terminal, abort, device revocation and operator revoke; test virtual 60 minutes, the exact cap,
   every terminal/revocation boundary, and restart behavior. Keep tokens out of URL, storage and logs;
   do not invent a post-terminal grace period without persistence.
+
+## Iteration 11 (run 20260728-023004-98501, its iteration 3) - session-lifecycle view authority (C1)
+- Target: Phase C candidate C1, confirmed defect 4. `VIEW_TTL_SECONDS = 900` fixed at
+  `bind_session` fails a >15-minute meeting outright, which is the PRD's whole point.
+- Files: `moss_transcribe_diarize/app/live_auth.py`, `moss_transcribe_diarize/app/live_transport.py`,
+  `tests/test_live_auth.py`, `tests/test_live_api.py`, `tests/test_live_portal.py` (route surface),
+  `scripts/ralph-afk/{context.md,progress.txt}`.
+- Method: make view authority **derived** rather than mirrored. `attach_live_routes` wires
+  `LiveAccessRegistry.bind_session_lifecycle(_session_status)`; `_view_for_digest` admits a token
+  only if the ownership entry exists, is not operator-revoked, is under the 12 h absolute cap
+  (`VIEW_ABSOLUTE_CAP_SECONDS`), and the lifecycle reports a status in
+  `VIEWABLE_SESSION_STATUSES = {active, closing}`. `VIEW_TTL_SECONDS` deleted, not raised.
+  Added `revoke_view` + loopback-only `DELETE /api/live/sessions/{id}/view` for operator revoke.
+- Validation:
+  - `pytest tests/test_live_auth.py tests/test_live_api.py tests/test_live_portal.py -q` ->
+    **52 passed** (auth 7 -> 13, api 26 -> 29)
+  - `pytest tests -q -p no:cacheprovider` -> **475 passed, 2 skipped, 368 subtests** in 36.1s
+    (was 466/2/346; +9 nodes, no regressions)
+  - `swift test --package-path macos/MOSSCapture` -> **121 tests, 0 failures** (no Swift change)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+- Evidence:
+  - **The status a viewer must follow is not `session.status`.** Written as a status-only check the
+    failed-stop node returned `'active' != 'failed'`: a runtime terminal failure (stop that fails
+    accounting, helper lease expiry) refuses every later frame while the mono session still reads
+    `active`. `_session_status` now reports `failed` whenever `snapshot.terminal_failure is not
+    None`. Found by the test, not by review, and it is exactly the case a mirror cannot cover -
+    the failed-stop path releases v2/mixer/presence but deliberately **not** the access entry,
+    because the capture client still has to be able to abort and clean up (existing
+    `test_stop_timeout_and_abort_return_terminal_failure_semantics` depends on that abort working).
+  - Fail-closed is structural: an unwired registry grants **no** view authority, so authority that
+    is not bound to a lifecycle cannot exist by omission. The allowlist (not a terminal denylist)
+    means a status added later revokes the view until it is admitted deliberately.
+  - Mutation rehearsal 1 (`_session_is_viewable` -> `return True`, i.e. mirror-only): 5 lifecycle
+    subtests + the fail-closed node + the failed-stop route node fail. Clean stop still passes -
+    that is the path a mirror does cover, which is why it alone was not enough evidence.
+    Reverted -> green.
+  - Mutation rehearsal 2 (`VIEW_ABSOLUTE_CAP_SECONDS = 900`): the virtual-meeting node fails from
+    minute 20 on, plus the scope and route expiry assertions. Reverted -> green.
+  - Mutation rehearsal 3 (drop the `terminal_failure` branch): the failed-stop route node fails.
+    Reverted -> green.
+  - Mutation rehearsal 4 (drop the loopback check in `revoke_view`): both operator-revoke nodes
+    fail. Reverted -> green.
+  - Secret hygiene held: the persisted state file still carries devices only - no view digest, no
+    session id - which is also what makes a restart revoke every view (checked by the restart node,
+    not assumed).
+  - `tests/test_live_portal.py`'s `EXPECTED_LIVE_API` caught the new route immediately; the live
+    API surface is guarded by an exact set, so the route was added there deliberately.
+- Learned: (1) "Bound to the session lifecycle" is only real if the authority *asks* the lifecycle
+  owner; a copy maintained by four call sites is a mirror, and the hole is always the error path
+  that forgot to update it. (2) Two terminal representations coexist here - `session.status` and
+  `terminal_failure` - and the ownership entry has a third lifetime again, because capture needs to
+  outlive the session's death long enough to abort. Keeping those three separate is what let the
+  view die immediately without stranding the capture client. (3) The one thing to re-check at F3:
+  the 16-minute soak now depends on `closing` being viewable, so a viewer polling through a drain
+  keeps working and only the terminal transition cuts it off.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: C2 - bounds retune (`hard_cap_samples=40000`, `max_retained_samples=960000`,
+  `frame_samples=8000`) with generated bundle hashes, never hand-edited, plus descriptor/config
+  admission and capacity-headroom tests. B3 already made the client send 8000-sample 16 kHz frames,
+  so the host manifest bounds are the last thing standing between the two ends of the wire.

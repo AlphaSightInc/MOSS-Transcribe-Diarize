@@ -30,6 +30,7 @@ EXPECTED_LIVE_API = {
     ("GET", "/api/live/sessions/{session_id}/events"),
     ("POST", "/api/live/sessions/{session_id}/stop"),
     ("POST", "/api/live/sessions/{session_id}/abort"),
+    ("DELETE", "/api/live/sessions/{session_id}/view"),
     ("DELETE", "/api/live/devices/{device_id}"),
 }
 

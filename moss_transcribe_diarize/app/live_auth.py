@@ -11,12 +11,17 @@ from typing import Callable, Literal
 
 
 PAIRING_TTL_SECONDS = 300
-VIEW_TTL_SECONDS = 900
+VIEW_ABSOLUTE_CAP_SECONDS = 12 * 60 * 60
 PAIRING_PAYLOAD_PREFIX = "mtd1"
 SECRET_BYTES = 32
 
 CAPTURE_ACTIONS = frozenset({"create", "frame", "heartbeat", "snapshot", "events", "stop", "abort"})
 VIEW_ACTIONS = frozenset({"snapshot", "events", "stop", "abort"})
+
+# View authority lives exactly as long as the session it was bound to is still running.
+# The allowlist fails closed: any status the lifecycle owner adds later revokes the view
+# until it is admitted here deliberately.
+VIEWABLE_SESSION_STATUSES = frozenset({"active", "closing"})
 
 _ALLOWED_PEER_NETWORKS = tuple(
     ipaddress.ip_network(value)
@@ -137,10 +142,17 @@ class _DeviceState:
 class _SessionState:
     owner_device_id: str
     view_token_digest: str
+    bound_at: float
     view_expires_at: float
+    view_revoked: bool = False
 
 
 SecretFactory = Callable[[int], str]
+
+# Reports the live status of a session, or None when the lifecycle owner has never
+# heard of it. This is what view authority is derived from, so it is the runtime's
+# own view of the session, never a copy of it.
+SessionStatusResolver = Callable[[str], str | None]
 
 
 class LiveAccessRegistry:
@@ -159,7 +171,18 @@ class LiveAccessRegistry:
         self._pairings: dict[str, _PairingState] = {}
         self._devices: dict[str, _DeviceState] = {}
         self._sessions: dict[str, _SessionState] = {}
+        self._session_status: SessionStatusResolver | None = None
         self._load()
+
+    def bind_session_lifecycle(self, session_status: SessionStatusResolver) -> None:
+        """Wire the live session lifecycle that view authority is derived from.
+
+        The lifecycle owner (the live runtime) is built after this registry, so this
+        cannot be a constructor argument. Until it is wired the registry grants no view
+        authority at all: authority that is not bound to a session lifecycle is exactly
+        what this method exists to prevent.
+        """
+        self._session_status = session_status
 
     def issue_pairing(self, peer: LivePeer, now: float) -> PairingGrant:
         self._admit_peer(peer)
@@ -263,10 +286,11 @@ class LiveAccessRegistry:
         if device is None or device.revoked:
             raise LiveAccessForbidden("capture principal is not active.")
         view_token = self._new_secret()
-        expires_at = now + VIEW_TTL_SECONDS
+        expires_at = now + VIEW_ABSOLUTE_CAP_SECONDS
         self._sessions[session_id] = _SessionState(
             owner_device_id=capture_principal.device_id,
             view_token_digest=_digest(view_token),
+            bound_at=now,
             view_expires_at=expires_at,
         )
         return ViewCredential(
@@ -295,6 +319,21 @@ class LiveAccessRegistry:
             self._sessions.pop(session_id, None)
         self._persist()
         return RevocationResult(device_id=device_id, session_ids=owned)
+
+    def revoke_view(self, peer: LivePeer, session_id: str, now: float) -> bool:
+        """Operator revocation of one session's view authority.
+
+        Capture ownership survives, so the meeting keeps streaming and can still be
+        stopped cleanly; only the browser's authority dies, and it dies at once.
+        """
+        self._admit_peer(peer)
+        if not peer.is_loopback:
+            raise LiveAccessForbidden("view revocation requires a loopback peer.")
+        session = self._sessions.get(session_id)
+        if session is None or session.view_revoked:
+            return False
+        session.view_revoked = True
+        return True
 
     def release_session(self, session_id: str) -> None:
         self._sessions.pop(session_id, None)
@@ -331,9 +370,19 @@ class LiveAccessRegistry:
 
     def _view_for_digest(self, token_digest: str, *, now: float) -> ViewPrincipal | None:
         for session_id, session in self._sessions.items():
-            if session.view_token_digest == token_digest and now < session.view_expires_at:
-                return ViewPrincipal(session_id=session_id)
+            if session.view_token_digest != token_digest:
+                continue
+            if session.view_revoked or now >= session.view_expires_at:
+                return None
+            if not self._session_is_viewable(session_id):
+                return None
+            return ViewPrincipal(session_id=session_id)
         return None
+
+    def _session_is_viewable(self, session_id: str) -> bool:
+        if self._session_status is None:
+            return False
+        return self._session_status(session_id) in VIEWABLE_SESSION_STATUSES
 
     def _load(self) -> None:
         if not self._state_path.exists():

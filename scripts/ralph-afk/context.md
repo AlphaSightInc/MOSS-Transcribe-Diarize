@@ -41,9 +41,10 @@ lab bundle (A4); iteration 5 made the file secret store the production default (
 added the retained-until-ACK outbox (B2); iteration 7 added the 16 kHz/8000-sample wire format and
 converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent transport (B4);
 iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 recorded the Phase B
-client gate (B6) and changed no product source.
+client gate (B6) and changed no product source; iteration 11 bound view authority to the session
+lifecycle (C1).
 Test totals on the branch: Swift **121 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **466 passed / 2 skipped / 346 subtests**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **475 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3) and
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9).
 
@@ -208,6 +209,26 @@ D7's DR claim reproduces here: two different binaries signed by that identity bo
 `designated => identifier "…" and certificate leaf = H"421b…"`. `security delete-keychain` also
 removes the search-list entry, so the recorded rollback is complete.
 
+**View-authority contract (new, iteration 11).** View authority is **derived** from the live
+session lifecycle, never mirrored from it. `attach_live_routes` wires
+`LiveAccessRegistry.bind_session_lifecycle(_session_status)`, and `_view_for_digest` admits a view
+token only when all four hold: the ownership entry exists, it is not operator-revoked, `now` is
+below the 12 h absolute cap (`VIEW_ABSOLUTE_CAP_SECONDS`, stamped at `bind_session`), and the
+lifecycle reports a status in `VIEWABLE_SESSION_STATUSES` = `{active, closing}`. The allowlist
+fails closed: any status added later — and an **unwired** registry — grants nothing, so authority
+that is not bound to a lifecycle does not exist. `VIEW_TTL_SECONDS` is deleted, not raised; a
+900 s expiry is unreachable because no code carries it.
+*The status a viewer must follow is not `session.status`.* A runtime terminal failure (a stop that
+fails accounting, a helper lease expiry) refuses every later frame while
+`snapshot.session.status` still reads `active`; `_session_status` therefore reports `failed`
+whenever `snapshot.terminal_failure is not None`. That is the case the mirror could never cover:
+the failed-stop path releases v2/mixer/presence but deliberately **not** the access entry, because
+the capture client still has to be able to abort and clean up.
+Operator revoke is `revoke_view` + loopback-only `DELETE /api/live/sessions/{id}/view`: it kills
+the browser's authority and leaves capture streaming, and it is idempotent (second call → 404).
+Sessions are still memory-only in the persisted state file, so a restart revokes every view while
+paired devices survive.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -249,7 +270,10 @@ typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitize
    (what a pinned `URLSession` throws on a real outage) typed as `CapturePumpFailure.unexpected`
    instead of `.transportUnavailable`.
 4. Viewer expiry — `VIEW_TTL_SECONDS = 900` fixed at `bind_session`, no renewal. Reproduced:
-   authorized at t=899, rejected at t=3600.
+   authorized at t=899, rejected at t=3600. **Closed on the feature branch by iteration 11 (C1)** —
+   see the view-authority contract above. The adjacent defect found with it: a runtime terminal
+   failure leaves `session.status == "active"`, so a status-only check would have kept the viewer
+   alive on a dead session.
 5. Unbounded callback-shaped blocking POSTs. **Closed on the feature branch by iterations 7 and 8**:
    B3 fixed emission at two 0.5 s frames per second per lane, and B4 bounded the transport — lanes
    concurrent with one request each, no overlapping pass, one pinned session per pin. A 15 s
@@ -333,6 +357,12 @@ Binary transfer: embed a `base64 -d` heredoc in that script.
 python3 -m pytest tests/test_live_auth.py tests/test_live_portal.py -q
 python3 -m pytest tests/test_live_service_runtime.py tests/test_live_provider_bundle.py \
   tests/test_live_mixer.py tests/test_live_ingest.py -q
+
+# --- C1 view-authority nodes (10 = 9 new + the pre-existing action/session scope node:
+#     60 virtual minutes, exact cap, five lifecycle statuses, unwired fail-closed, operator
+#     revoke, restart, clean stop, failed stop, loopback-only route) ----------------------------
+python3 -m pytest tests/test_live_auth.py tests/test_live_api.py -q \
+  -k 'view_authority or view_revocation or revokes_the_view'
 
 # --- narrow: Mac client --------------------------------------------------
 swift build --package-path macos/MOSSCapture --product mtd-capture
@@ -536,10 +566,18 @@ edit the control-plane discriminator scripts to keep them green.
 **Gate opened by iteration 10's green B6 checkpoint.** Server work may now start; the Mac client is
 frozen except for defects the server work exposes.
 
-11. **C1 — session-lifecycle view authority**: active-session-only + 12 h cap + immediate revoke
-    on clean terminal, abort, device revocation, or operator revoke. Test virtual 60 minutes,
-    exact cap, every terminal/revocation boundary, and restart behavior. Keep tokens out of
-    URL/storage/logs; do not invent post-terminal grace without persistence.
+11. **C1 — session-lifecycle view authority** `[done — iteration 11]`: `bind_session_lifecycle` +
+    `VIEW_ABSOLUTE_CAP_SECONDS` + `revoke_view` and its loopback route (see the view-authority
+    contract above). Nine nodes: virtual 60 minutes, the exact cap boundary with capture
+    unaffected, five lifecycle statuses with ownership proven intact, fail-closed when unwired,
+    operator revoke, restart, and three route-level nodes (clean stop → 401, failed stop → 401 with
+    abort still possible, loopback-only operator revoke with capture still streaming). Four
+    mutation rehearsals recorded in progress.txt. Residue for C4: the PRD's server gate also names
+    5 s outage / ambiguous retry / duplicate retry / 429 / outbox overflow. Duplicate retry and 429
+    already have server nodes (`test_v2_http_replays_prior_ack_and_keeps_lane_sequences_distinct`,
+    `test_v2_http_maps_lane_capacity_to_429_without_mutating_or_sharing_capacity`); outage,
+    ambiguous retry and outbox overflow are the B2 Swift nodes. The gate iteration must record that
+    clause-to-node map rather than assume it.
 12. **C2 — bounds retune**: `hard_cap_samples=40000`,
     `max_retained_samples=960000`, `frame_samples=8000`; generated bundle hashes, never hand
     edited. Test descriptor/config admission and capacity headroom.

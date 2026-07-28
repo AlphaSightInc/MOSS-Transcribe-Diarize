@@ -84,6 +84,25 @@ def attach_live_routes(
     app.state.live_helper_presence = helper_presence
     app.state.live_helper_failures = helper_failures
 
+    def _session_status(session_id: str) -> str | None:
+        try:
+            snapshot = runtime.snapshot(session_id)
+        except KeyError:
+            return None
+        if snapshot is None:
+            return None
+        # A runtime terminal failure - a stop that fails accounting, a helper lease
+        # expiry - refuses every later frame while the mono session's own status is
+        # still "active". Terminal is terminal for the viewer too.
+        if snapshot.terminal_failure is not None:
+            return "failed"
+        return snapshot.session.status
+
+    # View authority is derived from the runtime's own session status, not mirrored from
+    # it: whatever ends the session - clean stop, abort, helper lease expiry, a failed
+    # stop that never reaches an explicit release - revokes the view on the next request.
+    access.bind_session_lifecycle(_session_status)
+
     @app.get("/api/live/descriptor")
     def live_descriptor(
         request: Request,
@@ -427,6 +446,16 @@ def attach_live_routes(
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @app.delete("/api/live/sessions/{session_id}/view")
+    def revoke_live_view(request: Request, session_id: str):
+        try:
+            revoked = access.revoke_view(_peer_from_request(request), session_id, now=_request_now())
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        if not revoked:
+            raise HTTPException(status_code=404, detail="no live view authority for this session.")
+        return {"session_id": session_id, "view_revoked": True}
 
     @app.delete("/api/live/devices/{device_id}")
     async def revoke_live_device(request: Request, device_id: str):
