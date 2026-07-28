@@ -300,9 +300,9 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
     `Contents/Info.plist` -> **2 failed** (both lab-using nodes) at
     `_assert_lab_bundle_unchanged`; restoring the plist -> **3 passed**. A one-key bundle change
     is caught, so the immutability assertion is not vacuous.
-- A4 CHECKPOINT SHA: recorded in the commit for this iteration (`ralph: iteration 4 - immutable
-  IDEA-044 lab bundle`). Deliberately **not merged and not pushed** — the one keeper merge stays
-  at C4. This unblocks Phase B.
+- A4 CHECKPOINT SHA: **1ede498dde1ec16ae0b3f39922a3987883daeaaa** (`ralph: iteration 4 -
+  immutable IDEA-044 lab bundle`). Deliberately **not merged and not pushed** — the one keeper
+  merge stays at C4. This unblocks Phase B.
 - Learned: (1) an ad-hoc signature has no explicit designated requirement, so `codesign -d -r -`
   emits it commented (`# designated => cdhash H"…"`) on stdout while `Executable=` goes to stderr;
   the parser must strip the `#`. The cdhash form is actually the stronger continuity evidence —

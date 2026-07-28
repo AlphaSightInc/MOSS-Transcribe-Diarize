@@ -41,7 +41,7 @@ lab bundle (A4). Test totals on the branch: Swift **95 passed** (67 → 81 → 9
 **457 passed / 2 skipped / 346 subtests** including `tests/test_macos_uds_tracer.py` **3 passed**
 (1 hung → 2 → 3).
 
-**IDEA-044 attempt-2 checkpoint: GREEN at iteration 4.** Discriminators **10/10** and **16/16**;
+**IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
 **0 Darwin skips**. Re-run before any further Phase-A edit — the discriminator scripts are the
 gate, not a formality.
