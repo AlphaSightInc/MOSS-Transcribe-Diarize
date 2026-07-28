@@ -136,8 +136,9 @@ survived the bundle replacement. It changed no tracked file. See the K5c redeplo
 broke "one exact SHA everywhere" to 1/4; **K5c restored it to 4/4 at `fc7097d`** — the expected
 mid-cycle dip after every keeper merge, now closed. Iteration 16 of the prior run closed the
 last *machine* gate — Phase J's probe. **E3 is CLOSED** — both TCC grants hold `auth_value=2` — and
-the blocker that replaced it is that both capture lanes report `failed` for a reason no surface
-records, which is what Phase K makes legible.)
+the blocker that replaced it, both lanes reporting `failed` for a reason no surface recorded, was
+made legible by Phase K and **named by K5d: `macos_buffer_overrun`, from the start-path wedge in
+Phase L.**)
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus all four amendments' authorized follow-up merges), **one exact SHA everywhere — 4/4 at
@@ -148,17 +149,19 @@ host the PRD clause actually names), batch service unharmed, signed app installe
 replaced, while the E1 DR stayed byte-identical and `codesign --verify -R=<DR>` still passes — which
 is what the PRD clause "unchanged across a rebuild" literally asks for), **rollback rehearsed and
 recorded**.
-Open: **permissions granted — half green**: both TCC grants hold (`auth_value=2`, E3 closed), but
-"`mtd-capture status` reports both lanes active" is not met — K1 made it *expressible* (the response
-had no lane field at all), and both lanes still report `failed`. Also open: the 60 s canary, the
-300 s certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
+**Permissions granted — GREEN as of K5d** (run 20260728-181020 iteration 7): both TCC grants hold
+(`auth_value=2`) and `mtd-capture status` reported `{"lane":"system","state":"capturing"}` and
+`{"lane":"microphone","state":"capturing"}` continuously through a 672-frame meeting on the real
+host. Open: the 60 s canary, the 300 s certification, the 16-minute soak, the run-time half of
+secret hygiene, and the final close.
 
-**E3 was the blocker for four runs; it is spent, and the clicks did not finish the job.** Phase J
-settled the terminal-failure class (J1 clamp, J2 unattributed publish, J3 transient decode, J4 named
-refusal), J5a-d gated/merged/deployed/proved it, and the operator then granted both permissions —
-and the capture still dies, because **both lanes report `failed`** and every surface that could name
-the code discards it (see the Phase K block). **Never ask for the TCC clicks again.** The path
-forward is K1-K5: make the failure legible, then diagnose it as an ordinary candidate.
+**E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Phase J settled
+the terminal-failure class (J1 clamp, J2 unattributed publish, J3 transient decode, J4 named
+refusal), J5a-d gated/merged/deployed/proved it, the operator granted both permissions, and Phase K
+made the remaining failure legible. **K5d then read it: `macos_buffer_overrun` on both lanes, caused
+by a client-side wedge in `CaptureController.start` — and a clean `pair` → `start` runs a whole
+healthy meeting (1767/1767 × 200, 23 committed spans).** See the K5d block and Phase L.
+**Never ask for the TCC clicks again.**
 Test totals on the branch: Swift **150 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150); Python **598 passed / 2 skipped / 368 subtests**
 including `tests/test_live_pipeline_seams.py` **52 passed** (new in run 20260728-112922 iteration 1,
@@ -1588,6 +1591,66 @@ still true, including the stop drain, which happens before `finishStop` clears i
 *Still diagnostic groundwork.* Nothing here changes which lanes fail or keeps a session alive; it
 makes K5's re-read on m4mbp able to say "the server disowned us at tick N" instead of "the network
 looks down".
+
+**K5d — the re-read, and the answer (new, run 20260728-181020 iteration 7). READ THIS BEFORE ANY
+FURTHER CLIENT WORK.** The lane failure is `macos_buffer_overrun` on **both** lanes, and its cause is
+a client-side wedge in `CaptureController.start`. All three surfaces K1–K4 built printed it, in
+agreement, on the real hosts:
+- `mtd-capture status`: `lanes[{system, failed, macos_buffer_overrun}, {microphone, failed,
+  macos_buffer_overrun}]`, `sessionRefusal: sessionDisowned`, `pumpFailure: transportUnavailable`
+- the Mac's unified log (K2): `capture lane system failed: state=failed code=macos_buffer_overrun
+  dropped=14005 discontinuities=0` and the same for microphone with `dropped=1379`
+- the server journal (K3): `live helper terminal: session=f9a592ae… reason=helper_all_lanes_failed
+  lane.system=macos_buffer_overrun lane.microphone=macos_buffer_overrun`
+
+*The mechanism, read out of the source and then measured.* `CaptureController.start` unwinds a
+non-retryable publish failure at `CaptureController.swift:396-400` (`source.stop` +
+`state.rollbackStart()` + rethrow) — but the start-time heartbeat is the **next** statement,
+`let status = try emitHealth(...)` at `:403`, **outside** that `do/catch`. A 403 there throws past the
+unwind *and* past `scheduler.schedule` at `:404`. What is left is the exact state the comment at
+`:394-395` says must never exist: both lanes hot, `running: true`, **no pump**, no heartbeat, and no
+`sessionRefusal` (nothing outside the tick and the stop drain calls `recordSessionRefusal`).
+Measured: `start` → `{"error":"nonSuccessStatus(403)","ok":false}` rc=70, then `status` →
+`running:true`, both lanes `capturing`, `publishedFrameCount` frozen, `outboxRetainedFrames: 0`,
+**no** `sessionRefusal`. A fresh `pair` cannot rescue it — the next `start` answers `alreadyRunning`
+— so only an explicit `stop` clears it.
+*Then the wedge poisons the next meeting.* With no pump draining the source, the lanes overrun:
+14005 dropped frames on `system`, 1379 on `microphone`. The failure is **sticky across stop/start
+inside one process** (`NativeLaneHealth`'s projection keeps `failure`), so the next `start` comes up
+with both lanes already `failed`, its **first** heartbeat reports all lanes failed, and the server
+correctly ends the meeting. `1 heartbeat 200 then 63 × 403` — byte-for-byte the pattern the fourth
+amendment recorded from the attended run.
+*The server is not at fault anywhere in this chain*: `helper_all_lanes_failed` on two failed lanes is
+the designed answer, and the 403s are `release_session` being one-way.
+*The attended run reconstructed from m4mbp's unified log*, which still holds it (`log show
+--predicate 'processIdentifier == 14978'`, 186476 lines; CFNetwork prints body size + status, which
+is enough to identify each route): pid 60550 paired at 11:58:34 and published a 21514-byte frame 200
+at 13:51; it exited at 14:00:16. pid 14978 launched 14:00:45, and its **first** request at 14:01:07
+was a 439-byte heartbeat → **403** (the stale session in the store) — the wedge. 14:03:17 two large
+bodies → 403 (a `stop`, whose drain publishes and swallows the failure). 14:03:52 re-pair 200 + new
+session 200. 14:04:03.031 heartbeat **200**; 14:04:03.608 heartbeat **403** — one pump interval later.
+*What the fourth amendment got right and wrong.* Right: both lanes were reporting failed, deduced
+correctly from `_terminal_reason`. Wrong by omission: nothing suggested the lanes had been **starved
+by the client's own start path**, and the phrase "the app never sent a top-level failed" is still
+true and still irrelevant. TCC, pinning, schema and duplicate helpers were correctly ruled out.
+*And the clean path works.* Before the repro, one `pair` → `start` on a freshly launched process ran
+a whole healthy meeting: **1767 requests, 1767 × 200, zero non-200** — 672 frame POSTs (equal to the
+client's own `publishedFrameCount`, so accepted == published), 337 heartbeats, 377 snapshot + 377
+events from the app-owned probe; both lanes `capturing` throughout; **23 committed spans**; a clean
+stop with both lanes `stopped` and the outbox drained to 0; zero lane-failure log lines and zero
+terminal records. This is the first end-to-end live meeting from the real Mac.
+*First real-Mac latency figures, from `mtd-capture latency` (evidence for candidate 43, not authority
+— this is not the plan's Phase F procedure):* committed p95 **9089 ms** (p50 1550, max 11556, n=23),
+render bound **1359 ms**, user-visible **10448 ms**, snapshot p95 215 ms, events p95 145 ms,
+`fetchFailures 0`, `timelineIntact true`, `mixerOriginResolved true`. The p50/p95 spread says
+backlog, not a floor — do not read it as a second measurement of J5d's 4.2-5.1 s.
+*Reusable procedure notes.* macOS has **no `timeout(1)`** — use
+`perl -e "alarm shift; exec @ARGV" <sec> <cmd>…`. `open -a /Applications/MOSSCapture.app` over SSH
+lands in the real GUI session (console user `ga0`, `launchctl print gui/501` resolves) and
+`xpcproxy` in the log confirms LaunchServices spawned it, so TCC attributes to the bundle. `pair`
+**reuses** the stored `capture-device-id` — no new device row; `live-auth.json` still has exactly one
+unrevoked device (`AB600574…`) and its `paired_at` is simply refreshed. The user journal on the
+server only retains ~40 min for this unit, so read the *Mac's* log for anything older.
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -3547,16 +3610,48 @@ An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox fl
       `6a540fe..fc7097d`; server + m4mbp both at `fc7097d`; live unit restarted (346453); the Mac
       rebuilt/reinstalled and **both TCC grants survived**. **Four-way SHA check GREEN 4/4 at
       `fc7097d`.** See the K5c redeploy block.
-    - **(d) the re-read** `[NEXT]`. Re-run `pair` -> `start` on m4mbp and **read the codes**: the
-      server journal prints `live helper terminal: session=… reason=… lane.<lane>=<code>` (K3), the
-      Mac's `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` prints the per-lane
-      failure line (K2), and `mtd-capture status` prints both lanes plus `sessionRefusal` if the
-      session has been released (K1/K4). Only then diagnose the cause - it is a new candidate and
-      may need its own authorization.
+    - **(d) the re-read** `[done - run 20260728-181020 iteration 7]`. **All four surfaces answered,
+      and they agree.** A clean `pair` -> `start` on a freshly launched app ran a whole healthy
+      meeting (1767/1767 × 200, 672 frames, 23 committed spans, clean drain) - so the failure does
+      **not** reproduce from a clean start. Deliberately reproducing the attended sequence then
+      printed the codes: both lanes `failed` / **`macos_buffer_overrun`**, `sessionRefusal:
+      sessionDisowned`, K2's log line with `dropped=14005` / `dropped=1379`, and K3's
+      `live helper terminal: … reason=helper_all_lanes_failed lane.system=macos_buffer_overrun
+      lane.microphone=macos_buffer_overrun`. **Phase K is closed and the fourth amendment is
+      spent.** See the K5d block above for the mechanism and the reconstruction of the attended run.
 
-Do not guess the cause before K5 reports the codes. Candidates already ruled out by measurement:
-TCC (both granted), pinning/network (probe 200s), schema (five faithful heartbeat shapes 200), and
-duplicate helper instances (exactly one app process).
+Candidates ruled out by measurement: TCC (both granted), pinning/network (probe 200s), schema (five
+faithful heartbeat shapes 200), duplicate helper instances (exactly one app process), and - new this
+iteration - the **server**, which behaves correctly at every step of the failure.
+
+### Phase L - the start-path wedge (2026-07-28, found by K5d; NOT YET AUTHORIZED)
+
+The fourth amendment said the cause "may need its own authorization" once `status` named the codes.
+It has, so these are written down and **not acted on**: they are tracked product source under a
+post-merge freeze, and this loop has spent every merge the operator has granted. **The operator
+decides whether to authorize a fifth cycle.** Both are one defect at two removes, and the second is
+only reachable through the first.
+
+48. **L1 - `start` leaks a hot capture when the start-time heartbeat fails** `[open - needs
+    authorization; root cause]`. `CaptureController.swift:403` `let status = try emitHealth(…)` sits
+    **outside** the `do/catch` at `:387-402` that unwinds a non-retryable publish failure, and
+    **before** `scheduler.schedule` at `:404`. A 403/401 on that first heartbeat therefore throws
+    past `source.stop` + `state.rollbackStart()` and past the pump, leaving exactly the state the
+    code's own comment forbids: both lanes hot, `running: true`, nothing draining them, and no
+    `sessionRefusal` because only the tick and the stop drain record one. `alreadyRunning` then
+    blocks recovery, so a re-`pair` cannot fix it. *Shape of the fix, not a decision:* the health
+    emission belongs under the same guard as the publish, and the start path is a third caller that
+    must record a refusal. Note this is the **same shape** as J's four blockers - a condition the
+    design contemplates is handled everywhere except the one path that ends the meeting.
+49. **L2 - a starved source overruns, and the failure survives `stop`** `[open - needs
+    authorization; depends on L1]`. With no pump, the lanes overrun (`macos_buffer_overrun`,
+    14005 / 1379 dropped) and `NativeLaneHealth` keeps `projection.failure` across a stop/start
+    **inside the same process**, so the next `start` publishes a first heartbeat that says both lanes
+    are dead and the server correctly ends a meeting that never began. Two questions the operator's
+    authorization would have to settle: whether a new `start` resets lane failure state (K4 already
+    ruled that "a new session id is a new question" for `sessionRefusal` - the same argument applies
+    here), and whether an overrun is even a lane *failure* rather than a lane *degradation* with a
+    dropped-frame count. Do not fix L2 alone: without L1 the starvation just happens again.
 
 ## Non-candidates
 

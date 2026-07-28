@@ -6363,3 +6363,109 @@ MUTATIONS AND THEIR ROLLBACKS, in the order they will be applied:
 
 Nothing else is touched: no checkout moves, no service restarts, no rebuild, no reinstall, no
 TCC write, and the batch service is not addressed at all.
+
+================================================================================
+run 20260728-181020 | iteration 7 | K5d - the re-read: the lane failure is named,
+                                    and the cause is a client-side start-path wedge
+================================================================================
+Target: candidate 47 K5d, the last Phase K item. K1-K4 built four surfaces for a failure nobody
+could see; this iteration ran the failure on the real hosts and read them.
+
+RESULT: **the code is `macos_buffer_overrun` on BOTH lanes**, and its cause is
+`CaptureController.start` leaving a hot capture with no pump when the start-time heartbeat is
+refused. Phase K is closed and the fourth amendment is spent. The three surfaces AGREE:
+- `mtd-capture status` (K1/K4): lanes [{system, failed, macos_buffer_overrun},
+  {microphone, failed, macos_buffer_overrun}], `sessionRefusal: sessionDisowned`,
+  `pumpFailure: transportUnavailable`
+- the Mac's unified log (K2): `capture lane system failed: state=failed code=macos_buffer_overrun
+  dropped=14005 discontinuities=0`, and microphone with `dropped=1379`
+- the server journal (K3): `live helper terminal: session=f9a592ae… reason=helper_all_lanes_failed
+  lane.system=macos_buffer_overrun lane.microphone=macos_buffer_overrun`
+
+**FIRST: the clean path works, and that is the bigger finding.** One `pair` -> `start` on a freshly
+launched app ran a whole healthy meeting on the real Mac for the first time in this project:
+**1767 requests, 1767 x 200, ZERO non-200** - 672 frame POSTs (exactly the client's own
+`publishedFrameCount`, so accepted == published, zero loss), 337 heartbeats, 377 snapshot + 377
+events from the app-owned probe; both lanes `capturing` throughout; **23 committed spans**
+(`mtd-capture latency`); a clean stop with both lanes `stopped` and the outbox drained to 0; zero
+lane-failure log lines; zero terminal records; `live-runs/` 0 and no `/tmp/mtd-live-*` afterwards.
+So the shipped product is NOT broken for a clean start - the PRD's "`mtd-capture status` reports
+both lanes active" clause is now GREEN on the real host, not merely expressible.
+
+**THEN: the attended failure, deliberately reproduced, and it is one defect.**
+`CaptureController.start` unwinds a non-retryable publish failure at CaptureController.swift:396-400
+(`source.stop` + `state.rollbackStart()` + rethrow). The start-time heartbeat is the NEXT statement -
+`let status = try emitHealth(...)` at :403 - **outside that do/catch** and **before**
+`scheduler.schedule` at :404. A 403 there throws past the unwind and past the pump. Measured, in
+that order:
+1. `start` against the store's now-finished session -> `{"error":"nonSuccessStatus(403)"}` rc=70,
+   and then `status` -> `running: true`, both lanes **capturing**, `publishedFrameCount` frozen at
+   672 for 20+ s, `outboxRetainedFrames: 0`, and NO `sessionRefusal`. Exactly the state the comment
+   at :394-395 says must never exist: "a capture running with nowhere to send it".
+2. A fresh `pair` succeeds (new session f9a592ae…) but cannot rescue it: the next `start` answers
+   `alreadyRunning`. Only an explicit `stop` clears the wedge.
+3. With nothing draining the source the lanes overrun - 14005 dropped frames on system, 1379 on
+   microphone - and `NativeLaneHealth` keeps `projection.failure` across a stop/start inside one
+   process, so the NEXT `start` comes up with both lanes already `failed`.
+4. That start's FIRST heartbeat therefore says all lanes failed. The server does the designed thing:
+   `helper_all_lanes_failed`, terminal, release. Journal for the repro: **1 heartbeat 200, then
+   63 x 403** - byte-for-byte the pattern the fourth amendment recorded from the attended run.
+The server is correct at every step of this chain; the defect is entirely client-side.
+
+**The attended run reconstructed from m4mbp's unified log, which still holds it.**
+`log show --predicate 'processIdentifier == 14978'` (186476 lines; CFNetwork prints body size and
+status, enough to identify each route):
+- pid 60550 (11:56:59-14:00:16 local): paired 11:58:34 (186 B -> 200, then 0 B -> 200), published a
+  21514 B frame -> 200 at 13:51:19. Exited 14:00:16.
+- pid 14978 (14:00:45-15:19:17): its FIRST request, 14:01:07, was a 439 B heartbeat -> **403** (the
+  stale session id in the store) = the wedge. 14:03:17 two large bodies -> 403 (a `stop`, whose
+  drain publishes and swallows the failure). 14:03:52 re-pair 200 + session 200. 14:04:03.031
+  heartbeat **200**; 14:04:03.608 heartbeat **403**, one pump interval later.
+The fourth amendment's deduction ("both lanes are reporting failed") was RIGHT. What no surface
+could show was that the client had starved its own lanes. TCC, pinning, schema and duplicate helpers
+were correctly ruled out, and the app was properly launched (xpcproxy in the log = LaunchServices).
+
+Validation (all read-only after the run; nothing rebuilt, nothing merged, no checkout moved):
+- server: 1767/1767 200 for the clean meeting; the repro's 1 x 200 + 63 x 403; 0 tracebacks;
+  live-runs 0; no /tmp/mtd-live-*; moss-live-web MainPID 346453 NRestarts=0 and moss-web MainPID
+  301112 NRestarts=0 unmoved; host HEAD fc7097d clean; batch http://192.168.68.38:7860/ -> 200
+- m4mbp: app stopped and quit, `mtd-capture status` back to `{"ok":false}` rc=70, both TCC grants
+  still `auth_value=2`
+- `live-auth.json`: still exactly ONE unrevoked device (AB600574…). `pair` REUSES the stored
+  `capture-device-id` - the pre-recorded rollback's premise that it mints a new UUID was wrong, and
+  is corrected here; there was no new device to revoke, only a refreshed `paired_at`.
+
+**First real-Mac latency figures** (`mtd-capture latency`, evidence for candidate 43 only - this is
+NOT the plan's Phase F procedure): committed p95 **9089 ms** (p50 1550, max 11556, n=23), render
+bound **1359 ms**, user-visible **10448 ms**, snapshot p95 215 ms, events p95 145 ms,
+fetchFailures 0, timelineIntact true, mixerOriginResolved true. The p50/p95 spread says backlog, not
+a floor; do not read it as a second measurement of J5d's 4.2-5.1 s.
+
+**Hygiene incident, recorded rather than hidden.** One minted pairing payload was echoed into this
+agent's own tool output by a stdin collision (the payload and a `bash -s` script competed for one
+stdin). It never reached a CLI, a log, a URL or any file on any host, and it was abandoned unused
+and left to expire (single-use, 300 s TTL); a fresh payload was minted for the actual pair. The
+lesson is procedural: pipe a payload to the CLI **only**, as its own `ssh` invocation - never share
+that stdin with a remote script.
+
+Files touched: scripts/ralph-afk/{context.md,progress.txt} only. No tracked product source changed -
+correct, since the post-merge freeze holds and K5d is a measurement step.
+
+Evidence paths: context.md's "K5d - the re-read, and the answer" block (mechanism, reconstruction,
+reusable procedure notes) and the new Phase L candidates 48/49.
+
+Learned: (1) the observability cycle paid for itself in one run - three independent surfaces named
+the same code, and the code named a defect that no test in the repo could have found, because it
+needs a real 403 at exactly the start-time heartbeat; (2) "it does not reproduce" is a finding, not
+a dead end - it located the difference (a clean `pair` -> `start` on a fresh process) and made the
+deliberate repro possible; (3) macOS has no `timeout(1)` - use
+`perl -e "alarm shift; exec @ARGV" <sec> <cmd>`; (4) the server's user journal retains only ~40 min
+for this unit, so the Mac's unified log is the durable record of an attended run.
+
+Next: **Phase L is NOT authorized.** L1 (CaptureController.swift:403 - the health emission belongs
+under the same guard as the publish, and the start path must record a session refusal) is tracked
+product source under the post-merge freeze, and every merge the operator has granted is spent. The
+operator's decision is required before touching it. L2 (a starved source overruns and the failure
+survives `stop` inside one process) depends on L1 and must not be fixed alone. Until then the loop's
+own workaround is exact and cheap: **always `stop` before `pair`, and prefer a freshly launched app
+for any canary run** - the clean sequence measured green today.
