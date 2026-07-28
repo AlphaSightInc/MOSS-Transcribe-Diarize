@@ -2271,3 +2271,5 @@ history as well as out of `ps`. Then `mtd-capture start` again for the real sess
 - Next: G1 ATS declaration, G2 payload trim, G3 error classification and logging, G4 regression
   tests including a `100.64.0.0/10` tracer case, then the single authorized merge. After that,
   re-run the E3 runbook in the corrected order: pair first, then `start`, then the two clicks.
+
+[loop 20260728-072601-15601] start budget=30 agent=claude branch=ralph/live-meeting-mvp
