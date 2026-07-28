@@ -519,6 +519,16 @@ public protocol ControlChannelFailureLogging: AnyObject, Sendable {
     func recordUnclassifiedFailure(command: String?, detail: ControlChannelErrorDetail)
 }
 
+/// Records a capture lane the app has watched fail.
+///
+/// Same discipline as `ControlChannelFailureLogging`, enforced the same structural way: it is
+/// handed a `CaptureLaneStatus` and nothing else, and that type holds only a lane, a state word,
+/// counters and a typed code. The free-form `NativeLaneFailure.cause` is not on it, so no
+/// implementation can write one even by accident.
+public protocol CaptureLaneFailureLogging: AnyObject, Sendable {
+    func recordLaneFailure(_ status: CaptureLaneStatus)
+}
+
 /// The app's failure log.
 ///
 /// Unified logging is the only place `MOSSCaptureApp` can leave a record an operator can read
@@ -529,7 +539,7 @@ public protocol ControlChannelFailureLogging: AnyObject, Sendable {
 /// Everything interpolated here is marked public because everything interpolated here is provably
 /// non-secret: the command is one of `ControlChannelCommands.all` or the literal `other`, and the
 /// rest is a `ControlChannelErrorDetail`.
-public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging {
+public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging, CaptureLaneFailureLogging {
     private let emit: @Sendable (String) -> Void
 
     public convenience init(
@@ -552,6 +562,16 @@ public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging {
         emit(
             "control command \(named) failed with an unclassified error: "
                 + "domain=\(detail.domain) code=\(detail.code) underlying=\(underlying)"
+        )
+    }
+
+    /// The lane is an enum case and the code is one the capture source minted, so both are
+    /// compile-time vocabulary; the counters are counters. Nothing here can carry a payload.
+    public func recordLaneFailure(_ status: CaptureLaneStatus) {
+        emit(
+            "capture lane \(status.lane.rawValue) failed: "
+                + "state=\(status.state) code=\(status.failureCode ?? "none") "
+                + "dropped=\(status.droppedFrames) discontinuities=\(status.discontinuities)"
         )
     }
 }

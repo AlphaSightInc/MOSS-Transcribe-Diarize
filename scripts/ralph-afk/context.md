@@ -113,8 +113,9 @@ block. It changed no tracked product source (it repaired the Ralph probe's own r
 observability, Phase K), after the operator granted both TCC permissions and the attended session
 found both capture lanes reporting `failed` with the code recorded nowhere: run
 `20260728-181020` iteration 1 landed **K1** — `ControlChannelResponse.lanes` and the shared
-`CaptureStatus.reportedLanes()` projection — so the branch carries tracked `macos/` source again,
-strictly within Phase K's scope. See the lane-reporting contract block.
+`CaptureStatus.reportedLanes()` projection — and iteration 2 landed **K2**, the app-side log of a
+typed lane failure, so the branch carries tracked `macos/` source again, strictly within Phase K's
+scope. See the lane-reporting and lane-failure-log contract blocks.
 
 **PRD acceptance scoreboard after iteration 16 of run 20260728-112922** ("one exact SHA everywhere"
 is GREEN 4/4 at `6a540fe` since iteration 15; iteration 16 closed the last *machine* gate — Phase J's
@@ -139,8 +140,8 @@ refusal), J5a-d gated/merged/deployed/proved it, and the operator then granted b
 and the capture still dies, because **both lanes report `failed`** and every surface that could name
 the code discards it (see the Phase K block). **Never ask for the TCC clicks again.** The path
 forward is K1-K5: make the failure legible, then diagnose it as an ordinary candidate.
-Test totals on the branch: Swift **142 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142); Python **590 passed / 2 skipped / 368 subtests**
+Test totals on the branch: Swift **146 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146); Python **590 passed / 2 skipped / 368 subtests**
 including `tests/test_live_pipeline_seams.py` **50 passed** (new in run 20260728-112922 iteration 1,
 +5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10, +12 in iteration 11,
 +6 in iteration 12) and `tests/test_live_identity.py` **8 passed** (+1 in iteration 12),
@@ -1349,6 +1350,33 @@ new node and by **nothing else in the suite** (`testHTTPHealth*` both still pass
 default had no coverage before this iteration.
 *This is diagnostic groundwork only.* K1 makes the lane failure legible; it does not change which
 lanes fail, and K5's re-read on m4mbp is what turns the codes into a candidate.
+
+**Lane-failure-log contract (new, run 20260728-181020 iteration 2 / K2).** *The app records the
+failure whether or not anyone asks.* `LaneFailureLoggingHealthAdapter` (`CaptureController.swift`)
+wraps the app's `CaptureHTTPHealthAdapter` and reads `status.reportedLanes()` — K1's projection —
+on every heartbeat, writing one line per lane per failure through `CaptureLaneFailureLogging`.
+*Why the health path and not the control channel.* The heartbeat is the only report the app
+produces unprompted, and it fires every 0.5 s: an operator who never runs `status` still gets the
+code, which is exactly the attended session's situation. It records **before** delegating, because
+a heartbeat the server refuses is the case where the local line is the only evidence left.
+*Once per failure.* `NativeLaneProjection.recordFailure` is sticky for a capture generation, so
+logging every tick would write two lines a second and bury the evidence. The key is
+`state/failureCode` per lane and it is **cleared when a lane recovers**, so recovered-then-failed-
+again is recorded again even with the identical code.
+*What can reach the log.* `recordLaneFailure` is handed a `CaptureLaneStatus` and nothing else, and
+that type has no free-form field — `NativeLaneFailure.cause` is not on it. Same structural argument
+as G3's `ControlChannelErrorDetail`: an implementation cannot write a payload because it is never
+given one. The line is `capture lane <lane> failed: state=… code=… dropped=… discontinuities=…`;
+one `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` now answers both "which
+control command failed" and "which lane died".
+*One state vocabulary.* `CaptureLaneStates` (`CaptureController.swift`) holds `capturing`,
+`recovering`, `stopped`, `failed`; `NativeLaneHealth` and `reportedLanes()` use it. `failed` is a
+**wire** value, not a local one — `live_helper_failure.py:240` keys the server's terminal path on
+that exact word — so a test pins each constant to its literal.
+*Measured mutation residue:* recording from `status.lanes` instead of `reportedLanes()` survives the
+suite. It is an equivalent mutant, not a coverage gap: an unreported lane projects as `stopped`, so
+it is never logged either way. `reportedLanes()` is used for the structural reason — one projection,
+now three surfaces.
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -3217,8 +3245,10 @@ An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox fl
     `ControlChannelResponse.lanes`; `init(status:)` fills it from the new
     `CaptureStatus.reportedLanes()`, which the heartbeat now shares. See the lane-reporting
     contract block. `mtd-capture status` prints both lanes and a failed lane's typed code.
-44. **K2 - log typed lane failures in the app.** G3 logs only unclassified failures, so the typed
-    failure that ends a meeting is quieter than an unknown one. Use the same non-secret shape.
+44. **K2 - log typed lane failures in the app** `[done - run 20260728-181020 iteration 2]`:
+    `CaptureLaneFailureLogging` + `OSLogControlChannelFailureLog.recordLaneFailure` +
+    `LaneFailureLoggingHealthAdapter` wrapping the app's heartbeat adapter, plus the one
+    `CaptureLaneStates` vocabulary. See the lane-failure-log contract block.
 45. **K3 - record the terminal reason and per-lane codes server-side.** The terminal path in
     `live_helper_failure.observe` marks the session, calls `_terminal_failure` with a generic
     reason and **skips `_fail_lane`**, so the codes the client sent are discarded. Log them.

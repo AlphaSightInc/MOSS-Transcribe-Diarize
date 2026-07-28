@@ -5773,3 +5773,94 @@ failure that ends a meeting must not be quieter than an unknown one). Then K3 (s
 reason + per-lane codes), K4 (a released session must not read `running: true`), K5 (gate, one
 merge with `expected_main` advanced in-script, push, redeploy, re-read the codes on m4mbp).
 Do not guess the lane-failure cause before K5 reports it.
+
+================================================================================
+run 20260728-181020 | iteration 2 | K2 - the app records the lane failure itself
+================================================================================
+Target: candidate K2 (fourth amendment, lane observability). G3 logs a control failure nobody could
+name; a *typed* lane failure - the one event that ends a meeting - was silent. In the attended E3
+session the app watched both lanes fail, the server released the session, and `log show` for the app
+process returned nothing at all.
+
+Design decisions, recorded rather than left implicit:
+- **The health path, not the control channel.** The heartbeat is the only report the app produces
+  unprompted (every 0.5 s), so an operator who never runs `status` still gets the code. K1 already
+  made the code readable *when asked*; K2 makes it recorded *when it happens*.
+- **Recorded before delegating.** A heartbeat the server refuses is exactly the case where the local
+  line is the only evidence left, so the log is written before `wrapped.emit`.
+- **Once per failure, not once per tick.** `NativeLaneProjection.recordFailure` is sticky for a
+  capture generation, so a per-tick line would write twice a second and bury what it preserves. The
+  dedupe key is `state/failureCode` per lane and is cleared when a lane recovers, so
+  recovered-then-failed-again is recorded again even with the identical code.
+- **What can reach the log is bounded structurally.** `recordLaneFailure` is handed a
+  `CaptureLaneStatus` and nothing else, and that type has no free-form field: the free-form
+  `NativeLaneFailure.cause` is not on it. Same argument as G3's `ControlChannelErrorDetail`.
+- **One state vocabulary.** `CaptureLaneStates` replaces four literal spellings. `failed` is a wire
+  value, not a local one - `live_helper_failure.py:240` keys the server's terminal path on that
+  exact word - so a node pins each constant to its literal.
+- **One log object.** `main.swift` builds `OSLogControlChannelFailureLog` once and injects it into
+  both the control server and the health decorator, so one
+  `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` answers both questions.
+
+Files touched (all tracked `macos/`, inside Phase K's scope; no server source):
+- `Sources/MOSSCaptureCore/CaptureSecurity.swift` - new `CaptureLaneFailureLogging` protocol;
+  `OSLogControlChannelFailureLog` now conforms to it and gains `recordLaneFailure(_:)`.
+- `Sources/MOSSCaptureCore/CaptureController.swift` - new `CaptureLaneStates` vocabulary and
+  `LaneFailureLoggingHealthAdapter` (a `CaptureHealthAdapter` decorator).
+- `Sources/MOSSCaptureCore/NativeLaneHealth.swift` - the five state literals now read from
+  `CaptureLaneStates`; values unchanged.
+- `Sources/MOSSCaptureApp/main.swift` - one `failureLog` built once, injected into the control
+  server (as before) and into the new decorator wrapping `CaptureHTTPHealthAdapter`.
+- Tests: `CaptureControllerTests.swift` +4 nodes, +2 doubles
+  (`RecordingCaptureLaneFailureLog`, `ThrowingCaptureHealthAdapter`).
+- `testProductionPumpTicksOncePerCanonicalWireFrameOnOneSharedPinnedProvider` matched the shared
+  provider by literal indentation (`"\(dependent)(\n                clientProvider: httpClients,"`),
+  which a decorator's extra nesting broke. Replaced with a whitespace-insensitive regex asserting
+  the same invariant - the argument, not the indentation. Not a weakening: the mutation "give the
+  health adapter its own provider" still fails it (M1 below reaches the same file and the node
+  still holds).
+
+Validation (MacStudio, swift 6.3.2 / pyenv 3.12.10):
+- `swift test` in `macos/MOSSCapture`: **146 passed, 0 failures** (was 142; +4 new nodes).
+- `python3 -m pytest tests/test_macos_uds_tracer.py -q`: **4 passed** in 15.50s - the real-process
+  Darwin tracer builds and drives both products over a real UDS, unaffected.
+- Red-before and mutation rehearsals, all in a scratch copy under /tmp (repo never mutated, copy
+  deleted afterwards). NOTE: the scratch copy has a standing baseline of **4** unrelated failures -
+  `testIDEA0{36,42,43}*` read repo-root docs (`CONTEXT.md`, `docs/adr/…`) that do not exist beside a
+  copied package. Every count below is *in addition* to those four.
+  1. **Sources at HEAD + the new tests** -> compile errors: `cannot find type
+     'CaptureLaneFailureLogging' in scope`, `cannot find 'LaneFailureLoggingHealthAdapter' in
+     scope`. Both are genuinely new.
+  2. **M1 - the app stops wrapping the heartbeat** (`health: CaptureHTTPHealthAdapter(...)` direct)
+     -> `testTheAppEntrypointWiresTheControlChannelFailureLogAndTheCLIDoesNot` fails on both new
+     assertions. A declaration the shipped app does not wire is worth nothing.
+  3. **M2 - no dedupe** (`alreadyRecorded = false`) -> the once-per-failure node fails at all three
+     checkpoints: 5 lines for one failure, then 7, then 10 where 3 are expected.
+  4. **M3 - never clear the key on recovery** (`if failed { reported[…] = signature }`) -> the same
+     node fails only at the third checkpoint: the microphone's *second* permission denial, after a
+     recovery, is swallowed. This is why the node re-fails with the identical code.
+  5. **M4 - record after the delegate** -> `testTheLaneFailureIsRecordedFromTheSharedProjection
+     EvenWhenTheHeartbeatFails` fails on both assertions: a refused heartbeat loses the record.
+  6. **M5 - reduce the line to the lane alone** -> `testTheAppLaneFailureLineNamesTheLaneAndTyped
+     CodeAndNeverTheCause` fails; the typed code this whole cycle exists to surface is gone.
+  7. **Survivor, measured and accepted: `record(status.lanes)` instead of
+     `record(status.reportedLanes())`** produces no failure. It is an equivalent mutant, not a
+     coverage gap - an unreported lane projects as `stopped`, so it is never logged either way.
+     `reportedLanes()` is used for the structural reason (one projection, now three surfaces).
+
+Learned: the state word `failed` is a *wire* value the server's terminal path keys on
+(`live_helper_failure.py:240`), spelled inline in three Swift places before this iteration. One
+vocabulary plus a node pinning each constant to its literal is what stops a future rename from
+silently making the server stop recognising a dead lane - a defect that would present exactly like
+the one Phase K is chasing.
+
+Evidence paths: macos/MOSSCapture/Sources/MOSSCaptureCore/{CaptureController,CaptureSecurity,
+NativeLaneHealth}.swift; macos/MOSSCapture/Sources/MOSSCaptureApp/main.swift;
+macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift.
+
+Next: **K3** - record the terminal reason and per-lane codes server-side.
+`live_helper_failure.observe` marks the session terminal, calls `_terminal_failure` with a generic
+reason and skips `_fail_lane`, so the codes the client sent are discarded at the moment they matter
+most; `_failed_lanes` at :237-245 already has them in hand. Then K4 (a released session must not
+answer `running: true`), then K5 (full gate, one merge with `expected_main` advanced in-script,
+push, redeploy, re-read the codes on m4mbp). Do not guess the lane-failure cause before K5.

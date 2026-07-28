@@ -5,6 +5,18 @@ public enum CaptureLane: String, CaseIterable, Codable, Equatable {
     case microphone
 }
 
+/// The whole vocabulary of lane states, in one place.
+///
+/// Every reporting surface — the heartbeat, the control channel, the app's log — has to agree on
+/// which word means "this lane is dead", and a surface that spells it itself is a surface that can
+/// silently stop recognising it.
+public enum CaptureLaneStates {
+    public static let capturing = "capturing"
+    public static let recovering = "recovering"
+    public static let stopped = "stopped"
+    public static let failed = "failed"
+}
+
 public struct CaptureConfiguration: Equatable {
     public var sessionID: String
     public var serverURL: URL
@@ -113,7 +125,12 @@ public struct CaptureStatus: Equatable {
     public func reportedLanes() -> [CaptureLaneStatus] {
         CaptureLane.allCases.map { lane in
             lanes.first { $0.lane == lane }
-                ?? CaptureLaneStatus(lane: lane, sequence: 0, deviceEpoch: 0, state: "stopped")
+                ?? CaptureLaneStatus(
+                    lane: lane,
+                    sequence: 0,
+                    deviceEpoch: 0,
+                    state: CaptureLaneStates.stopped
+                )
         }
     }
 }
@@ -196,6 +213,62 @@ public protocol CaptureHealthAdapter {
         sentMonotonicNS: UInt64
     ) throws
 }
+
+/// Records every lane failure the app sees, on its way to the server.
+///
+/// It sits on the health path rather than the control channel because the heartbeat is the only
+/// report the app produces without an operator asking for one: a meeting that dies while nobody is
+/// polling still leaves the typed code in the unified log. G3 made a control failure *nobody could
+/// name* readable afterwards; a typed lane failure that ends the meeting must not be quieter than
+/// that.
+///
+/// One line per lane per failure. A lane's failure is sticky for the life of a capture generation,
+/// so logging it every 0.5 s tick would bury the evidence this exists to preserve — but a lane that
+/// recovers and fails again, or fails a second time with a different code, is recorded again.
+public final class LaneFailureLoggingHealthAdapter: CaptureHealthAdapter {
+    private let wrapped: CaptureHealthAdapter
+    private let log: any CaptureLaneFailureLogging
+    private let lock = NSLock()
+    private var reported: [CaptureLane: String] = [:]
+
+    public init(wrapping wrapped: CaptureHealthAdapter, log: any CaptureLaneFailureLogging) {
+        self.wrapped = wrapped
+        self.log = log
+    }
+
+    public func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        // Before the delegate, not after: a heartbeat the server never receives is exactly the case
+        // where the local record is the only evidence anyone will have.
+        record(status.reportedLanes())
+        try wrapped.emit(
+            status: status,
+            configuration: configuration,
+            sentMonotonicNS: sentMonotonicNS
+        )
+    }
+
+    /// Reads the same projection the heartbeat and the control channel report, so the log cannot
+    /// name a different set of lanes than the ones the operator and the server are told about.
+    private func record(_ lanes: [CaptureLaneStatus]) {
+        for lane in lanes {
+            let failed = lane.state == CaptureLaneStates.failed
+            let signature = "\(lane.state)/\(lane.failureCode ?? "")"
+            lock.lock()
+            let alreadyRecorded = failed && reported[lane.lane] == signature
+            reported[lane.lane] = failed ? signature : nil
+            lock.unlock()
+            if failed && !alreadyRecorded {
+                log.recordLaneFailure(lane)
+            }
+        }
+    }
+}
+
+extension LaneFailureLoggingHealthAdapter: @unchecked Sendable {}
 
 public enum CaptureControllerError: Error, Equatable {
     case alreadyRunning
