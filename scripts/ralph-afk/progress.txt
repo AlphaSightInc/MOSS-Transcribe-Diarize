@@ -2214,3 +2214,5 @@ history as well as out of `ps`. Then `mtd-capture start` again for the real sess
   F1's 60 s canary. If the operator is unavailable for a long stretch, the one candidate that needs
   no human and no TCC is F4's rollback rehearsal - but it takes the live service down and must not be
   started while a pairing or canary window is open, so prefer waiting.
+
+[loop 20260728-023004-98501] blocked at iteration 15
