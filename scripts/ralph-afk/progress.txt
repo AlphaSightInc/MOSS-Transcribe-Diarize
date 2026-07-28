@@ -2858,3 +2858,72 @@ than "tidied".
   D4 mint -> `pair` (Ctrl-D; a stray Return is harmless since G2) -> `start` -> the two clicks ->
   the read-only `sqlite3`/`csreq` verification. Pair first regardless: the stale 03:10 configuration
   means `start` alone would no longer fail closed.
+
+
+================================================================================
+## run 20260728-072601 / iteration 7 - G6 rollbacks recorded BEFORE the rebuild
+================================================================================
+
+- Target: candidate 31 (**G6**) - re-run E2b's reviewed tools on m4mbp so the *installed*
+  `/Applications/MOSSCapture.app` carries G1+G2+G3. G5 moved the checkout to `317df4d`; the product
+  is still the pre-amendment `f9285d6` build, so this is the last step between the ATS fix and the
+  binary the operator will click through TCC.
+- Authorized action: candidate 31 names `macos/scripts/build-app.sh --configuration release` then
+  `install-app.sh` on m4mbp. Nothing else is touched - no server, no service, no TCC, no git ref.
+
+### Pre-state, measured read-only this iteration (all on m4mbp, 2026-07-28T08:53Z)
+- Host `M4MBP.local`, macOS `26.5.2`.
+- Checkout `/Users/ga0/…/MOSS-Transcribe-Diarize`: HEAD `317df4d728b6765dbe365a3166158ba581299557`,
+  tree `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`, `git status --porcelain` empty, 159 tracked files.
+- Checkout `macos/MOSSCapture/Resources/Info.plist` -> `plutil -extract NSAppTransportSecurity`
+  prints exactly `NSAllowsArbitraryLoads` / `true` and nothing else. **The source has the fix.**
+- Installed bundle `/Applications/MOSSCapture.app`: inode **211502957**, mtime 2026-07-28T01:12:55Z,
+  `Identifier=com.alphasight.moss.capture`, `CDHash=026836783c25f27e93c128214f717289864a680c`
+  (full sha256 `026836783c25f27e93c128214f717289864a680c7e539fbccb8cc6531bf09f6f`),
+  `flags=0x10000(runtime)`, `TeamIdentifier=not set`, `Signed Time=Jul 28, 2026 at 1:12:55 AM`,
+  DR `identifier "com.alphasight.moss.capture" and certificate leaf =
+  H"e118d874377746c4bd25beb8252bb84302b73e72"`, `codesign --verify --strict` ok, embedded
+  entitlements exactly `{com.apple.security.device.audio-input: true}`.
+  Its three files hash to
+  `Contents/MacOS/MOSSCaptureApp de8cf591…`, `Contents/Info.plist 2cc4b1da…`,
+  `Contents/_CodeSignature/CodeResources 6686de10…`.
+- **`plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist`
+  errors `No value at that key path`.** That is the "before" half of G6's one-line proof.
+- Installed CLI `/Users/ga0/.local/bin/mtd-capture`: 0755, 1378624 bytes,
+  sha256 `08ba13fd…`, `Identifier=com.alphasight.moss.capture.cli`,
+  `CDHash=f9d9e849f77bdca24df544fe7f4b8476cfe6cf78`.
+- No `/Applications/MOSSCapture.app.backup-*` and no `mtd-capture.backup-*` exist yet, so any
+  backup seen after this iteration was created by it.
+- `MOSSCaptureApp` is **not running** and `/tmp/moss-capture-501/control.sock` does not exist, so no
+  live control channel or capture session is disturbed by replacing the bundle.
+- Signing identity intact: `~/Library/Keychains/moss-signing.keychain-db` (26408 B, 01:05) and
+  `~/.config/moss-capture/signing-keychain.password` (0600, 45 B).
+- `.build/product` from E2b holds the currently-installed build plus `build-evidence.json`.
+- Free space 77 Gi.
+
+### Rollbacks, recorded before the mutations they cover (prd.md "Reversibility")
+1. **Independent pre-copy of the installed artifacts**, taken first so a restore never depends on the
+   tool's own backup step succeeding. SwiftPM is not byte-reproducible on this host, so the *only*
+   way back to these exact bytes is a copy that already exists:
+   `mkdir -p /tmp/moss-g6-prebackup && cp -R /Applications/MOSSCapture.app /tmp/moss-g6-prebackup/ && cp -p /Users/ga0/.local/bin/mtd-capture /tmp/moss-g6-prebackup/`
+   Restore from it:
+   `rm -rf /Applications/MOSSCapture.app && cp -R /tmp/moss-g6-prebackup/MOSSCapture.app /Applications/ && cp -p /tmp/moss-g6-prebackup/mtd-capture /Users/ga0/.local/bin/mtd-capture`
+   Removing the pre-copy afterwards is `rm -rf /tmp/moss-g6-prebackup`.
+2. **`build-app.sh --configuration release`** overwrites `macos/MOSSCapture/.build/product`, which is
+   gitignored derived output. Rollback is rollback 1 (the bytes it replaces are the installed ones)
+   plus, if the tree ever needs to be clean of build output, `rm -rf macos/MOSSCapture/.build/product`.
+   It touches no keychain state: it unlocks the signing keychain from the password file and signs;
+   it refuses an install location by design.
+3. **`install-app.sh`** replaces the bundle and the CLI. Because the rebuild changes the bytes, this
+   takes the **replacement** path, which prints its own rollback line *before* the first mutation and
+   moves the previous artifacts aside rather than deleting them:
+   `rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-<utc>' '/Applications/MOSSCapture.app'`
+   `rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-<utc>' '/Users/ga0/.local/bin/mtd-capture'`
+   The `<utc>` stamps are recorded in the result section below once the tool prints them.
+4. **Stop condition, not a rollback.** If the new bundle's designated requirement is anything other
+   than `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`, apply
+   rollback 3 (or 1) immediately and record a blocker: a changed DR is exactly what would cost the
+   operator the TCC grants E3 is about to create.
+5. **Nothing else is at risk.** No TCC row exists for this client yet (iteration 23 baseline: zero
+   `%moss%` rows in either service), so no grant can be lost by an inode change this time; the
+   E1 identity is untouched, so the DR is stable; the server and both services are not involved.
