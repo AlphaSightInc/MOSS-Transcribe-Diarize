@@ -6305,3 +6305,61 @@ deployed logging config), the Mac's
 and `mtd-capture status` for both lanes plus sessionRefusal (K1/K4). Do NOT guess the cause
 first - TCC, pinning/network, schema and duplicate helpers are all already ruled out by
 measurement, so the answer will be something none of those covers.
+
+================================================================================
+Iteration 7 of run 20260728-181020 - K5d PRE-RECORDED ROLLBACKS (written before
+any mutation, per prd.md "Reversibility")
+================================================================================
+
+Target: K5d - the re-read. Launch the freshly installed app on m4mbp, mint one pairing
+payload on the server loopback, `pair` -> `start`, and READ the three surfaces K1-K4 built.
+This is the step the fourth amendment authorizes ("re-run pair -> start on m4mbp and read
+the codes"), so launching the app and creating one session on m4mbp is in scope.
+
+Pre-state, measured read-only before anything was touched:
+- all four checkouts still fc7097d; server moss-live-web MainPID 346453 NRestarts=0 active,
+  moss-web active; server journal quiet (last line 15:24:21 local, a /live 200) - the 2846
+  heartbeat 403s in the last 30 min are the PRE-K5c storm that stopped at 15:19:17, not a
+  live client
+- m4mbp: macOS 26.5.2, MOSSCaptureApp NOT running, a STALE /tmp/moss-capture-501/control.sock
+  (srw-------, Jul 28 14:00) left by the killed pid 14978, `mtd-capture status` -> {"ok":false}
+  rc=70
+- both TCC grants still auth_value=2 (322 rows in the table, so the reader is sound)
+- `log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 8h` is EMPTY -
+  a clean baseline, so any line K2 emits during this run is unambiguously from this run
+- console user is `ga0` and `launchctl print gui/501` resolves, so `open -a` over SSH lands in
+  the real GUI session (never run Contents/MacOS/MOSSCaptureApp directly - TCC would attribute
+  the grant to the terminal)
+
+MUTATIONS AND THEIR ROLLBACKS, in the order they will be applied:
+
+1. Launch the app: `open -a /Applications/MOSSCapture.app` over SSH.
+   ROLLBACK:
+     /Users/ga0/.local/bin/mtd-capture stop || true
+     pkill -x MOSSCaptureApp
+     rm -f /tmp/moss-capture-501/control.sock     # only if it is stale afterwards
+   (`stop` first, so the outbox drains rather than being killed mid-publish.)
+
+2. Mint ONE pairing payload on the server loopback (`ops/live-pair.sh --url
+   https://127.0.0.1:7861`). This appends a single-use pairing CODE to live-auth.json.
+   ROLLBACK: none required and none attempted - a pairing code is single-use and expires
+   after PAIRING_TTL_SECONDS (300 s). An unused code is inert.
+
+3. `mtd-capture pair --server https://100.64.0.8:7861` with the payload on STDIN (never argv,
+   never a file). This mints a NEW device UUID (CaptureSecurity.swift:100/259 - the app does
+   not reuse capture-device-id) and overwrites the bearer/session/view entries in m4mbp's
+   ~/Library/Application Support/MOSSCapture/secrets.json.
+   ROLLBACK (apply only if K5d is abandoned, never as routine cleanup):
+     # on the server, loopback, with the live cert:
+     curl -s --cacert "$L/live.crt" -X DELETE https://127.0.0.1:7861/api/live/devices/<new-id>
+   No backup of secrets.json is taken ON PURPOSE: copying a bearer to a second file on disk is
+   a worse outcome than re-running a repeatable mint, and the bearer being overwritten is
+   already dead (its session died with the F4a service restart). Re-pairing IS the restore.
+   The pre-existing m4mbp device AB600574-FD93-4321-967E-652AB064A70B is left alone.
+
+4. `mtd-capture start --label ralph-k5d-<utc>`. Creates ONE live session and opens both lanes.
+   ROLLBACK: `mtd-capture stop`; if the CLI cannot reach the app, the session releases itself
+   (helper lease 30 s, and the terminal path releases on its own). Sessions are memory-only.
+
+Nothing else is touched: no checkout moves, no service restarts, no rebuild, no reinstall, no
+TCC write, and the batch service is not addressed at all.
