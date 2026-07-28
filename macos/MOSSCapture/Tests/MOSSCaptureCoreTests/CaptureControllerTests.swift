@@ -58,8 +58,10 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(current.lanes.map(\.lane), [.system, .microphone])
         XCTAssertEqual(current.lanes.first { $0.lane == .system }?.deviceEpoch, 1)
         XCTAssertEqual(current.lanes.first { $0.lane == .microphone }?.deviceEpoch, 7)
-        XCTAssertEqual(transport.publishedFrames.map(\.lane), [.system, .microphone])
-        XCTAssertEqual(transport.publishedFrames.map(\.sequence), [0, 0])
+        // Per lane, because the lanes publish concurrently: within a lane the order is the
+        // contract, across lanes it is a race the server does not care about.
+        XCTAssertEqual(transport.publishedFrames(lane: .system).map(\.sequence), [0])
+        XCTAssertEqual(transport.publishedFrames(lane: .microphone).map(\.sequence), [0])
         XCTAssertEqual(transport.sessionIDs, ["session-a", "session-a"])
         XCTAssertEqual(health.emissions.count, 1)
         XCTAssertEqual(health.emissions.first?.configuration, configuration)
@@ -138,12 +140,19 @@ final class CaptureControllerTests: XCTestCase {
         scheduler.runScheduledOperation()
         scheduler.runScheduledOperation()
 
+        // Each lane's own stream is ordered and complete; the interleaving between the two lanes is
+        // deliberately not asserted, because the lanes publish on separate threads.
+        XCTAssertEqual(transport.publishedFrames(lane: .system).map(\.sequence), [0, 1])
         XCTAssertEqual(
-            transport.publishedFrames.map(\.lane),
-            [CaptureLane.system, CaptureLane.microphone, CaptureLane.system, CaptureLane.microphone]
+            transport.publishedFrames(lane: .system).map(\.captureTimestampNS),
+            [10, 30]
         )
-        XCTAssertEqual(transport.publishedFrames.map(\.sequence), [0, 0, 1, 1])
-        XCTAssertEqual(transport.publishedFrames.map(\.captureTimestampNS), [10, 20, 30, 40])
+        XCTAssertEqual(transport.publishedFrames(lane: .microphone).map(\.sequence), [0, 1])
+        XCTAssertEqual(
+            transport.publishedFrames(lane: .microphone).map(\.captureTimestampNS),
+            [20, 40]
+        )
+        XCTAssertEqual(transport.publishedFrames.count, 4)
         XCTAssertEqual(health.emissions.map(\.sentMonotonicNS), [100, 200, 300, 400])
         XCTAssertEqual(health.emissions.map(\.status.publishedFrameCount), [1, 3, 4, 4])
         XCTAssertEqual(controller.status().publishedFrameCount, 4)
@@ -671,6 +680,261 @@ final class CaptureControllerTests: XCTestCase {
             ["session-a", "session-b"],
             "a new server session counts each lane from zero, so the outbox restarts with it"
         )
+    }
+
+    func testLanesPublishConcurrentlyWithOneRequestInFlightPerLane() throws {
+        let framesPerLane = 4
+        let source = FakeCaptureSourceAdapter(frames: [])
+        // Every lane's first request is held until every lane has one in flight. A transport that
+        // sends the lanes one after another can never satisfy that, so a serial pump fails on the
+        // rendezvous deadline instead of passing because it happened to be fast.
+        let transport = RendezvousCaptureTransport(expectedLanes: [.system, .microphone])
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(configuration: laneConfiguration())
+
+        for index in 0..<framesPerLane {
+            source.enqueue(
+                frames: [
+                    laneFrame(.system, captureTimestampNS: UInt64(100 + index)),
+                    laneFrame(.microphone, captureTimestampNS: UInt64(200 + index)),
+                ]
+            )
+        }
+        scheduler.runScheduledOperation()
+        let drained = controller.status()
+
+        XCTAssertFalse(
+            transport.rendezvousTimedOut,
+            "the lanes never overlapped, so the transport is still draining them one after another"
+        )
+        XCTAssertEqual(
+            transport.maxConcurrentRequests,
+            CaptureLane.allCases.count,
+            "in-flight work is bounded by the number of lanes, not by how much audio is waiting"
+        )
+        for lane in CaptureLane.allCases {
+            XCTAssertEqual(
+                transport.maxConcurrentRequests(lane: lane),
+                1,
+                "\(lane.rawValue) has to arrive in sequence order, so it can only have one request out"
+            )
+            XCTAssertEqual(
+                transport.published(lane: lane).map(\.sequence),
+                Array(0..<UInt64(framesPerLane)),
+                "concurrency across lanes never reorders a lane's own stream"
+            )
+        }
+        XCTAssertEqual(drained.publishedFrameCount, CaptureLane.allCases.count * framesPerLane)
+        XCTAssertEqual(drained.outbox.retainedFrames, 0)
+        XCTAssertNil(drained.pumpFailure)
+    }
+
+    func testATickArrivingDuringADrainSkipsInsteadOfReSendingFramesAlreadyInFlight() throws {
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let transport = GatedCaptureTransport()
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ConcurrentCaptureHealth()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: IncrementingCaptureClock(),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(configuration: laneConfiguration())
+        let healthEmissionsBeforeTheLateTick = health.emissionCount()
+        source.enqueue(
+            frames: [
+                laneFrame(.system, captureTimestampNS: 1),
+                laneFrame(.microphone, captureTimestampNS: 2),
+            ]
+        )
+
+        let tickRunner = FakeScheduledPumpRunner(scheduler: scheduler)
+        let drainingTick = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            tickRunner.run()
+            drainingTick.signal()
+        }
+        XCTAssertTrue(
+            transport.waitUntilInFlight(CaptureLane.allCases.count, timeout: 5),
+            "both lanes should be waiting on the transport"
+        )
+
+        let lateTick = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            tickRunner.run()
+            lateTick.signal()
+        }
+
+        XCTAssertEqual(
+            lateTick.wait(timeout: .now() + 5),
+            .success,
+            "a tick that finds a pass running skips its turn instead of queueing behind the drain"
+        )
+        XCTAssertEqual(
+            transport.attempts.count,
+            CaptureLane.allCases.count,
+            "the skipped tick issued no second attempt at identities that are already in flight"
+        )
+        XCTAssertGreaterThan(
+            health.emissionCount(),
+            healthEmissionsBeforeTheLateTick,
+            "skipping the publish turn must not skip the heartbeat the helper lease depends on"
+        )
+
+        transport.release()
+        XCTAssertEqual(drainingTick.wait(timeout: .now() + 5), .success)
+        let drained = controller.status()
+
+        XCTAssertEqual(transport.published.count, CaptureLane.allCases.count)
+        XCTAssertEqual(drained.publishedFrameCount, CaptureLane.allCases.count)
+        XCTAssertEqual(drained.outbox.retainedFrames, 0)
+    }
+
+    func testStopWaitsForTheRunningPassInsteadOfSkippingTheFinalDrain() throws {
+        let tailHandedOver = DispatchSemaphore(value: 0)
+        let source = ConcurrentTailCaptureSource(
+            tail: [laneFrame(.microphone, captureTimestampNS: 2)],
+            onTailHandover: { tailHandedOver.signal() }
+        )
+        let transport = GatedCaptureTransport()
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: IncrementingCaptureClock(),
+            scheduler: scheduler,
+            health: ConcurrentCaptureHealth()
+        )
+        try controller.start(configuration: laneConfiguration())
+        source.enqueue(frames: [laneFrame(.system, captureTimestampNS: 1)])
+
+        let tickRunner = FakeScheduledPumpRunner(scheduler: scheduler)
+        let drainingTick = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            tickRunner.run()
+            drainingTick.signal()
+        }
+        XCTAssertTrue(transport.waitUntilInFlight(1, timeout: 5))
+
+        let stopper = CaptureControllerStopper(controller: controller)
+        let stopped = CaptureStatusBox()
+        let stopFinished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            if let status = stopper.stop(deadline: Date(timeIntervalSince1970: 1)) {
+                stopped.append(status)
+            }
+            stopFinished.signal()
+        }
+        XCTAssertEqual(
+            tailHandedOver.wait(timeout: .now() + 5),
+            .success,
+            "the stop has flushed the source and is at the transport"
+        )
+        XCTAssertEqual(
+            stopFinished.wait(timeout: .now() + 0.3),
+            .timedOut,
+            "the stop is held by the pass still in flight rather than skipping past it"
+        )
+
+        transport.release()
+        XCTAssertEqual(stopFinished.wait(timeout: .now() + 5), .success)
+        XCTAssertEqual(drainingTick.wait(timeout: .now() + 5), .success)
+        let finalStatus = try XCTUnwrap(stopped.load().first)
+
+        // The meeting's last frame only exists after the stop flushes, and no later tick will ever
+        // carry it: a stop that gave up its turn would leave it queued forever.
+        XCTAssertEqual(
+            transport.published.map(\.captureTimestampNS).sorted(),
+            [1, 2]
+        )
+        XCTAssertEqual(finalStatus.publishedFrameCount, 2)
+        XCTAssertEqual(finalStatus.outbox.retainedFrames, 0)
+        XCTAssertFalse(finalStatus.running)
+    }
+
+    func testPinnedProviderKeepsOneSessionPerPinAndSupersedesARotatedOne() throws {
+        var built: [String] = []
+        let provider = PinnedURLSessionCaptureHTTPClientProvider(makeClient: { pin in
+            built.append(pin)
+            return URLSessionCaptureHTTPClient(session: URLSession(configuration: .ephemeral))
+        })
+        let firstPin = String(repeating: "a", count: 64)
+        let rotatedPin = String(repeating: "b", count: 64)
+
+        // One meeting-minute of frames plus heartbeats, all on the same pin.
+        var clients: [CaptureHTTPClient] = []
+        for _ in 0..<180 {
+            clients.append(try provider.client(certificatePinSHA256Hex: firstPin))
+        }
+        let rotated = try provider.client(certificatePinSHA256Hex: rotatedPin)
+
+        // A per-request session would leak its pinning delegate for the whole meeting and
+        // re-handshake TLS every 0.5 s; one per live pin is the bound.
+        XCTAssertEqual(built, [firstPin, rotatedPin])
+        XCTAssertEqual(Set(clients.map { ObjectIdentifier($0 as AnyObject) }).count, 1)
+        XCTAssertNotEqual(
+            ObjectIdentifier(clients[0] as AnyObject),
+            ObjectIdentifier(rotated as AnyObject),
+            "a rotated pin is a different session, not the same one with a new expectation"
+        )
+
+        // A real pinned client owns its session, so it is the one that can be superseded.
+        let owned = try URLSessionCaptureHTTPClient(certificatePinSHA256Hex: firstPin)
+        XCTAssertFalse(owned.isInvalidated)
+        owned.invalidate()
+        XCTAssertTrue(owned.isInvalidated)
+        XCTAssertThrowsError(
+            try owned.send(URLRequest(url: URL(string: "https://127.0.0.1/api/live")!))
+        ) { error in
+            XCTAssertEqual(
+                error as? CaptureHTTPTransportError,
+                .missingCertificatePin,
+                "a superseded session must fail rather than keep serving a rotated-away pin"
+            )
+        }
+    }
+
+    func testProductionPumpTicksOncePerCanonicalWireFrameOnOneSharedPinnedProvider() throws {
+        let canonicalFramePeriod = Double(NativeLaneWireFormat.live.frameSamples)
+            / Double(NativeLaneWireFormat.live.sampleRate)
+        XCTAssertEqual(CapturePumpContract.interval, canonicalFramePeriod, accuracy: 1e-9)
+        XCTAssertEqual(CapturePumpContract.interval, 0.5, accuracy: 1e-9)
+
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureApp")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(
+            source.contains("RepeatingCaptureSchedulerAdapter(interval: CapturePumpContract.interval)"),
+            "the shipped pump cadence is the stated contract, not a literal beside it"
+        )
+        XCTAssertEqual(
+            try matches(pattern: #"(PinnedURLSessionCaptureHTTPClientProvider\(\))"#, in: source).count,
+            1,
+            "frames, heartbeats and pairing share one provider, so the process holds one session per pin"
+        )
+        for dependent in ["CaptureV2HTTPTransportAdapter", "CaptureHTTPHealthAdapter"] {
+            XCTAssertTrue(
+                source.contains("\(dependent)(\n                clientProvider: httpClients,"),
+                "\(dependent) has to be given the shared provider rather than defaulting to its own"
+            )
+        }
     }
 
     private func laneFrame(
@@ -4615,22 +4879,268 @@ private final class NoOpCaptureTransport: CaptureTransportAdapter, @unchecked Se
 /// left the client — including the ones that then failed — and `accepted` only the answered ones,
 /// which is the distinction an ambiguous result turns on.
 private final class ProgrammableCaptureTransport: CaptureTransportAdapter, @unchecked Sendable {
-    var failure: ((CaptureFrame, Int) -> Error?)?
-    private(set) var attempts: [CaptureFrame] = []
-    private(set) var accepted: [CaptureFrame] = []
-    private(set) var sessionIDs: [String] = []
+    /// The lanes publish concurrently, so the record has to be synchronized; the answer is chosen
+    /// inside the lock so an attempt is counted exactly once per request.
+    private let lock = NSLock()
+    private var programmedFailure: ((CaptureFrame, Int) -> Error?)?
+    private var attemptedFrames: [CaptureFrame] = []
+    private var acceptedFrames: [CaptureFrame] = []
+    private var acceptedSessionIDs: [String] = []
     private var attemptsByIdentity: [String: Int] = [:]
 
+    var failure: ((CaptureFrame, Int) -> Error?)? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return programmedFailure
+        }
+        set {
+            lock.lock()
+            programmedFailure = newValue
+            lock.unlock()
+        }
+    }
+
+    var attempts: [CaptureFrame] {
+        lock.lock()
+        defer { lock.unlock() }
+        return attemptedFrames
+    }
+
+    var accepted: [CaptureFrame] {
+        lock.lock()
+        defer { lock.unlock() }
+        return acceptedFrames
+    }
+
+    var sessionIDs: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return acceptedSessionIDs
+    }
+
     func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
+        lock.lock()
         let identity = "\(frame.lane.rawValue):\(frame.sequence)"
         let attempt = attemptsByIdentity[identity, default: 0] + 1
         attemptsByIdentity[identity] = attempt
-        attempts.append(frame)
-        if let error = failure?(frame, attempt) {
-            throw error
+        attemptedFrames.append(frame)
+        let answer = programmedFailure?(frame, attempt)
+        if answer == nil {
+            acceptedFrames.append(frame)
+            acceptedSessionIDs.append(configuration.sessionID)
         }
-        accepted.append(frame)
-        sessionIDs.append(configuration.sessionID)
+        lock.unlock()
+        if let answer {
+            throw answer
+        }
+    }
+}
+
+private final class FakeScheduledPumpRunner: @unchecked Sendable {
+    private let scheduler: FakeCaptureSchedulerAdapter
+
+    init(scheduler: FakeCaptureSchedulerAdapter) {
+        self.scheduler = scheduler
+    }
+
+    func run() {
+        scheduler.runScheduledOperation()
+    }
+}
+
+private final class CaptureControllerStopper: @unchecked Sendable {
+    private let controller: CaptureController
+
+    init(controller: CaptureController) {
+        self.controller = controller
+    }
+
+    func stop(deadline: Date) -> CaptureStatus? {
+        try? controller.stop(deadline: deadline)
+    }
+}
+
+/// A transport that holds every lane's first request until every lane has one outstanding, and
+/// records how wide the in-flight work ever got. A pump that drains the lanes one after another
+/// cannot satisfy the rendezvous, so it is reported as a timeout rather than a slow pass.
+private final class RendezvousCaptureTransport: CaptureTransportAdapter, @unchecked Sendable {
+    private let condition = NSCondition()
+    private let expectedLanes: Set<CaptureLane>
+    private let rendezvousTimeout: TimeInterval
+    private var inFlightByLane: [CaptureLane: Int] = [:]
+    private var lanesArrived: Set<CaptureLane> = []
+    private var widestConcurrency = 0
+    private var widestConcurrencyByLane: [CaptureLane: Int] = [:]
+    private var publishedFrames: [CaptureFrame] = []
+    private var timedOut = false
+
+    init(expectedLanes: Set<CaptureLane>, rendezvousTimeout: TimeInterval = 5) {
+        self.expectedLanes = expectedLanes
+        self.rendezvousTimeout = rendezvousTimeout
+    }
+
+    var maxConcurrentRequests: Int {
+        condition.lock()
+        defer { condition.unlock() }
+        return widestConcurrency
+    }
+
+    func maxConcurrentRequests(lane: CaptureLane) -> Int {
+        condition.lock()
+        defer { condition.unlock() }
+        return widestConcurrencyByLane[lane] ?? 0
+    }
+
+    func published(lane: CaptureLane) -> [CaptureFrame] {
+        condition.lock()
+        defer { condition.unlock() }
+        return publishedFrames.filter { $0.lane == lane }
+    }
+
+    var rendezvousTimedOut: Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return timedOut
+    }
+
+    func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
+        condition.lock()
+        let laneInFlight = inFlightByLane[frame.lane, default: 0] + 1
+        inFlightByLane[frame.lane] = laneInFlight
+        lanesArrived.insert(frame.lane)
+        widestConcurrency = Swift.max(widestConcurrency, inFlightByLane.values.reduce(0, +))
+        widestConcurrencyByLane[frame.lane] = Swift.max(
+            widestConcurrencyByLane[frame.lane] ?? 0,
+            laneInFlight
+        )
+        condition.broadcast()
+        let deadline = Date(timeIntervalSinceNow: rendezvousTimeout)
+        while lanesArrived != expectedLanes {
+            guard condition.wait(until: deadline) else {
+                timedOut = true
+                break
+            }
+        }
+        publishedFrames.append(frame)
+        inFlightByLane[frame.lane] = laneInFlight - 1
+        condition.unlock()
+    }
+}
+
+/// A transport that parks every request until the test releases it, so a pass can be observed while
+/// it is still in flight.
+private final class GatedCaptureTransport: CaptureTransportAdapter, @unchecked Sendable {
+    private let condition = NSCondition()
+    private var attemptedFrames: [CaptureFrame] = []
+    private var publishedFrames: [CaptureFrame] = []
+    private var inFlight = 0
+    private var released = false
+
+    var attempts: [CaptureFrame] {
+        condition.lock()
+        defer { condition.unlock() }
+        return attemptedFrames
+    }
+
+    var published: [CaptureFrame] {
+        condition.lock()
+        defer { condition.unlock() }
+        return publishedFrames
+    }
+
+    func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
+        condition.lock()
+        attemptedFrames.append(frame)
+        inFlight += 1
+        condition.broadcast()
+        while !released {
+            condition.wait()
+        }
+        inFlight -= 1
+        publishedFrames.append(frame)
+        condition.unlock()
+    }
+
+    func waitUntilInFlight(_ count: Int, timeout: TimeInterval) -> Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        let deadline = Date(timeIntervalSinceNow: timeout)
+        while inFlight < count {
+            guard condition.wait(until: deadline) else {
+                return false
+            }
+        }
+        return true
+    }
+
+    func release() {
+        condition.lock()
+        released = true
+        condition.broadcast()
+        condition.unlock()
+    }
+}
+
+/// A source that hands over live frames while it is running and one flushed tail after the stop,
+/// readable from the pump thread and the stopping thread at the same time.
+private final class ConcurrentTailCaptureSource: CaptureSourceAdapter, @unchecked Sendable {
+    private let lock = NSLock()
+    private let tail: [CaptureFrame]
+    private let onTailHandover: () -> Void
+    private var live: [CaptureFrame] = []
+    private var stopped = false
+    private var handedOverTail = false
+
+    init(tail: [CaptureFrame], onTailHandover: @escaping () -> Void = {}) {
+        self.tail = tail
+        self.onTailHandover = onTailHandover
+    }
+
+    func enqueue(frames: [CaptureFrame]) {
+        lock.lock()
+        live.append(contentsOf: frames)
+        lock.unlock()
+    }
+
+    func start(configuration: CaptureConfiguration) throws {}
+
+    func pendingFrames() throws -> [CaptureFrame] {
+        lock.lock()
+        if stopped {
+            guard !handedOverTail else {
+                lock.unlock()
+                return []
+            }
+            handedOverTail = true
+            lock.unlock()
+            onTailHandover()
+            return tail
+        }
+        let frames = live
+        live.removeAll()
+        lock.unlock()
+        return frames
+    }
+
+    func status() -> [CaptureLaneStatus] {
+        lock.lock()
+        let isStopped = stopped
+        lock.unlock()
+        return CaptureLane.allCases.map {
+            CaptureLaneStatus(
+                lane: $0,
+                sequence: 0,
+                deviceEpoch: 0,
+                state: isStopped ? "stopped" : "capturing"
+            )
+        }
+    }
+
+    func stop(deadline: Date) throws {
+        lock.lock()
+        stopped = true
+        lock.unlock()
     }
 }
 

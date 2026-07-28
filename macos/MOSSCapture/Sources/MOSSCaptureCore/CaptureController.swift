@@ -17,7 +17,7 @@ public struct CaptureConfiguration: Equatable {
     }
 }
 
-public struct CaptureFrame: Equatable {
+public struct CaptureFrame: Equatable, Sendable {
     public var lane: CaptureLane
     public var sequence: UInt64
     public var sampleRate: Int
@@ -183,6 +183,7 @@ public final class CaptureController {
     private let scheduler: CaptureSchedulerAdapter
     private let health: CaptureHealthAdapter
     private let outbox: CaptureFrameOutbox
+    private let pump: CaptureFramePublishPump
     private let state = CaptureControllerState()
 
     public init(
@@ -192,7 +193,8 @@ public final class CaptureController {
         clock: CaptureClockAdapter,
         scheduler: CaptureSchedulerAdapter,
         health: CaptureHealthAdapter,
-        outbox: CaptureFrameOutbox = CaptureFrameOutbox()
+        outbox: CaptureFrameOutbox = CaptureFrameOutbox(),
+        pump: CaptureFramePublishPump = CaptureFramePublishPump()
     ) {
         self.source = source
         self.transport = transport
@@ -201,6 +203,7 @@ public final class CaptureController {
         self.scheduler = scheduler
         self.health = health
         self.outbox = outbox
+        self.pump = pump
     }
 
     @discardableResult
@@ -220,7 +223,9 @@ public final class CaptureController {
             throw error
         }
         do {
-            try publishPendingFrames(configuration: configuration)
+            // No pump exists yet, so nothing can be holding the turn; waiting is the honest
+            // instruction for a pass whose frames no later tick would carry differently.
+            try publishPendingFrames(configuration: configuration, onContention: .wait)
         } catch {
             // The audio is retained either way, so a transient answer at start is a degraded start
             // rather than a failed one: the pump delivers what is queued. A failure that no retry
@@ -240,9 +245,17 @@ public final class CaptureController {
                 return
             }
             do {
-                try self.publishPendingFrames(configuration: configuration)
+                // A tick that finds the previous pass still draining skips its publish turn, but it
+                // still emits health: the server's helper lease is what a silent client loses, and
+                // a long recovery drain must not be mistaken for a dead helper.
+                let published = try self.publishPendingFrames(
+                    configuration: configuration,
+                    onContention: .skip
+                )
                 _ = try self.emitHealth(configuration: configuration)
-                self.state.clearPumpFailure()
+                if published {
+                    self.state.clearPumpFailure()
+                }
             } catch {
                 self.state.recordPumpFailure(CapturePumpFailure(error: error))
             }
@@ -262,9 +275,11 @@ public final class CaptureController {
         try source.stop(deadline: deadline)
         if let configuration {
             // The meeting's last partial frame only exists once the source has flushed, so the
-            // final drain belongs after the stop. A failure here loses nothing — unacknowledged
-            // audio stays in the outbox and the returned status reports the depth it kept.
-            try? publishPendingFrames(configuration: configuration)
+            // final drain belongs after the stop. It waits for any pass still in flight rather than
+            // skipping, because no later tick will carry these frames. A failure here loses nothing
+            // — unacknowledged audio stays in the outbox and the returned status reports the depth
+            // it kept.
+            _ = try? publishPendingFrames(configuration: configuration, onContention: .wait)
         }
         let lanes = source.status()
         let (task, stopped) = state.finishStop(lanes: lanes, outbox: outbox.snapshot())
@@ -275,35 +290,34 @@ public final class CaptureController {
     /// Moves captured audio into the outbox, then publishes as much of the outbox as the server
     /// takes. Nothing captured is lost by a failure here: audio is released only by an
     /// acknowledgement, so whatever is not acknowledged is still queued for the next tick.
-    private func publishPendingFrames(configuration: CaptureConfiguration) throws {
+    ///
+    /// Returns whether this call actually took a turn — a periodic tick that finds the previous
+    /// pass still draining reports `false` and has observed nothing about the transport.
+    @discardableResult
+    private func publishPendingFrames(
+        configuration: CaptureConfiguration,
+        onContention contention: CaptureFramePublishPump.Contention
+    ) throws -> Bool {
         for frame in try source.pendingFrames() {
             outbox.admit(frame)
         }
 
-        var stalledLanes: Set<CaptureLane> = []
-        var firstFailure: Error?
-        for frame in outbox.retainedFrames() {
-            // A lane has to arrive in sequence order, so its first unacknowledged frame stops that
-            // lane for this tick — and only that lane.
-            guard !stalledLanes.contains(frame.lane) else {
-                continue
-            }
-            do {
-                try transport.publish(frame: frame, configuration: configuration)
-            } catch {
-                stalledLanes.insert(frame.lane)
-                if firstFailure == nil {
-                    firstFailure = error
-                }
-                continue
-            }
+        let outbox = self.outbox
+        let transport = self.transport
+        let state = self.state
+        let pass = pump.run(
+            onContention: contention,
+            retainedFrames: { outbox.retainedFrames() }
+        ) { frame in
+            try transport.publish(frame: frame, configuration: configuration)
             outbox.acknowledge(lane: frame.lane, sequence: frame.sequence)
             state.recordPublishedFrame()
         }
 
-        if let firstFailure {
-            throw firstFailure
+        if let failure = pass.failure {
+            throw failure
         }
+        return pass.ran
     }
 
     private func emitHealth(configuration: CaptureConfiguration) throws -> CaptureStatus {

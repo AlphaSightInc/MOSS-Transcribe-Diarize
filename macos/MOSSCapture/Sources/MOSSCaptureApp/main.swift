@@ -24,16 +24,21 @@ final class ProductionCaptureRuntime {
     static func makeDefault() throws -> ProductionCaptureRuntime {
         let keyStore = try CaptureSecretStoreSelection.makeDefault()
         try ensureControlSecret(in: keyStore)
+        // One provider for the whole process, so frames, heartbeats and pairing share a single
+        // pinned session per pin instead of opening one per request.
+        let httpClients = PinnedURLSessionCaptureHTTPClientProvider()
         let controller = CaptureController(
             source: NativeDualCaptureSource(),
             transport: CaptureV2HTTPTransportAdapter(
+                clientProvider: httpClients,
                 certificatePin: keyStore,
                 bearerToken: keyStore
             ),
             keyStore: keyStore,
             clock: SystemCaptureClockAdapter(),
-            scheduler: RepeatingCaptureSchedulerAdapter(interval: 0.25),
+            scheduler: RepeatingCaptureSchedulerAdapter(interval: CapturePumpContract.interval),
             health: CaptureHTTPHealthAdapter(
+                clientProvider: httpClients,
                 certificatePin: keyStore,
                 bearerToken: keyStore,
                 instanceID: ProcessInfo.processInfo.globallyUniqueString,
@@ -42,7 +47,10 @@ final class ProductionCaptureRuntime {
         )
         let dispatcher = ControlCommandDispatcher(
             controller: controller,
-            pairingExchange: URLSessionCapturePairingExchangeAdapter(deviceIdentity: keyStore),
+            pairingExchange: URLSessionCapturePairingExchangeAdapter(
+                clientProvider: httpClients,
+                deviceIdentity: keyStore
+            ),
             captureTokenStore: keyStore,
             certificatePinStore: keyStore,
             sessionStore: keyStore,

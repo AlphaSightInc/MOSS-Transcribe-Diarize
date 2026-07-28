@@ -34,17 +34,46 @@ public enum CaptureHTTPTransportError: Error, Equatable, Sendable {
 
 public final class URLSessionCaptureHTTPClient: CaptureHTTPClient {
     private let session: URLSession
+    /// Only a session this client created may be torn down by it; an injected one belongs to its
+    /// owner.
+    private let ownsSession: Bool
+    private let invalidation = CaptureHTTPClientInvalidationFlag()
 
     public init(certificatePinSHA256Hex: String) throws {
         let delegate = try PinnedCertificateURLSessionDelegate(expectedSHA256Hex: certificatePinSHA256Hex)
-        session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+        let configuration = URLSessionConfiguration.ephemeral
+        // One connection per lane plus one for the heartbeat. Concurrency above that would only
+        // reorder a lane's own frames, which the server rejects.
+        configuration.httpMaximumConnectionsPerHost = CaptureLane.allCases.count + 1
+        session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+        ownsSession = true
     }
 
     public init(session: URLSession) {
         self.session = session
+        ownsSession = false
+    }
+
+    /// True once this client has been superseded. A session created here holds its pinning delegate
+    /// strongly until it is invalidated, so a client that is dropped without this call leaks both
+    /// for the life of the process.
+    public var isInvalidated: Bool {
+        invalidation.isSet
+    }
+
+    /// Releases the session and its pinning delegate, letting requests that are already in flight
+    /// finish. Sending on an invalidated client fails rather than silently using a superseded pin.
+    public func invalidate() {
+        guard ownsSession, invalidation.set() else {
+            return
+        }
+        session.finishTasksAndInvalidate()
     }
 
     public func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
+        guard !invalidation.isSet else {
+            throw CaptureHTTPTransportError.missingCertificatePin
+        }
         let semaphore = DispatchSemaphore(value: 0)
         let result = URLSessionResultBox()
         let task = session.dataTask(with: request) { data, response, error in
@@ -66,14 +95,64 @@ public protocol CaptureHTTPClientProvider {
     func client(certificatePinSHA256Hex: String?) throws -> CaptureHTTPClient
 }
 
+/// Hands out one pinned client per pin, for as long as that pin is the current one.
+///
+/// The pin is re-read for every request so a rotation takes effect immediately, but a *session* is
+/// not a per-request object: building one per frame means a fresh TLS handshake for every 0.5 s of
+/// audio and — because a session retains its delegate until it is invalidated — one leaked session
+/// and delegate per frame for the whole meeting. Caching by pin makes the transport reuse a warm
+/// connection and keeps the process's session count at one per live pin, while a rotation still
+/// supersedes the old session instead of leaving it usable.
 public final class PinnedURLSessionCaptureHTTPClientProvider: CaptureHTTPClientProvider {
-    public init() {}
+    private let makeClient: (String) throws -> URLSessionCaptureHTTPClient
+    private let lock = NSLock()
+    private var current: (pin: String, client: URLSessionCaptureHTTPClient)?
+
+    public convenience init() {
+        self.init(makeClient: { pin in
+            try URLSessionCaptureHTTPClient(certificatePinSHA256Hex: pin)
+        })
+    }
+
+    init(makeClient: @escaping (String) throws -> URLSessionCaptureHTTPClient) {
+        self.makeClient = makeClient
+    }
 
     public func client(certificatePinSHA256Hex: String?) throws -> CaptureHTTPClient {
         guard let certificatePinSHA256Hex, !certificatePinSHA256Hex.isEmpty else {
             throw CaptureHTTPTransportError.missingCertificatePin
         }
-        return try URLSessionCaptureHTTPClient(certificatePinSHA256Hex: certificatePinSHA256Hex)
+        lock.lock()
+        defer { lock.unlock() }
+        if let current, current.pin == certificatePinSHA256Hex {
+            return current.client
+        }
+        let client = try makeClient(certificatePinSHA256Hex)
+        current?.client.invalidate()
+        current = (certificatePinSHA256Hex, client)
+        return client
+    }
+}
+
+private final class CaptureHTTPClientInvalidationFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var invalidated = false
+
+    var isSet: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return invalidated
+    }
+
+    /// Returns true the first time only, so the session is torn down exactly once.
+    func set() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !invalidated else {
+            return false
+        }
+        invalidated = true
+        return true
     }
 }
 

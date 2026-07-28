@@ -39,9 +39,10 @@ from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (
 moved the portal handoff into the app (A2); iteration 4 rebuilt the tracer around the immutable
 lab bundle (A4); iteration 5 made the file secret store the production default (B1); iteration 6
 added the retained-until-ACK outbox (B2); iteration 7 added the 16 kHz/8000-sample wire format and
-converted-nanosecond timestamps (B3). Test totals on the branch: Swift **116 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116); Python **457 passed / 2 skipped / 346 subtests** including
-`tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3).
+converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent transport (B4).
+Test totals on the branch: Swift **121 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **457 passed / 2 skipped / 346 subtests**
+including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3).
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
@@ -59,8 +60,9 @@ behavioral (see below). Never edit those control-plane scripts to recolor this.
 production phases widen scope, and its allowlist is the thirteen registered A4 paths. It is
 **green at the frozen checkpoint** — `git diff --name-only af3ac366 1ede498` is exactly that
 allowlist — and it now fails on the tip on `CaptureController.swift` plus the new
-`CaptureOutbox.swift` and `NativeLaneWireFormat.swift`, which Phase B is authorized to add. Verify
-it against `1ede498`, never against the tip, and do not add paths to the script.
+`CaptureOutbox.swift`, `NativeLaneWireFormat.swift` and `CapturePublishPump.swift`, which Phase B is
+authorized to add. Verify it against `1ede498`, never against the tip, and do not add paths to the
+script.
 
 **Lab bundle contract (new, iteration 4).** The tracer's one fixed path is
 `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` (gitignored via `macos/MOSSCapture/
@@ -134,6 +136,29 @@ gap beyond one wire sample, a `deviceEpoch` change, or a driver-flagged buffer b
 the same way. `MachTimebaseHostTimeConverter` divides before multiplying and returns `nil` rather
 than wrapping.
 
+**Transport-pump contract (new, iteration 8).** `CapturePublishPump.swift` holds
+`CaptureFramePublishPump`, the only thing that calls `transport.publish`. It bounds the transport
+two independent ways. *Width*: one pre-created serial `DispatchQueue` per lane, so a lane has at
+most one request in flight (its stream must arrive in sequence order) and the lanes run at the same
+time; in-flight work is `CaptureLane.allCases.count`, never a function of backlog, meeting length or
+tick count. A lane's first failure ends that lane for the pass only — the one-head-retry-per-tick
+rule from B2 is unchanged — and the reported failure is chosen in lane order so it is deterministic.
+*Time*: passes never overlap. `Contention.skip` (the periodic tick) gives up the turn; `.wait`
+(start and stop) takes it after the running pass, because the meeting's final frames reach the wire
+only through the stop's pass. Critically, the retained-frame list is read **inside** the pass, never
+before it — a waiting caller that snapshotted first would re-send identities the running pass still
+had in flight (found by the stop node, not by review). A skipped tick still emits health: a long
+recovery drain must not read as a dead helper against the 30 s lease. `CapturePumpContract.interval`
+= 0.5 s (was a 0.25 s literal in the app) — exactly one canonical wire frame per lane per tick.
+`PinnedURLSessionCaptureHTTPClientProvider` now caches one `URLSessionCaptureHTTPClient` per pin and
+`invalidate()`s a superseded one; before this every frame built a fresh ephemeral `URLSession`,
+which re-handshook TLS twice a second per lane and leaked a session + pinning delegate per frame for
+the whole meeting (a session retains its delegate until invalidated). The app builds **one**
+provider and gives it to frames, heartbeat and pairing; `httpMaximumConnectionsPerHost` is lanes + 1.
+Cross-lane publish *order* is now undefined by design — the server aligns lanes by capture
+timestamp, and only per-lane order is contractual — so tests assert per lane
+(`FakeCaptureTransportAdapter.publishedFrames(lane:)`).
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -176,12 +201,13 @@ typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitize
    instead of `.transportUnavailable`.
 4. Viewer expiry — `VIEW_TTL_SECONDS = 900` fixed at `bind_session`, no renewal. Reproduced:
    authorized at t=899, rejected at t=3600.
-5. Unbounded callback-shaped blocking POSTs. **Half closed by iteration 7 (B3)**: emission is now
-   exactly two 0.5 s frames per second per lane instead of one per Core Audio callback, so the
-   steady-state request rate no longer depends on device cadence. Still open for B4:
-   `URLSessionCaptureHTTPClient.send` blocks on a semaphore and `publishPendingFrames` iterates
-   serially, so an outage recovery still issues its whole backlog sequentially inside one tick at
-   the measured 72 ms average / 146 ms max RTT.
+5. Unbounded callback-shaped blocking POSTs. **Closed on the feature branch by iterations 7 and 8**:
+   B3 fixed emission at two 0.5 s frames per second per lane, and B4 bounded the transport — lanes
+   concurrent with one request each, no overlapping pass, one pinned session per pin. A 15 s
+   recovery backlog is 30 frames per lane drained on two threads (~2.2 s at the measured 146 ms max
+   RTT) instead of 60 sequential round trips, and later ticks skip instead of piling on.
+   `URLSessionCaptureHTTPClient.send` still blocks its lane thread on a semaphore; that is now the
+   *definition* of one request in flight per lane, not an unbounded cost.
 6. Secret store broken — code requested access group `com.alphasight.moss.capture.shared` while
    the entitlement declares `$(AppIdentifierPrefix)com.alphasight.moss.capture`; strings differ and
    a self-signed identity has no Team ID. Keychain writes also fail `-25308` from any non-GUI
@@ -292,6 +318,11 @@ swift test --package-path macos/MOSSCapture \
 swift test --package-path macos/MOSSCapture \
   --filter 'HostTicks|CanonicalFrames|ConserveDuration|HostTimeDomain|CaptureInstant|TerminalFlush|TimelineGap|RealtimeCallbacks|FlushedTail'
 
+# --- B4 bounded-transport behavioral nodes (5: lane rendezvous + per-lane in-flight bound, late
+#     tick skips, stop waits, one session per pin, shipped cadence/provider) --------------------
+swift test --package-path macos/MOSSCapture \
+  --filter 'LanesPublishConcurrently|ATickArrivingDuringADrain|StopWaitsForTheRunningPass|PinnedProviderKeepsOneSession|ProductionPumpTicksOnce'
+
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
 
@@ -398,10 +429,7 @@ edit the control-plane discriminator scripts to keep them green.
    overflow with a sticky typed degradation plus a discontinuity on the lane's next admitted frame.
    Eight behavioral nodes cover 5 s outage, ambiguous success, duplicate retry, 429/5xx/401,
    overflow, per-lane stall isolation, wire-sequence authority, and per-session numbering.
-   Residue for B4: the flush is still serial and blocking (one semaphore-waiting POST at a time,
-   both lanes in one loop), so a recovery tick that drains a 15 s backlog issues 60 sequential
-   round trips inside a 0.5 s tick with no re-entry guard. B4's concurrent lanes, persistent
-   session, and non-overlapping pump are what bound that.
+   The serial-flush residue this left is closed by iteration 8 (B4).
 7. **B3 — 16 kHz mono conversion/coalescing + real nanosecond timestamps** `[done — iteration 7]`:
    `NativeLaneWireFormat.swift` + the rewritten `NativeLaneFrameEmitter` convert host ticks with
    `AudioConvertHostTimeToNanos`, run one stateful `AVAudioConverter` per lane, and coalesce exact
@@ -413,12 +441,16 @@ edit the control-plane discriminator scripts to keep them green.
    bounds the server admits them against (`bounds_config.max_frame_samples`, `frame_samples`,
    `max_retained_samples` — read from the host provider manifest via
    `live_provider_bundle.py:269,912`) must be the retuned contract values before D-phase pairing.
-8. **B4 — bounded concurrent transport**: 0.5 s pump; persistent URLSession; at most one
-   in-flight POST per lane, lanes concurrent; no overlapping pump re-entry. Test bounded
-   in-flight work and wall time—never use a sleep-only timing assertion. B3 makes the request
-   rate deterministic (2 POSTs/s/lane instead of one per Core Audio callback), so what B4 has to
-   bound is the recovery burst: 15 s of retained audio is 30 frames per lane, still issued
-   serially inside one 0.5 s tick with no re-entry guard.
+8. **B4 — bounded concurrent transport** `[done — iteration 8]`: `CaptureFramePublishPump`
+   (`CapturePublishPump.swift`) is the only caller of `transport.publish`; one serial queue per
+   lane makes in-flight work exactly the lane count, `Contention.skip`/`.wait` stops passes from
+   overlapping, the app's pump interval is `CapturePumpContract.interval` (0.5 s, was 0.25 s), and
+   `PinnedURLSessionCaptureHTTPClientProvider` keeps one pinned session per pin instead of one per
+   request. Five behavioral nodes (see Validation); five mutation rehearsals recorded in
+   progress.txt. Residue: `stop`'s final drain is unbounded in time — it waits for whatever pass is
+   running plus its own. That is correct for the tail but means a stop during a full-window
+   recovery can take seconds; if F2/F3 shows a slow stop, bound it with the stop deadline the
+   `stop(deadline:)` signature already carries rather than by skipping the drain.
 9. **B5 — tracked Mac packaging/install tools**:
    `macos/scripts/bootstrap-signing-identity.sh`, `build-app.sh`, and `install-app.sh`;
    idempotent, scratch-path testable, no real keychain/app/install mutation during tests.

@@ -46,15 +46,38 @@ public final class FakeCaptureSourceAdapter: CaptureSourceAdapter {
     }
 }
 
-public final class FakeCaptureTransportAdapter: CaptureTransportAdapter {
-    public private(set) var publishedFrames: [CaptureFrame] = []
-    public private(set) var sessionIDs: [String] = []
+/// The lanes publish at the same time, so even a recording fake has to be safe for that: an
+/// unsynchronized array here would be a fault in the test double, not in the transport.
+public final class FakeCaptureTransportAdapter: CaptureTransportAdapter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var frames: [CaptureFrame] = []
+    private var sessions: [String] = []
 
     public init() {}
 
+    public var publishedFrames: [CaptureFrame] {
+        lock.lock()
+        defer { lock.unlock() }
+        return frames
+    }
+
+    public var sessionIDs: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return sessions
+    }
+
+    /// Everything one lane published, in the order that lane published it. Across lanes the order
+    /// is not defined — the lanes are concurrent by design — so a test asserts per lane.
+    public func publishedFrames(lane: CaptureLane) -> [CaptureFrame] {
+        publishedFrames.filter { $0.lane == lane }
+    }
+
     public func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
-        publishedFrames.append(frame)
-        sessionIDs.append(configuration.sessionID)
+        lock.lock()
+        frames.append(frame)
+        sessions.append(configuration.sessionID)
+        lock.unlock()
     }
 }
 

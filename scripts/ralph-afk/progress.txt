@@ -566,3 +566,97 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   concurrent, and no overlapping pump re-entry. The thing to bound is the recovery burst, not the
   steady state: B3 fixed steady state at 2 POSTs/s/lane, but draining a 15 s backlog is still 30
   sequential semaphore-blocked round trips per lane inside one 0.5 s tick.
+
+## Iteration 8 - bounded concurrent transport (B4)
+- Target: Phase B candidate B4 / defect 5. Bound what the transport can have outstanding, in width
+  (requests) and in time (overlapping passes), and stop building a TLS session per frame.
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/CapturePublishPump.swift` (new);
+  `.../{CaptureController,CaptureHTTPTransport,CaptureScheduling,FakeCaptureAdapters}.swift`;
+  `macos/MOSSCapture/Sources/MOSSCaptureApp/main.swift`;
+  `macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift`;
+  `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: four changes, one contract.
+  (1) `CaptureFramePublishPump` is now the only caller of `transport.publish`. One pre-created
+      serial `DispatchQueue` per lane: a lane has at most one request in flight because its stream
+      must arrive in sequence order, and the lanes run at the same time because nothing couples
+      them. In-flight work is `CaptureLane.allCases.count` and does not grow with the backlog, the
+      meeting length or the tick count. B2's one-head-retry-per-lane-per-tick rule is unchanged;
+      the reported failure is now picked in lane order so a two-lane outage is deterministic.
+  (2) Passes never overlap. `Contention.skip` for the periodic tick (its audio is already retained;
+      a second pass over the same frames would publish identities that are in flight and multiply
+      in-flight work by the number of late ticks) and `.wait` for start and stop (the meeting's
+      final frames reach the wire only through the stop's pass). A skipped tick still emits health
+      — a long recovery drain must not read as a dead helper against the 30 s lease.
+  (3) The app's pump interval was a `0.25` literal; it is now `CapturePumpContract.interval` = 0.5 s,
+      the prd's domain value and exactly one canonical wire frame per lane per tick.
+  (4) `PinnedURLSessionCaptureHTTPClientProvider` caches one client per pin and `invalidate()`s a
+      superseded one. Before this, `publish` called the provider per frame and the provider built a
+      fresh ephemeral `URLSession` every time: a TLS handshake per 0.5 s of audio per lane, and —
+      because a session retains its delegate until invalidated — a leaked session plus pinning
+      delegate per frame for the whole meeting (~14,400 in a 60-minute two-lane run). The app now
+      builds one provider and hands it to frames, heartbeat and pairing.
+- Validation:
+  - `swift build --product mtd-capture` -> OK; `--product MOSSCaptureApp` -> OK; zero warnings
+    (checked against a clean scratch path, the tree was warning-free before and after)
+  - `swift test --package-path macos/MOSSCapture` -> **121 passed, 0 failures** (was 116: +5 nodes)
+  - the five new nodes re-run 12x consecutively -> 12/12 clean, no flake
+  - `pytest tests/test_macos_uds_tracer.py -q -p no:cacheprovider` -> **3 passed in 8.28s**, 0 skips
+  - `pytest tests -q -p no:cacheprovider` -> **457 passed, 2 skipped, 346 subtests** (unchanged)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+  - `ls -d ~/Library/Application\ Support/MOSSCapture` -> absent (no real-home side effect)
+  - `validate-phase-a-locality.sh` on the tip -> still FAILS by design, now also on
+    `CapturePublishPump.swift`. Frozen green stays `1ede498`; script not edited.
+- Evidence:
+  - New nodes: `testLanesPublishConcurrentlyWithOneRequestInFlightPerLane`,
+    `testATickArrivingDuringADrainSkipsInsteadOfReSendingFramesAlreadyInFlight`,
+    `testStopWaitsForTheRunningPassInsteadOfSkippingTheFinalDrain`,
+    `testPinnedProviderKeepsOneSessionPerPinAndSupersedesARotatedOne`,
+    `testProductionPumpTicksOncePerCanonicalWireFrameOnOneSharedPinnedProvider`.
+  - Concurrency is proven by rendezvous, not by a sleep: every lane's first request is held until
+    every lane has one outstanding, so a serial pump fails on the deadline instead of passing
+    because it was fast. Measured max concurrency 2 overall and 1 per lane, with each lane's four
+    sequences still 0..3 in order.
+  - Two existing nodes asserted a cross-lane publish *order* B4 deliberately gives up
+    (`[system, microphone]`, `[system, microphone, system, microphone]`). Cross-lane order was never
+    contractual — the server aligns lanes by capture timestamp and rejects only out-of-order frames
+    *within* a lane — so they now assert per-lane order plus total count, with the reason in a
+    comment. `FakeCaptureTransportAdapter` and `ProgrammableCaptureTransport` grew locks: the first
+    concurrent run segfaulted (signal 11) inside `ProgrammableCaptureTransport.publish`, which was
+    an unsynchronized array in the test double, not a fault in the transport.
+  - Bug found by the stop node, not by review: `publishPendingFrames` snapshotted
+    `outbox.retainedFrames()` *before* asking for the turn, so a caller that waited worked from a
+    list captured while the running pass still had those frames in flight and re-published them
+    (`[1, 1, 2]` where `[1, 2]` was required). The pump now takes a `retainedFrames` closure and
+    reads it after `beginPass`. Admission from the source stays outside the turn on purpose — a
+    skipped tick must still drain the source's bounded ring into the outbox, which is where loss is
+    accounted for.
+  - Mutation rehearsal 1 (lane concurrency): `queue.async(group:)` -> `queue.sync` -> the rendezvous
+    times out and max concurrency reads 1 instead of 2. Reverted -> green.
+  - Mutation rehearsal 2 (skip becomes wait): dropped the `.skip` early return -> the late tick
+    never returns within 5 s and the heartbeat count does not advance. Reverted -> green.
+  - Mutation rehearsal 3 (no gate at all): removed `beginPass`/`endPass` -> attempts go 2 -> 4, the
+    same two identities published twice concurrently. Reverted -> green.
+  - Mutation rehearsal 4 (stop skips): `stop`'s contention `.wait` -> `.skip` -> the flushed tail is
+    never published (`[1]` not `[1, 2]`), `publishedFrameCount` 0 and `outbox.retainedFrames` 2 —
+    the meeting's last audio is stranded. Reverted -> green.
+  - Mutation rehearsal 5 (no session cache): removed the per-pin hit -> 180 sessions built for 180
+    requests instead of 1. Reverted -> green, 121 passed.
+- Learned: (1) The re-entry guard and the frame snapshot are one decision, not two. Winning the turn
+  is worthless if the caller already decided what to send — a waiting stop with a stale list is
+  exactly the duplicate publisher the guard was added to prevent. (2) A per-request `URLSession` is
+  invisible in tests and unbounded in production: nothing fails, the process just accumulates one
+  session and one strongly-retained pinning delegate per frame. Making the provider's construction
+  count observable is what turned it into a node. (3) Concurrency can be proven without sleeping by
+  making the fake refuse to proceed until the concurrency actually exists; the serial implementation
+  then fails on a deadline, which is a real signal rather than a slow-machine artifact. (4) Giving
+  up cross-lane publish order is the price of lane concurrency, and it was cheap only because the
+  wire contract is per-lane; the tests that asserted global order were asserting an implementation
+  detail.
+- Blocker: none.
+- Next: B5 - tracked Mac packaging/install tools (`bootstrap-signing-identity.sh`, `build-app.sh`,
+  `install-app.sh`), idempotent and scratch-path testable with no real keychain/app/install mutation
+  during tests. `build-app.sh` must drop the `keychain-access-groups` entitlement key: it still
+  carries the unresolvable `$(AppIdentifierPrefix)` literal (defect 6 residue) and B1 made the
+  Keychain store dormant, so signing that entitlement would assert an identity the certificate
+  cannot satisfy.
