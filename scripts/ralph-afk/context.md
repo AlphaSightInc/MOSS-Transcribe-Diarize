@@ -45,8 +45,9 @@ client gate (B6) and changed no product source; iteration 11 bound view authorit
 lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
 tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
 deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c); iteration 16 ran the
-final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1) and changed
-no tracked file — from here the branch carries only `scripts/ralph-afk/*`.
+final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1) and
+iteration 18 finalized the host manifest and rotated the live TLS pair (D2) — neither changed a
+tracked file, so from here the branch carries only `scripts/ralph-afk/*`.
 Test totals on the branch: Swift **131 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
@@ -498,17 +499,21 @@ is the remaining leg and belongs to E2. The host checkout is **detached** at tha
 its local `main` ref is still `163e969`, so
 `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete one-command rollback
 that moves nothing but `HEAD`. Tree clean, `moss-vllm`/`moss-web` still `active`, **neither service
-restarted** (D1 does not restart; D3 owns that decision).
-`/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0` in `ops/moss.env`;
+restarted** by D1 or D2 (`ActiveEnterTimestamp` 2026-07-24 21:37 and 2026-07-26 22:05; D3 owns the
+restart decision).
+`/api/live/descriptor` and `/live` → 404 on 7860; 7861 does not answer at all yet (the Windows
+forward is D3's). `MOSS_LIVE_ENABLED=0` in `ops/moss.env`;
 `ops/moss-live.env` is **absent** (D3 creates it) and `moss-live-web.service` is present in
 `ops/systemd/` but **not installed** — only `moss-vllm.service` and `moss-web.service` are in
 `~/.config/systemd/user/`. `webrtcvad-wheels 2.0.14` and
-`onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified;
-`live.crt`/`live.key` staged but SANs cover only `ga0-alienware-rtx4070ti.local` +
-`IP:192.168.68.38` (**no tailnet SAN**); provider manifest is
-`live-provider-manifest.provisional.json` (0600, `~/.local/share/moss-transcribe-diarize/live/`)
-with `source_revision: "PROVISIONAL-UPDATE-AFTER-KEEPER"` and the pre-retune bounds measured in
-iteration 12 (see the manifest-bounds contract). D2 finalizes it in place of the provisional file.
+`onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified.
+*`~/.local/share/moss-transcribe-diarize/live/` after D2 (iteration 18):*
+`live-provider-manifest.json` (0644, generated), `live-provider-manifest.provisional.json` (0600,
+untouched, inode 665548), `live.crt` (0644) / `live.key` (0600) carrying all four SANs,
+`live.crt.backup-20260728T044132Z` / `live.key.backup-20260728T044132Z` (the pre-rotation pair,
+which is the recorded rollback), and `golden.wav`.
+**The live pin is now `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`**
+(was `2c88836b…`); that is the value D4's pairing payload carries and every Mac stores.
 *The running batch process is still the `163e969` image* — `INDEX_HTML`/`FAVICON_SVG` are
 module-level constants (`server.py:123-129`), so a checkout cannot change what an already-running
 uvicorn serves. "Batch unharmed" therefore needs the *restart* proven separately, and iteration 17
@@ -524,6 +529,25 @@ over SSH with a designated requirement that is byte-identical across rebuilds (p
 `security find-identity -v -p codesigning` reports 0 valid identities for such a cert even though
 `codesign` succeeds — never gate on `find-identity`. The exact mechanics are in the signing-mechanics
 note above; `macos/scripts/bootstrap-signing-identity.sh` (iteration 9) implements them.
+
+**Open defect (found by D2, iteration 18) — the finalizer needs the deployment venv, and the
+tracked doc says otherwise.** `ops/finalize-live-provider-manifest.py` inserts the repo root on
+`sys.path` and imports `moss_transcribe_diarize.app.live_manifest_finalizer`, which first executes
+the package `__init__.py` → `configuration_moss_transcribe_diarize.py` → `from transformers import
+PretrainedConfig`. The host's system `python3` (3.12.3) has no `transformers`, so the exact command
+`LOCAL_DEPLOYMENT.md:666` prescribes — `python3 ops/finalize-live-provider-manifest.py …` — dies
+with `ModuleNotFoundError` before printing a single `plan:` line. The finalizer module itself needs
+nothing from `transformers`; only the package `__init__` chain does. **Workaround used by D2, and
+the invocation D3 and any re-run must use:**
+`$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3 ops/finalize-live-provider-manifest.py …`
+— the deployment venv (3.12.13, `transformers 5.14.1`) already resolves
+`moss_transcribe_diarize` **from this same checkout**, so the reviewed revision is still what
+generates the file, and it is the interpreter the live service itself will use to read the manifest.
+The durable fix is to load the finalizer module by file path (`importlib.util.spec_from_file_
+location`) instead of importing it through the package, which would make the tool stdlib-only and
+match its own docstring. That is a **tracked-source** change and the merge freeze forbids it on this
+branch: it needs a new branch and a decision, not a second keeper merge. Nothing in D3–F4 is blocked
+by it — only the doc's copy-paste line is wrong.
 
 **Gotcha — remote shell quoting.** Nested quoting through Windows conhost → `wsl.exe` → bash
 fails ("The system cannot find the path specified"). Always pipe a script on stdin:
@@ -608,12 +632,20 @@ python3 -m pytest tests/test_live_deployment_credentials.py -q
 # --- C3a tools by hand (scratch paths; never the deployed live dir) --------------------------
 ops/generate-live-tls.sh --dry-run --dns moss-live.fixture.invalid --ip 10.11.12.13 \
   --cert /tmp/moss-tls/live.crt --key /tmp/moss-tls/live.key
-# The D2 invocation itself (run on the host, from the deployed checkout, at D2 and not before):
+# The D2 invocation - SPENT in iteration 18, and it needed `--rotate` because the staged pair had
+# no tailnet SAN. Re-running it WITHOUT --rotate now prints `unchanged:` and rotates nothing, which
+# is the safe way to re-assert the pin; never add --rotate again unless a name really changes,
+# because rotation invalidates every pairing payload and every pin a Mac has stored.
 #   ops/generate-live-tls.sh --dns ga0-alienware-rtx4070ti.tailnet.aisight.us \
 #     --dns ga0-alienware-rtx4070ti.local --ip 100.64.0.8 --ip 192.168.68.38 \
 #     --common-name ga0-alienware-rtx4070ti.tailnet.aisight.us \
 #     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt" \
 #     --key "$HOME/.local/share/moss-transcribe-diarize/live/live.key"
+# Rollback for that rotation, still valid until the backups are removed:
+#   L="$HOME/.local/share/moss-transcribe-diarize/live"
+#   rm -f "$L/live.crt" "$L/live.key" \
+#     && mv "$L/live.crt.backup-20260728T044132Z" "$L/live.crt" \
+#     && mv "$L/live.key.backup-20260728T044132Z" "$L/live.key"
 # D4 mints exactly once, on the host, and the payload line is never redirected to a file:
 #   ops/live-pair.sh --url https://127.0.0.1:7861 \
 #     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
@@ -673,17 +705,20 @@ curl -sk https://100.64.0.8:7861/api/live/descriptor | head -c 200
 ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOSSCapture.app; \
   codesign -dv /Applications/MOSSCapture.app 2>&1 | head -5; codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1'
 
-# --- host manifest finalization (tool tracked since iteration 12; D2 runs it, never earlier) ----
-# Rehearse it locally first - it mutates nothing without --input/--output on the host:
-#   python3 ops/finalize-live-provider-manifest.py --input <provisional> --output <final> \
-#     --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 \
-#     --max-retained-samples 960000 --frame-samples 8000 --dry-run
+# --- host manifest finalization (SPENT in iteration 18/D2; re-run only to re-prove idempotence) --
+# MUST use the deployment venv python, not `python3` - see the open defect above. Re-running is
+# safe: it prints `unchanged:` and does not touch the inode.
 printf '%s\n' \
   'set -euo pipefail' \
   'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
-  'python3 ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000' |
+  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
     "wsl.exe -d Ubuntu -- bash -s"
+
+# --- host manifest admission by the runtime's own readers (read-only; re-run any time) ----------
+#   from_manifest -> _endpoint_config(payload["endpoint_config"]) and _bounds(payload["bounds_config"])
+#   (they take their own sub-mappings, NOT the whole payload), then _preflight_payload(path)
+#   Expect available=True, failures=[], manifest_hash 61d97ffef1bbdc0d4278c0fd719d5d31b0ac5f69e1654573ada5091653fecb95
 
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
@@ -898,8 +933,18 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     `live-pair.sh` and `moss-ops-lib.sh` are now **on the host** and D2 runs them from that
     checkout, so `--source-revision "$(git rev-parse HEAD)"` there yields the 40-hex merge SHA the
     finalizer requires. Note the host is detached, so that command reads `HEAD`, not a branch.
-18. **D2 — host manifest/TLS**: run the reviewed finalizer and TLS generator; verify merge SHA,
-    generated hashes, four SANs, and fingerprint; rotate pin/pairing together.
+18. **D2 — host manifest/TLS** `[done — iteration 18]`: the finalized manifest carries
+    `source_revision f9285d69…`, `hard_cap_samples 40000` in **both** sections,
+    `max_retained_samples 960000`, `frame_samples 8000` and regenerated hashes
+    (`provider_manifest_hash 61d97ffe…`), and the runtime's own readers admit it with
+    `available=True, failures=[]`. The certificate was **rotated** (the staged pair had no tailnet
+    SAN) to CN `ga0-alienware-rtx4070ti.tailnet.aisight.us` with all four SANs, 825 days, cert 0644
+    / key 0600; the new pin is `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`,
+    agreed by four independent readers including a real TLS handshake. Both refusal and idempotence
+    were proven for real on the host, not only in tests. Residue for D3: the finalizer must be run
+    with the **deployment venv python** (see the open defect above), and `ops/moss-live.env` must
+    point `MOSS_LIVE_TLS_CERT`/`_KEY` at the rotated pair. Residue for D4/E2: the pin the Mac stores
+    is the new `a35ca9fc…`; any payload minted before 2026-07-28T04:41:32Z is dead.
 19. **D3 — install reviewed live service/networking**: create `ops/moss-live.env` on the host from
     `ops/moss-live.env.example` (absolute paths only), `install-services.sh --with-live --dry-run`
     then for real, and `configure-windows-network.ps1 -IncludeLive` from an Administrator shell.

@@ -1404,3 +1404,139 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   --ip 100.64.0.8 --ip 192.168.68.38`) - the staged pair has **no tailnet SAN**, so this is a real
   rotation and needs `--rotate`; record the backup paths as the rollback before running it. Both
   exact invocations are in context.md's Validation section.
+
+## Iteration 18 (run 20260728-023004-98501, its iteration 10) - D2: host manifest and TLS material
+- Target: Phase D candidate D2 - run the reviewed `ops/finalize-live-provider-manifest.py` and
+  `ops/generate-live-tls.sh` from the deployed checkout on `ga0-alienware-rtx4070ti`, so the live
+  service has retuned bounds that admit the client's 8000-sample 16 kHz frames and a certificate
+  whose SANs cover the tailnet address the Mac will actually dial.
+
+### Rollback recorded BEFORE any mutation (PRD "Reversibility")
+- Pre-mutation state on the host, measured read-only this iteration:
+  - checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize` detached at
+    f9285d69ed7bcc592bb41b3dcdf29e3221968f44, tree clean (`post_dirty=[0]`)
+  - `~/.local/share/moss-transcribe-diarize/live/` mode 0700, holding `golden.wav`,
+    `live-provider-manifest.provisional.json` (0600, 3260 B, inode 665548),
+    `live.crt` (0600, 1582 B) and `live.key` (0600, 2484 B)
+  - `live-provider-manifest.json` (the finalized file) is **absent**
+  - staged certificate: `CN=ga0-alienware-rtx4070ti.local`, SANs
+    `DNS:ga0-alienware-rtx4070ti.local, IP:192.168.68.38` (**no tailnet SAN**),
+    notAfter Oct 25 2026, DER sha256 pin
+    `2c88836b0a9e766d009a2e1eac14748e6c4855629af5c21c0361668d0c206969`
+  - `moss-vllm.service` and `moss-web.service` both `active`; neither uses this certificate
+    (`MOSS_LIVE_ENABLED=0`, `ops/moss-live.env` absent, `moss-live-web.service` not installed)
+- Rollback for the **manifest** (the tool prints this line itself before writing):
+    rm -f "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json"
+  The provisional input is never overwritten, so removing the generated file restores the exact
+  pre-D2 state. Verify with `stat` that the provisional keeps inode 665548 and size 3260.
+- Rollback for the **TLS rotation** (`--rotate` moves both files aside first):
+    mv "$LIVE/live.crt.backup-<utc>" "$LIVE/live.crt"
+    mv "$LIVE/live.key.backup-<utc>" "$LIVE/live.key"
+  where `<utc>` is the stamp the tool prints on its own `plan:`/`rollback:` lines before the first
+  mutation. Restoration is verified by re-reading the DER sha256 and requiring
+  `2c88836b0a9e766d009a2e1eac14748e6c4855629af5c21c0361668d0c206969`.
+- Rotating the pin invalidates every pairing payload minted before it. **None exist**: no Mac is
+  paired yet (`/Applications/MOSSCapture.app` is absent on m4mbp and D4 has not run), so the pin
+  change costs nothing here and must happen before D4 rather than after.
+
+### Applied
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. **No tracked file changed** - D2 runs
+  already-reviewed tools against host state; the merge freeze means the feature branch may carry
+  only Ralph evidence.
+- Validation, in order (every command run on the host from the deployed checkout):
+  - **Finalizer dry-run** -> the full `plan:`/`rollback:`/`evidence:` block, `dry-run: … not
+    written`, and the output file still absent. Every checked relation passed:
+    `frame_seconds=0.5`, `hard_cap_seconds=2.5`, `max_retained_seconds=60.0`,
+    `reconnect_burst_samples=240000`, `retention_headroom_seconds=42.5`,
+    `decoder_headroom_samples=80000`, `replay_ack_headroom_frames=196`,
+    `descriptor_frame_samples=8000`, `descriptor_sample_rate=16000`.
+  - **Finalizer real run** -> `wrote: …/live-provider-manifest.json`, exit 0, with
+    `source_revision=f9285d69ed7bcc592bb41b3dcdf29e3221968f44` (the 40-hex merge SHA, read from the
+    detached `HEAD`), `bounds_config_hash=bb7e098d…`, `combined_config_hash=dca295c3…`,
+    `provider_manifest_hash=61d97ffe…`.
+  - **Idempotence** -> an immediate re-run printed `unchanged:` with `inode_before=inode_after=10565`
+    and `mtime_before=mtime_after=1785213652`. The provisional input kept `inode 665548` / `3260 B`,
+    so it was never touched.
+  - **Runtime admission by the server's own readers** (not by the finalizer's self-report):
+    `LiveProviderBundleConfig.from_manifest` OK;
+    `_endpoint_config -> EndpointPolicyConfig(min_speech_samples=1600, min_silence_samples=8000,
+    pre/post_speech_padding=1600, hard_cap_samples=40000)`;
+    `_bounds -> LiveServiceBounds(max_frame_samples=16000, max_queue_depth=16,
+    max_retained_samples=960000, max_identity_speakers=16, max_events=1000, hard_cap_samples=40000,
+    stop_drain_deadline_seconds=5.0)`;
+    `compute_live_provider_manifest_hash` recomputed `61d97ffe…` independently, matching the
+    finalizer's evidence line; `_preflight_payload` -> **`available=True`, `failures=[]`**, with the
+    bundle descriptor carrying `sample_rate 16000` and
+    `source_revision f9285d69…`. So D3 will not be refused at admission.
+  - **TLS refusal proven for real, not only in tests**: the same four-SAN invocation run **without**
+    `--rotate` exited **1** with `error: …/live.crt carries DNS:ga0-alienware-rtx4070ti.local,
+    IP:192.168.68.38 instead of DNS:…local,DNS:…tailnet.aisight.us,IP:100.64.0.8,IP:192.168.68.38;
+    re-run with --rotate …`, and left `pin_unchanged=yes key_unchanged=yes no_backups=0`.
+  - **Rotation** -> exit 0. `rollback:` printed before the first `change:` line, exactly as the B5
+    output discipline requires. New material: `pin=a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49
+    b6d5677d22b680ff`, `subject_common_name=ga0-alienware-rtx4070ti.tailnet.aisight.us`,
+    `subject_alt_names=DNS:ga0-alienware-rtx4070ti.local,DNS:ga0-alienware-rtx4070ti.tailnet.
+    aisight.us,IP:100.64.0.8,IP:192.168.68.38`, `not_after=Oct 30 04:41:32 2028 GMT`,
+    `validity_days=825`, `certificate_mode=644`, `private_key_mode=600`, `rotated=true`,
+    backups at `live.{crt,key}.backup-20260728T044132Z`.
+  - **The pin agrees across four independent readers**, which is the C3a coupling claim measured on
+    the deployed material rather than on a fixture:
+      1. `openssl x509 -outform DER | sha256sum`      -> a35ca9fc…
+      2. `openssl x509 -noout -fingerprint -sha256`   -> a35ca9fc…
+      3. `web_cli._certificate_sha256(Path(...))`     -> a35ca9fc…  (the server's own reader)
+      4. a **real TLS handshake** against a loopback listener loaded with the installed pair,
+         leaf hashed from `PEM_cert_to_DER_cert`  -> a35ca9fc…
+    Key/certificate pairing checked separately: `openssl x509 -pubkey` and `openssl pkey -pubout`
+    both hash to `7d669c7f157664bdf3de264858d29365c986b82029e302aa1e32c2ba8d1f1262`. EKU is
+    `TLS Web Server Authentication, critical`.
+  - **No-rotate re-run after the rotation** -> `unchanged: …/live.crt already carries … and its key
+    still matches`, `rotated=false`, `pin_stable=yes`, `inode_stable=yes`, `backup_count=2`. The
+    safety property the C3a contract rests on - a re-run does not silently rotate the pin every
+    Mac has stored - now holds on the real deployment path.
+  - **Nothing else moved**: host checkout still detached at f9285d6 with `dirty=[0]`;
+    `moss-vllm.service`/`moss-web.service` both `active` with `ActiveEnterTimestamp` Fri 2026-07-24
+    21:37:11 and Sun 2026-07-26 22:05:29 EDT - both predate this iteration, so **neither was
+    restarted**; `~/.config/systemd/user/` still holds only those two units;
+    `MOSS_LIVE_ENABLED=0`; `ops/moss-live.env` still absent.
+    From MacStudio: `http://192.168.68.38:7860/` -> **200**, `/api/runtime` -> **200**;
+    `https://100.64.0.8:7861/live` -> 000 (no listener and no Windows forward yet - both are D3).
+- Evidence / secret hygiene: the only new value printed anywhere is the certificate **pin**, which
+  is a public fingerprint by construction - it is what the Mac must store and what the server
+  embeds in pairing payloads. No pairing payload was minted this iteration (that is D4), no bearer,
+  device or view token was read, and no private key material was printed: the key was only ever
+  passed as a **path** to `openssl pkey -pubout` and `ssl.load_cert_chain`.
+- Defect found (recorded, not fixed - the merge freeze forbids tracked-source edits here):
+  `ops/finalize-live-provider-manifest.py` imports the finalizer *through* the package, so
+  `moss_transcribe_diarize/__init__.py` -> `configuration_moss_transcribe_diarize.py` ->
+  `from transformers import PretrainedConfig` runs first. The host's system `python3` has no
+  `transformers`, so the exact line `LOCAL_DEPLOYMENT.md:666` tells the operator to paste dies with
+  `ModuleNotFoundError` before printing a single `plan:` line. The finalizer module itself needs
+  nothing from `transformers`. D2 ran it with the deployment venv python
+  (`~/.local/share/moss-transcribe-diarize/venv/bin/python3`, 3.12.13, transformers 5.14.1), which
+  resolves `moss_transcribe_diarize` from **this same checkout** - so the reviewed revision is still
+  what generated the file, and it is the interpreter the live service itself will use. The durable
+  fix is `importlib.util.spec_from_file_location` so the tool is stdlib-only and matches its own
+  docstring; that needs a new branch and a decision, not a second keeper merge. Nothing downstream
+  is blocked - only the doc's copy-paste line is wrong.
+- Learned: (1) A dry-run is not a rehearsal of a **refusal**. `--dry-run` without `--rotate` printed
+  the plan and exited 0; the refusal only exists on the mutation path. Running the real command
+  without `--rotate` was the cheap way to prove the guard, and it is safe precisely because the tool
+  refuses before it mutates - "run it for real and let it refuse" is better evidence than any dry
+  run.
+  (2) Verifying a manifest with the generator that wrote it proves nothing about admission. Loading
+  it with the server's own `_endpoint_config`/`_bounds`/`_preflight_payload` is what shows D3 will
+  start; those two take their per-section sub-mappings, not the whole payload, and passing the whole
+  payload raises a misleading `min_speech_samples must be a non-negative integer`.
+  (3) The interpreter is part of a deployment tool's contract. A tracked tool that works on the dev
+  host and dies on the deployment host is a real defect even though every one of its 17 tests
+  passes - the tests import the module directly and never exercise the wrapper's import path.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: D3 - install and start the reviewed live service. Create `ops/moss-live.env` on the host
+  from `ops/moss-live.env.example` with **absolute** paths (systemd expands nothing), pointing the
+  TLS variables at the rotated `live.crt`/`live.key` and the manifest variable at the finalized
+  `live-provider-manifest.json`, with `MOSS_WEB_PORT=7861` and a `MOSS_RUNS_DIR` that is **not**
+  `<checkout>/runs`. Then `ops/install-services.sh --with-live --dry-run`, then for real, recording
+  the unit-file rollback first; it will not restart the batch service and will report
+  `evidence: restart_required=` for any unit whose file changed. Finally
+  `configure-windows-network.ps1 -IncludeLive` from an Administrator shell to forward 7861 - that is
+  why `https://100.64.0.8:7861/live` currently times out rather than refusing.
