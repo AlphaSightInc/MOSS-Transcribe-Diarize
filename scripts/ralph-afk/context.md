@@ -121,20 +121,29 @@ the suite finally assembles the helper coordinator, the v2 registry and the runt
 seam that hid this. Iteration 4 landed **K4**: a session the server has released is now reported as
 refused instead of merely unreachable, so `running: true` no longer stands alone while every request
 403s. See the lane-reporting, lane-failure-log, terminal-record and session-refusal contract blocks.
-**Only K5 remains — the gate, the merge, the redeploy, and the re-read that finally names the lane
-failure's cause.**
+Iteration 5 ran **K5 steps (a) and (b)**: the full gate green, the payload reviewed against the
+fourth amendment's scope, and **the fourth amendment's one authorized merge** at `fc7097d`. It also
+made the cycle's only unplanned change — a **one-line test-harness fix** (`tests/
+test_live_deployment_credentials.py` publishes its port atomically) — because the merge script's own
+gate failed on a race the primary worktree kept winning. See the fifth-keeper-merge block and the
+port-publish-race block. **K5 steps (c) and (d) remain — publish + redeploy, then the re-read that
+finally names the lane failure's cause.**
 
-**PRD acceptance scoreboard after iteration 16 of run 20260728-112922** ("one exact SHA everywhere"
-is GREEN 4/4 at `6a540fe` since iteration 15; iteration 16 closed the last *machine* gate — Phase J's
-probe. **E3 is now CLOSED too** — both TCC grants hold `auth_value=2` — and the blocker that replaced
-it is that both capture lanes report `failed` for a reason no surface records, which is what Phase K
-makes legible).
+**PRD acceptance scoreboard after iteration 5 of run 20260728-181020.** ("one exact SHA everywhere"
+was GREEN 4/4 at `6a540fe`; the K5b merge **deliberately broke it to 1/4** — local `main` is
+`fc7097d`, the other three checkouts are still `6a540fe`, and K5c restores it. That is the expected
+mid-cycle state after every keeper merge, not a regression. Iteration 16 of the prior run closed the
+last *machine* gate — Phase J's probe. **E3 is CLOSED** — both TCC grants hold `auth_value=2` — and
+the blocker that replaced it is that both capture lanes report `failed` for a reason no surface
+records, which is what Phase K makes legible.)
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
-merge (plus all three amendments' authorized follow-up merges), **one exact SHA everywhere (4/4)**,
+merge (plus all four amendments' authorized follow-up merges), **one exact SHA everywhere — 4/4 at
+`6a540fe`, now 1/4 pending K5c**,
 live service answering (re-measured after the J5c redeploy **and, for the first time, from m4mbp
 itself** — the host the PRD clause actually names), batch service unharmed, signed app installed
-(re-verified at this SHA: inode `211648186` and the E1 DR both unchanged), **rollback rehearsed and
+(re-verified at `6a540fe`: inode `211648186` and the E1 DR both unchanged — **K5c's rebuild will
+change that inode, and the DR must be re-checked unchanged across it**), **rollback rehearsed and
 recorded**.
 Open: **permissions granted — half green**: both TCC grants hold (`auth_value=2`, E3 closed), but
 "`mtd-capture status` reports both lanes active" is not met — K1 made it *expressible* (the response
@@ -147,11 +156,12 @@ refusal), J5a-d gated/merged/deployed/proved it, and the operator then granted b
 and the capture still dies, because **both lanes report `failed`** and every surface that could name
 the code discards it (see the Phase K block). **Never ask for the TCC clicks again.** The path
 forward is K1-K5: make the failure legible, then diagnose it as an ordinary candidate.
-Test totals on the branch: Swift **146 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146); Python **590 passed / 2 skipped / 368 subtests**
-including `tests/test_live_pipeline_seams.py` **50 passed** (new in run 20260728-112922 iteration 1,
+Test totals on the branch: Swift **150 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150); Python **598 passed / 2 skipped / 368 subtests**
+including `tests/test_live_pipeline_seams.py` **52 passed** (new in run 20260728-112922 iteration 1,
 +5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10, +12 in iteration 11,
-+6 in iteration 12) and `tests/test_live_identity.py` **8 passed** (+1 in iteration 12),
++6 in iteration 12, +2 in run 20260728-181020 iteration 3) and
+`tests/test_live_identity.py` **8 passed** (+1 in iteration 12),
 `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -270,6 +280,59 @@ join commit `3ba0f74` then left that tree unchanged (`git diff 9d68d2d 3ba0f74 -
 `git diff --name-only 517306b 3ba0f74 -- ':!scripts/ralph-afk'` was empty — i.e. the product tree the
 J5a gate measured is byte-identical to the one merged. Only then was `merge-base --is-ancestor main
 HEAD` honestly true (it printed NO before the join).
+
+**Fifth keeper merge — the FOURTH amendment's ONE authorized merge: DONE at `fc7097d` (new,
+run 20260728-181020 iteration 5 / K5b).** Feature tip `8a7b98cbde8692b52ab2f82d710d1fdeda9589c8`,
+merge `fc7097d0c729ee9a96b8bf95878582e07b5b1145`, `main^1 = 6a540fe…` (the fourth merge),
+`main^2 = 8a7b98c…`. `git diff 8a7b98c fc7097d` is **empty** and both trees are
+`a6261b52547cc36830396c92db982e2713854cc6`, so the merge commit carries exactly the feature tree.
+Against the published `6a540fe` the delta is **19 files**: fourteen product/test (**+1449/-57**) plus
+five `scripts/ralph-afk/*`. The fourteen are K1-K4's reviewed thirteen (+1441/-56 — seven `macos/`,
+three `moss_transcribe_diarize/`, three tests) plus `tests/test_live_deployment_credentials.py`
+(+8/-1, the port-publish race). `git diff --name-only 6a540fe fc7097d -- ':!scripts/ralph-afk'
+':!macos' ':!moss_transcribe_diarize' ':!tests'` is **empty** — no `ops/`, no doc, no
+`LOCAL_DEPLOYMENT.md`, exactly the three trees the fourth amendment names.
+**Unlike the third and fourth merges this one is NOT server-only:** seven of the fourteen files are
+under `macos/`, so K5c needs **both** a `moss-live-web.service` restart *and* a Mac rebuild +
+reinstall before the re-read can see K1/K2/K4 — the app installed on m4mbp in G6 is **stale at this
+SHA**. Rebuilding replaces the bundle, so confirm the TCC grants survive it (they are keyed to the
+signing identity + bundle id, both unchanged) and re-check the inode note in the J5c block.
+*The suite on the merged tree, measured inside the merge worktree (the script's own gate):* both
+Swift products built there in separate invocations, then `swift test` **150 passed / 0 failures** —
++11 over J5b's 139, which is how a client-side cycle proves it changed the client; `pytest tests`
+**598 passed / 2 skipped / 368 subtests** in 65.12 s, matching the local numbers exactly.
+**Not pushed** — `origin/main` is still `6a540fe`; publishing is K5 step (c). One worktree remains
+and the tree is clean, so the EXIT trap ran and nothing is holding `main`.
+*The guard is live and was rehearsed non-vacuously after the merge:* the same dry run now prints
+`ERROR: main moved from expected pre-merge SHA 6a540fe…`, rc=1, so a **sixth** merge is refused
+until a fifth amendment advances the line in-script.
+*The history join, done first and proven content-free before it was made:*
+`git merge-tree --write-tree main HEAD` returned HEAD's own tree `9e3be156…` **before** the join, the
+join commit `82f4e66` then left that tree unchanged (`git diff cd7faf9 82f4e66 -- .` empty), and
+`merge-base --is-ancestor main HEAD` printed NO before the join and YES after.
+*`expected_main` advanced `b817871… → 6a540fe…` in-script* with a comment naming the fourth
+amendment's four items, committed as `ff5abe3` **before** the script ran.
+
+**The port-publish race — why the first merge attempt failed, and the standing lesson (new,
+iteration 5).** The keeper script's own gate came back `596 passed, 2 skipped, **2 errors**` while
+the *identical tree* had just passed `598 passed / 2 skipped` in the primary worktree. Both errors
+were fixture setup in `tests/test_live_deployment_credentials.py`:
+`ValueError: invalid literal for int() with base 10: ''` at `:591`.
+*Not luck and not a product defect.* The `live_server` fixture treats the port file's **existence**
+as the signal that the port is readable, and the generated server published it with
+`port_file.write_text(...)`, which creates the file **before** it holds anything. A reader polling
+inside that window sees an existing, empty file.
+*Measured rather than assumed* (`/tmp/moss-port-race-probe.py`, 4000 rounds with writer and reader
+released from one barrier): the shipped `write_text` tears **168/4000** reads (4.2%); staging file +
+`os.replace` tears **0/4000**. The fix is the atomic publish, so existence and completeness become
+one event — **not** a tolerant reader, which would have left the window open.
+*Why the merge worktree lost a race the primary worktree wins:* nothing about the worktree. Another
+agent's full pytest suite was running on this MacStudio at the time, so the CPU contention widened
+the window. **Treat that as the standing lesson: an unexplained failure inside `merge-keeper.sh`
+that does not reproduce in the primary worktree is a scheduling-sensitive test, not a bad merge.**
+Re-running the merge until it passes would have hidden a 4%-per-run flake under an authorized merge.
+Verification: the two nodes 14 passed **×5** consecutively, full suite 598/2/368, then the merge's
+own gate green on the retry.
 
 **J5c redeploy: DONE at `6a540fe`, and the four-way SHA check is GREEN 4/4 (new, iteration 15).**
 `git push origin main` fast-forwarded `b817871..6a540fe`; the host checkout fetched and detached at
@@ -2487,7 +2550,10 @@ print("retired knob present =", "session_hard_cap_samples" in json.dumps(d))
 PY' | ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
 
 # --- the full gate, run before every merge (iteration 4 of run 20260728-072601 re-ran it green at
-#     23dc163; iteration 4 of run 20260728-112922 re-ran it green at 8b852f2) --------------------
+#     23dc163; iteration 4 of run 20260728-112922 re-ran it green at 8b852f2; iteration 5 of run
+#     20260728-181020 re-ran it green at cd7faf9 — 150 / 598+2 / tracer 4 / 10/10 / clean) --------
+# The zero-warning claim needs a FRESH scratch each time: a second build into a warm scratch is a
+# no-op and re-emits nothing, so grep `warning:` over a first build's log, not a rebuild's.
 SCRATCH="$(mktemp -d /tmp/moss-gate-scratch.XXXXXX)"   # must be EMPTY; one dir, two invocations
 swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product mtd-capture
 swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product MOSSCaptureApp
@@ -3345,10 +3411,38 @@ An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox fl
     `CaptureSessionRefusal` (401/403/404/410 only), `CaptureStatus.sessionRefusal` and
     `ControlChannelResponse.sessionRefusal`, recorded from the tick's failure and from the stop
     drain. See the session-refusal contract block.
-47. **K5 - gate, merge, redeploy, re-read.** Regression nodes red-before/green-after; full
-    Swift/Python gate; one merge (`expected_main` is `b817871…` -> advance in-script); push;
-    redeploy; then re-run `pair` -> `start` on m4mbp and **read the lane failure codes**. Only then
-    diagnose the cause - it is a new candidate and may need its own authorization.
+47. **K5 - gate, merge, redeploy, re-read.**
+    - **(a) full gate** `[done - run 20260728-181020 iteration 5]`. Green at `cd7faf9`: both Swift
+      products from an **empty** scratch path (`mtd-capture` 8.5 s, `MOSSCaptureApp` 1.0 s) with
+      **zero `warning:` lines**; `swift test` **150 passed / 0 failures**; `pytest tests`
+      **598 passed / 2 skipped / 368 subtests** in 64.2 s; `-rs` names the same two pre-existing
+      `test_large_upload.py:155,175` Python-3.10 skips; tracer **4 passed / 0 skips**; attempt-2
+      discriminator **10/10**; `leak-scan: clean`; `live-hardcap-repro.py --frames 8` rc=0; tree
+      clean. Payload reviewed: exactly **13 files, +1441/-56**, nothing outside `macos/`,
+      `moss_transcribe_diarize/`, `tests/`. Clause -> node map, all run: K1 3 nodes (incl. the CLI
+      node that satisfies the PRD's "`mtd-capture status` reports both lanes" clause over the real
+      socket), K2 4, K4 4 = **11 Swift**, K3 **8 Python** (3 `test_live_helper_failure`, 2
+      `test_live_pipeline_seams`, 3 `test_live_session_v2`). The counts reconcile exactly:
+      150-139 = 11 and 598-590 = 8, so nothing else moved.
+    - **(b) the merge** `[done - run 20260728-181020 iteration 5]`. Join first (content-free,
+      proven before it was made), `expected_main` advanced `b817871… → 6a540fe…` **in-script** and
+      committed as `ff5abe3`, script run in the **background**. **First attempt failed** on a
+      scheduling-sensitive test race, which was fixed at its source rather than retried away - see
+      the port-publish-race block. Merge **`fc7097d`**, tree identical to the feature tip
+      `8a7b98c`. Guard rehearsed after: a **sixth** merge refuses. See the fifth-keeper-merge block.
+    - **(c) publish + redeploy** `[NEXT]`. `git push origin main` (fast-forward `6a540fe..fc7097d`,
+      never force), then the host checkout + `moss-live-web.service` restart + `/live` poll, per the
+      J5c block's exact order. **This merge is NOT server-only** - seven `macos/` files changed - so
+      m4mbp needs `git fetch alphasight main && git checkout fc7097d` (remote names are INVERTED
+      there) **and a rebuild + reinstall** of `/Applications/MOSSCapture.app`, unlike J5c. The app's
+      inode will change; the TCC grants are keyed to bundle id + signing identity, both unchanged,
+      so re-verify `auth_value=2` for both services after the reinstall rather than assuming.
+    - **(d) the re-read** `[open]`. Re-run `pair` -> `start` on m4mbp and **read the codes**: the
+      server journal prints `live helper terminal: session=… reason=… lane.<lane>=<code>` (K3), the
+      Mac's `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` prints the per-lane
+      failure line (K2), and `mtd-capture status` prints both lanes plus `sessionRefusal` if the
+      session has been released (K1/K4). Only then diagnose the cause - it is a new candidate and
+      may need its own authorization.
 
 Do not guess the cause before K5 reports the codes. Candidates already ruled out by measurement:
 TCC (both granted), pinning/network (probe 200s), schema (five faithful heartbeat shapes 200), and

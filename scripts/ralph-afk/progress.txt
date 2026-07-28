@@ -6049,3 +6049,99 @@ journal now prints `live helper terminal: session=… reason=… lane.<lane>=<co
 (K2), and `mtd-capture status` prints both lanes plus - if the session has been released -
 `sessionRefusal` (K1/K4). Only then diagnose the lane failure; it is a new candidate and may need
 its own authorization. Do not guess the cause before K5 reports the codes.
+
+================================================================================
+run 20260728-181020 | iteration 5 | K5 steps (a) and (b) - the gate and the fourth amendment's
+                                    one authorized merge, at fc7097d
+================================================================================
+Target: candidate K5, steps (a) full gate and (b) the merge. K1-K4 had landed the four lane
+observability surfaces; nothing they record reaches a host until the branch is merged, published and
+redeployed, so this iteration is the first half of turning four code changes into a diagnosis.
+
+**(a) The full gate, green at cd7faf9** (MacStudio, Swift 6.3.2 / pyenv 3.12.10):
+- Both Swift products from an EMPTY scratch path, two separate invocations: mtd-capture 8.5 s,
+  MOSSCaptureApp 1.0 s. Zero `warning:` lines - re-measured on a SECOND fresh scratch, because a
+  rebuild into a warm scratch is a no-op that re-emits nothing and would have proven zero vacuously.
+- `swift test` 150 passed / 0 failures. `pytest tests` 598 passed / 2 skipped / 368 subtests in
+  64.2 s. `-rs` names the two skips as test_large_upload.py:155,175 "Python 3.10 compatibility
+  contract" - the same pre-existing pair as every prior gate, not Darwin skips.
+- Tracer alone 4 passed / 0 skips; attempt-2 discriminator 10/10; `leak-scan: clean`;
+  live-hardcap-repro.py --frames 8 rc=0; `git status --porcelain` empty.
+- Payload review: exactly 13 files, +1441/-56, and
+  `git diff --name-only main HEAD -- ':!scripts/ralph-afk' ':!macos' ':!moss_transcribe_diarize'
+   ':!tests'` is EMPTY - the fourth amendment's three trees and nothing else.
+- Clause -> node map, each selection run: K1 3 nodes (including
+  testCLIStatusReportsBothLanesAndTheTypedCodeOfAFailedOneAcrossTheRealSocket, which is the PRD's
+  "`mtd-capture status` reports both lanes" clause exercised over the real socket), K2 4, K4 4 =
+  11 Swift; K3 8 Python (3 test_live_helper_failure, 2 test_live_pipeline_seams, 3
+  test_live_session_v2). The counts reconcile exactly - 150-139 = 11, 598-590 = 8 - so the payload
+  moved nothing outside the amendment.
+- Hygiene sweep over the payload diff: every `token`/`secret`/`pcm` hit is a test or comment
+  ENFORCING non-leakage (a node forbids ["pcm","token","secret","cause"] in the log line; the CLI
+  node asserts stdout never contains the control secret). No new surface carries audio or a token.
+
+**(b) The merge: fc7097d0c729ee9a96b8bf95878582e07b5b1145.** Both fences satisfied honestly:
+1. History join FIRST, proven content-free BEFORE it was made: `git merge-tree --write-tree main
+   HEAD` returned HEAD's own tree 9e3be156…; the join 82f4e66 left that tree unchanged and
+   `git diff cd7faf9 82f4e66 -- .` was empty. `merge-base --is-ancestor main HEAD` printed NO before
+   and YES after - the check was never loosened.
+2. `expected_main` advanced b817871… -> 6a540fe… IN-SCRIPT (never RALPH_MERGE_MAIN_BEFORE), with a
+   comment naming the fourth amendment's four items, committed as ff5abe3 before the script ran.
+3. Script run in the BACKGROUND per the recorded stall hazard.
+Result: main^1 = 6a540fe (the fourth merge), main^2 = 8a7b98c = the feature tip, merge tree ==
+feature tree (a6261b52…), `git diff 8a7b98c fc7097d` empty. Guard rehearsed non-vacuously after: the
+dry run now prints "main moved from expected pre-merge SHA 6a540fe…", rc=1 - a SIXTH merge refuses.
+NOT pushed: origin/main is still 6a540fe. One worktree, tree clean - the EXIT trap ran.
+
+**The first merge attempt FAILED, and the failure was worth more than the retry.** The script's own
+gate returned `596 passed, 2 skipped, 2 errors` on the IDENTICAL tree that had just passed 598/2 in
+the primary worktree. Both errors were fixture setup in tests/test_live_deployment_credentials.py:
+`ValueError: invalid literal for int() with base 10: ''` at :591.
+- Diagnosis, by reading rather than by re-running: the `live_server` fixture treats the port file's
+  EXISTENCE as the signal that the port is readable (:590), while the generated server published it
+  with `port_file.write_text(...)` (:549), which CREATES the file before it holds anything. A reader
+  polling inside that window sees an existing, empty file. Test-harness defect, not product.
+- Measured, not assumed: /tmp/moss-port-race-probe.py runs writer and reader against a shared
+  barrier, 4000 rounds. Shipped `write_text` tears 168/4000 reads (4.2%); staging file + os.replace
+  tears 0/4000. That is the red-before/green-after for this fix.
+- Fixed at the source (atomic publish) rather than by a tolerant reader: os.replace makes existence
+  and completeness ONE event, so the fixture's stated assumption becomes true instead of usually
+  true. A tolerant reader would have left the window open and hidden it.
+- Why the merge worktree lost a race the primary worktree wins: another agent's full pytest suite was
+  running on this MacStudio at the time (pid 33186, a different project), so CPU contention widened
+  the window. Nothing about worktrees.
+- Verification: the two nodes 14 passed x5 consecutively; full suite 598/2/368; then the merge's own
+  gate green on the retry (150 Swift, 598/2/368 Python in 65.12 s).
+The alternative - re-running merge-keeper.sh until it went green - would have parked a 4%-per-run
+flake permanently underneath an authorized merge, and every future gate would have inherited it.
+
+Design note recorded because K5c depends on it: **this merge is NOT server-only.** The third and
+fourth merges were, so J5c needed only a service restart. Seven of the fourteen product/test files
+here are under `macos/`, so K5c needs a Mac REBUILD + REINSTALL as well as the systemd restart, or
+the re-read in step (d) will interrogate an app that predates K1/K2/K4 and report nothing new. The
+rebuild replaces the bundle and changes its inode; the TCC grants are keyed to bundle id + signing
+identity, both unchanged, so they should survive - but that must be re-verified (auth_value=2 for
+both services), not assumed, because it is the one input this loop cannot re-obtain.
+
+Files touched: scripts/ralph-afk/merge-keeper.sh (expected_main + its authorizing comment),
+tests/test_live_deployment_credentials.py (+8/-1, the atomic port publish),
+scripts/ralph-afk/{context.md,progress.txt}.
+
+Validation: full gate as above; merge verified by tree identity, parent SHAs, scope query and the
+post-merge guard rehearsal.
+
+Evidence paths: /tmp/moss-keeper-merge-4.log (the failed attempt, with both tracebacks),
+/tmp/moss-keeper-merge-4b.log (the green run), /tmp/moss-port-race-probe.py (the race measurement);
+context.md's fifth-keeper-merge and port-publish-race blocks.
+
+Learned: a keeper-merge gate that fails where the primary worktree passes is a scheduling-sensitive
+test, not a bad merge - and the merge script is the only place in this repo that runs the suite under
+real CPU contention, which is why it is the only place that has ever caught one. Worth keeping as a
+property of the gate rather than engineering it away.
+
+Next: **K5c** - `git push origin main` (fast-forward 6a540fe..fc7097d, never force), then the host
+checkout + `moss-live-web.service` restart + `/live` poll in the J5c block's exact order, then m4mbp
+(`git fetch alphasight main` - the remote names are INVERTED there - `git checkout fc7097d`) AND a
+rebuild + reinstall of /Applications/MOSSCapture.app, re-verifying both TCC grants across it. Record
+each rollback command before applying it. Then K5d: re-run pair -> start and READ the codes. Do not
+guess the lane-failure cause before K5d reports it.
