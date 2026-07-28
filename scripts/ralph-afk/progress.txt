@@ -3639,3 +3639,5 @@ each one alone is enough to end a real meeting in the first few seconds.
   rebuild, so the grants will persist), `codesign --verify --strict` ok. TCC still has **zero**
   `%moss%` rows. The stored session is stale - F4a's service restart dropped in-memory sessions, so
   E3 pairs first, exactly as its runbook already says.
+
+[loop 20260728-112922-76267] start budget=30 agent=claude branch=ralph/live-meeting-mvp
