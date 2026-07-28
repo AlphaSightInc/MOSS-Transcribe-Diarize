@@ -3612,3 +3612,30 @@ each one alone is enough to end a real meeting in the first few seconds.
   `scripts/ralph-afk/live-hardcap-repro.py` and can be ported into `tests/` verbatim.
 
 [loop 20260728-072601-15601] blocked at iteration 10
+
+## Supervisor - operator authorizes the server decode-seam fix cycle (2026-07-28)
+- The loop emitted BLOCKED at iteration 10 rather than starting server product work without
+  authorization. That was correct: the 2026-07-28 amendment was spent on the Mac client and does
+  not cover `moss_transcribe_diarize/`.
+- Supervisor verification of F0's post-state, checked independently rather than read from the
+  journal above: `git diff --name-only 317df4d..HEAD -- ':!scripts/ralph-afk'` is **empty**, so the
+  freeze held; the only changed files are `scripts/ralph-afk/{live-pipeline-probe.py,context.md,
+  progress.txt}`. Server checkout `317df4d...`, `git status --porcelain` empty; `live-runs/` **0**
+  entries; `/tmp/mtd-live-*` **0** directories; `moss-live-web` MainPID 336320, `moss-web` 301112,
+  `moss-vllm` 322117, all `active` with **NRestarts=0**; batch `http://192.168.68.38:7860/` **200**
+  and live `https://127.0.0.1:7861/live` **200**. The probe left nothing behind.
+- Operator decision: **second fix cycle authorized**, recorded in prd.md under "Second authorized
+  amendment". Phase H candidates H1-H4 in context.md carry the work. One further merge, then
+  redeploy; the post-merge freeze resumes afterwards.
+- Ordering the operator accepted with it: **E3's TCC clicks wait until this cycle is deployed.** The
+  clicks exist to enable the canary and the canary cannot pass on the current build, so spending
+  them now would burn the one input the loop cannot obtain against a session that dies in ~3 s.
+- Supervisor note for H2: F0's caveat is the right instinct and must be closed first. Re-run the
+  probe with a per-lane `capture_timestamp_ns` offset before touching the endpoint policy - if the
+  400 disappears, Blocker 2 is a probe artifact and the policy is fine as written.
+- m4mbp state is unchanged and ready for E3 whenever the build is: `/Applications/MOSSCapture.app`
+  carries G1+G2+G3 with `NSAllowsArbitraryLoads` present, identifier `com.alphasight.moss.capture`,
+  designated requirement still `certificate leaf = H"e118d874..."` (byte-identical across the G6
+  rebuild, so the grants will persist), `codesign --verify --strict` ok. TCC still has **zero**
+  `%moss%` rows. The stored session is stale - F4a's service restart dropped in-memory sessions, so
+  E3 pairs first, exactly as its runbook already says.

@@ -2004,6 +2004,49 @@ under a second (see the H-diagnosis block and the repro commands in Validation).
     third-party exception become `kind=integrity`. Reproduced on the deployed host **and** offline;
     it is the first thing a real Mac capture will hit, before blockers 1 and 2 are even reachable.
 
+### Phase H - authorized server decode-seam fix cycle (2026-07-28, second amendment)
+
+Opened by the second prd.md amendment after F0 proved the deployed pipeline dies within ~3 s of
+ordinary audio. Both blockers are server-side and downstream of the operator's TCC clicks, which is
+why F0 was worth pulling ahead of E3. Scope is exactly these items.
+
+32. **H1 - a span the decoder cannot parse must never be terminal.** `vllm_runner.py:245`
+    `_validate_transcription_response` raises a bare `RuntimeError` when `parse_transcript(text)` is
+    empty; it escapes before `live_adapters.py:360-364`, whose typed `LiveProviderError` for the
+    identical condition therefore never fires. The live session records
+    `kind=integrity, retryable=false` and goes terminal, `session.status` still reading `active`
+    while `terminal_failure` is set - the C1 divergence, now observed on a real failure. Measured:
+    `frozen_until_sample 14400` (0.9 s) against a first utterance at sample 16000, so the span was
+    pure silence. **Decide the policy explicitly and record it - drop the span or commit it empty -
+    then implement.** Every meeting starts with silence, so this fires on the first span.
+33. **H2 - the endpointer can ask to freeze a span that does not advance.** 400
+    `frozen span end must advance.` at `live_session.py:237`, from `live_coordinator.py:128`
+    (accept path) or `:231` (`_freeze_and_queue`). **First rule the probe artifact in or out:**
+    F0's two lanes carry identical `capture_timestamp_ns` and start at the same instant, which a
+    real capture never does. Re-run `scripts/ralph-afk/live-pipeline-probe.py` with a per-lane
+    offset before concluding anything about the endpoint policy. It is legal input either way - the
+    contract has no distinctness requirement and the server accepted eleven such frames - but the
+    caveat must be closed rather than assumed.
+34. **H3 - close the seam the suite cannot reach.** No test puts the real VAD endpointer and a real
+    decoder in one process: `tests/test_live_vad.py` drives the endpointer with a stub provider and
+    even asserts the typed `LiveProviderError` the real path never reaches, and every decoder node
+    is stubbed because MacStudio has no GPU. That gap, not the two bugs, is the durable defect. Add
+    regression coverage that exercises the real `vllm_runner` validation seam under the live
+    coordinator for an empty transcript and for a leading-silence span.
+35. **H4 - gate, merge, redeploy.** Re-run `live-pipeline-probe.py` against the deployed service and
+    require a run that survives its full plan with committed samples advancing; full Swift/Python
+    gate; then the single merge authorized by the second amendment through `merge-keeper.sh`
+    (`expected_main` is now `317df4d...`, advance it in-script exactly as G4 did, never by CLI
+    override), then push and redeploy so all four checkouts return to one exact SHA. Only after
+    that is E3 worth the operator's clicks.
+
+Useful F0 facts for this cycle: healthy request timings are 4-280 ms while post-terminal 409s took
+**6-8 s each**, so a dead session will back the Mac's outbox up hard - worth a look while fixing H1.
+Three terminal sessions did not restart or destabilise any service, so the failure is per-session.
+`live-runs/` stayed empty and `/tmp/mtd-live-*` was cleaned up, which is real evidence for the PRD's
+"no raw audio is persisted" clause. Device revocation (`DELETE /api/live/devices/{id}`, loopback
+only) is a complete no-restart rollback for a pairing but marks rather than deletes.
+
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.
