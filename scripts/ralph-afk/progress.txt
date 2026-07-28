@@ -12721,3 +12721,46 @@ live-canary.sh NOHUP'd, reduce with live-canary-analyze.py AND live-canary-claus
 with live-soak.sh --user-visible-gate-ms 6000. If m4mbp is still gone, the next non-host
 candidate is candidate 55 / Phase N groundwork that needs no run - but note Phase N is gated
 AFTER Phase M's gate, so prefer another instrument or an evidence repair over starting it.
+
+================================================================================
+Iteration 23 of run 20260728-181020 - PRE-RECORDED ROLLBACKS, written and committed
+BEFORE any host is touched (prd.md "Reversibility").
+================================================================================
+
+Planned mutation: ONE live-pipeline-probe.py run against the DEPLOYED live service at
+77e0014, from MacStudio over the tailnet, to measure candidate 50 / D-c's token cap on
+REAL spans through the REAL decoder. m4mbp is unreachable for the third iteration
+running, so gate step (d) cannot run; this measures the half of F1's red latency clause
+that is purely server-side and has never been exercised end to end since the sixth merge.
+
+Probe device id for this run: ralph-i23-dc-probe-20260728T230147Z
+
+ROLLBACK 1 (mandatory after the run; loopback-only, on the host, no restart needed):
+  curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/ralph-i23-dc-probe-20260728T230147Z
+  It returns and releases the sessions the device owns. It MARKS revoked rather than
+  deleting, so live-auth.json only grows. A second DELETE returns 200, not 404.
+
+ROLLBACK 2 (the deeper one, only if live-auth.json is corrupted; costs a service restart,
+so it is NOT the default):
+  cp ~/.local/share/moss-transcribe-diarize/live/live-auth.json.ralph-f0-backup-20260728T091927Z      ~/.local/share/moss-transcribe-diarize/live/live-auth.json   # sha256 9d306766...
+  systemctl --user restart moss-live-web
+
+ROLLBACK 3 (if the probe leaves a live session that the device revoke does not release):
+  the device DELETE above already releases owned sessions; if a session still shows
+  active, the fallback is the recorded live-service restart
+  (systemctl --user restart moss-live-web), which is the same command M6c used and which
+  the batch units never share.
+
+NOT MUTATED BY THIS RUN, and the baseline that must still hold afterwards (read-only,
+captured before the run, /tmp/i23-host-baseline.txt):
+  HEAD=77e0014ac2a1eee1edb29b109024807e9489daa5
+  moss-live-web MainPID 350731 NRestarts=0 active
+  moss-web      MainPID 301112 NRestarts=0 active     <- batch, must NEVER restart
+  moss-vllm     MainPID 322117 NRestarts=0 active     <- batch, must NEVER restart
+  live-runs entries 0; /tmp/mtd-live-* absent; unrevoked devices 1 (m4mbp's
+  AB600574-FD93-4321-967E-652AB064A70B, which must stay revoked:false)
+  live-auth.json sha256 648386c7a531a7bc... (it WILL change - the probe adds a device row;
+  what must not change is the unrevoked count returning to 1)
+
+No tracked product source is touched by this iteration. No checkout, no merge, no push,
+no deploy, no restart, no app install.
