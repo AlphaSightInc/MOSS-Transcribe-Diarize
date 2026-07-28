@@ -81,8 +81,10 @@ progress.txt archive.
 - **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** Two of 42 spans decoded
   at RTF ≈ 3.4 and stalled the serial queue behind them; committed p95 9053 ms with a median lag of
   ≈ 0 s. Three independent runs agree to within ~100 ms (K5d 9089, F1 9053, F3 9148).
-Both are tracked product source under the post-merge freeze. **Candidate 54** (log the 409's reason
-server-side) belongs in the same authorization: 53's fix cannot be aimed without it. See Phase M.
+Both are tracked product source under the post-merge freeze. **Candidate 54 is ANSWERED** (iteration
+11) without spending an authorization: the 409 is `LiveV2SessionTerminalError` —
+`"v2 system lane is failed."` — armed by the client's *own* heartbeat, **not** the
+`v2_out_of_order_frame` that was on record as likeliest. See the lane-refusal block and Phase M.
 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
@@ -285,12 +287,12 @@ to the publish path, so a non-fatal publish condition ends the meeting.
 and `CaptureSessionRefusal(error:)` **deliberately excludes 409** (`:179-182`, because the wire
 overloads it for a closed session and an ordering conflict). Both decisions are defensible; together
 they mean a permanently-wedged lane is reported as a transient network problem.
-*What is NOT determined, and the probe that would settle it:* which 409 the server sent.
-`live_transport.py:261-265` and `live_lane_contract.py:400-406` make `LiveV2OutOfOrderFrameError`
-(a skipped per-lane **sequence**) the likeliest, but the access log records only the code, and the
-client discards the body by G3's contract — so **nothing on either host records why a frame was
-refused**. That is the same "known but not shown" defect the fourth amendment fixed for lanes, one
-level down. Settle it by logging the 409 `detail` server-side, not by guessing.
+*Which 409 the server sent was left undetermined here and was **SETTLED in iteration 11** — it is
+`LiveV2SessionTerminalError`, `"v2 system lane is failed."`, and **not** the
+`LiveV2OutOfOrderFrameError` this block guessed at. Read the lane-refusal block below before using
+any sentence in this paragraph.* Still true, and still the reason it took a probe: the access log
+records only the status code and the client discards the body by G3's contract, so **neither host
+records why a frame was refused**.
 
 ***The same chain ended F1.*** The journal still holds `live helper terminal:
 session=de088f0510ec492082972365127cebee reason=helper_lease_expired lanes=none` at **15:53:55** —
@@ -322,6 +324,62 @@ run at 9.1 s committed p95 (K5d 9089, F1 9053) on a fourth audio program.
 Neither holds a secret. `log show` needs a **script file** on m4mbp — an inline `log show --predicate`
 over `ssh` hits zsh's own `log` builtin and dies with `zsh:log:1: too many arguments`, printing
 nothing, which reads exactly like an absent log line.
+
+**The 409 is NAMED, and the meeting was survivable (new, run 20260728-181020 iteration 11).
+READ THIS BEFORE DESIGNING CANDIDATE 53'S FIX.** F3 left "which 409" undetermined and recorded
+`LiveV2OutOfOrderFrameError` as likeliest. It is **not** that. Settled offline and deterministically
+by `scripts/ralph-afk/live-lane-refusal-probe.py`, which drives the **real** `create_app` in-process
+(the branch carries no product source, so its tree == `main` == the server checkout, all `fc7097d`
+— re-verified this iteration) through F3's exact sequence and through the rival hypothesis beside it.
+
+*The chain, and every link is a component behaving as designed.*
+1. The Mac's `system` lane overruns. `NativeLaneHealth` classes `macos_buffer_overrun` as a lane
+   **failure**, not a degradation (`NativeLaneHealth.swift:8,217-220`).
+2. K1's projection carries that honestly into the **next heartbeat**. One failed lane is not
+   terminal, so the heartbeat answers **200** — and then
+   `LiveHelperFailureCoordinator` calls `_fail_lane` (`live_helper_failure.py:232`) →
+   `LiveV2Session.fail_lane` (`live_v2_session.py:139-156`): the lane's retained frames are released
+   into `failed_samples` and `lifecycle.health` becomes `failed`. **This is the client arming its own
+   refusal**, and it is why F3's *last* heartbeat 200 and its *first* frame 409 share one second.
+3. Every later `POST /frames` **on that lane** hits `LiveV2Session.accept`'s
+   `if lifecycle.health != "active"` (`live_v2_session.py:99-103`) → `LiveV2SessionTerminalError` →
+   `live_transport.py:262` → **HTTPException 409**, body exactly `{"detail": "v2 system lane is
+   failed."}`.
+4. `publishPendingFrames` throws, `emitHealth` at `CaptureController.swift:417` is skipped, the
+   heartbeat stops, the 30 s lease expires — candidate 53.
+
+*Measured, all rc=0 in one probe run:* the failed lane answers **409 three times in a row on the
+identical retried frame** (permanent — `LiveV2Session` has no un-fail path, so the outbox's
+retain-until-acked loop can never clear it); `failed_samples` 2 of 2 and `failure_code`
+`macos_buffer_overrun` on `system` while `microphone` stays `health: active`; **the peer lane's next
+frame returns 200**; **a heartbeat sent after the refusal returns 200** and the session stays
+registered. So the meeting was survivable on one lane with the lease intact: *the only thing that
+killed F3 was the skipped `emitHealth`.*
+
+*The rival hypothesis, run beside it so the two are compared rather than argued.* A genuinely
+skipped wire sequence answers a **different** 409: `{"detail": "expected v2 system frame sequence 1,
+got 2.", "failure": {"code": "v2_out_of_order_frame", …}, "snapshot": …, "v2_session": …}` — and it
+is **recoverable**: posting the awaited sequence afterwards returns 200. Two consequences.
+(a) The two 409s are distinguishable on the wire *today*: the lane-failed one carries a bare
+`detail` and **no** machine-readable `failure.code`. The client already receives the answer and
+discards it by G3's contract, so candidate 54's "log it server-side" is one option and "stop
+discarding it client-side" is another. (b) A sequence gap could never have been the cause anyway —
+`CaptureFrameOutbox` stamps wire identity at admission and **a refused frame burns no sequence
+number** (`CaptureOutbox.swift:116-120`), which is exactly the invariant that keeps the stream
+gapless after lost audio.
+
+*What this kills, and what it adds, for candidate 53's fix.* **Dead remedy:** "the client
+resynchronises the lane sequence" — the refusal is not about sequence and no client-side
+renumbering can reopen a lane the server has closed. **New question for whoever authorizes it,**
+one level above candidate 53 and the same shape as L2's second question: should 0.5 s of dropped
+capture audio close a lane for the rest of a meeting at all? Three components each behave
+defensibly and the product of the three is a dead meeting; the cheapest single place to break the
+chain is step 1 — an overrun with a dropped-buffer count is a *degradation*, not a *failure*.
+
+*The coverage gap that let this ship, stated so it is closed deliberately:*
+`tests/test_live_api.py:1055` fails the **microphone** lane and then posts a **system** frame,
+asserting the *peer* lane survives. **Nothing in the suite posts a frame on the lane that failed.**
+Same shape as every blocker in Phases H/J: the one path that ends the meeting is the untested one.
 
 **Feasibility — settled, do not re-litigate.**
 - Warm 12-run decode p95: 7.5 s span → **0.241 s**; 2.5 s → **0.162 s**. One pre-warm
@@ -1053,6 +1111,19 @@ python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-span-sweep \
 # 4. after any run: host HEAD unchanged, both MainPIDs unchanged with NRestarts=0, live-runs/ 0,
 #    no /tmp/mtd-live-*, 0 journal tracebacks, both probe devices revoked, m4mbp device NOT revoked.
 
+# --- the lane-refusal probe (iteration 11). Names the 409 that ends a meeting after one capture
+#     overrun, and reproduces the rival sequence-gap hypothesis beside it. Offline and
+#     deterministic: drives the REAL create_app in-process through fastapi.testclient, starts no
+#     server, opens no socket, touches no deployed state, needs no GPU and no network (~3 s).
+#     rc=0 every recorded expectation held, rc=3 the diagnosis is wrong, rc=2 it could not run.
+#     Valid as evidence about the DEPLOYED service only while the branch carries no product source
+#     and all four checkouts are one SHA - check that first, it is one command.
+git diff --name-only main HEAD -- ':!scripts/ralph-afk'      # must be EMPTY
+python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-lane-refusal.json
+# It imports tests/test_live_api.py BY FILE PATH (`tests/` is not a package, so
+# `import tests.test_live_api` fails with ModuleNotFoundError) to reuse the tracked payload
+# builders - restating them here would let the probe drift from the shapes the suite asserts.
+
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
 
@@ -1425,8 +1496,12 @@ only reachable through the first.
     ruled that "a new session id is a new question" for `sessionRefusal` - the same argument applies
     here), and whether an overrun is even a lane *failure* rather than a lane *degradation* with a
     dropped-frame count. Do not fix L2 alone: without L1 the starvation just happens again.
+    *Iteration 11 raised the stakes on the second question:* an overrun classed as a **failure** is
+    carried by the next heartbeat into `LiveV2Session.fail_lane`, which closes that lane on the
+    **server** for the rest of the meeting with no way back. So the classification is not a reporting
+    detail - it is what makes candidate 53's wedge permanent. See the lane-refusal block.
 
-### Phase M - what F1 and F3 found. 50/53/54 are NOT AUTHORIZED; 51 is Ralph-only and open (52 done)
+### Phase M - what F1 and F3 found. 50/53 are NOT AUTHORIZED; 51 is Ralph-only and open (52, 54 done)
 
 50. **A decode that runs away is unbounded, and it is what fails the latency gate** `[open - needs
     authorization; tracked server source under the post-merge freeze]`. Measured in F1: two of 42
@@ -1490,19 +1565,32 @@ only reachable through the first.
     *Shape of the fix, not a decision:* the tick's health emission must survive a failed publish the
     same way it already survives contention (the comment at `:410-412` states the rule the code only
     half implements) - and, separately, a lane whose frames are permanently refused must degrade
-    (drop the lane, resynchronise, or fail that one lane) rather than block the pump forever. Three
-    decisions belong to whoever authorizes this, exactly as H1 needed one: whether a heartbeat may
-    be sent while a publish is failing (it must, or the lease is a dead-man switch on a healthy
-    meeting); what a permanently-refused frame does; and whether the client resynchronises the lane
-    sequence or ends only that lane. **Same class as Phase J and L1** - a condition the design
-    contemplates ends the meeting.
-54. **Nothing on either host records *why* a frame was refused** `[open - needs authorization;
-    diagnosability, blocks 53's own diagnosis]`. The 409 that killed F3 is one of at least four
-    distinct server conditions (`live_transport.py:261-265`, `live_lane_contract.py:394-406`); the
-    access log prints only the status code, and the client discards the body by G3's contract, so
-    the sub-reason is undetermined even with three logs in hand. `LiveV2OutOfOrderFrameError` is the
-    likeliest but was **not** proven. This is the fourth amendment's "known but not shown" defect one
-    level down, and settling 53 well needs it: log the refusal `detail` server-side.
+    (stop publishing that lane and report it) rather than block the pump forever. **Iteration 11
+    named the refusal and it changes this list** (see the lane-refusal block): the 409 is
+    `"v2 <lane> lane is failed."`, armed by the client's own heartbeat, and it is **permanent** -
+    so *"the client resynchronises the lane sequence" is a dead remedy* and is struck from the
+    decisions. What is left for whoever authorizes this: (a) whether a heartbeat may be sent while a
+    publish is failing - **it must**, and iteration 11 measured that a heartbeat sent after the
+    refusal still returns 200, so this alone would have kept F3 alive; (b) what the client does with
+    a lane the server has permanently closed (it must stop publishing it - the peer lane still
+    returns 200, so the meeting continues one-laned); and (c), one level up and cheapest of the
+    three, whether `macos_buffer_overrun` should be a lane **failure** at all rather than a
+    degradation with a dropped-buffer count - fixing (c) stops the chain before the server ever
+    closes the lane. **Same class as Phase J and L1** - a condition the design contemplates ends the
+    meeting.
+54. **Nothing on either host records *why* a frame was refused** `[ANSWERED - run 20260728-181020
+    iteration 11; no authorization was needed and none was spent]`. The question was which of the
+    seven distinct 409 conditions on `POST /frames` F3 took.
+    `scripts/ralph-afk/live-lane-refusal-probe.py` settled it against the real `create_app`:
+    **`LiveV2SessionTerminalError` → `{"detail": "v2 system lane is failed."}`**, not the
+    `LiveV2OutOfOrderFrameError` that was on record as likeliest - which the outbox's
+    burns-no-sequence-on-refusal invariant (`CaptureOutbox.swift:116-120`) rules out by construction,
+    and which the probe shows would have looked completely different on the wire (a machine-readable
+    `failure.code`, and **recoverable**). *What remains, and it is now an ordinary durability
+    candidate rather than a blocker:* the lane-failed 409 carries a bare `detail` and no
+    `failure.code`, and the client discards the body by G3's contract - so a future authorization may
+    log the refusal server-side, give it a typed code, or stop discarding it client-side. Pick one
+    when 53 is authorized; nothing is blocked on it now.
 
 ## Non-candidates
 

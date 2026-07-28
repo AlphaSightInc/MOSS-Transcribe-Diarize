@@ -10901,3 +10901,120 @@ prd.md amendment (it fails two acceptance clauses and caps every meeting at its 
 buffer); **candidate 54** belongs in the same authorization because 53's fix cannot be aimed
 without knowing which 409 the server sent. The only Ralph-only work left is **candidate 51**
 (give the two lanes different audio), which unblocks F2's label clause but not F2 itself.
+
+================================================================================
+run 20260728-181020 | iteration 11 | candidate 54 ANSWERED - the 409 that ends a
+                                    meeting is named, and it is not the one on record
+================================================================================
+Target: candidate 54. The loop's critical path (candidates 53 and 50) needs a FIFTH prd.md
+amendment it cannot grant, and iteration 9 recorded 54 as belonging to that same authorization
+because "53's fix cannot be aimed without knowing which 409 the server sent". That premise turned
+out to be wrong in a useful way: the QUESTION is answerable with no product change at all, and
+only the durability half (record the refusal somewhere) is authorization work. Answering it now
+sharpens the amendment the operator has to write and strikes one wrong remedy out of it.
+Off the strict candidate order (51 was the only item marked Ralph-only) and justified: 51
+unblocks F2's label clause, and F2 dies at candidate 53's wall either way, so 51 buys nothing
+until 53 lands, while 54 changes what 53's fix must do.
+
+CHANGE: one new file, scripts/ralph-afk/live-lane-refusal-probe.py. No tracked product source, no
+tracked test, no host mutation - the post-merge freeze holds. It drives the REAL create_app
+in-process through fastapi.testclient: no server, no socket, no deployed state, no GPU, no
+network, ~3 s. Its evidence is about the DEPLOYED service because the branch carries no product
+source - re-verified this iteration: `git diff --name-only main HEAD -- ':!scripts/ralph-afk'` is
+empty, local main is fc7097d, and the server checkout answered fc7097d.
+
+RESULT: rc=0, all 18 recorded expectations held. The 409 is LiveV2SessionTerminalError ->
+HTTPException 409, body exactly {"detail": "v2 system lane is failed."}. It is NOT
+LiveV2OutOfOrderFrameError, which iteration 9 recorded as likeliest.
+
+THE CHAIN, and every link is a component behaving as designed:
+1. The Mac's system lane overruns. NativeLaneHealth classes macos_buffer_overrun as a lane
+   FAILURE, not a degradation (NativeLaneHealth.swift:8,217-220).
+2. K1's projection carries that honestly into the NEXT heartbeat. One failed lane is not terminal,
+   so the heartbeat answers 200 - and then LiveHelperFailureCoordinator calls _fail_lane
+   (live_helper_failure.py:232) -> LiveV2Session.fail_lane (live_v2_session.py:139-156), which
+   releases that lane's retained frames into failed_samples and sets health=failed. THE CLIENT
+   ARMS ITS OWN REFUSAL. That is why F3's last heartbeat 200 and its first frame 409 share one
+   second, and why F1's server-side lane record carried failed_samples 8000 (exactly the one
+   retained 8000-sample frame).
+3. Every later POST /frames ON THAT LANE hits LiveV2Session.accept's `if lifecycle.health !=
+   "active"` (live_v2_session.py:99-103) -> LiveV2SessionTerminalError -> live_transport.py:262 ->
+   409.
+4. publishPendingFrames throws, emitHealth at CaptureController.swift:417 is skipped, the
+   heartbeat stops, the 30 s lease expires - candidate 53.
+
+MEASURED IN THE PROBE RUN (all in one report, /tmp/ralph-lane-refusal.json):
+- healthy system frame 200; healthy heartbeat 200.
+- heartbeat reporting ONE failed lane: 200 (observed, not terminal), and afterwards the v2
+  snapshot reads system {health failed, failure_code macos_buffer_overrun, failed_samples 2},
+  microphone {health active, failure_code null, failed_samples 0}.
+- next frame on the failed lane: 409 "v2 system lane is failed.", failure code ABSENT.
+- the IDENTICAL frame retried twice more: 409, 409. Permanent - LiveV2Session has no un-fail path,
+  so the outbox's retain-until-acked loop can never clear it.
+- peer lane's next frame: 200. A heartbeat sent AFTER the refusal: 200. Session still registered.
+  So the meeting was survivable one-laned with the lease intact: the ONLY thing that killed F3 was
+  the skipped emitHealth.
+
+THE RIVAL HYPOTHESIS, run beside it so the two are compared rather than argued. A genuinely
+skipped wire sequence answers a DIFFERENT 409: detail "expected v2 system frame sequence 1, got
+2.", failure.code v2_out_of_order_frame, plus snapshot and v2_session in the body - and it is
+RECOVERABLE (posting the awaited sequence afterwards returns 200). Two consequences. (a) The two
+409s are already distinguishable on the wire: the lane-failed one carries a bare detail and no
+machine-readable code, and the client receives it and discards it by G3's contract - so candidate
+54's durability half has two shapes, not one ("log it server-side" or "stop discarding it
+client-side"). (b) A sequence gap could never have been the cause anyway: CaptureFrameOutbox
+stamps wire identity at admission and a refused frame BURNS NO SEQUENCE NUMBER
+(CaptureOutbox.swift:116-120) - the invariant that keeps a lane gapless after lost audio.
+
+WHAT IT CHANGES FOR CANDIDATE 53. Dead remedy, struck from its decision list: "the client
+resynchronises the lane sequence" - the refusal is not about sequence and no client-side
+renumbering reopens a lane the server has closed. What is left: (a) a heartbeat MUST be sendable
+while a publish is failing - measured here to still return 200, so this alone keeps the meeting
+alive; (b) the client must stop publishing a lane the server has permanently closed and continue
+one-laned; (c) NEW, one level up and cheapest of the three - whether macos_buffer_overrun should
+be a lane failure at all rather than a degradation with a dropped-buffer count. (c) stops the
+chain before the server ever closes the lane, and it is L2's second open question with the
+server-side consequence now measured rather than assumed.
+
+THE COVERAGE GAP THAT LET THIS SHIP, named so it is closed deliberately when 53 is authorized:
+tests/test_live_api.py:1055 fails the MICROPHONE lane and then posts a SYSTEM frame, asserting the
+PEER lane survives. Nothing in the suite posts a frame on the lane that failed. Same shape as
+every blocker in Phases H and J - the one path that ends the meeting is the untested one.
+
+Files touched: scripts/ralph-afk/live-lane-refusal-probe.py (new),
+scripts/ralph-afk/{context.md,progress.txt}.
+
+Validation:
+- python3 scripts/ralph-afk/live-lane-refusal-probe.py -> rc=0, 18/18 expectations held.
+- python3 -m pytest tests/test_live_api.py tests/test_live_session_v2.py
+  tests/test_live_helper_failure.py -q -> 52 passed, 325 subtests, 4.76 s (unchanged; the probe
+  imports the API test module by file path and mutates nothing in it).
+- git diff --name-only main HEAD -- ':!scripts/ralph-afk' -> empty; git rev-parse main ->
+  fc7097d...; server checkout git rev-parse HEAD -> fc7097d... So the probe exercised the deployed
+  code, not a branch variant.
+- scripts/ralph-afk/preflight.sh rc=0.
+- No host was mutated: no checkout moved, no service restarted, no session created, no device
+  paired, no pairing code minted, no app launched, nothing written outside the repo and /tmp.
+
+Evidence paths: scripts/ralph-afk/live-lane-refusal-probe.py (self-documenting, re-runnable, no
+secret); /tmp/ralph-lane-refusal.json (disposable, regenerated by --json); context.md's block
+"The 409 is NAMED, and the meeting was survivable" and its Validation-fence recipe.
+
+Learned. (1) "Needs authorization" was conflated with "needs a product change": the FIX for 54 is
+product source, but the ANSWER was one offline probe against code the loop may read freely. Check
+that split before deferring a question to an amendment. (2) A probe that reproduces the RIVAL
+hypothesis beside the real one is worth more than one that confirms a guess - the two 409s differ
+in body shape and in recoverability, and only the comparison shows that the recorded guess was not
+merely unproven but impossible. (3) Three components each behaving defensibly still multiplied
+into a dead meeting; the cheapest fix is usually at the first link, not the last one to throw.
+(4) The suite tested the peer lane's survival and never the failed lane's refusal - when a test
+asserts the neighbour of the interesting case, read it as a coverage gap, not as coverage.
+
+Next: unchanged in shape but sharper. **Candidate 53** is still the critical path and still needs
+a fifth prd.md amendment; it should now be written to cover the client's heartbeat/publish
+decoupling, the client's handling of a server-closed lane, AND the overrun-is-a-failure
+classification (L2's second question), with "resynchronise the sequence" struck. **Candidate 50**
+(unbounded runaway decode) belongs in the same amendment. **Candidate 54** no longer needs to be
+in it as a blocker - only as an optional durability item. The remaining Ralph-only work is
+**candidate 51** (give the two lanes different audio), which unblocks F2's label clause but not
+F2 itself.
