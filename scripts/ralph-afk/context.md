@@ -130,15 +130,22 @@ port-publish-race block. Iteration 6 ran **K5c** — published `fc7097d`, redepl
 and (unlike every prior redeploy) **rebuilt and reinstalled the Mac product too**, because this is the
 first merge that is not server-only; the four-way SHA check is back to **4/4** and both TCC grants
 survived the bundle replacement. It changed no tracked file. See the K5c redeploy block.
-**Only K5d remains — the re-read that finally names the lane failure's cause.**
+Iteration 7 ran **K5d**, the re-read: it named the lane failure `macos_buffer_overrun` and traced it
+to a client-side start-path wedge (Phase L, unauthorized). **Phase K is closed and the fourth
+amendment is spent.** Iteration 8 then ran **F1, the 60 s canary**, the first PRD certification item
+in the loop's history to actually execute: it is **RED** on user-visible latency and on zero loss,
+green on decoder RTF, frame accounting and the labelled updating transcript, and it produced a
+diagnosis that supersedes candidate 43. It changed no tracked product source. **The post-merge
+freeze still holds — the feature branch may carry only `scripts/ralph-afk/*`.**
 
-**PRD acceptance scoreboard after iteration 6 of run 20260728-181020.** (K5b's merge deliberately
+**PRD acceptance scoreboard after iteration 8 of run 20260728-181020.** (K5b's merge deliberately
 broke "one exact SHA everywhere" to 1/4; **K5c restored it to 4/4 at `fc7097d`** — the expected
 mid-cycle dip after every keeper merge, now closed. Iteration 16 of the prior run closed the
 last *machine* gate — Phase J's probe. **E3 is CLOSED** — both TCC grants hold `auth_value=2` — and
 the blocker that replaced it, both lanes reporting `failed` for a reason no surface recorded, was
 made legible by Phase K and **named by K5d: `macos_buffer_overrun`, from the start-path wedge in
-Phase L.**)
+Phase L.** Iteration 8 ran **F1, the 60 s canary, and it is RED on latency and on zero-loss** —
+see the F1 block; the *diagnosis* is the deliverable and it refutes candidate 43's premise.)
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus all four amendments' authorized follow-up merges), **one exact SHA everywhere — 4/4 at
@@ -152,8 +159,10 @@ recorded**.
 **Permissions granted — GREEN as of K5d** (run 20260728-181020 iteration 7): both TCC grants hold
 (`auth_value=2`) and `mtd-capture status` reported `{"lane":"system","state":"capturing"}` and
 `{"lane":"microphone","state":"capturing"}` continuously through a 672-frame meeting on the real
-host. Open: the 60 s canary, the 300 s certification, the 16-minute soak, the run-time half of
-secret hygiene, and the final close.
+host. **RED as of F1 (iteration 8): the 60 s canary.** Open: the 300 s certification, the 16-minute
+soak, the run-time half of secret hygiene, and the final close. F1's own sub-clauses split — decoder
+p95 RTF, zero double count and the continuously-updating labelled transcript are green; user-visible
+p95 and zero loss are red.
 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Phase J settled
 the terminal-failure class (J1 clamp, J2 unattributed publish, J3 transient decode, J4 named
@@ -1652,6 +1661,89 @@ lands in the real GUI session (console user `ga0`, `launchctl print gui/501` res
 unrevoked device (`AB600574…`) and its `paired_at` is simply refreshed. The user journal on the
 server only retains ~40 min for this unit, so read the *Mac's* log for anything older.
 
+**F1 — the 60 s canary, RED, and the diagnosis is the deliverable (new, run 20260728-181020
+iteration 8). READ THIS BEFORE F2 OR ANY LATENCY WORK.** Session
+`de088f0510ec492082972365127cebee`, label `ralph-f1-20260728T195125Z`, on the real hosts at
+`fc7097d`. Fresh app launch → `pair` → `start` (K5d's clean sequence), 73.3 s of a two-voice program
+spoken by `say -v Samantha` / `say -v Reed` through the MacBook speakers, `handoff` → the view token
+onto the pasteboard → a portal poller on m4mbp that reads it through `curl -K -` on stdin. Server
+side: **1271 requests, 1270 × 200 and exactly one 409** (381 snapshot + 381 events + 340 frames + 168
+heartbeat + the one 409). `snapshotFetch.count` 325 (the app's own probe) + 56 (the poller) = 381
+exactly — an independent cross-check that both readers were talking to this session.
+
+*Green sub-clauses, with numbers.*
+- **Continuously updating transcript with speaker labels.** Snapshot `version` 0 → 283 across 56
+  polls, monotone; **42 committed spans**; `[S00]`…`[S16]` labels present throughout; the portal page
+  itself 200 / 21282 bytes over the pinned leaf (hash re-verified against the D2 pin before trusting
+  it); `terminal_failure` null and `status` still `active` at the last poll.
+- **Decoder p95 RTF < 1: GREEN.** n=42, min **0.049**, p50 **0.139**, p95 **0.706**, max **3.398**.
+- **Zero double count: GREEN.** `340 POST /frames → 200` is exactly the client's own
+  `publishedFrameCount` 340.
+- **Run-time secret hygiene held.** The token existed only in the app, on the pasteboard, and in one
+  shell variable; it never reached argv, disk, a log or any output; pasteboard cleared to 0 bytes
+  after. No raw audio persisted (`live-runs` 0 entries, no `/tmp/mtd-live-*`), 0 server tracebacks,
+  both service MainPIDs and `NRestarts=0` unmoved, batch still 200.
+
+*Red sub-clause 1 — user-visible p95 **10426 ms** against the canary's ≤ **4000 ms**.* Committed p95
+**9052.9 ms** + render bound **1373.3 ms** (portal cycle 1000 + snapshot p95 227.3 + events p95
+146.1). The report is otherwise sound: `sufficientSamples` true (**38** advances ≥ the plan's 20),
+`mixerOriginResolved` true, `timelineIntact` true, `fetchFailures` 0, and all four disqualifier
+counters (`rejectedNegative`, `rejectedClockRegression`, `rejectedAfterTimelineBreak`) **0**.
+
+*Red sub-clause 2 — zero loss FAILED, and it is a NEW instance of `macos_buffer_overrun`.* At
+~T+85 s, **inside a healthy meeting with a live pump**, the `system` lane went
+`failed` / `macos_buffer_overrun`; K2's log line fired correctly
+(`capture lane system failed: state=failed code=macos_buffer_overrun dropped=149 discontinuities=0`,
+pid 68877, 15:53:25 local) and the server's v2 lane record carries `failed_samples: 8000`
+(**0.5 s**), `health: failed`. The microphone lane stayed `capturing`. This is **not** L1: `start`
+succeeded, the pump ran, frames published for 85 s. It is the *same code* reached by a different
+road — the lane starved because publishing slowed, not because there was no pump. The stop drain
+also left `outboxRetainedFrames: 3` and took the run's only 409 (`POST /frames` after the session had
+stopped), where K5d's quiet meeting drained to 0 with zero non-200.
+
+***The diagnosis, and it refutes candidate 43's premise.*** Per-span timing from the `events`
+stream (`canonical_decode_elapsed_sec` / `canonical_decode_rtf`, each span's `span_frozen` and
+`canonical_processed` first-seen poll times):
+- **40 of 42 spans decode in 0.10–0.54 s** (RTF 0.049–0.706) and commit **0.0–1.6 s** after freezing.
+- **Two spans do not: span 6 (8.49 s, RTF 3.398) and span 34 (8.29 s, RTF 3.318).** Both are
+  degenerate decoder repeat loops — hundreds of `[0.99][S06]…[1.21]`-shaped fragments in one 2.5 s
+  span.
+- Each runaway **stalls the serial decode queue behind it**: the spans queued behind span 6 committed
+  4.9 / 6.6 / 6.6 / 8.1 s late; behind span 34, 1.8 / 4.7 / 6.2 / 8.3 s late. That is the entire
+  tail. Total decode was 26.7 s over 73.3 s of speech, so throughput was never the problem.
+So **the committed p95 is set by two spans, not by a floor.** Candidate 43 reasoned "at a 2.5 s hard
+cap the committed half is floor-bound near 2.5 s + decode, and the plan's first remedy — a 2.0 s span
+cap — is aimed exactly there". Measured, the floor is **not binding** (median lag ≈ 0 s), and a 2.0 s
+span that hallucinates a repeat loop still decodes for 8 s. **Neither of the plan's two ordered
+remedies attacks this term.** The remedy that does is a bound on decode itself — max new tokens, a
+repetition guard, or a decode deadline that degrades the span rather than blocking the queue — the
+same shape as J3's transient-decode contract but for a decoder that answers *too slowly* rather than
+not at all. It also plausibly explains sub-clause 2: the backlog window is exactly where accepted
+samples fell to ~8.6 k/s (half real time) and the Mac's outbox and system-lane ring backed up.
+*Corroboration across runs:* K5d's independent quiet meeting measured committed p95 **9089 ms**;
+this run measured **9053 ms** on completely different audio. Two runs 36 ms apart on unrelated
+content is what a small number of runaway decodes predicts and what a content-dependent floor does
+not.
+
+*Harness caveat, stated plainly because it bounds what F1 proves.* Both lanes carried the **same**
+program: the `say` output reaches the system tap directly *and* the built-in microphone
+acoustically, so the mixer summed the program with its own echo. The doubling is visible in the
+transcript (span 1 renders "Good afternoon everyone." twice; span 27 repeats a whole sentence).
+Consequences: **16 canonical speakers for 2 real voices** and many `S00` (J2's unattributed marker) —
+so the *speaker-label* clause is expressible and present but **not meaningfully verified**; and the
+marker cross-check could not be completed because `pineapple` was transcribed "Hi Apple" (span 26),
+i.e. an ASR-accuracy miss, not a pipeline miss. The two red clauses above are **not** explained away
+by the echo — the latency mechanism reproduced on K5d's echo-free run — but the label and marker
+clauses are, and F2 must fix the harness: give the two lanes **different** content, which is what a
+real meeting is.
+
+*Reusable.* The canary driver is `/tmp/ralph-f1-canary.sh` on m4mbp (sha256 `e768a6dc…`, also at
+`/tmp/ralph-f1-canary.sh` on MacStudio) with its evidence in `/tmp/ralph-f1/` there and a pulled copy
+in `/tmp/ralph-f1-evidence/` here; the reducer is `/tmp/ralph-f1-analyze.py`. Neither holds a secret.
+`log show --predicate 'subsystem == …' --last 20m --style compact` returned nothing for lines that a
+plain `--last 90m` found — **do not read an empty `log show` as an absent log line**; widen the
+window and drop `--style` before concluding anything.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -2896,6 +2988,30 @@ systemctl --user enable --now moss-live-web.service
 #   set -a; . ops/moss.env; set +a; bash "$tmp/probe.sh"
 # Expect exactly tests/test_live_service_deployment.py:52-62 with {state} and DEPLOYMENT_ROOT
 # expanded, and no --live flag. Re-run it after D3 edits any env file.
+
+# --- F1 canary on the real hosts (RUN in iteration 8 of run 20260728-181020; re-runnable, ~2 min,
+#     costs no operator input). Order matters: a stale in-process lane failure is sticky (K5d), so
+#     always launch a FRESH app, and always `stop` before `pair`. -------------------------------
+ssh ga0@m4mbp 'osascript -e "set volume output volume 45"; open -a /Applications/MOSSCapture.app'
+#   ... wait ~4 s, then `pgrep -x MOSSCaptureApp` and `mtd-capture status` -> running:false, both
+#   lanes "stopped". A stale /tmp/moss-capture-501/control.sock from a killed process is harmless:
+#   the freshly launched app replaces it.
+# Mint on the server loopback, pipe to the CLI as its OWN ssh invocation - never share that stdin
+# with a remote `bash -s` script (the K5d hygiene incident):
+#   PAYLOAD="$(printf '%s\n' "$MINT" | ssh … "wsl.exe -d Ubuntu -- bash -s" 2>/dev/null)"
+#   printf '%s\n' "$PAYLOAD" | ssh ga0@m4mbp '~/.local/bin/mtd-capture pair --server https://100.64.0.8:7861'
+# Then the driver (transfer it first; it re-execs itself for its two pollers):
+#   scp /tmp/ralph-f1-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp "bash /tmp/ralph-f1-canary.sh ralph-f1-$(date -u +%Y%m%dT%H%M%SZ)"
+# It pins the served leaf before trusting it, arms the app-owned probe with an early
+# `mtd-capture latency` (measure() only schedules the poll on the FIRST call while running - call it
+# right after `start` or the report has no samples), takes view authority through `handoff` +
+# `pbpaste` into `curl -K -` on stdin, speaks the program, then reads status/latency, stops, clears
+# the pasteboard. Reduce with /tmp/ralph-f1-analyze.py after pulling *.tsv + times.env.
+# ALWAYS afterwards: `osascript -e "set volume output volume 31"`, `pkill -x MOSSCaptureApp`,
+# re-check both TCC grants (auth_value=2) and `pbpaste | wc -c` == 0.
+# Server-side tally for one session (query strings must be stripped or the count is wrong):
+#   grep "$SID" journal | grep -oE '(POST|GET) /api/live/sessions/[a-z0-9]+/[a-z_]+[^ ]* HTTP/1.1" [0-9]{3}' \
+#     | sed -E 's#/api/live/sessions/[a-z0-9]+/##; s#\?[^ ]*##' | sort | uniq -c
 ```
 
 ## Candidates
@@ -3182,14 +3298,21 @@ own, which no later step does.
     `--lane-offset-ms system=137 --lead-seconds 0` spent F0's open caveat and found blocker 3. The
     device was revoked, both batch units and the live unit kept their MainPIDs/NRestarts/timestamps,
     `live-runs/` is still 0 entries and no `/tmp/mtd-live-*` survives. See the H-diagnosis block.
-24. **F1 — 60 s canary** per prd.md. `[blocked on E3 ONLY — the server-side blockers are closed and
-    J5d proved it end to end]`. Read candidate 43 before running it: the latency clause is the one
-    part of F1 the machine evidence says is *not* comfortably green.
+24. **F1 — 60 s canary** per prd.md. `[RUN — RED — run 20260728-181020 iteration 8]`. See the F1
+    block above. Green: continuously updating labelled transcript (42 spans, version 0 → 283),
+    decoder p95 RTF **0.706**, zero double count (340 published == 340 accepted), run-time secret
+    hygiene, no raw audio persisted. Red: **user-visible p95 10426 ms vs ≤ 4000 ms**, and **0.5 s of
+    system-lane loss** to a mid-meeting `macos_buffer_overrun`. The diagnosis (candidate 50) is the
+    part that matters; the label/marker clauses are confounded by the harness (candidate 51) and
+    must be re-run, not re-argued. F1 is re-runnable end to end from
+    `/tmp/ralph-f1-canary.sh` and costs no operator input.
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-    `[blocked on E3 only]`
+    `[open — do NOT run before candidate 51; F1 proved the harness confounds the label clause, and a
+    300 s run would spend five times the wall clock on the same confound]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-    `[blocked on E3 only]`
+    `[open — independent of the latency verdict, so it can run before candidate 50 lands; it needs
+    only periodic accepted audio, which F1's driver already produces]`
 **F4 was split by evidence in iteration 8**, the way iteration 20 split E2: its rollback rehearsal
 needs no operator, closes a PRD acceptance clause on its own, and is *cheaper before* certification
 than after (nothing in flight to disturb). Its close half still waits on everything else.
@@ -3534,8 +3657,17 @@ and 37 are folded in here; settle them together or the next gate run finds the f
       `timestamp_outside_span` → **rc=0 `prepared`** on the deployed venv. See the J5d gate block.
       **Phase J is closed and the third amendment is spent** - no fifth merge, freeze holds.
 
-43. **The user-visible latency clause is at risk, measured twice** `[open - evidence only; NOT
-    authorized work, and deliberately not acted on]`. J5d's two runs put user-visible p95 at
+43. **The user-visible latency clause is at risk, measured twice** `[SUPERSEDED by F1's measurement
+    - run 20260728-181020 iteration 8. Its *conclusion* (the clause is at risk) held; its
+    *reasoning* was refuted. Kept for the history; act on candidate 50, not on this.]` **What F1
+    changed:** this candidate argued the committed half is floor-bound near the 2.5 s hard cap, so
+    the plan's first ordered remedy (a 2.0 s span cap) was aimed at it. Per-span timing on the real
+    Mac says the floor is not binding - 40 of 42 spans commit 0.0-1.6 s after freezing - and the
+    whole tail is **two** spans that decoded at RTF 3.4 and stalled the serial queue behind them.
+    The open question it flagged (prd.md's `hard_cap_samples` 40000 as a domain-contract value vs
+    the plan's 2.0 s remedy) is therefore **moot for now**: changing the cap would not move this
+    number, so nobody has to resolve that contradiction to fix the latency. The original text
+    follows. J5d's two runs put user-visible p95 at
     **5131 ms** and **4240 ms** against the 60 s canary's **≤ 4 s** (the 300 s run's ≤ 6 s is met by
     both). The split says where it lives: committed p95 **3699 / 3010 ms** versus a render bound of
     **1432 / 1230 ms**. A span cannot commit before it ends, so at a 2.5 s hard cap the committed
@@ -3652,6 +3784,43 @@ only reachable through the first.
     ruled that "a new session id is a new question" for `sessionRefusal` - the same argument applies
     here), and whether an overrun is even a lane *failure* rather than a lane *degradation* with a
     dropped-frame count. Do not fix L2 alone: without L1 the starvation just happens again.
+
+### Phase M - what F1 found (2026-07-28, iteration 8). 50 is NOT AUTHORIZED; 51 and 52 are Ralph-only
+
+50. **A decode that runs away is unbounded, and it is what fails the latency gate** `[open - needs
+    authorization; tracked server source under the post-merge freeze]`. Measured in F1: two of 42
+    spans decoded at RTF **3.398** and **3.318** (8.49 s and 8.29 s for a 2.5 s span), both
+    degenerate repeat loops, and because the decode queue is serial each one delayed every span
+    behind it by up to 8.3 s. Committed p95 **9053 ms**; median lag ≈ 0 s. K5d's unrelated quiet
+    meeting measured **9089 ms**, so this is not content-specific. *Shape of the fix, not a
+    decision:* bound the decode - max new tokens derived from the span's own duration, a repetition
+    guard, or a wall-clock deadline after which the span degrades (commits empty, or without labels)
+    instead of holding the queue. **This is the same class prd.md's third amendment settled**: a
+    condition the design contemplates must degrade rather than damage the meeting - here it damages
+    latency instead of ending the session, which is why no existing gate sees it. Note two things
+    before acting: (a) the two ordered remedies in the plan (2.0 s span cap, then 0.5 s poll
+    interval) do **not** attack this term, so following them would burn a cycle for nothing; (b) a
+    per-span deadline needs a decision about what a timed-out span publishes, exactly as H1 needed
+    one for an unparseable span - decide it once and record it, as H1 did.
+51. **The canary harness puts the SAME audio on both lanes, which confounds the label clause**
+    `[open - Ralph-only, no product source, no authorization needed]`. `say` through the MacBook
+    speakers reaches the system tap directly *and* the microphone acoustically, so the mixer sums the
+    program with its own echo: 16 canonical speakers for 2 voices, duplicated sentences in the
+    transcript, and a marker word ("pineapple" → "Hi Apple") that could not be cross-checked. Fix the
+    harness before F2, not after: the lanes must carry **different** content, which is what a real
+    meeting is. *Shape:* pre-render voice A to a file and play it through a process whose output the
+    tap captures while the speakers stay muted, and give the microphone lane voice B from the room -
+    or, if only one output device exists, accept that one lane is the program and the other is the
+    room and say so in the record. Also worth pinning down while there: `AudioHardwareCreateProcessTap`
+    with the default `CATapDescription()` (`isExclusive = true`, empty process list) captured `say`
+    output as expected, so an arbitrary application's audio will be captured too.
+52. **`context.md` no longer fits in one sitting** `[open - Ralph-only]`. 312 KB / ~3760 lines; the
+    Read tool refuses it above 256 KB, so every iteration now pays for a header scan plus targeted
+    `sed` ranges before it can choose work. The procedure asks for a file readable in one sitting and
+    for history to live in progress.txt. Candidates for compaction, all superseded by later
+    measurement rather than merely old: the Phase B/C per-iteration gate transcripts, the D2/D3
+    installation blocks, and the F0/H-diagnosis blocks whose blockers H1-H3 are shipped and deployed.
+    Do this as its own iteration, and move text to progress.txt rather than deleting it.
 
 ## Non-candidates
 

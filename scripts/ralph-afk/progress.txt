@@ -6536,3 +6536,106 @@ MUTATIONS AND THEIR ROLLBACKS, in the order they will be applied:
 
 Nothing else is touched: no checkout moves, no service restart, no rebuild, no reinstall, no
 TCC write, no merge, no push, and the batch service is not addressed at all.
+
+================================================================================
+run 20260728-181020 | iteration 8 | F1 - the 60-second canary RAN, and it is RED
+                                    on latency and on zero loss
+================================================================================
+Target: candidate 24, F1. E3 is closed, K5d proved a clean pair -> start runs a healthy meeting,
+and F1 was the next open PRD acceptance item. Session de088f0510ec492082972365127cebee, label
+ralph-f1-20260728T195125Z, all four checkouts at fc7097d.
+
+RESULT: RED. Two clauses fail and the DIAGNOSIS is this iteration's deliverable - it refutes the
+premise of candidate 43, which every prior iteration had been reasoning from.
+
+WHAT RAN. Fresh app launch (open -a, GUI session, pid 68877) -> mint on the server loopback ->
+`pair` piped as its own ssh invocation -> `start` -> `mtd-capture latency` immediately (measure()
+schedules the poll only on the FIRST call while running) -> `handoff` -> the view token onto the
+pasteboard, read once into a shell variable on m4mbp and handed to curl through `curl -K -` on
+stdin -> 73.3 s of a two-voice program (`say -v Samantha` / `say -v Reed`) through the MacBook
+speakers, with a spoken marker word at T+46.8 s -> 10 s of quiet -> status/latency -> stop ->
+pasteboard cleared. Server side: 1271 requests, 1270 x 200 and exactly ONE 409.
+Cross-check that both readers were on this session: the app probe's own snapshotFetch.count 325 +
+the poller's 56 = 381 = the journal's GET /snapshot count, exactly.
+
+GREEN sub-clauses, with numbers:
+- continuously updating transcript with speaker labels: snapshot version 0 -> 283 over 56 polls,
+  monotone; 42 committed spans; [S00]..[S16] labels present; /live itself 200 / 21282 bytes over
+  the pinned leaf (hash verified against the D2 pin BEFORE trusting it); terminal_failure null,
+  session still `active` at the last poll; clean stop with both lanes `stopped`.
+- decoder p95 RTF < 1: n=42, min 0.049, p50 0.139, p95 0.706, max 3.398.
+- zero double count: 340 POST /frames -> 200 is exactly the client's own publishedFrameCount 340.
+- run-time secret hygiene: the token never reached argv, disk, a log, a URL or any output;
+  pasteboard cleared to 0 bytes; no raw audio persisted (live-runs 0, no /tmp/mtd-live-*);
+  0 server tracebacks; both MainPIDs and NRestarts=0 unmoved; batch 200 and /api/jobs 200.
+
+RED sub-clause 1 - user-visible p95 10426 ms against the canary's <= 4000 ms. Committed p95
+9052.9 ms + render bound 1373.3 ms (1000 portal cycle + 227.3 snapshot p95 + 146.1 events p95).
+The report is otherwise sound: sufficientSamples true (38 advances >= the plan's 20),
+mixerOriginResolved true, timelineIntact true, fetchFailures 0, and all three disqualifier
+counters 0. Both components recorded separately, as the PRD asks.
+
+RED sub-clause 2 - zero loss FAILED, and it is a NEW instance of macos_buffer_overrun. At ~T+85 s,
+INSIDE a healthy meeting with a live pump, the `system` lane went failed/macos_buffer_overrun.
+K2's log fired correctly (`capture lane system failed: state=failed code=macos_buffer_overrun
+dropped=149 discontinuities=0`, pid 68877, 15:53:25 local) and the server's v2 lane record carries
+failed_samples: 8000 (0.5 s), health: failed. Microphone stayed capturing. This is NOT L1 - start
+succeeded, the pump ran, frames published for 85 s. Same code, different road: the lane starved
+because publishing slowed, not because there was no pump. The stop drain also left
+outboxRetainedFrames: 3 and took the run's only 409, where K5d's quiet meeting drained to 0.
+
+THE DIAGNOSIS. Per-span timing out of the events stream (canonical_decode_elapsed_sec,
+canonical_decode_rtf, and each span's span_frozen -> canonical_processed first-seen poll times):
+- 40 of 42 spans decode in 0.10-0.54 s (RTF 0.049-0.706) and commit 0.0-1.6 s after freezing.
+- TWO do not: span 6 (8.49 s, RTF 3.398) and span 34 (8.29 s, RTF 3.318), both degenerate decoder
+  repeat loops - hundreds of fragments inside one 2.5 s span.
+- The decode queue is serial, so each runaway delays everything behind it: 4.9/6.6/6.6/8.1 s behind
+  span 6 and 1.8/4.7/6.2/8.3 s behind span 34. That is the entire tail.
+- Total decode 26.7 s over 73.3 s of speech, so throughput was never the constraint.
+So the committed p95 is set by TWO spans, not by a floor. Candidate 43 had argued the committed
+half is floor-bound near the 2.5 s hard cap and that the plan's first ordered remedy (a 2.0 s span
+cap) was aimed at it. Measured, the floor is not binding, and a 2.0 s span that hallucinates a
+repeat loop still decodes for 8 s. NEITHER of the plan's ordered remedies attacks this term.
+Corroboration: K5d's unrelated quiet meeting measured committed p95 9089 ms; this run measured
+9053 ms on completely different audio - 36 ms apart, which is what a few runaway decodes predict
+and a content-dependent floor does not. The backlog window is also exactly where accepted samples
+fell to ~8.6 k/s (half real time), which is the likely path to sub-clause 2.
+
+HARNESS CAVEAT, recorded rather than buried. Both lanes carried the SAME program: `say` reaches the
+system tap directly and the built-in microphone acoustically, so the mixer summed the program with
+its own echo (span 1 renders "Good afternoon everyone." twice; span 27 repeats a sentence). That
+produced 16 canonical speakers for 2 real voices and a marker ("pineapple" -> "Hi Apple") that could
+not be cross-checked. So the speaker-label clause is PRESENT but NOT meaningfully verified, and the
+marker cross-check is unspent. The two red clauses are not explained away by the echo - the latency
+mechanism reproduced on K5d's echo-free run - but F2 must fix the harness first (candidate 51).
+
+Files touched: scripts/ralph-afk/{context.md,progress.txt} only. No tracked product source changed -
+correct, the post-merge freeze holds and F1 is a certification step.
+
+Validation: the run itself is the validation. Cross-checks that it measured what it claims:
+340 published == 340 accepted; 325 + 56 == 381 snapshot GETs; pin hash == the D2 pin before any
+authenticated request; sufficientSamples true with 0 disqualified samples; 0 tracebacks; both
+service MainPIDs unmoved; both TCC grants still auth_value=2 after the app was quit; volume
+restored 45 -> 31; pasteboard 0 bytes.
+
+Evidence paths: context.md's "F1 - the 60 s canary" block and the F1 recipe in the Validation
+fence; /tmp/ralph-f1-canary.sh (m4mbp and MacStudio, sha256 e768a6dc...), /tmp/ralph-f1/ on m4mbp,
+/tmp/ralph-f1-evidence/ + /tmp/ralph-f1-analyze.py on MacStudio. None hold a secret; all are
+disposable and rebuildable from the Validation block.
+
+Learned. (1) The first certification run in this loop's history executed cleanly on the first
+attempt because K5d had already found the sequence (fresh app, stop before pair) - the observability
+cycle keeps paying. (2) A latency gate answered with a p95 alone would have sent the next cycle at
+the span cap; the per-span decode table is what named the real term, and it cost one extra reduction
+pass over data already collected. (3) `log show --predicate ... --last 20m --style compact` returned
+nothing for a line a plain `--last 90m` found - an empty log show is not evidence of an absent log
+line, and K2 in fact fired exactly as designed. (4) Automating "two speakers plus system audio" on
+one machine puts the same audio on both lanes; that is a harness bug with real consequences for the
+diarization clause, and it must be fixed before spending 300 s on F2.
+
+Next: **candidate 51** (fix the canary harness so the lanes carry different content) is Ralph-only,
+cheap, and unblocks F2 and the marker cross-check; **candidate 26 / F3** (the 16-minute soak) is
+independent of the latency verdict and can run on the current harness. **Candidate 50** - bounding a
+runaway decode - is tracked server source under the post-merge freeze and every merge the operator
+has granted is spent, so it needs a FIFTH amendment. Phase L (48/49) is still unauthorized and is a
+different defect from F1's overrun, which happened with a healthy pump.
