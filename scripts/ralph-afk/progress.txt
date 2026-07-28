@@ -6706,3 +6706,118 @@ same rollbacks - the soak differs only in duration and in what it speaks.
 
 Nothing else is touched: no checkout moves, no service restart, no rebuild, no reinstall, no
 TCC write, no merge, no push, and the batch service is not addressed at all.
+
+================================================================================
+run 20260728-181020 | iteration 9 | F3 - the 16-minute soak RAN, is RED at minute
+                                    14.6, and it names the defect that also ended F1
+================================================================================
+Target: candidate 26, F3. It was the only remaining PRD acceptance item reachable with no
+operator input and independent of both the latency verdict (candidate 50) and the harness
+confound (candidate 51): F3 has no latency clause and no speaker-label clause. Session
+6e4f280535424114baf7bb10f66c31f1, label ralph-f3-20260728T200827Z, all four checkouts fc7097d.
+
+RESULT: RED. The soak held for FOURTEEN CLEAN MINUTES and then died, and the root cause is one
+line of client source. The diagnosis is this iteration's deliverable, and it collapses two red
+certification runs into ONE defect.
+
+WHAT RAN. K5d's sequence (fresh app via `open -a`, pid 77860 -> mint on the server loopback ->
+`pair` piped as its own ssh invocation -> `start` -> `latency` immediately -> `handoff` -> the
+view token onto the pasteboard, read once into a shell variable and handed to curl through
+`curl -K -` on stdin), then 1020 s of one short spoken utterance per minute (17 of them,
+alternating two voices) with a 2 s portal poller and a 10 s `status` poller, an explicit t0 /
+post15 / post-stop exercise of the SAME token, then stop and hygiene. Server side for the
+session: 12725 x 200, 735 x 401, 608 x 403, 57 x 409.
+
+GREEN for the first 14 minutes, with numbers:
+- periodic accepted audio: 56-62 s of audio accepted in EVERY wall-clock minute 0-13; no minute
+  below 30 s and no minute without a new committed span.
+- /live polling: 348 snapshot 200s from the poller plus 3458 from the app-owned probe; snapshot
+  version 0 -> 2647 monotone; 412 committed spans; terminal_failure null and status `active` in
+  every 200.
+- bounded: retained_samples peaked at 247982 of the 960000 bound (25.8%); outbox 0-2 frames.
+- zero double count again: publishedFrameCount 3430 == 3430 POST /frames -> 200.
+- hygiene: both service MainPIDs (346453/301112) and NRestarts=0 unmoved, live-runs 0 entries,
+  no /tmp/mtd-live-*, batch / and /api/jobs both 200 during the soak, served leaf hashed to the
+  D2 pin BEFORE any authenticated request, pasteboard 0 bytes, volume 45 -> 31, both TCC grants
+  still auth_value=2.
+
+THE FAILURE, on three independent clocks that agree to the second:
+  16:22:32.09  m4mbp unified log (K2): capture lane system failed: state=failed
+               code=macos_buffer_overrun dropped=112 discontinuities=0   [capture age 844 s]
+  16:22:33     server journal: FIRST POST /frames -> 409, and the LAST POST /heartbeat -> 200.
+               1682 heartbeats had gone out at 0.5 s, i.e. exactly up to this instant. 57 x 409
+               follow in 28 s; no heartbeat follows at all.
+  16:23:01     server journal (K3's line): live helper terminal: session=6e4f2805...
+               reason=helper_lease_expired lanes=none. View routes 401 from age 874.8 s, the
+               client reports sessionRefusal: sessionDisowned at 875.9 s, and POST /frames
+               answers 608 x 403 for the remaining 150 s because a release is one-way.
+
+THE LINE. CaptureController.swift:413-417, inside the pump tick:
+    let published = try self.publishPendingFrames(configuration: configuration, onContention: .skip)
+    _ = try self.emitHealth(configuration: configuration)     // skipped when the publish throws
+The comment directly above states the right rule - "a tick that finds the previous pass still
+draining skips its publish turn, but it still emits health: the server's helper lease is what a
+silent client loses" - but it only covers CONTENTION. A publish that THROWS propagates past
+emitHealth to the catch at :421, and because the wedged frame is refused identically on every
+later tick the heartbeat stops PERMANENTLY. 30 s later the lease expires and the server correctly
+ends a meeting the client still reports as running. Third instance of one shape (J's four
+blockers, L1's :403): the heartbeat is coupled to the publish path.
+Classification puts it in the blind spot on purpose: CapturePumpFailure(error:) maps any
+CaptureHTTPTransportError to transportUnavailable, and CaptureSessionRefusal(error:) deliberately
+excludes 409 because the wire overloads it. Both defensible; together they report a permanently
+wedged lane as a transient network problem.
+
+THE SAME CHAIN ENDED F1. The journal still holds `live helper terminal:
+session=de088f0510ec492082972365127cebee reason=helper_lease_expired lanes=none` at 15:53:55 -
+exactly 30 s after F1's own macos_buffer_overrun at 15:53:25.507. F1's canary called `stop`
+inside that 30 s window, which is the only reason its last poll still showed a live session. So
+F1's red zero-loss clause and F3's red soak are one defect (candidate 53), and it is NOT Phase L:
+there the pump never started, here it ran healthily for 14 minutes.
+
+WHAT IS NOT DETERMINED, stated rather than guessed: which 409 the server sent.
+live_transport.py:261-265 and live_lane_contract.py:400-406 make LiveV2OutOfOrderFrameError (a
+skipped per-lane sequence) the likeliest, but the access log prints only the code and the client
+discards the body by G3's contract, so with three logs in hand the sub-reason is still unknown.
+That is candidate 54 - the fourth amendment's "known but not shown" defect one level down.
+
+THE CLAUSE VERDICT, exactly. RED, and all three halves are UNPROVEN rather than failed:
+- capture did not remain active for 16 minutes (it ended at 14.6);
+- "the same view authority works after minute 15" - the token was accepted continuously to
+  871.9 s (14.53 min) and then refused because the SESSION was gone, 25 s short of the 900 s the
+  clause exists to test. The 401 is NOT the retired fixed expiry: it lands within 1 s of the lease
+  expiry and 28 s away from 900, and C1's deterministic nodes (60 virtual minutes, exact cap)
+  already prove the fixed clock is gone.
+- "clean stop immediately revokes it" - stop ran 150 s after the session had already been
+  released (revoke_latency_s 0.1, but the authority was refused before stop, not because of it).
+
+Files touched: scripts/ralph-afk/{context.md,progress.txt} only. No tracked product source
+changed - the post-merge freeze holds and F3 is a certification step.
+
+Validation: the run itself. Cross-checks that it measured what it claims: 3430 published == 3430
+accepted; 348 poller 200s + 3458 app-probe fetches == 3806/3807 journal GETs; pin hash == the D2
+pin before any authenticated request; heartbeat count 1682 x 0.5 s == 841 s == the instant of the
+last one; the three clocks above agreeing to the second; 0 server tracebacks; both MainPIDs
+unmoved; batch 200 during the run.
+
+Evidence paths: context.md's "F3 - the 16-minute soak" block and the F3 recipe in the Validation
+fence; /tmp/ralph-f3-soak.sh (m4mbp and MacStudio, sha256 471e9a82...), /tmp/ralph-f3/ on m4mbp,
+/tmp/ralph-f3-evidence/ + /tmp/ralph-f3-analyze.py here, /tmp/f3-log.sh on m4mbp. None hold a
+secret; all are disposable and rebuildable from the Validation block.
+
+Learned. (1) A certification run that fails is worth more than one that is skipped: F1's red
+zero-loss clause looked like a lane-health curiosity, and it took a run long enough to outlive the
+30 s lease to show it is the meeting-killer. (2) Read all three logs on one timeline or the chain
+is invisible - the client sees `transportUnavailable`, the server sees `helper_lease_expired`, and
+neither alone names a 409 as the trigger. (3) `log show --predicate ...` inline over ssh hits
+zsh's own `log` builtin and dies with "zsh:log:1: too many arguments" printing NOTHING, which
+reads exactly like an absent log line - put it in a script file. This is the second time an empty
+`log show` nearly buried a real line. (4) The soak's evidence must be projected as it is collected:
+a 17-minute run logging full snapshot bodies is ~40 MB of duplicated transcript.
+
+Next: **candidate 53** is now the loop's critical path and needs a FIFTH prd.md amendment - it
+fails two acceptance clauses at once and caps every meeting at its first dropped buffer; it is
+tracked `macos/` source under the post-merge freeze and every authorized merge is spent.
+**Candidate 54** (log the 409's reason server-side) belongs in the same authorization: without it
+53's fix cannot be aimed. Ralph-only work that remains available meanwhile: **candidate 51** (give
+the two lanes different audio) and **candidate 52** (compact context.md). F2 stays gated behind 51
+and would in any case die at the same 14-minute wall.

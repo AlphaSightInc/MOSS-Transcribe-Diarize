@@ -135,17 +135,24 @@ to a client-side start-path wedge (Phase L, unauthorized). **Phase K is closed a
 amendment is spent.** Iteration 8 then ran **F1, the 60 s canary**, the first PRD certification item
 in the loop's history to actually execute: it is **RED** on user-visible latency and on zero loss,
 green on decoder RTF, frame accounting and the labelled updating transcript, and it produced a
-diagnosis that supersedes candidate 43. It changed no tracked product source. **The post-merge
+diagnosis that supersedes candidate 43. It changed no tracked product source. Iteration 9 ran
+**F3, the 16-minute soak**: it held for **14 clean minutes**, then died at minute 14.6, and the root
+cause — one dropped audio buffer wedges the publish path, a throwing publish skips the heartbeat,
+and the 30 s helper lease ends the meeting — is **the same defect that ended F1** (candidates
+53/54). It changed no tracked product source. **The post-merge
 freeze still holds — the feature branch may carry only `scripts/ralph-afk/*`.**
 
-**PRD acceptance scoreboard after iteration 8 of run 20260728-181020.** (K5b's merge deliberately
+**PRD acceptance scoreboard after iteration 9 of run 20260728-181020.** (K5b's merge deliberately
 broke "one exact SHA everywhere" to 1/4; **K5c restored it to 4/4 at `fc7097d`** — the expected
 mid-cycle dip after every keeper merge, now closed. Iteration 16 of the prior run closed the
 last *machine* gate — Phase J's probe. **E3 is CLOSED** — both TCC grants hold `auth_value=2` — and
 the blocker that replaced it, both lanes reporting `failed` for a reason no surface recorded, was
 made legible by Phase K and **named by K5d: `macos_buffer_overrun`, from the start-path wedge in
 Phase L.** Iteration 8 ran **F1, the 60 s canary, and it is RED on latency and on zero-loss** —
-see the F1 block; the *diagnosis* is the deliverable and it refutes candidate 43's premise.)
+see the F1 block; the *diagnosis* is the deliverable and it refutes candidate 43's premise.
+Iteration 9 ran **F3, the 16-minute soak, and it is RED** — see the F3 block; it survived 14 clean
+minutes and then reproduced F1's overrun with the consequence F1's `stop` had hidden, so **both red
+certification runs are now one named defect**, candidate 53.)
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus all four amendments' authorized follow-up merges), **one exact SHA everywhere — 4/4 at
@@ -159,10 +166,17 @@ recorded**.
 **Permissions granted — GREEN as of K5d** (run 20260728-181020 iteration 7): both TCC grants hold
 (`auth_value=2`) and `mtd-capture status` reported `{"lane":"system","state":"capturing"}` and
 `{"lane":"microphone","state":"capturing"}` continuously through a 672-frame meeting on the real
-host. **RED as of F1 (iteration 8): the 60 s canary.** Open: the 300 s certification, the 16-minute
-soak, the run-time half of secret hygiene, and the final close. F1's own sub-clauses split — decoder
-p95 RTF, zero double count and the continuously-updating labelled transcript are green; user-visible
-p95 and zero loss are red.
+host. **RED as of F1 (iteration 8): the 60 s canary. RED as of F3 (iteration 9): the 16-minute
+soak.** Open: the 300 s certification, the run-time half of secret hygiene, and the final close.
+F1's own sub-clauses split — decoder p95 RTF, zero double count and the continuously-updating
+labelled transcript are green; user-visible p95 and zero loss are red. F3's split the same way:
+periodic accepted audio, bounded memory, `/live` polling and frame accounting green for 14 minutes;
+all three halves of the view-authority clause **unproven**, because the session died 25 s short of
+the 900 s the clause exists to test.
+**Two distinct product defects now stand between the loop and the acceptance bar, and neither is
+authorized:** candidate 50 (a runaway decode sets the latency p95) and candidate 53 (a throwing
+publish stops the heartbeat, so one dropped buffer ends the meeting). 53 is the higher-order one —
+it fails *two* clauses and it caps every meeting at the first overrun.
 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Phase J settled
 the terminal-failure class (J1 clamp, J2 unattributed publish, J3 transient decode, J4 named
@@ -1744,6 +1758,88 @@ in `/tmp/ralph-f1-evidence/` here; the reducer is `/tmp/ralph-f1-analyze.py`. Ne
 plain `--last 90m` found — **do not read an empty `log show` as an absent log line**; widen the
 window and drop `--style` before concluding anything.
 
+**F3 — the 16-minute soak, RED at minute 14.6, and it names the defect that also ended F1 (new,
+run 20260728-181020 iteration 9). READ THIS BEFORE ANY FURTHER CERTIFICATION RUN.** Session
+`6e4f280535424114baf7bb10f66c31f1`, label `ralph-f3-20260728T200827Z`, on the real hosts at
+`fc7097d`. K5d's sequence (fresh app → `pair` → `start` → `latency` → `handoff`), then one short
+utterance per minute for **1020 s** with a 2 s portal poller and a 10 s `status` poller.
+
+*The first 14 minutes are exactly what the clause asks for.* Per wall-clock minute the mixer
+accepted **56–62 s of audio** on every one of minutes 0–13 (no minute below 30 s, no minute without
+a new committed span); snapshot `version` **0 → 2647** monotone over 348 polls, **412 committed
+spans**, `terminal_failure` null and `status` `active` in every 200; `retained_samples` peaked at
+**247 982 of the 960 000 bound (25.8 %)**, so memory stayed bounded; `publishedFrameCount`
+**3430 == 3430** `POST /frames → 200` server-side, so zero double count again; outbox 0–2 frames for
+the whole healthy stretch.
+
+***Then one dropped audio buffer ends the meeting in 29 seconds.*** Three independent clocks agree:
+- **16:22:32.09** (m4mbp unified log, K2): `capture lane system failed: state=failed
+  code=macos_buffer_overrun dropped=112 discontinuities=0` — pid 77860, at capture age **844 s**.
+- **16:22:33** (server journal): the **first `POST /frames → 409`**, and the **last
+  `POST /heartbeat → 200`** — 1682 heartbeats had gone out at 0.5 s, i.e. exactly up to this instant.
+  57 × 409 follow in 28 s; no heartbeat follows at all.
+- **16:23:01** (server journal, K3's line): `live helper terminal:
+  session=6e4f280535424114baf7bb10f66c31f1 reason=helper_lease_expired lanes=none`. The view routes
+  401 from age **874.8 s**, the client's own `status` reports `sessionRefusal: sessionDisowned` at
+  875.9 s, and `POST /frames` answers **608 × 403** for the remaining 150 s because a release is
+  one-way.
+
+*The line that turns a lane hiccup into a dead meeting is `CaptureController.swift:413-417`:*
+```swift
+let published = try self.publishPendingFrames(configuration: configuration, onContention: .skip)
+_ = try self.emitHealth(configuration: configuration)   // never reached when the publish throws
+```
+The comment directly above it states the right rule — *"a tick that finds the previous pass still
+draining skips its publish turn, but it still emits health: the server's helper lease is what a
+silent client loses"* — but that guarantee only covers **contention**. A publish that **throws**
+propagates past `emitHealth` to the catch at `:421`, and because the wedged frame is retried and
+refused identically on every later tick, the heartbeat stops **permanently**. 30 s later the helper
+lease expires and the server correctly ends a meeting the client still believes is running. This is
+the **third** instance of the same shape (J's four blockers, L1's `:403`): the heartbeat is coupled
+to the publish path, so a non-fatal publish condition ends the meeting.
+*The 409 is classified into the blind spot on purpose.* `CapturePumpFailure(error:)`
+(`CaptureController.swift:150-167`) maps any `CaptureHTTPTransportError` to `transportUnavailable`,
+and `CaptureSessionRefusal(error:)` **deliberately excludes 409** (`:179-182`, because the wire
+overloads it for a closed session and an ordering conflict). Both decisions are defensible; together
+they mean a permanently-wedged lane is reported as a transient network problem.
+*What is NOT determined, and the probe that would settle it:* which 409 the server sent.
+`live_transport.py:261-265` and `live_lane_contract.py:400-406` make `LiveV2OutOfOrderFrameError`
+(a skipped per-lane **sequence**) the likeliest, but the access log records only the code, and the
+client discards the body by G3's contract — so **nothing on either host records why a frame was
+refused**. That is the same "known but not shown" defect the fourth amendment fixed for lanes, one
+level down. Settle it by logging the 409 `detail` server-side, not by guessing.
+
+***The same chain ended F1.*** The journal still holds `live helper terminal:
+session=de088f0510ec492082972365127cebee reason=helper_lease_expired lanes=none` at **15:53:55** —
+exactly **30 s** after F1's own `macos_buffer_overrun` at 15:53:25.507. F1's canary stopped inside
+that 30 s window, which is the only reason it looked like a live session at its last poll. So F1's
+red zero-loss clause and F3's red soak are **one defect**, not two, and it is a different defect from
+Phase L (there the pump never started; here it ran healthily for 14 minutes).
+
+*The clause verdict, stated exactly.* **RED.** Capture did not remain active for 16 minutes.
+"The same view authority works after minute 15" is **unproven, not disproven**: the token was
+accepted continuously to **871.9 s (14.53 min)** and then refused because the *session* was gone —
+25 s short of the 900 s that the retired fixed expiry would have used, so this run cannot discharge
+that clause on real hardware. The 401 is **not** the old fixed expiry: it lands within 1 s of the
+lease expiry and 28 s away from 900 s, and C1's deterministic nodes (60 virtual minutes, exact cap)
+already prove the fixed clock is gone. "Clean stop immediately revokes it" is likewise unproven —
+`stop` ran 150 s after the session had already been released (`revoke_latency_s=0.1`, but the
+authority was refused before `stop`, not because of it).
+*Everything else stayed clean:* both service MainPIDs (346453 / 301112) and `NRestarts=0` unmoved,
+`live-runs` 0 entries, no `/tmp/mtd-live-*`, batch `/` and `/api/jobs` both 200 during the soak, the
+served leaf hashed to the D2 pin **before** any authenticated request, pasteboard cleared to 0 bytes,
+volume restored 45 → 31, and both TCC grants still `auth_value=2` after the app was quit.
+*The app-owned latency report over 17 minutes* (evidence, not the Phase F procedure): committed p95
+**9147.9 ms** (p50 1624.4, max 14437.0, n=358), render bound **1297.7 ms**, user-visible
+**10445.5 ms**, `sufficientSamples` true, `timelineIntact` true, all disqualifier counters 0,
+`fetchFailures` 607 — every one of those failures after the session died. A **third** independent
+run at 9.1 s committed p95 (K5d 9089, F1 9053) on a fourth audio program.
+*Reusable.* Driver `/tmp/ralph-f3-soak.sh` (m4mbp + MacStudio, sha256 `471e9a82…`), reducer
+`/tmp/ralph-f3-analyze.py`, evidence `/tmp/ralph-f3/` on m4mbp and `/tmp/ralph-f3-evidence/` here.
+Neither holds a secret. `log show` needs a **script file** on m4mbp — an inline `log show --predicate`
+over `ssh` hits zsh's own `log` builtin and dies with `zsh:log:1: too many arguments`, printing
+nothing, which reads exactly like an absent log line.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -3012,6 +3108,23 @@ ssh ga0@m4mbp 'osascript -e "set volume output volume 45"; open -a /Applications
 # Server-side tally for one session (query strings must be stripped or the count is wrong):
 #   grep "$SID" journal | grep -oE '(POST|GET) /api/live/sessions/[a-z0-9]+/[a-z_]+[^ ]* HTTP/1.1" [0-9]{3}' \
 #     | sed -E 's#/api/live/sessions/[a-z0-9]+/##; s#\?[^ ]*##' | sort | uniq -c
+
+# --- F3 soak on the real hosts (RUN in iteration 9 of run 20260728-181020; re-runnable, ~19 min,
+#     costs no operator input). Same launch/mint/pair prelude as F1 above, then: -----------------
+#   scp /tmp/ralph-f3-soak.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp "bash /tmp/ralph-f3-soak.sh ralph-f3-$(date -u +%Y%m%dT%H%M%SZ)"
+# SOAK_SECONDS (1020), UTTERANCE_INTERVAL (60), POLL_INTERVAL (2), STATUS_INTERVAL (10) are env
+# knobs. It logs a compact jq projection per snapshot poll instead of the whole body (a 17-minute
+# run at full bodies is ~40 MB), keeps one full snapshot per minute, and writes view-checks.tsv with
+# an explicit t0 / post15 / post-stop exercise of the SAME token. Reduce with
+# /tmp/ralph-f3-analyze.py <dir>, which prints the clause in its own terms.
+# Run it in the BACKGROUND from MacStudio (Bash caps a foreground call at 10 min) and watch the log.
+# ALWAYS afterwards, exactly as F1: volume back to 31, `pkill -x MOSSCaptureApp`, both TCC grants
+# re-checked (auth_value=2), `pbpaste | wc -c` == 0.
+# The three surfaces that must be read TOGETHER to diagnose a soak death, and their clock offsets:
+#   m4mbp:  bash /tmp/f3-log.sh   # log show in a SCRIPT FILE - inline over ssh hits zsh's `log`
+#                                 # builtin and prints nothing at all
+#   server: journalctl --user -u moss-live-web.service --since "-40 min"   # ~40 min retention only
+#   client: status.tsv transitions (10 s) + snapshot.tsv 200->401 (2 s)
 ```
 
 ## Candidates
@@ -3311,8 +3424,15 @@ own, which no later step does.
     300 s run would spend five times the wall clock on the same confound]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-    `[open — independent of the latency verdict, so it can run before candidate 50 lands; it needs
-    only periodic accepted audio, which F1's driver already produces]`
+    `[RUN — RED — run 20260728-181020 iteration 9]`. See the F3 block above. Green for 14 minutes:
+    56–62 s of accepted audio every wall-clock minute, 412 committed spans, version 0 → 2647
+    monotone, retained ≤ 25.8 % of its bound, 3430 published == 3430 accepted. Then at minute 14.1
+    one `macos_buffer_overrun` wedged the publish path, the heartbeat stopped **because a throwing
+    publish skips it** (`CaptureController.swift:413-417`), and the 30 s helper lease ended the
+    meeting 29 s later. All three clause halves are therefore unproven, not merely failed: the
+    token was accepted to 871.9 s, 25 s short of the 900 s the clause is aimed at. Re-runnable end
+    to end from `/tmp/ralph-f3-soak.sh`, costs no operator input, and **will fail the same way until
+    candidate 53 lands**.
 **F4 was split by evidence in iteration 8**, the way iteration 20 split E2: its rollback rehearsal
 needs no operator, closes a PRD acceptance clause on its own, and is *cheaper before* certification
 than after (nothing in flight to disturb). Its close half still waits on everything else.
@@ -3822,6 +3942,29 @@ only reachable through the first.
     installation blocks, and the F0/H-diagnosis blocks whose blockers H1-H3 are shipped and deployed.
     Do this as its own iteration, and move text to progress.txt rather than deleting it.
 
+53. **A throwing publish stops the heartbeat, so one dropped audio buffer ends the meeting**
+    `[open - needs authorization; tracked client source under the post-merge freeze; ROOT CAUSE of
+    both red certification runs]`. Measured in F3 and re-read in F1's journal: an overrun on one
+    lane makes the next `POST /frames` answer 409, `publishPendingFrames` throws at
+    `CaptureController.swift:413`, `emitHealth` at `:417` is skipped, the same frame is refused on
+    every retry so the heartbeat never resumes, and the 30 s helper lease ends the session. F3 died
+    at minute 14.6; F1 died 30 s after its own overrun, inside the window its `stop` hid.
+    *Shape of the fix, not a decision:* the tick's health emission must survive a failed publish the
+    same way it already survives contention (the comment at `:410-412` states the rule the code only
+    half implements) - and, separately, a lane whose frames are permanently refused must degrade
+    (drop the lane, resynchronise, or fail that one lane) rather than block the pump forever. Three
+    decisions belong to whoever authorizes this, exactly as H1 needed one: whether a heartbeat may
+    be sent while a publish is failing (it must, or the lease is a dead-man switch on a healthy
+    meeting); what a permanently-refused frame does; and whether the client resynchronises the lane
+    sequence or ends only that lane. **Same class as Phase J and L1** - a condition the design
+    contemplates ends the meeting.
+54. **Nothing on either host records *why* a frame was refused** `[open - needs authorization;
+    diagnosability, blocks 53's own diagnosis]`. The 409 that killed F3 is one of at least four
+    distinct server conditions (`live_transport.py:261-265`, `live_lane_contract.py:394-406`); the
+    access log prints only the status code, and the client discards the body by G3's contract, so
+    the sub-reason is undetermined even with three logs in hand. `LiveV2OutOfOrderFrameError` is the
+    likeliest but was **not** proven. This is the fourth amendment's "known but not shown" defect one
+    level down, and settling 53 well needs it: log the refusal `detail` server-side.
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.
