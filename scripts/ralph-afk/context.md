@@ -39,10 +39,12 @@ from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (
 moved the portal handoff into the app (A2); iteration 4 rebuilt the tracer around the immutable
 lab bundle (A4); iteration 5 made the file secret store the production default (B1); iteration 6
 added the retained-until-ACK outbox (B2); iteration 7 added the 16 kHz/8000-sample wire format and
-converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent transport (B4).
+converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent transport (B4);
+iteration 9 added the tracked Mac packaging/install tools (B5).
 Test totals on the branch: Swift **121 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **457 passed / 2 skipped / 346 subtests**
-including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3).
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **466 passed / 2 skipped / 346 subtests**
+including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3) and
+`tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9).
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
@@ -60,9 +62,9 @@ behavioral (see below). Never edit those control-plane scripts to recolor this.
 production phases widen scope, and its allowlist is the thirteen registered A4 paths. It is
 **green at the frozen checkpoint** — `git diff --name-only af3ac366 1ede498` is exactly that
 allowlist — and it now fails on the tip on `CaptureController.swift` plus the new
-`CaptureOutbox.swift`, `NativeLaneWireFormat.swift` and `CapturePublishPump.swift`, which Phase B is
-authorized to add. Verify it against `1ede498`, never against the tip, and do not add paths to the
-script.
+`CaptureOutbox.swift`, `NativeLaneWireFormat.swift`, `CapturePublishPump.swift`, `macos/scripts/*`
+and `tests/test_macos_packaging_tools.py`, which Phase B is authorized to add. Verify it against
+`1ede498`, never against the tip, and do not add paths to the script.
 
 **Lab bundle contract (new, iteration 4).** The tracer's one fixed path is
 `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` (gitignored via `macos/MOSSCapture/
@@ -159,6 +161,37 @@ Cross-lane publish *order* is now undefined by design — the server aligns lane
 timestamp, and only per-lane order is contractual — so tests assert per lane
 (`FakeCaptureTransportAdapter.publishedFrames(lane:)`).
 
+**Packaging-tool contract (new, iteration 9).** `macos/scripts/` holds three tracked tools plus
+`moss-tool-lib.sh`, which fixes one output discipline: `--dry-run` prints the ordered `plan:` and
+the `rollback:` command and mutates nothing; the `rollback:` line is printed **before** the first
+mutation; a re-run prints `unchanged:` instead of mutating; `evidence: key=value` lines carry the
+observed facts and never a secret.
+*`bootstrap-signing-identity.sh`* creates the dedicated `moss-signing.keychain-db` (random password
+in a 0600 file), a self-signed `extendedKeyUsage=critical,codeSigning` certificate, imports it with
+`-T /usr/bin/codesign`, sets the key partition list, appends the keychain to the user search list
+keeping every existing entry, and accepts only if a scratch `codesign` run succeeds. It refuses the
+login/System/default keychain outright.
+*`build-app.sh`* composes and signs `MOSSCapture.app` plus `mtd-capture` into build output only
+(it refuses an install location), derives the signing entitlements from the tracked file with
+`keychain-access-groups` dropped, and reads the embedded entitlements, identifier and DR back out of
+the signature with `codesign -d` — what was passed in is an input, not evidence. Identical inputs
+give an identical bundle digest and DR, and a re-run over the same output re-signs nothing.
+*`install-app.sh`* verifies the source signature/identifier/entitlements first, does **nothing** when
+the installed bundle is already byte-identical (the inode and therefore the TCC grants survive),
+moves a replaced bundle aside to `<installed>.backup-<utc>` instead of deleting it, reports loudly when the
+new DR differs from the installed one (that is exactly when the human loses the grants), and
+re-verifies the installed bundle's DR against the source.
+
+**Signing mechanics — measured on MacStudio, iteration 9.** `codesign --keychain <kc> --sign <name>`
+is accepted and **ignored**: with the identity only in `<kc>` it fails `no identity found`, while
+`security find-identity <kc>` lists it as `CSSMERR_TP_NOT_TRUSTED`. The same command succeeds once
+the keychain is in the **user keychain search list** (`security list-keychains -d user -s <existing…>
+<kc>`) — no trust change, no `add-trusted-cert`, `find-identity -v -p codesigning` still reports 0
+valid identities. So search-list membership, not the flag, is what makes an identity reachable, and
+D7's DR claim reproduces here: two different binaries signed by that identity both get
+`designated => identifier "…" and certificate leaf = H"421b…"`. `security delete-keychain` also
+removes the search-list entry, so the recorded rollback is complete.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -212,10 +245,12 @@ typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitize
    the entitlement declares `$(AppIdentifierPrefix)com.alphasight.moss.capture`; strings differ and
    a self-signed identity has no Team ID. Keychain writes also fail `-25308` from any non-GUI
    session. **Closed on the feature branch by iteration 5 (B1)**: the file store is the default,
-   the Keychain store is dormant with no access group. Residue for B5: the *entitlements* file
-   still declares `keychain-access-groups` with the unresolvable `$(AppIdentifierPrefix)` literal
-   (SwiftPM never substitutes it). Nothing signs with it yet; `build-app.sh` must drop that key
-   rather than sign an entitlement the identity cannot satisfy.
+   the Keychain store is dormant with no access group. The residue is **closed by iteration 9
+   (B5)**: the tracked `Resources/MOSSCapture.entitlements` still declares `keychain-access-groups`
+   with the unresolvable `$(AppIdentifierPrefix)` literal, deliberately, as documentation of intent
+   for a future real Team ID — `build-app.sh` derives the *signing* entitlements from it with that
+   key dropped and refuses to finish if the key reappears in the signature. Rehearsed: without the
+   drop the literal really is embedded verbatim.
 7. No client-side 16 kHz conversion — devices stayed at their native rate and the server mixer
    resampled by linear interpolation with no anti-alias filter (`live_mixer.py:305-327`).
    **Closed on the feature branch by iteration 7 (B3)**: both lanes leave the Mac at 16 kHz mono in
@@ -267,7 +302,8 @@ Login keychain is **locked to SSH sessions** — `LiveTranscribe Local Dev` sign
 `errSecInternalComponent`. A scripted self-signed identity in a dedicated keychain **does** sign
 over SSH with a designated requirement that is byte-identical across rebuilds (plan D7).
 `security find-identity -v -p codesigning` reports 0 valid identities for such a cert even though
-`codesign` succeeds — never gate on `find-identity`.
+`codesign` succeeds — never gate on `find-identity`. The exact mechanics are in the signing-mechanics
+note above; `macos/scripts/bootstrap-signing-identity.sh` (iteration 9) implements them.
 
 **Gotcha — remote shell quoting.** Nested quoting through Windows conhost → `wsl.exe` → bash
 fails ("The system cannot find the path specified"). Always pipe a script on stdin:
@@ -322,6 +358,19 @@ swift test --package-path macos/MOSSCapture \
 #     tick skips, stop waits, one session per pin, shipped cadence/provider) --------------------
 swift test --package-path macos/MOSSCapture \
   --filter 'LanesPublishConcurrently|ATickArrivingDuringADrain|StopWaitsForTheRunningPass|PinnedProviderKeepsOneSession|ProductionPumpTicksOnce'
+
+# --- B5 packaging tools (9 nodes: entitlement drop, reproducible bundle, install-location
+#     refusal, untouched idempotent install, backup + working rollback, tampered-bundle refusal,
+#     three dry-run plans, keychain refusals). Scratch paths only; no keychain/app is mutated. ---
+python3 -m pytest tests/test_macos_packaging_tools.py -q
+
+# --- B5 tools by hand (build output is gitignored; ad-hoc signing needs no identity) --------
+macos/scripts/build-app.sh --configuration debug --no-build \
+  --output /tmp/moss-build --sign-identity -
+macos/scripts/install-app.sh --bundle /tmp/moss-build/MOSSCapture.app \
+  --cli /tmp/moss-build/mtd-capture --applications /tmp/moss-apps --bin-dir /tmp/moss-bin
+macos/scripts/bootstrap-signing-identity.sh --dry-run   # never run for real on MacStudio
+# Real signing identity + install belong to E1/E2 on m4mbp, not to this host.
 
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
@@ -451,9 +500,15 @@ edit the control-plane discriminator scripts to keep them green.
    running plus its own. That is correct for the tail but means a stop during a full-window
    recovery can take seconds; if F2/F3 shows a slow stop, bound it with the stop deadline the
    `stop(deadline:)` signature already carries rather than by skipping the drain.
-9. **B5 — tracked Mac packaging/install tools**:
-   `macos/scripts/bootstrap-signing-identity.sh`, `build-app.sh`, and `install-app.sh`;
-   idempotent, scratch-path testable, no real keychain/app/install mutation during tests.
+9. **B5 — tracked Mac packaging/install tools** `[done — iteration 9]`:
+   `macos/scripts/{moss-tool-lib,bootstrap-signing-identity,build-app,install-app}.sh` with one
+   dry-run/rollback-first/idempotent output discipline (see the packaging-tool contract above).
+   Nine acceptance nodes run against scratch paths only; the suite creates no certificate,
+   keychain, search-list entry or installed file. The signing incantation itself was proven for
+   real once on MacStudio in a temp keychain and rolled back — `codesign --keychain` is ignored,
+   search-list membership is what works. Residue for E2: `install-app.sh` defaults the CLI to
+   `~/.local/bin` and reports `bin_dir_on_path`; if that is not on m4mbp's PATH, pass `--bin-dir`
+   rather than editing a shell profile from the loop.
 10. **B6 — client gate**: both Swift products build; Swift suite and full Python suite green;
    Darwin built-process tracer zero skips; retry/concurrency/conversion tests green; leak scan
    clean. Record the exact SHA. The Phase-A source discriminators are historical evidence, not

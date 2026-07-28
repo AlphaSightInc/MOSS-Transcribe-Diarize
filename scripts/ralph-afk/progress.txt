@@ -664,3 +664,79 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
 [loop 20260728-002458-97091] stalled after 3 consecutive iterations without progress (last agent exit: 1)
 
 [loop 20260728-023004-98501] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+## Iteration 9 (run 20260728-023004-98501, its iteration 1) - tracked Mac packaging/install tools (B5)
+- Target: Phase B candidate B5 / defect 6 residue. Give Phase E a reviewed, idempotent path from
+  "no identity, no app" to "signed app installed", and stop shipping an entitlement the signing
+  identity cannot satisfy. Prior run's iterations 9-11 exited 1 in 1-7 s each (agent launch
+  failures, `telemetry/run-20260728-002458-97091/run.jsonl`); no work was lost and B5 was untouched.
+- Files: `macos/scripts/{moss-tool-lib,bootstrap-signing-identity,build-app,install-app}.sh` (new);
+  `tests/test_macos_packaging_tools.py` (new, 9 nodes); `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: one output discipline in `moss-tool-lib.sh` - `--dry-run` prints the ordered plan and
+  mutates nothing, `rollback:` is printed *before* the first mutation, a re-run prints `unchanged:`,
+  and `evidence: key=value` lines carry observed facts (never a secret). On top of it:
+  (1) `bootstrap-signing-identity.sh`: dedicated `moss-signing.keychain-db` with a random password in
+      a 0600 file, self-signed `extendedKeyUsage=critical,codeSigning` cert, import with
+      `-T /usr/bin/codesign`, key partition list, append to the user keychain search list keeping
+      every existing entry, accept only if a scratch `codesign` run succeeds. Refuses the
+      login/System/default keychain. Reuse and repair paths for an interrupted earlier run.
+  (2) `build-app.sh`: composes and signs the bundle + CLI into build output only (refuses an install
+      location), derives the signing entitlements from the tracked file with `keychain-access-groups`
+      dropped, then reads identifier/entitlements/DR back out of the *signature* with `codesign -d`.
+  (3) `install-app.sh`: verifies the source first; does nothing when the installed bundle is already
+      byte-identical (inode preserved -> TCC grants survive); moves a replacement aside to
+      `<installed>.backup-<utc>` instead of deleting it; says so loudly when the DR changes.
+- Validation:
+  - `pytest tests/test_macos_packaging_tools.py -q -p no:cacheprovider` -> **9 passed in 2.28s**
+  - `pytest -q -p no:cacheprovider` -> **466 passed, 2 skipped, 346 subtests** in 39.4s (was 457/2)
+  - `swift test --package-path macos/MOSSCapture` -> **121 tests, 0 failures** (no Swift source changed)
+  - `swift build --product mtd-capture` / `--product MOSSCaptureApp` -> OK
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+  - after everything: `~/Library/Keychains/moss-signing.keychain-db`, `~/.config/moss-capture`,
+    `/Applications/MOSSCapture.app`, `~/.local/bin/mtd-capture` all absent, and
+    `security list-keychains -d user` is back to the login keychain alone.
+- Evidence:
+  - **The plan's D7 incantation does not work as written, and now does.** `codesign --keychain <kc>
+    --sign "<name>"` is accepted and ignored: with the identity only in `<kc>` it fails
+    `no identity found`, while `security find-identity <kc>` lists it as `CSSMERR_TP_NOT_TRUSTED`.
+    Adding the keychain to the **user keychain search list** makes the identical command succeed -
+    no `add-trusted-cert`, no trust change, and `find-identity -v -p codesigning` still says
+    `0 valid identities found`. So search-list membership, not the flag, is what makes an identity
+    reachable. Rollback is complete: `security delete-keychain` removes the search-list entry too.
+  - Proven for real once, in a temp keychain (`/tmp/moss-b5/kc/`), rollback recorded before the run
+    and executed after: create -> import -> partition list -> search list -> probe. Two different
+    binaries (`/usr/bin/true`, `/usr/bin/false`) both got
+    `designated => identifier "..." and certificate leaf = H"421b362cb77ae6bb662cd30c1c9dd0910f67fae6"`,
+    reproducing D7's "DR identical across rebuilds" claim on this host. `build-app.sh` signed with
+    that identity produced
+    `designated => identifier "com.alphasight.moss.capture" and certificate leaf = H"421b..."`.
+    Teardown verified: no keychain file, no search-list entry, login keychain untouched.
+  - Ad-hoc build reproducibility: two independent output directories from the same sources gave the
+    same `bundle_digest` (`fb1b9408...`) and the same DR; a third run over an existing output
+    printed `unchanged:` and re-signed nothing.
+  - Mutation rehearsal 1 (entitlement drop removed): the signature really does carry
+    `keychain-access-groups = ['$(AppIdentifierPrefix)com.alphasight.moss.capture']`. Reverted -> green.
+  - Mutation rehearsal 2 (idempotence check -> `if false`): the installed executable's inode and
+    mtime change on the second install - the case where a human's TCC grants are silently lost.
+    Reverted -> green.
+  - Mutation rehearsal 3 (`mv` aside -> `rm -rf`): the backup test fails; the previous install is
+    unrecoverable. Reverted -> green.
+  - Mutation rehearsal 4 (source verification removed): a bundle with one byte appended to its
+    executable installs cleanly. Reverted -> green, 9 passed.
+  - The install rollback line is executed by the test, not just matched: it restores the replaced
+    bundle's `CFBundleShortVersionString` byte for byte.
+- Learned: (1) A "proven" incantation in a plan document is still a hypothesis on another host -
+  the D7 probe evidently ran with the keychain in the search list, and the flag it recorded does
+  nothing. Running the tool for real once, in a temp path with the rollback recorded first, is what
+  converted a plausible E1 step into a working one; discovering this at E1 would have cost a human
+  round trip. (2) The safest install is the one that does nothing: comparing a whole-bundle digest
+  and skipping the copy is what preserves the inode, and the inode is what preserves the two grants
+  that only a human can give. (3) `--dry-run` plus rollback-before-mutation is worth the lines - it
+  makes each tool reviewable *before* it is pointed at m4mbp, which is the only machine where these
+  mutations are expensive.
+- Blocker: none. TCC clicks remain the one irreducible human step (E3), untouched by this iteration.
+- Next: B6 - the Phase B client gate. Both Swift products build, Swift suite, full Python suite,
+  Darwin tracer with zero skips, and the leak scan, all recorded with the exact SHA. Everything in
+  the gate has been run green this iteration except recording it as one checkpoint; after that,
+  Phase C opens with C1 (session-lifecycle view authority, defect 4).
