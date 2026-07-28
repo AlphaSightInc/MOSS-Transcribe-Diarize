@@ -1514,6 +1514,53 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(microphoneStatus.discontinuities, 0)
     }
 
+    /// A new `start` is a new question about every lane, and the drops the previous generation
+    /// already reported are the previous generation's answer.
+    ///
+    /// The buffer queue counts drops for the life of the process while the source keeps a watermark
+    /// of what it has already turned into facts. Reset the watermark without re-baselining it and
+    /// the first drain of the new generation reads the whole process's drop history back as fresh
+    /// loss: a meeting that has not dropped a single buffer comes up with its lane already failed,
+    /// its first heartbeat says so, and the server ends it. This is candidate 49 (L2) — the same
+    /// "a new session id is a new question" rule K4 applied to `sessionRefusal`.
+    func testNativeDualCaptureSourceStartDoesNotReplayEarlierGenerationDrops() throws {
+        let queue = RealTimeNativeAudioBufferQueue(capacity: 2)
+        let source = NativeDualCaptureSource(
+            system: RecordingNativeCaptureComponent(),
+            microphone: RecordingNativeCaptureComponent(),
+            queue: queue,
+            emitter: laboratoryEmitter()
+        )
+
+        try source.start(configuration: laneConfiguration())
+        // One buffer more than the lane can hold, produced the way a device callback produces it.
+        for index in 0..<3 {
+            queue.enqueueFromRealtimeCallback(
+                nativeBuffer(
+                    lane: .system,
+                    timestamp: UInt64(10 + index),
+                    deviceEpoch: 1,
+                    samples: [0.25]
+                )
+            )
+        }
+        _ = try source.pendingFrames()
+
+        let overrun = try XCTUnwrap(source.status().first { $0.lane == .system })
+        XCTAssertEqual(overrun.state, "failed")
+        XCTAssertEqual(overrun.failureCode, "macos_buffer_overrun")
+        XCTAssertEqual(overrun.droppedFrames, 1)
+
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+        try source.start(configuration: laneConfiguration())
+        _ = try source.pendingFrames()
+
+        let restarted = try XCTUnwrap(source.status().first { $0.lane == .system })
+        XCTAssertEqual(restarted.state, "capturing")
+        XCTAssertNil(restarted.failureCode)
+        XCTAssertEqual(restarted.droppedFrames, 0)
+    }
+
     func testNativeDualCaptureSourceInvalidatesGenerationBeforeComponentTeardown() throws {
         let system = RecordingNativeCaptureComponent(emitLateFactOnStop: true)
         let microphone = RecordingNativeCaptureComponent()

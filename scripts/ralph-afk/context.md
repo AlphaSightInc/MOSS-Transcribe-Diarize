@@ -48,10 +48,11 @@
 landed on it (A-E client/server/deploy/install, then four operator-authorized post-merge fix cycles
 G, H, J, K). **Five keeper merges have been made and all five are spent** — `f9285d6` (C4),
 `317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b) — and `merge-keeper.sh`'s
-`expected_main` guard refuses a **sixth** until a fifth prd.md amendment advances the line in-script.
-**The post-merge freeze holds: the feature branch may carry only `scripts/ralph-afk/*`.** Every
-tracked product change since `f9285d6` was made under a named amendment; there is no unauthorized
-tracked source on the branch. Per-phase detail is in the closed-phase index below and in full in the
+`expected_main` guard refuses a **sixth** until the fifth amendment advances the line in-script.
+**Phase M is OPEN under that amendment**, so the branch now carries tracked product source again
+(from iteration 13) — legitimately, and only inside `macos/`, `moss_transcribe_diarize/`, `ops/` and
+`tests/`. Every tracked product change since `f9285d6` was made under a named amendment; there is no
+unauthorized tracked source on the branch. Per-phase detail is in the closed-phase index below and in full in the
 progress.txt archive.
 
 **PRD acceptance scoreboard (after iteration 9 of run `20260728-181020`).**
@@ -93,8 +94,8 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch.** Swift **150 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150);
+**Test totals on the branch.** Swift **151 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151);
 Python **598 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
 Per-file: `test_live_pipeline_seams.py` **52**, `test_live_identity.py` **8**,
@@ -331,6 +332,71 @@ run at 9.1 s committed p95 (K5d 9089, F1 9053) on a fourth audio program.
 Neither holds a secret. `log show` needs a **script file** on m4mbp — an inline `log show --predicate`
 over `ssh` hits zsh's own `log` builtin and dies with `zsh:log:1: too many arguments`, printing
 nothing, which reads exactly like an absent log line.
+
+**The three Phase M decisions, taken and binding (new, run 20260728-181020 iteration 13).
+READ THIS BEFORE WRITING ANY PART OF 53, 48 OR 50.** The fifth amendment required D-a/D-b/D-c to be
+settled in writing before the patch. Full reasoning is in progress.txt under "Phase M decisions";
+the rulings and the numbers behind them are here.
+
+- **D-a. `macos_buffer_overrun` is a lane DEGRADATION, not a lane failure.** The general rule that
+  decides it: *a lane failure means the lane can no longer produce audio; an event that loses some
+  audio while the lane keeps producing is a degradation.* That rule partitions
+  `NativeLaneFailureCode` cleanly and `bufferOverrun` is the only member on the degradation side —
+  it is minted in exactly one place (`NativeAudioBuffers.swift:47-58`, a lane already holding
+  `capacity` buffers) and is a statement about the **consumer**, not the device. *Zero-loss clause:*
+  a dropped buffer never becomes a frame, so it is never *accepted* audio — an overrun is capture
+  loss, not accepted-audio loss, and the clause holds. The report is the count, which already
+  travels as `droppedFrames` / `dropped_frames` (`CaptureHTTPTransport.swift:395,415`).
+  *What it buys:* the server needs **no change** — `_failed_lanes` keys on `state == "failed"`
+  (`live_helper_failure.py:363-371`), so a degradation never reaches `_fail_lane`, never closes the
+  lane, and never arms the 409 iteration 11 named. The chain breaks at step 1, the cheapest place.
+  *What the patch must pay:* K2's log line fires only for `failed`
+  (`CaptureController.swift:312-324`) and **both F1's and F3's diagnoses came off it** — an overrun
+  must stay visible in the unified log as a degradation, or the cycle trades a dead meeting for a
+  blind one. Three existing Swift assertions encode the old contract and must be changed
+  **deliberately, citing this decision**: `CaptureControllerTests.swift:1507-1508`, the reducer
+  table at `:2760`, and `:2710` — where a *health-mailbox* overflow reuses
+  `.bufferOverrun(droppedBuffers: 1)` to mean "health facts were dropped". That overload is a
+  different signal wearing the same fact and needs its own code, not the degradation's.
+- **D-b. Inside one generation, no. Across a `stop`/`start`, yes — and that is K4's rule, not a new
+  one.** With D-a applied every remaining failure code means the lane is not producing and cannot
+  resume by itself, so an un-fail path would have to invent a recovery signal the source does not
+  have; `recordFailure`'s stickiness stays. Across a restart the verdict names a session that no
+  longer exists, exactly as K4 ruled for `sessionRefusal`. **`LiveV2Session` needs no un-fail
+  path** — the amendment made that conditional on D-a, and with D-a the only lane the server ever
+  closes is one that genuinely stopped producing.
+- **D-c. Cap the decode, commit what came back, never abandon the span.** *Zero loss:* a capped span
+  is still accepted and still committed with fewer words; abandoning it, or committing it empty,
+  removes accepted audio from the transcript — which is the loss the clause forbids. *Speaker
+  continuity:* a dropped span breaks the identity preparer's timeline, a shorter one does not.
+  *Which cap:* a bound on **generated tokens derived from the span's own duration** — not a
+  wall-clock deadline (non-deterministic, makes the same audio decode differently on a busy host,
+  untestable here) and not a repetition heuristic in decoder space we do not control. It attacks the
+  measured mechanism directly: both runaway spans were degenerate repeat loops emitting hundreds of
+  fragments for 2.5 s of audio, i.e. far more tokens than the audio can contain. The constant must
+  be **derived from the committed spans already in the F1/F3/canary evidence** (observed max
+  tokens-per-second-of-audio for real speech, plus an explicit margin) and the derivation recorded —
+  a tuning value, not a domain-contract value; the contract's 2.5 s `hard_cap_samples` is what it is
+  derived *from*. A capped span publishes what the decoder returned, with the cap recorded on its
+  event so truncation is visible rather than inferred (H1's treatment, one step along).
+  *Not fixed by this:* the decode queue stays serial. The cap is chosen because it removes the
+  measured cause; if a capped run still misses the gate, the plan's ordered remedies apply **then**.
+
+**Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
+`[done]`).** The record said the lane failure "survives a stop/start inside one process" because
+"`NativeLaneHealth` keeps `projection.failure`". **It does not** — `beginGeneration()`
+(`NativeLaneHealth.swift:58-65`) resets every projection and `stop` invalidates the generation too.
+The real mechanism is one line away: `NativeDualCaptureSource.start` cleared `reportedDroppedBuffers`
+— the watermark of drops already turned into facts — while
+`RealTimeNativeAudioBufferQueue.droppedBuffersByLane` is **cumulative for the life of the process and
+never reset**. So the first `pendingFrames()` of the new generation read the whole process's drop
+history back as fresh loss and failed the lane on the **first heartbeat**, before the new meeting had
+dropped anything. Fixed by re-baselining the watermark against the queue instead of zeroing it;
+red-before/green-after in
+`testNativeDualCaptureSourceStartDoesNotReplayEarlierGenerationDrops` (red: `failed` /
+`macos_buffer_overrun` / `droppedFrames 1` on a restart that dropped nothing).
+*The general lesson, worth more than the fix:* **a watermark must be reset together with the counter
+it watermarks** — resetting one alone is what replays history as news.
 
 **The lanes are separated, and it corrects two things F1 concluded (new, run 20260728-181020
 iteration 12). READ THIS BEFORE F2.** Session `c06fa7c5457c476487d48eca13454964`, label
@@ -1572,8 +1638,8 @@ only reachable through the first.
     emission belongs under the same guard as the publish, and the start path is a third caller that
     must record a refusal. Note this is the **same shape** as J's four blockers - a condition the
     design contemplates is handled everywhere except the one path that ends the meeting.
-49. **L2 - a starved source overruns, and the failure survives `stop`** `[open - needs
-    authorization; depends on L1]`. With no pump, the lanes overrun (`macos_buffer_overrun`,
+49. **L2 - a starved source overruns, and the failure survives `stop`** `[done - iteration 13;
+    the mechanism below is WRONG, see the Phase M list and the correction block above]`. With no pump, the lanes overrun (`macos_buffer_overrun`,
     14005 / 1379 dropped) and `NativeLaneHealth` keeps `projection.failure` across a stop/start
     **inside the same process**, so the next `start` publishes a first heartbeat that says both lanes
     are dead and the server correctly ends a meeting that never began. Two questions the operator's
@@ -1717,15 +1783,12 @@ that killed F3 was the skipped `emitHealth`**.
 Governing rule from the amendment: **a fault on one lane must not end the meeting.** No publish
 failure may stop the heartbeat; a transient resource condition must not permanently disable a lane.
 
-Take the decisions before the patches, and record the reasoning in progress.txt:
-- **D-a. Is `macos_buffer_overrun` a failure or a degradation?** (`NativeLaneHealth.swift:8,217-220`;
-  `LiveV2Session` has no un-fail path, so today one dropped buffer disables the lane for the whole
-  meeting.) State what an overrun means for the PRD's zero-loss clause, which is about *accepted*
-  audio.
-- **D-b. May a failed lane recover?** K4's "a new session id is a new question" is the precedent;
-  apply it or explain why it does not hold.
-- **D-c. What bounds a runaway decode?** Cap, abandon, or commit partial - justified against the
-  zero-loss and speaker-continuity clauses.
+**D-a, D-b and D-c are TAKEN (iteration 13)** - see "The three Phase M decisions, taken and binding"
+above for the rulings and progress.txt for the full reasoning. In one line each: an overrun is a
+**degradation**, not a failure (so the server needs no change and the chain breaks at step 1); a
+failed lane does **not** recover inside a generation but **always** does across a `stop`/`start`
+(K4's rule), and `LiveV2Session` gains no un-fail path; a runaway decode is bounded by a
+**duration-derived token cap** whose span still commits.
 
 53. **[AUTHORIZED]** A throwing publish must not skip `emitHealth`
     (`CaptureController.swift:417`). Root cause of both red certification runs.
@@ -1733,8 +1796,13 @@ Take the decisions before the patches, and record the reasoning in progress.txt:
     `do/catch` at `:387-402` and before `scheduler.schedule` at `:404`. A failed start-time
     heartbeat leaves both lanes hot with no pump, no `sessionRefusal`, and `alreadyRunning`
     blocking recovery. 53 and 48 are the same omission on two paths - fix them as one shape.
-49. **[AUTHORIZED - L2]** `NativeLaneHealth` keeps `projection.failure` across a stop/start inside
-    one process, so the next `start` reports lanes that died in the previous attempt.
+49. **[done - iteration 13]** Not `NativeLaneHealth`'s projection, which `beginGeneration()` resets
+    correctly. `NativeDualCaptureSource.start` zeroed the `reportedDroppedBuffers` watermark while
+    the queue's per-lane drop counter is cumulative for the whole process, so the new generation's
+    first drain replayed every historical drop as fresh loss and failed the lane on its first
+    heartbeat. Now re-baselined against the queue; red-before/green-after. See the correction block
+    above. **D-a still has to land** - this fix stops a *previous* generation's drops failing a
+    lane; it does nothing about the current one's.
 50. **[AUTHORIZED]** Bound the runaway decode per D-c. Measured in F1: 2 of 42 spans at RTF
     3.398/3.318 (8.49 s and 8.29 s for a 2.5 s span), degenerate repeat loops, and the serial queue
     makes each one the entire latency tail. Neither of the plan's ordered remedies attacks this.

@@ -11207,3 +11207,184 @@ iteration of their own, in writing, before touching macos/ or moss_transcribe_di
 have been reasoned about across F1, F3 and the lane-refusal probe, so the evidence is already in
 hand. Candidate 55 stays OUT of that cycle and needs its own authorization. The remaining
 Ralph-only work is the room-lane source and one run to exercise the isolated-marker change.
+
+================================================================================
+RALPH RUN 20260728-181020 - ITERATION 13 - PHASE M DECISIONS + CANDIDATE 49
+================================================================================
+Target: the fifth amendment requires D-a, D-b and D-c to be settled IN WRITING BEFORE THE PATCH.
+Taken here, from a fresh read of the named source rather than from the record - which turned out to
+matter, because the record's mechanism for candidate 49 was wrong. Candidate 49 is also CLOSED here:
+it is the smallest of the four authorized items, it is independent of the three decisions, and its
+true root cause is one line away from where the record pointed.
+
+--------------------------------------------------------------------------------
+PHASE M DECISIONS
+--------------------------------------------------------------------------------
+
+D-a. macos_buffer_overrun is a lane DEGRADATION, not a lane failure.
+
+The discriminator, stated as a general rule rather than as a verdict on one code:
+  A LANE FAILURE MEANS THE LANE CAN NO LONGER PRODUCE AUDIO. AN EVENT THAT LOSES SOME AUDIO WHILE
+  THE LANE KEEPS PRODUCING IS A DEGRADATION.
+Read against the whole vocabulary in NativeLaneFailureCode that rule partitions it cleanly, and
+bufferOverrun is the only member on the degradation side:
+  permissionDenied        no - TCC refused; nothing will ever arrive
+  deviceUnavailable       no - there is no device
+  ioStoppedAbnormally     no - the IO proc died
+  unexpectedCaptureError  no - an OSStatus the design does not model
+  callbackStalled         no - declared in the enum, never produced by the reducer today
+  bufferOverrun           YES - the callbacks are still firing; the drain fell behind
+An overrun is minted in exactly one place - RealTimeNativeAudioBufferQueue.enqueueFromRealtimeCallback
+(NativeAudioBuffers.swift:47-58), when a lane already holds `capacity` buffers. It is a statement
+about the CONSUMER, not the producer: the device is fine, and the next buffer after the drain catches
+up is enqueued normally. Classing it as a failure makes a backpressure event permanent
+(NativeLaneProjection.recordFailure is sticky by design) and hands it to the server, which then
+correctly closes the lane for the rest of the meeting.
+
+What it means for the PRD's zero-loss clause. The clause is "zero ACCEPTED-audio loss", and accepted
+audio is audio the server acknowledged (CaptureFrameOutbox.acknowledge). A dropped buffer is dropped
+BEFORE it becomes a frame and therefore before admission to the outbox, so an overrun is CAPTURE
+loss, not accepted-audio loss, and the clause is not violated by one. It must not be silent, though,
+and it is not: the count already rides on CaptureLaneStatus.droppedFrames and on the heartbeat as
+dropped_frames (CaptureHTTPTransport.swift:395,415). That is exactly the amendment's phrase "a
+degradation carrying a dropped-frame count".
+
+What it buys, and it is the reason to prefer it. The SERVER NEEDS NO CHANGE AT ALL: _failed_lanes
+keys on state == "failed" (live_helper_failure.py:363-371), so an overrun reported as a degradation
+never reaches _fail_lane, never sets LiveV2Session lifecycle.health = failed, and never arms the 409
+iteration 11 named. The chain breaks at step 1 - which is where the lane-refusal block said it was
+cheapest - and no server state is added that nothing can clear.
+
+What the patch must PAY, stated so it is not discovered later:
+ (1) K2's log line fires only for state == failed (LaneFailureLoggingHealthAdapter,
+     CaptureController.swift:312-324). BOTH F1'S AND F3'S DIAGNOSES CAME OFF THAT LINE. An overrun
+     must stay visible in the unified log as a degradation, or this cycle trades a dead meeting for
+     a blind one.
+ (2) Three existing Swift assertions encode the old contract and must be changed DELIBERATELY,
+     citing this decision - never quietly relaxed: CaptureControllerTests.swift:1507-1508 (the dual
+     source), the reducer table at :2760, and :2710. The third is not really about audio: a
+     health-MAILBOX overflow reuses .bufferOverrun(droppedBuffers: 1) to mean "health facts were
+     dropped" (NativeLaneHealth.swift:284-291). That overload is a different signal wearing the same
+     fact - losing health observations is not losing audio - and it should get its own code rather
+     than inherit the degradation.
+
+D-b. May a failed lane recover? Two scopes, two answers.
+
+INSIDE ONE CAPTURE GENERATION: NO. With D-a applied, every remaining failure code means the lane is
+not producing audio and cannot resume by itself, so an un-fail path would have to observe a recovery
+signal the source does not have. Inventing one would be worse than the disease. recordFailure's
+stickiness stays as it is.
+
+ACROSS A stop/start: YES, UNCONDITIONALLY - and this is K4's rule, not a new one. A new `start` is a
+new generation and a new server session id; K4 already ruled "a new session id is a new question" for
+sessionRefusal, and the argument holds here for the same reason: the verdict names a session that no
+longer exists. NativeLaneHealth.beginGeneration() already implements this correctly.
+
+AND LiveV2Session GAINS NO UN-FAIL PATH. The amendment made that conditional on D-a. With D-a, the
+only lane the server ever closes is one that genuinely stopped producing audio, and closing it is the
+right answer. Symmetry is worth less than not adding server state nothing can clear.
+
+D-c. What bounds a runaway decode? CAP THE DECODE, COMMIT WHAT CAME BACK, NEVER ABANDON THE SPAN.
+
+Against the two clauses the amendment names:
+ - Zero loss. A span decoded under a cap is still accepted, still committed, and still holds its
+   place in the timeline; it carries fewer words. Abandoning the span, or committing it empty,
+   removes accepted audio from the transcript - which is the loss the clause forbids. So of the
+   three offered outcomes (cap / abandon / commit partial) the answer is cap AND commit.
+ - Speaker continuity. A dropped span breaks the identity preparer's timeline. A shorter one does
+   not.
+
+WHICH cap: a bound on GENERATED TOKENS DERIVED FROM THE SPAN'S OWN DURATION.
+ - It attacks the measured mechanism directly. Both runaway spans were degenerate repeat loops
+   emitting hundreds of fragments for 2.5 s of audio - by definition far more tokens than the audio
+   can contain. F1: span 6 8.49 s RTF 3.398, span 34 8.29 s RTF 3.318, against 40 of 42 spans at
+   0.10-0.54 s.
+ - It is DETERMINISTIC, so it is testable in this repo and the same audio decodes the same way on a
+   busy host. A wall-clock deadline is not: it would make the transcript a function of GPU load.
+ - It needs nothing from the decoder that vLLM does not already expose, unlike a repetition guard,
+   which lives in decoder space this project does not control.
+The constant MUST BE DERIVED AND RECORDED, not guessed: measure tokens per second of audio across the
+committed spans already sitting in the F1/F3/canary evidence, take the observed maximum for real
+speech, and set the bound with an explicit margin above it so no real utterance is ever truncated. It
+is a TUNING value with a written derivation, not a domain-contract value - the contract's 2.5 s
+hard_cap_samples is what it is derived FROM.
+WHAT A CAPPED SPAN PUBLISHES: the text the decoder returned, with the cap recorded on the span's
+event so a truncation is visible rather than inferred. H1 had to decide once what an unparseable span
+publishes; this is the same question one step along, and it gets the same treatment - decide it here,
+record it, and make the event say which happened.
+WHAT THIS DOES NOT FIX, said plainly: the decode queue is still serial, so a capped-but-slow span
+still delays the ones behind it. The cap is chosen because it removes the MEASURED cause. If a capped
+run still misses the gate, the plan's ordered remedies (2.0 s span cap, then 0.5 s poll interval)
+apply THEN - not before, since F1 proved neither attacks this term.
+
+--------------------------------------------------------------------------------
+CANDIDATE 49 - THE RECORD'S MECHANISM WAS WRONG, AND THE REAL ONE IS ONE LINE AWAY
+--------------------------------------------------------------------------------
+The record (K5d, and the L2 candidate) said the lane failure "is sticky across stop/start inside one
+process" because "NativeLaneHealth's projection keeps failure". IT DOES NOT. beginGeneration()
+(NativeLaneHealth.swift:58-65) calls resetForCurrentGeneration(), which replaces every
+NativeLaneProjection with a fresh one, and stop() invalidates the generation as well
+(NativeDualCaptureSource.swift:267). Anyone fixing 49 where the record pointed would have found
+nothing to fix.
+
+THE REAL MECHANISM, read out of the source and then measured:
+ - RealTimeNativeAudioBufferQueue.droppedBuffersByLane is CUMULATIVE FOR THE LIFE OF THE PROCESS and
+   has no reset (NativeAudioBuffers.swift:39,47-58); drain() clears the buffered counts, never the
+   dropped counts.
+ - NativeDualCaptureSource keeps reportedDroppedBuffers as the watermark of drops it has already
+   turned into facts, and enqueueCounterFacts emits .bufferOverrun for the DELTA
+   (NativeDualCaptureSource.swift:440-445).
+ - start() cleared that watermark (:184) while the counter it watermarks kept its history.
+So the FIRST pendingFrames() of every later generation reads the whole process's drop history back as
+fresh loss, mints .bufferOverrun(droppedBuffers: N), and fails the lane - and since start()'s own
+publish pass is what calls pendingFrames() first, the lane is already failed when emitHealth runs at
+:403. THAT IS EXACTLY K5D'S OBSERVATION: "the next start comes up with both lanes already failed, its
+FIRST heartbeat reports all lanes failed, and the server correctly ends the meeting" - 1 heartbeat
+200 then 63 x 403.
+
+THE FIX: re-baseline the watermark against the queue instead of zeroing it (snapshot taken before the
+source lock, matching enqueueCounterFacts' existing lock order). One general rule, and it is worth
+more than the fix: A WATERMARK MUST BE RESET TOGETHER WITH THE COUNTER IT WATERMARKS. Resetting one
+alone is what replays history as news.
+
+Files touched:
+  macos/MOSSCapture/Sources/MOSSCaptureCore/NativeDualCaptureSource.swift   (the fix, ~6 lines)
+  macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift (the regression node)
+  scripts/ralph-afk/{context.md,progress.txt}
+Tracked product source, inside macos/ and tests/ - authorized by the fifth amendment (candidate 49).
+No branch, merge, push, deploy or host mutation this iteration; nothing on any remote host was
+touched, so no rollback record was required.
+
+Validation:
+- RED FIRST, non-vacuously. With the fix reverted in place and the new test present:
+    swift test --package-path macos/MOSSCapture --filter 'StartDoesNotReplayEarlierGenerationDrops'
+    -> 1 test, 3 failures: state ("failed") is not equal to ("capturing"); failureCode
+       "macos_buffer_overrun" not nil; droppedFrames ("1") is not equal to ("0")
+  i.e. a restart that dropped NOTHING came up with the lane failed and one phantom dropped frame.
+- GREEN AFTER, and the whole Swift suite, not just the filter:
+    swift test --package-path macos/MOSSCapture
+    -> Executed 151 tests, with 0 failures (0 unexpected). Swift 150 -> 151.
+- Python NOT re-run: no Python source was touched this iteration. The cycle's gate runs both.
+
+Evidence paths: NativeDualCaptureSource.swift:178-190 (the re-baseline and its comment);
+CaptureControllerTests.swift testNativeDualCaptureSourceStartDoesNotReplayEarlierGenerationDrops;
+context.md blocks "The three Phase M decisions, taken and binding" and "Candidate 49's mechanism was
+wrong in the record, and is now measured".
+
+Learned. (1) Read the source at the named site before trusting a record that names a mechanism -
+this record had been carried forward unchallenged since K5d and pointed at a class that resets
+correctly. The candidate was right, the diagnosis was wrong, and only one of those is cheap to
+discover late. (2) A decision iteration is not overhead: taking D-a properly surfaced two costs the
+patch must pay (K2's log line goes quiet; three test assertions encode the old contract) and one it
+does not (the server needs no change at all), none of which were visible from the candidate text.
+(3) The mailbox-overflow path overloads .bufferOverrun to mean "health facts were dropped" - a second
+signal wearing the same fact. Decisions that re-classify a fact have to enumerate every producer of
+it, not just the obvious one.
+
+Next: candidates 53 and 48 together - "the same omission on two paths", per the amendment. The tick's
+emitHealth must survive a throwing publish exactly as it already survives contention
+(CaptureController.swift:413-417), and start()'s emitHealth at :403 must come under the same guard as
+the publish at :387-402 with the start path recording a sessionRefusal. Then D-a in
+NativeLaneHealth (with the K2 log line kept and the mailbox overload given its own code), then 50 per
+D-c, then the coverage gap at tests/test_live_api.py:1055 (post a frame ON the lane that failed),
+then the full gate, the lane-refusal probe, and re-runs of F1 and F3.
