@@ -2746,3 +2746,115 @@ still at `f9285d6` at that point (the killed run never committed).
    Note: the m4mbp checkout moving to `317df4d` does **not** by itself change
    `/Applications/MOSSCapture.app` - the installed bundle is still the `f9285d6` build until G6
    re-runs `build-app.sh`/`install-app.sh`. No TCC grant is at risk from this checkout.
+
+### Result - G5 done, the PRD's "one exact SHA everywhere" clause GREEN again
+All four now read `317df4d728b6765dbe365a3166158ba581299557`, measured in one pass at the end:
+| checkout | before | after |
+| --- | --- | --- |
+| local `main` (MacStudio) | 317df4d | 317df4d |
+| `origin/main` (`git ls-remote`) | f9285d6 | 317df4d |
+| server `/mnt/d/Coding/MOSS-Transcribe-Diarize` | f9285d6 | 317df4d |
+| m4mbp `…/MOSS-Transcribe-Diarize` | f9285d6 | 317df4d |
+- `git push origin main` -> `f9285d6..317df4d  main -> main`, a **fast-forward** (`merge-base
+  --is-ancestor f9285d6 317df4d` was asserted true first). `origin` is the AlphaSight fork;
+  `upstream` (OpenMOSS) was not touched. No force, no tag, no branch deleted.
+- Each host checkout ran behind a fence that aborts before any mutation: HEAD must equal `f9285d6`
+  and `git status --porcelain` must be empty. Both printed `fences: ok`.
+- Both hosts stay **detached**, so each rollback still moves nothing but `HEAD`: the server's local
+  `main` ref is still `163e969` and m4mbp's is still upstream `40cf854`.
+- Tree objects after: both hosts `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3` = local
+  `git rev-parse 317df4d^{tree}`. m4mbp still 159 tracked files, both trees clean.
+
+### No restart, and the reason was measured rather than asserted
+`git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk' ':!tests/test_macos_*'` is
+empty - the entire 12-file delta is six Mac client sources/tests, two `tests/test_macos_*` files and
+four `scripts/ralph-afk/*`. After both checkouts moved, `systemctl --user show` reported the same
+three MainPIDs (322117 / 301112 / 334346), `NRestarts=0` on all three, and the same
+`ActiveEnterTimestamp`s (2026-07-26 22:05:29 / 2026-07-24 21:37:11 / 2026-07-28 00:50:29) recorded
+since D3. Reachability re-asserted from **both** client hosts: batch `http://192.168.68.38:7860/`
+200, `https://100.64.0.8:7861/live` 200, `/api/live/descriptor` 200.
+
+### Cross-host content proven by hash, not by `git status`
+E2a's lesson applied. Six files hashed independently on each host and compared - the four G1/G2/G3
+client sources plus `build-app.sh` and `install-app.sh` - all six identical to MacStudio's blobs at
+`317df4d` (e.g. `Info.plist acfe31d6…`, `CaptureSecurity.swift c79b2dbf…`). `macos/scripts/` exec
+bits intact (three 0755 tools, `moss-tool-lib.sh` 0644 by design). Semantic spot-check on m4mbp:
+`plutil -extract NSAppTransportSecurity` on the checkout's `Info.plist` prints exactly
+`NSAllowsArbitraryLoads` / `true` and nothing else - the G1 shape, on the host that needs it.
+
+### The measurement that matters most for G6: the checkout has the fix, the PRODUCT does not
+`plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist` ->
+`Could not extract value … No value at that key path`. The installed bundle is still the `f9285d6`
+build, `CDHash=026836783c25f27e93c128214f717289864a680c`, `Identifier=com.alphasight.moss.capture`,
+DR still `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`,
+`TeamIdentifier=not set`. So G6's rebuild has an exact before/after proof available, and G5 did not
+accidentally change the product.
+
+### Off-target discovery: two context.md facts were false, and they change the E3/G6 premise
+Probing the installed app also listed `~/Library/Application Support/MOSSCapture` - which context
+recorded as **absent** ("nothing has paired yet"). It exists, 0700 dir / 0600
+`secrets.json`, mtime 2026-07-28 03:10:14. The server's `live/live-auth.json` - recorded as
+**absent**, "D4 is what creates it" - also exists, 0600, `{schema_version: 1, devices: 1}`, mtime
+03:10:15. One second apart. The supervisor's attended-diagnosis entry did record the cause in
+passing ("one device pairing persisted to the Mac secret store by the unsigned build", "two pairing
+sessions were minted"), but neither state block was corrected, so the loop has been carrying two
+false facts since. Both are fixed in context.md this iteration.
+Independent witness, the live journal since 02:00: 5 `POST /api/live/pairing-codes`, 2 `POST
+/api/live/pairings`, 2 `POST /api/live/sessions`, 13 `GET /api/live/descriptor`, and **zero** frame
+posts - so a device really is paired, two sessions really exist, and no session has ever received
+audio. (It is a uvicorn access log: paths only, no bodies, no token - a small piece of the
+secret-hygiene clause, gathered for free.)
+Store contents read keys-and-lengths only, never values: `capture-bearer` 43,
+`capture-certificate-pin` 64, `capture-device-id` 36, `capture-server-url` 23
+(= `https://100.64.0.8:7861`), `capture-session-id` 32, `capture-view-token` 43,
+`local-control-secret` 44.
+**Consequence for G6, and it is not cosmetic.** The supervisor's finding that
+`captureConfiguration(from:)` throws `missingCaptureConfiguration` before `CaptureController.start`
+was measured against an *empty* store. m4mbp's store is now complete, so a bare `start` there would
+**resolve**, raise both TCC prompts, and publish into the stale 03:10 session instead of failing
+closed. Read out of the source to check it could: `LiveServiceRuntime.create`
+(`live_service_runtime.py:430`) just inserts into `self._sessions` with no single-session refusal,
+and `moss-live-web` has not restarted since 00:50:29, so those in-memory sessions are still there
+(until the 12 h view cap ~15:10). Nothing is blocked - but G6 must pair first so the fresh
+`pairings` -> `sessions` exchange overwrites the stored session id and bearer.
+
+### Known benign divergence G5 leaves behind
+`/api/live/descriptor` still reports `source_revision f9285d69…` - it is baked into the manifest D2
+generated and `provider_manifest_hash 61d97ffe…` covers the file. It names an ancestor of the
+deployed SHA whose server tree is byte-identical, so it still honestly describes the running code.
+Restamping it would rotate a file every paired client hashes for no behavioral gain; recorded rather
+than "tidied".
+
+### Validation
+- Four-way SHA check (the PRD clause) - four commands, one value: `317df4d728b6765dbe365a3166158ba581299557`.
+- `git push origin main` rc=0, `f9285d6..317df4d`; `git ls-remote origin refs/heads/main` re-read
+  after the push confirms it.
+- Both host fences printed `fences: ok`; both `git status --porcelain` empty afterwards.
+- Services: same MainPIDs / `NRestarts=0` / same `ActiveEnterTimestamp`s before and after.
+- Reachability from MacStudio and from m4mbp: 200 / 200 / 200.
+- Six-file cross-host `shasum -a 256` parity.
+- No tracked product source changed this iteration; the only files this loop wrote are
+  `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### Learned
+1. **A fact recorded as "absent" decays silently.** "`live-auth.json` is absent, so its absence is
+   the marker that no device is paired" was true when written and became false during an
+   operator-attended session that was *itself* recorded in progress.txt - just not back-propagated
+   into the state blocks. Absence-based markers need re-measuring, not remembering; a positive
+   marker (mtime, device count) would not have rotted the same way.
+2. **Publishing is a good time to re-measure the hosts.** The G5 mutation needed a pre-state read
+   anyway, and that read is what surfaced the stale pairing. Cheap probes on the way to a small
+   change beat a dedicated audit iteration.
+3. **"Fails closed" is a property of state, not only of code.** The unpaired-`start` guard is real
+   and unchanged, but m4mbp is no longer unpaired, so the safety it provided during the diagnosis is
+   gone on that host. Re-check the precondition, not the guard.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp (Microphone and System
+  Audio Recording for `/Applications/MOSSCapture.app`). G5 did not need them.
+- Next: **G6** - `build-app.sh --configuration release` then `install-app.sh` on m4mbp so the
+  installed bundle carries G1+G2+G3. Expect the replacement path (SwiftPM is not byte-reproducible
+  there), a `<...>.backup-<utc>` for both bundle and CLI, and **no** DR-change warning; stop if the
+  DR moves off `H"e118d874…"`. Prove the fix shipped with the `plutil -extract` before/after and a
+  new `CDHash` against `0268367…`. Then the operator's step in the order the diagnosis established:
+  D4 mint -> `pair` (Ctrl-D; a stray Return is harmless since G2) -> `start` -> the two clicks ->
+  the read-only `sqlite3`/`csreq` verification. Pair first regardless: the stale 03:10 configuration
+  means `start` alone would no longer fail closed.

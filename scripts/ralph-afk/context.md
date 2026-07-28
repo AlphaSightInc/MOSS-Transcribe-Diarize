@@ -58,7 +58,8 @@ branch carries tracked product source again, strictly within the amendment's fou
 Iteration 4 re-ran the full client gate green and changed no tracked source (see the G4 gate block),
 and iteration 5 made **the amendment's one authorized follow-up merge** (see the second-keeper-merge
 block). The post-merge freeze has resumed: from `23aabe6` on, the feature branch may again carry only
-`scripts/ralph-afk/*`.
+`scripts/ralph-afk/*`. Iteration 6 published that merge to all four checkouts (G5) and changed no
+tracked file.
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
@@ -661,26 +662,67 @@ So if the tap call does block, `mtd-capture start` blocks with **no timeout** an
 the expected appearance of an unanswered prompt, not a defect, and a hung `status` is not evidence
 that the app died. Diagnose it with `pgrep -x MOSSCaptureApp` and `sample`, never by killing the app.
 
-**Server state.** Deployed **`f9285d6`** since iteration 17 (D1), as is `origin/main` and local
-`main`. **The PRD's "one exact SHA everywhere" clause is GREEN since iteration 20**: local `main`,
-`origin/main` (via `ls-remote`), the server checkout and the m4mbp checkout all read
-`f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, measured in the same iteration. The host checkout is
-**detached** at that SHA on purpose:
-its local `main` ref is still `163e969`, so
+**Server state.** Deployed **`317df4d`** since iteration 6 of run 20260728-072601 (G5); it was
+`f9285d6` from iteration 17 (D1) until then. **The PRD's "one exact SHA everywhere" clause is GREEN
+at `317df4d728b6765dbe365a3166158ba581299557`** — local `main`, `origin/main` (via `ls-remote`), the
+server checkout and the m4mbp checkout were all measured at that value in iteration 6. Both host
+checkouts are **detached** on purpose: the server's local `main` ref is still `163e969` and m4mbp's
+is still upstream `40cf854`, so
 `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete one-command rollback
 that moves nothing but `HEAD`. Tree clean; `moss-vllm` MainPID 322117 and `moss-web` MainPID 301112
 still `active` with `NRestarts=0` and `ActiveEnterTimestamp` 2026-07-26 22:05:29 / 2026-07-24
-21:37:11 — **neither batch service has been restarted** by D1, D2 or D3, and those four values are
-what every later probe must still show.
+21:37:11 — **neither batch service has been restarted** by D1, D2, D3 or G5, and those four values
+are what every later probe must still show.
+*Why G5 needed no restart, measured rather than assumed:* the server-visible tree is byte-identical
+across the two SHAs (`git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk'
+':!tests/test_macos_*'` is empty), and the tree objects differ only because the amendment's twelve
+Mac/evidence files do (`815f23b0…` → `3b37815f…`).
+*Known benign divergence left by G5:* `/api/live/descriptor` still reports
+`source_revision f9285d69…`, because that string is baked into the manifest D2 generated and
+`provider_manifest_hash 61d97ffe…` covers the file. It names an **ancestor** of the deployed SHA
+whose server tree is byte-identical, so it still honestly describes the running code. Re-running the
+finalizer to restamp it would rotate a file every paired client hashes, for no behavioral gain — do
+not do it as a tidy-up; only as part of a deployment that has another reason to regenerate.
 **The live service is up since D3 (iteration 19).** `moss-live-web.service` is installed
 (byte-identical to `ops/systemd/`), `enabled`, `active`, MainPID 334346 since 2026-07-28 00:50:29,
 listening on `0.0.0.0:7861` **TLS**; `/live` and `/api/live/descriptor` both return 200 from
 MacStudio *and from m4mbp*, and plaintext on 7861 gets nothing (`000`). The served leaf hashes to
 the D2 pin on both hosts. `ops/moss-live.env` now exists on the host (untracked, `.gitignore:32`),
 `MOSS_LIVE_ENABLED=0` stays in `ops/moss.env` and is overridden only by that profile.
-`/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs` was created by the service;
-`live/live-auth.json` is still **absent** — `LiveAccessRegistry` writes it on the first pairing, so
-D4 is what creates it. `/api/live/descriptor` and `/live` are still 404 on 7860.
+`/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs` was created by the service.
+`/api/live/descriptor` and `/live` are still 404 on 7860.
+
+**A device is ALREADY paired — corrected in iteration 6, and it changes the E3/G6 premise.**
+Context claimed until now that `live/live-auth.json` was absent and that D4 would create it. It is
+**present**, 0600 on ext4, `{schema_version: 1, devices: 1}`, mtime **2026-07-28 03:10:15** — one
+second after m4mbp's `~/Library/Application Support/MOSSCapture/secrets.json` (0600 in a 0700
+directory, 469 bytes, 03:10:14). Both were written during the operator-attended diagnosis, by the
+*unsigned* `.build/debug/MOSSCaptureApp`, which ATS does not restrict; the supervisor entry recorded
+it ("one device pairing persisted to the Mac secret store by the unsigned build") but the two state
+blocks were never corrected. The live journal since 02:00 agrees and is the independent witness:
+**5** `POST /api/live/pairing-codes`, **2** `POST /api/live/pairings`, **2** `POST
+/api/live/sessions`, 13 `GET /api/live/descriptor` — and **zero** frame posts, so no session has
+ever received audio. (That journal is a uvicorn access log: paths only, no bodies, no token.)
+*Four consequences, all measured or read out of the source this iteration:*
+1. **The two 03:10 sessions are still in memory.** `moss-live-web` has not restarted (MainPID 334346
+   since 00:50:29) and sessions are memory-only, so they live until the 12 h view cap (~15:10) or a
+   restart.
+2. **They do not block anything.** `LiveServiceRuntime.create` (`live_service_runtime.py:430`) just
+   inserts into `self._sessions`; there is no single-session refusal, so D4/G6 can create a fresh
+   session beside them.
+3. **m4mbp is no longer "unpaired", so `start` no longer fails closed.** The store holds
+   `capture-bearer` (43), `capture-certificate-pin` (64), `capture-device-id` (36),
+   `capture-server-url` (23 = `https://100.64.0.8:7861`), `capture-session-id` (32),
+   `capture-view-token` (43) and `local-control-secret` (44). The supervisor entry's finding — that
+   `captureConfiguration(from:)` throws `missingCaptureConfiguration` before
+   `CaptureController.start` — was measured against an *empty* store and is now inapplicable on this
+   host: a bare `start` would resolve, raise both TCC prompts, and publish into the **stale 03:10
+   session**. Do not let a G6 run drift into that: pair first, so the fresh
+   `pairings` → `sessions` exchange overwrites the session id and bearer, and the canary measures a
+   session this app created.
+4. **The paired device is why D4 is cheap now.** Device pairings persist; only the payload mint and
+   the session are per-run. Nothing needs un-pairing, and `live-auth.json` existing is no longer the
+   marker that D4 has run.
 Windows: portproxy now carries `0.0.0.0:7861 → 172.30.115.123:7861` beside the untouched 7860 and
 5100 rows, firewall rule `MOSS-Transcribe-Diarize-Live` (Inbound/Allow/**Private** only) beside
 `…-Web`, and the sign-in scheduled task argument list now ends `-RefreshOnly -IncludeLive`.
@@ -714,14 +756,27 @@ mode inside the checkout.
 
 **Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3 (`swift-driver 1.148.6`).
 **`/Applications/MOSSCapture.app` and `~/.local/bin/mtd-capture` exist since iteration 22 (E2b)** —
-see the installed-app block below; `~/Library/Application Support/MOSSCapture` is still absent
-(nothing has paired yet, and store construction is side-effect free).
+see the installed-app block below.
+**`~/Library/Application Support/MOSSCapture/secrets.json` now exists** (corrected in iteration 6;
+context previously claimed it was absent) — 0600 in a 0700 directory, written 2026-07-28 03:10:14 by
+the *unsigned* debug build during the attended diagnosis. B1's mode contract therefore holds on the
+real host, not only in tests. See the "A device is ALREADY paired" block above for its seven keys
+and for why a bare `start` no longer fails closed here.
+**The installed bundle is still the pre-G1 `f9285d6` build**, measured in iteration 6:
+`plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist` answers
+`No value at that key path`, and `CDHash=026836783c25f27e93c128214f717289864a680c`. The **checkout**
+carries the fix — the same file in the working tree extracts exactly `NSAllowsArbitraryLoads = true`
+and nothing else — so G6's rebuild is what closes the gap, and those two facts are the before/after
+pair that proves it did.
 **`moss-signing.keychain-db` exists since iteration 21 (E1)** — see the signing-identity block
 below. Checkout is
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` (same relative path as
 MacStudio), reachable as `ga0@m4mbp` with `BatchMode=yes`.
-**Since iteration 20 (E2a) it is detached at `f9285d6`** — tree `815f23b0…`, clean, 159 tracked
-files, and the reviewed `macos/scripts/*` + `ops/*` tools are present with their exec bits intact
+**Since iteration 6 of run 20260728-072601 (G5) it is detached at `317df4d`** — tree `3b37815f…`,
+clean, 159 tracked files; it was `f9285d6`/`815f23b0…` from iteration 20 (E2a) until then. The four
+G1/G2/G3 client sources plus `build-app.sh`/`install-app.sh` were re-verified by independent
+`shasum -a 256` against MacStudio's blobs at `317df4d` — all six identical — and the reviewed
+`macos/scripts/*` + `ops/*` tools are present with their exec bits intact
 (the two `*-lib.sh` libraries are non-executable by design). Its `main` ref is deliberately
 **untouched** at upstream `40cf854` still tracking `origin` = **OpenMOSS upstream**, and the fork
 was added as a *second* remote `alphasight`; the complete rollback is therefore one
@@ -1193,10 +1248,10 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
 # Standing rollback for the host checkout, still valid until D3 changes the host:
 #   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
-# Four-way SHA check — the PRD clause in full. It was green at f9285d6 from iteration 20; the
-# authorized second merge moved local main to 317df4d728b6765dbe365a3166158ba581299557, so all four
-# must be republished at THAT value (candidate G5). The server tree is byte-identical between the
-# two SHAs, so its checkout moves without a service restart:
+# Four-way SHA check — the PRD clause in full. GREEN at
+# 317df4d728b6765dbe365a3166158ba581299557 since iteration 6 of run 20260728-072601 (G5); it was
+# green at f9285d6 from iteration 20 until the authorized second merge. Re-run it read-only any
+# time — all four lines must print the same 40 hex characters:
 git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
@@ -1450,9 +1505,10 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     firewall rule and the `-IncludeLive` sign-in task. `/live` and `/api/live/descriptor` return 200
     over pinned TLS **from m4mbp**, batch 7860 still 200, plaintext 7861 dead. The `--with-live`
     refusal and the installer's idempotence were both proven for real on the host. Residue for D4:
-    `live/live-auth.json` does not exist yet — the first pairing creates it, so its absence is the
-    marker that no device is paired; and the loopback mint route is what `ops/live-pair.sh` uses,
-    so D4 runs on the host, never from MacStudio.
+    the loopback mint route is what `ops/live-pair.sh` uses, so D4 runs on the host, never from
+    MacStudio. (The "`live-auth.json` absent = nothing paired" marker this residue used to name is
+    **spent** — the attended diagnosis paired a device at 03:10; see the "A device is ALREADY
+    paired" block.)
 20. **D4 — verify/pair** `[deferred by evidence — run immediately before the operator's pair command,
     which iteration 23 showed can come AFTER the TCC grants rather than in the same window]`:
     `live_auth.PAIRING_TTL_SECONDS = 300` (`live_auth.py:13`, stamped at
@@ -1462,8 +1518,10 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     loopback-only) as `ops/live-pair.sh --url https://127.0.0.1:7861 --cert <live.crt>` **once**,
     never redirecting the `payload:` line to a file, in the same five-minute window as the app's
     first `pair`. Then confirm no secret artifact was left (no payload in shell history, logs, argv
-    or the journal) and that `live-auth.json` appeared with 0600 on ext4. Reachability is already
-    recorded by D3/E2a and only needs re-asserting if the service is restarted. No tracked
+    or the journal) and that `live-auth.json`'s device count advanced (it already exists at 0600 on
+    ext4 with `devices: 1` from the 03:10 attended pairing, so *appearance* is no longer the check —
+    mtime and count are). Reachability is already recorded by D3/E2a/G5 and only needs re-asserting
+    if the service is restarted. No tracked
     product/deployment edits after merge; only Ralph evidence may advance on the feature branch.
 
 ### Phase E — Mac install and human permission boundary
@@ -1497,17 +1555,23 @@ own, which no later step does.
     host. C4 review note (a) observed and measured: `build-app.sh` does put the keychain password on
     argv, and after the run `ps`, both shell histories, `~/Library/Logs`, the build output and the
     installed artifacts all contain zero occurrences of it. `--bin-dir` was **not** needed (see
-    fact 3 above). Residue for E3: the app is installed but nothing is paired —
-    `~/Library/Application Support/MOSSCapture` does not exist yet, and `mtd-capture status` answers
-    `{"ok":false}` until the app is running.
+    fact 3 above). Residue for E3, **superseded by the attended diagnosis**: this used to say
+    "nothing is paired and `~/Library/Application Support/MOSSCapture` does not exist yet". The store
+    exists since 2026-07-28 03:10 and a device is paired — see the "A device is ALREADY paired"
+    block. `mtd-capture status` still answers `{"ok":false}` until the app is running.
 23. **E3 — TCC human step** `[BLOCKED on the operator — runbook derived and recorded in iteration
     23]`: the only irreducible human step in the whole loop. The exact click sequence, the exact
     commands and the read-only verification are in progress.txt iteration 23 and in the three new
     contract blocks above (TCC-verification, E3 command surface, prompt order). Summary of what
     iteration 23 changed about it:
-    - **Grants no longer have to happen inside D4's 300 s window.** An unpaired `start` still raises
-      both prompts (`CaptureController.swift:242` runs the source before the first publish), so the
-      operator can grant and verify first, then pair with the full five minutes for pairing alone.
+    - ~~**Grants no longer have to happen inside D4's 300 s window.** An unpaired `start` still
+      raises both prompts.~~ **REFUTED by the attended diagnosis** — iteration 23 flagged this one
+      "derived from source, not yet observed", and observation killed it:
+      `captureConfiguration(from:)` (`CaptureSecurity.swift:847-862`) throws
+      `missingCaptureConfiguration` *before* `CaptureController.start` runs, so an unpaired `start`
+      never reaches the source and never raises a prompt. **The order is pair → start → clicks.**
+      Note the separate iteration-6 finding that m4mbp is no longer unpaired at all, so a bare
+      `start` there now resolves against a stale session instead of failing — pair first anyway.
     - **Order is System Audio Recording first, Microphone second**, fixed by
       `NativeDualCaptureSource.swift:191-192`; only the first can block the control channel.
     - **Verification is read-only and scriptable** — two `sqlite3`/`csreq` queries, no TCC write.
@@ -1578,22 +1642,39 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     `23aabe6`, merge `317df4d`, all recorded in the second-keeper-merge block above. **G4 is
     closed and the amendment is spent: no third merge, and the post-merge freeze has resumed.**
 
-30. **G5 - republish the authorized merge to all four checkouts.** The PRD's "one exact SHA
-    everywhere" clause is currently **red**: local `main` is `317df4d`, while `origin/main`, the
-    server checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize` and the m4mbp checkout are all still
-    `f9285d6`. Do it in the D1/E2a order already rehearsed - `git push origin main` (fast-forward
-    `f9285d6..317df4d`, never force, never `upstream`), then the server checkout, then m4mbp - and
-    re-run the four-way check in Validation. **No service restart is needed and none is authorized
-    here**: `git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk'
-    ':!tests/test_macos_*'` is empty, so the server tree does not change. Rollback for each hop is
-    `checkout f9285d6`; the push is one-way by PRD rule, which is why the payload was reviewed
-    before the merge rather than after.
+30. **G5 - republish the authorized merge to all four checkouts** `[done - iteration 6 of run
+    20260728-072601]`: `git push origin main` fast-forwarded `f9285d6..317df4d` on the AlphaSight
+    fork, then both host checkouts moved to the same SHA, detached, each behind a HEAD-and-clean
+    fence. **The PRD's "one exact SHA everywhere" clause is GREEN at `317df4d`** — see the four-way
+    check in Validation and the server-state block. No service was restarted and none needed to be
+    (the server tree is byte-identical across the two SHAs); both batch units and the live unit kept
+    their MainPIDs, `NRestarts=0` and their original `ActiveEnterTimestamp`s. Cross-host content was
+    proven by independent `shasum -a 256` of the six files that matter, not by `git status`.
+    Residue for G6: the checkout carries G1+G2+G3 but the **installed** bundle does not — its
+    `Info.plist` has no `NSAppTransportSecurity` key at all (measured), so the rebuild is the only
+    thing left between the fix and the product.
 31. **G6 - re-run E2b on m4mbp so the installed app carries G1+G2+G3**, then the corrected E3 order
-    (pair first, then start, then the two GUI clicks). Blocked on G5 for the checkout, and on the
-    human for the clicks. If the rebuilt app still fails, read
-    `log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m` - G3 exists so
-    that this failure has a name, and the -1200/-9802 vs -999 distinction is in the
-    control-channel failure contract above.
+    (pair first, then start, then the two GUI clicks). Unblocked for the checkout half by G5;
+    still blocked on the human for the clicks. Concretely:
+    - `macos/scripts/build-app.sh --configuration release` then `install-app.sh` from the m4mbp
+      checkout. The rebuild changes the bytes (SwiftPM is not reproducible there), so this takes the
+      **replacement** path, not the `unchanged:` shortcut — expect a `<...>.backup-<utc>` for both
+      the bundle and the CLI, and expect **no** DR-change warning. The DR must stay
+      `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`; if it changes,
+      stop — the human's future TCC grants would key on a different requirement.
+    - The one-line proof the fix actually shipped is the before/after of
+      `plutil -extract NSAppTransportSecurity xml1 -o - /Applications/MOSSCapture.app/Contents/Info.plist`:
+      today it errors `No value at that key path`; after the install it must print exactly
+      `NSAllowsArbitraryLoads` / `true` and nothing else. Record the new `CDHash` against the current
+      `026836783c25f27e93c128214f717289864a680c`.
+    - **Pair before start**, and understand why the order now matters for a new reason: the store on
+      m4mbp already holds a complete configuration from the 03:10 unsigned-build pairing, so a bare
+      `start` would no longer fail closed — it would publish into a stale session. See the
+      "A device is ALREADY paired" block.
+    - If the rebuilt app still fails, read
+      `log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m` - G3 exists so
+      that this failure has a name, and the -1200/-9802 vs -999 distinction is in the
+      control-channel failure contract above.
 
 ## Non-candidates
 
