@@ -23,6 +23,7 @@ public enum CaptureSecurityError: Error, Equatable {
     case invalidSecretStorePath
     case secretStoreStatus(Int32)
     case secretStorePathNotPrivate
+    case secretStoreDirectoryNotPrivate
     case secretStoreOwnerMismatch(expected: uid_t, actual: uid_t)
     case pinMismatch
     case invalidPinnedHash
@@ -44,16 +45,14 @@ public enum CaptureSecurityError: Error, Equatable {
     case pasteboardUnavailable
 }
 
+/// Dormant secret store: no product entrypoint selects it. It keeps no access group, so it can
+/// only ever reach the process's own default keychain access group — a shared group needs a Team
+/// ID that a locally signed identity does not have.
 public final class KeychainCaptureSecretStore: CaptureKeyStoreAdapter, CaptureBearerTokenAdapter {
     public let service: String
-    public let accessGroup: String?
 
-    public init(
-        service: String = "com.alphasight.moss.capture",
-        accessGroup: String? = "com.alphasight.moss.capture.shared"
-    ) {
+    public init(service: String = "com.alphasight.moss.capture") {
         self.service = service
-        self.accessGroup = accessGroup
     }
 
     public func saveControlSecret(_ secret: String) throws {
@@ -146,15 +145,11 @@ public final class KeychainCaptureSecretStore: CaptureKeyStoreAdapter, CaptureBe
     }
 
     private func baseQuery(account: String) -> [String: Any] {
-        var query: [String: Any] = [
+        [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
         ]
-        if let accessGroup {
-            query[kSecAttrAccessGroup as String] = accessGroup
-        }
-        return query
     }
 }
 
@@ -174,15 +169,26 @@ extension KeychainCaptureSecretStore: CaptureSecretStoreAdapter {}
 public enum CaptureSecretStoreSelection {
     public static let environmentKey = "MOSS_CAPTURE_SECRET_STORE_PATH"
 
+    /// The one store both product entrypoints resolve, so the app and the CLI always agree on
+    /// where the paired authority lives without either composition root repeating a literal.
+    public static func defaultPath(homeDirectory: String = NSHomeDirectory()) -> String {
+        URL(fileURLWithPath: homeDirectory, isDirectory: true)
+            .appendingPathComponent("Library", isDirectory: true)
+            .appendingPathComponent("Application Support", isDirectory: true)
+            .appendingPathComponent("MOSSCapture", isDirectory: true)
+            .appendingPathComponent("secrets.json")
+            .path
+    }
+
     public static func makeDefault(
         environment: [String: String] = ProcessInfo.processInfo.environment,
         environmentKey: String = environmentKey,
-        keychainDefault: @autoclosure () -> KeychainCaptureSecretStore = KeychainCaptureSecretStore()
+        homeDirectory: String = NSHomeDirectory()
     ) throws -> any CaptureSecretStoreAdapter {
-        guard let path = environment[environmentKey], !path.isEmpty else {
-            return keychainDefault()
-        }
-        return try FileCaptureSecretStore(path: path)
+        let overridePath = environment[environmentKey] ?? ""
+        return try FileCaptureSecretStore(
+            path: overridePath.isEmpty ? defaultPath(homeDirectory: homeDirectory) : overridePath
+        )
     }
 }
 
@@ -191,12 +197,18 @@ public final class FileCaptureSecretStore: CaptureSecretStoreAdapter {
     private let expectedUID: uid_t
     private let lock = NSLock()
 
+    public var path: String {
+        url.path
+    }
+
     public init(path: String, expectedUID: uid_t = getuid()) throws {
         guard !path.isEmpty else {
             throw CaptureSecurityError.invalidSecretStorePath
         }
         url = URL(fileURLWithPath: path)
         self.expectedUID = expectedUID
+        // Constructing a store stays side-effect free — `mtd-capture --help` must not create a
+        // directory in the user's home. The private directory is materialized on first write.
         if FileManager.default.fileExists(atPath: url.path) {
             try validateFile()
         }
@@ -289,34 +301,89 @@ public final class FileCaptureSecretStore: CaptureSecretStoreAdapter {
     }
 
     private func writeDocument(_ document: FileSecretDocument) throws {
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        let data = try JSONEncoder().encode(document)
-        if !FileManager.default.fileExists(atPath: url.path) {
-            let created = FileManager.default.createFile(atPath: url.path, contents: Data(), attributes: [
-                .posixPermissions: 0o600
-            ])
-            guard created else {
-                throw CaptureSecurityError.secretStoreStatus(errno)
-            }
+        try prepareDirectory()
+        if FileManager.default.fileExists(atPath: url.path) {
+            try validateFile()
         }
-        try validateFile()
-        try data.write(to: url, options: .atomic)
-        guard chmod(url.path, 0o600) == 0 else {
+        let data = try JSONEncoder().encode(document)
+        let temporaryURL = url
+            .deletingLastPathComponent()
+            .appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: temporaryURL) }
+        try writePrivateFile(data, at: temporaryURL)
+        // rename(2) publishes the new document in one step: a reader never sees a half-written
+        // file, and the live path never exists with permissions wider than 0600.
+        guard rename(temporaryURL.path, url.path) == 0 else {
             throw CaptureSecurityError.secretStoreStatus(errno)
         }
         try validateFile()
     }
 
-    private func validateFile() throws {
-        var info = stat()
-        guard stat(url.path, &info) == 0 else {
+    private func writePrivateFile(_ data: Data, at fileURL: URL) throws {
+        let descriptor = open(fileURL.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
+        guard descriptor >= 0 else {
             throw CaptureSecurityError.secretStoreStatus(errno)
         }
-        let permissions = UInt16(info.st_mode & 0o777)
-        guard permissions == 0o600 else {
+        var isOpen = true
+        defer { if isOpen { close(descriptor) } }
+        // umask could have relaxed the creation mode, so state it exactly before any byte lands.
+        guard fchmod(descriptor, 0o600) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        try data.withUnsafeBytes { buffer in
+            var offset = 0
+            while offset < buffer.count {
+                let written = write(descriptor, buffer.baseAddress! + offset, buffer.count - offset)
+                guard written > 0 else {
+                    throw CaptureSecurityError.secretStoreStatus(errno)
+                }
+                offset += written
+            }
+        }
+        guard fsync(descriptor) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        isOpen = false
+        guard close(descriptor) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+    }
+
+    /// A widened directory is tightened rather than refused: it cannot expose a 0600 document, so
+    /// repairing it keeps a paired device working. A widened document is refused instead, because
+    /// its bytes may already have been read by another user.
+    private func prepareDirectory() throws {
+        let directory = url.deletingLastPathComponent()
+        var info = stat()
+        if stat(directory.path, &info) != 0 {
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
+            guard stat(directory.path, &info) == 0 else {
+                throw CaptureSecurityError.secretStoreStatus(errno)
+            }
+        }
+        if info.st_mode & 0o777 != 0o700 {
+            guard chmod(directory.path, 0o700) == 0, stat(directory.path, &info) == 0 else {
+                throw CaptureSecurityError.secretStoreStatus(errno)
+            }
+        }
+        guard info.st_mode & mode_t(S_IFMT) == mode_t(S_IFDIR), info.st_mode & 0o777 == 0o700 else {
+            throw CaptureSecurityError.secretStoreDirectoryNotPrivate
+        }
+        guard info.st_uid == expectedUID else {
+            throw CaptureSecurityError.secretStoreOwnerMismatch(expected: expectedUID, actual: info.st_uid)
+        }
+    }
+
+    private func validateFile() throws {
+        var info = stat()
+        guard lstat(url.path, &info) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        guard info.st_mode & mode_t(S_IFMT) == mode_t(S_IFREG), info.st_mode & 0o777 == 0o600 else {
             throw CaptureSecurityError.secretStorePathNotPrivate
         }
         guard info.st_uid == expectedUID else {

@@ -1993,6 +1993,77 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(try fileMode(at: path), 0o600)
     }
 
+    func testDefaultSecretStoreKeepsItsDirectoryAndDocumentPrivate() throws {
+        let home = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-home-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let store = try CaptureSecretStoreSelection.makeDefault(
+            environment: [:],
+            homeDirectory: home.path
+        )
+        let path = try XCTUnwrap((store as? FileCaptureSecretStore)?.path)
+        let directory = URL(fileURLWithPath: path).deletingLastPathComponent().path
+
+        // resolving the store must not touch the home directory; only writing a secret does
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory))
+        try store.saveCaptureBearerToken("capture-token")
+        XCTAssertEqual(try fileMode(at: directory), 0o700)
+        XCTAssertEqual(try fileMode(at: path), 0o600)
+        XCTAssertEqual(try fileOwner(at: path), getuid())
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory), ["secrets.json"])
+
+        // a directory someone widened cannot expose the 0600 document, so it is repaired
+        XCTAssertEqual(chmod(directory, 0o755), 0)
+        try store.saveCaptureSessionID("session-a")
+        XCTAssertEqual(try fileMode(at: directory), 0o700)
+
+        // a widened document may already have been read, so it is refused instead
+        XCTAssertEqual(chmod(path, 0o644), 0)
+        XCTAssertThrowsError(try FileCaptureSecretStore(path: path)) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .secretStorePathNotPrivate)
+        }
+        XCTAssertEqual(chmod(path, 0o600), 0)
+        XCTAssertEqual(
+            try FileCaptureSecretStore(path: path).loadCaptureBearerToken(),
+            "capture-token"
+        )
+
+        XCTAssertThrowsError(try FileCaptureSecretStore(path: path, expectedUID: getuid() + 1)) { error in
+            XCTAssertEqual(
+                error as? CaptureSecurityError,
+                .secretStoreOwnerMismatch(expected: getuid() + 1, actual: getuid())
+            )
+        }
+    }
+
+    func testSecretStoreSavePublishesAReplacementRatherThanRewritingTheLiveDocument() throws {
+        let path = temporarySecretStorePath()
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let directory = URL(fileURLWithPath: path).deletingLastPathComponent().path
+        let store = try FileCaptureSecretStore(path: path)
+
+        try store.saveControlSecret("control-secret")
+        let firstInode = try fileInode(at: path)
+        try store.saveCaptureBearerToken("capture-token")
+        let secondInode = try fileInode(at: path)
+
+        XCTAssertNotEqual(
+            firstInode,
+            secondInode,
+            "a save must publish a renamed replacement, never truncate the live document"
+        )
+        XCTAssertEqual(try fileMode(at: path), 0o600)
+        XCTAssertEqual(
+            try FileManager.default.contentsOfDirectory(atPath: directory),
+            ["secrets.json"],
+            "no temporary residue may survive a save"
+        )
+        let reloaded = try FileCaptureSecretStore(path: path)
+        XCTAssertEqual(try reloaded.loadControlSecret(), "control-secret")
+        XCTAssertEqual(try reloaded.loadCaptureBearerToken(), "capture-token")
+    }
+
     func testDispatcherPersistsPairingAuthorityAndReloadsStartConfiguration() throws {
         let path = temporarySecretStorePath()
         defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
@@ -2881,11 +2952,23 @@ final class CaptureControllerTests: XCTestCase {
     }
 
     private func fileMode(at path: String) throws -> UInt16 {
+        try fileInfo(at: path).st_mode & 0o777
+    }
+
+    private func fileOwner(at path: String) throws -> uid_t {
+        try fileInfo(at: path).st_uid
+    }
+
+    private func fileInode(at path: String) throws -> UInt64 {
+        try fileInfo(at: path).st_ino
+    }
+
+    private func fileInfo(at path: String) throws -> stat {
         var info = stat()
-        guard stat(path, &info) == 0 else {
+        guard lstat(path, &info) == 0 else {
             throw CaptureSecurityError.secretStoreStatus(errno)
         }
-        return UInt16(info.st_mode & 0o777)
+        return info
     }
 
     private func waitForSocket(at path: String) throws {

@@ -37,14 +37,21 @@ branch after the iteration-1 graft unless stated.
 with `--no-ff` (conflict-free: A-034 branches from the same `af3ac36` and touches paths disjoint
 from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (A3); iteration 3
 moved the portal handoff into the app (A2); iteration 4 rebuilt the tracer around the immutable
-lab bundle (A4). Test totals on the branch: Swift **95 passed** (67 → 81 → 92 → 95); Python
-**457 passed / 2 skipped / 346 subtests** including `tests/test_macos_uds_tracer.py` **3 passed**
-(1 hung → 2 → 3).
+lab bundle (A4); iteration 5 made the file secret store the production default (B1). Test totals
+on the branch: Swift **98 passed** (67 → 81 → 92 → 95 → 98); Python **457 passed / 2 skipped /
+346 subtests** including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3).
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
-**0 Darwin skips**. Re-run before any further Phase-A edit — the discriminator scripts are the
-gate, not a formality.
+**0 Darwin skips**. That commit is the frozen historical evidence — do not try to reproduce
+16/16 on the tip.
+
+**Deliberate post-checkpoint delta (iteration 5, B1).** On the tip the attempt-2 discriminator is
+still **10/10**, but `idea-044-real-uds-tracer/repro.py` is **14/16**: checks **09** and **15**
+fail by design because they assert `keychain_still_default` and the `MOSS_CAPTURE_SECRET_STORE_PATH`
+literal inside each `main.swift`. B1 removed both — the default is now the file store and the
+env-key literal lives only in `CaptureSecretStoreSelection`. Their replacement evidence is
+behavioral (see below). Never edit those control-plane scripts to recolor this.
 
 **Lab bundle contract (new, iteration 4).** The tracer's one fixed path is
 `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` (gitignored via `macos/MOSSCapture/
@@ -62,6 +69,20 @@ rewrites the evidence as a new first install. Everything else — certificate, s
 secret store, artifacts — stays per-test temporary. Ad-hoc signing means the cdhash is stable
 across runs, so the lab bundle is the only surface on which real TCC continuity could later be
 observed; that observation is still the E3 human step.
+
+**Secret-store contract (new, iteration 5).** `CaptureSecretStoreSelection.makeDefault()` is the
+only resolver and both composition roots call it with no arguments, so app and CLI cannot drift:
+the path is `defaultPath(homeDirectory:)` = `~/Library/Application Support/MOSSCapture/secrets.json`,
+overridden only by a non-empty `MOSS_CAPTURE_SECRET_STORE_PATH` (what the tracer uses). The
+returned store is always `FileCaptureSecretStore`; `KeychainCaptureSecretStore` is dormant,
+unreachable from either product, and no longer carries an access group. Construction is
+side-effect free — `mtd-capture` printing usage must not create a directory in the user's home —
+so the 0700 directory is materialized on first write. A save writes a fresh `O_EXCL` file at
+exactly 0600, `fsync`s it, and `rename(2)`s it over the live path: readers never see a partial
+document and the live path never exists wider than 0600. A widened *directory* is tightened on the
+next save (it cannot expose a 0600 file); a widened *document* is refused with
+`secretStorePathNotPrivate` (its bytes may already have been read). `validateFile` uses `lstat` and
+demands a regular file, so a symlink planted at the path is rejected.
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -103,11 +124,14 @@ typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitize
    sizes rather than fixed 0.5 s frames; `URLSessionCaptureHTTPClient.send` blocks on a semaphore
    and `publishPendingFrames` iterates serially. Request rate therefore varies with device
    callback cadence and can outrun the pump at the measured 72 ms average / 146 ms max RTT.
-6. Secret store broken — code requests access group `com.alphasight.moss.capture.shared`
-   (`CaptureSecurity.swift:32,89-90`) but the entitlement declares
-   `$(AppIdentifierPrefix)com.alphasight.moss.capture`; strings differ and a self-signed identity
-   has no Team ID. Keychain writes also fail `-25308` from any non-GUI session. A-034 already ships
-   `FileCaptureSecretStore` + `CaptureSecretStoreSelection.makeDefault`.
+6. Secret store broken — code requested access group `com.alphasight.moss.capture.shared` while
+   the entitlement declares `$(AppIdentifierPrefix)com.alphasight.moss.capture`; strings differ and
+   a self-signed identity has no Team ID. Keychain writes also fail `-25308` from any non-GUI
+   session. **Closed on the feature branch by iteration 5 (B1)**: the file store is the default,
+   the Keychain store is dormant with no access group. Residue for B5: the *entitlements* file
+   still declares `keychain-access-groups` with the unresolvable `$(AppIdentifierPrefix)` literal
+   (SwiftPM never substitutes it). Nothing signs with it yet; `build-app.sh` must drop that key
+   rather than sign an entitlement the identity cannot satisfy.
 7. No client-side 16 kHz conversion — tap defaults 48 kHz (`SystemAudioTap.swift:70`), mic uses
    device rate (`MicrophoneCapture.swift:332`); mixer resamples by linear interpolation with no
    anti-alias filter (`live_mixer.py:305-327`).
@@ -190,7 +214,12 @@ rm -rf macos/MOSSCapture/.build/idea044-lab
 # --- Phase A discriminator (the A4 gate; run it before and after any Phase-A change) --------
 PYTHONDONTWRITEBYTECODE=1 python3 \
   "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-attempt2-red-control/repro.py" \
-  --target "$PWD"        # 10/10 since iteration 4
+  --target "$PWD"        # 10/10 since iteration 4; must stay 10/10
+# The 16-check sibling is historical after B1 and reads 14/16 on the tip (09 and 15 assert the
+# superseded Keychain default). Its frozen green is commit 1ede498, not the tip.
+
+# --- B1 secret-store behavioral nodes (the replacement for discriminator 09/15) ------------
+swift test --package-path macos/MOSSCapture --filter 'SecretStore|ProductEntrypoints|DormantKeychain'
 
 # --- wide checkpoint -----------------------------------------------------
 # Keep executable builds explicit because tests/test_live_integration.py and the A-034 tracer
@@ -281,11 +310,11 @@ discriminators are historical evidence: B1–B5 deliberately supersede the lab-o
 source/locality expectations and need their own behavioral tests plus the full-suite gate. Never
 edit the control-plane discriminator scripts to keep them green.
 
-5. **B1 — production file secret store**: now make `FileCaptureSecretStore` the default at
-   `~/Library/Application Support/MOSSCapture/`; directory 0700, files 0600, atomic replacement,
-   app/CLI same path. Remove the mismatched access group from the dormant Keychain opt-in.
-   Replace the lab-default source assertions with behavioral permission/secrecy tests; do not
-   edit the historical control-plane discriminator.
+5. **B1 — production file secret store** `[done — iteration 5]`: `makeDefault()` returns a
+   `FileCaptureSecretStore` at `~/Library/Application Support/MOSSCapture/secrets.json` for both
+   products; 0700 directory, 0600 `O_EXCL`+`fsync`+`rename` replacement, no access group on the
+   dormant Keychain store. The lab-default source assertions were replaced by behavioral nodes
+   (see Validation); the control-plane discriminator was left untouched at 14/16.
 6. **B2 — retained-until-ACK outbox**: 15 s/lane keyed by `(lane, sequence)`; retry identical
    frames on timeout/429/ambiguous result; release only after ACK; typed degraded state on
    overflow. Test 5 s outage, ambiguous success, duplicate retry, 429, and overflow.

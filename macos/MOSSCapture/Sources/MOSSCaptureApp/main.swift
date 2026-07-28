@@ -22,10 +22,7 @@ final class ProductionCaptureRuntime {
     }
 
     static func makeDefault() throws -> ProductionCaptureRuntime {
-        let keyStore = try CaptureSecretStoreSelection.makeDefault(
-            environmentKey: "MOSS_CAPTURE_SECRET_STORE_PATH",
-            keychainDefault: KeychainCaptureSecretStore()
-        )
+        let keyStore = try CaptureSecretStoreSelection.makeDefault()
         try ensureControlSecret(in: keyStore)
         let controller = CaptureController(
             source: NativeDualCaptureSource(),

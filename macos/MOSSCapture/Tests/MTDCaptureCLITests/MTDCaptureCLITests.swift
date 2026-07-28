@@ -318,48 +318,76 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertFalse(entitlements.contains("com.apple.security.app-sandbox"))
     }
 
-    func testProductEntrypointsShareExplicitLabStoreResolverAndKeepKeychainDefault() throws {
-        let defaultStore = try CaptureSecretStoreSelection.makeDefault(environment: [:])
-        XCTAssertTrue(defaultStore is KeychainCaptureSecretStore)
-        let path = FileManager.default.temporaryDirectory
-            .appendingPathComponent("moss-cli-store-\(UUID().uuidString)")
+    func testProductEntrypointsResolveOneSharedPrivateFileStoreByDefault() throws {
+        let home = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-home-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let expectedPath = home
+            .appendingPathComponent("Library")
+            .appendingPathComponent("Application Support")
+            .appendingPathComponent("MOSSCapture")
             .appendingPathComponent("secrets.json")
             .path
-        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
-        let selectedStore = try CaptureSecretStoreSelection.makeDefault(
-            environment: [CaptureSecretStoreSelection.environmentKey: path]
-        )
-        XCTAssertTrue(selectedStore is FileCaptureSecretStore)
 
+        XCTAssertEqual(
+            CaptureSecretStoreSelection.defaultPath(homeDirectory: home.path),
+            expectedPath
+        )
+
+        // the app composition root and the CLI composition root, resolved independently
+        let appStore = try CaptureSecretStoreSelection.makeDefault(
+            environment: [:],
+            homeDirectory: home.path
+        )
+        let cliStore = try CaptureSecretStoreSelection.makeDefault(
+            environment: [:],
+            homeDirectory: home.path
+        )
+        XCTAssertEqual((appStore as? FileCaptureSecretStore)?.path, expectedPath)
+        XCTAssertEqual((cliStore as? FileCaptureSecretStore)?.path, expectedPath)
+        try appStore.saveCaptureBearerToken("capture-token")
+        try appStore.saveCaptureSessionID("session-shared")
+        XCTAssertEqual(try cliStore.loadCaptureBearerToken(), "capture-token")
+        XCTAssertEqual(try cliStore.loadCaptureSessionID(), "session-shared")
+        XCTAssertEqual(try cliStore.loadDeviceID(), try appStore.loadDeviceID())
+
+        // the environment override still wins; that is what the tracer and lab runs select
+        let overridePath = home
+            .appendingPathComponent("override")
+            .appendingPathComponent("secrets.json")
+            .path
+        let overridden = try CaptureSecretStoreSelection.makeDefault(
+            environment: [CaptureSecretStoreSelection.environmentKey: overridePath],
+            homeDirectory: home.path
+        )
+        XCTAssertEqual((overridden as? FileCaptureSecretStore)?.path, overridePath)
+        XCTAssertNil(try overridden.loadCaptureBearerToken())
+    }
+
+    func testNeitherProductEntrypointCanSelectTheDormantKeychainStore() throws {
         let package = packageRoot()
-        let appMain = try String(
-            contentsOf: package
-                .appendingPathComponent("Sources")
-                .appendingPathComponent("MOSSCaptureApp")
-                .appendingPathComponent("main.swift"),
-            encoding: .utf8
-        )
-        let cliMain = try String(
-            contentsOf: package
-                .appendingPathComponent("Sources")
-                .appendingPathComponent("MTDCaptureCLI")
-                .appendingPathComponent("main.swift"),
-            encoding: .utf8
-        )
-        let coreSecurity = try String(
-            contentsOf: package
-                .appendingPathComponent("Sources")
-                .appendingPathComponent("MOSSCaptureCore")
-                .appendingPathComponent("CaptureSecurity.swift"),
-            encoding: .utf8
-        )
+        func read(_ target: String, _ file: String) throws -> String {
+            try String(
+                contentsOf: package
+                    .appendingPathComponent("Sources")
+                    .appendingPathComponent(target)
+                    .appendingPathComponent(file),
+                encoding: .utf8
+            )
+        }
+        let appMain = try read("MOSSCaptureApp", "main.swift")
+        let cliMain = try read("MTDCaptureCLI", "main.swift")
+        let coreSecurity = try read("MOSSCaptureCore", "CaptureSecurity.swift")
 
-        XCTAssertTrue(appMain.contains("environmentKey: \"MOSS_CAPTURE_SECRET_STORE_PATH\""))
-        XCTAssertTrue(cliMain.contains("environmentKey: \"MOSS_CAPTURE_SECRET_STORE_PATH\""))
-        XCTAssertTrue(appMain.contains("keychainDefault: KeychainCaptureSecretStore()"))
-        XCTAssertTrue(cliMain.contains("keychainDefault: KeychainCaptureSecretStore()"))
+        for source in [appMain, cliMain] {
+            XCTAssertTrue(source.contains("CaptureSecretStoreSelection.makeDefault()"))
+            XCTAssertFalse(source.contains("KeychainCaptureSecretStore"))
+            XCTAssertFalse(source.contains("MOSS_CAPTURE_SECRET_STORE_PATH"))
+        }
         XCTAssertTrue(coreSecurity.contains("MOSS_CAPTURE_SECRET_STORE_PATH"))
-        XCTAssertTrue(coreSecurity.contains("keychainDefault()"))
+        XCTAssertFalse(coreSecurity.contains("com.alphasight.moss.capture.shared"))
+        XCTAssertFalse(coreSecurity.contains("kSecAttrAccessGroup"))
     }
 
     private func packageRoot() -> URL {

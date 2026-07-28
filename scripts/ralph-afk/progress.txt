@@ -325,3 +325,71 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   source assertions with behavioral permission/secrecy tests. Do not edit the historical
   control-plane discriminator to keep it green; B1 deliberately supersedes its
   `KeychainCaptureSecretStore()`-is-default expectation (checks 09 and 15).
+
+## Iteration 5 - production file secret store is the default (B1)
+- Target: Phase B candidate B1. Make `FileCaptureSecretStore` the default for both products at
+  `~/Library/Application Support/MOSSCapture/secrets.json` (0700 dir, 0600 file, atomic
+  replacement, one path shared by app and CLI) and strip the mismatched Keychain access group.
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureSecurity.swift`;
+  `macos/MOSSCapture/Sources/{MOSSCaptureApp,MTDCaptureCLI}/main.swift`;
+  `macos/MOSSCapture/Tests/{MOSSCaptureCoreTests/CaptureControllerTests.swift,
+  MTDCaptureCLITests/MTDCaptureCLITests.swift}`; `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: `CaptureSecretStoreSelection` gained `defaultPath(homeDirectory:)` and lost the
+  `keychainDefault:` autoclosure; `makeDefault` now always returns a `FileCaptureSecretStore`,
+  taking a non-empty `MOSS_CAPTURE_SECRET_STORE_PATH` as an override. Both composition roots call
+  `CaptureSecretStoreSelection.makeDefault()` with no arguments, so the env-key literal and the
+  path rule have exactly one owner and the two products cannot drift apart. `KeychainCaptureSecretStore`
+  keeps its `SecItem*` implementation but lost `accessGroup` entirely (a shared group needs a Team
+  ID a locally signed identity does not have) and is now documented as dormant. `FileCaptureSecretStore`
+  gained a `path` accessor and a `prepareDirectory()` that creates the directory 0700, tightens a
+  widened one via `chmod`, and rejects a non-directory or foreign-owned one. The write path is
+  now `open(O_WRONLY|O_CREAT|O_EXCL|O_CLOEXEC, 0600)` + `fchmod` + full write loop + `fsync` +
+  `rename(2)` onto the live path, replacing `Data.write(.atomic)`-then-`chmod`, which left a
+  window where the live file was not yet 0600. `validateFile` switched `stat` -> `lstat` and now
+  demands `S_IFREG`, so a symlink planted at the secrets path is rejected instead of followed.
+- Validation:
+  - `swift build --product mtd-capture` -> OK; `--product MOSSCaptureApp` -> OK
+  - `swift test --package-path macos/MOSSCapture` -> **98 passed, 0 failures** (was 95: +3 nodes,
+    -1 replaced source-assertion node)
+  - `swift test --filter 'SecretStore|ProductEntrypoints|DormantKeychain'` -> 5 passed (the B1
+    behavioral slice that replaces discriminator checks 09/15)
+  - `pytest tests/test_macos_uds_tracer.py -q -p no:cacheprovider` -> **3 passed in 7.09 s**
+  - `pytest tests -q -p no:cacheprovider` -> **457 passed, 2 skipped, 346 subtests** (unchanged)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `spikes/idea-044-real-uds-tracer/repro.py` -> **14/16**, the two deliberate misses being
+    09 `keychain_still_default=False lab_path_env=False` and 15 (same, CLI). Recorded, not
+    repaired: prd.md authorizes B1 to supersede the lab-only source expectation once the A4
+    checkpoint is green, and the control-plane scripts were not touched.
+  - `validate-phase-a-locality.sh` -> PASS; `git diff --check` -> clean; `leak-scan.sh` -> clean
+- Evidence:
+  - New nodes: `testDefaultSecretStoreKeepsItsDirectoryAndDocumentPrivate`,
+    `testSecretStoreSavePublishesAReplacementRatherThanRewritingTheLiveDocument`,
+    `testProductEntrypointsResolveOneSharedPrivateFileStoreByDefault`,
+    `testNeitherProductEntrypointCanSelectTheDormantKeychainStore`. Removed:
+    `testProductEntrypointsShareExplicitLabStoreResolverAndKeepKeychainDefault`.
+  - Mutation rehearsal 1 (atomicity): swapped the temp-file+`rename` publish for an in-place
+    `FileHandle.truncate(atOffset: 0)` rewrite -> **1 failed**, inode 196896002 unchanged across
+    two saves. Reverted -> green.
+  - Mutation rehearsal 2 (privacy): directory create/tighten/verify mode 0o700 -> 0o755 ->
+    **1 failed** twice inside the same node (493 != 448, before and after the widen-and-repair
+    step). Reverted -> green.
+  - Real-home side effect found and fixed mid-iteration: the first cut created the private
+    directory in `FileCaptureSecretStore.init`, and `tests/test_live_integration.py` runs the real
+    `mtd-capture` with no env override, so a full pytest run created
+    `~/Library/Application Support/MOSSCapture` on MacStudio. Directory creation moved to the
+    write path; the stray empty directory was removed and a re-run leaves the home untouched
+    (`ls -d ~/Library/Application\ Support/MOSSCapture` -> No such file or directory).
+- Learned: (1) resolving a secret store must be side-effect free, because the CLI builds one
+  before it parses arguments — `mtd-capture` with no arguments would otherwise mkdir in `$HOME`
+  just to print usage. (2) Tightening a widened *directory* and refusing a widened *file* is the
+  right asymmetry: a 0755 directory cannot expose a 0600 document, but a 0644 document may
+  already have been read, so repairing it would hide the exposure. (3) Deleting the
+  `keychainDefault:` parameter is what actually makes "app and CLI share one path" checkable —
+  the old design guaranteed it only by two matching string literals in two files, which is
+  exactly what discriminator checks 09/15 were reduced to asserting.
+- Blocker: none.
+- Next: B2 — retained-until-ACK outbox, 15 s per lane keyed by `(lane, sequence)`, releasing only
+  on ACK, retrying identical frames on timeout/429/ambiguous result, and surfacing a typed
+  degraded state on overflow. Defect 3 (`queue.drain()` + `publishPendingFrames` dropping the
+  current and all remaining frames on a throw) is the thing to kill;
+  `NativeAudioBuffers.swift:60-64` and `CaptureController.swift:242-247` are the sites.

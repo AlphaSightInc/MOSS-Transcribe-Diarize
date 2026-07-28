@@ -6,10 +6,7 @@ struct MTDCaptureCLI {
     static func main() {
         let secretStore: any CaptureSecretStoreAdapter
         do {
-            secretStore = try CaptureSecretStoreSelection.makeDefault(
-                environmentKey: "MOSS_CAPTURE_SECRET_STORE_PATH",
-                keychainDefault: KeychainCaptureSecretStore()
-            )
+            secretStore = try CaptureSecretStoreSelection.makeDefault()
         } catch {
             Foundation.exit(70)
         }
