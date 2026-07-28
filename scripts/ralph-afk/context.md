@@ -2548,10 +2548,14 @@ and 37 are folded in here; settle them together or the next gate run finds the f
 38. **J1 - the timestamp tolerance, answered once.** `live_identity.py:101-102` rejects
     `segment.end > duration` with no tolerance, so a hard-cap span - 2.5 s of continuous speech with
     no endpoint **by construction** - fails with `reason="timestamp_outside_span"`. Decide the
-    tolerance deliberately (the decoder's own timestamp granularity is the natural basis) and apply
-    the identical answer in `BoundedCausalIdentityPreparer.prepare` **and**
-    `LiveSession._canonical_validation_error` (`live_session.py:436-442`), which carries the same
-    strict bound. Fixing one alone relocates the failure.
+    tolerance deliberately and apply the identical answer in `BoundedCausalIdentityPreparer.prepare`
+    **and** `LiveSession._canonical_validation_error` (`live_session.py:436-442`), which carries the
+    same strict bound. Fixing one alone relocates the failure. **Read the boundary-sweep block
+    before choosing:** granularity is the natural *basis* but not a sufficient answer - the measured
+    overshoot reaches **two** ticks (2.52 in a 2.50 s span), so a one-tick tolerance still kills one
+    of the two known-failing spans. The sweep's recommendation is a clamp, with three reasons and a
+    6.1 %-per-span rate behind it, and a third copy of the same bound to fold in
+    (`live_adapters.py:387`).
 39. **J2 - a non-`prepared` preparation must not end the meeting.** `live_session.py:449` admits
     only `status == "prepared"`; `live_service_runtime.py:745-751` converts the resulting False into
     a non-retryable terminal failure. `abstain` is a *designed* outcome

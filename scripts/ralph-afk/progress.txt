@@ -4537,3 +4537,22 @@ python3 -m pytest tests/test_live_pipeline_seams.py -q   -> 13 passed (tree unch
 - E3's clicks stay deferred by the operator's decision, for the same reason as before: a canary
   against a service that dies at the first 2.5 s of continuous speech would spend the one input the
   loop cannot obtain, for nothing.
+
+### Addendum - the third amendment landed WHILE this iteration ran, and absorbed its commit
+prd.md gained its "Third authorized amendment" section at 09:03:07 and the supervisor committed the
+whole working tree at 09:03:59 as `d681e58 ralph: authorize the terminal-failure policy cycle
+(Phase J)`. That commit therefore carries **both** the authorization and this iteration's evidence
+(the boundary-sweep block, this entry, build-span-sweep.py came in with ba9ca5d). There is no
+separate `ralph: iteration 8` commit for the measurement - look in `d681e58`, not for a subject
+line. Nothing was lost and no tracked product source changed.
+Two consequences for whoever reads this next:
+1. **Blocker 4 is now authorized work** as Phase J (candidates 38-42), and J1's tolerance decision
+   is exactly what this iteration measured. J1's text suggests the decoder's timestamp granularity
+   as the basis; the sweep says granularity alone is not enough - the observed maximum is TWO ticks,
+   so a one-tick tolerance still loses one of the two known-failing spans. Candidate 38 now
+   cross-references the measurement.
+2. **The two known-failing spans are the free after-fix gate.** Rebuild the 20 s timeline with the
+   same arguments (byte-deterministic) and require `12208+10*8000` and `12208+32*8000` to publish.
+   That is a machine-only check: no Mac, no operator, ~25 s per span.
+Next iteration should take J1+J2 together (one tolerance answer, one ruling on non-`prepared`),
+red-first in tests/test_live_pipeline_seams.py, exactly as H1-H3 were done.
