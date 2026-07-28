@@ -1,8 +1,15 @@
 import Foundation
+import Security
 
 public protocol CaptureBearerTokenAdapter {
     func loadCaptureBearerToken() throws -> String?
 }
+
+public protocol CaptureCertificatePinAdapter {
+    func loadCaptureCertificatePin() throws -> String?
+}
+
+extension KeychainCaptureSecretStore: CaptureCertificatePinAdapter {}
 
 public protocol CaptureHTTPClient {
     @discardableResult
@@ -21,13 +28,19 @@ public struct CaptureHTTPResponse: Equatable, Sendable {
 
 public enum CaptureHTTPTransportError: Error, Equatable, Sendable {
     case missingCaptureBearer
+    case missingCertificatePin
     case nonSuccessStatus(Int)
 }
 
 public final class URLSessionCaptureHTTPClient: CaptureHTTPClient {
     private let session: URLSession
 
-    public init(session: URLSession = .shared) {
+    public init(certificatePinSHA256Hex: String) throws {
+        let delegate = try PinnedCertificateURLSessionDelegate(expectedSHA256Hex: certificatePinSHA256Hex)
+        session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    }
+
+    public init(session: URLSession) {
         self.session = session
     }
 
@@ -49,6 +62,61 @@ public final class URLSessionCaptureHTTPClient: CaptureHTTPClient {
     }
 }
 
+public protocol CaptureHTTPClientProvider {
+    func client(certificatePinSHA256Hex: String?) throws -> CaptureHTTPClient
+}
+
+public final class PinnedURLSessionCaptureHTTPClientProvider: CaptureHTTPClientProvider {
+    public init() {}
+
+    public func client(certificatePinSHA256Hex: String?) throws -> CaptureHTTPClient {
+        guard let certificatePinSHA256Hex, !certificatePinSHA256Hex.isEmpty else {
+            throw CaptureHTTPTransportError.missingCertificatePin
+        }
+        return try URLSessionCaptureHTTPClient(certificatePinSHA256Hex: certificatePinSHA256Hex)
+    }
+}
+
+public final class PinnedCertificateURLSessionDelegate: NSObject, URLSessionDelegate {
+    private let expectedSHA256Hex: String
+    private let validator: FullCertificatePinValidator
+
+    public init(
+        expectedSHA256Hex: String,
+        validator: FullCertificatePinValidator = FullCertificatePinValidator()
+    ) throws {
+        try validator.validate(expectedSHA256Hex: expectedSHA256Hex)
+        self.expectedSHA256Hex = expectedSHA256Hex
+        self.validator = validator
+    }
+
+    public func validate(serverTrust: SecTrust) throws {
+        guard let chain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
+              let certificate = chain.first else {
+            throw CaptureSecurityError.invalidPinnedHash
+        }
+        try validator.validate(certificate: certificate, expectedSHA256Hex: expectedSHA256Hex)
+    }
+
+    public func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+            return
+        }
+        do {
+            try validate(serverTrust: serverTrust)
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } catch {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
+}
+
 private final class URLSessionResultBox: @unchecked Sendable {
     private let lock = NSLock()
     private var result: Result<CaptureHTTPResponse, Error>?
@@ -67,16 +135,27 @@ private final class URLSessionResultBox: @unchecked Sendable {
 }
 
 public final class CaptureV2HTTPTransportAdapter: CaptureTransportAdapter {
-    private let client: CaptureHTTPClient
+    private let client: (CaptureConfiguration) throws -> CaptureHTTPClient
     private let bearerToken: CaptureBearerTokenAdapter
 
     public init(client: CaptureHTTPClient, bearerToken: CaptureBearerTokenAdapter) {
-        self.client = client
+        self.client = { _ in client }
+        self.bearerToken = bearerToken
+    }
+
+    public init(
+        clientProvider: CaptureHTTPClientProvider = PinnedURLSessionCaptureHTTPClientProvider(),
+        certificatePin: CaptureCertificatePinAdapter,
+        bearerToken: CaptureBearerTokenAdapter
+    ) {
+        self.client = { _ in
+            try clientProvider.client(certificatePinSHA256Hex: certificatePin.loadCaptureCertificatePin())
+        }
         self.bearerToken = bearerToken
     }
 
     public func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
-        let response = try client.send(
+        let response = try client(configuration).send(
             try authorizedJSONRequest(
                 url: liveURL(
                     base: configuration.serverURL,
@@ -92,7 +171,7 @@ public final class CaptureV2HTTPTransportAdapter: CaptureTransportAdapter {
 }
 
 public final class CaptureHTTPHealthAdapter: CaptureHealthAdapter {
-    private let client: CaptureHTTPClient
+    private let client: (CaptureConfiguration) throws -> CaptureHTTPClient
     private let bearerToken: CaptureBearerTokenAdapter
     private let instanceID: String
     private let helperVersion: String
@@ -103,7 +182,22 @@ public final class CaptureHTTPHealthAdapter: CaptureHealthAdapter {
         instanceID: String,
         helperVersion: String
     ) {
-        self.client = client
+        self.client = { _ in client }
+        self.bearerToken = bearerToken
+        self.instanceID = instanceID
+        self.helperVersion = helperVersion
+    }
+
+    public init(
+        clientProvider: CaptureHTTPClientProvider = PinnedURLSessionCaptureHTTPClientProvider(),
+        certificatePin: CaptureCertificatePinAdapter,
+        bearerToken: CaptureBearerTokenAdapter,
+        instanceID: String,
+        helperVersion: String
+    ) {
+        self.client = { _ in
+            try clientProvider.client(certificatePinSHA256Hex: certificatePin.loadCaptureCertificatePin())
+        }
         self.bearerToken = bearerToken
         self.instanceID = instanceID
         self.helperVersion = helperVersion
@@ -114,7 +208,7 @@ public final class CaptureHTTPHealthAdapter: CaptureHealthAdapter {
         configuration: CaptureConfiguration,
         sentMonotonicNS: UInt64
     ) throws {
-        let response = try client.send(
+        let response = try client(configuration).send(
             try authorizedJSONRequest(
                 url: liveURL(
                     base: configuration.serverURL,

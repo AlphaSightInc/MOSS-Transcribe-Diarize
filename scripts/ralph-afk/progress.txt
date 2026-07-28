@@ -92,3 +92,44 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
 - Next: validate revision-6 fences, complete clean dry-runs/full baselines, then launch A1
 
 [loop 20260728-002458-97091] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+## Iteration 1 - graft A-034 pairing/pinning/persistence/tracer
+- Target: Phase A candidate A1 (graft `acl/IDEA-044--A-034@67a27b8`, do not rewrite)
+- Files: merge commit bringing `CONTEXT.md`, `docs/adr/0001-live-v2-json-http-contract.md`,
+  `macos/MOSSCapture/Sources/{MOSSCaptureApp/main.swift,MTDCaptureCLI/main.swift,
+  MOSSCaptureCore/{CaptureCommandLine,CaptureHTTPTransport,CaptureSecurity}.swift}`,
+  `macos/MOSSCapture/Tests/{MOSSCaptureCoreTests/CaptureControllerTests.swift,
+  MTDCaptureCLITests/MTDCaptureCLITests.swift}`, new `tests/test_macos_uds_tracer.py`;
+  plus `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: `git merge --no-ff acl/IDEA-044--A-034` — A-034 branches from the same `af3ac36` and
+  touches paths disjoint from the Ralph scripts, so the graft is conflict-free and preserves the
+  original ten commits verbatim (no cherry-pick rewrite, no reimplementation)
+- Validation:
+  - `swift build --product mtd-capture` -> OK; `--product MOSSCaptureApp` -> OK
+  - `swift test --package-path macos/MOSSCapture` -> **81 passed, 0 failures** (was 67)
+  - `python3 -m pytest -q --ignore=tests/test_macos_uds_tracer.py` -> **454 passed, 2 skipped,
+    346 subtests** — identical to the pre-graft baseline, so no regression
+  - `python3 -m pytest tests/test_macos_uds_tracer.py -q` -> **1 passed, 1 failed**:
+    `TimeoutExpired` on `mtd-capture start --label tracer` after 8 s. Everything the tracer
+    asserts before that point passes on the real built products: private-address TLS server,
+    real same-user UDS, two-step `/pairings` -> `/sessions` pairing, full-certificate pin
+    persisted and re-pinned, device-ID stability across an app restart, and zero secret leakage
+    into CLI output
+- Evidence: `sample` of the live `MOSSCaptureApp` product during the hang gives the exact stack —
+  `ControlCommandDispatcher.dispatch` -> `CaptureController.start` -> `NativeDualCaptureSource`
+  -> `MicrophoneCapture.start` (`MicrophoneCapture.swift:65`) ->
+  `AVAudioEngineMicrophoneDriver.currentInputDeviceID` (`:239`) -> `-[AVAudioEngine inputNode]`
+  -> `AVAudioEngineImpl::UpdateInputNode` -> `_dispatch_sync_f_slow` -> `kevent_id`, blocked
+  indefinitely. Reproduced outside pytest with a hand-built store/socket, then cleaned up.
+- Learned: (1) the graft is a clean no-op for every existing test and adds 14 Swift tests plus the
+  real-process tracer. (2) New defect 9, recorded in context.md: `MicrophoneCapture.start` throws
+  only on `.denied`; `.undetermined` falls through to `engine.inputNode`, which blocks forever in
+  a non-GUI process because nothing calls `AVCaptureDevice.requestAccess` and no TCC prompt can be
+  answered. SwiftPM ad-hoc signing gives every rebuild a new cdhash, so `.undetermined` is the
+  *normal* state on this host, not an edge case — and because the app's UDS loop is single
+  threaded, the hang also makes `status` and `stop` unanswerable. This is precisely the gap A3
+  exists to close, and it is now the only failing test on the branch.
+- Blocker: none. The A4 checkpoint cannot be attempted until defect 9 is fixed (zero Darwin skips
+  is not the issue; a hang is).
+- Next: A3 — explicit per-lane permission coordinator (request access, non-blocking pending state,
+  typed denied-lane failure), then A2 app-owned handoff, then the A4 eleven-command checkpoint.

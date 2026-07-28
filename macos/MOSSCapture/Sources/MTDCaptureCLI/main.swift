@@ -4,9 +4,18 @@ import MOSSCaptureCore
 @main
 struct MTDCaptureCLI {
     static func main() {
+        let secretStore: any CaptureSecretStoreAdapter
+        do {
+            secretStore = try CaptureSecretStoreSelection.makeDefault(
+                environmentKey: "MOSS_CAPTURE_SECRET_STORE_PATH",
+                keychainDefault: KeychainCaptureSecretStore()
+            )
+        } catch {
+            Foundation.exit(70)
+        }
         let sendRequestClient = UnixDomainControlClient(
             socketPath: ControlSocketDefaults.socketPath(),
-            secrets: KeychainCaptureSecretStore()
+            secrets: secretStore
         )
         let pairingPayloadInput = StandardInput()
         let commandLine = CaptureCommandLine(
@@ -16,6 +25,7 @@ struct MTDCaptureCLI {
             input: pairingPayloadInput,
             standardOutput: StandardOutput(fileHandle: .standardOutput),
             standardError: StandardOutput(fileHandle: .standardError),
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: secretStore),
             skipLaunch: ProcessInfo.processInfo.environment["MOSS_CAPTURE_SKIP_LAUNCH"] == "1"
         )
         let exitCode = commandLine.run(arguments: Array(CommandLine.arguments.dropFirst()))

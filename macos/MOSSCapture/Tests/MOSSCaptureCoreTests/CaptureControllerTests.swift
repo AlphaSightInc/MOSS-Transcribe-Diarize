@@ -1,5 +1,6 @@
 import CryptoKit
 import CoreAudio
+import Darwin
 import Foundation
 import Security
 @testable import MOSSCaptureCore
@@ -1389,6 +1390,393 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(client.requests.isEmpty)
     }
 
+    func testHTTPTransportAndHealthBuildPinnedClientFromStoredPin() throws {
+        let provider = RecordingCaptureHTTPClientProvider()
+        let transport = CaptureV2HTTPTransportAdapter(
+            clientProvider: provider,
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token")
+        )
+        let health = CaptureHTTPHealthAdapter(
+            clientProvider: provider,
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token"),
+            instanceID: "instance-a",
+            helperVersion: "0.1.0"
+        )
+        let pin = String(repeating: "a", count: 64)
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://moss.example")!
+        )
+
+        try transport.publish(
+            frame: CaptureFrame(
+                lane: .system,
+                sequence: 0,
+                sampleRate: 16_000,
+                sampleCount: 1,
+                captureTimestampNS: 0,
+                deviceEpoch: 0,
+                silent: true,
+                discontinuity: false,
+                pcm16: Data([0, 0])
+            ),
+            configuration: configuration
+        )
+        try health.emit(
+            status: CaptureStatus(
+                running: true,
+                sessionID: "session-a",
+                lanes: [],
+                publishedFrameCount: 0,
+                lastHealthSequence: 0
+            ),
+            configuration: configuration,
+            sentMonotonicNS: 1
+        )
+
+        XCTAssertEqual(provider.requestedPins, [pin, pin])
+        XCTAssertEqual(provider.client.requests.map(\.url?.path), [
+            "/api/live/sessions/session-a/frames",
+            "/api/live/sessions/session-a/heartbeat",
+        ])
+    }
+
+    func testPinnedHTTPProviderRejectsMissingCertificatePinBeforeRequest() throws {
+        let provider = RecordingCaptureHTTPClientProvider()
+        let transport = CaptureV2HTTPTransportAdapter(
+            clientProvider: provider,
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: nil),
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token")
+        )
+
+        XCTAssertThrowsError(
+            try transport.publish(
+                frame: CaptureFrame(
+                    lane: .system,
+                    sequence: 0,
+                    sampleRate: 16_000,
+                    sampleCount: 1,
+                    captureTimestampNS: 0,
+                    deviceEpoch: 0,
+                    silent: true,
+                    discontinuity: false,
+                    pcm16: Data([0, 0])
+                ),
+                configuration: CaptureConfiguration(
+                    sessionID: "session-a",
+                    serverURL: URL(string: "https://moss.example")!
+                )
+            )
+        ) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .missingCertificatePin)
+        }
+        XCTAssertTrue(provider.client.requests.isEmpty)
+    }
+
+    func testPairingExchangeUsesServerPairingThenAuthenticatedSessionContract() throws {
+        let client = QueuedCaptureHTTPClient(responses: [
+            CaptureHTTPResponse(
+                statusCode: 200,
+                body: try JSONEncoder().encode(TestPairingResponseBody(
+                    deviceID: "device-a",
+                    deviceToken: "device-token"
+                ))
+            ),
+            CaptureHTTPResponse(
+                statusCode: 200,
+                body: try JSONEncoder().encode(TestSessionResponseBody(
+                    id: "session-a",
+                    ownerDeviceID: "device-a",
+                    viewToken: "view-token"
+                ))
+            ),
+        ])
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            client: client,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+
+        let result = try exchange.pair(
+            serverURL: URL(string: "https://moss.example")!,
+            pairingPayload: Data("mtd1.secret.\(String(repeating: "a", count: 64))".utf8)
+        )
+
+        XCTAssertEqual(result.deviceID, "device-a")
+        XCTAssertEqual(result.sessionID, "session-a")
+        XCTAssertEqual(result.viewToken, "view-token")
+        XCTAssertEqual(result.captureBearerToken, "device-token")
+        XCTAssertEqual(result.certificatePinSHA256Hex, String(repeating: "a", count: 64))
+        XCTAssertEqual(client.requests.count, 2)
+        let pairingRequest = try XCTUnwrap(client.requests.first)
+        let sessionRequest = try XCTUnwrap(client.requests.dropFirst().first)
+        let pairingBody = try jsonBody(pairingRequest)
+        XCTAssertEqual(pairingRequest.httpMethod, "POST")
+        XCTAssertEqual(pairingRequest.url?.absoluteString, "https://moss.example/api/live/pairings")
+        XCTAssertEqual(pairingRequest.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        XCTAssertEqual(pairingRequest.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertNil(pairingRequest.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertEqual(pairingBody["device_id"] as? String, "device-a")
+        XCTAssertEqual(
+            pairingBody["pairing_payload"] as? String,
+            "mtd1.secret.\(String(repeating: "a", count: 64))"
+        )
+        XCTAssertEqual(sessionRequest.httpMethod, "POST")
+        XCTAssertEqual(sessionRequest.url?.absoluteString, "https://moss.example/api/live/sessions")
+        XCTAssertEqual(sessionRequest.value(forHTTPHeaderField: "Authorization"), "Bearer device-token")
+        XCTAssertEqual(sessionRequest.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertNil(sessionRequest.httpBody)
+        XCTAssertFalse(
+            String(decoding: pairingRequest.httpBody ?? Data(), as: UTF8.self).contains("device-token")
+        )
+    }
+
+    func testPairingExchangeRejectsMalformedPayloadBeforeRequest() throws {
+        let client = QueuedCaptureHTTPClient(responses: [])
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            client: client,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+
+        let invalidCases: [(String, CaptureSecurityError)] = [
+            ("", .missingPairingPayload),
+            ("secret.\(String(repeating: "a", count: 64))", .invalidPairingPayload),
+            ("mtd1.secret", .invalidPairingPayload),
+            ("mtd1..\(String(repeating: "a", count: 64))", .invalidPairingPayload),
+            ("mtd1.secret.\(String(repeating: "a", count: 64)).extra", .invalidPairingPayload),
+            ("mtd1.secret.\(String(repeating: "a", count: 63))", .invalidPinnedHash),
+            ("mtd1.secret.\(String(repeating: "g", count: 64))", .invalidPinnedHash),
+        ]
+
+        for invalidCase in invalidCases {
+            XCTAssertThrowsError(
+                try exchange.pair(
+                    serverURL: URL(string: "https://moss.example")!,
+                    pairingPayload: Data(invalidCase.0.utf8)
+                ),
+                invalidCase.0
+            ) { error in
+                XCTAssertEqual(error as? CaptureSecurityError, invalidCase.1)
+            }
+        }
+        XCTAssertTrue(client.requests.isEmpty)
+    }
+
+    func testPairingExchangeStopsBeforeSessionWhenPairingFails() throws {
+        let client = QueuedCaptureHTTPClient(responses: [
+            CaptureHTTPResponse(statusCode: 403, body: Data())
+        ])
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            client: client,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+
+        XCTAssertThrowsError(
+            try exchange.pair(
+                serverURL: URL(string: "https://moss.example")!,
+                pairingPayload: Data("mtd1.secret.\(String(repeating: "a", count: 64))".utf8)
+            )
+        ) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .nonSuccessStatus(403))
+        }
+        XCTAssertEqual(client.requests.count, 1)
+        XCTAssertEqual(client.requests.first?.url?.absoluteString, "https://moss.example/api/live/pairings")
+    }
+
+    func testPairingExchangeBuildsHTTPSClientFromPayloadPin() throws {
+        let client = QueuedCaptureHTTPClient(responses: [
+            CaptureHTTPResponse(
+                statusCode: 200,
+                body: try JSONEncoder().encode(TestPairingResponseBody(
+                    deviceID: "device-a",
+                    deviceToken: "device-token"
+                ))
+            ),
+            CaptureHTTPResponse(
+                statusCode: 200,
+                body: try JSONEncoder().encode(TestSessionResponseBody(
+                    id: "session-a",
+                    ownerDeviceID: "device-a",
+                    viewToken: "view-token"
+                ))
+            ),
+        ])
+        let provider = RecordingCaptureHTTPClientProvider(client: client)
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            clientProvider: provider,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+        let pin = String(repeating: "B", count: 64)
+
+        let result = try exchange.pair(
+            serverURL: URL(string: "https://moss.example")!,
+            pairingPayload: Data("mtd1.secret.\(pin)".utf8)
+        )
+
+        XCTAssertEqual(provider.requestedPins, [pin.lowercased()])
+        XCTAssertEqual(result.certificatePinSHA256Hex, pin.lowercased())
+        XCTAssertEqual(client.requests.count, 2)
+    }
+
+    func testDispatcherStoresPairingPinForSubsequentHTTPSClients() throws {
+        let source = FakeCaptureSourceAdapter(frames: [
+            CaptureFrame(
+                lane: .system,
+                sequence: 0,
+                sampleRate: 16_000,
+                sampleCount: 1,
+                captureTimestampNS: 0,
+                deviceEpoch: 0,
+                silent: true,
+                discontinuity: false,
+                pcm16: Data([0, 0])
+            )
+        ])
+        let transport = RecordingCaptureTransportAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [1]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        let pin = String(repeating: "c", count: 64)
+        let pinStore = RecordingCaptureCertificatePinStore()
+        let dispatcher = ControlCommandDispatcher(
+            controller: controller,
+            pairingExchange: StaticPairingExchange(
+                result: CapturePairingResult(
+                    sessionID: "session-a",
+                    captureBearerToken: "capture-token",
+                    certificatePinSHA256Hex: pin
+                )
+            ),
+            certificatePinStore: pinStore
+        )
+
+        _ = try dispatcher.dispatch(
+            ControlChannelRequest(
+                command: "pair",
+                serverURL: URL(string: "https://moss.example")!,
+                pairingPayload: Data("mtd1.secret.\(pin)".utf8)
+            )
+        )
+
+        XCTAssertEqual(pinStore.savedPins, [pin])
+        XCTAssertTrue(transport.configurations.isEmpty)
+    }
+
+    func testFileSecretStorePersistsRestartSafeAuthorityWithPrivateMode() throws {
+        let path = temporarySecretStorePath()
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let store = try FileCaptureSecretStore(path: path)
+        let pin = String(repeating: "d", count: 64)
+        let serverURL = URL(string: "https://moss.example")!
+
+        try store.saveControlSecret("control-secret")
+        try store.saveCaptureBearerToken("capture-token")
+        try store.saveCaptureCertificatePin(pin)
+        try store.saveCaptureServerURL(serverURL)
+        try store.saveCaptureSessionID("session-a")
+        try store.saveCaptureViewToken("view-token")
+        let deviceID = try store.loadDeviceID()
+
+        let reloaded = try FileCaptureSecretStore(path: path)
+        XCTAssertEqual(try reloaded.loadControlSecret(), "control-secret")
+        XCTAssertEqual(try reloaded.loadCaptureBearerToken(), "capture-token")
+        XCTAssertEqual(try reloaded.loadCaptureCertificatePin(), pin)
+        XCTAssertEqual(try reloaded.loadCaptureServerURL(), serverURL)
+        XCTAssertEqual(try reloaded.loadCaptureSessionID(), "session-a")
+        XCTAssertEqual(try reloaded.loadCaptureViewToken(), "view-token")
+        XCTAssertEqual(try reloaded.loadDeviceID(), deviceID)
+        XCTAssertEqual(try fileMode(at: path), 0o600)
+    }
+
+    func testDispatcherPersistsPairingAuthorityAndReloadsStartConfiguration() throws {
+        let path = temporarySecretStorePath()
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let store = try FileCaptureSecretStore(path: path)
+        try store.saveControlSecret("control-secret")
+        let serverURL = URL(string: "https://moss.example")!
+        let pin = String(repeating: "e", count: 64)
+        let firstController = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: RecordingCaptureTransportAdapter(),
+            keyStore: store,
+            clock: FakeCaptureClockAdapter(ticks: [1]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        let firstDispatcher = ControlCommandDispatcher(
+            controller: firstController,
+            pairingExchange: StaticPairingExchange(
+                result: CapturePairingResult(
+                    sessionID: "session-persisted",
+                    viewToken: "view-token",
+                    captureBearerToken: "capture-token",
+                    certificatePinSHA256Hex: pin
+                )
+            ),
+            captureTokenStore: store,
+            certificatePinStore: store,
+            sessionStore: store
+        )
+
+        let pairResponse = try firstDispatcher.dispatch(ControlChannelRequest(
+            command: "pair",
+            serverURL: serverURL,
+            pairingPayload: Data("mtd1.secret.\(pin)".utf8)
+        ))
+
+        let encodedResponse = String(decoding: try JSONEncoder().encode(pairResponse), as: UTF8.self)
+        XCTAssertEqual(pairResponse.sessionID, "session-persisted")
+        XCTAssertEqual(pairResponse.portalURL, serverURL.appendingPathComponent("live"))
+        XCTAssertNil(pairResponse.portalURL?.query)
+        XCTAssertNil(pairResponse.portalURL?.fragment)
+        XCTAssertFalse(encodedResponse.contains("view-token"))
+        XCTAssertFalse(encodedResponse.contains("capture-token"))
+        XCTAssertFalse(encodedResponse.contains("?"))
+        XCTAssertFalse(encodedResponse.contains("#"))
+        XCTAssertEqual(try store.loadCaptureServerURL(), serverURL)
+        XCTAssertEqual(try store.loadCaptureSessionID(), "session-persisted")
+        XCTAssertEqual(try store.loadCaptureViewToken(), "view-token")
+
+        let transport = RecordingCaptureTransportAdapter()
+        let secondController = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: [
+                CaptureFrame(
+                    lane: .system,
+                    sequence: 0,
+                    sampleRate: 16_000,
+                    sampleCount: 1,
+                    captureTimestampNS: 0,
+                    deviceEpoch: 0,
+                    silent: true,
+                    discontinuity: false,
+                    pcm16: Data([0, 0])
+                )
+            ]),
+            transport: transport,
+            keyStore: store,
+            clock: FakeCaptureClockAdapter(ticks: [2]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        let secondDispatcher = ControlCommandDispatcher(
+            controller: secondController,
+            pairingExchange: StaticPairingExchange(result: CapturePairingResult(sessionID: "unused")),
+            sessionStore: store
+        )
+
+        _ = try secondDispatcher.dispatch(ControlChannelRequest(command: "start", label: "restart"))
+
+        XCTAssertEqual(transport.configurations.map(\.sessionID), ["session-persisted"])
+        XCTAssertEqual(transport.configurations.map(\.serverURL), [serverURL])
+        XCTAssertEqual(transport.configurations.map(\.label), ["restart"])
+    }
+
     func testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory() throws {
         let source = try String(
             contentsOf: packageRoot()
@@ -1444,6 +1832,32 @@ final class CaptureControllerTests: XCTestCase {
             ) { error in
                 XCTAssertEqual(error as? CaptureSecurityError, .invalidPinnedHash)
             }
+        }
+    }
+
+    func testPinnedURLSessionDelegateRequiresPresentedCertificateHash() throws {
+        let certificate = try testCertificate()
+        let certificateData = SecCertificateCopyData(certificate) as Data
+        let expectedHash = SHA256.hash(data: certificateData)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        let trust = try testTrust(certificate: certificate)
+        let delegate = try PinnedCertificateURLSessionDelegate(expectedSHA256Hex: expectedHash)
+        let replacementLastByte = expectedHash.hasSuffix("00") ? "ff" : "00"
+        let mismatchedHash = String(expectedHash.dropLast(2)) + replacementLastByte
+
+        XCTAssertNoThrow(try delegate.validate(serverTrust: trust))
+        XCTAssertThrowsError(
+            try PinnedCertificateURLSessionDelegate(
+                expectedSHA256Hex: mismatchedHash
+            ).validate(serverTrust: trust)
+        ) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .pinMismatch)
+        }
+        XCTAssertThrowsError(
+            try PinnedCertificateURLSessionDelegate(expectedSHA256Hex: String(repeating: "0", count: 63))
+        ) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .invalidPinnedHash)
         }
     }
 
@@ -1612,6 +2026,50 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(mutationCount, 0)
     }
 
+    func testControlServerSanitizesUnknownErrorInActualResponseArtifact() throws {
+        let socketPath = temporarySocketPath()
+        let artifact = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-control-response-\(UUID().uuidString).bin")
+        let secret = "raw-error-secret-\(UUID().uuidString)"
+        defer {
+            try? FileManager.default.removeItem(at: artifact)
+        }
+        let serverFinished = expectation(description: "server sanitized one error")
+        let serverError = TestErrorBox()
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(
+                secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+            )
+        ) { _ in
+            throw SecretBearingControlError(secret: secret)
+        }
+
+        DispatchQueue.global().async {
+            do {
+                try server.serveOnce()
+            } catch {
+                serverError.store(error)
+            }
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let responseBody = try sendRawControlPayloadBody(
+            try rawControlFrame(command: "status"),
+            socketPath: socketPath
+        )
+        try responseBody.write(to: artifact, options: .atomic)
+        let response = try JSONDecoder().decode(ControlChannelResponse.self, from: responseBody)
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertNil(serverError.load())
+        XCTAssertFalse(response.ok)
+        XCTAssertEqual(response.error, "control_failed")
+        XCTAssertNil(responseBody.range(of: Data(secret.utf8)))
+        XCTAssertEqual(try Data(contentsOf: artifact), responseBody)
+    }
+
     func testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation() throws {
         struct BadFrameCase {
             var name: String
@@ -1743,8 +2201,24 @@ final class CaptureControllerTests: XCTestCase {
 
         XCTAssertTrue(response.ok)
         XCTAssertEqual(response.sessionID, "session-from-pairing")
+        XCTAssertEqual(response.portalURL, serverURL.appendingPathComponent("live"))
         XCTAssertEqual(exchange.serverURL, serverURL)
         XCTAssertEqual(exchange.pairingPayload, payload)
+    }
+
+    func testProductionStartDefersPermissionStateToIndependentNativeLanes() throws {
+        let appMain = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureApp")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(appMain.contains("handler: dispatcher.dispatch"))
+        XCTAssertFalse(appMain.contains("CGPreflightScreenCaptureAccess"))
+        XCTAssertFalse(appMain.contains("CoreGraphics"))
+        XCTAssertFalse(appMain.contains("authorizationStatus(for: .audio)"))
     }
 
     func testPromotedSwiftTestIdentifiersRemainCollected() throws {
@@ -1941,6 +2415,17 @@ final class CaptureControllerTests: XCTestCase {
         return try XCTUnwrap(SecCertificateCreateWithData(nil, der as CFData))
     }
 
+    private func testTrust(certificate: SecCertificate) throws -> SecTrust {
+        var trust: SecTrust?
+        let status = SecTrustCreateWithCertificates(
+            certificate,
+            SecPolicyCreateBasicX509(),
+            &trust
+        )
+        XCTAssertEqual(status, errSecSuccess)
+        return try XCTUnwrap(trust)
+    }
+
     private func packageRoot() -> URL {
         var url = URL(fileURLWithPath: #filePath)
         for _ in 0..<3 {
@@ -1985,6 +2470,21 @@ final class CaptureControllerTests: XCTestCase {
             .path
     }
 
+    private func temporarySecretStorePath() -> String {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-capture-store-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+    }
+
+    private func fileMode(at path: String) throws -> UInt16 {
+        var info = stat()
+        guard stat(path, &info) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        return UInt16(info.st_mode & 0o777)
+    }
+
     private func waitForSocket(at path: String) throws {
         let deadline = Date(timeIntervalSinceNow: 2)
         while Date() < deadline {
@@ -2027,6 +2527,19 @@ final class CaptureControllerTests: XCTestCase {
         socketPath: String,
         halfCloseWrite: Bool = false
     ) throws -> ControlChannelResponse {
+        let body = try sendRawControlPayloadBody(
+            payload,
+            socketPath: socketPath,
+            halfCloseWrite: halfCloseWrite
+        )
+        return try JSONDecoder().decode(ControlChannelResponse.self, from: body)
+    }
+
+    private func sendRawControlPayloadBody(
+        _ payload: Data,
+        socketPath: String,
+        halfCloseWrite: Bool = false
+    ) throws -> Data {
         let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
         XCTAssertGreaterThanOrEqual(fileDescriptor, 0)
         defer { close(fileDescriptor) }
@@ -2036,8 +2549,7 @@ final class CaptureControllerTests: XCTestCase {
         if halfCloseWrite {
             shutdown(fileDescriptor, SHUT_WR)
         }
-        let body = try readRawFrame(from: fileDescriptor)
-        return try JSONDecoder().decode(ControlChannelResponse.self, from: body)
+        return try readRawFrame(from: fileDescriptor)
     }
 
     private func connectRawSocket(_ fileDescriptor: Int32, socketPath: String) throws {
@@ -2369,6 +2881,99 @@ private final class RecordingCaptureHTTPClient: CaptureHTTPClient {
     }
 }
 
+private final class RecordingCaptureHTTPClientProvider: CaptureHTTPClientProvider {
+    let client: RecordingCaptureHTTPClient
+    private let providedClient: CaptureHTTPClient
+    private(set) var requestedPins: [String?] = []
+
+    init() {
+        let client = RecordingCaptureHTTPClient()
+        self.client = client
+        providedClient = client
+    }
+
+    init(client: CaptureHTTPClient) {
+        self.client = RecordingCaptureHTTPClient()
+        providedClient = client
+    }
+
+    func client(certificatePinSHA256Hex: String?) throws -> CaptureHTTPClient {
+        requestedPins.append(certificatePinSHA256Hex)
+        guard let certificatePinSHA256Hex, !certificatePinSHA256Hex.isEmpty else {
+            throw CaptureHTTPTransportError.missingCertificatePin
+        }
+        return providedClient
+    }
+}
+
+private final class QueuedCaptureHTTPClient: CaptureHTTPClient {
+    private(set) var requests: [URLRequest] = []
+    private var responses: [CaptureHTTPResponse]
+
+    init(responses: [CaptureHTTPResponse]) {
+        self.responses = responses
+    }
+
+    func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
+        requests.append(request)
+        return responses.removeFirst()
+    }
+}
+
+private final class RecordingCaptureTransportAdapter: CaptureTransportAdapter {
+    private(set) var configurations: [CaptureConfiguration] = []
+
+    func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
+        configurations.append(configuration)
+    }
+}
+
+private struct StaticCaptureCertificatePinAdapter: CaptureCertificatePinAdapter {
+    var pin: String?
+
+    func loadCaptureCertificatePin() throws -> String? {
+        pin
+    }
+}
+
+private final class RecordingCaptureCertificatePinStore: CaptureCertificatePinStoreAdapter {
+    private(set) var savedPins: [String] = []
+
+    func saveCaptureCertificatePin(_ pin: String) throws {
+        savedPins.append(pin)
+    }
+}
+
+private struct StaticCaptureDeviceIdentityAdapter: CaptureDeviceIdentityAdapter {
+    var deviceID: String
+
+    func loadDeviceID() throws -> String {
+        deviceID
+    }
+}
+
+private struct TestPairingResponseBody: Encodable {
+    var deviceID: String
+    var deviceToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case deviceID = "device_id"
+        case deviceToken = "device_token"
+    }
+}
+
+private struct TestSessionResponseBody: Encodable {
+    var id: String
+    var ownerDeviceID: String
+    var viewToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case ownerDeviceID = "owner_device_id"
+        case viewToken = "view_token"
+    }
+}
+
 private final class FailOnceScheduledHealthAdapter: CaptureHealthAdapter {
     private(set) var attemptCount = 0
 
@@ -2410,6 +3015,14 @@ private final class RecordingPairingExchange: CapturePairingExchangeAdapter {
     }
 }
 
+private struct StaticPairingExchange: CapturePairingExchangeAdapter {
+    var result: CapturePairingResult
+
+    func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
+        result
+    }
+}
+
 private final class TestErrorBox: @unchecked Sendable {
     private let lock = NSLock()
     private var error: Error?
@@ -2424,6 +3037,14 @@ private final class TestErrorBox: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return error
+    }
+}
+
+private struct SecretBearingControlError: Error, CustomStringConvertible {
+    let secret: String
+
+    var description: String {
+        secret
     }
 }
 

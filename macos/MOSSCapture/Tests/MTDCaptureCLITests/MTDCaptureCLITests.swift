@@ -92,7 +92,12 @@ final class MTDCaptureCLITests: XCTestCase {
             )
         ) { request in
             receivedRequest.store(request)
-            return ControlChannelResponse(ok: true, running: false, sessionID: "session-from-app")
+            return ControlChannelResponse(
+                ok: true,
+                running: false,
+                sessionID: "session-from-app",
+                portalURL: serverURL.appendingPathComponent("live")
+            )
         }
         DispatchQueue.global().async {
             try? server.serveOnce()
@@ -129,7 +134,12 @@ final class MTDCaptureCLITests: XCTestCase {
                 ControlChannelResponse.self,
                 from: standardOutput.data.dropTrailingNewline()
             ),
-            ControlChannelResponse(ok: true, running: false, sessionID: "session-from-app")
+            ControlChannelResponse(
+                ok: true,
+                running: false,
+                sessionID: "session-from-app",
+                portalURL: serverURL.appendingPathComponent("live")
+            )
         )
         XCTAssertTrue(standardError.data.isEmpty)
         let combinedOutput = standardOutput.data + standardError.data
@@ -138,6 +148,7 @@ final class MTDCaptureCLITests: XCTestCase {
             "control-secret",
             "capture-bearer",
             "certificate-pin",
+            "view-token",
         ] {
             XCTAssertFalse(String(decoding: combinedOutput, as: UTF8.self).contains(secret))
         }
@@ -167,6 +178,70 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(standardError.data.isEmpty)
     }
 
+    func testCLIExplicitHandoffCopiesViewAuthorityWithoutOutputLeak() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-cli-handoff-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+        defer {
+            try? FileManager.default.removeItem(
+                at: URL(fileURLWithPath: path).deletingLastPathComponent()
+            )
+        }
+        let store = try FileCaptureSecretStore(path: path)
+        let serverURL = URL(string: "https://moss.example")!
+        try store.saveCaptureServerURL(serverURL)
+        try store.saveCaptureSessionID("session-handoff")
+        try store.saveCaptureViewToken("view-token-secret")
+        var copiedToken: String?
+        let handoff = PasteboardCapturePortalHandoff(
+            sessionStore: store,
+            copyViewToken: {
+                copiedToken = $0
+                return true
+            }
+        )
+        let client = RecordingControlChannelClient(
+            response: ControlChannelResponse(ok: true, running: false)
+        )
+        let standardOutput = RecordingCLIOutput()
+        let standardError = RecordingCLIOutput()
+        let commandLine = CaptureCommandLine(
+            launcher: RecordingCaptureAppLauncher(),
+            socketChecker: StaticSocketChecker(exists: true),
+            client: client,
+            input: StaticCLIInput(data: Data()),
+            standardOutput: standardOutput,
+            standardError: standardError,
+            portalHandoff: handoff
+        )
+
+        XCTAssertEqual(commandLine.run(arguments: ["handoff"]), 0)
+
+        let confirmation = try JSONDecoder().decode(
+            CapturePortalHandoffConfirmation.self,
+            from: standardOutput.data.dropTrailingNewline()
+        )
+        XCTAssertEqual(client.requests.map(\.command), ["status"])
+        XCTAssertEqual(copiedToken, "view-token-secret")
+        XCTAssertEqual(
+            confirmation,
+            CapturePortalHandoffConfirmation(
+                sessionID: "session-handoff",
+                portalURL: serverURL.appendingPathComponent("live")
+            )
+        )
+        XCTAssertEqual(confirmation.viewAuthority, "copied-to-pasteboard")
+        XCTAssertTrue(standardError.data.isEmpty)
+        let combinedOutput = String(
+            decoding: standardOutput.data + standardError.data,
+            as: UTF8.self
+        )
+        XCTAssertFalse(combinedOutput.contains("view-token-secret"))
+        XCTAssertFalse(combinedOutput.contains("?"))
+        XCTAssertFalse(combinedOutput.contains("#"))
+    }
+
     func testShimCommandsStayControlOnlyAndAudioFrameworkFree() throws {
         let source = try cliSources()
 
@@ -174,6 +249,8 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(source.contains("start"))
         XCTAssertTrue(source.contains("stop"))
         XCTAssertTrue(source.contains("status"))
+        XCTAssertTrue(source.contains("handoff"))
+        XCTAssertTrue(source.contains("PasteboardCapturePortalHandoff"))
         XCTAssertTrue(source.contains("LaunchServices"))
         XCTAssertTrue(source.contains("UnixDomainControlClient"))
         XCTAssertTrue(source.contains("sendRequest"))
@@ -219,6 +296,50 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(entitlements.contains("com.apple.security.device.audio-input"))
         XCTAssertTrue(entitlements.contains("keychain-access-groups"))
         XCTAssertFalse(entitlements.contains("com.apple.security.app-sandbox"))
+    }
+
+    func testProductEntrypointsShareExplicitLabStoreResolverAndKeepKeychainDefault() throws {
+        let defaultStore = try CaptureSecretStoreSelection.makeDefault(environment: [:])
+        XCTAssertTrue(defaultStore is KeychainCaptureSecretStore)
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-cli-store-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let selectedStore = try CaptureSecretStoreSelection.makeDefault(
+            environment: [CaptureSecretStoreSelection.environmentKey: path]
+        )
+        XCTAssertTrue(selectedStore is FileCaptureSecretStore)
+
+        let package = packageRoot()
+        let appMain = try String(
+            contentsOf: package
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureApp")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+        let cliMain = try String(
+            contentsOf: package
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MTDCaptureCLI")
+                .appendingPathComponent("main.swift"),
+            encoding: .utf8
+        )
+        let coreSecurity = try String(
+            contentsOf: package
+                .appendingPathComponent("Sources")
+                .appendingPathComponent("MOSSCaptureCore")
+                .appendingPathComponent("CaptureSecurity.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(appMain.contains("environmentKey: \"MOSS_CAPTURE_SECRET_STORE_PATH\""))
+        XCTAssertTrue(cliMain.contains("environmentKey: \"MOSS_CAPTURE_SECRET_STORE_PATH\""))
+        XCTAssertTrue(appMain.contains("keychainDefault: KeychainCaptureSecretStore()"))
+        XCTAssertTrue(cliMain.contains("keychainDefault: KeychainCaptureSecretStore()"))
+        XCTAssertTrue(coreSecurity.contains("MOSS_CAPTURE_SECRET_STORE_PATH"))
+        XCTAssertTrue(coreSecurity.contains("keychainDefault()"))
     }
 
     private func packageRoot() -> URL {

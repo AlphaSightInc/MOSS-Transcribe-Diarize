@@ -126,6 +126,23 @@
   live-enabled FastAPI app. It is a pull-only view adapter to the existing
   same-origin live `snapshot`, `events`, `stop`, and `abort` routes, not a new
   backend API or frontend app.
+- **Manual capture portal handoff (IDEA-044)**: Operator workflow where the
+  explicit `mtd-capture handoff` command first checks the real app over its
+  authenticated UDS, then copies the persisted view authority to the macOS
+  pasteboard and returns only a non-secret confirmation, server-hosted live
+  portal URL, and live session id. The view authority never enters a URL,
+  argv, stdout/stderr, log, cookie, browser storage, or DOM channel. Production
+  `start` adds no Screen Recording preflight: Core Audio system-tap and
+  microphone permission facts remain lane-specific, and microphone
+  `notDetermined` stays prompt-capable after the explicit start action rather
+  than becoming denial. The unsigned tracer keeps deterministic permission
+  denial isolated from real capture; a real success is accepted only after
+  both native lanes reach the server plus real CLI `status` and bounded
+  `stop`. Signing, notarization, TCC continuity, Keychain runtime, deployed
+  device/tap behavior, deployment, 60/300 evidence, canary, and live
+  enablement remain Missing.
+- **Portal handoff URL**: Non-authority `/live` URL derived from the paired live
+  server origin and path without query or fragment credentials.
 - **Live portal view token**: Manually entered view token retained only in page
   memory and sent only as an `Authorization` bearer header. It is cleared from
   inputs immediately after connect and from memory on disconnect, reload, or a

@@ -30,8 +30,14 @@
 
 ## Current state
 
-Measured 2026-07-27 from MacStudio against the live hosts. Anchors are file:line on `main af3ac36`
-unless stated.
+Measured 2026-07-27 from MacStudio against the live hosts. Anchors are file:line on the feature
+branch after the iteration-1 graft unless stated.
+
+**Branch state.** Iteration 1 merged `acl/IDEA-044--A-034@67a27b8` into `ralph/live-meeting-mvp`
+with `--no-ff` (conflict-free: A-034 branches from the same `af3ac36` and touches paths disjoint
+from the Ralph scripts). Test totals on the branch: Swift **81 passed** (was 67); Python
+**454 passed / 2 skipped / 346 subtests** excluding the tracer, plus
+`tests/test_macos_uds_tracer.py` = **1 passed, 1 failed** (defect 9 below).
 
 **Feasibility — settled, do not re-litigate.**
 - Warm 12-run decode p95: 7.5 s span → **0.241 s**; 2.5 s → **0.162 s**. One pre-warm
@@ -45,12 +51,14 @@ unless stated.
 
 **Confirmed defects.**
 1. Pairing contract mismatch — client posts `/api/live/pair` expecting `{session_id,
-   capture_bearer}` (`CaptureSecurity.swift:472-491`); server exposes only `pairing-codes` →
-   `pairings` → `sessions` (`live_transport.py:114-173`) and returns the view token from session
-   create. Client never calls `/sessions`. **Fixed already on `acl/IDEA-044--A-034@67a27b8`**
-   (`pairings` line 854, `sessions` line 878) — graft, do not rewrite.
-2. No pinning on `main`; `PinnedCertificateURLSessionDelegate` + `FullCertificatePinValidator`
-   exist on A-034 (`CaptureHTTPTransport.swift:80-118`).
+   capture_bearer}`; server exposes only `pairing-codes` → `pairings` → `sessions`
+   (`live_transport.py:114-173`) and returns the view token from session create.
+   **Closed on the feature branch by the iteration-1 graft** — `URLSessionCapturePairingExchangeAdapter`
+   now posts `/pairings` then `/sessions` (`CaptureSecurity.swift:823-890`).
+2. No pinning on `main`. **Closed by the iteration-1 graft**:
+   `PinnedCertificateURLSessionDelegate` + `FullCertificatePinValidator` +
+   `PinnedURLSessionCaptureHTTPClientProvider` (`CaptureHTTPTransport.swift:65-118`); both
+   product entrypoints build their HTTP clients from the stored pin.
 3. Frame loss on any send failure — `queue.drain()` does `removeAll()`
    (`NativeAudioBuffers.swift:60-64`) and `publishPendingFrames` abandons the current and all
    remaining drained frames on a throw (`CaptureController.swift:242-247`).
@@ -74,6 +82,20 @@ unless stated.
    the observed timebase is 125/3. Convert with `AudioConvertHostTimeToNanos` before transport,
    then preserve the converted first-sample timestamp through resampling/coalescing. Reject
    zero/invalid host time as typed discontinuity/failure.
+9. **Undetermined microphone permission hangs `start` forever** (new, measured iteration 1, and
+   the only failing test on the branch). `MicrophoneCapture.start` throws only on `.denied`
+   (`MicrophoneCapture.swift:60-64`); `.undetermined` falls through to
+   `driver.currentInputDeviceID()`, whose `engine.inputNode` access blocks inside
+   `AVAudioEngineImpl::UpdateInputNode` → `_dispatch_sync_f_slow` → `kevent_id` and never
+   returns, because a non-GUI process cannot answer the TCC prompt. Nothing calls
+   `AVCaptureDevice.requestAccess`. `sample` of the real product proves the stack. Every SwiftPM
+   rebuild is ad-hoc signed with a new cdhash, so the TCC identity is `.undetermined` on *every*
+   rebuild — this is the normal case, not an edge case. It hangs the app's single-threaded UDS
+   dispatch loop, so `status`/`stop` cannot answer either. A3 must close it: request access
+   explicitly, keep the lane `pending` without blocking the control loop, and emit a typed
+   per-lane failure on denial. Repro: `tests/test_macos_uds_tracer.py::test_built_macos_app_cli_cross_real_uds_and_private_tls_server`
+   → `TimeoutExpired` on `mtd-capture start` after 8 s (all pairing, pinning, restart-persistence,
+   and secret-hygiene assertions before it pass).
 
 **Server state.** Deployed `163e969`; `origin/main` also `163e969`; local `main` is +84.
 `/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0`. `webrtcvad-wheels 2.0.14` and
@@ -111,7 +133,8 @@ swift test --package-path macos/MOSSCapture
 swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real product dir
 
 # --- real-process tracer (darwin; needs a live private-address TLS server)
-# arrives with the A-034 graft as tests/test_macos_uds_tracer.py
+# present since the iteration-1 graft. It builds/bundles/ad-hoc-signs the real products, so it
+# needs both Swift products built first. Currently 1 passed / 1 failed (defect 9).
 python3 -m pytest tests/test_macos_uds_tracer.py -q
 
 # --- wide checkpoint -----------------------------------------------------
@@ -171,16 +194,22 @@ only after the durable result is in progress.txt.
 
 ### Phase A — preserve and close IDEA-044 before widening scope
 
-1. **A1 — graft A-034's accepted mechanics**: two-step pairing/session create,
+1. **A1 — graft A-034's accepted mechanics** `[done — iteration 1, `--no-ff` merge of
+   `acl/IDEA-044--A-034@67a27b8`]`: two-step pairing/session create,
    `PinnedCertificateURLSessionDelegate`, `FullCertificatePinValidator`, restart-safe authority
-   persistence, environment-selected `FileCaptureSecretStore`, and
-   `tests/test_macos_uds_tracer.py`. Keep Keychain the unconditional production default in this
-   phase. Graft from `acl/IDEA-044--A-034@67a27b8`; do not rewrite.
+   persistence, environment-selected `FileCaptureSecretStore` (Keychain still the default with no
+   `MOSS_CAPTURE_SECRET_STORE_PATH`), and `tests/test_macos_uds_tracer.py`. Grafted verbatim, not
+   rewritten.
 2. **A2 — app-owned UDS `handoff`**: app reads view authority and writes pasteboard; CLI sends one
-   authenticated UDS request and relays non-secret status only.
-3. **A3 — explicit per-lane permission coordinator**: microphone `requestAccess(.audio)`,
+   authenticated UDS request and relays non-secret status only. Grafted state to replace:
+   `MTDCaptureCLI/main.swift` gives the **CLI** a `PasteboardCapturePortalHandoff(sessionStore:)`,
+   so today the CLI reads `capture-view-token` itself.
+3. **A3 — explicit per-lane permission coordinator** — **now the top blocker**, because defect 9
+   makes the tracer hang rather than fail: microphone `requestAccess(.audio)`,
    user-started system tap transition, generation-fenced pending/granted/denied, duplicate-start
    idempotence, stop-during-prompt, late-callback rejection, and typed denied-lane failure.
+   Must also keep the app's UDS dispatch loop responsive while a lane is pending, and must never
+   touch `AVAudioEngine.inputNode` while permission is `.undetermined`.
 4. **A4 — compatibility checkpoint**: run the exact eleven registered IDEA-044 attempt-2
    commands plus `bash scripts/ralph-afk/validate-phase-a-locality.sh`. Required: 10/10, 16/16,
    zero Darwin skips, all other commands green. Commit and record the exact SHA. **Do not merge,

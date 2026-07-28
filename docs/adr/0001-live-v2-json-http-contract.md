@@ -103,6 +103,29 @@ headers only. Browser cursors advance only after successful parse and render,
 replayed events render once, bounded retry remains single-flight, and terminal
 `closed`, `failed`, or `aborted` state stops polling and clears authority.
 
+IDEA-044 keeps the macOS client on the existing JSON/HTTP contract. The shipped
+client exchanges `mtd1.<secret>.<64-hex-pin>` at `POST /api/live/pairings`,
+creates the live session with capture bearer authority at
+`POST /api/live/sessions`, and pins helper HTTPS to the pairing payload's full
+certificate SHA-256. `CaptureSecretStore` is the single persistence seam:
+Keychain is the unconditional product adapter, while an explicit same-user
+`0600` file adapter is allowed only for unattended local lab runs. The manual
+portal handoff is the explicit `mtd-capture handoff` action. It verifies the
+real app over authenticated UDS, copies the persisted view token to the macOS
+pasteboard, and returns only a non-secret confirmation, the non-authority
+`/live` portal URL, and live session id. The token is never placed in a URL,
+process argument, CLI output, log, cookie, browser storage, or DOM channel.
+Production `start` does not use Screen Recording preflight as a proxy for Core
+Audio authority or collapse the two lanes into one permission boolean.
+Microphone `notDetermined` can proceed after the explicit start action while
+denied and authorized facts remain lane-specific. The tracer isolates its
+deterministic denied-permission harness from real capture; real success is
+accepted only when the server observes native samples on both lanes and the
+real CLI completes `status` plus bounded `stop`. Local unsigned tests do not
+prove signing, notarization, TCC continuity, Keychain runtime, deployed
+device/tap behavior, deployment, 60/300 evidence, canary, or live enablement;
+those remain Missing.
+
 IDEA-035 adds an observation-only helper heartbeat side channel at the same
 default-off live HTTP seam. The owning capture authority may post strict
 `moss-live-helper-health.v1` JSON to
