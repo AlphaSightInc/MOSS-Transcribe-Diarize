@@ -2706,3 +2706,43 @@ still at `f9285d6` at that point (the killed run never committed).
   **G6** - re-run E2b on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order
   (pair, start, clicks), reading `log show --predicate 'subsystem == "com.alphasight.moss.capture"'`
   if it still fails.
+
+================================================================================
+## run 20260728-072601 / iteration 6 - G5 rollbacks recorded BEFORE any mutation
+================================================================================
+
+- Target: candidate 30 (**G5**) - republish the authorized merge `317df4d` so the PRD's "one exact
+  SHA everywhere" clause is green again. Pre-mutation state measured read-only this iteration and
+  identical to what iteration 5 recorded:
+  - local `main` = `317df4d728b6765dbe365a3166158ba581299557`; `git merge-base --is-ancestor
+    f9285d6 317df4d` is **true**, so the push is a pure fast-forward.
+  - `git ls-remote origin refs/heads/main` = `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`;
+    `origin` is the AlphaSight fork, `upstream` is OpenMOSS (never pushed).
+  - server `/mnt/d/Coding/MOSS-Transcribe-Diarize`: HEAD `f9285d6`, tree `815f23b0…`, detached,
+    clean, local `main` ref still `163e969`. `moss-vllm` MainPID 322117 / `moss-web` MainPID 301112
+    / `moss-live-web` MainPID 334346, all `active`, all `NRestarts=0`, ActiveEnterTimestamps
+    2026-07-26 22:05:29 / 2026-07-24 21:37:11 / 2026-07-28 00:50:29 - unchanged since D3.
+  - m4mbp `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`: HEAD `f9285d6`,
+    tree `815f23b0…`, detached, clean, 159 tracked files, local `main` still upstream `40cf854`,
+    remotes `origin` = OpenMOSS and `alphasight` = the fork.
+- Re-verified before pushing: `git diff --name-only f9285d6 317df4d -- ':!macos'
+  ':!scripts/ralph-afk' ':!tests/test_macos_*'` is **empty**, so the server tree does not change and
+  **no service restart is authorized or needed**. The whole delta is 12 files: six Mac client
+  sources/tests, two `tests/test_macos_*` files, and four `scripts/ralph-afk/*`.
+
+### Rollbacks, recorded before the mutations they cover (prd.md "Reversibility")
+1. **`git push origin main`** - one-way by PRD rule (no force-push, ever). There is no rollback and
+   none is claimed; that is why the payload was reviewed before the merge, not after.
+2. **Server checkout** - restore the previously published SHA, moving nothing but `HEAD`:
+   `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout f9285d69ed7bcc592bb41b3dcdf29e3221968f44`
+   The standing deeper rollback is unchanged and still valid:
+   `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969`
+3. **m4mbp checkout** - same shape:
+   `git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout f9285d69ed7bcc592bb41b3dcdf29e3221968f44`
+   Full rollback to the pre-loop state is still the recorded one:
+   `git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout main`
+   (restores `40cf854`, branch `main`, tree `ac0058f9…`), optionally
+   `git -C … remote remove alphasight`.
+   Note: the m4mbp checkout moving to `317df4d` does **not** by itself change
+   `/Applications/MOSSCapture.app` - the installed bundle is still the `f9285d6` build until G6
+   re-runs `build-app.sh`/`install-app.sh`. No TCC grant is at risk from this checkout.
