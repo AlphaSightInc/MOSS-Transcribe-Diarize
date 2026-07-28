@@ -45,8 +45,9 @@ client gate (B6) and changed no product source; iteration 11 bound view authorit
 lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
 tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
 deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c); iteration 16 ran the
-final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1) and
-iteration 18 finalized the host manifest and rotated the live TLS pair (D2) — neither changed a
+final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1),
+iteration 18 finalized the host manifest and rotated the live TLS pair (D2), and iteration 19
+installed and started the live service plus its Windows forward (D3) — none of 17-19 changed a
 tracked file, so from here the branch carries only `scripts/ralph-afk/*`.
 Test totals on the branch: Swift **131 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
@@ -498,14 +499,23 @@ not add a Screen Recording preflight in its place (M31 forbids it).
 is the remaining leg and belongs to E2. The host checkout is **detached** at that SHA on purpose:
 its local `main` ref is still `163e969`, so
 `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete one-command rollback
-that moves nothing but `HEAD`. Tree clean, `moss-vllm`/`moss-web` still `active`, **neither service
-restarted** by D1 or D2 (`ActiveEnterTimestamp` 2026-07-24 21:37 and 2026-07-26 22:05; D3 owns the
-restart decision).
-`/api/live/descriptor` and `/live` → 404 on 7860; 7861 does not answer at all yet (the Windows
-forward is D3's). `MOSS_LIVE_ENABLED=0` in `ops/moss.env`;
-`ops/moss-live.env` is **absent** (D3 creates it) and `moss-live-web.service` is present in
-`ops/systemd/` but **not installed** — only `moss-vllm.service` and `moss-web.service` are in
-`~/.config/systemd/user/`. `webrtcvad-wheels 2.0.14` and
+that moves nothing but `HEAD`. Tree clean; `moss-vllm` MainPID 322117 and `moss-web` MainPID 301112
+still `active` with `NRestarts=0` and `ActiveEnterTimestamp` 2026-07-26 22:05:29 / 2026-07-24
+21:37:11 — **neither batch service has been restarted** by D1, D2 or D3, and those four values are
+what every later probe must still show.
+**The live service is up since D3 (iteration 19).** `moss-live-web.service` is installed
+(byte-identical to `ops/systemd/`), `enabled`, `active`, MainPID 334346 since 2026-07-28 00:50:29,
+listening on `0.0.0.0:7861` **TLS**; `/live` and `/api/live/descriptor` both return 200 from
+MacStudio *and from m4mbp*, and plaintext on 7861 gets nothing (`000`). The served leaf hashes to
+the D2 pin on both hosts. `ops/moss-live.env` now exists on the host (untracked, `.gitignore:32`),
+`MOSS_LIVE_ENABLED=0` stays in `ops/moss.env` and is overridden only by that profile.
+`/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs` was created by the service;
+`live/live-auth.json` is still **absent** — `LiveAccessRegistry` writes it on the first pairing, so
+D4 is what creates it. `/api/live/descriptor` and `/live` are still 404 on 7860.
+Windows: portproxy now carries `0.0.0.0:7861 → 172.30.115.123:7861` beside the untouched 7860 and
+5100 rows, firewall rule `MOSS-Transcribe-Diarize-Live` (Inbound/Allow/**Private** only) beside
+`…-Web`, and the sign-in scheduled task argument list now ends `-RefreshOnly -IncludeLive`.
+`webrtcvad-wheels 2.0.14` and
 `onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified.
 *`~/.local/share/moss-transcribe-diarize/live/` after D2 (iteration 18):*
 `live-provider-manifest.json` (0644, generated), `live-provider-manifest.provisional.json` (0600,
@@ -519,7 +529,19 @@ module-level constants (`server.py:123-129`), so a checkout cannot change what a
 uvicorn serves. "Batch unharmed" therefore needs the *restart* proven separately, and iteration 17
 did that without restarting anything: the deployed `ops/start-web.sh` sourced with the host's real
 `ops/moss.env` derives exactly the recorded contract argv (`tests/test_live_service_deployment.py:
-52-62`), port 7860, runs dir `<checkout>/runs`, **no live flag**.
+52-62`), port 7860, runs dir `<checkout>/runs`, **no live flag**. Re-run after D3 with the live
+profile also sourced: the batch argv is byte-identical and the live argv is the complete
+`--live …` form, so the two profiles really are one adapter.
+
+**Gotcha — file modes are unenforceable inside the host checkout (found by D3).** `/mnt/d` is a 9p
+`drvfs` mount **without** the `metadata` option, so every file under
+`/mnt/d/Coding/MOSS-Transcribe-Diarize` reads `777` and `chmod` is a silent no-op (the tracked
+`ops/moss-live.env.example` reads 777 too — this predates the loop). That is safe for
+`ops/moss-live.env` because the profile carries only paths and scalars, no secret. It is *not* safe
+for anything holding a secret: `MOSS_LIVE_AUTH_STATE`, `live.key` and the manifest all live under
+`~/.local/share/moss-transcribe-diarize/live` on **ext4**, mode 0700, where the modes are real.
+Never move live secret state onto the Windows drive, and never write a doc line that promises a
+mode inside the checkout.
 
 **Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. `/Applications/MOSSCapture.app` absent.
 Checkout is at upstream `40cf854` with `origin` = **OpenMOSS upstream**, not the AlphaSight fork.
@@ -752,6 +774,43 @@ git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
 
+# --- D3: install and start the live service (SPENT in iteration 19) --------------------------
+# The profile is host-local and untracked. It was written with `$HOME` expanded AT WRITE TIME, so
+# the file itself holds literal absolute paths (systemd expands nothing). Re-creating it is safe
+# only if the live unit is stopped first; `install-services.sh` refuses --with-live without it.
+#   /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env  ->  MOSS_LIVE_ENABLED=1,
+#   MOSS_WEB_PORT=7861, MOSS_RUNS_DIR=<checkout>/live-runs, and four absolute paths under
+#   /home/devcontainers/.local/share/moss-transcribe-diarize/live/ plus
+#   MOSS_LIVE_HELPER_LEASE_SECONDS=30 (key set identical to the tracked example).
+# Spent invocations, in order:
+#   ops/install-services.sh --with-live --dry-run     # plan/rollback/evidence, mutates nothing
+#   ops/install-services.sh --with-live               # installs + enables + starts the live unit
+#   powershell: & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1' -IncludeLive
+# Re-running either is safe and is the idempotence proof: the installer prints three `unchanged:`
+# lines and `evidence: restart_required=none`; the PowerShell script re-asserts both portproxy rows.
+# Standing rollback (still valid; apply in this order):
+#   netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=7861
+#   Remove-NetFirewallRule -Name 'MOSS-Transcribe-Diarize-Live'
+#   & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1'   # task back to batch-only
+#   systemctl --user disable --now moss-live-web.service
+#   rm -f "$HOME/.config/systemd/user/moss-live-web.service" && systemctl --user daemon-reload
+#   rm -rf /mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs
+#   rm -f "$HOME/.local/share/moss-transcribe-diarize/live/live-auth.json"
+#   rm -f /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env
+# That sequence is also F4's "live service disabled" rehearsal — F4 additionally checks out 163e969.
+
+# --- pinned live reachability from any client host (read-only; run from MacStudio or m4mbp) ----
+# Pin first, then trust exactly that leaf — this is what the Mac client's full-certificate pin does.
+#   PIN=a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff
+#   echo | openssl s_client -connect 100.64.0.8:7861 \
+#     -servername ga0-alienware-rtx4070ti.tailnet.aisight.us 2>/dev/null | openssl x509 > leaf.pem
+#   openssl x509 -in leaf.pem -outform DER | shasum -a 256   # must equal $PIN before trusting it
+#   curl -s --cacert leaf.pem \
+#     --resolve ga0-alienware-rtx4070ti.tailnet.aisight.us:7861:100.64.0.8 \
+#     -o /dev/null -w '%{http_code}\n' \
+#     https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/live      # 200
+# Plaintext on 7861 must stay dead: `curl -m 5 http://100.64.0.8:7861/live` -> 000.
+
 # --- batch-restart safety probe (read-only; mutates and starts nothing) --------------------
 # The running batch process serves module-level constants, so a checkout cannot change it; this is
 # what proves the *next* restart is also unharmed. It rewrites only the final `exec` line of a
@@ -945,13 +1004,23 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     with the **deployment venv python** (see the open defect above), and `ops/moss-live.env` must
     point `MOSS_LIVE_TLS_CERT`/`_KEY` at the rotated pair. Residue for D4/E2: the pin the Mac stores
     is the new `a35ca9fc…`; any payload minted before 2026-07-28T04:41:32Z is dead.
-19. **D3 — install reviewed live service/networking**: create `ops/moss-live.env` on the host from
-    `ops/moss-live.env.example` (absolute paths only), `install-services.sh --with-live --dry-run`
-    then for real, and `configure-windows-network.ps1 -IncludeLive` from an Administrator shell.
-    Only the live service starts; the batch service is not restarted.
-20. **D4 — verify/pair**: 7861 TLS live + descriptor 200, 7860 plaintext batch 200, use reviewed
-    loopback helper once, verify no secret artifact. No tracked product/deployment edits after
-    merge; only Ralph evidence may advance on the feature branch.
+19. **D3 — install reviewed live service/networking** `[done — iteration 19]`: host
+    `ops/moss-live.env` written from the tracked example with literal absolute paths,
+    `install-services.sh --with-live` installed/enabled/started `moss-live-web.service` (MainPID
+    334346) leaving both batch units untouched (`unchanged:` ×2, same MainPIDs, `NRestarts=0`), and
+    `configure-windows-network.ps1 -IncludeLive` added the 7861 portproxy row, the Private-profile
+    firewall rule and the `-IncludeLive` sign-in task. `/live` and `/api/live/descriptor` return 200
+    over pinned TLS **from m4mbp**, batch 7860 still 200, plaintext 7861 dead. The `--with-live`
+    refusal and the installer's idempotence were both proven for real on the host. Residue for D4:
+    `live/live-auth.json` does not exist yet — the first pairing creates it, so its absence is the
+    marker that no device is paired; and the loopback mint route is what `ops/live-pair.sh` uses,
+    so D4 runs on the host, never from MacStudio.
+20. **D4 — verify/pair**: use the reviewed `ops/live-pair.sh --url https://127.0.0.1:7861 --cert
+    <live.crt>` **once** on the host to mint one pairing payload, never redirecting the `payload:`
+    line to a file; then confirm no secret artifact was left (no payload in shell history, logs,
+    argv or the journal) and that `live-auth.json` appeared with 0600 on ext4. Reachability is
+    already recorded by D3 and only needs re-asserting if the service is restarted. No tracked
+    product/deployment edits after merge; only Ralph evidence may advance on the feature branch.
 
 ### Phase E — Mac install and human permission boundary
 
