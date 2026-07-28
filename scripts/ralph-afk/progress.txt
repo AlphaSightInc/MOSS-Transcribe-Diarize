@@ -3610,3 +3610,5 @@ each one alone is enough to end a real meeting in the first few seconds.
   multiple of `speech_provider.frame_samples`; H2's needs one `LiveSession` and one `EndpointPolicy`
   carrying the *same* hard cap. Both red cases already exist in
   `scripts/ralph-afk/live-hardcap-repro.py` and can be ported into `tests/` verbatim.
+
+[loop 20260728-072601-15601] blocked at iteration 10
