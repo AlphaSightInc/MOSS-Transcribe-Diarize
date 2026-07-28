@@ -12910,3 +12910,44 @@ inferred. If m4mbp is still gone, the remaining non-host work is evidence repair
 context.md is now ~209 KB / ~2450 lines, so candidate 52's retirement pass (fold the F1/F3
 diagnosis blocks into progress.txt) is the next honest instrument-free iteration, though
 the record says to do it only once F1 and F3 have passed.
+
+================================================================================
+Iteration 24 of run 20260728-181020 - PRE-RUN RECORD, written and committed BEFORE
+the host is touched: the no-mutation contract for the decode-cap latency probe.
+================================================================================
+
+prd.md requires every server or Mac mutation to have its rollback recorded before it is
+applied. This probe's answer is that it performs NO mutation, and the claim is stated
+here in advance so it can be checked against rather than asserted afterwards.
+
+WHAT THE PROBE DOES ON THE HOST:
+  - sends inference requests to the ALREADY-RESIDENT vLLM at http://127.0.0.1:8000/v1,
+    the same endpoint `live-identity-seam-probe.py` has used since H4 and the same one
+    the live service itself decodes through;
+  - reads `~/.local/share/moss-transcribe-diarize/live/golden.wav` read-only;
+  - writes span WAVs only inside a TemporaryDirectory it creates and its own context
+    manager removes, under a scratch dir OUTSIDE /tmp/mtd-live-* so the standing host
+    check for stray live scratch keeps its meaning.
+
+WHAT IT DOES NOT DO, each of which is the thing that would need a rollback:
+  no pairing code, no device row, no live session, no view token, no auth-state write,
+  no checkout, no merge, no push, no deploy, no systemctl, no unit file, no manifest
+  write, no TLS material, no app install, no product source change, no restart.
+  Therefore: ROLLBACK REQUIRED = NONE. There is no host state to put back.
+
+THE ONE REAL COST, stated because it is not zero: GPU time on the shared engine. The
+uncapped condition deliberately generates to the pre-D-c 2048-token bound, ~8.5 s per
+request at F1's measured rate, and the run makes at most 9 requests (1 warm-up + 2 x 3
+conditions), i.e. under ~1 minute of GPU. Batch and live share that engine, so the
+baseline below must show no live session and no running batch job BEFORE the first
+request, and the after-check must show both services' MainPIDs and NRestarts unmoved.
+
+STOP CONDITIONS - abandon the run and record a blocker rather than pressing on:
+  - any live session is active, or a batch job is running, at baseline;
+  - moss-live-web / moss-web / moss-vllm MainPID or NRestarts differs from baseline;
+  - `git rev-parse HEAD` on the host is not 77e0014;
+  - a journal traceback appears that was not in the baseline.
+
+VALIDITY FENCE, per the standing rule (compare against the DEPLOYED sha, never main):
+  git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'   must be EMPTY, or the
+  product function the probe imports is not the one the service runs.
