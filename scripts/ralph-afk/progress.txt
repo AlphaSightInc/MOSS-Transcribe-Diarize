@@ -12599,3 +12599,125 @@ this iteration watched happen three times) and poll its log. Reduce with live-ca
 (lane separation) AND live-canary-clauses.py (the clauses). The two numbers that decide the
 iteration: user-visible p95 against 4000 ms, and whether any span still shows
 canonical_decode_capped=false at an 8 s decode.
+
+================================================================================
+Iteration 22 of run 20260728-181020 - m4mbp still gone, so F3's half of gate step
+(d) was instrumented: live-soak.sh brought into the repo with candidate 51's
+harness, and the clause reducer stopped passing two RED runs.
+================================================================================
+
+Target: Phase M gate step (d). m4mbp was re-checked at the top of the iteration and again after
+17 minutes of polling - ssh "Operation timed out", 100% ICMP loss on 100.64.0.4, ~40 attempts.
+Same physical-host blocker as iteration 21, unchanged. So the iteration took the next thing on
+the critical path that costs no host access: F3's driver and its reduction, which is what
+iteration 21 did for F1 and its own recorded lesson (2) says to do BEFORE the run.
+
+WHY THE EXISTING F3 DRIVER COULD NOT SIMPLY BE RE-RUN. Three reasons, none cosmetic:
+ 1. /tmp/ralph-f3-soak.sh speaks its program through the Mac's own speakers, so it carries
+    EXACTLY the echo confound candidate 51 removed for the canary - and the fifth amendment's
+    gate requires that harness on BOTH re-runs ("with candidate 51's harness fix in place so the
+    label clause is meaningfully verified"). Re-running it would have produced a soak whose label
+    clause is confounded the way F1's was, i.e. a non-compliant gate run.
+ 2. It writes snapshot.tsv as a POSITIONAL jq projection (t, age, code, 11 fields), which
+    live-canary-clauses.py refuses by name - iteration 21 recorded that refusal as a feature.
+ 3. It existed only in /tmp on two hosts. A certification driver on scratch disks is one reboot
+    away from being unreproducible, and m4mbp is currently a host that may well have rebooted.
+
+WHAT WAS BUILT.
+  NEW: scripts/ralph-afk/live-soak.sh (Ralph evidence tooling; no product source).
+  The canary's harness: OUTPUT_MODE=muted (the process tap is upstream of the output mute -
+  iteration 12 measured that), topology-before/after.txt with the mute restored on every exit
+  path including the trap, the marker said ALONE x3 at -r 130, and phases.tsv naming each
+  minute's intended lane so the analyzer can ask "did this lane's marker land, and only here".
+  Plus the soak's own clauses: view-authority checks at t0, AT THE MOMENT THE TOKEN'S AGE CROSSES
+  900 s, after the soak, and after the stop. The third one is new and is the point - F3's only
+  post-boundary check landed at age 1024 s, 124 s late, which is precisely why that run could not
+  separate "the authority expired" from "the session was already dead".
+
+THE SNAPSHOT BODY IS PRUNED, AND THE DECISION IS MEASURED RATHER THAN TIDY.
+  Measured on F1's real evidence: the FULL snapshot body grew 2796 -> 18210 bytes across 42
+  committed spans (~366 B/span; mean 10.3 KB per poll over 56 polls). A 17-minute soak commits
+  ~412 spans, so copying the canary layout verbatim would reach ~150 KB per poll and ~38 MB of
+  snapshot.tsv - written on the capture Mac, during the run whose latency is being measured.
+  That is why the original driver projected, and the projection is why its evidence is
+  unreadable. The new driver takes neither horn: it keeps the snapshot's SHAPE and replaces
+  committed[] with its span ids, so every scalar the reducer reads survives and len(committed)
+  stays exact. The transcript text lives in the event stream anyway, where it is linear because
+  since_seq advances.
+  PROVEN, NOT ASSERTED: the SHIPPED filter was extracted from live-soak.sh itself (not retyped)
+  and applied to F1's 56 real 200-bodies. Reducer output on the pruned directory is
+  BYTE-IDENTICAL to the full one, at 564.5 KB -> 102.7 KB (18.2%). The pruned body grows
+  32 B/span instead of 366 (1020 -> 2371 B), so a 412-span poll is ~14 KB and the whole file
+  ~5 MB. identity_snapshot is the other 700 B and is bounded by the 16-speaker contract.
+
+RUNNING THE REDUCER ON REAL DIRECTORIES FOUND TWO FALSE VERDICTS. This is the durable half of
+the iteration, and neither was visible without executing it against evidence.
+ (1) F1's evidence directory reduced to rc=0 - a GREEN - on a run the loop records as RED. Its
+     red sub-clause 2 (system lane failed/macos_buffer_overrun at t+86.0 s) was PRINTED in the
+     lane-health timeline and DECIDED by nothing. Section 8 now reads that timeline as clauses,
+     and which transition is a fault comes from the shipped contracts rather than taste:
+       lane failed       -> RED   (D-a made an overrun a DEGRADATION, so failed means the lane
+                                   genuinely stopped producing)
+       lane degraded     -> reported, not red (D-a's whole point is that the meeting survives)
+       sessionRefusal    -> RED   (K4: the session being published to is gone)
+       outboxDegradation -> RED   (B2: the typed overflow state is accepted audio not delivered)
+       pumpFailure       -> reported, not red (53 deliberately leaves the publish verdict
+                                   standing while the heartbeat keeps the meeting alive)
+     F1 now reduces to rc=3 with "lane system reported FAILED at t+86.0s (macos_buffer_overrun)".
+ (2) F3's evidence directory reduced to rc=2 and discarded everything, including the parts the
+     reducer understands perfectly (status.tsv and the latency report share their layout across
+     drivers). The layout refusal is now PER SECTION - still named, still refusing to mis-read a
+     projection as status codes - so F3 reduces to its recorded facts without a host:
+       lane system FAILED t+845.8s (macos_buffer_overrun)   [record: capture age 844 s]
+       outboxDegradation overflowedLaneRetention t+865.9s
+       sessionRefusal sessionDisowned t+875.9s              [record: 875.9 s]
+       revoke latency 0.1 s after the clean stop, 401/401   [record: revoke_latency_s=0.1]
+       user-visible p95 10445.5 ms                          [record: 10445.5 ms]
+     and the "same view authority works after minute 15" clause comes out UNPROVEN, NOT
+     DISPROVEN - automatically - because the session had already been refused 148 s before the
+     check. That distinction cost a careful human reading the first time and is now in the tool.
+ (3) A refused layout can no longer exit 0: an `undecided` list forces rc=2, so a half-read
+     directory can never be mistaken for a pass.
+
+VALIDATION (the smallest commands that produce real evidence):
+  bash -n scripts/ralph-afk/live-soak.sh                      -> OK
+  python3 -m py_compile scripts/ralph-afk/live-canary-clauses.py -> OK
+  reducer vs the PREVIOUS committed reducer (git show HEAD:...), on three real directories:
+    /tmp/ralph-c51-evidence/ralph-canary  old rc=3  new rc=3  OUTPUT IDENTICAL through section 7
+    /tmp/ralph-f1-evidence                old rc=0  new rc=3  (the false green, above)
+    /tmp/ralph-f3-evidence                old rc=2  new rc=3  (the discarded evidence, above)
+  the canary - a clean meeting - gains NO new red, which is what makes the two new reds
+  trustworthy rather than a blanket pessimism.
+  prune equivalence: /tmp/i22-f1-pruned reduces byte-identically to /tmp/ralph-f1-evidence.
+  git status --porcelain clean before the commit.
+Evidence paths: scripts/ralph-afk/live-soak.sh, scripts/ralph-afk/live-canary-clauses.py,
+  /tmp/i22-old-*.txt and /tmp/i22-new-*.txt (old/new reductions), /tmp/i22-v2-*.txt (final),
+  /tmp/i22-f1-pruned/ + /tmp/i22-f1-pruned.txt (the prune-equivalence proof),
+  context.md block "F3 has a repo driver now, and the reducer stopped passing two red runs".
+
+Learned.
+(1) A REDUCER THAT PRINTS A FAULT IS NOT A REDUCER THAT DECIDES IT. F1's directory had the
+    failing lane in its output the whole time and still exited 0. Every clause the tool prints
+    must either be scored or be explicitly named undecided; there is no third state that is
+    safe.
+(2) REFUSE PER SECTION, NOT PER DIRECTORY. Iteration 21's whole-file refusal was right about the
+    projection and wrong about the rest of the directory: status.tsv and latency-final.json are
+    identical across drivers, and they carry three of F3's four recorded facts.
+(3) UNPROVEN IS NOT DISPROVEN, AND A TOOL CAN TELL THEM APART CHEAPLY. A refused view check whose
+    session was already refused earlier measures a dead session, not an expired authority. The
+    discriminator is one timestamp comparison the reducer already had in hand.
+(4) WHEN A DRIVER'S EVIDENCE MUST SHRINK, PRUNE THE SHAPE, DO NOT PROJECT IT. A positional
+    projection saved 99.7% of the bytes and cost the directory every reducer that will ever be
+    written; keeping the JSON shape and dropping one array saved 82% and cost nothing measurable.
+
+Blocker: unchanged and physical - m4mbp is asleep or powered off, unreachable by ssh, ICMP or
+tailnet, and there is no second route (MacStudio 192.168.68.36, m4mbp 192.168.1.240 on a
+different LAN; no ARP entry, so Wake-on-LAN is unreachable). F1 and F3 - the whole of gate step
+(d), and therefore the 60 s canary, 300 s certification and 16-minute soak clauses - cannot run
+until it returns.
+
+Next: the moment `ssh ga0@m4mbp` answers, F1 (pkill MOSSCaptureApp, relaunch fresh, re-pair, then
+live-canary.sh NOHUP'd, reduce with live-canary-analyze.py AND live-canary-clauses.py), then F3
+with live-soak.sh --user-visible-gate-ms 6000. If m4mbp is still gone, the next non-host
+candidate is candidate 55 / Phase N groundwork that needs no run - but note Phase N is gated
+AFTER Phase M's gate, so prefer another instrument or an evidence repair over starting it.
