@@ -44,7 +44,8 @@ iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 rec
 client gate (B6) and changed no product source; iteration 11 bound view authority to the session
 lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
 tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
-deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c).
+deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c); iteration 16 ran the
+final local gate and made the **one keeper merge** (C4).
 Test totals on the branch: Swift **131 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
@@ -64,6 +65,41 @@ bundle to a paired built app is proven cold; B1/B2/B3/B4 filters 5/10/11/5 passe
 discriminator **10/10**; `leak-scan: clean`; and MacStudio is left with no
 `~/Library/Application Support/MOSSCapture`, no `/Applications/MOSSCapture.app` and no
 `moss-signing.keychain-db`. **Phase C is open.**
+
+**Keeper merge: DONE at `f9285d6` (iteration 16).** Feature tip `f400d426…`, merge
+`f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, `main^1 = af3ac366…`, `main^2 = f400d426…`.
+`git diff f400d42 f9285d6` is **empty** — main was untouched since the branch point, so every
+number measured on the feature tip is also a measurement of the merge commit, and the merge
+worktree re-ran the whole suite anyway. **Not pushed** (that is D1); `origin/main` is still
+`163e969`, the server checkout is still `163e969`. From here the feature branch may only carry
+`scripts/ralph-afk/*` evidence — **no tracked product source may change on it**. A defect found in
+D/E/F needs a new branch and a decision, not a second keeper merge.
+*The gate measured at `f400d426` (all on MacStudio, 2026-07-28):* both Swift products from an
+**empty** scratch path, `MOSSCaptureApp` 8.0 s and `mtd-capture` 0.9 s, **zero warnings**;
+`swift test` **131 passed / 0 failures**; `pytest tests` **536 passed / 2 skipped / 368 subtests**
+in 51.9 s; tracer **3 passed / 0 skips**; attempt-2 discriminator **10/10**; `leak-scan: clean`.
+*Gotcha found here:* `swift build --product A --product B` silently builds only **B**. The B6 and
+C4 gates and `merge-keeper.sh` all use two separate invocations; never collapse them into one.
+
+**Server meeting-reliability gate: GREEN at `f400d426` (iteration 16).** The PRD clause → node map
+the C1 residue asked for, each clause run and passing:
+| PRD clause | node |
+| --- | --- |
+| active-session-only authority | `test_view_authority_follows_the_session_lifecycle_without_an_explicit_release`, `test_view_authority_is_refused_until_a_session_lifecycle_is_bound` |
+| virtual 60-minute duration | `test_view_authority_outlasts_the_retired_fifteen_minute_expiry` (0→60 min in 5-min subtests) |
+| exact 12 h cap boundary | `test_view_authority_ends_exactly_at_the_absolute_cap_while_capture_continues` (cap−0.5 s ok, cap and cap+1 s refused, capture still authorized at cap+1 h) |
+| terminal boundary | `test_clean_stop_immediately_revokes_view_authority`, `test_failed_stop_revokes_the_view_without_stranding_capture_authority` |
+| device revoke | `test_device_ownership_revocation_and_session_release` |
+| operator revoke | `test_operator_view_revocation_is_loopback_only_and_leaves_capture_running`, `…_and_keeps_capture_streaming` (route) |
+| restart | `test_view_authority_does_not_survive_a_restart` |
+| 900 s expiry unreachable | proven by absence: the only `VIEW_TTL` string in the tree is `test_…outlasts…`'s `assertFalse(hasattr(live_auth, "VIEW_TTL_SECONDS"))`, and no `900` literal exists in `live_auth.py` or `live_transport.py` |
+| 5-second outage | Swift `testOutboxRetainsEveryFrameAcrossAFiveSecondOutageAndDeliversEachExactlyOnce` |
+| ambiguous-success retry | Swift `testAmbiguousAnswerAndDuplicateRetryReuseTheOriginalLaneSequenceIdentity` |
+| duplicate retry | server `test_v2_http_replays_prior_ack_and_keeps_lane_sequences_distinct` + the Swift node above |
+| 429 | server `test_v2_http_maps_lane_capacity_to_429_without_mutating_or_sharing_capacity` + Swift `testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio` |
+| outbox overflow → typed degraded state | Swift `testOutboxOverflowKeepsSequencesGaplessAndReportsATypedDegradedState`, `testOneStalledLaneNeitherBlocksTheOtherLaneNorReattemptsItsWholeBacklog` |
+Counts: view-authority slice **10 passed / 22 subtests**, device-revocation node **1 passed**,
+server retry/429 pair **2 passed**, Swift reliability filter **5 passed**.
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
@@ -455,7 +491,8 @@ not the tap), but nothing yet proves it returns promptly on m4mbp while its prom
 If E3 shows it blocking, move system admission onto the coordinator's own thread in Phase B; do
 not add a Screen Recording preflight in its place (M31 forbids it).
 
-**Server state.** Deployed `163e969`; `origin/main` also `163e969`; local `main` is +84.
+**Server state.** Deployed `163e969`; `origin/main` also `163e969`; local `main` is now the keeper
+merge `f9285d6` (was `af3ac36`, itself +84 over `163e969`). D1 pushes `f9285d6` and checks it out.
 `/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0`. `webrtcvad-wheels 2.0.14` and
 `onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified;
 `live.crt`/`live.key` staged but SANs cover only `ga0-alienware-rtx4070ti.local` +
@@ -644,6 +681,9 @@ bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spik
 # checkpoint and now fails on the tip by design — see the locality note above.
 
 # --- one keeper merge, primary worktree stays on the feature branch -------
+# SPENT in iteration 16: main is f9285d6. Re-running merge-keeper.sh now fails its own fence
+# ("main moved from expected pre-merge SHA"), which is the intended one-merge guard. Do not
+# raise RALPH_MERGE_MAIN_BEFORE to get past it.
 swift build --package-path macos/MOSSCapture --product mtd-capture
 swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
 swift test --package-path macos/MOSSCapture
@@ -651,6 +691,20 @@ python3 -m pytest tests -q -p no:cacheprovider
 test -z "$(git status --porcelain)"
 RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # fences only, no merge
 bash scripts/ralph-afk/merge-keeper.sh                          # builds products itself in the temp worktree
+
+# --- D1: publish the reviewed merge (next open step) ---------------------
+# `origin` is the AlphaSight fork (push target); `upstream` is OpenMOSS - never push there.
+# Rollback for the server checkout must be recorded *before* the fetch: it is currently 163e969.
+git push origin main                                  # fast-forward af3ac36..f9285d6 on the fork
+printf '%s\n' \
+  'set -euo pipefail' \
+  'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
+  'git rev-parse HEAD' \
+  'git fetch origin main' \
+  'git checkout f9285d69ed7bcc592bb41b3dcdf29e3221968f44' \
+  'git rev-parse HEAD' |
+  ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
+# rollback: git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
 ```
 
 ## Candidates
@@ -800,11 +854,15 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     answers) keeps the origin unresolved — the report says `mixerOriginResolved: false` rather than
     quoting a figure, which is the honest answer but means the canary needs both lanes settled
     (granted or denied) before it starts.
-16. **C4 — final local gate and single keeper merge**: Swift/full Python/tracer/reliability
-    gates green on the feature tip; then run `scripts/ralph-afk/merge-keeper.sh`. It creates and
-    tests the one no-ff merge in a temporary `main` worktree while the primary Ralph worktree
-    remains on the feature branch. Record feature + merge SHAs. After this point, only Ralph
-    evidence files may change on the feature branch; no tracked product source may change.
+16. **C4 — final local gate and single keeper merge** `[done — iteration 16]`: gate green at
+    `f400d426`, merge `f9285d6` — see the keeper-merge and server-reliability blocks above.
+    The pre-merge review of every artifact the PRD names is recorded in progress.txt. Two review
+    notes carried forward: (a) `build-app.sh` unlocks the signing keychain with
+    `security unlock-keychain -p "$(cat …)"`, so the random keychain password is briefly visible in
+    `ps` on a shared host — acceptable on single-user m4mbp, worth stating at E1 rather than
+    silently accepting; (b) `.gitignore` now ignores `*.crt`, so a future tracked certificate
+    fixture would need an explicit negation. **From here the feature branch carries only
+    `scripts/ralph-afk/*`.**
 
 ### Phase D — publish and enable the 4070Ti
 

@@ -1229,3 +1229,81 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   (5 s outage / ambiguous retry / duplicate retry / 429 / outbox overflow), then
   `RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh` followed by the real run, and record
   both the feature tip and merge SHAs.
+
+## Iteration 16 (run 20260728-023004-98501, its iteration 8) - final local gate + the one keeper merge (C4)
+- Target: Phase C candidate C4 - the last local item. Record the server meeting-reliability gate
+  with the clause-to-node map C1 left as residue, review every artifact the PRD names as
+  merge-blocking, then make the single `ralph/live-meeting-mvp` -> `main` merge.
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. **No tracked product source changed** -
+  this iteration is a gate, a review and a merge.
+- Method: the gate ran on the feature tip first, because the merge script's own suite runs inside a
+  throwaway worktree whose output is discarded when it exits. Measuring on `f400d426` and then
+  proving `git diff f400d42 f9285d6` is empty makes the tip numbers *also* the merge numbers, which
+  is stronger than trusting a log I could not keep.
+- Validation (all on MacStudio, feature tip `f400d4266df0fa0011052fbff2af0f9fa182a29b`):
+  - `swift build --scratch-path <empty> --product MOSSCaptureApp` -> **8.0 s, zero warnings**
+  - `swift build --scratch-path <same> --product mtd-capture` -> **0.9 s, zero warnings**
+  - `swift test --package-path macos/MOSSCapture` -> **131 passed, 0 failures**
+  - `pytest tests -q -p no:cacheprovider` -> **536 passed, 2 skipped, 368 subtests** in 51.9 s
+  - `pytest tests/test_macos_uds_tracer.py -q` -> **3 passed, 0 skipped** in 7.1 s
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10 true**
+  - `leak-scan.sh` -> `leak-scan: clean`
+  - `RALPH_MERGE_DRY_RUN=1 merge-keeper.sh` -> `PASS feature=f400d426 main_before=af3ac366`
+  - `merge-keeper.sh` -> `PASS feature=f400d4266df0fa0011052fbff2af0f9fa182a29b
+    main=f9285d69ed7bcc592bb41b3dcdf29e3221968f44` (its own worktree re-ran both builds, `swift
+    test`, and `pytest tests` -> 536 passed / 2 skipped / 368 subtests before committing)
+- Evidence:
+  - **Server meeting-reliability gate: GREEN.** Every PRD clause was run against a named node, not
+    assumed. View-authority slice **10 passed / 22 subtests**; `test_device_ownership_revocation_
+    and_session_release` **1 passed**; `test_v2_http_replays_prior_ack_and_keeps_lane_sequences_
+    distinct` + `test_v2_http_maps_lane_capacity_to_429_without_mutating_or_sharing_capacity`
+    **2 passed**; the Swift outage/ambiguous/duplicate/429-5xx-401/overflow/stalled-lane filter
+    **5 passed**. The full map is in context.md.
+  - **The 900 s expiry is unreachable, proven by absence.** `grep -rn VIEW_TTL moss_transcribe_
+    diarize/ tests/` returns exactly one line - the test asserting `not hasattr(live_auth,
+    "VIEW_TTL_SECONDS")` - and `grep -n '\b900\b'` over `live_auth.py` and `live_transport.py`
+    returns nothing. There is no constant to raise, so the defect cannot regress by retuning.
+  - **Merge shape verified independently of the script.** `main^1 = af3ac366…` (the recorded
+    pre-merge SHA), `main^2 = f400d426…` (the feature tip), and `git diff f400d42 f9285d6` is
+    **empty**: main had not moved since the branch point, so the merge introduces no content the
+    gate did not measure. The primary worktree is still on `ralph/live-meeting-mvp` at `f400d426`
+    and `git worktree list` shows only it - the temp worktree cleaned itself up.
+  - **Pre-merge review of the PRD's named artifacts** (read, not just re-tested): `ops/moss-ops-lib.sh`,
+    `ops/generate-live-tls.sh`, `ops/live-pair.sh`, `ops/install-services.sh`, `ops/start-web.sh`,
+    `ops/systemd/moss-live-web.service`, `ops/moss-live.env.example`,
+    `ops/configure-windows-network.ps1`, `ops/finalize-live-provider-manifest.py`,
+    `macos/scripts/{build-app,install-app,bootstrap-signing-identity}.sh`, and the
+    `LOCAL_DEPLOYMENT.md` live section. Confirmed by hand: the live unit is byte-for-byte the batch
+    unit plus one **mandatory** `EnvironmentFile`; the Windows 7860 row is unconditional and only
+    the 7861 row sits behind `-IncludeLive`, which is also written into the scheduled task;
+    `install-services.sh` prints `restart_required=` instead of bouncing a running service;
+    `generate-live-tls.sh` refuses a group/world-writable key directory and re-reads pin, SANs, EKU
+    and key pairing out of the file it generated; `live-pair.sh` refuses a non-loopback or
+    non-TLS URL before it sends anything and keeps the payload in a shell variable only;
+    `install-app.sh` does nothing when the bundle is byte-identical (which is what preserves the
+    TCC grants) and never deletes a replaced bundle.
+  - Diff hygiene scan over `af3ac36..HEAD` excluding `scripts/ralph-afk`: no `/Users/gao` or
+    `0.AISIGHT_LOOP` path, no TODO/FIXME/HACK/debug print (the only `XXX` hits are `mktemp`
+    templates), and `scripts/aisight-coding-loop/` is untouched. The control-plane halt sentinel
+    lives at `0.AISIGHT_LOOP/moss-transcribe-diarize/.stop-after-current-role` - **not** inside this
+    repo - and is present; `preflight.sh:86` is what checks it.
+  - Two review notes carried forward rather than fixed under the merge freeze: (a) `build-app.sh`
+    passes the keychain password on `security unlock-keychain -p "$(cat …)"`, so it is briefly
+    visible in `ps`; the password is a locally generated random value in a 0600 file on a
+    single-user Mac, so this is a statement to make at E1, not a defect to patch after the gate.
+    (b) `.gitignore` now ignores `*.crt`, so any future tracked certificate fixture needs an
+    explicit negation.
+- Learned: (1) `swift build --product A --product B` silently builds only **B** - the scratch-path
+  build looked complete and had produced no `mtd-capture` at all. Every gate here uses two separate
+  invocations, and `merge-keeper.sh` already did; the one-liner is the trap.
+  (2) Proving a retired constant is gone is better done by absence over the whole tree than by a
+  behavioral test alone: the grep is what shows there is nothing left to retune.
+  (3) Doing the gate on the tip and then diffing tip against merge is cheaper and more durable than
+  trying to capture the merge worktree's own output, which is deleted with the worktree.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: D1 - publish the reviewed merge. `git push origin main` (fast-forward `af3ac36..f9285d6` on
+  the AlphaSight fork; never `upstream`), then fetch and check out exactly
+  `f9285d69ed7bcc592bb41b3dcdf29e3221968f44` at `/mnt/d/Coding/MOSS-Transcribe-Diarize`, recording
+  `git checkout 163e969` as the rollback *before* the fetch. Then verify three-way SHA equality
+  (local main, origin/main, server checkout) and confirm the batch service on 7860 still answers
+  200. The exact commands are in context.md's Validation section.
