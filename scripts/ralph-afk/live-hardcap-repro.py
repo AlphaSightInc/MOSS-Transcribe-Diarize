@@ -53,7 +53,12 @@ from moss_transcribe_diarize.app.live_endpoint import (  # noqa: E402
     EndpointPolicyConfig,
     SpeechObservation,
 )
-from moss_transcribe_diarize.app.live_session import AudioFrame, LiveSession  # noqa: E402
+from moss_transcribe_diarize.app.live_provider_bundle import WebRtcSpeechProvider  # noqa: E402
+from moss_transcribe_diarize.app.live_session import (  # noqa: E402
+    LIVE_SAMPLE_RATE,
+    AudioFrame,
+    LiveSession,
+)
 
 # Deployed manifest values (see the module docstring for provenance).
 DEPLOYED = {
@@ -65,6 +70,7 @@ DEPLOYED = {
     "post_speech_padding_samples": 1600,
     "max_retained_samples": 960000,
     "frame_samples": 8000,
+    "vad_frame_samples": 160,
 }
 
 
@@ -92,6 +98,33 @@ class WholeFrameSpeech:
                 speech_present=present,
             ),
         )
+
+
+class LengthContractVad:
+    """A stand-in for `webrtcvad.Vad` that enforces only its length contract.
+
+    WebRTC's VAD accepts exactly 10, 20 or 30 ms of 16-bit mono PCM at 8/16/32/48 kHz and
+    raises `webrtcvad.Error: Error while processing frame` for anything else. That single
+    rule is the whole of blocker 3, and it lets the reproduction run on a host with no
+    native `webrtcvad` wheel (MacStudio has none - which is part of why no test could ever
+    have caught this). The real exception from the real library is recorded in progress.txt
+    from the deployed host; this reproduces the condition that raises it.
+    """
+
+    def __init__(self, sample_rate: int):
+        self.valid_lengths = {sample_rate * ms // 1000 for ms in (10, 20, 30)}
+        self.calls: list[int] = []
+
+    def __call__(self, pcm: bytes, sample_rate: int) -> bool:
+        del sample_rate
+        samples = len(pcm) // 2
+        self.calls.append(samples)
+        if samples not in self.valid_lengths:
+            raise RuntimeError(
+                f"Error while processing frame (webrtcvad accepts only "
+                f"{sorted(self.valid_lengths)} samples, got {samples})"
+            )
+        return False
 
 
 class UnusedDecoder:
@@ -132,6 +165,12 @@ def main() -> int:
     parser.add_argument("--speech-pattern", default="1",
                         help="cycled per frame: '1' speech, '0' silence. Default '1' = "
                              "continuous speech, i.e. no endpoint before the hard cap")
+    parser.add_argument("--speech-provider", choices=("whole-frame", "webrtc"), default="whole-frame",
+                        help="'webrtc' drives the real WebRtcSpeechProvider with the deployed "
+                             "vad frame_samples and a length-contract VAD stand-in, which is "
+                             "what a mixed frame of a non-multiple length hits (blocker 3)")
+    parser.add_argument("--vad-frame-samples", type=int, default=DEPLOYED["vad_frame_samples"],
+                        help="deployed speech_provider.frame_samples (10 ms at 16 kHz)")
     args = parser.parse_args()
 
     for character in args.speech_pattern:
@@ -164,7 +203,14 @@ def main() -> int:
                 hard_cap_samples=args.endpoint_hard_cap,
             )
         ),
-        speech_provider=WholeFrameSpeech(args.speech_pattern),
+        speech_provider=(
+            WebRtcSpeechProvider(
+                vad=LengthContractVad(LIVE_SAMPLE_RATE),
+                frame_samples=args.vad_frame_samples,
+            )
+            if args.speech_provider == "webrtc"
+            else WholeFrameSpeech(args.speech_pattern)
+        ),
         decoder=UnusedDecoder(),
         identity_preparer=UnusedIdentityPreparer(),
         arbiter=InferenceArbiter(),
@@ -173,8 +219,16 @@ def main() -> int:
     print(
         f"config: session_hard_cap={args.session_hard_cap} "
         f"endpoint_hard_cap={args.endpoint_hard_cap} "
-        f"frame_samples={args.frame_samples} pattern={args.speech_pattern}"
+        f"frame_samples={args.frame_samples} pattern={args.speech_pattern} "
+        f"speech_provider={args.speech_provider}"
+        + (f" vad_frame_samples={args.vad_frame_samples}" if args.speech_provider == "webrtc" else "")
     )
+    if args.speech_provider == "webrtc":
+        remainder = args.frame_samples % args.vad_frame_samples
+        print(
+            f"evidence: mixed_frame_remainder={remainder} "
+            f"({'whole VAD frames' if remainder == 0 else 'short trailing VAD piece'})"
+        )
 
     pcm = bytes(args.frame_samples * 2)
     queued_ids: list[int] = []

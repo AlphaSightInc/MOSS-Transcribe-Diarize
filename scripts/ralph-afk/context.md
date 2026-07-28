@@ -61,17 +61,20 @@ block). The post-merge freeze has resumed: from `23aabe6` on, the feature branch
 `scripts/ralph-afk/*`. Iteration 6 published that merge to all four checkouts (G5), iteration 7
 rebuilt and reinstalled the signed app on m4mbp (G6's automatable half), and iteration 8 rehearsed
 and restored the server rollback (F4a); none of the three changed a tracked file, and the *product*
-on the Mac now carries G1+G2+G3.
+on the Mac now carries G1+G2+G3. Iteration 9 built the F0 server-side probe and found two
+certification blockers; iteration 10 resolved F0's one open caveat and found a **third**, worse one
+(see the F0 and H-diagnosis blocks). Neither 9 nor 10 changed a tracked file.
 
-**PRD acceptance scoreboard after iteration 9.** Green with evidence: IDEA-044 checkpoint, production
+**PRD acceptance scoreboard after iteration 10.** Green with evidence: IDEA-044 checkpoint, production
 client gate, server meeting-reliability gate, the one reviewed keeper merge (plus the amendment's one
 authorized follow-up merge), one exact SHA everywhere, live service answering, batch service
 unharmed, signed app installed, **rollback rehearsed and recorded**. Open: permissions granted, the
 60 s canary, the 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and
 the final close.
 
-**Those open items are no longer merely waiting on E3 — iteration 9 proved they cannot pass on the
-deployed build at all.** See the F0 block below. The certification path is now gated on an
+**Those open items are no longer merely waiting on E3 — iterations 9 and 10 proved they cannot pass
+on the deployed build at all, and that the deployed build fails *sooner* on realistic input than on
+the probe's first-cut input.** See the F0 block and the H-diagnosis block below. The certification path is now gated on an
 **operator decision** (authorize a second post-merge fix cycle, this time for server source) *before*
 it is worth spending E3's physical TCC clicks. Running E3 first would burn the one irreducible human
 step on a canary that is guaranteed to die in about three seconds.
@@ -709,8 +712,9 @@ the D2 pin on both hosts. `ops/moss-live.env` now exists on the host (untracked,
 `/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs` was created by the service.
 `/api/live/descriptor` and `/live` are still 404 on 7860.
 
-**`live-auth.json` now holds four devices, three of them inert (updated iteration 9).** The F0 probe
-paired and then revoked three `ralph-f0-probe-*` devices; only
+**`live-auth.json` now holds five devices, four of them inert (updated iteration 10).** The F0 probe
+paired and revoked three `ralph-f0-probe-*` devices and iteration 10 added and revoked one
+`ralph-h2-probe-20260728T094218Z`; only
 `AB600574-FD93-4321-967E-652AB064A70B` (m4mbp, from the 03:10 attended pairing) is `revoked: false`.
 Device *count* is therefore no longer a useful signal for D4 — check that entry's `paired_at`, or the
 count of **unrevoked** devices. Baseline pre-copy: `live-auth.json.ralph-f0-backup-20260728T091927Z`,
@@ -1055,10 +1059,10 @@ session survived one tick longer (11 frames, `accepted_samples` 32000) and then 
 `frozen span end must advance.`** — `live_session.py:237`, `freeze_until` refusing
 `end_sample <= self._frozen_until_sample`. Both call sites are the coordinator
 (`live_coordinator.py:128` accept path, `:231` `_freeze_and_queue` used by `flush_endpoint`).
-*Caveat a fix must resolve first:* the probe's two lanes carry **identical** `capture_timestamp_ns`
-and start at the same instant, which the Mac's will not. That is legal (the contract requires no
-distinctness and the server 200'd eleven such frames) but it is more degenerate than a real capture —
-re-run the probe with a per-lane offset before concluding. Blocker 1 has no such caveat.
+~~*Caveat a fix must resolve first:* the probe's two lanes carry identical `capture_timestamp_ns`.~~
+**Spent in iteration 10 — the caveat was real and it was hiding a third, earlier blocker.** The
+mechanism of blocker 2 is now named and reproduced offline, and lane timestamps have nothing to do
+with it. See the H-diagnosis block below.
 
 *Why every gate stayed green.* No test puts the **real** VAD endpointer and a **real** decoder in one
 process: `tests/test_live_vad.py` drives the endpointer with a stub provider — it even asserts the
@@ -1081,6 +1085,9 @@ printf '%s' "$PAYLOAD" | python3 scripts/ralph-afk/live-pipeline-probe.py \
   --host 100.64.0.8 --port 7861 --pin a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff \
   --device-id "$DEVICE_ID" --seconds 20 --lead-seconds 1.0 --report /tmp/moss-f0.json
 ```
+Add `--lane-offset-ms system=137` (iteration 10) to break the degenerate shared-lane-origin input;
+that is the flag that surfaces blocker 3, and any future run that wants to reach the endpointer at
+all must **omit** it until blocker 3 is fixed.
 `--fail-fast` is the default and must stay so: a terminal failure is sticky, so continuing only
 buries the one response that explains it (the first run published for **7 minutes** past a dead
 session and learned strictly less than the 2-second run that replaced it). Post-terminal 409s take
@@ -1095,6 +1102,74 @@ sessions the device owns and needs no restart. It *marks* revoked rather than de
 matters. A pre-copy of the baseline file is
 `live-auth.json.ralph-f0-backup-20260728T091927Z` (sha256 `9d306766…`); restoring it costs a service
 restart, so it is the deeper rollback, not the default.
+
+**H-diagnosis — the three server blockers, all reproduced, two of them offline (new, iteration 10).
+READ THIS WITH THE F0 BLOCK; it supersedes F0's open caveat.** Iteration 10 answered the one
+question F0 left open (do the probe's identical lane timestamps explain blocker 2?) and the answer
+changed the picture: **no, and relaxing that input exposes a third blocker that fires four times
+sooner.** Two tools carry the evidence, both Ralph-only: `scripts/ralph-afk/live-hardcap-repro.py`
+(new — offline, no server, no GPU, no network, ~0.4 s per case) and the existing
+`live-pipeline-probe.py`, which gained `--lane-offset-ms LANE=MS`.
+
+*The caveat is structurally irrelevant to blockers 2 and 3, and the repro prints the reason rather
+than arguing it:* `live_session.AudioFrame` — the frame the mixer hands the coordinator — has fields
+`sequence, pcm, sample_count, sample_rate` and **no timestamp field at all**. Lane capture
+timestamps stop at the mixer. They decide *how many* mixed samples exist and *when*, never what the
+coordinator does with them.
+
+*Blocker 2 is a collision between two independent hard-cap freezers, and it is deterministic.*
+`LiveSession.accept_frame` calls `self._freeze_hard_cap_spans()` **itself** (`live_session.py:198`,
+`:353-359`) whenever `accepted - frozen_until >= hard_cap_samples`. The coordinator calls that same
+`session.accept_frame` **first** (`live_coordinator.py:122`), *then* runs the endpoint policy, which
+emits its own `hard_cap` span at the identical sample, and `freeze_until` refuses it because the
+session already moved `_frozen_until_sample` there. So the session dies at the first stretch of
+`hard_cap_samples` (40000 = **2.5 s**) of accepted audio that contains no endpoint — i.e. 2.5 s of
+continuous speech, or 2.5 s of opening silence. Measured, deployed config, `--frames 8`:
+continuous speech → `ValueError: frozen span end must advance.` at `accepted_samples=40000`;
+pure silence → the same at the same sample; frame size 1000 instead of 8000 → the same at the same
+sample (so it is not a frame-size artifact); a speech/silence pattern that endpoints every ≤ 2.5 s →
+**survives**, because each endpoint span moves both cursors together. *Second defect visible in the
+same output:* the span the session freezes by itself is never queued for decode —
+`FrameAck.frozen_span_ids` is dropped on the floor by the coordinator and by
+`live_service_runtime.py:477`, which reports only `result.frozen_spans`. So even without the
+collision that audio would never be transcribed.
+*Why no test could see it:* **every** harness in the repo gives the endpoint policy a hard cap and
+the session none — `tests/test_live_coordinator.py:101` (`LiveSession(max_retained_samples=8000)`,
+policy cap 4000), `tests/test_live_service_runtime.py:155,165` (`endpoint_config` 4000,
+`bounds.hard_cap_samples=None`), `tests/test_live_api.py:209` (same shape, bounds default `None`).
+`tests/test_live_session.py` exercises the session's cap in isolation, with no coordinator and no
+policy. The two freezers have therefore never coexisted anywhere except production — and C2
+(iteration 12) *requires* them to be equal in a deployed manifest, so C2 is what guarantees the
+collision on the real host.
+
+*Blocker 3 — an unaligned lane timestamp makes the mixed frame an illegal VAD frame, and the session
+dies in ~1.1 s.* One probe run against the deployed service with `--lane-offset-ms system=137
+--lead-seconds 0`: tick 0 both lanes 200, tick 1 system 200, tick 1 **microphone 500 Internal Server
+Error**, `terminal_failure {kind: integrity, code: Error, message: "Error while processing frame",
+retryable: false}`, `accepted_samples` **5808** — which is exactly 500 ms − 137 ms of audio. The host
+traceback names it: `live_transport.py:221` → `live_mixer.py:112` → `live_service_runtime.py:465` →
+`live_coordinator.py:122` → `live_provider_bundle.py:424` → `:643` →
+**`webrtcvad.Error: Error while processing frame`**.
+*Mechanism.* `LiveMixer._stage` sets `origin_ns = max(first capture_timestamp_ns over active lanes)`
+and (non-final) `safe_end_ns = min(last sealed interval end)`, then
+`sample_count = floor((safe_end − cursor) × 16000 / 1e9)` — an **arbitrary** integer once the lanes
+are not aligned to each other on the frame grid. `WebRtcSpeechProvider.observe`
+(`live_provider_bundle.py:417-434`) then chops that frame into `frame_samples` pieces with
+`piece_samples = min(frame_samples, end − cursor)`, so the **trailing piece is short**; the deployed
+`speech_provider` is `{kind: webrtc, frame_samples: 160, mode: 1}` and webrtcvad accepts only 10/20/30
+ms (160/320/480 samples at 16 kHz). 5808 = 36×160 + **48** → raise. The exception is a bare
+`webrtcvad.Error`, so — exactly like blocker 1 — it escapes typed classification, lands as
+`kind=integrity, retryable=false`, and the session is terminal. Reproduced offline with the real
+`WebRtcSpeechProvider` and a stand-in VAD that enforces only webrtcvad's documented length contract:
+`--speech-provider webrtc --frame-samples 5808` → refused at the first frame with `got 48`; the
+control `--frame-samples 8000` (8000 = 50×160) survives. **This is the normal case, not an edge
+case:** two real capture devices never start on the same instant, so the Mac will produce unaligned
+lanes on essentially every run. F0 could not find it because a single shared origin makes every mixed
+frame exactly 8000 samples.
+*Severity ordering for a fix cycle:* blocker 3 (≈1.1 s, any unaligned lanes) → blocker 1 (≈3 s, any
+unparseable span) → blocker 2 (2.5 s, any endpoint-free stretch). All three are one-line-class
+defects in server source and all three are `kind=integrity, retryable=false`, i.e. the session cannot
+recover. **None of them may be touched on this branch** — see Phase H.
 
 **Gotcha — remote shell quoting.** Nested quoting through Windows conhost → `wsl.exe` → bash
 fails ("The system cannot find the path specified"). Always pipe a script on stdin:
@@ -1367,6 +1442,20 @@ printf '%s\n' \
 #   from_manifest -> _endpoint_config(payload["endpoint_config"]) and _bounds(payload["bounds_config"])
 #   (they take their own sub-mappings, NOT the whole payload), then _preflight_payload(path)
 #   Expect available=True, failures=[], manifest_hash 61d97ffef1bbdc0d4278c0fd719d5d31b0ac5f69e1654573ada5091653fecb95
+
+# --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
+#     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived. ------
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8                      # blocker 2, speech
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 --speech-pattern 0   # blocker 2, silence
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 45 --frame-samples 1000  # not frame-size
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 --session-hard-cap none  # the TEST shape
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 24 --speech-pattern 1100   # endpoints, ok
+python3 scripts/ralph-afk/live-hardcap-repro.py --speech-provider webrtc --frame-samples 5808 \
+  --frames 3                                                                   # blocker 3
+python3 scripts/ralph-afk/live-hardcap-repro.py --speech-provider webrtc --frame-samples 8000 \
+  --frames 4                                                                   # blocker 3 control
+# The webrtc cases use a stand-in VAD enforcing only webrtcvad's 10/20/30 ms length contract,
+# because MacStudio has no native webrtcvad wheel. The real exception is recorded from the host.
 
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
@@ -1730,7 +1819,8 @@ own, which no later step does.
     "nothing is paired and `~/Library/Application Support/MOSSCapture` does not exist yet". The store
     exists since 2026-07-28 03:10 and a device is paired — see the "A device is ALREADY paired"
     block. `mtd-capture status` still answers `{"ok":false}` until the app is running.
-23. **E3 — TCC human step** `[BLOCKED on the operator — and, since iteration 9, DO NOT SPEND IT YET]`:
+23. **E3 — TCC human step** `[BLOCKED on the operator — and, since iterations 9/10, DO NOT SPEND IT
+    YET: three server blockers now stand between the clicks and any transcript]`:
     the only irreducible human step in the whole loop. **F0 proved the canary it exists to enable
     cannot pass on the deployed build** (see the F0 block), so asking for the clicks now buys a
     session that dies in about three seconds. Correct order is: authorize H1/H2 → fix and gate →
@@ -1764,13 +1854,17 @@ own, which no later step does.
     blockers that would have destroyed F1 seconds after the operator's TCC clicks**. Off-list and
     justified in progress.txt: it is the only remaining work that could fail *downstream* of the one
     human step, and it needed no human. Re-runnable; the device revoke is mandatory after each run.
-24. **F1 — 60 s canary** per prd.md. `[blocked on E3 **and** on H1/H2 — it cannot pass on the
+23b. **F0b — the offset probe run** `[done — iteration 10]`: one run with
+    `--lane-offset-ms system=137 --lead-seconds 0` spent F0's open caveat and found blocker 3. The
+    device was revoked, both batch units and the live unit kept their MainPIDs/NRestarts/timestamps,
+    `live-runs/` is still 0 entries and no `/tmp/mtd-live-*` survives. See the H-diagnosis block.
+24. **F1 — 60 s canary** per prd.md. `[blocked on E3 **and** on H1/H2/H3 — it cannot pass on the
     deployed build]`
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-    `[blocked on E3 and H1/H2]`
+    `[blocked on E3 and H1/H2/H3]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-    `[blocked on E3 and H1/H2]`
+    `[blocked on E3 and H1/H2/H3]`
 **F4 was split by evidence in iteration 8**, the way iteration 20 split E2: its rollback rehearsal
 needs no operator, closes a PRD acceptance clause on its own, and is *cheaper before* certification
 than after (nothing in flight to disturb). Its close half still waits on everything else.
@@ -1874,12 +1968,15 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
 
 ### Phase H — server fix cycle, NOT YET AUTHORIZED
 
-**Gate: do not start any of this.** Both items change tracked **server** source, which the
+**Gate: do not start any of this.** All three items change tracked **server** source, which the
 post-merge freeze forbids on this branch, and the 2026-07-28 amendment is spent on the Mac client and
 does not cover them. This is the same shape as the ATS blocker that produced that amendment: a defect
 no gate could see, found after the merge. The loop's job is to hold here with the evidence recorded
 until prd.md carries an authorization (or an explicit decision to certify against a rebuilt branch).
-When it does, do H1 before H2 — H1 is unambiguous and H2 has an input caveat to resolve first.
+**Order when authorized: H3 → H1 → H2**, which is the order the deployed build actually fails in
+(≈1.1 s → ≈3 s → 2.5 s). Iteration 10 spent H2's input caveat: it is resolved, and it produced H3.
+Nothing here is waiting on further diagnosis — all three are reproduced, two of them offline in
+under a second (see the H-diagnosis block and the repro commands in Validation).
 
 33. **H1 — an unparseable span must not kill the meeting** `[BLOCKED on authorization]`. The policy
     question comes before the patch: a span the decoder returns nothing for should be **dropped or
@@ -1888,11 +1985,24 @@ When it does, do H1 before H2 — H1 is unambiguous and H2 has an input caveat t
     "silence" from "corrupt". The regression test must put the *real* validation seam under the live
     coordinator with an empty transcript — a stub that raises `LiveProviderError` reproduces nothing,
     because that is exactly the path the bug bypasses.
-34. **H2 — the endpointer must not ask to freeze a non-advancing span** `[BLOCKED on authorization,
-    and on ruling out the probe's identical-lane-timestamp caveat first]`. Re-run F0 with a per-lane
-    `capture_timestamp_ns` offset before touching source: if the 400 disappears the defect is
-    narrower than it looks, and if it does not, `live_coordinator.py:128/231` and the endpoint policy
-    are the surface.
+34. **H2 — two independent hard-cap freezers collide** `[BLOCKED on authorization; diagnosis
+    complete, iteration 10]`. Not "the endpointer asks to freeze a non-advancing span" as first
+    written: `LiveSession.accept_frame` freezes its own `hard_cap` span before the endpoint policy
+    ever runs, and the policy's identical span is then refused. The surface is that duplication —
+    either the session stops freezing on its own (and the endpoint policy stays the single authority),
+    or the coordinator honours `FrameAck.frozen_span_ids` and the policy's cap goes away. The second
+    reading has to answer the orphan too: spans the session freezes by itself are never queued for
+    decode. The regression test must give **one** `LiveSession` and **one** `EndpointPolicy` the
+    *same* hard cap — no harness in the repo does, which is exactly why the suite is green.
+    `scripts/ralph-afk/live-hardcap-repro.py` is the red case, offline, in 0.4 s.
+35. **H3 — a mixed frame that is not a whole number of VAD frames kills the session**
+    `[BLOCKED on authorization; diagnosis complete, iteration 10; fix this FIRST]`. Unaligned lane
+    capture timestamps make `LiveMixer._stage` emit an arbitrary `sample_count`;
+    `WebRtcSpeechProvider.observe` then hands webrtcvad a short trailing piece and the bare
+    `webrtcvad.Error` goes terminal. Fix surface is the provider (buffer the remainder across
+    frames, or refuse to build a short piece) and the classification seam that lets a bare
+    third-party exception become `kind=integrity`. Reproduced on the deployed host **and** offline;
+    it is the first thing a real Mac capture will hit, before blockers 1 and 2 are even reachable.
 
 ## Non-candidates
 
