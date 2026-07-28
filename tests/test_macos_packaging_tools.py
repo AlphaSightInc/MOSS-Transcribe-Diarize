@@ -138,6 +138,13 @@ def test_build_app_signs_without_the_entitlement_the_identity_cannot_satisfy(bui
     # could never be granted at all.
     for key in ("NSAudioCaptureUsageDescription", "NSMicrophoneUsageDescription"):
         assert info[key].strip()
+    # And without the transport declaration the shipped bundle cannot reach the live server at
+    # all: ATS applies to a bundle and not to a bare executable, and it rejects the pinned
+    # self-signed leaf after the pinning delegate has already accepted it. Asserted on the
+    # composed bundle, not on the tracked source, because this tool is what installs it.
+    # Keep it un-siblinged: NSAllowsLocalNetworking or either NSAllowsArbitraryLoadsIn* key
+    # makes the OS ignore NSAllowsArbitraryLoads.
+    assert info["NSAppTransportSecurity"] == {"NSAllowsArbitraryLoads": True}
 
     tracked = plistlib.loads((PACKAGE_ROOT / "Resources" / "MOSSCapture.entitlements").read_bytes())
     assert "keychain-access-groups" in tracked, (

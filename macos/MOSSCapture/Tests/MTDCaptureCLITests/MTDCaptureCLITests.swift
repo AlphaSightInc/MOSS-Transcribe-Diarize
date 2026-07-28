@@ -410,6 +410,36 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertFalse(entitlements.contains("com.apple.security.app-sandbox"))
     }
 
+    func testBundleDeclaresTheTransportExceptionThePinnedClientCannotWorkWithout() throws {
+        // App Transport Security applies to an `.app` bundle and not to the bare executable, and
+        // it rejects this product's self-signed leaf *after* PinnedCertificateURLSessionDelegate
+        // has matched the pin — NSURLErrorDomain -1200 / _kCFStreamErrorCodeKey -9802. ATS exempts
+        // loopback and the RFC 1918 ranges, so no single-host test can observe this; only the
+        // declaration's presence can be gated here. Parsed, not substring-matched, so the
+        // explanatory comment in the plist cannot satisfy the assertions.
+        let url = packageRoot()
+            .appendingPathComponent("Resources")
+            .appendingPathComponent("Info.plist")
+        let parsed = try PropertyListSerialization.propertyList(
+            from: try Data(contentsOf: url),
+            options: [],
+            format: nil
+        )
+        let info = try XCTUnwrap(parsed as? [String: Any])
+        let transport = try XCTUnwrap(
+            info["NSAppTransportSecurity"] as? [String: Any],
+            "without this key the app cannot reach the live server at all"
+        )
+        XCTAssertEqual(transport["NSAllowsArbitraryLoads"] as? Bool, true)
+        // Declaring NSAllowsLocalNetworking or either NSAllowsArbitraryLoadsIn* sibling makes the
+        // OS ignore NSAllowsArbitraryLoads, which would silently restore the -1200.
+        XCTAssertEqual(
+            Array(transport.keys),
+            ["NSAllowsArbitraryLoads"],
+            "a sibling key here disables the exception this product depends on"
+        )
+    }
+
     func testProductEntrypointsResolveOneSharedPrivateFileStoreByDefault() throws {
         let home = FileManager.default.temporaryDirectory
             .appendingPathComponent("moss-home-\(UUID().uuidString)")

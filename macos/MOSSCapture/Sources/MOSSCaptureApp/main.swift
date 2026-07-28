@@ -79,6 +79,9 @@ final class ProductionCaptureRuntime {
             server: UnixDomainControlServer(
                 socketPath: ControlSocketDefaults.socketPath(),
                 authenticator: SameUserUDSAuthenticator(secrets: keyStore),
+                // This app is LSUIElement and Launch Services gives it no usable stderr, so a
+                // failure it does not put in the unified log is a failure nobody can reconstruct.
+                failureLog: OSLogControlChannelFailureLog(),
                 handler: dispatcher.dispatch
             )
         )

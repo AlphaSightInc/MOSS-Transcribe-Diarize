@@ -102,7 +102,7 @@ public final class CaptureCommandLine {
 
     public func run(arguments: [String]) -> Int32 {
         guard let rawCommand = arguments.first,
-              ["pair", "start", "stop", "status", "handoff", "latency"].contains(rawCommand) else {
+              ControlChannelCommands.all.contains(rawCommand) else {
             writeError(
                 "usage: mtd-capture pair --server <https-url> | "
                     + "start [--label <name>] | stop | status | handoff | latency\n"

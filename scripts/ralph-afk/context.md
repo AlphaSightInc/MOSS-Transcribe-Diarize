@@ -44,10 +44,21 @@ iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 rec
 client gate (B6) and changed no product source; iteration 11 bound view authority to the session
 lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
 tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
-deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c).
-Test totals on the branch: Swift **131 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
-including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
+deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c); iteration 16 ran the
+final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1),
+iteration 18 finalized the host manifest and rotated the live TLS pair (D2), iteration 19
+installed and started the live service plus its Windows forward (D3), iteration 20 aligned the
+m4mbp checkout with the published SHA (E2a), iteration 21 created the signing identity there (E1),
+and iteration 22 built, signed and installed the app there (E2b) — none of 17-22 changed a tracked
+file. Iteration 23 recorded the E3 blocker. **The post-merge freeze is then reopened exactly once**
+by the prd.md amendment of 2026-07-28: run `20260728-072601` iteration 1 landed G1 (the ATS
+declaration plus its gates), iteration 2 landed G2 (the pairing-payload trim and the canonical
+wire form) and iteration 3 landed G3 (control-channel failure classification and logging), so the
+branch carries tracked product source again, strictly within the amendment's four items.
+Iteration 4 re-ran the full client gate green and changed no tracked source (see the G4 gate block).
+Test totals on the branch: Swift **139 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
+including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
 `tests/test_live_deployment_credentials.py` **14 passed** (new in iteration 13) and
@@ -64,6 +75,79 @@ bundle to a paired built app is proven cold; B1/B2/B3/B4 filters 5/10/11/5 passe
 discriminator **10/10**; `leak-scan: clean`; and MacStudio is left with no
 `~/Library/Application Support/MOSSCapture`, no `/Applications/MOSSCapture.app` and no
 `moss-signing.keychain-db`. **Phase C is open.**
+
+**Keeper merge: DONE at `f9285d6` (iteration 16).** Feature tip `f400d426…`, merge
+`f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, `main^1 = af3ac366…`, `main^2 = f400d426…`.
+`git diff f400d42 f9285d6` is **empty** — main was untouched since the branch point, so every
+number measured on the feature tip is also a measurement of the merge commit, and the merge
+worktree re-ran the whole suite anyway. **Published in iteration 17 (D1)**: `origin/main` and the
+server checkout are both `f9285d6`. From here the feature branch may only carry
+`scripts/ralph-afk/*` evidence — **no tracked product source may change on it**. A defect found in
+D/E/F needs a new branch and a decision, not a second keeper merge.
+*The gate measured at `f400d426` (all on MacStudio, 2026-07-28):* both Swift products from an
+**empty** scratch path, `MOSSCaptureApp` 8.0 s and `mtd-capture` 0.9 s, **zero warnings**;
+`swift test` **131 passed / 0 failures**; `pytest tests` **536 passed / 2 skipped / 368 subtests**
+in 51.9 s; tracer **3 passed / 0 skips**; attempt-2 discriminator **10/10**; `leak-scan: clean`.
+*Gotcha found here:* `swift build --product A --product B` silently builds only **B**. The B6 and
+C4 gates and `merge-keeper.sh` all use two separate invocations; never collapse them into one.
+
+**G4 client gate: GREEN at `23dc163` (run 20260728-072601 iteration 4).** The amendment's fix cycle
+re-measured on MacStudio 2026-07-28, tree clean before and after: both Swift products from an
+**empty** scratch path in separate invocations (`mtd-capture` 8.48 s wall / 7.69 s build,
+`MOSSCaptureApp` 0.92 s / 0.61 s), **zero warnings**; `swift test` **139 passed / 0 failures**;
+`pytest tests` **537 passed / 2 skipped / 368 subtests** in 59.2 s — the two skips printed with
+`-rs` are `tests/test_large_upload.py:155,175` "Python 3.10 compatibility contract", the same
+pre-existing pair as every prior gate, **not** Darwin skips; tracer alone **4 passed / 0 skips** in
+14.7 s; attempt-2 discriminator **10/10**; `leak-scan: clean`.
+*The merge payload, reviewed against the amendment's four allowed items:* `git diff --stat main HEAD
+-- ':!scripts/ralph-afk'` is exactly eight files, +864/-19 — `Resources/Info.plist` (G1),
+`CaptureSecurity.swift` (G2 trim + wire form, G3 classifier), `MOSSCaptureApp/main.swift` and
+`CaptureCommandLine.swift` (G3), and four test files (`CaptureControllerTests.swift`,
+`MTDCaptureCLITests.swift`, `tests/test_macos_packaging_tools.py`,
+`tests/test_macos_uds_tracer.py`). No `ops/`, no server source, no deployment template, nothing
+outside the amendment. The only non-product paths in the diff are
+`scripts/ralph-afk/{context.md,prd.md,progress.txt}`.
+
+**The keeper fence blocks on TWO conditions, not one (measured, iteration 4).** The prior iteration
+flagged only the SHA fence; a dry run found a second, and it fails **silently**.
+1. `merge-keeper.sh:21` compares `git rev-parse main` with `RALPH_MERGE_MAIN_BEFORE`, default
+   `af3ac366…` — the *first* merge's pre-merge SHA. It prints
+   `ERROR: main moved from expected pre-merge SHA af3ac366…` and exits 1.
+2. `merge-keeper.sh:27` is a bare `git merge-base --is-ancestor main "$feature_sha"` under
+   `set -e`. **`main` is not an ancestor of the feature tip** and never was after the first merge:
+   `f9285d6` *is* the merge commit, so it lives only on `main` while its second parent `f400d426` is
+   the feature-branch commit. With fence 1 satisfied the script therefore exits **1 with no output
+   at all** — an undiagnosable failure mode, and the reason this had to be measured rather than
+   reasoned about.
+*Why fence 2 is safe to satisfy by history rather than by editing the check:* `main`'s tree and the
+merge base's tree are the **same object**, `815f23b0d7cd0c3fd73226404036fdce49802da2`, and
+`git diff f400d426 f9285d6` is empty. So `main` carries **zero content** the feature branch lacks;
+only the merge commit object itself is exclusive to it. Merging `main` into the feature branch is
+therefore a pure history join with a provably empty diff, after which the ancestry fence is honestly
+true and the recorded gate at product-tree `23dc163` still measures the merged tree. Do **not**
+delete or loosen fence 2, and do not leave fence 1 as a command-line `RALPH_MERGE_MAIN_BEFORE`
+override — write the amendment's expected pre-merge SHA into the script so a *third* merge still
+fails. `git merge-tree --write-tree main HEAD` already succeeds (rc=0), so the merge is conflict-free.
+
+**Server meeting-reliability gate: GREEN at `f400d426` (iteration 16).** The PRD clause → node map
+the C1 residue asked for, each clause run and passing:
+| PRD clause | node |
+| --- | --- |
+| active-session-only authority | `test_view_authority_follows_the_session_lifecycle_without_an_explicit_release`, `test_view_authority_is_refused_until_a_session_lifecycle_is_bound` |
+| virtual 60-minute duration | `test_view_authority_outlasts_the_retired_fifteen_minute_expiry` (0→60 min in 5-min subtests) |
+| exact 12 h cap boundary | `test_view_authority_ends_exactly_at_the_absolute_cap_while_capture_continues` (cap−0.5 s ok, cap and cap+1 s refused, capture still authorized at cap+1 h) |
+| terminal boundary | `test_clean_stop_immediately_revokes_view_authority`, `test_failed_stop_revokes_the_view_without_stranding_capture_authority` |
+| device revoke | `test_device_ownership_revocation_and_session_release` |
+| operator revoke | `test_operator_view_revocation_is_loopback_only_and_leaves_capture_running`, `…_and_keeps_capture_streaming` (route) |
+| restart | `test_view_authority_does_not_survive_a_restart` |
+| 900 s expiry unreachable | proven by absence: the only `VIEW_TTL` string in the tree is `test_…outlasts…`'s `assertFalse(hasattr(live_auth, "VIEW_TTL_SECONDS"))`, and no `900` literal exists in `live_auth.py` or `live_transport.py` |
+| 5-second outage | Swift `testOutboxRetainsEveryFrameAcrossAFiveSecondOutageAndDeliversEachExactlyOnce` |
+| ambiguous-success retry | Swift `testAmbiguousAnswerAndDuplicateRetryReuseTheOriginalLaneSequenceIdentity` |
+| duplicate retry | server `test_v2_http_replays_prior_ack_and_keeps_lane_sequences_distinct` + the Swift node above |
+| 429 | server `test_v2_http_maps_lane_capacity_to_429_without_mutating_or_sharing_capacity` + Swift `testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio` |
+| outbox overflow → typed degraded state | Swift `testOutboxOverflowKeepsSequencesGaplessAndReportsATypedDegradedState`, `testOneStalledLaneNeitherBlocksTheOtherLaneNorReattemptsItsWholeBacklog` |
+Counts: view-authority slice **10 passed / 22 subtests**, device-revocation node **1 passed**,
+server retry/429 pair **2 passed**, Swift reliability filter **5 passed**.
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
@@ -356,6 +440,100 @@ session stopped cancels itself; `stop` cancels the probe but leaves the aggregat
 handed lane/timestamp/rate/count/discontinuity — never a `CaptureFrame` — so the measurement path
 structurally cannot reach PCM.
 
+**ATS contract (new, run 20260728-072601 iteration 1 / G1).** `Resources/Info.plist` declares
+`NSAppTransportSecurity = {NSAllowsArbitraryLoads: true}` and **nothing else** — declaring
+`NSAllowsLocalNetworking` or either `NSAllowsArbitraryLoadsIn*` sibling makes the OS ignore
+`NSAllowsArbitraryLoads`, which would silently restore the failure. Three shape gates hold it:
+`MTDCaptureCLITests.testBundleDeclaresTheTransportExceptionThePinnedClientCannotWorkWithout`
+(parses the plist, so the explanatory comment inside it cannot satisfy the assertion),
+`test_macos_packaging_tools.py`'s composed-bundle node (what `build-app.sh` actually ships), and
+`_first_install_lab_bundle` (refuses to install a lab bundle without it). Mutation-rehearsed: key
+removed → 4 nodes fail; `NSAllowsLocalNetworking` added → the 2 exact-shape nodes fail.
+*The exemption matrix, measured on MacStudio 2026-07-28 with one ad-hoc `.app`-bundled Swift probe
+whose `URLSessionDelegate` accepts the leaf (26.5.1; m4mbp is 26.5.2 and answered identically):*
+| destination | bare binary | in `.app` |
+| --- | --- | --- |
+| remote `100.64.0.8` (tailnet) | 200 | **-1200 / -9802** |
+| remote `192.168.68.38` (LAN) | 200 | 200 |
+| this host's own `100.64.0.1` | 200 | 200 |
+| this host's own `192.168.68.36` | 200 | 200 |
+Same bundle + the declaration → `100.64.0.8` answers **200**. So ATS applies only to a bundle, only
+to a peer that is neither loopback nor RFC 1918, and it overrides a delegate that already accepted
+the leaf.
+**The consequence for testing is structural: no single-host test can gate this.** Every server the
+tracer starts is on the tracer's host, so however the peer address is *written* the connection is
+routed over loopback and exempted — `100.64.0.1` proves it directly. G4's premise (that binding
+`100.64.0.0/10` would reproduce it) is therefore wrong, and the supervisor's inference that the
+tracer's blind spot was the *address range* is only half of it: remote RFC 1918 is exempt too, so
+even a second LAN host would not have caught this. The behavioral confirmation is m4mbp dialling
+`https://100.64.0.8:7861` — a real remote tailnet peer — which is E3. Never re-add a node that
+looks like an ATS gate but binds a local server; that is the exact shape of the test that let this
+ship.
+The CGNAT node the loop did build (`test_bundled_app_on_the_production_address_range_still_refuses_
+an_unpinned_leaf`) proves the *other* half of the declaration's safety case: with ATS off the whole
+trust decision is the pin's, so it pairs once honestly and then serves a leaf the payload's pin does
+not describe and requires refusal. Non-vacuity rehearsed both ways.
+
+**Pairing-payload contract (new, run 20260728-072601 iteration 2 / G2).** The payload is typed by a
+human — paste, Return, Ctrl-D — so `CapturePairingPayload.init` treats surrounding whitespace as
+punctuation of the *input*, not of the payload: it trims `.whitespacesAndNewlines` first, and only
+then splits. Two consequences are contractual.
+*The error now accuses the right thing.* Whitespace that survives the trim is **inside** a field, so
+the guard refuses it as `invalidPairingPayload`; before this a wrapped or space-broken payload
+reached the strict 64-hex check and came back as `invalidPinnedHash`, an error that sends the
+operator to inspect the server's certificate for their own keystroke. Whitespace-only input is
+`missingPairingPayload`, not `invalidPairingPayload`.
+*What was parsed is what is sent.* `URLSessionCapturePairingExchangeAdapter.pair` used to validate
+the parsed payload and then put the **raw stdin bytes** in the HTTP body
+(`String(decoding: pairingPayload, as: UTF8.self)`), so the client validated one string and
+transmitted another. It now sends `parsedPayload.wireRepresentation` =
+`"mtd1.<secret>.<lowercased pin>"`. That mattered beyond tidiness: the server strips the pin field
+(`live_auth._normalize_cert_sha256` → `.strip().lower()`) but not the prefix, so a trailing newline
+would have been forgiven on the wire while a leading space would have come back as a 401 the app
+reports only as `nonSuccessStatus(401)`. Lowercasing is safe because both sides normalize the pin;
+the secret is `secrets.token_urlsafe(32)` (`[A-Za-z0-9_-]`, no dot, no whitespace), so trimming can
+never eat a legitimate character. Canonicalization happens at exactly one place — the parse — and
+the CLI still ships the raw bytes across the UDS unaltered.
+Measured red/green: with the trim removed the tracer's real `mtd-capture pair` with a trailing
+newline answers `exit=70 {"ok":false,"error":"invalidPairingPayload"}`; with the trim *and* the
+internal-whitespace guard removed the same input reproduces the shipped signature
+`invalidPinnedHash`; with the wire form reverted to the raw bytes the body assertion fails showing
+`…aaaa\n` on the wire.
+
+**Control-channel failure contract (new, run 20260728-072601 iteration 3 / G3).** A failure the
+control channel cannot name now says *which* failure it is. `classifyControlError` replaces
+`sanitizedControlError` and returns `(name, detail)`: the four typed families
+(`CaptureSecurityError`, `CaptureControllerError`, `CaptureHTTPTransportError`,
+`NativeCaptureError`) keep their exact `String(describing:)` names and get **no** detail — their
+cases carry only what this process put in them, so the name is already the evidence — while
+anything else keeps the bare `control_failed` it always had **plus** a
+`ControlChannelErrorDetail`.
+*The detail is a domain and integers, and that is the whole safety argument.* It is built from
+`error as NSError`, so it needs no per-type list: `URLError`, `POSIXError` and a bare Swift struct
+all answer, which is what makes it a backstop rather than another list the next unfamiliar error
+falls off the end of. `underlyingCode` is `_kCFStreamErrorCodeKey` when non-zero, else
+`NSUnderlyingError.code`, else **absent** — never zeroed, because zero is a code an error can
+really have. Nothing else is copied out: a `URLError`'s `userInfo` carries
+`NSURLErrorFailingURLStringErrorKey` and a localized message, and the mutation that replaced
+`nsError.domain` with `nsError.description` put `https://100.64.0.8:7861/api/live/pairings` and the
+whole SSL message on the wire — caught by the node's absence assertions.
+*Logging.* `UnixDomainControlServer` takes an optional `ControlChannelFailureLogging` and calls it
+**only** for a detail-bearing (i.e. unclassified) failure; `MOSSCaptureApp/main.swift` wires
+`OSLogControlChannelFailureLog()` and the CLI has no control server at all. Unified logging is the
+only place an `LSUIElement` app can leave a record — no window, and Launch Services gives it no
+usable stderr. Read it with
+`log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m`.
+Everything the line marks `.public` is provably non-secret: the detail is numbers and a constant,
+and the command word is reduced to `ControlChannelCommands.all` (the CLI's own vocabulary, now one
+constant instead of two literals) or the literal `other`/`unknown`. An unrecognised command never
+reaches this path — it throws the named `unknownCommand` — which is exactly why that guard is
+structural rather than assumed.
+*The signature this makes readable:* the tracer's real-process pin refusal is `control_failed` +
+`{domain: NSURLErrorDomain, code: -999}` with **no** `underlyingCode` — -999 is
+`NSURLErrorCancelled`, i.e. *this client* refused the leaf — whereas the ATS block G1 fixed is
+-1200 with underlying -9802, i.e. the *OS* refused the connection. Same `control_failed` for both;
+only the detail tells them apart, and that distinction is what nobody could make in E3.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -454,25 +632,247 @@ MacStudio it returns promptly (iteration-1 `sample` proved the hang was in the m
 not the tap), but nothing yet proves it returns promptly on m4mbp while its prompt is on screen.
 If E3 shows it blocking, move system admission onto the coordinator's own thread in Phase B; do
 not add a Screen Recording preflight in its place (M31 forbids it).
+*Its consequence, made concrete in iteration 23:* `UnixDomainControlServer.serve()` is a **serial**
+accept loop (`CaptureSecurity.swift:897-902`) and `UnixDomainControlClient` sets no `SO_RCVTIMEO`.
+So if the tap call does block, `mtd-capture start` blocks with **no timeout** and every other
+`mtd-capture` command — `status` included — queues behind it. An apparently hung `start` at E3 is
+the expected appearance of an unanswered prompt, not a defect, and a hung `status` is not evidence
+that the app died. Diagnose it with `pgrep -x MOSSCaptureApp` and `sample`, never by killing the app.
 
-**Server state.** Deployed `163e969`; `origin/main` also `163e969`; local `main` is +84.
-`/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0`. `webrtcvad-wheels 2.0.14` and
-`onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified;
-`live.crt`/`live.key` staged but SANs cover only `ga0-alienware-rtx4070ti.local` +
-`IP:192.168.68.38` (**no tailnet SAN**); provider manifest is
-`live-provider-manifest.provisional.json` (0600, `~/.local/share/moss-transcribe-diarize/live/`)
-with `source_revision: "PROVISIONAL-UPDATE-AFTER-KEEPER"` and the pre-retune bounds measured in
-iteration 12 (see the manifest-bounds contract). D2 finalizes it in place of the provisional file;
-nothing on the host has been mutated.
+**Server state.** Deployed **`f9285d6`** since iteration 17 (D1), as is `origin/main` and local
+`main`. **The PRD's "one exact SHA everywhere" clause is GREEN since iteration 20**: local `main`,
+`origin/main` (via `ls-remote`), the server checkout and the m4mbp checkout all read
+`f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, measured in the same iteration. The host checkout is
+**detached** at that SHA on purpose:
+its local `main` ref is still `163e969`, so
+`git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete one-command rollback
+that moves nothing but `HEAD`. Tree clean; `moss-vllm` MainPID 322117 and `moss-web` MainPID 301112
+still `active` with `NRestarts=0` and `ActiveEnterTimestamp` 2026-07-26 22:05:29 / 2026-07-24
+21:37:11 — **neither batch service has been restarted** by D1, D2 or D3, and those four values are
+what every later probe must still show.
+**The live service is up since D3 (iteration 19).** `moss-live-web.service` is installed
+(byte-identical to `ops/systemd/`), `enabled`, `active`, MainPID 334346 since 2026-07-28 00:50:29,
+listening on `0.0.0.0:7861` **TLS**; `/live` and `/api/live/descriptor` both return 200 from
+MacStudio *and from m4mbp*, and plaintext on 7861 gets nothing (`000`). The served leaf hashes to
+the D2 pin on both hosts. `ops/moss-live.env` now exists on the host (untracked, `.gitignore:32`),
+`MOSS_LIVE_ENABLED=0` stays in `ops/moss.env` and is overridden only by that profile.
+`/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs` was created by the service;
+`live/live-auth.json` is still **absent** — `LiveAccessRegistry` writes it on the first pairing, so
+D4 is what creates it. `/api/live/descriptor` and `/live` are still 404 on 7860.
+Windows: portproxy now carries `0.0.0.0:7861 → 172.30.115.123:7861` beside the untouched 7860 and
+5100 rows, firewall rule `MOSS-Transcribe-Diarize-Live` (Inbound/Allow/**Private** only) beside
+`…-Web`, and the sign-in scheduled task argument list now ends `-RefreshOnly -IncludeLive`.
+`webrtcvad-wheels 2.0.14` and
+`onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified.
+*`~/.local/share/moss-transcribe-diarize/live/` after D2 (iteration 18):*
+`live-provider-manifest.json` (0644, generated), `live-provider-manifest.provisional.json` (0600,
+untouched, inode 665548), `live.crt` (0644) / `live.key` (0600) carrying all four SANs,
+`live.crt.backup-20260728T044132Z` / `live.key.backup-20260728T044132Z` (the pre-rotation pair,
+which is the recorded rollback), and `golden.wav`.
+**The live pin is now `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`**
+(was `2c88836b…`); that is the value D4's pairing payload carries and every Mac stores.
+*The running batch process is still the `163e969` image* — `INDEX_HTML`/`FAVICON_SVG` are
+module-level constants (`server.py:123-129`), so a checkout cannot change what an already-running
+uvicorn serves. "Batch unharmed" therefore needs the *restart* proven separately, and iteration 17
+did that without restarting anything: the deployed `ops/start-web.sh` sourced with the host's real
+`ops/moss.env` derives exactly the recorded contract argv (`tests/test_live_service_deployment.py:
+52-62`), port 7860, runs dir `<checkout>/runs`, **no live flag**. Re-run after D3 with the live
+profile also sourced: the batch argv is byte-identical and the live argv is the complete
+`--live …` form, so the two profiles really are one adapter.
 
-**Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. `/Applications/MOSSCapture.app` absent.
-Checkout is at upstream `40cf854` with `origin` = **OpenMOSS upstream**, not the AlphaSight fork.
+**Gotcha — file modes are unenforceable inside the host checkout (found by D3).** `/mnt/d` is a 9p
+`drvfs` mount **without** the `metadata` option, so every file under
+`/mnt/d/Coding/MOSS-Transcribe-Diarize` reads `777` and `chmod` is a silent no-op (the tracked
+`ops/moss-live.env.example` reads 777 too — this predates the loop). That is safe for
+`ops/moss-live.env` because the profile carries only paths and scalars, no secret. It is *not* safe
+for anything holding a secret: `MOSS_LIVE_AUTH_STATE`, `live.key` and the manifest all live under
+`~/.local/share/moss-transcribe-diarize/live` on **ext4**, mode 0700, where the modes are real.
+Never move live secret state onto the Windows drive, and never write a doc line that promises a
+mode inside the checkout.
+
+**Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3 (`swift-driver 1.148.6`).
+**`/Applications/MOSSCapture.app` and `~/.local/bin/mtd-capture` exist since iteration 22 (E2b)** —
+see the installed-app block below; `~/Library/Application Support/MOSSCapture` is still absent
+(nothing has paired yet, and store construction is side-effect free).
+**`moss-signing.keychain-db` exists since iteration 21 (E1)** — see the signing-identity block
+below. Checkout is
+`/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` (same relative path as
+MacStudio), reachable as `ga0@m4mbp` with `BatchMode=yes`.
+**Since iteration 20 (E2a) it is detached at `f9285d6`** — tree `815f23b0…`, clean, 159 tracked
+files, and the reviewed `macos/scripts/*` + `ops/*` tools are present with their exec bits intact
+(the two `*-lib.sh` libraries are non-executable by design). Its `main` ref is deliberately
+**untouched** at upstream `40cf854` still tracking `origin` = **OpenMOSS upstream**, and the fork
+was added as a *second* remote `alphasight`; the complete rollback is therefore one
+`git -C <checkout> checkout main` (rehearsed in iteration 20: it restores `40cf854`, branch `main`,
+tree `ac0058f9…`, clean, `macos/scripts` gone), optionally followed by
+`git remote remove alphasight`. The fork is fetchable from m4mbp **anonymously** —
+`GIT_TERMINAL_PROMPT=0 git ls-remote` succeeds — so no credential lives on that host.
+`.gitattributes` declares LFS filters for `*.bin/*.safetensors/*.pt/*.pth` but the reviewed tree
+contains **zero** such files and neither host has `git-lfs`, so LFS is not in the picture.
 Login keychain is **locked to SSH sessions** — `LiveTranscribe Local Dev` signing fails
 `errSecInternalComponent`. A scripted self-signed identity in a dedicated keychain **does** sign
 over SSH with a designated requirement that is byte-identical across rebuilds (plan D7).
 `security find-identity -v -p codesigning` reports 0 valid identities for such a cert even though
 `codesign` succeeds — never gate on `find-identity`. The exact mechanics are in the signing-mechanics
 note above; `macos/scripts/bootstrap-signing-identity.sh` (iteration 9) implements them.
+
+**Signing-identity state on m4mbp (new, iteration 21 / E1).** The dedicated keychain
+`~/Library/Keychains/moss-signing.keychain-db` (0644) holds the self-signed identity
+`MOSS Capture Local Signing` — RSA 2048 / sha256WithRSA, `CA:FALSE` critical, keyUsage critical
+`digitalSignature`, EKU critical `codeSigning`, valid 2026-07-28 → 2036-07-25. Its password is a
+random 32-byte base64 string in `~/.config/moss-capture/signing-keychain.password` (0600, in a 0700
+directory). The keychain is the **fourth** entry of the user search list, after the three
+pre-existing ones (`projectclerk-signing`, `login`, `openvpn`) — all preserved; the default keychain
+is still `login.keychain-db`.
+**The values E2b/E3 depend on:** `leaf_sha256
+ef8fa54299d5774057287cf577f51d9a9a8410b4524ad67ce69b00b41021d4f2`, leaf SHA-1
+`e118d874377746c4bd25beb8252bb84302b73e72`, and the designated requirement
+`designated => identifier "com.alphasight.moss.capture" and certificate leaf =
+H"e118d874377746c4bd25beb8252bb84302b73e72"`. Measured: that DR is byte-identical for two different
+binaries and after re-signing changed bytes at the same path, while their `CDHash` values differ —
+which is the PRD's "DR unchanged across a rebuild" property at the identity level (the app-bundle
+level belongs to E2b). Contrast measured in the same session: ad-hoc signing gives
+`designated => cdhash H"…" or cdhash H"…"`, different per binary.
+*Three operational facts that decide later steps:*
+1. **The identity is not reproducible.** The rollback was rehearsed for real and re-applied, and the
+   fresh run minted a **new** key: leaf `8c99754e…` → `ef8fa542…`. Unlike the lab bundle, identity
+   here is a property of a stored private key, not of the inputs. So after E2b installs and E3
+   grants TCC, running `security delete-keychain` costs the human's grants. Rollback of E1 is free
+   **only until E2b signs the installed bundle**.
+2. **A fresh SSH session finds the keychain locked** — `security show-keychain-info` answers
+   `User interaction is not allowed` and `codesign --sign` fails `errSecInternalComponent`, despite
+   `set-keychain-settings` having disabled the auto-lock timeout; the unlock state is per security
+   session. Not a defect: `build-app.sh:186-191` unlocks unconditionally from the password file
+   before signing, and the bootstrap tool's own probe unlocks first. Any *ad-hoc* `codesign` run
+   from a new SSH session must unlock first or it will look like a broken identity.
+3. **No trust was added and none is needed.** `security find-identity -v -p codesigning` still lists
+   only the pre-existing `LiveTranscribe Local Dev`, and the MOSS certificate appears in neither the
+   user nor the admin trust-settings domain (the three certs that do carry user trust settings —
+   `LiveTranscribe Local Dev`, `Ga0-Alienware-RTX4070Ti`, `Ga0-RTX4090` — are pre-existing and
+   unrelated). Search-list membership alone makes the identity reachable, reproducing the
+   iteration-9 MacStudio finding on m4mbp.
+
+**Installed-app state on m4mbp (new, iteration 22 / E2b).** `/Applications/MOSSCapture.app`
+(`drwxr-xr-x ga0:staff`, three files: `Contents/MacOS/MOSSCaptureApp`, `Contents/Info.plist`,
+`Contents/_CodeSignature/CodeResources`) and `~/.local/bin/mtd-capture` (0755) are installed from
+`macos/MOSSCapture/.build/product`, release configuration, signed by the E1 identity. Both verify
+`codesign --verify --strict`; the bundle also "satisfies its Designated Requirement".
+**The PRD's "Signed app installed" clause is GREEN**: the app exists, `codesign -dv` reports
+`Identifier=com.alphasight.moss.capture`, and the DR is
+`designated => identifier "com.alphasight.moss.capture" and certificate leaf =
+H"e118d874377746c4bd25beb8252bb84302b73e72"` — that `H"…"` equals `shasum -a 1` of the E1
+certificate's DER read independently out of the keychain. The CLI is a *separate* identifier,
+`com.alphasight.moss.capture.cli`, signed by the same leaf. Embedded entitlements are exactly
+`{com.apple.security.device.audio-input: true}`: `keychain-access-groups` is **absent** from the
+signature while the tracked entitlements file still declares it, so B5's drop really fires on this
+host. `TeamIdentifier=not set`, `flags=0x10000(runtime)`. Info.plist carries both usage strings.
+*Three facts that decide E3 and any later rebuild:*
+1. **SwiftPM release builds are not byte-reproducible on this host, but the DR is.** Two
+   from-scratch builds of the identical checkout gave different `built_app_sha256`
+   (`5bf01255…` → `ad83c0f8…` → build #3) and different `bundle_digest`, while the DR came out
+   byte-identical every time. That is the PRD's "unchanged across a rebuild" property proven against
+   a genuinely different binary rather than a tautology — and it is why the grants survive a rebuild:
+   they key on the DR, not on the bytes. Corollary: `install-app.sh`'s byte-identical shortcut
+   (which preserves the inode) will **not** fire after a rebuild, so a rebuild always takes the
+   replacement path. That is fine, and it was rehearsed for real — see below.
+2. **The replacement path is safe and was measured, not assumed.** Installing a rebuilt bundle over
+   the installed one moved the previous install to `/Applications/MOSSCapture.app.backup-<utc>`
+   (which still verifies and still carries the old CDHash), printed its `rollback:` line **before**
+   the first mutation, and did **not** print the "designated requirement changes on install" warning
+   — correctly, because only the bytes changed. Applying that printed rollback verbatim restored the
+   previous bundle's exact CDHash. The same run also backs the **CLI** up to
+   `<bin>/mtd-capture.backup-<utc>`; that file is not cleaned up by the tool, so a rebuild-install
+   leaves one behind.
+3. **`bin_dir_on_path=false` in the tool's evidence is an SSH artifact, not a defect.**
+   `~/.local/bin` is absent from the non-interactive SSH `PATH`, which is what the tool observes, but
+   `.zshrc` puts it on the human's interactive `PATH` — `zsh -lic 'command -v mtd-capture'` resolves
+   to `/Users/ga0/.local/bin/mtd-capture`. So the default `--bin-dir` is right and **no shell profile
+   was edited**; the loop just has to invoke the CLI by absolute path over SSH.
+The installed CLI runs: `--help` prints the one-line usage (`rc=64`) and `status` answers
+`{"ok":false}` (`rc=70`) with no helper running, emitting no path, token or secret. Neither call
+created `~/Library/Application Support/MOSSCapture`, so B1's side-effect-free construction holds for
+the *installed* binary too.
+
+**TCC-verification contract (new, iteration 23).** The PRD's "Permissions granted" clause has a
+**read-only, scriptable** check, so the loop never needs to go near a TCC write.
+`~/Library/Application Support/com.apple.TCC/TCC.db` on m4mbp is `-rw-r--r-- ga0:staff` and opens
+over plain SSH **without** Full Disk Access — measured: 320 rows across 20 services. The two service
+names are read off that live table, not guessed: Microphone = `kTCCServiceMicrophone` (21 rows),
+**System Audio Recording = `kTCCServiceAudioCapture`** (3 rows). `auth_value` 2 = allowed, 0 = denied
+(both appear on this host, e.g. `com.openai.chat|2` vs `com.google.antigravity|0`); `client_type`
+0 = bundle identifier, 1 = absolute path, so an app bundle is keyed by its identifier.
+*Baseline recorded this iteration:* **zero** rows match `%moss%` in either service — both lanes are
+undetermined, consistent with the app never having been launched.
+*The csreq is the DR.* Each row carries a `FADE0C00` code-requirement blob that
+`sqlite3 … writefile()` plus `csreq -r <file> -t` decodes. Decoded on the `com.livetranscribe.app`
+precedent (a locally-signed app on this same host that already holds **both** grants):
+`identifier "com.livetranscribe.app" and certificate leaf = H"51e289ba70a36bcdd063f1efa660d56aebd83da7"`
+— byte-for-byte the *form* of the E1 designated requirement. So after E3 the two moss rows must
+decode to `identifier "com.alphasight.moss.capture" and certificate leaf =
+H"e118d874377746c4bd25beb8252bb84302b73e72"`, and that decode is the **direct observation** that the
+grants key on the DR rather than the cdhash — the reason a byte-different SwiftPM rebuild keeps them.
+Until E3 that link was argued from the DR's stability alone, never seen in TCC's own storage.
+
+**E3 command surface (new, iteration 23; read out of the reviewed source at `f9285d6`).** Three
+facts decide whether the human step succeeds on the first try:
+1. **The pairing payload goes on stdin, never on argv.** `CaptureCommandLine.swift:121` is
+   `input.readAll()`; empty stdin is `rc=65`. So the operator runs
+   `mtd-capture pair --server <https-url>`, pastes the payload, presses **Ctrl-D** — that keeps it
+   out of argv *and* out of shell history, which is what the PRD's secret-hygiene clause needs.
+   Since G2 (run 20260728-072601 iteration 2) a Return pressed before Ctrl-D is harmless; before it
+   that keystroke failed the pair with `invalidPinnedHash`. That fix reaches the host only when
+   E2b is re-run there after the G4 merge.
+   Full surface: `pair --server <https-url> | start [--label <name>] | stop | status | handoff |
+   latency`; anything else is the usage line and `rc=64`.
+2. **The CLI cannot launch the app by itself here.** `NSWorkspaceLaunchServicesCaptureAppLauncher`
+   launches only when the control socket is absent **and** `MOSS_CAPTURE_APP_URL` is set
+   (`CaptureCommandLine.swift:69`); nothing in the product, the install tool or a shell profile sets
+   it, so a bare CLI call answers `{"ok":false}` `rc=70` and starts nothing. The app must be started
+   from the GUI session (Finder double-click or `open -a`), or the operator exports
+   `MOSS_CAPTURE_APP_URL=/Applications/MOSSCapture.app`. Never run
+   `…/Contents/MacOS/MOSSCaptureApp` from a shell: TCC would attribute the grant to the terminal
+   instead of the bundle, and the DR-keyed grant would not apply to the app.
+   Socket path is `/tmp/moss-capture-$(id -u)/control.sock` = `/tmp/moss-capture-501/control.sock`.
+3. **`LSUIElement` is `true`** (`macos/MOSSCapture/Resources/Info.plist`), so a launched app shows no
+   window, no Dock icon and no menu-bar item. "Running" is observed by `pgrep -x MOSSCaptureApp` and
+   by the socket existing — never by a visible UI. Nothing appearing on screen is the correct result.
+
+**Prompt order is fixed by the source, and the TCC clicks are NOT bound to D4's 300 s window
+(new, iteration 23).** `NativeDualCaptureSource.start` admits **system audio first**
+(`NativeDualCaptureSource.swift:191`) and the microphone second (`:192`). System audio has no request
+API — `AudioHardwareCreateProcessTap` inside `SystemAudioTap.start` *is* the request, called inline
+on the control thread — while the microphone request is the asynchronous
+`AVCaptureDevice.requestAccess(for: .audio)` that leaves the lane `pending`. So the operator sees
+**System Audio Recording first, Microphone second**, and only the first one can block.
+*The decoupling:* `CaptureController.start` (`CaptureController.swift:230-246`) requires only
+`loadControlSecret() != nil` — which the app writes for itself at launch — and calls
+`source.start` at `:242`, **before** the first publish at `:250`. Pairing is needed only by that
+publish. An **unpaired** `start` therefore still raises both prompts; the publish then fails
+`missingCaptureBearer`, which `CaptureFrameRetryPolicy` classes as not retryable, so the controller
+unwinds the source and throws — but the user's two decisions are already durable in TCC.db, because
+TCC records the click, not the capture outcome. That converts E3 from "clicks inside a five-minute
+window" into two independent steps: grants first, verified read-only, then D4's mint and pairing with
+the whole 300 s available for pairing alone. **Derived from source, not yet observed** — E3 is what
+confirms it; if the unpaired `start` behaves differently, fall back to the coupled sequence.
+
+**Open defect (found by D2, iteration 18) — the finalizer needs the deployment venv, and the
+tracked doc says otherwise.** `ops/finalize-live-provider-manifest.py` inserts the repo root on
+`sys.path` and imports `moss_transcribe_diarize.app.live_manifest_finalizer`, which first executes
+the package `__init__.py` → `configuration_moss_transcribe_diarize.py` → `from transformers import
+PretrainedConfig`. The host's system `python3` (3.12.3) has no `transformers`, so the exact command
+`LOCAL_DEPLOYMENT.md:666` prescribes — `python3 ops/finalize-live-provider-manifest.py …` — dies
+with `ModuleNotFoundError` before printing a single `plan:` line. The finalizer module itself needs
+nothing from `transformers`; only the package `__init__` chain does. **Workaround used by D2, and
+the invocation D3 and any re-run must use:**
+`$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3 ops/finalize-live-provider-manifest.py …`
+— the deployment venv (3.12.13, `transformers 5.14.1`) already resolves
+`moss_transcribe_diarize` **from this same checkout**, so the reviewed revision is still what
+generates the file, and it is the interpreter the live service itself will use to read the manifest.
+The durable fix is to load the finalizer module by file path (`importlib.util.spec_from_file_
+location`) instead of importing it through the package, which would make the tool stdlib-only and
+match its own docstring. That is a **tracked-source** change and the merge freeze forbids it on this
+branch: it needs a new branch and a decision, not a second keeper merge. Nothing in D3–F4 is blocked
+by it — only the doc's copy-paste line is wrong.
 
 **Gotcha — remote shell quoting.** Nested quoting through Windows conhost → `wsl.exe` → bash
 fails ("The system cannot find the path specified"). Always pipe a script on stdin:
@@ -501,8 +901,32 @@ swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real pr
 
 # --- real-process tracer (darwin; needs a live private-address TLS server)
 # present since the iteration-1 graft. It builds/bundles/ad-hoc-signs the real products, so it
-# needs both Swift products built first. Currently 3 passed, 0 skipped (~7 s).
+# needs both Swift products built first. Currently 4 passed, 0 skipped (~15 s). The fourth node
+# needs a 100.64.0.0/10 address on this host and FAILS (never skips) without one.
 python3 -m pytest tests/test_macos_uds_tracer.py -q
+
+# --- G1 ATS declaration: the three shape gates. There is no behavioral gate and there cannot be
+#     one on a single host - see the ATS contract block. ------------------------------------------
+swift test --package-path macos/MOSSCapture --filter 'BundleDeclaresTheTransport'
+python3 -m pytest tests/test_macos_packaging_tools.py -q -k entitlement_the_identity
+python3 -m pytest tests/test_macos_uds_tracer.py -q -k 'immutable_first_install or unpinned_leaf'
+# --- G2 pairing-payload trim + canonical wire form (2 Swift nodes; the tracer's second real
+#     pairing now feeds `payload + b"\n"`, so the whole stdin -> UDS -> app -> HTTPS path is
+#     covered at no extra runtime). ---------------------------------------------------------------
+swift test --package-path macos/MOSSCapture --filter 'PairingPayloadTrims|PairingPayloadWhitespace'
+python3 -m pytest tests/test_macos_uds_tracer.py -q -k cross_real_uds
+# --- G3 control-channel classification + logging (5 Swift nodes: the three unclassified NSError
+#     shapes with no message/URL on the wire, the four typed families keeping their names with no
+#     detail and no log line, one log record per unclassified failure with its command, the log
+#     line's fixed vocabulary, and the app-wires-it/CLI-does-not entrypoint scan). The real-process
+#     half is the tracer's pin refusal, strengthened in place to assert -999 with no underlying. ---
+swift test --package-path macos/MOSSCapture \
+  --filter 'UnclassifiedTransportFailure|AlreadyNamedControlFailures|UnclassifiedControlFailureIsLogged|AppFailureLogWritesOnly|WiresTheControlChannelFailureLog'
+python3 -m pytest tests/test_macos_uds_tracer.py -q -k unpinned_leaf
+
+# Reproducing the failure itself needs a REMOTE non-exempt peer, i.e. m4mbp -> 100.64.0.8. The
+# ad-hoc probe that measured the matrix is disposable; rebuild it in /tmp when needed, never in
+# the repo. Bare binary vs the same binary inside an ad-hoc `.app` is the whole experiment.
 
 # Reinstall the fixed lab bundle from scratch (safe: gitignored build output). Do this only to
 # re-prove the first-install path; normal runs must reuse it.
@@ -557,12 +981,20 @@ python3 -m pytest tests/test_live_deployment_credentials.py -q
 # --- C3a tools by hand (scratch paths; never the deployed live dir) --------------------------
 ops/generate-live-tls.sh --dry-run --dns moss-live.fixture.invalid --ip 10.11.12.13 \
   --cert /tmp/moss-tls/live.crt --key /tmp/moss-tls/live.key
-# The D2 invocation itself (run on the host, from the deployed checkout, at D2 and not before):
+# The D2 invocation - SPENT in iteration 18, and it needed `--rotate` because the staged pair had
+# no tailnet SAN. Re-running it WITHOUT --rotate now prints `unchanged:` and rotates nothing, which
+# is the safe way to re-assert the pin; never add --rotate again unless a name really changes,
+# because rotation invalidates every pairing payload and every pin a Mac has stored.
 #   ops/generate-live-tls.sh --dns ga0-alienware-rtx4070ti.tailnet.aisight.us \
 #     --dns ga0-alienware-rtx4070ti.local --ip 100.64.0.8 --ip 192.168.68.38 \
 #     --common-name ga0-alienware-rtx4070ti.tailnet.aisight.us \
 #     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt" \
 #     --key "$HOME/.local/share/moss-transcribe-diarize/live/live.key"
+# Rollback for that rotation, still valid until the backups are removed:
+#   L="$HOME/.local/share/moss-transcribe-diarize/live"
+#   rm -f "$L/live.crt" "$L/live.key" \
+#     && mv "$L/live.crt.backup-20260728T044132Z" "$L/live.crt" \
+#     && mv "$L/live.key.backup-20260728T044132Z" "$L/live.key"
 # D4 mints exactly once, on the host, and the payload line is never redirected to a file:
 #   ops/live-pair.sh --url https://127.0.0.1:7861 \
 #     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
@@ -593,6 +1025,73 @@ macos/scripts/install-app.sh --bundle /tmp/moss-build/MOSSCapture.app \
 macos/scripts/bootstrap-signing-identity.sh --dry-run   # never run for real on MacStudio
 # Real signing identity + install belong to E1/E2 on m4mbp, not to this host.
 
+# --- E1: the signing identity on m4mbp (SPENT in iteration 21) --------------------------------
+# Run from the m4mbp checkout; re-running is safe and prints `unchanged:` without touching the
+# keychain, the password file or the search list.
+#   ssh -o BatchMode=yes ga0@m4mbp 'bash -s' <<< 'cd <checkout> && \
+#     macos/scripts/bootstrap-signing-identity.sh'
+# Rollback (rehearsed for real this iteration; `delete-keychain` also removes the search-list entry):
+#   security delete-keychain "$HOME/Library/Keychains/moss-signing.keychain-db" \
+#     && rm -f "$HOME/.config/moss-capture/signing-keychain.password"
+# DO NOT apply it after E2b/E3: the re-created identity has a different leaf, so the DR changes and
+# the human's TCC grants die with it.
+# Verify the identity by codesign, NEVER by `security find-identity -v -p codesigning` (0 valid for
+# a self-signed leaf). A fresh SSH session must unlock first or codesign says errSecInternalComponent:
+#   security unlock-keychain -p "$(cat "$HOME/.config/moss-capture/signing-keychain.password")" \
+#     "$HOME/Library/Keychains/moss-signing.keychain-db"
+#   codesign --force --identifier com.alphasight.moss.capture --sign 'MOSS Capture Local Signing' <bin>
+#   codesign -d -r- <bin> | tail -1   # must be the DR recorded in the signing-identity block
+
+# --- E2b: build, sign and install on m4mbp (SPENT in iteration 22) ----------------------------
+# Run from the m4mbp checkout. build-app.sh writes only under .build/product (it refuses an install
+# location) and unlocks the signing keychain itself, so no manual unlock is needed.
+#   macos/scripts/build-app.sh --dry-run  &&  macos/scripts/build-app.sh --configuration release
+#   macos/scripts/install-app.sh --dry-run  &&  macos/scripts/install-app.sh
+# Re-running either prints `unchanged:` — but only while the binary is unrebuilt. A rebuild changes
+# the bytes (SwiftPM is not reproducible here) and therefore always takes the replacement path.
+# Rollback for a FIRST install (what iteration 22 recorded and rehearsed):
+#   rm -rf '/Applications/MOSSCapture.app' && rm -f '/Users/ga0/.local/bin/mtd-capture'
+# Rollback for a REPLACEMENT, printed by the tool with its own <utc> stamp — note it backs up the
+# CLI too, and that backup file is left behind for you to remove:
+#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-<utc>' '/Applications/MOSSCapture.app'
+#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-<utc>' '/Users/ga0/.local/bin/mtd-capture'
+# DO NOT apply the install rollback after E3 without a reason: re-installing is safe (the DR is
+# stable) but each replacement resets the bundle's inode, and only the DR keeps the grants.
+# The PRD's "Signed app installed" clause, re-assertable read-only at any time:
+ssh -o BatchMode=yes ga0@m4mbp 'ls -ld /Applications/MOSSCapture.app; \
+  codesign -dv /Applications/MOSSCapture.app 2>&1 | sed -n "2p"; \
+  codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1; \
+  codesign --verify --strict /Applications/MOSSCapture.app && echo bundle_ok'
+# The CLI is on the human's interactive PATH but NOT on the non-interactive SSH PATH — over SSH
+# always call it as /Users/ga0/.local/bin/mtd-capture.
+
+# --- E3: verify the TCC grants READ-ONLY (never write TCC; see the TCC-verification contract) ----
+# The user TCC.db opens over plain SSH without Full Disk Access. Before E3 both queries print
+# nothing; the PRD's "Permissions granted" clause is green when the first prints exactly two rows
+# with auth_value 2 and the second decodes to the E1 designated requirement.
+ssh -o BatchMode=yes ga0@m4mbp 'DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"; \
+  sqlite3 "$DB" "select service,client,client_type,auth_value from access \
+    where client=\"com.alphasight.moss.capture\" order by service;"'
+#   expect: kTCCServiceAudioCapture|com.alphasight.moss.capture|0|2
+#           kTCCServiceMicrophone|com.alphasight.moss.capture|0|2
+#   auth_value 2 = allowed, 0 = denied. System Audio Recording IS kTCCServiceAudioCapture.
+ssh -o BatchMode=yes ga0@m4mbp 'DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"; \
+  T=$(mktemp -d /tmp/moss-csreq.XXXXXX); \
+  sqlite3 "$DB" "select writefile(\"$T/req.bin\", csreq) from access \
+    where client=\"com.alphasight.moss.capture\" and service=\"kTCCServiceMicrophone\";" >/dev/null; \
+  csreq -r "$T/req.bin" -t; rm -rf "$T"'
+#   expect: identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"
+#   That decode is the proof the grant keys on the DR, so a byte-different rebuild keeps it.
+# Sanity-check the reader itself before trusting an empty result — a 0-row answer and a broken
+# query look identical: `sqlite3 "$DB" "select count(*) from access;"` must print a few hundred.
+
+# --- E3: the operator's own checks (run in the GUI session, not over SSH) ---------------------
+#   pgrep -x MOSSCaptureApp                 # the app is LSUIElement: no window, no Dock icon
+#   ls -l /tmp/moss-capture-$(id -u)/control.sock
+#   /Users/ga0/.local/bin/mtd-capture status
+# A hung `status` while a prompt is on screen is expected: serve() is a serial accept loop and the
+# client has no timeout. Never kill the app to "fix" it.
+
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
 
@@ -622,17 +1121,20 @@ curl -sk https://100.64.0.8:7861/api/live/descriptor | head -c 200
 ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOSSCapture.app; \
   codesign -dv /Applications/MOSSCapture.app 2>&1 | head -5; codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1'
 
-# --- host manifest finalization (tool tracked since iteration 12; D2 runs it, never earlier) ----
-# Rehearse it locally first - it mutates nothing without --input/--output on the host:
-#   python3 ops/finalize-live-provider-manifest.py --input <provisional> --output <final> \
-#     --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 \
-#     --max-retained-samples 960000 --frame-samples 8000 --dry-run
+# --- host manifest finalization (SPENT in iteration 18/D2; re-run only to re-prove idempotence) --
+# MUST use the deployment venv python, not `python3` - see the open defect above. Re-running is
+# safe: it prints `unchanged:` and does not touch the inode.
 printf '%s\n' \
   'set -euo pipefail' \
   'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
-  'python3 ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000' |
+  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
     "wsl.exe -d Ubuntu -- bash -s"
+
+# --- host manifest admission by the runtime's own readers (read-only; re-run any time) ----------
+#   from_manifest -> _endpoint_config(payload["endpoint_config"]) and _bounds(payload["bounds_config"])
+#   (they take their own sub-mappings, NOT the whole payload), then _preflight_payload(path)
+#   Expect available=True, failures=[], manifest_hash 61d97ffef1bbdc0d4278c0fd719d5d31b0ac5f69e1654573ada5091653fecb95
 
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
@@ -643,14 +1145,105 @@ bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spik
 # section "IDEA-044 attempt-2 exact commands". `validate-phase-a-locality.sh` belongs to that
 # checkpoint and now fails on the tip by design — see the locality note above.
 
-# --- one keeper merge, primary worktree stays on the feature branch -------
-swift build --package-path macos/MOSSCapture --product mtd-capture
-swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
+# --- the client gate, run before either merge (iteration 4 re-ran it green at 23dc163) ---------
+SCRATCH="$(mktemp -d /tmp/moss-gate-scratch.XXXXXX)"   # must be EMPTY; one dir, two invocations
+swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product mtd-capture
+swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product MOSSCaptureApp
+swift build --package-path macos/MOSSCapture --product mtd-capture      # default .build: the tracer
+swift build --package-path macos/MOSSCapture --product MOSSCaptureApp   # executes these two
 swift test --package-path macos/MOSSCapture
-python3 -m pytest tests -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_large_upload.py -q -rs   # names the 2 skips
 test -z "$(git status --porcelain)"
+
+# --- keeper merge #1: SPENT in iteration 16, main is f9285d6. -----------------------------------
+# --- keeper merge #2: the ONE merge the 2026-07-28 amendment authorizes. Not yet run. -----------
+# Two fences block it; see the two-fence block above for why each is what it is. Satisfy them in
+# this order, and never by deleting a check:
+#   1. History join, so `merge-base --is-ancestor main HEAD` is honestly true. main's tree IS the
+#      merge base's tree (815f23b0…), so this changes no file. Assert that, do not assume it:
+#        git merge --no-ff -m 'ralph: join published main f9285d6 (empty diff) before the authorized merge' main
+#        git diff --stat 23dc163 HEAD -- .    # MUST be empty: the join carried no content
+#   2. Edit merge-keeper.sh:10 so `expected_main` defaults to
+#      f9285d69ed7bcc592bb41b3dcdf29e3221968f44 with a comment citing the amendment. Writing it in
+#      the script keeps the one-merge guard alive for a THIRD merge; a command-line
+#      RALPH_MERGE_MAIN_BEFORE override would leave no reviewable record. While there, give fence 2
+#      an error message — as committed it exits 1 printing nothing.
+# Then:
 RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # fences only, no merge
 bash scripts/ralph-afk/merge-keeper.sh                          # builds products itself in the temp worktree
+# After it: record feature tip + merge SHA, confirm HEAD^2 == the feature tip, re-run the suite on
+# the merge commit (the script already does), and the post-merge freeze resumes.
+
+# --- D1: publish the reviewed merge --------------------------------------
+# SPENT in iteration 17. `git push origin main` fast-forwarded 163e969..f9285d6 on the AlphaSight
+# fork (118 commits) and the host is detached at f9285d6. The push is one-way - the PRD forbids
+# force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
+# Standing rollback for the host checkout, still valid until D3 changes the host:
+#   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
+# Four-way SHA check — the PRD clause in full (all four must print
+# f9285d69ed7bcc592bb41b3dcdf29e3221968f44; green since iteration 20):
+git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
+printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
+  ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
+ssh -o BatchMode=yes ga0@m4mbp \
+  'git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize rev-parse HEAD'
+
+# --- E2a: the m4mbp checkout (SPENT in iteration 20) -----------------------------------------
+# Fences first (HEAD == 40cf854, branch main, clean), then remote + fetch + detached checkout.
+# `main` and `origin` (OpenMOSS) are never touched, so the rollback moves only HEAD:
+#   git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout main
+#   git -C … remote remove alphasight        # optional cleanup of the added remote
+# Re-running the checkout is a no-op; re-adding the remote prints `unchanged:`. Verify with
+# HEAD/tree/clean/159-files plus independent `shasum -a 256` of the reviewed tools against this
+# host — do not treat `git status` alone as content proof of a cross-host copy.
+
+# --- D3: install and start the live service (SPENT in iteration 19) --------------------------
+# The profile is host-local and untracked. It was written with `$HOME` expanded AT WRITE TIME, so
+# the file itself holds literal absolute paths (systemd expands nothing). Re-creating it is safe
+# only if the live unit is stopped first; `install-services.sh` refuses --with-live without it.
+#   /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env  ->  MOSS_LIVE_ENABLED=1,
+#   MOSS_WEB_PORT=7861, MOSS_RUNS_DIR=<checkout>/live-runs, and four absolute paths under
+#   /home/devcontainers/.local/share/moss-transcribe-diarize/live/ plus
+#   MOSS_LIVE_HELPER_LEASE_SECONDS=30 (key set identical to the tracked example).
+# Spent invocations, in order:
+#   ops/install-services.sh --with-live --dry-run     # plan/rollback/evidence, mutates nothing
+#   ops/install-services.sh --with-live               # installs + enables + starts the live unit
+#   powershell: & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1' -IncludeLive
+# Re-running either is safe and is the idempotence proof: the installer prints three `unchanged:`
+# lines and `evidence: restart_required=none`; the PowerShell script re-asserts both portproxy rows.
+# Standing rollback (still valid; apply in this order):
+#   netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=7861
+#   Remove-NetFirewallRule -Name 'MOSS-Transcribe-Diarize-Live'
+#   & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1'   # task back to batch-only
+#   systemctl --user disable --now moss-live-web.service
+#   rm -f "$HOME/.config/systemd/user/moss-live-web.service" && systemctl --user daemon-reload
+#   rm -rf /mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs
+#   rm -f "$HOME/.local/share/moss-transcribe-diarize/live/live-auth.json"
+#   rm -f /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env
+# That sequence is also F4's "live service disabled" rehearsal — F4 additionally checks out 163e969.
+
+# --- pinned live reachability from any client host (read-only; run from MacStudio or m4mbp) ----
+# Pin first, then trust exactly that leaf — this is what the Mac client's full-certificate pin does.
+#   PIN=a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff
+#   echo | openssl s_client -connect 100.64.0.8:7861 \
+#     -servername ga0-alienware-rtx4070ti.tailnet.aisight.us 2>/dev/null | openssl x509 > leaf.pem
+#   openssl x509 -in leaf.pem -outform DER | shasum -a 256   # must equal $PIN before trusting it
+#   curl -s --cacert leaf.pem \
+#     --resolve ga0-alienware-rtx4070ti.tailnet.aisight.us:7861:100.64.0.8 \
+#     -o /dev/null -w '%{http_code}\n' \
+#     https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/live      # 200
+# Plaintext on 7861 must stay dead: `curl -m 5 http://100.64.0.8:7861/live` -> 000.
+
+# --- batch-restart safety probe (read-only; mutates and starts nothing) --------------------
+# The running batch process serves module-level constants, so a checkout cannot change it; this is
+# what proves the *next* restart is also unharmed. It rewrites only the final `exec` line of a
+# /tmp copy and asserts the original last line first, so it can never launch the server.
+#   last line must be: exec "${VENV_DIR}/bin/mtd-subtitle-web" "${web_args[@]}"
+#   sed '$ s|.*|printf "argv:%s\\n" "${web_args[@]}"|' ops/start-web.sh > "$tmp/probe.sh"
+#   set -a; . ops/moss.env; set +a; bash "$tmp/probe.sh"
+# Expect exactly tests/test_live_service_deployment.py:52-62 with {state} and DEPLOYMENT_ROOT
+# expanded, and no --live flag. Re-run it after D3 edits any env file.
 ```
 
 ## Candidates
@@ -800,37 +1393,114 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     answers) keeps the origin unresolved — the report says `mixerOriginResolved: false` rather than
     quoting a figure, which is the honest answer but means the canary needs both lanes settled
     (granted or denied) before it starts.
-16. **C4 — final local gate and single keeper merge**: Swift/full Python/tracer/reliability
-    gates green on the feature tip; then run `scripts/ralph-afk/merge-keeper.sh`. It creates and
-    tests the one no-ff merge in a temporary `main` worktree while the primary Ralph worktree
-    remains on the feature branch. Record feature + merge SHAs. After this point, only Ralph
-    evidence files may change on the feature branch; no tracked product source may change.
+16. **C4 — final local gate and single keeper merge** `[done — iteration 16]`: gate green at
+    `f400d426`, merge `f9285d6` — see the keeper-merge and server-reliability blocks above.
+    The pre-merge review of every artifact the PRD names is recorded in progress.txt. Two review
+    notes carried forward: (a) `build-app.sh` unlocks the signing keychain with
+    `security unlock-keychain -p "$(cat …)"`, so the random keychain password is briefly visible in
+    `ps` on a shared host — acceptable on single-user m4mbp, worth stating at E1 rather than
+    silently accepting; (b) `.gitignore` now ignores `*.crt`, so a future tracked certificate
+    fixture would need an explicit negation. **From here the feature branch carries only
+    `scripts/ralph-afk/*`.**
 
 ### Phase D — publish and enable the 4070Ti
 
-17. **D1 — publish reviewed `main`**: push the merge SHA to `origin`, then fetch/checkout that
-    exact SHA at `/mnt/d/Coding/MOSS-Transcribe-Diarize` on
-    `gyauo@ga0-alienware-rtx4070ti.local`. Record rollback before mutation; verify three-way SHA
-    equality.
-18. **D2 — host manifest/TLS**: run the reviewed finalizer and TLS generator; verify merge SHA,
-    generated hashes, four SANs, and fingerprint; rotate pin/pairing together.
-19. **D3 — install reviewed live service/networking**: create `ops/moss-live.env` on the host from
-    `ops/moss-live.env.example` (absolute paths only), `install-services.sh --with-live --dry-run`
-    then for real, and `configure-windows-network.ps1 -IncludeLive` from an Administrator shell.
-    Only the live service starts; the batch service is not restarted.
-20. **D4 — verify/pair**: 7861 TLS live + descriptor 200, 7860 plaintext batch 200, use reviewed
-    loopback helper once, verify no secret artifact. No tracked product/deployment edits after
-    merge; only Ralph evidence may advance on the feature branch.
+17. **D1 — publish reviewed `main`** `[done — iteration 17]`: `git push origin main` fast-forwarded
+    `163e969..f9285d6` (118 commits) on the AlphaSight fork, and the host checkout is **detached**
+    at `f9285d6` with its local `main` ref left at `163e969`, so the recorded rollback is one
+    `git checkout 163e969`. Local `main`, `origin/main` and the host all read
+    `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`; the m4mbp leg of the PRD's "one exact SHA
+    everywhere" clause is still open and belongs to E2. Batch service verified unharmed on four
+    routes plus a restart-safety argv probe (see the server-state block). No service restarted.
+    Residue for D2: the reviewed `ops/finalize-live-provider-manifest.py`, `generate-live-tls.sh`,
+    `live-pair.sh` and `moss-ops-lib.sh` are now **on the host** and D2 runs them from that
+    checkout, so `--source-revision "$(git rev-parse HEAD)"` there yields the 40-hex merge SHA the
+    finalizer requires. Note the host is detached, so that command reads `HEAD`, not a branch.
+18. **D2 — host manifest/TLS** `[done — iteration 18]`: the finalized manifest carries
+    `source_revision f9285d69…`, `hard_cap_samples 40000` in **both** sections,
+    `max_retained_samples 960000`, `frame_samples 8000` and regenerated hashes
+    (`provider_manifest_hash 61d97ffe…`), and the runtime's own readers admit it with
+    `available=True, failures=[]`. The certificate was **rotated** (the staged pair had no tailnet
+    SAN) to CN `ga0-alienware-rtx4070ti.tailnet.aisight.us` with all four SANs, 825 days, cert 0644
+    / key 0600; the new pin is `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`,
+    agreed by four independent readers including a real TLS handshake. Both refusal and idempotence
+    were proven for real on the host, not only in tests. Residue for D3: the finalizer must be run
+    with the **deployment venv python** (see the open defect above), and `ops/moss-live.env` must
+    point `MOSS_LIVE_TLS_CERT`/`_KEY` at the rotated pair. Residue for D4/E2: the pin the Mac stores
+    is the new `a35ca9fc…`; any payload minted before 2026-07-28T04:41:32Z is dead.
+19. **D3 — install reviewed live service/networking** `[done — iteration 19]`: host
+    `ops/moss-live.env` written from the tracked example with literal absolute paths,
+    `install-services.sh --with-live` installed/enabled/started `moss-live-web.service` (MainPID
+    334346) leaving both batch units untouched (`unchanged:` ×2, same MainPIDs, `NRestarts=0`), and
+    `configure-windows-network.ps1 -IncludeLive` added the 7861 portproxy row, the Private-profile
+    firewall rule and the `-IncludeLive` sign-in task. `/live` and `/api/live/descriptor` return 200
+    over pinned TLS **from m4mbp**, batch 7860 still 200, plaintext 7861 dead. The `--with-live`
+    refusal and the installer's idempotence were both proven for real on the host. Residue for D4:
+    `live/live-auth.json` does not exist yet — the first pairing creates it, so its absence is the
+    marker that no device is paired; and the loopback mint route is what `ops/live-pair.sh` uses,
+    so D4 runs on the host, never from MacStudio.
+20. **D4 — verify/pair** `[deferred by evidence — run immediately before the operator's pair command,
+    which iteration 23 showed can come AFTER the TCC grants rather than in the same window]`:
+    `live_auth.PAIRING_TTL_SECONDS = 300` (`live_auth.py:13`, stamped at
+    `pairing-codes` time as `expires_at = now + PAIRING_TTL_SECONDS` and enforced at
+    `live_auth.py:221`), so **a minted payload is dead five minutes later** — minting it before a
+    built app exists on m4mbp would only burn it. Run it on the host (the mint route is
+    loopback-only) as `ops/live-pair.sh --url https://127.0.0.1:7861 --cert <live.crt>` **once**,
+    never redirecting the `payload:` line to a file, in the same five-minute window as the app's
+    first `pair`. Then confirm no secret artifact was left (no payload in shell history, logs, argv
+    or the journal) and that `live-auth.json` appeared with 0600 on ext4. Reachability is already
+    recorded by D3/E2a and only needs re-asserting if the service is restarted. No tracked
+    product/deployment edits after merge; only Ralph evidence may advance on the feature branch.
 
 ### Phase E — Mac install and human permission boundary
 
-21. **E1 — run reviewed signing tool**: create/reuse dedicated-keychain self-signed identity;
-    validate `codesign` and stable designated requirement, never `find-identity`.
-22. **E2 — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin; add
-    AlphaSight remote on m4mbp; fast-forward exact SHA; install app and CLI. Record rollback first.
-23. **E3 — TCC human step**: GUI launch and one `start`; report exact Microphone and System Audio
-    Recording clicks. Never touch TCC DB or retry autonomously. Continue only after operator
-    confirms both grants.
+**E2 was split by evidence in iteration 20.** Its checkout half had to come first: every reviewed
+tool E1 and E2b run (`macos/scripts/*`) simply did not exist on m4mbp, so "run the reviewed tool
+there" was unreachable until the checkout carried it. It also closes a PRD acceptance clause on its
+own, which no later step does.
+
+20a. **E2a — align the m4mbp checkout with the published SHA** `[done — iteration 20]`: remote
+    `alphasight` added beside the untouched OpenMOSS `origin`, `main` fetched, and the checkout
+    detached at `f9285d6` (tree `815f23b0…`, clean, 159 files) with `main` left at `40cf854`. Six
+    reviewed tool/source files hash identically to this host. Rollback rehearsed and re-applied. The
+    PRD's four-way "one exact SHA everywhere" clause is green. `git-lfs` is absent on both hosts and
+    the tree has no LFS-tracked file, so the `.gitattributes` filters are inert.
+21. **E1 — run reviewed signing tool** `[done — iteration 21]`: `MOSS Capture Local Signing` exists
+    in the dedicated `moss-signing.keychain-db` on m4mbp with leaf `ef8fa542…` and DR
+    `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"` — see the
+    signing-identity block above. Validated by `codesign` only (DR identical across two different
+    binaries and across a re-sign of changed bytes, CDHash differing), never by `find-identity`.
+    Both keychain refusals and the idempotent re-run were proven for real on the host, and the
+    rollback was rehearsed and re-applied. Residue for E2b: the identity is **not reproducible**, so
+    from the moment E2b signs the installed bundle the E1 rollback is no longer free; and a new SSH
+    session must unlock the keychain before any hand-run `codesign`.
+22. **E2b — run reviewed build/install tools** `[done — iteration 22]`: release build (zero warnings,
+    8.6 s from an empty scratch path), signed by the E1 identity, installed to
+    `/Applications/MOSSCapture.app` + `~/.local/bin/mtd-capture` — see the installed-app block above.
+    The PRD's "Signed app installed" clause is green, including *unchanged across a rebuild* proven
+    against a byte-different rebuild. Both dry runs, the idempotent re-run of each tool, the
+    first-install rollback and the replacement/backup rollback were all exercised for real on the
+    host. C4 review note (a) observed and measured: `build-app.sh` does put the keychain password on
+    argv, and after the run `ps`, both shell histories, `~/Library/Logs`, the build output and the
+    installed artifacts all contain zero occurrences of it. `--bin-dir` was **not** needed (see
+    fact 3 above). Residue for E3: the app is installed but nothing is paired —
+    `~/Library/Application Support/MOSSCapture` does not exist yet, and `mtd-capture status` answers
+    `{"ok":false}` until the app is running.
+23. **E3 — TCC human step** `[BLOCKED on the operator — runbook derived and recorded in iteration
+    23]`: the only irreducible human step in the whole loop. The exact click sequence, the exact
+    commands and the read-only verification are in progress.txt iteration 23 and in the three new
+    contract blocks above (TCC-verification, E3 command surface, prompt order). Summary of what
+    iteration 23 changed about it:
+    - **Grants no longer have to happen inside D4's 300 s window.** An unpaired `start` still raises
+      both prompts (`CaptureController.swift:242` runs the source before the first publish), so the
+      operator can grant and verify first, then pair with the full five minutes for pairing alone.
+    - **Order is System Audio Recording first, Microphone second**, fixed by
+      `NativeDualCaptureSource.swift:191-192`; only the first can block the control channel.
+    - **Verification is read-only and scriptable** — two `sqlite3`/`csreq` queries, no TCC write.
+    Never touch the TCC DB, never retry autonomously. Continue only after the operator confirms both
+    grants. Both lanes must settle (granted or denied) before any canary starts — a lane left
+    *pending* by an unanswered prompt leaves the latency probe's mixer origin unresolved (C3c
+    residue).
 
 ### Phase F — certification and rollback
 
@@ -840,6 +1510,60 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
 27. **F4 — rehearse/record rollback, restore service, and close** only when every PRD acceptance
     item has evidence.
+
+### Phase G - authorized post-merge fix cycle (2026-07-28)
+
+Opened by the prd.md amendment of the same date, after E3 proved the merged app cannot reach the
+live server at all. Scope is exactly these four items; nothing else may touch tracked source.
+
+26. **G1 - ATS declaration for the pinned live transport** `[done - iteration 1 of run
+    20260728-072601]`: `macos/MOSSCapture/Resources/Info.plist` now carries
+    `NSAppTransportSecurity = {NSAllowsArbitraryLoads: true}` and nothing else - see the ATS
+    contract block above for the exemption matrix measured on MacStudio, the three shape gates,
+    and why no single-host test can be the behavioral gate. Chosen over a host-scoped
+    `NSExceptionDomains` entry because the exact-leaf pin is the security control here by
+    deliberate design (prd.md "The certificate pin deliberately bypasses PKI"), every connection
+    the app makes comes from the pinned provider, and a scoped exception would bake one
+    deployment's hostname into the shipped product. Do not add chain or hostname evaluation.
+    Residue for the G4 merge: the fix is proven by probe on MacStudio and by shape gates in the
+    suite; the *product* path is confirmed only when the rebuilt app on m4mbp pairs against
+    `https://100.64.0.8:7861` (E3), so E2b must be re-run there after the merge.
+27. **G2 - trim the pairing payload** `[done - iteration 2 of run 20260728-072601]`:
+    `CapturePairingPayload.init` trims `.whitespacesAndNewlines` before splitting, refuses
+    whitespace *inside* a field as `invalidPairingPayload` instead of letting it reach the hex
+    check, and the exchange adapter now sends `wireRepresentation` rather than the raw stdin bytes -
+    see the pairing-payload contract above. The strict 64-hex check is unchanged. Two Swift nodes
+    plus the tracer's second real pairing (fed `payload + b"\n"`); three mutation rehearsals
+    recorded in progress.txt, one of which reproduces the shipped `invalidPinnedHash` exactly.
+    Residue for G4: nothing - this item needs no host work; the fix ships to m4mbp with the same
+    E2b re-run G1 already requires.
+28. **G3 - classify and log control-channel failures** `[done - iteration 3 of run
+    20260728-072601]`: `classifyControlError` + `ControlChannelErrorDetail` +
+    `ControlChannelFailureLogging` / `OSLogControlChannelFailureLog`, wired in
+    `MOSSCaptureApp/main.swift` - see the control-channel failure contract above. Five Swift nodes
+    plus the tracer's real-process pin refusal strengthened in place; four mutation rehearsals
+    recorded in progress.txt, one of which puts the failing URL and the SSL message on the wire.
+    `ControlChannelCommands.all` replaces the CLI's duplicate command literal so the log's public
+    vocabulary and the CLI's accepted set cannot drift.
+    Residue for G4: nothing new - it ships to m4mbp with the same E2b re-run G1 already requires,
+    and the `log show` predicate above is what E3 reads if the rebuilt app still fails.
+29. **G4 - regression tests, then one further reviewed merge.** Tests must fail before each fix and
+    pass after. The `100.64.0.0/10` tracer case this item asked for is **done** (iteration 1 of run
+    20260728-072601) - but measurement showed it cannot be the ATS gate, because a server this
+    tracer starts is always reached over loopback. See the ATS contract block; the node it became
+    proves the pin instead, and the declaration is gated by shape in three places. G2's regression
+    tests are **done** (iteration 2) and G3's are **done** (iteration 3), red/green rehearsed for
+    both. **The client-gate half is `[done - iteration 4 of run 20260728-072601]`** - green at
+    product tree `23dc163`, numbers in the G4 gate block above, and the merge payload reviewed
+    against the amendment's four items (eight files, every one of them Mac client source or a
+    regression test; no `ops/`, no server source). Iteration 4 also measured the fence and found
+    **two** blocking conditions rather than the one the prior iteration flagged, the second of which
+    exits 1 printing nothing; both, and the honest route through each, are in the two-fence block
+    above and staged as commands in Validation.
+    **Remaining for G4: the merge itself** - the empty-diff history join, then the `expected_main`
+    edit (in the script, not as an env override), then `merge-keeper.sh`. After the merge the
+    post-merge freeze resumes and E2b must be re-run on m4mbp so the installed app carries
+    G1+G2+G3.
 
 ## Non-candidates
 

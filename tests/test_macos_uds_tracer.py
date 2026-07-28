@@ -35,6 +35,12 @@ ALLOWED_PEER_NETWORKS = tuple(
     ipaddress.ip_network(value)
     for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10")
 )
+# App Transport Security exempts "local networking" — the RFC 1918 ranges and link-local — from
+# its CA-chain requirement, and applies in full to everything else. It also applies to an `.app`
+# bundle and not to a bare executable, and it overrides a URLSession delegate that has already
+# accepted the leaf. Production dials this range (the tailnet), so a tracer that only ever binds
+# an RFC 1918 address proves a transport production never takes.
+NON_EXEMPT_PEER_NETWORK = ipaddress.ip_network("100.64.0.0/10")
 
 # The one fixed path in this tracer. Everything else the tracer touches — certificate,
 # server, port, UDS, secret store, artifacts — stays per-test temporary. The lab app is
@@ -53,6 +59,10 @@ LAB_USAGE_DESCRIPTION_KEYS = (
     "NSAudioCaptureUsageDescription",
     "NSMicrophoneUsageDescription",
 )
+# The declaration that lets the app's pinned transport reach a peer ATS does not exempt. No test
+# on one host can observe its effect — every server this tracer starts is reached over loopback,
+# which ATS exempts unconditionally — so the bundle carrying it is what the tracer can gate.
+LAB_TRANSPORT_SECURITY_KEY = "NSAppTransportSecurity"
 
 
 def test_lab_app_bundle_is_one_immutable_first_install_reused_across_nodes():
@@ -83,6 +93,16 @@ def test_lab_app_bundle_is_one_immutable_first_install_reused_across_nodes():
         assert description.strip()
         assert description == product_info[key]
 
+    # And so does the transport declaration, which is the only reason a signed bundle can reach
+    # the live server: ATS applies to bundles, not to bare executables, and overrides the pinning
+    # delegate's acceptance of the self-signed leaf. Keep it un-siblinged — NSAllowsLocalNetworking
+    # or either NSAllowsArbitraryLoadsIn* key makes the OS ignore NSAllowsArbitraryLoads.
+    transport = evidence["app_transport_security"]
+    assert transport == product_info[LAB_TRANSPORT_SECURITY_KEY]
+    assert transport == {"NSAllowsArbitraryLoads": True}
+
+    assert re.fullmatch(r"[0-9a-f]{64}", evidence["product_info_plist_sha256"])
+    assert evidence["product_info_plist_sha256"] == _product_info_plist_sha256()
     assert re.fullmatch(r"[0-9a-f]{64}", evidence["executable_sha256"])
     assert re.fullmatch(r"[0-9a-f]{64}", evidence["bundle_sha256"])
     assert re.fullmatch(r"[0-9a-f]{64}", evidence["built_product"]["sha256"])
@@ -307,11 +327,16 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                 value="0" * 64,
             )
             second_pairing_payload = _issue_pairing(loopback_url)
+            # Typed the way an operator types it: paste, Return, Ctrl-D. The trailing newline is
+            # part of ending the input, not part of the payload, and it must survive the whole
+            # real path - stdin, the UDS hop, the app's parse and the HTTPS body the server
+            # actually reads. Feeding the clean bytes here would only ever prove the machine's
+            # own round trip.
             second_pair = _run_cli(
                 cli_exe,
                 ["pair", "--server", server_url],
                 env=env,
-                stdin=second_pairing_payload,
+                stdin=second_pairing_payload + b"\n",
             )
             assert second_pair.returncode == 0, second_pair.diagnostic
             _assert_secret_absent(
@@ -392,6 +417,186 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
             assert not store_path.exists()
     assert tmp_root is not None and not tmp_root.exists()
     # Running the app out of the fixed lab bundle must not have mutated it.
+    _assert_lab_bundle_unchanged(lab)
+
+
+def test_bundled_app_on_the_production_address_range_still_refuses_an_unpinned_leaf():
+    """The bundle pairs over the address range production dials, and still pins what it gets.
+
+    Two things this node deliberately does *not* claim. It does not observe App Transport
+    Security: the server is on this host, so however the peer address is written the connection
+    is routed over loopback, which ATS exempts unconditionally. Measured on MacStudio
+    2026-07-28 — bundled probe to this host's own 100.64.0.1 → 200, to the remote 100.64.0.8 →
+    NSURLErrorDomain -1200 / _kCFStreamErrorCodeKey -9802. So no single-host test can be the
+    ATS regression gate; the product Info.plist declaration is gated by shape instead, in
+    test_lab_app_bundle_is_one_immutable_first_install_reused_across_nodes.
+
+    What it does prove is the other half of that declaration's safety case. Turning ATS off
+    hands the whole trust decision to PinnedCertificateURLSessionDelegate, so phase two serves a
+    certificate the pairing payload's pin does not describe and the client must refuse it —
+    non-vacuously, because phase one already paired against the same code path and the only
+    thing that changed is the leaf.
+    """
+    if platform.system() != "Darwin":
+        pytest.skip("macOS App Transport Security tracer is Darwin-only.")
+    for module in ("uvicorn", "fastapi"):
+        if importlib.util.find_spec(module) is None:
+            pytest.fail(f"{module} is required for the Darwin ATS tracer.")
+    for tool in ("openssl", "codesign"):
+        if shutil.which(tool) is None:
+            pytest.fail(f"{tool} is required for the Darwin ATS tracer.")
+
+    peer_ip = _non_ats_exempt_ipv4()
+    if peer_ip is None:
+        # Not a skip: silently falling back to whatever address ifconfig lists first is how the
+        # sibling node came to exercise only RFC 1918 for this product's whole life.
+        pytest.fail(
+            f"this node needs an address in {NON_EXEMPT_PEER_NETWORK} on this host — it is the "
+            "range production dials. Bring the tailnet interface up."
+        )
+
+    cli_exe = _swift_bin_dir() / "mtd-capture"
+    assert cli_exe.is_file(), f"built CLI product missing: {cli_exe}"
+    lab = _lab_bundle()
+
+    with tempfile.TemporaryDirectory(prefix="mtd5-ats-", dir="/tmp") as tmp:
+        tmp_path = Path(tmp)
+        server_script = _write_server_script(tmp_path)
+        socket_path = tmp_path / "control.sock"
+        store_path = tmp_path / "secrets.json"
+        app_log = tmp_path / "app.log"
+        env = os.environ.copy()
+        env.update(
+            {
+                "MOSS_CAPTURE_CONTROL_SOCKET": str(socket_path),
+                "MOSS_CAPTURE_SECRET_STORE_PATH": str(store_path),
+                "MOSS_CAPTURE_SKIP_LAUNCH": "1",
+            }
+        )
+
+        served = tmp_path / "served"
+        served.mkdir()
+        cert = served / "live.pem"
+        key = served / "live.key"
+        _make_certificate(cert=cert, key=key, private_ip=peer_ip)
+        cert_pin = _certificate_sha256(cert)
+
+        # A second, never-served certificate: the pin the client is handed in phase two.
+        other = tmp_path / "other"
+        other.mkdir()
+        other_cert = other / "live.pem"
+        _make_certificate(cert=other_cert, key=other / "live.key", private_ip=peer_ip)
+        other_pin = _certificate_sha256(other_cert)
+        assert other_pin != cert_pin
+
+        app = None
+        honest = None
+        mismatched = None
+        try:
+            app = _start_app(lab.executable, env=env, log=app_log, socket_path=socket_path)
+
+            # Phase one — the production transport must work at all.
+            honest_dir = tmp_path / "honest"
+            honest_dir.mkdir()
+            honest, honest_port = _start_server(
+                server_script=server_script,
+                host="0.0.0.0",
+                cert=cert,
+                key=key,
+                cert_pin=cert_pin,
+                log=honest_dir / "server.log",
+                tmp_path=honest_dir,
+            )
+            _wait_for_https(
+                f"https://127.0.0.1:{honest_port}/api/runtime",
+                honest,
+                honest_dir / "server.log",
+            )
+            payload = _issue_pairing(f"https://127.0.0.1:{honest_port}")
+            server_url = f"https://{peer_ip}:{honest_port}"
+            pair = _run_cli(cli_exe, ["pair", "--server", server_url], env=env, stdin=payload)
+            assert pair.returncode == 0, (
+                "the bundled app could not pair over the production address range: "
+                f"{pair.diagnostic}"
+            )
+            body = pair.json()
+            assert body["ok"] is True
+            assert body["portalURL"] == f"{server_url}/live"
+            paired = _read_store(store_path)
+            assert paired["capture-server-url"] == server_url
+            assert paired["capture-certificate-pin"] == cert_pin
+            assert paired["capture-bearer"]
+            _assert_secret_absent(pair.output, payload.decode("utf-8"))
+            _assert_secret_absent(pair.output, paired["capture-bearer"])
+            _terminate(honest)
+            honest = None
+
+            # Phase two — same transport, but the served leaf is not the pinned one. Phase one
+            # is what makes this non-vacuous: the only thing that changed is the certificate.
+            mismatched_dir = tmp_path / "mismatched"
+            mismatched_dir.mkdir()
+            mismatched, mismatched_port = _start_server(
+                server_script=server_script,
+                host="0.0.0.0",
+                cert=cert,
+                key=key,
+                cert_pin=other_pin,
+                log=mismatched_dir / "server.log",
+                tmp_path=mismatched_dir,
+            )
+            _wait_for_https(
+                f"https://127.0.0.1:{mismatched_port}/api/runtime",
+                mismatched,
+                mismatched_dir / "server.log",
+            )
+            mismatched_payload = _issue_pairing(f"https://127.0.0.1:{mismatched_port}")
+            assert mismatched_payload.decode("utf-8").endswith(f".{other_pin}")
+            refused = _run_cli(
+                cli_exe,
+                ["pair", "--server", f"https://{peer_ip}:{mismatched_port}"],
+                env=env,
+                stdin=mismatched_payload,
+            )
+            assert refused.returncode != 0, (
+                "the pinned transport accepted a leaf its pin does not describe: "
+                f"{refused.diagnostic}"
+            )
+            # A refusal the operator cannot name is how the ATS block survived a whole merge.
+            # This is the same shape of failure — URLSession cancels the task, so the error that
+            # comes back is an NSURLErrorDomain code the app has never reasoned about — measured
+            # here through the real process rather than through a stub.
+            refusal = refused.json()
+            assert refusal["ok"] is False, refused.diagnostic
+            assert refusal["error"] == "control_failed", refused.diagnostic
+            detail = refusal["errorDetail"]
+            assert detail["domain"] == "NSURLErrorDomain", refused.diagnostic
+            # -999 is NSURLErrorCancelled: the pinning delegate cancelled the challenge, so *this
+            # client* refused the leaf. That is exactly the distinction the operator could not
+            # make before — a connection the OS refused instead arrives as -1200 with an
+            # underlying stream code. Same bare `control_failed` for both; different detail.
+            assert detail["code"] == -999, refused.diagnostic
+            # Omitted, not zeroed: a cancelled challenge has no underlying reason to report.
+            assert "underlyingCode" not in detail, refused.diagnostic
+            # Numbers and one constant: the detail names the fault without naming the deployment.
+            assert set(detail) == {"domain", "code"}, refused.diagnostic
+            assert str(peer_ip) not in json.dumps(detail), refused.diagnostic
+            # The refusal is the client's: the server would have accepted this payload, since the
+            # pin it carries is the one that server was configured with.
+            unchanged = _read_store(store_path)
+            assert unchanged["capture-certificate-pin"] == cert_pin
+            assert unchanged["capture-bearer"] == paired["capture-bearer"]
+            assert unchanged["capture-server-url"] == server_url
+            _assert_secret_absent(refused.output, mismatched_payload.decode("utf-8"))
+        finally:
+            if app is not None:
+                _terminate(app)
+            for process in (honest, mismatched):
+                if process is not None:
+                    _terminate(process)
+            _remove_socket(socket_path)
+            if store_path.exists():
+                store_path.unlink()
+        assert not socket_path.exists()
     _assert_lab_bundle_unchanged(lab)
 
 
@@ -549,11 +754,23 @@ def _install_or_reuse_lab_bundle() -> _LabBundle:
     built_exe = _swift_bin_dir() / LAB_EXECUTABLE_NAME
     built_product = _built_product_identity(built_exe)
     recorded = _read_lab_evidence()
-    if recorded is not None and recorded["built_product"] == built_product:
+    # The bundle's inputs are the built executable *and* the product Info.plist: the plist is
+    # copied in verbatim, so a plist-only edit changes the installed bundle without changing the
+    # Mach-O identity. Reusing across it would fail the continuity assertions instead of
+    # reinstalling, and would leave the tracer running a bundle the product no longer describes.
+    if (
+        recorded is not None
+        and recorded["built_product"] == built_product
+        and recorded.get("product_info_plist_sha256") == _product_info_plist_sha256()
+    ):
         lab = _LabBundle(bundle=LAB_BUNDLE, evidence=recorded)
         _assert_lab_bundle_unchanged(lab)
         return lab
     return _first_install_lab_bundle(built_exe, built_product)
+
+
+def _product_info_plist_sha256() -> str:
+    return hashlib.sha256((PACKAGE_ROOT / "Resources" / "Info.plist").read_bytes()).hexdigest()
 
 
 def _built_product_identity(built_product: Path) -> dict[str, str]:
@@ -593,6 +810,10 @@ def _first_install_lab_bundle(built_exe: Path, built_product: dict[str, str]) ->
     assert info["CFBundleIdentifier"] == LAB_BUNDLE_IDENTIFIER
     for key in LAB_USAGE_DESCRIPTION_KEYS:
         assert info.get(key, "").strip(), f"product Info.plist lacks {key}"
+    assert info.get(LAB_TRANSPORT_SECURITY_KEY), (
+        f"product Info.plist lacks {LAB_TRANSPORT_SECURITY_KEY}: the bundle would not reach the "
+        "live server at all"
+    )
     info.update({"CFBundleExecutable": LAB_EXECUTABLE_NAME, "CFBundlePackageType": "APPL"})
     (contents / "Info.plist").write_bytes(plistlib.dumps(info, sort_keys=False))
 
@@ -623,6 +844,8 @@ def _observe_lab_bundle(built_product: dict[str, str]) -> dict[str, Any]:
         "bundle_identifier": info["CFBundleIdentifier"],
         "bundle_executable": info["CFBundleExecutable"],
         "usage_descriptions": {key: info.get(key, "") for key in LAB_USAGE_DESCRIPTION_KEYS},
+        "app_transport_security": info.get(LAB_TRANSPORT_SECURITY_KEY),
+        "product_info_plist_sha256": _product_info_plist_sha256(),
         "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
         "bundle_sha256": _digest_inventory(inventory),
         "bundle_inventory": inventory,
@@ -687,7 +910,7 @@ def _assert_lab_bundle_unchanged(lab: _LabBundle) -> None:
     assert verified.returncode == 0, verified.stderr.decode("utf-8", errors="replace")
 
 
-def _private_non_loopback_ipv4() -> str | None:
+def _local_ipv4_addresses() -> list[ipaddress.IPv4Address]:
     completed = subprocess.run(
         ["ifconfig"],
         check=True,
@@ -695,6 +918,7 @@ def _private_non_loopback_ipv4() -> str | None:
         text=True,
         timeout=3.0,
     )
+    addresses: list[ipaddress.IPv4Address] = []
     for line in completed.stdout.splitlines():
         parts = line.strip().split()
         if len(parts) >= 2 and parts[0] == "inet":
@@ -702,10 +926,23 @@ def _private_non_loopback_ipv4() -> str | None:
                 address = ipaddress.ip_address(parts[1])
             except ValueError:
                 continue
-            if address.version == 4 and any(
-                address in network for network in ALLOWED_PEER_NETWORKS
-            ):
-                return str(address)
+            if isinstance(address, ipaddress.IPv4Address):
+                addresses.append(address)
+    return addresses
+
+
+def _private_non_loopback_ipv4() -> str | None:
+    for address in _local_ipv4_addresses():
+        if any(address in network for network in ALLOWED_PEER_NETWORKS):
+            return str(address)
+    return None
+
+
+def _non_ats_exempt_ipv4() -> str | None:
+    """A peer address ATS does not treat as local networking — what production dials."""
+    for address in _local_ipv4_addresses():
+        if address in NON_EXEMPT_PEER_NETWORK:
+            return str(address)
     return None
 
 

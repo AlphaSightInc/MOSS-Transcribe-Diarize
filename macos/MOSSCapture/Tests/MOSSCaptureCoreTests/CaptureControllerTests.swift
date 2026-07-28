@@ -2921,6 +2921,91 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(client.requests.isEmpty)
     }
 
+    func testPairingPayloadTrimsHowItWasTypedAndSendsExactlyWhatItParsed() throws {
+        // The payload is pasted into `mtd-capture pair` and ended with Ctrl-D. A Return pressed
+        // first, a terminal that ends lines with CRLF, or a paste that carries indentation all put
+        // characters around the payload that are not part of it.
+        let pin = String(repeating: "a", count: 64)
+        let canonical = "mtd1.secret.\(pin)"
+        let typedForms: [(String, String)] = [
+            ("Return before Ctrl-D", canonical + "\n"),
+            ("CRLF terminal", canonical + "\r\n"),
+            ("indented paste", "  \t" + canonical + " \n"),
+            ("uppercase pin with a newline", "mtd1.secret.\(pin.uppercased())\n"),
+        ]
+
+        for (label, typed) in typedForms {
+            let client = QueuedCaptureHTTPClient(responses: [
+                CaptureHTTPResponse(
+                    statusCode: 200,
+                    body: try JSONEncoder().encode(TestPairingResponseBody(
+                        deviceID: "device-a",
+                        deviceToken: "device-token"
+                    ))
+                ),
+                CaptureHTTPResponse(
+                    statusCode: 200,
+                    body: try JSONEncoder().encode(TestSessionResponseBody(
+                        id: "session-a",
+                        ownerDeviceID: "device-a",
+                        viewToken: "view-token"
+                    ))
+                ),
+            ])
+            let exchange = URLSessionCapturePairingExchangeAdapter(
+                client: client,
+                deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+            )
+
+            let result = try exchange.pair(
+                serverURL: URL(string: "https://moss.example")!,
+                pairingPayload: Data(typed.utf8)
+            )
+
+            XCTAssertEqual(result.sessionID, "session-a", label)
+            XCTAssertEqual(result.certificatePinSHA256Hex, pin, label)
+            // The server sees only what was transmitted, so the transmitted payload must be the
+            // canonical string the pin was validated from — not the bytes that arrived on stdin.
+            let pairingBody = try jsonBody(try XCTUnwrap(client.requests.first, label))
+            XCTAssertEqual(pairingBody["pairing_payload"] as? String, canonical, label)
+        }
+    }
+
+    func testPairingPayloadWhitespaceFaultsAreReportedAgainstThePayloadNotTheCertificate() throws {
+        // Whitespace that survives the trim is inside a field: the payload itself is broken, and
+        // saying `invalidPinnedHash` would send the operator to look at the server's certificate.
+        let pin = String(repeating: "a", count: 64)
+        let client = QueuedCaptureHTTPClient(responses: [])
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            client: client,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+
+        let whitespaceCases: [(String, String, CaptureSecurityError)] = [
+            ("nothing but whitespace", " \t\n ", .missingPairingPayload),
+            ("space inside the secret", "mtd1.sec ret.\(pin)", .invalidPairingPayload),
+            (
+                "pin wrapped across two lines",
+                "mtd1.secret.\(String(repeating: "a", count: 32))\n\(String(repeating: "a", count: 32))",
+                .invalidPairingPayload
+            ),
+            ("space inside the prefix", "mtd 1.secret.\(pin)", .invalidPairingPayload),
+        ]
+
+        for (label, typed, expected) in whitespaceCases {
+            XCTAssertThrowsError(
+                try exchange.pair(
+                    serverURL: URL(string: "https://moss.example")!,
+                    pairingPayload: Data(typed.utf8)
+                ),
+                label
+            ) { error in
+                XCTAssertEqual(error as? CaptureSecurityError, expected, label)
+            }
+        }
+        XCTAssertTrue(client.requests.isEmpty)
+    }
+
     func testPairingExchangeStopsBeforeSessionWhenPairingFails() throws {
         let client = QueuedCaptureHTTPClient(responses: [
             CaptureHTTPResponse(statusCode: 403, body: Data())
@@ -3608,6 +3693,274 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(response.error, "control_failed")
         XCTAssertNil(responseBody.range(of: Data(secret.utf8)))
         XCTAssertEqual(try Data(contentsOf: artifact), responseBody)
+    }
+
+    /// The failure that hid the ATS block for a whole merge. A pinned `URLSession` reports a
+    /// refused connection as an `NSURLErrorDomain` error whose real reason lives only in the
+    /// underlying stream code, and the control channel discarded the domain, the code and the
+    /// underlying code alike — the operator saw `control_failed` and had nothing to search for.
+    /// Domain and code are compile-time constants and integers; the message and the failing URL
+    /// beside them are not, so neither may cross the socket.
+    func testAnUnclassifiedTransportFailureCarriesItsDomainCodeAndUnderlyingCodeButNoMessageOrURL() throws {
+        struct FailureCase {
+            var name: String
+            var error: Error
+            var expected: ControlChannelErrorDetail
+        }
+
+        let failingURL = "https://100.64.0.8:7861/api/live/pairings"
+        let message = "An SSL error has occurred and a secure connection to the server cannot be made."
+        let cases = [
+            // Exactly what m4mbp saw: -1200 says "secure connection failed", -9802 says why.
+            FailureCase(
+                name: "ats-refused-tls",
+                error: NSError(
+                    domain: NSURLErrorDomain,
+                    code: NSURLErrorSecureConnectionFailed,
+                    userInfo: [
+                        NSLocalizedDescriptionKey: message,
+                        NSURLErrorFailingURLStringErrorKey: failingURL,
+                        "_kCFStreamErrorCodeKey": -9802,
+                        "_kCFStreamErrorDomainKey": 3,
+                    ]
+                ),
+                expected: ControlChannelErrorDetail(
+                    domain: NSURLErrorDomain,
+                    code: NSURLErrorSecureConnectionFailed,
+                    underlyingCode: -9802
+                )
+            ),
+            // The other shape URLSession uses for the same idea: a nested NSError.
+            FailureCase(
+                name: "nested-underlying-error",
+                error: NSError(
+                    domain: NSURLErrorDomain,
+                    code: NSURLErrorCannotConnectToHost,
+                    userInfo: [
+                        NSURLErrorFailingURLStringErrorKey: failingURL,
+                        NSUnderlyingErrorKey: NSError(
+                            domain: NSPOSIXErrorDomain,
+                            code: 61,
+                            userInfo: [NSLocalizedDescriptionKey: message]
+                        ),
+                    ]
+                ),
+                expected: ControlChannelErrorDetail(
+                    domain: NSURLErrorDomain,
+                    code: NSURLErrorCannotConnectToHost,
+                    underlyingCode: 61
+                )
+            ),
+            // No underlying reason at all: report that honestly rather than inventing a zero.
+            FailureCase(
+                name: "no-underlying-reason",
+                error: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [:]),
+                expected: ControlChannelErrorDetail(
+                    domain: NSURLErrorDomain,
+                    code: NSURLErrorTimedOut,
+                    underlyingCode: nil
+                )
+            ),
+        ]
+
+        for failureCase in cases {
+            let socketPath = temporarySocketPath()
+            let serverFinished = expectation(description: "server answered \(failureCase.name)")
+            let server = UnixDomainControlServer(
+                socketPath: socketPath,
+                authenticator: SameUserUDSAuthenticator(
+                    secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+                )
+            ) { _ in
+                throw failureCase.error
+            }
+            DispatchQueue.global().async {
+                try? server.serveOnce()
+                serverFinished.fulfill()
+            }
+            try waitForSocket(at: socketPath)
+
+            let responseBody = try sendRawControlPayloadBody(
+                try rawControlFrame(command: "pair"),
+                socketPath: socketPath
+            )
+            let response = try JSONDecoder().decode(ControlChannelResponse.self, from: responseBody)
+            wait(for: [serverFinished], timeout: 2)
+
+            XCTAssertFalse(response.ok, failureCase.name)
+            XCTAssertEqual(response.error, "control_failed", failureCase.name)
+            XCTAssertEqual(response.errorDetail, failureCase.expected, failureCase.name)
+            // The detail is numbers and one constant. Everything the error knew about the
+            // deployment stays inside the app.
+            XCTAssertNil(responseBody.range(of: Data(failingURL.utf8)), failureCase.name)
+            XCTAssertNil(responseBody.range(of: Data(message.utf8)), failureCase.name)
+            XCTAssertNil(responseBody.range(of: Data("100.64.0.8".utf8)), failureCase.name)
+        }
+    }
+
+    /// Classification must not rename what already worked: the tracer, the CLI and the operator's
+    /// runbook all read these exact strings, and a named failure needs no detail because its name
+    /// already says everything non-secret about it.
+    func testAlreadyNamedControlFailuresKeepTheirNamesAndCarryNoDetail() throws {
+        struct NamedCase {
+            var error: Error
+            var expected: String
+        }
+
+        let cases = [
+            NamedCase(error: CaptureSecurityError.invalidPairingPayload, expected: "invalidPairingPayload"),
+            NamedCase(error: CaptureSecurityError.invalidPinnedHash, expected: "invalidPinnedHash"),
+            NamedCase(error: CaptureControllerError.notRunning, expected: "notRunning"),
+            NamedCase(
+                error: CaptureHTTPTransportError.nonSuccessStatus(401),
+                expected: "nonSuccessStatus(401)"
+            ),
+            NamedCase(
+                error: NativeCaptureError.permissionDenied("microphone"),
+                expected: "permissionDenied(\"microphone\")"
+            ),
+        ]
+
+        for namedCase in cases {
+            let socketPath = temporarySocketPath()
+            let serverFinished = expectation(description: "server answered \(namedCase.expected)")
+            let failureLog = RecordingControlChannelFailureLog()
+            let server = UnixDomainControlServer(
+                socketPath: socketPath,
+                authenticator: SameUserUDSAuthenticator(
+                    secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+                ),
+                failureLog: failureLog
+            ) { _ in
+                throw namedCase.error
+            }
+            DispatchQueue.global().async {
+                try? server.serveOnce()
+                serverFinished.fulfill()
+            }
+            try waitForSocket(at: socketPath)
+
+            let response = try sendRawControlPayload(
+                try rawControlFrame(command: "status"),
+                socketPath: socketPath
+            )
+            wait(for: [serverFinished], timeout: 2)
+
+            XCTAssertFalse(response.ok, namedCase.expected)
+            XCTAssertEqual(response.error, namedCase.expected)
+            XCTAssertNil(response.errorDetail, namedCase.expected)
+            // Only what has no name is worth a log line; a named failure is already evidence.
+            XCTAssertEqual(failureLog.records.count, 0, namedCase.expected)
+        }
+    }
+
+    /// An `LSUIElement` app has no window and its stderr goes nowhere when Launch Services starts
+    /// it, so a failure it does not record is a failure nobody can reconstruct afterwards. The log
+    /// is handed the command word and the non-secret detail and nothing else — it cannot write a
+    /// payload even by accident, because it is never given one.
+    func testEveryUnclassifiedControlFailureIsLoggedOnceWithOnlyItsCommandAndDetail() throws {
+        let secret = "unclassified-log-secret-\(UUID().uuidString)"
+        let failureLog = RecordingControlChannelFailureLog()
+
+        func failOnce(command: String) throws -> ControlChannelResponse {
+            let socketPath = temporarySocketPath()
+            let serverFinished = expectation(description: "server answered \(command)")
+            let server = UnixDomainControlServer(
+                socketPath: socketPath,
+                authenticator: SameUserUDSAuthenticator(
+                    secrets: FakeCaptureKeyStoreAdapter(secret: "control-secret")
+                ),
+                failureLog: failureLog
+            ) { _ in
+                throw SecretBearingControlError(secret: secret)
+            }
+            DispatchQueue.global().async {
+                try? server.serveOnce()
+                serverFinished.fulfill()
+            }
+            try waitForSocket(at: socketPath)
+            let response = try sendRawControlPayload(
+                try rawControlFrame(command: command),
+                socketPath: socketPath
+            )
+            wait(for: [serverFinished], timeout: 2)
+            return response
+        }
+
+        let first = try failOnce(command: "pair")
+        let second = try failOnce(command: "latency")
+
+        XCTAssertEqual(failureLog.records.count, 2)
+        XCTAssertEqual(failureLog.records.map(\.command), ["pair", "latency"])
+        XCTAssertEqual(failureLog.records.map(\.detail), [first.errorDetail, second.errorDetail])
+        XCTAssertNotNil(first.errorDetail)
+        // A Swift error's bridged domain is its type name and its code is a case index, so the
+        // associated secret cannot reach the log through either.
+        for record in failureLog.records {
+            XCTAssertFalse(record.detail.domain.contains(secret))
+            XCTAssertTrue(record.detail.domain.contains("SecretBearingControlError"))
+        }
+    }
+
+    /// Everything the app's log marks public has to be provably non-secret. The detail already is
+    /// — it is a domain and integers — but the command word arrives over the socket, so the log
+    /// reduces it to the fixed vocabulary rather than trusting it. An unknown command never
+    /// reaches this path (it throws a named `unknownCommand`), which is exactly why the guard has
+    /// to be structural instead of relying on that.
+    func testTheAppFailureLogWritesOnlyAFixedCommandWordAndTheDetailsNumbers() throws {
+        let lines = LoggedLineBox()
+        let log = OSLogControlChannelFailureLog { lines.append($0) }
+        let detail = ControlChannelErrorDetail(
+            domain: NSURLErrorDomain,
+            code: NSURLErrorSecureConnectionFailed,
+            underlyingCode: -9802
+        )
+
+        log.recordUnclassifiedFailure(command: "pair", detail: detail)
+        log.recordUnclassifiedFailure(
+            command: "status; token=sk-live-do-not-log",
+            detail: ControlChannelErrorDetail(domain: "MOSSCaptureCore.Whatever", code: 3)
+        )
+        log.recordUnclassifiedFailure(command: nil, detail: detail)
+
+        XCTAssertEqual(
+            lines.lines,
+            [
+                "control command pair failed with an unclassified error: "
+                    + "domain=NSURLErrorDomain code=-1200 underlying=-9802",
+                "control command other failed with an unclassified error: "
+                    + "domain=MOSSCaptureCore.Whatever code=3 underlying=none",
+                "control command unknown failed with an unclassified error: "
+                    + "domain=NSURLErrorDomain code=-1200 underlying=-9802",
+            ]
+        )
+        for line in lines.lines {
+            XCTAssertFalse(line.contains("sk-live-do-not-log"))
+        }
+        // The vocabulary is the CLI's, not a second copy of it.
+        XCTAssertEqual(ControlChannelCommands.all, ["pair", "start", "stop", "status", "handoff", "latency"])
+    }
+
+    /// The declaration is worthless if the shipped app never wires it. The CLI has no control
+    /// server at all, so it must not grow one.
+    func testTheAppEntrypointWiresTheControlChannelFailureLogAndTheCLIDoesNot() throws {
+        let package = packageRoot()
+        func read(_ target: String, _ file: String) throws -> String {
+            try String(
+                contentsOf: package
+                    .appendingPathComponent("Sources")
+                    .appendingPathComponent(target)
+                    .appendingPathComponent(file),
+                encoding: .utf8
+            )
+        }
+
+        let appMain = try read("MOSSCaptureApp", "main.swift")
+        let cliMain = try read("MTDCaptureCLI", "main.swift")
+        XCTAssertTrue(appMain.contains("OSLogControlChannelFailureLog()"))
+        XCTAssertTrue(appMain.contains("failureLog:"))
+        XCTAssertFalse(cliMain.contains("OSLogControlChannelFailureLog"))
+        XCTAssertFalse(cliMain.contains("UnixDomainControlServer"))
     }
 
     func testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation() throws {
@@ -5509,6 +5862,45 @@ private struct SecretBearingControlError: Error, CustomStringConvertible {
 
     var description: String {
         secret
+    }
+}
+
+private final class LoggedLineBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [String] = []
+
+    var lines: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    func append(_ line: String) {
+        lock.lock()
+        storage.append(line)
+        lock.unlock()
+    }
+}
+
+private final class RecordingControlChannelFailureLog: ControlChannelFailureLogging, @unchecked Sendable {
+    struct Record: Equatable {
+        var command: String?
+        var detail: ControlChannelErrorDetail
+    }
+
+    private let lock = NSLock()
+    private var storage: [Record] = []
+
+    var records: [Record] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    func recordUnclassifiedFailure(command: String?, detail: ControlChannelErrorDetail) {
+        lock.lock()
+        storage.append(Record(command: command, detail: detail))
+        lock.unlock()
     }
 }
 
