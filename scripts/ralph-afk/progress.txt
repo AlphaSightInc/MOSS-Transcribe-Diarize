@@ -660,3 +660,5 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   carries the unresolvable `$(AppIdentifierPrefix)` literal (defect 6 residue) and B1 made the
   Keychain store dormant, so signing that entitlement would assert an identity the certificate
   cannot satisfy.
+
+[loop 20260728-002458-97091] stalled after 3 consecutive iterations without progress (last agent exit: 1)
