@@ -12264,3 +12264,144 @@ ROLLBACKS, to be applied in this order if any step fails:
    designated requirement, which is unchanged by a rebuild (measured in K5c: inode moved
    211648186 -> 211995344 and both grants survived). The read-only query is re-run afterwards
    as a check, never as a write.
+
+================================================================================
+Iteration 20 of run 20260728-181020 - M6c: publish 77e0014, redeploy the server,
+and REBUILD the Mac product. "One exact SHA everywhere" is 4/4 again.
+================================================================================
+
+Target: Phase M gate step (c), the fifth amendment's "push, redeploy" - the K5c shape, not the
+server-only J5c one, because four macos/ product files changed. Everything 53/48/49/D-a fixed
+lives in the Mac binary and everything D-c fixed lives in the server process; until this step
+both were inert and F1/F3 would have re-measured the code they already died on.
+
+Rollbacks were pre-recorded and COMMITTED (970a144) before any host was touched.
+
+RESULT: four-way SHA check GREEN 4/4 at 77e0014ac2a1eee1edb29b109024807e9489daa5.
+  local main / origin/main / server /mnt/d/Coding/MOSS-Transcribe-Diarize / m4mbp checkout.
+
+PUSH. `git push origin main` fast-forwarded fc7097d..77e0014, proven a fast-forward first
+(`git merge-base --is-ancestor origin/main main`). Never forced; `upstream` (OpenMOSS) untouched.
+
+SERVER (J5c/K5c order - admission check AFTER the checkout so it runs under the code about to
+start, restart only then, poll never one-shot):
+- fetch by URL + `git checkout 77e0014`; HEAD 77e0014, tree d20943692be226e1e196c31e7923e961faebb332
+  - THE TREE IS THE MERGE'S OWN TREE, i.e. identical to the feature tip 4ac5d95 that gate step (a)
+    tested. Same hash on the host as in iteration 19's record, so the deployed tree needs no
+    separate argument.
+- content parity, the discriminating form: all three CHANGED server files hashed on the host match
+  their 77e0014 content and differ from their fc7097d content -
+    live_adapters.py        aa481428b0754379…  (was 195ff4dd35a71c83…)
+    live_coordinator.py     561105b949b78733…  (was ee711f67ebf6fe5d…)
+    live_service_runtime.py a1bbcb82b2225990…  (was 832b1878e8e9c35d…)
+  A file whose content differs across the two SHAs is the discriminator; hashing an unchanged file
+  proves nothing.
+- manifest admission re-run under the NEW code, under the SERVICE's venv python:
+    caps equal = True 40000 | vad frame_samples = 160 | retired knob present = False
+    _preflight_payload -> available=True, failures=[], manifest_hash 61d97ffe… (UNCHANGED)
+  So D-c adds no admission constraint and breaks none.
+- POSITIVE proof the deployed code carries D-c, exercised rather than hasattr'd:
+    LIVE_DECODE_TOKEN_BUDGET_BASE 68 | LIVE_DECODE_TOKENS_PER_AUDIO_SECOND 87 | MARGIN 4
+    canonical_decode_token_cap(sample_count=40000) -> 286   (the 2.5 s hard-cap span)
+    canonical_decode_token_cap(sample_count=8000)  -> 112   (a 0.5 s frame-sized span)
+    LiveServiceRuntime source carries canonical_decode_token_cap AND canonical_decode_capped
+  286/112 are exactly the numbers iteration 16 derived on this branch, now reproduced by the
+  deployed interpreter.
+- `systemctl --user restart moss-live-web.service`: MainPID 346453 -> 350731, NRestarts=0,
+  ActiveState=active. `/live` answered 200 **9 s** after the restart (polled 1 s x 40; a single
+  probe before ~8 s returns 000 and reads exactly like a failure).
+- Batch NEVER restarted: moss-web MainPID stayed 301112 / NRestarts=0; moss-vllm stayed 322117 /
+  NRestarts=0. From MacStudio http://192.168.68.38:7860/ and /api/jobs both **200**.
+- Post-restart hygiene: 0 `Traceback` lines in the unit journal; `live-runs/` 0 entries;
+  no /tmp/mtd-live-*; the untracked ops/moss-live.env still present (never `git clean` there).
+- The running process resolves the package FROM THE CHECKOUT (editable install), which is what
+  makes "restart picks up the checkout" a fact rather than an assumption:
+    moss_transcribe_diarize.app.live_adapters.__file__
+      = /mnt/d/Coding/MOSS-Transcribe-Diarize/moss_transcribe_diarize/app/live_adapters.py
+
+m4mbp: CHECKOUT, THEN REBUILD + REINSTALL.
+- app confirmed NOT running first (`pgrep -x MOSSCaptureApp` empty), so nothing was killed.
+- fetch BY URL (on m4mbp `origin` is OpenMOSS and the fork is `alphasight`), `git checkout 77e0014`;
+  HEAD 77e0014, tree d2094369… , porcelain empty.
+- macos witnesses match the new SHA and differ from the old:
+    NativeLaneHealth.swift   560dfa53e7a6a00a…  (was 0ddc66c693ff1211…)
+    CaptureController.swift  ad7bfb9261af2496…  (was 65f446ad27f380f8…)
+- `build-app.sh --dry-run` then `--configuration release`: MOSSCaptureApp 5.09 s, mtd-capture
+  0.52 s; keychain-access-groups dropped as designed; bundle_digest c7c12ce21014bf0b… (was
+  267ada93… at K5c, so the bundle really is new).
+- **The designated requirement is byte-identical across this rebuild, for the fourth time:**
+    identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"
+  and the CLI's is the .cli sibling on the same leaf. `codesign --verify -R=<that requirement>`
+  passes (DR_OK) and `codesign --verify --strict` passes (bundle_ok).
+- `install-app.sh --dry-run` then the real install. THE ROLLBACK STRINGS IT PRINTED, which are the
+  concrete form of pre-record item 3:
+    rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-20260728T222244Z' '/Applications/MOSSCapture.app'
+    rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-20260728T222244Z' '/Users/ga0/.local/bin/mtd-capture'
+  Those backups are the ONLY copy of the fc7097d bytes (SwiftPM is not byte-reproducible here).
+  Do not delete them. The older …backup-20260728T191937Z pair is the PRE-K5c product.
+- installed CLI sha256 450c20bf2cfc86c6… (was c11e89ff…); bundle inode moved
+  **211995344 -> 212080356**, mtime 2026-07-28T18:22:32Z - positive proof the bundle was replaced.
+- G1's ATS declaration still in the INSTALLED Info.plist (`NSAllowsArbitraryLoads` true).
+
+PROOF THE INSTALLED PRODUCT - NOT JUST THE CHECKOUT - CARRIES PHASE M. `strings` over the new
+install and over the pre-M6c backup of the same file, with a control word that is in both:
+                                new install   pre-M6c backup
+    macos_health_facts_dropped        1              0        (D-a's new mailbox-overflow code)
+    degraded                          1              0        (D-a's degradation state)
+    macos_buffer_overrun              1              1        (the CONTROL - in both products)
+measured on BOTH binaries - /Users/ga0/.local/bin/mtd-capture and
+/Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp, the one that actually captures.
+A vocabulary absent from the backup and present in the install, with a control word present in
+both, is a discriminating witness rather than a smoke test.
+
+TCC GRANTS SURVIVED THE REBUILD, MEASURED READ-ONLY, NEVER WRITTEN (second time this has been
+measured across an actual bundle replacement, after K5c):
+  reader sanity: 322 rows in `access` (a 0-row answer and a broken query look identical)
+  kTCCServiceAudioCapture|com.alphasight.moss.capture|0|2
+  kTCCServiceMicrophone  |com.alphasight.moss.capture|0|2
+  csreq decode -> identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"
+i.e. the grant keys on the DR, which is why a byte-different rebuild keeps it.
+
+LIVE SURFACE RE-VERIFIED FROM m4mbp - the exact path the PRD clause names (100.64.0.4 ->
+100.64.0.8), with the served leaf hashed BEFORE any request was trusted:
+  leaf sha256 a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff == the D2 pin
+  https://100.64.0.8:7861/live               -> 200
+  https://100.64.0.8:7861/api/live/descriptor -> 200
+  descriptor still reports source_revision f9285d69… - that is a MANIFEST field stamped at D2
+  time, NOT the running code's revision. Never use it as the deployed-SHA check; the four-way
+  `git rev-parse` plus the venv introspection above is the check.
+Same three probes from MacStudio also 200/200, and the leaf hashed identically there.
+
+Validation: the four-way SHA check (4/4 at 77e0014); `/live` 200 after 9 s polled; batch 200 on
+/ and /api/jobs with both MainPIDs unmoved; DR_OK + bundle_ok; the strings witness table above;
+both TCC rows auth_value=2.
+Evidence paths: /tmp/ralph-i20-build.log, /tmp/ralph-i20-install.log; pre-record commit 970a144;
+context.md block "M6c is deployed - all four checkouts at 77e0014".
+
+Learned. (1) THE VENV RESOLVES THE PACKAGE FROM THE CHECKOUT, AND THAT IS WORTH STATING AS A
+MEASUREMENT RATHER THAN A HABIT. Every redeploy in this loop has assumed "checkout + restart =
+new code"; `live_adapters.__file__` under the service's own interpreter is the one-line proof, and
+it costs nothing. Without it, a venv that had ever been `pip install`ed non-editably would restart
+happily into the OLD code and every later measurement would be attributed to the wrong SHA.
+(2) A STRINGS WITNESS NEEDS A CONTROL WORD. `macos_health_facts_dropped` 1-vs-0 alone proves the
+binary changed; `macos_buffer_overrun` 1-vs-1 beside it proves the *tool* works and the 0 is a real
+absence rather than a mis-typed grep or an unreadable binary. K5c's witness had no control.
+(3) `set -o pipefail` TURNS A DELIBERATE `ls … 2>/dev/null | wc -l` INTO AN ABORT. A no-match `ls`
+exits 2, pipefail propagates it, `set -e` kills the script - and the remaining checks silently
+never run, which reads as if they passed. It cost one round trip here; in a redeploy verification
+script it would be a skipped check reported as a green one.
+(4) A "0 entries" ANSWER FROM THE WRONG PATH IS NOT EVIDENCE. `live-runs/` is
+/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs (it is the unit's `--runs-dir`), NOT under
+~/.local/share/…; the first check pointed at a directory that does not exist and returned 0
+vacuously. Re-run against the path the running argv actually names.
+
+Blocker: none.
+
+Next: gate step (d) - F1 (60 s canary) and F3 (16-minute soak) against 77e0014, both required
+green, using scripts/ralph-afk/live-canary.sh with OUTPUT_MODE=muted (candidate 51's lane
+separation) and the marker-alone-x3 harness change that is written but never yet exercised. This
+is the first run that can MEASURE candidate 50's predicted latency drop (committed p95 9.05 s ->
+near the 1.5 s median lag) and the first that can see whether 53/48/49/D-a keep a meeting alive
+through a lane fault. Order: F1 first - it is 60 s against F3's 17 minutes, and if the latency
+prediction is wrong F1 says so seventeen times cheaper. Both runs need their own pre-recorded
+rollbacks (volume, app, session, /tmp evidence) per iteration 12's list.
