@@ -4383,3 +4383,26 @@ run reached `prepared` through it, the first time that has been observed.
   tests/test_live_pipeline_seams.py and re-run BOTH probes as the gate. If it does not, the loop
   has no authorized product work left on the critical path; the only mechanical step available is
   the m4mbp checkout, which needs that host to be powered on.
+
+--------------------------------------------------------------------------------
+run 20260728-112922 | iteration 8 | rollback recorded BEFORE the span-sweep host probe
+--------------------------------------------------------------------------------
+About to run `live-identity-seam-probe.py` nine times on ga0-alienware-rtx4070ti (WSL Ubuntu)
+over nine span WAVs cut from the pipeline probe's own two-lane timeline, to measure how far a
+decoder timestamp can land past the end of the span it was given. This is the same class of host
+mutation iteration 7 rehearsed: temp files under /tmp inside WSL plus read-only inference requests
+to the vLLM endpoint the service already uses. NOTHING else is touched - no session is opened, no
+pairing is minted, no auth state is written, no unit is restarted, no checkout is moved.
+
+Mutations, and the command that undoes each:
+  1. ship the probe + WAVs into WSL /tmp
+       rollback: rm -rf /tmp/moss-span-sweep /tmp/live-identity-seam-probe.py
+  2. nine JSON reports written to /tmp/moss-span-sweep/reports/
+       rollback: rm -rf /tmp/moss-span-sweep   (same command; reports are copied back first)
+  3. nine inference requests to http://127.0.0.1:8000/v1 (the deployed vLLM endpoint)
+       rollback: none needed - stateless requests, no session, no persisted audio. The service is
+       idle; if a live session were running these would merely queue behind it.
+Audio must not be left on the server: the WAVs are deleted in the same ssh invocation that runs
+the sweep, and verified absent afterwards.
+Verification after rollback: `ls /tmp/moss-span-sweep` absent, both unit MainPIDs and NRestarts
+unchanged (moss-live-web 338545 / moss-web 301112), /live 200, batch / 200.
