@@ -6639,3 +6639,70 @@ independent of the latency verdict and can run on the current harness. **Candida
 runaway decode - is tracked server source under the post-merge freeze and every merge the operator
 has granted is spent, so it needs a FIFTH amendment. Phase L (48/49) is still unauthorized and is a
 different defect from F1's overrun, which happened with a healthy pump.
+
+================================================================================
+Iteration 9 of run 20260728-181020 - F3 PRE-RECORDED ROLLBACKS (written before
+any mutation, per prd.md "Reversibility")
+================================================================================
+
+Target: candidate 26, F3 - the 16-minute active-view soak. It is the only remaining PRD
+acceptance item that is (a) reachable with no operator input, (b) independent of the latency
+verdict that candidate 50 owns, and (c) not confounded by the harness defect candidate 51
+names - F3 has no speaker-label clause and no latency clause. F2 is explicitly gated behind
+51 and would in any case be red on latency; 50, 48 and 49 are tracked product source under
+the post-merge freeze and are unauthorized.
+
+Pre-state, measured read-only before anything was touched:
+- all four checkouts fc7097d; server moss-live-web MainPID 346453 NRestarts=0 active,
+  moss-web MainPID 301112 NRestarts=0 active; live-runs 0 entries
+- m4mbp: macOS 26.5.2, MOSSCaptureApp NOT running, checkout fc7097d, stale
+  /tmp/moss-capture-501/control.sock (srw-------, Jul 28 15:51) left by F1's stopped process
+- m4mbp output volume 31
+
+MUTATIONS AND THEIR ROLLBACKS, in the order they will be applied. This is F1's list with the
+same rollbacks - the soak differs only in duration and in what it speaks.
+
+1. Launch the app: `open -a /Applications/MOSSCapture.app` over SSH (GUI session, console
+   user ga0 - never Contents/MacOS/MOSSCaptureApp, which would attribute TCC to the terminal).
+   ROLLBACK:
+     /Users/ga0/.local/bin/mtd-capture stop || true
+     pkill -x MOSSCaptureApp
+     rm -f /tmp/moss-capture-501/control.sock     # only if stale afterwards
+
+2. Raise the m4mbp output volume 31 -> 45 so the built-in microphone hears the program.
+   ROLLBACK (applied unconditionally at the end of the run, not only on failure):
+     osascript -e 'set volume output volume 31'
+
+3. Mint ONE pairing payload on the server loopback (`ops/live-pair.sh --url
+   https://127.0.0.1:7861`). Appends a single-use pairing CODE to live-auth.json.
+   ROLLBACK: none required and none attempted - single-use, 300 s TTL, inert when unused.
+   Per K5d's hygiene lesson the payload is piped to the CLI as its OWN ssh invocation and
+   never shares stdin with a remote script.
+
+4. `mtd-capture pair --server https://100.64.0.8:7861` with the payload on STDIN. Reuses the
+   stored capture-device-id and overwrites bearer/session/view in m4mbp's
+   ~/Library/Application Support/MOSSCapture/secrets.json.
+   ROLLBACK: re-pairing IS the restore; no copy of secrets.json is taken on purpose. Only if
+   F3 is abandoned entirely, on the server loopback:
+     curl -s --cacert "$L/live.crt" -X DELETE https://127.0.0.1:7861/api/live/devices/AB600574-FD93-4321-967E-652AB064A70B
+   (that device is the ONLY unrevoked one and must NOT be revoked as routine cleanup.)
+
+5. `mtd-capture start --label ralph-f3-<utc>`. One live session, both lanes hot, ~17.5 min.
+   ROLLBACK: `mtd-capture stop`; failing that the helper lease (30 s) releases it. Sessions
+   are memory-only.
+
+6. `mtd-capture handoff` writes the raw view token to m4mbp's GENERAL pasteboard. The token is
+   read once into a shell variable on m4mbp, passed to curl via `curl -K -` on stdin so it
+   never reaches argv or disk, and never printed.
+   ROLLBACK (applied unconditionally at the end of the run):
+     pbcopy < /dev/null
+
+7. Disposable scripts and evidence under /tmp on m4mbp (/tmp/ralph-f3-*, /tmp/ralph-f3/).
+   ROLLBACK: rm -rf /tmp/ralph-f3*   (kept until the evidence is transcribed into this file)
+
+8. ~17 minutes of periodic audible speech from the MacBook speakers (one short utterance per
+   minute, alternating two voices). No rollback and none possible - it IS the soak's audio.
+   It ends when the program ends; volume is restored by (2).
+
+Nothing else is touched: no checkout moves, no service restart, no rebuild, no reinstall, no
+TCC write, no merge, no push, and the batch service is not addressed at all.
