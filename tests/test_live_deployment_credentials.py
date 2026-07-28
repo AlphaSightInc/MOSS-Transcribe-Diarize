@@ -510,6 +510,7 @@ def _write_server_script(path: Path) -> Path:
 from __future__ import annotations
 
 import importlib.util
+import os
 import socket
 import sys
 from pathlib import Path
@@ -546,7 +547,13 @@ listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 listener.bind(("127.0.0.1", 0))
 listener.listen(socket.SOMAXCONN)
-port_file.write_text(str(listener.getsockname()[1]), encoding="ascii")
+# Publish the port atomically. The reader treats the file's existence as the signal that
+# the port is readable, and a plain write_text creates the file before it holds anything —
+# so a reader polling in that window sees an existing, empty file and raises on int("").
+# os.replace makes existence and completeness the same event.
+staging = port_file.with_name(port_file.name + ".partial")
+staging.write_text(str(listener.getsockname()[1]), encoding="ascii")
+os.replace(staging, port_file)
 
 uvicorn.Server(
     uvicorn.Config(app, host="127.0.0.1", port=0, ssl_certfile=cert, ssl_keyfile=key,
