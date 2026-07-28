@@ -259,6 +259,95 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertFalse(combinedOutput.contains("#"))
     }
 
+    func testCLILatencyRelaysOnlyTheAppsAggregateTimingsAndNeverTheViewToken() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-cli-latency-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+        defer {
+            try? FileManager.default.removeItem(
+                at: URL(fileURLWithPath: path).deletingLastPathComponent()
+            )
+        }
+        let store = try FileCaptureSecretStore(path: path)
+        try store.saveControlSecret("control-secret")
+        try store.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try store.saveCaptureSessionID("session-latency")
+        try store.saveCaptureViewToken("view-token-secret")
+        let probe = StubLatencyProbe(
+            report: CaptureLatencyReport(
+                polling: true,
+                mixerOriginResolved: true,
+                sufficientSamples: true,
+                committedLatency: CaptureLatencyDistribution(
+                    count: 24,
+                    p50MS: 1_100,
+                    p95MS: 1_800,
+                    maxMS: 2_400
+                ),
+                snapshotFetch: CaptureLatencyDistribution(count: 96, p50MS: 40, p95MS: 90, maxMS: 140),
+                eventsFetch: CaptureLatencyDistribution(count: 96, p50MS: 30, p95MS: 70, maxMS: 110),
+                renderBoundMS: 1_160,
+                userVisibleMS: 2_960
+            )
+        )
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: UnusedPairingExchange(),
+            sessionStore: store,
+            latencyProbe: probe
+        )
+        let socketPath = temporarySocketPath()
+        let receivedRequest = ControlRequestBox()
+        let serverFinished = expectation(description: "app answered the CLI latency request")
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: store)
+        ) { request in
+            receivedRequest.store(request)
+            return try dispatcher.dispatch(request)
+        }
+        DispatchQueue.global().async {
+            try? server.serveOnce()
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let standardOutput = RecordingCLIOutput()
+        let standardError = RecordingCLIOutput()
+        let commandLine = CaptureCommandLine(
+            launcher: RecordingCaptureAppLauncher(),
+            socketChecker: StaticSocketChecker(exists: true),
+            client: UnixDomainControlClient(socketPath: socketPath, secrets: store),
+            input: StaticCLIInput(data: Data()),
+            standardOutput: standardOutput,
+            standardError: standardError
+        )
+
+        XCTAssertEqual(commandLine.run(arguments: ["latency"]), 0)
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(receivedRequest.load()).command, "latency")
+        XCTAssertEqual(probe.measureCount(), 1)
+        let response = try JSONDecoder().decode(
+            ControlChannelResponse.self,
+            from: standardOutput.data.dropTrailingNewline()
+        )
+        // Both components of the gated number reach the operator separately.
+        XCTAssertEqual(response.latency?.committedLatency.p95MS, 1_800)
+        XCTAssertEqual(response.latency?.renderBoundMS, 1_160)
+        XCTAssertEqual(response.latency?.userVisibleMS, 2_960)
+        XCTAssertTrue(standardError.data.isEmpty)
+        let combinedOutput = String(
+            decoding: standardOutput.data + standardError.data,
+            as: UTF8.self
+        )
+        XCTAssertFalse(combinedOutput.contains("view-token-secret"))
+        XCTAssertFalse(combinedOutput.contains("control-secret"))
+        XCTAssertFalse(combinedOutput.contains("session-latency"))
+        XCTAssertFalse(combinedOutput.contains("moss.example"))
+    }
+
     func testShimCommandsStayControlOnlyAndAudioFrameworkFree() throws {
         let source = try cliSources()
 
@@ -268,9 +357,12 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(source.contains("status"))
         XCTAssertTrue(source.contains("handoff"))
         XCTAssertTrue(source.contains("ControlChannelRequest(command: \"handoff\")"))
+        XCTAssertTrue(source.contains("latency"))
+        XCTAssertTrue(source.contains("ControlChannelRequest(command: \"latency\")"))
         XCTAssertFalse(source.contains("PasteboardCapturePortalHandoff"))
         XCTAssertFalse(source.contains("loadCaptureViewToken"))
         XCTAssertFalse(source.contains("NSPasteboard"))
+        XCTAssertFalse(source.contains("CaptureLatencyProbe("))
         XCTAssertTrue(source.contains("LaunchServices"))
         XCTAssertTrue(source.contains("UnixDomainControlClient"))
         XCTAssertTrue(source.contains("sendRequest"))
@@ -529,6 +621,31 @@ private final class ControlRequestBox: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return request
+    }
+}
+
+private final class StubLatencyProbe: CaptureLatencyProbing, @unchecked Sendable {
+    private let lock = NSLock()
+    private let report: CaptureLatencyReport
+    private var measures = 0
+
+    init(report: CaptureLatencyReport) {
+        self.report = report
+    }
+
+    func measure() throws -> CaptureLatencyReport {
+        lock.lock()
+        measures += 1
+        lock.unlock()
+        return report
+    }
+
+    func stop() {}
+
+    func measureCount() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return measures
     }
 }
 

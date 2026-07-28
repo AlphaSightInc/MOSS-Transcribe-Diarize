@@ -44,9 +44,9 @@ iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 rec
 client gate (B6) and changed no product source; iteration 11 bound view authority to the session
 lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
 tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
-deployment bundle (C3b).
-Test totals on the branch: Swift **121 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **536 passed / 2 skipped / 368 subtests**
+deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c).
+Test totals on the branch: Swift **131 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -323,6 +323,39 @@ rule that the `payload:` line is never redirected to a file; a test asserts ever
 `ops/` tool is named in it (tools invoked only from a unit's `ExecStart`, and `*-lib.sh`, are
 excluded).
 
+**Latency-probe contract (new, iteration 15).** The Phase F number is measured inside the app,
+because that is the only place the capture instants, the polling and the view authority are on one
+clock — `LiveServiceEvent` carries no timestamp and the server cannot compare its clock with the
+Mac's. `CaptureLatencyProbe.swift` holds three separable pieces. *`CaptureLatencySampler`* is the
+arithmetic, with no clock and no network: it takes acknowledged-frame facts, lane states and
+`(committed_samples, now)` readings, and produces the report. The mixer origin is **derived, not
+assumed**: it is the maximum first capture instant over the lanes the mixer would still wait for
+(`failureCode == nil && state != "stopped"`, mirroring the server's `active_lanes` minus failed
+lanes at `live_mixer.py:139-169`), it resolves only once *every* such lane has produced audio, and it
+then freezes — resolving early on one lane would anchor the whole measurement to the wrong instant.
+16000 divides 1e9 exactly, so `committed_end_capture_ns = origin + committed × 62500` is exact and
+the mapping adds no error of its own. The first reading is only a **baseline** (it has not been seen
+to advance, so it says nothing about arrival time); after that, each advance is measured, and the
+plan's four disqualifiers are counted separately rather than averaged away: `rejectedNegative`,
+`rejectedClockRegression`, `rejectedAfterTimelineBreak`, and `timelineIntact`. A short frame taints
+the timeline **only when the lane produces another frame after it** — the meeting's trailing partial
+never gets a successor, so a clean stop is not a break. *`CaptureLatencyProbe`* is the IO half: it
+loads server URL / session / view token from the same app-only store the handoff uses, fetches
+`snapshot?since_version` then `events?since_seq` serially exactly as the portal does, times both, and
+advances both cursors. The token is written to exactly one place — the `Authorization` header — and a
+node asserts that by filtering *all* headers for it. Only `seq` is decoded from the events body, so
+the transcript never enters the app's memory. `render_bound = 1000 ms + snapshot p95 + events p95`
+and `user_visible = committed p95 + render_bound`; both components stay in the report, and the report
+is numbers and flags only (no URL, no session id, no token), so it cannot leak by construction.
+Percentiles are nearest-rank, so every quoted figure was actually observed.
+*Default-off:* nothing polls and no view authority is read until `mtd-capture latency` asks for a
+figure; `measure()` schedules only when capture is running and is idempotent; a poll that finds the
+session stopped cancels itself; `stop` cancels the probe but leaves the aggregates readable.
+`CaptureController` gained one optional `CaptureAcknowledgedFrameObserving` hook that fires **after**
+`outbox.acknowledge`, so what the measurement anchors to is audio the server accepted; the hook is
+handed lane/timestamp/rate/count/discontinuity — never a `CaptureFrame` — so the measurement path
+structurally cannot reach PCM.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -500,6 +533,13 @@ swift test --package-path macos/MOSSCapture \
 #     tick skips, stop waits, one session per pin, shipped cadence/provider) --------------------
 swift test --package-path macos/MOSSCapture \
   --filter 'LanesPublishConcurrently|ATickArrivingDuringADrain|StopWaitsForTheRunningPass|PinnedProviderKeepsOneSession|ProductionPumpTicksOnce'
+
+# --- C3c app-owned latency probe (10 nodes: origin/mapping math, three disqualifier classes,
+#     trailing-partial vs mid-stream short frame, waits-then-freezes origin, separate committed and
+#     render components, one poll's requests + header-only token + advancing cursors, default-off
+#     and idempotent measure + typed unavailable, stops with the session, acknowledged-frame
+#     observer sees accepted audio only and cannot reach PCM, plus the CLI relay). ---------------
+swift test --package-path macos/MOSSCapture --filter 'Latency|AcknowledgedFrameObserver'
 
 # --- C2 manifest bounds (17 nodes: retune + regenerated hashes, descriptor admission, reconnect-
 #     burst capacity headroom on both lanes with replayable acks, 9 refusals, dry-run, unchanged
@@ -705,7 +745,9 @@ edit the control-plane discriminator scripts to keep them green.
 ### Phase C — server meeting reliability, then one merge
 
 **Gate opened by iteration 10's green B6 checkpoint.** Server work may now start; the Mac client is
-frozen except for defects the server work exposes.
+frozen except for defects the server work exposes and for C3c, whose probe is app-side by design
+(iteration 15 added `CaptureLatencyProbe.swift` and one optional observer hook on
+`CaptureController`; nothing on the capture or publish path changed).
 
 11. **C1 — session-lifecycle view authority** `[done — iteration 11]`: `bind_session_lifecycle` +
     `VIEW_ABSOLUTE_CAP_SECONDS` + `revoke_view` and its loopback route (see the view-authority
@@ -746,10 +788,18 @@ frozen except for defects the server work exposes.
     needs `ops/moss-live.env` created from the example with absolute paths *before*
     `install-services.sh --with-live`, and the batch service is not restarted by that tool —
     `evidence: restart_required=` names any unit whose file changed.
-15. **C3c — app-owned latency probe**: the app — not the CLI —
-    uses view authority, maps `committed_samples` to converted client capture timestamps, and
-    emits only redacted p50/p95/max plus snapshot/events fetch timings. Test default-off, secrecy,
-    and deterministic latency math without host mutation.
+15. **C3c — app-owned latency probe** `[done — iteration 15]`:
+    `CaptureLatencySampler` + `CaptureLatencyProbe` (`CaptureLatencyProbe.swift`), the
+    `CaptureAcknowledgedFrameObserving` hook on `CaptureController`, the `latency` control command
+    and `ControlChannelResponse.latency` — see the latency-probe contract above. Ten nodes; six
+    mutation rehearsals recorded in progress.txt. No server source changed.
+    Residue for F1/F2: the probe reports `sufficientSamples` only at the plan's twenty advances, so
+    a canary must run long enough to produce them (at a 2.5 s span cap that is ~50 s of continuous
+    speech); the human marker cross-check and the decoder RTF figure are still separate evidence the
+    probe does not produce. Residue for E3: a lane left *pending* forever (a TCC prompt nobody
+    answers) keeps the origin unresolved — the report says `mixerOriginResolved: false` rather than
+    quoting a figure, which is the honest answer but means the canary needs both lanes settled
+    (granted or denied) before it starts.
 16. **C4 — final local gate and single keeper merge**: Swift/full Python/tracer/reliability
     gates green on the feature tip; then run `scripts/ralph-afk/merge-keeper.sh`. It creates and
     tests the one no-ff merge in a temporary `main` worktree while the primary Ralph worktree

@@ -3303,10 +3303,17 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(appMain.contains("PasteboardCapturePortalHandoff(sessionStore:"))
         XCTAssertTrue(security.contains("case \"handoff\""))
         XCTAssertTrue(commandLine.contains("ControlChannelRequest(command: \"handoff\")"))
+        XCTAssertTrue(appMain.contains("latencyProbe: CaptureLatencyProbe("))
+        XCTAssertTrue(appMain.contains("frameObserver: latencySampler"))
+        XCTAssertTrue(security.contains("case \"latency\""))
+        XCTAssertTrue(commandLine.contains("ControlChannelRequest(command: \"latency\")"))
         for source in [cliMain, commandLine] {
             XCTAssertFalse(source.contains("PasteboardCapturePortalHandoff"))
             XCTAssertFalse(source.contains("loadCaptureViewToken"))
             XCTAssertFalse(source.contains("NSPasteboard"))
+            // The measurement uses view authority; only the app may build the thing that holds it.
+            XCTAssertFalse(source.contains("CaptureLatencyProbe("))
+            XCTAssertFalse(source.contains("CaptureLatencySampler("))
         }
     }
 
@@ -4248,6 +4255,705 @@ final class CaptureControllerTests: XCTestCase {
         let data = try XCTUnwrap(request.httpBody)
         let object = try JSONSerialization.jsonObject(with: data)
         return try XCTUnwrap(object as? [String: Any])
+    }
+
+    // MARK: - C3c app-owned latency probe
+
+    func testLatencySamplerMapsCommittedSamplesToTheMixerOriginOnOneCaptureClock() throws {
+        XCTAssertEqual(
+            1_000_000_000 % 16_000,
+            0,
+            "the wire rate must divide a second exactly, or the mapping adds rounding of its own"
+        )
+        let sampler = CaptureLatencySampler()
+        sampler.noteLaneStates([
+            laneStatus(.microphone, state: "capturing"),
+            laneStatus(.system, state: "capturing")
+        ])
+        // The mixer's origin is the latest of the lanes' first capture instants, not the earliest.
+        sampler.observeAcknowledgedFrame(
+            lane: .microphone,
+            captureTimestampNS: 1_000_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+        sampler.observeAcknowledgedFrame(
+            lane: .system,
+            captureTimestampNS: 1_500_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+
+        let origin: UInt64 = 1_500_000_000
+        var committed = 40_000
+        // The first reading has not been seen to advance, so it is only the baseline.
+        sampler.observe(
+            committedSamples: committed,
+            atHostNanoseconds: origin + UInt64(committed) * 62_500 + 200_000_000
+        )
+        for latencyMS in [300, 500, 400, 900] {
+            committed += 40_000
+            sampler.observe(
+                committedSamples: committed,
+                atHostNanoseconds: origin + UInt64(committed) * 62_500 + UInt64(latencyMS) * 1_000_000
+            )
+        }
+
+        let report = sampler.report(polling: false)
+        XCTAssertTrue(report.mixerOriginResolved)
+        XCTAssertEqual(report.committedLatency.count, 4, "the baseline reading is not a measurement")
+        XCTAssertEqual(report.committedLatency.p50MS, 400)
+        XCTAssertEqual(report.committedLatency.p95MS, 900)
+        XCTAssertEqual(report.committedLatency.maxMS, 900)
+        XCTAssertEqual(report.frameQuantisationMS, 500)
+        XCTAssertFalse(report.sufficientSamples, "four advances is not the plan's twenty")
+        XCTAssertNil(report.userVisibleMS, "no fetch distribution yet, so no gated number")
+        XCTAssertEqual(report.rejectedNegative, 0)
+        XCTAssertEqual(report.rejectedClockRegression, 0)
+    }
+
+    func testLatencySamplerRejectsNegativeRegressedAndPostBreakReadingsInsteadOfAveragingThem() throws {
+        let sampler = CaptureLatencySampler()
+        // A denied lane is excluded exactly as the server excludes a failed lane, so the origin is
+        // the surviving lane's first capture instant.
+        sampler.noteLaneStates([
+            laneStatus(.microphone, state: "capturing"),
+            laneStatus(.system, state: "failed", failureCode: "permissionDenied")
+        ])
+        sampler.observeAcknowledgedFrame(
+            lane: .microphone,
+            captureTimestampNS: 1_000_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+        let origin: UInt64 = 1_000_000_000
+
+        sampler.observe(committedSamples: 8_000, atHostNanoseconds: origin + 8_000 * 62_500 + 100_000_000)
+        // Committed audio that claims to have arrived before it was captured is a broken clock
+        // assumption, not a fast server.
+        sampler.observe(committedSamples: 16_000, atHostNanoseconds: origin + 16_000 * 62_500 - 1)
+        // A reading whose clock went backwards cannot be differenced against the previous one.
+        sampler.observe(committedSamples: 24_000, atHostNanoseconds: origin + 500_000_000)
+        sampler.observe(
+            committedSamples: 32_000,
+            atHostNanoseconds: origin + 32_000 * 62_500 + 250_000_000
+        )
+
+        var report = sampler.report(polling: false)
+        XCTAssertEqual(report.committedLatency.count, 1)
+        XCTAssertEqual(report.committedLatency.maxMS, 250)
+        XCTAssertEqual(report.rejectedNegative, 1)
+        XCTAssertEqual(report.rejectedClockRegression, 1)
+        XCTAssertEqual(report.rejectedAfterTimelineBreak, 0)
+        XCTAssertTrue(report.timelineIntact)
+
+        sampler.observeAcknowledgedFrame(
+            lane: .microphone,
+            captureTimestampNS: origin + 4_000_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: true
+        )
+        sampler.observe(
+            committedSamples: 40_000,
+            atHostNanoseconds: origin + 40_000 * 62_500 + 250_000_000
+        )
+        report = sampler.report(polling: false)
+        XCTAssertFalse(report.timelineIntact)
+        XCTAssertEqual(report.committedLatency.count, 1, "a broken timeline stops producing figures")
+        XCTAssertEqual(report.rejectedAfterTimelineBreak, 1)
+    }
+
+    func testLatencySamplerTreatsAShortFrameAsABreakOnlyWhenTheLaneKeepsGoing() throws {
+        func sampler(withSuccessor: Bool) -> CaptureLatencySampler {
+            let sampler = CaptureLatencySampler()
+            sampler.noteLaneStates([laneStatus(.microphone, state: "capturing")])
+            sampler.observeAcknowledgedFrame(
+                lane: .microphone,
+                captureTimestampNS: 1_000_000_000,
+                sampleRate: 16_000,
+                sampleCount: 8_000,
+                discontinuity: false
+            )
+            sampler.observeAcknowledgedFrame(
+                lane: .microphone,
+                captureTimestampNS: 1_500_000_000,
+                sampleRate: 16_000,
+                sampleCount: 3_200,
+                discontinuity: false
+            )
+            if withSuccessor {
+                sampler.observeAcknowledgedFrame(
+                    lane: .microphone,
+                    captureTimestampNS: 1_700_000_000,
+                    sampleRate: 16_000,
+                    sampleCount: 8_000,
+                    discontinuity: false
+                )
+            }
+            return sampler
+        }
+
+        XCTAssertTrue(
+            sampler(withSuccessor: false).report(polling: false).timelineIntact,
+            "the meeting's trailing partial frame ends the stream; it is not a hole in it"
+        )
+        XCTAssertFalse(
+            sampler(withSuccessor: true).report(polling: false).timelineIntact,
+            "a short frame the lane then continues past is a hole in the middle of the timeline"
+        )
+    }
+
+    func testLatencySamplerWaitsForEveryContributingLaneThenFreezesTheOrigin() throws {
+        let sampler = CaptureLatencySampler()
+        sampler.noteLaneStates([
+            laneStatus(.microphone, state: "capturing"),
+            laneStatus(.system, state: "capturing")
+        ])
+        sampler.observeAcknowledgedFrame(
+            lane: .microphone,
+            captureTimestampNS: 1_000_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+        sampler.observe(committedSamples: 8_000, atHostNanoseconds: 20_000_000_000)
+        sampler.observe(committedSamples: 16_000, atHostNanoseconds: 21_000_000_000)
+        XCTAssertFalse(
+            sampler.report(polling: false).mixerOriginResolved,
+            "resolving on one lane would anchor the whole measurement to the wrong instant"
+        )
+        XCTAssertEqual(sampler.report(polling: false).committedLatency.count, 0)
+
+        sampler.observeAcknowledgedFrame(
+            lane: .system,
+            captureTimestampNS: 1_500_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+        let origin: UInt64 = 1_500_000_000
+        sampler.observe(
+            committedSamples: 24_000,
+            atHostNanoseconds: origin + 24_000 * 62_500 + 500_000_000
+        )
+        // The system lane leaving does not move an origin the mixer has already frozen.
+        sampler.noteLaneStates([
+            laneStatus(.microphone, state: "capturing"),
+            laneStatus(.system, state: "stopped")
+        ])
+        sampler.observe(
+            committedSamples: 32_000,
+            atHostNanoseconds: origin + 32_000 * 62_500 + 700_000_000
+        )
+
+        let report = sampler.report(polling: false)
+        XCTAssertTrue(report.mixerOriginResolved)
+        XCTAssertEqual(report.committedLatency.count, 1)
+        XCTAssertEqual(report.committedLatency.maxMS, 700)
+    }
+
+    func testLatencyReportKeepsTheCommittedAndRenderComponentsSeparate() throws {
+        let sampler = CaptureLatencySampler()
+        sampler.noteLaneStates([laneStatus(.microphone, state: "capturing")])
+        sampler.observeAcknowledgedFrame(
+            lane: .microphone,
+            captureTimestampNS: 1_000_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+        let origin: UInt64 = 1_000_000_000
+        var committed = 8_000
+        sampler.observe(committedSamples: committed, atHostNanoseconds: origin + 8_000 * 62_500)
+        for latencyMS in [1_200, 900, 1_500, 1_100] {
+            committed += 8_000
+            sampler.observe(
+                committedSamples: committed,
+                atHostNanoseconds: origin + UInt64(committed) * 62_500 + UInt64(latencyMS) * 1_000_000
+            )
+        }
+
+        for milliseconds in [40, 60, 55, 90] {
+            sampler.recordSnapshotFetch(nanoseconds: UInt64(milliseconds) * 1_000_000)
+        }
+        XCTAssertNil(
+            sampler.report(polling: true).renderBoundMS,
+            "the bound needs both routes; one of them is not a portal cycle"
+        )
+        for milliseconds in [30, 45, 35, 70] {
+            sampler.recordEventsFetch(nanoseconds: UInt64(milliseconds) * 1_000_000)
+        }
+
+        let report = sampler.report(polling: true)
+        XCTAssertEqual(report.portalCycleMS, 1_000)
+        XCTAssertEqual(report.snapshotFetch.p95MS, 90)
+        XCTAssertEqual(report.eventsFetch.p95MS, 70)
+        XCTAssertEqual(report.renderBoundMS, 1_160)
+        XCTAssertEqual(report.committedLatency.p95MS, 1_500)
+        XCTAssertEqual(report.userVisibleMS, 2_660)
+        XCTAssertEqual(
+            report.userVisibleMS,
+            try XCTUnwrap(report.committedLatency.p95MS) + (try XCTUnwrap(report.renderBoundMS)),
+            "the gated number must stay the sum of the two recorded components"
+        )
+    }
+
+    func testLatencyProbePollsWithViewAuthorityAndEmitsOnlyAggregates() throws {
+        let sessionStore = InMemoryCaptureSessionStore()
+        try sessionStore.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try sessionStore.saveCaptureSessionID("session-latency")
+        try sessionStore.saveCaptureViewToken("view-token-secret")
+        let client = RecordingLatencyHTTPClient()
+        client.snapshotBody = try latencySnapshotBody(version: 7, committedSamples: 40_000)
+        client.eventsBody = try latencyEventsBody(sequences: [3, 11, 8])
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let sampler = CaptureLatencySampler()
+        let probe = CaptureLatencyProbe(
+            sampler: sampler,
+            status: { CaptureStatus(running: true, sessionID: "session-latency", lanes: [], publishedFrameCount: 0, lastHealthSequence: nil) },
+            sessionStore: sessionStore,
+            clientProvider: RecordingCaptureHTTPClientProvider(client: client),
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            clock: FakeCaptureClockAdapter(ticks: [0, 12_000_000, 0, 4_000_000, 0, 9_000_000, 0, 5_000_000]),
+            hostTime: StaticCaptureHostTimeReader(nanoseconds: [30_000_000_000, 31_000_000_000]),
+            scheduler: scheduler
+        )
+
+        _ = try probe.measure()
+        scheduler.runScheduledOperation()
+
+        XCTAssertEqual(client.requests.count, 2)
+        let snapshotRequest = client.requests[0]
+        let eventsRequest = client.requests[1]
+        XCTAssertEqual(snapshotRequest.url?.path, "/api/live/sessions/session-latency/snapshot")
+        XCTAssertNil(snapshotRequest.url?.query, "the first poll asks for the whole snapshot")
+        XCTAssertEqual(eventsRequest.url?.path, "/api/live/sessions/session-latency/events")
+        XCTAssertEqual(eventsRequest.url?.query, "since_seq=0")
+        for request in client.requests {
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(
+                request.value(forHTTPHeaderField: "Authorization"),
+                "Bearer view-token-secret"
+            )
+            XCTAssertFalse(
+                try XCTUnwrap(request.url?.absoluteString).contains("view-token-secret"),
+                "view authority belongs in the header, never in a URL a proxy or log would keep"
+            )
+            let carryingHeaders = (request.allHTTPHeaderFields ?? [:])
+                .filter { $0.value.contains("view-token-secret") }
+                .keys
+                .sorted()
+            XCTAssertEqual(
+                carryingHeaders,
+                ["Authorization"],
+                "the token goes to exactly one place on the wire"
+            )
+            XCTAssertNil(request.httpBody)
+        }
+
+        // The cursors advance, so the second poll costs what the portal's steady state costs.
+        scheduler.runScheduledOperation()
+        XCTAssertEqual(client.requests.count, 4)
+        XCTAssertEqual(client.requests[2].url?.query, "since_version=7")
+        XCTAssertEqual(client.requests[3].url?.query, "since_seq=11")
+
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: StaticPairingExchange(result: CapturePairingResult(sessionID: "unused")),
+            latencyProbe: probe
+        )
+        let response = try dispatcher.dispatch(ControlChannelRequest(command: "latency"))
+        let encoded = String(decoding: try JSONEncoder().encode(response), as: UTF8.self)
+        XCTAssertTrue(response.ok)
+        XCTAssertEqual(response.latency?.schema, "moss-capture-latency.v1")
+        XCTAssertEqual(response.latency?.snapshotFetch.count, 2)
+        XCTAssertEqual(response.latency?.eventsFetch.count, 2)
+        XCTAssertFalse(encoded.contains("view-token-secret"))
+        XCTAssertFalse(encoded.contains("moss.example"))
+        XCTAssertFalse(encoded.contains("session-latency"))
+    }
+
+    func testLatencyProbeIsDefaultOffAndAsksNothingUntilAFigureIsRequested() throws {
+        let sessionStore = InMemoryCaptureSessionStore()
+        try sessionStore.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try sessionStore.saveCaptureSessionID("session-latency")
+        try sessionStore.saveCaptureViewToken("view-token-secret")
+        let client = RecordingLatencyHTTPClient()
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let running = MutableFlag(value: false)
+        let probe = CaptureLatencyProbe(
+            sampler: CaptureLatencySampler(),
+            status: {
+                CaptureStatus(
+                    running: running.value,
+                    sessionID: "session-latency",
+                    lanes: [],
+                    publishedFrameCount: 0,
+                    lastHealthSequence: nil
+                )
+            },
+            sessionStore: sessionStore,
+            clientProvider: RecordingCaptureHTTPClientProvider(client: client),
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            clock: FakeCaptureClockAdapter(ticks: []),
+            hostTime: StaticCaptureHostTimeReader(nanoseconds: []),
+            scheduler: scheduler
+        )
+
+        XCTAssertTrue(scheduler.labels.isEmpty, "constructing the probe must not start polling")
+        XCTAssertTrue(client.requests.isEmpty)
+
+        let idle = try probe.measure()
+        XCTAssertFalse(idle.polling, "there is no session to measure, so nothing is scheduled")
+        XCTAssertTrue(scheduler.labels.isEmpty)
+
+        running.value = true
+        _ = try probe.measure()
+        _ = try probe.measure()
+        XCTAssertEqual(scheduler.labels, ["moss.capture.latency"], "asking twice must not poll twice")
+
+        let noProbe = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: StaticPairingExchange(result: CapturePairingResult(sessionID: "unused"))
+        )
+        XCTAssertThrowsError(try noProbe.dispatch(ControlChannelRequest(command: "latency"))) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .latencyProbeUnavailable)
+        }
+    }
+
+    func testLatencyProbeStopsWithTheSessionAndStaysReadableAfterwards() throws {
+        let sessionStore = InMemoryCaptureSessionStore()
+        try sessionStore.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try sessionStore.saveCaptureSessionID("session-latency")
+        try sessionStore.saveCaptureViewToken("view-token-secret")
+        let client = RecordingLatencyHTTPClient()
+        client.snapshotBody = try latencySnapshotBody(version: 3, committedSamples: 8_000)
+        client.eventsBody = try latencyEventsBody(sequences: [1])
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let running = MutableFlag(value: true)
+        let probe = CaptureLatencyProbe(
+            sampler: CaptureLatencySampler(),
+            status: {
+                CaptureStatus(
+                    running: running.value,
+                    sessionID: "session-latency",
+                    lanes: [],
+                    publishedFrameCount: 0,
+                    lastHealthSequence: nil
+                )
+            },
+            sessionStore: sessionStore,
+            clientProvider: RecordingCaptureHTTPClientProvider(client: client),
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            clock: FakeCaptureClockAdapter(ticks: [0, 7_000_000, 0, 3_000_000]),
+            hostTime: StaticCaptureHostTimeReader(nanoseconds: [50_000_000_000]),
+            scheduler: scheduler
+        )
+
+        _ = try probe.measure()
+        scheduler.runScheduledOperation()
+        XCTAssertEqual(client.requests.count, 2)
+
+        running.value = false
+        scheduler.runScheduledOperation()
+        XCTAssertEqual(client.requests.count, 2, "view authority dies with the session")
+
+        let afterStop = try probe.measure()
+        XCTAssertFalse(afterStop.polling)
+        XCTAssertEqual(afterStop.snapshotFetch.maxMS, 7, "what was measured stays readable")
+        XCTAssertEqual(client.requests.count, 2, "reading the result must not restart the poll")
+
+        let stopping = RecordingLatencyProbe()
+        let dispatcher = ControlCommandDispatcher(
+            controller: try startedControllerForLatency(),
+            pairingExchange: StaticPairingExchange(result: CapturePairingResult(sessionID: "unused")),
+            latencyProbe: stopping
+        )
+        _ = try dispatcher.dispatch(ControlChannelRequest(command: "stop"))
+        XCTAssertEqual(stopping.stopCount, 1)
+        XCTAssertEqual(stopping.measureCount, 0)
+    }
+
+    func testAcknowledgedFrameObserverSeesOnlyAcceptedAudioFactsAndNeverPCM() throws {
+        let observer = RecordingAcknowledgedFrameObserver()
+        let frame = CaptureFrame(
+            lane: .microphone,
+            sequence: 0,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            captureTimestampNS: 4_200_000_000,
+            deviceEpoch: 1,
+            silent: false,
+            discontinuity: false,
+            pcm16: Data(repeating: 7, count: 16_000)
+        )
+        let refusing = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: [frame]),
+            transport: AlwaysFailingCaptureTransport(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter(),
+            frameObserver: observer
+        )
+        _ = try refusing.start(configuration: laneConfiguration())
+        XCTAssertEqual(observer.sessionStarts, 1)
+        XCTAssertTrue(
+            observer.observations.isEmpty,
+            "a retained frame has not entered the server's timeline yet"
+        )
+
+        let accepting = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: [frame]),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter(),
+            frameObserver: observer
+        )
+        _ = try accepting.start(configuration: laneConfiguration())
+        XCTAssertEqual(observer.sessionStarts, 2, "a new session forgets the previous timeline")
+        XCTAssertEqual(observer.observations.count, 1)
+        let observed = try XCTUnwrap(observer.observations.first)
+        XCTAssertEqual(observed.lane, .microphone)
+        XCTAssertEqual(observed.captureTimestampNS, 4_200_000_000)
+        XCTAssertEqual(observed.sampleRate, 16_000)
+        XCTAssertEqual(observed.sampleCount, 8_000)
+        XCTAssertFalse(observed.discontinuity)
+
+        let controllerSource = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources/MOSSCaptureCore/CaptureController.swift"),
+            encoding: .utf8
+        )
+        let acknowledge = try XCTUnwrap(controllerSource.range(of: "outbox.acknowledge("))
+        let observe = try XCTUnwrap(controllerSource.range(of: "frameObserver?.observeAcknowledgedFrame("))
+        XCTAssertTrue(
+            acknowledge.lowerBound < observe.lowerBound,
+            "the observation follows the acknowledgement, so it only ever reports accepted audio"
+        )
+        let probeSource = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources/MOSSCaptureCore/CaptureLatencyProbe.swift"),
+            encoding: .utf8
+        )
+        for forbidden in ["pcm16", "pcm_base64", "loadCaptureBearerToken", "transcript\""] {
+            XCTAssertFalse(
+                probeSource.contains(forbidden),
+                "the measurement path must not be able to reach \(forbidden)"
+            )
+        }
+    }
+
+    private func laneStatus(
+        _ lane: CaptureLane,
+        state: String,
+        failureCode: String? = nil
+    ) -> CaptureLaneStatus {
+        CaptureLaneStatus(
+            lane: lane,
+            sequence: 0,
+            deviceEpoch: 1,
+            state: state,
+            failureCode: failureCode
+        )
+    }
+
+    private func latencySnapshotBody(version: Int, committedSamples: Int) throws -> Data {
+        try JSONSerialization.data(
+            withJSONObject: [
+                "snapshot": [
+                    "session_id": "session-latency",
+                    "session": [
+                        "version": version,
+                        "status": "active",
+                        "committed_samples": committedSamples
+                    ]
+                ],
+                "unchanged": false
+            ]
+        )
+    }
+
+    private func latencyEventsBody(sequences: [Int]) throws -> Data {
+        try JSONSerialization.data(
+            withJSONObject: [
+                "events": sequences.map { sequence in
+                    ["seq": sequence, "kind": "committed", "payload": ["transcript": "hello"]]
+                }
+            ]
+        )
+    }
+
+    private func startedControllerForLatency() throws -> CaptureController {
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        _ = try controller.start(configuration: laneConfiguration())
+        return controller
+    }
+}
+
+private final class InMemoryCaptureSessionStore: CaptureSessionStoreAdapter {
+    private var serverURL: URL?
+    private var sessionID: String?
+    private var viewToken: String?
+
+    func saveCaptureServerURL(_ serverURL: URL) throws {
+        self.serverURL = serverURL
+    }
+
+    func saveCaptureSessionID(_ sessionID: String) throws {
+        self.sessionID = sessionID
+    }
+
+    func saveCaptureViewToken(_ viewToken: String) throws {
+        self.viewToken = viewToken
+    }
+
+    func loadCaptureServerURL() throws -> URL? {
+        serverURL
+    }
+
+    func loadCaptureSessionID() throws -> String? {
+        sessionID
+    }
+
+    func loadCaptureViewToken() throws -> String? {
+        viewToken
+    }
+}
+
+private final class RecordingLatencyHTTPClient: CaptureHTTPClient {
+    private(set) var requests: [URLRequest] = []
+    var snapshotBody = Data()
+    var eventsBody = Data()
+    var statusCode = 200
+
+    func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
+        requests.append(request)
+        let isSnapshot = request.url?.path.hasSuffix("/snapshot") ?? false
+        return CaptureHTTPResponse(
+            statusCode: statusCode,
+            body: isSnapshot ? snapshotBody : eventsBody
+        )
+    }
+}
+
+private struct StaticCaptureHostTimeReader: CaptureHostTimeReading {
+    private let readings: CaptureHostTimeReadings
+
+    init(nanoseconds: [UInt64]) {
+        readings = CaptureHostTimeReadings(nanoseconds: nanoseconds)
+    }
+
+    func hostNanoseconds() -> UInt64? {
+        readings.next()
+    }
+}
+
+private final class CaptureHostTimeReadings: @unchecked Sendable {
+    private let lock = NSLock()
+    private var nanoseconds: [UInt64]
+
+    init(nanoseconds: [UInt64]) {
+        self.nanoseconds = nanoseconds
+    }
+
+    func next() -> UInt64? {
+        lock.lock()
+        defer { lock.unlock() }
+        return nanoseconds.isEmpty ? nil : nanoseconds.removeFirst()
+    }
+}
+
+private final class MutableFlag {
+    var value: Bool
+
+    init(value: Bool) {
+        self.value = value
+    }
+}
+
+private final class RecordingLatencyProbe: CaptureLatencyProbing {
+    private(set) var measureCount = 0
+    private(set) var stopCount = 0
+
+    func measure() throws -> CaptureLatencyReport {
+        measureCount += 1
+        return CaptureLatencyReport()
+    }
+
+    func stop() {
+        stopCount += 1
+    }
+}
+
+private final class RecordingAcknowledgedFrameObserver: CaptureAcknowledgedFrameObserving, @unchecked Sendable {
+    struct Observation: Equatable {
+        var lane: CaptureLane
+        var captureTimestampNS: UInt64
+        var sampleRate: Int
+        var sampleCount: Int
+        var discontinuity: Bool
+    }
+
+    private let lock = NSLock()
+    private var starts = 0
+    private var recorded: [Observation] = []
+
+    var sessionStarts: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return starts
+    }
+
+    var observations: [Observation] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recorded
+    }
+
+    func observeSessionStart() {
+        lock.lock()
+        starts += 1
+        lock.unlock()
+    }
+
+    func observeAcknowledgedFrame(
+        lane: CaptureLane,
+        captureTimestampNS: UInt64,
+        sampleRate: Int,
+        sampleCount: Int,
+        discontinuity: Bool
+    ) {
+        lock.lock()
+        recorded.append(
+            Observation(
+                lane: lane,
+                captureTimestampNS: captureTimestampNS,
+                sampleRate: sampleRate,
+                sampleCount: sampleCount,
+                discontinuity: discontinuity
+            )
+        )
+        lock.unlock()
+    }
+}
+
+private final class AlwaysFailingCaptureTransport: CaptureTransportAdapter {
+    func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
+        throw CaptureHTTPTransportError.nonSuccessStatus(503)
     }
 }
 

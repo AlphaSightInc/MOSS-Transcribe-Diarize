@@ -43,6 +43,7 @@ public enum CaptureSecurityError: Error, Equatable {
     case missingCaptureConfiguration
     case portalHandoffUnavailable
     case pasteboardUnavailable
+    case latencyProbeUnavailable
 }
 
 /// Dormant secret store: no product entrypoint selects it. It keeps no access group, so it can
@@ -462,6 +463,9 @@ public struct ControlChannelResponse: Codable, Equatable {
     /// lost — the typed reason. Both are counts and codes, never audio and never a secret.
     public var outboxRetainedFrames: Int?
     public var outboxDegradation: CaptureOutboxDegradation?
+    /// Aggregate timing evidence from the app-owned probe. Durations and counts only — the view
+    /// authority the measurement uses stays inside the app.
+    public var latency: CaptureLatencyReport?
     public var error: String?
 
     public init(
@@ -474,6 +478,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         pumpFailure: CapturePumpFailure? = nil,
         outboxRetainedFrames: Int? = nil,
         outboxDegradation: CaptureOutboxDegradation? = nil,
+        latency: CaptureLatencyReport? = nil,
         error: String? = nil
     ) {
         self.ok = ok
@@ -485,6 +490,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.pumpFailure = pumpFailure
         self.outboxRetainedFrames = outboxRetainedFrames
         self.outboxDegradation = outboxDegradation
+        self.latency = latency
         self.error = error
     }
 
@@ -753,6 +759,7 @@ public final class ControlCommandDispatcher {
     private let certificatePinStore: CaptureCertificatePinStoreAdapter?
     private let sessionStore: CaptureSessionStoreAdapter?
     private let portalHandoff: CapturePortalHandoffAdapter?
+    private let latencyProbe: CaptureLatencyProbing?
     private var pairedConfiguration: CaptureConfiguration?
 
     public init(
@@ -761,7 +768,8 @@ public final class ControlCommandDispatcher {
         captureTokenStore: CaptureBearerTokenStoreAdapter? = nil,
         certificatePinStore: CaptureCertificatePinStoreAdapter? = nil,
         sessionStore: CaptureSessionStoreAdapter? = nil,
-        portalHandoff: CapturePortalHandoffAdapter? = nil
+        portalHandoff: CapturePortalHandoffAdapter? = nil,
+        latencyProbe: CaptureLatencyProbing? = nil
     ) {
         self.controller = controller
         self.pairingExchange = pairingExchange
@@ -769,6 +777,7 @@ public final class ControlCommandDispatcher {
         self.certificatePinStore = certificatePinStore
         self.sessionStore = sessionStore
         self.portalHandoff = portalHandoff
+        self.latencyProbe = latencyProbe
     }
 
     public func dispatch(_ request: ControlChannelRequest) throws -> ControlChannelResponse {
@@ -809,7 +818,16 @@ public final class ControlCommandDispatcher {
         case "status":
             return ControlChannelResponse(status: controller.status())
         case "stop":
-            return ControlChannelResponse(status: try controller.stop(deadline: Date()))
+            let stopped = try controller.stop(deadline: Date())
+            // The session's view authority ends here, so the measurement stops polling with it —
+            // what it already measured stays readable.
+            latencyProbe?.stop()
+            return ControlChannelResponse(status: stopped)
+        case "latency":
+            guard let latencyProbe else {
+                throw CaptureSecurityError.latencyProbeUnavailable
+            }
+            return ControlChannelResponse(ok: true, latency: try latencyProbe.measure())
         case "handoff":
             guard let portalHandoff else {
                 throw CaptureSecurityError.portalHandoffUnavailable

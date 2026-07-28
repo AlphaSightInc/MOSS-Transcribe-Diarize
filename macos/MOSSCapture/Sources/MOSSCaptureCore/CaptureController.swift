@@ -161,6 +161,23 @@ public protocol CaptureCancellation {
     func cancel()
 }
 
+/// Sees the audio the server actually took, so a measurement can anchor itself to the same timeline
+/// the server mixer builds.
+///
+/// It is handed facts, not frames: an observer structurally cannot reach the PCM, so nothing on this
+/// path can grow into a second consumer of the audio.
+public protocol CaptureAcknowledgedFrameObserving: AnyObject {
+    /// A new server session mixes a fresh timeline and numbers its samples from zero.
+    func observeSessionStart()
+    func observeAcknowledgedFrame(
+        lane: CaptureLane,
+        captureTimestampNS: UInt64,
+        sampleRate: Int,
+        sampleCount: Int,
+        discontinuity: Bool
+    )
+}
+
 public protocol CaptureHealthAdapter {
     func emit(
         status: CaptureStatus,
@@ -184,6 +201,7 @@ public final class CaptureController {
     private let health: CaptureHealthAdapter
     private let outbox: CaptureFrameOutbox
     private let pump: CaptureFramePublishPump
+    private let frameObserver: CaptureAcknowledgedFrameObserving?
     private let state = CaptureControllerState()
 
     public init(
@@ -194,7 +212,8 @@ public final class CaptureController {
         scheduler: CaptureSchedulerAdapter,
         health: CaptureHealthAdapter,
         outbox: CaptureFrameOutbox = CaptureFrameOutbox(),
-        pump: CaptureFramePublishPump = CaptureFramePublishPump()
+        pump: CaptureFramePublishPump = CaptureFramePublishPump(),
+        frameObserver: CaptureAcknowledgedFrameObserving? = nil
     ) {
         self.source = source
         self.transport = transport
@@ -204,6 +223,7 @@ public final class CaptureController {
         self.health = health
         self.outbox = outbox
         self.pump = pump
+        self.frameObserver = frameObserver
     }
 
     @discardableResult
@@ -214,8 +234,10 @@ public final class CaptureController {
 
         try state.beginStart(configuration: configuration)
         // A server session numbers each lane's frames from zero, so a new session starts from an
-        // empty outbox with fresh wire sequences.
+        // empty outbox with fresh wire sequences — and from a measurement that has forgotten the
+        // previous session's timeline.
         outbox.reset()
+        frameObserver?.observeSessionStart()
         do {
             try source.start(configuration: configuration)
         } catch {
@@ -305,6 +327,7 @@ public final class CaptureController {
         let outbox = self.outbox
         let transport = self.transport
         let state = self.state
+        let frameObserver = self.frameObserver
         let pass = pump.run(
             onContention: contention,
             retainedFrames: { outbox.retainedFrames() }
@@ -312,6 +335,15 @@ public final class CaptureController {
             try transport.publish(frame: frame, configuration: configuration)
             outbox.acknowledge(lane: frame.lane, sequence: frame.sequence)
             state.recordPublishedFrame()
+            // After the acknowledgement, so what is observed is audio the server accepted — a frame
+            // that is still being retried has not entered the server's timeline yet.
+            frameObserver?.observeAcknowledgedFrame(
+                lane: frame.lane,
+                captureTimestampNS: frame.captureTimestampNS,
+                sampleRate: frame.sampleRate,
+                sampleCount: frame.sampleCount,
+                discontinuity: frame.discontinuity
+            )
         }
 
         if let failure = pass.failure {

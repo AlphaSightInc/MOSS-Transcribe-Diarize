@@ -1140,3 +1140,92 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   `committed_samples` to converted client capture timestamps, and emits only redacted p50/p95/max
   plus snapshot/events fetch timings. Test default-off, secrecy, and deterministic latency math
   with no host mutation. That is the last item before the C4 gate and keeper merge.
+
+## Iteration 15 (run 20260728-023004-98501, its iteration 7) - app-owned latency probe (C3c)
+- Target: Phase C candidate C3c - the last item before the C4 gate. The app (never the CLI) uses
+  view authority, maps `committed_samples` to converted client capture timestamps, and emits only
+  redacted p50/p95/max plus snapshot/events fetch timings, so the PRD's user-visible p95 gate stops
+  being unfalsifiable.
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureLatencyProbe.swift` (new),
+  `CaptureController.swift` (one optional observer hook), `CaptureSecurity.swift` (`latency`
+  command, `ControlChannelResponse.latency`, `latencyProbeUnavailable`), `CaptureCommandLine.swift`
+  (allowlist + usage), `CaptureHTTPTransport.swift` (`liveURL` made internal so the probe reuses the
+  route shape instead of copying it), `MOSSCaptureApp/main.swift` (the only composition root that
+  builds the probe), `Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift`,
+  `Tests/MTDCaptureCLITests/MTDCaptureCLITests.swift`, `scripts/ralph-afk/{context.md,progress.txt}`.
+  **No server source changed.**
+- Method: the shape came from two facts read before writing anything. (1) The plan's Phase F
+  procedure is a subtraction between a capture instant and a later instant, so both readings must
+  come from one clock - which only exists inside the app, where the converted `capture_timestamp_ns`
+  and the view token are co-located. (2) `live_mixer.py:139-169` defines the origin as the maximum
+  first capture instant over lanes that have registered and are not failed, and freezes it into
+  `_cursor_ns` at the first mix. So the probe derives the origin by the same rule rather than
+  assuming the earliest frame or the start of capture. Splitting the file into a pure sampler (no
+  clock, no network) and an IO probe is what makes the arithmetic testable to the nanosecond.
+- Validation:
+  - `swift test --filter 'Latency|AcknowledgedFrameObserver'` -> **10 passed** (9 core + 1 CLI)
+  - `swift test --package-path macos/MOSSCapture` -> **131 passed, 0 failures** (was 121; +10)
+  - `swift build --scratch-path <empty> --product MOSSCaptureApp --product mtd-capture` ->
+    both products from an empty scratch path in **8.0 s with zero warnings**
+  - `pytest tests -q -p no:cacheprovider` -> **536 passed, 2 skipped, 368 subtests** in 53.0s
+    (unchanged - this iteration touched no Python)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+- Evidence:
+  - **The origin is derived, not assumed.** A node feeds mic-first-at-1.0 s and system-first-at-1.5 s
+    and proves the mapping uses 1.5 s; another proves that with only one lane's frame in hand the
+    report says `mixerOriginResolved: false` and produces *no* figures at all, then resolves when the
+    second lane arrives and does not move when a lane later leaves. 16000 divides 1e9 exactly
+    (asserted), so `origin + committed x 62500` is exact integer arithmetic and the mapping
+    contributes no rounding to a gate measured in milliseconds.
+  - **The first reading is a baseline, not a measurement.** Four advances after it yield exactly the
+    four injected latencies; nearest-rank p50/p95/max are asserted as literals (300/400/500/900 ->
+    p50 400, p95 900), so a percentile change is a test failure rather than a quieter number.
+  - **The plan's four disqualifiers are counted, not averaged.** One node drives a negative reading,
+    a backwards clock, and a post-discontinuity reading through the same sampler and asserts one
+    surviving measurement plus `rejectedNegative=1`, `rejectedClockRegression=1`,
+    `rejectedAfterTimelineBreak=1`, `timelineIntact=false`.
+  - Found while writing the short-frame rule: "reject non-8000 frames" would have tainted every
+    clean stop, because `CaptureController.stop` deliberately drains the trailing partial (B3). The
+    general rule that actually distinguishes the two cases is *succession*: a short frame the lane
+    continues past is a hole; a short frame with no successor ended the stream. A node asserts both
+    directions.
+  - **Secrecy is structural, not reviewed.** The report type has one string field (the schema name);
+    everything else is a count, a flag or a duration - so there is no field a token could occupy. A
+    node filters *all* headers of every issued request for the token and asserts the carrying set is
+    exactly `["Authorization"]`, and asserts the encoded control response contains neither the token,
+    the server host, nor the session id. The events body is decoded into `{seq}` only, so the
+    transcript never enters the app's memory.
+  - **Default-off is proven three ways**: constructing the probe schedules nothing and sends nothing;
+    `measure()` with no running session schedules nothing and answers `polling: false`; a dispatcher
+    built without a probe answers the typed `latencyProbeUnavailable` (this is what the CLI-side
+    composition would get). Asking twice still schedules one poll.
+  - **The measurement anchors to accepted audio.** The observer hook fires after
+    `outbox.acknowledge`, and a node with an always-failing transport proves a retained frame is
+    never observed while the same frame through a working transport is observed exactly once with
+    its wire facts intact. The hook takes lane/timestamp/rate/count/discontinuity rather than a
+    `CaptureFrame`, so nothing on this path can reach the PCM; a source gate asserts the probe file
+    contains no `pcm16`/`pcm_base64`/`loadCaptureBearerToken`.
+  - Mutation rehearsal 1 (`origins.max()` -> `.min()`): 4 assertions fail. Reverted.
+  - Mutation rehearsal 2 (copy the view token into a second request header): 2 assertions fail -
+    *after* the node was strengthened. The first attempt at this rehearsal passed, because the node
+    only checked the URL; the all-headers check exists because the mutation found the gap.
+  - Mutation rehearsal 3 (observe the frame before the publish/ack): 3 assertions fail. Reverted.
+  - Mutation rehearsal 4 (drop the `current.running` guard so `measure()` always polls): 3 fail.
+  - Mutation rehearsal 5 (count readings after a timeline break): 1 fails. Reverted.
+  - Mutation rehearsal 6 (drop the 1 s portal cycle from the render bound): 2 fail. Reverted.
+  - Mutation rehearsal 7 (wait for a failed lane the mixer already excluded): 6 fail. Reverted.
+- Learned: (1) Reading the *server's* origin rule before writing the client's was the whole
+  iteration - "first frame seen" and "start of capture" are both wrong, and either would have
+  produced a plausible latency figure that was silently offset by the lanes' start skew.
+  (2) A mutation rehearsal is worth running even when the node looks obviously sufficient: the
+  token-secrecy node passed a real leak (a second header) until the assertion was changed from "not
+  in the URL" to "in exactly one header".
+  (3) Handing an observer facts instead of the frame is cheaper than auditing what the observer does
+  with the frame - the PCM is simply not reachable from that call.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: C4 - the final local gate and the single keeper merge. Run the Swift, full Python, tracer and
+  Phase C reliability gates on the feature tip, record the clause-to-node map the C1 residue asks for
+  (5 s outage / ambiguous retry / duplicate retry / 429 / outbox overflow), then
+  `RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh` followed by the real run, and record
+  both the feature tip and merge SHAs.

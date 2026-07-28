@@ -446,7 +446,9 @@ private struct HelperLanePayload: Encodable {
     }
 }
 
-private func liveURL(base: URL, sessionID: String, action: String) -> URL {
+/// The one place the live session route shape is written, so the measurement probe cannot drift
+/// from the transport it measures.
+func liveURL(base: URL, sessionID: String, action: String) -> URL {
     base
         .appendingPathComponent("api")
         .appendingPathComponent("live")

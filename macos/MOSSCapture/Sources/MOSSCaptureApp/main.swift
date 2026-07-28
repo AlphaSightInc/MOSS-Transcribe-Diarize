@@ -27,6 +27,11 @@ final class ProductionCaptureRuntime {
         // One provider for the whole process, so frames, heartbeats and pairing share a single
         // pinned session per pin instead of opening one per request.
         let httpClients = PinnedURLSessionCaptureHTTPClientProvider()
+        let clock = SystemCaptureClockAdapter()
+        // Built before the controller because the measurement's origin is the first capture instant
+        // of the session: it has to be watching from the first acknowledged frame, not from whenever
+        // an operator first asks for a figure.
+        let latencySampler = CaptureLatencySampler()
         let controller = CaptureController(
             source: NativeDualCaptureSource(),
             transport: CaptureV2HTTPTransportAdapter(
@@ -35,7 +40,7 @@ final class ProductionCaptureRuntime {
                 bearerToken: keyStore
             ),
             keyStore: keyStore,
-            clock: SystemCaptureClockAdapter(),
+            clock: clock,
             scheduler: RepeatingCaptureSchedulerAdapter(interval: CapturePumpContract.interval),
             health: CaptureHTTPHealthAdapter(
                 clientProvider: httpClients,
@@ -43,7 +48,8 @@ final class ProductionCaptureRuntime {
                 bearerToken: keyStore,
                 instanceID: ProcessInfo.processInfo.globallyUniqueString,
                 helperVersion: "0.1.0"
-            )
+            ),
+            frameObserver: latencySampler
         )
         let dispatcher = ControlCommandDispatcher(
             controller: controller,
@@ -54,7 +60,20 @@ final class ProductionCaptureRuntime {
             captureTokenStore: keyStore,
             certificatePinStore: keyStore,
             sessionStore: keyStore,
-            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: keyStore)
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: keyStore),
+            // The probe reads view authority from the same app-only store the handoff uses; it
+            // polls nothing until an operator asks for a figure.
+            latencyProbe: CaptureLatencyProbe(
+                sampler: latencySampler,
+                status: { controller.status() },
+                sessionStore: keyStore,
+                clientProvider: httpClients,
+                certificatePin: keyStore,
+                clock: clock,
+                scheduler: RepeatingCaptureSchedulerAdapter(
+                    interval: CaptureLatencyContract.pollInterval
+                )
+            )
         )
         return ProductionCaptureRuntime(
             server: UnixDomainControlServer(
