@@ -4254,3 +4254,132 @@ Stop conditions:
   - a terminal failure aborts the run at the first non-200 -> revoke the device, record the
     signature, and do NOT attempt a product fix on this branch: the freeze has resumed and a
     fourth merge is refused by `merge-keeper.sh`'s guard. It would need a further amendment.
+
+--------------------------------------------------------------------------------
+run 20260728-112922 | iteration 7 | H4 step (d) - the gate RAN and is RED: blocker 4
+--------------------------------------------------------------------------------
+Result: **the second amendment's gate FAILED.** The three fixes it authorized (H3/H1/H2) are all
+proven working on the real host in one continuous run, the probe got **four times further** than
+any previous run, and then the session died on a **fourth** blocker on the same seam. Diagnosed to
+one line and one rounding tick. Phase H is not finished and E3 stays unspent.
+
+Files touched:
+  scripts/ralph-afk/live-identity-seam-probe.py   NEW - Ralph evidence tool, not product source.
+  scripts/ralph-afk/context.md                    H4d block; branch state + scoreboard; candidate
+                                                  35(d) closed RED and new candidate 37; Validation
+                                                  gained the seam-probe recipe; two stale notes
+                                                  repaired (--lane-offset-ms, device-revoke 200).
+  scripts/ralph-afk/progress.txt                  the rollback block above, then this entry.
+No tracked product source changed - the post-merge freeze holds.
+
+### Command and result
+DEVICE_ID="ralph-h4d-probe-20260728T123400Z"   (payload minted on host loopback, piped on stdin)
+python3 scripts/ralph-afk/live-pipeline-probe.py --host 100.64.0.8 --port 7861 \
+  --pin a35ca9fc... --seconds 20 --lead-seconds 1.0 --lane-offset-ms system=137
+  -> 17 frames accepted across 9 ticks, then tick 8 microphone **409**, wall 4.08 s, rc=1
+     report: /tmp/moss-h4d.json   stderr tick log: /tmp/moss-h4d-stderr.txt
+
+### What is now PROVEN WORKING on the deployed service (this is the amendment's payoff)
+H3  both lanes unaligned (system +137 ms) for 9 ticks, no webrtcvad.Error. Pre-fix this died at
+    tick 1 with accepted_samples 5808. The mixed frames are now legal VAD input.
+H1  span 0 = the leading-silence span **committed empty**: span_id 0, 0 -> 12208, transcript "",
+    committed_prefix_hash advancing, committed_samples 12208. Pre-fix this exact input was the
+    terminal `vLLM transcription returned zero parsed segments`.
+H2  the 2.5 s hard-cap span froze once and was queued for decode; no `frozen span end must advance`.
+    frozen_until_sample 52208 with committed 12208 = one open 40000-sample span, in lockstep.
+Also measured: publish p95 91.7 ms, snapshot p95 66.8 ms, events p95 42.0 ms, 1 TLS handshake,
+14 events, view authority 401 after stop, live/descriptor/batch/jobs all 200 afterwards,
+`live-runs/` 0 entries and no /tmp/mtd-live-*. Decode RTF on the host 0.478-0.83 (gate wants < 1).
+
+### Blocker 4 - the failure, then the mechanism, then the control
+Failure (from the probe, tick 8, accepted_samples 53808):
+  409 {kind: identity_commit, code: canonical_not_submitted, retryable: false,
+       detail: {span_id: 1, identity_status: "failed"}}
+  every later frame and `stop` got the same; the host journal has **no traceback** - a typed
+  refusal, not an escaping exception, which is why nothing in the journal explains it.
+
+The reason string is unobservable from outside: it is written into a *proposed* identity snapshot
+that is never committed, and only `identity_status` reaches the event and the failure detail. So
+this iteration built `scripts/ralph-afk/live-identity-seam-probe.py`, which rebuilds the same two
+seams the runtime builds from the same manifest (bounded decoder over the vLLM runner; bounded
+causal identity preparer over the manifest's wespeaker evidence provider) and reports `reason`.
+Run on the host with the service's own venv, mutating nothing:
+
+  input = span 1's audio rebuilt sample-for-sample on MacStudio from the pipeline probe's own
+          build_schedule/build_lane_track, system lane shifted 137 ms, mixed with live_mixer's own
+          _HEADROOM_GAIN/_LIMITER_* constants, sliced [12208:52208] = 40000 samples = 2.5 s
+  decode -> "[0.11][S01] Good morning everyone. This is the microphone.[2.51]"   (25 tokens, RTF 0.478)
+  prepare(with real evidence)  -> status=failed reason=**timestamp_outside_span**  would_publish=false
+  prepare(without evidence)    -> status=failed reason=timestamp_outside_span      would_publish=false
+  rc=4, verdict "pre-evidence check"           report: /tmp/moss-h4d-identity-span1.json
+
+  CONTROL, same audio + 0.5 s of trailing silence (3.0 s span):
+  decode -> "[0.00][S01]Good morning everyone. This is the microphone.[2.54]"
+  -> **prepared**, would_publish=true, rc=0                report: /tmp/moss-h4d-identity-tail.json
+
+  Baseline, the manifest's own golden.wav (2.1 s): generated_tokens 0, transcript "" ->
+  coordinator_empty_reason `decoder_returned_no_transcript`, i.e. H1's path.  /tmp/moss-h4d-identity.json
+
+Mechanism, with line anchors:
+  1. the model's closing marker lands at ~= the duration of the audio it is handed. For a 2.50 s
+     span whose speech runs to the end it emits **2.51** - one 0.01 s quantisation tick past.
+  2. `BoundedCausalIdentityPreparer.prepare` live_identity.py:101-102 rejects `segment.end >
+     duration` with **no tolerance** -> status="failed", reason="timestamp_outside_span".
+  3. `LiveSession._identity_preparation_is_current` live_session.py:449 admits **only**
+     status == "prepared", so `submit_prepared_canonical` returns False.
+  4. `live_service_runtime.py:745-751` turns that False into a non-retryable terminal failure of
+     the whole session.
+A hard-cap span is 2.5 s of continuous speech with no endpoint **by construction**, so this fires
+on any speaker who does not pause - the ordinary case, not an edge case.
+
+Two more defects visible in the same code, recorded so one amendment can settle them together:
+  - `LiveSession._canonical_validation_error` live_session.py:436-442 carries the SAME strict bound
+    check, so relaxing only the identity side moves the failure instead of fixing it.
+  - an `abstain` preparation - the DESIGNED outcome for ambiguous identity or speaker capacity
+    (live_identity.py:106,121,127) - is terminal by the same line 449. Design intent ("don't
+    relabel") and implementation ("kill the meeting") disagree for a second input class.
+Positive side-evidence: the wespeaker ONNX evidence provider **works** on the host - the control
+run reached `prepared` through it, the first time that has been observed.
+
+### Rollback: applied and verified
+  DELETE https://127.0.0.1:7861/api/live/devices/ralph-h4d-probe-20260728T123400Z -> 200 (repeat 200)
+  live-auth.json: that device revoked=true; m4mbp AB600574-...-652AB064A70B still revoked=false
+  moss-live-web MainPID 338545 / moss-web MainPID 301112, both NRestarts=0, both active - untouched
+  host /tmp WAVs and .b64 blobs deleted (no audio left on the server); JSON reports kept
+  from MacStudio afterwards: /live 200, /api/live/descriptor 200, batch / 200, /api/jobs 200
+
+### Learned
+1. **A gate that fails is still the gate working.** Three blockers were fixed and deployed, and the
+   run that proved it is the same run that found the fourth. The probe's reach (tick 1 -> tick 8,
+   0 -> 1 committed spans) is the measurement that says the cycle was worth it.
+2. **A typed refusal with no traceback is harder to diagnose than a crash.** H1/H3 left tracebacks
+   in the journal; this one left nothing, because the process classified it correctly and then
+   threw away the one word that named it. `reason` reaching the failure detail is not a nicety -
+   it is the difference between reading a log line and building a host-side probe.
+3. **Reproduce the exact input, not a similar one.** golden.wav (the manifest's own fixture) decodes
+   to empty and proves nothing about this defect. Rebuilding span 1 from the probe's own schedule -
+   same voices, same offset, same mixer arithmetic, same sample window - reproduced it first try,
+   and the +0.5 s-silence control then isolated the boundary condition in one more run.
+4. **`say`-driven probe audio is reusable evidence.** Both runs cost one vLLM request each (~1-2.5 s)
+   and no service disturbance, so this seam can now be re-measured after any fix without a Mac.
+
+- **BLOCKER (new, and it is the critical path):** blocker 4 needs a **THIRD prd.md amendment**. The
+  post-merge freeze resumed at 9e0780a, `merge-keeper.sh` refuses a fourth merge, and no test in the
+  repo covers this seam (nothing puts the real decoder's timestamps under the real identity
+  preparer). The loop must not touch product source for it without that authorization.
+  What the amendment has to decide is written out in candidate 37: (a) the timestamp tolerance,
+  answered ONCE and applied in both live_identity.prepare and
+  LiveSession._canonical_validation_error; (b) whether a non-`prepared` preparation may be terminal
+  at all, given `abstain` is a designed outcome; (c) `reason` reaching the failure detail and the
+  canonical_processed event. Candidate 36 (a transient decoder failure is terminal) is the same
+  "non-fatal treated as fatal" shape on the same path and should be settled in the same amendment.
+- **Blocker (unchanged):** m4mbp is still offline (`ping` and `ssh` both time out), so "one exact
+  SHA everywhere" stays 3/4 at b817871. Not on the critical path: no rebuild, no reinstall, just
+  `git fetch && git checkout b817871` when it is up.
+- **Blocker (unchanged):** E3's physical TCC clicks - and still correctly deferred. A canary against
+  a service that dies at the first 2.5 s of continuous speech would spend the one irreducible human
+  step for nothing.
+- Next: if a third amendment lands, fix blocker 4 with a real-seam regression node in
+  tests/test_live_pipeline_seams.py and re-run BOTH probes as the gate. If it does not, the loop
+  has no authorized product work left on the critical path; the only mechanical step available is
+  the m4mbp checkout, which needs that host to be powered on.
