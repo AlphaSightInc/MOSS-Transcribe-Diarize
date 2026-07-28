@@ -63,13 +63,18 @@ rebuilt and reinstalled the signed app on m4mbp (G6's automatable half), and ite
 and restored the server rollback (F4a); none of the three changed a tracked file, and the *product*
 on the Mac now carries G1+G2+G3.
 
-**PRD acceptance scoreboard after iteration 8.** Green with evidence: IDEA-044 checkpoint, production
+**PRD acceptance scoreboard after iteration 9.** Green with evidence: IDEA-044 checkpoint, production
 client gate, server meeting-reliability gate, the one reviewed keeper merge (plus the amendment's one
 authorized follow-up merge), one exact SHA everywhere, live service answering, batch service
 unharmed, signed app installed, **rollback rehearsed and recorded**. Open: permissions granted, the
 60 s canary, the 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and
-the final close — **every one of them downstream of E3's physical TCC clicks.** There is no
-loop-runnable acceptance work left.
+the final close.
+
+**Those open items are no longer merely waiting on E3 — iteration 9 proved they cannot pass on the
+deployed build at all.** See the F0 block below. The certification path is now gated on an
+**operator decision** (authorize a second post-merge fix cycle, this time for server source) *before*
+it is worth spending E3's physical TCC clicks. Running E3 first would burn the one irreducible human
+step on a canary that is guaranteed to die in about three seconds.
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
@@ -704,6 +709,13 @@ the D2 pin on both hosts. `ops/moss-live.env` now exists on the host (untracked,
 `/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs` was created by the service.
 `/api/live/descriptor` and `/live` are still 404 on 7860.
 
+**`live-auth.json` now holds four devices, three of them inert (updated iteration 9).** The F0 probe
+paired and then revoked three `ralph-f0-probe-*` devices; only
+`AB600574-FD93-4321-967E-652AB064A70B` (m4mbp, from the 03:10 attended pairing) is `revoked: false`.
+Device *count* is therefore no longer a useful signal for D4 — check that entry's `paired_at`, or the
+count of **unrevoked** devices. Baseline pre-copy: `live-auth.json.ralph-f0-backup-20260728T091927Z`,
+sha256 `9d306766…`.
+
 **A device is ALREADY paired — corrected in iteration 6, and it changes the E3/G6 premise.**
 Context claimed until now that `live/live-auth.json` was absent and that D4 would create it. It is
 **present**, 0600 on ext4, `{schema_version: 1, devices: 1}`, mtime **2026-07-28 03:10:15** — one
@@ -1006,6 +1018,83 @@ location`) instead of importing it through the package, which would make the too
 match its own docstring. That is a **tracked-source** change and the merge freeze forbids it on this
 branch: it needs a new branch and a decision, not a second keeper merge. Nothing in D3–F4 is blocked
 by it — only the doc's copy-paste line is wrong.
+
+**F0 live-pipeline probe — the deployed pipeline dies in ~3 s (new, iteration 9). READ THIS BEFORE
+PLANNING ANY PHASE-F WORK.** `scripts/ralph-afk/live-pipeline-probe.py` drives the deployed live
+service through the whole path E3's canary needs, from MacStudio over the real pinned tailnet TLS
+hop, with real two-speaker `say` audio and **no Mac and no TCC grant**. It is a Ralph evidence tool,
+not product source. Three runs, each with a fresh single-use payload and a fresh device.
+
+*Proven working on the real host for the first time:* remote pairing exchange (`scope=capture`,
+43-char device token) and session create over a leaf pin the probe enforces itself (`CERT_NONE`, no
+hostname check, DER sha256 == `a35ca9fc…`, **1 TLS handshake per run**); the running service admits
+the C2 manifest (`sample_rate 16000`, `frame_samples 8000`,
+`provider_manifest_hash 61d97ffe…` straight off `POST /sessions`); v2 lane ingress with the canonical
+wire format on both lanes; the endpointer freezing spans and writing `/tmp/mtd-live-<rand>/span-*.wav`
+for decode; C1 view authority (200 while viewable, **401** the instant the session leaves
+`VIEWABLE_SESSION_STATUSES`, 401 after stop); and `DELETE /api/live/devices/{id}` releasing the
+sessions it owns. **No raw audio is persisted** — after three runs `live-runs/` has 0 entries and
+`/tmp/mtd-live-*` is gone. Timings: publish p95 **209-279 ms**, snapshot p95 **73-105 ms**, events
+p95 **22-175 ms**, i.e. a ~1280 ms render bound leaving ~2.7 s of the 4 s canary budget. Committed
+latency is **unmeasurable** here because nothing ever commits.
+
+*Blocker 1 — a span with no speech makes the session terminal.* With 1.0 s of leading silence the
+session went terminal on **span-0000**:
+`vLLM transcription returned zero parsed segments for /tmp/mtd-live-…/span-0000.wav`,
+`{kind: integrity, code: RuntimeError, retryable: false}`. Frames 409 thereafter, snapshot/events
+401, `stop` 409. The span held no speech and that is measured, not inferred:
+`frozen_until_sample 14400` (0.9 s) versus a first utterance at sample 16000 (1.0 s).
+*Root path:* `vllm_runner.py:245` `_validate_transcription_response` raises a **bare `RuntimeError`**
+when `parse_transcript(text)` is empty; it escapes before `live_adapters._validated_segments`
+(`live_adapters.py:360-364`), which has a *typed* `LiveProviderError` for the identical condition,
+can classify it. Unclassified → `integrity` → non-retryable → terminal. Every real meeting opens with
+silence and contains silence between turns, so this ends the meeting almost immediately.
+
+*Blocker 2 — the endpointer can ask to freeze a non-advancing span.* With `--lead-seconds 0` the
+session survived one tick longer (11 frames, `accepted_samples` 32000) and then answered **400
+`frozen span end must advance.`** — `live_session.py:237`, `freeze_until` refusing
+`end_sample <= self._frozen_until_sample`. Both call sites are the coordinator
+(`live_coordinator.py:128` accept path, `:231` `_freeze_and_queue` used by `flush_endpoint`).
+*Caveat a fix must resolve first:* the probe's two lanes carry **identical** `capture_timestamp_ns`
+and start at the same instant, which the Mac's will not. That is legal (the contract requires no
+distinctness and the server 200'd eleven such frames) but it is more degenerate than a real capture —
+re-run the probe with a per-lane offset before concluding. Blocker 1 has no such caveat.
+
+*Why every gate stayed green.* No test puts the **real** VAD endpointer and a **real** decoder in one
+process: `tests/test_live_vad.py` drives the endpointer with a stub provider — it even asserts the
+typed `LiveProviderError` the real path never reaches — and every decoder node is stubbed because
+MacStudio has no GPU. The seam where they meet has only ever run on the deployed host, and both
+blockers live in that seam. Do not "fix" this by loosening a gate; the missing thing is a node that
+drives the coordinator through the real `vllm_runner` validation with an empty transcript.
+
+*Probe usage (mint on the host, payload never on argv, never in a file):*
+```bash
+DEVICE_ID="ralph-f0-probe-$(date -u +%Y%m%dT%H%M%SZ)"
+MINT='set -euo pipefail
+cd /mnt/d/Coding/MOSS-Transcribe-Diarize
+L="$HOME/.local/share/moss-transcribe-diarize/live"
+out="$(ops/live-pair.sh --url https://127.0.0.1:7861 --cert "$L/live.crt")"
+printf "%s" "$out" | sed -n "s/^payload: //p"'
+PAYLOAD="$(printf '%s\n' "$MINT" | ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
+  "wsl.exe -d Ubuntu -- bash -s" 2>/dev/null)"
+printf '%s' "$PAYLOAD" | python3 scripts/ralph-afk/live-pipeline-probe.py \
+  --host 100.64.0.8 --port 7861 --pin a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff \
+  --device-id "$DEVICE_ID" --seconds 20 --lead-seconds 1.0 --report /tmp/moss-f0.json
+```
+`--fail-fast` is the default and must stay so: a terminal failure is sticky, so continuing only
+buries the one response that explains it (the first run published for **7 minutes** past a dead
+session and learned strictly less than the 2-second run that replaced it). Post-terminal 409s take
+**6-8 s each** — unexplained, bounded to already-dead sessions, but it means a Mac outbox will back
+up hard behind one.
+**Mandatory rollback after every run**, on the host, loopback-only:
+`curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<device-id>`. It returns and releases the
+sessions the device owns and needs no restart. It *marks* revoked rather than deleting, so
+`live-auth.json` only grows; the three inert entries from iteration 9 are
+`ralph-f0-probe-20260728T{091938,092856,093052}Z`. The m4mbp device
+`AB600574-FD93-4321-967E-652AB064A70B` is untouched (`revoked: false`) and is the only one that
+matters. A pre-copy of the baseline file is
+`live-auth.json.ralph-f0-backup-20260728T091927Z` (sha256 `9d306766…`); restoring it costs a service
+restart, so it is the deeper rollback, not the default.
 
 **Gotcha — remote shell quoting.** Nested quoting through Windows conhost → `wsl.exe` → bash
 fails ("The system cannot find the path specified"). Always pipe a script on stdin:
@@ -1641,8 +1730,11 @@ own, which no later step does.
     "nothing is paired and `~/Library/Application Support/MOSSCapture` does not exist yet". The store
     exists since 2026-07-28 03:10 and a device is paired — see the "A device is ALREADY paired"
     block. `mtd-capture status` still answers `{"ok":false}` until the app is running.
-23. **E3 — TCC human step** `[BLOCKED on the operator — runbook derived and recorded in iteration
-    23]`: the only irreducible human step in the whole loop. The exact click sequence, the exact
+23. **E3 — TCC human step** `[BLOCKED on the operator — and, since iteration 9, DO NOT SPEND IT YET]`:
+    the only irreducible human step in the whole loop. **F0 proved the canary it exists to enable
+    cannot pass on the deployed build** (see the F0 block), so asking for the clicks now buys a
+    session that dies in about three seconds. Correct order is: authorize H1/H2 → fix and gate →
+    deploy → *then* E3. The runbook below stays valid and needs no rework. The exact click sequence, the exact
     commands and the read-only verification are in progress.txt iteration 23 and in the three new
     contract blocks above (TCC-verification, E3 command surface, prompt order). Summary of what
     iteration 23 changed about it:
@@ -1664,12 +1756,21 @@ own, which no later step does.
 
 ### Phase F — certification and rollback
 
-24. **F1 — 60 s canary** per prd.md. `[blocked on E3]`
+23a. **F0 — server-side live pipeline probe (no Mac, no TCC)** `[done — iteration 9 of run
+    20260728-072601]`: `scripts/ralph-afk/live-pipeline-probe.py` drove the deployed service through
+    pairing → session → two-lane v2 ingress → endpointer → decode → snapshot from a real remote
+    pinned-TLS peer. It retired a large block of server risk (see the F0 block above for everything
+    now proven, including "no raw audio is persisted" and the ~1280 ms render bound) and **found two
+    blockers that would have destroyed F1 seconds after the operator's TCC clicks**. Off-list and
+    justified in progress.txt: it is the only remaining work that could fail *downstream* of the one
+    human step, and it needed no human. Re-runnable; the device revoke is mandatory after each run.
+24. **F1 — 60 s canary** per prd.md. `[blocked on E3 **and** on H1/H2 — it cannot pass on the
+    deployed build]`
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-    `[blocked on E3]`
+    `[blocked on E3 and H1/H2]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-    `[blocked on E3]`
+    `[blocked on E3 and H1/H2]`
 **F4 was split by evidence in iteration 8**, the way iteration 20 split E2: its rollback rehearsal
 needs no operator, closes a PRD acceptance clause on its own, and is *cheaper before* certification
 than after (nothing in flight to disturb). Its close half still waits on everything else.
@@ -1770,6 +1871,28 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
       that this failure has a name, and the -1200/-9802 vs -999 distinction is in the
       control-channel failure contract above. That log is now reachable for the first time: the
       installed product is the first build to carry `OSLogControlChannelFailureLog`.
+
+### Phase H — server fix cycle, NOT YET AUTHORIZED
+
+**Gate: do not start any of this.** Both items change tracked **server** source, which the
+post-merge freeze forbids on this branch, and the 2026-07-28 amendment is spent on the Mac client and
+does not cover them. This is the same shape as the ATS blocker that produced that amendment: a defect
+no gate could see, found after the merge. The loop's job is to hold here with the evidence recorded
+until prd.md carries an authorization (or an explicit decision to certify against a rebuilt branch).
+When it does, do H1 before H2 — H1 is unambiguous and H2 has an input caveat to resolve first.
+
+33. **H1 — an unparseable span must not kill the meeting** `[BLOCKED on authorization]`. The policy
+    question comes before the patch: a span the decoder returns nothing for should be **dropped or
+    committed empty**, never terminal. `vllm_runner.py:245` raises a bare `RuntimeError` that escapes
+    `live_adapters._validated_segments`' typed `LiveProviderError`, so the session cannot tell
+    "silence" from "corrupt". The regression test must put the *real* validation seam under the live
+    coordinator with an empty transcript — a stub that raises `LiveProviderError` reproduces nothing,
+    because that is exactly the path the bug bypasses.
+34. **H2 — the endpointer must not ask to freeze a non-advancing span** `[BLOCKED on authorization,
+    and on ruling out the probe's identical-lane-timestamp caveat first]`. Re-run F0 with a per-lane
+    `capture_timestamp_ns` offset before touching source: if the 400 disappears the defect is
+    narrower than it looks, and if it does not, `live_coordinator.py:128/231` and the endpoint policy
+    are the surface.
 
 ## Non-candidates
 
