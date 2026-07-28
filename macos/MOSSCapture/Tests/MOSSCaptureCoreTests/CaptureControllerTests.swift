@@ -615,6 +615,157 @@ final class CaptureControllerTests: XCTestCase {
         )
     }
 
+    func testAThrowingPublishStillEmitsTheHeartbeatThatHoldsTheServerLease() throws {
+        // F3's death in one node. One lane's frames are refused for the rest of the meeting — the
+        // server answers `409 v2 system lane is failed.` and never stops — so the tick's publish
+        // throws, and the throw used to jump over `emitHealth`. The heartbeat stopped permanently,
+        // the 30 s helper lease expired, and the server correctly ended a meeting whose other lane
+        // was still healthy and whose heartbeats it would still have accepted.
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let transport = ProgrammableCaptureTransport()
+        transport.failure = { frame, _ in
+            frame.lane == .system ? CaptureHTTPTransportError.nonSuccessStatus(409) : nil
+        }
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = FakeCaptureHealthAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300, 400]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        for tick in 0..<3 {
+            source.enqueue(frames: [
+                laneFrame(.system, captureTimestampNS: UInt64(tick) * 2 + 1),
+                laneFrame(.microphone, captureTimestampNS: UInt64(tick) * 2 + 2),
+            ])
+            scheduler.runScheduledOperation()
+        }
+        let refused = controller.status()
+
+        XCTAssertEqual(
+            health.emissions.count,
+            4,
+            "one heartbeat at start and one per tick: a refused lane must not silence the client"
+        )
+        XCTAssertEqual(refused.lastHealthSequence, 4)
+        XCTAssertTrue(refused.running)
+        XCTAssertEqual(
+            transport.accepted.map(\.lane),
+            [.microphone, .microphone, .microphone],
+            "the peer lane keeps publishing — a fault on one lane is not a fault on the meeting"
+        )
+        XCTAssertEqual(refused.pumpFailure, .transportUnavailable)
+        XCTAssertNil(
+            refused.sessionRefusal,
+            "409 says nothing about whether the session exists, and the heartbeats prove it does"
+        )
+        XCTAssertEqual(
+            refused.outbox.retainedFrames,
+            3,
+            "the refused lane's audio stays queued; the heartbeat is not bought with dropped audio"
+        )
+    }
+
+    func testAStartHeartbeatTheServerRefusesUnwindsInsteadOfLeavingTheLanesHot() throws {
+        // K5d's wedge. A session the server had already released answers the *start*-time heartbeat
+        // 403, and that throw escaped past both the unwind and `scheduler.schedule`: both lanes
+        // stayed hot with nothing draining them, `running` stayed true, no refusal was recorded, and
+        // `alreadyRunning` refused every later start until the app was killed. The starved lanes
+        // then overran — 14005 dropped frames on `system` — and poisoned the next meeting.
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 403, refusedAttempts: [1])
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://127.0.0.1/live")!
+        )
+
+        XCTAssertThrowsError(try controller.start(configuration: configuration)) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .nonSuccessStatus(403))
+        }
+        let unwound = controller.status()
+
+        XCTAssertFalse(unwound.running, "a start whose session the server refuses runs nothing")
+        XCTAssertEqual(unwound.lanes.map(\.state), ["stopped", "stopped"], "no lane is left hot")
+        XCTAssertTrue(scheduler.labels.isEmpty, "no pump is left behind")
+        XCTAssertEqual(
+            unwound.sessionRefusal,
+            .sessionDisowned,
+            "the start path is the third caller that has to record the server's verdict"
+        )
+        XCTAssertNoThrow(
+            try controller.start(
+                configuration: CaptureConfiguration(
+                    sessionID: "session-b",
+                    serverURL: URL(string: "https://127.0.0.1/live")!
+                )
+            ),
+            "a refused start must not block the next one with alreadyRunning"
+        )
+        XCTAssertNil(controller.status().sessionRefusal, "a new session id is a new question")
+    }
+
+    func testATransientStartHeartbeatFailureIsADegradedStartWithAPumpRunning() throws {
+        // The publish at start already draws this line — a transient answer is a degraded start, an
+        // answer no retry can change is an unwind. The heartbeat is the same kind of report, so it
+        // gets the same rule: a 503 keeps the meeting and the pump's next heartbeat clears it.
+        // (The adapter's status code is the test's choice, not a claim about the session.)
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 503, refusedAttempts: [1])
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health
+        )
+
+        let started = try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        XCTAssertTrue(started.running, "a transient answer at start is a degraded start")
+        XCTAssertEqual(started.pumpFailure, .transportUnavailable)
+        XCTAssertNil(
+            started.sessionRefusal,
+            "5xx is the server talking about itself, not about whether this session exists"
+        )
+        XCTAssertEqual(started.lanes.map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(
+            scheduler.labels,
+            ["moss.capture.pump"],
+            "the pump is what carries the next heartbeat, so it has to exist"
+        )
+
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertNil(recovered.pumpFailure, "the next heartbeat was accepted and says so")
+        XCTAssertEqual(recovered.lastHealthSequence, 2)
+        XCTAssertEqual(health.attemptCount, 2)
+    }
+
     func testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio() throws {
         XCTAssertEqual(
             CaptureFrameRetryPolicy.retryReason(for: CaptureHTTPTransportError.nonSuccessStatus(429)),
@@ -1504,7 +1655,10 @@ final class CaptureControllerTests: XCTestCase {
 
         let systemStatus = try XCTUnwrap(runningStatus.first { $0.lane == .system })
         let microphoneStatus = try XCTUnwrap(runningStatus.first { $0.lane == .microphone })
-        XCTAssertEqual(systemStatus.state, "failed")
+        // D-a: the lane dropped a buffer and kept capturing, so it is degraded, not failed. The
+        // code and the count are unchanged — what changed is the word that decides whether the
+        // server closes the lane.
+        XCTAssertEqual(systemStatus.state, "degraded")
         XCTAssertEqual(systemStatus.failureCode, "macos_buffer_overrun")
         XCTAssertEqual(systemStatus.droppedFrames, 1)
         XCTAssertEqual(systemStatus.discontinuities, 1)
@@ -1512,6 +1666,55 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertNil(microphoneStatus.failureCode)
         XCTAssertEqual(microphoneStatus.droppedFrames, 0)
         XCTAssertEqual(microphoneStatus.discontinuities, 0)
+    }
+
+    /// A new `start` is a new question about every lane, and the drops the previous generation
+    /// already reported are the previous generation's answer.
+    ///
+    /// The buffer queue counts drops for the life of the process while the source keeps a watermark
+    /// of what it has already turned into facts. Reset the watermark without re-baselining it and
+    /// the first drain of the new generation reads the whole process's drop history back as fresh
+    /// loss: a meeting that has not dropped a single buffer comes up already carrying the previous
+    /// meeting's damage, and says so in its first heartbeat. This is candidate 49 (L2) — the same
+    /// "a new session id is a new question" rule K4 applied to `sessionRefusal`. D-a since made
+    /// that verdict a degradation rather than a failure, which is why the fresh generation is
+    /// asserted `capturing` with no code at all: neither verdict may be inherited.
+    func testNativeDualCaptureSourceStartDoesNotReplayEarlierGenerationDrops() throws {
+        let queue = RealTimeNativeAudioBufferQueue(capacity: 2)
+        let source = NativeDualCaptureSource(
+            system: RecordingNativeCaptureComponent(),
+            microphone: RecordingNativeCaptureComponent(),
+            queue: queue,
+            emitter: laboratoryEmitter()
+        )
+
+        try source.start(configuration: laneConfiguration())
+        // One buffer more than the lane can hold, produced the way a device callback produces it.
+        for index in 0..<3 {
+            queue.enqueueFromRealtimeCallback(
+                nativeBuffer(
+                    lane: .system,
+                    timestamp: UInt64(10 + index),
+                    deviceEpoch: 1,
+                    samples: [0.25]
+                )
+            )
+        }
+        _ = try source.pendingFrames()
+
+        let overrun = try XCTUnwrap(source.status().first { $0.lane == .system })
+        XCTAssertEqual(overrun.state, "degraded")
+        XCTAssertEqual(overrun.failureCode, "macos_buffer_overrun")
+        XCTAssertEqual(overrun.droppedFrames, 1)
+
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+        try source.start(configuration: laneConfiguration())
+        _ = try source.pendingFrames()
+
+        let restarted = try XCTUnwrap(source.status().first { $0.lane == .system })
+        XCTAssertEqual(restarted.state, "capturing")
+        XCTAssertNil(restarted.failureCode)
+        XCTAssertEqual(restarted.droppedFrames, 0)
     }
 
     func testNativeDualCaptureSourceInvalidatesGenerationBeforeComponentTeardown() throws {
@@ -2614,6 +2817,11 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(stopped.outbox.retainedFrames, 0)
     }
 
+    /// Decision D-a partitions the vocabulary rather than renaming anything in it: a *failure*
+    /// means the lane can no longer produce audio, a *degradation* means it lost some and kept
+    /// producing. `macos_buffer_overrun` moved sides — it is minted in one place, for a lane that
+    /// is still capturing while this process's drain falls behind — and the mailbox's own overflow
+    /// stopped borrowing its name, because a lost *fact* is not lost audio.
     func testNativeLaneHealthStableCodeVocabularyIsClosed() throws {
         XCTAssertEqual(
             NativeLaneFailureCode.allCases.map(\.rawValue),
@@ -2622,8 +2830,14 @@ final class CaptureControllerTests: XCTestCase {
                 "macos_device_unavailable",
                 "macos_io_stopped_abnormally",
                 "macos_callback_stalled",
-                "macos_buffer_overrun",
                 "macos_unexpected_capture_error",
+            ]
+        )
+        XCTAssertEqual(
+            NativeLaneDegradationCode.allCases.map(\.rawValue),
+            [
+                "macos_buffer_overrun",
+                "macos_health_facts_dropped",
             ]
         )
     }
@@ -2696,7 +2910,15 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(system.deviceEpoch, 9)
     }
 
-    func testNativeLaneMailboxTerminalFenceCannotBeDroppedAtCapacity() throws {
+    /// A mailbox that overflows says so, in its own words.
+    ///
+    /// It used to say `macos_buffer_overrun` with `droppedFrames: 1` — the audio code, and the
+    /// audio counter — for a loss of *health facts*, so an operator reading the heartbeat could
+    /// not tell a lane that dropped a buffer of PCM from a lane whose reporting fell behind, and
+    /// the PRD's accounting saw a frame of audio that had never existed. D-a gave the condition
+    /// its own code; the fence stays, because after this point the mailbox's account is knowingly
+    /// incomplete.
+    func testNativeLaneMailboxOverflowIsItsOwnCodeAndNotAudioLoss() throws {
         let health = NativeLaneHealth(mailboxCapacity: 2)
         let generation = health.beginGeneration()
         health.enqueue(.admitted, lane: .system, generation: generation)
@@ -2707,10 +2929,10 @@ final class CaptureControllerTests: XCTestCase {
         let system = try XCTUnwrap(
             health.statuses(running: true).first { $0.lane == .system }
         )
-        XCTAssertEqual(system.state, "failed")
+        XCTAssertEqual(system.state, "degraded")
         XCTAssertEqual(system.deviceEpoch, 7)
-        XCTAssertEqual(system.droppedFrames, 1)
-        XCTAssertEqual(system.failureCode, "macos_buffer_overrun")
+        XCTAssertEqual(system.droppedFrames, 0)
+        XCTAssertEqual(system.failureCode, "macos_health_facts_dropped")
     }
 
     func testNativeLaneReducerDeferredBatchCannotCrossGeneration() throws {
@@ -2757,7 +2979,6 @@ final class CaptureControllerTests: XCTestCase {
             (.startFailed(.deviceUnavailable("aggregate")), .deviceUnavailable),
             (.startFailed(.osStatus("AudioHardwareCreateProcessTap", -50)), .unexpectedCaptureError),
             (.ioStoppedAbnormally("HAL stopped"), .ioStoppedAbnormally),
-            (.bufferOverrun(droppedBuffers: 1), .bufferOverrun),
             (.unexpectedCaptureError("uncaught native error"), .unexpectedCaptureError),
         ]
 
@@ -2772,6 +2993,128 @@ final class CaptureControllerTests: XCTestCase {
             XCTAssertEqual(system.state, "failed")
             XCTAssertEqual(system.failureCode, code.rawValue)
         }
+    }
+
+    /// The other half of the same table, and the reason there are two: every fact that leaves a
+    /// lane producing audio maps to `degraded`, and no fact maps to both states.
+    func testNativeLaneHealthMapsSurvivableFactsToDegradedCodes() throws {
+        let facts: [(NativeLaneFact, NativeLaneDegradationCode)] = [
+            (.bufferOverrun(droppedBuffers: 3), .bufferOverrun),
+            (.healthFactsDropped(count: 1), .healthFactsDropped),
+        ]
+
+        for (fact, code) in facts {
+            let health = NativeLaneHealth()
+            let generation = health.beginGeneration()
+            health.enqueue(fact, lane: .system, generation: generation)
+
+            let system = try XCTUnwrap(
+                health.statuses(running: true).first { $0.lane == .system }
+            )
+            XCTAssertEqual(system.state, "degraded")
+            XCTAssertEqual(system.failureCode, code.rawValue)
+            // Nothing here is a failure, so nothing here closes the lane: the projection's
+            // failure — the field the server's terminal path reads — stays empty.
+            XCTAssertNil(health.failure(for: .system))
+        }
+    }
+
+    /// A degraded lane is still a lane that reports, and the failure that genuinely ends it must
+    /// still arrive.
+    ///
+    /// The mailbox used to fence itself shut on the first overrun, because an overrun *was* the
+    /// lane's terminal verdict and nothing after it could matter. D-a makes an overrun survivable,
+    /// so that fence would have left the lane silent for the rest of the meeting while it kept
+    /// producing audio — losing the device failure, the abnormal stop and every discontinuity that
+    /// followed. The reclassification is only safe together with the fence's removal.
+    func testAnOverrunLaneStillReportsTheFailureThatGenuinelyEndsIt() throws {
+        let health = NativeLaneHealth()
+        let generation = health.beginGeneration()
+        health.enqueue(.admitted, lane: .system, generation: generation)
+        health.enqueue(.bufferOverrun(droppedBuffers: 112), lane: .system, generation: generation)
+
+        let degraded = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(degraded.state, "degraded")
+        XCTAssertEqual(degraded.droppedFrames, 112)
+
+        health.enqueue(.discontinuity(count: 2), lane: .system, generation: generation)
+        health.enqueue(.bufferOverrun(droppedBuffers: 8), lane: .system, generation: generation)
+        health.enqueue(.ioStoppedAbnormally("HAL stopped"), lane: .system, generation: generation)
+
+        let failed = try XCTUnwrap(
+            health.statuses(running: true).first { $0.lane == .system }
+        )
+        XCTAssertEqual(failed.state, "failed")
+        XCTAssertEqual(failed.failureCode, "macos_io_stopped_abnormally")
+        // The counters kept accruing across the degradation, and the failure did not erase them.
+        XCTAssertEqual(failed.droppedFrames, 120)
+        XCTAssertEqual(failed.discontinuities, 2)
+    }
+
+    /// The chain that killed F1 and F3, broken at the cheapest link, on the wire the server parses.
+    ///
+    /// The whole chain was: the lane overruns → the *client* calls it failed → the next heartbeat
+    /// carries `state: "failed"` → the server's `_fail_lane` closes that lane for the meeting →
+    /// every later frame on it answers 409 → the publish throws → the heartbeat stops → the helper
+    /// lease expires 30 s later and the meeting is over. Every link behaves as designed; the
+    /// product of them is a dead meeting for one dropped buffer. `_failed_lanes` keys on
+    /// `state == "failed"` and nothing else, so a lane that says `degraded` never enters step 4 —
+    /// which is why this is asserted on the serialized body rather than on the projection.
+    func testTheHeartbeatCarriesAnOverrunLaneAsDegradedAndNotAsFailed() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5]),
+                nativeBuffer(lane: .system, timestamp: 11, deviceEpoch: 1, samples: [0.25]),
+                nativeBuffer(lane: .system, timestamp: 12, deviceEpoch: 1, samples: [0.75]),
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: RecordingNativeCaptureComponent(
+                buffersOnStart: [
+                    nativeBuffer(lane: .microphone, timestamp: 11, deviceEpoch: 7, samples: [0])
+                ]
+            ),
+            queue: RealTimeNativeAudioBufferQueue(capacity: 2),
+            emitter: laboratoryEmitter()
+        )
+        let client = RecordingCaptureHTTPClient()
+        let health = CaptureHTTPHealthAdapter(
+            client: client,
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token"),
+            instanceID: "boot-a",
+            helperVersion: "0.1.0"
+        )
+        let configuration = laneConfiguration()
+
+        try source.start(configuration: configuration)
+        _ = try source.pendingFrames()
+        try health.emit(
+            status: CaptureStatus(
+                running: true,
+                sessionID: configuration.sessionID,
+                lanes: source.status(),
+                publishedFrameCount: 1,
+                lastHealthSequence: 1
+            ),
+            configuration: configuration,
+            sentMonotonicNS: 900
+        )
+
+        let body = try jsonBody(try XCTUnwrap(client.requests.first))
+        let lanes = try XCTUnwrap(body["lanes"] as? [String: [String: Any]])
+        let systemLane = try XCTUnwrap(lanes["system"])
+        XCTAssertEqual(systemLane["state"] as? String, "degraded")
+        XCTAssertEqual(systemLane["failure_code"] as? String, "macos_buffer_overrun")
+        // How much was lost is the report. The count is what an operator and the accounting need;
+        // the lane's life is not the price of saying it.
+        XCTAssertEqual(systemLane["dropped_frames"] as? Int, 1)
+        XCTAssertEqual(try XCTUnwrap(lanes["microphone"])["state"] as? String, "capturing")
+        // The top-level state is the whole helper's, and it is unchanged: the client has never
+        // sent `failed` there, and one degraded lane is not a degraded capture.
+        XCTAssertEqual(body["state"] as? String, "capturing")
     }
 
     func testRealtimeCallbacksOnlyCopyAndEnqueueNativeBuffers() throws {
@@ -4365,6 +4708,66 @@ final class CaptureControllerTests: XCTestCase {
         )
         XCTAssertFalse(try XCTUnwrap(lines.lines.first).contains(cause))
         XCTAssertEqual(microphone.failureCode, "macos_unexpected_capture_error")
+    }
+
+    /// A degradation is written to the same log, and it says what it is.
+    ///
+    /// Both live diagnoses that found this defect — F1's mid-meeting lane loss and F3's death at
+    /// minute 14.6 — were read off this one line, so D-a's reclassification had to follow the
+    /// condition here or the cycle would have traded a dead meeting for a blind one. The verb
+    /// comes from the state: a degradation that announced itself as a failure would be the same
+    /// lie in the log that the lane state used to tell on the wire.
+    func testTheAppLogRecordsADegradationAsLoudlyAsAFailureAndNamesItCorrectly() throws {
+        let lines = LoggedLineBox()
+        let delegate = FakeCaptureHealthAdapter()
+        let adapter = LaneFailureLoggingHealthAdapter(
+            wrapping: delegate,
+            log: OSLogControlChannelFailureLog { lines.append($0) }
+        )
+        let configuration = laneConfiguration()
+        func emit(_ lanes: [CaptureLaneStatus]) throws {
+            try adapter.emit(
+                status: CaptureStatus(
+                    running: true,
+                    sessionID: configuration.sessionID,
+                    lanes: lanes,
+                    publishedFrameCount: 0,
+                    lastHealthSequence: nil
+                ),
+                configuration: configuration,
+                sentMonotonicNS: 0
+            )
+        }
+        let capturing = CaptureLaneStatus(
+            lane: .microphone,
+            sequence: 1,
+            deviceEpoch: 1,
+            state: "capturing"
+        )
+        let degraded = CaptureLaneStatus(
+            lane: .system,
+            sequence: 1,
+            deviceEpoch: 1,
+            state: "degraded",
+            droppedFrames: 149,
+            failureCode: "macos_buffer_overrun"
+        )
+
+        try emit([degraded, capturing])
+        // Sticky for the generation, exactly as a failure is: a 0.5 s pump must not write this
+        // line twice a second for the rest of a sixteen-minute meeting.
+        for _ in 0..<3 {
+            try emit([degraded, capturing])
+        }
+
+        XCTAssertEqual(
+            lines.lines,
+            [
+                "capture lane system degraded: state=degraded "
+                    + "code=macos_buffer_overrun dropped=149 discontinuities=0"
+            ]
+        )
+        XCTAssertEqual(delegate.emissions.count, 4, "watching costs the heartbeat nothing")
     }
 
     /// One vocabulary for the lane states. A reporting surface that spells `failed` itself is a

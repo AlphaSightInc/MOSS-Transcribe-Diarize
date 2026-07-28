@@ -26,10 +26,18 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # failure as loudly as an unclassified one, K3 the server recording the terminal reason and the
 # per-lane codes that caused it, K4 a released session reported gone instead of merely
 # unreachable, and the real-seam regression coverage for each) authorizes exactly one further
-# merge, whose pre-merge main is therefore 6a540fe. Advancing this default is a
-# reviewable diff on purpose: a SIXTH merge still fails here, and a command-line
+# merge, whose pre-merge main was therefore 6a540fe and which landed as fc7097d.
+# The FIFTH prd.md amendment of 2026-07-28 (survive a lane fault: candidate 53 a throwing
+# publish no longer skipping the tick's heartbeat, candidate 48 the start-time heartbeat coming
+# under the same unwind guard as the publish above it, candidate 49 the dropped-buffer watermark
+# re-baselined against the queue's cumulative counter instead of zeroed, candidate 50 / decision
+# D-c the live decode bounded by a token cap derived from the span's own duration, decision D-a
+# reclassifying macos_buffer_overrun as a lane DEGRADATION rather than a lane failure, and the
+# closed coverage gap that posts a frame on the lane that failed) authorizes exactly one further
+# merge, whose pre-merge main is therefore fc7097d. Advancing this default is a
+# reviewable diff on purpose: a SEVENTH merge still fails here, and a command-line
 # RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-6a540fe086cf819ba0e07a948da9fec0766202c3}"
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-fc7097d0c729ee9a96b8bf95878582e07b5b1145}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

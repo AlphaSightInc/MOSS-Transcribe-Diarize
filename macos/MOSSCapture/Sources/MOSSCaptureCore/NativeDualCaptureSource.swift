@@ -177,11 +177,17 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
 
         let generation = health.beginGeneration()
         permissions.beginGeneration(generation)
+        // The queue counts dropped buffers for the life of the process, so the watermark that says
+        // "already reported" is re-baselined against it rather than zeroed. Zeroing it alone would
+        // make the first drain of every later generation read the whole process's drop history back
+        // as fresh loss, and a meeting that has not dropped a single buffer would come up with its
+        // lanes already failed — which is exactly what a new session id must not inherit.
+        let alreadyDroppedBuffers = queue.droppedBuffersByLaneSnapshot()
         lock.lock()
         latestFrames.removeAll(keepingCapacity: true)
         admissions.removeAll(keepingCapacity: true)
         activeGeneration = generation
-        reportedDroppedBuffers.removeAll(keepingCapacity: true)
+        reportedDroppedBuffers = alreadyDroppedBuffers
         started = true
         lock.unlock()
 

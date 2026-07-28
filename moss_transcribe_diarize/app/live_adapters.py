@@ -90,12 +90,58 @@ class IdentityDecision:
     reason: str | None = None
 
 
+# --------------------------------------------------------------------------------------
+# The bound on a runaway canonical decode.
+#
+# Measured 2026-07-28 on the committed spans of two independent live runs -- the F1 canary
+# (42 spans) and the echo-free canary (46 spans) -- tokenised with the deployed decoder's
+# own tokenizer through the vLLM `/tokenize` endpoint. Over 76 spans of real speech the
+# decoder never emitted more than **54 tokens** for a full 2.5 s span (21.6 tokens per
+# audio-second), and never more than **17 tokens** for a span shorter than 0.5 s: the fixed
+# cost of the transcript's own syntax -- two timestamps and a speaker tag -- which does not
+# shrink with the audio. The same evidence holds the two spans that set the latency tail,
+# both degenerate repeat loops for 2.5 s of audio: **2024** and **2019** generated tokens,
+# i.e. they ran to `VllmRunner.transcribe`'s 2048-token default, the only bound they had,
+# and each held the serial decode queue for ~8.5 s.
+#
+# So the budget is affine in the span's own duration -- an allowance for the syntax plus a
+# rate for the words -- and each term is the observed maximum times an explicit margin.
+# Every one of the 76 real spans sits at least 4.8x under the result, and a 2.5 s span may
+# now generate 286 tokens instead of 2048.
+#
+# These are tuning values derived from measurement, not domain-contract values: the
+# contractual quantity is `hard_cap_samples` (2.5 s), which is what the budget is derived
+# *from*. Lowering the margin needs new measurement, which is what the tracked node
+# `test_the_token_cap_covers_the_measured_speech_and_still_bounds_a_runaway` holds in place.
+# --------------------------------------------------------------------------------------
+OBSERVED_MAX_SPAN_SYNTAX_TOKENS = 17
+OBSERVED_MAX_TOKENS_PER_AUDIO_SECOND = 21.6
+LIVE_DECODE_TOKEN_MARGIN = 4
+LIVE_DECODE_TOKEN_BUDGET_BASE = LIVE_DECODE_TOKEN_MARGIN * OBSERVED_MAX_SPAN_SYNTAX_TOKENS
+LIVE_DECODE_TOKENS_PER_AUDIO_SECOND = math.ceil(LIVE_DECODE_TOKEN_MARGIN * OBSERVED_MAX_TOKENS_PER_AUDIO_SECOND)
+
+
+def canonical_decode_token_cap(*, sample_count: int) -> int:
+    """The most tokens the decoder may generate for a span of `sample_count` samples."""
+
+    if sample_count <= 0:
+        raise LiveProviderError("sample_count must be positive.")
+    duration_sec = sample_count / float(LIVE_SAMPLE_RATE)
+    return LIVE_DECODE_TOKEN_BUDGET_BASE + math.ceil(LIVE_DECODE_TOKENS_PER_AUDIO_SECOND * duration_sec)
+
+
 @dataclass(frozen=True, slots=True)
 class InferenceTranscript:
     transcript: str
     prompt_len: int = 0
     generated_tokens: int = 1
     elapsed_sec: float | None = None
+    # What the decode was allowed to generate, and whether it used all of it. A capped span
+    # publishes what came back -- the words are accepted audio and stay in the transcript --
+    # so truncation has to be *stated*, or a shortened span is indistinguishable from a
+    # quiet one to everybody downstream.
+    token_cap: int | None = None
+    capped: bool = False
 
     def __post_init__(self) -> None:
         if self.elapsed_sec is None:
@@ -252,12 +298,16 @@ class RunnerBoundedWavInference:
         _validate_pcm_length(pcm, span.sample_count)
         if span.sample_count > self.max_samples:
             raise LiveProviderError("canonical span exceeds bounded inference capacity.")
+        token_cap = self._token_cap(span)
         with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"span-{span.id:04d}.wav"
             _write_pcm16_wav(wav_path, pcm)
             started = time.monotonic()
             try:
-                result = self.runner.transcribe(wav_path, **self.transcribe_kwargs)
+                result = self.runner.transcribe(
+                    wav_path,
+                    **{**self.transcribe_kwargs, "max_new_tokens": token_cap},
+                )
             except EmptyTranscriptionError:
                 # Nothing was said in this span. That is a transcript of "", not a failure:
                 # the span is committed empty upstream so the audio stays accounted for.
@@ -265,6 +315,7 @@ class RunnerBoundedWavInference:
                     transcript="",
                     generated_tokens=0,
                     elapsed_sec=time.monotonic() - started,
+                    token_cap=token_cap,
                 )
             except LiveProviderError:
                 raise
@@ -285,12 +336,31 @@ class RunnerBoundedWavInference:
                     f"canonical decode failed: {exc.__class__.__name__}: {exc}",
                     detail={"span_id": span.id, "cause": exc.__class__.__name__},
                 ) from exc
+        generated_tokens = int(getattr(result, "generated_tokens", 0) or 0)
         return InferenceTranscript(
             transcript=str(result.text),
             prompt_len=int(getattr(result, "prompt_len", 0) or 0),
-            generated_tokens=int(getattr(result, "generated_tokens", 0) or 0),
+            generated_tokens=generated_tokens,
             elapsed_sec=_runner_elapsed_sec(result),
+            token_cap=token_cap,
+            capped=generated_tokens >= token_cap,
         )
+
+    def _token_cap(self, span: FrozenSpan) -> int:
+        """The span's own duration decides, and a configured ceiling may only tighten it.
+
+        A live decode that answers too slowly damages the meeting exactly as a decode that
+        does not answer does -- the queue is serial, so one runaway span is the whole
+        latency tail -- and the deployment that configures the runner is not the place that
+        can see that. So the derived bound always applies; an explicit `max_new_tokens`
+        stays honoured, but only where it is stricter.
+        """
+
+        cap = canonical_decode_token_cap(sample_count=span.sample_count)
+        configured = self.transcribe_kwargs.get("max_new_tokens")
+        if configured is None:
+            return cap
+        return min(cap, int(configured))
 
 
 def silero_vad_manifest(
