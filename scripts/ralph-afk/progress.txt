@@ -12405,3 +12405,17 @@ near the 1.5 s median lag) and the first that can see whether 53/48/49/D-a keep 
 through a lane fault. Order: F1 first - it is 60 s against F3's 17 minutes, and if the latency
 prediction is wrong F1 says so seventeen times cheaper. Both runs need their own pre-recorded
 rollbacks (volume, app, session, /tmp evidence) per iteration 12's list.
+
+Addendum, iteration 20 - two checks run after the write-up, so the claims in context.md are
+verified rather than asserted:
+  git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'   -> EMPTY
+    i.e. the branch's product source IS the deployed source, so the offline probes speak for the
+    running service again (they had not since iteration 16).
+  python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-i20-lane-refusal.json
+    -> rc=0
+Also measured while updating context.md: it is back to 194 236 bytes / 2256 lines, ~1.5x its
+post-compaction size (129 832 / 1509) after ten iterations - about four Reads rather than three.
+The growth is cumulative BLOCKS, not verbose ones, so the correction is retiring superseded blocks,
+not trimming live ones. Recorded in the file's own header with the trigger named: once F1 and F3
+pass against 77e0014, the F1/F3 diagnosis and the Phase L/M mechanism narratives become history and
+move to progress.txt. Not done now - it is candidate 52's work and this iteration is the redeploy.
