@@ -6469,3 +6469,70 @@ operator's decision is required before touching it. L2 (a starved source overrun
 survives `stop` inside one process) depends on L1 and must not be fixed alone. Until then the loop's
 own workaround is exact and cheap: **always `stop` before `pair`, and prefer a freshly launched app
 for any canary run** - the clean sequence measured green today.
+
+================================================================================
+Iteration 8 of run 20260728-181020 - F1 PRE-RECORDED ROLLBACKS (written before
+any mutation, per prd.md "Reversibility")
+================================================================================
+
+Target: candidate 24, F1 - the 60-second canary. E3 is closed, K5d proved a clean
+`pair` -> `start` on a freshly launched app runs a whole healthy meeting, and F1 is the next
+open PRD acceptance item. This iteration runs it on the real hosts with a machine-generated
+two-voice program instead of two humans (see the iteration body for exactly what that
+substitutes and what it does not).
+
+Pre-state, measured read-only before anything was touched:
+- all four checkouts fc7097d; server moss-live-web MainPID 346453 NRestarts=0 active,
+  moss-web MainPID 301112 NRestarts=0 active; server checkout clean
+- m4mbp: macOS 26.5.2, MOSSCaptureApp NOT running, stale /tmp/moss-capture-501/control.sock
+  (srw-------, Jul 28 15:27) left by K5d's stopped process
+- m4mbp default output = MacBook Pro Speakers, default input = MacBook Pro Microphone,
+  output volume 31, not muted
+
+MUTATIONS AND THEIR ROLLBACKS, in the order they will be applied:
+
+1. Launch the app: `open -a /Applications/MOSSCapture.app` over SSH (GUI session, console
+   user ga0 - never Contents/MacOS/MOSSCaptureApp, which would attribute TCC to the terminal).
+   ROLLBACK:
+     /Users/ga0/.local/bin/mtd-capture stop || true
+     pkill -x MOSSCaptureApp
+     rm -f /tmp/moss-capture-501/control.sock     # only if stale afterwards
+
+2. Raise the m4mbp output volume 31 -> 45 so the built-in microphone hears the program.
+   ROLLBACK (applied unconditionally at the end of the run, not only on failure):
+     osascript -e 'set volume output volume 31'
+
+3. Mint ONE pairing payload on the server loopback (`ops/live-pair.sh --url
+   https://127.0.0.1:7861`). Appends a single-use pairing CODE to live-auth.json.
+   ROLLBACK: none required and none attempted - single-use, 300 s TTL, inert when unused.
+   Per K5d's hygiene lesson the payload is piped to the CLI as its OWN ssh invocation and
+   never shares stdin with a remote script.
+
+4. `mtd-capture pair --server https://100.64.0.8:7861` with the payload on STDIN. Reuses the
+   stored capture-device-id (K5d correction - it does NOT mint a new device row) and
+   overwrites bearer/session/view in m4mbp's ~/Library/Application Support/MOSSCapture/
+   secrets.json.
+   ROLLBACK: re-pairing IS the restore; no copy of secrets.json is taken on purpose. Only if
+   F1 is abandoned entirely, on the server loopback:
+     curl -s --cacert "$L/live.crt" -X DELETE https://127.0.0.1:7861/api/live/devices/AB600574-FD93-4321-967E-652AB064A70B
+   (that device is the ONLY unrevoked one and must NOT be revoked as routine cleanup.)
+
+5. `mtd-capture start --label ralph-f1-<utc>`. One live session, both lanes hot.
+   ROLLBACK: `mtd-capture stop`; failing that the helper lease (30 s) releases it. Sessions
+   are memory-only.
+
+6. `mtd-capture handoff` writes the raw view token to m4mbp's GENERAL pasteboard (that is the
+   designed handoff; MOSS_CAPTURE_PASTEBOARD_NAME can only be set at app launch and `open -a`
+   cannot pass it). The token is read once into a shell variable on m4mbp, passed to curl via
+   `curl -K -` on stdin so it never reaches argv or disk, and never printed.
+   ROLLBACK (applied unconditionally at the end of the run):
+     pbcopy < /dev/null
+
+7. Disposable scripts and evidence under /tmp on m4mbp (/tmp/ralph-f1-*).
+   ROLLBACK: rm -rf /tmp/ralph-f1-*   (kept until the evidence is transcribed into this file)
+
+8. ~60 s of audible speech from the MacBook speakers. No rollback and none possible - it IS
+   the canary. It ends when the program ends; volume is restored by (2).
+
+Nothing else is touched: no checkout moves, no service restart, no rebuild, no reinstall, no
+TCC write, no merge, no push, and the batch service is not addressed at all.
