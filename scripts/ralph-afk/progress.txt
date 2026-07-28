@@ -4081,3 +4081,49 @@ scripts/ralph-afk/*.
   BEFORE the restart, because both new refusals fail the service closed. Then `git push origin
   main` fast-forward only, move the host and m4mbp checkouts, confirm the served leaf still hashes
   to the D2 pin a35ca9fc..., and re-run the four-way SHA check. Only then step (d), the probe.
+
+================================================================================
+run 20260728-112922 | iteration 6 | H4 step (c) - rollbacks recorded BEFORE the host mutation
+================================================================================
+Target: candidate 35(c) - publish `b817871` and redeploy the live service. This block is written
+and committed BEFORE anything on the host or the remote is touched, per prd.md's reversibility
+constraint ("every server or Mac mutation must have its rollback command recorded in progress.txt
+before it is applied").
+
+Mutations this iteration intends to make, each with its rollback:
+
+1. `git push origin main` (fast-forward 317df4d... -> b817871..., AlphaSight fork).
+   **NOT reversible by policy** - the PRD forbids force-push, so there is no rollback command for
+   this line and there must not be one. It is safe to be irreversible because `b817871` is the
+   second amendment's ONE authorized merge, already reviewed (H4a) and already carrying a green
+   full suite measured inside the merge worktree (H4b). `upstream` is OpenMOSS: never pushed.
+
+2. Host checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize` 317df4d -> b817871 (detached).
+   Rollback:
+     git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 317df4d728b6765dbe365a3166158ba581299557
+   NEVER `git clean` there - it would delete the untracked `ops/moss-live.env` the live unit needs.
+
+3. `systemctl --user restart moss-live-web.service` (MANDATORY here: unlike the second merge, this
+   one is server-only, so the running process must be replaced to carry H1/H2/H3).
+   Rollback (apply AFTER rollback 2, in this order):
+     systemctl --user restart moss-live-web.service
+   Full-stop rollback if the restarted unit will not come up at all:
+     systemctl --user disable --now moss-live-web.service
+   (the batch service on 7860 is a separate unit and is untouched by every line above).
+
+4. m4mbp checkout -> b817871, if the host is reachable.
+   Rollback:
+     git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout 317df4d728b6765dbe365a3166158ba581299557
+   No Mac rebuild and no reinstall: `git diff --name-only 317df4d b817871 -- macos` is empty, so the
+   app installed in G6 is already current at the new SHA and its TCC-bearing inode must not be
+   disturbed.
+
+Stop conditions, checked after the restart, each with the rollback to apply if it fails:
+  - the served leaf on 100.64.0.8:7861 must still hash to the D2 pin
+    a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff, else every paired Mac is
+    broken -> apply rollbacks 2+3 and record a blocker;
+  - `https://100.64.0.8:7861/live` must return 200 (poll ~10 s; a single probe at 6 s returns 000);
+  - `http://192.168.68.38:7860/` must still return 200 (batch unharmed).
+Pre-redeploy manifest admission check already re-run read-only this iteration, BEFORE the restart:
+  caps equal = True 40000 | vad frame_samples = 160 | retired knob present = False
+so H2's `_require_one_span_cap` and H3's construction refusal both admit the deployed manifest.
