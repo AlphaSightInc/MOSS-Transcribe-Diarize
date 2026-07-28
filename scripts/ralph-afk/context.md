@@ -37,9 +37,10 @@ branch after the iteration-1 graft unless stated.
 with `--no-ff` (conflict-free: A-034 branches from the same `af3ac36` and touches paths disjoint
 from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (A3); iteration 3
 moved the portal handoff into the app (A2); iteration 4 rebuilt the tracer around the immutable
-lab bundle (A4); iteration 5 made the file secret store the production default (B1). Test totals
-on the branch: Swift **98 passed** (67 → 81 → 92 → 95 → 98); Python **457 passed / 2 skipped /
-346 subtests** including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3).
+lab bundle (A4); iteration 5 made the file secret store the production default (B1); iteration 6
+added the retained-until-ACK outbox (B2). Test totals on the branch: Swift **106 passed**
+(67 → 81 → 92 → 95 → 98 → 106); Python **457 passed / 2 skipped / 346 subtests** including
+`tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3).
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
@@ -52,6 +53,13 @@ fail by design because they assert `keychain_still_default` and the `MOSS_CAPTUR
 literal inside each `main.swift`. B1 removed both — the default is now the file store and the
 env-key literal lives only in `CaptureSecretStoreSelection`. Their replacement evidence is
 behavioral (see below). Never edit those control-plane scripts to recolor this.
+
+**`validate-phase-a-locality.sh` is historical from iteration 6 on.** Its own header says later
+production phases widen scope, and its allowlist is the thirteen registered A4 paths. It is
+**green at the frozen checkpoint** — `git diff --name-only af3ac366 1ede498` is exactly that
+allowlist — and it now fails on the tip on `CaptureController.swift` plus the new
+`CaptureOutbox.swift`, which Phase B is authorized to add. Verify it against `1ede498`, never
+against the tip, and do not add paths to the script.
 
 **Lab bundle contract (new, iteration 4).** The tracer's one fixed path is
 `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` (gitignored via `macos/MOSSCapture/
@@ -83,6 +91,26 @@ document and the live path never exists wider than 0600. A widened *directory* i
 next save (it cannot expose a 0600 file); a widened *document* is refused with
 `secretStorePathNotPrivate` (its bytes may already have been read). `validateFile` uses `lstat` and
 demands a regular file, so a symlink planted at the path is rejected.
+
+**Outbox contract (new, iteration 6).** `CaptureFrameOutbox` (`CaptureOutbox.swift`) sits between
+`source.pendingFrames()` and `transport.publish`. It is the authority for **wire identity**: it
+stamps the `(lane, sequence)` a frame keeps for every attempt, so the emitter's per-lane counter is
+only a source-local production count. Capacity is **15 s of audio per lane**, measured from each
+frame's own `sampleCount / sampleRate`, so it survives B3's rate/frame-size change unedited. Audio
+is released **only** by `acknowledge(lane:sequence:)` after a 2xx publish; every failure — 429,
+5xx, `URLError`, even a fatal 401 — leaves the frame queued. On overflow the outbox **refuses the
+new frame** rather than evicting a retained one (evicting would leave a permanent hole in the
+lane's sequence stream and the server rejects every later frame as out of order), counts it in
+`refusedFrames`, sets sticky `degradation` (`overflowedLaneRetention` / `undeliverableFrame`, never
+cleared by later success), and marks the next frame that lane admits `discontinuity = true`.
+`reset()` runs on every `start`, because a new server session counts each lane from zero.
+The pump flushes in **global admission order** and stalls only the failing lane (one head retry per
+lane per tick, no backlog hammering); `CaptureStatus.outbox` and
+`ControlChannelResponse.outboxRetainedFrames` / `.outboxDegradation` expose depth and the typed
+degraded state. The `moss-live-helper-health.v1` heartbeat wire is untouched.
+`CaptureFrameRetryPolicy` is the single classifier: 0/408 → `ambiguous`, 429 → `backpressure`,
+5xx → `serverUnavailable`, the transient `URLError` set → `ambiguous`; 4xx, `missingCaptureBearer`,
+`missingCertificatePin`, `secureConnectionFailed`, `cancelled` → not retryable.
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -116,8 +144,14 @@ typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitize
    `PinnedURLSessionCaptureHTTPClientProvider` (`CaptureHTTPTransport.swift:65-118`); both
    product entrypoints build their HTTP clients from the stored pin.
 3. Frame loss on any send failure — `queue.drain()` does `removeAll()`
-   (`NativeAudioBuffers.swift:60-64`) and `publishPendingFrames` abandons the current and all
-   remaining drained frames on a throw (`CaptureController.swift:242-247`).
+   (`NativeAudioBuffers.swift:60-64`) and `publishPendingFrames` abandoned the current and all
+   remaining drained frames on a throw. **Closed on the feature branch by iteration 6 (B2)**: the
+   drained frames go straight into `CaptureFrameOutbox` and only an ack releases them. Two adjacent
+   defects found and closed with it: (a) a publish throw inside `start` failed the start while
+   leaving `state.running == true` with no pump task — a zombie capture; a retryable failure is now
+   a degraded start and an unretryable one unwinds the source and rolls back; (b) a raw `URLError`
+   (what a pinned `URLSession` throws on a real outage) typed as `CapturePumpFailure.unexpected`
+   instead of `.transportUnavailable`.
 4. Viewer expiry — `VIEW_TTL_SECONDS = 900` fixed at `bind_session`, no renewal. Reproduced:
    authorized at t=899, rejected at t=3600.
 5. Unbounded callback-shaped blocking POSTs — native queue emission follows Core Audio callback
@@ -221,6 +255,14 @@ PYTHONDONTWRITEBYTECODE=1 python3 \
 # --- B1 secret-store behavioral nodes (the replacement for discriminator 09/15) ------------
 swift test --package-path macos/MOSSCapture --filter 'SecretStore|ProductEntrypoints|DormantKeychain'
 
+# --- B2 outbox behavioral nodes (8 nodes: outage, ambiguous/duplicate, 429/5xx/401, overflow,
+#     stalled lane, wire-sequence authority, per-session numbering, start unwind) --------------
+swift test --package-path macos/MOSSCapture \
+  --filter 'Outbox|Ambiguous|RetryPolicy|Stalled|NumbersItsLane|Unwinds'
+
+# --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
+git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
+
 # --- wide checkpoint -----------------------------------------------------
 # Keep executable builds explicit because tests/test_live_integration.py and the A-034 tracer
 # execute the real products and error when they are absent. Swift 6.3 currently builds both
@@ -255,11 +297,14 @@ printf '%s\n' \
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
     "wsl.exe -d Ubuntu -- bash -s"
 
-# --- Phase A compatibility checkpoint ------------------------------------
+# --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
+bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
+
+# --- Phase A compatibility checkpoint (historical; frozen at 1ede498) ----
 # Run the exact eleven registered commands from:
 # /Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/context/VALIDATION_COMMANDS.md
-# section "IDEA-044 attempt-2 exact commands", then:
-bash scripts/ralph-afk/validate-phase-a-locality.sh
+# section "IDEA-044 attempt-2 exact commands". `validate-phase-a-locality.sh` belongs to that
+# checkpoint and now fails on the tip by design — see the locality note above.
 
 # --- one keeper merge, primary worktree stays on the feature branch -------
 swift build --package-path macos/MOSSCapture --product mtd-capture
@@ -315,9 +360,16 @@ edit the control-plane discriminator scripts to keep them green.
    products; 0700 directory, 0600 `O_EXCL`+`fsync`+`rename` replacement, no access group on the
    dormant Keychain store. The lab-default source assertions were replaced by behavioral nodes
    (see Validation); the control-plane discriminator was left untouched at 14/16.
-6. **B2 — retained-until-ACK outbox**: 15 s/lane keyed by `(lane, sequence)`; retry identical
-   frames on timeout/429/ambiguous result; release only after ACK; typed degraded state on
-   overflow. Test 5 s outage, ambiguous success, duplicate retry, 429, and overflow.
+6. **B2 — retained-until-ACK outbox** `[done — iteration 6]`: `CaptureFrameOutbox` holds 15 s of
+   audio per lane keyed by the wire `(lane, sequence)` it stamps itself, retries the identical
+   frame on timeout/429/5xx/ambiguous answers, releases only on an ack, and refuses new audio on
+   overflow with a sticky typed degradation plus a discontinuity on the lane's next admitted frame.
+   Eight behavioral nodes cover 5 s outage, ambiguous success, duplicate retry, 429/5xx/401,
+   overflow, per-lane stall isolation, wire-sequence authority, and per-session numbering.
+   Residue for B4: the flush is still serial and blocking (one semaphore-waiting POST at a time,
+   both lanes in one loop), so a recovery tick that drains a 15 s backlog issues 60 sequential
+   round trips inside a 0.5 s tick with no re-entry guard. B4's concurrent lanes, persistent
+   session, and non-overlapping pump are what bound that.
 7. **B3 — 16 kHz mono conversion/coalescing + real nanosecond timestamps**: convert raw
    `hostTime`/`mHostTime` ticks with `AudioConvertHostTimeToNanos`; one stateful
    `AVAudioConverter` per lane; callback work still copy/enqueue only; preserve the converted

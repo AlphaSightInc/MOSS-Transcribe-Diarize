@@ -216,6 +216,488 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.attemptCount, 3)
     }
 
+    func testOutboxRetainsEveryFrameAcrossAFiveSecondOutageAndDeliversEachExactlyOnce() throws {
+        // Ten 0.5 s pump ticks is the 5 s interruption the meeting has to survive.
+        let outageTicks = 10
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let transport = ProgrammableCaptureTransport()
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        transport.failure = { _, _ in URLError(.networkConnectionLost) }
+        for tick in 0..<outageTicks {
+            source.enqueue(
+                frames: [
+                    laneFrame(.system, captureTimestampNS: UInt64(1_000 + tick)),
+                    laneFrame(.microphone, captureTimestampNS: UInt64(2_000 + tick)),
+                ]
+            )
+            scheduler.runScheduledOperation()
+        }
+        let interrupted = controller.status()
+        let acceptedDuringOutage = transport.accepted.count
+
+        transport.failure = nil
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertEqual(interrupted.outbox.retainedFrames, 2 * outageTicks)
+        XCTAssertEqual(interrupted.outbox.retainedSecondsByLane, [.system: 5, .microphone: 5])
+        XCTAssertEqual(interrupted.outbox.refusedFrames, 0)
+        XCTAssertNil(interrupted.outbox.degradation, "5 s of audio fits inside the 15 s window")
+        XCTAssertEqual(interrupted.pumpFailure, .transportUnavailable)
+        XCTAssertEqual(interrupted.publishedFrameCount, 0)
+        XCTAssertEqual(acceptedDuringOutage, 0, "nothing reached the server during the outage")
+
+        XCTAssertEqual(recovered.publishedFrameCount, 2 * outageTicks)
+        XCTAssertEqual(recovered.outbox.retainedFrames, 0)
+        XCTAssertNil(recovered.pumpFailure)
+        XCTAssertEqual(
+            transport.accepted.filter { $0.lane == .system }.map(\.sequence),
+            Array(0..<UInt64(outageTicks)),
+            "the whole interrupted lane arrives, in order"
+        )
+        XCTAssertEqual(
+            transport.accepted.filter { $0.lane == .microphone }.map(\.sequence),
+            Array(0..<UInt64(outageTicks))
+        )
+        XCTAssertEqual(
+            transport.accepted.filter { $0.lane == .system }.map(\.captureTimestampNS),
+            (0..<outageTicks).map { UInt64(1_000 + $0) },
+            "retained frames keep their captured audio, not a resynthesized substitute"
+        )
+        XCTAssertEqual(
+            Set(transport.accepted.map { "\($0.lane.rawValue):\($0.sequence)" }).count,
+            2 * outageTicks,
+            "no identity is accepted twice"
+        )
+        XCTAssertGreaterThan(
+            transport.attempts.count,
+            transport.accepted.count,
+            "the outage was retried rather than skipped"
+        )
+    }
+
+    func testAmbiguousAnswerAndDuplicateRetryReuseTheOriginalLaneSequenceIdentity() throws {
+        let source = FakeCaptureSourceAdapter(
+            frames: [laneFrame(.microphone, captureTimestampNS: 4_242)]
+        )
+        let transport = ProgrammableCaptureTransport()
+        // The server admitted the frame and then the answer was lost on the way back. Only the
+        // reply is missing, so the retry has to be the identical frame: the server acknowledges
+        // `(lane, sequence)` idempotently and replays the original acknowledgement.
+        transport.failure = { _, attempt in attempt == 1 ? URLError(.timedOut) : nil }
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+
+        let started = try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        let ambiguous = controller.status()
+        scheduler.runScheduledOperation()
+        let resolved = controller.status()
+
+        XCTAssertEqual(
+            started.pumpFailure,
+            .transportUnavailable,
+            "an unanswered publish is a degraded start, not a failed one"
+        )
+        XCTAssertEqual(scheduler.labels, ["moss.capture.pump"], "the pump still has to run")
+        XCTAssertEqual(ambiguous.outbox.retainedFrames, 1, "an unanswered frame is still queued")
+        XCTAssertEqual(ambiguous.publishedFrameCount, 0)
+        XCTAssertEqual(transport.attempts.count, 2)
+        XCTAssertEqual(transport.attempts.map(\.lane), [.microphone, .microphone])
+        XCTAssertEqual(transport.attempts.map(\.sequence), [0, 0])
+        XCTAssertEqual(transport.attempts.map(\.captureTimestampNS), [4_242, 4_242])
+        XCTAssertEqual(transport.attempts[0].pcm16, transport.attempts[1].pcm16)
+        XCTAssertEqual(transport.attempts[0].discontinuity, transport.attempts[1].discontinuity)
+        XCTAssertEqual(resolved.publishedFrameCount, 1, "an idempotent replay is not a second frame")
+        XCTAssertEqual(resolved.outbox.retainedFrames, 0)
+        XCTAssertEqual(resolved.outbox.refusedFrames, 0)
+    }
+
+    func testStartUnwindsOnlyWhenNoRetryCouldEverPublish() throws {
+        let source = FakeCaptureSourceAdapter(
+            frames: [laneFrame(.system, captureTimestampNS: 1)]
+        )
+        let transport = ProgrammableCaptureTransport()
+        transport.failure = { _, _ in CaptureHTTPTransportError.missingCaptureBearer }
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://127.0.0.1/live")!
+        )
+
+        XCTAssertThrowsError(try controller.start(configuration: configuration)) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .missingCaptureBearer)
+        }
+        let unwound = controller.status()
+
+        XCTAssertFalse(unwound.running, "an unpublishable start leaves nothing running")
+        XCTAssertEqual(unwound.lanes.map(\.state), ["stopped", "stopped"])
+        XCTAssertTrue(scheduler.labels.isEmpty, "no pump is left behind")
+        XCTAssertNoThrow(
+            try controller.start(configuration: configuration),
+            "the failed start is not remembered as a running capture"
+        )
+    }
+
+    func testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio() throws {
+        XCTAssertEqual(
+            CaptureFrameRetryPolicy.retryReason(for: CaptureHTTPTransportError.nonSuccessStatus(429)),
+            .backpressure
+        )
+        XCTAssertEqual(
+            CaptureFrameRetryPolicy.retryReason(for: CaptureHTTPTransportError.nonSuccessStatus(503)),
+            .serverUnavailable
+        )
+        XCTAssertEqual(
+            CaptureFrameRetryPolicy.retryReason(for: CaptureHTTPTransportError.nonSuccessStatus(500)),
+            .serverUnavailable
+        )
+        XCTAssertEqual(
+            CaptureFrameRetryPolicy.retryReason(for: CaptureHTTPTransportError.nonSuccessStatus(408)),
+            .ambiguous
+        )
+        XCTAssertEqual(
+            CaptureFrameRetryPolicy.retryReason(for: CaptureHTTPTransportError.nonSuccessStatus(0)),
+            .ambiguous
+        )
+        XCTAssertEqual(CaptureFrameRetryPolicy.retryReason(for: URLError(.timedOut)), .ambiguous)
+        XCTAssertEqual(
+            CaptureFrameRetryPolicy.retryReason(for: URLError(.cannotConnectToHost)),
+            .ambiguous
+        )
+        for unretryable: Error in [
+            CaptureHTTPTransportError.nonSuccessStatus(401),
+            CaptureHTTPTransportError.nonSuccessStatus(403),
+            CaptureHTTPTransportError.nonSuccessStatus(404),
+            CaptureHTTPTransportError.nonSuccessStatus(409),
+            CaptureHTTPTransportError.missingCaptureBearer,
+            CaptureHTTPTransportError.missingCertificatePin,
+            URLError(.secureConnectionFailed),
+            URLError(.cancelled),
+            CaptureSecurityError.pinMismatch,
+        ] {
+            XCTAssertNil(
+                CaptureFrameRetryPolicy.retryReason(for: unretryable),
+                String(describing: unretryable)
+            )
+        }
+
+        let answers: [Error?] = [
+            CaptureHTTPTransportError.nonSuccessStatus(429),
+            CaptureHTTPTransportError.nonSuccessStatus(503),
+            CaptureHTTPTransportError.nonSuccessStatus(401),
+            nil,
+        ]
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let transport = ProgrammableCaptureTransport()
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        var depthAfterEachAnswer: [Int] = []
+        for (index, answer) in answers.enumerated() {
+            transport.failure = { _, _ in answer }
+            source.enqueue(frames: [laneFrame(.system, captureTimestampNS: UInt64(index))])
+            scheduler.runScheduledOperation()
+            depthAfterEachAnswer.append(controller.status().outbox.retainedFrames)
+        }
+        let final = controller.status()
+
+        XCTAssertEqual(
+            depthAfterEachAnswer,
+            [1, 2, 3, 0],
+            "429, 5xx and an unauthorized answer all keep the audio queued; only an ack releases it"
+        )
+        XCTAssertEqual(transport.accepted.map(\.sequence), [0, 1, 2, 3])
+        XCTAssertEqual(
+            transport.accepted.map(\.captureTimestampNS),
+            [0, 1, 2, 3],
+            "the backlog and the tick's own audio both arrive, in capture order"
+        )
+        XCTAssertEqual(final.publishedFrameCount, 4)
+        XCTAssertEqual(final.outbox.refusedFrames, 0)
+        XCTAssertNil(final.outbox.degradation)
+        XCTAssertNil(final.pumpFailure)
+    }
+
+    func testOutboxOverflowKeepsSequencesGaplessAndReportsATypedDegradedState() throws {
+        // The default window is the contract: 15 s per lane, which is thirty 0.5 s frames.
+        let admittedFrames = 30
+        let refusedFrames = 2
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let transport = ProgrammableCaptureTransport()
+        transport.failure = { _, _ in URLError(.notConnectedToInternet) }
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        for index in 0..<(admittedFrames + refusedFrames) {
+            source.enqueue(frames: [laneFrame(.system, captureTimestampNS: UInt64(index))])
+        }
+        source.enqueue(frames: [laneFrame(.microphone, captureTimestampNS: 9_000)])
+        scheduler.runScheduledOperation()
+        let overflowed = controller.status()
+
+        transport.failure = nil
+        scheduler.runScheduledOperation()
+        source.enqueue(frames: [laneFrame(.system, captureTimestampNS: 8_888)])
+        scheduler.runScheduledOperation()
+        let drained = controller.status()
+
+        XCTAssertEqual(overflowed.outbox.retainedFrames, admittedFrames + 1)
+        XCTAssertEqual(
+            overflowed.outbox.retainedSecondsByLane,
+            [.system: 15, .microphone: 0.5],
+            "the full window is held and the other lane is untouched by it"
+        )
+        XCTAssertEqual(overflowed.outbox.refusedFrames, UInt64(refusedFrames))
+        XCTAssertEqual(overflowed.outbox.degradation, .overflowedLaneRetention)
+        XCTAssertEqual(
+            ControlChannelResponse(status: overflowed).outboxDegradation,
+            .overflowedLaneRetention,
+            "the operator is told, in typed form, that captured audio was lost"
+        )
+        XCTAssertEqual(
+            ControlChannelResponse(status: overflowed).outboxRetainedFrames,
+            admittedFrames + 1
+        )
+
+        let systemAccepted = transport.accepted.filter { $0.lane == .system }
+        XCTAssertEqual(
+            systemAccepted.map(\.sequence),
+            Array(0..<UInt64(admittedFrames + 1)),
+            "a refused frame burns no sequence number, so the lane stays admissible"
+        )
+        XCTAssertEqual(
+            systemAccepted.map(\.captureTimestampNS),
+            (0..<admittedFrames).map(UInt64.init) + [8_888]
+        )
+        XCTAssertEqual(
+            systemAccepted.map(\.discontinuity),
+            Array(repeating: false, count: admittedFrames) + [true],
+            "the first frame admitted after the loss reports the gap in the audio"
+        )
+        XCTAssertEqual(drained.outbox.retainedFrames, 0)
+        XCTAssertEqual(
+            drained.outbox.degradation,
+            .overflowedLaneRetention,
+            "a run that lost audio never reports clean afterwards"
+        )
+        XCTAssertNil(drained.pumpFailure)
+    }
+
+    func testOneStalledLaneNeitherBlocksTheOtherLaneNorReattemptsItsWholeBacklog() throws {
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let transport = ProgrammableCaptureTransport()
+        transport.failure = { frame, _ in
+            frame.lane == .system ? CaptureHTTPTransportError.nonSuccessStatus(429) : nil
+        }
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        for tick in 0..<2 {
+            source.enqueue(
+                frames: [
+                    laneFrame(.system, captureTimestampNS: UInt64(100 + tick)),
+                    laneFrame(.microphone, captureTimestampNS: UInt64(200 + tick)),
+                ]
+            )
+            scheduler.runScheduledOperation()
+        }
+        let stalled = controller.status()
+
+        XCTAssertEqual(transport.accepted.map(\.lane), [.microphone, .microphone])
+        XCTAssertEqual(transport.accepted.map(\.sequence), [0, 1])
+        XCTAssertEqual(stalled.outbox.retainedFrames, 2, "only the stalled lane is still queued")
+        XCTAssertEqual(stalled.outbox.retainedSecondsByLane, [.system: 1, .microphone: 0])
+        XCTAssertEqual(
+            transport.attempts.filter { $0.lane == .system }.map(\.sequence),
+            [0, 0],
+            "a stalled lane retries its head once per tick instead of hammering its backlog"
+        )
+        XCTAssertEqual(stalled.pumpFailure, .transportUnavailable)
+    }
+
+    func testOutboxIsTheWireSequenceAuthorityAndReleasesOnlyAcknowledgedAudio() throws {
+        let outbox = CaptureFrameOutbox(retainedSecondsPerLane: 1)
+
+        let first = outbox.admit(laneFrame(.system, captureTimestampNS: 1, sequence: 77))
+        let second = outbox.admit(laneFrame(.system, captureTimestampNS: 2, sequence: 78))
+        let refused = outbox.admit(laneFrame(.system, captureTimestampNS: 3))
+        XCTAssertEqual(first?.sequence, 0, "the outbox, not the capture source, owns wire identity")
+        XCTAssertEqual(second?.sequence, 1)
+        XCTAssertNil(refused)
+        XCTAssertEqual(outbox.snapshot().refusedFrames, 1)
+        XCTAssertEqual(outbox.snapshot().degradation, .overflowedLaneRetention)
+        XCTAssertEqual(outbox.snapshot().retainedSecondsByLane[.system], 1)
+
+        let empty = CaptureFrameOutbox(retainedSecondsPerLane: 1)
+        XCTAssertNil(
+            empty.admit(laneFrame(.system, sampleCount: 32_000, captureTimestampNS: 4)),
+            "a frame larger than the whole window is refused, not admitted unbounded"
+        )
+        XCTAssertNil(
+            outbox.admit(laneFrame(.system, sampleRate: 0, captureTimestampNS: 5)),
+            "a frame that cannot be acknowledged must not occupy the window"
+        )
+        XCTAssertEqual(outbox.snapshot().degradation, .undeliverableFrame)
+
+        outbox.acknowledge(lane: .system, sequence: 0)
+        XCTAssertEqual(outbox.retainedFrames().map(\.sequence), [1])
+        outbox.acknowledge(lane: .microphone, sequence: 1)
+        XCTAssertEqual(
+            outbox.retainedFrames().map(\.sequence),
+            [1],
+            "an acknowledgement releases one lane's identity only"
+        )
+
+        let resumed = outbox.admit(laneFrame(.system, captureTimestampNS: 6))
+        XCTAssertEqual(resumed?.sequence, 2, "the admitted stream has no gap after the refusals")
+        XCTAssertEqual(resumed?.discontinuity, true, "audio was lost before this frame")
+        XCTAssertNil(
+            outbox.admit(laneFrame(.system, captureTimestampNS: 7)),
+            "the window is full again, so this one is refused"
+        )
+
+        outbox.reset()
+        XCTAssertEqual(outbox.snapshot(), CaptureOutboxSnapshot(retainedSecondsByLane: [.system: 0, .microphone: 0]))
+        XCTAssertEqual(outbox.admit(laneFrame(.system, captureTimestampNS: 8))?.sequence, 0)
+    }
+
+    func testEachSessionNumbersItsLaneFramesFromZero() throws {
+        let source = FakeCaptureSourceAdapter(
+            frames: [laneFrame(.system, captureTimestampNS: 1, sequence: 40)]
+        )
+        let transport = ProgrammableCaptureTransport()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+        source.enqueue(frames: [laneFrame(.system, captureTimestampNS: 2, sequence: 41)])
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-b",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        XCTAssertEqual(transport.accepted.map(\.sequence), [0, 0])
+        XCTAssertEqual(transport.accepted.map(\.captureTimestampNS), [1, 2])
+        XCTAssertEqual(
+            transport.sessionIDs,
+            ["session-a", "session-b"],
+            "a new server session counts each lane from zero, so the outbox restarts with it"
+        )
+    }
+
+    private func laneFrame(
+        _ lane: CaptureLane,
+        sampleRate: Int = 16_000,
+        sampleCount: Int = 8_000,
+        captureTimestampNS: UInt64,
+        sequence: UInt64 = 0,
+        deviceEpoch: UInt64 = 1
+    ) -> CaptureFrame {
+        var pcm16 = Data(count: Swift.max(sampleCount, 0) * 2)
+        if !pcm16.isEmpty {
+            pcm16[0] = UInt8(truncatingIfNeeded: captureTimestampNS)
+        }
+        return CaptureFrame(
+            lane: lane,
+            sequence: sequence,
+            sampleRate: sampleRate,
+            sampleCount: sampleCount,
+            captureTimestampNS: captureTimestampNS,
+            deviceEpoch: deviceEpoch,
+            silent: false,
+            discontinuity: false,
+            pcm16: pcm16
+        )
+    }
+
     func testControllerSharedStatusIsSynchronizedUnderConcurrentPumpStatus() throws {
         let source = ConcurrentEmptyCaptureSource()
         let scheduler = ConcurrentCaptureScheduler()
@@ -3713,6 +4195,30 @@ private final class ConcurrentEmptyCaptureSource: CaptureSourceAdapter, @uncheck
 
 private final class NoOpCaptureTransport: CaptureTransportAdapter, @unchecked Sendable {
     func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {}
+}
+
+/// A transport whose answer is chosen per attempt, so a test can stage an outage, backpressure, an
+/// unauthorized answer, or an answer that never came back. `attempts` records every request that
+/// left the client — including the ones that then failed — and `accepted` only the answered ones,
+/// which is the distinction an ambiguous result turns on.
+private final class ProgrammableCaptureTransport: CaptureTransportAdapter, @unchecked Sendable {
+    var failure: ((CaptureFrame, Int) -> Error?)?
+    private(set) var attempts: [CaptureFrame] = []
+    private(set) var accepted: [CaptureFrame] = []
+    private(set) var sessionIDs: [String] = []
+    private var attemptsByIdentity: [String: Int] = [:]
+
+    func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
+        let identity = "\(frame.lane.rawValue):\(frame.sequence)"
+        let attempt = attemptsByIdentity[identity, default: 0] + 1
+        attemptsByIdentity[identity] = attempt
+        attempts.append(frame)
+        if let error = failure?(frame, attempt) {
+            throw error
+        }
+        accepted.append(frame)
+        sessionIDs.append(configuration.sessionID)
+    }
 }
 
 private final class IncrementingCaptureClock: CaptureClockAdapter, @unchecked Sendable {

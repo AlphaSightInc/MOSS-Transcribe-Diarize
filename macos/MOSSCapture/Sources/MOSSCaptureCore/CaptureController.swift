@@ -86,6 +86,7 @@ public struct CaptureStatus: Equatable {
     public var publishedFrameCount: Int
     public var lastHealthSequence: UInt64?
     public var pumpFailure: CapturePumpFailure?
+    public var outbox: CaptureOutboxSnapshot
 
     public init(
         running: Bool,
@@ -93,7 +94,8 @@ public struct CaptureStatus: Equatable {
         lanes: [CaptureLaneStatus],
         publishedFrameCount: Int,
         lastHealthSequence: UInt64?,
-        pumpFailure: CapturePumpFailure? = nil
+        pumpFailure: CapturePumpFailure? = nil,
+        outbox: CaptureOutboxSnapshot = CaptureOutboxSnapshot()
     ) {
         self.running = running
         self.sessionID = sessionID
@@ -101,6 +103,7 @@ public struct CaptureStatus: Equatable {
         self.publishedFrameCount = publishedFrameCount
         self.lastHealthSequence = lastHealthSequence
         self.pumpFailure = pumpFailure
+        self.outbox = outbox
     }
 }
 
@@ -119,6 +122,10 @@ public enum CapturePumpFailure: String, Codable, Equatable {
         case NativeCaptureError.transportUnavailable(_):
             self = .transportUnavailable
         case is CaptureHTTPTransportError:
+            self = .transportUnavailable
+        case is URLError:
+            // A pinned `URLSession` reports an interrupted network as a raw `URLError`, and losing
+            // the network is the definition of the transport being unavailable.
             self = .transportUnavailable
         default:
             self = .unexpected
@@ -175,6 +182,7 @@ public final class CaptureController {
     private let clock: CaptureClockAdapter
     private let scheduler: CaptureSchedulerAdapter
     private let health: CaptureHealthAdapter
+    private let outbox: CaptureFrameOutbox
     private let state = CaptureControllerState()
 
     public init(
@@ -183,7 +191,8 @@ public final class CaptureController {
         keyStore: CaptureKeyStoreAdapter,
         clock: CaptureClockAdapter,
         scheduler: CaptureSchedulerAdapter,
-        health: CaptureHealthAdapter
+        health: CaptureHealthAdapter,
+        outbox: CaptureFrameOutbox = CaptureFrameOutbox()
     ) {
         self.source = source
         self.transport = transport
@@ -191,6 +200,7 @@ public final class CaptureController {
         self.clock = clock
         self.scheduler = scheduler
         self.health = health
+        self.outbox = outbox
     }
 
     @discardableResult
@@ -200,13 +210,29 @@ public final class CaptureController {
         }
 
         try state.beginStart(configuration: configuration)
+        // A server session numbers each lane's frames from zero, so a new session starts from an
+        // empty outbox with fresh wire sequences.
+        outbox.reset()
         do {
             try source.start(configuration: configuration)
         } catch {
             state.rollbackStart()
             throw error
         }
-        try publishPendingFrames(configuration: configuration)
+        do {
+            try publishPendingFrames(configuration: configuration)
+        } catch {
+            // The audio is retained either way, so a transient answer at start is a degraded start
+            // rather than a failed one: the pump delivers what is queued. A failure that no retry
+            // can change means this process cannot publish at all — unwind instead of leaving a
+            // capture running with nowhere to send it.
+            guard CaptureFrameRetryPolicy.retryReason(for: error) != nil else {
+                try? source.stop(deadline: clock.now())
+                state.rollbackStart()
+                throw error
+            }
+            state.recordPumpFailure(CapturePumpFailure(error: error))
+        }
         let status = try emitHealth(configuration: configuration)
         let task = scheduler.schedule(label: "moss.capture.pump") { [weak self] in
             guard let self else { return }
@@ -226,7 +252,7 @@ public final class CaptureController {
     }
 
     public func status() -> CaptureStatus {
-        state.snapshot(lanes: source.status())
+        state.snapshot(lanes: source.status(), outbox: outbox.snapshot())
     }
 
     @discardableResult
@@ -234,21 +260,48 @@ public final class CaptureController {
         try state.requireRunning()
         try source.stop(deadline: deadline)
         let lanes = source.status()
-        let (task, stopped) = state.finishStop(lanes: lanes)
+        let (task, stopped) = state.finishStop(lanes: lanes, outbox: outbox.snapshot())
         task?.cancel()
         return stopped
     }
 
+    /// Moves captured audio into the outbox, then publishes as much of the outbox as the server
+    /// takes. Nothing captured is lost by a failure here: audio is released only by an
+    /// acknowledgement, so whatever is not acknowledged is still queued for the next tick.
     private func publishPendingFrames(configuration: CaptureConfiguration) throws {
         for frame in try source.pendingFrames() {
-            try transport.publish(frame: frame, configuration: configuration)
+            outbox.admit(frame)
+        }
+
+        var stalledLanes: Set<CaptureLane> = []
+        var firstFailure: Error?
+        for frame in outbox.retainedFrames() {
+            // A lane has to arrive in sequence order, so its first unacknowledged frame stops that
+            // lane for this tick — and only that lane.
+            guard !stalledLanes.contains(frame.lane) else {
+                continue
+            }
+            do {
+                try transport.publish(frame: frame, configuration: configuration)
+            } catch {
+                stalledLanes.insert(frame.lane)
+                if firstFailure == nil {
+                    firstFailure = error
+                }
+                continue
+            }
+            outbox.acknowledge(lane: frame.lane, sequence: frame.sequence)
             state.recordPublishedFrame()
+        }
+
+        if let firstFailure {
+            throw firstFailure
         }
     }
 
     private func emitHealth(configuration: CaptureConfiguration) throws -> CaptureStatus {
         state.recordHealthEmissionAttempt()
-        let current = state.snapshot(lanes: source.status())
+        let current = state.snapshot(lanes: source.status(), outbox: outbox.snapshot())
         try health.emit(
             status: current,
             configuration: configuration,
@@ -335,7 +388,7 @@ private final class CaptureControllerState {
         lock.unlock()
     }
 
-    func snapshot(lanes: [CaptureLaneStatus]) -> CaptureStatus {
+    func snapshot(lanes: [CaptureLaneStatus], outbox: CaptureOutboxSnapshot) -> CaptureStatus {
         lock.lock()
         defer { lock.unlock() }
         return CaptureStatus(
@@ -344,11 +397,15 @@ private final class CaptureControllerState {
             lanes: lanes,
             publishedFrameCount: publishedFrameCount,
             lastHealthSequence: healthSequence,
-            pumpFailure: pumpFailure
+            pumpFailure: pumpFailure,
+            outbox: outbox
         )
     }
 
-    func finishStop(lanes: [CaptureLaneStatus]) -> (CaptureCancellation?, CaptureStatus) {
+    func finishStop(
+        lanes: [CaptureLaneStatus],
+        outbox: CaptureOutboxSnapshot
+    ) -> (CaptureCancellation?, CaptureStatus) {
         lock.lock()
         let stopped = CaptureStatus(
             running: false,
@@ -356,7 +413,8 @@ private final class CaptureControllerState {
             lanes: lanes,
             publishedFrameCount: publishedFrameCount,
             lastHealthSequence: healthSequence,
-            pumpFailure: pumpFailure
+            pumpFailure: pumpFailure,
+            outbox: outbox
         )
         let task = healthTask
         healthTask = nil

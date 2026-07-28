@@ -393,3 +393,90 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   degraded state on overflow. Defect 3 (`queue.drain()` + `publishPendingFrames` dropping the
   current and all remaining frames on a throw) is the thing to kill;
   `NativeAudioBuffers.swift:60-64` and `CaptureController.swift:242-247` are the sites.
+
+## Iteration 6 - retained-until-ACK outbox (B2)
+- Target: Phase B candidate B2 / plan D5. Kill defect 3 (frame loss on any transient send
+  failure): retain 15 s of audio per lane keyed by `(lane, sequence)`, retry the identical frame on
+  timeout/429/ambiguous answers, release only on an acknowledgement, and surface a typed degraded
+  state on overflow.
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureOutbox.swift` (new);
+  `macos/MOSSCapture/Sources/MOSSCaptureCore/{CaptureController,CaptureSecurity}.swift`;
+  `macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift`;
+  `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: `CaptureFrameOutbox` sits between `source.pendingFrames()` and `transport.publish` and
+  owns **wire identity** — it stamps the `(lane, sequence)` a frame keeps for every attempt. That is
+  what makes overflow survivable: the outbox **refuses** new audio when a lane is full instead of
+  evicting a retained frame, and because a refused frame burns no sequence number the admitted
+  stream stays gapless, so the lane keeps publishing instead of being rejected forever as out of
+  order (`live_ingest.py:_check_epoch`/sequence check would 409 every later frame). Capacity is
+  measured in audio seconds from each frame's own `sampleCount / sampleRate`, not in frames, so
+  B3's frame-size/rate change needs no edit here. Loss is reported three ways: `refusedFrames`, a
+  sticky `degradation` (`overflowedLaneRetention` / `undeliverableFrame`, never cleared by later
+  success), and `discontinuity = true` on the next frame that lane admits. `reset()` runs on every
+  `start` because a server session numbers each lane from zero. `publishPendingFrames` now admits
+  everything first, then flushes in global admission order, stalling only the failing lane;
+  `CaptureFrameRetryPolicy` is the one classifier (0/408 ambiguous, 429 backpressure, 5xx
+  serverUnavailable, transient `URLError` ambiguous; 4xx / missing bearer / missing pin /
+  `secureConnectionFailed` / `cancelled` not retryable). Depth and degradation reach the operator
+  through `CaptureStatus.outbox` and `ControlChannelResponse.outboxRetainedFrames` /
+  `.outboxDegradation`; the `moss-live-helper-health.v1` heartbeat wire was left alone.
+  Two adjacent defects surfaced while writing the ambiguous-answer node and were closed with it:
+  (a) a publish throw inside `start` failed the start while `state.beginStart` had already set
+  `running = true` and no pump task existed — a zombie capture that could never publish or be
+  restarted; a retryable failure is now a degraded start (pump scheduled, audio retained) and an
+  unretryable one stops the source and rolls the state back; (b) a raw `URLError` — exactly what
+  the pinned `URLSession` throws during a real outage — typed as `CapturePumpFailure.unexpected`
+  instead of `.transportUnavailable`.
+- Validation:
+  - `swift build --product mtd-capture` -> OK; `--product MOSSCaptureApp` -> OK
+  - `swift test --package-path macos/MOSSCapture` -> **106 passed, 0 failures** (was 98: +8 nodes)
+  - `swift test --filter 'Outbox|Ambiguous|RetryPolicy|Stalled|NumbersItsLane|Unwinds'` -> 8 passed
+  - `pytest tests/test_macos_uds_tracer.py -q -p no:cacheprovider` -> **3 passed in 6.73s**
+  - `pytest tests -q -p no:cacheprovider` -> **457 passed, 2 skipped, 346 subtests** (unchanged;
+    no server module touched)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+  - `validate-phase-a-locality.sh` on the tip -> **FAILS** on `CaptureController.swift` and
+    `CaptureOutbox.swift`. Deliberate and recorded, not repaired: the script's own header says
+    later production phases widen scope and its allowlist is the thirteen registered A4 paths.
+    Equivalent read-only proof that it is still green at the frozen checkpoint:
+    `git diff --name-only af3ac366 1ede498 --` is exactly that allowlist. The script was not edited.
+- Evidence:
+  - New nodes: `testOutboxRetainsEveryFrameAcrossAFiveSecondOutageAndDeliversEachExactlyOnce`,
+    `testAmbiguousAnswerAndDuplicateRetryReuseTheOriginalLaneSequenceIdentity`,
+    `testStartUnwindsOnlyWhenNoRetryCouldEverPublish`,
+    `testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio`,
+    `testOutboxOverflowKeepsSequencesGaplessAndReportsATypedDegradedState`,
+    `testOneStalledLaneNeitherBlocksTheOtherLaneNorReattemptsItsWholeBacklog`,
+    `testOutboxIsTheWireSequenceAuthorityAndReleasesOnlyAcknowledgedAudio`,
+    `testEachSessionNumbersItsLaneFramesFromZero`.
+  - 5 s outage measured, not asserted abstractly: ten 0.5 s ticks with
+    `URLError(.networkConnectionLost)` hold 20 frames = `[.system: 5, .microphone: 5]` seconds with
+    `refusedFrames 0`, `degradation nil`, `publishedFrameCount 0`, nothing accepted; the recovery
+    tick delivers all 20 in per-lane sequence order 0..9 with their original capture timestamps,
+    20 distinct identities, `retainedFrames 0`, `pumpFailure nil`.
+  - Overflow measured at the contract capacity, not an injected one: 32 x 0.5 s frames into one
+    lane admits exactly 30 (15.0 s), refuses 2, and after recovery the accepted system sequences
+    are `0...30` contiguous with `discontinuity` false x30 then true — the gap is in the audio,
+    never in the sequence stream.
+  - Mutation rehearsal 1 (retention): added `outbox.acknowledge(...)` to the publish-failure branch
+    (i.e. the old destructive behavior) -> the ambiguous node fails 5 assertions and then crashes on
+    `attempts[1]` because the retry never happens. Reverted -> green.
+  - Mutation rehearsal 2 (gaplessness): made a refusal increment `nextWireSequence` -> the two
+    sequence-continuity assertions fail (`Optional(3)` vs `Optional(2)`; `...29, 32` vs `...29, 30`).
+    Reverted -> green, 106 passed.
+- Learned: (1) the outbox has to own the wire sequence, otherwise refusing a frame on overflow
+  burns a number the emitter already assigned and the server rejects every subsequent frame of that
+  lane as out of order — a bounded queue would have converted a transient overload into a dead lane.
+  (2) Measuring the window in audio seconds instead of frames is what keeps the 15 s contract true
+  across B3's resampling and coalescing change. (3) A retained-until-ACK queue makes `start`'s
+  publish attempt best-effort by construction, which exposed the pre-existing zombie-start path:
+  once audio is never lost, failing the whole start on a network hiccup is strictly wrong.
+  (4) Sticky degradation is the only honest reading of "never report clean" — an overflow that later
+  drains still lost audio, so `degradation` survives recovery and resets only on a new session.
+- Blocker: none.
+- Next: B3 — one stateful `AVAudioConverter` per lane, exact 8000-sample coalescing, and D14
+  `AudioConvertHostTimeToNanos` conversion (defects 7 and 8). Realtime callbacks must stay
+  copy/enqueue only. The outbox needs no change for it: capacity is duration-based and it re-stamps
+  sequence after coalescing, so B3 only has to preserve the converted first-sample timestamp
+  through the converter and emit exact frames.

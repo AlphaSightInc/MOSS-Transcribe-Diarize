@@ -458,6 +458,10 @@ public struct ControlChannelResponse: Codable, Equatable {
     public var viewAuthority: String?
     public var publishedFrameCount: Int?
     public var pumpFailure: CapturePumpFailure?
+    /// How much captured audio is still waiting for an acknowledgement, and — once audio has been
+    /// lost — the typed reason. Both are counts and codes, never audio and never a secret.
+    public var outboxRetainedFrames: Int?
+    public var outboxDegradation: CaptureOutboxDegradation?
     public var error: String?
 
     public init(
@@ -468,6 +472,8 @@ public struct ControlChannelResponse: Codable, Equatable {
         viewAuthority: String? = nil,
         publishedFrameCount: Int? = nil,
         pumpFailure: CapturePumpFailure? = nil,
+        outboxRetainedFrames: Int? = nil,
+        outboxDegradation: CaptureOutboxDegradation? = nil,
         error: String? = nil
     ) {
         self.ok = ok
@@ -477,6 +483,8 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.viewAuthority = viewAuthority
         self.publishedFrameCount = publishedFrameCount
         self.pumpFailure = pumpFailure
+        self.outboxRetainedFrames = outboxRetainedFrames
+        self.outboxDegradation = outboxDegradation
         self.error = error
     }
 
@@ -486,7 +494,9 @@ public struct ControlChannelResponse: Codable, Equatable {
             running: status.running,
             sessionID: status.sessionID,
             publishedFrameCount: status.publishedFrameCount,
-            pumpFailure: status.pumpFailure
+            pumpFailure: status.pumpFailure,
+            outboxRetainedFrames: status.outbox.retainedFrames,
+            outboxDegradation: status.outbox.degradation
         )
     }
 }
