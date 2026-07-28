@@ -11900,3 +11900,142 @@ fixes (53/48/49/D-a) are in the Mac build only after a rebuild+reinstall, and th
 only after the merge+redeploy. Decide deliberately whether to gate-then-deploy-then-certify (the
 order the amendment's text implies) or to certify the client fixes against the old server first;
 the latter cannot measure candidate 50 at all.
+
+================================================================================
+iteration 18 of run 20260728-181020 - Phase M gate step (a): the full local gate
+is green, and the certification ORDER is settled
+================================================================================
+
+Target: the fifth amendment's gate. Phase M's work items all landed in iterations 13-17
+(53/48 uncoupling, 49 watermark, D-a degradation, D-c token cap, the failed-lane coverage gap),
+so context.md named the gate as the only remaining Phase M work. Two things were owed: the gate
+itself, and the ordering question iteration 17 left explicitly open ("decide deliberately whether
+to gate-then-deploy-then-certify or to certify the client fixes against the old server first").
+
+Files touched: scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt. NO product source.
+
+--------------------------------------------------------------------------------
+Part 1 - the ordering decision, taken and recorded before anything was run
+--------------------------------------------------------------------------------
+
+DECISION: gate -> merge -> publish + redeploy (+ Mac rebuild) -> F1 and F3.
+
+The fifth amendment's text lists F1/F3 BEFORE the merge. That order is physically unreachable
+here, for four reasons, and the loop has already answered the identical question twice:
+
+1. F1 and F3 exercise the DEPLOYED server and the INSTALLED bundle. The server checkout is
+   detached at fc7097d and /Applications/MOSSCapture.app was built from fc7097d (K5c). Neither
+   carries any part of Phase M. A run today re-measures exactly the code both red runs died on -
+   it would produce a third identical red and consume ~21 minutes of real-host wall clock.
+2. Candidate 50's token cap is SERVER source (live_adapters.py / live_coordinator.py /
+   live_service_runtime.py). F1's latency sub-clause - one of the two reds - therefore cannot be
+   measured at all before a redeploy, and prd.md's Constraints forbid deploying from a feature
+   branch ("Deploy only a reviewed SHA ... never deploy from a feature branch").
+3. Building the Mac half on m4mbp from the feature branch would be exactly that forbidden deploy,
+   AND would certify a fixed client against an unfixed server - a run that answers neither red.
+4. PRECEDENT, not invention. H4 and J5 hit the identical wording and resolved it the same way.
+   progress.txt, candidate 42's J5 entry, in its own words: "learned in H4: the amendment lists
+   the probes before the merge, but the branch's fixes are not on the host, so a probe run before
+   the redeploy measures b817871 and dies at blocker 4 no matter what the branch says; H4 ran
+   gate -> merge -> redeploy -> probe in iterations 4, 5, 6, 7". J5d's green landed at the merge
+   SHA 6a540fe; K5d's read landed at fc7097d.
+
+NOTHING IS WEAKENED. Both F1 and F3 green against the redeployed SHA is still the acceptance
+evidence for Phase M; a red one is answered by the next amendment exactly as H4d's red was. The
+merge buys the ABILITY TO MEASURE, never the verdict. No gate is skipped, no threshold moved.
+
+--------------------------------------------------------------------------------
+Part 2 - the gate, every line of it, at feature tip 21a73ea
+--------------------------------------------------------------------------------
+
+Driver /tmp/ralph-i18-gate.sh, log /tmp/ralph-i18-gate.log, run in the background (the standing
+lesson from the first merge attempt: a time-capped foreground shell is what stranded a worktree).
+
+  swift build --scratch-path <FRESH mktemp -d> --product mtd-capture      -> rc=0, 8.11 s
+  swift build --scratch-path <same fresh scratch> --product MOSSCaptureApp -> rc=0, 0.63 s
+  grep -c 'warning:' over BOTH fresh build logs                            -> 0 and 0
+  swift build --product mtd-capture / MOSSCaptureApp (default .build)      -> rc=0 (the tracer
+                                                                              executes these)
+  swift test --package-path macos/MOSSCapture   -> 158 passed, 0 failures (0 unexpected), 1.13 s
+  PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider
+        -> 604 passed, 2 skipped, 368 subtests passed in 62.67s
+  pytest tests/test_large_upload.py -q -rs
+        -> SKIPPED [1] :155 Python 3.10 compatibility contract
+           SKIPPED [1] :175 Python 3.10 compatibility contract      (11 passed, 2 skipped)
+           i.e. the two skips are the pre-existing 3.10 pair, NOT Darwin skips
+  pytest tests/test_macos_uds_tracer.py -q     -> 4 passed in 15.36 s, ZERO skips
+  idea-044-attempt2 discriminator --target $PWD -> 10/10 true
+  live-lane-refusal-probe.py --json /tmp/ralph-i18-lane-refusal.json -> rc=0, CONFIRMED
+  live-hardcap-repro.py, all seven recorded cases                   -> rc=0 x7
+  leak-scan.sh (source checks; no .tracer-artifacts dir)            -> leak-scan: clean
+  git status --porcelain                                            -> empty
+
+Versions on the record: Apple Swift 6.3.2 (swiftlang-6.3.2.1.108), python3 3.12.10 (pyenv).
+
+The zero-warning claim was taken over the FRESH scratch logs only, per the fence's own note: a
+second build into a warm scratch is a no-op and re-emits nothing, so a rebuild's log would have
+"proved" zero warnings without compiling a line.
+
+--------------------------------------------------------------------------------
+Part 3 - the merge payload, reviewed at the same time
+--------------------------------------------------------------------------------
+
+git diff --stat main HEAD -- ':!scripts/ralph-afk'  ->  10 files, +983 / -51:
+
+  macos/.../CaptureController.swift              +78   53 (tick emitHealth in its own do/catch)
+                                                       + 48 (start heartbeat under the same guard)
+                                                       + recordTransportVerdict from all 4 sites
+  macos/.../NativeLaneHealth.swift              +124   D-a: NativeLaneFailureCode (5, "cannot
+                                                       produce") vs NativeLaneDegradationCode (2),
+                                                       reportedState/reportedCode, mailbox fence
+                                                       removed, overflow gets its own code
+  macos/.../CaptureSecurity.swift                 +9   D-a: the K2 log line's VERB comes from the
+                                                       state, so `capture lane <lane> failed:`
+                                                       still matches failures only
+  macos/.../NativeDualCaptureSource.swift         +8   49: the dropped-buffer watermark is
+                                                       re-baselined against the cumulative queue
+                                                       counter instead of zeroed
+  macos/.../CaptureControllerTests.swift        +417   the Swift regression nodes for all of it
+  moss_transcribe_diarize/app/live_adapters.py   +74   D-c: token cap 68 + ceil(87 x duration_sec),
+                                                       min() with any configured max_new_tokens
+  moss_transcribe_diarize/app/live_coordinator.py +14  D-c: token_cap / capped carried through
+  .../live_service_runtime.py                     +2   D-c: the two canonical_processed fields
+  tests/test_live_api.py                        +108   the failed-lane and degraded-lane nodes
+  tests/test_live_pipeline_seams.py             +200   the real-seam nodes for D-a and D-c
+
+No ops/, no macos/scripts/, no docs, no moss_transcribe_diarize/ outside the three D-c files.
+That is exactly the fifth amendment's scope ("inside macos/, moss_transcribe_diarize/, ops/ only
+where required, and tests/") - and ops/ was not required.
+
+Validation command and result: bash /tmp/ralph-i18-gate.sh -> every stage rc=0; totals above.
+
+Evidence paths: /tmp/ralph-i18-gate.log, /tmp/ralph-i18-swiftbuild1.log,
+/tmp/ralph-i18-swiftbuild2.log, /tmp/ralph-i18-lane-refusal.json; context.md block "The Phase M
+gate is green, and the certification ORDER is settled by precedent".
+
+Learned. (1) AN AMENDMENT'S GATE ORDER IS A REQUIREMENT LIST, NOT AN EXECUTION PLAN. Three
+amendments in a row have written "run the probes, then merge" for fixes that only exist on the
+branch; the requirement (both runs green against the shipped code) is satisfiable, the literal
+order is not. Reading it as a plan would have burned a 21-minute real-host run measuring fc7097d
+for the third time. (2) THE ANSWER WAS ALREADY IN progress.txt AND HAD TO BE LOOKED UP RATHER
+THAN RE-DERIVED. Iteration 17 left the question open as if it were new; H4 and J5 had each
+settled it and written down why. A "decide deliberately" note should be a grep before it is a
+deliberation. (3) THE FRESH-SCRATCH RULE IS THE WHOLE ZERO-WARNING CLAIM. Two builds into one
+mktemp -d, warnings counted on those logs only - a warm rebuild emits nothing and would pass
+vacuously.
+
+Blocker: none.
+
+Next: gate step (b), the sixth keeper merge, by the standing pre-merge procedure in this exact
+order - (i) `git merge --no-ff main` on the feature branch, proven content-free BEFORE running it
+with `git merge-tree --write-tree main HEAD` returning HEAD's own tree; (ii) advance
+merge-keeper.sh:32 `expected_main` 6a540fe086cf819ba0e07a948da9fec0766202c3 ->
+fc7097d0c729ee9a96b8bf95878582e07b5b1145 IN-SCRIPT with a comment citing the FIFTH amendment,
+never the RALPH_MERGE_MAIN_BEFORE env override, and COMMIT it first so it becomes the feature tip
+the merge captures; (iii) run merge-keeper.sh in the BACKGROUND (a foreground timeout kill skips
+its EXIT trap and strands a worktree holding main; recover with `git -C <wt> merge --abort &&
+git worktree remove --force <wt>`); (iv) rehearse the guard non-vacuously after, so a seventh
+merge refuses. Then (c) push + redeploy - this is a K5c-shaped redeploy, NOT a J5c server-only
+one: the server needs a restart for candidate 50 and m4mbp needs a rebuild + reinstall for
+53/48/49/D-a, and the TCC grants survive it (measured in K5c). Then (d) F1 and F3 with
+scripts/ralph-afk/live-canary.sh, both required green.

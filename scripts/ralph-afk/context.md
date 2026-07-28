@@ -55,7 +55,9 @@ G, H, J, K). **Five keeper merges have been made and all five are spent** — `f
 unauthorized tracked source on the branch. Per-phase detail is in the closed-phase index below and in full in the
 progress.txt archive.
 
-**PRD acceptance scoreboard (after iteration 9 of run `20260728-181020`).**
+**PRD acceptance scoreboard (rows unchanged since iteration 9 except where noted; Phase M's local
+gate is green at `21a73ea` and the two certification rows stay RED until the sixth merge is
+deployed — see the gate block).**
 
 | clause | state |
 | --- | --- |
@@ -89,8 +91,10 @@ progress.txt archive.
   and F1/F3 are what will decide it.
 - **The coverage gap is CLOSED** `[done — iteration 17]`: two nodes in `tests/test_live_api.py`
   now post a frame on the lane that **failed** and on the lane that **degraded**. See "The failed
-  lane is in the suite" below. **Phase M's remaining work is the gate only** — full Swift/Python
-  + the lane-refusal probe + F1 and F3 both green, then the sixth merge.
+  lane is in the suite" below.
+- **Phase M gate step (a) is GREEN at `21a73ea`** `[done — iteration 18]`, and the certification
+  order is settled by precedent, not re-argued. See "The Phase M gate is green" below. What
+  remains is **(b) the sixth merge → (c) push + redeploy + Mac rebuild → (d) F1 and F3**.
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
@@ -541,6 +545,42 @@ load-bearing. Python **602 → 604**; the lane-refusal probe still rc=0.
 *Product source untouched this iteration* — the diff against `main` is what candidate 50 already
 made it, plus test files.
 
+**The Phase M gate is green, and the certification ORDER is settled by precedent (new,
+iteration 18). READ THIS BEFORE THE SIXTH MERGE.** Gate step (a) — the full local gate from the
+Validation fence — is **GREEN at the feature tip `21a73ea`**, every line of it:
+Swift **158 passed / 0 failures**, **0 `warning:` lines** across two builds into a *fresh* scratch
+(the claim only means anything on a first build); Python **604 passed / 2 skipped / 368 subtests**
+in 62.7 s, the two skips named as the pre-existing `test_large_upload.py:155,175` Python-3.10
+contract and **not** Darwin skips; tracer **4 passed / 0 skips**; Phase A discriminator **10/10**;
+`live-lane-refusal-probe.py` **rc=0**; all **seven** `live-hardcap-repro.py` cases rc=0; leak-scan
+clean; `git status --porcelain` empty. Log `/tmp/ralph-i18-gate.log`, probe JSON
+`/tmp/ralph-i18-lane-refusal.json`.
+*Merge payload, reviewed at the same time:* exactly **10 files, +983/-51**, all inside the fifth
+amendment's scope — `CaptureController.swift` (53+48), `NativeLaneHealth.swift` + `CaptureSecurity.
+swift` (D-a, incl. the log verb coming from the state), `NativeDualCaptureSource.swift` (49),
+`CaptureControllerTests.swift`, `live_adapters.py` + `live_coordinator.py` +
+`live_service_runtime.py` (D-c), `test_live_api.py`, `test_live_pipeline_seams.py`. **No `ops/`,
+no `macos/scripts/`, no doc, no `main`-only content.**
+
+***The order, decided once and binding: gate → merge → publish + redeploy (+ Mac rebuild) → F1 and
+F3.*** The fifth amendment's text lists F1/F3 *before* the merge. That order is physically
+unreachable and the loop has already answered this exact question twice:
+1. F1/F3 exercise the **deployed** server and the **installed** bundle. The server is detached at
+   `fc7097d` and `/Applications/MOSSCapture.app` was built from `fc7097d` (K5c). **Neither carries
+   any part of Phase M.** A run today would re-measure the code both red runs already died on.
+2. Candidate 50's token cap is server-side only, so the latency clause — one of F1's two red
+   sub-clauses — **cannot be measured at all** without a redeploy, and prd.md forbids deploying
+   from a feature branch.
+3. Building the Mac half from the feature branch would be exactly that forbidden deploy, *and*
+   would certify a fixed client against an unfixed server.
+4. **Precedent, not invention:** H4 and J5 hit the identical wording and ran gate → merge →
+   redeploy → probe (progress.txt, candidate 42's J5 entry: *"the amendment lists the probes before
+   the merge, but the branch's fixes are not on the host"*). J5d's green then landed at the merge
+   SHA `6a540fe`, and K5d likewise at `fc7097d`.
+**Nothing is weakened by this.** Both F1 and F3 green against the redeployed SHA is still the
+acceptance evidence, and a red one is answered by the next amendment exactly as H4d's red was — the
+merge buys the *ability to measure*, never the verdict.
+
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
 "`NativeLaneHealth` keeps `projection.failure`". **It does not** — `beginGeneration()`
@@ -947,6 +987,7 @@ progress.txt archive under each title.
 | **F4a rollback rehearsal** | GREEN — see the rollback block above. |
 | **K5d re-read** | Named the lane failure `macos_buffer_overrun` and traced it to Phase L. Phase K closed; the fourth amendment spent. |
 | **F1 canary / F3 soak** | **RED** — see the two blocks above. One defect, candidate 53. |
+| **Phase M gate step (a)** | GREEN at **`21a73ea`** — Swift 158/0 (0 warnings, fresh scratch), Python 604+2/368, tracer 4/0 skips, 10/10, lane-refusal probe rc=0, 7/7 hard-cap cases, leak-scan clean, tree clean; payload 10 files / +983/-51 all in scope. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -2009,9 +2050,23 @@ that **failed** (409, permanent, peer + lease survive) and on the lane that **de
 health stays active), both red-proved by semantic revert of the two guards that decide them. See
 "The failed lane is in the suite" above. **Nothing remains in Phase M except the gate.**
 
-**Gate:** full Swift/Python; the lane-refusal probe; then **re-run F1 and F3 and require both
-green**, with candidate 51's harness fix in place so the label clause is meaningfully verified.
-Then one merge (`expected_main` is `6a540fe…` -> advance in-script), push, redeploy.
+**Gate, in four steps. The order is decided — see "The Phase M gate is green" above for why the
+amendment's literal order is unreachable and why this one drops nothing.**
+- **(a) full local gate + payload review** `[done - iteration 18]`. GREEN at `21a73ea`:
+  Swift 158/0 with 0 warnings on a fresh scratch, Python 604+2/368 in 62.7 s, tracer 4/0 skips,
+  discriminator 10/10, lane-refusal probe rc=0, seven hard-cap cases rc=0, leak-scan clean, tree
+  clean. Payload 10 files / +983/-51, all in `macos/`, `moss_transcribe_diarize/`, `tests/`.
+- **(b) the sixth merge** `[next]` through `merge-keeper.sh`, by the standing pre-merge procedure:
+  join `main` into the feature branch **first** (prove it content-free with
+  `git merge-tree --write-tree main HEAD` returning HEAD's own tree), advance `expected_main`
+  `6a540fe…` -> **`fc7097d…`** *in-script* (`merge-keeper.sh:32`) with a comment citing the fifth
+  amendment — **never** the `RALPH_MERGE_MAIN_BEFORE` env override — commit that first, then run the
+  script in the **BACKGROUND**.
+- **(c) push + redeploy.** Server restart (candidate 50 is server source) **and** an m4mbp
+  rebuild + reinstall (53/48/49/D-a are client source) — the K5c shape, not the server-only J5c one.
+- **(d) F1 and F3, both required green**, with candidate 51's harness (`live-canary.sh`) in place so
+  the label clause is meaningfully verified. This is what MEASURES candidate 50's predicted latency
+  drop; nothing before (c) can.
 
 ### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)
 
