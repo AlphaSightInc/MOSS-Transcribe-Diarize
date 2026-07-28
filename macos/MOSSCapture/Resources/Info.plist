@@ -15,6 +15,22 @@
   <string>14.2</string>
   <key>LSUIElement</key>
   <true/>
+  <!-- App Transport Security applies to an .app bundle and not to a bare executable, and it
+       overrides a URLSession delegate that has already accepted the leaf: without this key the
+       app's pinned connection to the live server dies NSURLErrorDomain -1200 / -9802 after
+       PinnedCertificateURLSessionDelegate has matched the pin. ATS exempts loopback and the
+       RFC 1918 ranges, so a LAN peer and every self-hosted test server hide the failure; the
+       tailnet peer this product actually dials (100.64.0.0/10) is not exempt.
+       This is not a relaxation of the transport's security: the exact-leaf pin, not PKI, is the
+       control here by design, and every connection the app makes is built from the pinned
+       provider. A scoped NSExceptionDomains entry would instead bake one deployment's hostname
+       into the shipped product. Keep this key alone — declaring NSAllowsLocalNetworking or
+       either NSAllowsArbitraryLoadsIn* sibling makes the OS ignore NSAllowsArbitraryLoads. -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+  </dict>
   <key>NSAudioCaptureUsageDescription</key>
   <string>MOSS captures system audio only after the user starts a local live session.</string>
   <key>NSMicrophoneUsageDescription</key>

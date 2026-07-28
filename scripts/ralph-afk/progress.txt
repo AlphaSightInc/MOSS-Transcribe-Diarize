@@ -2273,3 +2273,107 @@ history as well as out of `ps`. Then `mtd-capture start` again for the real sess
   re-run the E3 runbook in the corrected order: pair first, then `start`, then the two clicks.
 
 [loop 20260728-072601-15601] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+## Iteration 1 (run 20260728-072601-15601) - G1: the ATS declaration, and the measurement that
+## showed the planned regression test could never have caught it
+- Target: candidate G1 from the prd.md amendment of 2026-07-28 - the App Transport Security
+  declaration that lets the app's pinned live transport work from an `.app` bundle - together with
+  G4's "tracer case bound to a 100.64.0.0/10 address", because a fix wants its gate in the same
+  change.
+- Files: `macos/MOSSCapture/Resources/Info.plist` (+16),
+  `macos/MOSSCapture/Tests/MTDCaptureCLITests/MTDCaptureCLITests.swift` (+30),
+  `tests/test_macos_uds_tracer.py` (+219/-6), `tests/test_macos_packaging_tools.py` (+7),
+  `scripts/ralph-afk/{context.md,progress.txt}`. First tracked product change since the keeper
+  merge, authorized by the amendment and inside its four items.
+
+### What was measured, before anything was fixed
+The planned regression test was written first and it **passed red** - it could not see the bug. So
+the next step was to find out why, with one disposable ad-hoc `.app`-bundled Swift probe in /tmp
+whose URLSessionDelegate accepts any leaf (built, measured, deleted; nothing entered the repo).
+Matrix on MacStudio (macOS 26.5.1; m4mbp is 26.5.2 and answered identically on the one row it
+shares):
+  | destination                        | bare binary | inside an `.app` |
+  | remote 100.64.0.8   (tailnet)      | 200         | **-1200 / -9802** |
+  | remote 192.168.68.38 (LAN)         | 200         | 200               |
+  | this host's own 100.64.0.1         | 200         | 200               |
+  | this host's own 192.168.68.36      | 200         | 200               |
+Then the fix, on the same bundle, changing nothing else: `NSAppTransportSecurity =
+{NSAllowsArbitraryLoads: true}` -> remote 100.64.0.8 answers **200**. That is the red/green pair
+for G1, measured directly rather than argued.
+Two things follow, and the second one contradicts the plan:
+1. ATS applies to a bundle and not to a bare executable, and it overrides a delegate that has
+   already accepted the leaf. Confirmed independently of m4mbp.
+2. **The exemption is loopback + RFC 1918, not "the address range the tracer picks".** A server the
+   tracer starts is on the tracer's host, so however its peer address is written the connection is
+   routed over loopback and exempted - `100.64.0.1` (this host's own tailnet address) proves that
+   directly. G4's premise, that binding `100.64.0.0/10` would reproduce the failure, is wrong. And
+   the supervisor's diagnosis was only half right: remote RFC 1918 is exempt too, so even a second
+   LAN host would not have caught this. **No single-host test can gate ATS.**
+
+### What was built instead
+- The fix: `Resources/Info.plist` declares `NSAppTransportSecurity = {NSAllowsArbitraryLoads: true}`
+  and nothing else, with a comment carrying the failure signature and the reason a scoped
+  `NSExceptionDomains` entry was rejected (it would bake one deployment's hostname into the shipped
+  product; the exact-leaf pin is the security control by prd.md design).
+  The sibling trap is called out in every gate: declaring `NSAllowsLocalNetworking` or either
+  `NSAllowsArbitraryLoadsIn*` key makes the OS ignore `NSAllowsArbitraryLoads`.
+- Three shape gates, since a behavioral one is impossible here:
+  1. `MTDCaptureCLITests.testBundleDeclaresTheTransportExceptionThePinnedClientCannotWorkWithout` -
+     **parses** the plist rather than substring-matching it, so the explanatory comment inside the
+     plist cannot satisfy the assertion, and requires the key set to be exactly
+     `["NSAllowsArbitraryLoads"]`.
+  2. `test_macos_packaging_tools.py` - asserts it on the bundle `build-app.sh` *composes*, which is
+     the artifact E2b installs, not on the tracked source.
+  3. `_first_install_lab_bundle` - refuses to install a lab bundle whose product plist lacks it.
+- The CGNAT tracer node was kept but renamed to what it can honestly prove:
+  `test_bundled_app_on_the_production_address_range_still_refuses_an_unpinned_leaf`. Its docstring
+  states that it does **not** observe ATS and why. What it does prove is the other half of the
+  declaration's safety case: with ATS off the entire trust decision belongs to
+  `PinnedCertificateURLSessionDelegate`, so the node pairs once honestly over the production
+  address range and then serves a certificate the pairing payload's pin does not describe and
+  requires refusal.
+- One adjacent defect found and closed on the way: the lab bundle's reuse predicate keyed only on
+  the built executable's Mach-O identity, so a product-Info.plist edit changed the installed bundle
+  without triggering a reinstall - the tracer would have failed its own continuity assertions
+  instead, and a passing run could have been driving a bundle the product no longer describes. The
+  predicate now also keys on `product_info_plist_sha256`, recorded in the evidence file.
+
+### Validation
+- `python3 -m pytest tests/test_macos_uds_tracer.py -q` -> **4 passed** (was 3), 0 skips, 15 s.
+- `swift test --package-path macos/MOSSCapture` -> **132 passed / 0 failures** (was 131).
+- `python3 -m pytest tests -q -p no:cacheprovider` -> **537 passed / 2 skipped / 368 subtests** in
+  60.5 s (was 536; the 2 skips are the pre-existing Python-3.10 contract in test_large_upload.py).
+- Both Swift products build from the tip, separate invocations, zero warnings.
+- Phase A attempt-2 discriminator **10/10**; `leak-scan: clean`.
+- Mutation rehearsals, each applied and reverted:
+  1. `NSAppTransportSecurity` removed -> **4 nodes fail** (three tracer nodes through the lab-bundle
+     install assert, plus the packaging node).
+  2. `NSAllowsLocalNetworking` added beside it -> the **2 exact-shape nodes fail**; the tracer's
+     behavioral nodes correctly stay green, since the OS-level consequence is invisible on one host.
+  3. Phase two of the new node made to serve the very leaf its payload pins -> the refusal assertion
+     fails with `exit=0 … "ok":true`, so the refusal in the real node is caused by the leaf
+     mismatch and by nothing incidental.
+- Nothing outside the repo was mutated: no service restarted, no host touched, no payload minted,
+  no app installed. The /tmp probe and its certificates were deleted and their absence asserted.
+  The m4mbp app is still the pre-fix build - this iteration did not rebuild or reinstall it.
+
+### Learned
+1. **A regression test that passes on the first run is a measurement, not a success.** Writing the
+   planned test first is what surfaced that the plan's premise was wrong; had it been written after
+   the fix it would have been recorded as proof and shipped a gate that gates nothing.
+2. **Ask what the environment exempts, not only what the code does.** Two independent exemptions
+   were in play (bundle-vs-bare and loopback/RFC1918-vs-everything else) and the second one is
+   invisible to any test that starts its own server. The blind spot was not the tracer's address
+   picker; it was that the tracer is its own peer.
+3. **When a behavioral gate is impossible, say so in the test.** The honest move was to rename the
+   node to what it proves and write the impossibility into its docstring and into context.md, so
+   the next reader does not re-derive it or, worse, trust it.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp. G1 does not need them;
+  the corrected E3 order (pair first, then start, then the clicks) is in the supervisor entry above.
+- Next: **G2** - trim the pairing payload in `CapturePairingPayload.init` with a regression test for
+  the trailing-newline case that produced `invalidPinnedHash` (65 bytes against a strict 64 check);
+  then **G3** - classify `URLError`/`NSError` into a typed non-secret shape and log unclassified
+  control-channel failures, which is what would have shown `-1200/-9802` on the first attempt; then
+  G4's gate and the single authorized merge. After the merge, E2b must be re-run on m4mbp so the
+  installed app carries the fix - the shape gates prove the declaration ships, but only that host
+  can prove the product path, because only it has a remote non-exempt peer.

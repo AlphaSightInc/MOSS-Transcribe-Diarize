@@ -50,10 +50,13 @@ iteration 18 finalized the host manifest and rotated the live TLS pair (D2), ite
 installed and started the live service plus its Windows forward (D3), iteration 20 aligned the
 m4mbp checkout with the published SHA (E2a), iteration 21 created the signing identity there (E1),
 and iteration 22 built, signed and installed the app there (E2b) — none of 17-22 changed a tracked
-file, so from here the branch carries only `scripts/ralph-afk/*`.
-Test totals on the branch: Swift **131 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
-including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
+file. Iteration 23 recorded the E3 blocker. **The post-merge freeze is then reopened exactly once**
+by the prd.md amendment of 2026-07-28: run `20260728-072601` iteration 1 landed G1 (the ATS
+declaration plus its gates), so the branch carries tracked product source again, strictly within
+the amendment's four items.
+Test totals on the branch: Swift **132 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132); Python **537 passed / 2 skipped / 368 subtests**
+including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
 `tests/test_live_deployment_credentials.py` **14 passed** (new in iteration 13) and
@@ -396,6 +399,40 @@ session stopped cancels itself; `stop` cancels the probe but leaves the aggregat
 `outbox.acknowledge`, so what the measurement anchors to is audio the server accepted; the hook is
 handed lane/timestamp/rate/count/discontinuity — never a `CaptureFrame` — so the measurement path
 structurally cannot reach PCM.
+
+**ATS contract (new, run 20260728-072601 iteration 1 / G1).** `Resources/Info.plist` declares
+`NSAppTransportSecurity = {NSAllowsArbitraryLoads: true}` and **nothing else** — declaring
+`NSAllowsLocalNetworking` or either `NSAllowsArbitraryLoadsIn*` sibling makes the OS ignore
+`NSAllowsArbitraryLoads`, which would silently restore the failure. Three shape gates hold it:
+`MTDCaptureCLITests.testBundleDeclaresTheTransportExceptionThePinnedClientCannotWorkWithout`
+(parses the plist, so the explanatory comment inside it cannot satisfy the assertion),
+`test_macos_packaging_tools.py`'s composed-bundle node (what `build-app.sh` actually ships), and
+`_first_install_lab_bundle` (refuses to install a lab bundle without it). Mutation-rehearsed: key
+removed → 4 nodes fail; `NSAllowsLocalNetworking` added → the 2 exact-shape nodes fail.
+*The exemption matrix, measured on MacStudio 2026-07-28 with one ad-hoc `.app`-bundled Swift probe
+whose `URLSessionDelegate` accepts the leaf (26.5.1; m4mbp is 26.5.2 and answered identically):*
+| destination | bare binary | in `.app` |
+| --- | --- | --- |
+| remote `100.64.0.8` (tailnet) | 200 | **-1200 / -9802** |
+| remote `192.168.68.38` (LAN) | 200 | 200 |
+| this host's own `100.64.0.1` | 200 | 200 |
+| this host's own `192.168.68.36` | 200 | 200 |
+Same bundle + the declaration → `100.64.0.8` answers **200**. So ATS applies only to a bundle, only
+to a peer that is neither loopback nor RFC 1918, and it overrides a delegate that already accepted
+the leaf.
+**The consequence for testing is structural: no single-host test can gate this.** Every server the
+tracer starts is on the tracer's host, so however the peer address is *written* the connection is
+routed over loopback and exempted — `100.64.0.1` proves it directly. G4's premise (that binding
+`100.64.0.0/10` would reproduce it) is therefore wrong, and the supervisor's inference that the
+tracer's blind spot was the *address range* is only half of it: remote RFC 1918 is exempt too, so
+even a second LAN host would not have caught this. The behavioral confirmation is m4mbp dialling
+`https://100.64.0.8:7861` — a real remote tailnet peer — which is E3. Never re-add a node that
+looks like an ATS gate but binds a local server; that is the exact shape of the test that let this
+ship.
+The CGNAT node the loop did build (`test_bundled_app_on_the_production_address_range_still_refuses_
+an_unpinned_leaf`) proves the *other* half of the declaration's safety case: with ATS off the whole
+trust decision is the pin's, so it pairs once honestly and then serves a leaf the payload's pin does
+not describe and requires refusal. Non-vacuity rehearsed both ways.
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -761,8 +798,18 @@ swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real pr
 
 # --- real-process tracer (darwin; needs a live private-address TLS server)
 # present since the iteration-1 graft. It builds/bundles/ad-hoc-signs the real products, so it
-# needs both Swift products built first. Currently 3 passed, 0 skipped (~7 s).
+# needs both Swift products built first. Currently 4 passed, 0 skipped (~15 s). The fourth node
+# needs a 100.64.0.0/10 address on this host and FAILS (never skips) without one.
 python3 -m pytest tests/test_macos_uds_tracer.py -q
+
+# --- G1 ATS declaration: the three shape gates. There is no behavioral gate and there cannot be
+#     one on a single host - see the ATS contract block. ------------------------------------------
+swift test --package-path macos/MOSSCapture --filter 'BundleDeclaresTheTransport'
+python3 -m pytest tests/test_macos_packaging_tools.py -q -k entitlement_the_identity
+python3 -m pytest tests/test_macos_uds_tracer.py -q -k 'immutable_first_install or unpinned_leaf'
+# Reproducing the failure itself needs a REMOTE non-exempt peer, i.e. m4mbp -> 100.64.0.8. The
+# ad-hoc probe that measured the matrix is disposable; rebuild it in /tmp when needed, never in
+# the repo. Bare binary vs the same binary inside an ad-hoc `.app` is the whole experiment.
 
 # Reinstall the fixed lab bundle from scratch (safe: gitignored build output). Do this only to
 # re-prove the first-install path; normal runs must reuse it.
@@ -1334,18 +1381,18 @@ own, which no later step does.
 Opened by the prd.md amendment of the same date, after E3 proved the merged app cannot reach the
 live server at all. Scope is exactly these four items; nothing else may touch tracked source.
 
-26. **G1 - ATS declaration for the pinned live transport.** `macos/MOSSCapture/Resources/Info.plist`
-    carries no `NSAppTransportSecurity` key, so ATS applies in full to the `.app` bundle and
-    rejects the self-signed leaf *after* `PinnedCertificateURLSessionDelegate` has already
-    accepted it. Measured on m4mbp against `https://100.64.0.8:7861/api/live/descriptor`:
-    bare binary -> 200; identical binary inside a minimal ad-hoc `.app` bundle -> `NSURLErrorDomain`
-    **-1200**, `_kCFStreamErrorCodeKey` **-9802**, with the delegate logging `pin MATCH -> accepting`
-    first; the same bundle plus `NSAllowsArbitraryLoads` -> **200**. The pin is not in question:
-    m4mbp, the served leaf and the payload all agree on `a35ca9fc...b680ff`.
-    Prefer `NSAllowsArbitraryLoads` over a host-scoped exception: the exact-leaf pin is the
-    security control here by deliberate design (prd.md "The certificate pin deliberately bypasses
-    PKI"), every connection the app makes is pinned, and a scoped exception would bake a
-    deployment-specific host into the product. Do not add chain or hostname evaluation.
+26. **G1 - ATS declaration for the pinned live transport** `[done - iteration 1 of run
+    20260728-072601]`: `macos/MOSSCapture/Resources/Info.plist` now carries
+    `NSAppTransportSecurity = {NSAllowsArbitraryLoads: true}` and nothing else - see the ATS
+    contract block above for the exemption matrix measured on MacStudio, the three shape gates,
+    and why no single-host test can be the behavioral gate. Chosen over a host-scoped
+    `NSExceptionDomains` entry because the exact-leaf pin is the security control here by
+    deliberate design (prd.md "The certificate pin deliberately bypasses PKI"), every connection
+    the app makes comes from the pinned provider, and a scoped exception would bake one
+    deployment's hostname into the shipped product. Do not add chain or hostname evaluation.
+    Residue for the G4 merge: the fix is proven by probe on MacStudio and by shape gates in the
+    suite; the *product* path is confirmed only when the rebuilt app on m4mbp pairs against
+    `https://100.64.0.8:7861` (E3), so E2b must be re-run there after the merge.
 27. **G2 - trim the pairing payload.** `CapturePairingPayload.init` (`CaptureSecurity.swift:616-628`)
     never trims its input, so an operator who presses Return before Ctrl-D sends 65 bytes where the
     pin field must be 64 and gets `invalidPinnedHash` - an error that accuses the certificate for a
@@ -1358,13 +1405,12 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     what hid G1. Classify `URLError`/`NSError` into a typed non-secret shape (domain + code, never
     a token or payload) and log unclassified failures.
 29. **G4 - regression tests, then one further reviewed merge.** Tests must fail before each fix and
-    pass after. The tracer's blind spot is the root of G1: `_private_non_loopback_ipv4()`
-    (`tests/test_macos_uds_tracer.py:690`) returns MacStudio's **192.168.x** address, which ATS
-    exempts as local networking, so every green tracer run exercised a path production never takes.
-    Add a case that binds the server to a `100.64.0.0/10` address - the range the tracer already
-    lists at line 36 but never selects - and runs the real bundle against it. Then re-run the full
-    client gate and perform the single authorized merge through `merge-keeper.sh`. After it, the
-    post-merge freeze resumes.
+    pass after. The `100.64.0.0/10` tracer case this item asked for is **done** (iteration 1 of run
+    20260728-072601) - but measurement showed it cannot be the ATS gate, because a server this
+    tracer starts is always reached over loopback. See the ATS contract block; the node it became
+    proves the pin instead, and the declaration is gated by shape in three places. Remaining for
+    G4: G2's and G3's own regression tests, then re-run the full client gate and perform the single
+    authorized merge through `merge-keeper.sh`. After it, the post-merge freeze resumes.
 
 ## Non-candidates
 
