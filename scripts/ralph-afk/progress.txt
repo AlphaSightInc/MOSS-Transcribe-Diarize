@@ -12419,3 +12419,65 @@ The growth is cumulative BLOCKS, not verbose ones, so the correction is retiring
 not trimming live ones. Recorded in the file's own header with the trigger named: once F1 and F3
 pass against 77e0014, the F1/F3 diagnosis and the Phase L/M mechanism narratives become history and
 move to progress.txt. Not done now - it is candidate 52's work and this iteration is the redeploy.
+
+================================================================================
+Iteration 21 of run 20260728-181020 - PRE-RECORD: the rollbacks for the F1 canary
+re-run against 77e0014 (Phase M gate step (d), first half).
+================================================================================
+
+Written and COMMITTED BEFORE any host is touched, per prd.md's reversibility constraint.
+Target: F1, the 60 s canary, re-run on the real hosts now that 53/48/49/D-a are in the installed
+Mac product and D-c is in the running server (M6c, iteration 20). Driver is the in-repo
+scripts/ralph-afk/live-canary.sh with OUTPUT_MODE=muted (candidate 51's lane separation) and the
+marker-alone-x3 delivery that is written but has never been exercised by a run.
+
+MUTATIONS THIS RUN MAKES, AND THE COMMAND THAT UNDOES EACH.
+
+m4mbp:
+ 1. Launch the app (`open -a /Applications/MOSSCapture.app`). The app is NOT running now
+    (`pgrep -x MOSSCaptureApp` empty), so the rollback is exactly:
+      ssh ga0@m4mbp 'pkill -x MOSSCaptureApp'
+ 2. `mtd-capture pair` overwrites capture-bearer / capture-session-id / capture-view-token /
+    capture-server-url in ~/Library/Application Support/MOSSCapture/secrets.json. There is no
+    "restore" and none is wanted: the next pair overwrites them again, and a stale bearer is
+    exactly what a re-pair is for. `pair` REUSES the stored capture-device-id, so no new device
+    row is created on the server. NOTHING IN THIS RUN MAY REVOKE m4mbp's DEVICE
+    (AB600574-FD93-4321-967E-652AB064A70B) - that is the paired identity every later run needs.
+ 3. `mtd-capture start` opens a live session; `stop` closes it. The driver stops in step 14 and
+    its EXIT trap runs even on failure. If the driver dies before its stop:
+      ssh ga0@m4mbp '/Users/ga0/.local/bin/mtd-capture stop'
+    and if that cannot reach the app, `pkill -x MOSSCaptureApp` (item 1) drops the capture; the
+    server then releases the session by helper-lease expiry within 30 s, which is designed
+    behaviour, not damage.
+ 4. Output MUTE. The driver mutes the system output and its EXIT/INT/TERM trap restores whatever
+    it found (topology-before.txt records it). If the driver is killed with -9:
+      ssh ga0@m4mbp 'osascript -e "set volume without output muted"'
+    DELIBERATE DIFFERENCE FROM F1: this run does NOT touch the output VOLUME. F1 set it to 45 and
+    restored 31; with the output muted the level is irrelevant, so leaving it alone removes one
+    mutation from an operator-shared machine.
+ 5. Pasteboard. `handoff` writes the view token to it and the driver clears it at the end.
+    IRREVERSIBLE AND STATED PLAINLY: the operator's own clipboard content (1071 bytes, measured
+    read-only as a byte COUNT - never read) is destroyed by this run. That is inherent to the
+    app-owned handoff contract, it happened in F1/F3/the iteration-12 canary too, and there is no
+    rollback. Nothing else about it changes.
+ 6. Files written on m4mbp: /tmp/live-canary.sh and /tmp/ralph-canary/. Rollback:
+      ssh ga0@m4mbp 'rm -rf /tmp/ralph-canary /tmp/live-canary.sh'
+
+server (ga0-alienware-rtx4070ti):
+ 7. One pairing code minted on the loopback with ops/live-pair.sh and immediately consumed, and
+    `paired_at` refreshed on the EXISTING m4mbp device row in live-auth.json. No new device, no
+    revoke. Rollback: none required; a pairing code is single-use and expires by itself.
+ 8. One live session, created and released. No restart, no checkout move, no file under
+    ~/.local/share/.../live changes except live-auth.json's paired_at. If the unit ever needs a
+    bounce the standing rollback is unchanged:
+      git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969   (full service rollback, F4a)
+
+NOT MUTATED BY THIS RUN, and re-checked afterwards: both batch MainPIDs (301112 / 322117,
+NRestarts=0), the live MainPID (350731), the served leaf (must still hash to the D2 pin
+a35ca9fc...), both TCC grants (auth_value=2), and every checkout's HEAD (77e0014).
+
+Stop conditions - abandon the run and record a blocker rather than pressing on:
+ * the served leaf does not hash to the pin (the driver exits 3 by itself);
+ * `mtd-capture start` fails (driver exits 4) - do NOT retry blind: read status first, because a
+   wedged start is exactly what candidate 48 fixed and a re-run would hide it;
+ * either batch MainPID moves.
