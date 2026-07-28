@@ -547,8 +547,9 @@ Never move live secret state onto the Windows drive, and never write a doc line 
 mode inside the checkout.
 
 **Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3 (`swift-driver 1.148.6`).
-`/Applications/MOSSCapture.app` absent; no `moss-signing.keychain-db`, no
-`~/Library/Application Support/MOSSCapture`. Checkout is
+`/Applications/MOSSCapture.app` still absent and no `~/Library/Application Support/MOSSCapture`;
+**`moss-signing.keychain-db` now exists since iteration 21 (E1)** — see the signing-identity block
+below. Checkout is
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` (same relative path as
 MacStudio), reachable as `ga0@m4mbp` with `BatchMode=yes`.
 **Since iteration 20 (E2a) it is detached at `f9285d6`** — tree `815f23b0…`, clean, 159 tracked
@@ -568,6 +569,42 @@ over SSH with a designated requirement that is byte-identical across rebuilds (p
 `security find-identity -v -p codesigning` reports 0 valid identities for such a cert even though
 `codesign` succeeds — never gate on `find-identity`. The exact mechanics are in the signing-mechanics
 note above; `macos/scripts/bootstrap-signing-identity.sh` (iteration 9) implements them.
+
+**Signing-identity state on m4mbp (new, iteration 21 / E1).** The dedicated keychain
+`~/Library/Keychains/moss-signing.keychain-db` (0644) holds the self-signed identity
+`MOSS Capture Local Signing` — RSA 2048 / sha256WithRSA, `CA:FALSE` critical, keyUsage critical
+`digitalSignature`, EKU critical `codeSigning`, valid 2026-07-28 → 2036-07-25. Its password is a
+random 32-byte base64 string in `~/.config/moss-capture/signing-keychain.password` (0600, in a 0700
+directory). The keychain is the **fourth** entry of the user search list, after the three
+pre-existing ones (`projectclerk-signing`, `login`, `openvpn`) — all preserved; the default keychain
+is still `login.keychain-db`.
+**The values E2b/E3 depend on:** `leaf_sha256
+ef8fa54299d5774057287cf577f51d9a9a8410b4524ad67ce69b00b41021d4f2`, leaf SHA-1
+`e118d874377746c4bd25beb8252bb84302b73e72`, and the designated requirement
+`designated => identifier "com.alphasight.moss.capture" and certificate leaf =
+H"e118d874377746c4bd25beb8252bb84302b73e72"`. Measured: that DR is byte-identical for two different
+binaries and after re-signing changed bytes at the same path, while their `CDHash` values differ —
+which is the PRD's "DR unchanged across a rebuild" property at the identity level (the app-bundle
+level belongs to E2b). Contrast measured in the same session: ad-hoc signing gives
+`designated => cdhash H"…" or cdhash H"…"`, different per binary.
+*Three operational facts that decide later steps:*
+1. **The identity is not reproducible.** The rollback was rehearsed for real and re-applied, and the
+   fresh run minted a **new** key: leaf `8c99754e…` → `ef8fa542…`. Unlike the lab bundle, identity
+   here is a property of a stored private key, not of the inputs. So after E2b installs and E3
+   grants TCC, running `security delete-keychain` costs the human's grants. Rollback of E1 is free
+   **only until E2b signs the installed bundle**.
+2. **A fresh SSH session finds the keychain locked** — `security show-keychain-info` answers
+   `User interaction is not allowed` and `codesign --sign` fails `errSecInternalComponent`, despite
+   `set-keychain-settings` having disabled the auto-lock timeout; the unlock state is per security
+   session. Not a defect: `build-app.sh:186-191` unlocks unconditionally from the password file
+   before signing, and the bootstrap tool's own probe unlocks first. Any *ad-hoc* `codesign` run
+   from a new SSH session must unlock first or it will look like a broken identity.
+3. **No trust was added and none is needed.** `security find-identity -v -p codesigning` still lists
+   only the pre-existing `LiveTranscribe Local Dev`, and the MOSS certificate appears in neither the
+   user nor the admin trust-settings domain (the three certs that do carry user trust settings —
+   `LiveTranscribe Local Dev`, `Ga0-Alienware-RTX4070Ti`, `Ga0-RTX4090` — are pre-existing and
+   unrelated). Search-list membership alone makes the identity reachable, reproducing the
+   iteration-9 MacStudio finding on m4mbp.
 
 **Open defect (found by D2, iteration 18) — the finalizer needs the deployment venv, and the
 tracked doc says otherwise.** `ops/finalize-live-provider-manifest.py` inserts the repo root on
@@ -714,6 +751,23 @@ macos/scripts/install-app.sh --bundle /tmp/moss-build/MOSSCapture.app \
   --cli /tmp/moss-build/mtd-capture --applications /tmp/moss-apps --bin-dir /tmp/moss-bin
 macos/scripts/bootstrap-signing-identity.sh --dry-run   # never run for real on MacStudio
 # Real signing identity + install belong to E1/E2 on m4mbp, not to this host.
+
+# --- E1: the signing identity on m4mbp (SPENT in iteration 21) --------------------------------
+# Run from the m4mbp checkout; re-running is safe and prints `unchanged:` without touching the
+# keychain, the password file or the search list.
+#   ssh -o BatchMode=yes ga0@m4mbp 'bash -s' <<< 'cd <checkout> && \
+#     macos/scripts/bootstrap-signing-identity.sh'
+# Rollback (rehearsed for real this iteration; `delete-keychain` also removes the search-list entry):
+#   security delete-keychain "$HOME/Library/Keychains/moss-signing.keychain-db" \
+#     && rm -f "$HOME/.config/moss-capture/signing-keychain.password"
+# DO NOT apply it after E2b/E3: the re-created identity has a different leaf, so the DR changes and
+# the human's TCC grants die with it.
+# Verify the identity by codesign, NEVER by `security find-identity -v -p codesigning` (0 valid for
+# a self-signed leaf). A fresh SSH session must unlock first or codesign says errSecInternalComponent:
+#   security unlock-keychain -p "$(cat "$HOME/.config/moss-capture/signing-keychain.password")" \
+#     "$HOME/Library/Keychains/moss-signing.keychain-db"
+#   codesign --force --identifier com.alphasight.moss.capture --sign 'MOSS Capture Local Signing' <bin>
+#   codesign -d -r- <bin> | tail -1   # must be the DR recorded in the signing-identity block
 
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
@@ -1069,14 +1123,22 @@ own, which no later step does.
     reviewed tool/source files hash identically to this host. Rollback rehearsed and re-applied. The
     PRD's four-way "one exact SHA everywhere" clause is green. `git-lfs` is absent on both hosts and
     the tree has no LFS-tracked file, so the `.gitattributes` filters are inert.
-21. **E1 — run reviewed signing tool**: create/reuse dedicated-keychain self-signed identity;
-    validate `codesign` and stable designated requirement, never `find-identity`. The tool is now
-    on m4mbp at `macos/scripts/bootstrap-signing-identity.sh` (exec bit intact); C4 review note (a)
-    applies — `build-app.sh` briefly exposes the random keychain password in `ps`, which is
-    acceptable on single-user m4mbp but should be stated when it happens.
+21. **E1 — run reviewed signing tool** `[done — iteration 21]`: `MOSS Capture Local Signing` exists
+    in the dedicated `moss-signing.keychain-db` on m4mbp with leaf `ef8fa542…` and DR
+    `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"` — see the
+    signing-identity block above. Validated by `codesign` only (DR identical across two different
+    binaries and across a re-sign of changed bytes, CDHash differing), never by `find-identity`.
+    Both keychain refusals and the idempotent re-run were proven for real on the host, and the
+    rollback was rehearsed and re-applied. Residue for E2b: the identity is **not reproducible**, so
+    from the moment E2b signs the installed bundle the E1 rollback is no longer free; and a new SSH
+    session must unlock the keychain before any hand-run `codesign`.
 22. **E2b — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin;
     install app and CLI. Record rollback first. B5 residue: `install-app.sh` defaults the CLI to
     `~/.local/bin` — pass `--bin-dir` if that is not on m4mbp's PATH rather than editing a profile.
+    E1 residue: `build-app.sh` unlocks the keychain itself (`:186-191`) so it needs no manual
+    unlock, but it passes the password on argv (`-p "$(cat …)"`), so the random keychain password is
+    briefly visible in `ps` — C4 review note (a), acceptable on single-user m4mbp, state it when it
+    happens. The bundle's DR must come out as the E1 DR with the app's own identifier.
 23. **E3 — TCC human step**: GUI launch and one `start`; report exact Microphone and System Audio
     Recording clicks. Never touch TCC DB or retry autonomously. Continue only after operator
     confirms both grants.

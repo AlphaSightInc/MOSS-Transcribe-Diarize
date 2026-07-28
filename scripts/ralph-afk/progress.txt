@@ -1784,3 +1784,131 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   `security find-identity -v -p codesigning`, which reports 0 valid identities for this kind of cert.
   Note C4 review note (a): `build-app.sh` unlocks the keychain with `-p "$(cat …)"`, so the random
   password is briefly visible in `ps`; state it at E1 rather than accepting it silently.
+
+## Iteration 21 (run 20260728-023004-98501, its iteration 13) - E1: run the reviewed signing tool on m4mbp
+- Target: Phase E candidate E1 - create the dedicated-keychain self-signed code-signing identity on
+  m4mbp by running the reviewed `macos/scripts/bootstrap-signing-identity.sh`, which E2a put on that
+  host. It is the highest-leverage open candidate: E2b (build + install the signed app) cannot start
+  without an identity, and E3's TCC grants are only durable if the designated requirement is stable
+  across rebuilds, which is exactly what a certificate-backed identity buys.
+
+### Rollback recorded BEFORE any mutation (PRD "Reversibility")
+- Pre-mutation state on m4mbp, measured read-only this iteration:
+  - checkout HEAD `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, tree `815f23b0d7cd0c3fd7322640…`,
+    `dirty_lines=0`; `macos/scripts/bootstrap-signing-identity.sh` present, `-rwxr-xr-x`,
+    sha256 `729b597c4dfe6a01…` (== MacStudio), `moss-tool-lib.sh` sha256 `087793c68214d75d…`,
+    non-executable by design
+  - `~/Library/Keychains/moss-signing.keychain-db` **absent**;
+    `~/.config/moss-capture/` **absent** (so the password file is absent too); `~/.config` is 0700
+  - default user keychain = `login.keychain-db` (**not** the target)
+  - user keychain search list, three pre-existing entries in this order:
+      "/Users/ga0/Library/Keychains/projectclerk-signing.keychain-db"
+      "/Users/ga0/Library/Keychains/login.keychain-db"
+      "/Users/ga0/Library/Keychains/openvpn.keychain-db"
+    Two of them belong to other projects; the tool must preserve all three.
+  - `security find-identity -v -p codesigning` = 1 valid identity, `LiveTranscribe Local Dev`
+    (the login-keychain one that fails `errSecInternalComponent` over SSH)
+  - `/usr/bin/openssl` = LibreSSL 3.3.6 (the PBES2 gotcha in the tool's header does not apply)
+  - `/Applications/MOSSCapture.app` absent, `~/Library/Application Support/MOSSCapture` absent,
+    macOS 26.5.2, 81 GiB free
+- Rollback, printed by the tool itself before its first mutation:
+    security delete-keychain '/Users/ga0/Library/Keychains/moss-signing.keychain-db' \
+      && rm -f '/Users/ga0/.config/moss-capture/signing-keychain.password'
+  `delete-keychain` also removes the search-list entry (measured on MacStudio in iteration 9), so
+  that one command restores both the keychain set and the search list.
+- Second rollback, printed only if the search list is actually touched, restoring the exact
+  pre-existing three entries:
+    security list-keychains -d user -s \
+      '/Users/ga0/Library/Keychains/projectclerk-signing.keychain-db' \
+      '/Users/ga0/Library/Keychains/login.keychain-db' \
+      '/Users/ga0/Library/Keychains/openvpn.keychain-db'
+- Nothing outside `~/Library/Keychains/moss-signing.keychain-db`, `~/.config/moss-capture/` and the
+  user search list is touched. No trust store change, no SIP/Gatekeeper change, no login keychain.
+
+### Applied
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. **No tracked file changed** — the merge
+  freeze means the feature branch may carry only Ralph evidence, and E1 is a host-state change.
+- Validation, in order:
+  - **`--dry-run` mutates nothing**: ten `plan:` lines plus the `rollback:` line, exit 0, and
+    afterwards the keychain, the `~/.config/moss-capture` directory and the search list were all
+    still exactly as measured above.
+  - **Both keychain refusals fire before any mutation** (exit 1, nothing created):
+    `--keychain ~/Library/Keychains/login.keychain-db` → `error: refusing to manage the session
+    keychain`; `--keychain /Library/Keychains/other.keychain-db` → `error: refusing to manage a
+    system keychain directory: /Library/Keychains`. The first proves the basename guard, the second
+    the directory guard (a system *name* would have been caught by the basename guard first, so the
+    directory branch needed its own non-system-name case to be exercised at all).
+  - **Real run**: `change:` ×4 (password file 0600, keychain created, identity imported, search-list
+    entry added) then `change: verified codesign signs with 'MOSS Capture Local Signing'`, exit 0.
+    The search-list `rollback:` line was printed **before** `security list-keychains -s` ran.
+  - **Search list preserved, not replaced**: the three pre-existing entries survive in their original
+    order and the MOSS keychain is appended fourth; `moss_entries=1` after the idempotent re-run, so
+    the append cannot duplicate. Default keychain still `login.keychain-db`.
+  - **Certificate is what was planned** (read back out of the keychain, not assumed from argv):
+    self-signed `CN=MOSS Capture Local Signing`, RSA 2048 / sha256WithRSAEncryption,
+    `X509v3 Basic Constraints: critical CA:FALSE`, `Key Usage: critical Digital Signature`,
+    `Extended Key Usage: critical Code Signing`, notBefore 2026-07-28 05:05:08 GMT →
+    notAfter 2036-07-25 05:05:08 GMT.
+  - **The PRD's "DR unchanged across a rebuild" property, measured at the identity level.** Two
+    *different* binaries (`/usr/bin/true`, `/bin/echo`) signed with the same `--identifier` both
+    emit `designated => identifier "com.alphasight.moss.capture" and certificate leaf =
+    H"e118d874377746c4bd25beb8252bb84302b73e72"`, byte-identical, while their `CDHash` values differ
+    (`acf92317…` vs `4f4391fc…`) — so the DR is demonstrably not cdhash-derived. Re-signing changed
+    bytes at the *same path* (a stand-in for a rebuild) leaves the DR byte-identical. The `H"…"`
+    value equals `shasum -a 1` of the certificate's DER, computed independently from
+    `security find-certificate | openssl x509 -outform DER` → `e118d874377746c4bd25beb8252bb84302b73e72`.
+    Ad-hoc contrast measured in the same session: `codesign --sign -` on the same two binaries gives
+    `designated => cdhash H"…" or cdhash H"…"` with different hashes per binary — which is exactly
+    the TCC-grant-invalidating behavior the tool's header says a certificate identity avoids.
+  - **Never gate on `find-identity`, reproduced on m4mbp**: `security find-identity -v -p codesigning`
+    reports `1 valid identities found` and lists only the pre-existing `LiveTranscribe Local Dev` —
+    the MOSS identity is absent from that list while `codesign` signs with it successfully. The
+    iteration-9 MacStudio finding holds on this host too.
+  - **No trust change**: the MOSS certificate is in neither the user nor the admin trust-settings
+    domain (`security dump-trust-settings` / `-d` → `moss_in_*_trust_settings=0`). The three certs
+    that do carry user trust settings (`LiveTranscribe Local Dev`, `Ga0-Alienware-RTX4070Ti`,
+    `Ga0-RTX4090`) are pre-existing and unrelated. No SIP, Gatekeeper or global trust change.
+  - **Idempotence**: a second run printed `unchanged: codesign already signs with 'MOSS Capture Local
+    Signing' …` plus the same eight `evidence:` lines, no `change:` line, and left the password
+    file's inode/size/mtime and the keychain's inode untouched.
+  - **Rollback rehearsed for real, then re-applied.** `security delete-keychain … && rm -f <password>`
+    removed both files and restored the search list to exactly the three pre-existing entries
+    (`moss_entries=0`, default keychain untouched); re-running the tool from that clean state
+    rebuilt everything with `change:` ×4 and exit 0.
+  - **Secret hygiene**: the keychain password appears in no shell history (`.zsh_history`,
+    `.bash_history` → 0), in no file under `~/Library/Logs`, and in no process argv
+    (`ps_hits_excluding_self=0`; the first measurement's `ps_hits=1` was my own `grep -F "$P"`
+    matching its own command line, not a leak). Its only occurrence on disk is the 0600 file inside
+    a 0700 directory. No token, payload or pin is involved in E1.
+  - **Checkout undisturbed**: m4mbp still `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, `dirty=0`.
+- Learned:
+  1. **The signing identity is not reproducible, and that changes when the rollback is free.** The
+     rehearsal minted a new RSA key, so the leaf moved `8c99754e…` → `ef8fa542…` and the DR with it.
+     The lab bundle's identity is a function of its inputs; this one is a function of a stored
+     private key. So E1's rollback is free **only until E2b signs the installed bundle** — after E3
+     it would destroy the human's TCC grants. Recorded on the E1/E2b candidates, not just here.
+  2. **A fresh SSH session finds the keychain locked**, even though `set-keychain-settings` disabled
+     the auto-lock timeout: `security show-keychain-info` answers `User interaction is not allowed`
+     and `codesign --sign` fails `errSecInternalComponent`. The unlock state is per security session,
+     not a keychain setting. My first DR probe failed this way and looked like a broken identity;
+     the tool's own probe and `build-app.sh:186-191` both unlock first, so nothing in the pipeline is
+     affected — but any hand-run `codesign` from a new session must unlock, and that is now in the
+     Validation section.
+  3. **A guard that shadows another guard is not exercised by the obvious input.** `System.keychain`
+     tests the basename branch, not the system-directory branch, because the basename check runs
+     first; only a non-system *name* in `/Library/Keychains` reaches the directory branch. Worth
+     remembering for the other tools' refusal rehearsals.
+  4. **Exit codes measured through a pipe are the pipe's.** The first refusal rehearsal reported
+     `rc=0` because `$?` followed `tail`, not the script; re-measured without a pipe both refusals
+     are exit 1. Never record a refusal's exit code from a pipeline.
+- Blocker: none new. E3's TCC clicks remain the one irreducible human step.
+- Next: E2b — run the reviewed `macos/scripts/build-app.sh` then `install-app.sh` on m4mbp to build,
+  sign and install `/Applications/MOSSCapture.app` plus `mtd-capture`. Record the rollback before
+  mutating (`install-app.sh` moves a replaced bundle to `<installed>.backup-<utc>`; on a first
+  install the rollback is `rm -rf /Applications/MOSSCapture.app` plus the CLI path). Expect the
+  bundle DR to be `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`,
+  identifier `com.alphasight.moss.capture`, and `keychain-access-groups` **absent** from the embedded
+  entitlements. Check whether `~/.local/bin` is on m4mbp's PATH first and pass `--bin-dir` if not,
+  rather than editing a shell profile. Build both Swift products with **separate** `--product`
+  invocations. State C4 review note (a) when `build-app.sh` unlocks the keychain with the password
+  on argv. After this step the E1 rollback stops being free.
