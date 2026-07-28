@@ -46,9 +46,10 @@ lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iterati
 tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
 deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c); iteration 16 ran the
 final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1),
-iteration 18 finalized the host manifest and rotated the live TLS pair (D2), and iteration 19
-installed and started the live service plus its Windows forward (D3) — none of 17-19 changed a
-tracked file, so from here the branch carries only `scripts/ralph-afk/*`.
+iteration 18 finalized the host manifest and rotated the live TLS pair (D2), iteration 19
+installed and started the live service plus its Windows forward (D3), and iteration 20 aligned the
+m4mbp checkout with the published SHA (E2a) — none of 17-20 changed a tracked file, so from here the
+branch carries only `scripts/ralph-afk/*`.
 Test totals on the branch: Swift **131 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
@@ -495,8 +496,10 @@ If E3 shows it blocking, move system admission onto the coordinator's own thread
 not add a Screen Recording preflight in its place (M31 forbids it).
 
 **Server state.** Deployed **`f9285d6`** since iteration 17 (D1), as is `origin/main` and local
-`main` — the three-way SHA equality the PRD names is satisfied for those three; the m4mbp checkout
-is the remaining leg and belongs to E2. The host checkout is **detached** at that SHA on purpose:
+`main`. **The PRD's "one exact SHA everywhere" clause is GREEN since iteration 20**: local `main`,
+`origin/main` (via `ls-remote`), the server checkout and the m4mbp checkout all read
+`f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, measured in the same iteration. The host checkout is
+**detached** at that SHA on purpose:
 its local `main` ref is still `163e969`, so
 `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete one-command rollback
 that moves nothing but `HEAD`. Tree clean; `moss-vllm` MainPID 322117 and `moss-web` MainPID 301112
@@ -543,8 +546,22 @@ for anything holding a secret: `MOSS_LIVE_AUTH_STATE`, `live.key` and the manife
 Never move live secret state onto the Windows drive, and never write a doc line that promises a
 mode inside the checkout.
 
-**Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. `/Applications/MOSSCapture.app` absent.
-Checkout is at upstream `40cf854` with `origin` = **OpenMOSS upstream**, not the AlphaSight fork.
+**Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3 (`swift-driver 1.148.6`).
+`/Applications/MOSSCapture.app` absent; no `moss-signing.keychain-db`, no
+`~/Library/Application Support/MOSSCapture`. Checkout is
+`/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` (same relative path as
+MacStudio), reachable as `ga0@m4mbp` with `BatchMode=yes`.
+**Since iteration 20 (E2a) it is detached at `f9285d6`** — tree `815f23b0…`, clean, 159 tracked
+files, and the reviewed `macos/scripts/*` + `ops/*` tools are present with their exec bits intact
+(the two `*-lib.sh` libraries are non-executable by design). Its `main` ref is deliberately
+**untouched** at upstream `40cf854` still tracking `origin` = **OpenMOSS upstream**, and the fork
+was added as a *second* remote `alphasight`; the complete rollback is therefore one
+`git -C <checkout> checkout main` (rehearsed in iteration 20: it restores `40cf854`, branch `main`,
+tree `ac0058f9…`, clean, `macos/scripts` gone), optionally followed by
+`git remote remove alphasight`. The fork is fetchable from m4mbp **anonymously** —
+`GIT_TERMINAL_PROMPT=0 git ls-remote` succeeds — so no credential lives on that host.
+`.gitattributes` declares LFS filters for `*.bin/*.safetensors/*.pt/*.pth` but the reviewed tree
+contains **zero** such files and neither host has `git-lfs`, so LFS is not in the picture.
 Login keychain is **locked to SSH sessions** — `LiveTranscribe Local Dev` signing fails
 `errSecInternalComponent`. A scripted self-signed identity in a dedicated keychain **does** sign
 over SSH with a designated requirement that is byte-identical across rebuilds (plan D7).
@@ -769,10 +786,22 @@ bash scripts/ralph-afk/merge-keeper.sh                          # builds product
 # force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
 # Standing rollback for the host checkout, still valid until D3 changes the host:
 #   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
-# Three-way SHA check (all three must print f9285d69ed7bcc592bb41b3dcdf29e3221968f44):
+# Four-way SHA check — the PRD clause in full (all four must print
+# f9285d69ed7bcc592bb41b3dcdf29e3221968f44; green since iteration 20):
 git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
+ssh -o BatchMode=yes ga0@m4mbp \
+  'git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize rev-parse HEAD'
+
+# --- E2a: the m4mbp checkout (SPENT in iteration 20) -----------------------------------------
+# Fences first (HEAD == 40cf854, branch main, clean), then remote + fetch + detached checkout.
+# `main` and `origin` (OpenMOSS) are never touched, so the rollback moves only HEAD:
+#   git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout main
+#   git -C … remote remove alphasight        # optional cleanup of the added remote
+# Re-running the checkout is a no-op; re-adding the remote prints `unchanged:`. Verify with
+# HEAD/tree/clean/159-files plus independent `shasum -a 256` of the reviewed tools against this
+# host — do not treat `git status` alone as content proof of a cross-host copy.
 
 # --- D3: install and start the live service (SPENT in iteration 19) --------------------------
 # The profile is host-local and untracked. It was written with `$HOME` expanded AT WRITE TIME, so
@@ -1015,19 +1044,39 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
     `live/live-auth.json` does not exist yet — the first pairing creates it, so its absence is the
     marker that no device is paired; and the loopback mint route is what `ops/live-pair.sh` uses,
     so D4 runs on the host, never from MacStudio.
-20. **D4 — verify/pair**: use the reviewed `ops/live-pair.sh --url https://127.0.0.1:7861 --cert
-    <live.crt>` **once** on the host to mint one pairing payload, never redirecting the `payload:`
-    line to a file; then confirm no secret artifact was left (no payload in shell history, logs,
-    argv or the journal) and that `live-auth.json` appeared with 0600 on ext4. Reachability is
-    already recorded by D3 and only needs re-asserting if the service is restarted. No tracked
+20. **D4 — verify/pair** `[deferred by evidence — must run immediately before E3's first pairing]`:
+    `live_auth.PAIRING_TTL_SECONDS = 300` (`live_auth.py:13`, stamped at
+    `pairing-codes` time as `expires_at = now + PAIRING_TTL_SECONDS` and enforced at
+    `live_auth.py:221`), so **a minted payload is dead five minutes later** — minting it before a
+    built app exists on m4mbp would only burn it. Run it on the host (the mint route is
+    loopback-only) as `ops/live-pair.sh --url https://127.0.0.1:7861 --cert <live.crt>` **once**,
+    never redirecting the `payload:` line to a file, in the same five-minute window as the app's
+    first `pair`. Then confirm no secret artifact was left (no payload in shell history, logs, argv
+    or the journal) and that `live-auth.json` appeared with 0600 on ext4. Reachability is already
+    recorded by D3/E2a and only needs re-asserting if the service is restarted. No tracked
     product/deployment edits after merge; only Ralph evidence may advance on the feature branch.
 
 ### Phase E — Mac install and human permission boundary
 
+**E2 was split by evidence in iteration 20.** Its checkout half had to come first: every reviewed
+tool E1 and E2b run (`macos/scripts/*`) simply did not exist on m4mbp, so "run the reviewed tool
+there" was unreachable until the checkout carried it. It also closes a PRD acceptance clause on its
+own, which no later step does.
+
+20a. **E2a — align the m4mbp checkout with the published SHA** `[done — iteration 20]`: remote
+    `alphasight` added beside the untouched OpenMOSS `origin`, `main` fetched, and the checkout
+    detached at `f9285d6` (tree `815f23b0…`, clean, 159 files) with `main` left at `40cf854`. Six
+    reviewed tool/source files hash identically to this host. Rollback rehearsed and re-applied. The
+    PRD's four-way "one exact SHA everywhere" clause is green. `git-lfs` is absent on both hosts and
+    the tree has no LFS-tracked file, so the `.gitattributes` filters are inert.
 21. **E1 — run reviewed signing tool**: create/reuse dedicated-keychain self-signed identity;
-    validate `codesign` and stable designated requirement, never `find-identity`.
-22. **E2 — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin; add
-    AlphaSight remote on m4mbp; fast-forward exact SHA; install app and CLI. Record rollback first.
+    validate `codesign` and stable designated requirement, never `find-identity`. The tool is now
+    on m4mbp at `macos/scripts/bootstrap-signing-identity.sh` (exec bit intact); C4 review note (a)
+    applies — `build-app.sh` briefly exposes the random keychain password in `ps`, which is
+    acceptable on single-user m4mbp but should be stated when it happens.
+22. **E2b — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin;
+    install app and CLI. Record rollback first. B5 residue: `install-app.sh` defaults the CLI to
+    `~/.local/bin` — pass `--bin-dir` if that is not on m4mbp's PATH rather than editing a profile.
 23. **E3 — TCC human step**: GUI launch and one `start`; report exact Microphone and System Audio
     Recording clicks. Never touch TCC DB or retry autonomously. Continue only after operator
     confirms both grants.

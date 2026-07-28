@@ -1681,3 +1681,106 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   `live-auth.json` appeared at 0600 on ext4. The payload is only useful once a Mac can consume it,
   so if E1/E2 are not yet done, D4 may instead be run as the *refusal* checks plus the
   served-vs-on-disk digest agreement, deferring the single real mint to just before E2's install.
+
+## Iteration 20 (run 20260728-023004-98501, its iteration 12) - E2a: align the m4mbp checkout with the published SHA
+- Target: the checkout half of Phase E candidate E2, split out and taken before E1 because of what
+  the pre-probe showed: **none of the reviewed tools existed on m4mbp**. `macos/scripts/` and
+  `ops/systemd/` were absent (the checkout sat at OpenMOSS upstream `40cf854`, 14 commits, 37
+  tracked files), so "run the reviewed signing tool on m4mbp" (E1) and "run the reviewed
+  build/install tools" (E2b) were both unreachable steps, not just unstarted ones. E2 itself
+  authorizes this action ("add AlphaSight remote on m4mbp; ... exact SHA"). It also closes a PRD
+  acceptance clause on its own, which no later Phase-E step does.
+- Deliberate deviation from E2's wording, recorded: `40cf854` **is** an ancestor of `f9285d6`
+  (`git merge-base --is-ancestor` = yes), so a literal fast-forward of m4mbp's `main` was possible -
+  and rejected. That branch tracks `origin` = **OpenMOSS upstream**; moving it would repoint a
+  branch belonging to a different remote and its rollback would need a ref rewrite
+  (`reset --hard`/`branch -f`), which prompt.md forbids. A **detached checkout** reaches the same
+  `git rev-parse HEAD` with a rollback that moves only HEAD - exactly the pattern D1 already
+  recorded for the server, where local `main` was likewise left behind at `163e969`.
+
+### Rollback recorded BEFORE any mutation (PRD "Reversibility")
+- Pre-mutation state, measured read-only this iteration
+  (`/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`, found by `find ~` -
+  the path was never recorded before, same relative path as MacStudio):
+  - HEAD `40cf8549c6b5634ba36b7e817cf523b5ad400c2e`, branch `main`, tree `ac0058f97dbb75e2c…`
+  - `dirty_lines=0` (porcelain includes untracked, so nothing could be clobbered by a checkout),
+    `git stash list` empty, one worktree, `origin/main...HEAD` = `0 0` (no local commits)
+  - remotes: **only** `origin` -> `https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git`
+  - not shallow, 14 commits, 37 tracked files, `.git` 336K, no submodules, 81 GiB free
+  - `macos/scripts` and `ops/systemd` absent; `/Applications/MOSSCapture.app` absent; no
+    `~/Library/Keychains/moss-signing.keychain-db`; no `~/Library/Application Support/MOSSCapture`
+  - `swift-driver 1.148.6 / Apple Swift 6.3.3`, macOS 26.5.2
+- Rollback (both lines printed by the script itself before its first mutation):
+    git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout main
+    git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize remote remove alphasight
+  The first restores HEAD, the branch and the whole worktree; the second is optional cleanup. No
+  ref is rewritten, nothing is deleted, and no file outside git's control is touched.
+- The script fences on the exact pre-state (HEAD == 40cf854, branch == main, porcelain empty) and
+  exits 1 rather than mutating anything if any fence fails.
+
+### Applied
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. **No tracked file changed** - the merge
+  freeze means the feature branch may carry only Ralph evidence, and E2a is a host-state change.
+- Validation, in order:
+  - **Fetch reachability proven before adding anything**: from m4mbp,
+    `GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/AlphaSightInc/MOSS-Transcribe-Diarize.git
+    refs/heads/main` -> `f9285d69…` at exit 0, so the fork is fetchable **anonymously** and no
+    credential is created, cached or needed on that host.
+  - **LFS ruled out before the checkout**: `.gitattributes` declares `filter=lfs` for
+    `*.bin/*.safetensors/*.pt/*.pth`, and neither host has `git-lfs` - but
+    `git ls-tree -r --name-only f9285d6 | grep -cE '\.(bin|safetensors|pt|pth)$'` = **0**, so the
+    filters are inert and the checkout cannot land pointer files in place of content.
+  - **Mutations**: `git remote add alphasight <fork>` -> `change: added remote alphasight`;
+    `git fetch --no-tags alphasight main` -> `* [new branch] main -> alphasight/main`;
+    `git rev-parse alphasight/main` = `f9285d69ed7bcc592bb41b3dcdf29e3221968f44` **asserted equal to
+    the reviewed SHA before the checkout ran**; `git checkout --detach f9285d6`.
+  - **Post-state**: HEAD `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, tree
+    `815f23b0d7cd0c3fd73226404036fdce49802da2` (identical to this host's
+    `git rev-parse f9285d6^{tree}`), `post_dirty_lines=0`, 159 tracked files (= `git ls-tree -r`
+    count here). `refs/heads/main` still `40cf854` and `origin` still the OpenMOSS URL, so the
+    pre-existing branch/remote really are untouched; `git remote` = `alphasight,origin`.
+  - **Content proof independent of git**: `shasum -a 256` on m4mbp vs MacStudio for
+    `macos/scripts/build-app.sh` `74b26414…`, `bootstrap-signing-identity.sh` `729b597c…`,
+    `install-app.sh` `0d59c6c7…`, `ops/live-pair.sh` `0728b7b6…`,
+    `CaptureLatencyProbe.swift` `60601d11…`, `MOSSCapture.entitlements` `989e12ff…` - all six
+    **byte-identical**. Exec bits arrived intact: the three `macos/scripts` tools and both `ops/*.sh`
+    tools are `-x`, while `moss-tool-lib.sh` / `moss-ops-lib.sh` are not (they are sourced, by
+    design), and `ops/finalize-live-provider-manifest.py` is `-x`.
+  - **Rollback rehearsed for real, then re-applied**: `git checkout main` restored HEAD `40cf854`,
+    branch `main`, tree `ac0058f97dbb75e2c…`, `dirty=0` and `macos/scripts` **gone**; re-running
+    `git checkout --detach f9285d6` returned the tree to `815f23b0…` with `dirty=0` and `main` still
+    at `40cf854`. Reflog shows exactly those three HEAD moves and no ref rewrite.
+  - **PRD "One exact SHA everywhere" - GREEN.** Measured this iteration, all four legs printing
+    `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`: local `main` (MacStudio), `origin/main` via
+    `git ls-remote`, the server checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize` (detached,
+    `dirty=0`), and the m4mbp checkout.
+  - **Nothing on the server was disturbed** (the checkout change is on the Mac, and this proves it):
+    moss-vllm MainPID **322117** / ActiveEnterTimestamp Sun 2026-07-26 22:05:29 EDT, moss-web
+    MainPID **301112** / Fri 2026-07-24 21:37:11 EDT, moss-live-web MainPID **334346** / Tue
+    2026-07-28 00:50:29 EDT, `NRestarts=0` on all three, all `active` - the same values D3 recorded.
+  - **PRD reachability clauses re-asserted from m4mbp at the new checkout**, pin-then-trust:
+    the leaf offered on `100.64.0.8:7861` hashes to `a35ca9fc4a0f…b680ff` (the D2 pin), and with
+    that leaf as the only trust anchor `/live` -> **200** and `/api/live/descriptor` -> **200**;
+    `http://192.168.68.38:7860/` -> **200**; plaintext `http://100.64.0.8:7861/live` -> **000**.
+  - **Secret hygiene**: no token, payload or credential is involved in E2a. The fetch is anonymous
+    over HTTPS, nothing was written outside the git checkout, and the added remote URL contains no
+    userinfo.
+- Learned: (1) `PAIRING_TTL_SECONDS = 300` (`live_auth.py:13`, enforced at `:221`) makes D4's mint a
+  **five-minute-perishable** artifact, so minting before a built app exists on m4mbp would simply
+  burn it - D4 is now recorded as "run immediately before E3's first pairing", which is why it was
+  correct to skip past it this iteration rather than run its hollow half. (2) Ancestry alone does not
+  make a fast-forward the right move: whose remote a branch tracks decides whether the rollback is a
+  HEAD move or a forbidden ref rewrite. (3) A cross-host git copy should be verified with digests as
+  well as `git status`; SHA equality plus a clean porcelain is git's own word about its own store,
+  and a filter (LFS, eol) can legitimately produce a "clean" tree whose bytes differ from the source
+  host's - here the `*.sh text eol=lf` attribute exists in the reviewed `.gitattributes`, and the six
+  matching digests are what prove it changed nothing on macOS.
+- Blocker: none new. E3's TCC clicks remain the one irreducible human step.
+- Next: E1 - run `macos/scripts/bootstrap-signing-identity.sh` on m4mbp (it is now present and
+  executable) to create the dedicated `moss-signing.keychain-db` self-signed identity. Record the
+  rollback (`security delete-keychain "$HOME/Library/Keychains/moss-signing.keychain-db"`, which also
+  removes the search-list entry) before the first mutation, run `--dry-run` first, and validate by
+  `codesign`-ing a scratch binary twice and comparing the designated requirement - never by
+  `security find-identity -v -p codesigning`, which reports 0 valid identities for this kind of cert.
+  Note C4 review note (a): `build-app.sh` unlocks the keychain with `-p "$(cat …)"`, so the random
+  password is briefly visible in `ps`; state it at E1 rather than accepting it silently.
