@@ -42,12 +42,14 @@ added the retained-until-ACK outbox (B2); iteration 7 added the 16 kHz/8000-samp
 converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent transport (B4);
 iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 recorded the Phase B
 client gate (B6) and changed no product source; iteration 11 bound view authority to the session
-lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2).
+lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
+tracked TLS-material and loopback-pairing tools (C3a).
 Test totals on the branch: Swift **121 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **492 passed / 2 skipped / 368 subtests**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **506 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
-`tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9) and
-`tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12).
+`tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
+`tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12) and
+`tests/test_live_deployment_credentials.py` **14 passed** (new in iteration 13).
 
 **Phase B client gate: GREEN at `3fb5567` (iteration 10).** Product-tree SHA `3fb5567`; the
 checkpoint commit adds only `scripts/ralph-afk/*`, so
@@ -259,6 +261,36 @@ input is never overwritten.
 the finalizer does not set already satisfies the contract and D2 will not be refused. The test
 fixture mirrors those exact values.
 
+**Live-credential tool contract (new, iteration 13).** Two tracked tools share
+`ops/moss-ops-lib.sh`, which carries B5's output discipline for the Linux side; the two libraries
+are separate files because the primitives differ per host family, and
+`test_ops_and_mac_tool_libraries_speak_one_output_vocabulary` compares their emitted lines byte for
+byte so the vocabulary cannot drift.
+*`generate-live-tls.sh`* mints `live.crt`/`live.key`. Names are **flags**, never constants: at least
+one `--dns` and one `--ip`, addresses refused unless inside the networks `live_auth` admits
+(IPv4-only, so the tool is narrower than the server, never wider), a name whose final label is
+all digits refused as an address in the wrong flag, `--days` ≤ 825. It reads the generated file back
+before installing anything — SAN set, `serverAuth`, key/certificate pairing, and the pin both as a
+DER digest and as `x509 -fingerprint`, which must agree. **A re-run with the same names prints
+`unchanged:` and rotates nothing**; that is a safety property, not tidiness, because the pin is what
+every paired Mac stores and what the server embeds in every pairing payload. A name change, a CN
+change, expiry inside `--min-remaining-days`, or a half-installed pair is **refused** unless
+`--rotate` is passed, and a rotation moves both files aside to `<path>.backup-<utc>` with the
+`rollback:` line printed before the first mutation. Key 0600, certificate 0644, directory 0700
+created if absent and refused if group/world-writable.
+*`live-pair.sh`* mints one payload from `POST /api/live/pairing-codes` and prints it **once** on its
+own `payload:` line — no temp file, no log, no argv, no `set -x`; the body never leaves a shell
+variable. It refuses any non-loopback or plaintext URL **before** sending anything (the mint route
+is loopback-only by design), and it refuses to print the payload when the certificate digest the
+*running service* embedded differs from the digest of the certificate file on disk — the
+rotated-but-not-restarted case, which would otherwise surface as an unexplained pinning failure on
+the Mac. `curl -k` on this hop is deliberate: the connection is to 127.0.0.1 and the certificate is
+then verified by exact digest against the operator's own file.
+The pin is the coupling: `evidence: pin=` equals `web_cli._certificate_sha256`, equals
+`sha256(DER)` computed independently, and equals the leaf a real handshake with the generated pair
+offers (measured by starting a TLS listener on it). Exchanging a minted payload needs a non-loopback
+TLS peer and is already covered end to end by `tests/test_macos_uds_tracer.py`; D4 does it for real.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -441,6 +473,27 @@ swift test --package-path macos/MOSSCapture \
 #     burst capacity headroom on both lanes with replayable acks, 9 refusals, dry-run, unchanged
 #     re-run, backup + working rollback, tracked ops tool end to end). Scratch paths only. -------
 python3 -m pytest tests/test_live_manifest_finalizer.py -q
+
+# --- C3a live-credential tools (14 nodes: pin identity across three independent readers plus a
+#     real handshake, four-SAN deployment invocation, no-rotate re-run, refusal + reversible
+#     rotation, half-installed pair, dry runs, address parity with live_auth, 15 malformed-input
+#     refusals, failed-generation cleanup, one-payload secrecy, served-vs-on-disk mismatch,
+#     pre-send refusals via a curl stub, library vocabulary parity). Scratch paths only; the one
+#     server it starts is loopback-only on an ephemeral port. -----------------------------------
+python3 -m pytest tests/test_live_deployment_credentials.py -q
+
+# --- C3a tools by hand (scratch paths; never the deployed live dir) --------------------------
+ops/generate-live-tls.sh --dry-run --dns moss-live.fixture.invalid --ip 10.11.12.13 \
+  --cert /tmp/moss-tls/live.crt --key /tmp/moss-tls/live.key
+# The D2 invocation itself (run on the host, from the deployed checkout, at D2 and not before):
+#   ops/generate-live-tls.sh --dns ga0-alienware-rtx4070ti.tailnet.aisight.us \
+#     --dns ga0-alienware-rtx4070ti.local --ip 100.64.0.8 --ip 192.168.68.38 \
+#     --common-name ga0-alienware-rtx4070ti.tailnet.aisight.us \
+#     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt" \
+#     --key "$HOME/.local/share/moss-transcribe-diarize/live/live.key"
+# D4 mints exactly once, on the host, and the payload line is never redirected to a file:
+#   ops/live-pair.sh --url https://127.0.0.1:7861 \
+#     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
 
 # --- B5 packaging tools (9 nodes: entitlement drop, reproducible bundle, install-location
 #     refusal, untouched idempotent install, backup + working rollback, tampered-bundle refusal,
@@ -629,15 +682,25 @@ frozen except for defects the server work exposes.
     tracked but **undocumented** in `LOCAL_DEPLOYMENT.md`, which C3 owns; residue for D2: the host
     file must be finalized before the live service starts, and the source revision must be the
     40-hex merge SHA (the placeholder is refused).
-13. **C3 — tracked deployment and certification bundle**: TLS generator,
-    live env/service templates, start-web overrides, two-port Windows networking, loopback
-    pairing helper, deployment docs (including the C2 finalizer), and an **app-owned latency
-    probe**. The app—not the CLI—
+13. **C3a — tracked TLS material and loopback pairing** `[done — iteration 13]`:
+    `ops/{moss-ops-lib,generate-live-tls,live-pair}.sh` — see the live-credential tool contract
+    above. Fourteen nodes; five mutation rehearsals recorded in progress.txt. No product source
+    changed. Residue for C3b: both tools are **undocumented** in `LOCAL_DEPLOYMENT.md`, which C3b
+    owns, and the doc must state the D2/D4 invocations and that the `payload:` line is never
+    redirected to a file. Residue for D2: `--min-remaining-days` defaults to 30, so a host cert
+    inside that window rotates only when `--rotate` is passed deliberately.
+14. **C3b — tracked live service templates and networking**: `ops/moss-live.env.example`,
+    `ops/systemd/moss-live-web.service`, `ops/start-web.sh` port/runs-dir/env overrides that keep
+    7860 exactly as it is, two-port Windows forwarding/firewall in
+    `ops/configure-windows-network.ps1`, `ops/install-services.sh` handling of the second unit, and
+    `LOCAL_DEPLOYMENT.md` (which must document the C2 finalizer and the C3a tools). Test that the
+    batch invocation is byte-identical when live is off, that the live profile requires every live
+    variable, and that nothing is generated with `MOSS_LIVE_ENABLED=0`. No host mutation.
+15. **C3c — app-owned latency probe**: the app — not the CLI —
     uses view authority, maps `committed_samples` to converted client capture timestamps, and
-    emits only redacted p50/p95/max plus snapshot/events fetch timings. Test
-    generation/default-off/secrecy/7860-preservation and deterministic latency math without host
-    mutation.
-14. **C4 — final local gate and single keeper merge**: Swift/full Python/tracer/reliability
+    emits only redacted p50/p95/max plus snapshot/events fetch timings. Test default-off, secrecy,
+    and deterministic latency math without host mutation.
+16. **C4 — final local gate and single keeper merge**: Swift/full Python/tracer/reliability
     gates green on the feature tip; then run `scripts/ralph-afk/merge-keeper.sh`. It creates and
     tests the one no-ff merge in a temporary `main` worktree while the primary Ralph worktree
     remains on the feature branch. Record feature + merge SHAs. After this point, only Ralph
@@ -645,35 +708,35 @@ frozen except for defects the server work exposes.
 
 ### Phase D — publish and enable the 4070Ti
 
-15. **D1 — publish reviewed `main`**: push the merge SHA to `origin`, then fetch/checkout that
+17. **D1 — publish reviewed `main`**: push the merge SHA to `origin`, then fetch/checkout that
     exact SHA at `/mnt/d/Coding/MOSS-Transcribe-Diarize` on
     `gyauo@ga0-alienware-rtx4070ti.local`. Record rollback before mutation; verify three-way SHA
     equality.
-16. **D2 — host manifest/TLS**: run the reviewed finalizer and TLS generator; verify merge SHA,
+18. **D2 — host manifest/TLS**: run the reviewed finalizer and TLS generator; verify merge SHA,
     generated hashes, four SANs, and fingerprint; rotate pin/pairing together.
-17. **D3 — install reviewed live service/networking**: create host-local env/auth state, install
+19. **D3 — install reviewed live service/networking**: create host-local env/auth state, install
     reviewed 7861 unit, apply reviewed two-port forwarding/firewall, start only live service.
-18. **D4 — verify/pair**: 7861 TLS live + descriptor 200, 7860 plaintext batch 200, use reviewed
+20. **D4 — verify/pair**: 7861 TLS live + descriptor 200, 7860 plaintext batch 200, use reviewed
     loopback helper once, verify no secret artifact. No tracked product/deployment edits after
     merge; only Ralph evidence may advance on the feature branch.
 
 ### Phase E — Mac install and human permission boundary
 
-19. **E1 — run reviewed signing tool**: create/reuse dedicated-keychain self-signed identity;
+21. **E1 — run reviewed signing tool**: create/reuse dedicated-keychain self-signed identity;
     validate `codesign` and stable designated requirement, never `find-identity`.
-20. **E2 — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin; add
+22. **E2 — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin; add
     AlphaSight remote on m4mbp; fast-forward exact SHA; install app and CLI. Record rollback first.
-21. **E3 — TCC human step**: GUI launch and one `start`; report exact Microphone and System Audio
+23. **E3 — TCC human step**: GUI launch and one `start`; report exact Microphone and System Audio
     Recording clicks. Never touch TCC DB or retry autonomously. Continue only after operator
     confirms both grants.
 
 ### Phase F — certification and rollback
 
-22. **F1 — 60 s canary** per prd.md.
-23. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-24. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
+24. **F1 — 60 s canary** per prd.md.
+25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
+26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-25. **F4 — rehearse/record rollback, restore service, and close** only when every PRD acceptance
+27. **F4 — rehearse/record rollback, restore service, and close** only when every PRD acceptance
     item has evidence.
 
 ## Non-candidates

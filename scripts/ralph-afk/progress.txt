@@ -938,3 +938,101 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   app-owned latency probe that emits only redacted aggregate timings. C3 is the largest remaining
   item before the C4 gate; consider splitting it (transport/TLS artifacts first, latency probe
   second) rather than one oversized iteration.
+
+## Iteration 13 (run 20260728-023004-98501, its iteration 5) - live TLS material + loopback pairing (C3a)
+- Target: Phase C candidate C3, split as iteration 12 recommended. This iteration is C3a - the two
+  *credential* tools D2 and D4 run on the host: `ops/generate-live-tls.sh` and `ops/live-pair.sh`.
+  They are one logical change because they are coupled by one value: SHA-256 over the leaf
+  certificate's DER bytes. The generator mints it, the server derives it from the same file
+  (`web_cli._certificate_sha256`) and stamps it into every pairing payload, and the Mac compares it
+  to the leaf a handshake offers (`FullCertificatePinValidator`, 64 lowercase hex, nothing else).
+  The staged host material has no tailnet SAN (plan D9), so nothing in the repo could generate the
+  certificate the browser has to match, and nothing could mint a payload on the loopback-only route.
+- Files: `ops/moss-ops-lib.sh` (new), `ops/generate-live-tls.sh` (new), `ops/live-pair.sh` (new),
+  `tests/test_live_deployment_credentials.py` (new), `scripts/ralph-afk/{context.md,progress.txt}`.
+  **No product source changed** (`git diff --name-only` touches only ops/, tests/ and the loop dir).
+- Method: names are flags with checked relations, exactly C2's shape - a deployment states its own
+  DNS names and addresses, and an address is refused unless it is inside the networks `live_auth`
+  admits, so the tool cannot mint material for a peer the server itself would reject. What was
+  passed in is an input; what the generated file says is evidence (SAN set, `serverAuth`,
+  key/certificate pairing, and the pin computed two independent ways which must agree) and the
+  installed file is re-read again after the move. Output discipline is B5's, via a Linux-side
+  `moss-ops-lib.sh`; the two libraries stay separate because the primitives differ per host family
+  and a parity node compares their emitted lines byte for byte.
+- Validation:
+  - `pytest tests/test_live_deployment_credentials.py -q` -> **14 passed** in 10.7s
+  - `pytest tests -q -p no:cacheprovider` -> **506 passed, 2 skipped, 368 subtests** in 49.5s
+    (was 492/2/368; +14 nodes, no regressions)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+  - `bash -n` on all three new scripts -> clean; every script is bash-3.2 compatible (MacStudio's
+    /bin/bash is 3.2.57, the server's is 5.x, so 3.2 is the binding constraint - no associative
+    arrays, no `${var,,}`, `[[ =~ ]]` and `$'\n'` verified by hand under 3.2 before use)
+  - Swift untouched this iteration (no Swift source changed); last measured 121 passed at
+    iteration 11.
+- Evidence:
+  - **The pin is proven identical across four readers**: the tool's `evidence: pin=`, the server's
+    own `web_cli._certificate_sha256`, `hashlib.sha256(ssl.PEM_cert_to_DER_cert(...))` computed in
+    the test without either implementation, and the leaf a *real handshake* offers - the node loads
+    the generated pair into an `SSLContext` (the same `load_cert_chain` call uvicorn makes) and
+    reads the certificate back with `ssl.get_server_certificate`. A key that did not belong to the
+    certificate would fail at `load_cert_chain`, so that node covers the pairing too.
+  - **A re-run must not rotate.** This started as tidiness and turned out to be the safety property
+    of the tool: the pin is what every paired Mac stores, so an accidental second run would break a
+    live client with a pin mismatch and invalidate every outstanding payload. A re-run with the same
+    names in a different order and a different `--days` prints `unchanged:`, emits no `change:` line
+    and leaves inode, mtime and bytes untouched. Rotation is `--rotate` only, and a name change, CN
+    change, near-expiry or half-installed pair is *refused* with the exact re-run command rather
+    than silently rotated.
+  - **`live-pair.sh` catches the rotated-but-not-restarted service.** The payload carries the digest
+    of the certificate the *running process* loaded; the tool compares it with the digest of the
+    file on disk and refuses to print anything when they differ, naming both digests. Without this
+    the failure mode surfaces on the Mac as an unexplained pinning failure with a valid-looking
+    pairing code. Proven with a real uvicorn TLS server on cert A and `--cert` pointing at cert B.
+  - Secret hygiene is measured, not asserted in prose: two real payloads are minted from the real
+    `POST /api/live/pairing-codes` route over real TLS, each printed exactly once on its own
+    `payload:` line, and the node then walks the whole tree under the tool's HOME, TMPDIR and
+    working directory and asserts neither secret reached any file - plus not stderr, not an
+    `evidence:` value, and not the server's persisted auth state. The two mints differ, so nothing
+    is cached or replayed.
+  - Address admission is a **parity table against the server**, asked through `LiveAccessRegistry`'s
+    public surface rather than by copying its network tuple: 14 IPv4 cases including the exact
+    boundaries 100.63.255.255/100.64.0.8/100.128.0.1 and 172.15/172.16/172.32, plus 169.254.1.1,
+    8.8.8.8 and two malformed values. The tool's accept/refuse agrees with the server on all 14.
+    IPv6 is refused although the server admits ULA and link-local: narrower than the server is safe,
+    wider would not be, and that direction is asserted.
+  - A dry run validates *before* it plans: 15 malformed-input cases produce zero `plan:` lines, so
+    `--dry-run` refuses exactly what a real run would. A failed generation (openssl stubbed to fail
+    at `req`) leaves no certificate, no key and an empty scratch TMPDIR.
+  - Mutation rehearsal 1 (drop the payload-vs-disk digest cross-check): the mismatch node fails.
+    Reverted -> green.
+  - Mutation rehearsal 2 (also emit the payload as an `evidence:` line): the secrecy node fails.
+    Reverted -> green.
+  - Mutation rehearsal 3 (make the `unchanged:` branch unreachable, i.e. rotate on every run): the
+    no-rotate node fails. Reverted -> green.
+  - Mutation rehearsal 4 (print `rollback:` after the moves instead of before): the reversible-
+    rotation node fails on ordering. Reverted -> green.
+  - Mutation rehearsal 5 (drop the loopback check in `live-pair.sh`): the pre-send node fails - and
+    it fails *by reaching the stub curl*, which is what the marker file in that node is for.
+  - Found while writing it: `10.0.0.5` is a label-legal DNS name, so an address typed into `--dns`
+    was accepted and would have become a DNS-type name that matches nothing. Fixed generally - a
+    final label that is all digits is not a hostname - so `8.8.8.8` is caught the same way, and the
+    error says which flag to use.
+  - Not covered here on purpose: exchanging a minted payload needs a non-loopback TLS peer, which
+    `tests/test_macos_uds_tracer.py` already does end to end with a payload from the same route.
+    This test's server binds loopback only on an ephemeral port; D4 exchanges for real.
+- Learned: (1) The `unchanged:`/rollback discipline B5 introduced for TCC grants transfers exactly
+  to TLS material, and for the same reason: the thing being protected is a human-visible binding
+  (there, the grant; here, the pin every paired client stores) that a silent rewrite destroys.
+  (2) Asking the server whether it would admit an address - through its public API, in the test -
+  is a better rule than copying its network list into the tool: the tool's own check can be simple
+  and narrow as long as a node proves it never becomes wider. (3) A credential tool's most useful
+  check is not on its own output but on the *disagreement between two places the value lives*: the
+  file on disk and the process that loaded it.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: C3b - the live service templates and networking: `ops/moss-live.env.example`,
+  `ops/systemd/moss-live-web.service`, `ops/start-web.sh` port/runs-dir overrides that keep the
+  7860 batch invocation byte-identical when live is off, two-port Windows forwarding/firewall,
+  `ops/install-services.sh` for the second unit, and `LOCAL_DEPLOYMENT.md` documenting the C2
+  finalizer plus both C3a tools (including that the `payload:` line is never redirected to a file).
+  Then C3c, the app-owned latency probe, which is the last item before the C4 gate.
