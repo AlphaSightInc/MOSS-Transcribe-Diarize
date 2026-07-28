@@ -1307,3 +1307,100 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   `git checkout 163e969` as the rollback *before* the fetch. Then verify three-way SHA equality
   (local main, origin/main, server checkout) and confirm the batch service on 7860 still answers
   200. The exact commands are in context.md's Validation section.
+
+## Iteration 17 (run 20260728-023004-98501, its iteration 9) - D1: publish the reviewed merge
+- Target: Phase D candidate D1 - push the one keeper merge to the AlphaSight fork and check that
+  exact SHA out on the 4070Ti, then prove three-way SHA equality and that the batch service is
+  unharmed. This is the first candidate in the whole run that authorizes a remote mutation.
+
+### Rollback recorded BEFORE any mutation (PRD "Reversibility")
+- Pre-mutation state, measured read-only this iteration:
+  - local `main` = f9285d69ed7bcc592bb41b3dcdf29e3221968f44 (HEAD is `ralph/live-meeting-mvp`
+    at a3f5e49c, working tree clean, single worktree)
+  - `git ls-remote origin refs/heads/main` = 163e969a054dd7f894e550ff611e9c5a7620ae4d
+  - server `/mnt/d/Coding/MOSS-Transcribe-Diarize`: branch `main`, HEAD 163e969a…, clean tree
+  - `moss-vllm.service` active, `moss-web.service` active; http://192.168.68.38:7860/ -> 200;
+    https://100.64.0.8:7861/live -> 000 (live not enabled yet, expected)
+- Rollback for the **server checkout** (the only host mutation D1 makes):
+    git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969a054dd7f894e550ff611e9c5a7620ae4d
+  The checkout is deliberately **detached** at the reviewed SHA, so the server's local `main` ref
+  never moves and this one command restores the exact pre-mutation worktree. No service is
+  restarted by D1, so no service rollback is needed: `moss-web.service` keeps serving the process
+  it already has.
+- Rollback for the **push**: there is none, by design. `git push origin main` is a fast-forward
+  163e969..f9285d6 (118 commits) and the PRD forbids force-push, so publishing is one-way. It is
+  authorized only because all three gates are green and the single keeper merge is complete:
+  Phase B client gate at 3fb5567, server meeting-reliability gate and final local gate at
+  f400d426, merge f9285d6 with `git diff f400d42 f9285d6` empty.
+
+### Applied
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. **No tracked file changed** - D1 is a
+  publish, and the merge freeze means the feature branch may carry only Ralph evidence.
+- Validation, in order:
+  - `git merge-base --is-ancestor 163e969 f9285d6` -> **true**; `git rev-list --count
+    163e969..f9285d6` -> **118**; `f9285d6^1 = af3ac366…`, `f9285d6^2 = f400d426…`,
+    `git diff --stat f400d42 f9285d6` -> **empty**. So the published tree is byte-identical to the
+    one the C4 gate measured.
+  - `git push --dry-run origin main` -> `163e969..f9285d6  main -> main` (no `+`, so fast-forward).
+  - `git push origin main` -> same line, exit 0. `git ls-remote origin refs/heads/main` now
+    **f9285d69ed7bcc592bb41b3dcdf29e3221968f44**.
+  - Host: `git fetch origin main` -> `163e969..f9285d6  main -> origin/main`;
+    `git cat-file -t f9285d6…` -> `commit`; ancestry re-checked **on the host** before the
+    checkout; `git checkout --detach f9285d6…` -> `HEAD is now at f9285d6 merge: live meeting
+    transcription MVP keeper`; `post_dirty=[0]`; `git rev-parse main` on the host still
+    **163e969** (the rollback target never moved).
+  - **Three-way SHA equality: green.** local `main`, local `origin/main`, `git ls-remote origin`
+    and the host checkout all read `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`.
+  - **Batch service unharmed:** `GET /` 200 (57066 B), `/api/runtime` 200 (1216 B), `/api/jobs`
+    200 (275527 B, real job records), `/favicon.svg` 200 (452 B). Live routes on the batch port
+    still **404** for both `/live` and `/api/live/descriptor`.
+  - `moss-vllm.service` and `moss-web.service` both still `active`; **neither restarted**.
+  - `https://100.64.0.8:7861/live` -> 000 (connection refused). Expected: the live unit is not
+    installed yet. `~/.config/systemd/user/` holds only `moss-vllm.service` and `moss-web.service`,
+    while `ops/systemd/` in the new checkout now carries `moss-live-web.service` for D3.
+- Evidence:
+  - **The reviewed ops tooling landed on the host with the checkout**: `ops/` now lists
+    `finalize-live-provider-manifest.py`, `generate-live-tls.sh`, `live-pair.sh`,
+    `moss-ops-lib.sh`, `moss-live.env.example` and `systemd/moss-live-web.service`. `ops/moss.env`
+    still says `MOSS_LIVE_ENABLED=0` and `ops/moss-live.env` is **absent**, which is exactly the
+    pre-D3 state: the live unit cannot start by accident because its `EnvironmentFile` is
+    mandatory.
+  - **"Batch unharmed" needed a second, sharper proof and got one.** The four 200s are weaker
+    evidence than they look: `INDEX_HTML` and `FAVICON_SVG` are module-level constants
+    (`moss_transcribe_diarize/app/server.py:123-129`), so the running uvicorn is still the
+    `163e969` process image and a checkout *cannot* change what it serves. What actually carries
+    risk is the next restart, which will use the new `ops/start-web.sh`. Proven without restarting
+    or starting anything: a /tmp copy of the deployed script with only its final line rewritten
+    (`sed '$ s|.*|printf "argv:%s\n" "${web_args[@]}"|'`, after asserting the original last line
+    really is the `exec`, and confirming the copy contains zero `^exec ` lines), sourced with the
+    host's real `ops/moss.env`, emits exactly the recorded contract argv from
+    `tests/test_live_service_deployment.py:52-62` - `--backend vllm`, `--model <state>/model`,
+    `--vllm-base-url http://127.0.0.1:8000/v1`, `--vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize`,
+    `--vllm-timeout 1800`, `--runs-dir /mnt/d/Coding/MOSS-Transcribe-Diarize/runs`,
+    `--host 0.0.0.0`, `--port 7860`, `--max-len 16384`, `--max-new-tokens 12000` - and **no live
+    flag**. The C3b claim "the batch argv is unchanged" is now measured on the deployed host, not
+    only in a test fixture.
+  - **Detached checkout was chosen over fast-forwarding the host's `main`.** Both pin the same
+    exact SHA, but detaching leaves the host's `main` ref at `163e969`, so the recorded rollback is
+    a single `git checkout 163e969` that moves `HEAD` and nothing else - no ref rewriting, and no
+    `reset --hard` anywhere near a deployment tree. It also makes "deploy only a reviewed SHA"
+    literal rather than a property of a branch that could later be advanced.
+- Learned: (1) A green HTTP probe is not evidence a deployment left a service alone when the
+  service loads its assets at import time - it is evidence the *old process* is still running. The
+  question worth answering was "what will the next restart do", and that was answerable read-only.
+  (2) Deriving the argv by rewriting one line of a copy is safer than any flag I could have added:
+  the tool needed no change, nothing was installed, and asserting the replaced line first means a
+  drifted script fails the probe instead of silently launching a server.
+  (3) The push is the one genuinely irreversible act in this whole plan (force-push is forbidden),
+  so the ordering that mattered was recording the rollback and re-verifying `diff f400d42 f9285d6`
+  *before* it, not after.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: D2 - host manifest and TLS material, run from the deployed checkout on the host. Finalize
+  `live-provider-manifest.provisional.json` into `live-provider-manifest.json` with
+  `--source-revision "$(git rev-parse HEAD)"` (the host is detached, so that reads the 40-hex merge
+  SHA the finalizer demands), `--hard-cap-samples 40000 --max-retained-samples 960000
+  --frame-samples 8000`, `--dry-run` first. Then `ops/generate-live-tls.sh` with all four SANs
+  (`--dns ga0-alienware-rtx4070ti.tailnet.aisight.us --dns ga0-alienware-rtx4070ti.local
+  --ip 100.64.0.8 --ip 192.168.68.38`) - the staged pair has **no tailnet SAN**, so this is a real
+  rotation and needs `--rotate`; record the backup paths as the rollback before running it. Both
+  exact invocations are in context.md's Validation section.

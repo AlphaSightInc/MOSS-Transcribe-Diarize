@@ -45,7 +45,8 @@ client gate (B6) and changed no product source; iteration 11 bound view authorit
 lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
 tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
 deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c); iteration 16 ran the
-final local gate and made the **one keeper merge** (C4).
+final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1) and changed
+no tracked file — from here the branch carries only `scripts/ralph-afk/*`.
 Test totals on the branch: Swift **131 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
@@ -70,8 +71,8 @@ discriminator **10/10**; `leak-scan: clean`; and MacStudio is left with no
 `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, `main^1 = af3ac366…`, `main^2 = f400d426…`.
 `git diff f400d42 f9285d6` is **empty** — main was untouched since the branch point, so every
 number measured on the feature tip is also a measurement of the merge commit, and the merge
-worktree re-ran the whole suite anyway. **Not pushed** (that is D1); `origin/main` is still
-`163e969`, the server checkout is still `163e969`. From here the feature branch may only carry
+worktree re-ran the whole suite anyway. **Published in iteration 17 (D1)**: `origin/main` and the
+server checkout are both `f9285d6`. From here the feature branch may only carry
 `scripts/ralph-afk/*` evidence — **no tracked product source may change on it**. A defect found in
 D/E/F needs a new branch and a decision, not a second keeper merge.
 *The gate measured at `f400d426` (all on MacStudio, 2026-07-28):* both Swift products from an
@@ -491,16 +492,29 @@ not the tap), but nothing yet proves it returns promptly on m4mbp while its prom
 If E3 shows it blocking, move system admission onto the coordinator's own thread in Phase B; do
 not add a Screen Recording preflight in its place (M31 forbids it).
 
-**Server state.** Deployed `163e969`; `origin/main` also `163e969`; local `main` is now the keeper
-merge `f9285d6` (was `af3ac36`, itself +84 over `163e969`). D1 pushes `f9285d6` and checks it out.
-`/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0`. `webrtcvad-wheels 2.0.14` and
+**Server state.** Deployed **`f9285d6`** since iteration 17 (D1), as is `origin/main` and local
+`main` — the three-way SHA equality the PRD names is satisfied for those three; the m4mbp checkout
+is the remaining leg and belongs to E2. The host checkout is **detached** at that SHA on purpose:
+its local `main` ref is still `163e969`, so
+`git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete one-command rollback
+that moves nothing but `HEAD`. Tree clean, `moss-vllm`/`moss-web` still `active`, **neither service
+restarted** (D1 does not restart; D3 owns that decision).
+`/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0` in `ops/moss.env`;
+`ops/moss-live.env` is **absent** (D3 creates it) and `moss-live-web.service` is present in
+`ops/systemd/` but **not installed** — only `moss-vllm.service` and `moss-web.service` are in
+`~/.config/systemd/user/`. `webrtcvad-wheels 2.0.14` and
 `onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified;
 `live.crt`/`live.key` staged but SANs cover only `ga0-alienware-rtx4070ti.local` +
 `IP:192.168.68.38` (**no tailnet SAN**); provider manifest is
 `live-provider-manifest.provisional.json` (0600, `~/.local/share/moss-transcribe-diarize/live/`)
 with `source_revision: "PROVISIONAL-UPDATE-AFTER-KEEPER"` and the pre-retune bounds measured in
-iteration 12 (see the manifest-bounds contract). D2 finalizes it in place of the provisional file;
-nothing on the host has been mutated.
+iteration 12 (see the manifest-bounds contract). D2 finalizes it in place of the provisional file.
+*The running batch process is still the `163e969` image* — `INDEX_HTML`/`FAVICON_SVG` are
+module-level constants (`server.py:123-129`), so a checkout cannot change what an already-running
+uvicorn serves. "Batch unharmed" therefore needs the *restart* proven separately, and iteration 17
+did that without restarting anything: the deployed `ops/start-web.sh` sourced with the host's real
+`ops/moss.env` derives exactly the recorded contract argv (`tests/test_live_service_deployment.py:
+52-62`), port 7860, runs dir `<checkout>/runs`, **no live flag**.
 
 **Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. `/Applications/MOSSCapture.app` absent.
 Checkout is at upstream `40cf854` with `origin` = **OpenMOSS upstream**, not the AlphaSight fork.
@@ -692,19 +706,26 @@ test -z "$(git status --porcelain)"
 RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # fences only, no merge
 bash scripts/ralph-afk/merge-keeper.sh                          # builds products itself in the temp worktree
 
-# --- D1: publish the reviewed merge (next open step) ---------------------
-# `origin` is the AlphaSight fork (push target); `upstream` is OpenMOSS - never push there.
-# Rollback for the server checkout must be recorded *before* the fetch: it is currently 163e969.
-git push origin main                                  # fast-forward af3ac36..f9285d6 on the fork
-printf '%s\n' \
-  'set -euo pipefail' \
-  'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
-  'git rev-parse HEAD' \
-  'git fetch origin main' \
-  'git checkout f9285d69ed7bcc592bb41b3dcdf29e3221968f44' \
-  'git rev-parse HEAD' |
+# --- D1: publish the reviewed merge --------------------------------------
+# SPENT in iteration 17. `git push origin main` fast-forwarded 163e969..f9285d6 on the AlphaSight
+# fork (118 commits) and the host is detached at f9285d6. The push is one-way - the PRD forbids
+# force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
+# Standing rollback for the host checkout, still valid until D3 changes the host:
+#   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
+# Three-way SHA check (all three must print f9285d69ed7bcc592bb41b3dcdf29e3221968f44):
+git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
+printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
-# rollback: git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
+
+# --- batch-restart safety probe (read-only; mutates and starts nothing) --------------------
+# The running batch process serves module-level constants, so a checkout cannot change it; this is
+# what proves the *next* restart is also unharmed. It rewrites only the final `exec` line of a
+# /tmp copy and asserts the original last line first, so it can never launch the server.
+#   last line must be: exec "${VENV_DIR}/bin/mtd-subtitle-web" "${web_args[@]}"
+#   sed '$ s|.*|printf "argv:%s\\n" "${web_args[@]}"|' ops/start-web.sh > "$tmp/probe.sh"
+#   set -a; . ops/moss.env; set +a; bash "$tmp/probe.sh"
+# Expect exactly tests/test_live_service_deployment.py:52-62 with {state} and DEPLOYMENT_ROOT
+# expanded, and no --live flag. Re-run it after D3 edits any env file.
 ```
 
 ## Candidates
@@ -866,10 +887,17 @@ frozen except for defects the server work exposes and for C3c, whose probe is ap
 
 ### Phase D — publish and enable the 4070Ti
 
-17. **D1 — publish reviewed `main`**: push the merge SHA to `origin`, then fetch/checkout that
-    exact SHA at `/mnt/d/Coding/MOSS-Transcribe-Diarize` on
-    `gyauo@ga0-alienware-rtx4070ti.local`. Record rollback before mutation; verify three-way SHA
-    equality.
+17. **D1 — publish reviewed `main`** `[done — iteration 17]`: `git push origin main` fast-forwarded
+    `163e969..f9285d6` (118 commits) on the AlphaSight fork, and the host checkout is **detached**
+    at `f9285d6` with its local `main` ref left at `163e969`, so the recorded rollback is one
+    `git checkout 163e969`. Local `main`, `origin/main` and the host all read
+    `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`; the m4mbp leg of the PRD's "one exact SHA
+    everywhere" clause is still open and belongs to E2. Batch service verified unharmed on four
+    routes plus a restart-safety argv probe (see the server-state block). No service restarted.
+    Residue for D2: the reviewed `ops/finalize-live-provider-manifest.py`, `generate-live-tls.sh`,
+    `live-pair.sh` and `moss-ops-lib.sh` are now **on the host** and D2 runs them from that
+    checkout, so `--source-revision "$(git rev-parse HEAD)"` there yields the 40-hex merge SHA the
+    finalizer requires. Note the host is detached, so that command reads `HEAD`, not a branch.
 18. **D2 — host manifest/TLS**: run the reviewed finalizer and TLS generator; verify merge SHA,
     generated hashes, four SANs, and fingerprint; rotate pin/pairing together.
 19. **D3 — install reviewed live service/networking**: create `ops/moss-live.env` on the host from
