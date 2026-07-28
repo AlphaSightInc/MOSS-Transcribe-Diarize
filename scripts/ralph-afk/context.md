@@ -45,27 +45,27 @@
 ## Where the loop stands
 
 **Branch and freeze.** Branch `ralph/live-meeting-mvp`, cut from `main af3ac36`. Fourteen phases have
-landed on it (A-E client/server/deploy/install, then four operator-authorized post-merge fix cycles
-G, H, J, K). **Five keeper merges have been made and all five are spent** — `f9285d6` (C4),
-`317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b) — and `merge-keeper.sh`'s
-`expected_main` guard refuses a **sixth** until the fifth amendment advances the line in-script.
-**Phase M is OPEN under that amendment**, so the branch now carries tracked product source again
-(from iteration 13) — legitimately, and only inside `macos/`, `moss_transcribe_diarize/`, `ops/` and
-`tests/`. Every tracked product change since `f9285d6` was made under a named amendment; there is no
-unauthorized tracked source on the branch. Per-phase detail is in the closed-phase index below and in full in the
-progress.txt archive.
+landed on it (A-E client/server/deploy/install, then five operator-authorized post-merge fix cycles
+G, H, J, K, M). **Six keeper merges have been made and all six are spent** — `f9285d6` (C4),
+`317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b), **`77e0014` (M6, iteration 19)** —
+and `merge-keeper.sh`'s `expected_main` guard now refuses a **seventh** (rehearsed non-vacuously:
+`main moved from expected pre-merge SHA fc7097d…`, rc=1). **Phase M's product work is merged**, so
+`git diff main HEAD -- ':!scripts/ralph-afk'` is **empty again** and the branch carries no
+unmerged tracked source. Every tracked product change since `f9285d6` was made under a named
+amendment. Per-phase detail is in the closed-phase index below and in full in the progress.txt
+archive.
 
 **PRD acceptance scoreboard (rows unchanged since iteration 9 except where noted; Phase M's local
-gate is green at `21a73ea` and the two certification rows stay RED until the sixth merge is
-deployed — see the gate block).**
+gate is green at `21a73ea`, the sixth merge landed as `77e0014` in iteration 19, and the two
+certification rows stay RED until that merge is **deployed** — see the gate block).**
 
 | clause | state |
 | --- | --- |
 | IDEA-044 compatibility checkpoint | GREEN, frozen at `1ede498` (10/10 and 16/16, 11 commands, 0 Darwin skips) |
 | Production client gate | GREEN (B6 `3fb5567`, re-gated G4 `23dc163`, K5a `cd7faf9`) |
 | Server meeting-reliability gate | GREEN at `f400d426`, clause→node map recorded |
-| One reviewed keeper merge (+ 4 authorized follow-ups) | GREEN, five merges, each reviewed against its amendment's scope |
-| One exact SHA everywhere | **GREEN 4/4 at `fc7097d`** (local `main`, `origin/main`, server checkout, m4mbp checkout) |
+| One reviewed keeper merge (+ 5 authorized follow-ups) | GREEN, six merges, each reviewed against its amendment's scope |
+| One exact SHA everywhere | **1/4 at `77e0014`** — local `main` only. `origin/main`, the server checkout and the m4mbp checkout are all still `fc7097d`; the sixth merge is **unpushed and undeployed**. This row is RED by construction between a merge and its redeploy and was 4/4 at `fc7097d`; gate step (c) restores it. |
 | Live service answering | GREEN — `/live` and `/api/live/descriptor` 200 over the pinned leaf from MacStudio **and from m4mbp** |
 | Batch service unharmed | GREEN — `http://192.168.68.38:7860/` and `/api/jobs` 200; batch MainPIDs never restarted |
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
@@ -93,8 +93,10 @@ deployed — see the gate block).**
   now post a frame on the lane that **failed** and on the lane that **degraded**. See "The failed
   lane is in the suite" below.
 - **Phase M gate step (a) is GREEN at `21a73ea`** `[done — iteration 18]`, and the certification
-  order is settled by precedent, not re-argued. See "The Phase M gate is green" below. What
-  remains is **(b) the sixth merge → (c) push + redeploy + Mac rebuild → (d) F1 and F3**.
+  order is settled by precedent, not re-argued. See "The Phase M gate is green" below.
+- **Phase M gate step (b) — the sixth keeper merge — is DONE** `[iteration 19]`. `main` is
+  **`77e0014`**, feature tip `4ac5d95`, payload exactly the reviewed 10 files / +983/-51. See "The
+  sixth merge is made" below. What remains is **(c) push + redeploy + Mac rebuild → (d) F1 and F3**.
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
@@ -581,6 +583,41 @@ unreachable and the loop has already answered this exact question twice:
 acceptance evidence, and a red one is answered by the next amendment exactly as H4d's red was — the
 merge buys the *ability to measure*, never the verdict.
 
+**The sixth merge is made — `77e0014` (new, iteration 19). READ THIS BEFORE THE REDEPLOY.** Gate
+step (b) of the fifth amendment, by the standing pre-merge procedure, both fences satisfied
+honestly.
+- **Fence 1, the history join, proven content-free BEFORE it was run.**
+  `git merge-tree --write-tree main HEAD` returned **HEAD's own tree `64ad23d6…`**, so joining
+  `main` could not bring content in. `git merge --no-ff main` → **`1b6a9f4`**, and afterwards
+  `git diff --stat 79b52e4 HEAD` and `git diff --name-only 21a73ea HEAD -- ':!scripts/ralph-afk'`
+  were **both empty**. Only then was `merge-base --is-ancestor main HEAD` honestly true.
+- **Fence 2, `expected_main` advanced in-script** (`merge-keeper.sh:32`,
+  `6a540fe…` → **`fc7097d…`**) with a paragraph citing the **fifth** amendment and naming all six
+  items it authorizes — never the `RALPH_MERGE_MAIN_BEFORE` env override — and **committed first**
+  (`4ac5d95`) so it became the feature tip the merge captured.
+- **The merge**, run in the **background** per the standing lesson: `77e0014`, parents
+  `fc7097d` (main) and `4ac5d95` (feature). Its own in-worktree gate, on the **merged** tree:
+  Swift **158 passed / 0 failures**, Python **604 passed / 2 skipped / 368 subtests** in 64.4 s.
+  The worktree cleaned itself up (`git worktree list` shows the primary only).
+- **The tested tree IS the committed tree**, stated as a hash rather than assumed: merge tree and
+  feature tree are both **`d2094369…`**, and `git diff --name-only 21a73ea 77e0014 --
+  ':!scripts/ralph-afk'` is **empty** — the merged product source is byte-identical to what gate
+  step (a) tested.
+- **Payload against `main^1`:** exactly the reviewed **10 files, +983/-51** — `CaptureController.
+  swift`, `NativeLaneHealth.swift`, `CaptureSecurity.swift`, `NativeDualCaptureSource.swift`,
+  `CaptureControllerTests.swift`, `live_adapters.py`, `live_coordinator.py`,
+  `live_service_runtime.py`, `test_live_api.py`, `test_live_pipeline_seams.py`. **No `ops/`, no
+  `macos/scripts/`, no doc.** (The full `main^1 → main` diff also carries this loop's own
+  `scripts/ralph-afk/` evidence, which is not product source.)
+- **The guard is live again, rehearsed non-vacuously:** `RALPH_MERGE_DRY_RUN=1` now prints
+  `ERROR: main moved from expected pre-merge SHA fc7097d…` and exits **1**. A seventh merge is
+  refused until another amendment advances the line.
+*What this does NOT do, and it is the row that just went red:* the merge is **local**. `origin/main`,
+the server checkout and the m4mbp checkout are all still `fc7097d`, so "one exact SHA everywhere" is
+**1/4** and every offline probe still speaks for the branch, not the service. Gate step (c) — the
+**K5c-shaped** redeploy (server restart for candidate 50 **and** an m4mbp rebuild+reinstall for
+53/48/49/D-a) — is what restores it, and nothing in F1 or F3 can measure Phase M until it does.
+
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
 "`NativeLaneHealth` keeps `projection.failure`". **It does not** — `beginGeneration()`
@@ -988,6 +1025,7 @@ progress.txt archive under each title.
 | **K5d re-read** | Named the lane failure `macos_buffer_overrun` and traced it to Phase L. Phase K closed; the fourth amendment spent. |
 | **F1 canary / F3 soak** | **RED** — see the two blocks above. One defect, candidate 53. |
 | **Phase M gate step (a)** | GREEN at **`21a73ea`** — Swift 158/0 (0 warnings, fresh scratch), Python 604+2/368, tracer 4/0 skips, 10/10, lane-refusal probe rc=0, 7/7 hard-cap cases, leak-scan clean, tree clean; payload 10 files / +983/-51 all in scope. |
+| **M6 gate + merge #6** | Merge **`77e0014`**, parents `fc7097d` + feature tip `4ac5d95`; join `1b6a9f4` proven content-free first. In-worktree gate on the merged tree: Swift 158/0, Python 604+2/368 in 64.4 s. Merge tree == feature tree `d2094369…`. **Not server-only** (4 files under `macos/`), so step (c) is the K5c shape: restart **and** Mac rebuild+reinstall. Guard rehearsed: a seventh merge refuses. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -1444,9 +1482,14 @@ python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-span-sweep \
 #     rc=0 every recorded expectation held, rc=3 the diagnosis is wrong, rc=2 it could not run.
 #     Valid as evidence about the DEPLOYED service only while the branch carries no product source
 #     and all four checkouts are one SHA - check that first, it is one command.
-#     SPENT since iteration 16: candidate 50 changed moss_transcribe_diarize/, so this diff is NOT
-#     empty any more and the probe now speaks for the BRANCH. It is still the right regression for
-#     the failed-lane path; it is no longer a statement about the running service.
+#     SPENT since iteration 16: candidate 50 changed moss_transcribe_diarize/, so the probe speaks
+#     for the BRANCH. It is still the right regression for the failed-lane path; it is no longer a
+#     statement about the running service.
+#     ITERATION 19 CAUTION — the diff below went EMPTY again at the sixth merge, and that no longer
+#     means what it used to. `main` is now 77e0014 while the SERVER CHECKOUT is still fc7097d, so
+#     branch-vs-main parity says nothing about the deployed service. Until step (c) lands, compare
+#     against the DEPLOYED SHA, not against `main`:
+#       git diff --name-only fc7097d HEAD -- ':!scripts/ralph-afk'   # non-empty == probe != service
 git diff --name-only main HEAD -- ':!scripts/ralph-afk'      # was EMPTY through iteration 15
 python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-lane-refusal.json
 # It imports tests/test_live_api.py BY FILE PATH (`tests/` is not a package, so
@@ -1505,9 +1548,17 @@ test -z "$(git status --porcelain)"
 
 # --- keeper merge #1: SPENT in iteration 16, main was f9285d6. ----------------------------------
 # --- keeper merge #2: SPENT in iteration 5 of run 20260728-072601. main is now 317df4d. ---------
+# --- keeper merge #6: SPENT in iteration 19 of run 20260728-181020. main is now 77e0014, and the
+#     six spent pre-merge SHAs in order are af3ac36 / f9285d6 / 317df4d / b817871 / 6a540fe /
+#     fc7097d. Both fences satisfied honestly again: join 1b6a9f4 proven content-free by
+#     `git merge-tree --write-tree main HEAD` == HEAD's own tree BEFORE running it, then
+#     expected_main advanced in-script and committed as 4ac5d95 so it became the captured tip.
 # Both fences were satisfied honestly (join first, then the in-script expected_main) and the guard
-# is live again: the dry run below now REFUSES, which is the proof no third merge can slip through.
+# is live again: the dry run below now REFUSES, which is the proof no further merge can slip through.
 RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "main moved from …"
+# To dry-run the guard while the tree is DIRTY (e.g. to check a proposed expected_main before
+# committing it), the script needs BOTH flags — RALPH_MERGE_DRY_RUN=1 alone still refuses:
+#   RALPH_MERGE_DRY_RUN=1 RALPH_MERGE_ALLOW_DIRTY=1 bash scripts/ralph-afk/merge-keeper.sh
 # If a further merge is ever authorized, run the script in the BACKGROUND: a foreground timeout kill
 # skips its EXIT trap and strands a worktree holding `main`, which then blocks the retry. Recover
 # with: git -C <wt> merge --abort && git worktree remove --force <wt>
@@ -2056,14 +2107,17 @@ amendment's literal order is unreachable and why this one drops nothing.**
   Swift 158/0 with 0 warnings on a fresh scratch, Python 604+2/368 in 62.7 s, tracer 4/0 skips,
   discriminator 10/10, lane-refusal probe rc=0, seven hard-cap cases rc=0, leak-scan clean, tree
   clean. Payload 10 files / +983/-51, all in `macos/`, `moss_transcribe_diarize/`, `tests/`.
-- **(b) the sixth merge** `[next]` through `merge-keeper.sh`, by the standing pre-merge procedure:
-  join `main` into the feature branch **first** (prove it content-free with
-  `git merge-tree --write-tree main HEAD` returning HEAD's own tree), advance `expected_main`
-  `6a540fe…` -> **`fc7097d…`** *in-script* (`merge-keeper.sh:32`) with a comment citing the fifth
-  amendment — **never** the `RALPH_MERGE_MAIN_BEFORE` env override — commit that first, then run the
-  script in the **BACKGROUND**.
-- **(c) push + redeploy.** Server restart (candidate 50 is server source) **and** an m4mbp
+- **(b) the sixth merge** `[done - iteration 19]`. `main` = **`77e0014`**, feature tip `4ac5d95`,
+  join `1b6a9f4`, in-worktree gate Swift 158/0 + Python 604+2/368 on the merged tree, payload
+  exactly the reviewed 10 files / +983/-51, guard rehearsed non-vacuously. See "The sixth merge is
+  made" above.
+- **(c) push + redeploy** `[next]`. Server restart (candidate 50 is server source) **and** an m4mbp
   rebuild + reinstall (53/48/49/D-a are client source) — the K5c shape, not the server-only J5c one.
+  Copy K5c exactly: rollbacks committed to progress.txt **before** any host is touched; the manifest
+  admission check run **after** the checkout so it exercises the code about to start; content parity
+  proven by hashing files whose content **differs** across the two SHAs; poll for `/live` 200 (~8-11 s,
+  never one sample); re-run the read-only TCC query after the reinstall. Restores "one exact SHA
+  everywhere" from 1/4 to 4/4.
 - **(d) F1 and F3, both required green**, with candidate 51's harness (`live-canary.sh`) in place so
   the label clause is meaningfully verified. This is what MEASURES candidate 50's predicted latency
   drop; nothing before (c) can.

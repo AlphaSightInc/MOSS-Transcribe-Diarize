@@ -12039,3 +12039,170 @@ merge refuses. Then (c) push + redeploy - this is a K5c-shaped redeploy, NOT a J
 one: the server needs a restart for candidate 50 and m4mbp needs a rebuild + reinstall for
 53/48/49/D-a, and the TCC grants survive it (measured in K5c). Then (d) F1 and F3 with
 scripts/ralph-afk/live-canary.sh, both required green.
+
+================================================================================
+iteration 19 of run 20260728-181020 - Phase M gate step (b): the SIXTH keeper
+merge, 77e0014
+================================================================================
+
+Target: gate step (b) of the fifth prd.md amendment - the one further reviewed no-ff merge to main
+it authorizes. Chosen because context.md names it `[next]` and because it is the only thing that
+unblocks step (c) (redeploy) and therefore step (d) (F1 and F3): candidate 50's token cap is server
+source and cannot be measured before a redeploy, and prd.md forbids deploying from a feature branch.
+The ordering decision behind this was taken and recorded in iteration 18 (gate -> merge -> publish +
+redeploy -> certify), on H4/J5 precedent.
+
+Files touched: scripts/ralph-afk/merge-keeper.sh (expected_main advanced in-script + its citation),
+scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt. NO product source moved this
+iteration - the merge captured what iterations 13-17 had already landed.
+
+Authorized actions taken: `git merge` twice (the history join on the feature branch, and the keeper
+merge onto main via merge-keeper.sh's temporary worktree). NO push, NO deploy, NO host mutation,
+nothing on m4mbp or the server. The fifth amendment names this merge explicitly.
+
+--------------------------------------------------------------------------------
+Fence 1 - the history join, proven content-free BEFORE it was run
+--------------------------------------------------------------------------------
+
+merge-keeper.sh requires `git merge-base --is-ancestor main HEAD`, which is false by construction
+after every prior keeper merge (that merge commit lives only on main). Verified false first:
+  git merge-base --is-ancestor main HEAD           -> "main is NOT ancestor"
+
+The join was proven content-free BEFORE running it, which is the whole point of doing it this way
+rather than loosening the fence:
+  git merge-tree --write-tree main HEAD  -> 64ad23d6b1f519e0b2bf076125ff7162956994f1
+  git rev-parse HEAD^{tree}              -> 64ad23d6b1f519e0b2bf076125ff7162956994f1   (EQUAL)
+  git rev-parse main^{tree}              -> a6261b52547cc36830396c92db982e2713854cc6   (differs,
+      i.e. the equality above is a real result and not a degenerate one)
+
+  git merge --no-ff main                 -> 1b6a9f45f71c836337ecfd66a791e2cc7044c328
+  git diff --stat 79b52e4 HEAD -- .                                -> EMPTY
+  git diff --name-only 21a73ea HEAD -- ':!scripts/ralph-afk'       -> EMPTY
+  git merge-base --is-ancestor main HEAD                           -> "main IS now an ancestor"
+
+--------------------------------------------------------------------------------
+Fence 2 - expected_main advanced IN-SCRIPT, committed first
+--------------------------------------------------------------------------------
+
+merge-keeper.sh:32  expected_main  6a540fe086cf819ba0e07a948da9fec0766202c3
+                               ->  fc7097d0c729ee9a96b8bf95878582e07b5b1145
+
+with a comment paragraph citing the FIFTH amendment by name and enumerating the six things it
+authorizes (53 the throwing publish, 48 the start-time heartbeat, 49 the drop watermark, 50/D-c the
+duration-derived token cap, D-a the overrun reclassification, and the closed failed-lane coverage
+gap), plus the standing sentence that a SEVENTH merge still fails here. Never the
+RALPH_MERGE_MAIN_BEFORE env override - the override would leave no record of why the guard was
+passed, which is the entire reason the guard exists.
+
+Committed as 4ac5d9597543ffb76245f7c9278b712fd974a1ba BEFORE the real run, per the standing order
+note: the real run refuses a dirty tree, and the commit becomes the feature tip the merge captures.
+
+Gotcha worth recording: the dirty-tree dry run needs BOTH env flags. RALPH_MERGE_DRY_RUN=1 alone
+still exits 1 on "feature worktree must be clean" (merge-keeper.sh:38-42 requires dry_run AND
+RALPH_MERGE_ALLOW_DIRTY). Checking a proposed expected_main before committing it therefore reads:
+  RALPH_MERGE_DRY_RUN=1 RALPH_MERGE_ALLOW_DIRTY=1 bash scripts/ralph-afk/merge-keeper.sh
+  -> "Keeper merge dry-run: PASS feature=1b6a9f4… main_before=fc7097d…"
+
+--------------------------------------------------------------------------------
+The merge
+--------------------------------------------------------------------------------
+
+Run in the BACKGROUND (the standing lesson from the first merge attempt: a time-capped foreground
+shell was killed without running the script's EXIT trap and stranded a worktree holding main).
+Log /tmp/ralph-i19-merge.log.
+
+  Keeper merge: PASS feature=4ac5d9597543ffb76245f7c9278b712fd974a1ba
+                     main=77e0014ac2a1eee1edb29b109024807e9489daa5
+  rc=0
+
+The script's own gate, run in the merge worktree ON THE MERGED TREE before the commit was created:
+  swift build --product mtd-capture        -> rc=0, 7.64 s
+  swift build --product MOSSCaptureApp     -> rc=0, 0.69 s
+  swift test                               -> 158 tests, 0 failures (0 unexpected), 1.137 s
+  PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider
+                                           -> 604 passed, 2 skipped, 368 subtests in 64.41 s
+That IS the PRD's "run the full post-merge suite", run on the merged tree rather than on either
+parent.
+
+--------------------------------------------------------------------------------
+Verification after the fact
+--------------------------------------------------------------------------------
+
+  git rev-parse main         -> 77e0014ac2a1eee1edb29b109024807e9489daa5
+  git rev-parse main^1       -> fc7097d0c729ee9a96b8bf95878582e07b5b1145   (the expected pre-merge)
+  git rev-parse main^2       -> 4ac5d9597543ffb76245f7c9278b712fd974a1ba   (the feature tip)
+  git diff --stat 4ac5d95 main                                      -> EMPTY
+  git worktree list          -> the primary worktree only (the EXIT trap cleaned up)
+  git status --porcelain     -> empty, branch still ralph/live-meeting-mvp at 4ac5d95
+
+THE TESTED TREE IS THE COMMITTED TREE, stated as a hash rather than assumed - the script tests a
+staged `--no-commit` merge and commits afterwards, so this is the step that closes that window:
+  merge tree   (77e0014^{tree})  -> d20943692be226e1e196c31e7923e961faebb332
+  feature tree (4ac5d95^{tree})  -> d20943692be226e1e196c31e7923e961faebb332   (IDENTICAL)
+  git diff --name-only 21a73ea 77e0014 -- ':!scripts/ralph-afk'  -> EMPTY, i.e. the merged product
+    source is byte-identical to what gate step (a) tested at 21a73ea in iteration 18.
+
+PAYLOAD REVIEW, main^1 -> main, product source only (':!scripts/ralph-afk'):
+  10 files, +983 / -51 - exactly the payload reviewed at gate step (a):
+    macos/.../CaptureController.swift              +78    (53 + 48 + recordTransportVerdict)
+    macos/.../NativeLaneHealth.swift              +124    (D-a: two enums, fence removed, mailbox
+                                                           overflow gets its own code)
+    macos/.../CaptureSecurity.swift                 +9    (D-a: K2's log verb comes from the state)
+    macos/.../NativeDualCaptureSource.swift         +8    (49: watermark re-baselined)
+    macos/.../CaptureControllerTests.swift        +417
+    moss_transcribe_diarize/app/live_adapters.py   +74    (D-c: 68 + ceil(87 x duration_sec))
+    moss_transcribe_diarize/app/live_coordinator.py +14
+    moss_transcribe_diarize/app/live_service_runtime.py +2
+    tests/test_live_api.py                        +108
+    tests/test_live_pipeline_seams.py             +200
+  No ops/, no macos/scripts/, no docs. Exactly the fifth amendment's scope ("inside macos/,
+  moss_transcribe_diarize/, ops/ only where required, and tests/"; ops/ was not required).
+  The full main^1 -> main diff additionally carries this loop's own scripts/ralph-afk/ evidence
+  (context.md, progress.txt, live-canary.sh, live-canary-analyze.py, live-lane-refusal-probe.py,
+  port-publish-race-probe.py, prd.md, merge-keeper.sh) - loop state, not product source.
+
+GUARD REHEARSED NON-VACUOUSLY, which is the proof no seventh merge can slip through:
+  RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh
+  -> ERROR: main moved from expected pre-merge SHA fc7097d0c729ee9a96b8bf95878582e07b5b1145
+     rc=1
+
+Evidence paths: /tmp/ralph-i19-merge.log; merge commit 77e0014; join commit 1b6a9f4; guard commit
+4ac5d95; scripts/ralph-afk/merge-keeper.sh:24-43; context.md block "The sixth merge is made".
+
+Learned. (1) THE ROW THAT GOES RED AT A MERGE IS "ONE EXACT SHA EVERYWHERE", AND IT SHOULD BE SAID
+OUT LOUD. main is now 77e0014 while origin/main, the server checkout and the m4mbp checkout are all
+still fc7097d, so that PRD clause is 1/4 by construction between a merge and its redeploy. Recording
+it as red rather than quietly carrying the old 4/4 is what keeps the next iteration from reading a
+stale green as a fact about the hosts. (2) A COROLLARY THAT WOULD HAVE MISLED THE NEXT READER:
+`git diff --name-only main HEAD -- ':!scripts/ralph-afk'` went EMPTY again at the merge, and that
+emptiness previously meant "the offline probes speak for the deployed service". It no longer does -
+the right comparison until step (c) is against the DEPLOYED SHA fc7097d, not against main. The
+Validation fence now says so at the probe it affects. (3) THE MERGE SCRIPT TESTS A STAGED MERGE AND
+COMMITS AFTERWARDS, so "the suite passed" and "the suite passed on the thing that got committed" are
+two different claims; comparing the merge commit's tree hash to the feature tip's (both d2094369…)
+is what makes them one claim. Cheap, and it is the only step that closes that window.
+
+Blocker: none. The merge is LOCAL and deliberately unpushed - prd.md's "Deploy only a reviewed SHA"
+and the one-logical-change-per-iteration rule put the push and the redeploy in the next iteration,
+not this one.
+
+Next: gate step (c), the push + redeploy, which is the K5c shape and NOT the server-only J5c one -
+four files under macos/ mean m4mbp needs a rebuild + reinstall as well as the server restart. In
+order: (i) `git push origin main` (fast-forward fc7097d..77e0014; never force-push, and `upstream`
+is OpenMOSS - never push there); (ii) record every rollback in progress.txt BEFORE touching a host;
+(iii) server: `git fetch origin main && git checkout 77e0014`, then the manifest admission check
+under the deployment venv python AFTER the checkout so it exercises the code about to start, then
+`systemctl --user restart moss-live-web.service`, then POLL for https://127.0.0.1:7861/live 200
+(~8-11 s; a single early probe returns 000 and reads like a failure); (iv) content parity by hashing
+the three CHANGED server files on the host against both `git show 77e0014:<f>` and
+`git show fc7097d:<f>` - matching the new and differing from the old is the discriminator, and
+hashing an unchanged file proves nothing; (v) m4mbp: kill any running app first, `git fetch
+alphasight main` (on m4mbp `origin` is OpenMOSS - resolve the remote by URL), checkout 77e0014,
+build-app.sh --dry-run then --configuration release, install-app.sh --dry-run then for real,
+record the printed backup-path rollback, and prove the INSTALLED product carries the cycle with a
+discriminating `strings` witness the old binary lacks (the D-a vocabulary, e.g. a degradation code
+name); (vi) re-run the READ-ONLY TCC query afterwards - the grants survived K5c's rebuild
+(measured), but it costs one ssh and it is the one input the loop cannot re-obtain; (vii) re-check
+the four-way SHA to bring "one exact SHA everywhere" back to 4/4. Then step (d): F1 and F3 with
+scripts/ralph-afk/live-canary.sh, both required green, which is what finally MEASURES candidate 50's
+predicted latency drop (committed p95 9.05 s -> near the 1.5 s median lag).
