@@ -4127,3 +4127,90 @@ Stop conditions, checked after the restart, each with the rollback to apply if i
 Pre-redeploy manifest admission check already re-run read-only this iteration, BEFORE the restart:
   caps equal = True 40000 | vad frame_samples = 160 | retired knob present = False
 so H2's `_require_one_span_cap` and H3's construction refusal both admit the deployed manifest.
+
+--------------------------------------------------------------------------------
+run 20260728-112922 | iteration 6 | H4 step (c) - published and redeployed
+--------------------------------------------------------------------------------
+Result: **PUBLISHED and REDEPLOYED at b817871414fcc8f609c6f5eb2898ec2957c7768c.** Three of the
+four checkouts read it; m4mbp was offline for the whole iteration and is the one step left.
+
+Files touched (all under scripts/ralph-afk/, no product source - the freeze holds):
+  progress.txt   the pre-mutation rollback block above, then this entry.
+  context.md     H4c redeploy block; branch state + scoreboard; candidate 35(c) closed except
+                 m4mbp, 35(d) marked next and unblocked; Validation gained the H4c commands, the
+                 deployed-code introspection recipe and its keyword-only gotcha.
+
+### The mutations, in the order the stop conditions require
+1. Pre-redeploy manifest admission check, read-only, BEFORE anything moved:
+     caps equal = True 40000 | vad frame_samples = 160 | retired knob present = False
+   so H2's `_require_one_span_cap` and H3's construction refusal both admit the deployed manifest.
+   Both fail the service closed, which is why this runs before the restart and not after it.
+2. `git push origin main` -> `317df4d..b817871  main -> main` (fast-forward, AlphaSight fork).
+   `git ls-remote origin refs/heads/main` now reads b817871.
+3. Host checkout: `git fetch origin main` (origin/main = b817871), `git checkout b817871`.
+     tree eb26fa9131fbf172125112c7f51e165935739399 == `git rev-parse b817871^{tree}` here
+     sha256(moss_transcribe_diarize/app/live_session.py) = b14eb43dacaa031e… on BOTH hosts
+     `git status --porcelain` empty (ops/moss-live.env is gitignored, so it does not show)
+   Content parity is asserted by hash, not inferred from `git status` on a cross-host copy.
+4. `systemctl --user restart moss-live-web.service`
+     MainPID 336320 -> 338545, NRestarts=0, ActiveState=active, start 08:27:34 EDT
+     polled: `/live` 200 after **11 s** (a single probe before ~10 s returns 000)
+     batch `moss-web.service` MainPID unchanged 301112, NRestarts=0 - untouched, as intended
+     journal after the restart: "Application startup complete", no traceback, only the pre-existing
+     onnxruntime GPU-discovery warning.
+
+### Stop conditions, all met (measured from MacStudio after the restart)
+  served leaf sha256 = a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff -> PIN MATCH
+    (this is the one that would have forced an immediate rollback: a changed leaf breaks every
+     paired Mac, and no pairing payload on m4mbp could be re-minted while it is offline)
+  https://100.64.0.8:7861/live                200
+  https://100.64.0.8:7861/api/live/descriptor 200
+  http://192.168.68.38:7860/                  200     (batch unharmed)
+  http://192.168.68.38:7860/api/jobs          200
+  http://100.64.0.8:7861/live                 000     (plaintext on 7861 still dead, curl rc=52)
+
+### The deployed code carries H1/H2/H3 - proven, not inferred from the SHA
+Run with the SERVICE'S OWN venv from the deployed checkout:
+  H2  "hard_cap_samples" in LiveSession.__init__ signature = False
+      hasattr(LiveSession, "_freeze_hard_cap_spans")       = False
+      hasattr(LiveServiceRuntime, "_require_one_span_cap") = True
+  H1  issubclass(EmptyTranscriptionError, RuntimeError)    = True
+      hasattr(LiveSession, "submit_empty_canonical")       = True
+  H3  WebRtcSpeechProvider(vad=…, frame_samples=5808) -> LiveProviderBundleAdmissionError:
+        "webrtc frame_samples must be one of [160, 320, 480] samples ([10, 20, 30] ms at 16000 Hz)."
+      frame_samples=160 constructs and carries `_carried_voiced`.
+
+### Four-way SHA check
+  local main   b817871414fcc8f609c6f5eb2898ec2957c7768c
+  origin/main  b817871414fcc8f609c6f5eb2898ec2957c7768c
+  host         b817871414fcc8f609c6f5eb2898ec2957c7768c
+  m4mbp        UNREACHABLE - `ssh -o ConnectTimeout=8 ga0@m4mbp` timed out three times across the
+               iteration, and `ping` fails for both `m4mbp` (-> m4mbp.tailnet.aisight.us) and
+               `m4mbp.local`, so the Mac is powered off or asleep, not merely SSH-refused.
+               It still reads 317df4d. Nothing was attempted to wake it: waking a host is not an
+               action this candidate authorizes.
+
+### Learned
+1. **A wrong probe signature can read as a passing refusal.** The first H3 check called
+   `WebRtcSpeechProvider(sample_rate=16000, frame_samples=5808, aggressiveness=2)` and printed
+   "refused ... TypeError" - but the constructor is keyword-only with a REQUIRED `vad=`, so the
+   TypeError was the call being wrong, not the manifest being rejected. Re-measured correctly it is
+   `LiveProviderBundleAdmissionError` with the frame-length message. Assert the exception TYPE;
+   "it raised" is not evidence that the guard fired. Recorded in Validation for the next reader.
+2. **`/api/live/descriptor`'s `source_revision` does not move on redeploy.** It still reads
+   f9285d69…, because it is a field C2's finalizer stamped into the manifest at D2 time, not the
+   running code's revision. It is a plausible-looking wrong answer to "what SHA is deployed" - use
+   the four-way `git rev-parse` plus the venv introspection above instead.
+3. **The restart needs a poll, and 6 s is not enough.** `/live` came up at 11 s here, consistent
+   with F4a's note that a single probe at 6 s returns 000. Model load is in that window.
+
+- **Blocker (partial, this iteration):** m4mbp is offline, so the PRD's "one exact SHA everywhere"
+  clause is 3/4. Not fatal and not on the critical path: `macos/` is byte-identical between
+  317df4d and b817871, so the app installed on m4mbp in G6 is already current at the new SHA, and
+  the remaining work is a `git fetch && git checkout` with **no rebuild and no reinstall**.
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp - and it is now doubly blocked, since
+  the Mac is not even reachable. But E3 is finally *worth* spending once step (d) passes.
+- Next: **H4 step (d)** - the amendment's actual gate. Re-run
+  `python3 scripts/ralph-afk/live-pipeline-probe.py` against the redeployed service and require a
+  run that survives its full plan with committed samples advancing (the pre-fix runs died ~1.1 s in
+  at the first unaligned frame). Then retry the m4mbp checkout to close the four-way SHA check.

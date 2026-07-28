@@ -74,16 +74,19 @@ amendment's scope and proved the deployed manifest still admits under H2's and H
 changed no tracked file. Iteration 5 made **the second amendment's one authorized merge** at
 `b817871` (see the third-keeper-merge block) and changed no tracked product source — only
 `merge-keeper.sh`'s guard. **The post-merge freeze has resumed: from `9e0780a` on, the feature branch
-may again carry only `scripts/ralph-afk/*`.** H4's remaining steps — publish, redeploy, then the
-probe — are the only Phase H items open.
+may again carry only `scripts/ralph-afk/*`.** Iteration 6 published that merge and redeployed the
+live service (H4c) — see the H4c redeploy block; it changed no tracked file, and **the deployed
+service now carries H1/H2/H3**. Only H4's step (d), the probe, is open in Phase H.
 
-**PRD acceptance scoreboard after iteration 5 of run 20260728-112922.** Green with evidence:
+**PRD acceptance scoreboard after iteration 6 of run 20260728-112922.** Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
-merge (plus both amendments' authorized follow-up merges), live service answering, batch service
-unharmed, signed app installed, **rollback rehearsed and recorded**. **One exact SHA everywhere is
-temporarily red by design** — local `main` is `b817871` while `origin/main`, the host checkout and
-m4mbp are still `317df4d`; H4 step (c) restores it. Open: permissions granted, the 60 s canary, the
-300 s certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
+merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
+the redeploy), batch service unharmed, signed app installed, **rollback rehearsed and recorded**.
+**One exact SHA everywhere is 3/4 green at `b817871`** — local `main`, `origin/main` and the host
+checkout all read it; **m4mbp is the only laggard and is offline** (`ssh`/`ping` both time out on
+`m4mbp` and `m4mbp.local`), so its `git fetch && git checkout b817871` is the one mechanical step
+left. No Mac rebuild is needed for it. Open: permissions granted, the 60 s canary, the 300 s
+certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
 
 **Those open items are no longer merely waiting on E3 — iterations 9 and 10 proved they cannot pass
 on the deployed build at all, and that the deployed build fails *sooner* on realistic input than on
@@ -183,6 +186,32 @@ recur, and it stayed unexplained rather than diagnosed.
 **Not pushed** — `origin/main` is still `317df4d`; publishing is H4 step (c).
 *The guard is live and was rehearsed non-vacuously after the merge:* the same dry run now prints
 `ERROR: main moved from expected pre-merge SHA 317df4d…`, rc=1, so a **fourth** merge is refused.
+
+**H4c redeploy: DONE at `b817871` (run 20260728-112922 iteration 6).** `git push origin main`
+fast-forwarded `317df4d..b817871` on the AlphaSight fork; the host checkout fetched and detached at
+`b817871` (tree `eb26fa91…`, matching `git rev-parse b817871^{tree}` here, and
+`sha256(live_session.py)` `b14eb43dacaa031e…` on both hosts — content parity proven independently of
+git); `systemctl --user restart moss-live-web.service` replaced MainPID 336320 with **338545**,
+`NRestarts=0`, `ActiveState=active`, and `/live` answered 200 **11 s** after the restart (a single
+probe before ~10 s still returns 000 — poll, never one-shot). The batch unit was untouched:
+`moss-web.service` MainPID stayed **301112** with `NRestarts=0`.
+*Post-restart client checks from MacStudio:* served leaf still hashes to the D2 pin
+`a35ca9fc…` (**so every paired Mac is intact**), `https://100.64.0.8:7861/live` 200,
+`/api/live/descriptor` 200, `http://192.168.68.38:7860/` 200, `/api/jobs` 200, and plaintext
+`http://100.64.0.8:7861/live` still dead (000, curl rc=52).
+*Positive proof the deployed code carries the three fixes*, taken with the **service's own venv**
+inside the deployed checkout rather than inferred from the SHA: `LiveSession.__init__` has no
+`hard_cap_samples` parameter and no `_freeze_hard_cap_spans`, `LiveServiceRuntime.
+_require_one_span_cap` exists (H2); `EmptyTranscriptionError` subclasses `RuntimeError` and
+`LiveSession.submit_empty_canonical` exists (H1); `WebRtcSpeechProvider(vad=…, frame_samples=5808)`
+is refused with `LiveProviderBundleAdmissionError: webrtc frame_samples must be one of [160, 320,
+480] …` while 160 constructs and carries `_carried_voiced` (H3). The unit's journal after the
+restart is clean: startup complete, no traceback, only the pre-existing onnxruntime GPU-discovery
+warning.
+*Gotcha for the next reader:* `/api/live/descriptor` reports `source_revision
+f9285d69…`. That is a **manifest field** stamped by C2's finalizer at D2 time, not the running
+code's revision — it does not move on redeploy and must never be used as the deployed-SHA check.
+Use the four-way `git rev-parse` check plus the venv introspection above.
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -1713,9 +1742,29 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
 # Standing rollback for the host checkout, still valid until D3 changes the host:
 #   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
+# --- H4c: publish + redeploy the third merge (SPENT in iteration 6 of run 20260728-112922) -------
+# The push fast-forwarded 317df4d..b817871; do not re-run it and never force-push. The host side,
+# in this exact order (pipe as a script on stdin per the remote-quoting gotcha):
+#   <the pre-redeploy manifest admission check below>          # BEFORE the restart, not after
+#   cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git fetch origin main --quiet
+#   git checkout b817871414fcc8f609c6f5eb2898ec2957c7768c      # rollback: checkout 317df4d…
+#   systemctl --user restart moss-live-web.service             # rollback: restart after the checkout
+#   for i in $(seq 1 30); do ... curl -sk https://127.0.0.1:7861/live ... done   # POLL, ~11 s
+# Prove the DEPLOYED code carries the fixes rather than trusting the SHA — run under the service's
+# own venv, from the deployed checkout (read-only, no server needed, re-runnable any time):
+#   "$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" -c '...'
+#     H2: "hard_cap_samples" not in inspect.signature(LiveSession.__init__).parameters,
+#         not hasattr(LiveSession, "_freeze_hard_cap_spans"),
+#         hasattr(LiveServiceRuntime, "_require_one_span_cap")
+#     H1: issubclass(EmptyTranscriptionError, RuntimeError), hasattr(LiveSession, "submit_empty_canonical")
+#     H3: WebRtcSpeechProvider(vad=lambda pcm, rate: False, frame_samples=5808) raises
+#         LiveProviderBundleAdmissionError, while frame_samples=160 constructs.
+#         The constructor is keyword-only and `vad=` is REQUIRED — omitting it raises TypeError,
+#         which looks like a refusal and is not one. Assert the exception TYPE, never just "raised".
 # Four-way SHA check — the PRD clause in full. GREEN at
-# 317df4d728b6765dbe365a3166158ba581299557 since iteration 6 of run 20260728-072601 (G5); it was
-# green at f9285d6 from iteration 20 until the authorized second merge. Re-run it read-only any
+# b817871414fcc8f609c6f5eb2898ec2957c7768c for local main + origin/main + the host since iteration 6
+# of run 20260728-112922 (H4c); m4mbp still reads 317df4d because it was offline. It was fully green
+# at 317df4d since G5, and at f9285d6 from iteration 20. Re-run it read-only any
 # time — all four lines must print the same 40 hex characters:
 git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
@@ -2257,21 +2306,22 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
        files plus `scripts/ralph-afk/*`. The guard now refuses a fourth merge. See the
        third-keeper-merge block above. **The freeze has resumed** - tracked product source may not
        change on this branch again without a further amendment.
-    c. *Publish and redeploy* `[open - next]`. `git push origin main` (fast-forward only, never
-       force), then move the host checkout to the new SHA and restart `moss-live-web.service`;
-       record the rollback (`git -C /mnt/d/... checkout 317df4d…` + restart) before touching the
-       host. **This merge is server-only, so unlike the second one the restart is mandatory** -
-       and it is the first restart under H2's `_require_one_span_cap` and H3's construction
-       refusal, both of which fail the service **closed**. Re-run the deployed-manifest check
-       recorded in Validation *before* restarting, not after. No Mac rebuild: `macos/` is
-       byte-identical to `317df4d`, so m4mbp needs only `git fetch && git checkout` to rejoin the
-       four-way SHA check. The served leaf must still hash to the D2 pin `a35ca9fc…` afterwards, or
-       every paired Mac is broken.
-    d. *Probe* `[open]` - the amendment's actual gate. Re-run `live-pipeline-probe.py` against the
-       redeployed service and require a run that survives its full plan with committed samples
-       advancing. Only after that is E3 worth the operator's clicks.
-    **Until (c) lands the deployed service is still the unfixed `317df4d`** - all three fixes exist
-    only in `b817871`, so a probe run before then still dies at the first unaligned frame.
+    c. *Publish and redeploy* `[done except m4mbp - run 20260728-112922 iteration 6]`. Pushed
+       fast-forward `317df4d..b817871`, host checkout moved, `moss-live-web.service` restarted
+       (mandatory here because this merge is server-only), pin/live/batch/plaintext checks all as
+       expected, and the deployed code proven to carry H1/H2/H3 by introspection under the
+       service's own venv. See the H4c redeploy block. **Left open: the m4mbp checkout**, which was
+       offline all iteration (`ssh` and `ping` both time out). When it is up:
+       `git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize fetch origin
+       main && … checkout b817871…`, then re-run the four-way SHA check. **No rebuild and no
+       reinstall** - `macos/` is byte-identical to `317df4d`, and reinstalling would reset the
+       bundle inode for nothing.
+    d. *Probe* `[open - next]` - the amendment's actual gate, and now unblocked: the deployed
+       service carries all three fixes. Re-run `live-pipeline-probe.py` against it and require a run
+       that survives its full plan with committed samples advancing. Only after that is E3 worth the
+       operator's clicks. Expect the probe's own recorded rollbacks (iteration 10 of run
+       20260728-072601) to still apply; it is loopback-mint + remote-pinned-TLS, mutating nothing
+       except one pairing that `DELETE /api/live/devices/{id}` revokes.
 
 36. **A transient decoder failure ends the meeting** `[open; out of the amendment's scope, do not
     start without authorization]`. One vLLM timeout or one reset socket is now a named
