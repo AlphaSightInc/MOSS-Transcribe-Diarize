@@ -58,8 +58,9 @@ branch carries tracked product source again, strictly within the amendment's fou
 Iteration 4 re-ran the full client gate green and changed no tracked source (see the G4 gate block),
 and iteration 5 made **the amendment's one authorized follow-up merge** (see the second-keeper-merge
 block). The post-merge freeze has resumed: from `23aabe6` on, the feature branch may again carry only
-`scripts/ralph-afk/*`. Iteration 6 published that merge to all four checkouts (G5) and changed no
-tracked file.
+`scripts/ralph-afk/*`. Iteration 6 published that merge to all four checkouts (G5) and iteration 7
+rebuilt and reinstalled the signed app on m4mbp (G6's automatable half); neither changed a tracked
+file, and the *product* on the Mac now carries G1+G2+G3.
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
@@ -762,12 +763,24 @@ context previously claimed it was absent) — 0600 in a 0700 directory, written 
 the *unsigned* debug build during the attended diagnosis. B1's mode contract therefore holds on the
 real host, not only in tests. See the "A device is ALREADY paired" block above for its seven keys
 and for why a bare `start` no longer fails closed here.
-**The installed bundle is still the pre-G1 `f9285d6` build**, measured in iteration 6:
-`plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist` answers
-`No value at that key path`, and `CDHash=026836783c25f27e93c128214f717289864a680c`. The **checkout**
-carries the fix — the same file in the working tree extracts exactly `NSAllowsArbitraryLoads = true`
-and nothing else — so G6's rebuild is what closes the gap, and those two facts are the before/after
-pair that proves it did.
+**The installed bundle carries G1+G2+G3 since iteration 7 of run 20260728-072601 (G6).** The
+before/after pair that proves it, both measured on the real installed product:
+`plutil -extract NSAppTransportSecurity xml1 -o - /Applications/MOSSCapture.app/Contents/Info.plist`
+answered `No value at that key path` before and now prints exactly `NSAllowsArbitraryLoads` / `true`
+and nothing else — the G1 shape, on the product. `CDHash 026836783c25f27e93c128214f717289864a680c`
+→ **`2b51082c44a0e882f78a4b22d9e22e0a50bb6981`**, equal to the freshly built product's own CDHash;
+CLI `f9d9e849…` → **`42c3593628f16ef81a778e039969e2a3ac73a74e`** (sha256 `08ba13fd…` →
+`a901b4b3…`). The **designated requirement did not move** —
+`identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"` — and
+`codesign --verify -R=<that requirement>` now passes for bundle and CLI while a wrong-leaf variant is
+refused, so DR satisfaction is proven positively and negatively rather than by string comparison.
+*Note the `-R` syntax:* pass the requirement **without** the `designated => ` prefix `codesign -d -r-`
+prints, or it fails `unexpected token: designated` and looks like a broken signature.
+**The pre-G6 product is preserved, so the rollback is real rather than described:**
+`/Applications/MOSSCapture.app.backup-20260728T085551Z` still verifies and still carries
+`CDHash=026836…` with **no** `NSAppTransportSecurity` key, and
+`/Users/ga0/.local/bin/mtd-capture.backup-20260728T085551Z` is still sha256 `08ba13fd…`.
+SwiftPM is not byte-reproducible here, so those backups are the only route to those exact bytes.
 **`moss-signing.keychain-db` exists since iteration 21 (E1)** — see the signing-identity block
 below. Checkout is
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` (same relative path as
@@ -1119,7 +1132,17 @@ macos/scripts/bootstrap-signing-identity.sh --dry-run   # never run for real on 
 #   codesign --force --identifier com.alphasight.moss.capture --sign 'MOSS Capture Local Signing' <bin>
 #   codesign -d -r- <bin> | tail -1   # must be the DR recorded in the signing-identity block
 
-# --- E2b: build, sign and install on m4mbp (SPENT in iteration 22) ----------------------------
+# --- E2b: build, sign and install on m4mbp (SPENT in iteration 22; RE-RUN as G6 in iteration 7 of
+#     run 20260728-072601, which is what put G1+G2+G3 into the product) -------------------------
+# The G6 re-run's own rollback, still valid while these backups exist (they are the ONLY copy of the
+# pre-G6 bytes - SwiftPM is not byte-reproducible here):
+#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-20260728T085551Z' '/Applications/MOSSCapture.app'
+#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-20260728T085551Z' '/Users/ga0/.local/bin/mtd-capture'
+# A redundant pre-copy also exists at /tmp/moss-g6-prebackup (volatile; `rm -rf` it any time).
+# DR satisfaction, positively and negatively - note the requirement has NO `designated => ` prefix:
+#   codesign --verify -R='identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"' /Applications/MOSSCapture.app
+# The one-line proof the ATS fix is in the PRODUCT (errors before G6, prints the G1 shape after):
+#   plutil -extract NSAppTransportSecurity xml1 -o - /Applications/MOSSCapture.app/Contents/Info.plist
 # Run from the m4mbp checkout. build-app.sh writes only under .build/product (it refuses an install
 # location) and unlocks the signing keychain itself, so no manual unlock is needed.
 #   macos/scripts/build-app.sh --dry-run  &&  macos/scripts/build-app.sh --configuration release
@@ -1653,28 +1676,29 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     Residue for G6: the checkout carries G1+G2+G3 but the **installed** bundle does not — its
     `Info.plist` has no `NSAppTransportSecurity` key at all (measured), so the rebuild is the only
     thing left between the fix and the product.
-31. **G6 - re-run E2b on m4mbp so the installed app carries G1+G2+G3**, then the corrected E3 order
-    (pair first, then start, then the two GUI clicks). Unblocked for the checkout half by G5;
-    still blocked on the human for the clicks. Concretely:
-    - `macos/scripts/build-app.sh --configuration release` then `install-app.sh` from the m4mbp
-      checkout. The rebuild changes the bytes (SwiftPM is not reproducible there), so this takes the
-      **replacement** path, not the `unchanged:` shortcut — expect a `<...>.backup-<utc>` for both
-      the bundle and the CLI, and expect **no** DR-change warning. The DR must stay
-      `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`; if it changes,
-      stop — the human's future TCC grants would key on a different requirement.
-    - The one-line proof the fix actually shipped is the before/after of
-      `plutil -extract NSAppTransportSecurity xml1 -o - /Applications/MOSSCapture.app/Contents/Info.plist`:
-      today it errors `No value at that key path`; after the install it must print exactly
-      `NSAllowsArbitraryLoads` / `true` and nothing else. Record the new `CDHash` against the current
-      `026836783c25f27e93c128214f717289864a680c`.
-    - **Pair before start**, and understand why the order now matters for a new reason: the store on
-      m4mbp already holds a complete configuration from the 03:10 unsigned-build pairing, so a bare
-      `start` would no longer fail closed — it would publish into a stale session. See the
-      "A device is ALREADY paired" block.
+31. **G6 - re-run E2b on m4mbp so the installed app carries G1+G2+G3** `[build/install half done -
+    iteration 7 of run 20260728-072601; the operator's half is E3 and still BLOCKED]`.
+    - **Done and proven.** `build-app.sh --configuration release` (7 s wall, zero warnings, both
+      products) then `install-app.sh` took the **replacement** path exactly as predicted, printed
+      each `rollback:` line before its mutation, created
+      `/Applications/MOSSCapture.app.backup-20260728T085551Z` and
+      `mtd-capture.backup-20260728T085551Z`, and printed **no** DR-change warning. The DR stayed
+      `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`. The
+      `plutil -extract` before/after and the CDHash pair are in the Mac-state block above. A second
+      `install-app.sh` printed two `unchanged:` lines, `backup_bundle=none`, and left the inode
+      (`211648186`) untouched — so the idempotent shortcut fires on the *installed* product, not only
+      in tests.
+    - **Still open, and it is E3, not G6:** the corrected order is D4 mint → `pair` → `start` → the
+      two GUI clicks. All of it needs the human at the keyboard.
+    - **Pair before start**, for a reason that outlives the ATS fix: the store on m4mbp already holds
+      a complete configuration from the 03:10 unsigned-build pairing, so a bare `start` would no
+      longer fail closed — it would publish into a stale session. See the "A device is ALREADY
+      paired" block.
     - If the rebuilt app still fails, read
       `log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m` - G3 exists so
       that this failure has a name, and the -1200/-9802 vs -999 distinction is in the
-      control-channel failure contract above.
+      control-channel failure contract above. That log is now reachable for the first time: the
+      installed product is the first build to carry `OSLogControlChannelFailureLog`.
 
 ## Non-candidates
 

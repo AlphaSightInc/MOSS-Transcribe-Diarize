@@ -2927,3 +2927,107 @@ than "tidied".
 5. **Nothing else is at risk.** No TCC row exists for this client yet (iteration 23 baseline: zero
    `%moss%` rows in either service), so no grant can be lost by an inode change this time; the
    E1 identity is untouched, so the DR is stable; the server and both services are not involved.
+
+### Result - G6's automatable half is DONE: the installed product now carries G1+G2+G3
+The whole point of this iteration in one before/after, measured on the real installed bundle:
+
+| | before | after |
+| --- | --- | --- |
+| `plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist` | `No value at that key path` | exactly `NSAllowsArbitraryLoads` / `true` |
+| bundle `CDHash` | `026836783c25f27e93c128214f717289864a680c` | `2b51082c44a0e882f78a4b22d9e22e0a50bb6981` |
+| bundle inode | 211502957 | 211648186 |
+| CLI `CDHash` | `f9d9e849f77bdca24df544fe7f4b8476cfe6cf78` | `42c3593628f16ef81a778e039969e2a3ac73a74e` |
+| CLI sha256 | `08ba13fd…` | `a901b4b37fd8615c470543262dc0a5aa5fadbf3fa03332361ad09780a7614456` |
+| designated requirement | `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"` | **identical** |
+
+- `build-app.sh --dry-run` printed its seven `plan:` lines and the `rollback:` line and mutated
+  nothing (tree still clean afterwards).
+- `build-app.sh --configuration release`: `MOSSCaptureApp` 4.79 s, `mtd-capture` 0.54 s, **7 s wall
+  total, zero warnings**, both products built in separate invocations by the tool itself.
+  `evidence: bundle_digest=48aaf203b230d0d81110aa84da7aaf21005958baeee37b86aefac3040a1eef4a`,
+  `built_app_sha256 836ed8f2…`, `built_cli_sha256 594f443e…`,
+  `embedded_keychain_access_groups: absent`, `embedded_audio_input_entitlement: true`.
+- The built bundle was checked **before** installing: ATS key exactly right, DR right, embedded
+  entitlements exactly `{com.apple.security.device.audio-input: true}`, and a `grep -c
+  keychain-access-groups` over the *signature's* entitlements returns **0** — B5's drop still fires.
+- `install-app.sh --dry-run` mutated nothing (inode unchanged, no backup created).
+- `install-app.sh` took the **replacement** path as predicted, printing each `rollback:` line before
+  the mutation it covers, and **no** DR-change warning (correctly - only the bytes changed):
+  `evidence: backup_bundle=/Applications/MOSSCapture.app.backup-20260728T085551Z`,
+  `evidence: backup_cli=/Users/ga0/.local/bin/mtd-capture.backup-20260728T085551Z`.
+- Post-install: `codesign --verify --strict` ok; usage strings and `LSUIElement=true` present;
+  the installed CLI answers `{"ok":false}` rc=70 and the usage line rc=64 with no helper running,
+  emitting no path, token or secret; `~/Library/Application Support/MOSSCapture` untouched.
+- **DR satisfaction proven positively and negatively**, not by string comparison:
+  `codesign --verify -R='identifier "com.alphasight.moss.capture" and certificate leaf =
+  H"e118d874…"'` passes for the bundle and (with the `.cli` identifier) for the CLI, while the same
+  requirement with leaf `H"0000…"` is refused `code failed to satisfy specified code requirement(s)`.
+- **Idempotence proven on the real product**: a second `install-app.sh` printed
+  `unchanged: /Applications/MOSSCapture.app already holds this exact bundle`,
+  `unchanged: … mtd-capture …`, `backup_bundle=none`, `backup_cli=none`, and the inode stayed
+  **211648186** - so the shortcut that preserves TCC grants works outside the test fixture too.
+- **The rollback is a real artifact, not a sentence.** The backup bundle still verifies, still
+  carries `CDHash=026836…`, and still has **no** `NSAppTransportSecurity` key; the backup CLI is
+  still sha256 `08ba13fd…`. Since SwiftPM is not byte-reproducible on this host, those two files are
+  the only route back to the pre-G6 product. A redundant pre-copy was taken first at
+  `/tmp/moss-g6-prebackup` (verified: same CDHash, same CLI sha256).
+- **Nothing else moved.** Checkout still `317df4d`, `git status --porcelain` empty; TCC still has
+  **zero** `%moss%` rows against 320 total (so the reader is sane and the install created no grant);
+  no service touched.
+
+### Reachability re-asserted from m4mbp after the reinstall (read-only)
+Served leaf hashes to `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff` = the D2
+pin; `/live` 200 and `/api/live/descriptor` 200 over pinned TLS (pin verified *before* trusting the
+leaf); batch `http://192.168.68.38:7860/` 200; plaintext `http://100.64.0.8:7861/live` **000**.
+
+### Validation
+- `build-app.sh --configuration release` rc=0, 7 s, zero warnings; `install-app.sh` rc=0; re-run
+  rc=0 with two `unchanged:` lines and an unmoved inode; both dry runs rc=0 with no mutation.
+- `codesign --verify --strict` ok on the installed bundle, the installed CLI and the backup bundle.
+- `codesign --verify -R=<E1 DR>` passes; wrong-leaf variant refused.
+- `plutil -extract NSAppTransportSecurity` on the installed `Info.plist`: errored before, prints the
+  G1 shape after.
+- Four reachability probes from m4mbp: pin match, 200, 200, 200, 000.
+- No tracked file changed this iteration; the loop wrote only
+  `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### Learned
+1. **`codesign --verify -R=` will not accept what `codesign -d -r-` prints.** The `-d -r-` output
+   begins `designated => `; feeding that back verbatim fails `unexpected token: designated` and reads
+   exactly like a corrupted signature. Strip the prefix. This iteration's first DR check "failed"
+   for that reason alone - a probe bug that, uncaught, would have looked like the stop condition that
+   aborts G6 and rolls back a perfectly good install.
+2. **Verify the built artifact before installing it, not after.** The ATS key, the DR and the
+   entitlement drop were all asserted on `.build/product` while `/Applications` still held the old
+   bundle, so a bad build would have been caught with the previous product still in place and no
+   backup/restore cycle needed. The install then had nothing left to discover.
+3. **The idempotent path is worth exercising deliberately.** `install-app.sh`'s `unchanged:`
+   shortcut is what preserves the bundle's inode and therefore the operator's future TCC grants;
+   it had only ever been proven against scratch paths in the test suite. Re-running the installer
+   once, immediately, proves it on the artifact that will actually hold the grants - for the cost of
+   one command.
+4. **A rebuild is where a DR would silently drift**, and the loop had a stop condition ready for it.
+   It did not drift - E1's identity is stable and the grants will key on it - but the check cost
+   nothing and the alternative (discovering it after the human clicks) costs the human's clicks.
+- Blocker: **unchanged, and now the only thing between here and Phase F** - E3's human step on
+  m4mbp. Everything mechanical is done: the product carries the ATS fix, the pairing-payload trim and
+  the control-channel classifier; the live service answers over the pinned tailnet address; the
+  checkout, the identity and the installed bundle all verify. What remains cannot be scripted:
+  1. On the server, mint one payload (loop-runnable, but only in the same 5-minute window as step 3):
+     `ops/live-pair.sh --url https://127.0.0.1:7861 --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"`
+     Never redirect the `payload:` line to a file.
+  2. In the **GUI session** on m4mbp (not over SSH): `open -a /Applications/MOSSCapture.app`.
+     `LSUIElement=true`, so nothing appears on screen - confirm with `pgrep -x MOSSCaptureApp` and
+     `ls -l /tmp/moss-capture-501/control.sock`.
+  3. `/Users/ga0/.local/bin/mtd-capture pair --server https://100.64.0.8:7861`, paste the payload,
+     **Ctrl-D**. A stray Return before Ctrl-D is harmless since G2. Pair even though a stale 03:10
+     configuration exists - that is what overwrites it.
+  4. `/Users/ga0/.local/bin/mtd-capture start`. **System Audio Recording prompts first, Microphone
+     second** (`NativeDualCaptureSource.swift:191-192`). A hung `start` while a prompt is on screen
+     is expected, not a defect - never kill the app.
+  5. Verify read-only from anywhere with the two `sqlite3`/`csreq` queries in Validation: two rows
+     with `auth_value 2`, and a csreq decoding to the E1 designated requirement.
+- Next: the loop cannot advance the product further without step 2-4 above. If the operator is
+  unavailable, the highest-value remaining loop-runnable work is F-phase *preparation* that needs no
+  TCC: nothing in F1/F2/F3 qualifies (all three need a running capture), so the honest next action is
+  to hold at this blocker rather than manufacture an iteration.
