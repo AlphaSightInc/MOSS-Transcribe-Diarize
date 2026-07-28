@@ -2611,3 +2611,98 @@ allowed is reviewable in the diff rather than invisible in a shell invocation.
   `HEAD^2` equals the feature tip. Do not push in the same iteration. After the merge, re-run E2b
   on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order, reading
   `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` if the rebuilt app still fails.
+
+================================================================================
+## run 20260728-072601 / iteration 5 - the amendment's one authorized merge, made
+================================================================================
+
+- Target: candidate 29 (**G4**), second half - perform the single follow-up keeper merge the
+  2026-07-28 prd.md amendment authorizes. Gate was already green at product tree `23dc163`
+  (iteration 4); this iteration only satisfied the two fences and ran `merge-keeper.sh`.
+- Files: `scripts/ralph-afk/merge-keeper.sh` (the fence edit), plus `context.md`/`progress.txt`.
+  No tracked product source changed. No host touched, no service restarted, nothing pushed, no app
+  rebuilt or reinstalled on m4mbp.
+
+### Result
+- Join commit `502a49ab464116dcded711235e075e7c858c1378` (`git merge --no-ff main`).
+- Fence commit `23aabe640cc39d16a996e7d48e4fdf297bf4f51e`.
+- **Merge `317df4d728b6765dbe365a3166158ba581299557`** on `main`; `main^1 = f9285d6…` (the first
+  keeper merge), `main^2 = 23aabe6…` = the feature tip, asserted by the script and re-asserted by
+  hand. `git diff 23aabe6 317df4d` is empty; both trees are `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`.
+- `origin/main` deliberately left at `f9285d6` - publishing is its own iteration (candidate G5).
+
+### The join was proven content-free BEFORE it was made
+`git merge-tree --write-tree main HEAD` returned `5963a2b0afd362eaacf0e664cec0fe8f0e6e52ac`, which
+is `git rev-parse HEAD^{tree}` - i.e. the merge's own result tree is the feature tree, so the join
+could not carry content even in principle. Confirmed after: `git diff --stat 0b5383f HEAD -- .`
+empty, `git diff --name-only 23dc163 HEAD -- ':!scripts/ralph-afk'` empty, and
+`git merge-base --is-ancestor main HEAD` then true. main's tree and the merge base's tree were the
+same object `815f23b0…`, as iteration 4 measured.
+
+### The fence edit, and both halves rehearsed non-vacuously
+- `expected_main` now defaults to `f9285d69…` **in the script**, with a comment citing the
+  amendment. Not an env override: the guard stays live and its reason stays in the diff.
+  *Rehearsed after the merge*: `RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh` now
+  prints `ERROR: main moved from expected pre-merge SHA f9285d69…`, rc=1. **A third merge is
+  refused**, which is the whole point of writing it down rather than overriding it.
+- The ancestry fence was a bare `git merge-base --is-ancestor` under `set -e` that exited 1 printing
+  nothing. It now names both SHAs and the fix. *Rehearsed* against a genuinely non-ancestor ref - a
+  dangling `git commit-tree` object, so no ref was created or moved - via a sed'd copy of the script
+  run with `RALPH_MERGE_DRY_RUN=1 RALPH_MERGE_ALLOW_DIRTY=1`: both lines printed, rc=1. The copy was
+  deleted in the same command.
+
+### Validation
+- `RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh` -> `Keeper merge dry-run: PASS
+  feature=23aabe64… main_before=f9285d69…`, rc=0.
+- `bash scripts/ralph-afk/merge-keeper.sh` -> `Keeper merge: PASS feature=23aabe64… main=317df4d7…`,
+  rc=0, ~95 s. Inside its temp worktree it built both Swift products in separate invocations, then:
+  `swift test` **139 passed / 0 failures**; `pytest tests` **537 passed / 2 skipped** in 67.4 s.
+- Merged-tree measurements taken by hand in the first (killed) merge worktree, same staged merge:
+  `swift test` 139 passed / 0 failures; `pytest tests` 537 passed / 2 skipped in 67.35 s;
+  `tests/test_macos_uds_tracer.py` alone **4 passed / 0 skips** in 16.47 s.
+  Logs: `/tmp/ralph-i5-swifttest.log`, `/tmp/ralph-i5-pytest.log`, `/tmp/ralph-i5-tracer.log`,
+  `/tmp/ralph-i5-keeper.log`.
+- Merge payload re-reviewed immediately before the merge: `git diff --stat main HEAD --
+  ':!scripts/ralph-afk'` = the same eight files / +864/-19 as iteration 4. Against published
+  `f9285d6` the entire delta is 12 files, and
+  `git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk' ':!tests/test_macos_*'`
+  is **empty**: the server tree is byte-identical, so G5 can republish without a restart.
+- Primary worktree left on `ralph/live-meeting-mvp`, clean, `git worktree list` back to one entry.
+
+### The first attempt was killed at 10 minutes - what that cost and what it taught
+The first `merge-keeper.sh` invocation ran in a time-capped foreground shell and was killed at 10
+min. Facts, not inference: the last artifact written in its worktree was at 04:20:29, 17 s after the
+worktree was born (04:20:12), and nothing was written for the remaining ~10 min. Re-running each
+stage by hand in that same worktree afterwards passed - `swift test` 1.15 s, tracer 16.5 s, full
+pytest 67.4 s - and a fresh full run of the script then finished in ~95 s. So the stall is
+**unexplained**; the honest suspicion is a first-run macOS security assessment of freshly built
+binaries at a new path, and it was not proven because the stuck process was killed by the cap before
+anyone sampled it.
+The concrete damage was recoverable but not obvious: SIGTERM skips the script's EXIT trap, so the
+kill left a linked worktree with `main` checked out and the merge staged. A branch can be checked
+out in only one worktree, so the retry would have failed at `git worktree add … main`. Recovery:
+`git -C <wt> merge --abort && git worktree remove --force <wt>` - both run, both confirmed, `main`
+still at `f9285d6` at that point (the killed run never committed).
+
+### Learned
+1. **Run the irreversible step where a timeout cannot kill it.** The merge is not slow, but it is
+   the one command in this loop whose interruption leaves shared state (a worktree owning `main`)
+   behind. Background it and poll; the cap is an orchestration artifact, not a property of the work.
+2. **A fence you advance is stronger than a fence you override.** Moving `expected_main` inside the
+   script cost one line and bought a rehearsable refusal of a third merge; `RALPH_MERGE_MAIN_BEFORE`
+   on the command line would have left nothing behind to test.
+3. **Prove the no-op before performing it.** `git merge-tree --write-tree` answered "this join
+   produces exactly your current tree" before any history was written, which turned the history join
+   from an argument into a measurement.
+4. **A killed run is still evidence.** The stranded worktree carried the staged merge, so the merged
+   tree could be measured stage by stage - which is how `swift test` and the tracer were cleared as
+   the stall's cause before spending another full run.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp (Microphone and System
+  Audio Recording for `/Applications/MOSSCapture.app`). G4 did not need them.
+- Next: **G5** - republish so the PRD's "one exact SHA everywhere" clause is green again at
+  `317df4d`: `git push origin main` (fast-forward `f9285d6..317df4d`, never force, never
+  `upstream`), then the server checkout, then the m4mbp checkout, then the four-way check in
+  Validation. No service restart: the server tree is byte-identical across the two SHAs. Then
+  **G6** - re-run E2b on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order
+  (pair, start, clicks), reading `log show --predicate 'subsystem == "com.alphasight.moss.capture"'`
+  if it still fails.

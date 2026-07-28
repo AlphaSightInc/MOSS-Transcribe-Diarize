@@ -55,7 +55,10 @@ by the prd.md amendment of 2026-07-28: run `20260728-072601` iteration 1 landed 
 declaration plus its gates), iteration 2 landed G2 (the pairing-payload trim and the canonical
 wire form) and iteration 3 landed G3 (control-channel failure classification and logging), so the
 branch carries tracked product source again, strictly within the amendment's four items.
-Iteration 4 re-ran the full client gate green and changed no tracked source (see the G4 gate block).
+Iteration 4 re-ran the full client gate green and changed no tracked source (see the G4 gate block),
+and iteration 5 made **the amendment's one authorized follow-up merge** (see the second-keeper-merge
+block). The post-merge freeze has resumed: from `23aabe6` on, the feature branch may again carry only
+`scripts/ralph-afk/*`.
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
@@ -108,26 +111,45 @@ pre-existing pair as every prior gate, **not** Darwin skips; tracer alone **4 pa
 outside the amendment. The only non-product paths in the diff are
 `scripts/ralph-afk/{context.md,prd.md,progress.txt}`.
 
-**The keeper fence blocks on TWO conditions, not one (measured, iteration 4).** The prior iteration
-flagged only the SHA fence; a dry run found a second, and it fails **silently**.
-1. `merge-keeper.sh:21` compares `git rev-parse main` with `RALPH_MERGE_MAIN_BEFORE`, default
-   `af3ac366…` — the *first* merge's pre-merge SHA. It prints
-   `ERROR: main moved from expected pre-merge SHA af3ac366…` and exits 1.
-2. `merge-keeper.sh:27` is a bare `git merge-base --is-ancestor main "$feature_sha"` under
-   `set -e`. **`main` is not an ancestor of the feature tip** and never was after the first merge:
-   `f9285d6` *is* the merge commit, so it lives only on `main` while its second parent `f400d426` is
-   the feature-branch commit. With fence 1 satisfied the script therefore exits **1 with no output
-   at all** — an undiagnosable failure mode, and the reason this had to be measured rather than
-   reasoned about.
-*Why fence 2 is safe to satisfy by history rather than by editing the check:* `main`'s tree and the
-merge base's tree are the **same object**, `815f23b0d7cd0c3fd73226404036fdce49802da2`, and
-`git diff f400d426 f9285d6` is empty. So `main` carries **zero content** the feature branch lacks;
-only the merge commit object itself is exclusive to it. Merging `main` into the feature branch is
-therefore a pure history join with a provably empty diff, after which the ancestry fence is honestly
-true and the recorded gate at product-tree `23dc163` still measures the merged tree. Do **not**
-delete or loosen fence 2, and do not leave fence 1 as a command-line `RALPH_MERGE_MAIN_BEFORE`
-override — write the amendment's expected pre-merge SHA into the script so a *third* merge still
-fails. `git merge-tree --write-tree main HEAD` already succeeds (rc=0), so the merge is conflict-free.
+**Second keeper merge — the amendment's ONE authorized merge: DONE at `317df4d` (iteration 5).**
+Feature tip `23aabe640cc39d16a996e7d48e4fdf297bf4f51e`, merge
+`317df4d728b6765dbe365a3166158ba581299557`, `main^1 = f9285d6…` (the first merge),
+`main^2 = 23aabe6…`. `git diff 23aabe6 317df4d` is **empty** and both trees are
+`3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`, so the merge commit carries exactly the feature tree.
+Against the published `f9285d6` the whole delta is **12 files**: the amendment's eight (four Mac
+client sources, four test files) plus `scripts/ralph-afk/{context,prd,progress,merge-keeper}`;
+`git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk' ':!tests/test_macos_*'` is
+**empty**, i.e. the server tree is byte-identical, so publishing this SHA cannot change server
+behavior and needs no service restart.
+*The suite on the merged tree, measured inside the merge worktree:* `swift test` **139 passed /
+0 failures**; `pytest tests` **537 passed / 2 skipped** in 67.3 s; `tests/test_macos_uds_tracer.py`
+alone **4 passed / 0 skips** in 16.5 s. Both Swift products built there first, separate invocations.
+**Not pushed** — `origin/main` is still `f9285d6`.
+
+**How the two fences were satisfied (iteration 5), and what they now do.**
+1. *History join.* `git merge --no-ff main` on the feature branch → `502a49a`. Proven content-free
+   **before** running it: `git merge-tree --write-tree main HEAD` returned HEAD's own tree
+   `5963a2b0…`, and afterwards `git diff --stat 0b5383f HEAD -- .` and
+   `git diff --name-only 23dc163 HEAD -- ':!scripts/ralph-afk'` were both empty. Only then was
+   `merge-base --is-ancestor main HEAD` honestly true. Do **not** loosen fence 2; join first.
+2. *`expected_main` advanced in the script*, not by env override, with a comment citing the
+   2026-07-28 amendment — so the guard is still live and its reason reviewable. Rehearsed
+   **non-vacuously after the merge**: the same dry run now prints
+   `ERROR: main moved from expected pre-merge SHA f9285d6…`, rc=1, so a **third** merge is refused.
+3. *Fence 2 now speaks.* It was a bare command under `set -e` that exited 1 printing nothing; it is
+   now `|| { echo ERROR …; exit 1; }` naming both SHAs and the fix. Rehearsed against a dangling
+   `git commit-tree` object (no ref created): both lines print, rc=1.
+
+**Run `merge-keeper.sh` in the BACKGROUND, never in a time-capped foreground shell (iteration 5).**
+The first attempt was killed by a 10-minute foreground cap. The kill does not run the script's EXIT
+trap, so it left a linked worktree with `main` checked out and the merge staged — and because a
+branch can be checked out in only one worktree, the *retry* would have failed at
+`git worktree add … main`. Recovery is `git -C <wt> merge --abort && git worktree remove --force <wt>`.
+The stall itself is **unexplained**: the last build artifact was written 17 s in, then nothing for
+10 min; re-running each stage by hand in that same worktree passed (139 / 537+2 / 4), and a fresh
+full run of the script then completed in **~95 s**. Suspect a first-run macOS security assessment of
+the freshly built binaries at a new path; nothing was proven, so if it recurs, `sample` the stuck
+process *before* killing it — that is the evidence this iteration failed to collect.
 
 **Server meeting-reliability gate: GREEN at `f400d426` (iteration 16).** The PRD clause → node map
 the C1 residue asked for, each clause run and passing:
@@ -1156,24 +1178,14 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
 PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_large_upload.py -q -rs   # names the 2 skips
 test -z "$(git status --porcelain)"
 
-# --- keeper merge #1: SPENT in iteration 16, main is f9285d6. -----------------------------------
-# --- keeper merge #2: the ONE merge the 2026-07-28 amendment authorizes. Not yet run. -----------
-# Two fences block it; see the two-fence block above for why each is what it is. Satisfy them in
-# this order, and never by deleting a check:
-#   1. History join, so `merge-base --is-ancestor main HEAD` is honestly true. main's tree IS the
-#      merge base's tree (815f23b0…), so this changes no file. Assert that, do not assume it:
-#        git merge --no-ff -m 'ralph: join published main f9285d6 (empty diff) before the authorized merge' main
-#        git diff --stat 23dc163 HEAD -- .    # MUST be empty: the join carried no content
-#   2. Edit merge-keeper.sh:10 so `expected_main` defaults to
-#      f9285d69ed7bcc592bb41b3dcdf29e3221968f44 with a comment citing the amendment. Writing it in
-#      the script keeps the one-merge guard alive for a THIRD merge; a command-line
-#      RALPH_MERGE_MAIN_BEFORE override would leave no reviewable record. While there, give fence 2
-#      an error message — as committed it exits 1 printing nothing.
-# Then:
-RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # fences only, no merge
-bash scripts/ralph-afk/merge-keeper.sh                          # builds products itself in the temp worktree
-# After it: record feature tip + merge SHA, confirm HEAD^2 == the feature tip, re-run the suite on
-# the merge commit (the script already does), and the post-merge freeze resumes.
+# --- keeper merge #1: SPENT in iteration 16, main was f9285d6. ----------------------------------
+# --- keeper merge #2: SPENT in iteration 5 of run 20260728-072601. main is now 317df4d. ---------
+# Both fences were satisfied honestly (join first, then the in-script expected_main) and the guard
+# is live again: the dry run below now REFUSES, which is the proof no third merge can slip through.
+RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "main moved from …"
+# If a further merge is ever authorized, run the script in the BACKGROUND: a foreground timeout kill
+# skips its EXIT trap and strands a worktree holding `main`, which then blocks the retry. Recover
+# with: git -C <wt> merge --abort && git worktree remove --force <wt>
 
 # --- D1: publish the reviewed merge --------------------------------------
 # SPENT in iteration 17. `git push origin main` fast-forwarded 163e969..f9285d6 on the AlphaSight
@@ -1181,8 +1193,10 @@ bash scripts/ralph-afk/merge-keeper.sh                          # builds product
 # force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
 # Standing rollback for the host checkout, still valid until D3 changes the host:
 #   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
-# Four-way SHA check — the PRD clause in full (all four must print
-# f9285d69ed7bcc592bb41b3dcdf29e3221968f44; green since iteration 20):
+# Four-way SHA check — the PRD clause in full. It was green at f9285d6 from iteration 20; the
+# authorized second merge moved local main to 317df4d728b6765dbe365a3166158ba581299557, so all four
+# must be republished at THAT value (candidate G5). The server tree is byte-identical between the
+# two SHAs, so its checkout moves without a service restart:
 git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
@@ -1560,10 +1574,26 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     **two** blocking conditions rather than the one the prior iteration flagged, the second of which
     exits 1 printing nothing; both, and the honest route through each, are in the two-fence block
     above and staged as commands in Validation.
-    **Remaining for G4: the merge itself** - the empty-diff history join, then the `expected_main`
-    edit (in the script, not as an env override), then `merge-keeper.sh`. After the merge the
-    post-merge freeze resumes and E2b must be re-run on m4mbp so the installed app carries
-    G1+G2+G3.
+    **The merge half is `[done - iteration 5 of run 20260728-072601]`** - join `502a49a`, fence edit
+    `23aabe6`, merge `317df4d`, all recorded in the second-keeper-merge block above. **G4 is
+    closed and the amendment is spent: no third merge, and the post-merge freeze has resumed.**
+
+30. **G5 - republish the authorized merge to all four checkouts.** The PRD's "one exact SHA
+    everywhere" clause is currently **red**: local `main` is `317df4d`, while `origin/main`, the
+    server checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize` and the m4mbp checkout are all still
+    `f9285d6`. Do it in the D1/E2a order already rehearsed - `git push origin main` (fast-forward
+    `f9285d6..317df4d`, never force, never `upstream`), then the server checkout, then m4mbp - and
+    re-run the four-way check in Validation. **No service restart is needed and none is authorized
+    here**: `git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk'
+    ':!tests/test_macos_*'` is empty, so the server tree does not change. Rollback for each hop is
+    `checkout f9285d6`; the push is one-way by PRD rule, which is why the payload was reviewed
+    before the merge rather than after.
+31. **G6 - re-run E2b on m4mbp so the installed app carries G1+G2+G3**, then the corrected E3 order
+    (pair first, then start, then the two GUI clicks). Blocked on G5 for the checkout, and on the
+    human for the clicks. If the rebuilt app still fails, read
+    `log show --predicate 'subsystem == "com.alphasight.moss.capture"' --last 30m` - G3 exists so
+    that this failure has a name, and the -1200/-9802 vs -999 distinction is in the
+    control-channel failure contract above.
 
 ## Non-candidates
 
