@@ -289,6 +289,11 @@ class InterleavingDrainWaiterSet(set):
 class PreparingIdentity:
     status: str = "prepared"
     reason: str | None = None
+    # A preparation built against identity state the session has already moved past. It is
+    # the one thing that still refuses to publish now that a non-`prepared` status commits
+    # the span unattributed: a stale proposal would overwrite newer identity state, which
+    # is a statement about the session rather than about who spoke.
+    stale_base_version: bool = False
 
     def prepare(
         self,
@@ -310,7 +315,7 @@ class PreparingIdentity:
             epoch=span.epoch,
             start_sample=span.start_sample,
             end_sample=span.end_sample,
-            base_snapshot_version=base_snapshot.version,
+            base_snapshot_version=base_snapshot.version - 1 if self.stale_base_version else base_snapshot.version,
             proposed_snapshot=proposed,
             relabeled_transcript=f"[0][S01]stable[{seconds:g}]",
             status=self.status,
@@ -954,7 +959,7 @@ def test_canonical_failure_does_not_starve_sibling_session():
 
 
 def test_runtime_terminal_failure_is_session_local():
-    bad_identity = PreparingIdentity(status="abstain", reason="ambiguous_identity")
+    bad_identity = PreparingIdentity(stale_base_version=True)
     runtime = _runtime(
         speech=(False, False),
         identity=bad_identity,

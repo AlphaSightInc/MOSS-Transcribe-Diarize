@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Callable, Protocol
 
 from scipy.optimize import linear_sum_assignment
 
@@ -13,6 +13,7 @@ from .live_session import (
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
     PCM16_BYTES_PER_SAMPLE,
+    UNATTRIBUTED_SPEAKER,
 )
 from .live_span_bounds import span_segments
 
@@ -330,17 +331,45 @@ def _display_label(canonical: str, canonical_speakers: tuple[str, ...]) -> str:
     return f"S{canonical_speakers.index(canonical) + 1:02d}"
 
 
+def unattributed_transcript(transcript: str, *, sample_count: int) -> str:
+    """Render a span's words with no speaker attributed to any of them.
+
+    This is what a span publishes when identity did not resolve -- an abstention, or a
+    preparer that could not obtain evidence. The words are kept because they are the
+    meeting; the labels are dropped because the decoder's `S01` is local to one span and
+    means nothing across spans, so publishing it as canonical would assert a link the
+    session declined to make. Timestamps go through the same span bound as every other
+    published segment, so an unattributed span is no less honest about what it holds.
+
+    Returns `""` for a transcript that parses to nothing; the caller decides what a span
+    with no words publishes, exactly as `span_segments` leaves that question open.
+    """
+
+    return _render_segments(
+        span_segments(transcript, sample_count=sample_count),
+        lambda segment: UNATTRIBUTED_SPEAKER,
+    )
+
+
 def _render_transcript(
     segments: tuple[TranscriptSegment, ...],
     assignments: dict[str, str],
     canonical_speakers: tuple[str, ...],
 ) -> str:
-    parts: list[str] = []
-    for segment in segments:
-        canonical = assignments[segment.speaker]
-        speaker = _display_label(canonical, canonical_speakers)
-        parts.append(f"[{_fmt_time(segment.start)}][{speaker}]{segment.text}[{_fmt_time(segment.end)}]")
-    return "".join(parts)
+    return _render_segments(
+        segments,
+        lambda segment: _display_label(assignments[segment.speaker], canonical_speakers),
+    )
+
+
+def _render_segments(
+    segments: tuple[TranscriptSegment, ...],
+    speaker_of: Callable[[TranscriptSegment], str],
+) -> str:
+    return "".join(
+        f"[{_fmt_time(segment.start)}][{speaker_of(segment)}]{segment.text}[{_fmt_time(segment.end)}]"
+        for segment in segments
+    )
 
 
 def _fmt_time(value: float) -> str:
@@ -376,4 +405,5 @@ __all__ = [
     "LiveSpeakerEvidence",
     "LiveSpeakerEvidenceProvider",
     "NoLiveSpeakerEvidence",
+    "unattributed_transcript",
 ]

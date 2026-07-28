@@ -4653,3 +4653,133 @@ for f in $FILES; do cp /tmp/j1-fixed/$(basename $f) $f; done  -> sha256 identica
 - Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
 - Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
   green - the same rule that has now held four times.
+
+## Iteration 10 (run 20260728-112922) - J2: identity answers *who*, never *whether*
+Target: candidate 39 / J2 - "a non-`prepared` identity preparation is terminal", the second item
+of the third prd.md amendment (Phase J, the live path's terminal-failure policy).
+Result: FIXED on the branch, offline evidence only. With J1 this closes BOTH of blocker 4's input
+classes; the remaining Phase J work (J3, J4) is a different failure class and J5 is the gate.
+
+Why this candidate: the amendment authorizes it, iteration 9 left it as the only thing on this
+path between the branch and a hard-cap span that publishes, and it is the second of the two input
+classes H4d's blocker covers. J3 (transient decoder failure) was left for the next iteration: it
+is a ruling about the decoder, not about identity, and needs its own transient/permanent
+classification.
+
+Files touched:
+  moss_transcribe_diarize/app/live_session.py       + UNATTRIBUTED_SPEAKER ("S00"),
+                                                    + submit_unlabeled_canonical(...)
+  moss_transcribe_diarize/app/live_identity.py      + unattributed_transcript(); _render_transcript
+                                                    refactored onto a shared segment renderer
+  moss_transcribe_diarize/app/live_coordinator.py   submit_prepared_work branches on
+                                                    preparation.status; + _submit_empty helper
+  tests/test_live_pipeline_seams.py                 +8 nodes (24 -> 32); _decode_seam_runtime gained
+                                                    max_speakers / evidence_provider
+  tests/test_live_coordinator.py                    abstention node re-pointed at the new behaviour
+  tests/test_live_service_runtime.py                + PreparingIdentity(stale_base_version=...)
+  tests/test_live_service_replay.py                 same knob, same reason
+  tests/test_live_replay.py                         `identity` row out of the hard-failure table,
+                                                    + a node asserting the new behaviour
+  scripts/ralph-afk/context.md                      unresolved-identity contract block; branch
+                                                    state, scoreboard, test totals; candidate 39
+                                                    done, 40 flagged next with its starting facts;
+                                                    Validation gained J2's red/green recipe
+  scripts/ralph-afk/progress.txt                    this entry
+
+### The ruling, stated once
+NO PREPARATION THE PREPARER RETURNS MAY END THE MEETING. `BoundedCausalIdentityPreparer` is a pure
+proposer - it mutates nothing and it already catches its own evidence provider's exceptions - so
+every outcome it can name is a statement about *who spoke*, not about whether the session can
+continue. A span whose identity did not resolve publishes its WORDS WITH NO SPEAKER ATTRIBUTED.
+Only the claim is dropped.
+This is deliberately broader than "abstain must not be terminal". Ruling only on `abstain` would
+have left `failed:evidence_provider_failed:*` - the wespeaker ONNX provider on the host - as the
+fifth blocker, which is exactly the per-blocker-per-cycle pattern the third amendment exists to
+stop. The genuine precondition violation is already terminal one call earlier and did not need a
+carve-out: `RunnerBoundedWavInference.transcribe_pcm` calls `_validate_pcm_length` and raises
+before the preparer ever sees the span, so the preparer's own `pcm_span_mismatch` is unreachable
+in production.
+Three pieces, each in the module that owns its question:
+  live_session.UNATTRIBUTED_SPEAKER = "S00" - the wire grammar admits only S+digits and canonical
+    display labels are S{index+1:02d}, so S00 is the one such token a canonical mapping can never
+    produce. A wire-format constant of the same kind as S01.
+  live_identity.unattributed_transcript(transcript, *, sample_count) - the words with that marker,
+    through J1's same span_segments clamp, so an unattributed span is no less honest about the
+    audio it holds. "" for a transcript that parses to nothing.
+  live_session.submit_unlabeled_canonical(...) - publishes with the identity snapshot left
+    BYTE-IDENTICAL (no speaker born, no version advanced, no capacity burned) and refuses a
+    transcript naming anything but the marker.
+The coordinator is the single decision point, and it renders from the DECODER's transcript rather
+than from `preparation.relabeled_transcript` - so a preparer that leaves local labels in a field it
+never relabeled cannot publish `S01` as canonical. If the rendering has no words at all the span
+commits empty (H1's path) and `empty_reason` names it, which makes the rule total rather than
+dependent on an invariant two functions away.
+Why publish rather than drop: `stop` waits for `committed_samples == accepted_samples` - the same
+accounting constraint that decided H1. A withheld span strands the session until the drain deadline.
+
+### Commands and results
+python3 -m pytest tests/test_live_pipeline_seams.py -q  -> 32 passed (24 + 8)
+python3 -m pytest tests -q                              -> 571 passed / 2 skipped / 368 subtests
+                                                           in 59.1 s (was 562/2/368; delta +9)
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 -> rc=0, unchanged by this fix
+# red proof, no git history touched, restore sha256-verified 667caa64... both ways:
+cp moss_transcribe_diarize/app/live_coordinator.py /tmp/j2-fixed/
+git show HEAD:moss_transcribe_diarize/app/live_coordinator.py > moss_transcribe_diarize/app/live_coordinator.py
+python3 -m pytest tests/test_live_pipeline_seams.py tests/test_live_coordinator.py \
+        tests/test_live_replay.py -q
+  -> 5 failed / 36 passed. Exactly the five J2 behaviour nodes, and the failure printed is the
+     deployed one, verbatim: LiveServiceFailureRecord(kind=identity_commit,
+     code='canonical_not_submitted', retryable=False,
+     detail={'span_id': 0, 'identity_status': 'abstain'}) - the same 409 H4d's probe received.
+cp /tmp/j2-fixed/live_coordinator.py moss_transcribe_diarize/app/live_coordinator.py  -> sha256 equal
+No Swift source changed, so `swift test` was not re-run; it is J5's gate that re-measures it.
+
+### The three tests that had to be re-pointed (the honest cost, not a weakened gate)
+Three existing tests used an abstention to MANUFACTURE a terminal failure, i.e. they asserted the
+defect. Each now uses a genuinely non-submittable preparation instead, and each asserts more than
+it did before:
+1. test_live_service_runtime.py::test_runtime_terminal_failure_is_session_local and
+2. test_live_service_replay.py::test_identity_commit_failure_writes_typed_terminal_artifacts
+   -> PreparingIdentity(stale_base_version=True): a preparation built against identity state the
+   session has already moved past. That is the ONLY remaining way a canonical submission refuses,
+   and it is a statement about the session (a stale proposal would overwrite newer identity state)
+   rather than about who spoke, so it stays terminal by the amendment's own rule.
+3. test_live_replay.py: the `identity` row (exit code 4) left the hard-failure table and became its
+   own node - the same manifest now exits 0, publishes the span unattributed, keeps accounting
+   exact and invents no speaker. EXIT CODE 4 IS NO LONGER MANUFACTURABLE FROM A REPLAY MANIFEST;
+   `run_replay`'s `not result.submitted` guard stays for a coordinator contract violation. A lab
+   harness stricter than the service would rebuild the divergence Phase J exists to close.
+
+### Learned
+1. **A red proof needs the shared name to live in a file it does not restore.** J1 learned this by
+   putting the clamp in a new leaf. Here the same rule chose which file to restore rather than
+   which file to write: UNATTRIBUTED_SPEAKER and unattributed_transcript are in live_session.py and
+   live_identity.py, both tracked at HEAD, so restoring all three product files would have produced
+   an ImportError and proven nothing. Restoring only live_coordinator.py - the decision point -
+   reds exactly the behaviour and leaves the two contract nodes green, which is the correct
+   partition: they test the other two files.
+2. **Rebuild the published text from the decoder, not from the preparation.** The obvious
+   implementation reads `preparation.relabeled_transcript`, which for a non-prepared preparation is
+   the raw decoder transcript with its LOCAL `S01` labels. Publishing that would have asserted the
+   very link the abstention declined to make - `S01` in span 3 is not `S01` in span 1 - and no test
+   in the tree would have caught it, because the fakes all return an already-labeled string.
+3. **Tests that manufacture a failure through a designed behaviour become load-bearing.** Three
+   suites reached for `status="abstain"` because it was the cheapest way to get `submitted=False`.
+   That is worth noticing before writing such a test: a defect used as a fixture is a defect the
+   suite will defend.
+
+- Next: **J3** (candidate 40) - a transient decoder failure must not be terminal, while a permanent
+  one stays terminal and named. Starting facts, verified this iteration:
+  `live_service_runtime._process_in_flight_item` turns EVERY exception from `prepare_work_item`
+  into `_failure_from_exception`, and `RunnerBoundedWavInference.transcribe_pcm`
+  (live_adapters.py:236-254) wraps the runner's `ConnectionResetError` - and every other exception -
+  into one untyped `LiveProviderError`. So a socket reset mid-meeting and a permanently
+  misconfigured endpoint are indistinguishable today; that classification is the work. Then J4
+  (`reason` must reach the failure detail and the canonical_processed event), then J5's
+  gate/merge/redeploy.
+- **Not done here, deliberately:** J2's real-audio confirmation on the host. The fix is not deployed
+  and the freeze forbids deploying it before Phase J's merge, so it is J5's gate - the same
+  deferral J1 recorded, and it costs no human step when it comes.
+- Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
+- Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
+  green.

@@ -89,10 +89,12 @@ block. It changed no tracked product source.
 terminal-failure policy, Phase J): iteration 9 landed **J1** — the span-bound clamp, answered once in
 the new leaf `moss_transcribe_diarize/app/live_span_bounds.py` and called from all three copies — so
 the branch carries tracked server source again, strictly within Phase J's scope. See the span-bound
-contract block.
+contract block. Iteration 10 landed **J2** — a non-`prepared` identity preparation now publishes the
+span's words with no speaker attributed instead of ending the meeting — which removes the *last*
+blocker-4 input class on this path. See the unresolved-identity contract block.
 
-**PRD acceptance scoreboard after iteration 9 of run 20260728-112922** (iteration 9 moved no
-scoreboard line either — J1 is a fix awaiting Phase J's gate, merge and redeploy).
+**PRD acceptance scoreboard after iteration 10 of run 20260728-112922** (iteration 10 moved no
+scoreboard line either — J1 and J2 are fixes awaiting Phase J's gate, merge and redeploy).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
@@ -107,9 +109,9 @@ certification, the 16-minute soak, the run-time half of secret hygiene, and the 
 **Those open items are still not merely waiting on E3.** Iterations 9 and 10 proved they cannot pass
 on the deployed build; the second amendment fixed those three blockers (H3, H1, H2) and iteration 6
 deployed them; and iteration 7's gate run then found a **fourth** blocker on the same seam — see the
-H4d block. Phase J is now authorized and **J1 (iteration 9) closes blocker 4's timestamp half on the
-branch**; the path stays gated until J2-J4 land and Phase J's gate/merge/redeploy (J5) put them on
-the host. So the certification path is gated on **Phase J**, not on the operator: E3's physical
+H4d block. Phase J is now authorized and **J1 (iteration 9) and J2 (iteration 10) close both of
+blocker 4's input classes on the branch**; the path stays gated until J3-J4 land and Phase J's
+gate/merge/redeploy (J5) put them on the host. So the certification path is gated on **Phase J**, not on the operator: E3's physical
 TCC clicks stay unspent, because a canary against a service that dies at the first 2.5 s of
 continuous speech would burn the one irreducible human step for nothing. This is the third time the
 same rule has held: **spend the human step last**, and only against a build a machine has already
@@ -117,9 +119,9 @@ driven end to end. Iteration 8 put a number on that judgement: at the measured 6
 rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 now would most likely
 buy one aborted run.
 Test totals on the branch: Swift **139 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **562 passed / 2 skipped / 368 subtests**
-including `tests/test_live_pipeline_seams.py` **24 passed** (new in run 20260728-112922 iteration 1,
-+5 in iteration 2, +3 in iteration 3, +11 in iteration 9),
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **571 passed / 2 skipped / 368 subtests**
+including `tests/test_live_pipeline_seams.py` **32 passed** (new in run 20260728-112922 iteration 1,
++5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10),
 `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -365,6 +367,49 @@ the fixed files back is sha256-verified. `live-hardcap-repro.py --frames 8` is u
 **Not yet observed on the host.** J1's real-audio confirmation is the sweep's two known-failing
 spans (`12208+10*8000` and `12208+32*8000`), which belongs to J5's gate — the fix is not deployed and
 the freeze rules say it may not be until Phase J's merge.
+
+**Unresolved-identity contract (new, iteration 10 / J2). Identity answers *who*, never *whether*.**
+*The rule: no preparation the preparer returns may end the meeting.* `BoundedCausalIdentityPreparer`
+is a pure proposer — it mutates nothing and it catches its own evidence provider's exceptions — so
+every outcome it can name is a statement about who spoke. A span whose identity did not resolve
+therefore publishes its **words with no speaker attributed**, and only the claim is dropped.
+Three pieces, each in the module that owns the question:
+- `live_session.UNATTRIBUTED_SPEAKER` = `"S00"`. The wire grammar admits only `S`+digits and
+  canonical display labels are `S{index+1:02d}`, so `S00` is the one such token a canonical mapping
+  can never produce. It is a wire-format constant of the same kind as `S01`, not a magic value.
+- `live_identity.unattributed_transcript(transcript, *, sample_count)` renders the span's words with
+  that marker, through the same `span_segments` clamp as every published segment — an unattributed
+  span is no less honest about the audio it holds. `""` for a transcript that parses to nothing.
+- `live_session.submit_unlabeled_canonical(...)` publishes with the identity snapshot left
+  **byte-identical**: no speaker is born, no version advances, so the next span still prepares
+  against the state this one saw and an abstention burns no speaker capacity. It refuses a
+  transcript naming anything but the marker.
+*The coordinator is the single decision point* (`submit_prepared_work`): `prepared` publishes
+relabeled, anything else publishes unattributed, and the rendering is rebuilt from the **decoder's**
+transcript rather than read out of `preparation.relabeled_transcript` — a preparer that leaves local
+labels in a field it never relabeled therefore cannot publish them as canonical. If the rendering has
+no words the span commits **empty** (H1's path) and `empty_reason` names it, so the rule is total.
+*Why publish rather than drop:* `stop` waits for `committed_samples == accepted_samples`, the same
+accounting constraint that decided H1 — a withheld span strands the session until the drain deadline.
+*Three tests used an abstention to manufacture a terminal failure and had to be re-pointed*, which is
+the honest cost of the ruling, not a weakened gate:
+`test_live_service_runtime.py::test_runtime_terminal_failure_is_session_local` and
+`test_live_service_replay.py::test_identity_commit_failure_writes_typed_terminal_artifacts` now use a
+new `PreparingIdentity(stale_base_version=True)` — a preparation built against identity state the
+session has moved past, which is the **only** remaining way a canonical submission refuses and is a
+statement about the session rather than about who spoke. `test_live_replay.py`'s `identity` row (exit
+code 4) is gone from the hard-failure table and is now its own node asserting the new behaviour: a
+lab harness stricter than the service would rebuild the divergence Phase J closes. **Exit code 4 is
+no longer manufacturable from a replay manifest** — `run_replay`'s guard stays for a coordinator
+contract violation.
+*Red/green rehearsed offline (MacStudio, no server):* restoring **only** `live_coordinator.py` from
+`HEAD` — the constant and the renderer live in the other two files, so the test module still imports
+and the red is the defect rather than a collection error — turns exactly the five J2 behaviour nodes
+red with the deployed failure verbatim: `LiveServiceFailureRecord(kind=identity_commit,
+code='canonical_not_submitted', retryable=False, detail={'span_id': 0, 'identity_status': 'abstain'})`
+— the same 409 H4d's probe received. The restore is sha256-verified
+(`667caa64…` both ways). `live-hardcap-repro.py --frames 8` unchanged at rc=0.
+**Not yet observed on the host.** Like J1, the real-audio confirmation belongs to J5's gate.
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -1838,6 +1883,12 @@ python3 -m pytest tests/test_live_pipeline_seams.py -q
 # with FILES = live_session.py live_identity.py live_adapters.py; the new leaf live_span_bounds.py
 # is untracked at HEAD, so it survives the restore and the three seam nodes fail for the real
 # reason (3 failed / 21 passed), rather than the file failing to import.
+# J2 (iteration 10) adds 8 more -> 32 passed (~3.6 s). Red-prove it by restoring ONLY
+# live_coordinator.py: UNATTRIBUTED_SPEAKER and unattributed_transcript live in live_session.py and
+# live_identity.py, so restoring those too would break the import instead of the behaviour. The
+# blast radius is five nodes across three files, so run them together:
+#   python3 -m pytest tests/test_live_pipeline_seams.py tests/test_live_coordinator.py \
+#           tests/test_live_replay.py -q            # 5 failed / 36 passed before, 41 passed after
 
 # --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
 #     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived.
@@ -2605,19 +2656,24 @@ and 37 are folded in here; settle them together or the next gate run finds the f
     span-bound contract block above.
     *Open, deliberately deferred to J5:* real-audio confirmation on the host (the sweep's two
     known-failing spans). The fix is not deployed and may not be until Phase J's merge.
-39. **J2 - a non-`prepared` preparation must not end the meeting** `[open - do this next]`. J1 made
-    it the *only* thing standing between the branch and a hard-cap span that publishes, and it is
-    the second of the two input classes blocker 4 covers. `live_session.py:449` admits
-    only `status == "prepared"`; `live_service_runtime.py:745-751` converts the resulting False into
-    a non-retryable terminal failure. `abstain` is a *designed* outcome
-    (`live_identity.py:106,121,127`) for ambiguous identity or exhausted speaker capacity, so the
-    design says "commit without relabeling" while the code says "kill the session". Make them agree,
-    and prefer committing the span unlabeled over discarding it - `accounted_samples` is a synonym
-    for `committed_samples`, the same accounting constraint that decided H1.
-40. **J3 - a transient decoder failure must not be terminal** (was candidate 36). Same shape, same
-    path. H1 deliberately kept a genuinely failed decoder terminal so a dead GPU cannot render as a
-    blank meeting - preserve that distinction: transient and retryable degrade, permanent stays
-    terminal and named.
+39. **J2 - a non-`prepared` preparation must not end the meeting** `[done - run 20260728-112922
+    iteration 10]`. Answered as the candidate recommended, and generalized: **no preparation the
+    preparer returns is terminal.** The span publishes its words with `UNATTRIBUTED_SPEAKER`
+    (`"S00"`) and the identity snapshot is left byte-identical, so an abstention costs the label and
+    nothing else. The decision lives once, in `LiveCoordinator.submit_prepared_work`, and renders
+    from the decoder's transcript rather than from `preparation.relabeled_transcript`. Eight nodes
+    in `tests/test_live_pipeline_seams.py` plus one in `tests/test_live_replay.py`; three tests that
+    used an abstention to *manufacture* a terminal failure were re-pointed at a genuinely stale
+    preparation. See the unresolved-identity contract block above.
+40. **J3 - a transient decoder failure must not be terminal** (was candidate 36) `[open - do this
+    next]`. Same shape, same path, and the last fix before J4/J5. H1 deliberately kept a genuinely
+    failed decoder terminal so a dead GPU cannot render as a blank meeting - preserve that
+    distinction: transient and retryable degrade, permanent stays terminal and named.
+    *Where it stands after J2:* `live_service_runtime._process_in_flight_item` turns **every**
+    exception from `prepare_work_item` into `_failure_from_exception`, and
+    `RunnerBoundedWavInference.transcribe_pcm` wraps the runner's `ConnectionResetError` (and every
+    other exception) into one untyped `LiveProviderError`. So a socket reset mid-meeting and a
+    permanently misconfigured endpoint are indistinguishable today; that classification is the work.
 41. **J4 - `reason` must survive.** It must reach the failure detail and the `canonical_processed`
     event. H4d cost a host-side probe precisely because the process classified the refusal correctly
     and then discarded the one word naming it; H1/H3 were easier because they left tracebacks.

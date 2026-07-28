@@ -35,7 +35,11 @@ from moss_transcribe_diarize.app.live_endpoint import (
     EndpointPolicyConfig,
     SpeechObservation,
 )
-from moss_transcribe_diarize.app.live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig
+from moss_transcribe_diarize.app.live_identity import (
+    BoundedCausalIdentityPreparer,
+    LiveIdentityConfig,
+    unattributed_transcript,
+)
 from moss_transcribe_diarize.app.live_provider_bundle import (
     LiveProviderBundleAdmissionError,
     WebRtcSpeechProvider,
@@ -49,9 +53,11 @@ from moss_transcribe_diarize.app.live_service_runtime import (
 )
 from moss_transcribe_diarize.app.live_session import (
     LIVE_SAMPLE_RATE,
+    UNATTRIBUTED_SPEAKER,
     AudioFrame,
     CanonicalResult,
     FrozenSpan,
+    LiveIdentitySnapshot,
     LiveSession,
 )
 from moss_transcribe_diarize.app.live_span_bounds import span_segments
@@ -370,7 +376,14 @@ def _deployed_descriptor() -> LiveServiceDescriptor:
     )
 
 
-def _decode_seam_runtime(*, responses, speech, scheduler=None) -> tuple[LiveServiceRuntime, StubbedTransportVllmRunner]:
+def _decode_seam_runtime(
+    *,
+    responses,
+    speech,
+    scheduler=None,
+    max_speakers: int = 16,
+    evidence_provider=None,
+) -> tuple[LiveServiceRuntime, StubbedTransportVllmRunner]:
     runner = StubbedTransportVllmRunner(responses)
     return (
         LiveServiceRuntime(
@@ -387,7 +400,8 @@ def _decode_seam_runtime(*, responses, speech, scheduler=None) -> tuple[LiveServ
             speech_provider_factory=lambda: ScriptedSpeech(speech),
             decoder_factory=lambda: RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES),
             identity_preparer_factory=lambda: BoundedCausalIdentityPreparer(
-                config=LiveIdentityConfig(max_speakers=16, min_match_score=0.5, min_match_margin=0.1)
+                config=LiveIdentityConfig(max_speakers=max_speakers, min_match_score=0.5, min_match_margin=0.1),
+                evidence_provider=evidence_provider,
             ),
             session_id_factory=lambda: "seam-session",
             _canonical_scheduler=scheduler,
@@ -719,3 +733,175 @@ def test_an_unparseable_transcript_is_still_not_a_set_of_segments():
     """
     assert span_segments("silence", sample_count=DEPLOYED_MIXED_FRAME_SAMPLES) == ()
     assert span_segments("   ", sample_count=DEPLOYED_MIXED_FRAME_SAMPLES) == ()
+
+
+# --------------------------------------------------------------------------------------
+# The identity-outcome seam: the real preparer's non-`prepared` answers under the real
+# runtime. An identity preparation answers *who spoke*; nothing it can answer makes the
+# session unable to continue, so no answer it gives may end the meeting.
+# --------------------------------------------------------------------------------------
+
+TWO_SPEAKER_TRANSCRIPT = "[0][S01]who said this[1.2][1.3][S02]and who said that[2.4]"
+
+
+def _abstaining_runtime(scheduler, **kwargs):
+    return _decode_seam_runtime(
+        responses=[{"text": TWO_SPEAKER_TRANSCRIPT, "usage": {"prompt_tokens": 3, "completion_tokens": 11}}],
+        speech=(True,) * 8,
+        scheduler=scheduler,
+        **kwargs,
+    )
+
+
+def test_an_abstaining_identity_publishes_the_span_without_a_speaker():
+    """The second input class of H4d's blocker, and the same shape as the first.
+
+    `abstain` is what the preparer returns when identity is genuinely undecidable -- two
+    local speakers against exhausted speaker capacity here, ambiguous evidence or a
+    same-span link conflict elsewhere. The design says "do not relabel"; `live_session`
+    admitted only `status == "prepared"`, so the runtime turned the resulting `False` into
+    a non-retryable terminal failure and the design said one thing while the code did
+    another. The span now commits its words with no speaker attributed, and the identity
+    snapshot does not move -- an abstention adds no speaker and burns no capacity.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _abstaining_runtime(scheduler, max_speakers=1)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    committed = [(item.start_sample, item.end_sample, item.transcript) for item in snapshot.session.committed]
+    assert [item[:2] for item in committed] == [(0, DEPLOYED_HARD_CAP_SAMPLES)]
+    # The words survive; only the claim about who spoke them is withheld.
+    assert "who said this" in committed[0][2] and "and who said that" in committed[0][2]
+    assert "[S00]" in committed[0][2]
+    assert "[S01]" not in committed[0][2] and "[S02]" not in committed[0][2]
+    assert snapshot.session.identity_snapshot.canonical_speakers == ()
+    assert snapshot.session.identity_snapshot.version == 0
+    # The audio is accounted for, so `stop` can still drain -- the same constraint that
+    # decided H1's empty-span commit.
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples == DEPLOYED_HARD_CAP_SAMPLES
+
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["identity_status"] for event in processed] == ["abstain"]
+    assert [event["submitted"] for event in processed] == [True]
+
+    # The meeting continues past the span that used to end it.
+    runtime.accept_frame(created.session_id, _frame(5, DEPLOYED_MIXED_FRAME_SAMPLES))
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+    assert len(runner.decoded_wav_bytes) == 1
+
+
+def test_an_identity_preparer_that_could_not_get_evidence_publishes_the_span_too():
+    """The `failed` half of the same ruling, through the real evidence seam.
+
+    `prepare` catches every exception the evidence provider raises and returns
+    `status="failed", reason="evidence_provider_failed:<type>"` -- it was already designed
+    not to propagate, and then the admission rule downstream made it fatal anyway. The
+    wespeaker ONNX provider is the real occupant of this seam on the host; a meeting must
+    not end because one span's embedding could not be scored.
+    """
+
+    class UnavailableEvidence:
+        def score(self, **kwargs):
+            del kwargs
+            raise RuntimeError("onnxruntime session is not available")
+
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, evidence_provider=UnavailableEvidence())
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    assert [event["identity_status"] for event in _events(runtime, created.session_id, "canonical_processed")] == [
+        "failed"
+    ]
+    committed = snapshot.session.committed
+    assert "[S00]" in committed[0].transcript
+    assert snapshot.session.identity_snapshot.canonical_speakers == ()
+    assert snapshot.session.committed_samples == DEPLOYED_HARD_CAP_SAMPLES
+
+
+def test_an_unresolved_span_stops_with_exact_accounting():
+    """Why the policy is *publish unattributed* rather than *drop the span*.
+
+    The same accounting constraint that decided H1: `stop` waits for
+    `committed_samples == accepted_samples`, so a span withheld because identity did not
+    resolve would strand the session until the drain deadline expired.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, max_speakers=1)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+    stopped = asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+
+    assert stopped.session.status == "closed"
+    assert stopped.session.accepted_samples == stopped.session.accounted_samples == DEPLOYED_HARD_CAP_SAMPLES
+    assert stopped.terminal_failure is None
+
+
+def test_a_span_published_without_identity_may_not_carry_the_decoder_s_own_labels():
+    """The guard that keeps "unattributed" honest at the session boundary.
+
+    `S01` in one span and `S01` in the next are the decoder's local labels and are not the
+    same person until identity says so; publishing them as canonical would assert exactly
+    the link the abstention declined to make. The session therefore refuses a transcript on
+    this path that names anything but the unattributed marker, which no canonical display
+    label (`S01`, `S02`, ...) can ever be.
+    """
+    session = LiveSession(max_retained_samples=960000)
+    session.accept_frame(_frame(0, DEPLOYED_MIXED_FRAME_SAMPLES))
+    span = session.freeze_until(DEPLOYED_MIXED_FRAME_SAMPLES, reason="hard_cap")
+    def submit(transcript: str) -> bool:
+        return session.submit_unlabeled_canonical(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            transcript=transcript,
+        )
+
+    assert submit("[0][S01]local label[0.5]") is False
+    assert submit("nothing parses here") is False
+    assert session.snapshot().committed_samples == 0
+    assert session.snapshot().status == "active"
+
+    assert submit(f"[0][{UNATTRIBUTED_SPEAKER}]unattributed[0.5]") is True
+    snapshot = session.snapshot()
+    assert snapshot.committed_samples == DEPLOYED_MIXED_FRAME_SAMPLES
+    assert snapshot.identity_snapshot == LiveIdentitySnapshot()
+
+
+@pytest.mark.parametrize(
+    ("transcript", "expected"),
+    [
+        pytest.param("[0][S01]one[1]", f"[0][{UNATTRIBUTED_SPEAKER}]one[1]", id="the_only_speaker"),
+        pytest.param(
+            "[0][S01]one[1][1.2][S02]two[2]",
+            f"[0][{UNATTRIBUTED_SPEAKER}]one[1][1.2][{UNATTRIBUTED_SPEAKER}]two[2]",
+            id="every_speaker_including_a_repeat",
+        ),
+        pytest.param("[0.11][S01]x[2.51]", f"[0.11][{UNATTRIBUTED_SPEAKER}]x[2.5]", id="still_clamped_into_the_span"),
+        pytest.param("silence", "", id="nothing_to_publish"),
+    ],
+)
+def test_an_unattributed_rendering_keeps_the_words_and_drops_only_the_speaker(transcript, expected):
+    """One rule for what an unresolved span publishes, driven from the decoder's transcript.
+
+    It is rebuilt from what the decoder said rather than read out of the preparation, so a
+    preparer that leaves local labels in a field it never relabeled cannot publish them.
+    The span bound applies here exactly as it does to a prepared span: an unattributed span
+    is no less honest about the audio it holds.
+    """
+    assert unattributed_transcript(transcript, sample_count=DEPLOYED_HARD_CAP_SAMPLES) == expected

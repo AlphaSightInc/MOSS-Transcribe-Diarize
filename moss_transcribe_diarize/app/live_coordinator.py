@@ -10,6 +10,7 @@ from moss_transcribe_diarize.transcript_parser import parse_transcript
 from .live_adapters import BoundedWavInference
 from .live_arbiter import ArbiterWorkItem, InferenceArbiter
 from .live_endpoint import EndpointPolicy, EndpointPolicyError, EndpointSpan, SpeechObservation
+from .live_identity import unattributed_transcript
 from .live_session import (
     AudioFrame,
     CanonicalResult,
@@ -189,17 +190,13 @@ class LiveCoordinator:
     def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
         span = work.span
         preparation = work.preparation
-        if work.empty_reason is not None:
-            submitted = self.session.submit_empty_canonical(
-                span_id=span.id,
-                epoch=span.epoch,
-                start_sample=span.start_sample,
-                end_sample=span.end_sample,
-            )
+        empty_reason = work.empty_reason
+        if empty_reason is not None:
+            submitted = self._submit_empty(span)
             identity_status = "empty_span"
         elif preparation is None:
             raise LiveCoordinatorError("prepared work carries neither an identity preparation nor an empty span.")
-        else:
+        elif preparation.status == "prepared":
             result = CanonicalResult(
                 span_id=span.id,
                 epoch=span.epoch,
@@ -210,6 +207,27 @@ class LiveCoordinator:
             )
             submitted = self.session.submit_prepared_canonical(result)
             identity_status = preparation.status
+        else:
+            # The span published its words without a speaker. Identity answered a question
+            # about *who*, and every answer it can give -- an abstention on ambiguity or on
+            # speaker capacity, a preparer that could not obtain evidence -- leaves the
+            # words intact and the meeting able to continue. Only the claim is dropped, and
+            # the label is rebuilt from the decoder's own transcript rather than taken from
+            # the preparation, so a preparer cannot publish local labels as canonical by
+            # leaving them in a field it did not relabel.
+            identity_status = preparation.status
+            unattributed = unattributed_transcript(work.transcript, sample_count=span.sample_count)
+            empty_reason = _empty_transcript_reason(unattributed)
+            if empty_reason is not None:
+                submitted = self._submit_empty(span)
+            else:
+                submitted = self.session.submit_unlabeled_canonical(
+                    span_id=span.id,
+                    epoch=span.epoch,
+                    start_sample=span.start_sample,
+                    end_sample=span.end_sample,
+                    transcript=unattributed,
+                )
         snapshot = self.session.snapshot()
         if submitted:
             self._pcm.prune_before(snapshot.committed_samples)
@@ -223,7 +241,15 @@ class LiveCoordinator:
             frozen_span_sample_count=measurement["frozen_span_sample_count"],
             frozen_span_duration_sec=measurement["frozen_span_duration_sec"],
             canonical_decode_rtf=measurement["canonical_decode_rtf"],
-            empty_reason=work.empty_reason,
+            empty_reason=empty_reason,
+        )
+
+    def _submit_empty(self, span: FrozenSpan) -> bool:
+        return self.session.submit_empty_canonical(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
         )
 
     def process_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkResult:

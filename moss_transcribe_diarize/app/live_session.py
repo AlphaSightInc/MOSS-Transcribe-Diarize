@@ -12,6 +12,14 @@ from .live_span_bounds import LIVE_SAMPLE_RATE, span_segments
 
 PCM16_BYTES_PER_SAMPLE = 2
 
+# The speaker label a span carries when the session never established who spoke it. The
+# wire grammar admits only `S` followed by digits, and canonical display labels are
+# `S{index + 1:02d}`, so this marker is the one such token a canonical mapping can never
+# produce. It exists because the alternative to publishing an honest "nobody attributed"
+# is publishing the decoder's *local* labels as if they were canonical -- `S01` in one span
+# and `S01` in the next are not the same person until identity says so.
+UNATTRIBUTED_SPEAKER = "S00"
+
 
 class LiveSessionError(RuntimeError):
     pass
@@ -283,6 +291,63 @@ class LiveSession:
 
         assert result.identity_preparation is not None
         self._publish_span(span, result, identity_snapshot=result.identity_preparation.proposed_snapshot)
+        self._bump()
+        self._notify_waiters()
+        return True
+
+    def submit_unlabeled_canonical(
+        self,
+        *,
+        span_id: int,
+        epoch: int,
+        start_sample: int,
+        end_sample: int,
+        transcript: str,
+    ) -> bool:
+        """Publish a frozen span's words without asserting who spoke them.
+
+        An identity preparation answers *who*, not *whether the meeting can continue*. An
+        `abstain` is the designed answer to ambiguous identity or exhausted speaker
+        capacity, and a preparer that could not obtain evidence has answered the same
+        question with the same word. Neither makes the words unusable, and `stop` waits for
+        `committed_samples == accepted_samples`, so refusing the span would strand the
+        session exactly as dropping an empty one would.
+
+        Publishing therefore keeps the audio and drops only the claim: the identity
+        snapshot is left byte-identical -- no speaker is born, no version advances, so the
+        next span still prepares against the state this one saw -- and every segment must
+        name `UNATTRIBUTED_SPEAKER`. A transcript that still carries the decoder's local
+        labels is refused, because publishing those as canonical would assert an identity
+        the session declined to establish.
+        """
+
+        if epoch != self._epoch:
+            return False
+        self._ensure_accepting_or_closing()
+        span = self._frozen_spans.get(span_id)
+        if span is None:
+            return False
+        if not self._span_order or self._span_order[0] != span_id:
+            return False
+        if start_sample != span.start_sample or end_sample != span.end_sample:
+            return False
+        segments = span_segments(transcript, sample_count=span.sample_count)
+        if not segments:
+            return False
+        if any(segment.speaker != UNATTRIBUTED_SPEAKER for segment in segments):
+            return False
+
+        self._publish_span(
+            span,
+            CanonicalResult(
+                span_id=span.id,
+                epoch=span.epoch,
+                start_sample=span.start_sample,
+                end_sample=span.end_sample,
+                transcript=transcript,
+            ),
+            identity_snapshot=self._identity_snapshot,
+        )
         self._bump()
         self._notify_waiters()
         return True
