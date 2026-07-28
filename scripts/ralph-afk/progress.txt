@@ -12481,3 +12481,121 @@ Stop conditions - abandon the run and record a blocker rather than pressing on:
  * `mtd-capture start` fails (driver exits 4) - do NOT retry blind: read status first, because a
    wedged start is exactly what candidate 48 fixed and a re-run would hide it;
  * either batch MainPID moves.
+
+================================================================================
+Iteration 21 of run 20260728-181020 - gate step (d) attempted: F1 setup ran, then
+m4mbp left the tailnet. BLOCKED on a physical host, and the run's missing
+instrument was built and validated instead.
+================================================================================
+
+Target: Phase M gate step (d), first half - re-run F1 (the 60 s canary) against the deployed
+77e0014 with scripts/ralph-afk/live-canary.sh, OUTPUT_MODE=muted, and the marker-alone-x3
+delivery that has never been exercised. Rollbacks pre-recorded and committed first (270f455).
+
+WHAT RAN, IN ORDER, AND WHAT IT MEASURED.
+1. Preconditions, all green before anything was touched:
+   - four-way SHA still 77e0014 (local main, origin/main, server checkout, m4mbp checkout);
+   - live https://100.64.0.8:7861/live 200; batch http://192.168.68.38:7860/ 200;
+   - server units unmoved: moss-live-web MainPID 350731 / NRestarts=0 / active, moss-web 301112,
+     moss-vllm 322117, both NRestarts=0;
+   - m4mbp: HEAD 77e0014, `pgrep -x MOSSCaptureApp` EMPTY (so a fresh launch was honest), TCC
+     reader sane (322 rows) with kTCCServiceAudioCapture|2 and kTCCServiceMicrophone|2;
+   - branch product source identical to the deployed SHA: `git diff --name-only 77e0014 HEAD --
+     ':!scripts/ralph-afk'` EMPTY.
+2. App launched fresh: pid 51512, control.sock present, `mtd-capture status` -> running:false,
+   both lanes "stopped". Exactly K5d's required starting state.
+3. Pairing: one code minted on the SERVER LOOPBACK (ops/live-pair.sh, evidence
+   payload_matches_certificate=true, pin a35ca9fc..., expires_in_seconds=300, single_use=true),
+   piped to `mtd-capture pair` as its OWN ssh invocation - payload never on argv, never on disk,
+   never printed (only its length, 113). Answer: {"sessionID":"8a6db4f6...","ok":true,
+   "running":false}. The device row was REUSED, not created (no revoke is owed).
+4. Driver copied to m4mbp:/tmp/live-canary.sh, sha256 e88e44550f11eceb3fa745d97339395b3fd9655f
+   ee1c40990354dc9c8b96dd69 on BOTH hosts.
+5. Then m4mbp left the network, before the canary was started.
+
+THE BLOCKER, MEASURED RATHER THAN INFERRED.
+  ssh ga0@m4mbp            -> "Operation timed out" on ~25 attempts across 12 minutes
+  ping 100.64.0.4          -> 100% packet loss
+  nc -z 100.64.0.4 22      -> closed
+  tailscale ping m4mbp     -> "no reply" x3
+  tailscale status m4mbp   -> "active; relay nyc", and the DISCRIMINATING fact: rx FROZEN at
+                              162594700 across ten minutes while tx kept climbing (985414176 ->
+                              985424628). Our packets leave; nothing answers. The peer row says
+                              "active" from the coordination server's view, not the host's.
+  no second path: MacStudio is 192.168.68.36, m4mbp is 192.168.1.240 - different LANs, no ARP
+  entry, so the tailnet is the ONLY route and Wake-on-LAN cannot reach it.
+The capture Mac is asleep or powered off. Nothing the loop can do wakes it; this is the same class
+of input as the TCC clicks. prd.md's third amendment already recorded the precedent (m4mbp was
+powered off during H4d), and the answer there was the same: record it and route around.
+
+STATE LEFT ON m4mbp, for the next iteration to clear:
+  * MOSSCaptureApp is RUNNING (pid 51512 at last contact) and the device holds a FRESH bearer.
+  * No capture was started: no lane was ever hot, the output was NEVER muted, the pasteboard was
+    NEVER written (handoff never ran), and no live session was opened beyond the paired id.
+  * /tmp/live-canary.sh exists there; /tmp/ralph-canary does not.
+  Next attempt must: `pkill -x MOSSCaptureApp`, relaunch fresh (K5d's rule - a stale in-process
+  lane verdict is sticky), and RE-PAIR, because this run's pairing code was single-use with a
+  300 s life.
+Nothing needed rolling back: every mutation in the pre-record either never happened (mute,
+pasteboard, session, evidence dir) or is self-superseding (the pairing).
+
+WHAT WAS BUILT INSTEAD - the instrument this run would have needed within five minutes of
+finishing, and did not have.
+  NEW: scripts/ralph-afk/live-canary-clauses.py (Ralph evidence tooling; no product source).
+  live-canary-analyze.py answers candidate 51's question (did the lanes carry different content).
+  Nothing answered the CERTIFICATION clauses for a canary directory: /tmp/ralph-f1-analyze.py is
+  keyed to F1's own layout (hard-coded /tmp/ralph-f1-evidence, and times.env keys T_MARKER_END /
+  MARKER that live-canary.sh does not write), so it cannot read a canary run at all.
+  Sections, one per clause: poll health with the FIRST non-200; transcript growth printed only
+  where it changes; final snapshot incl. per-lane v2 health/failure_code/failed_samples; the
+  accepted==accounted==committed equality (stated as a STOPPED-session clause, with an active
+  session's gap compared against retained instead of being called a loss); decoder RTF stats plus
+  D-c's canonical_decode_token_cap and capped-span count; per-span commit lag from the event
+  stream (span_frozen -> canonical_processed first-seen poll times); the latency report with its
+  committed and render components stated SEPARATELY against a --user-visible-gate-ms; and the lane
+  timeline printed only where it CHANGES.
+
+VALIDATED AGAINST THREE REAL DIRECTORIES, not asserted:
+  /tmp/ralph-c51-evidence/ralph-canary (iteration 12) -> reproduces the RECORDED committed p95
+    8342.697 ms and user-visible 9702.2 ms to the millisecond, and independently re-finds the
+    runaway decodes (span 25: 8.49 s rtf 3.396; span 5: 8.35 s rtf 3.339), commit lag p50 1.4 s /
+    p95 7.1 s / max 9.5 s, and the identity/empty-span notables.
+  /tmp/ralph-f1-evidence (F1) -> reproduces the RECORDED decoder p95 RTF 0.706, and section 8
+    prints F1's red sub-clause 2 by itself: system goes ('failed','macos_buffer_overrun') at
+    t+86.0 s while microphone stays capturing, with the v2 lane record showing failed_samples 8000.
+  /tmp/ralph-f3-evidence (F3 soak) -> REFUSES with a named reason, because that driver writes a
+    compact jq projection whose second column is not a status code. A reducer that silently
+    printed a 350-entry histogram of timestamps as "status codes" is worse than one that stops.
+
+Validation: `python3 -m py_compile` clean; the three reductions above; `git status --porcelain`
+clean before the commit. No host was mutated after the blocker was hit.
+Evidence paths: /tmp/m4mbp-watch.log (the connectivity poll), scripts/ralph-afk/live-canary-clauses.py,
+context.md block "F1's re-run is blocked on a sleeping Mac".
+
+Learned.
+(1) A TAILSCALE PEER ROW SAYING "active" IS NOT REACHABILITY. Read the rx counter: tx climbing
+    with rx frozen is the signature of a host that is gone, and it is available in one command
+    without waiting out a single ssh timeout. That is the cheap discriminator between "slow relay"
+    and "asleep".
+(2) BUILD THE REDUCER BEFORE THE RUN, NOT AFTER. Every certification run in this loop has been
+    reduced by a script written after the evidence existed - which is why F1's reducer only fits
+    F1's directory. Writing it first also forces the clause list to be explicit before the numbers
+    can bias it, and it cost nothing here because the run could not proceed anyway.
+(3) A REDUCER MUST REFUSE A LAYOUT IT DOES NOT UNDERSTAND. The F3 directory produced a plausible
+    looking - and completely meaningless - histogram until the guard was added.
+(4) THE ACCOUNTING EQUALITY IS A STOPPED-SESSION CLAUSE. At an active session accepted exceeds
+    accounted by exactly the retained tail (measured: 35289 vs retained 36924 in iteration 12's
+    run). Calling that a loss would have manufactured a red clause on a green run.
+
+Blocker: m4mbp (the capture Mac) is asleep or powered off and unreachable by any route the loop
+has. F1 and F3 - the whole of Phase M gate step (d), and therefore the 60 s canary, the 300 s
+certification and the 16-minute soak clauses - cannot run until it returns. Nothing else in the
+PRD is blocked by it; nothing else in the PRD is reachable without it either, because every
+remaining acceptance clause is a run on the real hosts.
+
+Next: the moment `ssh ga0@m4mbp` answers, run F1 - pkill the app left running, relaunch fresh,
+re-pair, then start live-canary.sh NOHUP'd on m4mbp (a foreground ssh dies with the link, which
+this iteration watched happen three times) and poll its log. Reduce with live-canary-analyze.py
+(lane separation) AND live-canary-clauses.py (the clauses). The two numbers that decide the
+iteration: user-visible p95 against 4000 ms, and whether any span still shows
+canonical_decode_capped=false at an 8 s decode.
