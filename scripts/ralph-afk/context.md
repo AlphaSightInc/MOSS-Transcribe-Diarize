@@ -71,28 +71,69 @@ within that amendment's scope; iteration 2 landed H1 (the empty-span decode cont
 iteration 3 landed H2 (the span-cap authority contract), which closes the last of F0's three
 blockers. Iteration 4 ran the **H4 gate green** at `8b852f2`, reviewed the merge payload against the
 amendment's scope and proved the deployed manifest still admits under H2's and H3's new refusals; it
-changed no tracked file. **H4's remaining half — merge, publish, redeploy, then the probe — is the
-only Phase H item open.**
+changed no tracked file. Iteration 5 made **the second amendment's one authorized merge** at
+`b817871` (see the third-keeper-merge block) and changed no tracked product source — only
+`merge-keeper.sh`'s guard. **The post-merge freeze has resumed: from `9e0780a` on, the feature branch
+may again carry only `scripts/ralph-afk/*`.** Iteration 6 published that merge and redeployed the
+live service (H4c) — see the H4c redeploy block; it changed no tracked file, and **the deployed
+service now carries H1/H2/H3**. Iteration 7 ran H4's step (d), the amendment's gate: the probe got
+**four times further** than before and then died on a **fourth** blocker, diagnosed to one line and
+one rounding tick — see the H4d block. It changed no tracked product source (it added the Ralph tool
+`scripts/ralph-afk/live-identity-seam-probe.py`), and **Phase H's own gate is red**, so the second
+amendment's cycle did not finish. The fix needs a *third* amendment: the freeze holds and
+`merge-keeper.sh` refuses a fourth merge. Iteration 8 measured that blocker's boundary instead of
+guessing at it — 44 host decodes over 33 hard-cap spans (`scripts/ralph-afk/build-span-sweep.py`,
+new) — which answers the amendment's first open question with a number; see the boundary-sweep
+block. It changed no tracked product source.
+**The freeze is then reopened a third time** by the prd.md amendment of 2026-07-28 (the live path's
+terminal-failure policy, Phase J): iteration 9 landed **J1** — the span-bound clamp, answered once in
+the new leaf `moss_transcribe_diarize/app/live_span_bounds.py` and called from all three copies — so
+the branch carries tracked server source again, strictly within Phase J's scope. See the span-bound
+contract block. Iteration 10 landed **J2** — a non-`prepared` identity preparation now publishes the
+span's words with no speaker attributed instead of ending the meeting — which removes the *last*
+blocker-4 input class on this path. See the unresolved-identity contract block. Iteration 11 landed
+**J3** — a decoder that did not answer is now told apart from one that failed, retried once, and
+degraded rather than made terminal — which closes candidate 36 and leaves J4 and J5 in Phase J. See
+the transient-decode contract block. Iteration 12 landed **J4** — every refusal on the live path now
+carries the word that names it out of the process, in the event and in the failure detail — which
+leaves **J5 alone** in Phase J. See the named-refusal contract block. Iteration 13 ran **J5 step
+(a)**: the full Swift/Python gate green at `517306b`, the seam coverage reviewed clause by clause
+against the third amendment, and the merge payload reviewed against Phase J's scope; it changed no
+tracked file outside `scripts/ralph-afk/`. See the J5a gate block.
 
-**PRD acceptance scoreboard after iteration 10.** Green with evidence: IDEA-044 checkpoint, production
-client gate, server meeting-reliability gate, the one reviewed keeper merge (plus the amendment's one
-authorized follow-up merge), one exact SHA everywhere, live service answering, batch service
-unharmed, signed app installed, **rollback rehearsed and recorded**. Open: permissions granted, the
-60 s canary, the 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and
-the final close.
+**PRD acceptance scoreboard after iteration 13 of run 20260728-112922** (iteration 13 moved no
+scoreboard line either — J1-J4 are fixes awaiting Phase J's merge and redeploy; the local gate is
+now green but the *host* still runs `b817871`).
+Green with evidence:
+IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
+merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
+the redeploy), batch service unharmed, signed app installed, **rollback rehearsed and recorded**.
+**One exact SHA everywhere is 3/4 green at `b817871`** — local `main`, `origin/main` and the host
+checkout all read it; **m4mbp is the only laggard and is still offline** (re-checked iteration 8:
+`ping m4mbp.local` and `ping m4mbp` both 100 % loss, `ssh m4mbp` "Operation timed out"), so its
+`git fetch && git checkout b817871` is the one mechanical step left. No Mac rebuild is needed for
+it. Open: permissions granted, the 60 s canary, the 300 s
+certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
 
-**Those open items are no longer merely waiting on E3 — iterations 9 and 10 proved they cannot pass
-on the deployed build at all, and that the deployed build fails *sooner* on realistic input than on
-the probe's first-cut input.** See the F0 block and the H-diagnosis block below. The operator
-decision those iterations waited on **arrived** (prd.md's second amendment), so the certification
-path is now gated on Phase H itself: **all three blockers are fixed on the branch** (H3, H1, H2 in
-run 20260728-112922 iterations 1, 2 and 3), and E3's physical TCC clicks stay unspent until **H4**
-deploys the fixed SHA. Running E3 before that would burn the one irreducible human step against a
-deployed service that still carries none of the three fixes.
+**Those open items are still not merely waiting on E3.** Iterations 9 and 10 proved they cannot pass
+on the deployed build; the second amendment fixed those three blockers (H3, H1, H2) and iteration 6
+deployed them; and iteration 7's gate run then found a **fourth** blocker on the same seam — see the
+H4d block. Phase J is now authorized and **J1 (iteration 9) and J2 (iteration 10) close both of
+blocker 4's input classes on the branch, J3 (iteration 11) closes the transient-decoder class that
+would have been the fifth, and J4 (iteration 12) makes the next one readable without a host-side
+probe**; the path stays gated until Phase J's gate/merge/redeploy (J5) put them on the host. So the
+certification path is gated on **Phase J**, not on the operator: E3's physical
+TCC clicks stay unspent, because a canary against a service that dies at the first 2.5 s of
+continuous speech would burn the one irreducible human step for nothing. This is the third time the
+same rule has held: **spend the human step last**, and only against a build a machine has already
+driven end to end. Iteration 8 put a number on that judgement: at the measured 6.1 % per-span kill
+rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 now would most likely
+buy one aborted run.
 Test totals on the branch: Swift **139 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **551 passed / 2 skipped / 368 subtests**
-including `tests/test_live_pipeline_seams.py` **13 passed** (new in run 20260728-112922 iteration 1,
-+5 in iteration 2, +3 in iteration 3),
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **590 passed / 2 skipped / 368 subtests**
+including `tests/test_live_pipeline_seams.py` **50 passed** (new in run 20260728-112922 iteration 1,
++5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10, +12 in iteration 11,
++6 in iteration 12) and `tests/test_live_identity.py` **8 passed** (+1 in iteration 12),
 `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -158,19 +199,430 @@ behavior and needs no service restart.
 alone **4 passed / 0 skips** in 16.5 s. Both Swift products built there first, separate invocations.
 **Not pushed** — `origin/main` is still `f9285d6`.
 
-**How the two fences were satisfied (iteration 5), and what they now do.**
-1. *History join.* `git merge --no-ff main` on the feature branch → `502a49a`. Proven content-free
-   **before** running it: `git merge-tree --write-tree main HEAD` returned HEAD's own tree
-   `5963a2b0…`, and afterwards `git diff --stat 0b5383f HEAD -- .` and
-   `git diff --name-only 23dc163 HEAD -- ':!scripts/ralph-afk'` were both empty. Only then was
+**Third keeper merge — the SECOND amendment's ONE authorized merge: DONE at `b817871` (run
+20260728-112922 iteration 5).** Feature tip `9e0780a69ef8438fd1ece0e93652b4c461dd68d3`, merge
+`b817871414fcc8f609c6f5eb2898ec2957c7768c`, `main^1 = 317df4d…` (the second merge),
+`main^2 = 9e0780a…`. `git diff HEAD main` is **empty** and both trees are
+`eb26fa9131fbf172125112c7f51e165935739399`, so the merge commit carries exactly the feature tree.
+Against the published `317df4d` the whole delta is **21 files**: the H4a-reviewed fifteen (nine
+`moss_transcribe_diarize/`, six tests, +917/-106) plus six `scripts/ralph-afk/*`
+(`context`, `prd`, `progress`, `merge-keeper`, and the two probes `live-hardcap-repro.py` /
+`live-pipeline-probe.py`). `git diff --name-only 317df4d b817871 -- macos ops docs LOCAL_DEPLOYMENT.md
+CONTEXT.md` is **empty** — unlike the second merge, this one is *server-only*, so the deployed
+service **does** change behavior and the redeploy in step (c) **does** need a
+`moss-live-web.service` restart. No Mac rebuild is needed: `macos/` is byte-identical, so the app
+installed on m4mbp in G6 is still current at this SHA.
+*The suite on the merged tree, measured inside the merge worktree (the script's own gate):* both
+Swift products built there first in separate invocations (`mtd-capture` 7.33 s, `MOSSCaptureApp`
+0.63 s); `swift test` **139 passed / 0 failures**; `pytest tests` **551 passed / 2 skipped**.
+The run completed in ~3 min with no stall — the iteration-5 hang of run `20260728-072601` did not
+recur, and it stayed unexplained rather than diagnosed.
+**Not pushed** — `origin/main` is still `317df4d`; publishing is H4 step (c).
+*The guard is live and was rehearsed non-vacuously after the merge:* the same dry run now prints
+`ERROR: main moved from expected pre-merge SHA 317df4d…`, rc=1, so a **fourth** merge is refused.
+
+**H4c redeploy: DONE at `b817871` (run 20260728-112922 iteration 6).** `git push origin main`
+fast-forwarded `317df4d..b817871` on the AlphaSight fork; the host checkout fetched and detached at
+`b817871` (tree `eb26fa91…`, matching `git rev-parse b817871^{tree}` here, and
+`sha256(live_session.py)` `b14eb43dacaa031e…` on both hosts — content parity proven independently of
+git); `systemctl --user restart moss-live-web.service` replaced MainPID 336320 with **338545**,
+`NRestarts=0`, `ActiveState=active`, and `/live` answered 200 **11 s** after the restart (a single
+probe before ~10 s still returns 000 — poll, never one-shot). The batch unit was untouched:
+`moss-web.service` MainPID stayed **301112** with `NRestarts=0`.
+*Post-restart client checks from MacStudio:* served leaf still hashes to the D2 pin
+`a35ca9fc…` (**so every paired Mac is intact**), `https://100.64.0.8:7861/live` 200,
+`/api/live/descriptor` 200, `http://192.168.68.38:7860/` 200, `/api/jobs` 200, and plaintext
+`http://100.64.0.8:7861/live` still dead (000, curl rc=52).
+*Positive proof the deployed code carries the three fixes*, taken with the **service's own venv**
+inside the deployed checkout rather than inferred from the SHA: `LiveSession.__init__` has no
+`hard_cap_samples` parameter and no `_freeze_hard_cap_spans`, `LiveServiceRuntime.
+_require_one_span_cap` exists (H2); `EmptyTranscriptionError` subclasses `RuntimeError` and
+`LiveSession.submit_empty_canonical` exists (H1); `WebRtcSpeechProvider(vad=…, frame_samples=5808)`
+is refused with `LiveProviderBundleAdmissionError: webrtc frame_samples must be one of [160, 320,
+480] …` while 160 constructs and carries `_carried_voiced` (H3). The unit's journal after the
+restart is clean: startup complete, no traceback, only the pre-existing onnxruntime GPU-discovery
+warning.
+*Gotcha for the next reader:* `/api/live/descriptor` reports `source_revision
+f9285d69…`. That is a **manifest field** stamped by C2's finalizer at D2 time, not the running
+code's revision — it does not move on redeploy and must never be used as the deployed-SHA check.
+Use the four-way `git rev-parse` check plus the venv introspection above.
+
+**H4d probe: RED — the three fixes work and a FOURTH blocker is now the wall (new, iteration 7).
+READ THIS BEFORE PLANNING ANY PHASE-F OR PHASE-H WORK.** The second amendment's own gate was run
+against the redeployed `b817871` and **failed**, four times further in than any previous run.
+*What is now proven working on the real host, in one continuous run:* H3 (both lanes unaligned by
+`--lane-offset-ms system=137`, 17 frames accepted, **no** `webrtcvad.Error`), H1 (the leading-silence
+span **committed empty** — `span_id 0`, `0→12208`, `transcript ""`, committed prefix advancing — the
+exact input that used to end the meeting at ~3 s), and H2 (the 2.5 s hard-cap span froze once and was
+queued for decode; no `frozen span end must advance`). Timings: publish p95 **91.7 ms**, snapshot p95
+**66.8 ms**, events p95 **42.0 ms**, 1 TLS handshake, 14 events, and view authority **401 after
+stop**. Decode RTF measured on the host is **0.478–0.83** (the PRD wants p95 < 1).
+*Blocker 4 — a decoder timestamp that overshoots the span by one rounding tick kills the meeting.*
+At tick 8 (~4 s in, `accepted_samples` 53808) the second span answered **409**:
+`{kind: identity_commit, code: canonical_not_submitted, retryable: false, detail: {span_id: 1,
+identity_status: "failed"}}`, and every later frame plus `stop` got the same. The host journal has
+**no traceback** — this is a *typed* refusal, not an escaping exception.
+*Root cause, reproduced under the service's own venv with the deployed manifest and the deployed
+vLLM endpoint* (`scripts/ralph-afk/live-identity-seam-probe.py`, new this iteration): span 1's audio
+rebuilt sample-for-sample from the probe's own schedule decodes to
+`[0.11][S01] Good morning everyone. This is the microphone.[2.51]` — a segment ending at **2.51 s
+inside a 2.50 s span**. `BoundedCausalIdentityPreparer.prepare` (`live_identity.py:101-102`) rejects
+`segment.end > duration` with **no tolerance**, returns `status="failed",
+reason="timestamp_outside_span"`, and `LiveSession._identity_preparation_is_current`
+(`live_session.py:449`) admits **only** `status == "prepared"`, so `submit_prepared_canonical`
+returns `False` and `live_service_runtime.py:745-751` turns that `False` into a non-retryable
+terminal failure of the whole session.
+*The control that names the boundary condition:* the identical audio with **0.5 s of silence
+appended** (3.0 s span) decodes to `[0.00 → 2.54]`, is **`prepared`**, and would publish — rc 0
+against rc 4. So the overshoot is not a decoder defect in general: the model's closing marker lands
+at ≈ the end of the audio it is given, and a span that ends *inside* speech therefore always reports
+an end at or just past its own duration. **A hard-cap span is by construction 2.5 s of speech with no
+endpoint, i.e. exactly that case** — so any speaker who talks for 2.5 s without a pause ends the
+meeting. That is the ordinary case, not an edge case.
+*Two further facts from the same run.* (i) `LiveSession._canonical_validation_error`
+(`live_session.py:436-442`) carries the **same** strict bound check, so bypassing identity alone
+would move the failure, not fix it — the tolerance question has to be answered once, in both places.
+(ii) An `abstain` preparation — the *designed* outcome for ambiguous identity or speaker capacity
+(`live_identity.py:106,121,127`) — is terminal by the same line, so the design intent
+("don't relabel") and the implementation ("kill the session") disagree for a second, independent
+input class. (iii) The `reason` string never leaves the process: it is written into a *proposed*
+snapshot that is never committed, and only `identity_status` reaches the event and the failure
+detail. That is why this iteration needed a host-side probe to learn a one-word answer.
+*Positive side-evidence:* the wespeaker ONNX evidence provider **works** on the host (the control
+run reached `prepared` through it — first time that has been observed), and `golden.wav` itself
+decodes to an empty transcript (`generated_tokens 0`), which is H1's path and is handled.
+**Fixing this needs a THIRD prd.md amendment.** The freeze resumed at `9e0780a`,
+`merge-keeper.sh`'s guard refuses a fourth merge, and no gate in the repo covers this seam either
+(no test puts the real decoder's timestamps under the real identity preparer). Candidate 37 records
+the options.
+
+**Blocker-4 boundary sweep: the tolerance question, MEASURED (new, iteration 8).** Iteration 7 saw
+the overshoot once, on one span. One sample cannot choose between "allow a quantisation tick" and
+"clamp", so this iteration measured the distribution: 33 hard-cap spans cut at a 0.5 s stride out of
+the pipeline probe's own mixed 20 s timeline (`scripts/ralph-afk/build-span-sweep.py`, new), each
+decoded and prepared on the host by the existing seam probe under the service's venv. **44 decodes
+in two rounds; nothing mutated but `/tmp`.**
+| fact | measured |
+| --- | --- |
+| hard-cap (2.5 s) spans that would kill the session | **2 of 33 = 6.1 %** |
+| overshoot when it happens | **+0.01 s and +0.02 s** — never more, never less |
+| the other 31 spans | end **0.00 to −0.68 s** *before* the span end |
+| `end == duration` exactly (1 span) | **admitted** — the check is strict `>` |
+| `start < 0` (the bound's other half) | **never observed**; min start across 44 decodes is 0.00 |
+| same bytes decoded 3× | **identical transcript, identical verdict** — and 4 more spans identical across the two rounds |
+Four things follow, and together they answer 37(a) with evidence rather than taste.
+1. **A one-tick tolerance would not have worked.** The larger of the two observed overshoots is
+   **two** ticks (2.52 in a 2.50 s span). Any fixed ε is a guess about a tail this sweep sampled 44
+   times; **clamping to the span end is the only rule that cannot be exceeded by a number nobody has
+   drawn yet.**
+2. **The codebase already answers it the same way, one call later.** The evidence provider's
+   `_speaker_intervals_by_label` (`live_provider_bundle.py:727-728`) does `max(0.0, start)` /
+   `min(duration, end)` on these very segments. `prepare` refuses at line 101-102 *before* calling
+   `score`, so the clamp that exists is unreachable. Clamping in the preparer is not a new policy —
+   it is the existing one, applied where the value is first read.
+3. **Retrying cannot help.** The decoder is deterministic for identical bytes (6 repeats, 0
+   variation), so a re-decode of the same span produces the same refusal.
+4. **The rate is fatal to certification, not merely to the odd span.** At 6.1 % per hard-cap span,
+   the arithmetic is P(a 60 s canary survives) ≈ **0.22** and P(a 300 s run survives) ≈ **0.0006**;
+   the expected time to the first kill is ~16 spans ≈ **41 s of continuous speech**. That matches
+   H4d's own run, which died at ~4 s on its second span.
+*The bound is stated three times and tested zero times.* `live_identity.py:101`,
+`live_session.py:438` and `live_adapters.py:387` each carry their own copy; `grep` for
+`timestamp_outside_span` or "timestamps outside frozen span" in `tests/` returns **nothing**. The
+third copy (`_validated_segments`) is reachable only through `LiveProvider.decode_canonical`, and
+nothing in the product constructs a `LiveProvider` — the live path calls
+`decoder.transcribe_pcm` directly (`live_coordinator.py:164`), so that copy is test-only today and
+would become a fourth divergence the moment anyone wired it up.
+*One more observability fact found while reading the path:* `submit_prepared_canonical`
+(`live_session.py:267-283`) returns bare `False` for **six** distinct conditions — stale epoch,
+unknown span, out-of-order span, sample mismatch, non-current preparation, canonical validation —
+and `live_service_runtime.py:745` turns all six into the same `canonical_not_submitted`. So the
+failure detail cannot distinguish "the decoder overshot by 0.01 s" from "the client raced the
+epoch". 37(c) is not a nicety.
+*Side observation, not this loop's to clean:* the host still carries four probe WAVs in `/tmp`
+(`mtd_span_{2.5,5,7.5,rt}.wav`, dated 2026-07-27 16:23-16:32, ~720 KB) from a Phase-D decode
+measurement. They are not service output — `live-runs/` is empty and nothing persists audio — but
+they should be removed before the secret-hygiene clause is signed off. This iteration deleted only
+its own artifacts.
+
+**Span-bound contract (new, iteration 9 / J1). One rule, one function, three callers.**
+`moss_transcribe_diarize/app/live_span_bounds.py` is a new leaf module — it imports only
+`transcript_parser`, so `live_session` can import *it* without a cycle — and it now owns both the
+live audio grid (`LIVE_SAMPLE_RATE`, moved here and re-exported from `live_session`, so every
+`from .live_session import LIVE_SAMPLE_RATE` still resolves) and `span_segments(transcript, *,
+sample_count)`.
+*The rule, decided against the boundary sweep rather than against taste: a decoder timestamp outside
+its span is **clamped into** the span, never refused.* `min(max(value, 0), duration)` per endpoint,
+`end` never below `start`, non-finite → 0.0, and the segment object is only rebuilt when a value
+actually moved. The reasoning is the sweep's: the observed overshoot reaches **two** ticks so a
+one-tick tolerance still kills a meeting; a clamp cannot be exceeded by a tail nobody has sampled;
+`live_provider_bundle._speaker_intervals_by_label` already clamps these same segments one call
+later, so this moves an existing policy to where the value is first read; and the decoder is
+deterministic, so no retry rescues a refusal.
+Three callers, all previously carrying their own copy of the bound, now carry none:
+`BoundedCausalIdentityPreparer.prepare` (`live_identity.py`) — which also means the *evidence
+provider and the relabeled transcript now see clamped values*, so a published span never claims
+audio the span does not hold; `LiveSession._canonical_validation_error` (both submission paths); and
+`live_adapters._validated_segments` (`LiveProvider.decode_canonical`, still unreachable from the live
+path but no longer a fourth divergence waiting to happen).
+*What the helper deliberately does not decide:* an unparseable transcript still returns `()` and each
+caller classifies it for itself — H1's empty-span commit, `unparseable_transcript`, a provider error.
+*Found while testing it:* the `start < 0` half of the old bound was **unreachable through the
+parser** — `parse_transcript("[-0.4][S01]x[1.0]")` yields nothing, so a negative start becomes
+"unparseable" rather than "outside the span". That matches the sweep's 44 decodes with min start
+0.00, and it is why the clamp's low half is defensive rather than the other half of the defect.
+*Red/green rehearsed offline (MacStudio, no server):* restoring the three consumer files from `HEAD`
+(the new leaf module is untracked at `HEAD`, so it survives the restore) turns exactly the three
+seam nodes red — `LiveProviderError: canonical inference returned timestamps outside frozen span.`
+and the identity/session equivalents — and leaves the eight helper-contract nodes green; restoring
+the fixed files back is sha256-verified. `live-hardcap-repro.py --frames 8` is unchanged at rc=0.
+**Not yet observed on the host.** J1's real-audio confirmation is the sweep's two known-failing
+spans (`12208+10*8000` and `12208+32*8000`), which belongs to J5's gate — the fix is not deployed and
+the freeze rules say it may not be until Phase J's merge.
+
+**Unresolved-identity contract (new, iteration 10 / J2). Identity answers *who*, never *whether*.**
+*The rule: no preparation the preparer returns may end the meeting.* `BoundedCausalIdentityPreparer`
+is a pure proposer — it mutates nothing and it catches its own evidence provider's exceptions — so
+every outcome it can name is a statement about who spoke. A span whose identity did not resolve
+therefore publishes its **words with no speaker attributed**, and only the claim is dropped.
+Three pieces, each in the module that owns the question:
+- `live_session.UNATTRIBUTED_SPEAKER` = `"S00"`. The wire grammar admits only `S`+digits and
+  canonical display labels are `S{index+1:02d}`, so `S00` is the one such token a canonical mapping
+  can never produce. It is a wire-format constant of the same kind as `S01`, not a magic value.
+- `live_identity.unattributed_transcript(transcript, *, sample_count)` renders the span's words with
+  that marker, through the same `span_segments` clamp as every published segment — an unattributed
+  span is no less honest about the audio it holds. `""` for a transcript that parses to nothing.
+- `live_session.submit_unlabeled_canonical(...)` publishes with the identity snapshot left
+  **byte-identical**: no speaker is born, no version advances, so the next span still prepares
+  against the state this one saw and an abstention burns no speaker capacity. It refuses a
+  transcript naming anything but the marker.
+*The coordinator is the single decision point* (`submit_prepared_work`): `prepared` publishes
+relabeled, anything else publishes unattributed, and the rendering is rebuilt from the **decoder's**
+transcript rather than read out of `preparation.relabeled_transcript` — a preparer that leaves local
+labels in a field it never relabeled therefore cannot publish them as canonical. If the rendering has
+no words the span commits **empty** (H1's path) and `empty_reason` names it, so the rule is total.
+*Why publish rather than drop:* `stop` waits for `committed_samples == accepted_samples`, the same
+accounting constraint that decided H1 — a withheld span strands the session until the drain deadline.
+*Three tests used an abstention to manufacture a terminal failure and had to be re-pointed*, which is
+the honest cost of the ruling, not a weakened gate:
+`test_live_service_runtime.py::test_runtime_terminal_failure_is_session_local` and
+`test_live_service_replay.py::test_identity_commit_failure_writes_typed_terminal_artifacts` now use a
+new `PreparingIdentity(stale_base_version=True)` — a preparation built against identity state the
+session has moved past, which is the **only** remaining way a canonical submission refuses and is a
+statement about the session rather than about who spoke. `test_live_replay.py`'s `identity` row (exit
+code 4) is gone from the hard-failure table and is now its own node asserting the new behaviour: a
+lab harness stricter than the service would rebuild the divergence Phase J closes. **Exit code 4 is
+no longer manufacturable from a replay manifest** — `run_replay`'s guard stays for a coordinator
+contract violation.
+*Red/green rehearsed offline (MacStudio, no server):* restoring **only** `live_coordinator.py` from
+`HEAD` — the constant and the renderer live in the other two files, so the test module still imports
+and the red is the defect rather than a collection error — turns exactly the five J2 behaviour nodes
+red with the deployed failure verbatim: `LiveServiceFailureRecord(kind=identity_commit,
+code='canonical_not_submitted', retryable=False, detail={'span_id': 0, 'identity_status': 'abstain'})`
+— the same 409 H4d's probe received. The restore is sha256-verified
+(`667caa64…` both ways). `live-hardcap-repro.py --frames 8` unchanged at rc=0.
+**Not yet observed on the host.** Like J1, the real-audio confirmation belongs to J5's gate.
+
+**Transient-decode contract (new, iteration 11 / J3). A decoder that did not answer is not a decoder
+that failed.** *The rule: a failure a later attempt could answer differently is transient and
+degrades; a failure any later attempt would answer identically is permanent and stays terminal. An
+outage that does not end is not transient however it started.* Four files, each holding the part of
+the question it owns:
+- `transcription_outcome.TransientTranscriptionError` — the shared vocabulary, beside
+  `EmptyTranscriptionError` and a `RuntimeError` for the same reason: batch callers that treat any
+  runner failure as fatal are unchanged.
+- `vllm_runner._post_multipart` — **the classification is made where the status code is still in
+  hand.** HTTP 408/425/429 and every 5xx, plus any `URLError` (refused, reset, unresolved, timed out)
+  and a bare `TimeoutError` from a slow read, raise the transient type; every other status keeps the
+  bare `RuntimeError`. Before this the runner flattened *all* of them into one `RuntimeError` whose
+  only distinguishing feature was English prose, so no downstream code could classify without parsing
+  a message.
+- `live_adapters.LiveProviderTransientError(LiveProviderError)` — a subclass, so every existing
+  caller that treats a decode failure as a failure is unchanged and only the one caller that can act
+  on the difference sees it. `transcribe_pcm` also maps bare `ConnectionError`/`TimeoutError`, so the
+  rule holds for any runner, not only the one that types its own transport failures.
+- `live_coordinator` — the policy, and the same single decision point J2 used.
+  `DECODE_ATTEMPTS_PER_SPAN` = 2 (the bytes are identical and nothing is committed until an attempt
+  answers, so a retry can only add an answer; no delay, because what this recovers is a dropped
+  connection and a decoder that is gone refuses instantly). `MAX_CONSECUTIVE_UNANSWERED_SPANS` = 3,
+  **reset by any span that decodes** — at most ~7.5 s of blank meeting at the 2.5 s span cap before
+  the outage is named. Below that line a span commits **empty** with
+  `empty_reason="decoder_did_not_answer"` (H1's accounting path, so `stop` can still drain); at it,
+  a `LiveProviderError` naming the consecutive count ends the session.
+*Why the count and not a timer:* it needs no clock in the coordinator, it is measured in the unit the
+policy is about (spans), and it makes "a blip every few minutes" and "the GPU is gone" different
+things without either one being a threshold on wall time.
+*What this preserves from H1:* a dead decoder still may not render as a blank meeting — it renders as
+at most two empty spans and then a terminal failure that names the outage.
+*The seam's own stub was the defect's hiding place.* `StubbedTransportVllmRunner` replaced
+`_post_multipart` — exactly where the status code becomes a typed outcome — so a failure node using it
+would have tested the stub. It now replaces only `urlopen` (a `CannedHttpResponse` or a
+`FailingTransport` factory that raises a fresh exception per attempt), so the product's request
+build, response unpack and transport classification are all real. **Every earlier node in the file
+gained that coverage for free.**
+*Twelve nodes in `tests/test_live_pipeline_seams.py`* (32 → 44): the eight-row status table through
+the real runner, one dropped connection mid-meeting costing one retry and not the meeting, a 503
+outage degrading two spans and then ending the session named, a meeting that blinks five times but
+never three in a row surviving with all its words, and a 400 that is terminal after **exactly one**
+attempt — the discriminator that proves this is not a retry-everything.
+*One test had to be re-pointed, the honest cost:*
+`test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say` used a `ConnectionResetError` as its
+example of a decoder that failed. That input is now transient by ruling, so the node uses a
+`ValueError("model weights are not loaded")` and additionally asserts the error is **not** transient.
+*Red/green rehearsed offline (MacStudio, no server):* restoring **only** `vllm_runner.py` from `HEAD`
+(the other three files' new names are imported by the test module, so restoring them would produce a
+collection error and prove nothing — J2's lesson, applied) turns exactly the seven transient nodes
+red, the four permanent status rows and everything else green. The red is the deployed failure
+verbatim: `LiveServiceFailureRecord(kind=integrity, code='LiveProviderError', message='canonical
+decode failed: RuntimeError: Failed to connect to vLLM API: [Errno 104] Connection reset by peer')`.
+Restore sha256-verified (`7d365b24…` both ways). `live-hardcap-repro.py --frames 8` unchanged at rc=0.
+*Left for J4, deliberately:* the terminal failure's `code` is still the exception class name
+(`LiveProviderError`) and its `detail` is `None`. The **message** names the outage and the status, so
+nothing is lost, but the machine-readable half of "name it" is J4's item, not J3's. *(Done in
+iteration 12 — see the named-refusal contract block.)*
+**Not yet observed on the host.** Like J1 and J2, real-audio confirmation belongs to J5's gate.
+
+**Named-refusal contract (new, iteration 12 / J4). A refusal that discards the word naming it is not
+diagnosable.** *The rule: every refusal on the live path carries the condition that caused it out of
+the process — into the `canonical_processed` event and into the failure's `detail` — and a refusal
+that names nothing cannot be constructed.* Four files, plus the lab harness:
+- `live_session.CanonicalSubmission(submitted, refusal)` replaces the three submit methods' bare
+  `bool`. Its `__post_init__` **refuses to build a silent refusal**, so the shape every one of these
+  used to have is now unwritable rather than merely discouraged. Eighteen distinct refusal words
+  replace what iteration 8 measured as **six conditions reported as one**:
+  `stale_epoch`, `unknown_span`, `span_out_of_order`, `span_sample_mismatch`; the nine
+  `identity_preparation_*` words from `_identity_preparation_refusal` (the old
+  `_identity_preparation_is_current`, whose seven branches were all one `False`);
+  `canonical_{missing_identity,empty_transcript,unparseable_transcript}` from
+  `_canonical_validation_error`, now a `_CanonicalValidationError` record; and the two
+  `unattributed_transcript_*` guards J2 added.
+- `live_coordinator.CoordinatorWorkResult` gains **`identity_reason`** (the preparer's own word,
+  which until now died in a proposed snapshot the session never commits) and **`submission_refusal`**.
+- `live_service_runtime` puts both on the `canonical_processed` event and in the
+  `canonical_not_submitted` detail, and names the refusal in its message. `_failure_from_exception`
+  now gives **every** arm a `detail` carrying `error_type`, and gives a decode failure the stable code
+  `canonical_decode_failed` instead of `exc.__class__.__name__` — a class name as a code means adding
+  a subclass renames a failure the operator reads, which J3 had just done.
+- `live_adapters.LiveProviderError` gains a keyword-only `detail`, so the decode seam's facts travel
+  as fields beside the prose: `{span_id, cause}` at the seam, plus
+  `consecutive_unanswered_spans` when the coordinator ends a meeting for an outage. Existing raises
+  are unaffected — the default is `{}`.
+- `live_replay` (the lab harness) records both words in its trace and in `ReplayIdentityFailure`.
+*One reachable defect fixed on the way:* `LiveServiceFailureRecord` refuses an empty message, so an
+exception raised with **no arguments** made `_failure_from_exception` raise *while handling* it — the
+session was left with no terminal record and the caller got a complaint about failure messages
+instead of the fault. `_failure_message` falls back to the exception's type. Its node drives this
+through the real runtime with a collaborator that raises `ValueError()`.
+*Six nodes in `tests/test_live_pipeline_seams.py`* (44 → 50): an abstention and an evidence-provider
+outage told apart by `identity_reason` alone (they are otherwise the same published span); the stale
+preparation — the only refusal still reachable after J2 — naming itself in both the event and the
+terminal detail, with `identity_status` "prepared" proving the status says nothing about the refusal;
+J3's 503 outage carrying `{error_type, cause, span_id, consecutive_unanswered_spans}`; a 400 carrying
+the same code and *no* count, which is the discriminator; and the empty-message node. Plus one in
+`tests/test_live_identity.py` for the unwritable-silent-refusal invariant, and that file's existing
+"rejects invalid preparations" node — which already exercised five distinct conditions and asserted
+all five as `False` — now asserts five distinct words.
+*Deliberately not changed:* `LiveSession.submit_canonical` still returns `bool`. Nothing in the
+product calls it (the live path uses the prepared/unlabeled/empty trio); it is a test-only path, so
+converting it would be churn without a reader.
+*Red/green rehearsed offline (MacStudio, no server):* restoring **only** `live_service_runtime.py`
+from `HEAD` — the test module imports `CanonicalSubmission` from `live_session`, so restoring that
+one would be a collection error and prove nothing (J2's lesson, applied again) — turns exactly the
+six J4 nodes red and leaves the other 44 green. Restore sha256-verified (`fba8c4c1…` both ways).
+`live-hardcap-repro.py --frames 8` unchanged at rc=0.
+**Not yet observed on the host.** Like J1-J3, real confirmation belongs to J5's gate — where this
+one pays for itself: if J5's probe run finds a fifth blocker, the 409 now carries the word.
+
+**J5a gate: GREEN at `517306b` (new, iteration 13).** The third amendment's local gate, measured on
+MacStudio 2026-07-28, tree clean before and after. **No tracked file changed this iteration.**
+- Both Swift products from an **empty** scratch path (`ls -A` printed 0), separate invocations —
+  never one `swift build --product A --product B`, which silently builds only B: `mtd-capture`
+  8.49 s wall / 18.65 s user, `MOSSCaptureApp` 0.96 s / 1.04 s. **Zero `warning:` lines** in the
+  whole log.
+- `swift test --package-path macos/MOSSCapture` → **139 passed / 0 failures** in 1.02 s. Unchanged
+  from H4a, which is itself the evidence Phase J stayed server-side: a moved Swift count would mean
+  the amendment's scope leaked.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider -rs` → **590 passed / 2 skipped /
+  368 subtests** in 60.9 s (H4a was 551/2/368; **+39** = J1's 11, J2's 9, J3's 12, J4's 7). `-rs`
+  names the two skips as `tests/test_large_upload.py:155,175` "Python 3.10 compatibility contract" —
+  the same pre-existing pair as every prior gate, **not** Darwin skips.
+- `pytest tests/test_macos_uds_tracer.py` alone → **4 passed / 0 skips** in 14.8 s.
+- attempt-2 discriminator (`--target "$PWD"`) → **10/10 true**. `leak-scan.sh` → `leak-scan: clean`.
+- `live-hardcap-repro.py --frames 8` → rc=0, `survived 8 frames`. `git status --porcelain` empty.
+- `RALPH_MERGE_DRY_RUN=1 merge-keeper.sh` → rc=1, `ERROR: main moved from expected pre-merge SHA
+  317df4d…`. The guard is still live; J5b advances `expected_main` to `b817871…` **in-script**.
+
+*The seam coverage, reviewed clause by clause against the third amendment — and the whole file is
+accounted for.* Five `-k` selections over `tests/test_live_pipeline_seams.py` cover **50 of 50**
+collected nodes (12+12+8+13+6 = 51 selections, minus the one node two clauses share):
+| amendment clause | nodes | selection |
+| --- | --- | --- |
+| the earlier amendments' seams (H1/H2/H3), still green | 12 | `webrtcvad`, `carried_tail`, `sub_vad`, `aligned_frames`, `manifest_frame_length`, `deployed_hard_cap`, `two_different_span_caps`, `leading_silence`, `pure_silence`, `no_speech_answer`, `unparseable_text_without_raising` |
+| "timestamp tolerance, decided once … in **both** places" | 12 | `span_bound`, `clamped`, `negative_timestamp`, `unparseable_transcript_is_still`, `hard_cap_span_whose_speech` |
+| "non-`prepared` preparations" | 8 | `abstaining`, `could_not_get_evidence`, `unresolved_span_stops`, `decoder_s_own_labels`, `unattributed_rendering` |
+| "candidate 36, in the same pass" | 13 | `later_attempt_could_answer`, `blinks`, `outlives_transience`, `resets_the_outage`, `refuses_on_its_merits_is_terminal`, `not_a_span_with_nothing` |
+| "diagnosability … `reason` must reach both" | 6 | `says_why_identity`, `names_the_refusal`, `facts_as_fields`, `named_the_same_way`, `names_nothing` |
+Outside the file, three more nodes the amendment's list implies: `test_live_identity.py::
+test_a_refused_canonical_submission_cannot_be_built_without_naming_itself` and
+`…::test_prepared_canonical_rejects_invalid_preparations_without_mutation` (2 passed) and
+`test_live_replay.py::test_live_replay_publishes_a_span_identity_could_not_resolve` (1 passed).
+*The one node two clauses share* is
+`test_an_unattributed_rendering_keeps_the_words_and_drops_only_the_speaker[still_clamped_into_the_span]`
+— J2's rendering going through J1's clamp — which is the right shape: the two rules meet on one span.
+*The seam is real on both sides*, which was the amendment's actual complaint. `_decode_seam_runtime`
+builds the product `LiveServiceRuntime`, `LiveCoordinator`, `LiveSession`, `EndpointPolicy`,
+`RunnerBoundedWavInference` over the real `VllmRunner`, and the real
+`BoundedCausalIdentityPreparer`; `prepared_by` **wraps** the real preparer rather than replacing it.
+Only two things are stubbed, both genuinely off-host: the native `webrtcvad` wheel (by a class that
+enforces its documented 10/20/30 ms length contract and nothing else) and `urllib.request.urlopen`
+(J3 moved the stub down to there from `_post_multipart`, so the runner's request build, response
+unpack and status classification are all product code).
+*The governing rule, checked by reading rather than by test count.* After J1-J4 nothing the **decoder
+produces** can end a meeting: a timestamp outside the span is clamped, an empty or unparseable
+transcript commits empty, a transient failure retries then commits empty, and every preparation the
+preparer returns publishes (`prepare` has no `raise` path — its one `LiveIdentityError` is caught and
+turned into an abstention). What remains terminal is session state or a genuine outage:
+`stale_epoch` / `unknown_span` / `span_out_of_order` / `span_sample_mismatch`, a stale identity base
+version, a permanent decoder refusal, three consecutive unanswered spans, `unqueued_frozen_span`, and
+the stop-drain deadline. Each of those is a session that cannot continue, which is what the amendment
+asked for.
+
+*The merge payload, reviewed against Phase J's scope.* `git diff --name-only main HEAD -- ':!scripts/
+ralph-afk' ':!moss_transcribe_diarize' ':!tests'` is **empty**, and so is the same query restricted to
+`macos ops docs LOCAL_DEPLOYMENT.md CONTEXT.md` — this cycle, like H4's, is **server-only**, so J5c's
+redeploy needs a `moss-live-web.service` restart and needs **no** Mac rebuild. The payload is exactly
+**15 files, +1475/-134**: nine under `moss_transcribe_diarize/` (`live_adapters`, `live_coordinator`,
+`live_identity`, `live_service_runtime`, `live_session`, the new leaf `live_span_bounds`, the leaf
+`transcription_outcome`, `vllm_runner`, `live_replay`) and six tests (`test_live_coordinator`,
+`test_live_identity`, `test_live_pipeline_seams`, `test_live_replay`, `test_live_service_replay`,
+`test_live_service_runtime`). The four a reviewer would not predict from the blocker names were read
+and are in scope: `vllm_runner` + `transcription_outcome` are J3's classification at the point the
+status code is still in hand; `live_replay` is J4's lab harness recording both refusal words; and the
+three re-pointed test files are J2's honest cost (an abstention can no longer manufacture a terminal
+failure, so those nodes now use a genuinely stale preparation).
+*Unlike H4a, the pre-redeploy manifest check is a formality here* — `grep`ping the product diff for
+new admission refusals finds none; Phase J adds no configuration constraint. It was run anyway
+(read-only, the standing command): `caps equal = True 40000`, `vad frame_samples = 160`,
+`retired knob present = False`. The host answered, so J5c's ssh path is live.
+
+**How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
+merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
+iteration 5); the SHAs below are the second merge's, and the third's are in its own block above.
+1. *History join.* `git merge --no-ff main` on the feature branch → `502a49a` (third merge:
+   `9f1552e`). Proven content-free **before** running it: `git merge-tree --write-tree main HEAD`
+   returned HEAD's own tree `5963a2b0…` (third: `bbb84f24…`), and afterwards
+   `git diff --stat <pre-join HEAD> HEAD -- .` and
+   `git diff --name-only <gate SHA> HEAD -- ':!scripts/ralph-afk'` were both empty. Only then was
    `merge-base --is-ancestor main HEAD` honestly true. Do **not** loosen fence 2; join first.
 2. *`expected_main` advanced in the script*, not by env override, with a comment citing the
-   2026-07-28 amendment — so the guard is still live and its reason reviewable. Rehearsed
-   **non-vacuously after the merge**: the same dry run now prints
-   `ERROR: main moved from expected pre-merge SHA f9285d6…`, rc=1, so a **third** merge is refused.
-3. *Fence 2 now speaks.* It was a bare command under `set -e` that exited 1 printing nothing; it is
+   authorizing amendment — so the guard is still live and its reason reviewable. Rehearsed
+   **non-vacuously after each merge**: the dry run then names the superseded SHA and exits 1, so the
+   next merge is refused until another amendment advances the line again.
+3. *Fence 2 speaks.* It was a bare command under `set -e` that exited 1 printing nothing; it is
    now `|| { echo ERROR …; exit 1; }` naming both SHAs and the fix. Rehearsed against a dangling
    `git commit-tree` object (no ref created): both lines print, rc=1.
+*Order that matters:* advance `expected_main` and **commit** it before running the script — the real
+run refuses a dirty tree, and the commit becomes the feature tip the merge captures.
 
 **Run `merge-keeper.sh` in the BACKGROUND, never in a time-capped foreground shell (iteration 5).**
 The first attempt was killed by a 10-minute foreground cap. The kill does not run the script's EXIT
@@ -1242,9 +1694,10 @@ printf '%s' "$PAYLOAD" | python3 scripts/ralph-afk/live-pipeline-probe.py \
   --host 100.64.0.8 --port 7861 --pin a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff \
   --device-id "$DEVICE_ID" --seconds 20 --lead-seconds 1.0 --report /tmp/moss-f0.json
 ```
-Add `--lane-offset-ms system=137` (iteration 10) to break the degenerate shared-lane-origin input;
-that is the flag that surfaces blocker 3, and any future run that wants to reach the endpointer at
-all must **omit** it until blocker 3 is fixed.
+**Always pass `--lane-offset-ms system=137`** (iteration 10) to break the degenerate
+shared-lane-origin input: without it every mixed frame is exactly 8000 samples and the run is
+easier than any real Mac capture. It surfaced blocker 3, and since H3 fixed that (iteration 7 ran
+the whole plan with it) there is no longer a reason to omit it.
 `--fail-fast` is the default and must stay so: a terminal failure is sticky, so continuing only
 buries the one response that explains it (the first run published for **7 minutes** past a dead
 session and learned strictly less than the 2-second run that replaced it). Post-terminal 409s take
@@ -1253,8 +1706,11 @@ up hard behind one.
 **Mandatory rollback after every run**, on the host, loopback-only:
 `curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<device-id>`. It returns and releases the
 sessions the device owns and needs no restart. It *marks* revoked rather than deleting, so
-`live-auth.json` only grows; the three inert entries from iteration 9 are
-`ralph-f0-probe-20260728T{091938,092856,093052}Z`. The m4mbp device
+`live-auth.json` only grows; the inert entries are `ralph-f0-probe-20260728T{091938,092856,093052}Z`
+(iteration 9), `ralph-h2-probe-20260728T094218Z` (iteration 10) and
+`ralph-h4d-probe-20260728T123400Z` (iteration 7 of this run), all `revoked: true`. A second DELETE
+of the same device returns **200**, not 404 — that 404 belongs to the *view* revoke route, so do not
+read a repeat 200 as "the first call did nothing". The m4mbp device
 `AB600574-FD93-4321-967E-652AB064A70B` is untouched (`revoked: false`) and is the only one that
 matters. A pre-copy of the baseline file is
 `live-auth.json.ralph-f0-backup-20260728T091927Z` (sha256 `9d306766…`); restoring it costs a service
@@ -1617,6 +2073,27 @@ python3 -m pytest tests/test_live_pipeline_seams.py -q
 #   for f in $FILES; do cp "$f" "$TMP/$(basename $f)"; git show HEAD:"$f" > "$f"; done
 #   python3 -m pytest tests/test_live_pipeline_seams.py -q
 #   for f in $FILES; do cp "$TMP/$(basename $f)" "$f"; done   # then compare sha256 both ways
+# J1 (iteration 9) adds 11 nodes to the same file -> 24 passed (~3.6 s). Red-prove it the same way
+# with FILES = live_session.py live_identity.py live_adapters.py; the new leaf live_span_bounds.py
+# is untracked at HEAD, so it survives the restore and the three seam nodes fail for the real
+# reason (3 failed / 21 passed), rather than the file failing to import.
+# J2 (iteration 10) adds 8 more -> 32 passed (~3.6 s). Red-prove it by restoring ONLY
+# live_coordinator.py: UNATTRIBUTED_SPEAKER and unattributed_transcript live in live_session.py and
+# live_identity.py, so restoring those too would break the import instead of the behaviour. The
+# blast radius is five nodes across three files, so run them together:
+#   python3 -m pytest tests/test_live_pipeline_seams.py tests/test_live_coordinator.py \
+#           tests/test_live_replay.py -q            # 5 failed / 36 passed before, 41 passed after
+# J3 (iteration 11) adds 12 more -> 44 passed (~3.6 s). Red-prove it by restoring ONLY
+# vllm_runner.py: TransientTranscriptionError, LiveProviderTransientError and the coordinator's three
+# policy constants are all imported by the test module, so restoring their files breaks collection
+# instead of behaviour. With no transient classification at the source the whole chain reverts, so
+# this one restore reds all seven transient nodes (7 failed / 37 passed) while the four permanent
+# status rows stay green - which is also the proof that the 400/401/404 path was never touched.
+# J4 (iteration 12) adds 6 more -> 50 passed (~3.7 s), plus 1 node in tests/test_live_identity.py
+# (8 passed). Red-prove it by restoring ONLY live_service_runtime.py: the test module imports
+# CanonicalSubmission from live_session, so restoring that one is a collection error rather than a
+# red. The runtime holds both halves of J4 that the nodes read - the canonical_processed payload and
+# _failure_from_exception - so this single restore reds exactly the six (6 failed / 44 passed).
 
 # --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
 #     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived.
@@ -1633,6 +2110,50 @@ python3 scripts/ralph-afk/live-hardcap-repro.py --speech-provider webrtc --frame
   --frames 4                                                                   # blocker 3 control
 # The webrtc cases use a stand-in VAD enforcing only webrtcvad's 10/20/30 ms length contract,
 # because MacStudio has no native webrtcvad wheel. The real exception is recorded from the host.
+
+# --- H blocker 4: the decode -> identity seam, ON THE HOST (iteration 7) ------------------------
+#     Reads the deployed manifest, sends ONE inference request to the same vLLM endpoint the
+#     service uses, and loads a second copy of the ONNX identity encoder (CPU). It mutates nothing:
+#     no session, no auth state, no service. rc=0 means the span would publish, rc=4 means it
+#     would make the session terminal. Ship it to the host on stdin (see the remote-quoting gotcha)
+#     and run it with the SERVICE'S venv from the deployed checkout:
+#       V="$HOME/.local/share/moss-transcribe-diarize/venv"
+#       L="$HOME/.local/share/moss-transcribe-diarize/live"
+#       cd /mnt/d/Coding/MOSS-Transcribe-Diarize
+#       "$V/bin/python" /tmp/live-identity-seam-probe.py \
+#         --manifest "$L/live-provider-manifest.json" --wav <one span of 16 kHz mono audio> \
+#         --vllm-base-url http://127.0.0.1:8000/v1 \
+#         --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-timeout 300
+#     It runs the preparation twice — with the manifest's real evidence provider and with none —
+#     so the verdict names which side of the evidence call the defect is on. Measured 2026-07-28:
+#       span 1 rebuilt from the pipeline probe's own schedule (2.5 s, speech to the end)
+#         -> "[0.11][S01] Good morning everyone. This is the microphone.[2.51]"
+#         -> failed/timestamp_outside_span, rc=4, both with and without evidence
+#       the same audio + 0.5 s trailing silence (3.0 s span) -> "[0.00 ... 2.54]" -> prepared, rc=0
+#       golden.wav (2.1 s) -> generated_tokens 0, transcript "" -> H1's empty path, handled
+#     Rebuild that span-1 audio on MacStudio by importing live-pipeline-probe.py's own
+#     build_schedule/build_lane_track, shifting the system lane by the --lane-offset-ms you used,
+#     mixing with live_mixer's own _HEADROOM_GAIN/_LIMITER_* constants, and slicing [12208:52208].
+#     Delete the WAV from the host afterwards; audio does not belong in /tmp on the server.
+
+# --- H blocker 4, the BOUNDARY SWEEP (iteration 8). The single-span probe says *that* a timestamp
+#     can land past its span; it cannot say how far or how often, and those two numbers are what
+#     the fix has to be chosen against. `build-span-sweep.py` cuts N spans out of the pipeline
+#     probe's OWN mixed timeline - same schedule, voices, lane offset and mixer arithmetic, all
+#     imported rather than restated - so a cut is the audio the service would have mixed, by
+#     construction. Cuts are START:COUNT[:PAD] in samples; PAD appends silence, the control that
+#     moves speech off the span end. The build is deterministic: two independent runs of the same
+#     arguments produced the same `mixed_sha256` and the same per-cut sha256.
+python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-span-sweep \
+  --report /tmp/moss-span-sweep/index.json --seconds 20 --lead-seconds 1.0 \
+  --lane-offset-ms system=137 --cut 12208:40000 --cut 12208:40000:8000   # repeat --cut per span
+# A stride sweep is one bash line: for k in $(seq 0 32); do CUTS+=(--cut $((12208+k*8000)):40000); done
+# (zsh does NOT word-split an unquoted "$CUTS" string - build an array and run it under `bash -c`.)
+# Then ship the wavs and live-identity-seam-probe.py to the host in ONE stdin script (a base64
+# heredoc per file), run the probe per wav under the service venv, `rm -f "$D"/*.wav` in the SAME
+# invocation, and print the reports. ~5-25 s per span (ONNX encoder load dominates the short ones).
+# GOTCHA: `sha256sum "$D"/*.wav | head -3` under `set -o pipefail` aborts the whole script with
+# rc=141 - SIGPIPE. Write the digests to a file and count lines instead.
 
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
@@ -1682,9 +2203,29 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
 # Standing rollback for the host checkout, still valid until D3 changes the host:
 #   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
+# --- H4c: publish + redeploy the third merge (SPENT in iteration 6 of run 20260728-112922) -------
+# The push fast-forwarded 317df4d..b817871; do not re-run it and never force-push. The host side,
+# in this exact order (pipe as a script on stdin per the remote-quoting gotcha):
+#   <the pre-redeploy manifest admission check below>          # BEFORE the restart, not after
+#   cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git fetch origin main --quiet
+#   git checkout b817871414fcc8f609c6f5eb2898ec2957c7768c      # rollback: checkout 317df4d…
+#   systemctl --user restart moss-live-web.service             # rollback: restart after the checkout
+#   for i in $(seq 1 30); do ... curl -sk https://127.0.0.1:7861/live ... done   # POLL, ~11 s
+# Prove the DEPLOYED code carries the fixes rather than trusting the SHA — run under the service's
+# own venv, from the deployed checkout (read-only, no server needed, re-runnable any time):
+#   "$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" -c '...'
+#     H2: "hard_cap_samples" not in inspect.signature(LiveSession.__init__).parameters,
+#         not hasattr(LiveSession, "_freeze_hard_cap_spans"),
+#         hasattr(LiveServiceRuntime, "_require_one_span_cap")
+#     H1: issubclass(EmptyTranscriptionError, RuntimeError), hasattr(LiveSession, "submit_empty_canonical")
+#     H3: WebRtcSpeechProvider(vad=lambda pcm, rate: False, frame_samples=5808) raises
+#         LiveProviderBundleAdmissionError, while frame_samples=160 constructs.
+#         The constructor is keyword-only and `vad=` is REQUIRED — omitting it raises TypeError,
+#         which looks like a refusal and is not one. Assert the exception TYPE, never just "raised".
 # Four-way SHA check — the PRD clause in full. GREEN at
-# 317df4d728b6765dbe365a3166158ba581299557 since iteration 6 of run 20260728-072601 (G5); it was
-# green at f9285d6 from iteration 20 until the authorized second merge. Re-run it read-only any
+# b817871414fcc8f609c6f5eb2898ec2957c7768c for local main + origin/main + the host since iteration 6
+# of run 20260728-112922 (H4c); m4mbp still reads 317df4d because it was offline. It was fully green
+# at 317df4d since G5, and at f9285d6 from iteration 20. Re-run it read-only any
 # time — all four lines must print the same 40 hex characters:
 git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
@@ -2184,7 +2725,9 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
     leading-silence span and a pure-silence meeting that stops with exact accounting. Red/green
     rehearsed; H2's offline repro is bit-for-bit unchanged by it. See the empty-span decode contract
     block above.
-    *Left open by it, deliberately:* a transient decoder failure is still terminal - candidate 36.
+    *Left open by it, deliberately:* a transient decoder failure is still terminal - candidate 36,
+    closed as J3 in iteration 11. Its "only the HTTP hop is a stand-in" is also now literally true:
+    J3 moved the stub down to `urlopen`, because `_post_multipart` is where the status is classified.
 33. **H2 - two independent hard-cap freezers collide** `[done - run 20260728-112922 iteration 3]`.
     Resolved by the first of the two readings: the endpoint policy is the single authority and
     `LiveSession` no longer partitions audio at all - the `hard_cap_samples` parameter, the attribute
@@ -2221,30 +2764,84 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
        (139 / 551+2 / tracer 4 / 10/10 / leak-scan clean), merge payload reviewed as exactly the
        three blockers and their tests, deployed manifest proven to admit under both new refusals.
        See the H4 gate block above.
-    b. *Merge* `[open - next]`. The single merge authorized by the second amendment, through
-       `merge-keeper.sh`: join `main` into the feature branch first (prove it content-free with
-       `git merge-tree --write-tree` before running it), then advance `expected_main` from
-       `317df4d...` **in-script** with a comment citing the second amendment, exactly as G4 did -
-       never by CLI override. Run the script in the **BACKGROUND**; a foreground timeout kill skips
-       its EXIT trap and strands a worktree holding `main`.
-    c. *Publish and redeploy* `[open]`. `git push origin main` (fast-forward only, never force),
-       then move the host checkout to the new SHA and restart `moss-live-web.service`; record the
-       rollback (`git -C /mnt/d/... checkout 317df4d…` + restart) before touching the host. Then
-       re-run the four-way SHA check so local/origin/host/m4mbp are one SHA again. The served leaf
-       must still hash to the D2 pin `a35ca9fc…` afterwards, or every paired Mac is broken.
-    d. *Probe* `[open]` - the amendment's actual gate. Re-run `live-pipeline-probe.py` against the
-       redeployed service and require a run that survives its full plan with committed samples
-       advancing. Only after that is E3 worth the operator's clicks.
-    **Until (c) lands the deployed service is still the unfixed `317df4d`** - all three fixes exist
-    only on this branch, so a probe run before then still dies at the first unaligned frame.
+    b. *Merge* `[done - run 20260728-112922 iteration 5]`. `b817871`, feature tip `9e0780a`,
+       `main^1 = 317df4d`, `main^2 = 9e0780a`, trees identical, delta exactly the fifteen reviewed
+       files plus `scripts/ralph-afk/*`. The guard now refuses a fourth merge. See the
+       third-keeper-merge block above. **The freeze has resumed** - tracked product source may not
+       change on this branch again without a further amendment.
+    c. *Publish and redeploy* `[done except m4mbp - run 20260728-112922 iteration 6]`. Pushed
+       fast-forward `317df4d..b817871`, host checkout moved, `moss-live-web.service` restarted
+       (mandatory here because this merge is server-only), pin/live/batch/plaintext checks all as
+       expected, and the deployed code proven to carry H1/H2/H3 by introspection under the
+       service's own venv. See the H4c redeploy block. **Left open: the m4mbp checkout**, which was
+       offline all iteration (`ssh` and `ping` both time out). When it is up:
+       `git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize fetch origin
+       main && … checkout b817871…`, then re-run the four-way SHA check. **No rebuild and no
+       reinstall** - `macos/` is byte-identical to `317df4d`, and reinstalling would reset the
+       bundle inode for nothing.
+    d. *Probe* `[run - RED, iteration 7]`. The gate was run and **failed**: 17 frames accepted (four
+       times the pre-fix reach), H3/H1/H2 all observed working on the real host, span 0 committed
+       empty - and then span 1 died on a **fourth** blocker, `identity_commit /
+       canonical_not_submitted / identity_status "failed"`. Diagnosed to one line and one rounding
+       tick with the new `scripts/ralph-afk/live-identity-seam-probe.py`; see the H4d block and
+       candidate 37. **Phase H's gate stays red**, so the second amendment's cycle is not finished
+       and E3 stays unspent. The probe's recorded rollback held: device
+       `ralph-h4d-probe-20260728T123400Z` revoked, both services untouched (MainPIDs 338545 /
+       301112, `NRestarts=0`), `live-runs/` 0 entries, no `/tmp/mtd-live-*`.
 
-36. **A transient decoder failure ends the meeting** `[open; out of the amendment's scope, do not
-    start without authorization]`. One vLLM timeout or one reset socket is now a named
+36. **A transient decoder failure ends the meeting** `[superseded by Phase J - it is candidate 40
+    (J3) and authorized there; kept for its reasoning]`. One vLLM timeout or one reset socket is now a named
     `LiveProviderError` and still terminal for the whole session (`live_service_runtime`
     `_process_in_flight_item` -> `_fail`). For a 300 s certification over a tailnet that is a real
     reliability gap, and the honest fix is a bounded per-span retry plus a typed degraded state -
     *not* committing the span empty, which would render a dead GPU as a blank meeting. Nothing in
     F0 observed this; it is a gap review found while fixing H1, and it needs its own decision.
+    **Iteration 7 makes this cheaper to fix than to defer:** it is the same "a non-fatal outcome is
+    treated as fatal" shape as candidate 37, on the same code path, and one amendment could settle
+    both classification questions at once.
+    *How J3 answered it, and where it departed from this entry:* the bounded per-span retry is as
+    written, but the span **is** committed empty afterwards - with `empty_reason` naming it - because
+    an uncommitted span strands `stop` on accounting (H1's constraint, which this entry predates).
+    The "blank meeting" concern is met by the *consecutive* count instead: two degraded spans is the
+    most a session can publish before the outage is declared terminal and named, and any span that
+    decodes resets it. A per-span rule alone could not have separated a hiccup from a dead GPU.
+
+37. **Blocker 4 - a span whose speech reaches its end is terminal** `[superseded by Phase J; the
+    third amendment landed. (a) is DONE as J1 in iteration 9; (b) is J2 and (c) is J4 - work them
+    there, this entry is kept for its evidence]`. The decoder's closing timestamp lands at ≈ the duration
+    of the audio it is handed (2.51 for a 2.50 s span), the identity preparer and the session both
+    reject `segment.end > span duration` with **no tolerance**, and a non-`prepared` preparation is
+    a non-retryable terminal failure. A hard-cap span is 2.5 s of continuous speech by construction,
+    so this fires on any speaker who does not pause. Evidence, control and line anchors are in the
+    H4d block; the **rate and the size** of the overshoot are in the boundary-sweep block
+    (iteration 8). The three things a fix has to decide - (a) is now answered by measurement, (b)
+    and (c) still need a ruling:
+    a. *Tolerance.* **Answered: clamp to the span, do not widen the bound.** The sweep's larger
+       overshoot is **two** quantisation ticks, so the obvious "allow one tick" would still have
+       killed the meeting; a clamp cannot be exceeded by a tail nobody has sampled; the evidence
+       provider already clamps these same segments one call later
+       (`live_provider_bundle.py:727-728`); and the decoder is deterministic, so no retry rescues a
+       refusal. Apply it **once** - the honest seam is a shared "segments of this span" helper -
+       and the three copies (`live_identity.py:101`, `live_session.py:438`,
+       `live_adapters.py:387`) collapse into it. A clamp keeps the committed prefix honest; a
+       widened bound does not.
+    b. *Is a non-`prepared` preparation allowed to be terminal?* `abstain` is a designed outcome
+       (ambiguous identity, speaker capacity) and today it kills the meeting. The honest shape is
+       commit the span with the un-relabeled transcript and record the abstention, exactly as H1
+       commits an unparseable span empty rather than dying.
+    c. *Observability.* `reason` must reach the failure detail and the `canonical_processed` event.
+       Iteration 7 needed a host-side probe under the service venv to read one word that the
+       process already knew, and iteration 8 found the reason it is unreadable is structural:
+       `submit_prepared_canonical` answers bare `False` for six different conditions and the runtime
+       reports all six as `canonical_not_submitted`.
+    A regression test belongs in `tests/test_live_pipeline_seams.py` with the **real** identity
+    preparer under the coordinator and a transcript whose last segment ends past the span - the same
+    "put both sides of the seam in one process" rule the second amendment set. Note there is
+    **no** existing coverage to extend: `timestamp_outside_span` and "timestamps outside frozen
+    span" appear nowhere under `tests/`, so all three copies of the bound are untested today.
+    The sweep is reusable as the after-fix gate at no human cost: re-run
+    `build-span-sweep.py` with the same arguments (the build is byte-deterministic) and the two
+    known-failing spans - `12208+10*8000` and `12208+32*8000` on the 20 s timeline - must publish.
 
 Useful F0 facts for this cycle: healthy request timings are 4-280 ms while post-terminal 409s took
 **6-8 s each**, so a dead session will back the Mac's outbox up hard - worth a look while fixing H1.
@@ -2252,6 +2849,93 @@ Three terminal sessions did not restart or destabilise any service, so the failu
 `live-runs/` stayed empty and `/tmp/mtd-live-*` was cleaned up, which is real evidence for the PRD's
 "no raw audio is persisted" clause. Device revocation (`DELETE /api/live/devices/{id}`, loopback
 only) is a complete no-restart rollback for a pairing but marks rather than deletes.
+
+### Phase J - the live path's terminal-failure policy (2026-07-28, third amendment)
+
+Authorized after H4d found the fourth defect of one shape. **Treat the shape, not the instance:**
+only a condition that makes the session genuinely unable to continue may be terminal. Candidates 36
+and 37 are folded in here; settle them together or the next gate run finds the fifth.
+
+38. **J1 - the timestamp tolerance, answered once** `[done - run 20260728-112922 iteration 9]`.
+    Answered as the sweep recommended: **clamp into the span, no tolerance constant anywhere.** The
+    rule lives once, in the new leaf module `app/live_span_bounds.py`, and all three copies of the
+    bound (`live_identity.py`, `live_session.py`, `live_adapters.py`) were deleted in favour of
+    calling it - so the fix cannot relocate the failure to the copy nobody edited. Eleven nodes in
+    `tests/test_live_pipeline_seams.py`: the H4d transcript through the real runtime (commits,
+    labeled, meeting continues), the same overshoot through `LiveSession` alone and through
+    `LiveProvider.decode_canonical`, the clamp's own table driven by the sweep's measured values,
+    and the two "not a bound question" cases. Red/green rehearsed by restoring the three consumers
+    from `HEAD` - exactly the three seam nodes fail - and the restore is sha256-verified. See the
+    span-bound contract block above.
+    *Open, deliberately deferred to J5:* real-audio confirmation on the host (the sweep's two
+    known-failing spans). The fix is not deployed and may not be until Phase J's merge.
+39. **J2 - a non-`prepared` preparation must not end the meeting** `[done - run 20260728-112922
+    iteration 10]`. Answered as the candidate recommended, and generalized: **no preparation the
+    preparer returns is terminal.** The span publishes its words with `UNATTRIBUTED_SPEAKER`
+    (`"S00"`) and the identity snapshot is left byte-identical, so an abstention costs the label and
+    nothing else. The decision lives once, in `LiveCoordinator.submit_prepared_work`, and renders
+    from the decoder's transcript rather than from `preparation.relabeled_transcript`. Eight nodes
+    in `tests/test_live_pipeline_seams.py` plus one in `tests/test_live_replay.py`; three tests that
+    used an abstention to *manufacture* a terminal failure were re-pointed at a genuinely stale
+    preparation. See the unresolved-identity contract block above.
+40. **J3 - a transient decoder failure must not be terminal** (was candidate 36) `[done - run
+    20260728-112922 iteration 11]`. Answered as the candidate asked and generalized one step: the
+    distinction is drawn on **whether a later attempt could answer differently**, typed at the source
+    (`vllm_runner` classifies by status code, where the code is still in hand) rather than sniffed
+    from a message downstream. A transient span is retried once, then committed empty and named
+    (`decoder_did_not_answer`); three consecutive unanswered spans end the session naming the outage,
+    which is how H1's "a dead GPU may not render as a blank meeting" survives. Twelve nodes; the
+    file's own stub was fixed to replace only `urlopen`, because it had been replacing the classifier
+    itself. See the transient-decode contract block above.
+41. **J4 - `reason` must survive** `[done - run 20260728-112922 iteration 12]`. All three inputs
+    answered, and generalized to one rule: **a refusal carries the word that names it out of the
+    process, and a refusal that names nothing cannot be constructed.** (i) `_failure_from_exception`
+    now gives every arm an `error_type` detail and a decode failure the stable code
+    `canonical_decode_failed`, with the seam's facts (`span_id`, `cause`,
+    `consecutive_unanswered_spans`) carried on `LiveProviderError.detail`. (ii) the three submit
+    methods return `CanonicalSubmission`, whose eighteen refusal words replace the bare `False`, and
+    both the event and the failure detail carry the one that fired. (iii) the preparer's `reason`
+    reaches the `canonical_processed` event, which is now the only thing distinguishing an abstention
+    from an evidence-provider outage. Six nodes; a reachable empty-message defect in the failure path
+    was found and fixed on the way. See the named-refusal contract block above.
+42. **J5 - review the seam coverage, then gate/merge/redeploy/probe.** Split into four steps, run in
+    this order (learned in H4: the amendment lists the probes before the merge, but the branch's
+    fixes are not on the host, so a probe run before the redeploy measures `b817871` and dies at
+    blocker 4 no matter what the branch says; H4 ran gate -> merge -> redeploy -> probe in
+    iterations 4, 5, 6, 7). **Nothing is dropped:** both probes green against the redeployed SHA is
+    still the acceptance evidence, and if they are red the merge is answered by the next amendment,
+    exactly as H4d's red was.
+    - **(a) coverage review + full local gate** `[done - run 20260728-112922 iteration 13]`. The
+      real-seam nodes were written **with** each fix (J1 +11, J2 +9, J3 +12, J4 +7, each red before
+      and green after with an sha256-verified restore), so this was a review, not a test-writing
+      pass: five `-k` selections account for **50 of 50** nodes in `test_live_pipeline_seams.py`
+      against the amendment's clauses, plus three nodes elsewhere. Gate green at `517306b`
+      (139 / 590+2 / tracer 4 / 10/10 / leak-scan clean / repro rc=0 / tree clean); payload reviewed
+      as exactly 15 server+test files, no `macos/`, no `ops/`, no doc. See the J5a gate block.
+    - **(b) the merge** `[open - do this next]`. Join `main` into the feature branch first and prove
+      it content-free with `git merge-tree --write-tree` **before** running it; advance
+      `expected_main` from `317df4d...` to `b817871...` **in-script** with a comment citing the third
+      amendment (never by CLI override) and **commit that** before running; run `merge-keeper.sh` in
+      the **BACKGROUND**. The dry run currently refuses (rc=1), which is the proof no unauthorized
+      merge can slip through.
+    - **(c) publish + redeploy.** `git push origin main`, fetch/detach the host checkout, restart
+      `moss-live-web.service` (this cycle is **server-only**, so the restart is required and no Mac
+      rebuild is needed), then poll `/live` - a single probe before ~10 s returns 000. Re-verify the
+      served leaf still hashes to the D2 pin `a35ca9fc…` and that the batch unit's MainPID did not
+      move. Confirm the deployed code carries J1-J4 by **venv introspection**, not by the SHA and
+      never by `/api/live/descriptor`'s `source_revision` (a stamped manifest field that does not
+      move on redeploy).
+    - **(d) the amendment's gate: both probes.** `live-pipeline-probe.py` and `live-hardcap-repro.py`
+      against the redeployed service, requiring a run that survives its full plan with committed
+      spans advancing and speaker labels present. J1's real-audio confirmation is the sweep's two
+      known-failing spans (`12208+10*8000` and `12208+32*8000`); J4 pays for itself here - if a fifth
+      blocker appears, the 409 now carries the word that names it.
+
+Reusable facts from H4d: rebuilding the probe's own span 1 from its schedule reproduced the defect
+first try, while `golden.wav` decodes to empty and proves nothing - reproduce the exact input, not a
+similar one. Each probe run costs ~1-2.5 s of vLLM and no service disturbance, so this seam can be
+re-measured after any fix without a Mac. The wespeaker ONNX evidence provider is confirmed working
+on the host: a control run reached `prepared` through it.
 
 ## Non-candidates
 

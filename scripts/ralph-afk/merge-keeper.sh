@@ -15,10 +15,15 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # (server decode-seam fix cycle: H1 the empty-span decode contract, H2 the span-cap
 # authority contract, H3 the webrtcvad framing contract, and the real-seam regression
 # tests that close the gap none of them could be caught through) authorizes exactly one
-# further merge, whose pre-merge main is therefore 317df4d. Advancing this default is a
-# reviewable diff on purpose: a FOURTH merge still fails here, and a command-line
+# further merge, whose pre-merge main was therefore 317df4d and which landed as b817871.
+# The THIRD prd.md amendment of 2026-07-28 (the live path's terminal-failure policy: J1
+# the span-bound clamp answered once, J2 an unresolved identity publishing unattributed
+# words, J3 a transient decoder failure retried then committed empty, J4 every refusal
+# carrying the word that names it, and the real-seam coverage for each) authorizes exactly
+# one further merge, whose pre-merge main is therefore b817871. Advancing this default is a
+# reviewable diff on purpose: a FIFTH merge still fails here, and a command-line
 # RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-317df4d728b6765dbe365a3166158ba581299557}"
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-b817871414fcc8f609c6f5eb2898ec2957c7768c}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

@@ -9,20 +9,43 @@ import time
 import wave
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Mapping, Protocol
 
-from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_transcript
+from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_session import CanonicalResult, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
-from .transcription_outcome import EmptyTranscriptionError
+from .live_span_bounds import span_segments
+from .transcription_outcome import EmptyTranscriptionError, TransientTranscriptionError
 
 
 class LiveProviderError(RuntimeError):
-    pass
+    """A canonical decode did not produce a usable answer.
+
+    `detail` carries the facts of the refusal in machine-readable form -- the underlying
+    exception type, how many spans an outage has now covered -- beside the prose that has
+    always carried them. A failure whose only structured field is the exception's class
+    name forces whoever reads it to parse an English sentence, which is how a typed
+    refusal ends up needing a host-side probe to explain itself.
+    """
+
+    def __init__(self, message: str, *, detail: Mapping[str, Any] | None = None):
+        super().__init__(message)
+        self.detail: Mapping[str, Any] = dict(detail or {})
 
 
 class LiveProviderAdmissionError(LiveProviderError):
     pass
+
+
+class LiveProviderTransientError(LiveProviderError):
+    """The decoder did not answer for this span, and the same bytes may decode later.
+
+    A `LiveProviderError` subclass so that every caller which already treats a decode
+    failure as a failure keeps doing so; the subclass exists so the one caller that can act
+    on the difference -- the live coordinator, which owns the span -- can offer the span
+    again instead of ending the meeting. What is transient is decided by the exception the
+    runner raises, never by its message.
+    """
 
 
 @dataclass(frozen=True, slots=True)
@@ -245,11 +268,22 @@ class RunnerBoundedWavInference:
                 )
             except LiveProviderError:
                 raise
+            except (TransientTranscriptionError, ConnectionError, TimeoutError) as exc:
+                # The request never got an answer. The bare exception types are here so this
+                # holds for any runner, not only the one that types its own transport
+                # failures: a reset socket and an expired deadline mean the same thing
+                # whoever raises them.
+                raise LiveProviderTransientError(
+                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
             except Exception as exc:
                 # Nothing leaves this seam unclassified. A decoder that failed is not a span
-                # with nothing to say, and must stay distinguishable from one.
+                # with nothing to say, and must stay distinguishable from one -- and from a
+                # decoder that merely blinked.
                 raise LiveProviderError(
-                    f"canonical decode failed: {exc.__class__.__name__}: {exc}"
+                    f"canonical decode failed: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
                 ) from exc
         return InferenceTranscript(
             transcript=str(result.text),
@@ -379,13 +413,10 @@ def _sha256(path: Path) -> str:
 def _validated_segments(transcript: str, span: FrozenSpan) -> tuple[TranscriptSegment, ...]:
     if not transcript.strip():
         raise LiveProviderError("canonical inference returned empty transcript.")
-    segments = tuple(parse_transcript(transcript))
+    # The same clamp as the identity preparer and the session use -- see `live_span_bounds`.
+    segments = span_segments(transcript, sample_count=span.sample_count)
     if not segments:
         raise LiveProviderError("canonical inference returned zero parsed segments.")
-    duration = span.sample_count / float(LIVE_SAMPLE_RATE)
-    for segment in segments:
-        if segment.start < 0 or segment.end > duration:
-            raise LiveProviderError("canonical inference returned timestamps outside frozen span.")
     return segments
 
 

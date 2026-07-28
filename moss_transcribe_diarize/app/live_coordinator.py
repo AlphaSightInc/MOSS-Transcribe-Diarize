@@ -7,12 +7,19 @@ from typing import Protocol
 
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
-from .live_adapters import BoundedWavInference
+from .live_adapters import (
+    BoundedWavInference,
+    InferenceTranscript,
+    LiveProviderError,
+    LiveProviderTransientError,
+)
 from .live_arbiter import ArbiterWorkItem, InferenceArbiter
 from .live_endpoint import EndpointPolicy, EndpointPolicyError, EndpointSpan, SpeechObservation
+from .live_identity import unattributed_transcript
 from .live_session import (
     AudioFrame,
     CanonicalResult,
+    CanonicalSubmission,
     FrozenSpan,
     LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
@@ -24,6 +31,27 @@ from .live_session import (
 
 class LiveCoordinatorError(RuntimeError):
     pass
+
+
+# How many times one span's audio is offered to a decoder that did not answer. The bytes are
+# identical on every attempt and nothing is committed until one of them answers, so a retry
+# can only add an answer -- it can never publish a span twice. Two attempts, with no delay
+# between them: what this recovers is a dropped connection, which the next request
+# re-establishes, and a decoder that is genuinely gone refuses immediately rather than
+# spending the meeting's real time on a wait.
+DECODE_ATTEMPTS_PER_SPAN = 2
+
+# How many *consecutive* spans may go unanswered before the decoder is called gone. A blip
+# costs its own spans and nothing else, because the count resets the moment one span decodes.
+# An outage that never ends is not transient however it started, and a meeting that publishes
+# nothing but empty spans has to say so rather than read as a room where nobody spoke. Three
+# spans is at most ~7.5 s of live audio at the 2.5 s span cap.
+MAX_CONSECUTIVE_UNANSWERED_SPANS = 3
+
+# The `empty_reason` a span carries when the decoder never answered for it. It names the
+# condition in the `canonical_processed` event, so a degraded span is distinguishable from a
+# span in which nothing was said.
+DECODER_DID_NOT_ANSWER = "decoder_did_not_answer"
 
 
 class SpeechSignalProvider(Protocol):
@@ -75,6 +103,12 @@ class CoordinatorWorkResult:
     frozen_span_duration_sec: float | None = None
     canonical_decode_rtf: float | None = None
     empty_reason: str | None = None
+    # The two words a reader needs when a span did not publish the way it was meant to.
+    # `identity_reason` is the preparer's own answer -- it is the only thing that tells an
+    # abstention on ambiguous evidence apart from an evidence provider that was not there
+    # -- and `submission_refusal` is the session's. Both used to die inside the process.
+    identity_reason: str | None = None
+    submission_refusal: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,6 +151,7 @@ class LiveCoordinator:
         self.identity_preparer = identity_preparer
         self.arbiter = arbiter
         self._pcm = _PcmRetention()
+        self._consecutive_unanswered_spans = 0
 
     def accept_frame(self, frame: AudioFrame) -> CoordinatorFrameResult:
         ack = self.session.accept_frame(frame)
@@ -161,7 +196,12 @@ class LiveCoordinator:
     def prepare_work_item(self, work: CoordinatorWorkInput) -> CoordinatorPreparedWork:
         span = work.span
         pcm = work.pcm
-        inferred = self.decoder.transcribe_pcm(span=span, pcm=pcm)
+        try:
+            inferred = self._decode(span, pcm)
+        except LiveProviderTransientError as exc:
+            # The decoder blinked. The meeting does not end for it; this span does.
+            return self._unanswered_span(span, exc)
+        self._consecutive_unanswered_spans = 0
         transcript = inferred.transcript
         empty_reason = _empty_transcript_reason(transcript)
         if empty_reason is not None:
@@ -189,17 +229,13 @@ class LiveCoordinator:
     def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
         span = work.span
         preparation = work.preparation
-        if work.empty_reason is not None:
-            submitted = self.session.submit_empty_canonical(
-                span_id=span.id,
-                epoch=span.epoch,
-                start_sample=span.start_sample,
-                end_sample=span.end_sample,
-            )
+        empty_reason = work.empty_reason
+        if empty_reason is not None:
+            submission = self._submit_empty(span)
             identity_status = "empty_span"
         elif preparation is None:
             raise LiveCoordinatorError("prepared work carries neither an identity preparation nor an empty span.")
-        else:
+        elif preparation.status == "prepared":
             result = CanonicalResult(
                 span_id=span.id,
                 epoch=span.epoch,
@@ -208,22 +244,95 @@ class LiveCoordinator:
                 transcript=preparation.relabeled_transcript,
                 identity_preparation=preparation,
             )
-            submitted = self.session.submit_prepared_canonical(result)
+            submission = self.session.submit_prepared_canonical(result)
             identity_status = preparation.status
+        else:
+            # The span published its words without a speaker. Identity answered a question
+            # about *who*, and every answer it can give -- an abstention on ambiguity or on
+            # speaker capacity, a preparer that could not obtain evidence -- leaves the
+            # words intact and the meeting able to continue. Only the claim is dropped, and
+            # the label is rebuilt from the decoder's own transcript rather than taken from
+            # the preparation, so a preparer cannot publish local labels as canonical by
+            # leaving them in a field it did not relabel.
+            identity_status = preparation.status
+            unattributed = unattributed_transcript(work.transcript, sample_count=span.sample_count)
+            empty_reason = _empty_transcript_reason(unattributed)
+            if empty_reason is not None:
+                submission = self._submit_empty(span)
+            else:
+                submission = self.session.submit_unlabeled_canonical(
+                    span_id=span.id,
+                    epoch=span.epoch,
+                    start_sample=span.start_sample,
+                    end_sample=span.end_sample,
+                    transcript=unattributed,
+                )
         snapshot = self.session.snapshot()
-        if submitted:
+        if submission.submitted:
             self._pcm.prune_before(snapshot.committed_samples)
         measurement = _canonical_decode_measurement(span, work.decode_elapsed_sec)
         return CoordinatorWorkResult(
             span_id=span.id,
-            submitted=submitted,
+            submitted=submission.submitted,
             identity_status=identity_status,
             committed_samples=snapshot.committed_samples,
             canonical_decode_elapsed_sec=measurement["canonical_decode_elapsed_sec"],
             frozen_span_sample_count=measurement["frozen_span_sample_count"],
             frozen_span_duration_sec=measurement["frozen_span_duration_sec"],
             canonical_decode_rtf=measurement["canonical_decode_rtf"],
-            empty_reason=work.empty_reason,
+            empty_reason=empty_reason,
+            identity_reason=None if preparation is None else preparation.reason,
+            submission_refusal=submission.refusal,
+        )
+
+    def _decode(self, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        attempt = 1
+        while True:
+            try:
+                return self.decoder.transcribe_pcm(span=span, pcm=pcm)
+            except LiveProviderTransientError:
+                if attempt >= DECODE_ATTEMPTS_PER_SPAN:
+                    raise
+                attempt += 1
+
+    def _unanswered_span(self, span: FrozenSpan, exc: LiveProviderTransientError) -> CoordinatorPreparedWork:
+        """Degrade one span, or -- once the outage has outlived transience -- end the meeting.
+
+        A span nobody could decode is published empty and named, exactly as a span in which
+        nothing was said is: the audio stays accounted for, the committed prefix advances,
+        and the meeting continues past a decoder that blinked. What must not happen is a
+        dead decoder rendering as a blank meeting, so the *consecutive* count is the line
+        between the two. It is reset by any span that decodes, so an occasional outage never
+        accumulates into a terminal one across a long meeting.
+        """
+
+        self._consecutive_unanswered_spans += 1
+        if self._consecutive_unanswered_spans >= MAX_CONSECUTIVE_UNANSWERED_SPANS:
+            raise LiveProviderError(
+                "canonical decode did not answer for "
+                f"{self._consecutive_unanswered_spans} consecutive spans: {exc}",
+                # The count is the fact that ended the meeting, so it travels as a number
+                # rather than only inside the sentence; the span's own detail says what the
+                # decoder was doing when it stopped answering.
+                detail={
+                    **exc.detail,
+                    "span_id": span.id,
+                    "consecutive_unanswered_spans": self._consecutive_unanswered_spans,
+                },
+            ) from exc
+        return CoordinatorPreparedWork(
+            span=span,
+            transcript="",
+            preparation=None,
+            empty_reason=DECODER_DID_NOT_ANSWER,
+        )
+
+    def _submit_empty(self, span: FrozenSpan) -> CanonicalSubmission:
+        return self.session.submit_empty_canonical(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
         )
 
     def process_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkResult:
@@ -321,7 +430,8 @@ def _empty_transcript_reason(transcript: str) -> str | None:
     A span the decoder cannot parse is committed empty, never made terminal. This rule is
     stated on the transcript rather than on an exception type so it holds for every decoder:
     one that raises the typed empty outcome and one that simply returns nothing get the same
-    answer. A decoder that *failed* raises instead, and that stays terminal.
+    answer. A decoder that *failed* raises instead: a permanent failure stays terminal, and a
+    transient one is answered by `_unanswered_span`, which names its own empty reason.
     """
 
     if not transcript.strip():

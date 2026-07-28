@@ -271,7 +271,7 @@ class LiveServiceReplayContractTest(unittest.TestCase):
                 descriptor=descriptor,
                 speech=(False,),
                 session_ids=("session-1",),
-                identity=PreparingIdentity(status="abstain", reason="ambiguous_identity"),
+                identity=PreparingIdentity(stale_base_version=True),
             )
         )
 
@@ -738,6 +738,10 @@ class RecordingDecoder:
 class PreparingIdentity:
     status: str = "prepared"
     reason: str | None = None
+    # See the same knob in tests/test_live_service_runtime.py: a preparation built against
+    # identity state the session has moved past is the remaining way a canonical submission
+    # refuses, now that a non-`prepared` status publishes the span unattributed.
+    stale_base_version: bool = False
 
     def prepare(
         self,
@@ -757,7 +761,7 @@ class PreparingIdentity:
             epoch=span.epoch,
             start_sample=span.start_sample,
             end_sample=span.end_sample,
-            base_snapshot_version=base_snapshot.version,
+            base_snapshot_version=base_snapshot.version - 1 if self.stale_base_version else base_snapshot.version,
             proposed_snapshot=proposed,
             relabeled_transcript="[0][S01]stable[0.01]",
             status=self.status,

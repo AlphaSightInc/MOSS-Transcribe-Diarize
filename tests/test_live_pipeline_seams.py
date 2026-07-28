@@ -15,22 +15,43 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import io
+import json
+import urllib.error
+import urllib.request
+from dataclasses import replace
+from unittest import mock
 
 import pytest
 
 from moss_transcribe_diarize.app.live_adapters import (
+    FakeBoundedWavInference,
+    FakeStableIdentity,
+    FakeVad,
     InferenceTranscript,
+    LiveProviderConfig,
     LiveProviderError,
+    LiveProviderTransientError,
     RunnerBoundedWavInference,
+    admit_live_provider,
 )
 from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter
-from moss_transcribe_diarize.app.live_coordinator import LiveCoordinator
+from moss_transcribe_diarize.app.live_coordinator import (
+    DECODE_ATTEMPTS_PER_SPAN,
+    DECODER_DID_NOT_ANSWER,
+    MAX_CONSECUTIVE_UNANSWERED_SPANS,
+    LiveCoordinator,
+)
 from moss_transcribe_diarize.app.live_endpoint import (
     EndpointPolicy,
     EndpointPolicyConfig,
     SpeechObservation,
 )
-from moss_transcribe_diarize.app.live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig
+from moss_transcribe_diarize.app.live_identity import (
+    BoundedCausalIdentityPreparer,
+    LiveIdentityConfig,
+    unattributed_transcript,
+)
 from moss_transcribe_diarize.app.live_provider_bundle import (
     LiveProviderBundleAdmissionError,
     WebRtcSpeechProvider,
@@ -44,10 +65,15 @@ from moss_transcribe_diarize.app.live_service_runtime import (
 )
 from moss_transcribe_diarize.app.live_session import (
     LIVE_SAMPLE_RATE,
+    UNATTRIBUTED_SPEAKER,
     AudioFrame,
+    CanonicalResult,
+    CanonicalSubmission,
     FrozenSpan,
+    LiveIdentitySnapshot,
     LiveSession,
 )
+from moss_transcribe_diarize.app.live_span_bounds import span_segments
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 
 DEPLOYED_VAD_FRAME_SAMPLES = 160
@@ -291,13 +317,46 @@ def test_a_provider_config_that_declares_two_different_span_caps_is_refused():
 # --------------------------------------------------------------------------------------
 
 
+class CannedHttpResponse:
+    """What `urlopen` hands back, with the model's answer already in it."""
+
+    def __init__(self, payload: dict):
+        self.headers = {"Content-Type": "application/json"}
+        self._body = json.dumps(payload).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+    def read(self) -> bytes:
+        return self._body
+
+
+class FailingTransport:
+    """The socket refusing, the way the network and the backend actually refuse.
+
+    A factory rather than one exception instance, so every attempt raises a fresh one: a
+    retried span must not pass merely because an earlier attempt already read the error body.
+    """
+
+    def __init__(self, factory):
+        self.factory = factory
+
+    def __call__(self):
+        raise self.factory()
+
+
 class StubbedTransportVllmRunner(VllmRunner):
-    """The product runner with only its HTTP hop replaced by a canned answer.
+    """The product runner with only its *socket* replaced.
 
     Everything the live path actually runs stays real: the wav the coordinator wrote is
-    read back through `_media_to_wav_bytes`, the response is unpacked by the product's own
-    code, and `_validate_transcription_response` -- the seam F0 caught -- decides. Only the
-    GPU on the other side of the socket is a stand-in.
+    read back through `_media_to_wav_bytes`, `_post_multipart` builds the request, unpacks
+    the response and classifies transport failures, and `_validate_transcription_response`
+    -- the seam F0 caught -- decides. Only what is on the other side of the socket is a
+    stand-in. Replacing `_post_multipart` instead would put the stub exactly where the
+    status code is turned into a typed outcome, i.e. it would test the stub.
     """
 
     def __init__(self, responses):
@@ -306,9 +365,33 @@ class StubbedTransportVllmRunner(VllmRunner):
         self.decoded_wav_bytes: list[int] = []
 
     def _post_multipart(self, url, *, file_bytes, **kwargs):
-        del url, kwargs
         self.decoded_wav_bytes.append(len(file_bytes))
-        return self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
+        answer = self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
+
+        def urlopen(request, timeout=None):
+            del request, timeout
+            if callable(answer):
+                return answer()
+            return CannedHttpResponse(answer)
+
+        with mock.patch.object(urllib.request, "urlopen", urlopen):
+            return super()._post_multipart(url, file_bytes=file_bytes, **kwargs)
+
+
+def _http_error(code: int, detail: bytes = b"backend is busy") -> FailingTransport:
+    return FailingTransport(
+        lambda: urllib.error.HTTPError(
+            "http://vllm.seam.test:8000/v1/audio/transcriptions",
+            code,
+            "error",
+            {},
+            io.BytesIO(detail),
+        )
+    )
+
+
+def _connection_reset() -> FailingTransport:
+    return FailingTransport(lambda: urllib.error.URLError(ConnectionResetError(104, "Connection reset by peer")))
 
 
 # The three answers that mean "the model produced nothing for this audio". The third is the
@@ -363,8 +446,27 @@ def _deployed_descriptor() -> LiveServiceDescriptor:
     )
 
 
-def _decode_seam_runtime(*, responses, speech, scheduler=None) -> tuple[LiveServiceRuntime, StubbedTransportVllmRunner]:
+def _decode_seam_runtime(
+    *,
+    responses,
+    speech,
+    scheduler=None,
+    max_speakers: int = 16,
+    evidence_provider=None,
+    speech_provider=None,
+    prepared_by=None,
+) -> tuple[LiveServiceRuntime, StubbedTransportVllmRunner]:
     runner = StubbedTransportVllmRunner(responses)
+
+    def identity_preparer():
+        preparer = BoundedCausalIdentityPreparer(
+            config=LiveIdentityConfig(max_speakers=max_speakers, min_match_score=0.5, min_match_margin=0.1),
+            evidence_provider=evidence_provider,
+        )
+        # `prepared_by` wraps the real preparer rather than replacing it, so a test about
+        # what the session does with a preparation still gets one the real preparer built.
+        return preparer if prepared_by is None else prepared_by(preparer)
+
     return (
         LiveServiceRuntime(
             descriptor=_deployed_descriptor(),
@@ -377,11 +479,9 @@ def _decode_seam_runtime(*, responses, speech, scheduler=None) -> tuple[LiveServ
                     hard_cap_samples=DEPLOYED_HARD_CAP_SAMPLES,
                 )
             ),
-            speech_provider_factory=lambda: ScriptedSpeech(speech),
+            speech_provider_factory=lambda: speech_provider or ScriptedSpeech(speech),
             decoder_factory=lambda: RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES),
-            identity_preparer_factory=lambda: BoundedCausalIdentityPreparer(
-                config=LiveIdentityConfig(max_speakers=16, min_match_score=0.5, min_match_margin=0.1)
-            ),
+            identity_preparer_factory=identity_preparer,
             session_id_factory=lambda: "seam-session",
             _canonical_scheduler=scheduler,
         ),
@@ -535,20 +635,739 @@ def test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say():
     Nothing leaves the decode seam unclassified -- that is what made the bare `RuntimeError`
     fatal -- but a decoder that *failed* must not be silently committed as silence either,
     or a dead GPU would render as a blank meeting. It is named, and it stays terminal.
+
+    The example here is a decoder that cannot work at all. A decoder that merely did not
+    answer is the other half of the same seam and answers differently; see the transient
+    nodes below.
     """
 
-    class FailingRunner:
+    class BrokenRunner:
         def transcribe(self, *args, **kwargs):
-            raise ConnectionResetError("vLLM socket closed")
+            raise ValueError("model weights are not loaded")
 
-    decoder = RunnerBoundedWavInference(FailingRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    decoder = RunnerBoundedWavInference(BrokenRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
 
     with pytest.raises(LiveProviderError) as caught:
         decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
 
-    assert "ConnectionResetError" in str(caught.value)
-    assert isinstance(caught.value.__cause__, ConnectionResetError)
+    assert not isinstance(caught.value, LiveProviderTransientError)
+    assert "ValueError" in str(caught.value)
+    assert isinstance(caught.value.__cause__, ValueError)
+
+
+# --------------------------------------------------------------------------------------
+# The transient-decoder seam: a decoder that did not answer is not a decoder that failed.
+# The classification is made from the exception the runner raises -- never from its message
+# -- and only the coordinator, which owns the span, acts on it.
+# --------------------------------------------------------------------------------------
+
+GOOD_RESPONSE = {"text": "[0.00][S01]hello there[1.10]", "usage": {"prompt_tokens": 3, "completion_tokens": 9}}
+
+# Frames alternating silence and speech, which the deployed endpoint policy cuts into one
+# span per transition. Six spans is enough to blink through, recover, and blink again.
+ALTERNATING_SPEECH = (False, True, False, True, False, True, False)
+
+
+@pytest.mark.parametrize(
+    "answer, transient",
+    [
+        (_connection_reset(), True),
+        (_http_error(503), True),
+        (_http_error(429), True),
+        (_http_error(500), True),
+        (FailingTransport(lambda: TimeoutError("timed out")), True),
+        (_http_error(400, b"malformed multipart"), False),
+        (_http_error(401, b"no"), False),
+        (_http_error(404, b"no such route"), False),
+    ],
+)
+def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+    """One table, drawn where the status code is still in hand.
+
+    Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+    message, so the live path could not tell "the socket dropped" from "the request is
+    wrong" without parsing English. The status decides, and it decides at the source.
+    """
+    decoder = RunnerBoundedWavInference(
+        StubbedTransportVllmRunner([answer]),
+        max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+    )
+
+    with pytest.raises(LiveProviderError) as caught:
+        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
+
+    assert isinstance(caught.value, LiveProviderTransientError) is transient
+
+
+def test_a_decoder_that_blinks_costs_one_retry_and_not_the_meeting():
+    """The ordinary case this whole node exists for: one dropped connection mid-meeting.
+
+    The span's bytes are unchanged and nothing has been committed, so offering them again
+    is free of consequence -- and it is the only thing that keeps the words. Before this,
+    a single `ConnectionResetError` from the vLLM socket ended the meeting.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[_connection_reset(), GOOD_RESPONSE],
+        speech=(False, False, True, True, False),
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(5):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    # Two spans, both published with their words -- and three transport attempts for them,
+    # because the first span was offered twice.
+    assert len(runner.decoded_wav_bytes) == 3
+    assert len(snapshot.session.committed) == 2
+    assert all("hello there" in item.transcript for item in snapshot.session.committed)
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["empty_reason"] for event in processed] == [None, None]
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples == 33600
+
+
+def test_an_outage_that_outlives_transience_ends_the_meeting_and_says_so():
+    """The line H1 drew, kept: a dead decoder may not render as a blank meeting.
+
+    Each unanswered span degrades on its own -- committed empty, named, accounting intact --
+    but a decoder that answers nothing is not transient however it started. The
+    *consecutive* count is what separates the two, and the terminal failure names the
+    condition rather than reporting some span as unsubmittable.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[_http_error(503)],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    # The spans before the last one degraded: empty, named, and accounted for.
+    assert [event["empty_reason"] for event in processed] == [DECODER_DID_NOT_ANSWER] * (
+        MAX_CONSECUTIVE_UNANSWERED_SPANS - 1
+    )
+    assert [event["submitted"] for event in processed] == [True] * (MAX_CONSECUTIVE_UNANSWERED_SPANS - 1)
+    assert [item.transcript for item in snapshot.session.committed] == [""] * (
+        MAX_CONSECUTIVE_UNANSWERED_SPANS - 1
+    )
+
+    assert snapshot.terminal_failure is not None
+    assert "consecutive spans" in snapshot.terminal_failure.message
+    assert "503" in snapshot.terminal_failure.message
+    # Every span was offered the full number of attempts, and the meeting ended on the
+    # first span that could not be degraded any further -- not on the first failure.
+    assert len(runner.decoded_wav_bytes) == MAX_CONSECUTIVE_UNANSWERED_SPANS * DECODE_ATTEMPTS_PER_SPAN
+
+
+def test_a_span_that_decodes_resets_the_outage_count():
+    """Blinking is not an outage, however often the decoder blinks.
+
+    A count that only ever rose would turn a long meeting with an occasional hiccup into a
+    terminal failure with no outage anywhere in it. Five unanswered spans here, never three
+    in a row, and the meeting keeps every word it was given.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    blink = _connection_reset()
+    runtime, runner = _decode_seam_runtime(
+        responses=[blink, blink, blink, blink, GOOD_RESPONSE, blink, blink, blink, blink, GOOD_RESPONSE],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["empty_reason"] for event in processed] == [
+        DECODER_DID_NOT_ANSWER,
+        DECODER_DID_NOT_ANSWER,
+        None,
+        DECODER_DID_NOT_ANSWER,
+        DECODER_DID_NOT_ANSWER,
+        None,
+    ]
+    assert all(event["submitted"] for event in processed)
+    # Nothing is lost to a degraded span: the committed prefix still covers every sample
+    # the session accepted, which is what lets `stop` drain.
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples
+    assert sum("hello there" in item.transcript for item in snapshot.session.committed) == 2
+
+
+def test_a_request_the_backend_refuses_on_its_merits_is_terminal_without_a_retry():
+    """The other half of the ruling, and the discriminator that proves it is not a retry-all.
+
+    A 400 would be a 400 forever, so offering the span again would only spend the meeting's
+    time to learn the same thing. Exactly one transport attempt, and the session is terminal
+    at the first span.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[_http_error(400, b"malformed multipart")],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is not None
+    assert "400" in snapshot.terminal_failure.message
+    assert "consecutive" not in snapshot.terminal_failure.message
+    assert len(runner.decoded_wav_bytes) == 1
+    assert snapshot.session.committed == ()
 
 
 def _span(span_id: int, sample_count: int) -> FrozenSpan:
     return FrozenSpan(id=span_id, epoch=0, start_sample=0, end_sample=sample_count, reason="hard_cap")
+
+
+# --------------------------------------------------------------------------------------
+# The span-bound seam: the real decoder's timestamps under the real identity preparer.
+# --------------------------------------------------------------------------------------
+
+# What the deployed vLLM endpoint returned for span 1 of the H4d probe run, rebuilt
+# sample-for-sample on the host: a closing marker 0.01 s past the 2.50 s hard-cap span it
+# was decoded from. The 33-span sweep that followed measured this on 2 of 33 spans, at
+# +0.01 s and +0.02 s, and never at any other value.
+HARD_CAP_OVERSHOOT_TRANSCRIPT = "[0.11][S01]Good morning everyone. This is the microphone.[2.51]"
+
+
+def test_a_hard_cap_span_whose_speech_reaches_its_end_still_publishes():
+    """The H4d blocker: the ordinary case, not an edge case.
+
+    A hard-cap span is 2.5 s of unbroken speech *by construction* -- it exists precisely
+    because no endpoint was found -- and the decoder puts its closing marker at ~= the end
+    of whatever audio it is handed. So a span that ends inside speech reports an end at or
+    just past its own duration, `BoundedCausalIdentityPreparer.prepare` refused it with
+    `timestamp_outside_span`, and `live_service_runtime` turned the resulting `False` into a
+    non-retryable terminal failure: any speaker who talked for 2.5 s without pausing ended
+    the meeting.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[{"text": HARD_CAP_OVERSHOOT_TRANSCRIPT, "usage": {"prompt_tokens": 3, "completion_tokens": 11}}],
+        speech=(True,) * 6,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    committed = [(item.start_sample, item.end_sample, item.transcript) for item in snapshot.session.committed]
+    assert [item[:2] for item in committed] == [(0, DEPLOYED_HARD_CAP_SAMPLES)]
+    assert "Good morning everyone." in committed[0][2]
+    # The published timestamps are inside the span: the overshoot is clamped, not carried
+    # through into a committed prefix that claims audio the span does not hold.
+    assert "[2.5]" in committed[0][2]
+    assert "2.51" not in committed[0][2]
+
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["identity_status"] for event in processed] == ["prepared"]
+    assert [event["submitted"] for event in processed] == [True]
+    # Identity work ran rather than being skipped: the span carries a speaker label.
+    assert snapshot.session.identity_snapshot.canonical_speakers == ("speaker-0001",)
+    assert "[S01]" in committed[0][2]
+
+    # The meeting continues past the span that used to end it.
+    runtime.accept_frame(created.session_id, _frame(5, DEPLOYED_MIXED_FRAME_SAMPLES))
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+    assert len(runner.decoded_wav_bytes) == 1
+
+
+def test_the_session_answers_the_span_bound_the_same_way_the_preparer_does():
+    """Fixing one copy of the bound relocates the failure instead of removing it.
+
+    `LiveSession._canonical_validation_error` carries its own copy, and it is reached from
+    both submission paths -- so a preparer that clamps while the session still refuses would
+    turn a `prepared` span into `LiveSessionFailed` one call later.
+    """
+    session = LiveSession(max_retained_samples=960000)
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        session.accept_frame(_frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    span = session.freeze_until(DEPLOYED_HARD_CAP_SAMPLES, reason="hard_cap")
+
+    submitted = session.submit_canonical(
+        CanonicalResult(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            transcript=HARD_CAP_OVERSHOOT_TRANSCRIPT,
+        )
+    )
+
+    assert submitted is True
+    snapshot = session.snapshot()
+    assert snapshot.status == "active"
+    assert snapshot.committed_samples == DEPLOYED_HARD_CAP_SAMPLES
+
+
+def test_the_provider_decode_path_answers_the_span_bound_the_same_way():
+    """The third copy of the bound, in `live_adapters._validated_segments`.
+
+    Nothing in the product constructs a `LiveProvider` today -- the coordinator calls
+    `decoder.transcribe_pcm` directly -- so this copy is unreachable on the live path and
+    was a fourth divergence waiting for whoever wires it up. It now answers through the same
+    helper as the other two.
+    """
+    provider = admit_live_provider(
+        LiveProviderConfig(name="seam-overshoot", assets=()),
+        vad=FakeVad(),
+        identity=FakeStableIdentity(confirmed=True),
+        inference=FakeBoundedWavInference(
+            transcript=HARD_CAP_OVERSHOOT_TRANSCRIPT,
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        ),
+    )
+    span = _span(0, DEPLOYED_HARD_CAP_SAMPLES)
+
+    result = provider.decode_canonical(span, b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+
+    assert result.identity_confirmed is True
+    assert result.transcript == HARD_CAP_OVERSHOOT_TRANSCRIPT
+
+
+@pytest.mark.parametrize(
+    ("transcript", "expected"),
+    [
+        pytest.param("[0.11][S01]x[2.51]", ((0.11, 2.5),), id="measured_one_tick_overshoot"),
+        pytest.param("[0.11][S01]x[2.52]", ((0.11, 2.5),), id="measured_two_tick_overshoot"),
+        pytest.param("[0][S01]x[2.5]", ((0.0, 2.5),), id="ends_exactly_at_the_span_end"),
+        pytest.param("[0.5][S01]x[1.25]", ((0.5, 1.25),), id="wholly_inside_the_span"),
+        pytest.param("[9][S01]x[12]", ((2.5, 2.5),), id="wholly_after_the_span"),
+        pytest.param("[0][S01]a[1][1][S02]b[9]", ((0.0, 1.0), (1.0, 2.5)), id="only_the_offending_segment_moves"),
+    ],
+)
+def test_a_timestamp_outside_the_span_is_clamped_into_it(transcript, expected):
+    """The tolerance question, answered once and by measurement rather than by taste.
+
+    The sweep's larger overshoot is *two* quantisation ticks, so the obvious "allow one
+    tick" would still have killed one of the two known-failing spans; any fixed epsilon is a
+    guess about a tail that was sampled 44 times. A clamp cannot be exceeded by a number
+    nobody has drawn yet, it keeps the committed prefix honest about what the span holds,
+    and it is the answer the evidence provider already gives these same segments one call
+    later (`live_provider_bundle._speaker_intervals_by_label`).
+    """
+    segments = span_segments(transcript, sample_count=DEPLOYED_HARD_CAP_SAMPLES)
+
+    assert tuple((segment.start, segment.end) for segment in segments) == expected
+    # The text is never touched: clamping is a statement about the span, not the words.
+    assert all(segment.text for segment in segments)
+
+
+def test_a_negative_timestamp_never_reaches_the_bound_at_all():
+    """Why the low half of the clamp is defensive rather than the other half of the defect.
+
+    The refused bound had two halves, `start < 0` and `end > duration`, and the 33-span
+    sweep never saw a start below 0.00 in 44 decodes. This is the structural reason: the
+    transcript parser does not accept a negative timestamp token, so a decoder that emitted
+    one produces no segments at all and the caller classifies *that* instead. The clamp
+    still covers it, because a future parser or a non-vLLM decoder may express one.
+    """
+    assert span_segments("[-0.4][S01]x[1.0]", sample_count=DEPLOYED_HARD_CAP_SAMPLES) == ()
+
+
+def test_an_unparseable_transcript_is_still_not_a_set_of_segments():
+    """The clamp answers only the bound question; "nothing parsed" stays the caller's call.
+
+    Each caller classifies it differently -- H1's empty-span commit, an abstention, a
+    provider error -- so the shared helper must not decide it for them.
+    """
+    assert span_segments("silence", sample_count=DEPLOYED_MIXED_FRAME_SAMPLES) == ()
+    assert span_segments("   ", sample_count=DEPLOYED_MIXED_FRAME_SAMPLES) == ()
+
+
+# --------------------------------------------------------------------------------------
+# The identity-outcome seam: the real preparer's non-`prepared` answers under the real
+# runtime. An identity preparation answers *who spoke*; nothing it can answer makes the
+# session unable to continue, so no answer it gives may end the meeting.
+# --------------------------------------------------------------------------------------
+
+TWO_SPEAKER_TRANSCRIPT = "[0][S01]who said this[1.2][1.3][S02]and who said that[2.4]"
+
+
+class UnavailableEvidence:
+    """The evidence provider the host actually runs, on a day it cannot start."""
+
+    def score(self, **kwargs):
+        del kwargs
+        raise RuntimeError("onnxruntime session is not available")
+
+
+def _abstaining_runtime(scheduler, **kwargs):
+    return _decode_seam_runtime(
+        responses=[{"text": TWO_SPEAKER_TRANSCRIPT, "usage": {"prompt_tokens": 3, "completion_tokens": 11}}],
+        speech=(True,) * 8,
+        scheduler=scheduler,
+        **kwargs,
+    )
+
+
+def test_an_abstaining_identity_publishes_the_span_without_a_speaker():
+    """The second input class of H4d's blocker, and the same shape as the first.
+
+    `abstain` is what the preparer returns when identity is genuinely undecidable -- two
+    local speakers against exhausted speaker capacity here, ambiguous evidence or a
+    same-span link conflict elsewhere. The design says "do not relabel"; `live_session`
+    admitted only `status == "prepared"`, so the runtime turned the resulting `False` into
+    a non-retryable terminal failure and the design said one thing while the code did
+    another. The span now commits its words with no speaker attributed, and the identity
+    snapshot does not move -- an abstention adds no speaker and burns no capacity.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _abstaining_runtime(scheduler, max_speakers=1)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    committed = [(item.start_sample, item.end_sample, item.transcript) for item in snapshot.session.committed]
+    assert [item[:2] for item in committed] == [(0, DEPLOYED_HARD_CAP_SAMPLES)]
+    # The words survive; only the claim about who spoke them is withheld.
+    assert "who said this" in committed[0][2] and "and who said that" in committed[0][2]
+    assert "[S00]" in committed[0][2]
+    assert "[S01]" not in committed[0][2] and "[S02]" not in committed[0][2]
+    assert snapshot.session.identity_snapshot.canonical_speakers == ()
+    assert snapshot.session.identity_snapshot.version == 0
+    # The audio is accounted for, so `stop` can still drain -- the same constraint that
+    # decided H1's empty-span commit.
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples == DEPLOYED_HARD_CAP_SAMPLES
+
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["identity_status"] for event in processed] == ["abstain"]
+    assert [event["submitted"] for event in processed] == [True]
+
+    # The meeting continues past the span that used to end it.
+    runtime.accept_frame(created.session_id, _frame(5, DEPLOYED_MIXED_FRAME_SAMPLES))
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+    assert len(runner.decoded_wav_bytes) == 1
+
+
+def test_an_identity_preparer_that_could_not_get_evidence_publishes_the_span_too():
+    """The `failed` half of the same ruling, through the real evidence seam.
+
+    `prepare` catches every exception the evidence provider raises and returns
+    `status="failed", reason="evidence_provider_failed:<type>"` -- it was already designed
+    not to propagate, and then the admission rule downstream made it fatal anyway. The
+    wespeaker ONNX provider is the real occupant of this seam on the host; a meeting must
+    not end because one span's embedding could not be scored.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, evidence_provider=UnavailableEvidence())
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    assert [event["identity_status"] for event in _events(runtime, created.session_id, "canonical_processed")] == [
+        "failed"
+    ]
+    committed = snapshot.session.committed
+    assert "[S00]" in committed[0].transcript
+    assert snapshot.session.identity_snapshot.canonical_speakers == ()
+    assert snapshot.session.committed_samples == DEPLOYED_HARD_CAP_SAMPLES
+
+
+def test_an_unresolved_span_stops_with_exact_accounting():
+    """Why the policy is *publish unattributed* rather than *drop the span*.
+
+    The same accounting constraint that decided H1: `stop` waits for
+    `committed_samples == accepted_samples`, so a span withheld because identity did not
+    resolve would strand the session until the drain deadline expired.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, max_speakers=1)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+    stopped = asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+
+    assert stopped.session.status == "closed"
+    assert stopped.session.accepted_samples == stopped.session.accounted_samples == DEPLOYED_HARD_CAP_SAMPLES
+    assert stopped.terminal_failure is None
+
+
+def test_a_span_published_without_identity_may_not_carry_the_decoder_s_own_labels():
+    """The guard that keeps "unattributed" honest at the session boundary.
+
+    `S01` in one span and `S01` in the next are the decoder's local labels and are not the
+    same person until identity says so; publishing them as canonical would assert exactly
+    the link the abstention declined to make. The session therefore refuses a transcript on
+    this path that names anything but the unattributed marker, which no canonical display
+    label (`S01`, `S02`, ...) can ever be.
+    """
+    session = LiveSession(max_retained_samples=960000)
+    session.accept_frame(_frame(0, DEPLOYED_MIXED_FRAME_SAMPLES))
+    span = session.freeze_until(DEPLOYED_MIXED_FRAME_SAMPLES, reason="hard_cap")
+    def submit(transcript: str) -> CanonicalSubmission:
+        return session.submit_unlabeled_canonical(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            transcript=transcript,
+        )
+
+    # Each refusal names itself: the two ways this guard can refuse are different facts
+    # about the transcript, and a reader downstream gets to know which one happened.
+    assert submit("[0][S01]local label[0.5]").refusal == "unattributed_transcript_names_a_speaker"
+    assert submit("nothing parses here").refusal == "unattributed_transcript_unparseable"
+    assert session.snapshot().committed_samples == 0
+    assert session.snapshot().status == "active"
+
+    assert submit(f"[0][{UNATTRIBUTED_SPEAKER}]unattributed[0.5]").submitted is True
+    snapshot = session.snapshot()
+    assert snapshot.committed_samples == DEPLOYED_MIXED_FRAME_SAMPLES
+    assert snapshot.identity_snapshot == LiveIdentitySnapshot()
+
+
+@pytest.mark.parametrize(
+    ("transcript", "expected"),
+    [
+        pytest.param("[0][S01]one[1]", f"[0][{UNATTRIBUTED_SPEAKER}]one[1]", id="the_only_speaker"),
+        pytest.param(
+            "[0][S01]one[1][1.2][S02]two[2]",
+            f"[0][{UNATTRIBUTED_SPEAKER}]one[1][1.2][{UNATTRIBUTED_SPEAKER}]two[2]",
+            id="every_speaker_including_a_repeat",
+        ),
+        pytest.param("[0.11][S01]x[2.51]", f"[0.11][{UNATTRIBUTED_SPEAKER}]x[2.5]", id="still_clamped_into_the_span"),
+        pytest.param("silence", "", id="nothing_to_publish"),
+    ],
+)
+def test_an_unattributed_rendering_keeps_the_words_and_drops_only_the_speaker(transcript, expected):
+    """One rule for what an unresolved span publishes, driven from the decoder's transcript.
+
+    It is rebuilt from what the decoder said rather than read out of the preparation, so a
+    preparer that leaves local labels in a field it never relabeled cannot publish them.
+    The span bound applies here exactly as it does to a prepared span: an unattributed span
+    is no less honest about the audio it holds.
+    """
+    assert unattributed_transcript(transcript, sample_count=DEPLOYED_HARD_CAP_SAMPLES) == expected
+
+# --------------------------------------------------------------------------------------
+# The diagnosability seam: a refusal must carry the word that names it, out of the
+# process. Every fix in this file was found by reading a failure; blocker 4 was the one
+# that could not be, because the process classified the refusal correctly and then
+# discarded the single word that said which refusal it was.
+# --------------------------------------------------------------------------------------
+
+
+class StaleBaseVersionPreparer:
+    """The real preparer, answering against identity state the session has moved past.
+
+    After J2 this is the only way a canonical submission still refuses, and it is a
+    statement about the session's timing rather than about who spoke -- so it is the one
+    refusal an operator can still be shown, and it had better say which one it is.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    def prepare(self, **kwargs):
+        preparation = self.inner.prepare(**kwargs)
+        return replace(preparation, base_snapshot_version=preparation.base_snapshot_version - 1)
+
+
+class SpeechThatFailsWithoutAWord:
+    """A collaborator that raises an exception carrying no message at all."""
+
+    def observe(self, **kwargs):
+        del kwargs
+        raise ValueError()
+
+
+@pytest.mark.parametrize(
+    ("runtime_kwargs", "identity_status", "identity_reason"),
+    [
+        pytest.param(
+            {"max_speakers": 1},
+            "abstain",
+            "speaker_capacity_exceeded",
+            id="identity_declined_to_decide",
+        ),
+        pytest.param(
+            {"evidence_provider": UnavailableEvidence()},
+            "failed",
+            "evidence_provider_failed:RuntimeError",
+            id="identity_never_got_the_evidence",
+        ),
+    ],
+)
+def test_an_unresolved_span_says_why_identity_did_not_resolve(runtime_kwargs, identity_status, identity_reason):
+    """The preparer's `reason` leaves the process, on the event that reports the span.
+
+    Both spans below publish unattributed and both keep the meeting alive -- J2's ruling --
+    so from outside they are the same span. They are not the same fact: one is identity
+    working correctly against audio it cannot resolve, the other is a provider outage that
+    needs an operator. The `reason` was already computed and was written into a proposed
+    snapshot the session never commits, which is to say it was computed and thrown away.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, **runtime_kwargs)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [(event["identity_status"], event["identity_reason"]) for event in processed] == [
+        (identity_status, identity_reason)
+    ]
+    # The span still published and the meeting still runs: naming the reason is not a
+    # reason to refuse the span.
+    assert [event["submitted"] for event in processed] == [True]
+    assert [event["submission_refusal"] for event in processed] == [None]
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+
+
+def test_a_span_the_session_refuses_names_the_refusal_and_not_only_the_status():
+    """The failure H4d's probe received, with the word it was missing.
+
+    The probe read `{code: canonical_not_submitted, identity_status: "failed"}` and could
+    get no further: `submit_prepared_canonical` returned a bare `False` for six distinct
+    conditions and the runtime reported all six identically. Here the preparation is
+    `prepared` and perfectly well formed -- only its base version is stale -- so
+    `identity_status` says nothing at all about why the session refused it.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, prepared_by=StaleBaseVersionPreparer)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert failure.code == "canonical_not_submitted"
+    assert failure.detail == {
+        "span_id": 0,
+        "identity_status": "prepared",
+        "identity_reason": None,
+        "submission_refusal": "identity_preparation_stale_base_version",
+    }
+    assert "identity_preparation_stale_base_version" in failure.message
+    # The event that reported the span carries the same word, so a reader following the
+    # event stream does not have to wait for the terminal record to learn it.
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [(event["submitted"], event["submission_refusal"]) for event in processed] == [
+        (False, "identity_preparation_stale_base_version")
+    ]
+
+
+def test_a_decoder_outage_reports_its_facts_as_fields_and_not_only_as_prose():
+    """J3's own terminal failure, made readable by something other than a human.
+
+    It arrived as `code='LiveProviderError'` -- the exception's class name standing in for
+    a code, so adding a subclass would have renamed it -- with `detail=None`, which put the
+    span, the cause and the count that ended the meeting inside an English sentence and
+    nowhere else.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _decode_seam_runtime(
+        responses=[_http_error(503)],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert failure.code == "canonical_decode_failed"
+    assert failure.detail == {
+        "error_type": "LiveProviderError",
+        "cause": "TransientTranscriptionError",
+        "span_id": MAX_CONSECUTIVE_UNANSWERED_SPANS - 1,
+        "consecutive_unanswered_spans": MAX_CONSECUTIVE_UNANSWERED_SPANS,
+    }
+    # The sentence still says everything it said before; it is no longer the only copy.
+    assert "consecutive spans" in failure.message and "503" in failure.message
+
+
+def test_a_span_the_backend_refuses_on_its_merits_is_named_the_same_way():
+    """The discriminator: the same code, and a detail that tells the two apart.
+
+    A 400 and an outage are both decode failures and both terminal, so they share a code.
+    What distinguishes them is that one span was refused once on its merits and the other
+    was offered repeatedly and never answered -- which is a field, not a judgement call.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _decode_seam_runtime(
+        responses=[_http_error(400, b"malformed multipart")],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert failure.code == "canonical_decode_failed"
+    assert failure.detail == {"error_type": "LiveProviderError", "cause": "RuntimeError", "span_id": 0}
+    assert "consecutive_unanswered_spans" not in failure.detail
+
+
+def test_an_exception_that_names_nothing_is_still_reported_as_a_failure():
+    """The failure path may not fail on the failure.
+
+    `LiveServiceFailureRecord` refuses an empty message, so an exception raised with no
+    arguments used to make `_failure_from_exception` raise *while handling* it: the session
+    was left with no terminal record, and the caller got a complaint about failure messages
+    in place of the thing that went wrong. A type is a poor name and a much better answer
+    than none.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _decode_seam_runtime(
+        responses=[GOOD_RESPONSE],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+        speech_provider=SpeechThatFailsWithoutAWord(),
+    )
+    created = runtime.create()
+
+    with pytest.raises(ValueError) as raised:
+        runtime.accept_frame(created.session_id, _frame(0, DEPLOYED_MIXED_FRAME_SAMPLES))
+    # The caller sees the original exception, not a complaint about the failure record.
+    assert str(raised.value) == ""
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert (failure.code, failure.message) == ("integrity_error", "ValueError")
+    assert failure.detail == {"error_type": "ValueError"}

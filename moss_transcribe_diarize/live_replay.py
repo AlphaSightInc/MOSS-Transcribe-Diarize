@@ -358,10 +358,15 @@ def _process_ready_work(coordinator: LiveCoordinator, arbiter: InferenceArbiter,
             span_id=result.span_id,
             submitted=result.submitted,
             identity_status=result.identity_status,
+            identity_reason=result.identity_reason,
+            submission_refusal=result.submission_refusal,
             committed_samples=result.committed_samples,
         )
         if not result.submitted:
-            raise ReplayIdentityFailure(f"identity preparation for span {result.span_id} was {result.identity_status}")
+            raise ReplayIdentityFailure(
+                f"identity preparation for span {result.span_id} was {result.identity_status} "
+                f"and the session refused it: {result.submission_refusal}"
+            )
 
 
 def _preflight_provider(raw: Any, base_dir: Path) -> dict[str, Any]:

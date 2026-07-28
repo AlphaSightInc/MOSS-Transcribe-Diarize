@@ -148,11 +148,6 @@ def test_live_replay_exits_nonzero_for_hard_failures(tmp_path):
     cases = [
         ("integrity", 2, lambda data: data["frames"][0].update({"sample_count": 999})),
         ("provider", 3, lambda data: data["provider"]["assets"][0].update({"sha256": "0" * 64})),
-        (
-            "identity",
-            4,
-            lambda data: data["decodes"][0].update({"transcript": "[0][S01]one[0.02][0.03][S02]two[0.05]"}),
-        ),
         ("rtf", 5, lambda data: data["decodes"][0].update({"decode_seconds": 1.0})),
     ]
 
@@ -172,3 +167,35 @@ def test_live_replay_exits_nonzero_for_hard_failures(tmp_path):
         assert trace[-1]["failure_kind"] == name
         assert summary["status"] == "failed"
         assert summary["failure"]["kind"] == name
+
+
+def test_live_replay_publishes_a_span_identity_could_not_resolve(tmp_path):
+    """The replay harness follows the live path's terminal-failure policy, not a stricter one.
+
+    This manifest used to be the table's `identity` row, exit code 4: two local speakers
+    against `max_speakers: 1` makes the preparer abstain, and an abstention refused to
+    publish, so the run ended. Abstaining is the *designed* answer to exhausted speaker
+    capacity, so the span now commits with its words and no speaker, and the run passes.
+    A lab harness that stayed stricter than the service would reproduce the divergence
+    Phase J exists to close -- `run_replay` still fails on a span that does not publish at
+    all, which is now only a coordinator contract violation.
+    """
+    _manifest_path, manifest, _service_state = base_manifest(tmp_path)
+    data = deepcopy(manifest)
+    data["decodes"][0].update({"transcript": "[0][S01]one[0.02][0.03][S02]two[0.05]"})
+    manifest_path = write_json(tmp_path / "manifest-abstain.json", data)
+    out_dir = tmp_path / "out-abstain"
+
+    code = main(["--manifest", str(manifest_path), "--out-dir", str(out_dir)])
+
+    assert code == 0
+    summary = json.loads((out_dir / "summary.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "passed"
+    # No audio is lost to the span identity could not resolve.
+    assert summary["accepted_samples"] == summary["accounted_samples"] == 2000
+    # And no speaker is invented for it: the snapshot still holds only the span that did
+    # resolve, so the next span prepares against the state this one saw.
+    assert summary["identity_snapshot"]["canonical_speakers"] == ["speaker-0001"]
+    statuses = [event["identity_status"] for event in read_jsonl(out_dir / "trace.jsonl") if "identity_status" in event]
+    assert statuses == ["abstain", "prepared"]
+    assert [row["speaker"] for row in read_jsonl(out_dir / "evaluator.jsonl")] == ["S00", "S00", "S01"]

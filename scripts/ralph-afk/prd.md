@@ -127,6 +127,49 @@ the post-merge freeze resumes.
 **Order matters:** do not spend the operator's TCC clicks until this cycle is deployed. E3 exists to
 enable the canary, and the canary cannot pass on the current build.
 
+## Third authorized amendment - 2026-07-28, the live path's terminal-failure policy
+
+H4d's gate run proved the second cycle worked (tick 1 -> tick 8, 0 -> 1 committed spans) and found
+a fourth blocker of the **same shape as the previous three**: a non-fatal condition on the live path
+is treated as fatal. The operator has authorized settling that class once rather than one blocker
+per cycle. Evidence is in progress.txt under the H4d gate run.
+
+**The governing rule this cycle must implement:** on the live path, only a condition that makes the
+session genuinely unable to continue may be terminal. Anything the design already contemplates -
+a span the decoder cannot parse, an abstained identity preparation, a transient decoder failure -
+must degrade, retry, or commit without labels, never end the meeting.
+
+Scope, all of it inside `moss_transcribe_diarize/` and `tests/`:
+
+- **Timestamp tolerance, decided once.** `live_identity.py:101-102` rejects `segment.end > duration`
+  with no tolerance. Choose the tolerance deliberately, record the reasoning, and apply the same
+  answer in **both** places - `BoundedCausalIdentityPreparer.prepare` and
+  `LiveSession._canonical_validation_error` (`live_session.py:436-442`). Fixing one moves the
+  failure instead of removing it.
+- **Non-`prepared` preparations.** `live_session.py:449` admits only `status == "prepared"`, so an
+  `abstain` - the *designed* outcome for ambiguous identity or exhausted speaker capacity
+  (`live_identity.py:106,121,127`) - is terminal. Decide whether any non-`prepared` preparation may
+  be terminal at all, and make design intent and implementation agree.
+- **Candidate 36, in the same pass:** a transient decoder failure is terminal. Same shape, same
+  path; settle it here rather than in a fourth cycle.
+- **Diagnosability.** `reason` must reach the failure detail and the `canonical_processed` event. A
+  typed refusal that discards the one word naming it is what forced a host-side probe to be built.
+- **Real-seam regression coverage** in `tests/test_live_pipeline_seams.py` for each case: nothing in
+  the repo currently puts the real decoder's timestamps under the real identity preparer.
+- **Gate:** re-run **both** probes (`live-pipeline-probe.py` and the hard-cap repro) against the
+  deployed service, requiring a run that survives its full plan with committed spans advancing and
+  speaker labels present; full Swift/Python gate; then one further reviewed no-ff merge through
+  `merge-keeper.sh` (advance `expected_main` in-script, never by CLI override), push, redeploy.
+
+Everything else stays frozen; this permits exactly one further merge. After it the post-merge
+freeze resumes. **Do not spend the operator's TCC clicks until this is deployed and the probe is
+green** - a canary against a service that dies at the first 2.5 s of continuous speech would burn
+the one input the loop cannot obtain.
+
+Housekeeping, not on the critical path: m4mbp was powered off during H4d, so "one exact SHA
+everywhere" is 3/4. When that host returns, `git fetch && git checkout <merge sha>` restores it -
+no rebuild or reinstall is needed unless `macos/` changes.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:

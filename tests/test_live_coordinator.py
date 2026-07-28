@@ -210,8 +210,15 @@ def test_coordinator_backpressure_leaves_frozen_span_uncommitted_not_dropped():
     assert decoder.calls == []
 
 
-def test_coordinator_identity_abstention_preserves_pending_session_state():
-    live, _decoder, arbiter, session = coordinator(
+def test_coordinator_identity_abstention_publishes_the_span_without_a_speaker():
+    """An abstention withholds the label, not the audio.
+
+    It is the *designed* answer to ambiguous identity or exhausted speaker capacity, so it
+    cannot also mean "end the meeting". The span commits, the identity snapshot does not
+    move -- no speaker is born and the next span still prepares against this state -- and
+    the words carry the unattributed marker rather than the decoder's local `S01`.
+    """
+    live, decoder, arbiter, session = coordinator(
         speech=(True, False),
         identity=PreparingIdentity(status="abstain", reason="ambiguous identity"),
     )
@@ -221,6 +228,12 @@ def test_coordinator_identity_abstention_preserves_pending_session_state():
 
     result = live.process_work_item(arbiter.next_work())
 
-    assert result.submitted is False
+    assert result.submitted is True
     assert result.identity_status == "abstain"
-    assert session.snapshot() == before
+    snapshot = session.snapshot()
+    assert snapshot.status == "active"
+    assert snapshot.committed_samples == 1000
+    assert snapshot.accounted_samples == snapshot.committed_samples
+    assert snapshot.identity_snapshot == before.identity_snapshot
+    assert snapshot.committed[-1].transcript == "[0][S00]decoded[0.0625]"
+    assert decoder.transcript == "[0][S01]decoded[0.0625]"
