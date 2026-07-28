@@ -81,6 +81,7 @@ from moss_transcribe_diarize.app.live_session import (
     LiveSession,
 )
 from moss_transcribe_diarize.app.live_span_bounds import span_segments
+from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2Frame
 from moss_transcribe_diarize.app.live_v2_session import LiveV2SessionRegistry
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 
@@ -1388,20 +1389,30 @@ def test_an_exception_that_names_nothing_is_still_reported_as_a_failure():
 # --------------------------------------------------------------------------------------
 
 
-def _helper_heartbeat(*, lane_codes: dict[str, str], sequence: int = 0, state: str = "capturing") -> HelperHeartbeat:
+def _helper_heartbeat(
+    *,
+    lane_codes: dict[str, str],
+    sequence: int = 0,
+    state: str = "capturing",
+    lane_state: str = "failed",
+    dropped_frames: int = 0,
+) -> HelperHeartbeat:
     """A heartbeat in the shape the shipped Swift client sends.
 
     `state` stays `capturing` for a failed lane: `CaptureHTTPTransport` reports the
     top-level state as `running ? "capturing" : "stopped"` and never sends `"failed"`, so
     all-lanes-failed is the only way this client can turn a session terminal.
+
+    `lane_state` is a parameter because since D-a the client has two ways to name a lane
+    that hit trouble, and only one of them may close it.
     """
 
     def lane(name: str) -> dict:
         code = lane_codes.get(name)
         return {
-            "state": "failed" if code else "capturing",
+            "state": lane_state if code else "capturing",
             "device_epoch": 0,
-            "dropped_frames": 0,
+            "dropped_frames": dropped_frames if code else 0,
             "discontinuities": 0,
             "failure_code": code,
         }
@@ -1510,3 +1521,56 @@ def test_one_failed_lane_is_recorded_without_ending_the_meeting():
         "permission_denied",
     )
     assert (lanes["microphone"]["health"], lanes["microphone"]["failure_code"]) == ("active", None)
+
+
+def test_a_degraded_lane_keeps_publishing_and_never_reaches_the_lane_failure_path():
+    """The chain that ended F1 and F3, refused at the link the client now controls.
+
+    A dropped capture buffer used to reach here as `state: "failed"`, which is the one
+    word `_failed_lanes` reads: the coordinator called `fail_lane`, the lane's retained
+    audio moved to `failed_samples`, and every later frame on it answered 409 --
+    permanently, because a v2 lane has no un-fail path. D-a makes the client say
+    `degraded` instead, and this asserts what that buys against the *real* coordinator,
+    registry and runtime rather than against the reading of them: the lease is renewed,
+    the lane is untouched, and the next frame on the lane that dropped audio is accepted.
+
+    The negative control is the node directly above -- same seam, same code, `failed`
+    instead of `degraded` -- so what is being tested is the state word and nothing else.
+    """
+
+    runtime, _runner = _decode_seam_runtime(responses=[], speech=(False,))
+    created = runtime.create()
+    coordinator, v2_sessions, presence = _helper_seam(runtime, created.session_id)
+    snapshot = presence.observe(
+        created.session_id,
+        _helper_heartbeat(
+            lane_codes={"system": "macos_buffer_overrun"},
+            lane_state="degraded",
+            dropped_frames=149,
+        ),
+    )
+
+    lease = asyncio.run(coordinator.observe(created.session_id, snapshot))
+
+    assert lease is not None
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+    assert _events(runtime, created.session_id, "session_aborted") == []
+    lanes = v2_sessions.get(created.session_id).snapshot().to_dict()["lanes"]
+    assert (lanes["system"]["health"], lanes["system"]["failure_code"]) == ("active", None)
+    assert lanes["system"]["failed_samples"] == 0
+    # The meeting continues on the lane that lost audio, which is the whole point: the
+    # publish that used to throw a 409 here is what stopped the heartbeat.
+    ack = v2_sessions.get(created.session_id).accept(
+        LiveV2Frame(
+            lane=LiveLane.SYSTEM,
+            sequence=0,
+            capture_timestamp_ns=0,
+            device_epoch=0,
+            silent=False,
+            discontinuity=False,
+            sample_rate=16000,
+            sample_count=8000,
+            pcm=b"\x00" * 16000,
+        )
+    )
+    assert (ack.lane, ack.sequence, ack.accepted_samples) == (LiveLane.SYSTEM, 0, 8000)

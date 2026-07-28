@@ -75,14 +75,18 @@ progress.txt archive.
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
 
-**What stands between the loop and the bar (updated iteration 14).**
+**What stands between the loop and the bar (updated iteration 15).**
 - **Candidate 53 + 48 — a throwing publish stopped the heartbeat, and a throwing start-time
   heartbeat leaked a hot capture.** `[done — iteration 14]`, both, as one shape. Root cause of
   *both* red certification runs. See "The heartbeat is uncoupled from the publish" below.
+- **D-a — an overrun is a degradation, not a lane failure.** `[done — iteration 15]`. The chain
+  that ended F1 and F3 is now broken at its first link as well as its fourth. See "D-a is landed"
+  below.
 - **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** `[AUTHORIZED, open]`
-  — the next Phase M work item, with D-c already deciding its shape. Two of 42 spans decoded
-  at RTF ≈ 3.4 and stalled the serial queue behind them; committed p95 9053 ms with a median lag of
-  ≈ 0 s. Three independent runs agree to within ~100 ms (K5d 9089, F1 9053, F3 9148).
+  — the **last** open Phase M work item, with D-c already deciding its shape. Two of 42 spans
+  decoded at RTF ≈ 3.4 and stalled the serial queue behind them; committed p95 9053 ms with a
+  median lag of ≈ 0 s. Four independent runs agree within ~800 ms (K5d 9089, F1 9053, F3 9148,
+  c51 8343).
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
@@ -95,11 +99,11 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch.** Swift **154 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154);
-Python **598 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
+**Test totals on the branch.** Swift **158 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
+→ 158); Python **599 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Per-file: `test_live_pipeline_seams.py` **52**, `test_live_identity.py` **8**,
+Per-file: `test_live_pipeline_seams.py` **53**, `test_live_identity.py` **8**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
 `test_live_manifest_finalizer.py` **17**, `test_live_deployment_credentials.py` **14**,
 `test_live_service_deployment.py` **30**.
@@ -410,6 +414,54 @@ returns 200 and a heartbeat still returns 200*, so the meeting was survivable an
 permanently closed still retries its head frame once per tick. That costs one doomed request per 0.5 s
 and the pump already isolates lanes (`CapturePublishPump.swift:110-124`), so the meeting continues on
 the peer lane — with D-a landed, the server never closes an overrun lane at all.
+
+**D-a is landed — an overrun is a degradation, and the client can finally say so (new,
+iteration 15; `[done]`). READ THIS BEFORE RE-RUNNING F1 OR F3, WITH THE UNCOUPLING BLOCK.** D-a was
+decided in iteration 13 and implemented here. The chain iteration 11 measured had four links; 53
+broke the fourth, this breaks the **first**, and either alone keeps the meeting alive.
+- **The vocabulary is partitioned, not renamed.** `NativeLaneFailureCode` (5 cases) means *the lane
+  can no longer produce audio*; the new `NativeLaneDegradationCode` (2) means *it lost some and kept
+  producing*. Two enums, so a degradation structurally cannot be minted where a failure is expected.
+  `NativeLaneProjection` carries both; `reportedState(running:)` resolves failed → stopped →
+  degraded → state, and `reportedCode` puts whichever verdict holds into the one wire code slot.
+- **`degraded` is not a new word on the wire.** The server's `HELPER_STATES`
+  (`live_helper_presence.py:10-14`) has always had it, `HelperLaneHealth` requires a `failure_code`
+  only for `failed` while permitting it elsewhere, and ADR M04 already forbade failing a session for
+  it. **The server needed no change and got none** — `moss_transcribe_diarize/` and `ops/` are still
+  byte-identical to `main`, which is what keeps the offline probe's validity argument alive.
+- **The second defect the reclassification exposed, and it is the one worth remembering.** The
+  health mailbox *fenced itself shut* on the first overrun (`isTerminalOverrun`), because an overrun
+  used to be the lane's last word. Left in place, a degraded lane would have gone **silent for the
+  rest of the meeting while still producing audio** — losing the device failure that genuinely ends
+  it. Measured in the red probe: after an overrun the lane reported `dropped=112` and
+  `discontinuities=0` and never saw the `ioStoppedAbnormally` that followed; with the fence removed
+  it reports `dropped=120`, `discontinuities=2`, `failed/macos_io_stopped_abnormally`.
+  *The general lesson:* **a fence justified by "nothing after this matters" outlives the
+  classification that justified it.** Re-classifying a fact means auditing everything that treated
+  it as final.
+- **The mailbox overflow stopped borrowing the overrun's name.** It appended
+  `.bufferOverrun(droppedBuffers: 1)` — the audio code *and* the audio counter — for a loss of
+  *health facts*. It is now `macos_health_facts_dropped` with `droppedFrames` untouched: facts and
+  frames are different losses and must not share a number the PRD's accounting reads.
+- **K2's log follows the condition.** `LaneFailureLoggingHealthAdapter` records a degradation as
+  well as a failure (both live diagnoses were read off that line), still once per lane per
+  generation, and the line's **verb comes from the state**: `capture lane system degraded:
+  state=degraded code=macos_buffer_overrun dropped=149 …`. So the F1/F3 grep for
+  `capture lane <lane> failed:` still matches failures only — **grep `capture lane ` in any future
+  soak diagnosis**, not `failed`.
+- **Stickiness, decided deliberately:** a degradation is first-cause-wins for the generation, like a
+  failure, and `beginGeneration()` clears it (D-b's rule, unchanged). Un-degrading would need a
+  "no drops for N ticks" threshold nothing has measured; `droppedFrames` carries the live count
+  regardless.
+*Red-before/green-after, both halves.* Probe A (pre-D-a reporting + the old mailbox fence, new
+vocabulary kept so the tests still compile): **6 tests / 12 failures**, including the wire body
+(`failed` vs `degraded`) and the swallowed later failure. Probe B (K2 filter back to `failed`-only):
+the degradation logged **nothing**. Python: the new seam node flipped to `lane_state="failed"` reds
+on `('failed', 'macos_buffer_overrun') != ('active', None)` — its negative control is the node above
+it. Swift **154 → 158**, Python **598 → 599**, both suites 0 failures; the lane-refusal probe still
+rc=0 (the server's failed-lane path is untouched and still permanent).
+*What is NOT fixed by this, deliberately:* a lane that genuinely stops producing still fails, still
+closes on the server, and still retries its head frame once per tick — 53's note applies unchanged.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -787,7 +839,7 @@ evidence, is in the progress.txt archive under the same title.
 | **Transient decode** (J3) | A decoder that did not **answer** is not one that **failed**: `DECODE_ATTEMPTS_PER_SPAN` 2, `MAX_CONSECUTIVE_UNANSWERED_SPANS` 3, then degrade — not terminal. |
 | **Named refusal** (J4) | Every refusal on the live path carries the word naming it out of the process, in the `canonical_processed` event and the failure detail. `CanonicalSubmission(submitted=False, refusal=None)` raises. |
 | **Lane reporting** (K1) | One projection, two readers: `CaptureStatus.reportedLanes()` feeds both the heartbeat and `ControlChannelResponse.lanes` (lane / state / `failureCode`). Counts, states and typed codes only — never audio, never a token. |
-| **Lane-failure log** (K2) | The app records a **typed** lane failure alongside G3's unclassified one, through `LaneFailureLoggingHealthAdapter`, with one `CaptureLaneStates` vocabulary. |
+| **Lane-failure log** (K2) | The app records a **typed** lane failure alongside G3's unclassified one, through `LaneFailureLoggingHealthAdapter`, with one `CaptureLaneStates` vocabulary. *Extended by D-a (it. 15):* a **degradation** is recorded the same way, once per lane per generation, and the line's verb comes from the state — so grep `capture lane ` , not `failed`. |
 | **Terminal record** (K3) | The heartbeat that ends a session carries the failed lanes' typed codes into `LiveV2Session.expire`, `runtime.abort`, the `session_aborted` event and one host-journal line. |
 | **Session refusal** (K4) | 401/403/404/410 → `CaptureStatus.sessionRefusal` / `ControlChannelResponse.sessionRefusal`, recorded from the tick **and** the stop drain, so `running: true` never stands alone while every request refuses. A new session id is a new question. |
 
@@ -1820,6 +1872,10 @@ failed lane does **not** recover inside a generation but **always** does across 
 (K4's rule), and `LiveV2Session` gains no un-fail path; a runaway decode is bounded by a
 **duration-derived token cap** whose span still commits.
 
+**D-a is IMPLEMENTED (iteration 15)** - `[done]`, see "D-a is landed" above. D-b needed no code (its
+ruling was that `LiveV2Session` gains no un-fail path, and it has none). **D-c is candidate 50 and
+is the only Phase M work item left.**
+
 53. **[done - iteration 14]** The tick's `emitHealth` now has its own `do/catch` after the publish's,
     so a throwing publish cannot skip it; the publish's `pumpFailure` is left standing and only a
     successful publish clears it. See the uncoupling block above.
@@ -1835,16 +1891,29 @@ failed lane does **not** recover inside a generation but **always** does across 
     heartbeat. Now re-baselined against the queue; red-before/green-after. See the correction block
     above. **D-a still has to land** - this fix stops a *previous* generation's drops failing a
     lane; it does nothing about the current one's.
-50. **[AUTHORIZED]** Bound the runaway decode per D-c. Measured in F1: 2 of 42 spans at RTF
-    3.398/3.318 (8.49 s and 8.29 s for a 2.5 s span), degenerate repeat loops, and the serial queue
-    makes each one the entire latency tail. Neither of the plan's ordered remedies attacks this.
+50. **[AUTHORIZED - the only Phase M item still open]** Bound the runaway decode per D-c. Measured
+    in F1: 2 of 42 spans at RTF 3.398/3.318 (8.49 s and 8.29 s for a 2.5 s span), degenerate repeat
+    loops, and the serial queue makes each one the entire latency tail. Neither of the plan's
+    ordered remedies attacks this. **This is the first Phase M item that touches
+    `moss_transcribe_diarize/`** - everything before it was client-side, which is why the server
+    tree is still byte-identical to `main` and the offline probes still speak for the deployed
+    service. Derive the token cap from the committed spans already in the F1/F3/canary evidence
+    (observed max tokens per second of audio for real speech, plus an explicit margin) and record
+    the derivation; a capped span publishes what came back, with the cap on its event.
+D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two code enums, a
+    `degraded` state the server's contract already had, the mailbox's overrun fence removed (it
+    would have silenced a still-producing lane), the mailbox overflow given its own code, and K2's
+    log following the condition. Server unchanged. See "D-a is landed" above.
 54. **[CLOSED - answered, not fixed]** The refusal reason is known. 53's fix **may** stop discarding
     the server's refusal detail where it must tell a permanent lane-failed 409 from a recoverable
     one; that is the only part of 54 in scope.
 
-**Coverage gap to close deliberately:** `tests/test_live_api.py:1055` fails the microphone lane and
-then posts a *system* frame, asserting the peer survives. Nothing in the suite posts a frame **on
-the lane that failed** - the same shape as every blocker in Phases H and J.
+**Coverage gap to close deliberately - STILL OPEN after iteration 15:** `tests/test_live_api.py:1055`
+fails the microphone lane and then posts a *system* frame, asserting the peer survives. Nothing in
+the suite posts a frame **on the lane that failed** - the same shape as every blocker in Phases H
+and J. D-a's new seam node posts a frame on the lane that **degraded** (and it is accepted, which is
+the point of D-a); the *failed*-lane refusal is still only covered by the offline probe, not by the
+suite. Close it with candidate 50 or before the gate.
 
 **Gate:** full Swift/Python; the lane-refusal probe; then **re-run F1 and F3 and require both
 green**, with candidate 51's harness fix in place so the label clause is meaningfully verified.

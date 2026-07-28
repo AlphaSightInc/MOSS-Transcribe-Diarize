@@ -14,6 +14,11 @@ public enum CaptureLaneStates {
     public static let capturing = "capturing"
     public static let recovering = "recovering"
     public static let stopped = "stopped"
+    /// The lane lost some audio and is still producing. The server's helper contract has always
+    /// had this word and has always declined to fail a lane for it; before D-a this client had no
+    /// way to say it, so the one condition that means "keep going, with less" was reported as the
+    /// one that means "this lane is over".
+    public static let degraded = "degraded"
     public static let failed = "failed"
 }
 
@@ -278,9 +283,14 @@ public protocol CaptureHealthAdapter {
 /// name* readable afterwards; a typed lane failure that ends the meeting must not be quieter than
 /// that.
 ///
-/// One line per lane per failure. A lane's failure is sticky for the life of a capture generation,
+/// One line per lane per fault. A lane's verdict is sticky for the life of a capture generation,
 /// so logging it every 0.5 s tick would bury the evidence this exists to preserve — but a lane that
-/// recovers and fails again, or fails a second time with a different code, is recorded again.
+/// recovers and faults again, or faults a second time with a different code, is recorded again.
+///
+/// A **degradation** is recorded here as well as a failure. D-a made a buffer overrun a
+/// degradation, and the two live diagnoses that found it — F1's and F3's — were both read off this
+/// line: reclassifying the condition without following it here would have traded a dead meeting
+/// for a blind one.
 public final class LaneFailureLoggingHealthAdapter: CaptureHealthAdapter {
     private let wrapped: CaptureHealthAdapter
     private let log: any CaptureLaneFailureLogging
@@ -311,13 +321,14 @@ public final class LaneFailureLoggingHealthAdapter: CaptureHealthAdapter {
     /// name a different set of lanes than the ones the operator and the server are told about.
     private func record(_ lanes: [CaptureLaneStatus]) {
         for lane in lanes {
-            let failed = lane.state == CaptureLaneStates.failed
+            let faulted = lane.state == CaptureLaneStates.failed
+                || lane.state == CaptureLaneStates.degraded
             let signature = "\(lane.state)/\(lane.failureCode ?? "")"
             lock.lock()
-            let alreadyRecorded = failed && reported[lane.lane] == signature
-            reported[lane.lane] = failed ? signature : nil
+            let alreadyRecorded = faulted && reported[lane.lane] == signature
+            reported[lane.lane] = faulted ? signature : nil
             lock.unlock()
-            if failed && !alreadyRecorded {
+            if faulted && !alreadyRecorded {
                 log.recordLaneFailure(lane)
             }
         }

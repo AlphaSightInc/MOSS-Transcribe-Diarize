@@ -567,9 +567,16 @@ public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging, 
 
     /// The lane is an enum case and the code is one the capture source minted, so both are
     /// compile-time vocabulary; the counters are counters. Nothing here can carry a payload.
+    ///
+    /// The verb comes from the state rather than from the method's name: since D-a this records
+    /// degradations too, and a line that called every fault a failure would be the same lie in the
+    /// log that the lane state used to tell on the wire. `capture lane <lane> failed:` stays the
+    /// exact prefix the F1 and F3 diagnoses were grepped with — a degradation is a different
+    /// condition and reads as one.
     public func recordLaneFailure(_ status: CaptureLaneStatus) {
+        let verb = status.state == CaptureLaneStates.failed ? "failed" : "degraded"
         emit(
-            "capture lane \(status.lane.rawValue) failed: "
+            "capture lane \(status.lane.rawValue) \(verb): "
                 + "state=\(status.state) code=\(status.failureCode ?? "none") "
                 + "dropped=\(status.droppedFrames) discontinuities=\(status.discontinuities)"
         )

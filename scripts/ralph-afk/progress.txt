@@ -11519,3 +11519,149 @@ instead of overloading `.bufferOverrun`; three existing Swift assertions encode 
 D-c (derive the token cap from the committed spans in the F1/F3/canary evidence and record the
 derivation), then the coverage gap at tests/test_live_api.py:1055 (post a frame ON the lane that
 failed), then the full gate, the lane-refusal probe, and re-runs of F1 and F3.
+
+================================================================================
+## Iteration 15 (run 20260728-181020-14512) - D-a: an overrun is a lane degradation,
+## and the client can finally say so
+================================================================================
+
+Target: implement decision D-a, taken in iteration 13 under the fifth amendment's first required
+decision. It is the cheapest link in the four-link chain iteration 11 measured; 53 broke link 4 in
+iteration 14, this breaks link 1, and either alone keeps the meeting alive.
+
+THE CHAIN, AND WHERE THIS CUTS IT.
+  1. the Mac's lane overruns -> NativeLaneHealth called it a lane FAILURE      <- cut here now
+  2. the next heartbeat carries state:"failed" -> _failed_lanes reads that one word
+  3. LiveV2Session.fail_lane closes the lane; every later frame on it -> 409, permanently
+  4. publishPendingFrames throws -> emitHealth skipped -> heartbeat stops      <- cut in it. 14
+  5. 30 s helper lease expires -> the server ends a survivable meeting
+Every component behaved as designed. The product of five defensible behaviours was a dead meeting
+for one dropped audio buffer.
+
+WHAT CHANGED, and the rule each change applies.
+ - THE VOCABULARY IS PARTITIONED, NOT RENAMED. `NativeLaneFailureCode` keeps the five codes that
+   mean "this lane can no longer produce audio"; the new `NativeLaneDegradationCode` holds the two
+   that mean "it lost something and kept producing" (`macos_buffer_overrun`,
+   `macos_health_facts_dropped`). Two enums rather than one enum plus a convention, so a degradation
+   structurally cannot be minted where a failure is expected and the classification cannot drift
+   back by accident. `NativeLaneProjection` carries `failure` and `degradation` side by side;
+   `reportedState(running:)` resolves failed -> stopped -> degraded -> state and `reportedCode`
+   places whichever verdict holds into the wire's single code slot.
+ - `degraded` IS NOT A NEW WORD ON THE WIRE, and that is the whole reason D-a was the cheap fix.
+   `HELPER_STATES` (live_helper_presence.py:10-14) has always contained it; `HelperLaneHealth`
+   requires `failure_code` only when the state is `failed` and permits it otherwise; ADR M04 already
+   registered "degraded ... do not fail live session". The server needed no change and got none -
+   `git diff --name-only main -- moss_transcribe_diarize/ ops/` is EMPTY after this iteration, which
+   is also what keeps the offline probes' "the branch's server tree == main == the deployed
+   checkout" argument alive.
+ - THE SECOND DEFECT THE RECLASSIFICATION EXPOSED, and it is the part worth remembering. The health
+   mailbox fenced itself shut on the first overrun (`isTerminalOverrun`), because an overrun WAS the
+   lane's last word and nothing after it could matter. Left in place under D-a, a degraded lane
+   would have gone SILENT FOR THE REST OF THE MEETING while still producing audio - losing the
+   device failure that genuinely ends it, every later discontinuity, and every later drop.
+   A FENCE JUSTIFIED BY "NOTHING AFTER THIS MATTERS" OUTLIVES THE CLASSIFICATION THAT JUSTIFIED IT.
+   Re-classifying a fact means auditing everything that treated it as final, not just the classifier.
+ - THE MAILBOX OVERFLOW STOPPED BORROWING THE OVERRUN'S NAME. At capacity it appended
+   `.bufferOverrun(droppedBuffers: 1)` - the audio code AND the audio counter - to say that HEALTH
+   FACTS had been dropped. It now appends `.healthFactsDropped(count: 1)` and leaves `droppedFrames`
+   alone: facts and frames are different losses and must not share a number the PRD's zero-loss
+   accounting reads.
+ - K2'S LOG FOLLOWS THE CONDITION. `LaneFailureLoggingHealthAdapter` records a degradation as well
+   as a failure - both live diagnoses (F1's mid-meeting lane loss, F3's death at minute 14.6) were
+   read off that one line, so reclassifying without following it here would have traded a dead
+   meeting for a blind one. Still once per lane per generation. The line's VERB comes from the
+   state: `capture lane system degraded: state=degraded code=macos_buffer_overrun dropped=149
+   discontinuities=0`. The F1/F3 grep `capture lane <lane> failed:` therefore still matches failures
+   only - future soak diagnoses must grep `capture lane `, not `failed`.
+ - STICKINESS, DECIDED RATHER THAN INHERITED: a degradation is first-cause-wins for the capture
+   generation, exactly as a failure is, and `beginGeneration()` clears it (D-b's rule, unchanged).
+   Un-degrading would need a "no drops for N ticks" threshold nothing has measured, and it would
+   trade a durable statement - this meeting lost audio on this lane - for a flickering one that
+   would also re-fire the log line per episode. `droppedFrames` carries the live count regardless.
+ - ZERO-LOSS CLAUSE, restated because the reclassification touches it: a dropped buffer never
+   becomes a frame, so it is never ACCEPTED audio. An overrun is capture loss, not accepted-audio
+   loss, and the PRD clause is unaffected. What the clause needs is the count, and the count travels
+   unchanged in `droppedFrames` / `dropped_frames`.
+
+Files touched:
+  macos/MOSSCapture/Sources/MOSSCaptureCore/NativeLaneHealth.swift     (the classification)
+  macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureController.swift    (CaptureLaneStates.degraded,
+                                                                        K2 adapter records both)
+  macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureSecurity.swift      (log verb from state)
+  macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift  (4 nodes changed
+                                                                        citing D-a, 4 added)
+  tests/test_live_pipeline_seams.py                                    (1 real-seam node added)
+  scripts/ralph-afk/{context.md,progress.txt}
+Tracked product source inside macos/ and tests/ - authorized by the fifth amendment, whose first
+required decision this is. NOTHING under moss_transcribe_diarize/ or ops/ was touched. No branch,
+merge, push, deploy or host mutation; nothing on any remote host, so no rollback record was required.
+
+Validation:
+- RED FIRST, PROBE A - the pre-D-a product behaviour restored in place (reporting a degradation as
+  `failed`, plus the old mailbox overrun fence and the old overflow marker), keeping the new types
+  so the test file still compiles. A wholesale `git show HEAD:<file>` restore would have been a
+  COMPILATION error, not a red - the same trap the J1/J3 red-prove notes record.
+    swift test --package-path macos/MOSSCapture --filter 'MapsSurvivableFactsToDegradedCodes|
+      MailboxOverflowIsItsOwnCode|OverrunLaneStillReportsTheFailure|HeartbeatCarriesAnOverrunLane
+      AsDegraded|AttributesLaneOverrunAndDiscontinuity|StartDoesNotReplayEarlierGenerationDrops'
+    -> Executed 6 tests, with 12 failures. The two that matter most:
+       * testTheHeartbeatCarriesAnOverrunLaneAsDegradedAndNotAsFailed - the SERIALIZED heartbeat
+         body says lanes.system.state "failed" where it must say "degraded". That is the exact byte
+         `_failed_lanes` reads, so this node is the chain break itself rather than a reading of it.
+       * testAnOverrunLaneStillReportsTheFailureThatGenuinelyEndsIt - after the overrun the lane
+         reported dropped=112, discontinuities=0 and code macos_buffer_overrun, and NEVER saw the
+         `ioStoppedAbnormally` that followed. Green: dropped=120, discontinuities=2,
+         failed/macos_io_stopped_abnormally. That is the mailbox fence, caught by its own node.
+  File restored and verified byte-identical: sha256 560dfa53… both ways.
+- RED FIRST, PROBE B - the K2 adapter's filter back to `failed`-only:
+    swift test --package-path macos/MOSSCapture --filter 'LogRecordsADegradationAsLoudly'
+    -> XCTAssertEqual failed: ("[]") is not equal to (["capture lane system degraded: …"])
+       i.e. the degradation was completely silent, which is the "blind meeting" D-a warned about.
+  File restored and verified byte-identical: sha256 ad7bfb92… both ways.
+- RED FIRST, PYTHON - the new seam node with `lane_state="failed"` instead of `"degraded"`:
+    AssertionError: assert ('failed', 'macos_buffer_overrun') == ('active', None)
+  so the node turns on the state word and nothing else; its negative control is the node directly
+  above it (`test_one_failed_lane_is_recorded_without_ending_the_meeting`). Restored, sha256
+  f010d91d… both ways.
+- GREEN AFTER, both suites in full:
+    swift build --package-path macos/MOSSCapture --product mtd-capture      -> Build complete
+    swift build --package-path macos/MOSSCapture --product MOSSCaptureApp   -> Build complete
+    swift test  --package-path macos/MOSSCapture   -> Executed 158 tests, 0 failures (154 -> 158)
+    PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+      -> 599 passed, 2 skipped, 368 subtests (598 -> 599); the 2 skips are the pre-existing
+         test_large_upload.py 3.10-compat pair, never Darwin skips.
+    python3 scripts/ralph-afk/live-lane-refusal-probe.py -> rc=0, unchanged: a lane the client
+      still calls FAILED is still closed permanently and still answers the bare-detail 409. D-a
+      does not soften that path; it stops an overrun from entering it.
+
+Evidence paths: NativeLaneHealth.swift (the two code enums, `reportedState`/`reportedCode`,
+`recordDegradation`, the mailbox's `overflowFenced`); CaptureController.swift `CaptureLaneStates.
+degraded` and `LaneFailureLoggingHealthAdapter.record`; CaptureSecurity.swift `recordLaneFailure`;
+CaptureControllerTests.swift testTheHeartbeatCarriesAnOverrunLaneAsDegradedAndNotAsFailed /
+testAnOverrunLaneStillReportsTheFailureThatGenuinelyEndsIt /
+testNativeLaneHealthMapsSurvivableFactsToDegradedCodes /
+testNativeLaneMailboxOverflowIsItsOwnCodeAndNotAudioLoss /
+testTheAppLogRecordsADegradationAsLoudlyAsAFailureAndNamesItCorrectly;
+tests/test_live_pipeline_seams.py test_a_degraded_lane_keeps_publishing_and_never_reaches_the_lane_
+failure_path; context.md block "D-a is landed".
+
+Learned. (1) The cheap fix was cheap because the CONTRACT ALREADY HAD THE WORD. `degraded` sat in
+`HELPER_STATES` and in ADR M04 from the beginning, unreachable because the client had no way to say
+it - a capability that exists on one side of an interface and not the other is invisible to every
+test that only exercises one side. Before designing a protocol change, check whether the protocol
+already answers the question. (2) Re-classifying a fact is never a one-line change: the fence, the
+overflow marker and the log filter had all been written against "an overrun is terminal", and two of
+the three would have failed silently. The iteration-13 decision predicted the log; it did not predict
+the fence, which was found only by writing a node that asked what happens AFTER the degradation.
+(3) Restoring whole files to prove a red does not work once the tests reference new types - the red
+has to be a semantic revert that keeps the vocabulary, or the result is a compilation error dressed
+up as evidence.
+
+Next: candidate 50, the last open Phase M item and the first to touch `moss_transcribe_diarize/`.
+Per D-c: cap the decode with a bound on generated tokens DERIVED FROM THE SPAN'S OWN DURATION (not a
+wall-clock deadline, not a repetition heuristic), derive the constant from the committed spans
+already in the F1/F3/canary evidence - observed max tokens per second of real speech plus an explicit
+margin - record the derivation, and commit the capped span with the cap recorded on its event. Then
+the coverage gap at tests/test_live_api.py:1055 (post a frame ON the lane that FAILED - D-a's node
+covers the degraded lane, not that one), then the full gate, the lane-refusal probe, and re-runs of
+F1 and F3 with scripts/ralph-afk/live-canary.sh.
