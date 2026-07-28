@@ -245,3 +245,83 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` with first-install `sha256`/`codesign -dr -`
   evidence captured once and re-asserted unchanged, keeping the M38 JUnit node contract; then A4
   step (b), the eleven registered commands.
+
+## Iteration 4 - immutable IDEA-044 lab bundle, A4 checkpoint green
+- Target: Phase A candidate A4, both steps. (a) replace the throwaway per-test
+  `MOSSCaptureTracer.app` with one immutable first-install bundle at the fixed lab path
+  (attempt-2 discriminator check 10 / mutation row M37); (b) run the eleven registered IDEA-044
+  attempt-2 commands as the compatibility checkpoint.
+- Files: `tests/test_macos_uds_tracer.py`; `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: the tracer's only fixed path is now
+  `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app`, held under an exclusive `flock` on a
+  sibling `install.lock` for the whole pytest process (acquired once, released on exit, bounded
+  180 s wait then a named failure). `_install_or_reuse_lab_bundle` copies the built
+  `MOSSCaptureApp`, writes the product `Info.plist` verbatim — identifier
+  `com.alphasight.moss.capture` plus both `NSAudioCaptureUsageDescription` and
+  `NSMicrophoneUsageDescription`, asserted non-empty at install — ad-hoc signs the bundle, then
+  records `first-install-evidence.json` (`schema: idea044-lab-bundle-evidence.v1`, 0600): the
+  per-file inventory hashes, `executable_sha256`, `bundle_sha256`, the `codesign -d -r -`
+  designated requirement, and provenance `built_product {macho_uuid, sha256}`. Reinstall happens
+  only when the built product's Mach-O UUID or sha256 moves. Every later node calls
+  `_assert_lab_bundle_unchanged`, which re-observes the bundle from disk and demands byte-equality
+  with the recorded evidence plus `codesign --verify --strict`. The lab node additionally re-enters
+  the install path and asserts the evidence file's own inode, mtime_ns and bytes are unmoved — the
+  direct answer to "rebuilding at the same path and bundle ID is not continuity proof". Certificate,
+  server, port, UDS, secret store and artifacts stay per-test temporary; `_make_temp_app_bundle` is
+  deleted. `_swift_bin_dir()` is memoized so the three call sites do not re-shell `swift build`.
+- Validation (all eleven registered attempt-2 commands, verbatim, plus the locality script):
+  1. `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10 true** (was 9/10;
+     check 10 "real tracer proves app-owned handoff and one immutable first-install lab build")
+  2. `spikes/idea-044-real-uds-tracer/repro.py` -> **16/16 true**; check 13 reports
+     `platform=darwin collected=3 passed=3 skipped=0 failures=0 errors=0`
+  3. `swift build --product MOSSCaptureApp` -> OK
+  4. `swift build --product mtd-capture` -> OK
+  5. `swift test --package-path macos/MOSSCapture` -> **95 passed, 0 failures** (unchanged)
+  6. `pytest tests/test_macos_uds_tracer.py -q -p no:cacheprovider` -> **3 passed in 6.55 s**
+  7. `pytest tests/test_live_{auth,api,integration,portal,session_v2}.py` -> **59 passed,
+     333 subtests**
+  8. `pytest tests -q -p no:cacheprovider` -> **457 passed, 2 skipped, 346 subtests** (+1 node)
+  9. `git diff --exit-code af3ac366 -- <9 live server modules> ops README.md README_zh.md
+     LOCAL_DEPLOYMENT.md pyproject.toml` -> exit 0, server fence clean
+  10. `git diff --check` -> clean
+  11. `leak-scan.sh` -> `leak-scan: clean`
+  plus `bash scripts/ralph-afk/validate-phase-a-locality.sh` -> `Phase A locality: PASS`
+- Evidence:
+  - New node `test_lab_app_bundle_is_one_immutable_first_install_reused_across_nodes`.
+  - Cross-run reuse proven directly: `stat -f '%i %m %z'` on
+    `macos/MOSSCapture/.build/idea044-lab/first-install-evidence.json` is
+    `196780291 1785200680 1264` both before and after a second full tracer run — same inode, same
+    mtime, same size, so the second run reused rather than reinstalled.
+  - Recorded first-install evidence: `bundle_identifier com.alphasight.moss.capture`;
+    `designated_requirement designated => cdhash H"dfd1e35058528d81bf8f265329fbf3becccf6f5c"`;
+    `executable_sha256 eb236e4f...18698e25`; `bundle_sha256 e59218e1...1b2db05e`;
+    `built_product.macho_uuid 2C2EEEB6-DFEA-33A7-A680-52F1F663481D`.
+  - Mutation rehearsal for M37: `PlistBuddy -c 'Set :CFBundleVersion 0.1.1'` on the installed
+    `Contents/Info.plist` -> **2 failed** (both lab-using nodes) at
+    `_assert_lab_bundle_unchanged`; restoring the plist -> **3 passed**. A one-key bundle change
+    is caught, so the immutability assertion is not vacuous.
+- A4 CHECKPOINT SHA: recorded in the commit for this iteration (`ralph: iteration 4 - immutable
+  IDEA-044 lab bundle`). Deliberately **not merged and not pushed** — the one keeper merge stays
+  at C4. This unblocks Phase B.
+- Learned: (1) an ad-hoc signature has no explicit designated requirement, so `codesign -d -r -`
+  emits it commented (`# designated => cdhash H"…"`) on stdout while `Executable=` goes to stderr;
+  the parser must strip the `#`. The cdhash form is actually the stronger continuity evidence —
+  it pins the exact immutable build. (2) The bundle's signed inventory is exactly
+  `Contents/Info.plist`, `Contents/MacOS/MOSSCaptureApp`,
+  `Contents/_CodeSignature/CodeResources`; asserting the exact set catches a stray file added to
+  the fixed path. (3) Moving to the *production* bundle identifier is a strict improvement over
+  the old per-run random one: a random id made every run a brand-new app to TCC, so no grant
+  could ever persist. Fixed path + fixed identifier + ad-hoc signing gives a stable cdhash, which
+  is the only way E3's real grant can survive into later tracer runs.
+- Blocker: none for A4. Standing gap, unchanged: M38's *granted* dual-lane tracer node cannot run
+  on MacStudio because no TCC grant exists for the lab cdhash; the tracer takes its typed
+  `permissionDenied` branch and the granted branch is only reachable after the E3 human step
+  (System Settings -> Privacy & Security -> Microphone, and -> System Audio Recording, toggled on
+  for MOSSCapture on m4mbp). The registered A4 gate does not require it, so this is recorded
+  evidence residue, not a gate failure.
+- Next: Phase B is now open. Start with B1 — make `FileCaptureSecretStore` the default at
+  `~/Library/Application Support/MOSSCapture/` (0700 dir, 0600 files, atomic replace, same path
+  for app and CLI), remove the mismatched Keychain access group, and replace the lab-default
+  source assertions with behavioral permission/secrecy tests. Do not edit the historical
+  control-plane discriminator to keep it green; B1 deliberately supersedes its
+  `KeychainCaptureSecretStore()`-is-default expectation (checks 09 and 15).

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import importlib.util
 import ipaddress
@@ -7,6 +8,7 @@ import json
 import os
 import platform
 import plistlib
+import re
 import shutil
 import socket
 import ssl
@@ -34,6 +36,87 @@ ALLOWED_PEER_NETWORKS = tuple(
     for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10")
 )
 
+# The one fixed path in this tracer. Everything else the tracer touches — certificate,
+# server, port, UDS, secret store, artifacts — stays per-test temporary. The lab app is
+# installed once, its identity evidence is captured on that first install, and every later
+# node re-asserts the recorded evidence instead of rebuilding: rebuilding at the same path
+# and bundle identifier is not continuity proof.
+LAB_ROOT = PACKAGE_ROOT / ".build" / "idea044-lab"
+LAB_BUNDLE = LAB_ROOT / "MOSSCapture.app"
+LAB_EXECUTABLE_NAME = "MOSSCaptureApp"
+LAB_EVIDENCE = LAB_ROOT / "first-install-evidence.json"
+LAB_LOCK = LAB_ROOT / "install.lock"
+LAB_LOCK_TIMEOUT = 180.0
+LAB_EVIDENCE_SCHEMA = "idea044-lab-bundle-evidence.v1"
+LAB_BUNDLE_IDENTIFIER = "com.alphasight.moss.capture"
+LAB_USAGE_DESCRIPTION_KEYS = (
+    "NSAudioCaptureUsageDescription",
+    "NSMicrophoneUsageDescription",
+)
+
+
+def test_lab_app_bundle_is_one_immutable_first_install_reused_across_nodes():
+    if platform.system() != "Darwin":
+        pytest.skip("macOS lab bundle inventory is Darwin-only.")
+    if shutil.which("codesign") is None:
+        pytest.fail("codesign is required to ad-hoc sign the fixed lab app bundle.")
+
+    lab = _lab_bundle()
+
+    assert lab.bundle == LAB_BUNDLE
+    assert lab.bundle.is_relative_to(PACKAGE_ROOT / ".build")
+    assert lab.bundle.name == "MOSSCapture.app"
+    assert lab.executable == LAB_BUNDLE / "Contents" / "MacOS" / LAB_EXECUTABLE_NAME
+    assert lab.executable.is_file()
+
+    evidence = lab.evidence
+    assert evidence["schema"] == LAB_EVIDENCE_SCHEMA
+    assert evidence["bundle_path"] == LAB_BUNDLE.relative_to(ROOT).as_posix()
+    assert evidence["bundle_identifier"] == LAB_BUNDLE_IDENTIFIER
+    assert evidence["bundle_executable"] == LAB_EXECUTABLE_NAME
+
+    # Both usage strings ship in the lab bundle, byte-identical to the product Info.plist,
+    # so the permission prompts the coordinator drives are the shipped ones.
+    product_info = plistlib.loads((PACKAGE_ROOT / "Resources" / "Info.plist").read_bytes())
+    for key in LAB_USAGE_DESCRIPTION_KEYS:
+        description = evidence["usage_descriptions"][key]
+        assert description.strip()
+        assert description == product_info[key]
+
+    assert re.fullmatch(r"[0-9a-f]{64}", evidence["executable_sha256"])
+    assert re.fullmatch(r"[0-9a-f]{64}", evidence["bundle_sha256"])
+    assert re.fullmatch(r"[0-9a-f]{64}", evidence["built_product"]["sha256"])
+    assert evidence["designated_requirement"].startswith("designated =>")
+    assert set(evidence["bundle_inventory"]) == {
+        "Contents/Info.plist",
+        f"Contents/MacOS/{LAB_EXECUTABLE_NAME}",
+        "Contents/_CodeSignature/CodeResources",
+    }
+    assert (
+        evidence["bundle_inventory"][f"Contents/MacOS/{LAB_EXECUTABLE_NAME}"]
+        == evidence["executable_sha256"]
+    )
+
+    # The installed executable carries the built product's Mach-O identity, and the ad-hoc
+    # signature is over the bundle — not over the bare SwiftPM product.
+    assert _macho_uuid(lab.executable) == evidence["built_product"]["macho_uuid"]
+
+    # Re-entering the install path must reuse, never reinstall: the evidence file itself is
+    # written once, so an unchanged inode, mtime and payload is the continuity proof.
+    before_stat = LAB_EVIDENCE.stat()
+    before_bytes = LAB_EVIDENCE.read_bytes()
+    reused = _install_or_reuse_lab_bundle()
+    after_stat = LAB_EVIDENCE.stat()
+    assert reused.evidence == evidence
+    assert LAB_EVIDENCE.read_bytes() == before_bytes
+    assert (after_stat.st_ino, after_stat.st_mtime_ns) == (
+        before_stat.st_ino,
+        before_stat.st_mtime_ns,
+    )
+
+    # And the same recorded hashes still describe the bundle on disk.
+    _assert_lab_bundle_unchanged(lab)
+
 
 def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
     if platform.system() != "Darwin":
@@ -57,6 +140,8 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
     assert app_exe.is_file(), f"built app product missing: {app_exe}"
     assert cli_exe.is_file(), f"built CLI product missing: {cli_exe}"
 
+    lab = _lab_bundle()
+
     tmp_root: Path | None = None
     with tempfile.TemporaryDirectory(prefix="mtd5-", dir="/tmp") as tmp:
         tmp_path = Path(tmp)
@@ -72,12 +157,13 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
         app_log = tmp_path / "app.log"
         server_log = tmp_path / "server.log"
         pasteboard_name = f"com.alphasight.moss.capture.tracer.{os.getpid()}.{time.monotonic_ns()}"
-        bundled_app_exe = _make_temp_app_bundle(app_exe, tmp_path)
+        bundled_app_exe = lab.executable
         _assert_bundled_product_identity(
             bundled_app_exe,
             built_product=app_exe,
-            expected_bundle=tmp_path / "MOSSCaptureTracer.app",
+            expected_bundle=LAB_BUNDLE,
         )
+        _assert_lab_bundle_unchanged(lab)
 
         server = None
         app = None
@@ -305,6 +391,8 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
             assert not socket_path.exists()
             assert not store_path.exists()
     assert tmp_root is not None and not tmp_root.exists()
+    # Running the app out of the fixed lab bundle must not have mutated it.
+    _assert_lab_bundle_unchanged(lab)
 
 
 def test_permission_denial_contract_isolated_from_real_capture_path():
@@ -375,7 +463,13 @@ class _CLIResult:
             raise AssertionError(self.diagnostic) from exc
 
 
+_SWIFT_BIN_DIR: Path | None = None
+
+
 def _swift_bin_dir() -> Path:
+    global _SWIFT_BIN_DIR
+    if _SWIFT_BIN_DIR is not None:
+        return _SWIFT_BIN_DIR
     for product in ("MOSSCaptureApp", "mtd-capture"):
         subprocess.run(
             [
@@ -400,37 +494,197 @@ def _swift_bin_dir() -> Path:
         text=True,
         timeout=BUILD_TIMEOUT,
     )
-    return Path(completed.stdout.strip())
+    _SWIFT_BIN_DIR = Path(completed.stdout.strip())
+    return _SWIFT_BIN_DIR
 
 
-def _make_temp_app_bundle(app_exe: Path, tmp_path: Path) -> Path:
-    bundle_id = f"com.alphasight.moss.capture.tracer.{os.getpid()}.{time.monotonic_ns()}"
-    bundle = tmp_path / "MOSSCaptureTracer.app"
-    contents = bundle / "Contents"
+class _LabBundle:
+    """The one immutable first-install app bundle at the fixed lab path."""
+
+    def __init__(self, *, bundle: Path, evidence: dict[str, Any]):
+        self.bundle = bundle
+        self.executable = bundle / "Contents" / "MacOS" / LAB_EXECUTABLE_NAME
+        self.evidence = evidence
+
+
+_LAB_BUNDLE: _LabBundle | None = None
+_LAB_LOCK_HANDLE: Any = None
+
+
+def _lab_bundle() -> _LabBundle:
+    """Install the lab bundle once per checkout, then reuse and re-assert it."""
+    global _LAB_BUNDLE
+    if _LAB_BUNDLE is None:
+        _LAB_BUNDLE = _install_or_reuse_lab_bundle()
+    else:
+        _assert_lab_bundle_unchanged(_LAB_BUNDLE)
+    return _LAB_BUNDLE
+
+
+def _acquire_lab_lock() -> None:
+    """Hold the fixed lab path exclusively for this process, released on exit."""
+    global _LAB_LOCK_HANDLE
+    if _LAB_LOCK_HANDLE is not None:
+        return
+    LAB_ROOT.mkdir(parents=True, exist_ok=True)
+    handle = LAB_LOCK.open("a+b")
+    deadline = time.monotonic() + LAB_LOCK_TIMEOUT
+    while True:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            if time.monotonic() >= deadline:
+                handle.close()
+                pytest.fail(
+                    f"another process still holds the lab bundle lock: {LAB_LOCK}"
+                )
+            time.sleep(0.1)
+            continue
+        _LAB_LOCK_HANDLE = handle
+        return
+
+
+def _install_or_reuse_lab_bundle() -> _LabBundle:
+    _acquire_lab_lock()
+    built_exe = _swift_bin_dir() / LAB_EXECUTABLE_NAME
+    built_product = _built_product_identity(built_exe)
+    recorded = _read_lab_evidence()
+    if recorded is not None and recorded["built_product"] == built_product:
+        lab = _LabBundle(bundle=LAB_BUNDLE, evidence=recorded)
+        _assert_lab_bundle_unchanged(lab)
+        return lab
+    return _first_install_lab_bundle(built_exe, built_product)
+
+
+def _built_product_identity(built_product: Path) -> dict[str, str]:
+    assert built_product.is_file(), f"built app product missing: {built_product}"
+    return {
+        "macho_uuid": _macho_uuid(built_product),
+        "sha256": hashlib.sha256(built_product.read_bytes()).hexdigest(),
+    }
+
+
+def _read_lab_evidence() -> dict[str, Any] | None:
+    if not LAB_EVIDENCE.is_file() or not LAB_BUNDLE.is_dir():
+        return None
+    try:
+        recorded = json.loads(LAB_EVIDENCE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(recorded, dict) or recorded.get("schema") != LAB_EVIDENCE_SCHEMA:
+        return None
+    return recorded
+
+
+def _first_install_lab_bundle(built_exe: Path, built_product: dict[str, str]) -> _LabBundle:
+    if LAB_EVIDENCE.exists():
+        LAB_EVIDENCE.unlink()
+    if LAB_BUNDLE.exists():
+        shutil.rmtree(LAB_BUNDLE)
+
+    contents = LAB_BUNDLE / "Contents"
     macos = contents / "MacOS"
     macos.mkdir(parents=True)
-    bundled_exe = macos / "MOSSCaptureApp"
-    shutil.copy2(app_exe, bundled_exe)
+    bundled_exe = macos / LAB_EXECUTABLE_NAME
+    shutil.copy2(built_exe, bundled_exe)
     os.chmod(bundled_exe, 0o755)
 
-    source_info = plistlib.loads((PACKAGE_ROOT / "Resources" / "Info.plist").read_bytes())
-    source_info.update(
-        {
-            "CFBundleIdentifier": bundle_id,
-            "CFBundleExecutable": "MOSSCaptureApp",
-            "CFBundlePackageType": "APPL",
-        }
-    )
-    (contents / "Info.plist").write_bytes(plistlib.dumps(source_info, sort_keys=False))
+    info = plistlib.loads((PACKAGE_ROOT / "Resources" / "Info.plist").read_bytes())
+    assert info["CFBundleIdentifier"] == LAB_BUNDLE_IDENTIFIER
+    for key in LAB_USAGE_DESCRIPTION_KEYS:
+        assert info.get(key, "").strip(), f"product Info.plist lacks {key}"
+    info.update({"CFBundleExecutable": LAB_EXECUTABLE_NAME, "CFBundlePackageType": "APPL"})
+    (contents / "Info.plist").write_bytes(plistlib.dumps(info, sort_keys=False))
 
     subprocess.run(
-        ["codesign", "--force", "--sign", "-", str(bundle)],
+        ["codesign", "--force", "--sign", "-", str(LAB_BUNDLE)],
         cwd=ROOT,
         check=True,
         capture_output=True,
         timeout=TIMEOUT,
     )
-    return bundled_exe
+
+    evidence = _observe_lab_bundle(built_product)
+    staging = LAB_EVIDENCE.with_suffix(".json.partial")
+    staging.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8")
+    staging.chmod(0o600)
+    staging.replace(LAB_EVIDENCE)
+    return _LabBundle(bundle=LAB_BUNDLE, evidence=evidence)
+
+
+def _observe_lab_bundle(built_product: dict[str, str]) -> dict[str, Any]:
+    """Everything the tracer asserts about the installed bundle, read from disk."""
+    info = plistlib.loads((LAB_BUNDLE / "Contents" / "Info.plist").read_bytes())
+    executable = LAB_BUNDLE / "Contents" / "MacOS" / LAB_EXECUTABLE_NAME
+    inventory = _lab_bundle_inventory()
+    return {
+        "schema": LAB_EVIDENCE_SCHEMA,
+        "bundle_path": LAB_BUNDLE.relative_to(ROOT).as_posix(),
+        "bundle_identifier": info["CFBundleIdentifier"],
+        "bundle_executable": info["CFBundleExecutable"],
+        "usage_descriptions": {key: info.get(key, "") for key in LAB_USAGE_DESCRIPTION_KEYS},
+        "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
+        "bundle_sha256": _digest_inventory(inventory),
+        "bundle_inventory": inventory,
+        "designated_requirement": _designated_requirement(LAB_BUNDLE),
+        "built_product": built_product,
+    }
+
+
+def _lab_bundle_inventory() -> dict[str, str]:
+    inventory: dict[str, str] = {}
+    for path in sorted(LAB_BUNDLE.rglob("*")):
+        assert not path.is_symlink(), f"unexpected symlink in lab bundle: {path}"
+        if path.is_file():
+            relative = path.relative_to(LAB_BUNDLE).as_posix()
+            inventory[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return inventory
+
+
+def _digest_inventory(inventory: dict[str, str]) -> str:
+    digest = hashlib.sha256()
+    for relative in sorted(inventory):
+        digest.update(f"{relative}\0{inventory[relative]}\0".encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _designated_requirement(bundle: Path) -> str:
+    completed = subprocess.run(
+        ["codesign", "-d", "-r", "-", str(bundle)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=TIMEOUT,
+    )
+    assert completed.returncode == 0, completed.stderr
+    for line in (completed.stdout + completed.stderr).splitlines():
+        # An implicit requirement is emitted commented out, e.g. `# designated => cdhash H"…"`.
+        candidate = line.strip().removeprefix("#").strip()
+        if candidate.startswith("designated =>"):
+            return candidate
+    raise AssertionError(
+        f"codesign -d -r - reported no designated requirement: "
+        f"stdout={completed.stdout!r} stderr={completed.stderr!r}"
+    )
+
+
+def _assert_lab_bundle_unchanged(lab: _LabBundle) -> None:
+    """Re-assert the first-install evidence; a rebuild is not continuity proof."""
+    recorded = _read_lab_evidence()
+    assert recorded is not None, f"lab bundle evidence disappeared: {LAB_EVIDENCE}"
+    assert recorded == lab.evidence
+    observed = _observe_lab_bundle(recorded["built_product"])
+    assert observed == recorded, (
+        "fixed lab bundle changed after its first install: "
+        f"{sorted(key for key in observed if observed[key] != recorded.get(key))}"
+    )
+    verified = subprocess.run(
+        ["codesign", "--verify", "--strict", str(LAB_BUNDLE)],
+        cwd=ROOT,
+        capture_output=True,
+        timeout=TIMEOUT,
+    )
+    assert verified.returncode == 0, verified.stderr.decode("utf-8", errors="replace")
 
 
 def _private_non_loopback_ipv4() -> str | None:

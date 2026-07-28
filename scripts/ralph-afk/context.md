@@ -36,19 +36,32 @@ branch after the iteration-1 graft unless stated.
 **Branch state.** Iteration 1 merged `acl/IDEA-044--A-034@67a27b8` into `ralph/live-meeting-mvp`
 with `--no-ff` (conflict-free: A-034 branches from the same `af3ac36` and touches paths disjoint
 from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (A3); iteration 3
-moved the portal handoff into the app (A2). Test totals on the branch: Swift **95 passed**
-(67 → 81 → 92 → 95); Python **456 passed / 2 skipped / 346 subtests** including
-`tests/test_macos_uds_tracer.py` **2 passed** (was 1 passed, 1 hung).
+moved the portal handoff into the app (A2); iteration 4 rebuilt the tracer around the immutable
+lab bundle (A4). Test totals on the branch: Swift **95 passed** (67 → 81 → 92 → 95); Python
+**457 passed / 2 skipped / 346 subtests** including `tests/test_macos_uds_tracer.py` **3 passed**
+(1 hung → 2 → 3).
 
-**IDEA-044 attempt-2 discriminator: 9/10** (`spikes/idea-044-attempt2-red-control/repro.py`,
-run against the worktree). Checks 1-9 are green. The one open check is 10: the tracer must
-additionally assert the fixed lab bundle path
-`macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` — the only literal it still lacks; it
-already carries `handoff`, `CFBundleIdentifier`, `permission`, `sha256`, and `codesign`, but it
-builds a throwaway per-test `MOSSCaptureTracer.app` under `tmp_path`
-(`tests/test_macos_uds_tracer.py:408-427`) instead of one immutable first-install lab bundle
-whose `sha256`/`codesign -dr -` evidence is captured once and reused. Run that script first in
-any Phase-A iteration: it *is* the A4 gate.
+**IDEA-044 attempt-2 checkpoint: GREEN at iteration 4.** Discriminators **10/10** and **16/16**;
+all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
+**0 Darwin skips**. Re-run before any further Phase-A edit — the discriminator scripts are the
+gate, not a formality.
+
+**Lab bundle contract (new, iteration 4).** The tracer's one fixed path is
+`macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` (gitignored via `macos/MOSSCapture/
+.gitignore:1`), held under an exclusive `flock` on `install.lock` for the whole pytest process.
+It is installed **once** — copy the built `MOSSCaptureApp`, write the product `Info.plist`
+verbatim (identifier `com.alphasight.moss.capture`, both `NSAudioCaptureUsageDescription` and
+`NSMicrophoneUsageDescription`), ad-hoc sign — and its identity is recorded in a sibling
+`first-install-evidence.json` (`schema: idea044-lab-bundle-evidence.v1`): per-file inventory
+hashes, `executable_sha256`, `bundle_sha256`, `designated_requirement`
+(`designated => cdhash H"…"`), and the provenance `built_product` `{macho_uuid, sha256}`.
+Every later node re-observes the bundle and asserts the recorded evidence *and* that the evidence
+file's own inode/mtime/bytes did not move — so a rebuild at the same path is not continuity
+proof. A reinstall happens only when the built product's Mach-O UUID or sha256 changes, and it
+rewrites the evidence as a new first install. Everything else — certificate, server, port, UDS,
+secret store, artifacts — stays per-test temporary. Ad-hoc signing means the cdhash is stable
+across runs, so the lab bundle is the only surface on which real TCC continuity could later be
+observed; that observation is still the E3 human step.
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -167,13 +180,17 @@ swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real pr
 
 # --- real-process tracer (darwin; needs a live private-address TLS server)
 # present since the iteration-1 graft. It builds/bundles/ad-hoc-signs the real products, so it
-# needs both Swift products built first. Currently 2 passed (~9 s).
+# needs both Swift products built first. Currently 3 passed, 0 skipped (~7 s).
 python3 -m pytest tests/test_macos_uds_tracer.py -q
+
+# Reinstall the fixed lab bundle from scratch (safe: gitignored build output). Do this only to
+# re-prove the first-install path; normal runs must reuse it.
+rm -rf macos/MOSSCapture/.build/idea044-lab
 
 # --- Phase A discriminator (the A4 gate; run it before and after any Phase-A change) --------
 PYTHONDONTWRITEBYTECODE=1 python3 \
   "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-attempt2-red-control/repro.py" \
-  --target "$PWD"        # currently 5/10; A4 needs 10/10
+  --target "$PWD"        # 10/10 since iteration 4
 
 # --- wide checkpoint -----------------------------------------------------
 # Keep executable builds explicit because tests/test_live_integration.py and the A-034 tracer
@@ -248,20 +265,21 @@ only after the durable result is in progress.txt.
    `AVCaptureDevice.requestAccess(for: .audio)` in `MicrophoneCapture.swift`, and
    `SystemAudioPermission` in `SystemAudioTap.swift`. Discriminator checks 5-9 green; tracer
    `2 passed`.
-4. **A4 — compatibility checkpoint** — **now the top candidate**, in two steps.
-   (a) **Tracer lab bundle (discriminator check 10):** replace the throwaway per-test
-   `MOSSCaptureTracer.app` with one immutable first-install bundle at the fixed path
-   `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app`, built and ad-hoc signed once, its
-   `sha256` and `codesign -dr -` evidence captured on first install and reused (and re-asserted
-   unchanged) on later runs; keep the M38 JUnit node contract — pending/grant and pending/deny
-   nodes, zero Darwin skips.
-   (b) **Checkpoint:** run the exact eleven registered IDEA-044 attempt-2 commands plus
-   `bash scripts/ralph-afk/validate-phase-a-locality.sh`. Required: 10/10, 16/16, zero Darwin
-   skips, all other commands green. Commit and record the exact SHA. **Do not merge, push, or
-   begin Phase B until this is green.** The granted dual-lane node needs real TCC grants, which
-   is the E3 human step — expect this to be where A4 parks.
+4. **A4 — compatibility checkpoint** `[done — iteration 4]`: the tracer now installs one
+   immutable lab bundle at the fixed path and re-asserts its first-install evidence across nodes;
+   the eleven registered commands plus the locality script are all green at **10/10 / 16/16 /
+   0 Darwin skips**. The SHA is recorded in progress.txt. **Not merged and not pushed** — the one
+   keeper merge stays at C4. Residue: M38's *granted* dual-lane node still cannot run because no
+   TCC grant exists on MacStudio; the tracer takes its typed-failure branch instead and the
+   granted branch is exercised for real only at E3. That is a recorded gap in the mutation
+   evidence, not a gate failure — the registered A4 gate does not require it.
 
 ### Phase B — production Mac reliability
+
+**Gate opened by iteration 4's green A4 checkpoint.** From here the Phase-A source
+discriminators are historical evidence: B1–B5 deliberately supersede the lab-only
+source/locality expectations and need their own behavioral tests plus the full-suite gate. Never
+edit the control-plane discriminator scripts to keep them green.
 
 5. **B1 — production file secret store**: now make `FileCaptureSecretStore` the default at
    `~/Library/Application Support/MOSSCapture/`; directory 0700, files 0600, atomic replacement,
