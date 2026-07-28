@@ -126,24 +126,27 @@ fourth amendment's scope, and **the fourth amendment's one authorized merge** at
 made the cycle's only unplanned change — a **one-line test-harness fix** (`tests/
 test_live_deployment_credentials.py` publishes its port atomically) — because the merge script's own
 gate failed on a race the primary worktree kept winning. See the fifth-keeper-merge block and the
-port-publish-race block. **K5 steps (c) and (d) remain — publish + redeploy, then the re-read that
-finally names the lane failure's cause.**
+port-publish-race block. Iteration 6 ran **K5c** — published `fc7097d`, redeployed the live service,
+and (unlike every prior redeploy) **rebuilt and reinstalled the Mac product too**, because this is the
+first merge that is not server-only; the four-way SHA check is back to **4/4** and both TCC grants
+survived the bundle replacement. It changed no tracked file. See the K5c redeploy block.
+**Only K5d remains — the re-read that finally names the lane failure's cause.**
 
-**PRD acceptance scoreboard after iteration 5 of run 20260728-181020.** ("one exact SHA everywhere"
-was GREEN 4/4 at `6a540fe`; the K5b merge **deliberately broke it to 1/4** — local `main` is
-`fc7097d`, the other three checkouts are still `6a540fe`, and K5c restores it. That is the expected
-mid-cycle state after every keeper merge, not a regression. Iteration 16 of the prior run closed the
+**PRD acceptance scoreboard after iteration 6 of run 20260728-181020.** (K5b's merge deliberately
+broke "one exact SHA everywhere" to 1/4; **K5c restored it to 4/4 at `fc7097d`** — the expected
+mid-cycle dip after every keeper merge, now closed. Iteration 16 of the prior run closed the
 last *machine* gate — Phase J's probe. **E3 is CLOSED** — both TCC grants hold `auth_value=2` — and
 the blocker that replaced it is that both capture lanes report `failed` for a reason no surface
 records, which is what Phase K makes legible.)
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus all four amendments' authorized follow-up merges), **one exact SHA everywhere — 4/4 at
-`6a540fe`, now 1/4 pending K5c**,
-live service answering (re-measured after the J5c redeploy **and, for the first time, from m4mbp
-itself** — the host the PRD clause actually names), batch service unharmed, signed app installed
-(re-verified at `6a540fe`: inode `211648186` and the E1 DR both unchanged — **K5c's rebuild will
-change that inode, and the DR must be re-checked unchanged across it**), **rollback rehearsed and
+`fc7097d`**,
+live service answering (re-measured after the K5c redeploy from **both** MacStudio and m4mbp — the
+host the PRD clause actually names), batch service unharmed, signed app installed (re-verified at
+`fc7097d` **across an actual rebuild**: inode moved `211648186` → `211995344`, proving the bundle was
+replaced, while the E1 DR stayed byte-identical and `codesign --verify -R=<DR>` still passes — which
+is what the PRD clause "unchanged across a rebuild" literally asks for), **rollback rehearsed and
 recorded**.
 Open: **permissions granted — half green**: both TCC grants hold (`auth_value=2`, E3 closed), but
 "`mtd-capture status` reports both lanes active" is not met — K1 made it *expressible* (the response
@@ -334,7 +337,76 @@ Re-running the merge until it passes would have hidden a 4%-per-run flake under 
 Verification: the two nodes 14 passed **×5** consecutively, full suite 598/2/368, then the merge's
 own gate green on the retry.
 
-**J5c redeploy: DONE at `6a540fe`, and the four-way SHA check is GREEN 4/4 (new, iteration 15).**
+**K5c redeploy: DONE at `fc7097d`, four-way SHA GREEN 4/4, and the TCC grants survived the Mac
+rebuild (new, run 20260728-181020 iteration 6).** The first redeploy of this loop that moved **both**
+a service and the installed Mac product, because this merge is the first that is not server-only.
+*Rollbacks were written to progress.txt and committed (`81fe8ca`) before any host was touched* — the
+server checkout+restart pair, the m4mbp checkout, and the app/CLI reinstall pair; the push has no
+rollback and none was attempted, because force-push is forbidden and every host effect is reversible
+without it.
+*Server, in J5c's order (admission check **after** the checkout, under the code about to start):*
+`git push origin main` fast-forwarded `6a540fe..fc7097d`; the host fetched and detached at `fc7097d`
+(tree `a6261b52…`); `systemctl --user restart moss-live-web.service` replaced MainPID 343344 with
+**346453**, `NRestarts=0`, `ActiveState=active`, and `/live` answered 200 **8 s** after the restart.
+The batch unit was untouched: `moss-web.service` MainPID stayed **301112**, `NRestarts=0`. Journal
+after the restart: **0 traceback lines**, `live-runs/` 0 entries, no `/tmp/mtd-live-*`.
+*Content parity, with the J5c lesson adapted:* this merge adds **no new server file**, so the witness
+had to be built differently — all three changed server files were hashed on the host and each matched
+its **`fc7097d`** hash and not its `6a540fe` one: `live_helper_failure.py` `728f26ce…` (was
+`df9a1428…`), `live_service_runtime.py` `832b1878…` (was `fba8c4c1…`), `live_v2_session.py`
+`9b145d2e…` (was `c961f2d6…`). A file whose *content* differs across the two SHAs is the same
+discriminator as a file that did not exist; a file that is unchanged proves nothing.
+*Manifest admission re-run under the new code before the restart:* `caps equal = True 40000`,
+`vad frame_samples = 160`, `retired knob present = False`, `_preflight_payload` →
+`available=True, failures=[], manifest_hash 61d97ffe…` — **unchanged from J5c**, so K3 adds no
+admission constraint and breaks none.
+*Positive proof the deployed code carries K3*, under the service's own venv in the deployed checkout:
+`LiveHelperTerminalRecord.to_dict()["lane_failures"]` round-trips both lanes,
+`LiveV2SessionRegistry.expire` takes `lane_failure_codes`, `LiveServiceRuntime.abort` takes `detail`,
+and — the one that matters for K5d — the journal line **survives the deployed uvicorn logging
+config**, printing verbatim
+`live helper terminal: session=s1 reason=helper_all_lanes_failed lane.system=device_unavailable`.
+*m4mbp: checkout, then rebuild + reinstall.* `git fetch alphasight main` (the fork's name there;
+`origin` is OpenMOSS) then `checkout fc7097d`, tree `a6261b52…`; the two `macos/` witnesses match the
+new hashes (`CaptureSecurity.swift` `f66c8dcf…` was `c79b2dbf…`, `NativeLaneHealth.swift`
+`0ddc66c6…` was `a8533b08…`). `build-app.sh --dry-run` then `--configuration release`
+(MOSSCaptureApp 5.15 s, mtd-capture 0.51 s), `install-app.sh --dry-run` then the install.
+**The DR is byte-identical to E1/G6** — `identifier "com.alphasight.moss.capture" and certificate
+leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"` — for both the app and the CLI, and
+`codesign --verify -R=<that requirement>` passes, so the PRD's "unchanged across a rebuild" clause is
+now proven *across an actual rebuild* rather than across a re-verification. `codesign --verify
+--strict` ok; G1's ATS block still in the installed `Info.plist`.
+**The TCC grants survived, measured rather than assumed:** both
+`kTCCServiceAudioCapture` and `kTCCServiceMicrophone` still hold `auth_value=2` for
+`com.alphasight.moss.capture` **after** the bundle was replaced. The inode did move as predicted,
+**211648186 → 211995344** (mtime `2026-07-28T15:19:30Z`), which is the positive proof the bundle
+really was replaced — so the grants are keyed to bundle id + signing identity, not to the inode.
+Backups (the pre-K5c bytes, the *only* copy): `/Applications/MOSSCapture.app.backup-20260728T191937Z`
+and `/Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z`.
+*Proof the INSTALLED product — not just the checkout — carries K1/K4*, which is what K5d will
+interrogate: the installed CLI hashes identically to the built product (`c11e89ff…`), and
+`strings` finds **`sessionRefusal` 3× in the new binary and 0× in the pre-K5c backup** (`failureCode`
+2→3, `lanes` 5→6). A vocabulary absent from the backup and present in the install is a
+discriminating witness; a count that merely rose is not.
+*Four-way SHA check GREEN 4/4 at `fc7097d0c729ee9a96b8bf95878582e07b5b1145`:* local `main`,
+`origin/main`, the server checkout, and the m4mbp checkout.
+*Client checks from MacStudio:* served leaf still hashes to the D2 pin `a35ca9fc…`, `/live` 200,
+`/api/live/descriptor` 200, batch `http://192.168.68.38:7860/` 200, `/api/jobs` 200, plaintext
+`http://100.64.0.8:7861/live` dead (000, curl rc=52). *And from m4mbp itself:* same leaf hash (so the
+stored pin is still the served leaf — **no re-pairing needed after the reinstall**), `/live` 200,
+`/api/live/descriptor` 200.
+**A live datum for K5d, found by reading the journal rather than by looking for it: the attended
+session's app was STILL RUNNING and had been retrying forever.** `172.30.112.1` (the Windows NAT
+front for the tailnet) was posting
+`/api/live/sessions/f362c1f5db1e44fb8692fa98aa9affe4/heartbeat` → **403** at roughly 1 Hz —
+**1623 such lines in 15 minutes**, and they continued *across* the service restart, i.e. the
+pre-K5c client retries a session the server has never heard of, indefinitely, with no backoff and no
+surface saying so. That is exactly the defect K4 makes visible, observed in the wild on the old
+build. The process (`MOSSCaptureApp` pid 14978) was stopped before the reinstall — it held the
+pre-K5c code, so leaving it up would have made K5d interrogate the old product. The 403s stopped at
+15:19:17 and did not resume. **K5d must confirm the new build stops instead of spinning.**
+
+**J5c redeploy: DONE at `6a540fe`, and the four-way SHA check is GREEN 4/4 (iteration 15).**
 `git push origin main` fast-forwarded `b817871..6a540fe`; the host checkout fetched and detached at
 `6a540fe` (tree `b1f4ab91…`); `systemctl --user restart moss-live-web.service` replaced MainPID
 338545 with **343344**, `NRestarts=0`, `ActiveState=active`, and `/live` answered 200 **9 s** after
@@ -1764,6 +1836,10 @@ context previously claimed it was absent) — 0600 in a 0700 directory, written 
 the *unsigned* debug build during the attended diagnosis. B1's mode contract therefore holds on the
 real host, not only in tests. See the "A device is ALREADY paired" block above for its seven keys
 and for why a bare `start` no longer fails closed here.
+**The installed bundle carries K1/K2/K4 as well since iteration 6 of run 20260728-181020 (K5c)** —
+rebuilt and reinstalled from `fc7097d`, bundle digest `267ada93…`, CLI sha256 `c11e89ff…`, inode
+`211995344`. The G6 figures below are the *previous* install; its bytes survive as the
+`…backup-20260728T191937Z` pair, and the older pre-G6 pair (`…085551Z`) is still there too.
 **The installed bundle carries G1+G2+G3 since iteration 7 of run 20260728-072601 (G6).** The
 before/after pair that proves it, both measured on the real installed product:
 `plutil -extract NSAppTransportSecurity xml1 -o - /Applications/MOSSCapture.app/Contents/Info.plist`
@@ -1786,8 +1862,8 @@ SwiftPM is not byte-reproducible here, so those backups are the only route to th
 below. Checkout is
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` (same relative path as
 MacStudio), reachable as `ga0@m4mbp` with `BatchMode=yes`.
-**Since iteration 6 of run 20260728-072601 (G5) it is detached at `317df4d`** — tree `3b37815f…`,
-clean, 159 tracked files; it was `f9285d6`/`815f23b0…` from iteration 20 (E2a) until then. The four
+**Since iteration 6 of run 20260728-181020 (K5c) it is detached at `fc7097d`** — tree `a6261b52…`,
+clean; it was `6a540fe` from J5c, `b817871`… back to `317df4d` (G5) and `f9285d6` (E2a). The four
 G1/G2/G3 client sources plus `build-app.sh`/`install-app.sh` were re-verified by independent
 `shasum -a 256` against MacStudio's blobs at `317df4d` — all six identical — and the reviewed
 `macos/scripts/*` + `ops/*` tools are present with their exec bits intact
@@ -2579,6 +2655,42 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
 # Standing rollback for the host checkout, still valid until D3 changes the host:
 #   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
+# --- K5c: publish + redeploy the FIFTH merge (SPENT in iteration 6 of run 20260728-181020) -------
+# The push fast-forwarded 6a540fe..fc7097d; never re-run it and never force-push. This was the first
+# NOT-server-only redeploy: server restart AND a Mac rebuild+reinstall. Server side, J5c's order:
+#   cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git fetch origin main --quiet
+#   git checkout fc7097d0c729ee9a96b8bf95878582e07b5b1145   # rollback: checkout 6a540fe… + restart
+#   <manifest admission check, under the venv python, AFTER the checkout>
+#   systemctl --user restart moss-live-web.service
+#   for i in $(seq 1 40); do curl -sk … https://127.0.0.1:7861/live …; done   # POLL; 200 at 8 s
+# PARITY WITNESS WHEN THE MERGE ADDS NO NEW FILE (J5c's rule does not apply): hash each CHANGED file
+# on the host and compare against BOTH `git show <new>:<f>` and `git show <old>:<f>`. Matching the new
+# hash while differing from the old is the same discriminator a new file gives you. Hashing an
+# unchanged file proves nothing. Here: live_helper_failure.py 728f26ce… (old df9a1428…),
+# live_service_runtime.py 832b1878… (old fba8c4c1…), live_v2_session.py 9b145d2e… (old c961f2d6…).
+# Prove the DEPLOYED code carries K3 under the service's own venv (read-only, re-runnable):
+#   LiveHelperTerminalRecord(session_id=…, reason=…, lane_failures={…}).to_dict()["lane_failures"]
+#   "lane_failure_codes" in inspect.signature(LiveV2SessionRegistry.expire).parameters
+#   "detail" in inspect.signature(LiveServiceRuntime.abort).parameters
+#   and the journal line under the DEPLOYED logging config (the K3 one-liner above), which must print
+#   `live helper terminal: session=… reason=… lane.<lane>=<code>` — that exact string is what K5d
+#   greps the host journal for.
+# --- m4mbp rebuild + reinstall (the half J5c did NOT need). Stop any running app FIRST or the
+#     re-read interrogates the old product: pkill -f '/Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp'
+#   git fetch alphasight main --quiet && git checkout fc7097d…   # rollback: checkout 6a540fe…
+#   macos/scripts/build-app.sh --dry-run && macos/scripts/build-app.sh --configuration release
+#   macos/scripts/install-app.sh --dry-run && macos/scripts/install-app.sh
+# Rollback for THIS install (the ONLY copy of the pre-K5c bytes; SwiftPM is not reproducible here):
+#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-20260728T191937Z' '/Applications/MOSSCapture.app'
+#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z' '/Users/ga0/.local/bin/mtd-capture'
+# MEASURED, not assumed: the TCC grants SURVIVE a rebuild+reinstall (both still auth_value=2) even
+# though the inode changes (211648186 -> 211995344). They are keyed to bundle id + signing identity.
+# Always re-run the E3 read-only query after any reinstall anyway — it is the one input this loop
+# cannot re-obtain, and it costs one ssh.
+# Prove the INSTALLED product (not just the checkout) carries the cycle, with a DISCRIMINATING
+# witness — a vocabulary absent from the backup binary and present in the new one:
+#   strings /Users/ga0/.local/bin/mtd-capture | grep -c '^sessionRefusal$'          # 3 (K4)
+#   strings /Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z | grep -c '^sessionRefusal$'  # 0
 # --- J5c: publish + redeploy the fourth merge (SPENT in iteration 15 of run 20260728-112922) -----
 # The push fast-forwarded b817871..6a540fe; never re-run it and never force-push. The host side, in
 # THIS order (the admission check AFTER the checkout, so it exercises the code about to start):
@@ -2612,9 +2724,10 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 ssh -o BatchMode=yes ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize && \
   git remote -v | grep AlphaSightInc'
 #   then: git fetch alphasight main --quiet && git checkout <sha>     # rollback: checkout 317df4d…
-#   Verify the app was NOT disturbed (the inode carries the TCC grants):
+#   Check whether the app was disturbed (STALE PREMISE: iteration 6 proved the inode does NOT carry
+#   the TCC grants — the bundle id + signing identity do; see the K5c block):
 #     stat -f "inode=%i mtime=%Sm" -t "%Y-%m-%dT%H:%M:%SZ" /Applications/MOSSCapture.app
-#     expect inode=211648186 mtime=2026-07-28T04:55:23Z   (unchanged since G6)
+#     current: inode=211995344 mtime=2026-07-28T15:19:30Z  (K5c's rebuild; was 211648186 from G6)
 # --- m4mbp cannot reach the batch service and that is TOPOLOGY, not a regression: m4mbp is
 #     192.168.1.240, the batch address is 192.168.68.38 (different LAN, 100% loss). The hosts meet
 #     only on the tailnet 100.64.0.4 -> 100.64.0.8. Measure the batch clause from MacStudio.
@@ -2638,9 +2751,9 @@ ssh -o BatchMode=yes ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Project
 #         The constructor is keyword-only and `vad=` is REQUIRED — omitting it raises TypeError,
 #         which looks like a refusal and is not one. Assert the exception TYPE, never just "raised".
 # Four-way SHA check — the PRD clause in full. **GREEN 4/4 at
-# 6a540fe086cf819ba0e07a948da9fec0766202c3 since iteration 15 of run 20260728-112922 (J5c)**, all
-# four checkouts. It was 3/4 at b817871 (m4mbp offline through H4c), fully green at 317df4d since
-# G5, and at f9285d6 from iteration 20. Re-run it read-only any
+# fc7097d0c729ee9a96b8bf95878582e07b5b1145 since iteration 6 of run 20260728-181020 (K5c)**, all
+# four checkouts. It was 4/4 at 6a540fe from J5c, 3/4 at b817871 (m4mbp offline through H4c), fully
+# green at 317df4d since G5, and at f9285d6 from iteration 20. Re-run it read-only any
 # time — all four lines must print the same 40 hex characters:
 git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
 printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
@@ -3430,14 +3543,11 @@ An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox fl
       scheduling-sensitive test race, which was fixed at its source rather than retried away - see
       the port-publish-race block. Merge **`fc7097d`**, tree identical to the feature tip
       `8a7b98c`. Guard rehearsed after: a **sixth** merge refuses. See the fifth-keeper-merge block.
-    - **(c) publish + redeploy** `[NEXT]`. `git push origin main` (fast-forward `6a540fe..fc7097d`,
-      never force), then the host checkout + `moss-live-web.service` restart + `/live` poll, per the
-      J5c block's exact order. **This merge is NOT server-only** - seven `macos/` files changed - so
-      m4mbp needs `git fetch alphasight main && git checkout fc7097d` (remote names are INVERTED
-      there) **and a rebuild + reinstall** of `/Applications/MOSSCapture.app`, unlike J5c. The app's
-      inode will change; the TCC grants are keyed to bundle id + signing identity, both unchanged,
-      so re-verify `auth_value=2` for both services after the reinstall rather than assuming.
-    - **(d) the re-read** `[open]`. Re-run `pair` -> `start` on m4mbp and **read the codes**: the
+    - **(c) publish + redeploy** `[done - run 20260728-181020 iteration 6]`. Pushed
+      `6a540fe..fc7097d`; server + m4mbp both at `fc7097d`; live unit restarted (346453); the Mac
+      rebuilt/reinstalled and **both TCC grants survived**. **Four-way SHA check GREEN 4/4 at
+      `fc7097d`.** See the K5c redeploy block.
+    - **(d) the re-read** `[NEXT]`. Re-run `pair` -> `start` on m4mbp and **read the codes**: the
       server journal prints `live helper terminal: session=… reason=… lane.<lane>=<code>` (K3), the
       Mac's `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` prints the per-lane
       failure line (K2), and `mtd-capture status` prints both lanes plus `sessionRefusal` if the

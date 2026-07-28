@@ -6190,3 +6190,118 @@ ROLLBACKS, to be applied in this order if any step fails:
 4. `git push origin main` has NO rollback and none is attempted: force-push is forbidden by
    prd.md. It is a fast-forward of an already-reviewed, already-merged, gate-green SHA, and
    every host-side effect is reversible by (1)-(3) independently of what origin holds.
+
+================================================================================
+Iteration 6 of run 20260728-181020 - K5c: publish fc7097d, redeploy the server,
+and REBUILD the Mac product (the first not-server-only redeploy of this loop)
+================================================================================
+
+Target: candidate 47 K5c. The fourth amendment's merge fc7097d was made in iteration 5 and
+left unpushed. Every observability surface K1-K4 adds is inert until it reaches a host, and
+this merge - unlike the third and fourth - carries seven macos/ files, so the Mac product had
+to be rebuilt as well as the service restarted, or K5d would interrogate an app that predates
+K1/K2/K4 and report nothing new.
+
+Rollbacks were pre-recorded and COMMITTED (81fe8ca) before any host was touched.
+
+RESULT: four-way SHA check GREEN 4/4 at fc7097d0c729ee9a96b8bf95878582e07b5b1145.
+
+**Push.** `git push origin main` fast-forwarded 6a540fe..fc7097d, proven a fast-forward first
+(`git merge-base --is-ancestor 6a540fe fc7097d`). Never forced.
+
+**Server** (J5c's order, admission check AFTER the checkout so it runs under the code about to
+start): fetch + `checkout fc7097d`, tree a6261b52…; `systemctl --user restart
+moss-live-web.service` moved MainPID 343344 -> 346453, NRestarts=0, active/running; `/live`
+answered 200 8 s after the restart (polled, never one-shot). Batch untouched: moss-web MainPID
+stayed 301112, NRestarts=0. Afterwards: 0 traceback lines, live-runs/ 0 entries, no
+/tmp/mtd-live-*, ops/moss-live.env intact (never `git clean` there).
+
+**Parity witness, adapted because J5c's rule did not apply.** J5c hashed a file that did not
+exist at the previous SHA. This merge adds NO new server file, so that discriminator was
+unavailable; instead all three CHANGED server files were hashed on the host and each matched
+its fc7097d hash and differed from its 6a540fe one: live_helper_failure.py 728f26ce…
+(was df9a1428…), live_service_runtime.py 832b1878… (was fba8c4c1…), live_v2_session.py
+9b145d2e… (was c961f2d6…). Hashing an unchanged file would have proven nothing - the point of
+the witness is that a stale checkout must produce a DIFFERENT number, not merely a number.
+
+**Admission re-run under the new code before the restart:** caps equal True 40000, vad
+frame_samples 160, retired knob absent, `_preflight_payload` -> available=True, failures=[],
+manifest_hash 61d97ffe… - unchanged from J5c, so K3 adds no admission constraint.
+
+**Positive proof the deployed code carries K3** (service's own venv, deployed checkout):
+lane_failures round-trip through LiveHelperTerminalRecord.to_dict(); expire() takes
+lane_failure_codes; abort() takes detail; and - the one K5d depends on - under the DEPLOYED
+uvicorn logging config the line prints verbatim:
+  live helper terminal: session=s1 reason=helper_all_lanes_failed lane.system=device_unavailable
+
+**m4mbp**: fetch from `alphasight` (origin is OpenMOSS there), checkout fc7097d, tree a6261b52…;
+macos witnesses CaptureSecurity.swift f66c8dcf… (was c79b2dbf…) and NativeLaneHealth.swift
+0ddc66c6… (was a8533b08…). Then build-app.sh --dry-run + --configuration release
+(MOSSCaptureApp 5.15 s, mtd-capture 0.51 s), install-app.sh --dry-run + install.
+Backups (the ONLY copy of the pre-K5c bytes - SwiftPM is not reproducible here):
+  /Applications/MOSSCapture.app.backup-20260728T191937Z
+  /Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z
+
+**The one input this loop cannot re-obtain survived, and it was measured, not assumed.** Both
+TCC grants still read auth_value=2 for com.alphasight.moss.capture AFTER the bundle was
+replaced. The inode DID move, 211648186 -> 211995344 (mtime 2026-07-28T15:19:30Z) - which is
+the positive proof the replacement really happened, and therefore proof the grants are keyed to
+bundle id + signing identity rather than to the inode. Context previously wrote "the inode
+carries the TCC grants"; that premise is now falsified and the block is corrected.
+The DR is byte-identical to E1/G6 for both app and CLI (leaf H"e118d874…"), `codesign --verify
+-R=<DR>` passes, `--verify --strict` ok, and G1's ATS block is still in the installed Info.plist.
+This makes the PRD's "the designated requirement ... is unchanged across a rebuild" clause
+proven across an ACTUAL rebuild for the first time, not across a re-verification.
+
+**Proof the INSTALLED product carries the cycle, with a discriminating witness.** The installed
+CLI hashes identically to the built product (c11e89ff…), and `strings` finds `sessionRefusal`
+3x in the new binary and 0x in the pre-K5c backup (failureCode 2->3, lanes 5->6). A vocabulary
+absent from the old binary and present in the new one discriminates; a count that merely rose
+does not.
+
+**Client clauses re-measured.** From MacStudio: served leaf still hashes to the D2 pin
+a35ca9fc…, /live 200, /api/live/descriptor 200, batch http://192.168.68.38:7860/ 200,
+/api/jobs 200, plaintext http://100.64.0.8:7861/live dead (000, rc=52). From m4mbp itself: same
+leaf hash - so the stored pin is still the served leaf and NO re-pairing is needed after the
+reinstall - /live 200, /api/live/descriptor 200.
+
+**Unplanned finding, and it is a real datum for K5d rather than noise.** The server journal
+showed the attended session's app STILL RUNNING and still retrying: 172.30.112.1 (the Windows
+NAT front for the tailnet) posting
+/api/live/sessions/f362c1f5db1e44fb8692fa98aa9affe4/heartbeat -> 403 at roughly 1 Hz, 1623 such
+lines in 15 minutes, and CONTINUING ACROSS the service restart. So the pre-K5c client retries a
+session the server has never heard of, indefinitely, with no backoff and nothing on any surface
+saying so - the exact defect K4 was written to make visible, caught in the wild on the old
+build. The process (MOSSCaptureApp pid 14978) was stopped before the reinstall, because leaving
+it up would have left the old code resident and made K5d interrogate the wrong product. The
+403s stopped at 15:19:17 and did not resume. K5d must check that the NEW build stops rather
+than spins.
+
+Files touched: scripts/ralph-afk/{context.md,progress.txt} only. No tracked product source
+changed - correct, since the post-merge freeze is in force from d35be63 on and K5c is a
+deployment step.
+
+Validation: four-way `git rev-parse` all four checkouts = fc7097d; `/live` 200 from MacStudio
+and from m4mbp; both TCC grants auth_value=2 after the reinstall; DR verified positively;
+0 tracebacks; batch MainPID unmoved.
+
+Evidence paths: context.md's K5c redeploy block and the K5c validation block;
+/tmp/k5c-server-checkout.sh, /tmp/k5c-server-preflight.sh, /tmp/k5c-restart.sh,
+/tmp/k5c-final.sh (disposable host scripts, rebuild them from the validation block).
+
+Learned two things worth keeping. (1) The parity-witness RULE is "a number that must differ if
+the checkout is stale", not "hash the new file" - the new-file form is just the easiest
+instance, and a merge that adds no file needs the changed-file form. (2) The redeploy checklist
+was written when every merge was server-only; a client-carrying merge needs three extra steps
+(stop the running app, rebuild, re-verify TCC) and none of them were in the recorded order
+until now. The validation block now carries the K5c form so the next client-side cycle does not
+rediscover it.
+
+Next: **K5d**, the re-read, and it is now unblocked on every host. Re-run pair -> start on
+m4mbp and READ THE CODES from the three surfaces this cycle built: the server journal's
+`live helper terminal: session=… reason=… lane.<lane>=<code>` (K3, proven to survive the
+deployed logging config), the Mac's
+`log show --predicate 'subsystem == "com.alphasight.moss.capture"'` per-lane failure line (K2),
+and `mtd-capture status` for both lanes plus sessionRefusal (K1/K4). Do NOT guess the cause
+first - TCC, pinning/network, schema and duplicate helpers are all already ruled out by
+measurement, so the answer will be something none of those covers.
