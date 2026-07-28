@@ -12764,3 +12764,149 @@ captured before the run, /tmp/i23-host-baseline.txt):
 
 No tracked product source is touched by this iteration. No checkout, no merge, no push,
 no deploy, no restart, no app install.
+
+================================================================================
+Iteration 23 of run 20260728-181020 - m4mbp gone a third time, so the REACHABLE half
+of gate step (d) was taken: D-c measured on the wire against the deployed 77e0014.
+The cap is live, derivation-exact and SAFE - and unexercised, so it is still unproven.
+================================================================================
+
+Target: Phase M gate step (d), server half. m4mbp was polled at the top of the iteration
+and continuously through it (24+ polls, ssh "Operation timed out", 100% ICMP loss on
+100.64.0.4) - the same physical-host blocker as iterations 21 and 22, unchanged. The
+SERVER, however, is up: /api/live/descriptor 200 over the pinned leaf and batch 200. So
+the iteration took the half of F1's red latency clause that is purely server-side and had
+never been exercised end to end since the sixth merge.
+
+WHAT WAS ACTUALLY UNMEASURED, WHICH IS WHY THIS WAS WORTH A HOST RUN. Iteration 20's
+redeploy proved D-c present by CALLING canonical_decode_token_cap() under the service's
+venv (286 / 112). It never drove a single real span through the deployed decoder with the
+cap in force. Between the sixth merge and this run, nothing had put real audio through
+live_adapters.py / live_coordinator.py / live_service_runtime.py on the host.
+
+THE INSTRUMENT GAP, CLOSED FIRST, AND IT IS ITERATION 22'S LESSON IN A SECOND COSTUME.
+  live-pipeline-probe.py collected canonical_decode_rtf and DROPPED
+  canonical_decode_elapsed_sec, canonical_decode_token_cap and canonical_decode_capped -
+  it predates D-c (iteration 16), so it was STRUCTURALLY incapable of answering the
+  question. Iteration 22: a reducer that PRINTS a fault does not DECIDE it. Iteration 23:
+  a probe that never COLLECTS a field cannot MEASURE it. Same defect one layer earlier.
+  The probe now carries all three fields plus a `decode` section, and re-derives the
+  expected cap by IMPORTING the product's own canonical_decode_token_cap rather than
+  restating the formula - the lane-refusal probe's rule (import, do not restate, or the
+  tool drifts from the code it checks). It falls back to the recorded literal only when
+  the checkout is not importable, and the report says which was used
+  (cap_expectation_source = "product-function" on this run).
+  VALIDATED OFFLINE ON SIX SYNTHETIC CASES BEFORE SPENDING A HOST RUN, including the two
+  that decide whether the tool can be trusted:
+    - a service with NO cap on the wire reduces to cap_present_count=0 /
+      cap_derivation_holds=False, NOT to a pass (an absent cap and an unexercised cap must
+      not reduce to the same silence);
+    - a DRIFTED cap names its span: {'span_id': 2, 'cap': 2048, 'expected': 286}.
+  Also replayed F1's two recorded runaways through it: rtf p95 0.14 (under bound) with max
+  3.396 - i.e. the tool reproduces the fact that F1's RTF GATE WAS GREEN while two spans
+  set the entire committed p95. Reporting max separately is the point.
+
+THE RUN. 120 s, --lane-offset-ms system=137 (mandatory), device
+ralph-i23-dc-probe-20260728T225905Z, report /tmp/i23-probe.json, rc=0.
+ GREEN, end to end, and this is the first real-audio exercise of the sixth merge:
+   240 ticks / 480 frames, non_200_count 0, one TLS handshake
+   accepted == accounted == committed == 1 920 000 samples (exactly 120 s at 16 kHz)
+   status closed, terminal_failure null, 4 attributed speakers S01-S04, 0 unattributed
+   36 of 59 spans committed EMPTY - H1's "commit empty, never terminal" firing 36 times
+     with the accounting still balancing exactly. That is the strongest available
+     statement that the empty path holds at volume, not just in a unit test.
+ D-C IS IN FORCE ON REAL SPANS, AND THE DERIVATION HOLDS ON THE WIRE:
+   58 of 58 spans carry canonical_decode_token_cap
+   every one equals the product's own function for that span's duration
+   21 DISTINCT cap values, 89 ... 286 -> genuinely per-span, not a constant that happens
+     to be present. Iteration 20 called the function; this is the number coming BACK.
+ AND THE HONEST LIMIT: capped_count = 0.
+   No span ran away, so nothing was truncated, so the ABSENCE of F1's 8.5 s tail here
+   CANNOT BE CREDITED TO THE CAP. F1's runaway rate was 2 of 42; 0 of 58 is ~5% likely on
+   that rate, so this is weak evidence the rate is lower on clean synthetic audio and NO
+   evidence about the cap's effect. The cap is DEPLOYED AND UNEXERCISED. F1 still decides
+   candidate 50, and I am not recording a latency improvement here.
+
+WHAT THE RUN DOES PROVE ABOUT THE CAP IS ITS SAFETY, ON CONTENT IT WAS NOT DERIVED FROM.
+A cap that truncates real speech would be worse than the runaway it prevents, so this is
+the property that had to hold. The 23 committed spans with text were tokenised by the
+DEPLOYED decoder's own tokenizer (host vLLM /tokenize, iteration 16's read-only recipe;
+calibrated to 0 with AND without special tokens, so no hidden template):
+   tokens per span 14 - 24 against caps of 89 - 286
+   minimum headroom 7.64x, median 13.0x   (iteration 16's derivation dataset: min 4.88x)
+THE AFFINE FORM'S FIXED TERM IS LOAD-BEARING, MEASURED RATHER THAN ARGUED:
+   spans >= 2.0 s (n=16): max 9.60 tok/audio-s - well under the 21.6 the constant came
+     from, 9.06x rate-term margin still in hand
+   spans <  1.0 s (n=2) : max 31.32 tok/audio-s - the transcript's own syntax not
+     shrinking with the audio, exactly what iteration 16 predicted
+   on those two sub-second spans a PURE RATE cap would have left 2.79x and 5.33x headroom
+     where the affine cap leaves 7.64x and 9.87x.
+   => do NOT "simplify" the cap to a rate. The 68 is why short spans are not starved.
+
+NEW FACT THAT WILL OTHERWISE BE MISREAD AS A RUNAWAY: the session's FIRST decode is engine
+warm-up. Span 0 took 1.689 s for 0.763 s of audio (RTF 2.214) and returned an EMPTY
+transcript, while all 57 other spans decoded in <= 0.456 s (min 0.104, p50 0.207, p95
+0.456). Decoder RTF p95 0.574 < 1 (green); the rtf MAX of 2.214 is that warm-up span
+alone. This matches the recorded "one pre-warm 2.5 s request took 3.851 s". Pre-warm or
+discount span 0, or a clean run reports a false tail.
+
+NOT COMPARABLE, STATED SO THE NUMBER IS NOT BORROWED: the probe's own committed p95
+2809.0 ms / user-visible 3954.7 ms are a DIFFERENT INSTRUMENT on DIFFERENT AUDIO than
+F1's app-owned 9052.9 ms / 10426 ms. The Mac half - outbox, pump, lane health - is
+untouched by this run. Quoting 2809 vs 9053 as an improvement would be false.
+
+VALIDATION (smallest commands that produced real evidence):
+  python3 -m py_compile scripts/ralph-afk/live-pipeline-probe.py            -> OK
+  six offline synthetic cases against _decode_summary/_expected_cap_function -> ALL PASS,
+    and the imported product function reproduces 286 (40000 samples) / 112 (8000) exactly
+  the host run itself: rc=0, non_200_count 0, accounting equality exact
+  host tokenizer calibration: empty string -> 0 both with and without special tokens
+  git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'                -> EMPTY
+    (product source still identical to the deployed SHA; the probe's validity argument
+     holds and no product source was touched this iteration)
+Evidence paths: /tmp/i23-probe.json (report), /tmp/i23-probe-run.log (240-tick transcript),
+  /tmp/i23-tokens.json (per-span token counts + headroom), /tmp/i23-spans.json,
+  /tmp/i23-host-baseline.txt and /tmp/i23-host-after.txt (before/after host state),
+  /tmp/i23-m4mbp-poll.log, context.md block "D-c is MEASURED on the deployed service".
+
+ROLLBACK EXECUTED, as pre-recorded and committed in 155f9bb BEFORE the host was touched:
+  curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/ralph-i23-dc-probe-...  -> 200
+  live-auth.json: 10 devices, unrevoked = 1, and it is
+    AB600574-FD93-4321-967E-652AB064A70B (m4mbp's) - the probe device is revoked:true
+  HEAD still 77e0014; moss-live-web MainPID 350731, moss-web 301112, moss-vllm 322117,
+    all NRestarts=0 and unchanged from the baseline; live-runs 0 entries; no
+    /tmp/mtd-live-*; 0 journal tracebacks; batch http://192.168.68.38:7860/ still 200.
+  No checkout, no merge, no push, no deploy, no restart, no app install, no product source.
+
+Learned.
+(1) A TOOL BUILT BEFORE A FEATURE CANNOT MEASURE IT, AND ITS SILENCE LOOKS LIKE A PASS.
+    The probe had been "the" pipeline instrument for five phases, so it read as capable.
+    Whenever a product change adds a field, ask which existing instrument was supposed to
+    see it - the answer was "none" here, and that is why D-c reached iteration 23
+    deployed-but-unmeasured.
+(2) DEPLOYED, EXERCISED AND EFFECTIVE ARE THREE DIFFERENT CLAIMS. This run moved D-c from
+    "present in the source" to "deployed and derivation-exact on the wire" and PROVED its
+    safety, while leaving its latency effect exactly as unproven as before. Collapsing
+    those into "D-c works" is the failure mode the whole loop keeps paying for.
+(3) A BOUND MUST BE PROVED NOT TO BITE BEFORE IT IS PROVED TO HELP. The cheap, always-
+    available measurement for any cap is headroom on content it was NOT derived from -
+    7.64x here vs 4.88x on the derivation set. That test needs no runaway to occur.
+(4) THE FIRST DECODE OF A SESSION IS WARM-UP AND WILL BE READ AS A RUNAWAY. It was the
+    single worst RTF in an otherwise clean run. Any latency clause measured over a whole
+    session must say whether span 0 is in or out.
+
+Blocker: unchanged and physical - m4mbp is asleep or powered off (ssh timeout, 100% ICMP
+loss, no second route: MacStudio 192.168.68.36, m4mbp 192.168.1.240 on a different LAN, no
+ARP entry so Wake-on-LAN is unreachable). F1 and F3 - the whole of gate step (d), and
+therefore the 60 s canary, 300 s certification and 16-minute soak clauses - still cannot
+run. The server half is now as measured as it can be without the Mac.
+
+Next: the moment `ssh ga0@m4mbp` answers, F1 (pkill MOSSCaptureApp, relaunch fresh,
+re-pair, live-canary.sh NOHUP'd, reduce with live-canary-analyze.py AND
+live-canary-clauses.py), then F3 with live-soak.sh --user-visible-gate-ms 6000. When F1
+runs, read its decode tail against THIS run's baseline: body <= 0.456 s, warm-up span 0
+excluded, and a capped span is now visible as canonical_decode_capped rather than
+inferred. If m4mbp is still gone, the remaining non-host work is evidence repair - and
+context.md is now ~209 KB / ~2450 lines, so candidate 52's retirement pass (fold the F1/F3
+diagnosis blocks into progress.txt) is the next honest instrument-free iteration, though
+the record says to do it only once F1 and F3 have passed.

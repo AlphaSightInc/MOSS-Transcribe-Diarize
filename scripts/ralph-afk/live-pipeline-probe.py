@@ -585,6 +585,13 @@ def main() -> int:
                                     "submission_refusal",
                                     "empty_reason",
                                     "canonical_decode_rtf",
+                                    # D-c (candidate 50, iteration 16) put the decode bound and
+                                    # its verdict on this event. Collecting the RTF alone made the
+                                    # probe unable to say whether a span was CAPPED or merely
+                                    # fast, which is the whole question the cap was added to answer.
+                                    "canonical_decode_elapsed_sec",
+                                    "canonical_decode_token_cap",
+                                    "canonical_decode_capped",
                                     "frozen_span_duration_sec",
                                 )
                             }
@@ -662,6 +669,7 @@ def main() -> int:
 
     report["events_seen"] = events_seen
     report["canonical_events"] = canonical_events
+    report["decode"] = _decode_summary(canonical_events)
     report["view_authority_after_stop"] = _probe_view_after_stop(client, session_id, view_token)
 
     text = json.dumps(report, indent=2, sort_keys=False)
@@ -675,6 +683,104 @@ def main() -> int:
     # span as S00 is a survived run and a failed gate. Say so in the exit code rather than
     # leaving it for a reader of the JSON.
     return 0 if report["transcript"]["attributed_speakers"] else 5
+
+
+def _expected_cap_function():
+    """The cap the deployed service *should* have applied, preferring the product's own function.
+
+    Restating the derivation here would let the probe drift from the code it is checking, which
+    is the mistake the lane-refusal probe already avoided by importing the suite's payload
+    builders. So import `canonical_decode_token_cap` when this checkout is importable, and fall
+    back to the recorded literal (`68 + ceil(87 x duration_sec)`, iteration 16) only when it is
+    not -- the probe must still run from a host that has no package. The report says which was
+    used, because "matches the product" and "matches a number I typed" are different claims.
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from moss_transcribe_diarize.app.live_adapters import (  # noqa: PLC0415
+            canonical_decode_token_cap,
+        )
+    except Exception:  # pragma: no cover - exercised only on a host without the checkout
+        return (lambda samples: 68 + math.ceil(87 * (samples / 16000)), "recorded-literal")
+    return (lambda samples: canonical_decode_token_cap(sample_count=samples), "product-function")
+
+
+def _decode_summary(canonical_events: list[dict]) -> dict:
+    """Reduce the decode measurements D-c added to the `canonical_processed` event.
+
+    F1 measured a committed p95 of 9053 ms whose entire tail came from two spans out of 42
+    that decoded for 8.49 s and 8.29 s as degenerate repeat loops. D-c's answer was a token
+    cap derived from the span's own duration (`68 + ceil(87 x duration_sec)`), so the
+    question this section exists to answer is not "was the decode fast" but three sharper
+    ones: is a cap in force at all, does the cap the service applied match the derivation on
+    record, and did any span actually hit it. A run where nothing is capped still answers the
+    first two -- an absent cap and an unexercised cap are different results and must not
+    reduce to the same silence.
+    """
+    measured = [
+        event
+        for event in canonical_events
+        if isinstance(event.get("canonical_decode_elapsed_sec"), (int, float))
+    ]
+    summary: dict = {
+        "spans_total": len(canonical_events),
+        "spans_measured": len(measured),
+        "cap_present_count": sum(
+            1 for event in measured if isinstance(event.get("canonical_decode_token_cap"), int)
+        ),
+        "capped_count": sum(1 for event in measured if event.get("canonical_decode_capped")),
+        "capped_span_ids": [
+            event.get("span_id") for event in measured if event.get("canonical_decode_capped")
+        ],
+    }
+    if not measured:
+        return summary
+
+    elapsed = sorted(float(event["canonical_decode_elapsed_sec"]) for event in measured)
+    rtfs = sorted(
+        float(event["canonical_decode_rtf"])
+        for event in measured
+        if isinstance(event.get("canonical_decode_rtf"), (int, float))
+    )
+    summary["elapsed_sec"] = {
+        "min": round(elapsed[0], 3),
+        "p50": round(elapsed[max(1, math.ceil(0.50 * len(elapsed))) - 1], 3),
+        "p95": round(elapsed[max(1, math.ceil(0.95 * len(elapsed))) - 1], 3),
+        "max": round(elapsed[-1], 3),
+    }
+    if rtfs:
+        summary["rtf"] = {
+            "min": round(rtfs[0], 3),
+            "p50": round(rtfs[max(1, math.ceil(0.50 * len(rtfs))) - 1], 3),
+            "p95": round(rtfs[max(1, math.ceil(0.95 * len(rtfs))) - 1], 3),
+            "max": round(rtfs[-1], 3),
+            "bound": 1.0,
+            "p95_under_bound": rtfs[max(1, math.ceil(0.95 * len(rtfs))) - 1] < 1.0,
+        }
+
+    # Re-derive the cap the service should have applied, from the span duration it reported.
+    # This is the ONLY check that can tell "D-c is deployed" from "D-c is in the source tree":
+    # the number has to come back off the wire matching the recorded derivation, not merely be
+    # present. Mismatches are listed rather than counted so a drift names its span.
+    expected_cap, cap_source = _expected_cap_function()
+    summary["cap_expectation_source"] = cap_source
+    mismatches = []
+    caps_seen = set()
+    for event in measured:
+        cap = event.get("canonical_decode_token_cap")
+        duration = event.get("frozen_span_duration_sec")
+        if not isinstance(cap, int) or not isinstance(duration, (int, float)):
+            continue
+        caps_seen.add(cap)
+        expected = expected_cap(round(float(duration) * 16000))
+        if cap != expected:
+            mismatches.append(
+                {"span_id": event.get("span_id"), "cap": cap, "expected": expected, "duration_sec": duration}
+            )
+    summary["caps_observed"] = sorted(caps_seen)
+    summary["cap_derivation_mismatches"] = mismatches
+    summary["cap_derivation_holds"] = not mismatches and bool(caps_seen)
+    return summary
 
 
 def _p95(values: list[float]) -> float | None:

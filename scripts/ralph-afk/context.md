@@ -110,8 +110,13 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
   deployed" below. **What remains is (d): F1 and F3, both green.**
 - **Gate step (d) was ATTEMPTED in iteration 21 and is BLOCKED on the capture Mac being awake.**
   The app was launched and the device re-paired, then m4mbp left the tailnet mid-setup and stayed
-  gone; it was **still gone through iteration 22** (~40 polls over 17 min, ssh timeout + 100 % ICMP
-  loss). See "F1's re-run is blocked on a sleeping Mac" below.
+  gone; it was **still gone through iterations 22 and 23** (ssh timeout + 100 % ICMP loss on every
+  poll). See "F1's re-run is blocked on a sleeping Mac" below.
+  **Iteration 23 took the reachable half instead:** the *server* is up, and one 120 s
+  `live-pipeline-probe.py` run against the deployed `77e0014` proved the merged pipeline healthy end
+  to end on real audio and measured D-c on the wire — but `capped_count` 0, so the cap's **latency
+  effect remains unmeasured** and F1 still decides candidate 50. See "D-c is MEASURED on the deployed
+  service" below.
   **Both halves of the run are now instrumented and waiting:** the clause reducer (iteration 21)
   and `scripts/ralph-afk/live-soak.sh` (iteration 22 — F3 with candidate 51's harness, in the repo,
   in a layout the reducer reads). Running the reducer on the real evidence also found that it had
@@ -759,6 +764,66 @@ other 700 B and is bounded by the 16-speaker contract, so it does not grow.
 *Regression, stated because it is what makes the two new verdicts trustworthy:* the iteration-12
 canary and F1 reduce **byte-identically** to the previous reducer through section 7, and the canary
 — a clean meeting — gains **no** new red, so the section-8 clauses do not fire on a healthy run.
+
+**D-c is MEASURED on the deployed service, and the cap is live-but-unexercised (new, iteration 23).
+READ THIS BEFORE READING F1'S RE-RUN AS A VERDICT ON CANDIDATE 50.** m4mbp was unreachable for a
+third iteration, so the reachable half of gate step (d) was taken: one `live-pipeline-probe.py` run
+against the deployed `77e0014` from MacStudio over the tailnet, 120 s, `--lane-offset-ms system=137`,
+device `ralph-i23-dc-probe-20260728T225905Z` (**revoked**; the only unrevoked device is still m4mbp's
+`AB600574…`). Report `/tmp/i23-probe.json`.
+*The instrument gap that was closed first, and it is the iteration-22 lesson in a second costume.*
+The probe collected `canonical_decode_rtf` and **dropped** `canonical_decode_elapsed_sec`,
+`canonical_decode_token_cap` and `canonical_decode_capped` — it predates D-c, so it **structurally
+could not** have answered this question. *A reducer that prints a fault does not decide it
+(iteration 22); a probe that never collects the field cannot measure it.* The probe now carries all
+three plus a `decode` section, and it re-derives the expected cap by **importing the product's own
+`canonical_decode_token_cap`** rather than restating the formula (fallback to the literal only when
+the checkout is not importable; the report names which was used — `product-function` here).
+Validated offline on six synthetic cases before the host run, including the two that matter: a
+service with **no** cap on the wire reduces to `cap_present=0 / derivation_holds=False` rather than to
+a pass, and a drifted cap **names its span** (`cap 2048, expected 286`).
+- **The deployed pipeline is healthy end to end — the first real-audio exercise of the sixth merge.**
+  240 ticks, 480 frames, `non_200_count` **0**, one TLS handshake, and
+  `accepted == accounted == committed == 1 920 000` samples (exactly 120 s at 16 kHz). `status`
+  `closed`, `terminal_failure` null, **4 attributed speakers** (S01–S04), **0 unattributed spans**.
+  36 of 59 spans committed **empty** — H1's path firing 36 times with the accounting still balancing
+  exactly, which is the strongest statement available that "commits empty, never terminal" holds at
+  volume.
+- **D-c is in force on real spans, and the derivation holds on the wire.** **58 of 58** spans carry
+  `canonical_decode_token_cap`, every one equal to the product's own function for that span's
+  duration, across **21 distinct values 89 … 286** — so the cap is genuinely per-span, not a
+  constant that happens to be present. Iteration 20 only *called* the function on the host; this is
+  the first time the number came back off the wire.
+- ***But `capped_count` is 0, so the cap is DEPLOYED AND UNEXERCISED, and this run is NOT evidence
+  that it fixes F1's tail.*** No span ran away, so nothing was truncated, so the missing 8.5 s tail
+  **cannot be credited to the cap**. F1's runaway rate was 2 of 42; 0 of 58 here is ~5 % likely on
+  that rate, so this is weak evidence the rate is lower on clean synthetic audio and **no** evidence
+  about the cap's effect. F1 remains the run that decides candidate 50.
+- **What the run does prove about the cap is its SAFETY, on content it was not derived from.** The
+  23 committed spans with text tokenise (the host's own vLLM `/tokenize`, calibrating to 0 both ways)
+  to **14–24 tokens** against caps of 89–286: **minimum headroom 7.64×**, median 13.0×, where
+  iteration 16's derivation dataset had a minimum of 4.88×. **A cap that truncates real speech would
+  be worse than the runaway it prevents**, and on a third independent dataset it does not.
+- **The affine form's fixed term is load-bearing, measured rather than argued.** Tokens per
+  audio-second is duration-dependent exactly as iteration 16 predicted: spans **≥ 2.0 s** peak at
+  **9.60** tok/audio-s (well under the 21.6 the constant was derived from, 9.06× rate-term margin),
+  while spans **< 1.0 s** reach **31.32** — the transcript's own syntax not shrinking with the audio.
+  On the two sub-second spans a **pure rate** cap would have left only **2.79×** and 5.33× headroom
+  where the affine cap leaves 7.64× and 9.87×. Do not "simplify" the cap to a rate.
+- **The first decode of a session is warm-up, and certification must not read it as a runaway.**
+  Span 0 took **1.689 s for 0.763 s** of audio (RTF 2.214) and returned **empty**; every one of the
+  other 57 spans decoded in **≤ 0.456 s** (min 0.104, p50 0.207, p95 0.456). Decoder **RTF p95
+  0.574 < 1** — green — and the `max` of 2.214 is that warm-up span alone. This matches the recorded
+  "one pre-warm 2.5 s request took 3.851 s"; **pre-warm or discount span 0**, or a clean run reports
+  a false tail.
+*What this says nothing about, stated so the next reader does not borrow the number:* the Mac half —
+outbox, pump, lane health — is untouched by this, and the probe's own committed p95 **2809 ms** /
+user-visible **3954.7 ms** are a **different instrument on different audio** than F1's app-owned
+9053 ms. They are not comparable and must not be quoted as an improvement.
+*Host untouched:* `HEAD` still `77e0014`, `moss-live-web` MainPID **350731**, batch `moss-web`
+**301112** / `moss-vllm` **322117**, all `NRestarts=0`; `live-runs` 0 entries, no `/tmp/mtd-live-*`,
+**0** journal tracebacks, batch `/` still 200. Baselines `/tmp/i23-host-baseline.txt` and
+`/tmp/i23-host-after.txt`.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -1624,6 +1689,19 @@ python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-span-sweep \
 #    `rm -f "$D"/*.wav` in the SAME invocation - audio does not belong in /tmp on the server.
 # 4. after any run: host HEAD unchanged, both MainPIDs unchanged with NRestarts=0, live-runs/ 0,
 #    no /tmp/mtd-live-*, 0 journal tracebacks, both probe devices revoked, m4mbp device NOT revoked.
+# 5. SINCE ITERATION 23 the report carries a `decode` section reducing D-c's own event fields:
+#    spans_measured / cap_present_count / capped_count / capped_span_ids, elapsed_sec and rtf
+#    quartiles, caps_observed, and cap_derivation_mismatches. `cap_expectation_source` says whether
+#    the expected cap came from the PRODUCT function (imported) or the recorded literal - prefer
+#    the former and treat a `recorded-literal` report as weaker evidence. Read the three states
+#    apart, because they are NOT the same result:
+#      cap_present_count == 0            -> D-c is NOT on this service (a pre-iteration-16 build)
+#      cap_derivation_holds == false     -> it is there and DRIFTED; the mismatch names its span
+#      capped_count == 0 with the above green -> deployed and UNEXERCISED. This is a pass on the
+#        cap's SAFETY (nothing truncated) and says NOTHING about its latency effect.
+#    ALWAYS discount span 0: the session's first decode is engine warm-up (measured iteration 23:
+#    1.689 s for 0.763 s of audio, RTF 2.214, empty transcript, against <= 0.456 s for all 57
+#    others). It is the `rtf.max` in an otherwise clean run and reads exactly like a runaway.
 
 # --- the lane-refusal probe (iteration 11). Names the 409 that ends a meeting after one capture
 #     overrun, and reproduces the rival sequence-gap hypothesis beside it. Offline and
@@ -2278,7 +2356,12 @@ all three decisions and the coverage gap have landed; what remains in Phase M is
     `canonical_processed` event carries `canonical_decode_token_cap` / `canonical_decode_capped`.
     See "The decode is bounded" above. **DEPLOYED in iteration 20** — the host's own interpreter
     reproduces the cap as 286 (2.5 s) / 112 (0.5 s), so the offline probes speak for the service
-    again.
+    again. **MEASURED ON THE WIRE in iteration 23**: 58/58 spans of a real 120 s pipeline-probe run
+    carry a per-span cap matching the product's own function (21 distinct values 89…286), and the
+    cap's **safety** is confirmed on an independent third dataset (min headroom **7.64×**, vs 4.88×
+    on the derivation dataset). **`capped_count` was 0**, so the cap is deployed and *unexercised* —
+    its **latency effect is still unmeasured**, and F1 is still the run that decides it. See
+    "D-c is MEASURED on the deployed service" above.
 D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two code enums, a
     `degraded` state the server's contract already had, the mailbox's overrun fence removed (it
     would have silenced a still-producing lane), the mailbox overflow given its own code, and K2's
