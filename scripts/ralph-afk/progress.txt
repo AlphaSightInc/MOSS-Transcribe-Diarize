@@ -12206,3 +12206,61 @@ name); (vi) re-run the READ-ONLY TCC query afterwards - the grants survived K5c'
 the four-way SHA to bring "one exact SHA everywhere" back to 4/4. Then step (d): F1 and F3 with
 scripts/ralph-afk/live-canary.sh, both required green, which is what finally MEASURES candidate 50's
 predicted latency drop (committed p95 9.05 s -> near the 1.5 s median lag).
+
+================================================================================
+Iteration 20 of run 20260728-181020 - M6c PRE-RECORDED ROLLBACKS (written before
+any mutation, per prd.md "Reversibility")
+================================================================================
+
+Target: Phase M gate step (c) - publish 77e0014 and redeploy it to the server AND to m4mbp.
+This merge is NOT server-only: four macos/ product files changed (CaptureController,
+CaptureSecurity, NativeDualCaptureSource, NativeLaneHealth), so this is the K5c shape, not
+the server-only J5c one.
+
+Pre-state measured read-only, all three hosts still at fc7097d:
+- local main 77e0014 (merged in iteration 19, unpushed); origin/main fc7097d
+- server /mnt/d/Coding/MOSS-Transcribe-Diarize HEAD fc7097d, clean;
+  moss-live-web MainPID 346453 NRestarts=0 active; moss-web MainPID 301112 NRestarts=0 active;
+  moss-vllm MainPID 322117 NRestarts=0 active
+- m4mbp checkout HEAD fc7097d, clean; MOSSCaptureApp NOT running;
+  /Applications/MOSSCapture.app inode=211995344 mtime=1785266370 (2026-07-28 15:19 local,
+  unchanged since K5c); /Users/ga0/.local/bin/mtd-capture sha256 c11e89ff...
+- fast-forward proven: `git merge-base --is-ancestor origin/main main` true (fc7097d..77e0014)
+- payload scope re-proven at the SHAs being deployed:
+  `git diff --name-only fc7097d 77e0014 -- moss_transcribe_diarize/ ops/` = 3 files
+  (live_adapters.py, live_coordinator.py, live_service_runtime.py) and NO ops/ file;
+  `git diff --name-only fc7097d 77e0014 -- macos/` = 5 files (4 product + 1 test file)
+
+ROLLBACKS, to be applied in this order if any step fails:
+
+1. Server checkout + service (undoes the redeploy; the running process serves the code it
+   started with, so the checkout alone changes nothing until the restart):
+     git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout fc7097d0c729ee9a96b8bf95878582e07b5b1145
+     systemctl --user restart moss-live-web.service
+     # then POLL https://127.0.0.1:7861/live for 200 (~8-11 s; a single probe before 8 s
+     # returns 000 and reads exactly like a failure)
+   NEVER `git clean` there - it would delete the untracked ops/moss-live.env the service needs.
+
+2. m4mbp checkout (main and both remotes are untouched; only HEAD moves):
+     git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize \
+       checkout fc7097d0c729ee9a96b8bf95878582e07b5b1145
+
+3. m4mbp app + CLI reinstall (install-app.sh prints its own <utc>-stamped pair; the exact
+   strings it prints are recorded in the iteration body below once it has run):
+     rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-<utc>' '/Applications/MOSSCapture.app'
+     rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-<utc>' '/Users/ga0/.local/bin/mtd-capture'
+   The pre-M6c bytes are ALSO still available as the K5c-era backup
+   /Applications/MOSSCapture.app.backup-20260728T191937Z (which is the PRE-K5c product, i.e.
+   G1+G2+G3 without K1/K2/K4) - a different, older product; prefer the M6c-stamped pair.
+   DO NOT delete the K5c-stamped backup this run creates: SwiftPM is not byte-reproducible on
+   that host, so those are the only copies of the fc7097d bytes.
+
+4. `git push origin main` has NO rollback and none is attempted: force-push is forbidden by
+   prd.md. It is a fast-forward of an already-reviewed, already-merged, gate-green SHA, and
+   every host-side effect is reversible by (1)-(3) independently of what origin holds.
+   `upstream` is OpenMOSS - never push there.
+
+5. The TCC grants are NOT a mutation of this step and are not rolled back. They key on the
+   designated requirement, which is unchanged by a rebuild (measured in K5c: inode moved
+   211648186 -> 211995344 and both grants survived). The read-only query is re-run afterwards
+   as a check, never as a write.
