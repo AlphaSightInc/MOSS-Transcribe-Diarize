@@ -94,8 +94,10 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 - **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** `[done —
   iteration 16]`. D-c implemented: the live decode now carries a token cap derived from the span's
   own duration, and a capped span commits its words and says so. See "The decode is bounded"
-  below. **The measured latency effect is still unmeasured on real hardware** — it is predicted,
-  and F1/F3 are what will decide it.
+  below. **Its latency effect is now MEASURED on the deployed engine (iteration 24): a runaway
+  costs 8.13 s uncapped and 1.07 s capped, 7.57x, reproducing F1's own runaways within 4 %.** What
+  F1 still decides is the *rate* of runaways and the end-to-end p95 on the Mac. See "D-c's latency
+  effect is MEASURED" below.
 - **The coverage gap is CLOSED** `[done — iteration 17]`: two nodes in `tests/test_live_api.py`
   now post a frame on the lane that **failed** and on the lane that **degraded**. See "The failed
   lane is in the suite" below.
@@ -824,6 +826,67 @@ user-visible **3954.7 ms** are a **different instrument on different audio** tha
 **301112** / `moss-vllm` **322117**, all `NRestarts=0`; `live-runs` 0 entries, no `/tmp/mtd-live-*`,
 **0** journal tracebacks, batch `/` still 200. Baselines `/tmp/i23-host-baseline.txt` and
 `/tmp/i23-host-after.txt`.
+
+**D-c's latency effect is MEASURED — a runaway costs 8.13 s uncapped and 1.07 s capped (new,
+iteration 24). READ THIS BEFORE READING F1 AS THE VERDICT ON CANDIDATE 50.** m4mbp was unreachable a
+fourth time, so the iteration took the half of candidate 50 that never needed the Mac. Iteration 23
+left the cap **deployed, derivation-exact and safe but UNEXERCISED** (`capped_count` 0), so its
+latency effect was still only predicted. `scripts/ralph-afk/decode-cap-latency-probe.py` induces the
+runaway deliberately instead of waiting for one, on the deployed `77e0014` engine.
+- **The paired measurement, same audio, same trigger, same real seam.** Both conditions run through
+  the product's own `RunnerBoundedWavInference.transcribe_pcm` with a real `FrozenSpan` of the
+  contract's 40000 samples; only `_token_cap` differs — **A** overridden to the 2048 that was
+  actually in force before D-c (a semantic revert of D-c inside the probe), **B** the product's own
+  `canonical_decode_token_cap`, imported not restated.
+
+  | condition | tokens | wall median | RTF |
+  | --- | --- | --- | --- |
+  | control, no trigger | 49 | **0.198 s** | 0.081 |
+  | **A pre-D-c 2048** | 2048 (3/3 hit) | **8.129 s** (8.036-8.192) | 3.277 |
+  | **B deployed cap 286** | 286 (3/3 hit) | **1.074 s** (1.071-1.077) | **0.431** |
+
+  **7.571x, 7.056 s off the head of the serial queue**, and a fully capped runaway no longer breaks
+  the RTF gate either (0.431 < 1, where the runaway is 3.277).
+- ***The reproduction is F1's own failure, within 4 %.*** F1's two runaways were 2024 / 2019 tokens
+  at 8.49 / 8.29 s, RTF 3.398 / 3.318; condition A reproduces 2048 tokens at 8.13 s, RTF 3.277. That
+  agreement is the evidence that the induced condition is the same condition, and it makes the
+  measured generation rate **251.9 tok/s** — against the 238 tok/s iteration 16 predicted from F1's
+  own spans, which predicted ~1.2 s for a capped span where **1.074 s** was measured. *The
+  iteration-16 prediction was right.*
+- **The queue argument, which is the part that reaches F1's p95.** This probe bounds the head of the
+  serial queue, not the queue. But F1 committed 42 spans over 73.3 s, i.e. a mean span arrival of
+  **1.745 s** — so an 8.13 s decode is **4.66x the arrival interval** and *necessarily* accumulates
+  backlog (F1 measured exactly that: spans behind the runaways committed 4.9-8.3 s late), while a
+  1.074 s decode is **below** the arrival interval and therefore cannot accumulate any. That is a
+  structural statement, not an extrapolation.
+- ***What this run does NOT establish, stated so the number is not over-read.*** (a) The **rate** of
+  runaways is unmeasured — the trigger is deliberate, so this says nothing about how often a real
+  meeting hits one. (b) The trigger is `temperature=2.0`, i.e. high-entropy sampling, **not** a
+  natural repeat loop, and the survey below is why. (c) **D-c's "a capped span commits its words"
+  half is NOT verified here:** this trigger's output is unparseable at *any* length, so the product
+  reported 0 tokens and an empty transcript for the capped *and* the uncapped runs alike — there
+  were no words to commit either way. F1's repeat loops were parseable fragments; that half of D-c
+  still rests on the unit tests alone. What the empty answers *do* show is H1's path firing three
+  more times without going terminal.
+- **The trigger had to be measured, not assumed, and the first two guesses were wrong.** The
+  endpoint's own `/openapi.json` has **no `ignore_eos` and no `min_tokens`**, so the loop must come
+  from a sampling field. Surveyed at the pre-D-c bound on the same span (control 49 tokens):
+  `repetition_penalty=0.5` → **0 tokens** (it *suppresses* generation, immediate EOS, 0.04 s);
+  `frequency_penalty` -2.0/-1.0, `presence_penalty` -2.0, their combination, and
+  `repetition_penalty=0.9` → **27 tokens**, i.e. all *shorten* the answer; `repetition_penalty=1.05`
+  → 49, unchanged. Only **`temperature=2.0`** ran away. A probe that had assumed its trigger worked
+  would have compared two identical empty decodes and reported a meaningless 1.0x.
+*Host untouched, checked against a baseline taken first:* `HEAD` still `77e0014`; `moss-live-web`
+**350731**, `moss-web` **301112**, `moss-vllm` **322117**, all `NRestarts=0`; `live-runs` 0 entries,
+no `/tmp/mtd-live-*`, no probe scratch left, **0** tracebacks, batch `/` 200, and the device store
+still **10 devices / 1 unrevoked** (m4mbp's) — this probe creates no device and no session. The four
+`/tmp/*.wav` on the host are dated **2026-07-27**, a day before this run, and are the feasibility
+probe's; the run's own span wav was deleted in the same invocation that wrote it.
+*Reusable:* `python3 scripts/ralph-afk/decode-cap-latency-probe.py --wav <2.5 s span> --checkout
+<deployed checkout> --extra-field temperature=2.0 --extra-field seed=<n> --repeats 3`, shipped to
+the host on stdin and run under the service venv. `--survey --candidate 'label:field=value,...'`
+re-answers the trigger question if the engine is ever replaced. Evidence `/tmp/i24-measure-raw.txt`,
+`/tmp/i24-survey.log`, `/tmp/i24-host-baseline.txt`, `/tmp/i24-host-after.txt`.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -1736,6 +1799,37 @@ python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-lane-refu
 #   Note what is being counted: the COMMITTED (relabeled) transcript, not the decoder's raw output.
 #   They differ only in the speaker tag, which is why it is a sound proxy for a token budget.
 
+# --- the decode-cap latency probe (iteration 24). Answers what D-c's token cap COSTS a runaway,
+#     which no live run can answer until a span happens to run away. Induces the runaway instead.
+#     Read-only on deployed state: no session, no device, no auth write, no restart - it sends
+#     inference requests to the resident vLLM, like live-identity-seam-probe.py. ~35 s.
+#     rc 0 runaway reproduced AND capped AND faster / 3 no runaway (INCONCLUSIVE, not a pass) /
+#     4 the cap did not stop generation / 2 could not run.
+# 1. BUILD THE AUDIO FIRST, and do NOT reach for golden.wav: it decodes to ZERO tokens (the fence
+#    already recorded that under H blocker 4) so every condition comes back empty and the run is
+#    wasted. Use a real-speech span, byte-deterministically:
+python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/i24-sweep \
+  --report /tmp/i24-sweep/index.json --seconds 20 --lead-seconds 1.0 \
+  --lane-offset-ms system=137 --cut 92208:40000 --cut 268208:40000
+#    sha256 must still be 844e6eff… / 038cf855… (re-verified in iteration 24, two runs apart).
+# 2. Ship probe + wav base64'd on ONE stdin script, run under the SERVICE venv from the deployed
+#    checkout, and `rm -f "$D"/*.wav` in the SAME invocation - audio does not belong in /tmp there.
+#      "$V" probe.py --wav span.wav --checkout /mnt/d/Coding/MOSS-Transcribe-Diarize \
+#        --span-samples 40000 --repeats 3 --extra-field temperature=2.0 --extra-field seed=20260728
+#    The seed makes the capped run a true PREFIX of the uncapped one, so the pair is comparable.
+# 3. THE TRIGGER IS MEASURED, NEVER ASSUMED. There is no `ignore_eos` and no `min_tokens` on this
+#    endpoint (read off its own /openapi.json). Surveyed in iteration 24 against control 49 tokens:
+#      temperature=2.0                      -> 2048  RUNS AWAY  <- the only one that works
+#      repetition_penalty=0.5               -> 0     SUPPRESSES generation entirely
+#      frequency_penalty -2.0/-1.0, presence_penalty -2.0, both, repetition_penalty 0.9 -> 27
+#      repetition_penalty=1.05              -> 49    unchanged
+#    Re-answer it with `--survey --candidate 'label:field=value[,field=value]'` if the engine moves.
+# 4. COUNT TOKENS AT THE ENGINE SEAM, NOT THE PRODUCT'S. `RunnerBoundedWavInference` maps an
+#    unparseable answer onto H1's empty path and reports **0** generated tokens however long the
+#    engine ran, so a genuine 8.2 s runaway scores as "0 tokens, no runaway". The probe reads
+#    `usage.completion_tokens` off the response itself and flags `product_lost_the_count`.
+#    Measured iteration 24 on 77e0014: 2048 tok / 8.129 s uncapped vs 286 tok / 1.074 s capped.
+
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
 
@@ -2359,9 +2453,18 @@ all three decisions and the coverage gap have landed; what remains in Phase M is
     again. **MEASURED ON THE WIRE in iteration 23**: 58/58 spans of a real 120 s pipeline-probe run
     carry a per-span cap matching the product's own function (21 distinct values 89…286), and the
     cap's **safety** is confirmed on an independent third dataset (min headroom **7.64×**, vs 4.88×
-    on the derivation dataset). **`capped_count` was 0**, so the cap is deployed and *unexercised* —
-    its **latency effect is still unmeasured**, and F1 is still the run that decides it. See
-    "D-c is MEASURED on the deployed service" above.
+    on the derivation dataset). `capped_count` was 0 there, so the cap was deployed and
+    *unexercised*. **ITS LATENCY EFFECT IS NOW MEASURED (iteration 24)**, by inducing the runaway
+    rather than waiting for one: on the deployed engine, over the same 2.5 s span and the same
+    trigger, a decode costs **8.129 s at the pre-D-c 2048 bound** and **1.074 s at the deployed cap
+    of 286** — **7.571×**, 7.056 s off the head of the serial queue, RTF 3.277 → **0.431**. It
+    reproduces F1's own runaways within 4 % (2048 tok / 8.13 s vs F1's 2024 / 8.49 s), which
+    confirms iteration 16's 238 tok/s prediction at a measured **251.9 tok/s**. Since F1's mean span
+    arrival was 1.745 s, a capped decode sits *below* the arrival interval and cannot build backlog
+    where the uncapped one is 4.66× it and must. **Still open and only F1 can close it:** the
+    *rate* of runaways, the end-to-end p95 on the Mac, and D-c's "commits its words" half (this
+    trigger's output is unparseable at any length, so nothing was there to commit). See
+    "D-c's latency effect is MEASURED" above.
 D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two code enums, a
     `degraded` state the server's contract already had, the mailbox's overrun fence removed (it
     would have silenced a still-producing lane), the mailbox overflow given its own code, and K2's
@@ -2399,9 +2502,13 @@ amendment's literal order is unreachable and why this one drops nothing.**
   that is written but never yet exercised. Reduce both with `live-canary-clauses.py` (the soak with
   `--user-visible-gate-ms 6000`); it now decides the lane-health and view-authority clauses instead
   of printing them. **Run F1 first** — 60 s against F3's 17 minutes, so if
-  the latency prediction is wrong it says so seventeen times cheaper. This is the run that MEASURES
-  candidate 50's predicted drop (committed p95 9.05 s → near the 1.5 s median lag) and the first
-  that can see whether 53/48/49/D-a keep a meeting alive through a lane fault. Both runs need their
+  the latency prediction is wrong it says so seventeen times cheaper. This is the first run that can
+  see whether 53/48/49/D-a keep a meeting alive through a lane fault. **What it still has to decide
+  about candidate 50 narrowed in iteration 24:** the per-span decode bound is no longer a prediction
+  — 8.13 s → 1.07 s is measured on the deployed engine — so F1 is now measuring the *rate* of
+  runaways and the end-to-end p95 on the Mac, not whether the cap works. If F1's committed p95 is
+  still ~9 s with `capped_count` 0, the cause is **not** the decode and the plan's ordered remedies
+  become live for the first time. Both runs need their
   own pre-recorded rollbacks (volume, app, session, `/tmp` evidence) per iteration 12's list.
 
 ### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)

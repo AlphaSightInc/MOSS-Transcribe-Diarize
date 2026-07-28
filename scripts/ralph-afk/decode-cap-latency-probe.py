@@ -10,9 +10,19 @@ and "effective" are three different claims.
 This probe measures the third one without waiting for a runaway to happen by chance.
 F1's two runaways were *degenerate repeat loops* -- hundreds of `[0.99][S06]...[1.21]`
 fragments for 2.5 s of audio, generating 2024 / 2019 tokens against VllmRunner's own 2048
-default and taking 8.49 s / 8.29 s. The deployed vLLM's transcription endpoint accepts
-`repetition_penalty`, and a value BELOW 1.0 rewards repeated tokens, which is the direct
-way to put the decoder into that state deliberately.
+default and taking 8.49 s / 8.29 s. The deployed vLLM's transcription endpoint exposes
+sampling fields (measured off its own `/openapi.json`: `repetition_penalty`,
+`frequency_penalty`, `presence_penalty`, `temperature`, `top_k`, `top_p`, `min_p`, `seed`,
+`length_penalty`, `use_beam_search`, `vllm_xargs`; there is NO `ignore_eos` and no
+`min_tokens`), so the loop has to be induced through one of those.
+
+Which one is a measured question, not an assumed one. `--survey` answers it: it runs each
+`--candidate` once at the pre-D-c bound and reports the tokens each produced. The first
+guess was wrong in an instructive way -- `repetition_penalty=0.5` SUPPRESSED generation
+entirely (0 tokens, immediate EOS, 0.04 s) where the same audio decodes 49 tokens
+untouched -- so a probe that had assumed its trigger worked would have reported a
+meaningless 1.0x speedup between two identical empty decodes. Hence `--extra-field` is
+mandatory in measurement mode and its absence is a refusal, not a default.
 
 The measurement is then a paired one over the SAME audio and the SAME induced loop:
 
@@ -25,7 +35,7 @@ Both run through the REAL `RunnerBoundedWavInference.transcribe_pcm` seam with a
 product's own function rather than restated here (iteration 23's rule: import, never
 restate, or the tool drifts from the code it checks).
 
-A third condition is the control: the deployed cap with NO repetition penalty. Ordinary
+A third condition is the control: the deployed cap with NO trigger at all. Ordinary
 content must decode normally and must NOT be truncated -- a cap that bites real speech
 would be worse than the runaway it prevents.
 
@@ -112,9 +122,9 @@ def _fit_to_span(pcm: bytes, span_samples: int) -> tuple[bytes, str]:
         return pcm, "exact"
     if have > span_samples:
         return pcm[: span_samples * 2], f"truncated from {have} samples"
-    # Pad with silence rather than tiling: tiling would itself be repeated content, which
-    # is the very thing the repetition penalty is being used to induce. Padding keeps the
-    # trigger attributable to the sampling parameter alone.
+    # Pad with silence rather than tiling: tiling would itself be repeated content, i.e. a
+    # second uncontrolled push toward the degeneracy under test. Padding keeps the runaway
+    # attributable to the sampling field alone.
     return pcm + b"\x00" * ((span_samples - have) * 2), f"silence-padded from {have} samples"
 
 
@@ -122,19 +132,25 @@ def _make_runner(product: dict[str, Any], args: argparse.Namespace):
     base = product["VllmRunner"]
 
     class _PenaltyRunner(base):  # type: ignore[misc, valid-type]
-        """The product's runner with one extra request field.
+        """The product's runner with extra request fields, and the engine's own token count.
 
         `_build_fields` is the single place the wire form is decided, so overriding it and
         nothing else keeps every other part of the request byte-identical to production.
         """
 
-        repetition_penalty: float | None = None
+        extra_fields: dict[str, str] = {}
+        last_usage: dict[str, Any] | None = None
 
         def _build_fields(self, **kwargs):  # type: ignore[override]
             fields = super()._build_fields(**kwargs)
-            if self.repetition_penalty is not None:
-                fields["repetition_penalty"] = str(float(self.repetition_penalty))
+            fields.update(self.extra_fields)
             return fields
+
+        def _post_multipart(self, *args, **kwargs):  # type: ignore[override]
+            response = super()._post_multipart(*args, **kwargs)
+            usage = response.get("usage") if isinstance(response, dict) else None
+            self.last_usage = dict(usage) if isinstance(usage, dict) else None
+            return response
 
     runner = _PenaltyRunner(
         base_url=args.vllm_base_url,
@@ -158,28 +174,54 @@ def _bounded(product: dict[str, Any], runner, *, span_samples: int, forced_cap: 
     return _PreDcInference(runner, max_samples=span_samples, scratch_dir=None)
 
 
-def _decode_once(inference, span, pcm: bytes) -> dict[str, Any]:
+def _decode_once(inference, span, pcm: bytes, runner) -> dict[str, Any]:
+    """One decode, counted at BOTH seams.
+
+    `generated_tokens` is what the product reports downstream; `engine_completion_tokens`
+    is what vLLM actually generated. They are NOT the same number, and the difference is
+    load-bearing here: `RunnerBoundedWavInference` maps an unparseable answer onto H1's
+    empty path and reports **0** tokens for it, however long the engine ran. Keying the
+    runaway detector on the product's count therefore scores a genuine 8.2 s runaway as
+    "0 tokens, no runaway" -- measured, and it is what made this probe's first survey
+    return NO TRIGGER while the engine had in fact run away.
+    """
+
+    runner.last_usage = None
     started = time.monotonic()
     result = inference.transcribe_pcm(span=span, pcm=pcm)
     wall = time.monotonic() - started
     text = result.transcript or ""
+    engine_tokens = int((runner.last_usage or {}).get("completion_tokens") or 0)
+    cap = int(result.token_cap)
     return {
+        "engine_completion_tokens": engine_tokens,
         "generated_tokens": int(result.generated_tokens),
-        "token_cap": int(result.token_cap),
+        "product_lost_the_count": engine_tokens != int(result.generated_tokens),
+        "token_cap": cap,
         "elapsed_sec": round(float(result.elapsed_sec), 4),
         "wall_sec": round(wall, 4),
         "transcript_chars": len(text),
         "transcript_head": text[:160],
-        "hit_cap": int(result.generated_tokens) >= int(result.token_cap),
+        "hit_cap": engine_tokens >= cap,
         "rtf": round(wall / (span.sample_count / float(LIVE_SAMPLE_RATE)), 4),
     }
+
+
+def _parse_fields(specs: list[str]) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    for spec in specs:
+        name, sep, value = spec.partition("=")
+        if not sep or not name.strip():
+            raise ProbeError(f"--extra-field/--candidate needs NAME=VALUE, got {spec!r}")
+        fields[name.strip()] = value.strip()
+    return fields
 
 
 def _summarise(runs: list[dict[str, Any]]) -> dict[str, Any]:
     if not runs:
         return {}
     walls = [r["wall_sec"] for r in runs]
-    tokens = [r["generated_tokens"] for r in runs]
+    tokens = [r["engine_completion_tokens"] for r in runs]
     return {
         "n": len(runs),
         "wall_sec_min": round(min(walls), 4),
@@ -207,10 +249,23 @@ def main() -> int:
         help="the contract's hard_cap_samples (2.5 s) by default",
     )
     parser.add_argument(
-        "--repetition-penalty",
-        type=float,
-        default=0.5,
-        help="below 1.0 rewards repeats; this is what induces the degenerate loop",
+        "--extra-field",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="extra sampling field on the transcription request; this is the loop trigger",
+    )
+    parser.add_argument(
+        "--candidate",
+        action="append",
+        default=[],
+        metavar="LABEL:NAME=VALUE[,NAME=VALUE]",
+        help="survey mode: one candidate trigger to try",
+    )
+    parser.add_argument(
+        "--survey",
+        action="store_true",
+        help="try each --candidate once at the pre-D-c bound and report which one loops",
     )
     parser.add_argument(
         "--uncapped-tokens",
@@ -250,30 +305,82 @@ def main() -> int:
         # Warm-up first and discard it. Iteration 23 measured the session's first decode at
         # RTF 2.214 against <= 0.456 s for every other span; timing it would report a false
         # tail and would land on whichever condition happened to run first.
-        runner.repetition_penalty = None
-        warm = _decode_once(deployed, span, pcm)
+        runner.extra_fields = {}
+        warm = _decode_once(deployed, span, pcm, runner)
         report["warmup_discarded"] = warm
 
         # Control: ordinary decode under the deployed cap. Must not be truncated.
-        control = [_decode_once(deployed, span, pcm) for _ in range(args.repeats)]
+        control = [_decode_once(deployed, span, pcm, runner) for _ in range(args.repeats)]
         report["control_no_penalty_deployed_cap"] = {"runs": control, **_summarise(control)}
 
+        if args.survey:
+            # No trigger is known to work a priori: repetition_penalty 0.5 was measured to
+            # SUPPRESS generation (0 tokens, immediate EOS) rather than induce a loop. So
+            # try each candidate once, at the pre-D-c bound, and let the tokens decide.
+            rows = []
+            for spec in args.candidate:
+                label, _, body = spec.partition(":")
+                fields = _parse_fields(body.split(",") if body else [])
+                runner.extra_fields = fields
+                try:
+                    row = _decode_once(pre_dc, span, pcm, runner)
+                    row["error"] = None
+                except Exception as exc:  # a refused sampling value is a result, not a crash
+                    row = {"error": f"{type(exc).__name__}: {exc}", "engine_completion_tokens": 0,
+                           "generated_tokens": 0, "wall_sec": None, "transcript_chars": 0}
+                row["label"] = label
+                row["fields"] = fields
+                rows.append(row)
+            runner.extra_fields = {}
+            report["survey"] = rows
+            looped = [r for r in rows if r["engine_completion_tokens"] >= args.uncapped_tokens]
+            best = max(rows, key=lambda r: r["engine_completion_tokens"]) if rows else None
+            report["verdict"] = {
+                "mode": "survey",
+                "control_tokens": control[0]["engine_completion_tokens"],
+                "candidates_tried": len(rows),
+                "candidates_that_reached_the_bound": [r["label"] for r in looped],
+                "best_label": best["label"] if best else None,
+                "best_tokens": best["engine_completion_tokens"] if best else None,
+                "conclusion": (
+                    f"TRIGGER FOUND: {[r['label'] for r in looped]} generated to the "
+                    f"{args.uncapped_tokens}-token bound."
+                    if looped
+                    else "NO TRIGGER: no candidate ran away, so the cap's latency effect "
+                    "cannot be measured this way. This is not a pass."
+                ),
+            }
+            report["rc"] = 0 if looped else 3
+            text = json.dumps(report, indent=2, sort_keys=False)
+            if args.report:
+                Path(args.report).expanduser().write_text(text + "\n", encoding="utf-8")
+            print(text)
+            return report["rc"]
+
+        trigger = _parse_fields(args.extra_field)
+        report["trigger_fields"] = trigger
+        if not trigger:
+            raise ProbeError(
+                "no --extra-field given: without a trigger both induced conditions are just "
+                "the control run twice, which would report a 1.0x speedup and mean nothing."
+            )
+
         # A: the runaway as it was before D-c.
-        runner.repetition_penalty = args.repetition_penalty
-        uncapped = [_decode_once(pre_dc, span, pcm) for _ in range(args.repeats)]
+        runner.extra_fields = trigger
+        uncapped = [_decode_once(pre_dc, span, pcm, runner) for _ in range(args.repeats)]
         report["induced_pre_dc_2048"] = {"runs": uncapped, **_summarise(uncapped)}
 
         # B: the same runaway with the deployed cap in force.
-        capped = [_decode_once(deployed, span, pcm) for _ in range(args.repeats)]
+        capped = [_decode_once(deployed, span, pcm, runner) for _ in range(args.repeats)]
         report["induced_deployed_cap"] = {"runs": capped, **_summarise(capped)}
-        runner.repetition_penalty = None
+        runner.extra_fields = {}
 
         a = report["induced_pre_dc_2048"]
         b = report["induced_deployed_cap"]
         c = report["control_no_penalty_deployed_cap"]
 
         runaway_reproduced = a["hit_cap_count"] == a["n"]
-        cap_is_hard_stop = all(r["generated_tokens"] <= expected_cap for r in capped)
+        cap_is_hard_stop = all(r["engine_completion_tokens"] <= expected_cap for r in capped)
         cap_bit = b["hit_cap_count"] == b["n"]
         control_untruncated = c["hit_cap_count"] == 0
 

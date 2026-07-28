@@ -12951,3 +12951,160 @@ STOP CONDITIONS - abandon the run and record a blocker rather than pressing on:
 VALIDITY FENCE, per the standing rule (compare against the DEPLOYED sha, never main):
   git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'   must be EMPTY, or the
   product function the probe imports is not the one the service runs.
+
+================================================================================
+Iteration 24 of run 20260728-181020 - m4mbp gone a FOURTH time, so candidate 50's
+last Mac-free question was taken: what D-c's token cap actually COSTS a runaway.
+MEASURED on the deployed 77e0014 - 8.129 s uncapped vs 1.074 s capped, 7.571x.
+================================================================================
+
+Target: candidate 50 / D-c, the latency half. m4mbp polled at the top of the iteration:
+ssh "Operation timed out", 100% ICMP loss on 100.64.0.4 - the same physical-host blocker
+as iterations 21, 22 and 23, unchanged. Gate step (d) stays blocked.
+
+WHY THIS AND NOT THE CONTEXT.MD RETIREMENT PASS iteration 23 nominated as the fallback:
+the record defers that pass until F1/F3 pass, and with the Mac possibly not returning
+inside the budget, the higher-leverage move was the one remaining unmeasured claim that
+never needed the Mac. Iteration 23 left D-c "deployed, derivation-exact and SAFE but
+UNEXERCISED" (capped_count 0) and said F1 decides it. That is only true of the RATE of
+runaways; what a runaway COSTS once it happens is a property of the engine, and the engine
+is reachable. If the cap does not bound wall clock, that is worth knowing before the
+operator's Mac comes back, not after.
+
+THE INSTRUMENT: scripts/ralph-afk/decode-cap-latency-probe.py (new, tracked).
+It does not wait for a runaway - it induces one, then runs a PAIRED comparison over the
+same audio through the product's own RunnerBoundedWavInference.transcribe_pcm seam with a
+real FrozenSpan of the contract's 40000 samples. Only _token_cap differs:
+  A "pre-D-c"  - overridden to 2048, the bound actually in force before iteration 16.
+                 A semantic revert of D-c, inside the probe.
+  B "deployed" - the product's own canonical_decode_token_cap, IMPORTED not restated
+                 (iteration 23's rule), which returns 286 for a 2.5 s span.
+Plus a control with no trigger at all, because a cap that truncates real speech would be
+worse than the runaway it prevents.
+
+VALIDATED OFFLINE ON ELEVEN SYNTHETIC CASES (33 checks) BEFORE EACH HOST RUN, with a
+stubbed engine. That validation earned its keep three times:
+  - it caught VllmRunner's constructor being model=, not model_path=, before any host call;
+  - case 7 encodes host failure 1 (a trigger that SUPPRESSES generation must reduce to
+    INCONCLUSIVE, never to a 1.0x speedup between two empty decodes);
+  - case 10 encodes host failure 2 (the engine runs away but the product reports 0 tokens;
+    the runaway must still be detected, at the engine seam).
+
+THE MEASUREMENT, on the deployed 77e0014, span sha256 844e6eff…, temperature=2.0 seed=
+20260728, 3 repeats per condition, warm-up decode discarded first (iteration 23's lesson):
+
+  condition              tokens      wall median          RTF
+  control, no trigger      49        0.198 s              0.081
+  A pre-D-c 2048         2048 (3/3)  8.129 s (8.036-8.192) 3.277
+  B deployed cap 286      286 (3/3)  1.074 s (1.071-1.077) 0.431
+
+  => 7.571x, 7.056 s off the head of the serial queue, and a fully capped runaway no
+     longer breaks the RTF gate either (0.431 < 1, against the runaway's 3.277).
+  => control untruncated (49 tokens against a cap of 286) with a parseable transcript, so
+     the cap does not bite ordinary speech on this span either.
+
+THE REPRODUCTION IS F1'S OWN FAILURE, WITHIN 4%, WHICH IS WHAT MAKES IT EVIDENCE.
+  F1's runaways: 2024 / 2019 tokens, 8.49 / 8.29 s, RTF 3.398 / 3.318.
+  Condition A:   2048        tokens, 8.129 s,        RTF 3.277.
+  Measured generation rate 251.9 tok/s against the 238 tok/s iteration 16 derived from
+  F1's own spans - which predicted ~1.2 s for a capped span where 1.074 s was measured.
+  ITERATION 16'S PREDICTION WAS RIGHT, and is now a measurement rather than an argument.
+
+THE QUEUE ARGUMENT, which is how this reaches F1's p95 without measuring the queue.
+  F1 committed 42 spans over 73.3 s of speech = 1.745 s mean span arrival. An 8.129 s
+  decode is 4.66x that interval and therefore MUST accumulate backlog - F1 measured
+  exactly that, spans behind the runaways committing 4.9-8.3 s late. A 1.074 s decode is
+  BELOW the arrival interval and therefore CANNOT accumulate any. That is structural, not
+  an extrapolation, and it is the strongest statement available without the Mac.
+
+WHAT THIS RUN DOES NOT ESTABLISH, stated so the numbers are not borrowed:
+ (a) THE RATE of runaways is unmeasured. The trigger is deliberate. This says nothing
+     about how often a real meeting hits one - F1 saw 2 in 42 spans, iteration 23 saw 0
+     in 58, and only F1/F3 can settle it.
+ (b) THE TRIGGER IS temperature=2.0, i.e. high-entropy sampling, NOT a natural repeat
+     loop. The shape of the degeneracy differs from F1's; the quantity under test - wall
+     clock as a function of the token bound - does not.
+ (c) D-C'S "A CAPPED SPAN COMMITS ITS WORDS" HALF IS NOT VERIFIED HERE. This trigger's
+     output is unparseable at ANY length, so the product reported 0 tokens and an empty
+     transcript for the capped AND the uncapped runs alike - there were no words to commit
+     either way. F1's repeat loops were parseable fragments, so that half still rests on
+     the unit tests alone. What the empty answers do show is H1's path firing three more
+     times without going terminal.
+ (d) The end-to-end user-visible p95 is a Mac-side number and is untouched by this.
+
+THE TRIGGER HAD TO BE MEASURED AND THE FIRST TWO GUESSES WERE WRONG.
+The endpoint's own /openapi.json has NO ignore_eos and NO min_tokens (25 properties read
+off it), so the loop must come from a sampling field. Surveyed at the pre-D-c bound on the
+same span, control 49 tokens:
+  temperature=2.0        -> 2048  RUNS AWAY   <- the only candidate that works
+  repetition_penalty=0.5 -> 0     SUPPRESSES generation entirely (immediate EOS, 0.04 s)
+  frequency_penalty -2.0 / -1.0, presence_penalty -2.0, both together,
+    repetition_penalty=0.9                    -> 27 tokens, i.e. all SHORTEN the answer
+  repetition_penalty=1.05                     -> 49, unchanged
+A probe that had assumed repetition_penalty<1 induces loops - which is what the first
+version of this probe's own docstring asserted - would have compared two identical empty
+decodes and reported a meaningless 1.0x speedup as a pass.
+
+VALIDATION (smallest commands that produced real evidence):
+  python3 /tmp/i24-offline-validate.py            -> 11 cases / 33 checks, ALL PASS
+  python3 -m py_compile scripts/ralph-afk/decode-cap-latency-probe.py -> OK
+  build-span-sweep.py                             -> 844e6eff… / 038cf855…, the recorded
+    hashes, so the build is still byte-deterministic two iterations later
+  the host measurement itself                     -> rc=0, table above
+  git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'  -> EMPTY, so the product
+    function the probe imports IS the one the service runs
+Evidence paths: /tmp/i24-measure-raw.txt (the report), /tmp/i24-survey.log (the trigger
+  survey), /tmp/i24-capprobe-run.log and run2.log (the two failed attempts, kept because
+  they are the evidence for both instrument lessons), /tmp/i24-host-baseline.txt and
+  /tmp/i24-host-after.txt, /tmp/i24-openapi.json.
+
+NO ROLLBACK WAS NEEDED, as pre-recorded and committed in 1b306ca BEFORE the host was
+touched. Verified against the baseline taken first:
+  HEAD still 77e0014; moss-live-web 350731, moss-web 301112, moss-vllm 322117, all
+    NRestarts=0 and identical to baseline; live-runs 0 entries; no /tmp/mtd-live-*; no
+    probe scratch left; 0 journal tracebacks; batch http://192.168.68.38:7860/ still 200.
+  Device store untouched at 10 devices / 1 unrevoked (m4mbp's) - this probe creates no
+    device and no session, so unlike the iteration-23 probe there was nothing to revoke.
+  The four /tmp/*.wav on the host are dated 2026-07-27, a day before this run (the
+    feasibility probe's); the run's own span wav was deleted in the same invocation that
+    wrote it, verified wavs_left=0.
+  No checkout, no merge, no push, no deploy, no restart, no app install, no product source.
+
+Learned.
+(1) A FIXTURE'S RECORDED PROPERTIES ARE PART OF THE FENCE AND I DID NOT READ THEM. The
+    first host run used golden.wav, and the fence ALREADY SAID "golden.wav (2.1 s) ->
+    generated_tokens 0, transcript ''". Every condition came back empty and the run proved
+    nothing. Before using a fixture, grep the fence for the fixture, not just for the tool.
+(2) COUNT A FACT AT THE SEAM THAT OWNS IT. The survey's first verdict was a FALSE NEGATIVE:
+    temperature=2.0 had run away for 8.23 s, and the probe scored it 0 tokens and printed
+    NO TRIGGER - because RunnerBoundedWavInference maps an unparseable answer onto H1's
+    empty path and reports 0 generated tokens however long the engine ran. The probe now
+    reads usage.completion_tokens off the response itself and flags product_lost_the_count
+    when the two disagree. This is iteration 23's "a tool that never collects the field
+    cannot measure it" one turn further on: a tool that collects the field THROUGH A LOSSY
+    SEAM measures the seam, not the fact - and its silence still looks like a pass.
+(3) AN INDUCED REPRODUCTION EARNS ITS AUTHORITY BY MATCHING THE ORIGINAL'S NUMBERS. The
+    trigger is synthetic and that is a real limit, but 2048 tok / 8.13 s / RTF 3.28 against
+    F1's 2024 / 8.49 / 3.40 is what licenses reading the capped number as F1's counterfactual.
+    A reproduction that had landed at, say, 2 s would have measured a different phenomenon.
+(4) "F1 WILL DECIDE IT" WAS TOO COARSE. Candidate 50 was really two questions - what a
+    runaway costs, and how often one happens - and only the second needed the Mac. Splitting
+    a blocked question into its reachable and unreachable halves is worth doing before
+    recording a candidate as blocked.
+
+Blocker: unchanged and physical - m4mbp asleep or powered off for the fourth consecutive
+iteration (ssh timeout, 100% ICMP loss; MacStudio 192.168.68.36 and m4mbp 192.168.1.240 are
+on different LANs with no ARP entry, so the tailnet is the only route and Wake-on-LAN is
+unreachable). F1 and F3 - gate step (d), and therefore the 60 s canary, 300 s certification
+and 16-minute soak clauses - still cannot run.
+
+Next: the moment `ssh ga0@m4mbp` answers, F1 (pkill MOSSCaptureApp, relaunch fresh, re-pair,
+live-canary.sh NOHUP'd, reduce with live-canary-analyze.py AND live-canary-clauses.py), then
+F3 with live-soak.sh --user-visible-gate-ms 6000. Read F1's decode tail against BOTH host
+baselines now on record: iteration 23's clean-run body (<= 0.456 s per span, warm-up span 0
+excluded) and this iteration's bound (a capped runaway is 1.07 s, and capped_count > 0 is
+what proves one occurred). If F1's committed p95 is still ~9 s with capped_count 0, the
+cause is NOT the decode and the plan's two ordered remedies become live for the first time.
+If m4mbp is still gone, the remaining non-host work is evidence repair - context.md is now
+~205 KB, so candidate 52's retirement pass is the honest fallback, accepting that the record
+defers it until F1/F3 pass.
