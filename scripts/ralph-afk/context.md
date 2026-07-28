@@ -87,9 +87,10 @@ progress.txt archive.
   own duration, and a capped span commits its words and says so. See "The decode is bounded"
   below. **The measured latency effect is still unmeasured on real hardware** — it is predicted,
   and F1/F3 are what will decide it.
-- **Phase M's remaining work is the coverage gap and the gate.** `tests/test_live_api.py:1055`
-  still never posts a frame on the lane that *failed* (see the Phase M list), then full
-  Swift/Python + the lane-refusal probe + F1 and F3 both green, then the sixth merge.
+- **The coverage gap is CLOSED** `[done — iteration 17]`: two nodes in `tests/test_live_api.py`
+  now post a frame on the lane that **failed** and on the lane that **degraded**. See "The failed
+  lane is in the suite" below. **Phase M's remaining work is the gate only** — full Swift/Python
+  + the lane-refusal probe + F1 and F3 both green, then the sixth merge.
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
@@ -104,7 +105,7 @@ recorded and survive a bundle replacement. **Never ask the operator for those cl
 
 **Test totals on the branch.** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **602 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
+→ 158); Python **604 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
 Per-file: `test_live_pipeline_seams.py` **56**, `test_live_identity.py` **8**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
@@ -512,6 +513,33 @@ Phase M change under `moss_transcribe_diarize/`, so `git diff --name-only main H
 ':!scripts/ralph-afk'` is **no longer empty** and `live-lane-refusal-probe.py` /
 `live-hardcap-repro.py` now speak for the **branch**, not for the deployed service. Any claim
 about the deployed service needs the redeploy, or a probe run against the host.
+
+**The failed lane is in the suite — the Phase M coverage gap is closed (new, iteration 17;
+`[done]`).** `tests/test_live_api.py:1055` failed the microphone lane and posted a **system** frame,
+so the one path that ended F1 and F3 was covered only by the offline probe. Two nodes now close it,
+both in `tests/test_live_api.py` and both semantically red-proved:
+- **`…a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_survives`**
+  replays F3's sequence on the failed lane: healthy frame → a heartbeat reporting `system` failed
+  (**200**, one failed lane is not terminal) → the next frame on **that** lane **409**
+  `{"detail": "v2 system lane is failed."}` with **no** `failure` key, the identical retry 409 again,
+  the **peer lane 200**, a **heartbeat after the refusal 200**, and the session still registered.
+  Both halves are the point: the refusal is permanent *and* survivable, which is why the fix belonged
+  in the client's tick (53) and not on the server.
+- **`…a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused`** is D-a asserted on the wire:
+  a `degraded` heartbeat is accepted and the frame on that lane returns **200**, `health` stays
+  `active`, `failure_code` stays null.
+*Red-before, by semantic revert, both files restored and re-hashed byte-identical
+(`9b145d2e…` / `728f26ce…` both ways — the same hashes K5c recorded on the host).* Probe A deleted
+`LiveV2Session.accept`'s `health != "active"` guard → node 1 `AssertionError: 200 != 409` while
+node 2 stayed green (correct — it is about a lane that is never closed). Probe B made `_failed_lanes`
+treat `degraded` as failed (with a code fallback, or the heartbeat 400s on the missing
+`failure_code` before reaching the point) → node 2 `AssertionError: 403 != 200` with
+`live helper terminal: … reason=helper_all_lanes_failed lane.system=macos_buffer_overrun
+lane.microphone=macos_buffer_overrun` in the log — i.e. **without D-a the meeting dies exactly as it
+did in K5d/F1/F3**, which is the strongest available statement that the reclassification is
+load-bearing. Python **602 → 604**; the lane-refusal probe still rc=0.
+*Product source untouched this iteration* — the diff against `main` is what candidate 50 already
+made it, plus test files.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -1941,9 +1969,8 @@ failed lane does **not** recover inside a generation but **always** does across 
 
 **D-a is IMPLEMENTED (iteration 15)** - `[done]`, see "D-a is landed" above. D-b needed no code (its
 ruling was that `LiveV2Session` gains no un-fail path, and it has none). **D-c is IMPLEMENTED
-(iteration 16)** - `[done]`, see "The decode is bounded" above. **All four authorized candidates
-and all three decisions have landed; what remains in Phase M is the coverage gap below and the
-gate.**
+(iteration 16)** - `[done]`, see "The decode is bounded" above. **All four authorized candidates,
+all three decisions and the coverage gap have landed; what remains in Phase M is the gate alone.**
 
 53. **[done - iteration 14]** The tick's `emitHealth` now has its own `do/catch` after the publish's,
     so a throwing publish cannot skip it; the publish's `pumpFailure` is left standing and only a
@@ -1977,13 +2004,10 @@ D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two
     the server's refusal detail where it must tell a permanent lane-failed 409 from a recoverable
     one; that is the only part of 54 in scope.
 
-**Coverage gap to close deliberately - STILL OPEN after iteration 16, and it is now the only
-Phase M work item before the gate:** `tests/test_live_api.py:1055`
-fails the microphone lane and then posts a *system* frame, asserting the peer survives. Nothing in
-the suite posts a frame **on the lane that failed** - the same shape as every blocker in Phases H
-and J. D-a's new seam node posts a frame on the lane that **degraded** (and it is accepted, which is
-the point of D-a); the *failed*-lane refusal is still only covered by the offline probe, not by the
-suite. Close it with candidate 50 or before the gate.
+**Coverage gap - CLOSED in iteration 17.** `tests/test_live_api.py` now posts a frame on the lane
+that **failed** (409, permanent, peer + lease survive) and on the lane that **degraded** (200,
+health stays active), both red-proved by semantic revert of the two guards that decide them. See
+"The failed lane is in the suite" above. **Nothing remains in Phase M except the gate.**
 
 **Gate:** full Swift/Python; the lane-refusal probe; then **re-run F1 and F3 and require both
 green**, with candidate 51's harness fix in place so the label clause is meaningfully verified.

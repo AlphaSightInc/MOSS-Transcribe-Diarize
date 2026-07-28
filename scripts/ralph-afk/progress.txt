@@ -11788,3 +11788,115 @@ amendment's gate in order: full Swift/Python, the lane-refusal probe, F1 (60 s c
 merge through merge-keeper.sh - whose `expected_main` still holds 6a540fe (merge-keeper.sh:32) and
 must be advanced in-script to today's main, fc7097d, never by the RALPH_MERGE_MAIN_BEFORE env
 override - then push and redeploy so all four checkouts return to one SHA.
+
+================================================================================
+iteration 17 of run 20260728-181020 - the Phase M coverage gap: a frame on the lane
+that FAILED, and a frame on the lane that DEGRADED
+================================================================================
+
+Target: the fifth amendment's last work item before its gate - "Close the coverage gap that let
+this ship: tests/test_live_api.py:1055 fails the microphone lane and then posts a *system* frame.
+Nothing in the suite posts a frame ON the lane that failed." Chosen because context.md names it as
+the only Phase M item left before the gate, and because the path it leaves untested is the exact
+path that ended both red certification runs.
+
+Files touched: tests/test_live_api.py (+2 nodes, product source untouched),
+scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt.
+
+What was missing, precisely. The existing node
+`test_explicit_failed_lane_heartbeat_calls_v2_fail_lane_without_releasing_peer` fails the
+microphone lane and then posts a SYSTEM frame - it asserts the PEER survives, which is the half
+that was never in doubt. The half that killed F1 and F3 - the pump's next turn ON the closed lane -
+was covered only by scripts/ralph-afk/live-lane-refusal-probe.py, an out-of-suite artifact that no
+gate runs. Same shape as every blocker in Phases H and J: the one path that ends the meeting is the
+untested one.
+
+Two nodes, both in tests/test_live_api.py:
+
+1. test_a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_
+   survives - F3's sequence, on the failed lane:
+     healthy system frame                                   -> 200
+     heartbeat reporting system failed/macos_buffer_overrun -> 200   (one lane is not terminal)
+     next frame on THAT lane                                -> 409  {"detail": "v2 system lane is
+                                                                     failed."}, and NO "failure" key
+     the identical frame retried                            -> 409  (permanent; no retry reopens it)
+     a frame on the peer lane                               -> 200
+     a heartbeat sent after the refusal                     -> 200, session still registered
+     v2 lanes: system health=failed / code=macos_buffer_overrun / retained 0 / failed_samples 2,
+     microphone health=active
+   Both halves are the assertion: the refusal is PERMANENT and the meeting is SURVIVABLE. That pair
+   is why candidate 53's fix belonged in the client's tick and not on the server, and the node now
+   holds that reasoning in the suite rather than in a context.md paragraph. The `assertNotIn
+   ("failure", ...)` is the discriminator against the out-of-order 409 already covered at :859,
+   which carries a machine-readable failure.code and is recoverable.
+
+2. test_a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused - D-a asserted on the wire
+   the client actually speaks: a `degraded` heartbeat is accepted (200) and the frame on that lane
+   returns 200, health stays `active`, failure_code stays null.
+
+Validation:
+- RED FIRST, PROBE A - `LiveV2Session.accept`'s `if lifecycle.health != "active": raise
+  LiveV2SessionTerminalError(...)` guard deleted:
+    python3 -m pytest tests/test_live_api.py -q -k 'lane_its_own_heartbeat_failed or
+      degraded_lane_keeps_publishing'
+    -> node 1 FAILS `AssertionError: 200 != 409` at the refused frame; node 2 stays GREEN, which is
+       correct - it is a statement about a lane that is never closed at all.
+  File restored, sha256 9b145d2e4ce75ee86860882c5a7a14db9e7ebde3a25de8b09c0bf88d4d4854ac both ways
+  (the same digest K5c recorded for the deployed host copy).
+- RED FIRST, PROBE B - `_failed_lanes` in live_helper_failure.py made to treat `degraded` as failed.
+  The first attempt (state check alone) reds node 2 at `400 != 200` on the HEARTBEAT, because the
+  contract requires a failure_code for a failed lane and a degraded lane carries none - a real red,
+  but not at the interesting line. With a code fallback added so the revert reaches the point:
+    -> node 2 FAILS `AssertionError: 403 != 200` on the frame, and the log carries
+       `live helper terminal: session=api-session reason=helper_all_lanes_failed
+        lane.system=macos_buffer_overrun lane.microphone=macos_buffer_overrun`
+    i.e. without D-a's reclassification the session goes terminal and every later request 403s -
+    byte-for-byte the death K5d, F1 and F3 recorded. That is the strongest available statement that
+    D-a is load-bearing rather than cosmetic.
+  File restored, sha256 728f26cee4483755da0eb484207d93bd0d82e0ce6bb58ad51e330753afdb265c both ways.
+- GREEN AFTER:
+    PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+      -> 604 passed, 2 skipped, 368 subtests (602 -> 604). The 2 skips are the pre-existing
+         test_large_upload.py 3.10-compat pair, never Darwin skips.
+    python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-i17-lane-refusal.json
+      -> rc=0, every recorded expectation still holds (it imports test_live_api.py by file path for
+         its payload builders, so the edit had to be re-proved harmless).
+  Swift was not touched and was not re-run; it stands at 158.
+- `git status --porcelain` after both probes: `M tests/test_live_api.py` only. No product source
+  moved this iteration.
+
+Evidence paths: tests/test_live_api.py
+test_a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_survives /
+test_a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused;
+moss_transcribe_diarize/app/live_v2_session.py:99-104 (the guard probe A deleted);
+moss_transcribe_diarize/app/live_helper_failure.py:363-371 (the state check probe B widened);
+/tmp/ralph-i17-lane-refusal.json; context.md block "The failed lane is in the suite".
+
+Learned. (1) A COVERAGE GAP IS CLOSED BY THE ASSERTION THAT WOULD HAVE CAUGHT THE BUG, NOT BY A
+TEST NEAR IT. The existing node was three lines away from the defect and passed through every red
+run; what it lacked was one POST on the other lane. (2) AN OUT-OF-SUITE PROBE IS NOT COVERAGE. The
+lane-refusal probe has held this exact sequence since iteration 11 and no gate runs it, so the
+behaviour was known and unprotected - the same "known but not shown" shape the fourth amendment
+named for lane state. (3) A SEMANTIC REVERT SHOULD BE PUSHED UNTIL IT REDS AT THE LINE THAT MATTERS.
+Probe B's first form reddened on a schema precondition 400, which would have "proved" the node
+without ever exercising the frame; widening the revert one line moved the red onto the 403 that is
+the real defect. A red is only evidence if you can name which line produced it.
+
+Blocker: none. Phase M's work items are all landed; what remains is its gate, and the gate's two
+expensive halves (F1, F3) run on the real hosts and cost no operator input.
+
+Next: the fifth amendment's gate, in order - (a) the full gate from the Validation fence (fresh
+scratch Swift build x2 for the zero-warning claim, swift test, full pytest, the tracer, the 10/10
+discriminator, clean tree); (b) the lane-refusal probe (rc=0, re-run above); (c) re-run F1 (60 s
+canary) and F3 (16-minute soak) with scripts/ralph-afk/live-canary.sh and require BOTH green - note
+the soak driver still lives at /tmp/ralph-f3-soak.sh and should be brought under scripts/ralph-afk/
+the way live-canary.sh was, and that F1/F3 are what MEASURE candidate 50's predicted latency drop
+(9.05 s committed p95 -> near the 1.5 s median lag); (d) then the sixth merge through
+merge-keeper.sh, whose expected_main still holds 6a540fe (merge-keeper.sh:32) and must be advanced
+in-script to fc7097d, never by the RALPH_MERGE_MAIN_BEFORE env override; then push and redeploy so
+all four checkouts return to one SHA. IMPORTANT ORDERING NOTE: F1/F3 exercise the DEPLOYED server,
+which is still fc7097d and therefore does NOT carry candidate 50's token cap - the client-side
+fixes (53/48/49/D-a) are in the Mac build only after a rebuild+reinstall, and the server-side cap
+only after the merge+redeploy. Decide deliberately whether to gate-then-deploy-then-certify (the
+order the amendment's text implies) or to certify the client fixes against the old server first;
+the latter cannot measure candidate 50 at all.

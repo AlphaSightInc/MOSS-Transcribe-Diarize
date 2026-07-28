@@ -1087,6 +1087,114 @@ class LiveApiTest(unittest.TestCase):
             )
             self.assertIn(session_id, app.state.live_v2_sessions)
 
+    def test_a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_survives(self):
+        """F3's soak sequence, on the lane that failed rather than on its peer.
+
+        The node above fails one lane and then publishes on the *other* one, so nothing in the
+        suite ever exercised the refusal that ended the 16-minute soak: the client's own heartbeat
+        closes a lane, and the pump's next turn on that lane is answered 409 forever. Both halves
+        matter — the refusal is permanent (no retry can reopen the lane) and it is *survivable*
+        (the peer lane and the helper lease are untouched), which is why the fix belonged in the
+        client's tick rather than here.
+        """
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+            heartbeat_url = f"/api/live/sessions/{session_id}/heartbeat"
+
+            healthy = client.post(frames_url, json=v2_frame_payload(0, 2, lane="system"))
+            failing_heartbeat = client.post(
+                heartbeat_url,
+                json=helper_heartbeat_payload(
+                    failed_lane="system",
+                    failure_code="macos_buffer_overrun",
+                ),
+            )
+            refused_payload = v2_frame_payload(1, 2, lane="system")
+            refused = client.post(frames_url, json=refused_payload)
+            identical_retry = client.post(frames_url, json=refused_payload)
+            peer_frame = client.post(frames_url, json=v2_frame_payload(0, 2, lane="microphone"))
+            heartbeat_after_refusal = client.post(
+                heartbeat_url,
+                json=helper_heartbeat_payload(
+                    sequence=1,
+                    sent_monotonic_ns=20,
+                    failed_lane="system",
+                    failure_code="macos_buffer_overrun",
+                ),
+            )
+
+            self.assertEqual(healthy.status_code, 200)
+            # One failed lane is not terminal, so the heartbeat that closes the lane is observed.
+            self.assertEqual(failing_heartbeat.status_code, 200)
+            self.assertEqual(refused.status_code, 409)
+            self.assertEqual(refused.json()["detail"], "v2 system lane is failed.")
+            # Unlike the out-of-order conflict above, this 409 carries no machine-readable code —
+            # the bare detail is the only thing that distinguishes a closed lane from a gap.
+            self.assertNotIn("failure", refused.json())
+            self.assertEqual(identical_retry.status_code, 409)
+            self.assertEqual(identical_retry.json()["detail"], "v2 system lane is failed.")
+            self.assertEqual(peer_frame.status_code, 200)
+            self.assertEqual(heartbeat_after_refusal.status_code, 200)
+            self.assertIn(session_id, app.state.live_v2_sessions)
+            lanes = app.state.live_v2_sessions.get(session_id).snapshot().to_dict()["lanes"]
+            self.assertEqual(lanes["system"]["health"], "failed")
+            self.assertEqual(lanes["system"]["failure_code"], "macos_buffer_overrun")
+            self.assertEqual(lanes["system"]["retained_samples"], 0)
+            self.assertEqual(lanes["system"]["failed_samples"], 2)
+            self.assertEqual(lanes["microphone"]["health"], "active")
+
+    def test_a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused(self):
+        """D-a's ruling, asserted on the wire the client actually speaks.
+
+        `macos_buffer_overrun` is now reported as a lane *degradation*: the lane lost some audio
+        and kept producing. The server has always accepted `degraded` in its helper contract, so
+        this node is the statement that the reclassification alone breaks the chain above — the
+        same overrun that closes a `failed` lane leaves a `degraded` one publishing.
+        """
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            degraded_heartbeat = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(
+                    state="degraded",
+                    lane_state="degraded",
+                    failure_code="macos_buffer_overrun",
+                ),
+            )
+            frame_on_the_degraded_lane = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(0, 2, lane="system"),
+            )
+
+            self.assertEqual(degraded_heartbeat.status_code, 200)
+            self.assertEqual(frame_on_the_degraded_lane.status_code, 200)
+            self.assertIn(session_id, app.state.live_v2_sessions)
+            lanes = app.state.live_v2_sessions.get(session_id).snapshot().to_dict()["lanes"]
+            self.assertEqual(lanes["system"]["health"], "active")
+            self.assertIsNone(lanes["system"]["failure_code"])
+
     def test_helper_lease_expiry_aborts_mono_expires_v2_and_releases_cleanup(self):
         from moss_transcribe_diarize.app.server import create_app
 
