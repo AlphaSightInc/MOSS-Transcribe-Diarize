@@ -5,6 +5,7 @@ import importlib
 import importlib.metadata
 import math
 import tempfile
+import time
 import wave
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,7 @@ from typing import Protocol
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_transcript
 
 from .live_session import CanonicalResult, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
+from .transcription_outcome import EmptyTranscriptionError
 
 
 class LiveProviderError(RuntimeError):
@@ -230,7 +232,25 @@ class RunnerBoundedWavInference:
         with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"span-{span.id:04d}.wav"
             _write_pcm16_wav(wav_path, pcm)
-            result = self.runner.transcribe(wav_path, **self.transcribe_kwargs)
+            started = time.monotonic()
+            try:
+                result = self.runner.transcribe(wav_path, **self.transcribe_kwargs)
+            except EmptyTranscriptionError:
+                # Nothing was said in this span. That is a transcript of "", not a failure:
+                # the span is committed empty upstream so the audio stays accounted for.
+                return InferenceTranscript(
+                    transcript="",
+                    generated_tokens=0,
+                    elapsed_sec=time.monotonic() - started,
+                )
+            except LiveProviderError:
+                raise
+            except Exception as exc:
+                # Nothing leaves this seam unclassified. A decoder that failed is not a span
+                # with nothing to say, and must stay distinguishable from one.
+                raise LiveProviderError(
+                    f"canonical decode failed: {exc.__class__.__name__}: {exc}"
+                ) from exc
         return InferenceTranscript(
             transcript=str(result.text),
             prompt_len=int(getattr(result, "prompt_len", 0) or 0),

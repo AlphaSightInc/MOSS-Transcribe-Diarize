@@ -280,6 +280,49 @@ class LiveSession:
         self._notify_waiters()
         return True
 
+    def submit_empty_canonical(
+        self,
+        *,
+        span_id: int,
+        epoch: int,
+        start_sample: int,
+        end_sample: int,
+    ) -> bool:
+        """Publish a frozen span that carries no transcript, advancing the committed prefix.
+
+        A span the decoder cannot parse must be accounted for rather than lost: `stop` waits
+        for `committed_samples == accepted_samples`, so a span that is merely dropped strands
+        the session forever. Every meeting opens with silence and holds silence between turns,
+        so this is the ordinary case, not an error path. The identity snapshot is left exactly
+        as it was, because a span with no transcript observed nothing about who spoke.
+        """
+
+        if epoch != self._epoch:
+            return False
+        self._ensure_accepting_or_closing()
+        span = self._frozen_spans.get(span_id)
+        if span is None:
+            return False
+        if not self._span_order or self._span_order[0] != span_id:
+            return False
+        if start_sample != span.start_sample or end_sample != span.end_sample:
+            return False
+
+        self._publish_span(
+            span,
+            CanonicalResult(
+                span_id=span.id,
+                epoch=span.epoch,
+                start_sample=span.start_sample,
+                end_sample=span.end_sample,
+                transcript="",
+            ),
+            identity_snapshot=self._identity_snapshot,
+        )
+        self._bump()
+        self._notify_waiters()
+        return True
+
     def snapshot(self) -> LiveSnapshot:
         return LiveSnapshot(
             status=self._status,

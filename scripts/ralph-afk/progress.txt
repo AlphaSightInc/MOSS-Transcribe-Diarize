@@ -3730,3 +3730,107 @@ candidate so it cannot be lost.
   patch, put the real `vllm_runner` validation seam under the live coordinator with an empty
   transcript in `tests/test_live_pipeline_seams.py`, and fix the shared classification seam
   there so no bare provider exception can make a session terminal.
+
+================================================================================
+## Iteration 2 (run 20260728-112922) - H1: a span the decoder cannot parse is committed empty
+================================================================================
+Target: candidate **H1**, the second blocker the deployed build hits (~3 s, on the first span
+of every meeting). Chosen because context.md fixes the order H3 -> H1 -> H2, H3 landed in
+iteration 1, and the amendment's own gate (a probe run that survives its full plan) cannot
+pass while a leading-silence span kills the session.
+
+### The policy decision the amendment required, and why
+**Commit the span empty. Never drop it, never terminal.** Dropping was ruled out by the
+product's own accounting, not by preference: `LiveSession.stop` waits for
+`committed_samples == accepted_samples`, `live_service_runtime.stop` fails a stop whose
+accepted and accounted totals differ, and `accounted_samples` *is* `committed_samples`. So a
+dropped span strands the session exactly as surely as a terminal failure does - it just does it
+at the end of the meeting instead of the start, and it would break the PRD's "both lanes
+accepted and accounted with zero loss" clause. Committing empty keeps the committed prefix
+contiguous, advances the prefix hash, prunes retained PCM, and publishes nothing false.
+There is a node that *is* this argument: `test_a_meeting_of_pure_silence_stops_with_exact_accounting`.
+
+Files touched (7 tracked; `moss_transcribe_diarize/` + `tests/`, which the second amendment
+authorizes):
+  moss_transcribe_diarize/app/transcription_outcome.py   (new leaf: EmptyTranscriptionError)
+  moss_transcribe_diarize/app/vllm_runner.py             (types the three empty conditions)
+  moss_transcribe_diarize/app/live_adapters.py           (decode seam: translate + classify)
+  moss_transcribe_diarize/app/live_coordinator.py        (empty-span path, no identity work)
+  moss_transcribe_diarize/app/live_session.py            (submit_empty_canonical)
+  moss_transcribe_diarize/app/live_service_runtime.py    (empty_reason on canonical_processed)
+  moss_transcribe_diarize/app/live_portal.py             (do not render a blank gap)
+  tests/test_live_pipeline_seams.py                      (+5 nodes, 5 -> 10)
+
+### The change
+1. `vllm_runner._validate_transcription_response` raises the typed `EmptyTranscriptionError`
+   for all three of its "the model produced nothing usable" cases. It subclasses `RuntimeError`
+   and the messages are byte-identical, so **every batch caller is unchanged** - a batch job
+   that returns no transcript for a submitted file must still fail closed. The type lives in a
+   new leaf module because `vllm_runner` drags torch/transformers in through `inference_utils`
+   and no live module may import that.
+2. `RunnerBoundedWavInference.transcribe_pcm` translates that one type into
+   `InferenceTranscript(transcript="", generated_tokens=0)` with the measured wall time - an
+   empty span still carries an RTF figure instead of vanishing from the gate - and wraps every
+   *other* exception from `runner.transcribe` in `LiveProviderError` with the original as
+   `__cause__`. That second half is the classification seam H3 deferred: nothing crosses the
+   decode seam unclassified.
+3. The rule is stated **on the transcript, not on an exception type**:
+   `live_coordinator._empty_transcript_reason` (replacing `_transcript_text`, which raised)
+   returns `decoder_returned_no_transcript` / `decoder_returned_unparseable_transcript` / None,
+   so a decoder that *returns* garbage without raising is handled identically and the fix is not
+   welded to vLLM. An empty span skips identity work entirely and commits through the new
+   `LiveSession.submit_empty_canonical`, which leaves the identity snapshot version untouched.
+   `empty_reason` rides the `canonical_processed` event, so an empty span is visible, not silent.
+4. A decoder that *failed* is still terminal, now named. Committing its spans as silence - what a
+   blanket catch would do - would render a dead GPU as a blank meeting.
+
+### Validation (all offline on MacStudio; no server, Mac, or remote host was touched)
+- `pytest tests/test_live_pipeline_seams.py -q` -> **10 passed** (3.6 s), was 5.
+- **Red proven without touching git history**: the five product files restored from `HEAD`,
+  re-run, restored, restore verified by sha256 (`restored_identical=true`). Pre-fix:
+  **5 failed / 5 passed** - the five new nodes red, H3's five still green. The failure is the
+  deployed signature exactly:
+  `LiveServiceFailureRecord(kind=integrity, code='RuntimeError', message='vLLM transcription
+  returned zero parsed segments for .../span-0000.wav.', retryable=False, detail=None)`.
+- The leading-silence span the node builds is `(0, 14400, "leading_silence")` - F0's measured
+  `frozen_until_sample 14400` reproduced from the deployed endpoint config
+  (16000 - pre_speech_padding_samples 1600), not asserted.
+- H2 unchanged by this, checked in the same sweep: `live-hardcap-repro.py --frames 8` and
+  `--frames 8 --speech-pattern 0` still **rc=3** at accepted_samples=40000; `--frames 24
+  --speech-pattern 1100` still rc=0; both webrtc cases still rc=0. So H1 masked nothing.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider` -> **547 passed / 2 skipped /
+  368 subtests** in 59.7 s (was 542/2/368; +5 is exactly the new nodes). No node changed status.
+  `tests/test_vllm_runner.py`'s fail-closed node still passes unmodified, which is the batch
+  contract's evidence.
+- Swift untouched this iteration; the full Swift gate belongs to H4.
+
+### Learned
+1. **The accounting decided the policy.** "Drop or commit empty" reads like a taste question and
+   is not one: `accounted_samples` is a synonym for `committed_samples`, so the session has no
+   representation for audio that was accepted and then discarded. Only one of the two options
+   was implementable at all.
+2. **F0's root-path sentence was half wrong, and it mattered.** It said the bare `RuntimeError`
+   escaped before `live_adapters._validated_segments` could type it. That function is on
+   `LiveProvider.decode_canonical`, which **the runtime never builds** - the live decoder is
+   `RunnerBoundedWavInference` under `LiveCoordinator`. Fixing where the note pointed would have
+   changed nothing on the live path. Corrected in context.md's F0 block.
+3. **The endpoint policy *manufactures* the silent span.** `_observe_speech` emits
+   `leading_silence` over everything before the padded speech start, so the first span of every
+   meeting is silence by construction, not by luck of the input. That is why this fired on span
+   0000 on the host, and it is why the node can build it deterministically.
+4. **A classification fix has a wrong version that looks right.** Catching everything at the
+   decode seam and committing empty would make the suite green and turn a dead GPU into a
+   silently blank meeting. The distinction that had to be preserved is "produced nothing" vs
+   "failed", which is why the runner-side type exists at all.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - H2 is
+  open and the deployed service is still the unfixed `317df4d`.
+- **New candidate recorded (36, not started, out of scope):** a transient decoder failure still
+  ends the meeting. Honest classification, but a real reliability gap for the 300 s
+  certification; the fix is bounded per-span retry plus a typed degraded state, and it needs its
+  own authorization.
+- Next: **H2** - the two hard-cap freezers. `live-hardcap-repro.py --frames 8` is the red case in
+  0.4 s, and the regression node must give one `LiveSession` and one `EndpointPolicy` the *same*
+  hard cap (no harness in the repo does). Decide which freezer is the single authority, and
+  answer the orphan the second reading creates: spans the session freezes by itself are never
+  queued for decode.

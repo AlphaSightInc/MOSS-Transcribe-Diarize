@@ -7,7 +7,7 @@ from typing import Protocol
 
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
-from .live_adapters import BoundedWavInference, InferenceTranscript
+from .live_adapters import BoundedWavInference
 from .live_arbiter import ArbiterWorkItem, InferenceArbiter
 from .live_endpoint import EndpointPolicy, EndpointPolicyError, EndpointSpan, SpeechObservation
 from .live_session import (
@@ -74,6 +74,7 @@ class CoordinatorWorkResult:
     frozen_span_sample_count: int | None = None
     frozen_span_duration_sec: float | None = None
     canonical_decode_rtf: float | None = None
+    empty_reason: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,8 +88,9 @@ class CoordinatorWorkInput:
 class CoordinatorPreparedWork:
     span: FrozenSpan
     transcript: str
-    preparation: LiveIdentityPreparation
+    preparation: LiveIdentityPreparation | None
     decode_elapsed_sec: float | None = None
+    empty_reason: str | None = None
 
 
 class LiveCoordinator:
@@ -160,7 +162,17 @@ class LiveCoordinator:
         span = work.span
         pcm = work.pcm
         inferred = self.decoder.transcribe_pcm(span=span, pcm=pcm)
-        transcript = _transcript_text(inferred)
+        transcript = inferred.transcript
+        empty_reason = _empty_transcript_reason(transcript)
+        if empty_reason is not None:
+            # No identity work: there is no transcript to relabel and no speaker to link.
+            return CoordinatorPreparedWork(
+                span=span,
+                transcript="",
+                preparation=None,
+                decode_elapsed_sec=inferred.elapsed_sec,
+                empty_reason=empty_reason,
+            )
         preparation = self.identity_preparer.prepare(
             span=span,
             pcm=pcm,
@@ -177,15 +189,27 @@ class LiveCoordinator:
     def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
         span = work.span
         preparation = work.preparation
-        result = CanonicalResult(
-            span_id=span.id,
-            epoch=span.epoch,
-            start_sample=span.start_sample,
-            end_sample=span.end_sample,
-            transcript=preparation.relabeled_transcript,
-            identity_preparation=preparation,
-        )
-        submitted = self.session.submit_prepared_canonical(result)
+        if work.empty_reason is not None:
+            submitted = self.session.submit_empty_canonical(
+                span_id=span.id,
+                epoch=span.epoch,
+                start_sample=span.start_sample,
+                end_sample=span.end_sample,
+            )
+            identity_status = "empty_span"
+        elif preparation is None:
+            raise LiveCoordinatorError("prepared work carries neither an identity preparation nor an empty span.")
+        else:
+            result = CanonicalResult(
+                span_id=span.id,
+                epoch=span.epoch,
+                start_sample=span.start_sample,
+                end_sample=span.end_sample,
+                transcript=preparation.relabeled_transcript,
+                identity_preparation=preparation,
+            )
+            submitted = self.session.submit_prepared_canonical(result)
+            identity_status = preparation.status
         snapshot = self.session.snapshot()
         if submitted:
             self._pcm.prune_before(snapshot.committed_samples)
@@ -193,12 +217,13 @@ class LiveCoordinator:
         return CoordinatorWorkResult(
             span_id=span.id,
             submitted=submitted,
-            identity_status=preparation.status,
+            identity_status=identity_status,
             committed_samples=snapshot.committed_samples,
             canonical_decode_elapsed_sec=measurement["canonical_decode_elapsed_sec"],
             frozen_span_sample_count=measurement["frozen_span_sample_count"],
             frozen_span_duration_sec=measurement["frozen_span_duration_sec"],
             canonical_decode_rtf=measurement["canonical_decode_rtf"],
+            empty_reason=work.empty_reason,
         )
 
     def process_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkResult:
@@ -290,11 +315,20 @@ class _PcmRetention:
             self._slices.appendleft(_PcmSlice(sample, item.end_sample, item.pcm[byte_offset:]))
 
 
-def _transcript_text(inferred: InferenceTranscript) -> str:
-    transcript = inferred.transcript
-    if not transcript.strip() or not parse_transcript(transcript):
-        raise LiveCoordinatorError("canonical decoder returned an invalid transcript.")
-    return transcript
+def _empty_transcript_reason(transcript: str) -> str | None:
+    """Name the condition under which a span has nothing to publish, or `None`.
+
+    A span the decoder cannot parse is committed empty, never made terminal. This rule is
+    stated on the transcript rather than on an exception type so it holds for every decoder:
+    one that raises the typed empty outcome and one that simply returns nothing get the same
+    answer. A decoder that *failed* raises instead, and that stays terminal.
+    """
+
+    if not transcript.strip():
+        return "decoder_returned_no_transcript"
+    if not parse_transcript(transcript):
+        return "decoder_returned_unparseable_transcript"
+    return None
 
 
 def _canonical_decode_measurement(span: FrozenSpan, elapsed_sec: float | None) -> dict[str, float | int | None]:

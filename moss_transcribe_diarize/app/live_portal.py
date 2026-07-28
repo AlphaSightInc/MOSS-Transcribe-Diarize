@@ -385,7 +385,11 @@ LIVE_PORTAL_HTML = """<!doctype html>
         const session = snapshot.session;
         const rows = [];
         for (const item of session.committed || []) {
-          rows.push(item.transcript);
+          // A span with no speech commits an empty transcript so its audio stays
+          // accounted for; it must not open a blank gap in the meeting.
+          if (item.transcript) {
+            rows.push(item.transcript);
+          }
         }
         if (session.provisional && session.provisional.transcript) {
           rows.push(session.provisional.transcript);

@@ -715,6 +715,7 @@ class LiveServiceRuntime:
                         "span_id": result.span_id,
                         "submitted": result.submitted,
                         "identity_status": result.identity_status,
+                        "empty_reason": result.empty_reason,
                         "committed_samples": result.committed_samples,
                         "canonical_decode_elapsed_sec": result.canonical_decode_elapsed_sec,
                         "frozen_span_sample_count": result.frozen_span_sample_count,

@@ -67,7 +67,7 @@ certification blockers; iteration 10 resolved F0's one open caveat and found a *
 **The freeze is then reopened a second time** by the prd.md amendment of 2026-07-28 (server
 decode-seam cycle): run `20260728-112922` iteration 1 landed H3 — the first tracked **server**
 source change on this branch — so the branch now carries `moss_transcribe_diarize/` again, strictly
-within that amendment's scope.
+within that amendment's scope; iteration 2 landed H1 (the empty-span decode contract).
 
 **PRD acceptance scoreboard after iteration 10.** Green with evidence: IDEA-044 checkpoint, production
 client gate, server meeting-reliability gate, the one reviewed keeper merge (plus the amendment's one
@@ -80,13 +80,14 @@ the final close.
 on the deployed build at all, and that the deployed build fails *sooner* on realistic input than on
 the probe's first-cut input.** See the F0 block and the H-diagnosis block below. The operator
 decision those iterations waited on **arrived** (prd.md's second amendment), so the certification
-path is now gated on Phase H itself: **H3 is fixed on the branch** (run 20260728-112922 iteration 1),
-H1 and H2 are open, and E3's physical TCC clicks stay unspent until H4 deploys the fixed SHA.
-Running E3 before that would burn the one irreducible human step on a canary that still dies in
-about three seconds.
+path is now gated on Phase H itself: **H3 and H1 are fixed on the branch** (run 20260728-112922
+iterations 1 and 2), **H2 is the last open blocker**, and E3's physical TCC clicks stay unspent
+until H4 deploys the fixed SHA. Running E3 before that would burn the one irreducible human step on
+a canary that still dies at 2.5 s of endpoint-free audio.
 Test totals on the branch: Swift **139 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **542 passed / 2 skipped / 368 subtests**
-including `tests/test_live_pipeline_seams.py` **5 passed** (new in run 20260728-112922 iteration 1),
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **547 passed / 2 skipped / 368 subtests**
+including `tests/test_live_pipeline_seams.py` **10 passed** (new in run 20260728-112922 iteration 1,
++5 in iteration 2),
 `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -420,6 +421,49 @@ after* the fix, which is what makes it a control).
 *What this does not fix:* the classification seam that turned the bare `webrtcvad.Error` into
 `kind=integrity, retryable=false`. That is shared with H1 and belongs to H1's iteration — the
 session should not die on any bare provider exception, and now no longer has one to die on here.
+
+**Empty-span decode contract (new, run 20260728-112922 iteration 2 / H1).** *The policy, decided and
+recorded as the amendment required: a span the decoder cannot parse is **committed empty**, never
+dropped and never terminal.* Dropping was ruled out by the session's own accounting rather than by
+taste — `LiveSession.stop` waits for `committed_samples == accepted_samples` and
+`live_service_runtime.stop` fails a stop whose accepted and accounted totals differ, and
+`accounted_samples` **is** `committed_samples`, so a dropped span strands the session just as surely
+as a terminal failure, only at the end of the meeting instead of the start. Committing empty keeps
+the committed prefix contiguous, advances the prefix hash, prunes retained PCM, and publishes
+nothing false.
+Four moving parts, each the smallest thing that makes the rule true:
+1. *The condition is typed at the runner.* `vllm_runner._validate_transcription_response` raises
+   `EmptyTranscriptionError` (new leaf module `app/transcription_outcome.py`) for all three of its
+   "the model produced nothing usable" cases. It subclasses `RuntimeError` and the messages are
+   byte-identical, so **every batch caller is unchanged** — a batch job that returns no transcript
+   for a submitted file must still fail closed.
+2. *The live decode seam translates it.* `RunnerBoundedWavInference.transcribe_pcm` turns that one
+   type into `InferenceTranscript(transcript="", generated_tokens=0)` with the measured wall time,
+   so an empty span still carries an RTF figure instead of hiding from the gate.
+3. *The rule is stated on the transcript, not on an exception type.*
+   `live_coordinator._empty_transcript_reason` (replacing `_transcript_text`, which raised) answers
+   `decoder_returned_no_transcript` / `decoder_returned_unparseable_transcript` / `None`, so a
+   decoder that *returns* garbage without raising gets the same treatment as one that raises — the
+   fix is not welded to vLLM. An empty span skips identity work entirely (nothing to relabel, no
+   speaker observed) and commits through the new `LiveSession.submit_empty_canonical`, which leaves
+   the identity snapshot version untouched. `CoordinatorWorkResult.empty_reason` reaches the
+   `canonical_processed` event, so an empty span is visible rather than silent.
+4. *A decoder that **failed** is still terminal, and now named.* The same seam wraps every other
+   exception from `runner.transcribe` in `LiveProviderError` with the original as `__cause__`.
+   That is the classification half H3 deferred: nothing crosses the decode seam unclassified, and
+   committing a dead GPU's spans as silence — which a blanket catch would do — would render a whole
+   meeting blank instead of saying why.
+The portal now skips empty commits when joining rows, so accounted silence does not open blank gaps.
+*Measured red/green (offline, MacStudio, no server):* restoring the five product files from `HEAD`
+turns the five new nodes red and leaves the five H3 nodes green; the pre-fix failure is the
+deployed signature exactly — `LiveServiceFailureRecord(kind=integrity, code='RuntimeError',
+message='vLLM transcription returned zero parsed segments for …/span-0000.wav.', retryable=False)`.
+The leading-silence span the node builds is `(0, 14400, "leading_silence")`, i.e. F0's
+`frozen_until_sample 14400` reproduced from the deployed endpoint config
+(`16000 − pre_speech_padding_samples`) rather than asserted.
+*What this does not fix:* a **transient** decoder failure (one vLLM timeout, one reset socket) still
+ends the meeting. That is honest classification, not a defect fixed here, but it is a real
+reliability gap for the 300 s certification — recorded as a candidate, out of the amendment's scope.
 
 **Live-credential tool contract (new, iteration 13).** Two tracked tools share
 `ops/moss-ops-lib.sh`, which carries B5's output discipline for the Linux side; the two libraries
@@ -1086,6 +1130,12 @@ when `parse_transcript(text)` is empty; it escapes before `live_adapters._valida
 (`live_adapters.py:360-364`), which has a *typed* `LiveProviderError` for the identical condition,
 can classify it. Unclassified → `integrity` → non-retryable → terminal. Every real meeting opens with
 silence and contains silence between turns, so this ends the meeting almost immediately.
+**Fixed on the branch by H1** (run 20260728-112922 iteration 2) — see the empty-span decode contract.
+*One correction to the sentence above, found while fixing it:* `_validated_segments` is on
+`LiveProvider.decode_canonical`, which the **runtime never builds** — the live decoder is
+`RunnerBoundedWavInference` under `LiveCoordinator`, so the typed error it was "escaping before" was
+never on the live path at all. The seam that needed the classification is the adapter, and that is
+where it now lives.
 
 *Blocker 2 — the endpointer can ask to freeze a non-advancing span.* With `--lead-seconds 0` the
 session survived one tick longer (11 frames, `accepted_samples` 32000) and then answered **400
@@ -1202,9 +1252,9 @@ frame exactly 8000 samples.
 *Severity ordering for the fix cycle:* blocker 3 (≈1.1 s, any unaligned lanes) → blocker 1 (≈3 s, any
 unparseable span) → blocker 2 (2.5 s, any endpoint-free stretch). All three are one-line-class
 defects in server source and all three are `kind=integrity, retryable=false`, i.e. the session cannot
-recover. **Blocker 3 is fixed on this branch** (H3, run 20260728-112922 iteration 1); blockers 1 and 2
-are authorized and open — see Phase H. This whole block still describes the **deployed** service,
-which is `317df4d` and carries none of the fixes.
+recover. **Blockers 3 and 1 are fixed on this branch** (H3, run 20260728-112922 iteration 1; H1,
+iteration 2); blocker 2 is authorized and open — see Phase H. This whole block still describes the
+**deployed** service, which is `317df4d` and carries none of the fixes.
 
 **Gotcha — remote shell quoting.** Nested quoting through Windows conhost → `wsl.exe` → bash
 fails ("The system cannot find the path specified"). Always pipe a script on stdin:
@@ -1478,16 +1528,20 @@ printf '%s\n' \
 #   (they take their own sub-mappings, NOT the whole payload), then _preflight_payload(path)
 #   Expect available=True, failures=[], manifest_hash 61d97ffef1bbdc0d4278c0fd719d5d31b0ac5f69e1654573ada5091653fecb95
 
-# --- H3 regression nodes: the real WebRtcSpeechProvider under the real coordinator (5 nodes:
-#     unaligned mixed frames incl. the host's 5808, the carried tail decided for real on
-#     completion, a 1-sample accepted range, the shipped 8000-sample control, admission refusal).
-#     The aligned control passes before AND after the fix; the other four are the red case. -------
+# --- H3 + H1 regression nodes, one file, 10 passed (~3.5 s). H3 (5): the real WebRtcSpeechProvider
+#     under the real coordinator - unaligned mixed frames incl. the host's 5808, the carried tail
+#     decided for real on completion, a 1-sample accepted range, the shipped 8000-sample control,
+#     admission refusal. H1 (5): the real vLLM response validation under the real runtime - F0's
+#     leading_silence span committed empty, a pure-silence meeting stopping with exact accounting,
+#     all three no-speech answers, a decoder that returns garbage without raising, and a decoder
+#     that failed staying terminal. The aligned control passes before AND after H3's fix. ----------
 python3 -m pytest tests/test_live_pipeline_seams.py -q
-# Red-prove it without touching git history (restore is sha256-verified):
-#   F=moss_transcribe_diarize/app/live_provider_bundle.py
-#   cp "$F" /tmp/h3-fixed.py && git show HEAD:"$F" > "$F"
-#   python3 -m pytest tests/test_live_pipeline_seams.py -q      # 4 failed, 1 passed
-#   cp /tmp/h3-fixed.py "$F"
+# Red-prove either half without touching git history (restore is sha256-verified). H3 is one file
+# (live_provider_bundle.py -> 4 failed / 1 passed); H1 is five (vllm_runner, live_adapters,
+# live_coordinator, live_session, live_service_runtime -> its 5 nodes fail, H3's 5 still pass):
+#   for f in $FILES; do cp "$f" "$TMP/$(basename $f)"; git show HEAD:"$f" > "$f"; done
+#   python3 -m pytest tests/test_live_pipeline_seams.py -q
+#   for f in $FILES; do cp "$TMP/$(basename $f)" "$f"; done   # then compare sha256 both ways
 
 # --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
 #     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived. ------
@@ -2027,20 +2081,19 @@ genuinely off-host part (the native `webrtcvad` wheel, the GPU runner) is a stan
 All three were reproduced before the cycle opened, two of them offline in under a second (see the
 H-diagnosis block and the repro commands in Validation), so none is waiting on diagnosis.
 
-32. **H1 - a span the decoder cannot parse must never be terminal.** `vllm_runner.py:245`
-    `_validate_transcription_response` raises a bare `RuntimeError` when `parse_transcript(text)` is
-    empty; it escapes before `live_adapters.py:360-364`, whose typed `LiveProviderError` for the
-    identical condition therefore never fires. The live session records
-    `kind=integrity, retryable=false` and goes terminal, `session.status` still reading `active`
-    while `terminal_failure` is set - the C1 divergence, now observed on a real failure. Measured:
-    `frozen_until_sample 14400` (0.9 s) against a first utterance at sample 16000, so the span was
-    pure silence. **Decide the policy explicitly and record it - drop the span or commit it empty -
-    then implement.** Every meeting starts with silence, so this fires on the first span. The
-    regression test must put the *real* validation seam under the live coordinator: a stub that
-    raises `LiveProviderError` reproduces nothing, because that is exactly the path the bug bypasses.
-    *Carry this in with it:* H3 left the shared half of the root cause open on purpose — a **bare
-    third-party exception** becoming `kind=integrity, retryable=false` is what makes each of these
-    blockers fatal rather than annoying. Fix the classification seam here, once, for both.
+32. **H1 - a span the decoder cannot parse must never be terminal**
+    `[done - run 20260728-112922 iteration 2]`. Policy decided and recorded: **commit the span
+    empty** (dropping is unimplementable against the session's accepted/accounted equality). The
+    typed `EmptyTranscriptionError` now names the condition at `vllm_runner`, the decode seam
+    translates it into an empty transcript, the coordinator commits it through
+    `LiveSession.submit_empty_canonical`, and every *other* decoder exception is wrapped as
+    `LiveProviderError` so nothing crosses the seam unclassified - the classification half H3
+    deferred. Five nodes in `tests/test_live_pipeline_seams.py` drive the **real** `vllm_runner`
+    validation under the real coordinator (only the HTTP hop is a stand-in), including F0's own
+    leading-silence span and a pure-silence meeting that stops with exact accounting. Red/green
+    rehearsed; H2's offline repro is bit-for-bit unchanged by it. See the empty-span decode contract
+    block above.
+    *Left open by it, deliberately:* a transient decoder failure is still terminal - candidate 36.
 33. **H2 - two independent hard-cap freezers collide** `[open; diagnosis complete, iteration 10]`.
     Not "the endpointer asks to freeze a non-advancing span" as first written:
     `LiveSession.accept_frame` freezes its own `hard_cap` span before the endpoint policy ever runs,
@@ -2077,6 +2130,14 @@ H-diagnosis block and the repro commands in Validation), so none is waiting on d
     that is E3 worth the operator's clicks. **The deployed service is still the unfixed `317df4d`** -
     H3 exists only on this branch, so any probe run before H4 will still die at the first unaligned
     frame.
+
+36. **A transient decoder failure ends the meeting** `[open; out of the amendment's scope, do not
+    start without authorization]`. One vLLM timeout or one reset socket is now a named
+    `LiveProviderError` and still terminal for the whole session (`live_service_runtime`
+    `_process_in_flight_item` -> `_fail`). For a 300 s certification over a tailnet that is a real
+    reliability gap, and the honest fix is a bounded per-span retry plus a typed degraded state -
+    *not* committing the span empty, which would render a dead GPU as a blank meeting. Nothing in
+    F0 observed this; it is a gap review found while fixing H1, and it needs its own decision.
 
 Useful F0 facts for this cycle: healthy request timings are 4-280 ms while post-terminal 409s took
 **6-8 s each**, so a dead session will back the Mac's outbox up hard - worth a look while fixing H1.
