@@ -11417,3 +11417,105 @@ then the full gate, the lane-refusal probe, and re-runs of F1 and F3.
   is a lower bound, not a target.
 - Supervisor state at authorization: loop RUNNING (pid 14512, iteration 14 of 30, mid Phase M),
   `main` fc7097d, tree clean, four-way SHA 4/4. No relaunch; the loop picks this up next iteration.
+
+================================================================================
+## Iteration 14 (run 20260728-181020-14512) - candidates 53 and 48: the heartbeat is
+## uncoupled from the publish, on both paths
+================================================================================
+
+Target: the fifth amendment's candidates 53 and 48, taken together because the amendment names them
+"the same omission on two paths". 53 is the ROOT CAUSE of both red certification runs (F1 and F3).
+
+WHAT WAS WRONG, in one sentence per path.
+ - 53, the tick. `publishPendingFrames(onContention: .skip)` and `emitHealth` shared one `do`, so a
+   publish that THREW jumped over the heartbeat. After a lane-failed 409 the same retained frame is
+   refused on every later tick, so the heartbeat stopped PERMANENTLY; 30 s later the helper lease
+   expired and the server ended a meeting that iteration 11 had already measured to be survivable
+   (peer lane 200, heartbeat-after-refusal 200, session still registered).
+ - 48, the start. `let status = try emitHealth(...)` sat outside the `do/catch` that unwinds a
+   non-retryable publish failure AND before `scheduler.schedule`. A 403 there threw past both:
+   both lanes hot, `running: true`, no pump, no recorded refusal, and `alreadyRunning` blocking
+   every later start until the app was killed. The starved lanes then overran (14005 / 1379 dropped)
+   and poisoned the next meeting - K5d's whole chain.
+
+THE FIX, and the rule it applies.
+ A REPORT ABOUT THE CAPTURE MUST NOT BE CARRIED BY THE THING IT REPORTS ON. The heartbeat is the
+ server's only evidence the client is alive; coupling it to the publish means the one condition that
+ most needs reporting is the one that silences the report.
+ - The tick now runs `emitHealth` in its OWN do/catch, after the publish's. The publish's verdict is
+   left standing rather than cleared - only a publish that SUCCEEDS says the transport recovered -
+   so `pumpFailure` still names the refused lane while the lease stays alive.
+ - The start's `emitHealth` came under the same rule the publish above it already used: retryable ->
+   degraded start (pump failure recorded, pump scheduled, status taken from `state.snapshot`),
+   non-retryable -> `source.stop` + `rollbackStart()` + rethrow.
+ - One private `recordTransportVerdict(_:)` is now called from all four request sites (start publish,
+   start heartbeat, tick publish, tick heartbeat), which is what makes the start path the third
+   caller that records a refusal, as candidate 48 required.
+ - `rollbackStart()` now KEEPS `sessionRefusal` while still clearing `pumpFailure`. Justification:
+   after an unwound start there is nowhere else for an operator to learn WHY it failed, and
+   `beginStart` clears the field, so a verdict still can never outlive the session id it names
+   (K4's rule, unchanged). `mtd-capture status` now answers `sessionDisowned` where it answered
+   nothing.
+
+NOT FIXED, deliberately, and why it is safe: a lane the server has permanently closed still retries
+its head frame once per tick. That is one doomed request per 0.5 s, and `CapturePublishPump`
+already isolates lanes (`CapturePublishPump.swift:110-124`: a lane's first failure stops THAT lane
+for the pass and only that lane), so the peer lane keeps publishing and the meeting continues
+one-laned. With D-a landed the server never closes an overrun lane at all, so this path is reached
+only by a lane that genuinely stopped producing audio.
+
+Files touched:
+  macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureController.swift            (the fix)
+  macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift    (3 regression nodes)
+  scripts/ralph-afk/{context.md,progress.txt}
+Tracked product source inside macos/ and tests/ - authorized by the fifth amendment (48, 53). No
+branch, merge, push, deploy or host mutation this iteration; nothing on any remote host was touched,
+so no rollback record was required.
+
+Validation:
+- RED FIRST, non-vacuously, with the fix absent and the three new nodes present:
+    swift test --package-path macos/MOSSCapture \
+      --filter 'ThrowingPublishStillEmits|StartHeartbeatTheServerRefuses|TransientStartHeartbeatFailure'
+    -> Executed 3 tests, with 7 failures:
+       * testAThrowingPublishStillEmitsTheHeartbeatThatHoldsTheServerLease:
+         health.emissions.count ("1") is not equal to ("4"); lastHealthSequence 1 vs 4
+         - i.e. the client went silent after the first refused publish, exactly as F3 died.
+       * testAStartHeartbeatTheServerRefusesUnwindsInsteadOfLeavingTheLanesHot:
+         running still true; lanes ("capturing","capturing") vs ("stopped","stopped");
+         sessionRefusal nil vs sessionDisowned; the second start threw "alreadyRunning"
+         - all four halves of K5d's wedge, in one node.
+       * testATransientStartHeartbeatFailureIsADegradedStartWithAPumpRunning:
+         caught error "nonSuccessStatus(503)" - a transient heartbeat killed the whole start.
+- GREEN AFTER, and the whole Swift suite, not just the filter:
+    swift test --package-path macos/MOSSCapture
+    -> Executed 154 tests, with 0 failures (0 unexpected). Swift 151 -> 154.
+    swift build --package-path macos/MOSSCapture --product mtd-capture      -> Build complete
+    swift build --package-path macos/MOSSCapture --product MOSSCaptureApp   -> Build complete
+- Python NOT re-run: no Python source was touched this iteration. The cycle's gate runs both.
+
+Evidence paths: CaptureController.swift:387-452 (both do/catch blocks and the tick's comment at
+:440-446), :529-538 (`recordTransportVerdict`), :575-583 (`rollbackStart` and its reasoning);
+CaptureControllerTests.swift testAThrowingPublishStillEmitsTheHeartbeatThatHoldsTheServerLease /
+testAStartHeartbeatTheServerRefusesUnwindsInsteadOfLeavingTheLanesHot /
+testATransientStartHeartbeatFailureIsADegradedStartWithAPumpRunning; context.md block "The heartbeat
+is uncoupled from the publish".
+
+Learned. (1) The three existing pump nodes all failed the HEALTH adapter and let the publish succeed
+(`FailOnceScheduledHealthAdapter`, `FailOnceHTTPTransportHealthAdapter`, `ReleasedSessionHealthAdapter`);
+NOT ONE failed the publish and asked what happened to the heartbeat. That asymmetry is precisely why
+a defect this load-bearing survived six gates - the same shape as the fifth amendment's own coverage
+note about `tests/test_live_api.py:1055`. When two operations share a `do`, a test that fails only
+one of them proves nothing about the other. (2) The fix cost nothing structurally: the tick's
+`if published { clearPumpFailure() }` simply moved inside the publish's own `do`, which also makes
+the semantics honest - "the transport recovered" is a statement about a publish, never about a
+heartbeat. (3) `rollbackStart` clearing `sessionRefusal` was the second half of "no recorded
+refusal": recording the verdict is useless if the unwind erases it one line later.
+
+Next: D-a in `NativeLaneHealth` - reclassify `macos_buffer_overrun` from lane FAILURE to lane
+DEGRADATION per the iteration-13 decision, keeping K2's unified-log line firing for a degradation
+(both F1's and F3's diagnoses came off it) and giving the health-mailbox overflow its own code
+instead of overloading `.bufferOverrun`; three existing Swift assertions encode the old contract
+(CaptureControllerTests.swift:1507-1508, :2760, :2710) and must be changed citing D-a. Then 50 per
+D-c (derive the token cap from the committed spans in the F1/F3/canary evidence and record the
+derivation), then the coverage gap at tests/test_live_api.py:1055 (post a frame ON the lane that
+failed), then the full gate, the lane-refusal probe, and re-runs of F1 and F3.

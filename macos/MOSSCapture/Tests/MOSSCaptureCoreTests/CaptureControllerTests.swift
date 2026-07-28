@@ -615,6 +615,157 @@ final class CaptureControllerTests: XCTestCase {
         )
     }
 
+    func testAThrowingPublishStillEmitsTheHeartbeatThatHoldsTheServerLease() throws {
+        // F3's death in one node. One lane's frames are refused for the rest of the meeting — the
+        // server answers `409 v2 system lane is failed.` and never stops — so the tick's publish
+        // throws, and the throw used to jump over `emitHealth`. The heartbeat stopped permanently,
+        // the 30 s helper lease expired, and the server correctly ended a meeting whose other lane
+        // was still healthy and whose heartbeats it would still have accepted.
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let transport = ProgrammableCaptureTransport()
+        transport.failure = { frame, _ in
+            frame.lane == .system ? CaptureHTTPTransportError.nonSuccessStatus(409) : nil
+        }
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = FakeCaptureHealthAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300, 400]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        for tick in 0..<3 {
+            source.enqueue(frames: [
+                laneFrame(.system, captureTimestampNS: UInt64(tick) * 2 + 1),
+                laneFrame(.microphone, captureTimestampNS: UInt64(tick) * 2 + 2),
+            ])
+            scheduler.runScheduledOperation()
+        }
+        let refused = controller.status()
+
+        XCTAssertEqual(
+            health.emissions.count,
+            4,
+            "one heartbeat at start and one per tick: a refused lane must not silence the client"
+        )
+        XCTAssertEqual(refused.lastHealthSequence, 4)
+        XCTAssertTrue(refused.running)
+        XCTAssertEqual(
+            transport.accepted.map(\.lane),
+            [.microphone, .microphone, .microphone],
+            "the peer lane keeps publishing — a fault on one lane is not a fault on the meeting"
+        )
+        XCTAssertEqual(refused.pumpFailure, .transportUnavailable)
+        XCTAssertNil(
+            refused.sessionRefusal,
+            "409 says nothing about whether the session exists, and the heartbeats prove it does"
+        )
+        XCTAssertEqual(
+            refused.outbox.retainedFrames,
+            3,
+            "the refused lane's audio stays queued; the heartbeat is not bought with dropped audio"
+        )
+    }
+
+    func testAStartHeartbeatTheServerRefusesUnwindsInsteadOfLeavingTheLanesHot() throws {
+        // K5d's wedge. A session the server had already released answers the *start*-time heartbeat
+        // 403, and that throw escaped past both the unwind and `scheduler.schedule`: both lanes
+        // stayed hot with nothing draining them, `running` stayed true, no refusal was recorded, and
+        // `alreadyRunning` refused every later start until the app was killed. The starved lanes
+        // then overran — 14005 dropped frames on `system` — and poisoned the next meeting.
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 403, refusedAttempts: [1])
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://127.0.0.1/live")!
+        )
+
+        XCTAssertThrowsError(try controller.start(configuration: configuration)) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .nonSuccessStatus(403))
+        }
+        let unwound = controller.status()
+
+        XCTAssertFalse(unwound.running, "a start whose session the server refuses runs nothing")
+        XCTAssertEqual(unwound.lanes.map(\.state), ["stopped", "stopped"], "no lane is left hot")
+        XCTAssertTrue(scheduler.labels.isEmpty, "no pump is left behind")
+        XCTAssertEqual(
+            unwound.sessionRefusal,
+            .sessionDisowned,
+            "the start path is the third caller that has to record the server's verdict"
+        )
+        XCTAssertNoThrow(
+            try controller.start(
+                configuration: CaptureConfiguration(
+                    sessionID: "session-b",
+                    serverURL: URL(string: "https://127.0.0.1/live")!
+                )
+            ),
+            "a refused start must not block the next one with alreadyRunning"
+        )
+        XCTAssertNil(controller.status().sessionRefusal, "a new session id is a new question")
+    }
+
+    func testATransientStartHeartbeatFailureIsADegradedStartWithAPumpRunning() throws {
+        // The publish at start already draws this line — a transient answer is a degraded start, an
+        // answer no retry can change is an unwind. The heartbeat is the same kind of report, so it
+        // gets the same rule: a 503 keeps the meeting and the pump's next heartbeat clears it.
+        // (The adapter's status code is the test's choice, not a claim about the session.)
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 503, refusedAttempts: [1])
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health
+        )
+
+        let started = try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        XCTAssertTrue(started.running, "a transient answer at start is a degraded start")
+        XCTAssertEqual(started.pumpFailure, .transportUnavailable)
+        XCTAssertNil(
+            started.sessionRefusal,
+            "5xx is the server talking about itself, not about whether this session exists"
+        )
+        XCTAssertEqual(started.lanes.map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(
+            scheduler.labels,
+            ["moss.capture.pump"],
+            "the pump is what carries the next heartbeat, so it has to exist"
+        )
+
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertNil(recovered.pumpFailure, "the next heartbeat was accepted and says so")
+        XCTAssertEqual(recovered.lastHealthSequence, 2)
+        XCTAssertEqual(health.attemptCount, 2)
+    }
+
     func testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio() throws {
         XCTAssertEqual(
             CaptureFrameRetryPolicy.retryReason(for: CaptureHTTPTransportError.nonSuccessStatus(429)),

@@ -75,11 +75,12 @@ progress.txt archive.
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
 
-**Two product defects stand between the loop and the bar, and neither is authorized.**
-- **Candidate 53 — a throwing publish stops the heartbeat, so one dropped audio buffer ends the
-  meeting.** Root cause of *both* red certification runs. `CaptureController.swift:413-417`. It caps
-  every meeting at its first overrun, so F2 and F3 cannot pass while it stands.
-- **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** Two of 42 spans decoded
+**What stands between the loop and the bar (updated iteration 14).**
+- **Candidate 53 + 48 — a throwing publish stopped the heartbeat, and a throwing start-time
+  heartbeat leaked a hot capture.** `[done — iteration 14]`, both, as one shape. Root cause of
+  *both* red certification runs. See "The heartbeat is uncoupled from the publish" below.
+- **Candidate 50 — a runaway decode is unbounded and sets the latency p95.** `[AUTHORIZED, open]`
+  — the next Phase M work item, with D-c already deciding its shape. Two of 42 spans decoded
   at RTF ≈ 3.4 and stalled the serial queue behind them; committed p95 9053 ms with a median lag of
   ≈ 0 s. Three independent runs agree to within ~100 ms (K5d 9089, F1 9053, F3 9148).
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
@@ -94,8 +95,8 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch.** Swift **151 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151);
+**Test totals on the branch.** Swift **154 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154);
 Python **598 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
 Per-file: `test_live_pipeline_seams.py` **52**, `test_live_identity.py` **8**,
@@ -381,6 +382,34 @@ the rulings and the numbers behind them are here.
   event so truncation is visible rather than inferred (H1's treatment, one step along).
   *Not fixed by this:* the decode queue stays serial. The cap is chosen because it removes the
   measured cause; if a capped run still misses the gate, the plan's ordered remedies apply **then**.
+
+**The heartbeat is uncoupled from the publish — candidates 53 and 48, one shape on two paths (new,
+iteration 14; `[done]`). READ THIS BEFORE RE-RUNNING F1 OR F3.** Both red certification runs died of
+this and nothing else: iteration 11 measured that after the lane-failed 409 *the peer lane still
+returns 200 and a heartbeat still returns 200*, so the meeting was survivable and only the skipped
+`emitHealth` ended it.
+- **53, the tick.** `emitHealth` now runs in its **own** `do/catch`, after the publish's, so a
+  publish that throws no longer jumps over it (`CaptureController.swift:404-437`). The publish's
+  verdict is left standing rather than cleared — only a publish that *succeeds* says the transport
+  recovered — so `pumpFailure` still reports the refused lane while the lease stays alive.
+- **48, the start.** `let status = try emitHealth(…)` moved inside a `do/catch` that applies the
+  **same rule the publish above it already applied**: retryable → degraded start (pump failure
+  recorded, pump scheduled, status returned from `state.snapshot`), non-retryable → `source.stop` +
+  `rollbackStart()` + rethrow. So a 403 on the start-time heartbeat can no longer leave both lanes
+  hot with no pump, and `alreadyRunning` no longer blocks the next start.
+- **The third caller now records a refusal.** One private `recordTransportVerdict(_:)` is called from
+  all four request sites (start publish, start heartbeat, tick publish, tick heartbeat), and
+  `rollbackStart()` **keeps** `sessionRefusal` while still clearing `pumpFailure` — `beginStart`
+  clears it, so a verdict can never outlive the session id it names (K4's rule, unchanged). After an
+  unwound start, `mtd-capture status` now answers `sessionDisowned` where it used to answer nothing.
+*Red-before/green-after, three nodes, all in `CaptureControllerTests.swift`:* the F3 shape
+(`ThrowingPublishStillEmitsTheHeartbeat…` — red: 1 heartbeat for 4 expected), the K5d wedge
+(`StartHeartbeatTheServerRefusesUnwinds…` — red: lanes `capturing`, no refusal, second start
+`alreadyRunning`), and the degraded start (`TransientStartHeartbeatFailure…` — red: `start` threw
+503). Swift **151 → 154**, 0 failures. **Not fixed by this, and deliberately:** a lane the server has
+permanently closed still retries its head frame once per tick. That costs one doomed request per 0.5 s
+and the pump already isolates lanes (`CapturePublishPump.swift:110-124`), so the meeting continues on
+the peer lane — with D-a landed, the server never closes an overrun lane at all.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -764,7 +793,8 @@ evidence, is in the progress.txt archive under the same title.
 
 **The one class all of Phase J, L1 and candidates 50/53 belong to:** *a condition the design
 contemplates is handled everywhere except the one path that ends (or degrades) the meeting.* Four
-blockers in Phase H/J were this shape; L1, 50 and 53 are the same shape unfixed. Suspect it first.
+blockers in Phase H/J were this shape; L1 and 53 were the same shape and were fixed as one in
+iteration 14; **50 and 55 are the two still unfixed.** Suspect this class first.
 
 ## Gates, merges and redeploys — index
 
@@ -1619,16 +1649,16 @@ than after (nothing in flight to disturb). Its close half still waits on everyth
 32b. **F4b — close the loop** only when every other PRD acceptance item has evidence.
     `[blocked on E3 → F1–F3]`
 
-### Phase L - the start-path wedge (2026-07-28, found by K5d; NOT YET AUTHORIZED)
+### Phase L - the start-path wedge (2026-07-28, found by K5d; CLOSED - both authorized by the fifth
+### amendment and both fixed, 49 in iteration 13 and 48 in iteration 14)
 
-The fourth amendment said the cause "may need its own authorization" once `status` named the codes.
-It has, so these are written down and **not acted on**: they are tracked product source under a
-post-merge freeze, and this loop has spent every merge the operator has granted. **The operator
-decides whether to authorize a fifth cycle.** Both are one defect at two removes, and the second is
-only reachable through the first.
+The fourth amendment said the cause "may need its own authorization" once `status` named the codes;
+the fifth amendment gave it. The two entries below are kept because they carry the *diagnosis* — the
+fix records are in the Phase M list and in the two blocks above. Note 49's stated mechanism was
+**wrong** and is corrected there.
 
-48. **L1 - `start` leaks a hot capture when the start-time heartbeat fails** `[open - needs
-    authorization; root cause]`. `CaptureController.swift:403` `let status = try emitHealth(…)` sits
+48. **L1 - `start` leaks a hot capture when the start-time heartbeat fails** `[done - iteration 14;
+    fixed as one shape with 53]`. `CaptureController.swift:403` `let status = try emitHealth(…)` sits
     **outside** the `do/catch` at `:387-402` that unwinds a non-retryable publish failure, and
     **before** `scheduler.schedule` at `:404`. A 403/401 on that first heartbeat therefore throws
     past `source.stop` + `state.rollbackStart()` and past the pump, leaving exactly the state the
@@ -1721,8 +1751,8 @@ authorization, and the cycle's gate (F1 and F3 both green) does not depend on it
     against a passing run.
 
 53. **A throwing publish stops the heartbeat, so one dropped audio buffer ends the meeting**
-    `[open - needs authorization; tracked client source under the post-merge freeze; ROOT CAUSE of
-    both red certification runs]`. Measured in F3 and re-read in F1's journal: an overrun on one
+    `[done - iteration 14; the diagnosis below is kept, the fix record is in the Phase M list and
+    the uncoupling block above; ROOT CAUSE of both red certification runs]`. Measured in F3 and re-read in F1's journal: an overrun on one
     lane makes the next `POST /frames` answer 409, `publishPendingFrames` throws at
     `CaptureController.swift:413`, `emitHealth` at `:417` is skipped, the same frame is refused on
     every retry so the heartbeat never resumes, and the 30 s helper lease ends the session. F3 died
@@ -1790,12 +1820,14 @@ failed lane does **not** recover inside a generation but **always** does across 
 (K4's rule), and `LiveV2Session` gains no un-fail path; a runaway decode is bounded by a
 **duration-derived token cap** whose span still commits.
 
-53. **[AUTHORIZED]** A throwing publish must not skip `emitHealth`
-    (`CaptureController.swift:417`). Root cause of both red certification runs.
-48. **[AUTHORIZED - L1]** `emitHealth` at `CaptureController.swift:403` sits outside the
-    `do/catch` at `:387-402` and before `scheduler.schedule` at `:404`. A failed start-time
-    heartbeat leaves both lanes hot with no pump, no `sessionRefusal`, and `alreadyRunning`
-    blocking recovery. 53 and 48 are the same omission on two paths - fix them as one shape.
+53. **[done - iteration 14]** The tick's `emitHealth` now has its own `do/catch` after the publish's,
+    so a throwing publish cannot skip it; the publish's `pumpFailure` is left standing and only a
+    successful publish clears it. See the uncoupling block above.
+48. **[done - iteration 14, with 53 as one shape]** The start's `emitHealth` came under the same
+    guard the publish above it already used: retryable -> degraded start with the pump scheduled,
+    non-retryable -> `source.stop` + `rollbackStart()` + rethrow, and the refusal recorded either
+    way. `rollbackStart()` now keeps `sessionRefusal` (cleared by `beginStart`), so a refused start
+    is visible in `status` instead of silent.
 49. **[done - iteration 13]** Not `NativeLaneHealth`'s projection, which `beginGeneration()` resets
     correctly. `NativeDualCaptureSource.start` zeroed the `reportedDroppedBuffers` watermark while
     the queue's per-lane drop counter is cumulative for the whole process, so the new generation's

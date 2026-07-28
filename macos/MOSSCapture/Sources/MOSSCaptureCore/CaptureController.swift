@@ -393,14 +393,31 @@ public final class CaptureController {
             // rather than a failed one: the pump delivers what is queued. A failure that no retry
             // can change means this process cannot publish at all — unwind instead of leaving a
             // capture running with nowhere to send it.
+            recordTransportVerdict(error)
             guard CaptureFrameRetryPolicy.retryReason(for: error) != nil else {
                 try? source.stop(deadline: clock.now())
                 state.rollbackStart()
                 throw error
             }
-            state.recordPumpFailure(CapturePumpFailure(error: error))
         }
-        let status = try emitHealth(configuration: configuration)
+        let status: CaptureStatus
+        do {
+            status = try emitHealth(configuration: configuration)
+        } catch {
+            // The same rule as the publish above, and for the same reason: the start-time heartbeat
+            // is a report about the capture, not the capture itself. A transient refusal is a
+            // degraded start — the pump's next tick emits health again. A refusal no retry can
+            // change means this process cannot hold this session at all, and letting that throw
+            // escape is what left both lanes hot with no pump draining them: `running` stayed true,
+            // the source overran unattended, and `alreadyRunning` refused every later start.
+            recordTransportVerdict(error)
+            guard CaptureFrameRetryPolicy.retryReason(for: error) != nil else {
+                try? source.stop(deadline: clock.now())
+                state.rollbackStart()
+                throw error
+            }
+            status = state.snapshot(lanes: source.status(), outbox: outbox.snapshot())
+        }
         let task = scheduler.schedule(label: "moss.capture.pump") { [weak self] in
             guard let self else { return }
             guard let configuration = self.state.runningConfiguration() else {
@@ -414,16 +431,23 @@ public final class CaptureController {
                     configuration: configuration,
                     onContention: .skip
                 )
-                _ = try self.emitHealth(configuration: configuration)
                 if published {
                     self.state.clearPumpFailure()
                 }
             } catch {
-                self.state.recordPumpFailure(CapturePumpFailure(error: error))
-                // A refused session is a separate fact from a failed publish, and it is the one
-                // that outlives every retry: the pump failure clears on the next successful tick,
-                // but a session the server has released never comes back.
-                self.state.recordSessionRefusal(from: error)
+                self.recordTransportVerdict(error)
+            }
+            // Outside the publish's `do`, because a publish that *throws* needs the heartbeat more
+            // than a healthy one does. A lane the server has closed refuses the same retained frame
+            // on every tick, so a heartbeat coupled to the publish stops for the rest of the
+            // meeting — and thirty seconds later the helper lease expires and the server ends a
+            // session that was still one healthy lane and an accepted heartbeat away from working.
+            // The publish's failure is left standing: this emission reports it rather than clearing
+            // it, and only a publish that succeeds says the transport recovered.
+            do {
+                _ = try self.emitHealth(configuration: configuration)
+            } catch {
+                self.recordTransportVerdict(error)
             }
         }
         state.storeHealthTask(task)
@@ -503,6 +527,16 @@ public final class CaptureController {
         return pass.ran
     }
 
+    /// Records what one failed request to the server says, on every path that talks to it — the
+    /// start's publish, the start's heartbeat, and the tick's two halves. Both facts are read from
+    /// the same error because they answer different questions: `pumpFailure` says whether this
+    /// client can reach the server right now and clears on the next successful publish, while a
+    /// refusal names a verdict on this session id that no retry changes.
+    private func recordTransportVerdict(_ error: Error) {
+        state.recordPumpFailure(CapturePumpFailure(error: error))
+        state.recordSessionRefusal(from: error)
+    }
+
     private func emitHealth(configuration: CaptureConfiguration) throws -> CaptureStatus {
         state.recordHealthEmissionAttempt()
         let current = state.snapshot(lanes: source.status(), outbox: outbox.snapshot())
@@ -538,12 +572,15 @@ private final class CaptureControllerState {
         sessionRefusal = nil
     }
 
+    /// Undoes a start that could not complete. The pump failure goes with it — nothing is pumping —
+    /// but a refusal the server gave during that start is kept: it is the only record of *why* the
+    /// start failed, and an operator reading `status` afterwards has nowhere else to find it.
+    /// `beginStart` clears it, so a refusal can never outlive the session id it names.
     func rollbackStart() {
         lock.lock()
         configuration = nil
         running = false
         pumpFailure = nil
-        sessionRefusal = nil
         lock.unlock()
     }
 
