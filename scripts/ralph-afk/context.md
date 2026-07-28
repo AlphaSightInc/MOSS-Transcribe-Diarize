@@ -1329,6 +1329,43 @@ own, which no later step does.
 27. **F4 — rehearse/record rollback, restore service, and close** only when every PRD acceptance
     item has evidence.
 
+### Phase G - authorized post-merge fix cycle (2026-07-28)
+
+Opened by the prd.md amendment of the same date, after E3 proved the merged app cannot reach the
+live server at all. Scope is exactly these four items; nothing else may touch tracked source.
+
+26. **G1 - ATS declaration for the pinned live transport.** `macos/MOSSCapture/Resources/Info.plist`
+    carries no `NSAppTransportSecurity` key, so ATS applies in full to the `.app` bundle and
+    rejects the self-signed leaf *after* `PinnedCertificateURLSessionDelegate` has already
+    accepted it. Measured on m4mbp against `https://100.64.0.8:7861/api/live/descriptor`:
+    bare binary -> 200; identical binary inside a minimal ad-hoc `.app` bundle -> `NSURLErrorDomain`
+    **-1200**, `_kCFStreamErrorCodeKey` **-9802**, with the delegate logging `pin MATCH -> accepting`
+    first; the same bundle plus `NSAllowsArbitraryLoads` -> **200**. The pin is not in question:
+    m4mbp, the served leaf and the payload all agree on `a35ca9fc...b680ff`.
+    Prefer `NSAllowsArbitraryLoads` over a host-scoped exception: the exact-leaf pin is the
+    security control here by deliberate design (prd.md "The certificate pin deliberately bypasses
+    PKI"), every connection the app makes is pinned, and a scoped exception would bake a
+    deployment-specific host into the product. Do not add chain or hostname evaluation.
+27. **G2 - trim the pairing payload.** `CapturePairingPayload.init` (`CaptureSecurity.swift:616-628`)
+    never trims its input, so an operator who presses Return before Ctrl-D sends 65 bytes where the
+    pin field must be 64 and gets `invalidPinnedHash` - an error that accuses the certificate for a
+    whitespace fault. Trim surrounding whitespace before splitting; keep the strict 64-hex check.
+28. **G3 - classify and log control-channel failures.** `sanitizedControlError`
+    (`CaptureSecurity.swift:1243-1256`) maps every unrecognised error to the bare string
+    `control_failed`, and `MOSSCaptureApp/main.swift` has no logging of any kind - no `os_log`, no
+    stderr, no `print`. A `URLError` therefore reaches the operator with its domain, code and
+    underlying `_kCFStreamErrorCodeKey` all discarded, and nothing anywhere records them. That is
+    what hid G1. Classify `URLError`/`NSError` into a typed non-secret shape (domain + code, never
+    a token or payload) and log unclassified failures.
+29. **G4 - regression tests, then one further reviewed merge.** Tests must fail before each fix and
+    pass after. The tracer's blind spot is the root of G1: `_private_non_loopback_ipv4()`
+    (`tests/test_macos_uds_tracer.py:690`) returns MacStudio's **192.168.x** address, which ATS
+    exempts as local networking, so every green tracer run exercised a path production never takes.
+    Add a case that binds the server to a `100.64.0.0/10` address - the range the tracer already
+    lists at line 36 but never selects - and runs the real bundle against it. Then re-run the full
+    client gate and perform the single authorized merge through `merge-keeper.sh`. After it, the
+    post-merge freeze resumes.
+
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.

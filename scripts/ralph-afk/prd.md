@@ -75,6 +75,25 @@ inspected, before/after deltas) recorded in progress.txt:
 - **Rollback rehearsed and recorded:** live service disabled, server checkout reverted to
   `163e969`, and `http://192.168.68.38:7860/` still serving — then restored.
 
+## Authorized amendment - 2026-07-28, one follow-up fix merge
+
+The keeper merge `f9285d6` shipped a blocker that no gate could see: App Transport Security
+rejects every pinned live connection the app makes, so no part of Phase F can run. Evidence is in
+progress.txt under "Supervisor diagnosis - ATS blocks the signed app bundle".
+
+The operator has therefore authorized **exactly one** follow-up fix cycle that may change tracked
+product source after the keeper merge, strictly limited to:
+
+- the ATS declaration that lets the pinned live transport work from an `.app` bundle,
+- the pairing-payload whitespace defect,
+- control-channel error classification and logging for unclassified failures,
+- regression tests for all three, including a tracer case bound to a `100.64.0.0/10` address,
+- and one further reviewed no-ff merge to `main` through `merge-keeper.sh`.
+
+Everything else stays frozen. This authorization does not reopen general product work, does not
+permit a third merge, and does not weaken any existing gate. After that merge the original
+post-merge freeze resumes: only Ralph evidence may change on the feature branch.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:

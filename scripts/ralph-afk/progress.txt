@@ -2216,3 +2216,58 @@ history as well as out of `ps`. Then `mtd-capture start` again for the real sess
   started while a pairing or canary window is open, so prefer waiting.
 
 [loop 20260728-023004-98501] blocked at iteration 15
+
+## Supervisor diagnosis - ATS blocks the signed app bundle (2026-07-28, operator-attended)
+- Context: not a loop iteration. The operator ran the E3 runbook, pairing failed, and this entry
+  records the diagnosis performed with them. No tracked product source was changed.
+- Trigger: the runbook's step order was wrong. `captureConfiguration(from:)`
+  (`CaptureSecurity.swift:847-862`) throws `missingCaptureConfiguration` before
+  `CaptureController.start` runs, so an unpaired `start` can never raise the TCC prompts. Iteration
+  23's finding 1 predicted the opposite and flagged itself "Derived, not observed" - the fallback it
+  named (pair first, then start) is correct and is now the order in Phase G's runbook.
+- Defect A, fixed procedurally, still a product bug (candidate G2): pasting the payload and pressing
+  Return before Ctrl-D yields `invalidPinnedHash`. `CapturePairingPayload.init` never trims, so the
+  pin field is 65 bytes against a strict `count == 64` check. Measured: 64 without the newline, 65
+  with. No test covers whitespace. Operator workaround: `IFS= read -r payload` then
+  `printf '%s' "$payload" | mtd-capture pair --server ...` - payload stays off argv, out of `ps`
+  and out of shell history.
+- Defect B (candidate G1), the real blocker. After the trim, pairing failed `control_failed`, and
+  the server never logged `POST /api/live/pairings` at all. Isolated by A/B on m4mbp, each step
+  measured rather than argued:
+  - bare binary, pinned GET to `https://100.64.0.8:7861/api/live/descriptor` -> **200**
+  - real `URLSessionCapturePairingExchangeAdapter` (throwaway package depending on the repo by
+    path, so the repo was untouched) -> **paired**, session + bearer + view token returned
+  - unsigned `.build/debug/MOSSCaptureApp` + `mtd-capture pair` -> **{"ok":true}**
+  - installed `/Applications/MOSSCapture.app` -> **control_failed**
+  - minimal ad-hoc `.app` bundle wrapping the same probe binary -> **-1200 / -9802**, after the
+    delegate had printed `pin MATCH -> accepting`
+  - that same bundle + `NSAllowsArbitraryLoads` -> **200**
+  Root cause: ATS applies to `.app` bundles and not to bare binaries, and overrides the pinning
+  delegate's acceptance because the leaf is not CA-chained. Ruled out first, each by direct test:
+  wrong pin (m4mbp, served leaf and payload all `a35ca9fc...b680ff`), network path (`/live` and
+  descriptor both 200 from m4mbp), TCC/Local Network (fails identically under the terminal's
+  identity; not listed in Local Network settings), hardened runtime (ad-hoc + runtime -> 200),
+  entitlements (ad-hoc + runtime + `audio-input` -> 200), sandboxing (no `app-sandbox` embedded),
+  application firewall (disabled) and network filters (only a Logitech HID extension).
+- Defect C (candidate G3): `sanitizedControlError` reduces every unrecognised error to
+  `control_failed` and `MOSSCaptureApp/main.swift` logs nothing at all. The `-1200`/`-9802` was
+  available from the first failed attempt and was discarded at the boundary. This is why B took
+  hours instead of minutes.
+- Why no gate caught B: `_private_non_loopback_ipv4()` (`tests/test_macos_uds_tracer.py:690`)
+  returns MacStudio's 192.168.x address, which ATS exempts as local networking. Production dials
+  100.64.0.8 (Tailscale CGNAT), which ATS does not exempt. The tracer lists `100.64.0.0/10` among
+  its allowed ranges (line 36) but never selects it, so every green run proved a path production
+  never takes.
+- Host state left behind: all diagnostic artifacts removed; `/Applications/MOSSCapture.app`
+  untouched and still verifying (`codesign --verify --strict` OK, DR
+  `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874..."`); m4mbp checkout
+  clean at `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`; no MOSSCaptureApp process running; the live
+  and batch services were never restarted. Two pairing sessions were minted and left unused on the
+  server, and one device pairing persisted to the Mac secret store by the unsigned build.
+- TCC status unchanged: **both grants are still ungranted**. No prompt was ever reached, because the
+  app never got past pairing. E3's two clicks remain outstanding and are still the only human step.
+- Operator decision, 2026-07-28: authorized exactly one follow-up fix merge, recorded in prd.md
+  under "Authorized amendment". Phase G candidates G1-G4 in context.md carry the work.
+- Next: G1 ATS declaration, G2 payload trim, G3 error classification and logging, G4 regression
+  tests including a `100.64.0.0/10` tracer case, then the single authorized merge. After that,
+  re-run the E3 runbook in the corrected order: pair first, then `start`, then the two clicks.
