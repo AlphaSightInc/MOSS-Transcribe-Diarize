@@ -19,6 +19,7 @@ from .live_identity import unattributed_transcript
 from .live_session import (
     AudioFrame,
     CanonicalResult,
+    CanonicalSubmission,
     FrozenSpan,
     LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
@@ -102,6 +103,12 @@ class CoordinatorWorkResult:
     frozen_span_duration_sec: float | None = None
     canonical_decode_rtf: float | None = None
     empty_reason: str | None = None
+    # The two words a reader needs when a span did not publish the way it was meant to.
+    # `identity_reason` is the preparer's own answer -- it is the only thing that tells an
+    # abstention on ambiguous evidence apart from an evidence provider that was not there
+    # -- and `submission_refusal` is the session's. Both used to die inside the process.
+    identity_reason: str | None = None
+    submission_refusal: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -224,7 +231,7 @@ class LiveCoordinator:
         preparation = work.preparation
         empty_reason = work.empty_reason
         if empty_reason is not None:
-            submitted = self._submit_empty(span)
+            submission = self._submit_empty(span)
             identity_status = "empty_span"
         elif preparation is None:
             raise LiveCoordinatorError("prepared work carries neither an identity preparation nor an empty span.")
@@ -237,7 +244,7 @@ class LiveCoordinator:
                 transcript=preparation.relabeled_transcript,
                 identity_preparation=preparation,
             )
-            submitted = self.session.submit_prepared_canonical(result)
+            submission = self.session.submit_prepared_canonical(result)
             identity_status = preparation.status
         else:
             # The span published its words without a speaker. Identity answered a question
@@ -251,9 +258,9 @@ class LiveCoordinator:
             unattributed = unattributed_transcript(work.transcript, sample_count=span.sample_count)
             empty_reason = _empty_transcript_reason(unattributed)
             if empty_reason is not None:
-                submitted = self._submit_empty(span)
+                submission = self._submit_empty(span)
             else:
-                submitted = self.session.submit_unlabeled_canonical(
+                submission = self.session.submit_unlabeled_canonical(
                     span_id=span.id,
                     epoch=span.epoch,
                     start_sample=span.start_sample,
@@ -261,12 +268,12 @@ class LiveCoordinator:
                     transcript=unattributed,
                 )
         snapshot = self.session.snapshot()
-        if submitted:
+        if submission.submitted:
             self._pcm.prune_before(snapshot.committed_samples)
         measurement = _canonical_decode_measurement(span, work.decode_elapsed_sec)
         return CoordinatorWorkResult(
             span_id=span.id,
-            submitted=submitted,
+            submitted=submission.submitted,
             identity_status=identity_status,
             committed_samples=snapshot.committed_samples,
             canonical_decode_elapsed_sec=measurement["canonical_decode_elapsed_sec"],
@@ -274,6 +281,8 @@ class LiveCoordinator:
             frozen_span_duration_sec=measurement["frozen_span_duration_sec"],
             canonical_decode_rtf=measurement["canonical_decode_rtf"],
             empty_reason=empty_reason,
+            identity_reason=None if preparation is None else preparation.reason,
+            submission_refusal=submission.refusal,
         )
 
     def _decode(self, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
@@ -301,7 +310,15 @@ class LiveCoordinator:
         if self._consecutive_unanswered_spans >= MAX_CONSECUTIVE_UNANSWERED_SPANS:
             raise LiveProviderError(
                 "canonical decode did not answer for "
-                f"{self._consecutive_unanswered_spans} consecutive spans: {exc}"
+                f"{self._consecutive_unanswered_spans} consecutive spans: {exc}",
+                # The count is the fact that ended the meeting, so it travels as a number
+                # rather than only inside the sentence; the span's own detail says what the
+                # decoder was doing when it stopped answering.
+                detail={
+                    **exc.detail,
+                    "span_id": span.id,
+                    "consecutive_unanswered_spans": self._consecutive_unanswered_spans,
+                },
             ) from exc
         return CoordinatorPreparedWork(
             span=span,
@@ -310,7 +327,7 @@ class LiveCoordinator:
             empty_reason=DECODER_DID_NOT_ANSWER,
         )
 
-    def _submit_empty(self, span: FrozenSpan) -> bool:
+    def _submit_empty(self, span: FrozenSpan) -> CanonicalSubmission:
         return self.session.submit_empty_canonical(
             span_id=span.id,
             epoch=span.epoch,

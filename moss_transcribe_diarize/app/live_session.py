@@ -100,6 +100,42 @@ class CanonicalResult:
 
 
 @dataclass(frozen=True, slots=True)
+class CanonicalSubmission:
+    """Whether a canonical submission published, and -- when it did not -- the word for why.
+
+    Every refusal on this path used to be a bare `False`. Six distinct conditions arrived
+    at the runtime as one code, so a session that stopped on a stale preparation and one
+    that stopped on a span-order violation were indistinguishable from outside the
+    process; that is why H4d had to build a host-side probe to learn a single word. The
+    invariant below makes the silent refusal unwritable: a submission that did not publish
+    must name the condition that refused it.
+    """
+
+    submitted: bool
+    refusal: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.submitted and self.refusal is not None:
+            raise ValueError("a published canonical submission has no refusal.")
+        if not self.submitted and not self.refusal:
+            raise ValueError("a refused canonical submission must name its refusal.")
+
+
+_PUBLISHED = CanonicalSubmission(submitted=True)
+
+
+def _refused(refusal: str) -> CanonicalSubmission:
+    return CanonicalSubmission(submitted=False, refusal=refusal)
+
+
+@dataclass(frozen=True, slots=True)
+class _CanonicalValidationError:
+    refusal: str
+    failure_reason: str
+    exception_reason: str
+
+
+@dataclass(frozen=True, slots=True)
 class CanonicalCommit:
     span_id: int
     start_sample: int
@@ -271,29 +307,31 @@ class LiveSession:
         self._notify_waiters()
         return True
 
-    def submit_prepared_canonical(self, result: CanonicalResult) -> bool:
+    def submit_prepared_canonical(self, result: CanonicalResult) -> CanonicalSubmission:
         """Atomically publish the next canonical span and identity snapshot."""
 
         if result.epoch != self._epoch:
-            return False
+            return _refused("stale_epoch")
         self._ensure_accepting_or_closing()
         span = self._frozen_spans.get(result.span_id)
         if span is None:
-            return False
+            return _refused("unknown_span")
         if not self._span_order or self._span_order[0] != result.span_id:
-            return False
+            return _refused("span_out_of_order")
         if result.start_sample != span.start_sample or result.end_sample != span.end_sample:
-            return False
-        if not self._identity_preparation_is_current(result, span):
-            return False
-        if self._canonical_validation_error(result, span) is not None:
-            return False
+            return _refused("span_sample_mismatch")
+        preparation_refusal = self._identity_preparation_refusal(result, span)
+        if preparation_refusal is not None:
+            return _refused(preparation_refusal)
+        validation_error = self._canonical_validation_error(result, span)
+        if validation_error is not None:
+            return _refused(validation_error.refusal)
 
         assert result.identity_preparation is not None
         self._publish_span(span, result, identity_snapshot=result.identity_preparation.proposed_snapshot)
         self._bump()
         self._notify_waiters()
-        return True
+        return _PUBLISHED
 
     def submit_unlabeled_canonical(
         self,
@@ -303,7 +341,7 @@ class LiveSession:
         start_sample: int,
         end_sample: int,
         transcript: str,
-    ) -> bool:
+    ) -> CanonicalSubmission:
         """Publish a frozen span's words without asserting who spoke them.
 
         An identity preparation answers *who*, not *whether the meeting can continue*. An
@@ -322,20 +360,20 @@ class LiveSession:
         """
 
         if epoch != self._epoch:
-            return False
+            return _refused("stale_epoch")
         self._ensure_accepting_or_closing()
         span = self._frozen_spans.get(span_id)
         if span is None:
-            return False
+            return _refused("unknown_span")
         if not self._span_order or self._span_order[0] != span_id:
-            return False
+            return _refused("span_out_of_order")
         if start_sample != span.start_sample or end_sample != span.end_sample:
-            return False
+            return _refused("span_sample_mismatch")
         segments = span_segments(transcript, sample_count=span.sample_count)
         if not segments:
-            return False
+            return _refused("unattributed_transcript_unparseable")
         if any(segment.speaker != UNATTRIBUTED_SPEAKER for segment in segments):
-            return False
+            return _refused("unattributed_transcript_names_a_speaker")
 
         self._publish_span(
             span,
@@ -350,7 +388,7 @@ class LiveSession:
         )
         self._bump()
         self._notify_waiters()
-        return True
+        return _PUBLISHED
 
     def submit_empty_canonical(
         self,
@@ -359,7 +397,7 @@ class LiveSession:
         epoch: int,
         start_sample: int,
         end_sample: int,
-    ) -> bool:
+    ) -> CanonicalSubmission:
         """Publish a frozen span that carries no transcript, advancing the committed prefix.
 
         A span the decoder cannot parse must be accounted for rather than lost: `stop` waits
@@ -370,15 +408,15 @@ class LiveSession:
         """
 
         if epoch != self._epoch:
-            return False
+            return _refused("stale_epoch")
         self._ensure_accepting_or_closing()
         span = self._frozen_spans.get(span_id)
         if span is None:
-            return False
+            return _refused("unknown_span")
         if not self._span_order or self._span_order[0] != span_id:
-            return False
+            return _refused("span_out_of_order")
         if start_sample != span.start_sample or end_sample != span.end_sample:
-            return False
+            return _refused("span_sample_mismatch")
 
         self._publish_span(
             span,
@@ -393,7 +431,7 @@ class LiveSession:
         )
         self._bump()
         self._notify_waiters()
-        return True
+        return _PUBLISHED
 
     def snapshot(self) -> LiveSnapshot:
         return LiveSnapshot(
@@ -482,42 +520,66 @@ class LiveSession:
     def _validate_canonical(self, result: CanonicalResult, span: FrozenSpan) -> None:
         error = self._canonical_validation_error(result, span)
         if error is not None:
-            failure_reason, exception_reason = error
-            self._fail(failure_reason)
-            raise LiveSessionFailed(self._failure_reason or exception_reason)
+            self._fail(error.failure_reason)
+            raise LiveSessionFailed(self._failure_reason or error.exception_reason)
 
-    def _canonical_validation_error(self, result: CanonicalResult, span: FrozenSpan) -> tuple[str, str] | None:
+    def _canonical_validation_error(
+        self,
+        result: CanonicalResult,
+        span: FrozenSpan,
+    ) -> _CanonicalValidationError | None:
         if not result.identity_confirmed:
-            return (
+            return _CanonicalValidationError(
+                "canonical_missing_identity",
                 f"canonical span {span.id} is missing stable session identity.",
                 "missing stable session identity.",
             )
         if not result.transcript.strip():
-            return (f"canonical span {span.id} returned empty transcript.", "empty canonical transcript.")
+            return _CanonicalValidationError(
+                "canonical_empty_transcript",
+                f"canonical span {span.id} returned empty transcript.",
+                "empty canonical transcript.",
+            )
         # Timestamps outside the span are clamped into it rather than refused -- see
         # `live_span_bounds`. The bound is answered in one place because this copy and the
         # identity preparer's both sit on the same submission path.
         if not span_segments(result.transcript, sample_count=span.sample_count):
-            return (f"canonical span {span.id} returned zero parsed segments.", "unparseable canonical transcript.")
+            return _CanonicalValidationError(
+                "canonical_unparseable_transcript",
+                f"canonical span {span.id} returned zero parsed segments.",
+                "unparseable canonical transcript.",
+            )
         return None
 
-    def _identity_preparation_is_current(self, result: CanonicalResult, span: FrozenSpan) -> bool:
+    def _identity_preparation_refusal(self, result: CanonicalResult, span: FrozenSpan) -> str | None:
+        """Name the way a preparation is not the one this span is waiting for, or `None`.
+
+        Each condition is its own word because they mean different things about the
+        session: a preparation built against identity state the session has moved past is
+        a race, while one whose transcript does not match the result it arrived with is a
+        coordinator defect. Reporting both as "not current" leaves the reader guessing.
+        """
+
         preparation = result.identity_preparation
         if preparation is None:
-            return False
-        if preparation.status != "prepared" or preparation.reason is not None:
-            return False
-        if preparation.epoch != self._epoch or preparation.span_id != span.id:
-            return False
+            return "identity_preparation_missing"
+        if preparation.status != "prepared":
+            return "identity_preparation_not_prepared"
+        if preparation.reason is not None:
+            return "identity_preparation_carries_a_reason"
+        if preparation.epoch != self._epoch:
+            return "identity_preparation_stale_epoch"
+        if preparation.span_id != span.id:
+            return "identity_preparation_span_mismatch"
         if preparation.start_sample != span.start_sample or preparation.end_sample != span.end_sample:
-            return False
+            return "identity_preparation_sample_mismatch"
         if preparation.base_snapshot_version != self._identity_snapshot.version:
-            return False
+            return "identity_preparation_stale_base_version"
         if preparation.proposed_snapshot.version != self._identity_snapshot.version + 1:
-            return False
+            return "identity_preparation_snapshot_not_successor"
         if preparation.relabeled_transcript != result.transcript:
-            return False
-        return True
+            return "identity_preparation_transcript_mismatch"
+        return None
 
     def _publish_ready_prefix(self) -> None:
         while self._span_order:

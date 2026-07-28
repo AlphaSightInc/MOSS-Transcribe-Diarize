@@ -63,8 +63,9 @@ def prepare_once(preparer, *, span, pcm: bytes, transcript: str, snapshot) -> di
         "canonical_speakers": list(preparation.proposed_snapshot.canonical_speakers),
         "diagnostics": {key: value for key, value in preparation.proposed_snapshot.diagnostics},
         "relabeled_transcript_len": len(preparation.relabeled_transcript),
-        # The session admits a preparation only when this is true (live_session.
-        # _identity_preparation_is_current); anything else makes the whole session terminal.
+        # The session publishes a *relabeled* span only when this is true (live_session.
+        # _identity_preparation_refusal); since J2 anything else publishes the span
+        # unattributed instead of ending the session.
         "would_publish": preparation.status == "prepared" and preparation.reason is None,
     }
 

@@ -4910,3 +4910,122 @@ transient. Same claim, an example that still means it.
 - Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
 - Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
   green - the same rule that has now held five times.
+
+================================================================================
+Iteration 12 (run 20260728-112922) - J4: a refusal must carry the word that names it
+================================================================================
+Target: candidate 41 (J4) - the third amendment's "Diagnosability" item. `reason` must reach the
+failure detail and the `canonical_processed` event.
+Why this candidate: the amendment names it, iteration 11 left it as the next item with all three of
+its inputs already verified, and it is the item that makes the NEXT blocker cheap. J1/J2/J3 each
+cost a host-side probe to diagnose because the process classified its refusal correctly and then
+threw away the one word naming it. J5's gate run is where a fifth blocker would appear.
+
+Files touched:
+  moss_transcribe_diarize/app/live_session.py         + CanonicalSubmission (+ _PUBLISHED/_refused),
+                                                      + _CanonicalValidationError; the three submit
+                                                      methods return it; _identity_preparation_
+                                                      is_current -> _identity_preparation_refusal
+  moss_transcribe_diarize/app/live_coordinator.py     CoordinatorWorkResult + identity_reason,
+                                                      + submission_refusal; _unanswered_span raises
+                                                      with a detail carrying the count
+  moss_transcribe_diarize/app/live_service_runtime.py canonical_processed payload + both words;
+                                                      canonical_not_submitted detail + both words and
+                                                      names the refusal in its message;
+                                                      _failure_from_exception typed + detailed;
+                                                      + _exception_detail, + _failure_message
+  moss_transcribe_diarize/app/live_adapters.py        LiveProviderError gains keyword-only `detail`;
+                                                      both wrapping raises carry {span_id, cause}
+  moss_transcribe_diarize/live_replay.py              trace + both words; ReplayIdentityFailure says
+                                                      which refusal
+  tests/test_live_pipeline_seams.py                   +6 nodes (44 -> 50); _decode_seam_runtime gains
+                                                      `speech_provider` and `prepared_by` overrides;
+                                                      UnavailableEvidence hoisted out of one test
+  tests/test_live_identity.py                         +1 node (the unwritable silent refusal); the
+                                                      existing five-condition node now asserts five
+                                                      distinct words instead of five `False`
+  scripts/ralph-afk/live-identity-seam-probe.py       comment named the renamed method (comment only)
+  scripts/ralph-afk/context.md                        named-refusal contract block; branch state,
+                                                      scoreboard, test totals; candidate 41 done, 42
+                                                      (J5) flagged next with an order note; Validation
+                                                      gained J4's red/green recipe
+  scripts/ralph-afk/progress.txt                      this entry
+
+### The ruling, stated once
+A REFUSAL CARRIES THE WORD THAT NAMES IT OUT OF THE PROCESS, AND A REFUSAL THAT NAMES NOTHING CANNOT
+BE CONSTRUCTED.
+`CanonicalSubmission.__post_init__` is the second half of that sentence: `submitted=False` with no
+refusal raises. The shape that cost H4d a host-side probe is now unwritable rather than discouraged.
+Eighteen refusal words replace the bare `False` on the three live submit paths - four shared span
+words, nine `identity_preparation_*`, three `canonical_*` validation words, two `unattributed_*` -
+and iteration 8's finding ("six distinct conditions, one code") is closed at the source rather than
+papered over at the report.
+The other two inputs answered in the same pass:
+  - the preparer's `reason` now rides the canonical_processed event. After J2 it is the ONLY thing
+    that distinguishes an abstention (identity working correctly on undecidable audio) from an
+    evidence-provider outage (an operator's problem): both publish unattributed, both keep the
+    meeting alive, and both used to look identical from outside.
+  - `_failure_from_exception` gives every arm an `error_type` detail and gives a decode failure the
+    stable code `canonical_decode_failed` instead of `exc.__class__.__name__`. A class name used as a
+    code means adding a subclass silently renames a failure the operator reads - which J3 had just
+    done by adding LiveProviderTransientError. The seam's facts travel as fields on
+    LiveProviderError.detail: {span_id, cause} at the decode seam, plus consecutive_unanswered_spans
+    when the coordinator ends a meeting for an outage.
+
+### Commands and results
+python3 -m pytest tests/test_live_pipeline_seams.py -q -> 50 passed (44 + 6)
+python3 -m pytest tests/test_live_identity.py -q       -> 8 passed (7 + 1)
+python3 -m pytest tests -q                             -> 590 passed / 2 skipped / 368 subtests
+                                                          in 59.0 s (was 583/2/368; delta +7)
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 -> rc=0, unchanged by this fix
+# red proof, no git history touched, restore sha256-verified fba8c4c1... both ways:
+cp moss_transcribe_diarize/app/live_service_runtime.py /tmp/j4-fixed/
+git show HEAD:moss_transcribe_diarize/app/live_service_runtime.py > <same path>
+python3 -m pytest tests/test_live_pipeline_seams.py -q
+  -> 6 failed / 44 passed. Exactly the six J4 nodes; every J1/J2/J3 node stays green, which is the
+     proof this pass changed reporting and not behaviour.
+cp /tmp/j4-fixed/live_service_runtime.py <same path>   -> sha256 equal
+No Swift source changed, so `swift test` was not re-run; J5's gate re-measures it.
+
+### The six nodes
+- an abstention and an evidence-provider outage, parametrized: same published span, same terminal
+  state (none), told apart ONLY by identity_reason (speaker_capacity_exceeded vs
+  evidence_provider_failed:RuntimeError).
+- the stale preparation - the only refusal still reachable after J2 - naming itself in the event AND
+  in the terminal detail. Its identity_status is "prepared", which is the point: the field the old
+  detail carried says nothing at all about why the session refused it.
+- J3's 503 outage carrying {error_type, cause, span_id, consecutive_unanswered_spans} instead of
+  detail=None.
+- a 400 carrying the same code and NO count - the discriminator that keeps "refused on its merits"
+  and "never answered" distinguishable now that they share a code.
+- an exception raised with no arguments, through the real runtime.
+
+### Learned
+1. **THE FAILURE PATH COULD FAIL ON THE FAILURE, AND IT WAS REACHABLE.** LiveServiceFailureRecord
+   refuses an empty message, so `raise ValueError()` anywhere the coordinator can reach made
+   _failure_from_exception raise INSIDE the except block: the session was left with no terminal
+   record at all and the caller got a complaint about failure messages in place of the fault. Found
+   by writing the test for the guard rather than by reading the code - I had assumed it defensive.
+   `_failure_message` falls back to the exception's type; a poor name beats none.
+2. **A `bool` return is a lossy encoding of a decision, and the loss compounds downstream.** Six
+   conditions became one `False`, one `False` became one `canonical_not_submitted`, and by the time
+   it reached the wire the only surviving fact was `identity_status`, which after J2 describes a
+   DIFFERENT question. Returning the reason at the point of refusal fixed all three layers at once;
+   nothing downstream needed a lookup table.
+3. **The invariant is worth more than the words.** Eighteen refusal strings will drift. A dataclass
+   that cannot be constructed as a silent refusal will not: the next `return False` on this path is
+   a TypeError at the call site, not a mystery in a journal three weeks later.
+
+- Next: **J5** (candidate 42) - the last item in Phase J. The amendment's real-seam coverage was
+  written with each fix (J1 +11, J2 +9, J3 +12, J4 +7 nodes, each red-before/green-after with an
+  sha256-verified restore), so J5 is: review that coverage against the amendment's list, run the full
+  local gate (Swift + Python), make the single authorized merge through merge-keeper.sh with
+  expected_main advanced IN-SCRIPT from 317df4d... to b817871..., push, redeploy, and only then run
+  both probes against the redeployed service as the acceptance evidence.
+  Order note (learned in H4, recorded in candidate 42): the amendment lists the probes before the
+  merge, but the branch's fixes are not on the host, so a probe run now measures b817871 and dies at
+  blocker 4 regardless. H4 ran gate -> merge -> redeploy -> probe and Phase J must do the same.
+  Nothing is dropped: both probes green against the redeployed SHA is still the acceptance bar.
+- Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
+- Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
+  green - the same rule that has now held six times.

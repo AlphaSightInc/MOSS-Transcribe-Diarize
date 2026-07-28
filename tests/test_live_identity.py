@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pytest
+
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     CanonicalResult,
+    CanonicalSubmission,
     LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
@@ -15,6 +18,10 @@ from moss_transcribe_diarize.app.live_identity import (
     LiveIdentityConfig,
     LiveSpeakerEvidence,
 )
+
+
+def _refused(refusal: str) -> CanonicalSubmission:
+    return CanonicalSubmission(submitted=False, refusal=refusal)
 
 
 def frame(sequence: int, samples: int) -> AudioFrame:
@@ -72,7 +79,7 @@ def test_prepared_canonical_publishes_transcript_and_identity_snapshot_atomicall
     span = session.freeze_until(4000, reason="hard_cap")
     result = prepared_result(span, session.snapshot().identity_snapshot)
 
-    assert session.submit_prepared_canonical(result) is True
+    assert session.submit_prepared_canonical(result) == CanonicalSubmission(submitted=True)
 
     snapshot = session.snapshot()
     assert snapshot.accounted_samples == 4000
@@ -83,6 +90,12 @@ def test_prepared_canonical_publishes_transcript_and_identity_snapshot_atomicall
 
 
 def test_prepared_canonical_rejects_invalid_preparations_without_mutation():
+    """Each refusal leaves the session untouched *and* names the condition that refused.
+
+    These five conditions used to be one bare `False`, so the runtime reported them with a
+    single code and a reader outside the process could not tell a stale preparation from a
+    span submitted out of order -- the gap that cost H4d a host-side probe.
+    """
     session = LiveSession(max_retained_samples=8000)
     session.accept_frame(frame(0, 8000))
     first = session.freeze_until(4000, reason="hard_cap")
@@ -91,29 +104,42 @@ def test_prepared_canonical_rejects_invalid_preparations_without_mutation():
 
     out_of_order = prepared_result(second, base)
     before = session.snapshot()
-    assert session.submit_prepared_canonical(out_of_order) is False
+    assert session.submit_prepared_canonical(out_of_order) == _refused("span_out_of_order")
     assert session.snapshot() == before
 
     mismatched = prepared_result(first, base)
     mismatched = replace(mismatched, end_sample=first.end_sample - 1)
-    assert session.submit_prepared_canonical(mismatched) is False
+    assert session.submit_prepared_canonical(mismatched) == _refused("span_sample_mismatch")
     assert session.snapshot() == before
 
     ambiguous = prepared_result(first, base, status="abstain", reason="ambiguous identity")
-    assert session.submit_prepared_canonical(ambiguous) is False
+    assert session.submit_prepared_canonical(ambiguous) == _refused("identity_preparation_not_prepared")
     assert session.snapshot() == before
 
     failed = prepared_result(first, base, status="failed", reason="identity provider failed")
-    assert session.submit_prepared_canonical(failed) is False
+    assert session.submit_prepared_canonical(failed) == _refused("identity_preparation_not_prepared")
     assert session.snapshot() == before
 
     accepted_first = prepared_result(first, base)
-    assert session.submit_prepared_canonical(accepted_first) is True
+    assert session.submit_prepared_canonical(accepted_first).submitted is True
     after_first = session.snapshot()
 
     stale_second = prepared_result(second, base)
-    assert session.submit_prepared_canonical(stale_second) is False
+    assert session.submit_prepared_canonical(stale_second) == _refused("identity_preparation_stale_base_version")
     assert session.snapshot() == after_first
+
+
+def test_a_refused_canonical_submission_cannot_be_built_without_naming_itself():
+    """The invariant that keeps the silent refusal unwritable.
+
+    A future `return CanonicalSubmission(submitted=False)` -- the shape every one of the
+    refusals above used to have -- raises here rather than reaching an operator as an
+    unexplained stop.
+    """
+    with pytest.raises(ValueError, match="must name its refusal"):
+        CanonicalSubmission(submitted=False)
+    with pytest.raises(ValueError, match="has no refusal"):
+        CanonicalSubmission(submitted=True, refusal="span_out_of_order")
 
 
 def test_bounded_identity_births_session_speakers_without_committing_raw_labels():
@@ -194,7 +220,7 @@ def test_bounded_identity_abstains_on_same_span_cannot_link_conflict_without_mut
 
     assert preparation.status == "abstain"
     assert preparation.reason == "same_span_cannot_link_conflict"
-    assert session.submit_prepared_canonical(result) is False
+    assert session.submit_prepared_canonical(result) == _refused("identity_preparation_not_prepared")
     assert session.snapshot() == before
 
 

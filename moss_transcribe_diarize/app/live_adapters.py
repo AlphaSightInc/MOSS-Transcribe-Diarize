@@ -9,7 +9,7 @@ import time
 import wave
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Mapping, Protocol
 
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
@@ -19,7 +19,18 @@ from .transcription_outcome import EmptyTranscriptionError, TransientTranscripti
 
 
 class LiveProviderError(RuntimeError):
-    pass
+    """A canonical decode did not produce a usable answer.
+
+    `detail` carries the facts of the refusal in machine-readable form -- the underlying
+    exception type, how many spans an outage has now covered -- beside the prose that has
+    always carried them. A failure whose only structured field is the exception's class
+    name forces whoever reads it to parse an English sentence, which is how a typed
+    refusal ends up needing a host-side probe to explain itself.
+    """
+
+    def __init__(self, message: str, *, detail: Mapping[str, Any] | None = None):
+        super().__init__(message)
+        self.detail: Mapping[str, Any] = dict(detail or {})
 
 
 class LiveProviderAdmissionError(LiveProviderError):
@@ -263,14 +274,16 @@ class RunnerBoundedWavInference:
                 # failures: a reset socket and an expired deadline mean the same thing
                 # whoever raises them.
                 raise LiveProviderTransientError(
-                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}"
+                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
                 ) from exc
             except Exception as exc:
                 # Nothing leaves this seam unclassified. A decoder that failed is not a span
                 # with nothing to say, and must stay distinguishable from one -- and from a
                 # decoder that merely blinked.
                 raise LiveProviderError(
-                    f"canonical decode failed: {exc.__class__.__name__}: {exc}"
+                    f"canonical decode failed: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
                 ) from exc
         return InferenceTranscript(
             transcript=str(result.text),

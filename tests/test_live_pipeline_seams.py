@@ -19,6 +19,7 @@ import io
 import json
 import urllib.error
 import urllib.request
+from dataclasses import replace
 from unittest import mock
 
 import pytest
@@ -67,6 +68,7 @@ from moss_transcribe_diarize.app.live_session import (
     UNATTRIBUTED_SPEAKER,
     AudioFrame,
     CanonicalResult,
+    CanonicalSubmission,
     FrozenSpan,
     LiveIdentitySnapshot,
     LiveSession,
@@ -451,8 +453,20 @@ def _decode_seam_runtime(
     scheduler=None,
     max_speakers: int = 16,
     evidence_provider=None,
+    speech_provider=None,
+    prepared_by=None,
 ) -> tuple[LiveServiceRuntime, StubbedTransportVllmRunner]:
     runner = StubbedTransportVllmRunner(responses)
+
+    def identity_preparer():
+        preparer = BoundedCausalIdentityPreparer(
+            config=LiveIdentityConfig(max_speakers=max_speakers, min_match_score=0.5, min_match_margin=0.1),
+            evidence_provider=evidence_provider,
+        )
+        # `prepared_by` wraps the real preparer rather than replacing it, so a test about
+        # what the session does with a preparation still gets one the real preparer built.
+        return preparer if prepared_by is None else prepared_by(preparer)
+
     return (
         LiveServiceRuntime(
             descriptor=_deployed_descriptor(),
@@ -465,12 +479,9 @@ def _decode_seam_runtime(
                     hard_cap_samples=DEPLOYED_HARD_CAP_SAMPLES,
                 )
             ),
-            speech_provider_factory=lambda: ScriptedSpeech(speech),
+            speech_provider_factory=lambda: speech_provider or ScriptedSpeech(speech),
             decoder_factory=lambda: RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES),
-            identity_preparer_factory=lambda: BoundedCausalIdentityPreparer(
-                config=LiveIdentityConfig(max_speakers=max_speakers, min_match_score=0.5, min_match_margin=0.1),
-                evidence_provider=evidence_provider,
-            ),
+            identity_preparer_factory=identity_preparer,
             session_id_factory=lambda: "seam-session",
             _canonical_scheduler=scheduler,
         ),
@@ -996,6 +1007,14 @@ def test_an_unparseable_transcript_is_still_not_a_set_of_segments():
 TWO_SPEAKER_TRANSCRIPT = "[0][S01]who said this[1.2][1.3][S02]and who said that[2.4]"
 
 
+class UnavailableEvidence:
+    """The evidence provider the host actually runs, on a day it cannot start."""
+
+    def score(self, **kwargs):
+        del kwargs
+        raise RuntimeError("onnxruntime session is not available")
+
+
 def _abstaining_runtime(scheduler, **kwargs):
     return _decode_seam_runtime(
         responses=[{"text": TWO_SPEAKER_TRANSCRIPT, "usage": {"prompt_tokens": 3, "completion_tokens": 11}}],
@@ -1057,12 +1076,6 @@ def test_an_identity_preparer_that_could_not_get_evidence_publishes_the_span_too
     wespeaker ONNX provider is the real occupant of this seam on the host; a meeting must
     not end because one span's embedding could not be scored.
     """
-
-    class UnavailableEvidence:
-        def score(self, **kwargs):
-            del kwargs
-            raise RuntimeError("onnxruntime session is not available")
-
     scheduler = _ManualCanonicalPumpScheduler()
     runtime, _runner = _abstaining_runtime(scheduler, evidence_provider=UnavailableEvidence())
     created = runtime.create()
@@ -1115,7 +1128,7 @@ def test_a_span_published_without_identity_may_not_carry_the_decoder_s_own_label
     session = LiveSession(max_retained_samples=960000)
     session.accept_frame(_frame(0, DEPLOYED_MIXED_FRAME_SAMPLES))
     span = session.freeze_until(DEPLOYED_MIXED_FRAME_SAMPLES, reason="hard_cap")
-    def submit(transcript: str) -> bool:
+    def submit(transcript: str) -> CanonicalSubmission:
         return session.submit_unlabeled_canonical(
             span_id=span.id,
             epoch=span.epoch,
@@ -1124,12 +1137,14 @@ def test_a_span_published_without_identity_may_not_carry_the_decoder_s_own_label
             transcript=transcript,
         )
 
-    assert submit("[0][S01]local label[0.5]") is False
-    assert submit("nothing parses here") is False
+    # Each refusal names itself: the two ways this guard can refuse are different facts
+    # about the transcript, and a reader downstream gets to know which one happened.
+    assert submit("[0][S01]local label[0.5]").refusal == "unattributed_transcript_names_a_speaker"
+    assert submit("nothing parses here").refusal == "unattributed_transcript_unparseable"
     assert session.snapshot().committed_samples == 0
     assert session.snapshot().status == "active"
 
-    assert submit(f"[0][{UNATTRIBUTED_SPEAKER}]unattributed[0.5]") is True
+    assert submit(f"[0][{UNATTRIBUTED_SPEAKER}]unattributed[0.5]").submitted is True
     snapshot = session.snapshot()
     assert snapshot.committed_samples == DEPLOYED_MIXED_FRAME_SAMPLES
     assert snapshot.identity_snapshot == LiveIdentitySnapshot()
@@ -1157,3 +1172,202 @@ def test_an_unattributed_rendering_keeps_the_words_and_drops_only_the_speaker(tr
     is no less honest about the audio it holds.
     """
     assert unattributed_transcript(transcript, sample_count=DEPLOYED_HARD_CAP_SAMPLES) == expected
+
+# --------------------------------------------------------------------------------------
+# The diagnosability seam: a refusal must carry the word that names it, out of the
+# process. Every fix in this file was found by reading a failure; blocker 4 was the one
+# that could not be, because the process classified the refusal correctly and then
+# discarded the single word that said which refusal it was.
+# --------------------------------------------------------------------------------------
+
+
+class StaleBaseVersionPreparer:
+    """The real preparer, answering against identity state the session has moved past.
+
+    After J2 this is the only way a canonical submission still refuses, and it is a
+    statement about the session's timing rather than about who spoke -- so it is the one
+    refusal an operator can still be shown, and it had better say which one it is.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    def prepare(self, **kwargs):
+        preparation = self.inner.prepare(**kwargs)
+        return replace(preparation, base_snapshot_version=preparation.base_snapshot_version - 1)
+
+
+class SpeechThatFailsWithoutAWord:
+    """A collaborator that raises an exception carrying no message at all."""
+
+    def observe(self, **kwargs):
+        del kwargs
+        raise ValueError()
+
+
+@pytest.mark.parametrize(
+    ("runtime_kwargs", "identity_status", "identity_reason"),
+    [
+        pytest.param(
+            {"max_speakers": 1},
+            "abstain",
+            "speaker_capacity_exceeded",
+            id="identity_declined_to_decide",
+        ),
+        pytest.param(
+            {"evidence_provider": UnavailableEvidence()},
+            "failed",
+            "evidence_provider_failed:RuntimeError",
+            id="identity_never_got_the_evidence",
+        ),
+    ],
+)
+def test_an_unresolved_span_says_why_identity_did_not_resolve(runtime_kwargs, identity_status, identity_reason):
+    """The preparer's `reason` leaves the process, on the event that reports the span.
+
+    Both spans below publish unattributed and both keep the meeting alive -- J2's ruling --
+    so from outside they are the same span. They are not the same fact: one is identity
+    working correctly against audio it cannot resolve, the other is a provider outage that
+    needs an operator. The `reason` was already computed and was written into a proposed
+    snapshot the session never commits, which is to say it was computed and thrown away.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, **runtime_kwargs)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [(event["identity_status"], event["identity_reason"]) for event in processed] == [
+        (identity_status, identity_reason)
+    ]
+    # The span still published and the meeting still runs: naming the reason is not a
+    # reason to refuse the span.
+    assert [event["submitted"] for event in processed] == [True]
+    assert [event["submission_refusal"] for event in processed] == [None]
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+
+
+def test_a_span_the_session_refuses_names_the_refusal_and_not_only_the_status():
+    """The failure H4d's probe received, with the word it was missing.
+
+    The probe read `{code: canonical_not_submitted, identity_status: "failed"}` and could
+    get no further: `submit_prepared_canonical` returned a bare `False` for six distinct
+    conditions and the runtime reported all six identically. Here the preparation is
+    `prepared` and perfectly well formed -- only its base version is stale -- so
+    `identity_status` says nothing at all about why the session refused it.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _abstaining_runtime(scheduler, prepared_by=StaleBaseVersionPreparer)
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert failure.code == "canonical_not_submitted"
+    assert failure.detail == {
+        "span_id": 0,
+        "identity_status": "prepared",
+        "identity_reason": None,
+        "submission_refusal": "identity_preparation_stale_base_version",
+    }
+    assert "identity_preparation_stale_base_version" in failure.message
+    # The event that reported the span carries the same word, so a reader following the
+    # event stream does not have to wait for the terminal record to learn it.
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [(event["submitted"], event["submission_refusal"]) for event in processed] == [
+        (False, "identity_preparation_stale_base_version")
+    ]
+
+
+def test_a_decoder_outage_reports_its_facts_as_fields_and_not_only_as_prose():
+    """J3's own terminal failure, made readable by something other than a human.
+
+    It arrived as `code='LiveProviderError'` -- the exception's class name standing in for
+    a code, so adding a subclass would have renamed it -- with `detail=None`, which put the
+    span, the cause and the count that ended the meeting inside an English sentence and
+    nowhere else.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _decode_seam_runtime(
+        responses=[_http_error(503)],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert failure.code == "canonical_decode_failed"
+    assert failure.detail == {
+        "error_type": "LiveProviderError",
+        "cause": "TransientTranscriptionError",
+        "span_id": MAX_CONSECUTIVE_UNANSWERED_SPANS - 1,
+        "consecutive_unanswered_spans": MAX_CONSECUTIVE_UNANSWERED_SPANS,
+    }
+    # The sentence still says everything it said before; it is no longer the only copy.
+    assert "consecutive spans" in failure.message and "503" in failure.message
+
+
+def test_a_span_the_backend_refuses_on_its_merits_is_named_the_same_way():
+    """The discriminator: the same code, and a detail that tells the two apart.
+
+    A 400 and an outage are both decode failures and both terminal, so they share a code.
+    What distinguishes them is that one span was refused once on its merits and the other
+    was offered repeatedly and never answered -- which is a field, not a judgement call.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _decode_seam_runtime(
+        responses=[_http_error(400, b"malformed multipart")],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert failure.code == "canonical_decode_failed"
+    assert failure.detail == {"error_type": "LiveProviderError", "cause": "RuntimeError", "span_id": 0}
+    assert "consecutive_unanswered_spans" not in failure.detail
+
+
+def test_an_exception_that_names_nothing_is_still_reported_as_a_failure():
+    """The failure path may not fail on the failure.
+
+    `LiveServiceFailureRecord` refuses an empty message, so an exception raised with no
+    arguments used to make `_failure_from_exception` raise *while handling* it: the session
+    was left with no terminal record, and the caller got a complaint about failure messages
+    in place of the thing that went wrong. A type is a poor name and a much better answer
+    than none.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, _runner = _decode_seam_runtime(
+        responses=[GOOD_RESPONSE],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+        speech_provider=SpeechThatFailsWithoutAWord(),
+    )
+    created = runtime.create()
+
+    with pytest.raises(ValueError) as raised:
+        runtime.accept_frame(created.session_id, _frame(0, DEPLOYED_MIXED_FRAME_SAMPLES))
+    # The caller sees the original exception, not a complaint about the failure record.
+    assert str(raised.value) == ""
+
+    failure = runtime.snapshot(created.session_id).terminal_failure
+    assert failure is not None
+    assert (failure.code, failure.message) == ("integrity_error", "ValueError")
+    assert failure.detail == {"error_type": "ValueError"}

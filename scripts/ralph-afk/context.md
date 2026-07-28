@@ -94,10 +94,12 @@ span's words with no speaker attributed instead of ending the meeting — which 
 blocker-4 input class on this path. See the unresolved-identity contract block. Iteration 11 landed
 **J3** — a decoder that did not answer is now told apart from one that failed, retried once, and
 degraded rather than made terminal — which closes candidate 36 and leaves J4 and J5 in Phase J. See
-the transient-decode contract block.
+the transient-decode contract block. Iteration 12 landed **J4** — every refusal on the live path now
+carries the word that names it out of the process, in the event and in the failure detail — which
+leaves **J5 alone** in Phase J. See the named-refusal contract block.
 
-**PRD acceptance scoreboard after iteration 11 of run 20260728-112922** (iteration 11 moved no
-scoreboard line either — J1, J2 and J3 are fixes awaiting Phase J's gate, merge and redeploy).
+**PRD acceptance scoreboard after iteration 12 of run 20260728-112922** (iteration 12 moved no
+scoreboard line either — J1-J4 are fixes awaiting Phase J's gate, merge and redeploy).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
@@ -113,9 +115,10 @@ certification, the 16-minute soak, the run-time half of secret hygiene, and the 
 on the deployed build; the second amendment fixed those three blockers (H3, H1, H2) and iteration 6
 deployed them; and iteration 7's gate run then found a **fourth** blocker on the same seam — see the
 H4d block. Phase J is now authorized and **J1 (iteration 9) and J2 (iteration 10) close both of
-blocker 4's input classes on the branch, and J3 (iteration 11) closes the transient-decoder class
-that would have been the fifth**; the path stays gated until J4 lands and Phase J's
-gate/merge/redeploy (J5) put them on the host. So the certification path is gated on **Phase J**, not on the operator: E3's physical
+blocker 4's input classes on the branch, J3 (iteration 11) closes the transient-decoder class that
+would have been the fifth, and J4 (iteration 12) makes the next one readable without a host-side
+probe**; the path stays gated until Phase J's gate/merge/redeploy (J5) put them on the host. So the
+certification path is gated on **Phase J**, not on the operator: E3's physical
 TCC clicks stay unspent, because a canary against a service that dies at the first 2.5 s of
 continuous speech would burn the one irreducible human step for nothing. This is the third time the
 same rule has held: **spend the human step last**, and only against a build a machine has already
@@ -123,9 +126,10 @@ driven end to end. Iteration 8 put a number on that judgement: at the measured 6
 rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 now would most likely
 buy one aborted run.
 Test totals on the branch: Swift **139 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **583 passed / 2 skipped / 368 subtests**
-including `tests/test_live_pipeline_seams.py` **44 passed** (new in run 20260728-112922 iteration 1,
-+5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10, +12 in iteration 11),
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **590 passed / 2 skipped / 368 subtests**
+including `tests/test_live_pipeline_seams.py` **50 passed** (new in run 20260728-112922 iteration 1,
++5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10, +12 in iteration 11,
++6 in iteration 12) and `tests/test_live_identity.py` **8 passed** (+1 in iteration 12),
 `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -470,8 +474,60 @@ decode failed: RuntimeError: Failed to connect to vLLM API: [Errno 104] Connecti
 Restore sha256-verified (`7d365b24…` both ways). `live-hardcap-repro.py --frames 8` unchanged at rc=0.
 *Left for J4, deliberately:* the terminal failure's `code` is still the exception class name
 (`LiveProviderError`) and its `detail` is `None`. The **message** names the outage and the status, so
-nothing is lost, but the machine-readable half of "name it" is J4's item, not J3's.
+nothing is lost, but the machine-readable half of "name it" is J4's item, not J3's. *(Done in
+iteration 12 — see the named-refusal contract block.)*
 **Not yet observed on the host.** Like J1 and J2, real-audio confirmation belongs to J5's gate.
+
+**Named-refusal contract (new, iteration 12 / J4). A refusal that discards the word naming it is not
+diagnosable.** *The rule: every refusal on the live path carries the condition that caused it out of
+the process — into the `canonical_processed` event and into the failure's `detail` — and a refusal
+that names nothing cannot be constructed.* Four files, plus the lab harness:
+- `live_session.CanonicalSubmission(submitted, refusal)` replaces the three submit methods' bare
+  `bool`. Its `__post_init__` **refuses to build a silent refusal**, so the shape every one of these
+  used to have is now unwritable rather than merely discouraged. Eighteen distinct refusal words
+  replace what iteration 8 measured as **six conditions reported as one**:
+  `stale_epoch`, `unknown_span`, `span_out_of_order`, `span_sample_mismatch`; the nine
+  `identity_preparation_*` words from `_identity_preparation_refusal` (the old
+  `_identity_preparation_is_current`, whose seven branches were all one `False`);
+  `canonical_{missing_identity,empty_transcript,unparseable_transcript}` from
+  `_canonical_validation_error`, now a `_CanonicalValidationError` record; and the two
+  `unattributed_transcript_*` guards J2 added.
+- `live_coordinator.CoordinatorWorkResult` gains **`identity_reason`** (the preparer's own word,
+  which until now died in a proposed snapshot the session never commits) and **`submission_refusal`**.
+- `live_service_runtime` puts both on the `canonical_processed` event and in the
+  `canonical_not_submitted` detail, and names the refusal in its message. `_failure_from_exception`
+  now gives **every** arm a `detail` carrying `error_type`, and gives a decode failure the stable code
+  `canonical_decode_failed` instead of `exc.__class__.__name__` — a class name as a code means adding
+  a subclass renames a failure the operator reads, which J3 had just done.
+- `live_adapters.LiveProviderError` gains a keyword-only `detail`, so the decode seam's facts travel
+  as fields beside the prose: `{span_id, cause}` at the seam, plus
+  `consecutive_unanswered_spans` when the coordinator ends a meeting for an outage. Existing raises
+  are unaffected — the default is `{}`.
+- `live_replay` (the lab harness) records both words in its trace and in `ReplayIdentityFailure`.
+*One reachable defect fixed on the way:* `LiveServiceFailureRecord` refuses an empty message, so an
+exception raised with **no arguments** made `_failure_from_exception` raise *while handling* it — the
+session was left with no terminal record and the caller got a complaint about failure messages
+instead of the fault. `_failure_message` falls back to the exception's type. Its node drives this
+through the real runtime with a collaborator that raises `ValueError()`.
+*Six nodes in `tests/test_live_pipeline_seams.py`* (44 → 50): an abstention and an evidence-provider
+outage told apart by `identity_reason` alone (they are otherwise the same published span); the stale
+preparation — the only refusal still reachable after J2 — naming itself in both the event and the
+terminal detail, with `identity_status` "prepared" proving the status says nothing about the refusal;
+J3's 503 outage carrying `{error_type, cause, span_id, consecutive_unanswered_spans}`; a 400 carrying
+the same code and *no* count, which is the discriminator; and the empty-message node. Plus one in
+`tests/test_live_identity.py` for the unwritable-silent-refusal invariant, and that file's existing
+"rejects invalid preparations" node — which already exercised five distinct conditions and asserted
+all five as `False` — now asserts five distinct words.
+*Deliberately not changed:* `LiveSession.submit_canonical` still returns `bool`. Nothing in the
+product calls it (the live path uses the prepared/unlabeled/empty trio); it is a test-only path, so
+converting it would be churn without a reader.
+*Red/green rehearsed offline (MacStudio, no server):* restoring **only** `live_service_runtime.py`
+from `HEAD` — the test module imports `CanonicalSubmission` from `live_session`, so restoring that
+one would be a collection error and prove nothing (J2's lesson, applied again) — turns exactly the
+six J4 nodes red and leaves the other 44 green. Restore sha256-verified (`fba8c4c1…` both ways).
+`live-hardcap-repro.py --frames 8` unchanged at rc=0.
+**Not yet observed on the host.** Like J1-J3, real confirmation belongs to J5's gate — where this
+one pays for itself: if J5's probe run finds a fifth blocker, the 409 now carries the word.
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -1957,6 +2013,11 @@ python3 -m pytest tests/test_live_pipeline_seams.py -q
 # instead of behaviour. With no transient classification at the source the whole chain reverts, so
 # this one restore reds all seven transient nodes (7 failed / 37 passed) while the four permanent
 # status rows stay green - which is also the proof that the 400/401/404 path was never touched.
+# J4 (iteration 12) adds 6 more -> 50 passed (~3.7 s), plus 1 node in tests/test_live_identity.py
+# (8 passed). Red-prove it by restoring ONLY live_service_runtime.py: the test module imports
+# CanonicalSubmission from live_session, so restoring that one is a collection error rather than a
+# red. The runtime holds both halves of J4 that the nodes read - the canonical_processed payload and
+# _failure_from_exception - so this single restore reds exactly the six (6 failed / 44 passed).
 
 # --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
 #     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived.
@@ -2750,26 +2811,30 @@ and 37 are folded in here; settle them together or the next gate run finds the f
     which is how H1's "a dead GPU may not render as a blank meeting" survives. Twelve nodes; the
     file's own stub was fixed to replace only `urlopen`, because it had been replacing the classifier
     itself. See the transient-decode contract block above.
-41. **J4 - `reason` must survive** `[open - do this next]`. It must reach the failure detail and the
-    `canonical_processed` event. H4d cost a host-side probe precisely because the process classified
-    the refusal correctly and then discarded the one word naming it; H1/H3 were easier because they
-    left tracebacks.
-    *Where it stands after J3:* three concrete inputs are on the table. (i) `_failure_from_exception`
-    (`live_service_runtime.py:801-810`) falls through to `code=exc.__class__.__name__`, so J3's
-    decoder outage arrives as `code='LiveProviderError'` with `detail=None` and only its message
-    carries the facts. (ii) `submit_prepared_canonical` still returns bare `False` for **six**
-    distinct conditions, all reported as `canonical_not_submitted` (iteration 8's finding, and after
-    J2 the only reachable one is a stale preparation - so the code now lies about *which* it was).
-    (iii) `BoundedCausalIdentityPreparer`'s `reason` still dies in an uncommitted proposed snapshot;
-    after J2 it is what distinguishes an abstention from an evidence-provider outage, and it reaches
-    nothing.
-42. **J5 - real-seam coverage, then gate/merge/redeploy.** Nothing in the repo puts the real
-    decoder's timestamps under the real identity preparer. Add nodes to
-    `tests/test_live_pipeline_seams.py` for each of J1-J3, red before and green after, restoring
-    product files from `HEAD` and verifying the restore by sha256 as H1-H3 did. Gate on **both**
-    probes against the deployed service - a full-plan survival with committed spans advancing and
-    speaker labels present - plus the full Swift/Python gate; then the single authorized merge
+41. **J4 - `reason` must survive** `[done - run 20260728-112922 iteration 12]`. All three inputs
+    answered, and generalized to one rule: **a refusal carries the word that names it out of the
+    process, and a refusal that names nothing cannot be constructed.** (i) `_failure_from_exception`
+    now gives every arm an `error_type` detail and a decode failure the stable code
+    `canonical_decode_failed`, with the seam's facts (`span_id`, `cause`,
+    `consecutive_unanswered_spans`) carried on `LiveProviderError.detail`. (ii) the three submit
+    methods return `CanonicalSubmission`, whose eighteen refusal words replace the bare `False`, and
+    both the event and the failure detail carry the one that fired. (iii) the preparer's `reason`
+    reaches the `canonical_processed` event, which is now the only thing distinguishing an abstention
+    from an evidence-provider outage. Six nodes; a reachable empty-message defect in the failure path
+    was found and fixed on the way. See the named-refusal contract block above.
+42. **J5 - review the seam coverage, then gate/merge/redeploy** `[open - do this next]`. The
+    real-seam nodes the amendment asked for were written **with** each fix (J1 +11, J2 +9, J3 +12,
+    J4 +7, each red before and green after with an sha256-verified restore), so what is left here is
+    a review that they cover the amendment's list, not a new test-writing pass. Then: **both** probes
+    against the deployed service - a full-plan survival with committed spans advancing and speaker
+    labels present - plus the full Swift/Python gate; then the single authorized merge
     (`expected_main` is now `317df4d...`; advance it in-script), push, redeploy.
+    *Order note, learned in H4:* the amendment lists the probes before the merge, but the branch's
+    fixes are not on the host, so a probe run before the redeploy measures `b817871` and dies at
+    blocker 4 no matter what the branch says. H4 therefore ran gate -> merge -> redeploy -> probe
+    (iterations 4, 5, 6, 7), and Phase J must run the same order. **Nothing is dropped:** both probes
+    green against the redeployed SHA is still the acceptance evidence, and if they are red the merge
+    is answered by the next amendment, exactly as H4d's red was.
 
 Reusable facts from H4d: rebuilding the probe's own span 1 from its schedule reproduced the defect
 first try, while `golden.wav` decodes to empty and proves nothing - reproduce the exact input, not a

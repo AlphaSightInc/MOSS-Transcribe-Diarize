@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, Awaitable, Callable, Mapping, Protocol
 
+from .live_adapters import LiveProviderError
 from .live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
 from .live_coordinator import (
     LiveCoordinator,
@@ -734,6 +735,8 @@ class LiveServiceRuntime:
                         "span_id": result.span_id,
                         "submitted": result.submitted,
                         "identity_status": result.identity_status,
+                        "identity_reason": result.identity_reason,
+                        "submission_refusal": result.submission_refusal,
                         "empty_reason": result.empty_reason,
                         "committed_samples": result.committed_samples,
                         "canonical_decode_elapsed_sec": result.canonical_decode_elapsed_sec,
@@ -744,9 +747,14 @@ class LiveServiceRuntime:
                 )
                 if not result.submitted:
                     failure = LiveServiceIdentityCommitFailure(
-                        "canonical work did not atomically publish.",
+                        f"canonical work did not atomically publish: {result.submission_refusal}.",
                         code="canonical_not_submitted",
-                        detail={"span_id": result.span_id, "identity_status": result.identity_status},
+                        detail={
+                            "span_id": result.span_id,
+                            "identity_status": result.identity_status,
+                            "identity_reason": result.identity_reason,
+                            "submission_refusal": result.submission_refusal,
+                        },
                     ).failure
                     self._fail(state, failure)
                     if raise_errors:
@@ -799,15 +807,61 @@ class LiveServiceRuntime:
             raise _error_from_failure(state.terminal_failure)
 
     def _failure_from_exception(self, exc: Exception) -> LiveServiceFailureRecord:
+        """Turn an exception into a failure record that still names what raised it.
+
+        Every arm carries `error_type`, because the code answers *which policy refused* and
+        not *what happened*. A decode failure is named by a stable code rather than by its
+        class name -- a new subclass, and `LiveProviderTransientError` was one, must not
+        silently rename a failure the operator reads -- and the facts the decode seam
+        already knows travel with it instead of only inside its sentence.
+        """
+
         if isinstance(exc, LiveServiceError):
             return exc.failure
         if isinstance(exc, (LiveSessionBackpressure, InferenceArbiterBackpressure, TimeoutError)):
-            return LiveServiceTransportPacingFailure(str(exc), code="backpressure_or_deadline").failure
+            return LiveServiceTransportPacingFailure(
+                _failure_message(exc),
+                code="backpressure_or_deadline",
+                detail=_exception_detail(exc),
+            ).failure
         if isinstance(exc, (LiveSessionFailed, LiveCoordinatorError, EndpointPolicyError)):
-            return LiveServiceIdentityCommitFailure(str(exc), code="identity_commit_failed").failure
+            return LiveServiceIdentityCommitFailure(
+                _failure_message(exc),
+                code="identity_commit_failed",
+                detail=_exception_detail(exc),
+            ).failure
+        if isinstance(exc, LiveProviderError):
+            return LiveServiceIntegrityFailure(
+                _failure_message(exc),
+                code="canonical_decode_failed",
+                detail=_exception_detail(exc, **exc.detail),
+            ).failure
         if isinstance(exc, (LiveSessionClosed, ValueError)):
-            return LiveServiceIntegrityFailure(str(exc), code="integrity_error").failure
-        return LiveServiceIntegrityFailure(str(exc), code=exc.__class__.__name__).failure
+            return LiveServiceIntegrityFailure(
+                _failure_message(exc),
+                code="integrity_error",
+                detail=_exception_detail(exc),
+            ).failure
+        return LiveServiceIntegrityFailure(
+            _failure_message(exc),
+            code=exc.__class__.__name__,
+            detail=_exception_detail(exc),
+        ).failure
+
+
+def _exception_detail(exc: Exception, **extra: Any) -> dict[str, Any]:
+    return {"error_type": exc.__class__.__name__, **extra}
+
+
+def _failure_message(exc: Exception) -> str:
+    """The exception's message, or its type when it carries none.
+
+    A `LiveServiceFailureRecord` refuses an empty message, so an exception raised with no
+    arguments would have made the failure path itself raise -- losing the failure instead
+    of reporting it. The type is a poor message and a far better answer than none.
+    """
+
+    return str(exc).strip() or exc.__class__.__name__
 
 
 def _error_from_failure(failure: LiveServiceFailureRecord) -> LiveServiceError:
