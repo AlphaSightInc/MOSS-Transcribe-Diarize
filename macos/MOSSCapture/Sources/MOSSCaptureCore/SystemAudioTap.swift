@@ -9,6 +9,32 @@ public struct SystemAudioTapSourceVector: Equatable, Sendable {
     public var realtimeCallbackWork: [String]
 }
 
+/// How System Audio Recording permission is resolved for the system lane.
+///
+/// macOS publishes neither a preflight nor a request API for it, and Screen Recording preflight
+/// is a different permission for a different lane. The user-initiated recording start that
+/// `SystemAudioTap.start(queue:)` performs — `AudioHardwareCreateProcessTap` followed by
+/// `AudioDeviceStart` on the transient aggregate — *is* the request. The lane therefore asks
+/// nothing at launch, prompts only from a user `start`, and learns its decision from that one
+/// attempt.
+enum SystemAudioPermission {
+    /// Maps the outcome of one user-initiated recording start onto the lane's decision.
+    /// A failure that is not permission-shaped leaves the decision unresolved (`nil`): the lane's
+    /// typed failure already carries the device or OSStatus reason, and guessing "denied" from it
+    /// would report a permission problem the user cannot fix.
+    static func state(afterRecordingStart error: Error?) -> NativeLanePermissionState? {
+        guard let error else {
+            return .granted
+        }
+        guard let nativeError = error as? NativeCaptureError,
+              case .permissionDenied = nativeError
+        else {
+            return nil
+        }
+        return .denied
+    }
+}
+
 public enum NativeCaptureError: Error, Equatable {
     case unavailable(String)
     case osStatus(String, Int32)

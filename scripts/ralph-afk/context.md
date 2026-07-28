@@ -35,9 +35,15 @@ branch after the iteration-1 graft unless stated.
 
 **Branch state.** Iteration 1 merged `acl/IDEA-044--A-034@67a27b8` into `ralph/live-meeting-mvp`
 with `--no-ff` (conflict-free: A-034 branches from the same `af3ac36` and touches paths disjoint
-from the Ralph scripts). Test totals on the branch: Swift **81 passed** (was 67); Python
-**454 passed / 2 skipped / 346 subtests** excluding the tracer, plus
-`tests/test_macos_uds_tracer.py` = **1 passed, 1 failed** (defect 9 below).
+from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (A3). Test totals
+on the branch: Swift **92 passed** (67 → 81 → 92); Python **456 passed / 2 skipped /
+346 subtests** including `tests/test_macos_uds_tracer.py` **2 passed** (was 1 passed, 1 hung).
+
+**IDEA-044 attempt-2 discriminator: 5/10** (`spikes/idea-044-attempt2-red-control/repro.py`,
+run against the worktree). All five permission checks (5-9) are green. The five open ones are
+checks 1-4 (A2 app-owned handoff) and check 10 (tracer must additionally assert `CFBundleIdentifier`,
+the fixed lab bundle path `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app`, `sha256`, and
+`codesign` evidence). Run that script first in any Phase-A iteration: it *is* the A4 gate.
 
 **Feasibility — settled, do not re-litigate.**
 - Warm 12-run decode p95: 7.5 s span → **0.241 s**; 2.5 s → **0.162 s**. One pre-warm
@@ -82,20 +88,31 @@ from the Ralph scripts). Test totals on the branch: Swift **81 passed** (was 67)
    the observed timebase is 125/3. Convert with `AudioConvertHostTimeToNanos` before transport,
    then preserve the converted first-sample timestamp through resampling/coalescing. Reject
    zero/invalid host time as typed discontinuity/failure.
-9. **Undetermined microphone permission hangs `start` forever** (new, measured iteration 1, and
-   the only failing test on the branch). `MicrophoneCapture.start` throws only on `.denied`
-   (`MicrophoneCapture.swift:60-64`); `.undetermined` falls through to
-   `driver.currentInputDeviceID()`, whose `engine.inputNode` access blocks inside
-   `AVAudioEngineImpl::UpdateInputNode` → `_dispatch_sync_f_slow` → `kevent_id` and never
-   returns, because a non-GUI process cannot answer the TCC prompt. Nothing calls
-   `AVCaptureDevice.requestAccess`. `sample` of the real product proves the stack. Every SwiftPM
-   rebuild is ad-hoc signed with a new cdhash, so the TCC identity is `.undetermined` on *every*
-   rebuild — this is the normal case, not an edge case. It hangs the app's single-threaded UDS
-   dispatch loop, so `status`/`stop` cannot answer either. A3 must close it: request access
-   explicitly, keep the lane `pending` without blocking the control loop, and emit a typed
-   per-lane failure on denial. Repro: `tests/test_macos_uds_tracer.py::test_built_macos_app_cli_cross_real_uds_and_private_tls_server`
-   → `TimeoutExpired` on `mtd-capture start` after 8 s (all pairing, pinning, restart-persistence,
-   and secret-hygiene assertions before it pass).
+9. **Undetermined microphone permission hung `start` forever** — **closed by iteration 2**.
+   `MicrophoneCapture.start` used to throw only on `.denied` and let `.undetermined` fall through
+   to `driver.currentInputDeviceID()`, whose `engine.inputNode` access blocks inside
+   `AVAudioEngineImpl::UpdateInputNode` → `_dispatch_sync_f_slow` → `kevent_id` forever, because a
+   non-GUI process cannot answer the TCC prompt. Every SwiftPM rebuild is ad-hoc signed with a new
+   cdhash, so `.undetermined` is the *normal* state, not an edge case. `start` now requires
+   `.granted` before touching the engine, and `NativeLanePermissionCoordinator` runs the explicit
+   `AVCaptureDevice.requestAccess(for: .audio)` transition instead.
+
+**Lane admission contract (new, iteration 2).** `NativeDualCaptureSource.start` never waits on a
+user decision. Per lane: `.granted` → admit inline; `.denied` → typed lane failure; `.undetermined`
+→ one `requestAccess` and lane state `pending`. The source is *running* only if at least one lane
+is actually capturing; a pending lane joins the running capture when the answer grants it. When no
+lane is capturing, `start` retires the permission generation (so a late grant cannot start capture
+behind a failed start) and throws the pending lane's typed `permissionDenied`. System audio has no
+preflight or request API, so its user-initiated recording start *is* the request
+(`SystemAudioPermission`); it resolves synchronously and never sits pending. `stop` retires the
+generation before teardown.
+
+**Open risk — system-tap prompt on a GUI host (M36).** `AudioHardwareCreateProcessTap` is the
+documented System Audio Recording prompt trigger and is still called on the control thread. On
+MacStudio it returns promptly (iteration-1 `sample` proved the hang was in the microphone path,
+not the tap), but nothing yet proves it returns promptly on m4mbp while its prompt is on screen.
+If E3 shows it blocking, move system admission onto the coordinator's own thread in Phase B; do
+not add a Screen Recording preflight in its place (M31 forbids it).
 
 **Server state.** Deployed `163e969`; `origin/main` also `163e969`; local `main` is +84.
 `/api/live/descriptor` and `/live` → 404. `MOSS_LIVE_ENABLED=0`. `webrtcvad-wheels 2.0.14` and
@@ -134,8 +151,13 @@ swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real pr
 
 # --- real-process tracer (darwin; needs a live private-address TLS server)
 # present since the iteration-1 graft. It builds/bundles/ad-hoc-signs the real products, so it
-# needs both Swift products built first. Currently 1 passed / 1 failed (defect 9).
+# needs both Swift products built first. Currently 2 passed (~9 s).
 python3 -m pytest tests/test_macos_uds_tracer.py -q
+
+# --- Phase A discriminator (the A4 gate; run it before and after any Phase-A change) --------
+PYTHONDONTWRITEBYTECODE=1 python3 \
+  "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-attempt2-red-control/repro.py" \
+  --target "$PWD"        # currently 5/10; A4 needs 10/10
 
 # --- wide checkpoint -----------------------------------------------------
 # Keep executable builds explicit because tests/test_live_integration.py and the A-034 tracer
@@ -200,20 +222,28 @@ only after the durable result is in progress.txt.
    persistence, environment-selected `FileCaptureSecretStore` (Keychain still the default with no
    `MOSS_CAPTURE_SECRET_STORE_PATH`), and `tests/test_macos_uds_tracer.py`. Grafted verbatim, not
    rewritten.
-2. **A2 — app-owned UDS `handoff`**: app reads view authority and writes pasteboard; CLI sends one
-   authenticated UDS request and relays non-secret status only. Grafted state to replace:
-   `MTDCaptureCLI/main.swift` gives the **CLI** a `PasteboardCapturePortalHandoff(sessionStore:)`,
-   so today the CLI reads `capture-view-token` itself.
-3. **A3 — explicit per-lane permission coordinator** — **now the top blocker**, because defect 9
-   makes the tracer hang rather than fail: microphone `requestAccess(.audio)`,
-   user-started system tap transition, generation-fenced pending/granted/denied, duplicate-start
-   idempotence, stop-during-prompt, late-callback rejection, and typed denied-lane failure.
-   Must also keep the app's UDS dispatch loop responsive while a lane is pending, and must never
-   touch `AVAudioEngine.inputNode` while permission is `.undetermined`.
+2. **A2 — app-owned UDS `handoff`** — **now the top candidate** (discriminator checks 1-4): app
+   reads view authority and writes pasteboard; CLI sends one authenticated UDS request and relays
+   non-secret status only. Grafted state to replace: `MTDCaptureCLI/main.swift` gives the **CLI** a
+   `PasteboardCapturePortalHandoff(sessionStore:)`, so today the CLI reads `capture-view-token`
+   itself. Required: `case "handoff"` in the app dispatcher (`CaptureSecurity.swift`),
+   `PasteboardCapturePortalHandoff` injected in `MOSSCaptureApp/main.swift`,
+   `ControlChannelRequest(command: "handoff"` in `CaptureCommandLine.swift`, and **no**
+   `PasteboardCapturePortalHandoff`/`loadCaptureViewToken`/`NSPasteboard` left in
+   `CaptureCommandLine.swift` + `MTDCaptureCLI/main.swift`.
+3. **A3 — explicit per-lane permission coordinator** `[done — iteration 2]`:
+   `NativeLanePermissionCoordinator` in `NativeDualCaptureSource.swift`,
+   `AVCaptureDevice.requestAccess(for: .audio)` in `MicrophoneCapture.swift`, and
+   `SystemAudioPermission` in `SystemAudioTap.swift`. Discriminator checks 5-9 green; tracer
+   `2 passed`.
 4. **A4 — compatibility checkpoint**: run the exact eleven registered IDEA-044 attempt-2
    commands plus `bash scripts/ralph-afk/validate-phase-a-locality.sh`. Required: 10/10, 16/16,
    zero Darwin skips, all other commands green. Commit and record the exact SHA. **Do not merge,
-   push, or begin Phase B until this is green.**
+   push, or begin Phase B until this is green.** Check 10 needs tracer work beyond A2: the fixed
+   lab bundle path, `CFBundleIdentifier`, reused `sha256`/`codesign -dr -` evidence, and the
+   M38 JUnit node contract (pending/grant and pending/deny nodes, zero Darwin skips). The
+   granted dual-lane node needs real TCC grants, which is the E3 human step — expect this to be
+   where A4 parks.
 
 ### Phase B — production Mac reliability
 

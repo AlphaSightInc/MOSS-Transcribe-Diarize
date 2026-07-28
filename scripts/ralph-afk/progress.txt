@@ -133,3 +133,60 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   is not the issue; a hang is).
 - Next: A3 — explicit per-lane permission coordinator (request access, non-blocking pending state,
   typed denied-lane failure), then A2 app-owned handoff, then the A4 eleven-command checkpoint.
+
+## Iteration 2 - explicit per-lane permission coordinator (A3)
+- Target: Phase A candidate A3 — close defect 9 with generation-fenced pending/granted/denied
+  per-lane permission transitions and a typed denied-lane failure
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/{MicrophoneCapture,SystemAudioTap,
+  NativeDualCaptureSource}.swift`; `macos/MOSSCapture/Tests/MOSSCaptureCoreTests/
+  CaptureControllerTests.swift`; `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: locality-constrained by design. `spikes/idea-044-attempt2-red-control/repro.py` fixes
+  the registered thirteen paths, so the coordinator could not be a new file: it lives in
+  `NativeDualCaptureSource.swift` as `NativeLanePermissionCoordinator`, the explicit microphone
+  transition in `MicrophoneCapture.swift`, and the system-lane rule in `SystemAudioTap.swift` as
+  `SystemAudioPermission`. Behaviour: `MicrophoneCapture.start` now requires `.granted` before it
+  touches `AVAudioEngine.inputNode`; an `.undetermined` lane gets one
+  `AVCaptureDevice.requestAccess(for: .audio)` and stays `pending`; the source runs when at least
+  one lane is capturing and a pending lane joins later on a grant; when nothing is capturing,
+  `start` retires the permission generation and throws the pending lane's typed
+  `permissionDenied`; `stop` retires before teardown; a duplicate `start` adopts the running
+  generation and never prompts twice.
+- Validation:
+  - `swift build --product MOSSCaptureApp` -> OK; `--product mtd-capture` -> OK
+  - `swift test --package-path macos/MOSSCapture` -> **92 passed, 0 failures** (was 81)
+  - `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_macos_uds_tracer.py -q
+    -p no:cacheprovider` -> **2 passed in 9.22 s** (was 1 passed / 1 failed on an 8 s
+    `TimeoutExpired`). The real built app now answers `start`, `stop` and `status` on an ungranted
+    host; `start` takes the tracer's typed-failure branch, so no lane is ever falsely reported as
+    recording
+  - `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider` -> **456 passed,
+    2 skipped, 346 subtests** (454+2, no regression)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **5/10** (was 1/10); all
+    five permission checks green
+  - `bash scripts/ralph-afk/validate-phase-a-locality.sh` -> PASS; `git diff --check` -> clean
+- Evidence: discriminator output above; new Swift nodes
+  `testDuplicateStartDoesNotRequestPermissionsTwice`,
+  `testStopDuringPermissionPromptCancelsGeneration`,
+  `testLatePermissionCompletionAfterStopIsNoop`,
+  `testStartWithNoLaneRecordingReportsThePendingPermissionAndDisownsIt`,
+  `testUndeterminedMicrophonePromptsOnceAndJoinsRunningCaptureOnGrant`,
+  `testUndeterminedMicrophoneDenialFailsOnlyThatLane`,
+  `test{System,Microphone}GrantedWith{Microphone,System}DeniedKeepsLanePermissionsIndependent`,
+  `testMicrophoneCaptureUndeterminedPermissionNeverTouchesInputNode`,
+  `testSystemAudioPermissionIsResolvedByTheUserInitiatedRecordingStart`,
+  `testLanePermissionCoordinatorKeepsLaneStateAndFencesRetiredAnswers`
+- Learned: (1) the attempt-2 red control is the real design spec, not just a gate — it fixes both
+  the file locality and the type names (`PermissionCoordinator` in the dual source,
+  `SystemAudioPermission`/`requestSystemAudio` in the tap, `requestAccess`+`.audio` in the
+  microphone), so read it before designing any Phase-A change. (2) Retiring the *health*
+  generation on a failed `start` destroys the per-lane failure evidence `status` must report;
+  only the permission generation may be retired there. Caught by
+  `testNativeDualCaptureSourceUnwindsBothLanesWhenEveryStartFails`. (3) `CaptureLane` is a public
+  enum, so Swift does not infer `Sendable`; carrying a lane into an asynchronous permission answer
+  needs the explicit conformance.
+- Blocker: none. Known open risk recorded in context.md: `AudioHardwareCreateProcessTap` is still
+  called on the control thread. It returns promptly on MacStudio (iteration-1 `sample` located the
+  hang in the microphone path), but M36 is only fully answered once m4mbp shows it also returns
+  while its own TCC prompt is on screen.
+- Next: A2 — move `handoff` into the app dispatcher and strip view-token/pasteboard authority from
+  the CLI (discriminator checks 1-4), then the tracer evidence for check 10, then A4.

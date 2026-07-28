@@ -54,12 +54,31 @@ public final class MicrophoneCapture {
         lock.unlock()
     }
 
+    /// Non-blocking read of this lane's recording decision. Never touches `AVAudioEngine`.
+    func authorization() -> NativeLanePermissionFact {
+        driver.recordPermission()
+    }
+
+    /// The one user-initiated microphone permission transition. It returns immediately and the
+    /// user's answer arrives later, on an arbitrary thread, so the caller's control loop stays
+    /// responsive for the whole time the prompt is on screen.
+    func requestAuthorization(
+        _ completion: @escaping @Sendable (NativeLanePermissionFact) -> Void
+    ) {
+        driver.requestRecordPermission(completion)
+    }
+
     public func start(queue: RealTimeNativeAudioBufferQueue) throws {
         setStopping(false)
         do {
             let permission = driver.recordPermission()
             emit(.permission(permission))
-            if permission == .denied {
+            guard permission == .granted else {
+                // Anything short of a grant must stop here. `.undetermined` in particular may
+                // never reach `AVAudioEngine.inputNode`: a process that cannot answer the TCC
+                // prompt blocks forever inside `AVAudioEngineImpl::UpdateInputNode`, taking the
+                // single-threaded control loop down with it. The permission coordinator asks for
+                // the decision first and starts this lane only once it is `.granted`.
                 throw NativeCaptureError.permissionDenied("microphone")
             }
             let currentDeviceID = try driver.currentInputDeviceID()
@@ -182,6 +201,9 @@ enum MicrophoneCaptureEngineObservation: Equatable {
 
 protocol MicrophoneCaptureDriver: AnyObject {
     func recordPermission() -> NativeLanePermissionFact
+    func requestRecordPermission(
+        _ completion: @escaping @Sendable (NativeLanePermissionFact) -> Void
+    )
     func currentInputDeviceID() throws -> AudioDeviceID
     func installConfigurationChangeHandler(
         _ handler: @escaping @Sendable (MicrophoneCaptureEngineObservation) -> Void
@@ -232,6 +254,14 @@ private final class AVAudioEngineMicrophoneDriver: MicrophoneCaptureDriver {
             return .denied
         @unknown default:
             return .undetermined
+        }
+    }
+
+    func requestRecordPermission(
+        _ completion: @escaping @Sendable (NativeLanePermissionFact) -> Void
+    ) {
+        AVCaptureDevice.requestAccess(for: .audio) { granted in
+            completion(granted ? .granted : .denied)
         }
     }
 

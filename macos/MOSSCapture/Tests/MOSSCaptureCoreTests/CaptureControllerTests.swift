@@ -744,23 +744,322 @@ final class CaptureControllerTests: XCTestCase {
         microphone.stop()
     }
 
-    func testMicrophoneCaptureUndeterminedPermissionIsPendingNotDenied() throws {
+    func testMicrophoneCaptureUndeterminedPermissionNeverTouchesInputNode() throws {
         let driver = RecordingMicrophoneCaptureDriver(permission: .undetermined, currentDeviceID: 64)
         let microphone = MicrophoneCapture(driver: driver)
         let health = NativeLaneHealth()
         let generation = health.beginGeneration()
         microphone.attachHealthSink(health, lane: .microphone, generation: generation)
 
-        try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
-        health.enqueue(.admitted, lane: .microphone, generation: generation)
+        XCTAssertThrowsError(
+            try microphone.start(queue: RealTimeNativeAudioBufferQueue(capacity: 4))
+        ) { error in
+            XCTAssertEqual(error as? NativeCaptureError, .permissionDenied("microphone"))
+        }
 
+        // Reading the current input device is what blocks forever behind an unanswered prompt.
+        XCTAssertEqual(driver.events, ["recordPermission"])
+        // Undetermined is still not denied: the lane records no terminal failure of its own.
+        XCTAssertNil(health.failure(for: .microphone))
         let status = try XCTUnwrap(
             health.statuses(running: true).first { $0.lane == .microphone }
         )
-        XCTAssertEqual(status.state, "capturing")
         XCTAssertNil(status.failureCode)
-        XCTAssertNil(health.failure(for: .microphone))
-        microphone.stop()
+    }
+
+    func testMicrophoneCaptureRequestAccessIsTheExplicitPermissionTransition() throws {
+        let driver = RecordingMicrophoneCaptureDriver(permission: .undetermined, currentDeviceID: 64)
+        let microphone = MicrophoneCapture(driver: driver)
+
+        XCTAssertEqual(microphone.authorization(), .undetermined)
+        let answers = RecordedPermissionAnswers()
+        microphone.requestAuthorization { answers.append($0) }
+
+        // The request returns before the user answers, so the control loop is never held.
+        XCTAssertEqual(driver.events, ["recordPermission", "requestRecordPermission"])
+        XCTAssertTrue(answers.values.isEmpty)
+
+        driver.answerRecordPermissionRequest(.granted)
+        XCTAssertEqual(answers.values, [.granted])
+        XCTAssertEqual(microphone.authorization(), .granted)
+    }
+
+    func testSystemAudioPermissionIsResolvedByTheUserInitiatedRecordingStart() throws {
+        XCTAssertEqual(SystemAudioPermission.state(afterRecordingStart: nil), .granted)
+        XCTAssertEqual(
+            SystemAudioPermission.state(
+                afterRecordingStart: NativeCaptureError.permissionDenied("system audio")
+            ),
+            .denied
+        )
+        // A device or OSStatus failure is not a permission answer; the lane's typed failure code
+        // already carries the reason and the decision stays unresolved.
+        XCTAssertNil(
+            SystemAudioPermission.state(
+                afterRecordingStart: NativeCaptureError.osStatus("AudioDeviceStart", -10_875)
+            )
+        )
+
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources/MOSSCaptureCore/SystemAudioTap.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(source.contains("AudioHardwareCreateProcessTap"))
+        for forbidden in [
+            "CGPreflightScreenCaptureAccess",
+            "CGRequestScreenCaptureAccess",
+            "CoreGraphics",
+            "ScreenCaptureKit",
+        ] {
+            XCTAssertFalse(source.contains(forbidden), forbidden)
+        }
+    }
+
+    func testLanePermissionCoordinatorKeepsLaneStateAndFencesRetiredAnswers() throws {
+        let coordinator = NativeLanePermissionCoordinator()
+        let gate = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
+        coordinator.beginGeneration(7)
+        coordinator.record(.granted, for: .system, generation: 7)
+
+        let answers = RecordedPermissionAnswers()
+        coordinator.request(lane: .microphone, generation: 7, gate: gate) { answers.append($0) }
+        coordinator.request(lane: .microphone, generation: 7, gate: gate) { answers.append($0) }
+
+        XCTAssertEqual(gate.requestCount, 1)
+        XCTAssertEqual(coordinator.state(for: .system), .granted)
+        XCTAssertEqual(coordinator.state(for: .microphone), .pending)
+
+        // A generation that is not live can neither record state nor start a request.
+        coordinator.record(.denied, for: .system, generation: 6)
+        coordinator.request(lane: .system, generation: 6, gate: gate) { answers.append($0) }
+        XCTAssertEqual(coordinator.state(for: .system), .granted)
+        XCTAssertEqual(gate.requestCount, 1)
+
+        coordinator.retire()
+        gate.answerPermissionRequest(.granted)
+        XCTAssertTrue(answers.values.isEmpty)
+        XCTAssertNil(coordinator.state(for: .microphone))
+    }
+
+    func testUndeterminedMicrophonePromptsOnceAndJoinsRunningCaptureOnGrant() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(configuration: laneConfiguration())
+
+        // `start` returned while the prompt is still on screen: the lane is pending, not failed,
+        // and the microphone engine has not been touched.
+        let pending = source.status()
+        XCTAssertEqual(microphone.requestCount, 1)
+        XCTAssertEqual(microphone.startCount, 0)
+        XCTAssertEqual(pending.map(\.state), ["capturing", "pending"])
+        XCTAssertEqual(pending.map(\.failureCode), [nil, nil])
+
+        microphone.answerPermissionRequest(.granted)
+
+        let granted = source.status()
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(microphone.requestCount, 1)
+        XCTAssertEqual(granted.map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(granted.map(\.failureCode), [nil, nil])
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+    }
+
+    func testUndeterminedMicrophoneDenialFailsOnlyThatLane() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        microphone.answerPermissionRequest(.denied)
+
+        let denied = source.status()
+        XCTAssertEqual(microphone.startCount, 0)
+        XCTAssertEqual(denied.map(\.state), ["capturing", "failed"])
+        XCTAssertEqual(
+            denied.map(\.failureCode),
+            [nil, "macos_permission_denied"]
+        )
+        // The surviving lane keeps producing frames.
+        XCTAssertEqual(try source.pendingFrames().map(\.lane), [.system])
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+    }
+
+    func testDuplicateStartDoesNotRequestPermissionsTwice() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        try source.start(configuration: laneConfiguration())
+
+        XCTAssertEqual(microphone.requestCount, 1)
+        XCTAssertEqual(microphone.startCount, 0)
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(source.status().map(\.state), ["capturing", "pending"])
+
+        // One answer to the one outstanding prompt still admits the lane exactly once.
+        microphone.answerPermissionRequest(.granted)
+        XCTAssertEqual(microphone.startCount, 1)
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+    }
+
+    func testStopDuringPermissionPromptCancelsGeneration() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        XCTAssertTrue(microphone.isPromptOutstanding)
+
+        // `stop` answers while the prompt is still up; it must not wait for the user.
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+        XCTAssertEqual(source.status().map(\.state), ["stopped", "stopped"])
+        XCTAssertEqual(system.stopCount, 1)
+        XCTAssertEqual(microphone.stopCount, 1)
+
+        // The retired generation owns the outstanding prompt, so the next start asks again.
+        try source.start(configuration: laneConfiguration())
+        XCTAssertEqual(microphone.requestCount, 2)
+        try source.stop(deadline: Date(timeIntervalSince1970: 2))
+    }
+
+    func testLatePermissionCompletionAfterStopIsNoop() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        microphone.answerPermissionRequest(.granted)
+        XCTAssertEqual(microphone.startCount, 0)
+        XCTAssertEqual(source.status().map(\.state), ["stopped", "stopped"])
+        XCTAssertEqual(source.status().map(\.failureCode), [nil, nil])
+
+        microphone.answerPermissionRequest(.denied)
+        XCTAssertEqual(source.status().map(\.failureCode), [nil, nil])
+    }
+
+    func testStartWithNoLaneRecordingReportsThePendingPermissionAndDisownsIt() throws {
+        let system = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.osStatus("AudioHardwareCreateProcessTap", 560_557_673)
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        XCTAssertThrowsError(try source.start(configuration: laneConfiguration())) { error in
+            XCTAssertEqual(
+                error as? NativeCaptureError,
+                .permissionDenied("microphone permission not granted yet")
+            )
+        }
+
+        // A grant that lands behind the failed start must not begin capture on its own.
+        microphone.answerPermissionRequest(.granted)
+        XCTAssertEqual(microphone.startCount, 0)
+        XCTAssertEqual(source.status().map(\.state), ["failed", "stopped"])
+    }
+
+    func testSystemGrantedWithMicrophoneDeniedKeepsLanePermissionsIndependent() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                nativeBuffer(lane: .system, timestamp: 10, deviceEpoch: 1, samples: [0.5])
+            ]
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .denied)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(configuration: laneConfiguration())
+
+        XCTAssertEqual(microphone.requestCount, 0)
+        XCTAssertEqual(microphone.startCount, 0)
+        XCTAssertEqual(source.status().map(\.state), ["capturing", "failed"])
+        XCTAssertEqual(
+            source.status().map(\.failureCode),
+            [nil, "macos_permission_denied"]
+        )
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+    }
+
+    func testMicrophoneGrantedWithSystemDeniedKeepsLanePermissionsIndependent() throws {
+        let system = RecordingNativeCaptureComponent(
+            startError: NativeCaptureError.permissionDenied("system audio")
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(
+            authorization: .granted,
+            buffersOnStart: [
+                nativeBuffer(lane: .microphone, timestamp: 12, deviceEpoch: 7, samples: [0.25])
+            ]
+        )
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+        )
+
+        try source.start(configuration: laneConfiguration())
+
+        // An already-granted lane is admitted without a second prompt.
+        XCTAssertEqual(microphone.requestCount, 0)
+        XCTAssertEqual(microphone.startCount, 1)
+        XCTAssertEqual(source.status().map(\.state), ["failed", "capturing"])
+        XCTAssertEqual(
+            source.status().map(\.failureCode),
+            ["macos_permission_denied", nil]
+        )
+        XCTAssertEqual(try source.pendingFrames().map(\.lane), [.microphone])
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
     }
 
     func testMicrophoneCaptureDeniedPermissionReportsRawTerminalFact() throws {
@@ -2629,6 +2928,13 @@ final class CaptureControllerTests: XCTestCase {
         )
     }
 
+    private func laneConfiguration() -> CaptureConfiguration {
+        CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://moss.example")!
+        )
+    }
+
     private func jsonBody(_ request: URLRequest) throws -> [String: Any] {
         let data = try XCTUnwrap(request.httpBody)
         let object = try JSONSerialization.jsonObject(with: data)
@@ -2692,6 +2998,95 @@ private final class RecordingNativeCaptureComponent:
         )
         lateFactWasRejected =
             (healthSink as? NativeLaneHealth)?.failure(for: healthLane) == nil
+    }
+}
+
+/// Collects permission answers that arrive on whichever thread the requester chooses.
+private final class RecordedPermissionAnswers: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [NativeLanePermissionFact] = []
+
+    var values: [NativeLanePermissionFact] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recorded
+    }
+
+    func append(_ decision: NativeLanePermissionFact) {
+        lock.lock()
+        recorded.append(decision)
+        lock.unlock()
+    }
+}
+
+/// A lane that owns an explicit permission request, like the real microphone. The answer is
+/// delivered only when the test calls `answerPermissionRequest`, which is how macOS behaves: the
+/// request returns immediately and the user replies whenever they reply.
+private final class PermissionGatedNativeCaptureComponent:
+    NativeAudioCaptureComponent,
+    NativeLaneHealthReportingComponent,
+    NativeLanePermissionRequesting
+{
+    private let buffersOnStart: [NativeCapturedAudioBuffer]
+    private let startError: Error?
+    private var authorizationState: NativeLanePermissionFact
+    private var outstanding: [@Sendable (NativeLanePermissionFact) -> Void] = []
+    private(set) var requestCount = 0
+    private(set) var startCount = 0
+    private(set) var stopCount = 0
+
+    init(
+        authorization: NativeLanePermissionFact,
+        buffersOnStart: [NativeCapturedAudioBuffer] = [],
+        startError: Error? = nil
+    ) {
+        self.authorizationState = authorization
+        self.buffersOnStart = buffersOnStart
+        self.startError = startError
+    }
+
+    var isPromptOutstanding: Bool {
+        !outstanding.isEmpty
+    }
+
+    func authorization() -> NativeLanePermissionFact {
+        authorizationState
+    }
+
+    func requestAuthorization(
+        _ completion: @escaping @Sendable (NativeLanePermissionFact) -> Void
+    ) {
+        requestCount += 1
+        outstanding.append(completion)
+    }
+
+    func answerPermissionRequest(_ decision: NativeLanePermissionFact) {
+        authorizationState = decision
+        let completions = outstanding
+        outstanding.removeAll()
+        for completion in completions {
+            completion(decision)
+        }
+    }
+
+    func attachHealthSink(
+        _ sink: NativeLaneHealthFactSink,
+        lane: CaptureLane,
+        generation: UInt64
+    ) {}
+
+    func start(queue: RealTimeNativeAudioBufferQueue) throws {
+        startCount += 1
+        if let startError {
+            throw startError
+        }
+        for buffer in buffersOnStart {
+            queue.enqueueFromRealtimeCallback(buffer)
+        }
+    }
+
+    func stop() {
+        stopCount += 1
     }
 }
 
@@ -2778,6 +3173,7 @@ private final class RecordingMicrophoneCaptureDriver: MicrophoneCaptureDriver {
     var startError: Error?
     private var observationHandler: (@Sendable (MicrophoneCaptureEngineObservation) -> Void)?
     private var removedObservationHandler: (@Sendable (MicrophoneCaptureEngineObservation) -> Void)?
+    private var outstandingPermissionRequests: [@Sendable (NativeLanePermissionFact) -> Void] = []
 
     init(
         permission: NativeLanePermissionFact,
@@ -2792,6 +3188,22 @@ private final class RecordingMicrophoneCaptureDriver: MicrophoneCaptureDriver {
     func recordPermission() -> NativeLanePermissionFact {
         events.append("recordPermission")
         return permission
+    }
+
+    func requestRecordPermission(
+        _ completion: @escaping @Sendable (NativeLanePermissionFact) -> Void
+    ) {
+        events.append("requestRecordPermission")
+        outstandingPermissionRequests.append(completion)
+    }
+
+    func answerRecordPermissionRequest(_ decision: NativeLanePermissionFact) {
+        permission = decision
+        let completions = outstandingPermissionRequests
+        outstandingPermissionRequests.removeAll()
+        for completion in completions {
+            completion(decision)
+        }
     }
 
     func currentInputDeviceID() throws -> AudioDeviceID {
