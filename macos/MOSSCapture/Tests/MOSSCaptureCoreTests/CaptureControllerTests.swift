@@ -268,6 +268,166 @@ final class CaptureControllerTests: XCTestCase {
         )
     }
 
+    func testAReleasedSessionIsReportedGoneInsteadOfMerelyUnreachable() throws {
+        // The attended session's exact shape: the first heartbeat is accepted, the server releases
+        // the session, and every request after that is refused. Before this, `status` answered
+        // `running: true` with a transport failure — the same answer a pulled network cable gives.
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 403)
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        XCTAssertNil(controller.status().sessionRefusal, "an accepted heartbeat refuses nothing")
+
+        scheduler.runScheduledOperation()
+        let refused = controller.status()
+
+        XCTAssertTrue(refused.running, "the microphones really are still open; that is not the lie")
+        XCTAssertEqual(
+            refused.sessionRefusal,
+            .sessionDisowned,
+            "a session the server has released has to be visible as gone, not as unreachable"
+        )
+        XCTAssertEqual(
+            refused.pumpFailure,
+            .transportUnavailable,
+            "the pump answer is still true — it is just not an answer to whether the session exists"
+        )
+        let response = ControlChannelResponse(status: refused)
+        XCTAssertEqual(response.sessionRefusal, .sessionDisowned)
+        let encoded = try XCTUnwrap(String(data: JSONEncoder().encode(response), encoding: .utf8))
+        XCTAssertTrue(
+            encoded.contains("sessionDisowned"),
+            "`mtd-capture status` encodes whatever the app answers, so the word has to be in it"
+        )
+    }
+
+    func testASessionTheServerRefusedStaysRefusedWhenALaterRequestSucceeds() throws {
+        // A pump failure clears on the next good tick because it describes right now. A refusal
+        // describes one session id, and the server's answer about that id is final — a release is
+        // one-way — so it must not be quietly erased by whatever happens next.
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = ReleasedSessionHealthAdapter(refusedStatusCode: 403, refusedAttempts: [2])
+        let controller = CaptureController(
+            source: FakeCaptureSourceAdapter(frames: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300]),
+            scheduler: scheduler,
+            health: health
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        scheduler.runScheduledOperation()
+        scheduler.runScheduledOperation()
+        let recovered = controller.status()
+
+        XCTAssertNil(recovered.pumpFailure, "the transport is working again and says so")
+        XCTAssertEqual(recovered.sessionRefusal, .sessionDisowned)
+
+        // A new session is a new question, so the previous session's verdict does not carry over.
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+        XCTAssertEqual(stopped.sessionRefusal, .sessionDisowned, "the stopped meeting was refused")
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-b",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        XCTAssertNil(controller.status().sessionRefusal)
+    }
+
+    func testStopReportsASessionTheServerRefusedWhileDrainingTheLastFrames() throws {
+        // The final drain's failure is deliberately swallowed — the audio stays queued either way —
+        // but "the server would not take it because the session was already gone" is the one thing
+        // in it an operator needs, and a clean-looking stop is exactly the report that hides it.
+        let tail = laneFrame(.microphone, sampleCount: 341, captureTimestampNS: 1_500_000_000)
+        let transport = ProgrammableCaptureTransport()
+        transport.failure = { _, _ in CaptureHTTPTransportError.nonSuccessStatus(404) }
+        let controller = CaptureController(
+            source: TerminalTailCaptureSource(tail: [tail]),
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-a",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(stopped.sessionRefusal, .sessionUnknown)
+        XCTAssertEqual(
+            stopped.outbox.retainedFrames,
+            1,
+            "the refusal is a report, not a licence to drop the audio"
+        )
+        XCTAssertEqual(stopped.publishedFrameCount, 0)
+    }
+
+    func testSessionRefusalNamesOnlyTheAnswersThatMeanTheSessionIsGone() throws {
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 401), .credentialRejected)
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 403), .sessionDisowned)
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 404), .sessionUnknown)
+        XCTAssertEqual(CaptureSessionRefusal(statusCode: 410), .sessionGone)
+        XCTAssertEqual(
+            CaptureSessionRefusal(error: CaptureHTTPTransportError.nonSuccessStatus(403)),
+            .sessionDisowned
+        )
+        XCTAssertNil(
+            CaptureSessionRefusal(statusCode: 409),
+            "409 is this wire's answer both for a closed session and for an out-of-sequence frame, "
+                + "so it cannot tell an operator which one happened"
+        )
+        for silent: Error in [
+            CaptureHTTPTransportError.nonSuccessStatus(200),
+            CaptureHTTPTransportError.nonSuccessStatus(400),
+            CaptureHTTPTransportError.nonSuccessStatus(429),
+            CaptureHTTPTransportError.nonSuccessStatus(503),
+            CaptureHTTPTransportError.nonSuccessStatus(0),
+            CaptureHTTPTransportError.missingCaptureBearer,
+            CaptureHTTPTransportError.missingCertificatePin,
+            URLError(.networkConnectionLost),
+            URLError(.secureConnectionFailed),
+            CaptureSecurityError.pinMismatch,
+        ] {
+            XCTAssertNil(CaptureSessionRefusal(error: silent), String(describing: silent))
+        }
+
+        // The two policies read the same status codes and must never both claim one: an answer a
+        // retry can fix is by definition not the server saying the session is gone for good.
+        for statusCode in 0..<600 {
+            let refusal = CaptureSessionRefusal(statusCode: statusCode)
+            let retry = CaptureFrameRetryPolicy.retryReason(forStatusCode: statusCode)
+            XCTAssertFalse(
+                refusal != nil && retry != nil,
+                "status \(statusCode) cannot be both retryable (\(String(describing: retry))) "
+                    + "and a final refusal (\(String(describing: refusal)))"
+            )
+        }
+    }
+
     func testPumpMapsCaptureHTTPTransportErrorToTransportUnavailableAndRecovers() throws {
         let scheduler = FakeCaptureSchedulerAdapter()
         let health = FailOnceHTTPTransportHealthAdapter()
@@ -1113,6 +1273,7 @@ final class CaptureControllerTests: XCTestCase {
             "recordHealthEmissionAttempt",
             "clearPumpFailure",
             "recordPumpFailure",
+            "recordSessionRefusal",
             "snapshot",
             "finishStop",
         ])
@@ -6107,6 +6268,32 @@ private final class FailOnceHTTPTransportHealthAdapter: CaptureHealthAdapter {
         attemptCount += 1
         if attemptCount == 2 {
             throw CaptureHTTPTransportError.nonSuccessStatus(503)
+        }
+    }
+}
+
+/// A server that accepts the first heartbeat and then refuses the session, the way a released
+/// session does. `refusedAttempts` narrows that to named attempts, so a test can also ask what
+/// happens when the refusal is followed by an accepted request.
+private final class ReleasedSessionHealthAdapter: CaptureHealthAdapter {
+    private let refusedStatusCode: Int
+    private let refusedAttempts: Set<Int>?
+    private(set) var attemptCount = 0
+
+    init(refusedStatusCode: Int, refusedAttempts: Set<Int>? = nil) {
+        self.refusedStatusCode = refusedStatusCode
+        self.refusedAttempts = refusedAttempts
+    }
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        attemptCount += 1
+        let refused = refusedAttempts.map { $0.contains(attemptCount) } ?? (attemptCount > 1)
+        if refused {
+            throw CaptureHTTPTransportError.nonSuccessStatus(refusedStatusCode)
         }
     }
 }

@@ -5958,3 +5958,94 @@ session is gone. Then K5 (full Swift/Python gate, one merge with `expected_main`
 push, redeploy, then re-run pair -> start on m4mbp and READ the codes: `journalctl` on the server
 now prints `live helper terminal: session=… reason=… lane.<lane>=<code>`, and `log show` on the Mac
 prints K2's line). Do not guess the lane-failure cause before K5 reports it.
+
+================================================================================
+run 20260728-181020 | iteration 4 | K4 - a released session is reported gone, not unreachable
+================================================================================
+Target: candidate K4 (fourth amendment, lane observability). The attended session's client kept
+answering `running: true` while every request to the server returned 403, and the only other thing
+`status` said was `pumpFailure: transportUnavailable` - the identical answer a pulled network cable
+gives. The server's verdict on the session existed on the wire and reached no surface.
+
+Design decisions, recorded rather than left implicit:
+- **A second field, not a truer `running`.** Reporting `running: false` for a released session
+  would be the same lie pointed the other way: the source is still capturing and the outbox is
+  still filling. `running` = the microphones are open; `sessionRefusal` = there is still somewhere
+  to send what they hear. Independent facts, both needed.
+- **Not folded into `pumpFailure`.** That type answers "can the pump publish right now" and clears
+  on the next good tick; a refusal answers "does this session still exist" and never clears, because
+  `LiveAccessRegistry.release_session` is one-way - a released session id answers 403 for good
+  (`live_auth.py:261-265`). Only `beginStart` clears it: a new session id is a new question.
+- **Which statuses count: 401/403/404/410 and nothing else.** `409` is excluded deliberately -
+  this wire uses it both for a closed/terminal session and for an out-of-sequence frame
+  (`live_transport.py:260-266`), so the client cannot tell a finished meeting from a recoverable
+  ordering conflict, and claiming the session is gone on an overloaded code would be a fresh false
+  report rather than a fix for the old one. `410` has no producer on this server today and is mapped
+  anyway: it is the HTTP contract's own word for the condition, not an instance-specific value.
+- **One invariant, swept rather than asserted by hand:** no status may be both retryable
+  (`CaptureFrameRetryPolicy`) and a final refusal. Both policies read the same codes, and a
+  contradiction between them is exactly how "retry forever against a dead session" gets written.
+- **The stop drain records it too.** That drain's failure is deliberately swallowed (the audio stays
+  queued either way), but "the server would not take the last frames because the session was already
+  gone" is the one thing in it an operator needs, and a clean-looking stop is the report that hides
+  it. The refusal is a report, never a licence to drop audio - a node pins the retained frame.
+
+Files touched (tracked `macos/` source, inside Phase K's scope; no server change):
+- `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureController.swift` - `CaptureSessionRefusal`
+  (+ `init?(error:)` / `init?(statusCode:)`), `CaptureStatus.sessionRefusal`,
+  `CaptureControllerState.recordSessionRefusal` (lock-fenced, cleared only by `beginStart`),
+  recorded from the periodic tick's catch and from the stop drain.
+- `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureSecurity.swift` -
+  `ControlChannelResponse.sessionRefusal`, filled by `init(status:)`.
+- `macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift` - 4 new nodes and one
+  `ReleasedSessionHealthAdapter` double; `recordSessionRefusal` added to the state's lock-fence
+  inventory (that structural node failed first, which is the inventory doing its job).
+
+Validation (MacStudio, Swift 6.2 / pyenv 3.12.10):
+- `swift test --package-path macos/MOSSCapture`: **150 passed, 0 failures** (was 146; +4 nodes).
+- Narrow: the 4 new nodes pass in 0.003 s.
+- `pytest tests -q --ignore=tests/test_macos_uds_tracer.py`: **594 passed, 2 skipped, 368 subtests**
+  in 45.95s (unchanged - no Python source moved).
+- `pytest tests/test_macos_uds_tracer.py -q -rs`: **4 passed, zero skips** - the real-process tracer
+  still drives the built app over real UDS after the control-channel response grew a field.
+- Red-before, in a scratch copy under /tmp (repo never mutated; copy deleted afterwards; four
+  doc-reading nodes fail there for an unrelated reason - they resolve `packageRoot()` to /private/tmp
+  - so mutants were scored on a filtered node set):
+  1. **Sources at HEAD + the new tests** -> does not compile: `value of type 'CaptureStatus' has no
+     member 'sessionRefusal'`, same for `ControlChannelResponse`. The shipped defect stated as a type
+     error: the surface had nowhere to put the server's verdict.
+  2. **M1 - the tick drops the refusal again** -> both session nodes fail, including the
+     `mtd-capture status` JSON assertion.
+  3. **M2 - a later good tick erases the refusal** (cleared in `clearPumpFailure`) -> the
+     stays-refused node fails on both assertions.
+  4. **M3 - 409 read as a dead session** -> the classifier node fails; that is the overloaded-code
+     misreport being prevented.
+  5. **M4 - the stop drain goes back to `try?`** -> the stop node fails: `nil` where
+     `sessionUnknown` belongs.
+  6. **M5 - `beginStart` keeps the previous session's verdict** -> the new-session assertion fails.
+  7. **M6 - 429 also a refusal** -> the 0..<600 sweep fires by name:
+     "status 429 cannot be both retryable (backpressure) and a final refusal (credentialRejected)".
+  8. **M7 - `ControlChannelResponse.init(status:)` drops the field** (K1's exact defect shape) ->
+     the released-session node fails on the response and on the encoded JSON.
+  9. **Survivor, measured and accepted: guarding the record on `running`** the way
+     `recordPumpFailure` is. No node fails. Equivalent mutant, not a coverage gap - every caller runs
+     while `running` is still true, including the stop drain, which precedes `finishStop`.
+
+Learned: the client had three ways to describe a dead meeting (`running`, `pumpFailure`, lane state)
+and none of them could say the server had disowned the session - the same "known but not shown"
+shape as K1's dropped lanes and K3's discarded terminal codes. The status-code knowledge was already
+centralised for retries, so the missing piece was not information but a second question asked of the
+same bytes; keeping the two policies from contradicting each other is what the 0..<600 sweep is for.
+
+Evidence paths: macos/MOSSCapture/Sources/MOSSCaptureCore/{CaptureController,CaptureSecurity}.swift;
+macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift.
+
+Next: **K5**, the last Phase K item and the one that turns all of this into a diagnosis - full gate
+(the block at context.md's "the full gate" marker), one reviewed no-ff merge through
+`merge-keeper.sh` with `expected_main` advanced in-script from `b817871…` to the current `main`
+(never by CLI override), push, redeploy, then re-run `pair` -> `start` on m4mbp and READ: the server
+journal now prints `live helper terminal: session=… reason=… lane.<lane>=<code>` (K3), the Mac's
+`log show --predicate 'subsystem == "com.alphasight.moss.capture"'` prints the per-lane failure line
+(K2), and `mtd-capture status` prints both lanes plus - if the session has been released -
+`sessionRefusal` (K1/K4). Only then diagnose the lane failure; it is a new candidate and may need
+its own authorization. Do not guess the cause before K5 reports the codes.

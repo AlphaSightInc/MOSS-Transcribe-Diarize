@@ -118,8 +118,11 @@ typed lane failure, so the branch carries tracked `macos/` source again, strictl
 scope. Iteration 3 landed **K3**, the server half: the failed lanes' typed codes now reach the v2
 expiry, the runtime journal and one host-journal line instead of being dropped at the teardown, and
 the suite finally assembles the helper coordinator, the v2 registry and the runtime together — the
-seam that hid this. See the lane-reporting, lane-failure-log and terminal-record contract blocks.
-**K4 and K5 remain.**
+seam that hid this. Iteration 4 landed **K4**: a session the server has released is now reported as
+refused instead of merely unreachable, so `running: true` no longer stands alone while every request
+403s. See the lane-reporting, lane-failure-log, terminal-record and session-refusal contract blocks.
+**Only K5 remains — the gate, the merge, the redeploy, and the re-read that finally names the lane
+failure's cause.**
 
 **PRD acceptance scoreboard after iteration 16 of run 20260728-112922** ("one exact SHA everywhere"
 is GREEN 4/4 at `6a540fe` since iteration 15; iteration 16 closed the last *machine* gate — Phase J's
@@ -1416,6 +1419,40 @@ lease expiry and an all-lanes-failed death are different diagnoses.
 coverage gap worth a node: both teardown steps swallow the only errors they can realistically raise
 (`KeyError`, `LiveV2SessionTerminalError`), so no constructible case loses the line. The ordering
 stays for the same reason K2's does.
+
+**Session-refusal contract (new, run 20260728-181020 iteration 4 / K4).** *`running` says the
+microphones are open; `sessionRefusal` says whether there is still anywhere to send what they hear.*
+`CaptureSessionRefusal` (`CaptureController.swift`) is `credentialRejected` 401 / `sessionDisowned`
+403 / `sessionUnknown` 404 / `sessionGone` 410, reads a `CaptureHTTPTransportError.nonSuccessStatus`
+and nothing else, and reaches both `CaptureStatus.sessionRefusal` and
+`ControlChannelResponse.sessionRefusal`, so `mtd-capture status` prints the word.
+*Why a second field and not a truer `running`.* Reporting `running: false` for a released session
+would be the same lie pointed the other way — the source is still capturing and the outbox is still
+filling. The two facts are independent and the operator needs both.
+*Why not fold it into `pumpFailure`.* A 403 classifies as `transportUnavailable`, which is also what
+a pulled cable gives; that collision is the whole defect. `pumpFailure` answers "can the pump
+publish right now" and clears on the next good tick; the refusal answers "does this session still
+exist" and does not clear, because `LiveAccessRegistry.release_session` is one-way — a released
+session id answers 403 for good (`live_auth.py:261-265`). It is cleared only by `beginStart`: a new
+session id is a new question.
+*409 is deliberately excluded.* This wire uses it both for a closed/terminal session and for an
+out-of-sequence frame (`live_transport.py:260-266`), so a client cannot tell a finished meeting from
+a recoverable ordering conflict; claiming the session is gone on an overloaded code would be a fresh
+false report. 410 has no producer on this server today and is mapped anyway — it is the HTTP
+contract's own word for the condition, not an instance value.
+*The invariant a node sweeps 0..<600 for:* no status may be both retryable
+(`CaptureFrameRetryPolicy`) and a final refusal. The two policies read the same codes, and a
+contradiction between them is how "retry forever against a dead session" would get written.
+*Also recorded at the stop drain*, whose failure is otherwise deliberately swallowed: "the server
+would not take the last frames because the session was already gone" is the one thing in it an
+operator needs, and a clean-looking stop is exactly the report that hides it. The audio still stays
+queued — the refusal is a report, never a licence to drop.
+*Measured mutation residue:* guarding the record on `running` (the way `recordPumpFailure` is)
+survives the suite. Equivalent mutant, not a coverage gap: every caller runs while `running` is
+still true, including the stop drain, which happens before `finishStop` clears it.
+*Still diagnostic groundwork.* Nothing here changes which lanes fail or keeps a session alive; it
+makes K5's re-read on m4mbp able to say "the server disowned us at tick N" instead of "the network
+looks down".
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -3304,8 +3341,10 @@ An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox fl
     into `LiveV2Session.expire(lane_failure_codes=...)`, into `runtime.abort(detail=...)` and its
     `session_aborted` event, and into one host-journal line per terminal transition. See the
     terminal-record contract block.
-46. **K4 - a dead session must not look healthy.** After the release the client still answers
-    `running: true` while every request 403s. Surface it in `status`.
+46. **K4 - a dead session must not look healthy** `[done - run 20260728-181020 iteration 4]`:
+    `CaptureSessionRefusal` (401/403/404/410 only), `CaptureStatus.sessionRefusal` and
+    `ControlChannelResponse.sessionRefusal`, recorded from the tick's failure and from the stop
+    drain. See the session-refusal contract block.
 47. **K5 - gate, merge, redeploy, re-read.** Regression nodes red-before/green-after; full
     Swift/Python gate; one merge (`expected_main` is `b817871…` -> advance in-script); push;
     redeploy; then re-run `pair` -> `start` on m4mbp and **read the lane failure codes**. Only then

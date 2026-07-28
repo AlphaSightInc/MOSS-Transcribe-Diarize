@@ -611,6 +611,10 @@ public struct ControlChannelResponse: Codable, Equatable {
     public var lanes: [ControlChannelLaneStatus]?
     public var publishedFrameCount: Int?
     public var pumpFailure: CapturePumpFailure?
+    /// Present once the server has refused this session outright. `running` reports whether this
+    /// process is still capturing; this reports whether there is still a session to capture into,
+    /// and an operator who sees it knows the meeting is over however healthy the rest looks.
+    public var sessionRefusal: CaptureSessionRefusal?
     /// How much captured audio is still waiting for an acknowledgement, and — once audio has been
     /// lost — the typed reason. Both are counts and codes, never audio and never a secret.
     public var outboxRetainedFrames: Int?
@@ -632,6 +636,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         lanes: [ControlChannelLaneStatus]? = nil,
         publishedFrameCount: Int? = nil,
         pumpFailure: CapturePumpFailure? = nil,
+        sessionRefusal: CaptureSessionRefusal? = nil,
         outboxRetainedFrames: Int? = nil,
         outboxDegradation: CaptureOutboxDegradation? = nil,
         latency: CaptureLatencyReport? = nil,
@@ -646,6 +651,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.lanes = lanes
         self.publishedFrameCount = publishedFrameCount
         self.pumpFailure = pumpFailure
+        self.sessionRefusal = sessionRefusal
         self.outboxRetainedFrames = outboxRetainedFrames
         self.outboxDegradation = outboxDegradation
         self.latency = latency
@@ -661,6 +667,7 @@ public struct ControlChannelResponse: Codable, Equatable {
             lanes: status.reportedLanes().map(ControlChannelLaneStatus.init(status:)),
             publishedFrameCount: status.publishedFrameCount,
             pumpFailure: status.pumpFailure,
+            sessionRefusal: status.sessionRefusal,
             outboxRetainedFrames: status.outbox.retainedFrames,
             outboxDegradation: status.outbox.degradation
         )

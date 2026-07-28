@@ -98,6 +98,10 @@ public struct CaptureStatus: Equatable {
     public var publishedFrameCount: Int
     public var lastHealthSequence: UInt64?
     public var pumpFailure: CapturePumpFailure?
+    /// Set once the server has said this session is not this client's to publish to. `running`
+    /// stays true while the microphones are still hot — this is what says the audio has nowhere
+    /// left to go.
+    public var sessionRefusal: CaptureSessionRefusal?
     public var outbox: CaptureOutboxSnapshot
 
     public init(
@@ -107,6 +111,7 @@ public struct CaptureStatus: Equatable {
         publishedFrameCount: Int,
         lastHealthSequence: UInt64?,
         pumpFailure: CapturePumpFailure? = nil,
+        sessionRefusal: CaptureSessionRefusal? = nil,
         outbox: CaptureOutboxSnapshot = CaptureOutboxSnapshot()
     ) {
         self.running = running
@@ -115,6 +120,7 @@ public struct CaptureStatus: Equatable {
         self.publishedFrameCount = publishedFrameCount
         self.lastHealthSequence = lastHealthSequence
         self.pumpFailure = pumpFailure
+        self.sessionRefusal = sessionRefusal
         self.outbox = outbox
     }
 
@@ -157,6 +163,56 @@ public enum CapturePumpFailure: String, Codable, Equatable {
             self = .transportUnavailable
         default:
             self = .unexpected
+        }
+    }
+}
+
+/// What the server has said about the session this capture publishes to.
+///
+/// `CapturePumpFailure` answers "can the pump publish right now"; this answers the different
+/// question "does this session still exist for this client", and neither substitutes for the other.
+/// The heartbeat that ends a meeting is refused for an authoritative reason and classified as
+/// `transportUnavailable` — indistinguishable from a dropped network — which is why an operator
+/// reading `running: true` had no way to see that the server had already released the session.
+///
+/// Only statuses whose meaning is *this session is not available to this client, and no retry
+/// changes that* appear here. `409` deliberately does not: this wire uses it both for a closed
+/// session and for a frame that arrived out of sequence, so the client cannot tell a finished
+/// meeting from a recoverable ordering conflict, and reporting a session gone on the strength of an
+/// overloaded code would be a fresh false report rather than a fix for the old one.
+public enum CaptureSessionRefusal: String, Codable, Equatable, Sendable {
+    /// 401 — the authority this client publishes with is no longer accepted.
+    case credentialRejected
+    /// 403 — the server does not consider this session this device's. A session the server has
+    /// released answers exactly this way, and it never stops: a release is one-way.
+    case sessionDisowned
+    /// 404 — the server has no session under this id.
+    case sessionUnknown
+    /// 410 — the session existed and has been retired.
+    case sessionGone
+
+    /// Reads a refusal out of a transport failure, or `nil` when the failure says nothing about
+    /// whether the session still exists — a lost network, a busy server, a missing pin.
+    public init?(error: Error) {
+        guard let transport = error as? CaptureHTTPTransportError,
+              case .nonSuccessStatus(let statusCode) = transport else {
+            return nil
+        }
+        self.init(statusCode: statusCode)
+    }
+
+    public init?(statusCode: Int) {
+        switch statusCode {
+        case 401:
+            self = .credentialRejected
+        case 403:
+            self = .sessionDisowned
+        case 404:
+            self = .sessionUnknown
+        case 410:
+            self = .sessionGone
+        default:
+            return nil
         }
     }
 }
@@ -364,6 +420,10 @@ public final class CaptureController {
                 }
             } catch {
                 self.state.recordPumpFailure(CapturePumpFailure(error: error))
+                // A refused session is a separate fact from a failed publish, and it is the one
+                // that outlives every retry: the pump failure clears on the next successful tick,
+                // but a session the server has released never comes back.
+                self.state.recordSessionRefusal(from: error)
             }
         }
         state.storeHealthTask(task)
@@ -385,7 +445,14 @@ public final class CaptureController {
             // skipping, because no later tick will carry these frames. A failure here loses nothing
             // — unacknowledged audio stays in the outbox and the returned status reports the depth
             // it kept.
-            _ = try? publishPendingFrames(configuration: configuration, onContention: .wait)
+            do {
+                _ = try publishPendingFrames(configuration: configuration, onContention: .wait)
+            } catch {
+                // The drain's failure is still not the operator's problem, with one exception: a
+                // server that refuses the session is telling us the meeting was already over, and
+                // that is exactly what the returned status has to say instead of a clean stop.
+                state.recordSessionRefusal(from: error)
+            }
         }
         let lanes = source.status()
         let (task, stopped) = state.finishStop(lanes: lanes, outbox: outbox.snapshot())
@@ -456,6 +523,7 @@ private final class CaptureControllerState {
     private var healthSequence: UInt64?
     private var healthTask: CaptureCancellation?
     private var pumpFailure: CapturePumpFailure?
+    private var sessionRefusal: CaptureSessionRefusal?
 
     func beginStart(configuration: CaptureConfiguration) throws {
         lock.lock()
@@ -466,6 +534,8 @@ private final class CaptureControllerState {
         self.configuration = configuration
         running = true
         pumpFailure = nil
+        // A refusal names one session id, so a new session starts without the last one's verdict.
+        sessionRefusal = nil
     }
 
     func rollbackStart() {
@@ -473,6 +543,7 @@ private final class CaptureControllerState {
         configuration = nil
         running = false
         pumpFailure = nil
+        sessionRefusal = nil
         lock.unlock()
     }
 
@@ -525,6 +596,18 @@ private final class CaptureControllerState {
         lock.unlock()
     }
 
+    /// Keeps the server's verdict on this session, if the failure carried one. Deliberately not
+    /// cleared by a later success the way a pump failure is: the refusal answers a question about
+    /// this session id, and the server's answer to that question is final.
+    func recordSessionRefusal(from error: Error) {
+        guard let refusal = CaptureSessionRefusal(error: error) else {
+            return
+        }
+        lock.lock()
+        sessionRefusal = refusal
+        lock.unlock()
+    }
+
     func snapshot(lanes: [CaptureLaneStatus], outbox: CaptureOutboxSnapshot) -> CaptureStatus {
         lock.lock()
         defer { lock.unlock() }
@@ -535,6 +618,7 @@ private final class CaptureControllerState {
             publishedFrameCount: publishedFrameCount,
             lastHealthSequence: healthSequence,
             pumpFailure: pumpFailure,
+            sessionRefusal: sessionRefusal,
             outbox: outbox
         )
     }
@@ -551,6 +635,7 @@ private final class CaptureControllerState {
             publishedFrameCount: publishedFrameCount,
             lastHealthSequence: healthSequence,
             pumpFailure: pumpFailure,
+            sessionRefusal: sessionRefusal,
             outbox: outbox
         )
         let task = healthTask
