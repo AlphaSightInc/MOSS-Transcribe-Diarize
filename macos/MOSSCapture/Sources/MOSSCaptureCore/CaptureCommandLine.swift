@@ -102,10 +102,10 @@ public final class CaptureCommandLine {
 
     public func run(arguments: [String]) -> Int32 {
         guard let rawCommand = arguments.first,
-              ["pair", "start", "stop", "status"].contains(rawCommand) else {
+              ["pair", "start", "stop", "status", "handoff", "latency"].contains(rawCommand) else {
             writeError(
                 "usage: mtd-capture pair --server <https-url> | "
-                    + "start [--label <name>] | stop | status\n"
+                    + "start [--label <name>] | stop | status | handoff | latency\n"
             )
             return 64
         }
@@ -128,6 +128,14 @@ public final class CaptureCommandLine {
                 serverURL: serverURL,
                 pairingPayload: pairingPayload
             )
+        } else if rawCommand == "handoff" {
+            // The app owns view authority and the pasteboard; the CLI only asks for the handoff
+            // and relays the app's non-secret confirmation.
+            request = ControlChannelRequest(command: "handoff")
+        } else if rawCommand == "latency" {
+            // Same rule for the measurement: the app polls with its own view authority and answers
+            // with aggregates, so asking for a figure never puts a token on this side of the socket.
+            request = ControlChannelRequest(command: "latency")
         } else {
             request = ControlChannelRequest(
                 command: rawCommand,
@@ -157,7 +165,11 @@ public final class CaptureCommandLine {
     }
 
     private func writeResponse(_ response: ControlChannelResponse) throws {
-        var data = try JSONEncoder().encode(response)
+        try writeJSON(response)
+    }
+
+    private func writeJSON(_ value: some Encodable) throws {
+        var data = try JSONEncoder().encode(value)
         data.append(contentsOf: Data("\n".utf8))
         try standardOutput.write(data)
     }

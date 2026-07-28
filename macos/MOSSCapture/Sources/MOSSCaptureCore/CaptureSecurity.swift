@@ -2,10 +2,29 @@ import CryptoKit
 import Darwin
 import Foundation
 import Security
+#if canImport(AppKit)
+import AppKit
+#endif
+
+private enum CaptureSecretStoreAccount {
+    static let controlSecret = "local-control-secret"
+    static let captureBearer = "capture-bearer"
+    static let certificatePin = "capture-certificate-pin"
+    static let deviceIDAccount = "capture-device-id"
+    static let deviceID = deviceIDAccount
+    static let serverURL = "capture-server-url"
+    static let sessionID = "capture-session-id"
+    static let viewToken = "capture-view-token"
+}
 
 public enum CaptureSecurityError: Error, Equatable {
     case keychainStatus(OSStatus)
     case missingSecret
+    case invalidSecretStorePath
+    case secretStoreStatus(Int32)
+    case secretStorePathNotPrivate
+    case secretStoreDirectoryNotPrivate
+    case secretStoreOwnerMismatch(expected: uid_t, actual: uid_t)
     case pinMismatch
     case invalidPinnedHash
     case socketStatus(Int32)
@@ -19,36 +38,82 @@ public enum CaptureSecurityError: Error, Equatable {
     case trailingRequestBytes
     case unknownCommand(String)
     case missingPairingPayload
+    case invalidPairingPayload
     case missingPairingServer
     case missingCaptureConfiguration
+    case portalHandoffUnavailable
+    case pasteboardUnavailable
+    case latencyProbeUnavailable
 }
 
+/// Dormant secret store: no product entrypoint selects it. It keeps no access group, so it can
+/// only ever reach the process's own default keychain access group — a shared group needs a Team
+/// ID that a locally signed identity does not have.
 public final class KeychainCaptureSecretStore: CaptureKeyStoreAdapter, CaptureBearerTokenAdapter {
     public let service: String
-    public let accessGroup: String?
 
-    public init(
-        service: String = "com.alphasight.moss.capture",
-        accessGroup: String? = "com.alphasight.moss.capture.shared"
-    ) {
+    public init(service: String = "com.alphasight.moss.capture") {
         self.service = service
-        self.accessGroup = accessGroup
     }
 
     public func saveControlSecret(_ secret: String) throws {
-        try save(secret, account: "local-control-secret")
+        try save(secret, account: CaptureSecretStoreAccount.controlSecret)
     }
 
     public func saveCaptureBearerToken(_ token: String) throws {
-        try save(token, account: "capture-bearer")
+        try save(token, account: CaptureSecretStoreAccount.captureBearer)
+    }
+
+    public func saveCaptureCertificatePin(_ pin: String) throws {
+        try save(pin, account: CaptureSecretStoreAccount.certificatePin)
+    }
+
+    public func saveCaptureServerURL(_ serverURL: URL) throws {
+        try save(serverURL.absoluteString, account: CaptureSecretStoreAccount.serverURL)
+    }
+
+    public func saveCaptureSessionID(_ sessionID: String) throws {
+        try save(sessionID, account: CaptureSecretStoreAccount.sessionID)
+    }
+
+    public func saveCaptureViewToken(_ viewToken: String) throws {
+        try save(viewToken, account: CaptureSecretStoreAccount.viewToken)
     }
 
     public func loadControlSecret() throws -> String? {
-        try load(account: "local-control-secret")
+        try load(account: CaptureSecretStoreAccount.controlSecret)
     }
 
     public func loadCaptureBearerToken() throws -> String? {
-        try load(account: "capture-bearer")
+        try load(account: CaptureSecretStoreAccount.captureBearer)
+    }
+
+    public func loadCaptureCertificatePin() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.certificatePin)
+    }
+
+    public func loadDeviceID() throws -> String {
+        if let deviceID = try load(account: CaptureSecretStoreAccount.deviceID), !deviceID.isEmpty {
+            return deviceID
+        }
+        let deviceID = UUID().uuidString
+        try save(deviceID, account: CaptureSecretStoreAccount.deviceID)
+        return deviceID
+    }
+
+    public func loadCaptureServerURL() throws -> URL? {
+        guard let rawURL = try load(account: CaptureSecretStoreAccount.serverURL) else {
+            return nil
+        }
+        return URL(string: rawURL)
+    }
+
+    public func loadCaptureSessionID() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.sessionID)
+    }
+
+    public func loadCaptureViewToken() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.viewToken)
     }
 
     private func save(_ value: String, account: String) throws {
@@ -81,25 +146,268 @@ public final class KeychainCaptureSecretStore: CaptureKeyStoreAdapter, CaptureBe
     }
 
     private func baseQuery(account: String) -> [String: Any] {
-        var query: [String: Any] = [
+        [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
         ]
-        if let accessGroup {
-            query[kSecAttrAccessGroup as String] = accessGroup
-        }
-        return query
     }
 }
 
-public struct FullCertificatePinValidator {
+public protocol CaptureSecretStoreAdapter:
+    CaptureKeyStoreAdapter,
+    ControlSecretStoreAdapter,
+    CaptureBearerTokenAdapter,
+    CaptureBearerTokenStoreAdapter,
+    CaptureCertificatePinAdapter,
+    CaptureCertificatePinStoreAdapter,
+    CaptureDeviceIdentityAdapter,
+    CaptureSessionStoreAdapter
+{}
+
+extension KeychainCaptureSecretStore: CaptureSecretStoreAdapter {}
+
+public enum CaptureSecretStoreSelection {
+    public static let environmentKey = "MOSS_CAPTURE_SECRET_STORE_PATH"
+
+    /// The one store both product entrypoints resolve, so the app and the CLI always agree on
+    /// where the paired authority lives without either composition root repeating a literal.
+    public static func defaultPath(homeDirectory: String = NSHomeDirectory()) -> String {
+        URL(fileURLWithPath: homeDirectory, isDirectory: true)
+            .appendingPathComponent("Library", isDirectory: true)
+            .appendingPathComponent("Application Support", isDirectory: true)
+            .appendingPathComponent("MOSSCapture", isDirectory: true)
+            .appendingPathComponent("secrets.json")
+            .path
+    }
+
+    public static func makeDefault(
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        environmentKey: String = environmentKey,
+        homeDirectory: String = NSHomeDirectory()
+    ) throws -> any CaptureSecretStoreAdapter {
+        let overridePath = environment[environmentKey] ?? ""
+        return try FileCaptureSecretStore(
+            path: overridePath.isEmpty ? defaultPath(homeDirectory: homeDirectory) : overridePath
+        )
+    }
+}
+
+public final class FileCaptureSecretStore: CaptureSecretStoreAdapter {
+    private let url: URL
+    private let expectedUID: uid_t
+    private let lock = NSLock()
+
+    public var path: String {
+        url.path
+    }
+
+    public init(path: String, expectedUID: uid_t = getuid()) throws {
+        guard !path.isEmpty else {
+            throw CaptureSecurityError.invalidSecretStorePath
+        }
+        url = URL(fileURLWithPath: path)
+        self.expectedUID = expectedUID
+        // Constructing a store stays side-effect free — `mtd-capture --help` must not create a
+        // directory in the user's home. The private directory is materialized on first write.
+        if FileManager.default.fileExists(atPath: url.path) {
+            try validateFile()
+        }
+    }
+
+    public func saveControlSecret(_ secret: String) throws {
+        try save(secret, account: CaptureSecretStoreAccount.controlSecret)
+    }
+
+    public func saveCaptureBearerToken(_ token: String) throws {
+        try save(token, account: CaptureSecretStoreAccount.captureBearer)
+    }
+
+    public func saveCaptureCertificatePin(_ pin: String) throws {
+        try save(pin, account: CaptureSecretStoreAccount.certificatePin)
+    }
+
+    public func saveCaptureServerURL(_ serverURL: URL) throws {
+        try save(serverURL.absoluteString, account: CaptureSecretStoreAccount.serverURL)
+    }
+
+    public func saveCaptureSessionID(_ sessionID: String) throws {
+        try save(sessionID, account: CaptureSecretStoreAccount.sessionID)
+    }
+
+    public func saveCaptureViewToken(_ viewToken: String) throws {
+        try save(viewToken, account: CaptureSecretStoreAccount.viewToken)
+    }
+
+    public func loadControlSecret() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.controlSecret)
+    }
+
+    public func loadCaptureBearerToken() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.captureBearer)
+    }
+
+    public func loadCaptureCertificatePin() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.certificatePin)
+    }
+
+    public func loadDeviceID() throws -> String {
+        if let deviceID = try load(account: CaptureSecretStoreAccount.deviceID), !deviceID.isEmpty {
+            return deviceID
+        }
+        let deviceID = UUID().uuidString
+        try save(deviceID, account: CaptureSecretStoreAccount.deviceID)
+        return deviceID
+    }
+
+    public func loadCaptureServerURL() throws -> URL? {
+        guard let rawURL = try load(account: CaptureSecretStoreAccount.serverURL) else {
+            return nil
+        }
+        return URL(string: rawURL)
+    }
+
+    public func loadCaptureSessionID() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.sessionID)
+    }
+
+    public func loadCaptureViewToken() throws -> String? {
+        try load(account: CaptureSecretStoreAccount.viewToken)
+    }
+
+    private func save(_ value: String, account: String) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        var document = try loadDocument()
+        document.values[account] = value
+        try writeDocument(document)
+    }
+
+    private func load(account: String) throws -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return try loadDocument().values[account]
+    }
+
+    private func loadDocument() throws -> FileSecretDocument {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return FileSecretDocument()
+        }
+        try validateFile()
+        let data = try Data(contentsOf: url)
+        if data.isEmpty {
+            return FileSecretDocument()
+        }
+        return try JSONDecoder().decode(FileSecretDocument.self, from: data)
+    }
+
+    private func writeDocument(_ document: FileSecretDocument) throws {
+        try prepareDirectory()
+        if FileManager.default.fileExists(atPath: url.path) {
+            try validateFile()
+        }
+        let data = try JSONEncoder().encode(document)
+        let temporaryURL = url
+            .deletingLastPathComponent()
+            .appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: temporaryURL) }
+        try writePrivateFile(data, at: temporaryURL)
+        // rename(2) publishes the new document in one step: a reader never sees a half-written
+        // file, and the live path never exists with permissions wider than 0600.
+        guard rename(temporaryURL.path, url.path) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        try validateFile()
+    }
+
+    private func writePrivateFile(_ data: Data, at fileURL: URL) throws {
+        let descriptor = open(fileURL.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
+        guard descriptor >= 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        var isOpen = true
+        defer { if isOpen { close(descriptor) } }
+        // umask could have relaxed the creation mode, so state it exactly before any byte lands.
+        guard fchmod(descriptor, 0o600) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        try data.withUnsafeBytes { buffer in
+            var offset = 0
+            while offset < buffer.count {
+                let written = write(descriptor, buffer.baseAddress! + offset, buffer.count - offset)
+                guard written > 0 else {
+                    throw CaptureSecurityError.secretStoreStatus(errno)
+                }
+                offset += written
+            }
+        }
+        guard fsync(descriptor) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        isOpen = false
+        guard close(descriptor) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+    }
+
+    /// A widened directory is tightened rather than refused: it cannot expose a 0600 document, so
+    /// repairing it keeps a paired device working. A widened document is refused instead, because
+    /// its bytes may already have been read by another user.
+    private func prepareDirectory() throws {
+        let directory = url.deletingLastPathComponent()
+        var info = stat()
+        if stat(directory.path, &info) != 0 {
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
+            guard stat(directory.path, &info) == 0 else {
+                throw CaptureSecurityError.secretStoreStatus(errno)
+            }
+        }
+        if info.st_mode & 0o777 != 0o700 {
+            guard chmod(directory.path, 0o700) == 0, stat(directory.path, &info) == 0 else {
+                throw CaptureSecurityError.secretStoreStatus(errno)
+            }
+        }
+        guard info.st_mode & mode_t(S_IFMT) == mode_t(S_IFDIR), info.st_mode & 0o777 == 0o700 else {
+            throw CaptureSecurityError.secretStoreDirectoryNotPrivate
+        }
+        guard info.st_uid == expectedUID else {
+            throw CaptureSecurityError.secretStoreOwnerMismatch(expected: expectedUID, actual: info.st_uid)
+        }
+    }
+
+    private func validateFile() throws {
+        var info = stat()
+        guard lstat(url.path, &info) == 0 else {
+            throw CaptureSecurityError.secretStoreStatus(errno)
+        }
+        guard info.st_mode & mode_t(S_IFMT) == mode_t(S_IFREG), info.st_mode & 0o777 == 0o600 else {
+            throw CaptureSecurityError.secretStorePathNotPrivate
+        }
+        guard info.st_uid == expectedUID else {
+            throw CaptureSecurityError.secretStoreOwnerMismatch(expected: expectedUID, actual: info.st_uid)
+        }
+    }
+}
+
+private struct FileSecretDocument: Codable {
+    var values: [String: String] = [:]
+}
+
+public struct FullCertificatePinValidator: Sendable {
     public init() {}
 
-    public func validate(certificate: SecCertificate, expectedSHA256Hex: String) throws {
+    public func validate(expectedSHA256Hex: String) throws {
         guard expectedSHA256Hex.count == 64, expectedSHA256Hex.allSatisfy(\.isHexDigit) else {
             throw CaptureSecurityError.invalidPinnedHash
         }
+    }
+
+    public func validate(certificate: SecCertificate, expectedSHA256Hex: String) throws {
+        try validate(expectedSHA256Hex: expectedSHA256Hex)
         let certificateData = SecCertificateCopyData(certificate) as Data
         let digest = SHA256.hash(data: certificateData)
             .map { String(format: "%02x", $0) }
@@ -116,6 +424,10 @@ public protocol ControlSecretAdapter {
 
 extension KeychainCaptureSecretStore: ControlSecretAdapter {}
 extension FakeCaptureKeyStoreAdapter: ControlSecretAdapter {}
+
+public protocol ControlSecretStoreAdapter: ControlSecretAdapter {
+    func saveControlSecret(_ secret: String) throws
+}
 
 public struct ControlChannelRequest: Codable, Equatable {
     public var command: String
@@ -143,23 +455,42 @@ public struct ControlChannelResponse: Codable, Equatable {
     public var ok: Bool
     public var running: Bool?
     public var sessionID: String?
+    public var portalURL: URL?
+    public var viewAuthority: String?
     public var publishedFrameCount: Int?
     public var pumpFailure: CapturePumpFailure?
+    /// How much captured audio is still waiting for an acknowledgement, and — once audio has been
+    /// lost — the typed reason. Both are counts and codes, never audio and never a secret.
+    public var outboxRetainedFrames: Int?
+    public var outboxDegradation: CaptureOutboxDegradation?
+    /// Aggregate timing evidence from the app-owned probe. Durations and counts only — the view
+    /// authority the measurement uses stays inside the app.
+    public var latency: CaptureLatencyReport?
     public var error: String?
 
     public init(
         ok: Bool,
         running: Bool? = nil,
         sessionID: String? = nil,
+        portalURL: URL? = nil,
+        viewAuthority: String? = nil,
         publishedFrameCount: Int? = nil,
         pumpFailure: CapturePumpFailure? = nil,
+        outboxRetainedFrames: Int? = nil,
+        outboxDegradation: CaptureOutboxDegradation? = nil,
+        latency: CaptureLatencyReport? = nil,
         error: String? = nil
     ) {
         self.ok = ok
         self.running = running
         self.sessionID = sessionID
+        self.portalURL = portalURL
+        self.viewAuthority = viewAuthority
         self.publishedFrameCount = publishedFrameCount
         self.pumpFailure = pumpFailure
+        self.outboxRetainedFrames = outboxRetainedFrames
+        self.outboxDegradation = outboxDegradation
+        self.latency = latency
         self.error = error
     }
 
@@ -169,7 +500,9 @@ public struct ControlChannelResponse: Codable, Equatable {
             running: status.running,
             sessionID: status.sessionID,
             publishedFrameCount: status.publishedFrameCount,
-            pumpFailure: status.pumpFailure
+            pumpFailure: status.pumpFailure,
+            outboxRetainedFrames: status.outbox.retainedFrames,
+            outboxDegradation: status.outbox.degradation
         )
     }
 }
@@ -255,17 +588,64 @@ public final class UnixDomainControlClient {
 }
 
 public struct CapturePairingResult: Equatable {
+    public var deviceID: String
     public var sessionID: String
+    public var viewToken: String?
     public var captureBearerToken: String?
+    public var certificatePinSHA256Hex: String?
 
-    public init(sessionID: String, captureBearerToken: String? = nil) {
+    public init(
+        deviceID: String = "",
+        sessionID: String,
+        viewToken: String? = nil,
+        captureBearerToken: String? = nil,
+        certificatePinSHA256Hex: String? = nil
+    ) {
+        self.deviceID = deviceID
         self.sessionID = sessionID
+        self.viewToken = viewToken
         self.captureBearerToken = captureBearerToken
+        self.certificatePinSHA256Hex = certificatePinSHA256Hex
+    }
+}
+
+public struct CapturePairingPayload: Equatable {
+    public var secret: String
+    public var certificatePinSHA256Hex: String
+
+    public init(data: Data, validator: FullCertificatePinValidator = FullCertificatePinValidator()) throws {
+        guard let payload = String(data: data, encoding: .utf8), !payload.isEmpty else {
+            throw CaptureSecurityError.missingPairingPayload
+        }
+        let fields = payload.split(separator: ".", omittingEmptySubsequences: false)
+        guard fields.count == 3, fields[0] == "mtd1", !fields[1].isEmpty else {
+            throw CaptureSecurityError.invalidPairingPayload
+        }
+        let pin = String(fields[2])
+        try validator.validate(expectedSHA256Hex: pin)
+        secret = String(fields[1])
+        certificatePinSHA256Hex = pin.lowercased()
     }
 }
 
 public protocol CapturePairingExchangeAdapter {
     func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult
+}
+
+public protocol CaptureDeviceIdentityAdapter {
+    func loadDeviceID() throws -> String
+}
+
+public final class GeneratedCaptureDeviceIdentityAdapter: CaptureDeviceIdentityAdapter {
+    private let deviceID: String
+
+    public init(deviceID: String = UUID().uuidString) {
+        self.deviceID = deviceID
+    }
+
+    public func loadDeviceID() throws -> String {
+        deviceID
+    }
 }
 
 public protocol CaptureBearerTokenStoreAdapter {
@@ -274,20 +654,130 @@ public protocol CaptureBearerTokenStoreAdapter {
 
 extension KeychainCaptureSecretStore: CaptureBearerTokenStoreAdapter {}
 
+public protocol CaptureCertificatePinStoreAdapter {
+    func saveCaptureCertificatePin(_ pin: String) throws
+}
+
+extension KeychainCaptureSecretStore: CaptureCertificatePinStoreAdapter {}
+
+public protocol CaptureSessionStoreAdapter {
+    func saveCaptureServerURL(_ serverURL: URL) throws
+    func saveCaptureSessionID(_ sessionID: String) throws
+    func saveCaptureViewToken(_ viewToken: String) throws
+    func loadCaptureServerURL() throws -> URL?
+    func loadCaptureSessionID() throws -> String?
+    func loadCaptureViewToken() throws -> String?
+}
+
+extension KeychainCaptureSecretStore: CaptureSessionStoreAdapter {}
+
+/// Non-secret result of a portal handoff. The view token itself never leaves the app: it goes
+/// straight to the pasteboard, and only this status crosses the control channel.
+public struct CapturePortalHandoffConfirmation: Equatable {
+    public static let copiedToPasteboard = "copied-to-pasteboard"
+
+    public var sessionID: String
+    public var portalURL: URL
+    public var viewAuthority: String
+
+    public init(
+        sessionID: String,
+        portalURL: URL,
+        viewAuthority: String = CapturePortalHandoffConfirmation.copiedToPasteboard
+    ) {
+        self.sessionID = sessionID
+        self.portalURL = portalURL
+        self.viewAuthority = viewAuthority
+    }
+}
+
+public protocol CapturePortalHandoffAdapter {
+    func perform() throws -> CapturePortalHandoffConfirmation
+}
+
+/// App-owned handoff: reads the stored view authority and writes it to the pasteboard. Only the
+/// app composition root builds one, so the CLI never holds view authority.
+public final class PasteboardCapturePortalHandoff: CapturePortalHandoffAdapter {
+    public static let pasteboardNameEnvironmentKey = "MOSS_CAPTURE_PASTEBOARD_NAME"
+
+    private let sessionStore: CaptureSessionStoreAdapter
+    private let copyViewToken: (String) -> Bool
+
+    public convenience init(
+        sessionStore: CaptureSessionStoreAdapter,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) {
+        self.init(sessionStore: sessionStore) { viewToken in
+            #if canImport(AppKit)
+            let pasteboard: NSPasteboard
+            if let name = environment[Self.pasteboardNameEnvironmentKey], !name.isEmpty {
+                pasteboard = NSPasteboard(name: NSPasteboard.Name(name))
+            } else {
+                pasteboard = .general
+            }
+            pasteboard.clearContents()
+            return pasteboard.setString(viewToken, forType: .string)
+            #else
+            _ = viewToken
+            return false
+            #endif
+        }
+    }
+
+    init(
+        sessionStore: CaptureSessionStoreAdapter,
+        copyViewToken: @escaping (String) -> Bool
+    ) {
+        self.sessionStore = sessionStore
+        self.copyViewToken = copyViewToken
+    }
+
+    public func perform() throws -> CapturePortalHandoffConfirmation {
+        guard let serverURL = try sessionStore.loadCaptureServerURL(),
+              serverURL.scheme == "https",
+              let sessionID = try sessionStore.loadCaptureSessionID(),
+              !sessionID.isEmpty,
+              let viewToken = try sessionStore.loadCaptureViewToken(),
+              !viewToken.isEmpty
+        else {
+            throw CaptureSecurityError.portalHandoffUnavailable
+        }
+        guard copyViewToken(viewToken) else {
+            throw CaptureSecurityError.pasteboardUnavailable
+        }
+        return CapturePortalHandoffConfirmation(
+            sessionID: sessionID,
+            portalURL: livePortalURL(from: serverURL)
+        )
+    }
+}
+
 public final class ControlCommandDispatcher {
     private let controller: CaptureController
     private let pairingExchange: CapturePairingExchangeAdapter
     private let captureTokenStore: CaptureBearerTokenStoreAdapter?
+    private let certificatePinStore: CaptureCertificatePinStoreAdapter?
+    private let sessionStore: CaptureSessionStoreAdapter?
+    private let portalHandoff: CapturePortalHandoffAdapter?
+    private let latencyProbe: CaptureLatencyProbing?
     private var pairedConfiguration: CaptureConfiguration?
 
     public init(
         controller: CaptureController,
         pairingExchange: CapturePairingExchangeAdapter,
-        captureTokenStore: CaptureBearerTokenStoreAdapter? = nil
+        captureTokenStore: CaptureBearerTokenStoreAdapter? = nil,
+        certificatePinStore: CaptureCertificatePinStoreAdapter? = nil,
+        sessionStore: CaptureSessionStoreAdapter? = nil,
+        portalHandoff: CapturePortalHandoffAdapter? = nil,
+        latencyProbe: CaptureLatencyProbing? = nil
     ) {
         self.controller = controller
         self.pairingExchange = pairingExchange
         self.captureTokenStore = captureTokenStore
+        self.certificatePinStore = certificatePinStore
+        self.sessionStore = sessionStore
+        self.portalHandoff = portalHandoff
+        self.latencyProbe = latencyProbe
     }
 
     public func dispatch(_ request: ControlChannelRequest) throws -> ControlChannelResponse {
@@ -303,19 +793,52 @@ public final class ControlCommandDispatcher {
             if let token = result.captureBearerToken {
                 try captureTokenStore?.saveCaptureBearerToken(token)
             }
+            if let pin = result.certificatePinSHA256Hex {
+                try certificatePinStore?.saveCaptureCertificatePin(pin)
+            }
+            try sessionStore?.saveCaptureServerURL(serverURL)
+            try sessionStore?.saveCaptureSessionID(result.sessionID)
+            if let viewToken = result.viewToken {
+                try sessionStore?.saveCaptureViewToken(viewToken)
+            }
             pairedConfiguration = CaptureConfiguration(
                 sessionID: result.sessionID,
                 serverURL: serverURL,
                 label: request.label
             )
-            return ControlChannelResponse(ok: true, running: controller.status().running, sessionID: result.sessionID)
+            return ControlChannelResponse(
+                ok: true,
+                running: controller.status().running,
+                sessionID: result.sessionID,
+                portalURL: livePortalURL(from: serverURL)
+            )
         case "start":
             let configuration = try captureConfiguration(from: request)
             return ControlChannelResponse(status: try controller.start(configuration: configuration))
         case "status":
             return ControlChannelResponse(status: controller.status())
         case "stop":
-            return ControlChannelResponse(status: try controller.stop(deadline: Date()))
+            let stopped = try controller.stop(deadline: Date())
+            // The session's view authority ends here, so the measurement stops polling with it —
+            // what it already measured stays readable.
+            latencyProbe?.stop()
+            return ControlChannelResponse(status: stopped)
+        case "latency":
+            guard let latencyProbe else {
+                throw CaptureSecurityError.latencyProbeUnavailable
+            }
+            return ControlChannelResponse(ok: true, latency: try latencyProbe.measure())
+        case "handoff":
+            guard let portalHandoff else {
+                throw CaptureSecurityError.portalHandoffUnavailable
+            }
+            let confirmation = try portalHandoff.perform()
+            return ControlChannelResponse(
+                ok: true,
+                sessionID: confirmation.sessionID,
+                portalURL: confirmation.portalURL,
+                viewAuthority: confirmation.viewAuthority
+            )
         default:
             throw CaptureSecurityError.unknownCommand(request.command)
         }
@@ -331,8 +854,20 @@ public final class ControlCommandDispatcher {
             }
             return pairedConfiguration
         }
+        if let sessionID = try sessionStore?.loadCaptureSessionID(),
+           let serverURL = try sessionStore?.loadCaptureServerURL()
+        {
+            return CaptureConfiguration(sessionID: sessionID, serverURL: serverURL, label: request.label)
+        }
         throw CaptureSecurityError.missingCaptureConfiguration
     }
+}
+
+private func livePortalURL(from serverURL: URL) -> URL {
+    var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: false)
+    components?.query = nil
+    components?.fragment = nil
+    return (components?.url ?? serverURL).appendingPathComponent("live")
 }
 
 public final class UnixDomainControlServer {
@@ -462,32 +997,123 @@ public enum ControlSocketDefaults {
 }
 
 public final class URLSessionCapturePairingExchangeAdapter: CapturePairingExchangeAdapter {
-    private let client: CaptureHTTPClient
+    private let client: (String) throws -> CaptureHTTPClient
+    private let deviceIdentity: CaptureDeviceIdentityAdapter
 
-    public init(client: CaptureHTTPClient = URLSessionCaptureHTTPClient()) {
-        self.client = client
+    public init(
+        client: CaptureHTTPClient,
+        deviceIdentity: CaptureDeviceIdentityAdapter = GeneratedCaptureDeviceIdentityAdapter()
+    ) {
+        self.client = { _ in client }
+        self.deviceIdentity = deviceIdentity
+    }
+
+    public init(
+        clientProvider: CaptureHTTPClientProvider = PinnedURLSessionCaptureHTTPClientProvider(),
+        deviceIdentity: CaptureDeviceIdentityAdapter = GeneratedCaptureDeviceIdentityAdapter()
+    ) {
+        self.client = { pin in
+            try clientProvider.client(certificatePinSHA256Hex: pin)
+        }
+        self.deviceIdentity = deviceIdentity
     }
 
     public func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
-        var request = URLRequest(url: serverURL.appendingPathComponent("api").appendingPathComponent("live").appendingPathComponent("pair"))
+        let parsedPayload = try CapturePairingPayload(data: pairingPayload)
+        let client = try client(parsedPayload.certificatePinSHA256Hex)
+        let payload = String(decoding: pairingPayload, as: UTF8.self)
+        let deviceID = try deviceIdentity.loadDeviceID()
+        let pairing = try postPairing(
+            client: client,
+            serverURL: serverURL,
+            deviceID: deviceID,
+            pairingPayload: payload
+        )
+        let session = try postSession(client: client, serverURL: serverURL, deviceToken: pairing.deviceToken)
+        return CapturePairingResult(
+            deviceID: pairing.deviceID,
+            sessionID: session.id,
+            viewToken: session.viewToken,
+            captureBearerToken: pairing.deviceToken,
+            certificatePinSHA256Hex: parsedPayload.certificatePinSHA256Hex
+        )
+    }
+
+    private func postPairing(
+        client: CaptureHTTPClient,
+        serverURL: URL,
+        deviceID: String,
+        pairingPayload: String
+    ) throws -> PairingResponseBody {
+        var request = URLRequest(
+            url: serverURL
+                .appendingPathComponent("api")
+                .appendingPathComponent("live")
+                .appendingPathComponent("pairings")
+        )
         request.httpMethod = "POST"
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        request.httpBody = pairingPayload
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(
+            PairingRequestBody(deviceID: deviceID, pairingPayload: pairingPayload)
+        )
         let response = try client.send(request)
         guard (200..<300).contains(response.statusCode) else {
             throw CaptureHTTPTransportError.nonSuccessStatus(response.statusCode)
         }
-        let body = try JSONDecoder().decode(PairingResponseBody.self, from: response.body)
-        return CapturePairingResult(sessionID: body.sessionID, captureBearerToken: body.captureBearerToken)
+        return try JSONDecoder().decode(PairingResponseBody.self, from: response.body)
+    }
+
+    private func postSession(
+        client: CaptureHTTPClient,
+        serverURL: URL,
+        deviceToken: String
+    ) throws -> SessionResponseBody {
+        var request = URLRequest(
+            url: serverURL
+                .appendingPathComponent("api")
+                .appendingPathComponent("live")
+                .appendingPathComponent("sessions")
+        )
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(deviceToken)", forHTTPHeaderField: "Authorization")
+        let response = try client.send(request)
+        guard (200..<300).contains(response.statusCode) else {
+            throw CaptureHTTPTransportError.nonSuccessStatus(response.statusCode)
+        }
+        return try JSONDecoder().decode(SessionResponseBody.self, from: response.body)
+    }
+
+    private struct PairingRequestBody: Encodable {
+        var deviceID: String
+        var pairingPayload: String
+
+        enum CodingKeys: String, CodingKey {
+            case deviceID = "device_id"
+            case pairingPayload = "pairing_payload"
+        }
     }
 
     private struct PairingResponseBody: Decodable {
-        var sessionID: String
-        var captureBearerToken: String?
+        var deviceID: String
+        var deviceToken: String
 
         enum CodingKeys: String, CodingKey {
-            case sessionID = "session_id"
-            case captureBearerToken = "capture_bearer"
+            case deviceID = "device_id"
+            case deviceToken = "device_token"
+        }
+    }
+
+    private struct SessionResponseBody: Decodable {
+        var id: String
+        var ownerDeviceID: String
+        var viewToken: String
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case ownerDeviceID = "owner_device_id"
+            case viewToken = "view_token"
         }
     }
 }
@@ -622,6 +1248,8 @@ private func sanitizedControlError(_ error: Error) -> String {
         return String(describing: controllerError)
     case let transportError as CaptureHTTPTransportError:
         return String(describing: transportError)
+    case let nativeError as NativeCaptureError:
+        return String(describing: nativeError)
     default:
         return "control_failed"
     }

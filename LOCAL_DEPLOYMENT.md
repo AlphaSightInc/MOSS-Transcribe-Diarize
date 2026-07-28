@@ -34,6 +34,14 @@ sampler while retaining CUDA model execution and continuous batching.
 - Tailscale: `http://100.64.0.8:7860`
 - Private vLLM API inside WSL: `http://127.0.0.1:8000/v1`
 
+When the live service is enabled it is a *second* service on port 7861, reachable
+only over TLS and only by clients that pin its certificate:
+
+- LAN: `https://192.168.68.38:7861/live`
+- Tailscale: `https://100.64.0.8:7861/live`
+
+Port 7860 stays plaintext and unchanged. See "Live service" below.
+
 The LAN address can change if the router assigns this PC a different address.
 The Tailscale IP remains stable for this node. This tailnet's control plane does
 not currently implement Tailscale Serve, so the service uses the node IP and
@@ -49,6 +57,15 @@ wsl.exe -d Ubuntu -- systemctl --user restart moss-vllm.service moss-web.service
 wsl.exe -d Ubuntu -- journalctl --user -u moss-vllm.service -u moss-web.service -n 100 --no-pager
 ```
 
+The live service is a separate unit and is operated separately, so restarting it
+never interrupts batch transcription:
+
+```powershell
+wsl.exe -d Ubuntu -- systemctl --user status moss-live-web.service
+wsl.exe -d Ubuntu -- systemctl --user restart moss-live-web.service
+wsl.exe -d Ubuntu -- journalctl --user -u moss-live-web.service -n 100 --no-pager
+```
+
 The Windows sign-in task starts WSL and refreshes the LAN forwarding rule because
 the WSL NAT address may change after a restart.
 
@@ -57,6 +74,14 @@ PowerShell window:
 
 ```powershell
 & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1'
+```
+
+That call forwards port 7860 only. Add `-IncludeLive` to also forward 7861 and
+start the live unit; the switch is written into the sign-in task so a refresh
+keeps forwarding the same ports:
+
+```powershell
+& 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1' -IncludeLive
 ```
 
 ## Verification
@@ -581,38 +606,108 @@ MOSS_LIVE_ENABLED=0
 ```
 
 `ops/start-web.sh` is the only deployment environment adapter. It accepts exactly
-`MOSS_LIVE_ENABLED=0` or `MOSS_LIVE_ENABLED=1`. Enabled mode also requires
+`MOSS_LIVE_ENABLED=0` or `MOSS_LIVE_ENABLED=1`, and enabled mode requires
 `MOSS_LIVE_PROVIDER_MANIFEST`, `MOSS_LIVE_AUTH_STATE`,
-`MOSS_LIVE_TLS_CERTFILE`, `MOSS_LIVE_TLS_KEYFILE`, and
-`MOSS_LIVE_HELPER_LEASE_SECONDS`, then translates that state into explicit CLI
-flags. The production lease value remains `Missing`; callers must supply a
-strictly positive value and this document does not choose one:
+`MOSS_LIVE_TLS_CERTFILE`, `MOSS_LIVE_TLS_KEYFILE`,
+`MOSS_LIVE_HELPER_LEASE_SECONDS`, `MOSS_WEB_PORT` and `MOSS_RUNS_DIR`, which it
+translates into explicit CLI flags. Invalid enablement exits before web app
+construction, routes, sessions, or job admission. Auth-state files and
+certificate private keys are operator-owned secret files and must not be
+committed. Rollback is setting `MOSS_LIVE_ENABLED=0` — in practice, stopping the
+live unit; see "Live service" below.
 
-```ini
-MOSS_LIVE_ENABLED=1
-MOSS_LIVE_PROVIDER_MANIFEST=/path/to/live-provider-manifest.json
-MOSS_LIVE_AUTH_STATE=/path/to/live-auth.json
-MOSS_LIVE_TLS_CERTFILE=/path/to/live.crt
-MOSS_LIVE_TLS_KEYFILE=/path/to/live.key
-MOSS_LIVE_HELPER_LEASE_SECONDS=Missing
-```
+## Live service
+
+The live service is a **second** systemd user unit, not a mode of the batch one.
+`--live` hands the certificate to uvicorn, so TLS covers the whole listener: a
+live profile served on 7860 would replace the plaintext batch surface instead of
+sitting beside it. Both units run the same `ops/start-web.sh`; only the
+environment differs.
+
+| | batch | live |
+| --- | --- | --- |
+| unit | `moss-web.service` | `moss-live-web.service` |
+| profile | `ops/moss.env` | `ops/moss.env`, then `ops/moss-live.env` |
+| port | 7860 plaintext | 7861 TLS |
+| runs dir | `<checkout>/runs` | its own directory |
+
+`ops/moss-live.env` is host-local and untracked. Copy `ops/moss-live.env.example`,
+replace every `REPLACE_WITH_` path with an absolute path, and keep the file on
+the host — systemd reads an `EnvironmentFile` literally, so `$HOME` and `~` are
+not expanded. The live unit's `EnvironmentFile` for that file is mandatory: if it
+is missing the unit fails to start rather than coming up as a second batch
+server. `ops/start-web.sh` refuses a live profile that binds 7860 or that points
+at the batch runs directory.
+
+Generate the deployment's TLS material and the final provider manifest from the
+reviewed checkout, on the host, before starting the live unit. Both tools print
+an ordered `plan:`, a `rollback:` command before their first mutation, and
+`evidence:` lines; both print `unchanged:` and mutate nothing on a re-run, and
+both accept `--dry-run`:
 
 ```bash
-mtd-subtitle-web ... \
-  --live \
-  --live-provider-manifest /path/to/live-provider-manifest.json \
-  --live-auth-state /path/to/live-auth.json \
-  --live-tls-certfile /path/to/live.crt \
-  --live-tls-keyfile /path/to/live.key \
-  --live-helper-lease-seconds Missing
+cd /mnt/d/Coding/MOSS-Transcribe-Diarize
+
+# Certificate and key. Names are flags: every DNS name and address a client may
+# use must be listed, and an address outside the networks live access admits is
+# refused. A re-run with the same names rotates nothing, because the
+# certificate's SHA-256 over its DER bytes is the pin every paired Mac stores.
+# Rotation is --rotate only, and it invalidates every existing pairing.
+ops/generate-live-tls.sh \
+  --dns <tailnet-name> --dns <lan-name> --ip <tailnet-ip> --ip <lan-ip> \
+  --common-name <tailnet-name> \
+  --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt" \
+  --key "$HOME/.local/share/moss-transcribe-diarize/live/live.key"
+
+# Provider manifest. The three bounds are required flags because the latency
+# remedy tunes the span cap; every other bound is a checked relation, so a wrong
+# flag is refused rather than deployed. --source-revision must be the reviewed
+# 40-character merge SHA.
+python3 ops/finalize-live-provider-manifest.py \
+  --input  "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" \
+  --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
+  --source-revision "$(git rev-parse HEAD)" \
+  --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000
 ```
 
-Rollback is setting `MOSS_LIVE_ENABLED=0`, removing or ignoring
-the live provider, auth-state, certificate, key, and helper lease environment
-variables, and restarting only after the reviewed operator handoff permits a
-restart. Invalid enablement exits before web app construction, routes, sessions,
-or job admission. Auth-state files and certificate private keys are
-operator-owned secret files and must not be committed.
+Then install and start the unit, and forward the port from Windows:
+
+```bash
+bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/install-services.sh --with-live --dry-run
+bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/install-services.sh --with-live
+```
+
+`install-services.sh` installs the tracked units verbatim, never enables or
+starts the live unit without `--with-live`, and refuses `--with-live` before any
+mutation when `ops/moss-live.env` is absent. It never restarts a running
+service: a changed unit file is reported as `evidence: restart_required=...` and
+restarting is a deliberate step.
+
+Pair a Mac from the host, over loopback, once per device:
+
+```bash
+ops/live-pair.sh --url https://127.0.0.1:7861 \
+  --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
+```
+
+The pairing payload is a secret. It is printed exactly once, on its own
+`payload:` line, and must never be redirected to a file, pasted into a log, or
+passed as a command-line argument — read it off the terminal and type it into
+the Mac client. The tool refuses to print anything when the certificate digest
+the running service loaded differs from the digest of the certificate on disk,
+which is the rotated-but-not-restarted case; restart the live unit and re-run.
+
+Roll the live service back by stopping it. The batch service is untouched by
+every step above:
+
+```bash
+systemctl --user disable --now moss-live-web.service
+```
+
+```powershell
+& netsh.exe interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=7861
+Remove-NetFirewallRule -Name 'MOSS-Transcribe-Diarize-Live'
+```
 
 Provider-blind truth and calibration are separate from bundle assembly. Truth
 uses 16 kHz integer sample intervals with independent annotation and review

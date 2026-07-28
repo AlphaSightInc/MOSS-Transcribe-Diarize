@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
+from moss_transcribe_diarize.app.live_auth import VIEW_ABSOLUTE_CAP_SECONDS
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW, LiveLane
 from moss_transcribe_diarize.app.live_helper_presence import HELPER_HEALTH_SCHEMA
@@ -495,6 +496,115 @@ class LiveApiTest(unittest.TestCase):
 
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
             self.assertEqual(rejected.status_code, 403)
+
+    def test_clean_stop_immediately_revokes_view_authority(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            created = client.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+
+            self.assertEqual(
+                viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
+                200,
+            )
+            remaining = created["view_expires_at"] - time.time()
+            self.assertLessEqual(remaining, VIEW_ABSOLUTE_CAP_SECONDS)
+            self.assertGreater(remaining, VIEW_ABSOLUTE_CAP_SECONDS - 60.0)
+
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
+            self.assertEqual(stopped.status_code, 200)
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "closed")
+
+            self.assertEqual(
+                viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
+                401,
+            )
+            self.assertEqual(
+                viewer.get(f"/api/live/sessions/{session_id}/events").status_code,
+                401,
+            )
+
+    def test_failed_stop_revokes_the_view_without_stranding_capture_authority(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8, speech=(True,)),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            created = client.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+
+            self.assertEqual(
+                client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 4)).status_code,
+                200,
+            )
+            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 200)
+
+            # A stop that fails accounting leaves the session terminal without releasing
+            # the ownership entry - the capture client still has to be able to abort.
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
+            self.assertEqual(stopped.status_code, 409)
+            # The mono session still reads "active" here; only the runtime's terminal
+            # failure records that the session is over. The view must follow the latter.
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "active")
+            self.assertEqual(stopped.json()["snapshot"]["terminal_failure"]["kind"], "transport_pacing")
+
+            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 401)
+            aborted = client.post(f"/api/live/sessions/{session_id}/abort", json={"reason": "cleanup"})
+            self.assertEqual(aborted.status_code, 200)
+            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 401)
+
+    def test_operator_view_revocation_is_loopback_only_and_keeps_capture_streaming(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            created = client.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+            local = TestClient(app, base_url="http://127.0.0.1", client=("127.0.0.1", 50000))
+
+            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 200)
+            self.assertEqual(
+                client.delete(f"/api/live/sessions/{session_id}/view").status_code,
+                403,
+            )
+            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 200)
+
+            revoked = local.delete(f"/api/live/sessions/{session_id}/view")
+            self.assertEqual(revoked.status_code, 200)
+            self.assertEqual(revoked.json(), {"session_id": session_id, "view_revoked": True})
+
+            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 401)
+            self.assertEqual(
+                client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 4)).status_code,
+                200,
+            )
+            self.assertEqual(local.delete(f"/api/live/sessions/{session_id}/view").status_code, 404)
 
     def test_stop_composes_v2_and_mono_work_under_one_client_deadline(self):
         from fastapi.testclient import TestClient

@@ -92,7 +92,12 @@ final class MTDCaptureCLITests: XCTestCase {
             )
         ) { request in
             receivedRequest.store(request)
-            return ControlChannelResponse(ok: true, running: false, sessionID: "session-from-app")
+            return ControlChannelResponse(
+                ok: true,
+                running: false,
+                sessionID: "session-from-app",
+                portalURL: serverURL.appendingPathComponent("live")
+            )
         }
         DispatchQueue.global().async {
             try? server.serveOnce()
@@ -129,7 +134,12 @@ final class MTDCaptureCLITests: XCTestCase {
                 ControlChannelResponse.self,
                 from: standardOutput.data.dropTrailingNewline()
             ),
-            ControlChannelResponse(ok: true, running: false, sessionID: "session-from-app")
+            ControlChannelResponse(
+                ok: true,
+                running: false,
+                sessionID: "session-from-app",
+                portalURL: serverURL.appendingPathComponent("live")
+            )
         )
         XCTAssertTrue(standardError.data.isEmpty)
         let combinedOutput = standardOutput.data + standardError.data
@@ -138,6 +148,7 @@ final class MTDCaptureCLITests: XCTestCase {
             "control-secret",
             "capture-bearer",
             "certificate-pin",
+            "view-token",
         ] {
             XCTAssertFalse(String(decoding: combinedOutput, as: UTF8.self).contains(secret))
         }
@@ -167,6 +178,176 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(standardError.data.isEmpty)
     }
 
+    func testCLIHandoffIsOneUDSRequestAndRelaysOnlyTheAppsNonSecretConfirmation() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-cli-handoff-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+        defer {
+            try? FileManager.default.removeItem(
+                at: URL(fileURLWithPath: path).deletingLastPathComponent()
+            )
+        }
+        let store = try FileCaptureSecretStore(path: path)
+        let serverURL = URL(string: "https://moss.example")!
+        try store.saveControlSecret("control-secret")
+        try store.saveCaptureServerURL(serverURL)
+        try store.saveCaptureSessionID("session-handoff")
+        try store.saveCaptureViewToken("view-token-secret")
+        let copiedTokens = CopiedTokenBox()
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: UnusedPairingExchange(),
+            sessionStore: store,
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: store) { viewToken in
+                copiedTokens.append(viewToken)
+                return true
+            }
+        )
+        let socketPath = temporarySocketPath()
+        let receivedRequest = ControlRequestBox()
+        let serverFinished = expectation(description: "app answered the CLI handoff request")
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: store)
+        ) { request in
+            receivedRequest.store(request)
+            return try dispatcher.dispatch(request)
+        }
+        DispatchQueue.global().async {
+            try? server.serveOnce()
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let standardOutput = RecordingCLIOutput()
+        let standardError = RecordingCLIOutput()
+        let commandLine = CaptureCommandLine(
+            launcher: RecordingCaptureAppLauncher(),
+            socketChecker: StaticSocketChecker(exists: true),
+            client: UnixDomainControlClient(socketPath: socketPath, secrets: store),
+            input: StaticCLIInput(data: Data()),
+            standardOutput: standardOutput,
+            standardError: standardError
+        )
+
+        XCTAssertEqual(commandLine.run(arguments: ["handoff"]), 0)
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(receivedRequest.load()).command, "handoff")
+        XCTAssertEqual(copiedTokens.load(), ["view-token-secret"])
+        XCTAssertEqual(
+            try JSONDecoder().decode(
+                ControlChannelResponse.self,
+                from: standardOutput.data.dropTrailingNewline()
+            ),
+            ControlChannelResponse(
+                ok: true,
+                sessionID: "session-handoff",
+                portalURL: serverURL.appendingPathComponent("live"),
+                viewAuthority: "copied-to-pasteboard"
+            )
+        )
+        XCTAssertTrue(standardError.data.isEmpty)
+        let combinedOutput = String(
+            decoding: standardOutput.data + standardError.data,
+            as: UTF8.self
+        )
+        XCTAssertFalse(combinedOutput.contains("view-token-secret"))
+        XCTAssertFalse(combinedOutput.contains("control-secret"))
+        XCTAssertFalse(combinedOutput.contains("?"))
+        XCTAssertFalse(combinedOutput.contains("#"))
+    }
+
+    func testCLILatencyRelaysOnlyTheAppsAggregateTimingsAndNeverTheViewToken() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-cli-latency-\(UUID().uuidString)")
+            .appendingPathComponent("secrets.json")
+            .path
+        defer {
+            try? FileManager.default.removeItem(
+                at: URL(fileURLWithPath: path).deletingLastPathComponent()
+            )
+        }
+        let store = try FileCaptureSecretStore(path: path)
+        try store.saveControlSecret("control-secret")
+        try store.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try store.saveCaptureSessionID("session-latency")
+        try store.saveCaptureViewToken("view-token-secret")
+        let probe = StubLatencyProbe(
+            report: CaptureLatencyReport(
+                polling: true,
+                mixerOriginResolved: true,
+                sufficientSamples: true,
+                committedLatency: CaptureLatencyDistribution(
+                    count: 24,
+                    p50MS: 1_100,
+                    p95MS: 1_800,
+                    maxMS: 2_400
+                ),
+                snapshotFetch: CaptureLatencyDistribution(count: 96, p50MS: 40, p95MS: 90, maxMS: 140),
+                eventsFetch: CaptureLatencyDistribution(count: 96, p50MS: 30, p95MS: 70, maxMS: 110),
+                renderBoundMS: 1_160,
+                userVisibleMS: 2_960
+            )
+        )
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: UnusedPairingExchange(),
+            sessionStore: store,
+            latencyProbe: probe
+        )
+        let socketPath = temporarySocketPath()
+        let receivedRequest = ControlRequestBox()
+        let serverFinished = expectation(description: "app answered the CLI latency request")
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: store)
+        ) { request in
+            receivedRequest.store(request)
+            return try dispatcher.dispatch(request)
+        }
+        DispatchQueue.global().async {
+            try? server.serveOnce()
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
+        let standardOutput = RecordingCLIOutput()
+        let standardError = RecordingCLIOutput()
+        let commandLine = CaptureCommandLine(
+            launcher: RecordingCaptureAppLauncher(),
+            socketChecker: StaticSocketChecker(exists: true),
+            client: UnixDomainControlClient(socketPath: socketPath, secrets: store),
+            input: StaticCLIInput(data: Data()),
+            standardOutput: standardOutput,
+            standardError: standardError
+        )
+
+        XCTAssertEqual(commandLine.run(arguments: ["latency"]), 0)
+
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(receivedRequest.load()).command, "latency")
+        XCTAssertEqual(probe.measureCount(), 1)
+        let response = try JSONDecoder().decode(
+            ControlChannelResponse.self,
+            from: standardOutput.data.dropTrailingNewline()
+        )
+        // Both components of the gated number reach the operator separately.
+        XCTAssertEqual(response.latency?.committedLatency.p95MS, 1_800)
+        XCTAssertEqual(response.latency?.renderBoundMS, 1_160)
+        XCTAssertEqual(response.latency?.userVisibleMS, 2_960)
+        XCTAssertTrue(standardError.data.isEmpty)
+        let combinedOutput = String(
+            decoding: standardOutput.data + standardError.data,
+            as: UTF8.self
+        )
+        XCTAssertFalse(combinedOutput.contains("view-token-secret"))
+        XCTAssertFalse(combinedOutput.contains("control-secret"))
+        XCTAssertFalse(combinedOutput.contains("session-latency"))
+        XCTAssertFalse(combinedOutput.contains("moss.example"))
+    }
+
     func testShimCommandsStayControlOnlyAndAudioFrameworkFree() throws {
         let source = try cliSources()
 
@@ -174,6 +355,14 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(source.contains("start"))
         XCTAssertTrue(source.contains("stop"))
         XCTAssertTrue(source.contains("status"))
+        XCTAssertTrue(source.contains("handoff"))
+        XCTAssertTrue(source.contains("ControlChannelRequest(command: \"handoff\")"))
+        XCTAssertTrue(source.contains("latency"))
+        XCTAssertTrue(source.contains("ControlChannelRequest(command: \"latency\")"))
+        XCTAssertFalse(source.contains("PasteboardCapturePortalHandoff"))
+        XCTAssertFalse(source.contains("loadCaptureViewToken"))
+        XCTAssertFalse(source.contains("NSPasteboard"))
+        XCTAssertFalse(source.contains("CaptureLatencyProbe("))
         XCTAssertTrue(source.contains("LaunchServices"))
         XCTAssertTrue(source.contains("UnixDomainControlClient"))
         XCTAssertTrue(source.contains("sendRequest"))
@@ -219,6 +408,78 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(entitlements.contains("com.apple.security.device.audio-input"))
         XCTAssertTrue(entitlements.contains("keychain-access-groups"))
         XCTAssertFalse(entitlements.contains("com.apple.security.app-sandbox"))
+    }
+
+    func testProductEntrypointsResolveOneSharedPrivateFileStoreByDefault() throws {
+        let home = FileManager.default.temporaryDirectory
+            .appendingPathComponent("moss-home-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let expectedPath = home
+            .appendingPathComponent("Library")
+            .appendingPathComponent("Application Support")
+            .appendingPathComponent("MOSSCapture")
+            .appendingPathComponent("secrets.json")
+            .path
+
+        XCTAssertEqual(
+            CaptureSecretStoreSelection.defaultPath(homeDirectory: home.path),
+            expectedPath
+        )
+
+        // the app composition root and the CLI composition root, resolved independently
+        let appStore = try CaptureSecretStoreSelection.makeDefault(
+            environment: [:],
+            homeDirectory: home.path
+        )
+        let cliStore = try CaptureSecretStoreSelection.makeDefault(
+            environment: [:],
+            homeDirectory: home.path
+        )
+        XCTAssertEqual((appStore as? FileCaptureSecretStore)?.path, expectedPath)
+        XCTAssertEqual((cliStore as? FileCaptureSecretStore)?.path, expectedPath)
+        try appStore.saveCaptureBearerToken("capture-token")
+        try appStore.saveCaptureSessionID("session-shared")
+        XCTAssertEqual(try cliStore.loadCaptureBearerToken(), "capture-token")
+        XCTAssertEqual(try cliStore.loadCaptureSessionID(), "session-shared")
+        XCTAssertEqual(try cliStore.loadDeviceID(), try appStore.loadDeviceID())
+
+        // the environment override still wins; that is what the tracer and lab runs select
+        let overridePath = home
+            .appendingPathComponent("override")
+            .appendingPathComponent("secrets.json")
+            .path
+        let overridden = try CaptureSecretStoreSelection.makeDefault(
+            environment: [CaptureSecretStoreSelection.environmentKey: overridePath],
+            homeDirectory: home.path
+        )
+        XCTAssertEqual((overridden as? FileCaptureSecretStore)?.path, overridePath)
+        XCTAssertNil(try overridden.loadCaptureBearerToken())
+    }
+
+    func testNeitherProductEntrypointCanSelectTheDormantKeychainStore() throws {
+        let package = packageRoot()
+        func read(_ target: String, _ file: String) throws -> String {
+            try String(
+                contentsOf: package
+                    .appendingPathComponent("Sources")
+                    .appendingPathComponent(target)
+                    .appendingPathComponent(file),
+                encoding: .utf8
+            )
+        }
+        let appMain = try read("MOSSCaptureApp", "main.swift")
+        let cliMain = try read("MTDCaptureCLI", "main.swift")
+        let coreSecurity = try read("MOSSCaptureCore", "CaptureSecurity.swift")
+
+        for source in [appMain, cliMain] {
+            XCTAssertTrue(source.contains("CaptureSecretStoreSelection.makeDefault()"))
+            XCTAssertFalse(source.contains("KeychainCaptureSecretStore"))
+            XCTAssertFalse(source.contains("MOSS_CAPTURE_SECRET_STORE_PATH"))
+        }
+        XCTAssertTrue(coreSecurity.contains("MOSS_CAPTURE_SECRET_STORE_PATH"))
+        XCTAssertFalse(coreSecurity.contains("com.alphasight.moss.capture.shared"))
+        XCTAssertFalse(coreSecurity.contains("kSecAttrAccessGroup"))
     }
 
     private func packageRoot() -> URL {
@@ -323,6 +584,29 @@ private final class RecordingCLIOutput: CaptureCLIOutput {
     }
 }
 
+private struct UnusedPairingExchange: CapturePairingExchangeAdapter {
+    func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
+        throw CLIProbeError.launchFailed
+    }
+}
+
+private final class CopiedTokenBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var tokens: [String] = []
+
+    func append(_ token: String) {
+        lock.lock()
+        tokens.append(token)
+        lock.unlock()
+    }
+
+    func load() -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return tokens
+    }
+}
+
 private final class ControlRequestBox: @unchecked Sendable {
     private let lock = NSLock()
     private var request: ControlChannelRequest?
@@ -337,6 +621,31 @@ private final class ControlRequestBox: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return request
+    }
+}
+
+private final class StubLatencyProbe: CaptureLatencyProbing, @unchecked Sendable {
+    private let lock = NSLock()
+    private let report: CaptureLatencyReport
+    private var measures = 0
+
+    init(report: CaptureLatencyReport) {
+        self.report = report
+    }
+
+    func measure() throws -> CaptureLatencyReport {
+        lock.lock()
+        measures += 1
+        lock.unlock()
+        return report
+    }
+
+    func stop() {}
+
+    func measureCount() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return measures
     }
 }
 
