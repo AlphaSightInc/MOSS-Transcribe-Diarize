@@ -797,6 +797,10 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "MOSS_LIVE_TLS_CERTFILE": "/provider/live.crt",
         "MOSS_LIVE_TLS_KEYFILE": "/provider/live.key",
         "MOSS_LIVE_HELPER_LEASE_SECONDS": "30",
+        # Live mode is a second service beside the plaintext batch one, so it must state its
+        # own listener and job directory. See tests/test_live_service_deployment.py.
+        "MOSS_WEB_PORT": "7861",
+        "MOSS_RUNS_DIR": "/provider/live-runs",
     }
 
     enabled = subprocess.run(
@@ -885,6 +889,21 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
     )
     assert missing_live_lease.returncode != 0
     assert "MOSS_LIVE_HELPER_LEASE_SECONDS is required" in missing_live_lease.stderr
+
+    for missing_key in ("MOSS_WEB_PORT", "MOSS_RUNS_DIR"):
+        missing_listener = subprocess.run(
+            ["bash", "ops/start-web.sh"],
+            check=False,
+            capture_output=True,
+            text=True,
+            env={
+                key: value
+                for key, value in (env | {"MOSS_LIVE_ENABLED": "1"}).items()
+                if key != missing_key
+            },
+        )
+        assert missing_listener.returncode != 0
+        assert f"{missing_key} is required" in missing_listener.stderr
 
 
 def _spec_for(path: Path) -> TierBAssetSpec:

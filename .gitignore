@@ -11,6 +11,7 @@ outputs/
 examples/*
 !examples/*.md
 runs/
+live-runs/
 
 # Large or transient runtime files.
 *.safetensors
@@ -25,6 +26,10 @@ runs/
 *.pem
 *live-auth*.json
 *pairing-payload*
+
+# Host-local live service profile. The tracked template is ops/moss-live.env.example; the
+# filled-in file names host paths and belongs only to the deployment host.
+ops/moss-live.env
 
 # Code-signing material for the local macOS capture app. A .p12 carries a private
 # key and a .keychain-db carries the signing identity; neither may ever be committed.

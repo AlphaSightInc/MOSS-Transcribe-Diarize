@@ -1036,3 +1036,107 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   `ops/install-services.sh` for the second unit, and `LOCAL_DEPLOYMENT.md` documenting the C2
   finalizer plus both C3a tools (including that the `payload:` line is never redirected to a file).
   Then C3c, the app-owned latency probe, which is the last item before the C4 gate.
+
+## Iteration 14 (run 20260728-023004-98501, its iteration 6) - two-service deployment bundle (C3b)
+- Target: Phase C candidate C3b - the tracked templates and networking that make the live service
+  a *deployable* second service: `ops/moss-live.env.example`, `ops/systemd/moss-live-web.service`,
+  port/runs-dir overrides in `ops/start-web.sh`, `--with-live` in `ops/install-services.sh`,
+  two-port forwarding in `ops/configure-windows-network.ps1`, and the `LOCAL_DEPLOYMENT.md` section
+  that documents them together with the C2 finalizer and the C3a credential tools.
+- Files: `ops/moss-live.env.example` (new), `ops/systemd/moss-live-web.service` (new),
+  `ops/start-web.sh`, `ops/install-services.sh`, `ops/configure-windows-network.ps1`,
+  `LOCAL_DEPLOYMENT.md`, `.gitignore`, `tests/test_live_service_deployment.py` (new),
+  `tests/test_speaker_identity_provider.py`, `scripts/ralph-afk/{context.md,progress.txt}`.
+  **No product source changed.**
+- Method: the shape of the change is forced by one fact in the existing code - `web_cli.main`
+  passes the certificate to `uvicorn.run`, so `--live` applies TLS to the *whole* listener
+  (`web_cli.py:197-202`). The live service therefore cannot be a mode of the batch process; it has
+  to be a second unit on its own port, and the property worth protecting is that adding it leaves
+  the first one byte-for-byte alone. One adapter serves both units and only the environment
+  differs, so the two invocations cannot drift. `MOSS_WEB_PORT`/`MOSS_RUNS_DIR` are required flags
+  under live mode with checked relations (not the batch port, not the batch runs dir), which is the
+  same required-flag/checked-relation shape C2 and C3a use.
+- Validation:
+  - `pytest tests/test_live_service_deployment.py -q` -> **30 passed** in 4.5s
+  - `pytest tests -q -p no:cacheprovider` -> **536 passed, 2 skipped, 368 subtests** in 52.5s
+    (was 506/2/368; +30 new nodes, no regressions)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+  - `bash -n` on every `ops/*.sh` and `macos/scripts/*.sh` -> clean; the new script runs under
+    MacStudio's bash 3.2.57 in the tests, so it is 3.2-compatible (`"${arr[@]}"` on an empty array
+    is still guarded by the existing `((${#arr[@]}))` test - 3.2 errors on the expansion, not the
+    count)
+  - Swift untouched this iteration; last measured 121 passed at iteration 11.
+- Evidence:
+  - **The batch invocation is recorded, not asserted loosely.** `BATCH_ARGV` in the new test file
+    is the exact argv the adapter produced before the live service existed, and the first node
+    replays `ops/moss.env` verbatim through the real script - `getent` stubbed to a scratch home,
+    the venv entrypoint replaced by an argv recorder - and compares element for element. The live
+    node then proves the live argv is that same list with exactly two elements changed (port,
+    runs dir) plus the six live flags appended. That is what the PRD's "batch service unharmed"
+    clause rests on, checked mechanically rather than by reading the diff.
+  - **The template is executable evidence.** The live node drives `ops/moss-live.env.example`
+    verbatim rather than a fixture, so a template that is missing a variable, names one the adapter
+    does not read, or spells one wrong fails the suite. A second node walks the template's keys and
+    drops each one in turn: all seven are required and each refusal names the missing key on stderr
+    with nothing on stdout.
+  - **Fail-closed both ways.** `MOSS_LIVE_ENABLED=0` with the whole live profile still exported
+    emits no `--live*` flag and none of the four live paths anywhere in the argv; and the live
+    unit's `EnvironmentFile` for `ops/moss-live.env` carries no `-`, so a host that installs the
+    unit without the profile gets a unit that fails to start rather than a second *batch* server
+    on the batch port.
+  - Found while writing the adapter: `${MOSS_WEB_PORT:-7860}` silently turns a profile line that
+    sets nothing (`MOSS_WEB_PORT=`) into the batch port - i.e. a typo in the live profile would
+    have produced a TLS listener on 7860 and taken the batch service down. Fixed generally by using
+    `${VAR-default}` for both overrides, so an explicitly empty value reaches the validator and is
+    refused; the empty-string case is in the malformed-port table.
+  - `install-services.sh` derives its source from its own location, so it installs the checkout it
+    lives in - which is exactly the D1-then-D3 order. It installs the tracked unit bytes verbatim
+    at 0644 (asserted against the repository files), prints `unchanged:` per unit on a re-run
+    without moving an inode, and the re-run also reports the *activation* as unchanged, because the
+    test's `systemctl` stub remembers `enable`/`start` and answers `is-enabled`/`is-active` from
+    that state.
+  - The tool never restarts a running service. A changed unit file surfaces as
+    `evidence: restart_required=<units>` instead, because bouncing the batch service is a
+    deployment decision; that is recorded here so D3 does not mistake the absence of a restart for
+    the absence of a change.
+  - Ordering is checked positionally, not by prose: the replaced-unit node asserts the last
+    `rollback:` line appears before the first `change:` line in stdout, then *executes* the printed
+    rollback and gets the previous bytes back.
+  - The PowerShell script cannot run on this host, so it is checked structurally by brace-matching
+    the `if ($IncludeLive)` blocks: every line naming 7861 or `moss-live-web.service` must be
+    inside one, every line naming 7860 or the batch rule name must be outside all of them, no
+    `netsh` line may carry a port literal (both ports go through one loop), and the scheduled-task
+    argument must append `-IncludeLive` so a sign-in refresh forwards the same ports as the run
+    that registered it.
+  - Documentation is covered by a node, not by intent: every operator-run tool in `ops/` must be
+    named in `LOCAL_DEPLOYMENT.md`, with `*-lib.sh` (sourced) and anything a unit's `ExecStart`
+    starts excluded. That is what pulled `finalize-live-provider-manifest.py`, `generate-live-tls.sh`
+    and `live-pair.sh` into the document with their real invocations, including the rule that the
+    `payload:` line is never redirected to a file.
+  - Mutation rehearsal 1 (hard-code `--port 7860` again): the live-argv node fails. Reverted.
+  - Mutation rehearsal 2 (drop the batch-port refusal): that refusal node fails. Reverted.
+  - Mutation rehearsal 3 (make the live `EnvironmentFile` optional with `-`): the unit-layout node
+    fails. Reverted.
+  - Mutation rehearsal 4 (move the live forwarding row out of the `-IncludeLive` guard): the
+    Windows node fails on "live forwarding is unconditional". Reverted.
+  - Mutation rehearsal 5 (drop the `ops/moss-live.env` precondition from `--with-live`): the
+    refusal node fails. Reverted -> 30 passed.
+  - `tests/test_speaker_identity_provider.py::test_start_web_is_the_single_environment_adapter`
+    encoded the previous live contract (five required variables). It was updated to the widened one
+    and *gained* two refusal checks; it was not relaxed. This is the deliberate supersession the
+    PRD authorizes for post-checkpoint production work, and the discriminator stayed 10/10.
+- Learned: (1) The two-service split was not a design preference - it falls out of
+  `uvicorn.run(ssl_certfile=...)` covering the whole listener. Reading that one call before
+  designing the templates is what turned "add live flags to the env file" (which would have put TLS
+  on 7860 and broken the batch service the PRD requires intact) into "add a second unit".
+  (2) `${VAR:-default}` versus `${VAR-default}` is a safety distinction whenever the variable comes
+  from a file a human edits: colon-default absorbs the typo, plain-default surfaces it.
+  (3) A stub that only records calls cannot show idempotence; giving the `systemctl` stub memory
+  turned the re-run assertion from "it printed unchanged" into "it observed the state the first run
+  created and then did nothing".
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: C3c - the app-owned latency probe: the app (never the CLI) uses view authority, maps
+  `committed_samples` to converted client capture timestamps, and emits only redacted p50/p95/max
+  plus snapshot/events fetch timings. Test default-off, secrecy, and deterministic latency math
+  with no host mutation. That is the last item before the C4 gate and keeper merge.

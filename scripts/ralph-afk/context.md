@@ -43,13 +43,15 @@ converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent t
 iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 recorded the Phase B
 client gate (B6) and changed no product source; iteration 11 bound view authority to the session
 lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2); iteration 13 added the
-tracked TLS-material and loopback-pairing tools (C3a).
+tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tracked two-service
+deployment bundle (C3b).
 Test totals on the branch: Swift **121 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **506 passed / 2 skipped / 368 subtests**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **536 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
-`tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12) and
-`tests/test_live_deployment_credentials.py` **14 passed** (new in iteration 13).
+`tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
+`tests/test_live_deployment_credentials.py` **14 passed** (new in iteration 13) and
+`tests/test_live_service_deployment.py` **30 passed** (new in iteration 14).
 
 **Phase B client gate: GREEN at `3fb5567` (iteration 10).** Product-tree SHA `3fb5567`; the
 checkpoint commit adds only `scripts/ralph-afk/*`, so
@@ -291,6 +293,36 @@ The pin is the coupling: `evidence: pin=` equals `web_cli._certificate_sha256`, 
 offers (measured by starting a TLS listener on it). Exchanging a minted payload needs a non-loopback
 TLS peer and is already covered end to end by `tests/test_macos_uds_tracer.py`; D4 does it for real.
 
+**Two-service deployment contract (new, iteration 14).** The live service is a **second systemd
+unit**, never a mode of the batch one: `--live` hands the certificate to uvicorn
+(`web_cli.py:197-202`), so TLS covers the whole listener and a live profile on 7860 would *replace*
+the plaintext batch surface. `moss-web.service` and `moss-live-web.service` run the same
+`ops/start-web.sh`; only the environment differs. The live unit loads `ops/moss.env` (optional,
+shared vLLM tuning) then `ops/moss-live.env` (**mandatory**, no `-` prefix), so a missing profile
+fails the unit instead of starting a second batch server. `ops/moss-live.env.example` is the
+tracked template with `REPLACE_WITH_` paths; the filled-in `ops/moss-live.env` is gitignored,
+and systemd expands nothing in an EnvironmentFile so every path must be absolute.
+`start-web.sh` gained `MOSS_WEB_PORT` and `MOSS_RUNS_DIR`, both **required** under
+`MOSS_LIVE_ENABLED=1` and both checked by relation: the port may not be the batch 7860 and the
+runs dir may not be `<checkout>/runs`. They use `${VAR-default}`, not `${VAR:-default}`, so a
+profile line that sets nothing is a typo to refuse rather than a request for the default. The
+batch argv is unchanged — recorded literally in `tests/test_live_service_deployment.py` as the
+contract the PRD's "batch service unharmed" clause rests on.
+`install-services.sh` now carries B5's output discipline via `moss-ops-lib.sh`: it installs the
+tracked units verbatim, prints `unchanged:` per unit that already matches, backs a replaced unit up
+to `<unit>.backup-<utc>` with the `rollback:` line printed before the first mutation, and derives
+its source from its own location (so it installs the checkout it lives in). `--with-live` is the
+only way the live unit is installed, enabled or started, and it is refused before any mutation when
+`ops/moss-live.env` is absent. It **never restarts a running service**: a changed unit file is
+reported as `evidence: restart_required=<units>` because bouncing the batch service is a
+deployment decision, not a side effect. `configure-windows-network.ps1` forwards a table of rows —
+the 7860 row unconditional, the 7861 row (its own firewall rule name) added only under
+`-IncludeLive`, which is also written into the sign-in scheduled task so a refresh forwards the
+same ports. `LOCAL_DEPLOYMENT.md` documents the layout, the C2 finalizer, both C3a tools, and the
+rule that the `payload:` line is never redirected to a file; a test asserts every operator-run
+`ops/` tool is named in it (tools invoked only from a unit's `ExecStart`, and `*-lib.sh`, are
+excluded).
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -495,6 +527,19 @@ ops/generate-live-tls.sh --dry-run --dns moss-live.fixture.invalid --ip 10.11.12
 #   ops/live-pair.sh --url https://127.0.0.1:7861 \
 #     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
 
+# --- C3b two-service deployment bundle (30 nodes: recorded batch argv, complete live argv from
+#     the tracked template, every live variable required, live-off leaks no live flag, batch-port
+#     and batch-runs-dir refusals, 8 malformed ports, 4 non-binary enablements, template/adapter
+#     variable parity, gitignored host profile, unit layout + one deployment root, installer
+#     default/refusal/explicit-live/backup-rollback/dry-run, doc coverage, Windows two-port guard).
+#     Scratch paths only; `systemctl` and `getent` are stubbed, no unit is installed for real. ----
+python3 -m pytest tests/test_live_service_deployment.py -q
+
+# --- C3b tools by hand ------------------------------------------------------------------------
+# `install-services.sh` is Linux-only and stops on MacStudio at
+# `error: required tool not found on PATH: systemctl`. Exercise it through the test file, which
+# stubs systemctl/getent; the real invocation belongs to D3 on the host.
+
 # --- B5 packaging tools (9 nodes: entitlement drop, reproducible bundle, install-location
 #     refusal, untouched idempotent install, backup + working rollback, tampered-bundle refusal,
 #     three dry-run plans, keychain refusals). Scratch paths only; no keychain/app is mutated. ---
@@ -689,13 +734,18 @@ frozen except for defects the server work exposes.
     owns, and the doc must state the D2/D4 invocations and that the `payload:` line is never
     redirected to a file. Residue for D2: `--min-remaining-days` defaults to 30, so a host cert
     inside that window rotates only when `--rotate` is passed deliberately.
-14. **C3b — tracked live service templates and networking**: `ops/moss-live.env.example`,
-    `ops/systemd/moss-live-web.service`, `ops/start-web.sh` port/runs-dir/env overrides that keep
-    7860 exactly as it is, two-port Windows forwarding/firewall in
-    `ops/configure-windows-network.ps1`, `ops/install-services.sh` handling of the second unit, and
-    `LOCAL_DEPLOYMENT.md` (which must document the C2 finalizer and the C3a tools). Test that the
-    batch invocation is byte-identical when live is off, that the live profile requires every live
-    variable, and that nothing is generated with `MOSS_LIVE_ENABLED=0`. No host mutation.
+14. **C3b — tracked live service templates and networking** `[done — iteration 14]`:
+    `ops/moss-live.env.example`, `ops/systemd/moss-live-web.service`, the `MOSS_WEB_PORT` /
+    `MOSS_RUNS_DIR` overrides in `ops/start-web.sh`, `--with-live` in `ops/install-services.sh`,
+    `-IncludeLive` in `ops/configure-windows-network.ps1`, and the `LOCAL_DEPLOYMENT.md` "Live
+    service" section — see the two-service deployment contract above. Thirty nodes in
+    `tests/test_live_service_deployment.py`; five mutation rehearsals recorded in progress.txt.
+    No product source changed. The pre-existing
+    `test_start_web_is_the_single_environment_adapter` was updated to the widened live contract
+    (two new required variables, two new refusal checks), not weakened. Residue for D3: the host
+    needs `ops/moss-live.env` created from the example with absolute paths *before*
+    `install-services.sh --with-live`, and the batch service is not restarted by that tool —
+    `evidence: restart_required=` names any unit whose file changed.
 15. **C3c — app-owned latency probe**: the app — not the CLI —
     uses view authority, maps `committed_samples` to converted client capture timestamps, and
     emits only redacted p50/p95/max plus snapshot/events fetch timings. Test default-off, secrecy,
@@ -714,8 +764,10 @@ frozen except for defects the server work exposes.
     equality.
 18. **D2 — host manifest/TLS**: run the reviewed finalizer and TLS generator; verify merge SHA,
     generated hashes, four SANs, and fingerprint; rotate pin/pairing together.
-19. **D3 — install reviewed live service/networking**: create host-local env/auth state, install
-    reviewed 7861 unit, apply reviewed two-port forwarding/firewall, start only live service.
+19. **D3 — install reviewed live service/networking**: create `ops/moss-live.env` on the host from
+    `ops/moss-live.env.example` (absolute paths only), `install-services.sh --with-live --dry-run`
+    then for real, and `configure-windows-network.ps1 -IncludeLive` from an Administrator shell.
+    Only the live service starts; the batch service is not restarted.
 20. **D4 — verify/pair**: 7861 TLS live + descriptor 200, 7860 plaintext batch 200, use reviewed
     loopback helper once, verify no secret artifact. No tracked product/deployment edits after
     merge; only Ralph evidence may advance on the feature branch.
