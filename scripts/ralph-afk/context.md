@@ -95,9 +95,12 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
   iteration 16]`. D-c implemented: the live decode now carries a token cap derived from the span's
   own duration, and a capped span commits its words and says so. See "The decode is bounded"
   below. **Its latency effect is now MEASURED on the deployed engine (iteration 24): a runaway
-  costs 8.13 s uncapped and 1.07 s capped, 7.57x, reproducing F1's own runaways within 4 %.** What
-  F1 still decides is the *rate* of runaways and the end-to-end p95 on the Mac. See "D-c's latency
-  effect is MEASURED" below.
+  costs 8.13 s uncapped and 1.07 s capped, 7.57x, reproducing F1's own runaways within 4 %.** And
+  **its "commits its words" half is now MEASURED too (iteration 25)** — truncating F1's own
+  runaways at the real cap commits 18 segments and never goes empty, no cut point of 9062 is
+  terminal, and F1's two runaways turn out to hold **zero words at any length**. See "D-c's OTHER
+  half is settled" below. What F1 still decides is the *rate* of runaways and the end-to-end p95 on
+  the Mac. See "D-c's latency effect is MEASURED" below.
 - **The coverage gap is CLOSED** `[done — iteration 17]`: two nodes in `tests/test_live_api.py`
   now post a frame on the lane that **failed** and on the lane that **degraded**. See "The failed
   lane is in the suite" below.
@@ -887,6 +890,64 @@ probe's; the run's own span wav was deleted in the same invocation that wrote it
 the host on stdin and run under the service venv. `--survey --candidate 'label:field=value,...'`
 re-answers the trigger question if the engine is ever replaced. Evidence `/tmp/i24-measure-raw.txt`,
 `/tmp/i24-survey.log`, `/tmp/i24-host-baseline.txt`, `/tmp/i24-host-after.txt`.
+
+**D-c's OTHER half is settled — a capped span commits its words, and F1's runaways had none
+(new, iteration 25). READ THIS WITH THE TWO BLOCKS ABOVE BEFORE READING F1 AS THE VERDICT ON
+CANDIDATE 50.** m4mbp was unreachable a fifth time. Iteration 24 measured what the cap *costs*
+(8.129 s → 1.074 s) but recorded, as its limitation (c), that it could **not** verify the ruling's
+other half: its `temperature=2.0` trigger was unparseable at *any* length, so capped and uncapped
+alike committed empty and there were no words either way. That half rested on the unit tests.
+`scripts/ralph-afk/decode-cap-truncation-probe.py` settles it on the deployed `77e0014`.
+- ***The measurement is possible with no Mac and no engine run, and the licence is greedy
+  decoding.*** `VllmRunner._build_fields` sends `temperature` 0.0 unless the caller asks for
+  `decoding="sample"`, and the live path never does — so the token sequence a decode produces
+  under a cap of N **is the N-token prefix** of the sequence the same decode produced under 2048.
+  The cap changes when generation stops, not what it generates. So the transcript a capped decode
+  would have returned is `detokenize(tokenize(<the recorded uncapped transcript>)[:cap])`, computed
+  with the **deployed decoder's own tokenizer**.
+- ***And the licence is verified rather than argued.*** Re-tokenising F1's two committed runaway
+  transcripts returns **2024** and **2019** tokens — *exactly* the generated-token counts F1's own
+  decode reported for those spans — and re-tokenising each truncation returns the same first 286
+  ids. An offline reconstruction that reproduces the engine's own counter to the token is the
+  reconstruction, not an approximation of it.
+- **THE FINDING THAT CHANGES HOW F1 IS READ: F1's two runaways contain ZERO words.** Both parse to
+  **127 segments of `[t][Sxx]...[t]`** — the literal text `...`, no alphanumeric character
+  anywhere. The two spans that set F1's entire 9.05 s committed p95 bought **no transcript content
+  at all**. So for the spans D-c was built for, "commits its words" was vacuous in both directions,
+  and *nothing was ever at risk of being lost by capping them*.
+- **At the real cap the span still commits, and never goes empty.** Truncated to 286 tokens, each
+  runaway publishes **18 segments** with `empty_reason` **None** and identity status `prepared` —
+  not H1's empty path, not a failure, not terminal.
+- **A runaway that DOES hold words keeps them.** Built from the same run's own word-bearing
+  fragments (1996 tokens, 105 segments, 1817 word chars), it commits **15 segments / 226 word
+  chars** at the cap. *Stated honestly:* a degenerate loop repeats itself, so this shows the words
+  survive truncation — it cannot show that no *distinct* content is lost, and no evidence available
+  without a real runaway on real speech can.
+- ***The general claim, which is the durable half: no cut point is terminal.*** Every character
+  prefix of all three transcripts was classified — **9062 cuts, 0 terminal and 0 unclassified**.
+  The only non-committing outcomes are the first 19/19/40 characters, before the first fragment
+  closes, and those are `committed_empty` through H1's named `decoder_returned_unparseable_transcript`
+  — the designed non-terminal answer. The token boundary is one cut out of thousands and the next
+  runaway will not land on it, so the sweep is what makes this a property of the parse rather than
+  a fact about two numbers.
+*What "the real live path" means here, because reading the wrong seam would have answered a question
+about code the meeting never runs:* the probe drives `LiveCoordinator.prepare_work_item` →
+`_empty_transcript_reason` → `BoundedCausalIdentityPreparer.prepare` → `submit_prepared_work` →
+`LiveSession`. It deliberately does **not** use `LiveProvider.decode_canonical` /
+`_validated_segments`, which is the **batch** provider's seam — the live coordinator calls
+`transcribe_pcm` directly and classifies the transcript itself.
+*Limits, stated so the result is not over-read:* the decoder is stubbed to return the truncated
+text (the engine is not re-run — the greedy-prefix argument plus the exact token agreement is what
+licenses that), and `capped`/`token_cap` are set by the stub, which is harmless because the
+coordinator only forwards them to the event and never classifies on them.
+*Host untouched, checked line-by-line against a baseline taken first:* `HEAD` `77e0014`;
+`moss-live-web` **350731**, `moss-web` **301112**, `moss-vllm` **322117**, all `NRestarts=0`;
+`live-runs` 0; no `/tmp/mtd-live-*`; no probe scratch; `git status --porcelain` empty; device store
+**10 / 1 unrevoked**; **0** tracebacks; batch `/` 200. The probe makes no TLS call, creates no
+device and no session, and touches only the `/tokenize` and `/detokenize` routes.
+*Reusable:* `--evidence-dir <canary or F1 dir>` or `--spans-json -`, `--tokenizer-url`,
+`--synthesize-wordy-runaway <chars>`, `--sweep-stride`. Evidence `/tmp/i25-trunc-report.json`,
+`/tmp/i25-trunc-raw.txt`, `/tmp/i25-host-baseline.txt`, `/tmp/i25-host-after.txt`.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -2461,10 +2522,16 @@ all three decisions and the coverage gap have landed; what remains in Phase M is
     reproduces F1's own runaways within 4 % (2048 tok / 8.13 s vs F1's 2024 / 8.49 s), which
     confirms iteration 16's 238 tok/s prediction at a measured **251.9 tok/s**. Since F1's mean span
     arrival was 1.745 s, a capped decode sits *below* the arrival interval and cannot build backlog
-    where the uncapped one is 4.66× it and must. **Still open and only F1 can close it:** the
-    *rate* of runaways, the end-to-end p95 on the Mac, and D-c's "commits its words" half (this
-    trigger's output is unparseable at any length, so nothing was there to commit). See
-    "D-c's latency effect is MEASURED" above.
+    where the uncapped one is 4.66× it and must. **ITS "COMMITS ITS WORDS" HALF IS MEASURED TOO
+    (iteration 25)**, offline against the deployed tokenizer and the real live coordinator: the
+    capped decode's transcript is the greedy token *prefix* of the uncapped one, re-tokenising F1's
+    two runaways returns exactly the **2024 / 2019** tokens their own decode reported, and at the
+    286-token cap each still commits **18 segments** with `empty_reason` None — while an
+    exhaustive sweep of **9062 cut points** finds **0** terminal and **0** unclassified outcomes.
+    The same run found that F1's two runaways carry **zero word characters** (127 segments of
+    `...`), so the spans that set F1's whole latency tail bought no transcript content at all.
+    **Still open and only F1 can close it:** the *rate* of runaways and the end-to-end p95 on the
+    Mac. See "D-c's OTHER half is settled" above.
 D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two code enums, a
     `degraded` state the server's contract already had, the mailbox's overrun fence removed (it
     would have silenced a still-producing lane), the mailbox overflow given its own code, and K2's
@@ -2505,10 +2572,11 @@ amendment's literal order is unreachable and why this one drops nothing.**
   the latency prediction is wrong it says so seventeen times cheaper. This is the first run that can
   see whether 53/48/49/D-a keep a meeting alive through a lane fault. **What it still has to decide
   about candidate 50 narrowed in iteration 24:** the per-span decode bound is no longer a prediction
-  — 8.13 s → 1.07 s is measured on the deployed engine — so F1 is now measuring the *rate* of
-  runaways and the end-to-end p95 on the Mac, not whether the cap works. If F1's committed p95 is
-  still ~9 s with `capped_count` 0, the cause is **not** the decode and the plan's ordered remedies
-  become live for the first time. Both runs need their
+  — 8.13 s → 1.07 s is measured on the deployed engine, and iteration 25 measured that a capped
+  span still commits rather than going empty — so F1 is now measuring the *rate* of runaways and the
+  end-to-end p95 on the Mac, not whether the cap works or what it costs the transcript. If F1's
+  committed p95 is still ~9 s with `capped_count` 0, the cause is **not** the decode and the plan's
+  ordered remedies become live for the first time. Both runs need their
   own pre-recorded rollbacks (volume, app, session, `/tmp` evidence) per iteration 12's list.
 
 ### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)

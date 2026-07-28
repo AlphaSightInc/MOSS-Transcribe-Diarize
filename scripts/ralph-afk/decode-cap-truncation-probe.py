@@ -329,11 +329,14 @@ def _wordy_runaway(product, spans: list[dict], *, sample_count: int, target_char
     words the meeting would lose if truncation broke the parse.
     """
 
+    # Alphanumeric-bearing fragments only, and by the same test the outcome uses. F1's own
+    # runaway fragments say "...", which is non-empty and is not a word; harvesting those
+    # too would build a "wordy" runaway mostly out of ellipses and quietly weaken the claim.
     words: list[str] = []
     for span in spans:
         for segment in product["span_segments"](span["transcript"], sample_count=span["sample_count"]):
             text = segment.text.strip()
-            if text:
+            if any(ch.isalnum() for ch in text):
                 words.append(text)
     if not words:
         raise SystemExit("no span in the evidence holds transcribed words; cannot synthesize")

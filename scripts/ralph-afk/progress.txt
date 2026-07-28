@@ -13147,3 +13147,155 @@ NO Mac action of any kind: m4mbp is unreachable for the fifth consecutive iterat
 this probe does not need it. No checkout, no merge, no push, no deploy, no restart, no app
 install, and no tracked product source is touched - the post-merge freeze holds and the only
 file this iteration adds is under scripts/ralph-afk/.
+
+================================================================================
+run 20260728-181020 iteration 25 - D-c's OTHER half is settled: a capped span
+commits its words, and F1's two runaways never had any
+================================================================================
+
+Target: candidate 50 / D-c, the half iteration 24 explicitly could NOT verify (its
+limitation (c)). m4mbp unreachable for a FIFTH consecutive iteration (ssh timeout,
+100% ICMP loss), so gate step (d) is still blocked; this took the last reachable
+half of candidate 50 instead of a fifth blocked-and-idle iteration.
+
+Files touched: scripts/ralph-afk/decode-cap-truncation-probe.py (new),
+scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt. NO tracked product
+source - `git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is EMPTY, so
+the post-merge freeze holds and the probe imports the code the service runs.
+
+THE QUESTION. D-c ruled "cap the decode, commit what came back, never abandon the
+span" and the ruling has two halves. Iteration 24 measured the first (8.129 s at the
+pre-D-c 2048 bound vs 1.074 s at the deployed 286) and recorded that it could not
+measure the second: its temperature=2.0 trigger produced output unparseable at ANY
+length, so the capped and the uncapped run both committed empty and there were no
+words either way. The risk that left open is specific and no gate sees it: a cap
+truncates mid-fragment, and if that breaks the parse the span commits EMPTY - which
+removes accepted audio's words from the transcript, i.e. exactly the loss D-c chose
+capping over abandonment to avoid.
+
+WHY IT IS MEASURABLE WITH NO MAC AND WITHOUT RE-RUNNING THE ENGINE. The live decode
+is greedy - VllmRunner._build_fields sends temperature 0.0 unless the caller asks for
+decoding="sample", and the live path never does - so the token sequence produced
+under a cap of N is the N-token PREFIX of the sequence produced under 2048. The cap
+decides when generation stops, not what it generates. So the transcript a capped
+decode would have returned is
+    detokenize(tokenize(<the recorded uncapped transcript>)[:cap])
+computed with the DEPLOYED decoder's own tokenizer.
+
+AND THE LICENCE IS VERIFIED, NOT ARGUED. Re-tokenising F1's two committed runaway
+transcripts on the host returns 2024 and 2019 tokens - EXACTLY the generated-token
+counts F1's own decode reported for those spans (context.md has had those two
+numbers on record since iteration 16) - and re-tokenising each truncation returns
+the same first 286 ids (round_trips true, both spans). A reconstruction that
+reproduces the engine's own counter to the token is the reconstruction.
+
+THE MEASUREMENT, on the deployed 77e0014, service venv python, product imported from
+the deployed checkout:
+
+  span   tokens  cap   full outcome              at-cap outcome           at-cap
+                                                                          segments
+  F1 #6   2024   286   committed_without_words   committed_without_words     18
+  F1 #34  2019   286   committed_without_words   committed_without_words     18
+  synth   1996   286   committed_with_words      committed_with_words        15
+                       (105 seg / 1817 word ch)  (226 word chars)
+
+  empty_reason is None and identity_status is "prepared" in EVERY at-cap row: not
+  H1's empty path, not a failure, not terminal.
+
+THE FINDING THAT CHANGES HOW F1 IS READ: F1'S TWO RUNAWAYS CONTAIN ZERO WORDS.
+Both parse to 127 segments of `[t][Sxx]...[t]` - the literal text "...", not one
+alphanumeric character anywhere. The two spans that set F1's entire 9053 ms committed
+p95 bought NO transcript content at all. So for the spans D-c was actually built for,
+"commits its words" was vacuous in both directions and nothing was ever at risk of
+being lost by capping them. This was in the evidence directory the whole time and no
+reducer had asked the question.
+
+THE GENERAL CLAIM, WHICH IS THE DURABLE HALF: NO CUT POINT IS TERMINAL. The token
+boundary is one cut out of thousands and the next runaway will not land on it, so
+every character prefix of all three transcripts was classified through the same path:
+  9062 cuts, 0 terminal, 0 unclassified.
+The only non-committing outcomes are the first 19 / 19 / 40 characters, before the
+first fragment closes, and those are committed_empty through H1's named
+`decoder_returned_unparseable_transcript` - the designed non-terminal answer.
+
+WHAT "THE REAL LIVE PATH" MEANS HERE, because reading the wrong seam would have
+answered a question about code the meeting never runs. The probe drives
+LiveCoordinator.prepare_work_item -> _empty_transcript_reason ->
+BoundedCausalIdentityPreparer.prepare -> submit_prepared_work -> LiveSession. It
+deliberately does NOT use LiveProvider.decode_canonical / _validated_segments: that
+is the BATCH provider's seam. The live coordinator calls transcribe_pcm directly and
+classifies the transcript itself, and the first version of this probe read the wrong
+one - it reported "no cut is unclassified" from a code path the live meeting does not
+execute, which would have been a true sentence about the wrong subject.
+
+LIMITS, stated so the numbers are not borrowed:
+ (a) The decoder is stubbed to return the truncated text; the engine is not re-run.
+     The greedy-prefix argument plus the exact 2024/2019 token agreement is what
+     licenses that, and nothing weaker would.
+ (b) `capped`/`token_cap` are set by the stub. Harmless: the coordinator only
+     forwards them to the canonical_processed event and never classifies on them.
+ (c) The wordy runaway is SYNTHETIC - built from the same run's own word-bearing
+     fragments in F1's measured loop shape. It shows words survive truncation; it
+     CANNOT show that no *distinct* content is lost, because a degenerate loop
+     repeats itself by definition. Only a real runaway on real speech settles that,
+     and only F1/F3 can produce one.
+ (d) The RATE of runaways and the end-to-end p95 on the Mac remain untouched by this
+     and remain F1's to decide.
+
+VALIDATION (smallest commands that produced real evidence):
+  the host run itself                      -> PROBE_RC=0, table above
+  python3 -m py_compile scripts/ralph-afk/decode-cap-truncation-probe.py  -> OK
+  offline smoke on F1's evidence directory -> rc=0 before any host contact
+  git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'  -> EMPTY, so the
+    coordinator, preparer and cap function the probe imports ARE the deployed ones
+Evidence: /tmp/i25-trunc-report.json (the report), /tmp/i25-trunc-raw.txt (the raw
+  host transcript incl. HEAD echo), /tmp/i25-f1-spans.json (the 42 F1 spans shipped),
+  /tmp/i25-host-baseline.txt, /tmp/i25-host-after.txt.
+
+NO ROLLBACK WAS NEEDED, as pre-recorded and committed in 578a4b1 BEFORE the host was
+touched. After-state compared line by line against the baseline taken first, and
+identical on every line: HEAD 77e0014; moss-live-web 350731, moss-web 301112,
+moss-vllm 322117, all NRestarts=0; live-runs 0 entries; no /tmp/mtd-live-*; no
+/tmp/mtd-dc-trunc.* left (the mktemp dir is removed by its own trap); server
+`git status --porcelain` empty; device store 10 devices / 1 unrevoked (m4mbp's);
+0 journal tracebacks; batch http://192.168.68.38:7860/ still 200. The probe makes no
+TLS call, no pairing, no session, no frame and no heartbeat - it touches only
+/tokenize and /detokenize, which do no GPU work.
+
+Learned.
+(1) A SEAM THAT LOOKS RIGHT AND IS NEVER EXECUTED ANSWERS THE WRONG QUESTION QUIETLY.
+    `_validated_segments` sits directly under a function called `decode_canonical` and
+    raises exactly the error this probe was hunting - but the live coordinator does
+    not call it. Before measuring at a seam, follow the caller chain from the code the
+    RUN executes, not from the name that matches the question.
+(2) MEASURE THE QUANTITY THE RULING NAMES, NOT ITS NEAREST CHEAP PROXY. The first
+    version scored "committed with words" as `published.strip()` non-empty, which
+    reported F1's `[t][Sxx]...[t]` loops as spans full of content. Counting only
+    alphanumeric characters flipped both runaways to `committed_without_words` and
+    turned a bland pass into the iteration's most useful fact.
+(3) A BLOCKED QUESTION IS USUALLY SEVERAL QUESTIONS. This is iteration 24's lesson (4)
+    applied to what iteration 24 itself left open: it split candidate 50 into cost and
+    rate and reached the cost; the same split applied to "commits its words" reaches
+    everything except the distinct-content loss. Five iterations of a dead host have
+    produced three real measurements this way.
+(4) EVIDENCE ALREADY ON DISK CAN CARRY AN UNASKED FACT FOR SEVENTEEN ITERATIONS.
+    "F1's runaways contain no words" needed no host, no engine and no new run - only a
+    reducer that asked. Before building an instrument, check whether the recorded
+    evidence already answers the question.
+
+Blocker: unchanged and physical - m4mbp asleep or off the tailnet for the fifth
+consecutive iteration (ssh timeout, 100% ICMP loss; MacStudio 192.168.68.36 and m4mbp
+192.168.1.240 are on different LANs with no ARP entry, so the tailnet is the only
+route and Wake-on-LAN is unreachable). F1 and F3 - gate step (d), and therefore the
+60 s canary, 300 s certification and 16-minute soak clauses - still cannot run.
+
+Next: the moment `ssh ga0@m4mbp` answers, F1 (pkill MOSSCaptureApp, relaunch fresh,
+re-pair, live-canary.sh NOHUP'd, reduce with live-canary-analyze.py AND
+live-canary-clauses.py), then F3 with live-soak.sh --user-visible-gate-ms 6000. When
+F1 lands, run decode-cap-truncation-probe.py over ITS evidence directory too: with
+candidate 50's cost and truncation behaviour both now measured, the only remaining
+question the cap owns is whether a real capped span loses distinct content, and F1's
+own committed spans are the only input that can answer it. If m4mbp is still gone,
+the honest remaining non-host work is candidate 52's retirement pass - context.md is
+now ~229 KB and every iteration pays four Reads for it - accepting that the record
+still defers the F1/F3-block retirement until those runs pass.
