@@ -662,3 +662,5 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   cannot satisfy.
 
 [loop 20260728-002458-97091] stalled after 3 consecutive iterations without progress (last agent exit: 1)
+
+[loop 20260728-023004-98501] start budget=30 agent=claude branch=ralph/live-meeting-mvp
