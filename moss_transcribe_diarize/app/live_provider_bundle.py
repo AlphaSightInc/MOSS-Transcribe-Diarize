@@ -26,7 +26,13 @@ from .live_service_runtime import (
     LiveServiceRuntime,
     hash_config,
 )
-from .live_session import AudioFrame, FrozenSpan, LIVE_SAMPLE_RATE, LiveIdentitySnapshot
+from .live_session import (
+    AudioFrame,
+    FrozenSpan,
+    LIVE_SAMPLE_RATE,
+    LiveIdentitySnapshot,
+    PCM16_BYTES_PER_SAMPLE,
+)
 from .speaker_identity import TierBAssetSpec, WeSpeakerResNet152LmAdapter
 
 
@@ -384,7 +390,23 @@ class SileroOnnxSpeechProvider:
 
 
 class WebRtcSpeechProvider:
-    """WebRTC speech observation adapter with injected binary VAD."""
+    """WebRTC speech observation adapter with injected binary VAD.
+
+    WebRTC's VAD accepts exactly one frame of 10, 20 or 30 ms per call and raises for any
+    other length. The accepted-sample stream it observes is not obliged to arrive in whole
+    VAD frames: the mixer emits ``floor((safe_end_ns - cursor_ns) * rate / 1e9)`` samples,
+    which is an arbitrary integer as soon as the two capture lanes are not aligned on the
+    frame grid -- i.e. on essentially every real capture. This adapter therefore tiles the
+    *stream*, not each accepted range: the VAD is called only with exactly ``frame_samples``
+    of real contiguous audio, and a tail that does not complete a frame is carried into the
+    next call. The coordinator still requires gap-free coverage of the accepted range now,
+    so a carried tail is reported with the last decided frame's answer (silence before any
+    frame has been decided) and no confidence, and the samples themselves are decided for
+    real once the frame completes.
+    """
+
+    #: Frame lengths webrtcvad accepts, in milliseconds.
+    VAD_FRAME_MILLISECONDS = (10, 20, 30)
 
     def __init__(
         self,
@@ -398,12 +420,20 @@ class WebRtcSpeechProvider:
             raise LiveProviderBundleAdmissionError("webrtc frame_samples must be positive.")
         if sample_rate != LIVE_SAMPLE_RATE:
             raise LiveProviderBundleAdmissionError("webrtc sample_rate must be 16000.")
+        accepted = tuple(sample_rate * ms // 1000 for ms in self.VAD_FRAME_MILLISECONDS)
+        if frame_samples not in accepted:
+            raise LiveProviderBundleAdmissionError(
+                "webrtc frame_samples must be one of "
+                f"{list(accepted)} samples ({list(self.VAD_FRAME_MILLISECONDS)} ms at {sample_rate} Hz)."
+            )
         if not (callable(vad) or callable(getattr(vad, "is_speech", None))):
             raise LiveProviderBundleAdmissionError("webrtc vad must be callable or expose is_speech().")
         self._vad = vad
         self.frame_samples = int(frame_samples)
         self.sample_rate = int(sample_rate)
         self.provider_reason = provider_reason
+        self._carried_pcm = bytearray()
+        self._carried_voiced = False
 
     def observe(
         self,
@@ -414,26 +444,69 @@ class WebRtcSpeechProvider:
     ) -> tuple[SpeechObservation, ...]:
         if frame.sample_rate != self.sample_rate:
             raise LiveProviderBundleAdmissionError("webrtc frame sample_rate mismatch.")
+        if end_sample <= start_sample:
+            raise LiveProviderBundleAdmissionError("webrtc accepted range must advance.")
+        frame_bytes = self.frame_samples * PCM16_BYTES_PER_SAMPLE
+        total_bytes = (end_sample - start_sample) * PCM16_BYTES_PER_SAMPLE
+        if len(frame.pcm) < total_bytes:
+            raise LiveProviderBundleAdmissionError("webrtc frame pcm is shorter than the accepted range.")
+
         observations: list[SpeechObservation] = []
         cursor = start_sample
         byte_cursor = 0
-        while cursor < end_sample:
-            piece_samples = min(self.frame_samples, end_sample - cursor)
-            byte_end = byte_cursor + piece_samples * 2
-            piece = frame.pcm[byte_cursor:byte_end]
-            voiced = bool(_call_webrtc_vad(self._vad, piece, self.sample_rate))
-            observations.append(
-                SpeechObservation(
-                    start_sample=cursor,
-                    end_sample=cursor + piece_samples,
-                    speech_present=voiced,
-                    confidence=1.0 if voiced else 0.0,
-                    provider_reason=self.provider_reason,
-                )
-            )
-            cursor += piece_samples
+
+        if self._carried_pcm:
+            taken = min(frame_bytes - len(self._carried_pcm), total_bytes)
+            self._carried_pcm += frame.pcm[:taken]
+            byte_cursor = taken
+            if len(self._carried_pcm) == frame_bytes:
+                decided = self._decide(bytes(self._carried_pcm))
+                self._carried_pcm.clear()
+            else:
+                decided = None
+            cursor = self._append(observations, cursor, taken // PCM16_BYTES_PER_SAMPLE, decided)
+
+        while total_bytes - byte_cursor >= frame_bytes:
+            byte_end = byte_cursor + frame_bytes
+            decided = self._decide(frame.pcm[byte_cursor:byte_end])
+            cursor = self._append(observations, cursor, self.frame_samples, decided)
             byte_cursor = byte_end
+
+        if byte_cursor < total_bytes:
+            self._carried_pcm += frame.pcm[byte_cursor:total_bytes]
+            cursor = self._append(
+                observations,
+                cursor,
+                (total_bytes - byte_cursor) // PCM16_BYTES_PER_SAMPLE,
+                None,
+            )
         return tuple(observations)
+
+    def _decide(self, piece: bytes) -> bool:
+        voiced = bool(_call_webrtc_vad(self._vad, piece, self.sample_rate))
+        self._carried_voiced = voiced
+        return voiced
+
+    def _append(
+        self,
+        observations: list[SpeechObservation],
+        cursor: int,
+        piece_samples: int,
+        decided: bool | None,
+    ) -> int:
+        voiced = self._carried_voiced if decided is None else decided
+        observations.append(
+            SpeechObservation(
+                start_sample=cursor,
+                end_sample=cursor + piece_samples,
+                speech_present=voiced,
+                confidence=None if decided is None else (1.0 if voiced else 0.0),
+                provider_reason=(
+                    f"{self.provider_reason}_carried" if decided is None else self.provider_reason
+                ),
+            )
+        )
+        return cursor + piece_samples
 
 
 class WeSpeakerLiveEvidenceProvider:

@@ -3641,3 +3641,92 @@ each one alone is enough to end a real meeting in the first few seconds.
   E3 pairs first, exactly as its runbook already says.
 
 [loop 20260728-112922-76267] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+================================================================================
+## Iteration 1 (run 20260728-112922) - H3: webrtcvad never gets an illegal frame
+================================================================================
+Target: candidate **H3**, the first blocker the deployed build hits (~1.1 s, on essentially
+every real capture). Chosen because context.md fixes the order H3 -> H1 -> H2 and because
+the amendment's own gate - a `live-pipeline-probe.py` run that survives its full plan -
+is unreachable while H3 stands.
+
+Scope justification, recorded because prd.md's second amendment names only blockers 1 and 2:
+blocker 3 was produced by that amendment's *own* Blocker-2 instruction ("rule the identical
+per-lane capture_timestamp_ns in or out by re-running the probe with a per-lane offset");
+it is the same classification seam the amendment opens the cycle over (a bare third-party
+exception -> kind=integrity, retryable=false); and it fires before blockers 1 and 2 are
+approached, so the amendment's gate cannot pass without it. Nothing outside it was touched.
+
+Files touched (2 tracked, both inside `moss_transcribe_diarize/` + `tests/`, which the second
+amendment authorizes):
+  moss_transcribe_diarize/app/live_provider_bundle.py   (WebRtcSpeechProvider)
+  tests/test_live_pipeline_seams.py                     (new, 5 nodes)
+  scripts/ralph-afk/context.md, progress.txt
+`git diff --stat main HEAD` for tracked source is exactly those two files.
+
+### The change, in one sentence
+`WebRtcSpeechProvider` tiles the **accepted-sample stream** instead of each accepted range, so
+webrtcvad is called only with exactly `frame_samples` of real contiguous audio - never with the
+short trailing piece `min(frame_samples, end - cursor)` used to build whenever the mixed frame
+was not a multiple of the VAD frame.
+- A tail that cannot fill a VAD frame is **carried** into the next `observe`: not zero-padded
+  (that fabricates input to a detector) and not dropped (that leaves audio unexamined).
+- The coordinator still requires gap-free coverage *now* (`_observe_endpoint` refuses anything
+  else), so the carried tail is reported with the last decided frame's answer,
+  `confidence=None` and `provider_reason=webrtc_observation_carried` - it says it is not a
+  decision rather than pretending to be one. Silence is the answer before anything is decided.
+- Carry state (PCM + one bit) is per provider instance, and `speech_provider_factory()` is
+  called once per session at `live_service_runtime.py:442`, so it cannot leak across sessions.
+- `frame_samples` outside {160, 320, 480} (10/20/30 ms at 16 kHz) is now refused at
+  construction, so a manifest that would raise on *every* frame is refused at admission rather
+  than at the first frame of a meeting. The deployed manifest's 160 is unaffected.
+Deliberately NOT fixed here: the classification seam that turns a bare third-party exception
+into `kind=integrity, retryable=false`. It is shared with H1 (bare `RuntimeError` from
+`vllm_runner.py:245`), and fixing it once, there, is better than twice. Recorded in the H1
+candidate so it cannot be lost.
+
+### Validation
+- `pytest tests/test_live_pipeline_seams.py -q` -> **5 passed** (3.4 s).
+- **Red proven without touching git history**: `cp` the file aside, `git show HEAD:<file> >`
+  it, re-run, `cp` back, and verify the restore by sha256 (`restored_identical=true`).
+  Pre-fix: **4 failed / 1 passed**, failing with the shipped signature -
+  `webrtcvad accepts only [160, 320, 480] samples, got 48` (48 is the host's own remainder:
+  5808 = 36*160 + 48), plus `got 40` and `got 1`. The one node that passes both before and
+  after is the aligned 8000-sample control, which is what makes it a control rather than a
+  second copy of the red case.
+- Offline repro, deployed config: `--speech-provider webrtc --frame-samples 5808 --frames 3`
+  went **rc=3 (reproduced) -> rc=0 (survived 17424 accepted samples)**; the 8000-sample control
+  still rc=0. Blocker 2 unchanged in the same sweep - `--frames 8` and `--frames 8
+  --speech-pattern 0` still rc=3 at accepted_samples=40000, `--frames 24 --speech-pattern 1100`
+  still rc=0 - so H3 did not mask H2.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider` -> **542 passed / 2 skipped /
+  368 subtests** in 60.3 s (was 537/2/368; +5 is exactly the new file). No node changed status.
+- Swift untouched this iteration; the full Swift gate belongs to H4.
+- Nothing was run against the server, the Mac, or any remote host. No service, checkout,
+  manifest, certificate, pairing or TCC state was touched, so this iteration has no rollback
+  to record beyond `git revert`.
+
+### Learned
+1. **The coverage contract decided the fix.** The obvious repair - buffer the remainder and emit
+   it next time - is impossible: `live_coordinator._observe_endpoint` requires observations to
+   start at the accepted range's start, be gap-free, and end exactly at its end. So the freedom
+   is not *when* to answer but *what each observation covers and what produced its answer*. That
+   constraint is what makes "carry the audio, report the last decision, label it as carried" the
+   only shape that neither fabricates nor drops.
+2. **A control node must pass before the fix too.** The aligned 8000-sample node is the evidence
+   that the shipped path is byte-identical (8000 = 50*160, carry always empty); a node that only
+   passes after the fix could not have shown that.
+3. **The suite's blind spot had a second layer.** Iteration 10 recorded that every harness gives
+   the session no hard cap; this iteration adds that every harness also feeds the provider a
+   sample count that happens to be a whole number of VAD frames. Both are *shapes of the fixture*,
+   not missing assertions - which is why review never found either.
+4. `tests/test_live_pipeline_seams.py` now exists as the home the amendment's third bullet asked
+   for: both sides of a seam are the product class, and only the genuinely off-host part is a
+   stand-in. H1's `vllm_runner` node and H2's shared-hard-cap node belong in it.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - H1 and H2
+  are open and the deployed service is still the unfixed `317df4d`.
+- Next: **H1**. Decide and record the policy (drop the span, or commit it empty) before the
+  patch, put the real `vllm_runner` validation seam under the live coordinator with an empty
+  transcript in `tests/test_live_pipeline_seams.py`, and fix the shared classification seam
+  there so no bare provider exception can make a session terminal.
