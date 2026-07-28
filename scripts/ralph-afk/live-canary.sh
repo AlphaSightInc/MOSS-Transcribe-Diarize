@@ -87,7 +87,14 @@ fi
 # ---------------------------------------------------------------- main
 LABEL="${1:?usage: live-canary.sh <label>}"
 mkdir -p "$OUT"
-: > "$OUT/phases.tsv"
+# Truncate every file the pollers APPEND to, not just the ones this script writes. A canary is
+# retried - iteration 21's attempt died in setup - and a second run into the same $OUT would
+# silently concatenate two meetings, so the reducer's "version is monotone" and "first non-200"
+# clauses would read across the seam and answer about no run that happened.
+for f in snapshot.tsv events.tsv status.tsv phases.tsv; do
+  [ -s "$OUT/$f" ] && echo "note: truncating $OUT/$f ($(wc -l < "$OUT/$f" | tr -d ' ') lines) from an earlier run"
+  : > "$OUT/$f"
+done
 
 # Phase bookkeeping: every stretch of the meeting names the lane it is supposed to reach.
 phase_begin() { PH_NAME="$1"; PH_LANE="$2"; PH_MARKER="${3:-}"; PH_T0=$(now); }

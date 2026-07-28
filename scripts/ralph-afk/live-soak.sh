@@ -126,8 +126,18 @@ fi
 # ---------------------------------------------------------------- main
 LABEL="${1:?usage: live-soak.sh <label>}"
 mkdir -p "$OUT"
-: > "$OUT/phases.tsv"
-: > "$OUT/view-checks.tsv"
+# Every file the pollers APPEND to is truncated here, not just the ones the main script writes.
+# A soak is retried - iteration 21's attempt died in setup - and a second run into the same $OUT
+# would silently concatenate two meetings: the reducer's "version is monotone" and "first non-200"
+# clauses would both read across the seam and answer about no run that happened. Say so out loud
+# when there was something to truncate, because an orphaned poller from the previous attempt would
+# keep appending regardless and that is visible only if the operator knows to look.
+for f in snapshot.tsv events.tsv status.tsv phases.tsv view-checks.tsv; do
+  [ -s "$OUT/$f" ] && echo "note: truncating $OUT/$f ($(wc -l < "$OUT/$f" | tr -d ' ') lines) from an earlier run"
+  : > "$OUT/$f"
+done
+rm -f "$OUT"/snap-full-*.json
+SNAPSHOT_TSV="$OUT/snapshot.tsv"
 
 phase_begin() { PH_NAME="$1"; PH_LANE="$2"; PH_MARKER="${3:-}"; PH_T0=$(now); }
 phase_end() {
@@ -251,6 +261,57 @@ sleep 2
 # muted), except on the ROOM_WINDOW_MINUTES where this host stays silent so the microphone lane
 # is the only thing carrying audio. Every minute is written to phases.tsv with the lane it is
 # supposed to reach, so the reducer can ask "did this lane's marker land, and only in its phase".
+# >>> soak-abort-decision (extracted and exercised by scripts/ralph-afk/soak-abort-probe.py;
+# keep it self-contained - it may read only its two arguments and $SNAPSHOT_TSV)
+#
+# WHAT MAY END A 17-MINUTE SOAK EARLY, ruled deliberately rather than pattern-matched.
+#
+#   THE PREVIOUS VERSION OF THIS BLOCK ABORTED EVERY RUN AT MINUTE 1, and it never ran once to
+#   find out. It asked `case "$snaplast" in *terminal*|*failed*)`, but the snapshot body carries
+#   the literal KEY `terminal_failure` on every healthy poll (and `failed_samples` on every
+#   lane), so the glob matched unconditionally. Measured on F1's 56 real recorded bodies:
+#   56/56 abort, including the 54 that are a perfectly healthy meeting. A substring test over a
+#   JSON document tests the schema, not the state.
+#
+#   THE RULING. Abort only on a session that GENUINELY CANNOT CONTINUE - the same rule the third
+#   and fifth amendments settled for the product itself:
+#     * the client says `running: false`                       -> the capture is gone;
+#     * `snapshot.terminal_failure` is non-null                -> the server ended the meeting;
+#     * `v2_session.status` is anything but `active`           -> likewise, with its reason;
+#     * three consecutive snapshot polls refused               -> F3's own death shape (the view
+#       routes 401 once the session is released), and the body then carries no state to read.
+#   A LANE FAULT IS RECORDED AND NEVER ABORTS. Phase M's governing rule is that a fault on one
+#   lane must not end the meeting, so a soak that stopped there would destroy the one piece of
+#   evidence 53/48/49/D-a exist to produce. The lane timeline goes to the reducer, which decides
+#   it (`live-canary-clauses.py` section 8); this driver only has to keep the run alive.
+lane_states() {
+  printf '%s' "${1:-}" | jq -r '[.v2_session.lanes[]? | "\(.lane):\(.health)\(if (.failure_code // null) != null then "/" + .failure_code else "" end)"] | join(" ")' 2>/dev/null
+}
+abort_reason() {
+  local last="${1:-}" snaplast="${2:-}" running verdict codes seen ok
+  # NOT `.running // empty`: jq's alternative operator treats `false` itself as an absent value,
+  # so that form silently swallows the exact case this line exists to catch. The probe found it.
+  running=$(printf '%s' "$last" | jq -r 'try (if .running == false then "false" else empty end) catch empty' 2>/dev/null)
+  if [ "$running" = "false" ]; then printf 'client reports running=false\n'; return 0; fi
+  verdict=$(printf '%s' "$snaplast" | jq -r '
+      if (.snapshot.terminal_failure // null) != null
+        then "session terminal_failure: " + ((.snapshot.terminal_failure | tostring)[0:140])
+      elif ((.v2_session.status // "active") != "active")
+        then "v2 session status=" + (.v2_session.status | tostring)
+             + (if (.v2_session.terminal_reason // null) != null
+                  then " reason=" + (.v2_session.terminal_reason | tostring) else "" end)
+      else empty end' 2>/dev/null)
+  if [ -n "$verdict" ]; then printf '%s\n' "$verdict"; return 0; fi
+  codes=$(tail -3 "${SNAPSHOT_TSV:-/dev/null}" 2>/dev/null | cut -f2)
+  seen=$(printf '%s\n' "$codes" | grep -c '^[0-9][0-9][0-9]$')
+  ok=$(printf '%s\n' "$codes" | grep -c '^200$')
+  if [ "$seen" -ge 3 ] && [ "$ok" -eq 0 ]; then
+    printf 'snapshot poll refused %s times in a row: %s\n' "$seen" "$(printf '%s' "$codes" | tr '\n' ' ')"
+  fi
+  return 0
+}
+# <<< soak-abort-decision
+
 echo "== step 9: the soak - one utterance per ${UTTERANCE_INTERVAL}s for ${SOAK_SECONDS}s"
 LINES=(
   "$VOICE_A|Minute one. Opening the long running transcription soak for today."
@@ -309,12 +370,8 @@ while :; do
   snaplast=$(tail -1 "$OUT/snapshot.tsv" 2>/dev/null | cut -f3-)
   echo "minute=$minute at=+${el}s status=$(printf '%s' "$last" | cut -c1-200)"
   echo "                 snapshot=$(printf '%s' "$snaplast" | cut -c1-200)"
-  case "$last" in
-    *'"running" : false'*|*'"running":false'*) ABORT="client reports running=false" ;;
-  esac
-  case "$snaplast" in
-    *terminal*|*failed*) ABORT="${ABORT:-}session snapshot reports terminal/failed" ;;
-  esac
+  echo "                 lanes=$(lane_states "$snaplast")"
+  ABORT=$(abort_reason "$last" "$snaplast")
   if [ -n "$ABORT" ]; then echo "ABORT at +${el}s: $ABORT"; break; fi
   i=$((i+1))
   target=$(( i * UTTERANCE_INTERVAL ))

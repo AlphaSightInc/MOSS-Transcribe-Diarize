@@ -13299,3 +13299,157 @@ own committed spans are the only input that can answer it. If m4mbp is still gon
 the honest remaining non-host work is candidate 52's retirement pass - context.md is
 now ~229 KB and every iteration pays four Reads for it - accepting that the record
 still defers the F1/F3-block retirement until those runs pass.
+
+================================================================================
+ITERATION 26 (run 20260728-181020) - the F3 driver would have aborted at minute 1,
+and m4mbp came back
+================================================================================
+
+TARGET. Gate step (d) of the fifth amendment is the whole remaining bar, and its
+soak half runs `scripts/ralph-afk/live-soak.sh` - written in iteration 22 and, because
+m4mbp has been off the tailnet for five consecutive iterations, NEVER EXECUTED ONCE.
+Iteration 25's recommended next step was context.md's retirement pass; this went after
+the driver instead, because a 17-minute certification run whose driver has never
+started is the more expensive thing to get wrong, and there are four iterations left.
+
+FILES TOUCHED
+  scripts/ralph-afk/live-soak.sh          (abort decision replaced; evidence truncated)
+  scripts/ralph-afk/live-canary.sh        (evidence truncated)
+  scripts/ralph-afk/soak-abort-probe.py   (new)
+  scripts/ralph-afk/context.md            (the block above the candidate-49 block)
+
+THE DEFECT, AND IT IS FATAL TO THE RUN IT GUARDS. The per-minute loop asked
+
+    case "$snaplast" in
+      *terminal*|*failed*) ABORT="...session snapshot reports terminal/failed" ;;
+    esac
+
+but every HEALTHY snapshot body carries the literal KEY `terminal_failure`, and every
+lane carries `failed_samples`. The glob therefore matched unconditionally, so the
+16-minute soak would have printed "ABORT at +60s: session snapshot reports
+terminal/failed" and stopped at minute 1 - reporting a dead meeting that was in perfect
+health. A SUBSTRING TEST OVER A JSON DOCUMENT TESTS THE SCHEMA, NOT THE STATE.
+`bash -n` passes on it. Nothing else in the loop would have caught it before the run.
+
+THE INSTRUMENT. `soak-abort-probe.py` does not restate the driver's logic - it EXTRACTS
+the shipped bytes between `# >>> soak-abort-decision` / `# <<< soak-abort-decision`
+and the shipped `SNAP_PRUNE` jq filter, writes them into a bash harness, and runs them
+against every body a real run recorded. It refuses (exit 2) if the markers or the filter
+are missing, so a refactor cannot make it vacuously green. It auto-detects whether the
+region is a function (`abort_reason`) or the legacy statement block that sets `$ABORT`,
+which is what let the same instrument measure both sides.
+
+THE CORPUS IS F1's OWN EVIDENCE DIRECTORY, and it already contained both sides of the
+ruling - no synthesis needed for the interesting cases:
+  54 polls  healthy            (terminal_failure null, v2 active, both lanes active)
+   2 polls  lane-fault         (lanes failed,active - F1's real system-lane overrun,
+                                session still active, terminal_failure still null)
+  28 status status-running
+   1 status status-lane-fault  (line 29: running:true, system failed/macos_buffer_overrun)
+   1 status status-stopped     (line 30: F1's real POST-STOP status, running:false)
+   4 controls synthesised by mutating a real body (terminal_failure set; v2 status
+     terminal; three 401 rows in the snapshot.tsv tail - F3's own death shape)
+
+RED / GREEN, both measured with the SAME instrument (the red run is HEAD's file plus
+the two marker COMMENTS, nothing else - `git diff` on that step was 2 insertions, both
+comment lines):
+
+  class               n   RED aborted/wrong   GREEN aborted/wrong
+  healthy            54       54 / 54              0 / 0
+  lane-fault          2        2 /  2              0 / 0
+  status-running     28       28 / 28              0 / 0
+  status-lane-fault   1        1 /  1              0 / 0
+  status-stopped      1        1 /  0              1 / 0
+  control-dead        4        4 /  0 (vacuous)    4 / 0
+  ---------------------------------------------------------------
+  VERDICT           90     FAIL 85 wrong        PASS 90/90, rc=0
+
+The four control-dead rows "passed" in the RED run only because the same unconditional
+glob fires on everything; their red reason string is the healthy one. The RED status-
+stopped row also exposes the block's second bug, `ABORT="${ABORT:-}session..."`, which
+concatenates: "client reports running=falsesession snapshot reports terminal/failed".
+
+THE RULING, recorded because it is a decision and not a repair. Abort a soak only on a
+session that GENUINELY CANNOT CONTINUE - the same rule the third and fifth amendments
+settled for the product:
+  * client `running: false`                     -> the capture is gone
+  * `snapshot.terminal_failure` non-null        -> the server ended the meeting
+  * `v2_session.status` != "active"             -> likewise, with its reason
+  * three consecutive refused snapshot polls    -> F3's own death shape; once the
+    session is released the view routes 401 and the body carries no state to read
+A LANE FAULT IS RECORDED AND NEVER ABORTS. Phase M's governing rule is that a fault on
+one lane must not end the meeting, so a driver that stopped there would destroy the one
+piece of evidence 53/48/49/D-a exist to produce. The lane timeline goes to
+live-canary-clauses.py section 8, which already decides it.
+
+THE PROBE FOUND A DEFECT IN ITS OWN FIX, which is the strongest argument for keeping it.
+The first repair read the client state as `jq -r '.running // empty'`. JQ'S ALTERNATIVE
+OPERATOR TREATS `false` ITSELF AS AN ABSENT VALUE, so that form silently swallows
+exactly the case the line exists to catch: `ctl-client-running-false` came back
+"continue" and the run was 89/90, not 90/90. Now
+`try (if .running == false then "false" else empty end) catch empty`.
+
+SECOND FIX, SAME CLASS, BOTH DRIVERS. `snapshot.tsv`, `events.tsv` and `status.tsv` are
+written by the nohup'd pollers with `>>` and were never truncated at the start of a run.
+A soak or canary is RETRIED - iteration 21's attempt died in setup - and a second run
+into the same $OUT would silently concatenate two meetings, so the reducer's "version is
+monotone" and "first non-200" clauses would read across the seam and answer about no run
+that happened. Both drivers now truncate every appended file (and the soak removes stale
+snap-full-*.json), and say out loud how many lines they truncated - because an orphaned
+poller from the previous attempt keeps appending regardless and that is visible only to
+an operator who knows to look.
+
+VALIDATION (smallest commands that produced real evidence):
+  python3 scripts/ralph-afk/soak-abort-probe.py --script /tmp/i26-soak-HEAD-marked.sh
+      -> FAIL, 85/90 wrong, 54/54 healthy polls abort   (/tmp/i26-abort-red.json)
+  python3 scripts/ralph-afk/soak-abort-probe.py
+      -> PASS, 90/90, rc=0                              (/tmp/i26-abort-green.json)
+  bash -n scripts/ralph-afk/live-soak.sh                -> OK
+  bash -n scripts/ralph-afk/live-canary.sh              -> OK
+Evidence: /tmp/i26-abort-red.json, /tmp/i26-abort-red.txt, /tmp/i26-abort-green.json,
+  /tmp/i26-abort-green.txt, /tmp/i26-soak-HEAD-marked.sh.
+
+Learned.
+(1) AN INSTRUMENT THAT HAS NEVER RUN IS NOT EVIDENCE THAT IT WORKS, and `bash -n`
+    measures nothing about a decision. The soak driver was carefully written, reviewed
+    in its own iteration, and would have destroyed the run it exists to produce.
+(2) A SUBSTRING TEST OVER A STRUCTURED DOCUMENT TESTS THE SCHEMA, NOT THE STATE. Every
+    field name the state might use is present on every healthy poll.
+(3) THE RECORDED EVIDENCE OF AN EARLIER RUN IS THE BEST CORPUS FOR THE NEXT RUN'S
+    INSTRUMENT. F1's directory supplied a real healthy meeting, a real lane fault on
+    both the server and the client side, and a real post-stop status line - four of the
+    six classes this probe needed, with no synthesis and no host.
+(4) A FIX DESERVES THE SAME INSTRUMENT AS THE DEFECT. The jq `//` trap was invisible to
+    reading and obvious to the probe, one minute after the probe existed.
+
+---- m4mbp IS BACK, and this is the pre-recorded rollback for the F1 attempt ----------
+
+A background poller opened at the start of this iteration answered ALIVE at attempt 14,
+2026-07-28 23:51:39Z, after five iterations of 100% ICMP loss. State on arrival, taken
+read-only before anything was touched:
+  HEAD 77e0014ac2a1eee1edb29b109024807e9489daa5 (unchanged, 4/4 still holds)
+  MOSSCaptureApp pid 51512 - iteration 21's launch, still running, never started a
+    capture: status running:false, both lanes "stopped", publishedFrameCount 0
+  output muted = false, pasteboard 0 bytes
+  both TCC grants auth_value=2 (kTCCServiceAudioCapture, kTCCServiceMicrophone)
+  uptime 3 days 21:24, load average 31.83 - the host is catching up after waking
+
+ROLLBACK FOR THE F1 RUN, RECORDED BEFORE IT IS APPLIED, per prd.md's reversibility
+constraint. The mutations an F1 canary makes and how each is undone:
+  app relaunch      -> `pkill -x MOSSCaptureApp` (the app is LSUIElement, holds no
+                       document state; the pre-run state was "running, idle")
+  pairing           -> the device row is REUSED, not created (K5d), so nothing to
+                       revoke; if a new row ever appears:
+                       `curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<id>`
+                       on the server loopback
+  live session      -> `mtd-capture stop`; the driver stops in step 12 and the server
+                       releases on the 30 s lease regardless
+  output mute       -> the driver's EXIT/INT/TERM trap restores what it found; manually
+                       `osascript -e 'set volume without output muted'` (pre-run: NOT
+                       muted)
+  pasteboard        -> the driver clears it; manually `pbcopy < /dev/null`
+  /tmp scratch      -> `rm -rf /tmp/ralph-canary /tmp/live-canary.sh` on m4mbp
+  server            -> NOTHING is mutated server-side beyond one pairing code and one
+                       session; no checkout, no restart, no unit change
+Nothing on this list requires an operator, and none of it touches the deployed SHA.
+

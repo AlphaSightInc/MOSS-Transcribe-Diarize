@@ -949,6 +949,42 @@ device and no session, and touches only the `/tokenize` and `/detokenize` routes
 `--synthesize-wordy-runaway <chars>`, `--sweep-stride`. Evidence `/tmp/i25-trunc-report.json`,
 `/tmp/i25-trunc-raw.txt`, `/tmp/i25-host-baseline.txt`, `/tmp/i25-host-after.txt`.
 
+**The F3 driver would have aborted at minute 1 of a healthy 17-minute soak — and `bash -n` says it
+is fine (new, iteration 26). READ THIS BEFORE RUNNING `live-soak.sh`.** `scripts/ralph-afk/
+live-soak.sh` was written in iteration 22 and, because m4mbp was gone for five iterations, had
+**never been executed once**. Its per-minute early-abort check asked
+`case "$snaplast" in *terminal*|*failed*)` — but every healthy snapshot body carries the literal
+**key** `terminal_failure`, and every lane carries `failed_samples`, so **the glob matched
+unconditionally**. *A substring test over a JSON document tests the schema, not the state.*
+- **Measured, not reasoned:** `scripts/ralph-afk/soak-abort-probe.py` extracts the shipped bytes
+  between `# >>> soak-abort-decision` markers plus the shipped `SNAP_PRUNE` filter and runs them
+  under bash over **F1's own 56 recorded snapshot bodies and 30 recorded status lines**. Against
+  HEAD's logic: **85 of 90 cases wrong**, including **54 of 54 fully healthy polls aborting**. The
+  four dead-state controls "passed" *vacuously* — same unconditional glob. After the fix:
+  **90/90, rc=0**.
+- **The ruling, and it is Phase M's rule applied to the instrument.** Abort only on a session that
+  genuinely cannot continue: client `running:false`, `snapshot.terminal_failure` non-null,
+  `v2_session.status != "active"`, or three consecutive refused snapshot polls (F3's own death
+  shape — once the session is released the body carries no state to read). **A lane fault is
+  recorded and never aborts**: a soak that stopped there would destroy the one piece of evidence
+  53/48/49/D-a exist to produce. The reducer decides the lane clause (`live-canary-clauses.py`
+  section 8); the driver only has to keep the run alive.
+- ***The probe then found a defect in its own fix, which is why it is worth keeping.*** The first
+  repair used `jq -r '.running // empty'`. **jq's `//` treats `false` itself as an absent value**,
+  so that form silently swallows the exact case the line exists to catch —
+  `ctl-client-running-false` failed. Now `try (if .running == false then "false" else empty end)`.
+- **F1's directory supplied two REAL controls for free**, which beat the synthetic ones beside
+  them: status line 30 is the post-stop `running:false` (must abort) and line 29 is
+  `running:true` with `system` `failed`/`macos_buffer_overrun` (must not). The corpus already
+  contained both sides of the ruling.
+- **Both drivers now truncate what their pollers append to.** `snapshot.tsv`, `events.tsv` and
+  `status.tsv` were opened `>>` and never reset, so a retried run — iteration 21's attempt died in
+  setup — would concatenate two meetings and the reducer's "version is monotone" and "first
+  non-200" clauses would read across the seam and answer about no run that happened.
+*The general lesson:* **an instrument that has never run is not evidence that it works, and `bash
+-n` measures nothing about a decision.** Every other never-executed branch in these drivers is
+still unexercised; the marker-plus-probe shape is how to settle the next one.
+
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
 "`NativeLaneHealth` keeps `projection.failure`". **It does not** — `beginGeneration()`
