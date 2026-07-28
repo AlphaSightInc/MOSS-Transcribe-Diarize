@@ -2038,3 +2038,179 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   Recording, both under System Settings → Privacy & Security) must be recorded as a blocker rather
   than retried — TCC cannot be scripted. Watch M36 on this host: the system-tap prompt is triggered
   on the control thread and has never been observed on a machine that actually shows the prompt.
+
+## Iteration 23 (run 20260728-023004-98501, its iteration 15) - E3: record the human TCC blocker with a verified runbook, and establish read-only grant verification
+- Target: Phase E candidate E3, the human TCC step. The PRD's own constraint decides the shape of
+  this iteration: "TCC cannot be scripted... the loop must record the exact click sequence in
+  progress.txt as a blocker and move to another candidate - never retry, never attempt to write the
+  TCC database." Every other open candidate (F1-F3) is downstream of the grants, and F4's rollback
+  rehearsal is explicitly last, so the highest-leverage work available is to make the human step
+  succeed on the first attempt: derive its exact commands and click order from the reviewed source,
+  and find a way to VERIFY the result without writing anything.
+- Nothing was mutated. Every command this iteration was read-only: three SSH probes of m4mbp, three
+  HTTP probes of the two services, and local reads of the reviewed source at f9285d6. No process was
+  started, no app launched, no payload minted, no service restarted, no file written on either host.
+  The one remote artifact created (a mktemp dir holding a csreq blob) was removed in the same
+  command and its removal was asserted (`cleaned=yes`).
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. No tracked file changed - the merge
+  freeze allows only Ralph evidence on this branch.
+
+### THE BLOCKER: E3 requires physical GUI clicks on m4mbp
+Two system alerts must be answered by a human at the machine. They cannot be scripted, and the loop
+will not retry, launch the app, or touch the TCC database. Everything below is the operator's
+sequence, in order, with the commands verified against the reviewed source and the installed binary.
+
+**Preconditions, all re-asserted read-only this iteration:**
+- `/Applications/MOSSCapture.app` installed (`drwxr-xr-x ga0:staff`, Jul 28 01:12), CLI at
+  `/Users/ga0/.local/bin/mtd-capture` (0755), no leftover `*.backup-*` of either.
+- No `MOSSCaptureApp` process, no `/tmp/moss-capture-501/control.sock`, no
+  `~/Library/Application Support/MOSSCapture` - nothing has been launched or paired.
+- m4mbp checkout `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, `dirty_lines=0`.
+- `stat -f "%Su" /dev/console` -> `ga0`: a GUI session is logged in, so the prompts have somewhere
+  to appear. (Over SSH alone they would have nowhere.)
+- Services up: batch `http://192.168.68.38:7860/` **200**, live `https://100.64.0.8:7861/live`
+  **200**, `https://100.64.0.8:7861/api/live/descriptor` **200**.
+- TCC baseline: **zero** rows for `%moss%` in `kTCCServiceMicrophone` or `kTCCServiceAudioCapture` -
+  both lanes undetermined.
+
+**Step 1 - launch the app from the GUI session.** Finder -> `/Applications` -> double-click
+`MOSSCapture`; or in a GUI Terminal `open -a /Applications/MOSSCapture.app`.
+*Nothing will appear on screen and that is correct*: `Info.plist` sets `LSUIElement=true`, so there
+is no window, no Dock icon and no menu-bar item. Confirm with `pgrep -x MOSSCaptureApp` and
+`ls -l /tmp/moss-capture-$(id -u)/control.sock`.
+**Do not** run `/Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp` from a shell: TCC would
+attribute the grant to the terminal instead of the bundle, and a DR-keyed grant on the terminal does
+nothing for the app. **Do not** expect the CLI to launch it - see the finding below.
+
+**Step 2 - trigger the prompts with one `start`.** In a GUI Terminal:
+    /Users/ga0/.local/bin/mtd-capture start
+The command will appear to hang. That is expected, not a fault (see finding 4).
+
+**Alert 1 - System Audio Recording. This one appears FIRST.** It names *MOSSCapture* and shows the
+`NSAudioCaptureUsageDescription` string "MOSS captures system audio only after the user starts a
+local live session." -> click **Allow** (the other button is Don't Allow; exact macOS 26 wording of
+this particular alert is not something this iteration could observe, so match on the app name and the
+usage string, not on a button caption).
+**Alert 2 - Microphone.** It shows "MOSS captures microphone audio only after the user starts a
+local live session." -> click **Allow**.
+Answer Alert 1 before Alert 2 - the source cannot present them in the other order, and until Alert 1
+is answered nothing else on the control channel will respond.
+
+**If no alert appears, or a lane was previously denied:** System Settings -> Privacy & Security ->
+**Microphone** -> enable **MOSSCapture**; then System Settings -> Privacy & Security ->
+**System Audio Recording** -> enable **MOSSCapture**. macOS will offer to quit and reopen the app;
+after that, relaunch it (step 1) and re-run step 2.
+
+**Step 3 - the loop verifies, read-only.** The two commands are in context.md's Validation section.
+The clause is green when
+`select service,client,client_type,auth_value from access where client="com.alphasight.moss.capture"`
+prints exactly:
+    kTCCServiceAudioCapture|com.alphasight.moss.capture|0|2
+    kTCCServiceMicrophone|com.alphasight.moss.capture|0|2
+and the csreq decodes to
+`identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"`.
+The PRD additionally requires `mtd-capture status` to report both lanes active, which needs a paired
+session, i.e. step 4.
+
+**Step 4 - pair (D4), now decoupled from the clicks.** On the host, inside one 300 s window:
+    ops/live-pair.sh --url https://127.0.0.1:7861 --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
+then on m4mbp, in a GUI Terminal:
+    /Users/ga0/.local/bin/mtd-capture pair --server https://100.64.0.8:7861
+    <paste the payload>  then press Ctrl-D
+Payload on **stdin**, never on argv and never redirected to a file - that keeps it out of the shell
+history as well as out of `ps`. Then `mtd-capture start` again for the real session.
+
+### Findings that changed the runbook (all derived from the reviewed source at f9285d6)
+1. **The TCC grants do NOT have to happen inside D4's five-minute pairing window.**
+   `CaptureController.start` (`CaptureController.swift:230-246`) requires only
+   `loadControlSecret() != nil` - which the app writes for itself at launch - and calls
+   `source.start` at `:242`, *before* the first publish at `:250`. Pairing is needed only by that
+   publish. So an **unpaired** `start` still raises both prompts; the publish then fails
+   `missingCaptureBearer`, which `CaptureFrameRetryPolicy` classes as not retryable, so the
+   controller unwinds the source and throws - but the user's two decisions are already durable,
+   because TCC records the click, not the capture outcome. Both iteration 22's "Next" note and the
+   old E3 candidate asserted the opposite coupling. Splitting them removes the worst failure mode of
+   the human step: a mis-timed prompt answer can no longer burn a minted payload.
+   **Derived, not observed** - E3 itself is the confirmation; if the unpaired `start` behaves
+   differently, fall back to the coupled sequence (mint, pair, then start once).
+2. **Prompt order is fixed by the source, not by chance.** `NativeDualCaptureSource.start` admits
+   system audio first (`:191`), microphone second (`:192`). System audio has no request API -
+   `AudioHardwareCreateProcessTap` inside `SystemAudioTap.start` *is* the request, called inline on
+   the control thread - while the microphone is the asynchronous
+   `AVCaptureDevice.requestAccess(for: .audio)` that leaves the lane `pending`. So System Audio
+   Recording is always the first alert, and it is the only one that can block.
+3. **The CLI cannot launch the app on this host, and nothing says so anywhere.**
+   `NSWorkspaceLaunchServicesCaptureAppLauncher.launch()` (`CaptureCommandLine.swift:69`) reads
+   `MOSS_CAPTURE_APP_URL` and throws `launchServicesUnavailable` when it is unset. Nothing in the
+   product, in `install-app.sh` or in a shell profile sets it - the only occurrences in the tree are
+   two test fixtures and one `env.pop` in `tests/live_integration_replay.py`. That is exactly why
+   the installed CLI answered `{"ok":false}` `rc=70` in iteration 22: not "no helper running" as
+   recorded, but "no helper running **and** no way to start one". Had the operator been handed
+   `mtd-capture pair` as the first command, it would have failed with an opaque `{"ok":false}` and
+   burned the 300 s payload. The runbook therefore starts with an explicit GUI launch.
+4. **A hung `start` is the expected appearance of an unanswered prompt.**
+   `UnixDomainControlServer.serve()` is a serial accept loop (`CaptureSecurity.swift:897-902`) and
+   `UnixDomainControlClient` sets no `SO_RCVTIMEO` (no timeout symbol exists in that file). So while
+   the tap call waits on the alert, `start` blocks with no timeout and every other `mtd-capture`
+   command - `status` included - queues behind it. This is M36's consequence made concrete: a hung
+   `status` is not evidence the app died. Diagnose with `pgrep`/`sample`, never by killing the app.
+5. **The pairing payload is a stdin argument.** `CaptureCommandLine.swift:114-130`: `pair` takes
+   `--server` from argv and the payload from `input.readAll()`, with empty stdin -> `rc=65`. Pasting
+   it into an interactive `mtd-capture pair` and pressing Ctrl-D satisfies the PRD's secret-hygiene
+   clause for free - no argv, no file, no history entry.
+
+### The verification finding: TCC state is readable read-only, and the grant carries the DR
+- `~/Library/Application Support/com.apple.TCC/TCC.db` on m4mbp is `-rw-r--r-- ga0:staff`, 163840
+  bytes, and opens over plain SSH **without** Full Disk Access. Proven non-vacuously before any
+  conclusion was drawn from it: `select count(*) from access` -> **320**, and the service histogram
+  lists 20 services. (A zero-row answer and a failed open look identical; iteration 22's learning 4
+  is exactly this class of error, so the reader was proven first.)
+- The service names are read off that live table, not guessed: Microphone is
+  `kTCCServiceMicrophone` (21 rows) and **System Audio Recording is `kTCCServiceAudioCapture`**
+  (3 rows). `auth_value` 2 = allowed, 0 = denied, both present on this host
+  (`com.openai.chat|2` vs `com.google.antigravity|0`, `com.microsoft.rdc.macos|0`). `client_type`
+  0 = bundle identifier, 1 = absolute path.
+- **The csreq column stores the designated requirement.** Each row carries a `FADE0C00` code
+  requirement blob; `sqlite3 … writefile()` + `csreq -r <file> -t` decodes it. Decoded on the
+  `com.livetranscribe.app` precedent - a locally-signed app already holding **both** grants on this
+  same machine - it reads
+  `identifier "com.livetranscribe.app" and certificate leaf = H"51e289ba70a36bcdd063f1efa660d56aebd83da7"`,
+  80 bytes. That is byte-for-byte the *form* of the E1 DR. So after E3 the moss rows must decode to
+  `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"`,
+  and that decode is the **direct observation** - in TCC's own storage - that the grants key on the
+  DR rather than the cdhash. Until now iterations 21/22 could only argue that link from the DR's
+  stability across three byte-different builds; this makes it checkable.
+  It also means the precedent app proves the *whole scheme* works on this host: a self-signed
+  local identity can hold System Audio Recording here.
+- Consequence for the loop: the PRD's "Permissions granted" clause becomes a two-command read-only
+  check the loop can run itself the moment the operator reports back, with no TCC write, no
+  `tccutil`, and no reliance on the operator's description of what they clicked.
+- Validation of this iteration's own claims: the decode command was run for real (output above), the
+  reader was proven with a row count, the temp directory was removed and its absence asserted, and
+  the three service probes returned 200/200/200. `git status --porcelain` on m4mbp still 0 lines.
+- Learned:
+  1. **"Record the blocker" is not the same as "stop".** The PRD says record the click sequence and
+     move on. The useful work was not writing the sentence "a human must click Allow" - it was
+     reading the source hard enough to find that the click sequence is System-Audio-then-Microphone,
+     that the CLI cannot launch the app, and that the clicks are not actually bound to the 300 s
+     window. A blocker is worth as much as the runbook attached to it.
+  2. **A read-only path to the evidence often exists where a write path is forbidden.** The PRD bans
+     touching the TCC database; it does not ban reading it, and the user-domain file turned out to be
+     world-readable. That converts the one acceptance clause the loop cannot cause into one it can
+     still verify. Worth asking of every "unscriptable" gate.
+  3. **An empty query result is not evidence until the query is proven to work.** Same shape as
+     iteration 22's vacuous CDHash comparison and iteration 21's exit-code-through-a-pipe slip: the
+     `%moss%` baseline of zero rows means "undetermined" only because `count(*)` returned 320 first.
+  4. **A tool's error string can hide a missing precondition.** `{"ok":false}` `rc=70` was recorded
+     in iteration 22 as "no helper running", which is true but incomplete - the CLI also had no way
+     to start one, because `MOSS_CAPTURE_APP_URL` is unset everywhere. The generic error made the
+     two cases indistinguishable from the outside.
+- Blocker: **E3's two GUI clicks on m4mbp** - the exact sequence is above. Nothing else in the loop
+  is blocked on input the loop cannot obtain; F1-F4 are blocked only on E3's outcome, which is a
+  human action rather than missing information.
+- Next: after the operator confirms both grants, run the two read-only TCC verifications to close the
+  PRD's "Permissions granted" clause, then D4 (mint on the host, pair on m4mbp inside 300 s, confirm
+  `live/live-auth.json` appears 0600 on ext4 and no payload reached history/logs/argv/journal), then
+  F1's 60 s canary. If the operator is unavailable for a long stretch, the one candidate that needs
+  no human and no TCC is F4's rollback rehearsal - but it takes the live service down and must not be
+  started while a pairing or canary window is open, so prefer waiting.
