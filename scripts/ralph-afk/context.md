@@ -55,6 +55,7 @@ by the prd.md amendment of 2026-07-28: run `20260728-072601` iteration 1 landed 
 declaration plus its gates), iteration 2 landed G2 (the pairing-payload trim and the canonical
 wire form) and iteration 3 landed G3 (control-channel failure classification and logging), so the
 branch carries tracked product source again, strictly within the amendment's four items.
+Iteration 4 re-ran the full client gate green and changed no tracked source (see the G4 gate block).
 Test totals on the branch: Swift **139 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
@@ -89,6 +90,44 @@ D/E/F needs a new branch and a decision, not a second keeper merge.
 in 51.9 s; tracer **3 passed / 0 skips**; attempt-2 discriminator **10/10**; `leak-scan: clean`.
 *Gotcha found here:* `swift build --product A --product B` silently builds only **B**. The B6 and
 C4 gates and `merge-keeper.sh` all use two separate invocations; never collapse them into one.
+
+**G4 client gate: GREEN at `23dc163` (run 20260728-072601 iteration 4).** The amendment's fix cycle
+re-measured on MacStudio 2026-07-28, tree clean before and after: both Swift products from an
+**empty** scratch path in separate invocations (`mtd-capture` 8.48 s wall / 7.69 s build,
+`MOSSCaptureApp` 0.92 s / 0.61 s), **zero warnings**; `swift test` **139 passed / 0 failures**;
+`pytest tests` **537 passed / 2 skipped / 368 subtests** in 59.2 s — the two skips printed with
+`-rs` are `tests/test_large_upload.py:155,175` "Python 3.10 compatibility contract", the same
+pre-existing pair as every prior gate, **not** Darwin skips; tracer alone **4 passed / 0 skips** in
+14.7 s; attempt-2 discriminator **10/10**; `leak-scan: clean`.
+*The merge payload, reviewed against the amendment's four allowed items:* `git diff --stat main HEAD
+-- ':!scripts/ralph-afk'` is exactly eight files, +864/-19 — `Resources/Info.plist` (G1),
+`CaptureSecurity.swift` (G2 trim + wire form, G3 classifier), `MOSSCaptureApp/main.swift` and
+`CaptureCommandLine.swift` (G3), and four test files (`CaptureControllerTests.swift`,
+`MTDCaptureCLITests.swift`, `tests/test_macos_packaging_tools.py`,
+`tests/test_macos_uds_tracer.py`). No `ops/`, no server source, no deployment template, nothing
+outside the amendment. The only non-product paths in the diff are
+`scripts/ralph-afk/{context.md,prd.md,progress.txt}`.
+
+**The keeper fence blocks on TWO conditions, not one (measured, iteration 4).** The prior iteration
+flagged only the SHA fence; a dry run found a second, and it fails **silently**.
+1. `merge-keeper.sh:21` compares `git rev-parse main` with `RALPH_MERGE_MAIN_BEFORE`, default
+   `af3ac366…` — the *first* merge's pre-merge SHA. It prints
+   `ERROR: main moved from expected pre-merge SHA af3ac366…` and exits 1.
+2. `merge-keeper.sh:27` is a bare `git merge-base --is-ancestor main "$feature_sha"` under
+   `set -e`. **`main` is not an ancestor of the feature tip** and never was after the first merge:
+   `f9285d6` *is* the merge commit, so it lives only on `main` while its second parent `f400d426` is
+   the feature-branch commit. With fence 1 satisfied the script therefore exits **1 with no output
+   at all** — an undiagnosable failure mode, and the reason this had to be measured rather than
+   reasoned about.
+*Why fence 2 is safe to satisfy by history rather than by editing the check:* `main`'s tree and the
+merge base's tree are the **same object**, `815f23b0d7cd0c3fd73226404036fdce49802da2`, and
+`git diff f400d426 f9285d6` is empty. So `main` carries **zero content** the feature branch lacks;
+only the merge commit object itself is exclusive to it. Merging `main` into the feature branch is
+therefore a pure history join with a provably empty diff, after which the ancestry fence is honestly
+true and the recorded gate at product-tree `23dc163` still measures the merged tree. Do **not**
+delete or loosen fence 2, and do not leave fence 1 as a command-line `RALPH_MERGE_MAIN_BEFORE`
+override — write the amendment's expected pre-merge SHA into the script so a *third* merge still
+fails. `git merge-tree --write-tree main HEAD` already succeeds (rc=0), so the merge is conflict-free.
 
 **Server meeting-reliability gate: GREEN at `f400d426` (iteration 16).** The PRD clause → node map
 the C1 residue asked for, each clause run and passing:
@@ -1106,17 +1145,35 @@ bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spik
 # section "IDEA-044 attempt-2 exact commands". `validate-phase-a-locality.sh` belongs to that
 # checkpoint and now fails on the tip by design — see the locality note above.
 
-# --- one keeper merge, primary worktree stays on the feature branch -------
-# SPENT in iteration 16: main is f9285d6. Re-running merge-keeper.sh now fails its own fence
-# ("main moved from expected pre-merge SHA"), which is the intended one-merge guard. Do not
-# raise RALPH_MERGE_MAIN_BEFORE to get past it.
-swift build --package-path macos/MOSSCapture --product mtd-capture
-swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
+# --- the client gate, run before either merge (iteration 4 re-ran it green at 23dc163) ---------
+SCRATCH="$(mktemp -d /tmp/moss-gate-scratch.XXXXXX)"   # must be EMPTY; one dir, two invocations
+swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product mtd-capture
+swift build --package-path macos/MOSSCapture --scratch-path "$SCRATCH" --product MOSSCaptureApp
+swift build --package-path macos/MOSSCapture --product mtd-capture      # default .build: the tracer
+swift build --package-path macos/MOSSCapture --product MOSSCaptureApp   # executes these two
 swift test --package-path macos/MOSSCapture
-python3 -m pytest tests -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_large_upload.py -q -rs   # names the 2 skips
 test -z "$(git status --porcelain)"
+
+# --- keeper merge #1: SPENT in iteration 16, main is f9285d6. -----------------------------------
+# --- keeper merge #2: the ONE merge the 2026-07-28 amendment authorizes. Not yet run. -----------
+# Two fences block it; see the two-fence block above for why each is what it is. Satisfy them in
+# this order, and never by deleting a check:
+#   1. History join, so `merge-base --is-ancestor main HEAD` is honestly true. main's tree IS the
+#      merge base's tree (815f23b0…), so this changes no file. Assert that, do not assume it:
+#        git merge --no-ff -m 'ralph: join published main f9285d6 (empty diff) before the authorized merge' main
+#        git diff --stat 23dc163 HEAD -- .    # MUST be empty: the join carried no content
+#   2. Edit merge-keeper.sh:10 so `expected_main` defaults to
+#      f9285d69ed7bcc592bb41b3dcdf29e3221968f44 with a comment citing the amendment. Writing it in
+#      the script keeps the one-merge guard alive for a THIRD merge; a command-line
+#      RALPH_MERGE_MAIN_BEFORE override would leave no reviewable record. While there, give fence 2
+#      an error message — as committed it exits 1 printing nothing.
+# Then:
 RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # fences only, no merge
 bash scripts/ralph-afk/merge-keeper.sh                          # builds products itself in the temp worktree
+# After it: record feature tip + merge SHA, confirm HEAD^2 == the feature tip, re-run the suite on
+# the merge commit (the script already does), and the post-merge freeze resumes.
 
 # --- D1: publish the reviewed merge --------------------------------------
 # SPENT in iteration 17. `git push origin main` fast-forwarded 163e969..f9285d6 on the AlphaSight
@@ -1496,13 +1553,17 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     tracer starts is always reached over loopback. See the ATS contract block; the node it became
     proves the pin instead, and the declaration is gated by shape in three places. G2's regression
     tests are **done** (iteration 2) and G3's are **done** (iteration 3), red/green rehearsed for
-    both. Remaining for G4: re-run the full client gate (both products from an empty scratch path,
-    `swift test`, `pytest tests`, tracer, discriminator, leak-scan, clean tree) and perform the
-    single authorized merge through `merge-keeper.sh`. Note `merge-keeper.sh` fences on a
-    pre-merge `main` SHA and `main` is now `f9285d6`, so that fence has to be satisfied honestly
-    for this second authorized merge - read the script before the merge iteration and record what
-    it requires; do **not** work around it. After the merge the post-merge freeze resumes and E2b
-    must be re-run on m4mbp so the installed app carries G1+G2+G3.
+    both. **The client-gate half is `[done - iteration 4 of run 20260728-072601]`** - green at
+    product tree `23dc163`, numbers in the G4 gate block above, and the merge payload reviewed
+    against the amendment's four items (eight files, every one of them Mac client source or a
+    regression test; no `ops/`, no server source). Iteration 4 also measured the fence and found
+    **two** blocking conditions rather than the one the prior iteration flagged, the second of which
+    exits 1 printing nothing; both, and the honest route through each, are in the two-fence block
+    above and staged as commands in Validation.
+    **Remaining for G4: the merge itself** - the empty-diff history join, then the `expected_main`
+    edit (in the script, not as an env override), then `merge-keeper.sh`. After the merge the
+    post-merge freeze resumes and E2b must be re-run on m4mbp so the installed app carries
+    G1+G2+G3.
 
 ## Non-candidates
 

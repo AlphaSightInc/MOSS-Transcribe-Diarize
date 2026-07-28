@@ -2525,3 +2525,89 @@ assert that signature rather than only `returncode != 0`.
   merge, re-run E2b on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order
   (pair first, then start, then the clicks), reading `log show --predicate 'subsystem ==
   "com.alphasight.moss.capture"'` if the rebuilt app still fails.
+
+================================================================================
+## run 20260728-072601 / iteration 4 - G4 client gate green; the merge fence measured
+================================================================================
+
+- Target: candidate 29 (**G4**), first half - re-run the full client gate for the amendment's fix
+  cycle, review the merge payload against the amendment's scope, and establish exactly what
+  `merge-keeper.sh` requires for the one authorized merge. **The merge itself was deliberately not
+  performed**: a merge into `main` cannot be undone without the history rewriting the rules forbid,
+  so the gate is recorded first, exactly as B6 preceded C4 for the first merge.
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. **No tracked product source changed**,
+  no host touched, no service restarted, no app rebuilt or reinstalled on m4mbp.
+
+### The gate, measured on MacStudio 2026-07-28 at product tree 23dc163 (tree clean before and after)
+- Both Swift products from an **empty** scratch path (`mktemp -d`, verified 0 entries), separate
+  invocations because `--product A --product B` silently builds only B:
+  `mtd-capture` 8.48 s wall / 7.69 s build, `MOSSCaptureApp` 0.92 s / 0.61 s, **zero warnings**
+  (a third invocation grepped for `warning` and counted 0).
+- `swift test --package-path macos/MOSSCapture` -> **139 passed / 0 failures** in 0.96 s.
+- `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider` ->
+  **537 passed / 2 skipped / 368 subtests** in 59.2 s.
+- The two skips were **named, not assumed**: `-rs` reports `tests/test_large_upload.py:155` and
+  `:175`, both "Python 3.10 compatibility contract". Same pre-existing pair as every prior gate;
+  **zero Darwin skips**.
+- `tests/test_macos_uds_tracer.py` alone -> **4 passed / 0 skips** in 14.7 s, including the
+  `100.64.0.0/10` node that fails rather than skips without a CGNAT address on this host.
+- Phase A attempt-2 discriminator -> **10/10 true**. `leak-scan: clean`.
+
+### Pre-merge review of what this merge would carry
+`git diff --stat main HEAD -- ':!scripts/ralph-afk'` is **eight files, +864/-19**:
+`Resources/Info.plist` (G1), `CaptureSecurity.swift` (G2 trim + wire form, G3 classifier),
+`MOSSCaptureApp/main.swift` + `CaptureCommandLine.swift` (G3), and four test files
+(`CaptureControllerTests.swift`, `MTDCaptureCLITests.swift`, `tests/test_macos_packaging_tools.py`,
+`tests/test_macos_uds_tracer.py`). No `ops/`, no server source, no deployment template, no
+packaging tool. That is strictly inside the amendment's four allowed items. The only other paths in
+the diff are `scripts/ralph-afk/{context.md,prd.md,progress.txt}`.
+
+### The fence: TWO blocking conditions, and the second is silent
+The previous iteration's next-step note flagged one. A dry run found two.
+1. `merge-keeper.sh:21` - `RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh` prints
+   `ERROR: main moved from expected pre-merge SHA af3ac3667393a0411616f52f76339eff01dc13e2`, rc=1.
+   That default is the *first* merge's pre-merge SHA; `main` is now `f9285d6`.
+2. `merge-keeper.sh:27` - re-running the same dry run with
+   `RALPH_MERGE_MAIN_BEFORE=f9285d69ed7bcc592bb41b3dcdf29e3221968f44` exits **rc=1 with no output
+   whatsoever**. The cause: `git merge-base --is-ancestor main HEAD` is false, under `set -e`, with
+   no message. `main` has never been an ancestor of the feature branch since the first merge -
+   `f9285d6` *is* that merge commit and lives only on `main`, while its second parent `f400d426` is
+   the feature-branch commit.
+Had iteration 5 gone straight at the merge with only the SHA override, it would have hit a bare
+rc=1 with nothing on stdout or stderr to explain it. Measuring the fence was the point of doing
+this as its own iteration.
+
+### Why fence 2 can be satisfied by history instead of by editing the check
+`git rev-parse f400d426^{tree}` and `git rev-parse f9285d6^{tree}` are the **same object**,
+`815f23b0d7cd0c3fd73226404036fdce49802da2`, and `git diff --stat f400d426 f9285d6` is empty. So
+`main` carries **zero content** the feature branch lacks; only the merge commit object itself is
+exclusive to it. Merging `main` into the feature branch is therefore a pure history join with a
+provably empty diff, after which the ancestry fence is honestly true and the gate recorded here at
+product tree `23dc163` still measures the merged tree. `git merge-tree --write-tree main HEAD`
+already returns rc=0, so the merge is conflict-free.
+Fence 1 gets the amendment's expected pre-merge SHA written **into the script**, not passed as a
+command-line override: the guard then still fails on a *third* merge, and the reason this one was
+allowed is reviewable in the diff rather than invisible in a shell invocation.
+
+### Learned
+1. **A guard that fails silently is a guard you have to run to understand.** Fence 2 is a bare
+   `git` command under `set -e`; it is the only check in the script with no error message, and it
+   is the one that was missed by reading. The merge iteration should give it one while it is
+   editing the file anyway.
+2. **"main is an ancestor" stops being true the moment main's tip is the merge commit.** The check
+   was written for a first merge and silently assumes the feature branch is never merged. The
+   property it actually protects - that the merge cannot drop content only `main` has - is provable
+   here by tree identity, which is why the join is a no-op rather than a risk.
+3. **Splitting gate from merge cost one iteration and bought the fence diagnosis.** The merge is
+   the one irreversible action left on this branch; the suite is re-run inside the merge worktree
+   anyway, so nothing was measured twice for free.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp. G4 does not need them.
+- Next: **finish G4 - the merge.** In one iteration, in this order: (1)
+  `git merge --no-ff main` on the feature branch and assert `git diff --stat 23dc163 HEAD -- .` is
+  empty; (2) edit `merge-keeper.sh:10` so `expected_main` defaults to
+  `f9285d69ed7bcc592bb41b3dcdf29e3221968f44` with a comment citing the 2026-07-28 amendment, and
+  give the ancestry fence an error message; (3) `RALPH_MERGE_DRY_RUN=1` dry run, then
+  `bash scripts/ralph-afk/merge-keeper.sh`; (4) record the feature tip and merge SHA and confirm
+  `HEAD^2` equals the feature tip. Do not push in the same iteration. After the merge, re-run E2b
+  on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order, reading
+  `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` if the rebuilt app still fails.
