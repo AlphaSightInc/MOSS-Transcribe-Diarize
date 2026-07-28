@@ -47,9 +47,10 @@ tracked TLS-material and loopback-pairing tools (C3a); iteration 14 added the tr
 deployment bundle (C3b); iteration 15 added the app-owned latency probe (C3c); iteration 16 ran the
 final local gate and made the **one keeper merge** (C4); iteration 17 published it (D1),
 iteration 18 finalized the host manifest and rotated the live TLS pair (D2), iteration 19
-installed and started the live service plus its Windows forward (D3), and iteration 20 aligned the
-m4mbp checkout with the published SHA (E2a) — none of 17-20 changed a tracked file, so from here the
-branch carries only `scripts/ralph-afk/*`.
+installed and started the live service plus its Windows forward (D3), iteration 20 aligned the
+m4mbp checkout with the published SHA (E2a), iteration 21 created the signing identity there (E1),
+and iteration 22 built, signed and installed the app there (E2b) — none of 17-22 changed a tracked
+file, so from here the branch carries only `scripts/ralph-afk/*`.
 Test totals on the branch: Swift **131 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131); Python **536 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
@@ -547,8 +548,10 @@ Never move live secret state onto the Windows drive, and never write a doc line 
 mode inside the checkout.
 
 **Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3 (`swift-driver 1.148.6`).
-`/Applications/MOSSCapture.app` still absent and no `~/Library/Application Support/MOSSCapture`;
-**`moss-signing.keychain-db` now exists since iteration 21 (E1)** — see the signing-identity block
+**`/Applications/MOSSCapture.app` and `~/.local/bin/mtd-capture` exist since iteration 22 (E2b)** —
+see the installed-app block below; `~/Library/Application Support/MOSSCapture` is still absent
+(nothing has paired yet, and store construction is side-effect free).
+**`moss-signing.keychain-db` exists since iteration 21 (E1)** — see the signing-identity block
 below. Checkout is
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize` (same relative path as
 MacStudio), reachable as `ga0@m4mbp` with `BatchMode=yes`.
@@ -605,6 +608,47 @@ level belongs to E2b). Contrast measured in the same session: ad-hoc signing giv
    `LiveTranscribe Local Dev`, `Ga0-Alienware-RTX4070Ti`, `Ga0-RTX4090` — are pre-existing and
    unrelated). Search-list membership alone makes the identity reachable, reproducing the
    iteration-9 MacStudio finding on m4mbp.
+
+**Installed-app state on m4mbp (new, iteration 22 / E2b).** `/Applications/MOSSCapture.app`
+(`drwxr-xr-x ga0:staff`, three files: `Contents/MacOS/MOSSCaptureApp`, `Contents/Info.plist`,
+`Contents/_CodeSignature/CodeResources`) and `~/.local/bin/mtd-capture` (0755) are installed from
+`macos/MOSSCapture/.build/product`, release configuration, signed by the E1 identity. Both verify
+`codesign --verify --strict`; the bundle also "satisfies its Designated Requirement".
+**The PRD's "Signed app installed" clause is GREEN**: the app exists, `codesign -dv` reports
+`Identifier=com.alphasight.moss.capture`, and the DR is
+`designated => identifier "com.alphasight.moss.capture" and certificate leaf =
+H"e118d874377746c4bd25beb8252bb84302b73e72"` — that `H"…"` equals `shasum -a 1` of the E1
+certificate's DER read independently out of the keychain. The CLI is a *separate* identifier,
+`com.alphasight.moss.capture.cli`, signed by the same leaf. Embedded entitlements are exactly
+`{com.apple.security.device.audio-input: true}`: `keychain-access-groups` is **absent** from the
+signature while the tracked entitlements file still declares it, so B5's drop really fires on this
+host. `TeamIdentifier=not set`, `flags=0x10000(runtime)`. Info.plist carries both usage strings.
+*Three facts that decide E3 and any later rebuild:*
+1. **SwiftPM release builds are not byte-reproducible on this host, but the DR is.** Two
+   from-scratch builds of the identical checkout gave different `built_app_sha256`
+   (`5bf01255…` → `ad83c0f8…` → build #3) and different `bundle_digest`, while the DR came out
+   byte-identical every time. That is the PRD's "unchanged across a rebuild" property proven against
+   a genuinely different binary rather than a tautology — and it is why the grants survive a rebuild:
+   they key on the DR, not on the bytes. Corollary: `install-app.sh`'s byte-identical shortcut
+   (which preserves the inode) will **not** fire after a rebuild, so a rebuild always takes the
+   replacement path. That is fine, and it was rehearsed for real — see below.
+2. **The replacement path is safe and was measured, not assumed.** Installing a rebuilt bundle over
+   the installed one moved the previous install to `/Applications/MOSSCapture.app.backup-<utc>`
+   (which still verifies and still carries the old CDHash), printed its `rollback:` line **before**
+   the first mutation, and did **not** print the "designated requirement changes on install" warning
+   — correctly, because only the bytes changed. Applying that printed rollback verbatim restored the
+   previous bundle's exact CDHash. The same run also backs the **CLI** up to
+   `<bin>/mtd-capture.backup-<utc>`; that file is not cleaned up by the tool, so a rebuild-install
+   leaves one behind.
+3. **`bin_dir_on_path=false` in the tool's evidence is an SSH artifact, not a defect.**
+   `~/.local/bin` is absent from the non-interactive SSH `PATH`, which is what the tool observes, but
+   `.zshrc` puts it on the human's interactive `PATH` — `zsh -lic 'command -v mtd-capture'` resolves
+   to `/Users/ga0/.local/bin/mtd-capture`. So the default `--bin-dir` is right and **no shell profile
+   was edited**; the loop just has to invoke the CLI by absolute path over SSH.
+The installed CLI runs: `--help` prints the one-line usage (`rc=64`) and `status` answers
+`{"ok":false}` (`rc=70`) with no helper running, emitting no path, token or secret. Neither call
+created `~/Library/Application Support/MOSSCapture`, so B1's side-effect-free construction holds for
+the *installed* binary too.
 
 **Open defect (found by D2, iteration 18) — the finalizer needs the deployment venv, and the
 tracked doc says otherwise.** `ops/finalize-live-provider-manifest.py` inserts the repo root on
@@ -768,6 +812,29 @@ macos/scripts/bootstrap-signing-identity.sh --dry-run   # never run for real on 
 #     "$HOME/Library/Keychains/moss-signing.keychain-db"
 #   codesign --force --identifier com.alphasight.moss.capture --sign 'MOSS Capture Local Signing' <bin>
 #   codesign -d -r- <bin> | tail -1   # must be the DR recorded in the signing-identity block
+
+# --- E2b: build, sign and install on m4mbp (SPENT in iteration 22) ----------------------------
+# Run from the m4mbp checkout. build-app.sh writes only under .build/product (it refuses an install
+# location) and unlocks the signing keychain itself, so no manual unlock is needed.
+#   macos/scripts/build-app.sh --dry-run  &&  macos/scripts/build-app.sh --configuration release
+#   macos/scripts/install-app.sh --dry-run  &&  macos/scripts/install-app.sh
+# Re-running either prints `unchanged:` — but only while the binary is unrebuilt. A rebuild changes
+# the bytes (SwiftPM is not reproducible here) and therefore always takes the replacement path.
+# Rollback for a FIRST install (what iteration 22 recorded and rehearsed):
+#   rm -rf '/Applications/MOSSCapture.app' && rm -f '/Users/ga0/.local/bin/mtd-capture'
+# Rollback for a REPLACEMENT, printed by the tool with its own <utc> stamp — note it backs up the
+# CLI too, and that backup file is left behind for you to remove:
+#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-<utc>' '/Applications/MOSSCapture.app'
+#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-<utc>' '/Users/ga0/.local/bin/mtd-capture'
+# DO NOT apply the install rollback after E3 without a reason: re-installing is safe (the DR is
+# stable) but each replacement resets the bundle's inode, and only the DR keeps the grants.
+# The PRD's "Signed app installed" clause, re-assertable read-only at any time:
+ssh -o BatchMode=yes ga0@m4mbp 'ls -ld /Applications/MOSSCapture.app; \
+  codesign -dv /Applications/MOSSCapture.app 2>&1 | sed -n "2p"; \
+  codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1; \
+  codesign --verify --strict /Applications/MOSSCapture.app && echo bundle_ok'
+# The CLI is on the human's interactive PATH but NOT on the non-interactive SSH PATH — over SSH
+# always call it as /Users/ga0/.local/bin/mtd-capture.
 
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
@@ -1132,16 +1199,24 @@ own, which no later step does.
     rollback was rehearsed and re-applied. Residue for E2b: the identity is **not reproducible**, so
     from the moment E2b signs the installed bundle the E1 rollback is no longer free; and a new SSH
     session must unlock the keychain before any hand-run `codesign`.
-22. **E2b — run reviewed build/install tools**: verify identifier, entitlements, DR, and pin;
-    install app and CLI. Record rollback first. B5 residue: `install-app.sh` defaults the CLI to
-    `~/.local/bin` — pass `--bin-dir` if that is not on m4mbp's PATH rather than editing a profile.
-    E1 residue: `build-app.sh` unlocks the keychain itself (`:186-191`) so it needs no manual
-    unlock, but it passes the password on argv (`-p "$(cat …)"`), so the random keychain password is
-    briefly visible in `ps` — C4 review note (a), acceptable on single-user m4mbp, state it when it
-    happens. The bundle's DR must come out as the E1 DR with the app's own identifier.
+22. **E2b — run reviewed build/install tools** `[done — iteration 22]`: release build (zero warnings,
+    8.6 s from an empty scratch path), signed by the E1 identity, installed to
+    `/Applications/MOSSCapture.app` + `~/.local/bin/mtd-capture` — see the installed-app block above.
+    The PRD's "Signed app installed" clause is green, including *unchanged across a rebuild* proven
+    against a byte-different rebuild. Both dry runs, the idempotent re-run of each tool, the
+    first-install rollback and the replacement/backup rollback were all exercised for real on the
+    host. C4 review note (a) observed and measured: `build-app.sh` does put the keychain password on
+    argv, and after the run `ps`, both shell histories, `~/Library/Logs`, the build output and the
+    installed artifacts all contain zero occurrences of it. `--bin-dir` was **not** needed (see
+    fact 3 above). Residue for E3: the app is installed but nothing is paired —
+    `~/Library/Application Support/MOSSCapture` does not exist yet, and `mtd-capture status` answers
+    `{"ok":false}` until the app is running.
 23. **E3 — TCC human step**: GUI launch and one `start`; report exact Microphone and System Audio
     Recording clicks. Never touch TCC DB or retry autonomously. Continue only after operator
-    confirms both grants.
+    confirms both grants. Ordering constraint carried from D4: the pairing payload lives 300 s, so
+    the mint on the host and `mtd-capture pair` on m4mbp must happen inside one five-minute window,
+    and both lanes must settle (granted or denied) before any canary starts — a lane left *pending*
+    by an unanswered prompt leaves the latency probe's mixer origin unresolved (C3c residue).
 
 ### Phase F — certification and rollback
 

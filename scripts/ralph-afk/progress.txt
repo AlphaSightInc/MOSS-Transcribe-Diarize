@@ -1943,3 +1943,98 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   on that costs the human's TCC grants. E1 rollback is therefore retired as an option here.
 - Nothing outside those three paths is touched: no keychain change, no search-list change, no shell
   profile edit, no trust/SIP/Gatekeeper change.
+
+### Applied
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only. **No tracked file changed** — the merge
+  freeze means the feature branch may carry only Ralph evidence, and E2b is a host-state change.
+- Validation, in order:
+  - **Both dry runs mutate nothing**: `build-app.sh --dry-run` printed 7 `plan:` lines + `rollback:`,
+    `install-app.sh --dry-run` printed 5 `plan:` lines + `rollback:`, both exit 0, and afterwards
+    `.build`, `/Applications/MOSSCapture.app` and `~/.local/bin/mtd-capture` were all still absent.
+  - **Build (release) green**: 11.0 s including signing, **0 `warning:` lines** in the whole swift
+    build stderr, exit 0, `change:` ×3 (`composed`, `dropped keychain-access-groups`, `signed`).
+  - **The signature was read back independently of the tool's own evidence**: `codesign -dvvv` →
+    `Identifier=com.alphasight.moss.capture`, `TeamIdentifier=not set`, `flags=0x10000(runtime)`;
+    `codesign -d -r-` → `designated => identifier "com.alphasight.moss.capture" and certificate
+    leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"`; the CLI is a separate identifier
+    `com.alphasight.moss.capture.cli` under the same leaf. That `H"…"` was recomputed from scratch as
+    `security find-certificate -c 'MOSS Capture Local Signing' | openssl x509 -outform DER |
+    shasum -a 1` → `e118d874377746c4bd25beb8252bb84302b73e72`, i.e. the DR really does name the E1
+    leaf and not something the tool asserted.
+  - **B5's entitlement drop fires on this host**: the embedded entitlements of the installed bundle
+    are exactly `{com.apple.security.device.audio-input: true}`; `keychain-access-groups` is absent
+    from the signature while the tracked `Resources/MOSSCapture.entitlements` still declares it.
+    Info.plist carries both usage strings and `CFBundleExecutable=MOSSCaptureApp`.
+  - **PRD clause "the designated requirement … is unchanged across a rebuild" — proven against a
+    genuinely different binary.** `rm -rf .build` + full rebuild (8.6 s, 0 warnings) produced
+    `built_app_sha256 5bf01255… → ad83c0f8…` and `bundle_digest 3391655e… → e20d36f3…`, while the DR
+    came out **byte-identical**. A third from-scratch build changed the bytes again
+    (`bundle_digest 385a1930…`, CDHash `02683678…`) with the same DR.
+  - **Idempotence of both tools**: a second `build-app.sh` printed `unchanged:` and left the app
+    executable's, the CLI's and the evidence file's inode/mtime/size untouched; a second
+    `install-app.sh` printed two `unchanged:` lines and **preserved the installed inode**
+    (`211501958 → 211501958`) — the property the TCC grants depend on.
+  - **Install green**: `change: installed /Applications/MOSSCapture.app` + `change: installed
+    /Users/ga0/.local/bin/mtd-capture`, `backup_bundle=none` / `backup_cli=none` (first install),
+    `codesign --verify --strict --deep` → `valid on disk` and `satisfies its Designated Requirement`
+    for the bundle, strict-verify green for the CLI. Installed digest == source digest.
+  - **First-install rollback rehearsed for real, then re-applied.** The recorded command verbatim
+    (`rm -rf '/Applications/MOSSCapture.app' && rm -f '…/mtd-capture'`) returned both paths to
+    absent with the other 58 `/Applications` entries untouched; re-installing from the same build
+    output reproduced the **same CDHash** `c7c6a6aa…` and the same DR (a new inode, as expected).
+  - **Replacement/backup path rehearsed for real** — the path every post-E3 rebuild will take.
+    Installing build #3 over build #2 moved the old bundle to
+    `/Applications/MOSSCapture.app.backup-20260728T051255Z` (still `codesign --verify --strict`
+    clean, still carrying build #2's CDHash `c7c6a6aa…`), printed its `rollback:` line **before** the
+    move, and did **not** print the "designated requirement changes on install" warning — correctly,
+    since only the bytes changed. Applying that printed rollback verbatim restored build #2's exact
+    CDHash. Settled by re-installing build #3 so the install matches the build output.
+  - **Installed CLI behaves**: `--help` prints the one-line usage (rc=64), `status` answers
+    `{"ok":false}` (rc=70) with no helper running, and neither call created
+    `~/Library/Application Support/MOSSCapture` — B1's side-effect-free construction holds for the
+    installed binary, not just the test one. `zsh -lic 'command -v mtd-capture'` →
+    `/Users/ga0/.local/bin/mtd-capture`.
+  - **Secret hygiene, C4 review note (a) discharged with a measurement.** `build-app.sh` really does
+    unlock with `-p "$(cat …)"`, so the random keychain password is briefly on argv. After the run:
+    `ps` hits excluding self **0**, `.zsh_history` **0**, `.bash_history` **0**, files under
+    `~/Library/Logs` **0**, build output **0**, installed bundle + CLI **0**; the password file is
+    still `-rw-------`. No token, pin or pairing payload is involved in E2b at all.
+  - **Nothing else moved**: m4mbp checkout still `f9285d69…` with `dirty_lines=0`; the keychain
+    search list still has its four entries in order and the default keychain is still
+    `login.keychain-db`; zero `*.backup-*` / `*.incoming-*` paths left behind (the CLI backup the
+    replacement rehearsal created was removed — it is an artifact of this iteration).
+- Learned:
+  1. **SwiftPM release builds are not byte-reproducible on this host, and that is exactly why the
+     certificate identity matters.** Three from-scratch builds of an unchanged checkout gave three
+     different binaries and three different bundle digests, but one DR. So `install-app.sh`'s
+     byte-identical shortcut — the one that preserves the inode — will **never** fire after a real
+     rebuild; every rebuild-install is a replacement. The grants survive anyway because macOS keys
+     them on the DR, which is the property that was measured. Recorded on the installed-app block so
+     a later iteration does not read a `change: installed` line as a regression.
+  2. **The replacement path leaves a CLI backup nobody cleans up.** `install-app.sh` backs both
+     artifacts up, but only the bundle backup is conspicuous; `~/.local/bin/mtd-capture.backup-<utc>`
+     sat there until I removed it. Worth remembering for F4's rollback rehearsal, which will produce
+     one of each.
+  3. **A tool's own evidence line can be true and still misleading.** `bin_dir_on_path=false` is
+     correct for the non-interactive SSH `PATH` the tool ran under, and wrong about the human, whose
+     `.zshrc` puts `~/.local/bin` on `PATH`. The B5 residue said to pass `--bin-dir` if the default
+     was not on PATH; measuring the *interactive* shell instead showed the default was right and no
+     profile edit was needed. Measure the environment the claim is about.
+  4. **A "did the warning fire?" check has to be run as its own observation.** I grepped the DR-change
+     warning out of a *second* invocation, which by then took the `unchanged:` path — so a 0 there
+     would have been vacuous either way. It is only meaningful because the first invocation's full
+     output was captured and shows the `change:` lines without it. (Same class of error as the
+     iteration-21 pipe/exit-code slip: measure the run you mean.) A CDHash comparison earlier in the
+     iteration was vacuous for the same reason — `codesign -dv` does not print `CDHash=`, only
+     `-dvvv` does — so that comparison was discarded and re-measured, not reported.
+- Blocker: none new. E3's TCC clicks remain the one irreducible human step, and it is now the only
+  thing standing between the loop and Phase F.
+- Next: **E3 — the human TCC step**, or **D4 immediately before it**. The two are coupled by a hard
+  300 s window: `live_auth.PAIRING_TTL_SECONDS = 300`, so the payload minted on the host by
+  `ops/live-pair.sh --url https://127.0.0.1:7861 --cert <live.crt>` must be consumed by
+  `/Users/ga0/.local/bin/mtd-capture pair --server https://100.64.0.8:7861` on m4mbp inside five
+  minutes, and the `payload:` line is never redirected to a file. Only after pairing does the app
+  have anything to start. The exact click sequence for the operator (Microphone, then System Audio
+  Recording, both under System Settings → Privacy & Security) must be recorded as a blocker rather
+  than retried — TCC cannot be scripted. Watch M36 on this host: the system-tap prompt is triggered
+  on the control thread and has never been observed on a machine that actually shows the prompt.
