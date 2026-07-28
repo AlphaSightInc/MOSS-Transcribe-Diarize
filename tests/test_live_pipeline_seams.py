@@ -98,17 +98,17 @@ class UnusedIdentityPreparer:
         raise AssertionError("this seam fails, or passes, before any identity work")
 
 
-def _coordinator(provider: WebRtcSpeechProvider) -> LiveCoordinator:
+def _coordinator(provider: WebRtcSpeechProvider, *, hard_cap_samples: int | None = None) -> LiveCoordinator:
     return LiveCoordinator(
         session_key="seam",
-        session=LiveSession(max_retained_samples=960000, hard_cap_samples=None),
+        session=LiveSession(max_retained_samples=960000),
         endpoint_policy=EndpointPolicy(
             EndpointPolicyConfig(
-                min_speech_samples=1600,
-                min_silence_samples=8000,
-                pre_speech_padding_samples=1600,
-                post_speech_padding_samples=1600,
-                hard_cap_samples=None,
+                min_speech_samples=DEPLOYED_MIN_SPEECH_SAMPLES,
+                min_silence_samples=DEPLOYED_MIN_SILENCE_SAMPLES,
+                pre_speech_padding_samples=DEPLOYED_PADDING_SAMPLES,
+                post_speech_padding_samples=DEPLOYED_PADDING_SAMPLES,
+                hard_cap_samples=hard_cap_samples,
             )
         ),
         speech_provider=provider,
@@ -218,6 +218,75 @@ def test_a_manifest_frame_length_webrtcvad_cannot_accept_is_refused_at_admission
 
 
 # --------------------------------------------------------------------------------------
+# The span-cap seam: one real session and one real endpoint policy, same hard cap.
+# --------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("voiced", [True, False], ids=["continuous_speech", "opening_silence"])
+def test_the_deployed_hard_cap_closes_one_span_and_the_meeting_continues(voiced):
+    """The H2 blocker: the shape no harness in the repo had ever assembled.
+
+    Every other harness gives the endpoint policy a hard cap and the session none, so the
+    two never coexisted outside production -- where the manifest finalizer *requires* them
+    to be equal. With both set, `LiveSession.accept_frame` froze its own `hard_cap` span at
+    40000 before the policy ever ran, and the policy's identical span was then refused with
+    `ValueError: frozen span end must advance.` at 2.5 s: any 2.5 s of continuous speech,
+    or of opening silence, ended the meeting.
+
+    Both directions are exercised because F0 measured both dying at the same sample.
+    """
+    vad = LengthContractVad(voiced=voiced)
+    coordinator = _coordinator(
+        WebRtcSpeechProvider(vad=vad, frame_samples=DEPLOYED_VAD_FRAME_SAMPLES),
+        hard_cap_samples=DEPLOYED_HARD_CAP_SAMPLES,
+    )
+
+    frozen: list[tuple[int, int, str]] = []
+    queued: list[int] = []
+    frames = 2 * DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES
+    for sequence in range(frames):
+        result = coordinator.accept_frame(_frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+        frozen.extend((span.start_sample, span.end_sample, span.reason) for span in result.frozen_spans)
+        queued.extend(result.queued_item_ids)
+        # The lockstep invariant that makes one authority true: the only boundary the
+        # session knows is the one the policy just emitted.
+        assert (
+            coordinator.session.snapshot().frozen_until_sample
+            == coordinator.endpoint_policy.snapshot().open_start_sample
+        )
+
+    assert frozen == [
+        (0, DEPLOYED_HARD_CAP_SAMPLES, "hard_cap"),
+        (DEPLOYED_HARD_CAP_SAMPLES, 2 * DEPLOYED_HARD_CAP_SAMPLES, "hard_cap"),
+    ]
+    # Every frozen span is queued for decode. A span the session froze by itself was not,
+    # so that audio would never have been transcribed even without the collision.
+    assert len(queued) == len(frozen)
+    assert coordinator.session.snapshot().pending_span_ids == (0, 1)
+    assert set(vad.calls) == {DEPLOYED_VAD_FRAME_SAMPLES}
+
+
+def test_a_provider_config_that_declares_two_different_span_caps_is_refused():
+    """`bounds_config.hard_cap_samples` is a declaration, not a second mechanism.
+
+    C2's finalizer enforces the equality when it writes a manifest; the runtime enforces it
+    when it opens a session, so a manifest that arrived by any other route cannot run with
+    an uncapped policy while claiming a cap.
+    """
+    runtime, _ = _decode_seam_runtime(responses=[NO_SPEECH_RESPONSES["zero parsed segments"]], speech=(False,))
+    runtime._endpoint_policy_factory = lambda: EndpointPolicy(
+        EndpointPolicyConfig(
+            min_speech_samples=DEPLOYED_MIN_SPEECH_SAMPLES,
+            min_silence_samples=DEPLOYED_MIN_SILENCE_SAMPLES,
+            hard_cap_samples=None,
+        )
+    )
+
+    with pytest.raises(ValueError, match="two different span caps"):
+        runtime.create()
+
+
+# --------------------------------------------------------------------------------------
 # The decoder seam: the real vLLM response validation under the real live coordinator.
 # --------------------------------------------------------------------------------------
 
@@ -285,9 +354,9 @@ def _deployed_descriptor() -> LiveServiceDescriptor:
             max_retained_samples=960000,
             max_identity_speakers=16,
             max_events=1000,
-            # The session's own hard cap stays unset: two hard-cap freezers collide (H2) and
-            # that is a different blocker, deliberately not under test here.
-            hard_cap_samples=None,
+            # The deployed manifest declares the same cap in both sections, which the
+            # runtime now requires: there is one span cap and the endpoint policy owns it.
+            hard_cap_samples=DEPLOYED_HARD_CAP_SAMPLES,
             stop_drain_deadline_seconds=5.0,
         ),
         frame_samples=DEPLOYED_MIXED_FRAME_SAMPLES,

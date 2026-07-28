@@ -19,20 +19,25 @@ It is a Ralph evidence tool, not product source: nothing in the product imports 
 it changes nothing. It exists so that whoever is authorized to fix H2 has a red
 reproduction that costs two seconds instead of a paired device and a live session.
 
+**H2 is fixed (run 20260728-112922 iteration 3), so this script is now a green check.**
+`LiveSession` no longer partitions audio: the endpoint policy is the only authority that
+closes a span, and `--session-hard-cap` is retired. Every case below that used to end in
+`ValueError: frozen span end must advance.` now survives, and the boundary the policy
+emits is queued for decode instead of being frozen by the session and orphaned. The red
+form is only reachable by restoring the pre-fix `live_session.py`; the recorded pre-fix
+output is in progress.txt.
+
 Defaults are the deployed values, read from
 `~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json` on
 ga0-alienware-rtx4070ti on 2026-07-28:
-    bounds_config.hard_cap_samples   = 40000   -> LiveSession(hard_cap_samples=...)
     endpoint_config.hard_cap_samples = 40000   -> EndpointPolicyConfig(hard_cap_samples=...)
     endpoint_config.min_speech_samples  = 1600
     endpoint_config.min_silence_samples = 8000
     endpoint_config.{pre,post}_speech_padding_samples = 1600
     bounds_config.max_retained_samples = 960000, frame_samples = 8000
 
-The two caps are equal because C2's finalizer *requires* them to be equal
-(`live_manifest_finalizer.py`: "the endpoint closes the span and LiveSession freezes it --
-a divergence silently splits spans"). Pass `--session-hard-cap none` to get the shape
-every test in the repo uses instead.
+`bounds_config.hard_cap_samples` is also 40000 there; C2's finalizer requires the two
+sections to agree, and `LiveServiceRuntime.create` now refuses a session when they do not.
 """
 
 from __future__ import annotations
@@ -62,7 +67,6 @@ from moss_transcribe_diarize.app.live_session import (  # noqa: E402
 
 # Deployed manifest values (see the module docstring for provenance).
 DEPLOYED = {
-    "session_hard_cap": 40000,
     "endpoint_hard_cap": 40000,
     "min_speech_samples": 1600,
     "min_silence_samples": 8000,
@@ -150,8 +154,9 @@ def _hard_cap(value: str) -> int | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--session-hard-cap", type=_hard_cap, default=str(DEPLOYED["session_hard_cap"]),
-                        help="LiveSession hard cap; 'none' reproduces every test harness in the repo")
+    parser.add_argument("--session-hard-cap", type=_hard_cap, default=None,
+                        help="retired: only 'none' is accepted. LiveSession no longer partitions "
+                             "audio at all, so the collision this script reproduced cannot recur")
     parser.add_argument("--endpoint-hard-cap", type=_hard_cap, default=str(DEPLOYED["endpoint_hard_cap"]),
                         help="EndpointPolicy hard cap; 'none' disables the policy's own boundary")
     parser.add_argument("--min-speech-samples", type=int, default=DEPLOYED["min_speech_samples"])
@@ -176,6 +181,11 @@ def main() -> int:
     for character in args.speech_pattern:
         if character not in "01":
             parser.error("--speech-pattern accepts only '0' and '1'")
+    if args.session_hard_cap is not None:
+        parser.error(
+            "--session-hard-cap is retired: the endpoint policy is the only authority that "
+            "closes a span, so LiveSession takes no hard cap. Pass 'none' or omit the flag."
+        )
 
     timestamp_fields = [
         field.name for field in dataclasses.fields(AudioFrame) if "time" in field.name
@@ -187,10 +197,7 @@ def main() -> int:
         f"{'true' if timestamp_fields else 'false'}"
     )
 
-    session = LiveSession(
-        max_retained_samples=args.max_retained_samples,
-        hard_cap_samples=args.session_hard_cap,
-    )
+    session = LiveSession(max_retained_samples=args.max_retained_samples)
     coordinator = LiveCoordinator(
         session_key="hardcap-repro",
         session=session,
@@ -217,7 +224,7 @@ def main() -> int:
     )
 
     print(
-        f"config: session_hard_cap={args.session_hard_cap} "
+        f"config: session_hard_cap=retired "
         f"endpoint_hard_cap={args.endpoint_hard_cap} "
         f"frame_samples={args.frame_samples} pattern={args.speech_pattern} "
         f"speech_provider={args.speech_provider}"

@@ -3834,3 +3834,100 @@ authorizes):
   hard cap (no harness in the repo does). Decide which freezer is the single authority, and
   answer the orphan the second reading creates: spans the session freezes by itself are never
   queued for decode.
+
+================================================================================
+## Iteration 3 (run 20260728-112922) - H2: one authority decides where a span ends
+================================================================================
+Target: candidate **H2**, the last of F0's three server blockers. Chosen because context.md
+fixes the order H3 -> H1 -> H2, both predecessors landed, and the amendment's own gate (a
+probe run that survives its full plan) cannot pass while 2.5 s of endpoint-free audio ends
+the meeting.
+
+### The design decision, and why the other reading was rejected
+The diagnosis offered two: (A) the session stops freezing on its own and the endpoint policy
+stays the single authority, or (B) the coordinator honours `FrameAck.frozen_span_ids` and the
+policy's cap goes away. **A.** B inverts the design - a boundary decided by the session would
+have to be pushed back into the policy to keep `_open_start` in step, and even then the
+policy's own later span can land *behind* the session's cursor and be refused by the same
+`ValueError` (session freezes 40000; policy then emits end_silence at 38000). B also has to
+solve the orphan separately. A closes the collision and the orphan with one removal.
+
+Files touched (3 tracked product + 6 tests + 1 Ralph tool; `moss_transcribe_diarize/` +
+`tests/`, which the second amendment authorizes):
+  moss_transcribe_diarize/app/live_session.py          (hard_cap_samples + freezer removed)
+  moss_transcribe_diarize/app/live_service_runtime.py  (_require_one_span_cap)
+  moss_transcribe_diarize/live_replay.py               (retired knob refused, not ignored)
+  tests/test_live_pipeline_seams.py                    (+3 nodes, 10 -> 13)
+  tests/test_live_session.py                           (+1 node; explicit freeze_until)
+  tests/test_live_identity.py                          (explicit freeze_until, 7 sites)
+  tests/test_live_service_runtime.py, tests/test_live_api.py,
+  tests/test_live_provider_bundle.py                   (declare both caps: deployed shape)
+  scripts/ralph-afk/live-hardcap-repro.py              (now a green check, not a repro)
+
+### The change
+1. `LiveSession` loses `hard_cap_samples` entirely - parameter, attribute and
+   `_freeze_hard_cap_spans`. `accept_frame` freezes nothing and returns `frozen_span_ids=()`.
+   The **client's** ack is unaffected: `live_service_runtime.accept_frame` has always rebuilt
+   `FrameAck` from `result.frozen_spans` (the coordinator's). That rebuild is precisely why
+   session-frozen spans were orphaned - frozen, never queued, never decoded.
+2. `LiveServiceRuntime._require_one_span_cap` refuses to open a session unless the endpoint
+   policy carries exactly `bounds_config.hard_cap_samples`. This is load-bearing, not tidiness:
+   without it, removing the session's freezer turns a `bounds`-capped/`endpoint`-uncapped
+   manifest into a session with **no** cap, where one span grows until retention backpressures.
+   It immediately caught a real fixture - `tests/test_live_provider_bundle.py`'s manifest
+   declared the cap only in `endpoint_config`.
+3. `live_replay.py` raises on `session_hard_cap_samples` rather than ignoring it: such a
+   manifest was authored against a session that closed its own spans and would replay
+   differently now.
+4. The only boundary the session still draws is `stop`'s tail flush. It cannot collide - it
+   fires only when `accepted > frozen_until`, i.e. only when nothing else closed the tail, and
+   on the runtime path `stop_endpoint()` has already closed it.
+
+### Validation (all offline on MacStudio; no server, Mac, or remote host was touched)
+- `pytest tests/test_live_pipeline_seams.py -q` -> **13 passed** (3.5 s), was 10.
+- **Red proven without touching git history**: `live_session.py` and `live_service_runtime.py`
+  restored from `HEAD`, the seam harness temporarily handed the cap the pre-fix session took,
+  re-run, then all three restored and verified by sha256 (identical). Pre-fix: **3 failed /
+  10 passed** - the three new nodes red with the deployed signature exactly,
+  `ValueError: frozen span end must advance.` at `live_session.py:237`, for continuous speech
+  *and* for opening silence; the ten H3/H1 nodes stayed green.
+- `live-hardcap-repro.py --frames 8` flipped **rc=3 -> rc=0**: was `REFUSED ValueError: frozen
+  span end must advance.` at accepted_samples=40000, now `survived 8 frames (64000 accepted
+  samples)` with `session_frozen_span_ids=[0]` == `coordinator_queued_span_ids=[0]` - the
+  orphan closed in the same line as the collision. `--speech-pattern 0` (silence),
+  `--frame-samples 1000` (not a frame-size artifact), `--speech-pattern 1100` (endpointing,
+  11 spans, all queued) and both webrtc cases are rc=0.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider -rs` -> **551 passed /
+  2 skipped / 368 subtests** in 59.4 s (was 547/2/368; +4 = 3 seam nodes + 1 session node).
+  The two skips printed with `-rs` are `tests/test_large_upload.py:155,175` "Python 3.10
+  compatibility contract", the same pre-existing pair as every prior gate.
+- Swift untouched this iteration; the full Swift gate belongs to H4.
+
+### Learned
+1. **The blind spot was a *shape*, for the third time.** Iteration 1 found "every harness feeds
+   the provider a whole number of VAD frames"; iteration 10 found "every harness gives the
+   session no hard cap"; this iteration found that the second one is enforced by C2 in
+   production and by nothing in the suite. A fixture that omits a production value is invisible
+   to review because there is nothing wrong on the line you are reading.
+2. **Deleting a mechanism can silently delete a guarantee.** Removing the session's freezer is
+   correct, but on its own it would have left a `bounds`-only manifest running uncapped. The
+   equality check is the part of this change that is not a deletion, and it is the part that
+   keeps the safety property.
+3. **The declared-vs-enforced distinction is worth naming.** `bounds_config.hard_cap_samples`
+   now declares what the endpoint policy must do; it does not do anything itself. A config
+   value that is both a declaration and an independent mechanism is the collision, generalised.
+4. **The repro tool had to change with the fix.** `--session-hard-cap` cannot survive the
+   removal of the parameter it set; leaving it accepted-and-ignored would have made the tool
+   lie about what it was testing. It is now retired with an error that explains the fix, and the
+   script is a green check whose red form is only reachable by restoring the pre-fix file.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - the
+  deployed service is still `317df4d` and carries none of H1/H2/H3.
+- Next: **H4** - gate, merge, redeploy. Re-run `live-pipeline-probe.py` against the deployed
+  service *after* the redeploy (before it, it still dies at the first unaligned frame); full
+  Swift + Python gate; the single merge the second amendment authorizes via `merge-keeper.sh`
+  with `expected_main` advanced in-script from `317df4d` (never by CLI override); then push and
+  redeploy so all four checkouts return to one exact SHA. Run `merge-keeper.sh` in the
+  BACKGROUND. Note for the redeploy: the new `_require_one_span_cap` reads the host manifest,
+  which D2's finalizer wrote with `hard_cap_samples 40000` in **both** sections, so it passes -
+  but verify that before restarting the service, because a mismatch now refuses every session.
