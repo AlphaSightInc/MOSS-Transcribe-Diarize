@@ -337,6 +337,14 @@ def main() -> int:
     )
     parser.add_argument("--mic-voice", default="Samantha")
     parser.add_argument("--system-voice", default="Fred")
+    parser.add_argument(
+        "--lane-offset-ms",
+        default="",
+        help="comma-separated LANE=MS shifts applied to that lane's whole "
+        "capture_timestamp_ns timeline, e.g. 'system=137'. Two real capture devices "
+        "never start on the same instant; without this every lane shares one origin, "
+        "which is the one input property more degenerate than a real Mac capture.",
+    )
     parser.add_argument("--poll-every-ticks", type=int, default=2)
     parser.add_argument("--stop-deadline", type=float, default=30.0)
     parser.add_argument(
@@ -358,6 +366,14 @@ def main() -> int:
         print("error: pairing payload must arrive on stdin", file=sys.stderr)
         return 2
 
+    lane_offset_ns = {lane: 0 for lane in LANES}
+    for item in (part.strip() for part in args.lane_offset_ms.split(",") if part.strip()):
+        lane, _, milliseconds = item.partition("=")
+        if lane not in lane_offset_ns:
+            print(f"error: unknown lane in --lane-offset-ms: {lane}", file=sys.stderr)
+            return 2
+        lane_offset_ns[lane] = int(round(float(milliseconds) * 1e6))
+
     report: dict = {
         "schema": "ralph-live-pipeline-probe.v1",
         "host": f"{args.host}:{args.port}",
@@ -377,6 +393,9 @@ def main() -> int:
     report["audio"] = {
         "voices": {"microphone": args.mic_voice, "system": args.system_voice},
         "lead_seconds": args.lead_seconds,
+        "lane_offset_ms": {
+            lane: offset / 1e6 for lane, offset in lane_offset_ns.items()
+        },
         "turns": {"microphone": len(mic_schedule), "system": len(system_schedule)},
         "frames_per_lane": {lane: len(frames) for lane, frames in lane_frames.items()},
         "voiced_frames": {
@@ -450,7 +469,9 @@ def main() -> int:
             frame_body = {
                 "lane": lane,
                 "sequence": tick,
-                "capture_timestamp_ns": origin_ns + tick * FRAME_SAMPLES * NS_PER_SAMPLE,
+                "capture_timestamp_ns": origin_ns
+                + lane_offset_ns[lane]
+                + tick * FRAME_SAMPLES * NS_PER_SAMPLE,
                 "device_epoch": 1,
                 "silent": is_silent(chunk),
                 "discontinuity": False,

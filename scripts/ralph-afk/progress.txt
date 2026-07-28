@@ -3452,3 +3452,24 @@ Outbox on the Mac will back up hard behind a dead session.
   cannot parse should be *dropped or committed empty*, never terminal - and (c) only then look at
   Blocker 2, first ruling the identical-lane-timestamp caveat in or out by re-running this probe
   with a per-lane timestamp offset.
+
+================================================================================
+## Iteration 10 (run 20260728-072601) - rollbacks recorded BEFORE the host probe run
+================================================================================
+About to run `scripts/ralph-afk/live-pipeline-probe.py` once against the deployed live
+service with per-lane `capture_timestamp_ns` offsets, to rule the F0 blocker-2 caveat in or
+out on the real host. Mutations it makes and their rollbacks, recorded before applying any of
+them (prd.md "Reversibility"):
+
+1. `ops/live-pair.sh` mints one pairing code on the host (loopback-only route).
+   Rollback: none needed - `live_auth.PAIRING_TTL_SECONDS = 300` expires it unused, and the
+   probe consumes it. Nothing durable is written until a device pairs.
+2. The probe pairs one device `ralph-h2-probe-<utc>` and creates one session.
+   Rollback (mandatory after the run, on the host, loopback-only, no restart):
+     curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/ralph-h2-probe-<utc>
+   It marks revoked rather than deleting, so `live-auth.json` only grows; the m4mbp device
+   AB600574-FD93-4321-967E-652AB064A70B must stay `revoked: false`.
+3. Deeper rollback, only if `live-auth.json` is damaged (costs a service restart, so it is
+   NOT the default): restore the iteration-9 baseline copy
+   `live-auth.json.ralph-f0-backup-20260728T091927Z` (sha256 9d306766...).
+No checkout, unit, manifest, certificate or Mac state is touched by any of this.
