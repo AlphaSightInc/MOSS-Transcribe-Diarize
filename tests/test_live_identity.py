@@ -67,9 +67,9 @@ def identity_config() -> LiveIdentityConfig:
 
 
 def test_prepared_canonical_publishes_transcript_and_identity_snapshot_atomically():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
     result = prepared_result(span, session.snapshot().identity_snapshot)
 
     assert session.submit_prepared_canonical(result) is True
@@ -83,10 +83,10 @@ def test_prepared_canonical_publishes_transcript_and_identity_snapshot_atomicall
 
 
 def test_prepared_canonical_rejects_invalid_preparations_without_mutation():
-    session = LiveSession(max_retained_samples=8000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 8000))
-    first = session._frozen_spans[ack.frozen_span_ids[0]]
-    second = session._frozen_spans[ack.frozen_span_ids[1]]
+    session = LiveSession(max_retained_samples=8000)
+    session.accept_frame(frame(0, 8000))
+    first = session.freeze_until(4000, reason="hard_cap")
+    second = session.freeze_until(8000, reason="hard_cap")
     base = session.snapshot().identity_snapshot
 
     out_of_order = prepared_result(second, base)
@@ -117,9 +117,9 @@ def test_prepared_canonical_rejects_invalid_preparations_without_mutation():
 
 
 def test_bounded_identity_births_session_speakers_without_committing_raw_labels():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
     preparer = BoundedCausalIdentityPreparer(config=identity_config())
 
     preparation = preparer.prepare(
@@ -136,9 +136,9 @@ def test_bounded_identity_births_session_speakers_without_committing_raw_labels(
 
 
 def test_bounded_identity_uses_exact_one_to_one_existing_assignment():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
     base = LiveIdentitySnapshot(version=2, canonical_speakers=("speaker-0001", "speaker-0002"))
     preparer = BoundedCausalIdentityPreparer(
         config=identity_config(),
@@ -164,9 +164,9 @@ def test_bounded_identity_uses_exact_one_to_one_existing_assignment():
 
 
 def test_bounded_identity_abstains_on_same_span_cannot_link_conflict_without_mutation():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
     base = LiveIdentitySnapshot(version=1, canonical_speakers=("speaker-0001",))
     preparer = BoundedCausalIdentityPreparer(
         config=identity_config(),
@@ -199,9 +199,9 @@ def test_bounded_identity_abstains_on_same_span_cannot_link_conflict_without_mut
 
 
 def test_bounded_identity_abstains_when_new_speaker_would_exceed_capacity():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
     base = LiveIdentitySnapshot(version=1, canonical_speakers=("speaker-0001",))
     preparer = BoundedCausalIdentityPreparer(
         config=LiveIdentityConfig(max_speakers=1, min_match_score=0.8, min_match_margin=0.1)
@@ -219,9 +219,9 @@ def test_bounded_identity_abstains_when_new_speaker_would_exceed_capacity():
 
 
 def test_bounded_identity_fails_on_pcm_span_mismatch():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
     preparer = BoundedCausalIdentityPreparer(config=identity_config())
 
     preparation = preparer.prepare(

@@ -257,9 +257,16 @@ def run_replay(
 
         frames = _load_frames(manifest.get("frames"), manifest_path.parent)
         decodes = _load_decodes(manifest.get("decodes"))
+        if config.get("session_hard_cap_samples") is not None:
+            # Refused rather than ignored: a manifest carrying this key was written against a
+            # session that closed its own spans, and it would replay differently now that the
+            # endpoint policy is the only authority for a span boundary.
+            raise ReplayFailure(
+                "session_hard_cap_samples is no longer a replay knob; declare the span cap once "
+                "as endpoint_policy.hard_cap_samples"
+            )
         session = LiveSession(
             max_retained_samples=_positive_int(config.get("max_retained_samples"), "max_retained_samples"),
-            hard_cap_samples=_optional_positive_int(config.get("session_hard_cap_samples"), "session_hard_cap_samples"),
         )
         endpoint = EndpointPolicy(_endpoint_config(config.get("endpoint_policy")))
         decoder = _ManifestDecoder(

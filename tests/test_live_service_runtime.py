@@ -162,7 +162,9 @@ def _descriptor(*, max_queue_depth: int = 4, max_retained_samples: int = 8000) -
             max_retained_samples=max_retained_samples,
             max_identity_speakers=2,
             max_events=64,
-            hard_cap_samples=None,
+            # The deployed shape: both sections declare the same cap. Leaving this `None`
+            # while the endpoint policy carried one is the fixture that hid H2 for a year.
+            hard_cap_samples=4000,
             stop_drain_deadline_seconds=1.0,
         ),
         frame_samples=1000,

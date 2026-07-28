@@ -8,13 +8,17 @@ cd "$repo_root"
 
 expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Pre-merge SHA of the ONE merge this script is currently allowed to make. It was
-# af3ac366… for the first keeper merge; the prd.md amendment of 2026-07-28 authorizes
+# af3ac366… for the first keeper merge; the prd.md amendment of 2026-07-28 authorized
 # exactly one follow-up fix merge (ATS declaration, pairing-payload trim, control-channel
-# error classification, their regression tests), whose pre-merge main is the first merge
-# commit f9285d6. Advancing this default is a reviewable diff on purpose: a THIRD merge
-# still fails here, and a command-line RALPH_MERGE_MAIN_BEFORE override would leave no
-# record of why the guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-f9285d69ed7bcc592bb41b3dcdf29e3221968f44}"
+# error classification, their regression tests), whose pre-merge main was the first merge
+# commit f9285d6 and which landed as 317df4d. The SECOND prd.md amendment of 2026-07-28
+# (server decode-seam fix cycle: H1 the empty-span decode contract, H2 the span-cap
+# authority contract, H3 the webrtcvad framing contract, and the real-seam regression
+# tests that close the gap none of them could be caught through) authorizes exactly one
+# further merge, whose pre-merge main is therefore 317df4d. Advancing this default is a
+# reviewable diff on purpose: a FOURTH merge still fails here, and a command-line
+# RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-317df4d728b6765dbe365a3166158ba581299557}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

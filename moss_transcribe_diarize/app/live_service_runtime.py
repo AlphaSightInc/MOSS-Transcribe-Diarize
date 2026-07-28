@@ -430,15 +430,14 @@ class LiveServiceRuntime:
     def create(self) -> LiveServiceCreateResult:
         with self._lock:
             session_id = self._new_session_id()
-            session = LiveSession(
-                max_retained_samples=self.descriptor.bounds.max_retained_samples,
-                hard_cap_samples=self.descriptor.bounds.hard_cap_samples,
-            )
+            endpoint_policy = self._endpoint_policy_factory()
+            self._require_one_span_cap(endpoint_policy)
+            session = LiveSession(max_retained_samples=self.descriptor.bounds.max_retained_samples)
             arbiter = InferenceArbiter(max_live_canonical_items=self.descriptor.bounds.max_queue_depth)
             coordinator = LiveCoordinator(
                 session_key=session_id,
                 session=session,
-                endpoint_policy=self._endpoint_policy_factory(),
+                endpoint_policy=endpoint_policy,
                 speech_provider=self._speech_provider_factory(),
                 decoder=self._decoder_factory(),
                 identity_preparer=self._identity_preparer_factory(),
@@ -571,6 +570,26 @@ class LiveServiceRuntime:
         snapshot = await state.session.abort(reason)
         with self._lock:
             return self._snapshot(state, session_snapshot=snapshot)
+
+    def _require_one_span_cap(self, endpoint_policy: EndpointPolicy) -> None:
+        """Refuse a provider config that declares the span cap twice with two values.
+
+        The endpoint policy is the only thing that closes a span, so
+        `bounds_config.hard_cap_samples` is a declaration of what the policy must do rather
+        than a second mechanism. The manifest finalizer already requires the two sections to
+        agree at write time; checking it here means a manifest that reached the host by any
+        other route is refused at session creation instead of running with an uncapped
+        policy, which would let one span grow until retention backpressures.
+        """
+
+        declared = self.descriptor.bounds.hard_cap_samples
+        enforced = endpoint_policy.config.hard_cap_samples
+        if declared != enforced:
+            raise ValueError(
+                "live provider config declares two different span caps: "
+                f"bounds_config.hard_cap_samples={declared} but "
+                f"endpoint_config.hard_cap_samples={enforced}."
+            )
 
     def _new_session_id(self) -> str:
         session_id = self._session_id_factory()
@@ -715,6 +734,7 @@ class LiveServiceRuntime:
                         "span_id": result.span_id,
                         "submitted": result.submitted,
                         "identity_status": result.identity_status,
+                        "empty_reason": result.empty_reason,
                         "committed_samples": result.committed_samples,
                         "canonical_decode_elapsed_sec": result.canonical_decode_elapsed_sec,
                         "frozen_span_sample_count": result.frozen_span_sample_count,

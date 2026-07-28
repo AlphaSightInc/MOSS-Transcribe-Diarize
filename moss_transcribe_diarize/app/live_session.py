@@ -137,21 +137,28 @@ class _RetainedFrame:
 
 
 class LiveSession:
-    """Default-off live session state machine for ordered 16 kHz PCM."""
+    """Default-off live session state machine for ordered 16 kHz PCM.
+
+    The session records a partition; it does not decide one. Every span boundary arrives
+    through `freeze_until`, which the coordinator calls with what the endpoint policy
+    emitted, so the policy is the single authority for where a span ends. A session that
+    also closed spans on its own would fight that authority — it froze its own `hard_cap`
+    span inside `accept_frame`, before any observation existed, and the policy's identical
+    span was then refused as "frozen span end must advance"; worse, the span the session
+    froze by itself was never queued for decode, so that audio was never transcribed.
+    The only boundary the session still draws is `stop`'s tail flush, which fires solely
+    when nothing else closed the tail and therefore cannot collide with anything.
+    """
 
     def __init__(
         self,
         *,
         max_retained_samples: int,
-        hard_cap_samples: int | None = None,
         session_epoch: int = 0,
     ):
         if max_retained_samples <= 0:
             raise ValueError("max_retained_samples must be positive.")
-        if hard_cap_samples is not None and hard_cap_samples <= 0:
-            raise ValueError("hard_cap_samples must be positive when provided.")
         self.max_retained_samples = int(max_retained_samples)
-        self.hard_cap_samples = None if hard_cap_samples is None else int(hard_cap_samples)
         self._epoch = int(session_epoch)
         self._version = 0
         self._status = "active"
@@ -195,7 +202,6 @@ class LiveSession:
         self._retained_samples += frame.sample_count
         self._accepted_samples = end_sample
         self._next_frame_sequence += 1
-        frozen = self._freeze_hard_cap_spans()
         self._bump()
         return FrameAck(
             sequence=frame.sequence,
@@ -203,7 +209,9 @@ class LiveSession:
             end_sample=end_sample,
             accepted_samples=self._accepted_samples,
             retained_samples=self._retained_samples,
-            frozen_span_ids=tuple(span.id for span in frozen),
+            # Accepting audio never freezes a span: the caller decides boundaries and then
+            # calls `freeze_until`. The ack the client receives carries those spans instead.
+            frozen_span_ids=(),
         )
 
     def begin_provisional(self) -> tuple[int, int, int]:
@@ -280,6 +288,49 @@ class LiveSession:
         self._notify_waiters()
         return True
 
+    def submit_empty_canonical(
+        self,
+        *,
+        span_id: int,
+        epoch: int,
+        start_sample: int,
+        end_sample: int,
+    ) -> bool:
+        """Publish a frozen span that carries no transcript, advancing the committed prefix.
+
+        A span the decoder cannot parse must be accounted for rather than lost: `stop` waits
+        for `committed_samples == accepted_samples`, so a span that is merely dropped strands
+        the session forever. Every meeting opens with silence and holds silence between turns,
+        so this is the ordinary case, not an error path. The identity snapshot is left exactly
+        as it was, because a span with no transcript observed nothing about who spoke.
+        """
+
+        if epoch != self._epoch:
+            return False
+        self._ensure_accepting_or_closing()
+        span = self._frozen_spans.get(span_id)
+        if span is None:
+            return False
+        if not self._span_order or self._span_order[0] != span_id:
+            return False
+        if start_sample != span.start_sample or end_sample != span.end_sample:
+            return False
+
+        self._publish_span(
+            span,
+            CanonicalResult(
+                span_id=span.id,
+                epoch=span.epoch,
+                start_sample=span.start_sample,
+                end_sample=span.end_sample,
+                transcript="",
+            ),
+            identity_snapshot=self._identity_snapshot,
+        )
+        self._bump()
+        self._notify_waiters()
+        return True
+
     def snapshot(self) -> LiveSnapshot:
         return LiveSnapshot(
             status=self._status,
@@ -349,14 +400,6 @@ class LiveSession:
     def _ensure_accepting_or_closing(self) -> None:
         if self._status not in {"active", "closing"}:
             raise LiveSessionClosed(f"live session is {self._status}.")
-
-    def _freeze_hard_cap_spans(self) -> list[FrozenSpan]:
-        if self.hard_cap_samples is None:
-            return []
-        frozen: list[FrozenSpan] = []
-        while self._accepted_samples - self._frozen_until_sample >= self.hard_cap_samples:
-            frozen.append(self._freeze_span(self._frozen_until_sample + self.hard_cap_samples, reason="hard_cap"))
-        return frozen
 
     def _freeze_span(self, end_sample: int, *, reason: str) -> FrozenSpan:
         span = FrozenSpan(

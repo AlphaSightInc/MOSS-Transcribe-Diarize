@@ -237,6 +237,9 @@ def _manifest(
             "max_identity_speakers": 2,
             "max_events": 32,
             "frame_samples": 160,
+            # Must equal endpoint_config.hard_cap_samples: the finalizer requires it when it
+            # writes a manifest and the runtime refuses a session when it does not hold.
+            "hard_cap_samples": 160,
             "stop_drain_deadline_seconds": 1.0,
         },
         "speech_provider": speech_provider,

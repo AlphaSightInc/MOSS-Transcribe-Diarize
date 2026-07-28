@@ -216,6 +216,8 @@ def make_live_runtime(
             max_retained_samples=max_retained_samples,
             max_identity_speakers=2,
             max_events=64,
+            # Same value as the endpoint policy below: one span cap, declared twice.
+            hard_cap_samples=4000,
         ),
         frame_samples=1000,
     )

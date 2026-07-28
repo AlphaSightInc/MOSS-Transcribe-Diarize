@@ -2611,3 +2611,1390 @@ allowed is reviewable in the diff rather than invisible in a shell invocation.
   `HEAD^2` equals the feature tip. Do not push in the same iteration. After the merge, re-run E2b
   on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order, reading
   `log show --predicate 'subsystem == "com.alphasight.moss.capture"'` if the rebuilt app still fails.
+
+================================================================================
+## run 20260728-072601 / iteration 5 - the amendment's one authorized merge, made
+================================================================================
+
+- Target: candidate 29 (**G4**), second half - perform the single follow-up keeper merge the
+  2026-07-28 prd.md amendment authorizes. Gate was already green at product tree `23dc163`
+  (iteration 4); this iteration only satisfied the two fences and ran `merge-keeper.sh`.
+- Files: `scripts/ralph-afk/merge-keeper.sh` (the fence edit), plus `context.md`/`progress.txt`.
+  No tracked product source changed. No host touched, no service restarted, nothing pushed, no app
+  rebuilt or reinstalled on m4mbp.
+
+### Result
+- Join commit `502a49ab464116dcded711235e075e7c858c1378` (`git merge --no-ff main`).
+- Fence commit `23aabe640cc39d16a996e7d48e4fdf297bf4f51e`.
+- **Merge `317df4d728b6765dbe365a3166158ba581299557`** on `main`; `main^1 = f9285d6…` (the first
+  keeper merge), `main^2 = 23aabe6…` = the feature tip, asserted by the script and re-asserted by
+  hand. `git diff 23aabe6 317df4d` is empty; both trees are `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`.
+- `origin/main` deliberately left at `f9285d6` - publishing is its own iteration (candidate G5).
+
+### The join was proven content-free BEFORE it was made
+`git merge-tree --write-tree main HEAD` returned `5963a2b0afd362eaacf0e664cec0fe8f0e6e52ac`, which
+is `git rev-parse HEAD^{tree}` - i.e. the merge's own result tree is the feature tree, so the join
+could not carry content even in principle. Confirmed after: `git diff --stat 0b5383f HEAD -- .`
+empty, `git diff --name-only 23dc163 HEAD -- ':!scripts/ralph-afk'` empty, and
+`git merge-base --is-ancestor main HEAD` then true. main's tree and the merge base's tree were the
+same object `815f23b0…`, as iteration 4 measured.
+
+### The fence edit, and both halves rehearsed non-vacuously
+- `expected_main` now defaults to `f9285d69…` **in the script**, with a comment citing the
+  amendment. Not an env override: the guard stays live and its reason stays in the diff.
+  *Rehearsed after the merge*: `RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh` now
+  prints `ERROR: main moved from expected pre-merge SHA f9285d69…`, rc=1. **A third merge is
+  refused**, which is the whole point of writing it down rather than overriding it.
+- The ancestry fence was a bare `git merge-base --is-ancestor` under `set -e` that exited 1 printing
+  nothing. It now names both SHAs and the fix. *Rehearsed* against a genuinely non-ancestor ref - a
+  dangling `git commit-tree` object, so no ref was created or moved - via a sed'd copy of the script
+  run with `RALPH_MERGE_DRY_RUN=1 RALPH_MERGE_ALLOW_DIRTY=1`: both lines printed, rc=1. The copy was
+  deleted in the same command.
+
+### Validation
+- `RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh` -> `Keeper merge dry-run: PASS
+  feature=23aabe64… main_before=f9285d69…`, rc=0.
+- `bash scripts/ralph-afk/merge-keeper.sh` -> `Keeper merge: PASS feature=23aabe64… main=317df4d7…`,
+  rc=0, ~95 s. Inside its temp worktree it built both Swift products in separate invocations, then:
+  `swift test` **139 passed / 0 failures**; `pytest tests` **537 passed / 2 skipped** in 67.4 s.
+- Merged-tree measurements taken by hand in the first (killed) merge worktree, same staged merge:
+  `swift test` 139 passed / 0 failures; `pytest tests` 537 passed / 2 skipped in 67.35 s;
+  `tests/test_macos_uds_tracer.py` alone **4 passed / 0 skips** in 16.47 s.
+  Logs: `/tmp/ralph-i5-swifttest.log`, `/tmp/ralph-i5-pytest.log`, `/tmp/ralph-i5-tracer.log`,
+  `/tmp/ralph-i5-keeper.log`.
+- Merge payload re-reviewed immediately before the merge: `git diff --stat main HEAD --
+  ':!scripts/ralph-afk'` = the same eight files / +864/-19 as iteration 4. Against published
+  `f9285d6` the entire delta is 12 files, and
+  `git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk' ':!tests/test_macos_*'`
+  is **empty**: the server tree is byte-identical, so G5 can republish without a restart.
+- Primary worktree left on `ralph/live-meeting-mvp`, clean, `git worktree list` back to one entry.
+
+### The first attempt was killed at 10 minutes - what that cost and what it taught
+The first `merge-keeper.sh` invocation ran in a time-capped foreground shell and was killed at 10
+min. Facts, not inference: the last artifact written in its worktree was at 04:20:29, 17 s after the
+worktree was born (04:20:12), and nothing was written for the remaining ~10 min. Re-running each
+stage by hand in that same worktree afterwards passed - `swift test` 1.15 s, tracer 16.5 s, full
+pytest 67.4 s - and a fresh full run of the script then finished in ~95 s. So the stall is
+**unexplained**; the honest suspicion is a first-run macOS security assessment of freshly built
+binaries at a new path, and it was not proven because the stuck process was killed by the cap before
+anyone sampled it.
+The concrete damage was recoverable but not obvious: SIGTERM skips the script's EXIT trap, so the
+kill left a linked worktree with `main` checked out and the merge staged. A branch can be checked
+out in only one worktree, so the retry would have failed at `git worktree add … main`. Recovery:
+`git -C <wt> merge --abort && git worktree remove --force <wt>` - both run, both confirmed, `main`
+still at `f9285d6` at that point (the killed run never committed).
+
+### Learned
+1. **Run the irreversible step where a timeout cannot kill it.** The merge is not slow, but it is
+   the one command in this loop whose interruption leaves shared state (a worktree owning `main`)
+   behind. Background it and poll; the cap is an orchestration artifact, not a property of the work.
+2. **A fence you advance is stronger than a fence you override.** Moving `expected_main` inside the
+   script cost one line and bought a rehearsable refusal of a third merge; `RALPH_MERGE_MAIN_BEFORE`
+   on the command line would have left nothing behind to test.
+3. **Prove the no-op before performing it.** `git merge-tree --write-tree` answered "this join
+   produces exactly your current tree" before any history was written, which turned the history join
+   from an argument into a measurement.
+4. **A killed run is still evidence.** The stranded worktree carried the staged merge, so the merged
+   tree could be measured stage by stage - which is how `swift test` and the tracer were cleared as
+   the stall's cause before spending another full run.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp (Microphone and System
+  Audio Recording for `/Applications/MOSSCapture.app`). G4 did not need them.
+- Next: **G5** - republish so the PRD's "one exact SHA everywhere" clause is green again at
+  `317df4d`: `git push origin main` (fast-forward `f9285d6..317df4d`, never force, never
+  `upstream`), then the server checkout, then the m4mbp checkout, then the four-way check in
+  Validation. No service restart: the server tree is byte-identical across the two SHAs. Then
+  **G6** - re-run E2b on m4mbp so the installed app carries G1+G2+G3, then the corrected E3 order
+  (pair, start, clicks), reading `log show --predicate 'subsystem == "com.alphasight.moss.capture"'`
+  if it still fails.
+
+================================================================================
+## run 20260728-072601 / iteration 6 - G5 rollbacks recorded BEFORE any mutation
+================================================================================
+
+- Target: candidate 30 (**G5**) - republish the authorized merge `317df4d` so the PRD's "one exact
+  SHA everywhere" clause is green again. Pre-mutation state measured read-only this iteration and
+  identical to what iteration 5 recorded:
+  - local `main` = `317df4d728b6765dbe365a3166158ba581299557`; `git merge-base --is-ancestor
+    f9285d6 317df4d` is **true**, so the push is a pure fast-forward.
+  - `git ls-remote origin refs/heads/main` = `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`;
+    `origin` is the AlphaSight fork, `upstream` is OpenMOSS (never pushed).
+  - server `/mnt/d/Coding/MOSS-Transcribe-Diarize`: HEAD `f9285d6`, tree `815f23b0…`, detached,
+    clean, local `main` ref still `163e969`. `moss-vllm` MainPID 322117 / `moss-web` MainPID 301112
+    / `moss-live-web` MainPID 334346, all `active`, all `NRestarts=0`, ActiveEnterTimestamps
+    2026-07-26 22:05:29 / 2026-07-24 21:37:11 / 2026-07-28 00:50:29 - unchanged since D3.
+  - m4mbp `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`: HEAD `f9285d6`,
+    tree `815f23b0…`, detached, clean, 159 tracked files, local `main` still upstream `40cf854`,
+    remotes `origin` = OpenMOSS and `alphasight` = the fork.
+- Re-verified before pushing: `git diff --name-only f9285d6 317df4d -- ':!macos'
+  ':!scripts/ralph-afk' ':!tests/test_macos_*'` is **empty**, so the server tree does not change and
+  **no service restart is authorized or needed**. The whole delta is 12 files: six Mac client
+  sources/tests, two `tests/test_macos_*` files, and four `scripts/ralph-afk/*`.
+
+### Rollbacks, recorded before the mutations they cover (prd.md "Reversibility")
+1. **`git push origin main`** - one-way by PRD rule (no force-push, ever). There is no rollback and
+   none is claimed; that is why the payload was reviewed before the merge, not after.
+2. **Server checkout** - restore the previously published SHA, moving nothing but `HEAD`:
+   `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout f9285d69ed7bcc592bb41b3dcdf29e3221968f44`
+   The standing deeper rollback is unchanged and still valid:
+   `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969`
+3. **m4mbp checkout** - same shape:
+   `git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout f9285d69ed7bcc592bb41b3dcdf29e3221968f44`
+   Full rollback to the pre-loop state is still the recorded one:
+   `git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout main`
+   (restores `40cf854`, branch `main`, tree `ac0058f9…`), optionally
+   `git -C … remote remove alphasight`.
+   Note: the m4mbp checkout moving to `317df4d` does **not** by itself change
+   `/Applications/MOSSCapture.app` - the installed bundle is still the `f9285d6` build until G6
+   re-runs `build-app.sh`/`install-app.sh`. No TCC grant is at risk from this checkout.
+
+### Result - G5 done, the PRD's "one exact SHA everywhere" clause GREEN again
+All four now read `317df4d728b6765dbe365a3166158ba581299557`, measured in one pass at the end:
+| checkout | before | after |
+| --- | --- | --- |
+| local `main` (MacStudio) | 317df4d | 317df4d |
+| `origin/main` (`git ls-remote`) | f9285d6 | 317df4d |
+| server `/mnt/d/Coding/MOSS-Transcribe-Diarize` | f9285d6 | 317df4d |
+| m4mbp `…/MOSS-Transcribe-Diarize` | f9285d6 | 317df4d |
+- `git push origin main` -> `f9285d6..317df4d  main -> main`, a **fast-forward** (`merge-base
+  --is-ancestor f9285d6 317df4d` was asserted true first). `origin` is the AlphaSight fork;
+  `upstream` (OpenMOSS) was not touched. No force, no tag, no branch deleted.
+- Each host checkout ran behind a fence that aborts before any mutation: HEAD must equal `f9285d6`
+  and `git status --porcelain` must be empty. Both printed `fences: ok`.
+- Both hosts stay **detached**, so each rollback still moves nothing but `HEAD`: the server's local
+  `main` ref is still `163e969` and m4mbp's is still upstream `40cf854`.
+- Tree objects after: both hosts `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3` = local
+  `git rev-parse 317df4d^{tree}`. m4mbp still 159 tracked files, both trees clean.
+
+### No restart, and the reason was measured rather than asserted
+`git diff --name-only f9285d6 317df4d -- ':!macos' ':!scripts/ralph-afk' ':!tests/test_macos_*'` is
+empty - the entire 12-file delta is six Mac client sources/tests, two `tests/test_macos_*` files and
+four `scripts/ralph-afk/*`. After both checkouts moved, `systemctl --user show` reported the same
+three MainPIDs (322117 / 301112 / 334346), `NRestarts=0` on all three, and the same
+`ActiveEnterTimestamp`s (2026-07-26 22:05:29 / 2026-07-24 21:37:11 / 2026-07-28 00:50:29) recorded
+since D3. Reachability re-asserted from **both** client hosts: batch `http://192.168.68.38:7860/`
+200, `https://100.64.0.8:7861/live` 200, `/api/live/descriptor` 200.
+
+### Cross-host content proven by hash, not by `git status`
+E2a's lesson applied. Six files hashed independently on each host and compared - the four G1/G2/G3
+client sources plus `build-app.sh` and `install-app.sh` - all six identical to MacStudio's blobs at
+`317df4d` (e.g. `Info.plist acfe31d6…`, `CaptureSecurity.swift c79b2dbf…`). `macos/scripts/` exec
+bits intact (three 0755 tools, `moss-tool-lib.sh` 0644 by design). Semantic spot-check on m4mbp:
+`plutil -extract NSAppTransportSecurity` on the checkout's `Info.plist` prints exactly
+`NSAllowsArbitraryLoads` / `true` and nothing else - the G1 shape, on the host that needs it.
+
+### The measurement that matters most for G6: the checkout has the fix, the PRODUCT does not
+`plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist` ->
+`Could not extract value … No value at that key path`. The installed bundle is still the `f9285d6`
+build, `CDHash=026836783c25f27e93c128214f717289864a680c`, `Identifier=com.alphasight.moss.capture`,
+DR still `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`,
+`TeamIdentifier=not set`. So G6's rebuild has an exact before/after proof available, and G5 did not
+accidentally change the product.
+
+### Off-target discovery: two context.md facts were false, and they change the E3/G6 premise
+Probing the installed app also listed `~/Library/Application Support/MOSSCapture` - which context
+recorded as **absent** ("nothing has paired yet"). It exists, 0700 dir / 0600
+`secrets.json`, mtime 2026-07-28 03:10:14. The server's `live/live-auth.json` - recorded as
+**absent**, "D4 is what creates it" - also exists, 0600, `{schema_version: 1, devices: 1}`, mtime
+03:10:15. One second apart. The supervisor's attended-diagnosis entry did record the cause in
+passing ("one device pairing persisted to the Mac secret store by the unsigned build", "two pairing
+sessions were minted"), but neither state block was corrected, so the loop has been carrying two
+false facts since. Both are fixed in context.md this iteration.
+Independent witness, the live journal since 02:00: 5 `POST /api/live/pairing-codes`, 2 `POST
+/api/live/pairings`, 2 `POST /api/live/sessions`, 13 `GET /api/live/descriptor`, and **zero** frame
+posts - so a device really is paired, two sessions really exist, and no session has ever received
+audio. (It is a uvicorn access log: paths only, no bodies, no token - a small piece of the
+secret-hygiene clause, gathered for free.)
+Store contents read keys-and-lengths only, never values: `capture-bearer` 43,
+`capture-certificate-pin` 64, `capture-device-id` 36, `capture-server-url` 23
+(= `https://100.64.0.8:7861`), `capture-session-id` 32, `capture-view-token` 43,
+`local-control-secret` 44.
+**Consequence for G6, and it is not cosmetic.** The supervisor's finding that
+`captureConfiguration(from:)` throws `missingCaptureConfiguration` before `CaptureController.start`
+was measured against an *empty* store. m4mbp's store is now complete, so a bare `start` there would
+**resolve**, raise both TCC prompts, and publish into the stale 03:10 session instead of failing
+closed. Read out of the source to check it could: `LiveServiceRuntime.create`
+(`live_service_runtime.py:430`) just inserts into `self._sessions` with no single-session refusal,
+and `moss-live-web` has not restarted since 00:50:29, so those in-memory sessions are still there
+(until the 12 h view cap ~15:10). Nothing is blocked - but G6 must pair first so the fresh
+`pairings` -> `sessions` exchange overwrites the stored session id and bearer.
+
+### Known benign divergence G5 leaves behind
+`/api/live/descriptor` still reports `source_revision f9285d69…` - it is baked into the manifest D2
+generated and `provider_manifest_hash 61d97ffe…` covers the file. It names an ancestor of the
+deployed SHA whose server tree is byte-identical, so it still honestly describes the running code.
+Restamping it would rotate a file every paired client hashes for no behavioral gain; recorded rather
+than "tidied".
+
+### Validation
+- Four-way SHA check (the PRD clause) - four commands, one value: `317df4d728b6765dbe365a3166158ba581299557`.
+- `git push origin main` rc=0, `f9285d6..317df4d`; `git ls-remote origin refs/heads/main` re-read
+  after the push confirms it.
+- Both host fences printed `fences: ok`; both `git status --porcelain` empty afterwards.
+- Services: same MainPIDs / `NRestarts=0` / same `ActiveEnterTimestamp`s before and after.
+- Reachability from MacStudio and from m4mbp: 200 / 200 / 200.
+- Six-file cross-host `shasum -a 256` parity.
+- No tracked product source changed this iteration; the only files this loop wrote are
+  `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### Learned
+1. **A fact recorded as "absent" decays silently.** "`live-auth.json` is absent, so its absence is
+   the marker that no device is paired" was true when written and became false during an
+   operator-attended session that was *itself* recorded in progress.txt - just not back-propagated
+   into the state blocks. Absence-based markers need re-measuring, not remembering; a positive
+   marker (mtime, device count) would not have rotted the same way.
+2. **Publishing is a good time to re-measure the hosts.** The G5 mutation needed a pre-state read
+   anyway, and that read is what surfaced the stale pairing. Cheap probes on the way to a small
+   change beat a dedicated audit iteration.
+3. **"Fails closed" is a property of state, not only of code.** The unpaired-`start` guard is real
+   and unchanged, but m4mbp is no longer unpaired, so the safety it provided during the diagnosis is
+   gone on that host. Re-check the precondition, not the guard.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp (Microphone and System
+  Audio Recording for `/Applications/MOSSCapture.app`). G5 did not need them.
+- Next: **G6** - `build-app.sh --configuration release` then `install-app.sh` on m4mbp so the
+  installed bundle carries G1+G2+G3. Expect the replacement path (SwiftPM is not byte-reproducible
+  there), a `<...>.backup-<utc>` for both bundle and CLI, and **no** DR-change warning; stop if the
+  DR moves off `H"e118d874…"`. Prove the fix shipped with the `plutil -extract` before/after and a
+  new `CDHash` against `0268367…`. Then the operator's step in the order the diagnosis established:
+  D4 mint -> `pair` (Ctrl-D; a stray Return is harmless since G2) -> `start` -> the two clicks ->
+  the read-only `sqlite3`/`csreq` verification. Pair first regardless: the stale 03:10 configuration
+  means `start` alone would no longer fail closed.
+
+
+================================================================================
+## run 20260728-072601 / iteration 7 - G6 rollbacks recorded BEFORE the rebuild
+================================================================================
+
+- Target: candidate 31 (**G6**) - re-run E2b's reviewed tools on m4mbp so the *installed*
+  `/Applications/MOSSCapture.app` carries G1+G2+G3. G5 moved the checkout to `317df4d`; the product
+  is still the pre-amendment `f9285d6` build, so this is the last step between the ATS fix and the
+  binary the operator will click through TCC.
+- Authorized action: candidate 31 names `macos/scripts/build-app.sh --configuration release` then
+  `install-app.sh` on m4mbp. Nothing else is touched - no server, no service, no TCC, no git ref.
+
+### Pre-state, measured read-only this iteration (all on m4mbp, 2026-07-28T08:53Z)
+- Host `M4MBP.local`, macOS `26.5.2`.
+- Checkout `/Users/ga0/…/MOSS-Transcribe-Diarize`: HEAD `317df4d728b6765dbe365a3166158ba581299557`,
+  tree `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`, `git status --porcelain` empty, 159 tracked files.
+- Checkout `macos/MOSSCapture/Resources/Info.plist` -> `plutil -extract NSAppTransportSecurity`
+  prints exactly `NSAllowsArbitraryLoads` / `true` and nothing else. **The source has the fix.**
+- Installed bundle `/Applications/MOSSCapture.app`: inode **211502957**, mtime 2026-07-28T01:12:55Z,
+  `Identifier=com.alphasight.moss.capture`, `CDHash=026836783c25f27e93c128214f717289864a680c`
+  (full sha256 `026836783c25f27e93c128214f717289864a680c7e539fbccb8cc6531bf09f6f`),
+  `flags=0x10000(runtime)`, `TeamIdentifier=not set`, `Signed Time=Jul 28, 2026 at 1:12:55 AM`,
+  DR `identifier "com.alphasight.moss.capture" and certificate leaf =
+  H"e118d874377746c4bd25beb8252bb84302b73e72"`, `codesign --verify --strict` ok, embedded
+  entitlements exactly `{com.apple.security.device.audio-input: true}`.
+  Its three files hash to
+  `Contents/MacOS/MOSSCaptureApp de8cf591…`, `Contents/Info.plist 2cc4b1da…`,
+  `Contents/_CodeSignature/CodeResources 6686de10…`.
+- **`plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist`
+  errors `No value at that key path`.** That is the "before" half of G6's one-line proof.
+- Installed CLI `/Users/ga0/.local/bin/mtd-capture`: 0755, 1378624 bytes,
+  sha256 `08ba13fd…`, `Identifier=com.alphasight.moss.capture.cli`,
+  `CDHash=f9d9e849f77bdca24df544fe7f4b8476cfe6cf78`.
+- No `/Applications/MOSSCapture.app.backup-*` and no `mtd-capture.backup-*` exist yet, so any
+  backup seen after this iteration was created by it.
+- `MOSSCaptureApp` is **not running** and `/tmp/moss-capture-501/control.sock` does not exist, so no
+  live control channel or capture session is disturbed by replacing the bundle.
+- Signing identity intact: `~/Library/Keychains/moss-signing.keychain-db` (26408 B, 01:05) and
+  `~/.config/moss-capture/signing-keychain.password` (0600, 45 B).
+- `.build/product` from E2b holds the currently-installed build plus `build-evidence.json`.
+- Free space 77 Gi.
+
+### Rollbacks, recorded before the mutations they cover (prd.md "Reversibility")
+1. **Independent pre-copy of the installed artifacts**, taken first so a restore never depends on the
+   tool's own backup step succeeding. SwiftPM is not byte-reproducible on this host, so the *only*
+   way back to these exact bytes is a copy that already exists:
+   `mkdir -p /tmp/moss-g6-prebackup && cp -R /Applications/MOSSCapture.app /tmp/moss-g6-prebackup/ && cp -p /Users/ga0/.local/bin/mtd-capture /tmp/moss-g6-prebackup/`
+   Restore from it:
+   `rm -rf /Applications/MOSSCapture.app && cp -R /tmp/moss-g6-prebackup/MOSSCapture.app /Applications/ && cp -p /tmp/moss-g6-prebackup/mtd-capture /Users/ga0/.local/bin/mtd-capture`
+   Removing the pre-copy afterwards is `rm -rf /tmp/moss-g6-prebackup`.
+2. **`build-app.sh --configuration release`** overwrites `macos/MOSSCapture/.build/product`, which is
+   gitignored derived output. Rollback is rollback 1 (the bytes it replaces are the installed ones)
+   plus, if the tree ever needs to be clean of build output, `rm -rf macos/MOSSCapture/.build/product`.
+   It touches no keychain state: it unlocks the signing keychain from the password file and signs;
+   it refuses an install location by design.
+3. **`install-app.sh`** replaces the bundle and the CLI. Because the rebuild changes the bytes, this
+   takes the **replacement** path, which prints its own rollback line *before* the first mutation and
+   moves the previous artifacts aside rather than deleting them:
+   `rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-<utc>' '/Applications/MOSSCapture.app'`
+   `rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-<utc>' '/Users/ga0/.local/bin/mtd-capture'`
+   The `<utc>` stamps are recorded in the result section below once the tool prints them.
+4. **Stop condition, not a rollback.** If the new bundle's designated requirement is anything other
+   than `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"`, apply
+   rollback 3 (or 1) immediately and record a blocker: a changed DR is exactly what would cost the
+   operator the TCC grants E3 is about to create.
+5. **Nothing else is at risk.** No TCC row exists for this client yet (iteration 23 baseline: zero
+   `%moss%` rows in either service), so no grant can be lost by an inode change this time; the
+   E1 identity is untouched, so the DR is stable; the server and both services are not involved.
+
+### Result - G6's automatable half is DONE: the installed product now carries G1+G2+G3
+The whole point of this iteration in one before/after, measured on the real installed bundle:
+
+| | before | after |
+| --- | --- | --- |
+| `plutil -extract NSAppTransportSecurity … /Applications/MOSSCapture.app/Contents/Info.plist` | `No value at that key path` | exactly `NSAllowsArbitraryLoads` / `true` |
+| bundle `CDHash` | `026836783c25f27e93c128214f717289864a680c` | `2b51082c44a0e882f78a4b22d9e22e0a50bb6981` |
+| bundle inode | 211502957 | 211648186 |
+| CLI `CDHash` | `f9d9e849f77bdca24df544fe7f4b8476cfe6cf78` | `42c3593628f16ef81a778e039969e2a3ac73a74e` |
+| CLI sha256 | `08ba13fd…` | `a901b4b37fd8615c470543262dc0a5aa5fadbf3fa03332361ad09780a7614456` |
+| designated requirement | `identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874…"` | **identical** |
+
+- `build-app.sh --dry-run` printed its seven `plan:` lines and the `rollback:` line and mutated
+  nothing (tree still clean afterwards).
+- `build-app.sh --configuration release`: `MOSSCaptureApp` 4.79 s, `mtd-capture` 0.54 s, **7 s wall
+  total, zero warnings**, both products built in separate invocations by the tool itself.
+  `evidence: bundle_digest=48aaf203b230d0d81110aa84da7aaf21005958baeee37b86aefac3040a1eef4a`,
+  `built_app_sha256 836ed8f2…`, `built_cli_sha256 594f443e…`,
+  `embedded_keychain_access_groups: absent`, `embedded_audio_input_entitlement: true`.
+- The built bundle was checked **before** installing: ATS key exactly right, DR right, embedded
+  entitlements exactly `{com.apple.security.device.audio-input: true}`, and a `grep -c
+  keychain-access-groups` over the *signature's* entitlements returns **0** — B5's drop still fires.
+- `install-app.sh --dry-run` mutated nothing (inode unchanged, no backup created).
+- `install-app.sh` took the **replacement** path as predicted, printing each `rollback:` line before
+  the mutation it covers, and **no** DR-change warning (correctly - only the bytes changed):
+  `evidence: backup_bundle=/Applications/MOSSCapture.app.backup-20260728T085551Z`,
+  `evidence: backup_cli=/Users/ga0/.local/bin/mtd-capture.backup-20260728T085551Z`.
+- Post-install: `codesign --verify --strict` ok; usage strings and `LSUIElement=true` present;
+  the installed CLI answers `{"ok":false}` rc=70 and the usage line rc=64 with no helper running,
+  emitting no path, token or secret; `~/Library/Application Support/MOSSCapture` untouched.
+- **DR satisfaction proven positively and negatively**, not by string comparison:
+  `codesign --verify -R='identifier "com.alphasight.moss.capture" and certificate leaf =
+  H"e118d874…"'` passes for the bundle and (with the `.cli` identifier) for the CLI, while the same
+  requirement with leaf `H"0000…"` is refused `code failed to satisfy specified code requirement(s)`.
+- **Idempotence proven on the real product**: a second `install-app.sh` printed
+  `unchanged: /Applications/MOSSCapture.app already holds this exact bundle`,
+  `unchanged: … mtd-capture …`, `backup_bundle=none`, `backup_cli=none`, and the inode stayed
+  **211648186** - so the shortcut that preserves TCC grants works outside the test fixture too.
+- **The rollback is a real artifact, not a sentence.** The backup bundle still verifies, still
+  carries `CDHash=026836…`, and still has **no** `NSAppTransportSecurity` key; the backup CLI is
+  still sha256 `08ba13fd…`. Since SwiftPM is not byte-reproducible on this host, those two files are
+  the only route back to the pre-G6 product. A redundant pre-copy was taken first at
+  `/tmp/moss-g6-prebackup` (verified: same CDHash, same CLI sha256).
+- **Nothing else moved.** Checkout still `317df4d`, `git status --porcelain` empty; TCC still has
+  **zero** `%moss%` rows against 320 total (so the reader is sane and the install created no grant);
+  no service touched.
+
+### Reachability re-asserted from m4mbp after the reinstall (read-only)
+Served leaf hashes to `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff` = the D2
+pin; `/live` 200 and `/api/live/descriptor` 200 over pinned TLS (pin verified *before* trusting the
+leaf); batch `http://192.168.68.38:7860/` 200; plaintext `http://100.64.0.8:7861/live` **000**.
+
+### Validation
+- `build-app.sh --configuration release` rc=0, 7 s, zero warnings; `install-app.sh` rc=0; re-run
+  rc=0 with two `unchanged:` lines and an unmoved inode; both dry runs rc=0 with no mutation.
+- `codesign --verify --strict` ok on the installed bundle, the installed CLI and the backup bundle.
+- `codesign --verify -R=<E1 DR>` passes; wrong-leaf variant refused.
+- `plutil -extract NSAppTransportSecurity` on the installed `Info.plist`: errored before, prints the
+  G1 shape after.
+- Four reachability probes from m4mbp: pin match, 200, 200, 200, 000.
+- No tracked file changed this iteration; the loop wrote only
+  `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### Learned
+1. **`codesign --verify -R=` will not accept what `codesign -d -r-` prints.** The `-d -r-` output
+   begins `designated => `; feeding that back verbatim fails `unexpected token: designated` and reads
+   exactly like a corrupted signature. Strip the prefix. This iteration's first DR check "failed"
+   for that reason alone - a probe bug that, uncaught, would have looked like the stop condition that
+   aborts G6 and rolls back a perfectly good install.
+2. **Verify the built artifact before installing it, not after.** The ATS key, the DR and the
+   entitlement drop were all asserted on `.build/product` while `/Applications` still held the old
+   bundle, so a bad build would have been caught with the previous product still in place and no
+   backup/restore cycle needed. The install then had nothing left to discover.
+3. **The idempotent path is worth exercising deliberately.** `install-app.sh`'s `unchanged:`
+   shortcut is what preserves the bundle's inode and therefore the operator's future TCC grants;
+   it had only ever been proven against scratch paths in the test suite. Re-running the installer
+   once, immediately, proves it on the artifact that will actually hold the grants - for the cost of
+   one command.
+4. **A rebuild is where a DR would silently drift**, and the loop had a stop condition ready for it.
+   It did not drift - E1's identity is stable and the grants will key on it - but the check cost
+   nothing and the alternative (discovering it after the human clicks) costs the human's clicks.
+- Blocker: **unchanged, and now the only thing between here and Phase F** - E3's human step on
+  m4mbp. Everything mechanical is done: the product carries the ATS fix, the pairing-payload trim and
+  the control-channel classifier; the live service answers over the pinned tailnet address; the
+  checkout, the identity and the installed bundle all verify. What remains cannot be scripted:
+  1. On the server, mint one payload (loop-runnable, but only in the same 5-minute window as step 3):
+     `ops/live-pair.sh --url https://127.0.0.1:7861 --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"`
+     Never redirect the `payload:` line to a file.
+  2. In the **GUI session** on m4mbp (not over SSH): `open -a /Applications/MOSSCapture.app`.
+     `LSUIElement=true`, so nothing appears on screen - confirm with `pgrep -x MOSSCaptureApp` and
+     `ls -l /tmp/moss-capture-501/control.sock`.
+  3. `/Users/ga0/.local/bin/mtd-capture pair --server https://100.64.0.8:7861`, paste the payload,
+     **Ctrl-D**. A stray Return before Ctrl-D is harmless since G2. Pair even though a stale 03:10
+     configuration exists - that is what overwrites it.
+  4. `/Users/ga0/.local/bin/mtd-capture start`. **System Audio Recording prompts first, Microphone
+     second** (`NativeDualCaptureSource.swift:191-192`). A hung `start` while a prompt is on screen
+     is expected, not a defect - never kill the app.
+  5. Verify read-only from anywhere with the two `sqlite3`/`csreq` queries in Validation: two rows
+     with `auth_value 2`, and a csreq decoding to the E1 designated requirement.
+- Next: the loop cannot advance the product further without step 2-4 above. If the operator is
+  unavailable, the highest-value remaining loop-runnable work is F-phase *preparation* that needs no
+  TCC: nothing in F1/F2/F3 qualifies (all three need a running capture), so the honest next action is
+  to hold at this blocker rather than manufacture an iteration.
+
+================================================================================
+## run 20260728-072601 / iteration 8 - F4a rollback rehearsal, rollbacks recorded FIRST
+================================================================================
+
+- Target: **F4a** - the PRD acceptance clause "Rollback rehearsed and recorded: live service
+  disabled, server checkout reverted to `163e969`, and `http://192.168.68.38:7860/` still serving -
+  then restored."
+- **Why this candidate, off the strict phase order.** Iteration 7 closed G6's automatable half and
+  concluded that everything left is E3's human TCC clicks. That is true of F1/F2/F3 - all three need
+  a running capture - but it is **not** true of the rollback clause: it touches only the server, and
+  it is the one remaining PRD acceptance item the loop can close without the operator. So candidate
+  32 (**F4**) is split by evidence the same way iteration 20 split E2: **F4a** is the rollback
+  rehearsal (runnable now, closes a clause on its own) and **F4b** is the final close (still gated on
+  every other item having evidence). Rehearsing earlier is also strictly better than rehearsing
+  later: the value of a rollback is knowing it works *before* you are committed, and after
+  certification the certified state is the thing you least want to disturb.
+- Authorized action: candidate 32 (F4) explicitly names "rehearse/record rollback, restore service".
+  Its "only when every PRD acceptance item has evidence" condition governs *closing the loop*, not
+  the rehearsal. Nothing else is touched: no Mac, no TCC, no push, no merge, no tracked source.
+
+### Pre-state, measured read-only this iteration (server, 2026-07-28)
+- Checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize`: HEAD `317df4d728b6765dbe365a3166158ba581299557`
+  (detached), tree `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`, `git status --porcelain` **empty**,
+  local `main` ref still `163e969a054dd7f894e550ff611e9c5a7620ae4d`. `git diff --name-only 163e969
+  317df4d` is 87 files.
+- Units: `moss-vllm` MainPID **322117** / `moss-web` MainPID **301112** / `moss-live-web` MainPID
+  **334346**, all `active`/`running`/`enabled`, all `NRestarts=0`, ActiveEnterTimestamps
+  2026-07-26 22:05:29 / 2026-07-24 21:37:11 / 2026-07-28 00:50:29.
+- Listeners: `0.0.0.0:7860` pid 301112 and `0.0.0.0:7861` pid 334346.
+- From MacStudio: served leaf hashes to the D2 pin
+  `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`; `/live` **200**,
+  `/api/live/descriptor` **200** over pinned TLS; plaintext `http://100.64.0.8:7861/live` **000**;
+  `http://192.168.68.38:7860/` **200**, `/api/jobs` **200** (real body, 143 job dirs),
+  `/api/runtime` **200**.
+- Live state files (ext4, **outside** the repo, so no checkout can reach them):
+  `live-auth.json` inode 11374 sha256 `9d306766…`; `live.crt` inode 12436 sha256 `1839a186…`;
+  `live.key` inode 12123 sha256 `7bb3173f…`; `live-provider-manifest.json` inode 10565 sha256
+  `8bef5c36…`.
+- Unit: `~/.config/systemd/user/moss-live-web.service` sha256 `090b7d98…`, byte-identical to the
+  tracked `ops/systemd/moss-live-web.service`; enable symlink present under `default.target.wants/`.
+  `ExecStart=/bin/bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/start-web.sh`,
+  EnvironmentFiles `ops/moss.env` (ignore_errors=yes) + `ops/moss-live.env` (**ignore_errors=no**).
+- Untracked-and-therefore-safe at **both** SHAs (`git ls-tree` empty for each): `runs/` (143 job
+  dirs), `live-runs/`, `ops/moss-live.env`. `.gitignore:13,14,32`. A checkout cannot delete them.
+- `ops/systemd/moss-live-web.service` does **not** exist at `163e969` (`git cat-file -e` fails);
+  `ops/start-web.sh` does.
+
+### The ordering hazard this rehearsal must respect, and why `disable` is the right verb
+`ExecStart` points at `ops/start-web.sh` **inside the reverted checkout**. At `163e969` that script
+predates `MOSS_WEB_PORT`/`MOSS_RUNS_DIR`, so a live unit started while the checkout is back at
+`163e969` would ignore the live profile and try to bring up a **batch** server. Therefore: disable
+the live unit **before** the checkout moves back, and restore the checkout **before** the unit is
+re-enabled. `disable --now` (not `stop`) is what the recorded D3 rollback says and is also the
+safer verb - a disabled unit cannot be pulled in by `default.target` if anything re-runs it.
+
+### Rollbacks, recorded before the mutations they cover (prd.md "Reversibility")
+1. **`systemctl --user disable --now moss-live-web.service`** stops the live service and removes the
+   `default.target.wants/` symlink. The unit file itself is untouched.
+   Rollback: `systemctl --user enable --now moss-live-web.service`.
+   Independent of the tool: the unit file is byte-identical to the tracked
+   `ops/systemd/moss-live-web.service`, so even a lost unit file is restorable with
+   `ops/install-services.sh --with-live` from the restored checkout.
+2. **`git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969`** moves `HEAD` only - no ref is
+   written, no branch moves, `main` stays at `163e969` and the tree is clean going in.
+   Rollback: `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 317df4d728b6765dbe365a3166158ba581299557`.
+   Both SHAs are already in the object store (`163e969` is an ancestor of `317df4d`), so neither
+   direction needs the network.
+3. **Nothing else is mutated.** No file outside the checkout is written; the live TLS pair, the
+   manifest, `live-auth.json`, `ops/moss-live.env`, `runs/` and `live-runs/` are all outside the
+   checkout or untracked, and their inodes+hashes above are the check that this held.
+4. **Accepted, deliberate loss:** the two stale 2026-07-28T03:10 in-memory live sessions die with
+   the process. That is not a regression - E3's runbook already says `pair` first precisely so the
+   canary uses a session the signed app created. Device pairings live in `live-auth.json` on disk;
+   proving they survive the cycle is part of this iteration's evidence, not a risk it takes.
+5. **Stop condition.** If after the restore the served leaf does not hash to
+   `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`, stop and record a blocker:
+   that pin is what every paired Mac stores, and a rotated pin would break E3 before it starts.
+6. **Untouched by design:** the Windows portproxy/firewall/scheduled-task half of the D3 rollback is
+   *recorded* (context.md Validation) but deliberately **not** rehearsed - the PRD's rollback clause
+   names three things and none of them is the Windows forward, and removing it would risk the
+   sign-in task for no acceptance credit. The client-side probe while the service is down covers the
+   part that matters behaviorally: a portproxy row with nothing behind it serves nothing.
+
+### Result - F4a DONE: the PRD's "Rollback rehearsed and recorded" clause is GREEN
+The clause has three assertions. All three were made for real on the server, in the order the
+hazard above requires, and then undone.
+
+**1. Live service disabled.** `systemctl --user disable --now moss-live-web.service` ->
+`Removed "…/default.target.wants/moss-live-web.service"`; afterwards `is-enabled`=**disabled**
+(rc=1), `is-active`=**inactive** (rc=3), `MainPID=0`, `SubState=dead`, **`Result=success`** (a clean
+shutdown, not a kill - the journal shows `Shutting down` / `Waiting for application shutdown` /
+`Application shutdown complete` / `Finished server process [334346]`). The 7861 listener vanished;
+only `0.0.0.0:7860` pid 301112 remained. The unit **file** was left in place (sha256 `090b7d98…`).
+From MacStudio, with the portproxy row still in place: `https://100.64.0.8:7861/live` **000**,
+`http://100.64.0.8:7861/live` **000**, `https://192.168.68.38:7861/live` **000**, and
+`openssl s_client` to 100.64.0.8:7861 fails `write:errno=54`. A forward with nothing behind it
+serves nothing - which is why the Windows half did not need to be torn down to prove the rollback.
+
+**2. Server checkout reverted to `163e969`.** `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout
+163e969` -> `HEAD` `163e969a054dd7f894e550ff611e9c5a7620ae4d`, tree `4b4de55db114094e413205b8bc0af6a60e33975d`,
+`main` still `163e969` (no ref written). Verified the live surface really left the disk:
+`ops/systemd/moss-live-web.service`, `ops/live-pair.sh`, `ops/generate-live-tls.sh`,
+`moss_transcribe_diarize/app/live_auth.py`, `macos/scripts/build-app.sh` and
+`ops/moss-live.env.example` all **absent**. Untracked host state survived untouched: `runs/` still
+143 dirs, `live-runs/` and `ops/moss-live.env` still present, and the four files under
+`~/.local/share/moss-transcribe-diarize/live/` kept **both** inode and sha256
+(`live-auth.json` 11374/`9d306766…`, `live.crt` 12436/`1839a186…`, `live.key` 12123/`7bb3173f…`,
+`live-provider-manifest.json` 10565/`8bef5c36…`).
+
+**3. `http://192.168.68.38:7860/` still serving**, measured from MacStudio while rolled back:
+root **200**, `/api/jobs` **200** returning **141** real jobs, `/api/runtime` **200** with the vLLM
+backend still answering (`backend: vllm`, `base_url http://127.0.0.1:8000/v1`). `moss-vllm` MainPID
+**322117** and `moss-web` MainPID **301112**, both `active`, `NRestarts=0`, ActiveEnterTimestamps
+unchanged at 2026-07-26 22:05:29 / 2026-07-24 21:37:11 - **no batch service was restarted at any
+point in this rehearsal.**
+*And the next restart would be healthy too, measured at the rolled-back SHA:* the read-only argv
+probe (last `exec` line asserted first, then rewritten in a `/tmp` copy, so it can never launch a
+server) run against `163e969`'s own `ops/start-web.sh` with the host's real `ops/moss.env` derives
+exactly `tests/test_live_service_deployment.py:51-62`'s `BATCH_ARGV` - port 7860, runs dir
+`<checkout>/runs`, **no `--live` flag**.
+
+**Then restored, in the reverse order.** `git checkout 317df4d…` -> HEAD `317df4d7…`, tree
+`3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`, `git status --porcelain` **empty**, all six probed files
+back, and the installed unit still byte-identical to the restored tracked
+`ops/systemd/moss-live-web.service`. Then `systemctl --user enable --now moss-live-web.service` ->
+symlink recreated, `active`/`running`/`enabled`, `NRestarts=0`, **MainPID 336320**,
+ActiveEnterTimestamp 2026-07-28 05:06:05, listening TLS on `0.0.0.0:7861`.
+Post-restore from MacStudio: the served leaf is **byte-identical** to the one captured before the
+rehearsal and still hashes to `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`
+(stop condition not triggered); `/live` **200**, `/api/live/descriptor` **200** over the pin, and the
+descriptor body is unchanged - `sample_rate 16000`, `frame_samples 8000`,
+`provider_manifest_hash 61d97ffe…`, `source_revision f9285d69…` (the known benign divergence,
+neither fixed nor worsened). Plaintext 7861 back to **000**; batch root/`api/jobs`/`api/runtime`
+**200/200/200** with the same 141 jobs.
+
+### What the rehearsal cost, and what it deliberately did not touch
+- **Cost:** the two stale 2026-07-28T03:10 in-memory live sessions, which died with PID 334346.
+  Accepted in the pre-record above; E3 pairs first anyway. The on-disk device state is provably
+  intact (`live-auth.json` same inode, same sha256), so nothing needs re-pairing that did not
+  already need it. This is the persistence split the view-authority contract asserts - devices
+  durable, sessions memory-only - observed on the real host for the first time, though only the
+  durable half is directly measured; the session loss is inferred from the new MainPID plus the
+  memory-only contract.
+- **Not touched:** the Windows portproxy/firewall/scheduled task (out of the clause's scope, and the
+  000s above show the forward is inert without a listener), the batch units, the TLS pair, the
+  manifest, `runs/`, `live-runs/`, `ops/moss-live.env`, and every Mac.
+
+### Validation
+- `systemctl --user disable --now` rc=0; state went enabled/active -> disabled/inactive with
+  `Result=success`; `enable --now` rc=0; state back to enabled/active with a new MainPID.
+- `git checkout 163e969` rc=0 and `git checkout 317df4d…` rc=0; tree hash back to `3b37815f…`,
+  `git status --porcelain` empty at the end.
+- 12 client-side probes across the three phases (before / rolled back / restored): pinned `/live`
+  200 -> 000 -> 200, `/api/live/descriptor` 200 -> 000 -> 200, plaintext 7861 000 -> 000 -> 000,
+  batch root 200 -> 200 -> 200, `/api/jobs` 200/141 jobs throughout, `/api/runtime` 200 throughout.
+- Leaf `cmp` before vs after: identical bytes; DER sha256 equals the D2 pin both times.
+- No tracked file changed this iteration; the loop wrote only
+  `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### Learned
+1. **The live service needs ~10 s from `enable --now` to a bound listener** (05:06:05 started ->
+   05:06:15 `Uvicorn running on https://0.0.0.0:7861`), because the app imports the ONNX/decoder
+   stack on startup. The first post-restore probe was taken at 6 s and returned **000** - i.e. a
+   correct restore that reads exactly like a failed one. Poll for 200 with a timeout; never sample
+   once and conclude. This is the single most likely way a real rollback-and-restore would be
+   misread as broken.
+2. **`163e969` is "before the MVP", not "before anything named live".**
+   `moss_transcribe_diarize/app/live_transport.py` **exists** at that SHA while `live_auth.py` does
+   not. Anyone verifying the rollback by looking for `live*` files will get a confusing answer;
+   check for the files the MVP actually added.
+3. **A rolled-back checkout is not a clean checkout, and that is expected.** `163e969`'s
+   `.gitignore` predates the `ops/moss-live.env` entry, so while rolled back
+   `git status --porcelain` reports `?? ops/moss-live.env`. The checkout does not delete the
+   profile - only a `git clean` would, and that is forbidden - but an operator who reflexively
+   tidies an "unclean" tree there would destroy the live profile and with it the ability to restore
+   in one command.
+4. **The "batch unharmed" contract was verified against its own origin for the first time.**
+   `BATCH_ARGV` is documented as "recorded from `ops/start-web.sh` before the live service existed";
+   until now every check ran it against the post-merge adapter. Running the probe at `163e969` on
+   the real host reproduces it byte for byte, so the two-profile claim is now anchored at both ends.
+5. **Rehearsing the rollback before certification was the cheap moment.** Nothing was in flight, no
+   capture session existed, and the only casualty was two stale sessions the runbook already
+   planned to replace. After F1-F3 the same rehearsal would have to disturb a certified state.
+- Blocker: **unchanged** - E3's human TCC step on m4mbp (pair -> start -> two GUI clicks) is still
+  the only thing between here and Phase F. The exact runbook is in iteration 7's entry and in
+  context.md's E3 blocks. This iteration did not touch it and could not.
+- Next: with F4a closed, **every remaining PRD acceptance item depends on the operator**: permissions
+  granted, the 60 s canary, the 300 s certification, the 16-minute soak, the run-time half of secret
+  hygiene, and F4b's final close. There is no further loop-runnable product or evidence work; the
+  honest next action is to hold at the E3 blocker.
+
+================================================================================
+## run 20260728-072601 / iteration 9 - F0 server-side live pipeline probe (no Mac, no TCC)
+================================================================================
+
+- Target: **F0** (new candidate, off-list, justified below) - drive the deployed live service
+  through the *entire* pipeline E3's canary depends on, from a real remote pinned-TLS peer, with
+  real two-speaker speech, and without a Mac or a TCC grant. Prove or disprove that the server can
+  turn accepted v2 frames into a transcript with speaker labels.
+- **Why this candidate, off the strict phase order.** Iteration 8 concluded there is no
+  loop-runnable acceptance work left. That conclusion is right about the *acceptance clauses* and
+  wrong about the *risk*. The host journal shows **zero frame posts ever**: ingress, lane contract,
+  mixer, endpointer, decoder, diarizer, publish and snapshot have never run on the real host with
+  the real GPU and the deployed manifest. Every one of them sits **downstream** of the operator's
+  irreducible TCC clicks, so if any is broken the loop discovers it only by spending the one thing
+  it cannot obtain. The same argument iteration 8 used to pull F4a forward applies here and more
+  strongly: this is the cheap moment, and unlike F1-F3 it needs no capture device, because the Mac
+  client's whole contribution to that path is HTTP requests this loop can make itself.
+- Not an acceptance claim. F1/F2/F3 remain the PRD's certification and still require the app: the
+  app owns the single-clock latency measurement, the permission transitions and the pasteboard
+  handoff. This probe retires *server* risk only, and its latency figure is a plausibility
+  preview, not the PRD's Phase F number.
+- Authorized action: no tracked product source, no server file edit, no service restart, no merge,
+  no push, no Mac. One new evidence tool under `scripts/ralph-afk/` (the only path the post-merge
+  freeze still permits) plus live-service API calls.
+
+### Pre-state, measured read-only before any mutation (2026-07-28)
+- m4mbp TCC: `select count(*) from access` = **320** (reader sane), rows matching `%moss%` = **0**
+  in both services, `pgrep -x MOSSCaptureApp` = 0, no `/tmp/moss-capture-501/control.sock`.
+  **E3 is still unstarted; the operator has not acted.**
+- Server: `moss-live-web` MainPID **336320** active NRestarts=0 (ActiveEnterTimestamp 2026-07-28
+  05:06:05, i.e. still the F4a restore), `moss-web` **301112**, `moss-vllm` **322117**, both
+  NRestarts=0.
+- `live-auth.json`: inode **11374**, 275 bytes, mode 600, mtime 2026-07-28 03:10:15,
+  sha256 `9d306766a001df1ef60155bb70f1ec41348c6eac1b56115704901c7f6e9aa47c`,
+  `{schema_version, devices}` with **1** device.
+- `/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs`: **empty**, `du -sh` = 0. That is the baseline
+  for the PRD's "no raw audio is persisted" clause.
+- From MacStudio: batch `http://192.168.68.38:7860/` **200**; pinned `https://100.64.0.8:7861/live`
+  **200**; descriptor **200** (`source_revision f9285d69…`, the known benign divergence).
+
+### Rollbacks, recorded before the mutations they cover (prd.md "Reversibility")
+1. **Pairing a probe device** (`POST /api/live/pairings` from MacStudio) writes a second device into
+   `live-auth.json`.
+   Rollback: `curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<device_id>` **run on the
+   host** (the route is loopback-only, `live_auth.py:305`). It aborts and releases any session the
+   device owns, so it is also the rollback for mutation 2.
+   *Known, accepted residue:* revocation marks the device `revoked` rather than deleting it, so
+   `live-auth.json` ends larger than baseline and that device id can never be re-paired. The entry
+   is inert - no token, no authority - and nothing a client hashes lives in that file (clients pin
+   the certificate, not the auth state). The deeper rollback that restores the exact baseline bytes
+   is `cp` of the pre-copy taken below, and it costs a service restart, so it is deliberately not
+   the default.
+   Pre-copy taken first, on the host, outside the repo:
+   `cp -p live-auth.json live-auth.json.ralph-f0-backup-<utc>` under
+   `~/.local/share/moss-transcribe-diarize/live/`.
+   Deeper rollback if ever needed: `systemctl --user stop moss-live-web.service` ->
+   `mv <backup> live-auth.json` -> `systemctl --user start moss-live-web.service`, then poll ~10 s
+   for 200 (F4a learning 1).
+2. **Creating a live session** (`POST /api/live/sessions`) is memory-only (`live_service_runtime.py`
+   holds `self._sessions`; the persisted state file carries devices only).
+   Rollback: `POST /api/live/sessions/<id>/stop`, which the probe does itself; failing that,
+   `POST /api/live/sessions/<id>/abort`; failing that, mutation 1's device revoke aborts it; and in
+   the limit the session dies with the process, as F4a observed for the two 03:10 sessions.
+3. **Posting frames** mutates only that session's in-memory state and whatever the decode path
+   writes. `MOSS_RUNS_DIR=<checkout>/live-runs` is the only writable run root the live unit has and
+   it is empty at baseline, so the rollback is `rm -rf` of anything that appears **under
+   `live-runs/` only** - and whether anything appears there at all is itself evidence for the PRD's
+   "no raw audio is persisted" clause.
+4. **Nothing else is mutated.** No unit is restarted or reloaded, no checkout moves, no file inside
+   the repo on any host is written, the TLS pair and the manifest are not touched, and no Mac is
+   contacted for anything but the read-only TCC probe above.
+5. **Stop condition.** If the served leaf stops hashing to
+   `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`, abort and record a blocker:
+   that pin is what m4mbp has stored. The probe enforces this itself - it is a full-certificate pin
+   client and refuses the connection on mismatch, exactly like the Mac.
+6. **Secret hygiene is part of the design, not a post-hoc check.** The pairing payload travels
+   host -> MacStudio inside an SSH pipe into a shell variable and then into the probe's **stdin**;
+   it is never an argument, never echoed, never redirected to a file. The probe holds the payload,
+   device token and view token in locals and reports only their lengths.
+
+### Result - F0 FOUND A CERTIFICATION BLOCKER. The live pipeline dies in ~3 seconds.
+Three runs against the deployed service from MacStudio over the real pinned tailnet TLS hop, each
+from a freshly minted single-use payload and a fresh device. **Every one of them killed or was
+rejected by the session inside the first six 0.5 s ticks.** Nothing about the failures is
+client-shaped: every frame the server rejected was preceded by frames it accepted with 200 from the
+same code path, and the two failures are raised by server code, not by transport.
+
+**What works, and is now proven on the real host for the first time:**
+- Full-certificate pinning end to end. The probe is a leaf-pin client with `CERT_NONE` and no
+  hostname check, exactly like `PinnedCertificateURLSessionDelegate`; the served leaf hashed to
+  `a35ca9fc…` on every connection. **1 TLS handshake for a whole run** - connection reuse holds.
+- `POST /api/live/pairings` from a **remote** non-loopback TLS peer -> 200, `scope=capture`,
+  43-char device token. `POST /api/live/sessions` -> 200 with a 43-char view token and a descriptor
+  reporting `sample_rate 16000`, `frame_samples 8000`,
+  `provider_manifest_hash 61d97ffe…` - **the C2 manifest is admitted by the running service**, not
+  only by the runtime readers iteration 18 used.
+- v2 lane ingress with the canonical wire format: 8000-sample 16 kHz frames on both lanes with real
+  nanosecond `capture_timestamp_ns`, per-lane sequences from zero, honest `silent` flags. Accepted
+  with 200, `accepted_samples` advancing 8000 per frame per lane, `retained_samples` tracking it.
+- The endpointer freezes spans and the coordinator writes them out as WAVs for decode
+  (`/tmp/mtd-live-<rand>/span-0000.wav`).
+- View authority behaves as C1 says: 200 while the session is viewable, **401 the moment it is
+  not**, and 401 after a stop. `revoke_view`'s sibling `DELETE /api/live/devices/{id}` works on the
+  real host - it returned the owned `session_ids` and released them.
+- **No raw audio is persisted.** After three runs `live-runs/` still has **0 entries** and
+  `/tmp/mtd-live-*` is **gone** - the span WAVs are temporary and cleaned up. That is real evidence
+  for a PRD clause, taken on the live path rather than argued from source.
+- Timings are comfortable: frame publish p95 **209-279 ms**, snapshot p95 **73-105 ms**, events p95
+  **22-175 ms** over the tailnet. A render bound of `1000 + 105 + 175 = 1280 ms` leaves ~2.7 s of
+  the PRD's 4 s canary budget for committed latency. **Not a Phase F number** - nothing ever
+  committed, so committed latency could not be measured at all.
+
+**Blocker 1 - a span with no speech makes the whole session terminal.**
+Run B (20 s plan, 1.0 s of leading silence, fail-fast): five frames accepted, then tick 4
+microphone -> **409** with
+
+    detail:  vLLM transcription returned zero parsed segments for /tmp/mtd-live-3lmp3f6_/span-0000.wav.
+    failure: {kind: integrity, code: RuntimeError, retryable: false}
+
+and the snapshot carrying that same record as **`terminal_failure`** while `session.status` still
+read `active` - precisely the divergence the C1 view-authority contract predicted, observed for the
+first time on a real failure rather than a test. Every later frame got 409, every snapshot/events
+poll got 401, and `POST /stop` answered 409.
+*The span had no speech in it, and that is measured rather than inferred:* the snapshot reports
+`frozen_until_sample: 14400` (0.9 s) while the run's first utterance starts at sample 16000 (1.0 s).
+So span-0000 covered 0 -> 0.9 s of pure silence.
+*The code path:* `vllm_runner.py:245` `_validate_transcription_response` raises a **bare
+`RuntimeError`** when `parse_transcript(text)` is empty. It escapes before
+`live_adapters._validated_segments` (`live_adapters.py:360-364`), which has a *typed*
+`LiveProviderError` for the identical condition, can classify it. The live session therefore sees an
+unclassified `RuntimeError`, records `kind=integrity, retryable=false`, and goes terminal.
+*Why this is a certification blocker and not a probe artifact:* every real meeting begins with the
+operator pressing start and then a second or two of nobody speaking, and contains silence between
+turns. On this build the first such span ends the meeting. F1 would have failed within ~3 seconds of
+the operator's TCC clicks, with the browser's `/live` view going 401 at the same moment - which is
+the *least* diagnosable way for it to fail.
+
+**Blocker 2 - the endpointer can ask to freeze a span that does not advance.**
+Run C, identical except `--lead-seconds 0` so the first span contains speech: the session survived
+one tick longer (eleven frames accepted, `accepted_samples` 32000, snapshot version 4), then tick 5
+microphone -> **400 `frozen span end must advance.`**
+That string is `live_session.py:237`, `freeze_until` refusing `end_sample <= self._frozen_until_sample`.
+Both call sites are the coordinator (`live_coordinator.py:128` on the accept path and `:231` in
+`_freeze_and_queue`, which `flush_endpoint` uses), so the endpoint policy handed the session a span
+whose end had already been frozen.
+*Honest caveat for whoever fixes this:* the probe's two lanes carry **identical**
+`capture_timestamp_ns` and start at the same instant, which the Mac's two lanes will not. That is a
+legal input - the contract has no distinctness requirement, and the server 200'd eleven such frames -
+but a fix iteration must rule it in or out before concluding, because it is the one input property
+that is more degenerate than a real capture. Blocker 1 has no such caveat.
+
+**Why the suite is green while both of these are live.** No test in the repo puts the *real* VAD
+endpointer and a *real* decoder in the same process: `tests/test_live_vad.py` drives the endpointer
+with a stub provider (it even asserts the typed `LiveProviderError` for "zero parsed segments" that
+the real path never reaches), and every decoder node is stubbed because MacStudio has no GPU. The
+seam where the two meet has therefore never been exercised anywhere but the deployed host, and that
+seam is where both blockers live. That is the durable lesson, not the individual bugs.
+
+### The probe's own defect, found and fixed inside this iteration
+Run A published for **seven minutes** after the session was already terminal, because the first
+version had no fail-fast: it recorded each non-200 and kept going. A terminal failure is sticky, so
+this buried the one response that explained it and cost a foreground timeout. `--fail-fast` is now
+the default (`--no-fail-fast` is the deliberate opt-out) and every request prints
+`tick/lane/status/ms` to stderr, so the *next* hang is diagnosable while it is happening. Related
+measurement: healthy requests are 4-280 ms, but the post-terminal 409s took **6-8 s each** in run A.
+That is unexplained and bounded (it only happens to a session that is already dead), but it means an
+Outbox on the Mac will back up hard behind a dead session.
+
+### Validation
+- Probe runs: A (60 s plan, aborted by the harness at 7 min), B (20 s, `--lead-seconds 1.0`,
+  rc=3, aborted tick 4), C (20 s, `--lead-seconds 0`, rc=3, aborted tick 5). Reports at
+  `/tmp/moss-f0-diag.json` and `/tmp/moss-f0-leadzero.json` (volatile; the durable evidence is here).
+- `python3 -c "import ast; ast.parse(...)"` on the probe: ok. `--help` renders.
+- Audio generation checked before any network call: 60 s plan -> 120 frames/lane, 50 voiced mic /
+  53 voiced system, **2** overlapping voiced frames (clean turns); 48 s -> 14 overlapping, which is
+  why 60 s is the default shape.
+- **Post-state, all mutations undone or accounted:**
+  - All three probe devices **revoked** via the recorded loopback rollback; each revoke returned the
+    session id it released. `live-auth.json` device map is now
+    `{AB600574-…: revoked=false, ralph-f0-probe-…091938Z: true, …092856Z: true, …093052Z: true}` -
+    **the m4mbp device is untouched**, which is the only one that matters.
+  - `moss-live-web` MainPID **336320**, NRestarts=0, ActiveEnterTimestamp still 2026-07-28 05:06:05;
+    `moss-web` **301112** and `moss-vllm` **322117**, both NRestarts=0. **Three terminal sessions did
+    not restart or destabilise anything** - the failure is per-session, which is itself worth knowing.
+  - `live-runs/` **0 entries**, `/tmp/mtd-live-*` **0 directories**.
+  - Server checkout `317df4d728b6765dbe365a3166158ba581299557`, `git status --porcelain` **empty**.
+  - From MacStudio: batch `/` **200**, batch `/api/jobs` **200**, live `/live` **200**, live
+    `/api/live/descriptor` **200**, served leaf still `a35ca9fc…`.
+  - Repo: only `scripts/ralph-afk/{live-pipeline-probe.py,context.md,progress.txt}` changed. No
+    tracked product source, no `ops/`, no server file, no Mac.
+- Secret hygiene held by construction: the payload went host -> SSH pipe -> shell variable ->
+  probe **stdin**; it was never an argument, never echoed, never written to a file. The reports
+  contain `device_token_len: 43` / `view_token_len: 43` and no token. `--dry-run`-style evidence
+  lines from `live-pair.sh` were printed (`payload_matches_certificate=true`,
+  `expires_in_seconds=300`) with the `payload:` line filtered out on the host side.
+
+### Learned
+1. **The one thing nobody had tested was the one thing that was broken.** Every gate this loop ran
+   was green, and the live pipeline still cannot survive three seconds of ordinary audio. The gates
+   were honest; they just could not reach the decoder seam. When a suite is green and a path has
+   never run in production, the greenness is evidence about the suite, not about the path.
+2. **Pulling the probe ahead of the human step was worth more than the whole rest of the iteration.**
+   Had F1 run first, the operator would have granted TCC, watched the session die in three seconds
+   with a 409 and a 401, and the loop would still have had to build this probe to find out why -
+   except now with a burned canary and a paired-but-broken app in the way.
+3. **A sticky terminal failure needs fail-fast instrumentation, not more retries.** The seven-minute
+   run produced strictly less information than the two-second one.
+4. **`session.status == "active"` with a non-null `terminal_failure` is not a hypothetical.** C1's
+   contract was written against exactly this and is now confirmed against a real runtime failure.
+5. **Revoking a device is a complete, no-restart rollback for a pairing** - it returns and releases
+   the owned sessions - but it *marks* rather than deletes, so the auth file only grows. Three inert
+   revoked entries is the price paid here, recorded rather than hidden.
+- **Blocker (new, and it needs the operator's decision, not their hands):** both fixes are in tracked
+  **server** source (`vllm_runner.py` / `live_adapters.py` classification, and the endpoint policy),
+  which the post-merge freeze forbids on this branch and which the 2026-07-28 amendment - already
+  spent on the Mac client - does not cover. This is the same shape as the ATS blocker that produced
+  that amendment: a defect no gate could see, found after the merge. **prd.md needs a second
+  authorized fix cycle** (or an explicit decision to certify against a rebuilt branch) before F1-F3
+  can pass. The loop must not start server product work until that authorization exists.
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still zero `%moss%` rows in TCC.db,
+  app not running. But E3 is now *pointless until the server is fixed* - the canary it exists to
+  enable cannot pass on this build. The correct order is now: authorize the server fix -> fix and
+  gate it -> deploy -> then spend the operator's TCC clicks.
+- Next: hold for the authorization. If it is granted, iteration 1 of that cycle should (a) reproduce
+  Blocker 1 deterministically as a test that puts the real `vllm_runner` validation seam under the
+  live coordinator with an empty transcript, (b) decide the policy question - a span the decoder
+  cannot parse should be *dropped or committed empty*, never terminal - and (c) only then look at
+  Blocker 2, first ruling the identical-lane-timestamp caveat in or out by re-running this probe
+  with a per-lane timestamp offset.
+
+================================================================================
+## Iteration 10 (run 20260728-072601) - rollbacks recorded BEFORE the host probe run
+================================================================================
+About to run `scripts/ralph-afk/live-pipeline-probe.py` once against the deployed live
+service with per-lane `capture_timestamp_ns` offsets, to rule the F0 blocker-2 caveat in or
+out on the real host. Mutations it makes and their rollbacks, recorded before applying any of
+them (prd.md "Reversibility"):
+
+1. `ops/live-pair.sh` mints one pairing code on the host (loopback-only route).
+   Rollback: none needed - `live_auth.PAIRING_TTL_SECONDS = 300` expires it unused, and the
+   probe consumes it. Nothing durable is written until a device pairs.
+2. The probe pairs one device `ralph-h2-probe-<utc>` and creates one session.
+   Rollback (mandatory after the run, on the host, loopback-only, no restart):
+     curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/ralph-h2-probe-<utc>
+   It marks revoked rather than deleting, so `live-auth.json` only grows; the m4mbp device
+   AB600574-FD93-4321-967E-652AB064A70B must stay `revoked: false`.
+3. Deeper rollback, only if `live-auth.json` is damaged (costs a service restart, so it is
+   NOT the default): restore the iteration-9 baseline copy
+   `live-auth.json.ralph-f0-backup-20260728T091927Z` (sha256 9d306766...).
+No checkout, unit, manifest, certificate or Mac state is touched by any of this.
+
+================================================================================
+## Iteration 10 (run 20260728-072601) - F0's caveat was real, and it was hiding a
+## third blocker that kills the session in ~1.1 s
+================================================================================
+Target: the one open question iteration 9 recorded - do the probe's identical lane
+`capture_timestamp_ns` values explain blocker 2, or not? Answering it was the only remaining
+work that needed neither the operator's hands nor an authorization the loop does not have.
+
+Files touched (Ralph evidence only; `git diff --name-only main HEAD -- ':!scripts/ralph-afk'`
+is EMPTY, so the post-merge freeze is intact):
+  scripts/ralph-afk/live-hardcap-repro.py   (new - offline reproduction)
+  scripts/ralph-afk/live-pipeline-probe.py  (+ `--lane-offset-ms LANE=MS`)
+  scripts/ralph-afk/context.md, progress.txt
+
+### Answer: the caveat was NOT a false alarm, and it was not what it looked like either
+Ruling it out structurally came first, and the repro prints the reason instead of asserting it:
+`live_session.AudioFrame` - the frame the mixer hands the coordinator - has fields
+`sequence, pcm, sample_count, sample_rate` and **no timestamp field at all**. Lane capture
+timestamps stop at the mixer. So they cannot be what makes `freeze_until` refuse a span.
+Then the offset run on the real host showed the caveat still mattered, for the opposite reason:
+the degenerate input was **masking a worse defect** that fires before blocker 2 is reachable.
+
+### Blocker 2, named and reproduced offline (deterministic, 0.4 s, no server/GPU/network)
+`LiveSession.accept_frame` freezes its own hard-cap span (`live_session.py:198` ->
+`:353-359`, `while accepted - frozen_until >= hard_cap_samples`). `LiveCoordinator.accept_frame`
+calls that first (`live_coordinator.py:122`), *then* runs the endpoint policy, which emits its own
+`hard_cap` span at the identical sample; `freeze_until` refuses it because the session already moved
+`_frozen_until_sample` there. Two independent freezers, same boundary, session wins, coordinator
+dies. Deployed config (both caps 40000), measured this iteration:
+  --frames 8                       -> ValueError: frozen span end must advance. @ accepted 40000
+  --frames 8 --speech-pattern 0    -> same error, same sample (pure silence: nobody has spoken yet)
+  --frames 45 --frame-samples 1000 -> same error, same sample  (NOT a frame-size artifact)
+  --frames 24 --speech-pattern 1100-> SURVIVES 192000 samples  (endpoints every <2.5 s keep the
+                                      two cursors moving together)
+  --frames 8 --session-hard-cap none -> SURVIVES; this is the shape every test uses
+So the failure condition is exact: **any stretch of `hard_cap_samples` (40000 = 2.5 s) of accepted
+audio containing no endpoint span** - 2.5 s of continuous speech, or 2.5 s of opening silence.
+*Second defect in the same output:* the span the session freezes by itself is never queued for
+decode. `FrameAck.frozen_span_ids` is dropped by the coordinator and `live_service_runtime.py:477`
+reports only `result.frozen_spans`. Even without the collision that audio would never be transcribed.
+*Why the suite is green, exactly:* every harness gives the policy a cap and the session none -
+`tests/test_live_coordinator.py:101` (`LiveSession(max_retained_samples=8000)`, policy 4000),
+`tests/test_live_service_runtime.py:155,165` (endpoint 4000, `bounds.hard_cap_samples=None`),
+`tests/test_live_api.py:209` (same shape, bounds default `None`); `tests/test_live_session.py` tests
+the session's cap with no coordinator and no policy. The two have never coexisted outside production.
+And C2 (iteration 12) *requires* `endpoint_config.hard_cap_samples == bounds_config.hard_cap_samples`
+in a deployed manifest - so the work that made a divergence impossible is what guarantees the
+collision on the real host. That is worth stating plainly: C2 was right about spans and blind to this.
+
+### Blocker 3 (NEW, and the one that fires first): an unaligned lane makes an illegal VAD frame
+One probe run, deployed service, real pinned tailnet TLS, fresh single-use payload, fresh device,
+`--lane-offset-ms system=137 --lead-seconds 0`:
+  tick 0 system 200 / microphone 200, snapshot 200
+  tick 1 system 200
+  tick 1 microphone **500 Internal Server Error** (468.8 ms), wall time 1.13 s
+  terminal_failure {kind: integrity, code: Error, message: "Error while processing frame",
+                    retryable: false}; accepted_samples **5808**; stop -> 409; snapshot -> 401
+5808 samples = 363 ms = 500 ms - 137 ms, i.e. exactly the offset eaten out of the first mixed frame.
+Host traceback (`journalctl --user -u moss-live-web.service`):
+  live_transport.py:221 -> live_mixer.py:112 -> live_service_runtime.py:465 ->
+  live_coordinator.py:122 -> live_provider_bundle.py:424 -> :643 ->
+  webrtcvad.Error: Error while processing frame
+*Mechanism.* `LiveMixer._stage` takes `origin_ns = max(first capture_timestamp_ns over active lanes)`
+and non-final `safe_end_ns = min(last sealed interval end)`, then
+`sample_count = floor((safe_end - cursor) * 16000 / 1e9)` - an arbitrary integer as soon as the lanes
+are not aligned on the frame grid. `WebRtcSpeechProvider.observe` (`live_provider_bundle.py:417-434`)
+chops it with `piece_samples = min(frame_samples, end - cursor)`, so the trailing piece is short. The
+deployed `speech_provider` is `{kind: webrtc, frame_samples: 160, mode: 1}` (read off the host
+manifest) and webrtcvad accepts only 10/20/30 ms = 160/320/480 samples at 16 kHz.
+5808 = 36x160 + **48** -> raise. Bare third-party exception, so like blocker 1 it escapes typed
+classification, lands as `kind=integrity, retryable=false`, and the session is terminal.
+Reproduced offline with the real `WebRtcSpeechProvider` and a stand-in VAD that enforces only
+webrtcvad's documented length contract (MacStudio has no native webrtcvad wheel - itself part of why
+no test could catch this):
+  --speech-provider webrtc --frame-samples 5808 -> refused at frame 0, "got 48"
+  --speech-provider webrtc --frame-samples 8000 -> SURVIVES (8000 = 50x160)  [control]
+**This is the normal case.** Two real capture devices never start on the same instant, so the Mac
+will produce unaligned lanes on essentially every run. F0 could not see it because one shared origin
+makes every mixed frame exactly 8000 samples.
+
+### Severity order for whoever is authorized to fix this
+  blocker 3  ~1.1 s  any unaligned lanes            (H3 - fix first)
+  blocker 1  ~3 s    any span the decoder can't parse (H1)
+  blocker 2  2.5 s   any endpoint-free stretch        (H2)
+All three are `kind=integrity, retryable=false`; the session cannot recover from any of them, and
+each one alone is enough to end a real meeting in the first few seconds.
+
+### Validation
+- `python3 -c "import ast; ast.parse(...)"` on both tools: ok. Both `--help` render.
+  `--lane-offset-ms bogus=5` is refused with rc=2 **before** any network call.
+- Seven offline repro cases run, listed above; rc=3 (reproduced) or rc=0 (survived) each time.
+- `git diff --name-only 317df4d HEAD -- moss_transcribe_diarize` is **empty**, so the offline repro
+  runs the *deployed* server source, not a drifted local copy.
+- One host probe run; report at /tmp/moss-h2-offset.json (volatile - the durable evidence is here).
+- **Post-state, all mutations undone or accounted:**
+  - Device `ralph-h2-probe-20260728T094218Z` **revoked** via the recorded loopback rollback; the
+    call returned the one session id it released. `live-auth.json` now holds 5 devices with exactly
+    one unrevoked: `AB600574-FD93-4321-967E-652AB064A70B` (m4mbp) - untouched.
+  - `moss-live-web` MainPID **336320** / ActiveEnterTimestamp 2026-07-28 05:06:05, `moss-web`
+    **301112** / 2026-07-24 21:37:11, `moss-vllm` **322117** / 2026-07-26 22:05:29, all
+    `NRestarts=0`, all `active`. Nothing restarted; the 500 did not destabilise the service.
+  - Server checkout `317df4d728b6765dbe365a3166158ba581299557`, `git status --porcelain` empty.
+  - `live-runs/` **0 entries**, `/tmp/mtd-live-*` **0 directories** - no raw audio persisted.
+  - From MacStudio: batch `http://192.168.68.38:7860/` **200**, live `/live` **200**,
+    `/api/live/descriptor` **200**.
+  - Repo: only `scripts/ralph-afk/*`. No tracked product source, no `ops/`, no Mac, no Windows.
+- Secret hygiene: payload went host -> SSH pipe -> shell variable -> probe **stdin**; never argv,
+  never a file, never echoed. The report carries `device_token_len: 43` / `view_token_len: 43`.
+
+### Learned
+1. **A recorded caveat is worth spending an iteration on even when you expect it to be nothing.**
+   The structural check said lane timestamps cannot reach the coordinator - true, and it would have
+   been a perfectly defensible reason to skip the run. The run found a defect that fires four times
+   sooner than the two already known.
+2. **Degenerate test input hides defects in the code that consumes its shape.** Identical lane
+   origins made every mixed frame exactly 8000 samples, which is the one size that happens to be a
+   whole number of VAD frames. The probe was measuring the pipeline through a keyhole.
+3. **Two mechanisms enforcing one policy is the bug.** Blocker 2 is not a wrong number anywhere;
+   both freezers are individually correct and individually tested. The defect is that both exist.
+4. **The suite's blind spot has a precise shape and it is now written down:** every live harness
+   configures the session's hard cap to `None`. That is not an oversight to shrug at - it is the
+   single line that would have turned this into a red test at iteration 12.
+5. Offline reproduction beats host reproduction once the mechanism is known: 0.4 s and no pairing,
+   versus a minted payload, a device that can only be revoked rather than deleted, and a live
+   session. Iteration 9 needed the host to *find* the seam; iteration 10 needed it only once more.
+- **Blocker (unchanged, and now three items deep):** H1/H2/H3 all change tracked **server** source,
+  which the post-merge freeze forbids on this branch and which the spent 2026-07-28 amendment does
+  not cover. prd.md needs a second authorized fix cycle (or an explicit decision to certify against
+  a rebuilt branch). The loop holds here.
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp - still zero `%moss%` rows in TCC.db.
+  Spending them now buys a session that dies in about one second.
+- Next: hold for the authorization. When it arrives, order is **H3 -> H1 -> H2** (the order the
+  build actually fails in). H3's regression test needs a mixed frame whose sample count is not a
+  multiple of `speech_provider.frame_samples`; H2's needs one `LiveSession` and one `EndpointPolicy`
+  carrying the *same* hard cap. Both red cases already exist in
+  `scripts/ralph-afk/live-hardcap-repro.py` and can be ported into `tests/` verbatim.
+
+[loop 20260728-072601-15601] blocked at iteration 10
+
+## Supervisor - operator authorizes the server decode-seam fix cycle (2026-07-28)
+- The loop emitted BLOCKED at iteration 10 rather than starting server product work without
+  authorization. That was correct: the 2026-07-28 amendment was spent on the Mac client and does
+  not cover `moss_transcribe_diarize/`.
+- Supervisor verification of F0's post-state, checked independently rather than read from the
+  journal above: `git diff --name-only 317df4d..HEAD -- ':!scripts/ralph-afk'` is **empty**, so the
+  freeze held; the only changed files are `scripts/ralph-afk/{live-pipeline-probe.py,context.md,
+  progress.txt}`. Server checkout `317df4d...`, `git status --porcelain` empty; `live-runs/` **0**
+  entries; `/tmp/mtd-live-*` **0** directories; `moss-live-web` MainPID 336320, `moss-web` 301112,
+  `moss-vllm` 322117, all `active` with **NRestarts=0**; batch `http://192.168.68.38:7860/` **200**
+  and live `https://127.0.0.1:7861/live` **200**. The probe left nothing behind.
+- Operator decision: **second fix cycle authorized**, recorded in prd.md under "Second authorized
+  amendment". Phase H candidates H1-H4 in context.md carry the work. One further merge, then
+  redeploy; the post-merge freeze resumes afterwards.
+- Ordering the operator accepted with it: **E3's TCC clicks wait until this cycle is deployed.** The
+  clicks exist to enable the canary and the canary cannot pass on the current build, so spending
+  them now would burn the one input the loop cannot obtain against a session that dies in ~3 s.
+- Supervisor note for H2: F0's caveat is the right instinct and must be closed first. Re-run the
+  probe with a per-lane `capture_timestamp_ns` offset before touching the endpoint policy - if the
+  400 disappears, Blocker 2 is a probe artifact and the policy is fine as written.
+- m4mbp state is unchanged and ready for E3 whenever the build is: `/Applications/MOSSCapture.app`
+  carries G1+G2+G3 with `NSAllowsArbitraryLoads` present, identifier `com.alphasight.moss.capture`,
+  designated requirement still `certificate leaf = H"e118d874..."` (byte-identical across the G6
+  rebuild, so the grants will persist), `codesign --verify --strict` ok. TCC still has **zero**
+  `%moss%` rows. The stored session is stale - F4a's service restart dropped in-memory sessions, so
+  E3 pairs first, exactly as its runbook already says.
+
+[loop 20260728-112922-76267] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+================================================================================
+## Iteration 1 (run 20260728-112922) - H3: webrtcvad never gets an illegal frame
+================================================================================
+Target: candidate **H3**, the first blocker the deployed build hits (~1.1 s, on essentially
+every real capture). Chosen because context.md fixes the order H3 -> H1 -> H2 and because
+the amendment's own gate - a `live-pipeline-probe.py` run that survives its full plan -
+is unreachable while H3 stands.
+
+Scope justification, recorded because prd.md's second amendment names only blockers 1 and 2:
+blocker 3 was produced by that amendment's *own* Blocker-2 instruction ("rule the identical
+per-lane capture_timestamp_ns in or out by re-running the probe with a per-lane offset");
+it is the same classification seam the amendment opens the cycle over (a bare third-party
+exception -> kind=integrity, retryable=false); and it fires before blockers 1 and 2 are
+approached, so the amendment's gate cannot pass without it. Nothing outside it was touched.
+
+Files touched (2 tracked, both inside `moss_transcribe_diarize/` + `tests/`, which the second
+amendment authorizes):
+  moss_transcribe_diarize/app/live_provider_bundle.py   (WebRtcSpeechProvider)
+  tests/test_live_pipeline_seams.py                     (new, 5 nodes)
+  scripts/ralph-afk/context.md, progress.txt
+`git diff --stat main HEAD` for tracked source is exactly those two files.
+
+### The change, in one sentence
+`WebRtcSpeechProvider` tiles the **accepted-sample stream** instead of each accepted range, so
+webrtcvad is called only with exactly `frame_samples` of real contiguous audio - never with the
+short trailing piece `min(frame_samples, end - cursor)` used to build whenever the mixed frame
+was not a multiple of the VAD frame.
+- A tail that cannot fill a VAD frame is **carried** into the next `observe`: not zero-padded
+  (that fabricates input to a detector) and not dropped (that leaves audio unexamined).
+- The coordinator still requires gap-free coverage *now* (`_observe_endpoint` refuses anything
+  else), so the carried tail is reported with the last decided frame's answer,
+  `confidence=None` and `provider_reason=webrtc_observation_carried` - it says it is not a
+  decision rather than pretending to be one. Silence is the answer before anything is decided.
+- Carry state (PCM + one bit) is per provider instance, and `speech_provider_factory()` is
+  called once per session at `live_service_runtime.py:442`, so it cannot leak across sessions.
+- `frame_samples` outside {160, 320, 480} (10/20/30 ms at 16 kHz) is now refused at
+  construction, so a manifest that would raise on *every* frame is refused at admission rather
+  than at the first frame of a meeting. The deployed manifest's 160 is unaffected.
+Deliberately NOT fixed here: the classification seam that turns a bare third-party exception
+into `kind=integrity, retryable=false`. It is shared with H1 (bare `RuntimeError` from
+`vllm_runner.py:245`), and fixing it once, there, is better than twice. Recorded in the H1
+candidate so it cannot be lost.
+
+### Validation
+- `pytest tests/test_live_pipeline_seams.py -q` -> **5 passed** (3.4 s).
+- **Red proven without touching git history**: `cp` the file aside, `git show HEAD:<file> >`
+  it, re-run, `cp` back, and verify the restore by sha256 (`restored_identical=true`).
+  Pre-fix: **4 failed / 1 passed**, failing with the shipped signature -
+  `webrtcvad accepts only [160, 320, 480] samples, got 48` (48 is the host's own remainder:
+  5808 = 36*160 + 48), plus `got 40` and `got 1`. The one node that passes both before and
+  after is the aligned 8000-sample control, which is what makes it a control rather than a
+  second copy of the red case.
+- Offline repro, deployed config: `--speech-provider webrtc --frame-samples 5808 --frames 3`
+  went **rc=3 (reproduced) -> rc=0 (survived 17424 accepted samples)**; the 8000-sample control
+  still rc=0. Blocker 2 unchanged in the same sweep - `--frames 8` and `--frames 8
+  --speech-pattern 0` still rc=3 at accepted_samples=40000, `--frames 24 --speech-pattern 1100`
+  still rc=0 - so H3 did not mask H2.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider` -> **542 passed / 2 skipped /
+  368 subtests** in 60.3 s (was 537/2/368; +5 is exactly the new file). No node changed status.
+- Swift untouched this iteration; the full Swift gate belongs to H4.
+- Nothing was run against the server, the Mac, or any remote host. No service, checkout,
+  manifest, certificate, pairing or TCC state was touched, so this iteration has no rollback
+  to record beyond `git revert`.
+
+### Learned
+1. **The coverage contract decided the fix.** The obvious repair - buffer the remainder and emit
+   it next time - is impossible: `live_coordinator._observe_endpoint` requires observations to
+   start at the accepted range's start, be gap-free, and end exactly at its end. So the freedom
+   is not *when* to answer but *what each observation covers and what produced its answer*. That
+   constraint is what makes "carry the audio, report the last decision, label it as carried" the
+   only shape that neither fabricates nor drops.
+2. **A control node must pass before the fix too.** The aligned 8000-sample node is the evidence
+   that the shipped path is byte-identical (8000 = 50*160, carry always empty); a node that only
+   passes after the fix could not have shown that.
+3. **The suite's blind spot had a second layer.** Iteration 10 recorded that every harness gives
+   the session no hard cap; this iteration adds that every harness also feeds the provider a
+   sample count that happens to be a whole number of VAD frames. Both are *shapes of the fixture*,
+   not missing assertions - which is why review never found either.
+4. `tests/test_live_pipeline_seams.py` now exists as the home the amendment's third bullet asked
+   for: both sides of a seam are the product class, and only the genuinely off-host part is a
+   stand-in. H1's `vllm_runner` node and H2's shared-hard-cap node belong in it.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - H1 and H2
+  are open and the deployed service is still the unfixed `317df4d`.
+- Next: **H1**. Decide and record the policy (drop the span, or commit it empty) before the
+  patch, put the real `vllm_runner` validation seam under the live coordinator with an empty
+  transcript in `tests/test_live_pipeline_seams.py`, and fix the shared classification seam
+  there so no bare provider exception can make a session terminal.
+
+================================================================================
+## Iteration 2 (run 20260728-112922) - H1: a span the decoder cannot parse is committed empty
+================================================================================
+Target: candidate **H1**, the second blocker the deployed build hits (~3 s, on the first span
+of every meeting). Chosen because context.md fixes the order H3 -> H1 -> H2, H3 landed in
+iteration 1, and the amendment's own gate (a probe run that survives its full plan) cannot
+pass while a leading-silence span kills the session.
+
+### The policy decision the amendment required, and why
+**Commit the span empty. Never drop it, never terminal.** Dropping was ruled out by the
+product's own accounting, not by preference: `LiveSession.stop` waits for
+`committed_samples == accepted_samples`, `live_service_runtime.stop` fails a stop whose
+accepted and accounted totals differ, and `accounted_samples` *is* `committed_samples`. So a
+dropped span strands the session exactly as surely as a terminal failure does - it just does it
+at the end of the meeting instead of the start, and it would break the PRD's "both lanes
+accepted and accounted with zero loss" clause. Committing empty keeps the committed prefix
+contiguous, advances the prefix hash, prunes retained PCM, and publishes nothing false.
+There is a node that *is* this argument: `test_a_meeting_of_pure_silence_stops_with_exact_accounting`.
+
+Files touched (7 tracked; `moss_transcribe_diarize/` + `tests/`, which the second amendment
+authorizes):
+  moss_transcribe_diarize/app/transcription_outcome.py   (new leaf: EmptyTranscriptionError)
+  moss_transcribe_diarize/app/vllm_runner.py             (types the three empty conditions)
+  moss_transcribe_diarize/app/live_adapters.py           (decode seam: translate + classify)
+  moss_transcribe_diarize/app/live_coordinator.py        (empty-span path, no identity work)
+  moss_transcribe_diarize/app/live_session.py            (submit_empty_canonical)
+  moss_transcribe_diarize/app/live_service_runtime.py    (empty_reason on canonical_processed)
+  moss_transcribe_diarize/app/live_portal.py             (do not render a blank gap)
+  tests/test_live_pipeline_seams.py                      (+5 nodes, 5 -> 10)
+
+### The change
+1. `vllm_runner._validate_transcription_response` raises the typed `EmptyTranscriptionError`
+   for all three of its "the model produced nothing usable" cases. It subclasses `RuntimeError`
+   and the messages are byte-identical, so **every batch caller is unchanged** - a batch job
+   that returns no transcript for a submitted file must still fail closed. The type lives in a
+   new leaf module because `vllm_runner` drags torch/transformers in through `inference_utils`
+   and no live module may import that.
+2. `RunnerBoundedWavInference.transcribe_pcm` translates that one type into
+   `InferenceTranscript(transcript="", generated_tokens=0)` with the measured wall time - an
+   empty span still carries an RTF figure instead of vanishing from the gate - and wraps every
+   *other* exception from `runner.transcribe` in `LiveProviderError` with the original as
+   `__cause__`. That second half is the classification seam H3 deferred: nothing crosses the
+   decode seam unclassified.
+3. The rule is stated **on the transcript, not on an exception type**:
+   `live_coordinator._empty_transcript_reason` (replacing `_transcript_text`, which raised)
+   returns `decoder_returned_no_transcript` / `decoder_returned_unparseable_transcript` / None,
+   so a decoder that *returns* garbage without raising is handled identically and the fix is not
+   welded to vLLM. An empty span skips identity work entirely and commits through the new
+   `LiveSession.submit_empty_canonical`, which leaves the identity snapshot version untouched.
+   `empty_reason` rides the `canonical_processed` event, so an empty span is visible, not silent.
+4. A decoder that *failed* is still terminal, now named. Committing its spans as silence - what a
+   blanket catch would do - would render a dead GPU as a blank meeting.
+
+### Validation (all offline on MacStudio; no server, Mac, or remote host was touched)
+- `pytest tests/test_live_pipeline_seams.py -q` -> **10 passed** (3.6 s), was 5.
+- **Red proven without touching git history**: the five product files restored from `HEAD`,
+  re-run, restored, restore verified by sha256 (`restored_identical=true`). Pre-fix:
+  **5 failed / 5 passed** - the five new nodes red, H3's five still green. The failure is the
+  deployed signature exactly:
+  `LiveServiceFailureRecord(kind=integrity, code='RuntimeError', message='vLLM transcription
+  returned zero parsed segments for .../span-0000.wav.', retryable=False, detail=None)`.
+- The leading-silence span the node builds is `(0, 14400, "leading_silence")` - F0's measured
+  `frozen_until_sample 14400` reproduced from the deployed endpoint config
+  (16000 - pre_speech_padding_samples 1600), not asserted.
+- H2 unchanged by this, checked in the same sweep: `live-hardcap-repro.py --frames 8` and
+  `--frames 8 --speech-pattern 0` still **rc=3** at accepted_samples=40000; `--frames 24
+  --speech-pattern 1100` still rc=0; both webrtc cases still rc=0. So H1 masked nothing.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider` -> **547 passed / 2 skipped /
+  368 subtests** in 59.7 s (was 542/2/368; +5 is exactly the new nodes). No node changed status.
+  `tests/test_vllm_runner.py`'s fail-closed node still passes unmodified, which is the batch
+  contract's evidence.
+- Swift untouched this iteration; the full Swift gate belongs to H4.
+
+### Learned
+1. **The accounting decided the policy.** "Drop or commit empty" reads like a taste question and
+   is not one: `accounted_samples` is a synonym for `committed_samples`, so the session has no
+   representation for audio that was accepted and then discarded. Only one of the two options
+   was implementable at all.
+2. **F0's root-path sentence was half wrong, and it mattered.** It said the bare `RuntimeError`
+   escaped before `live_adapters._validated_segments` could type it. That function is on
+   `LiveProvider.decode_canonical`, which **the runtime never builds** - the live decoder is
+   `RunnerBoundedWavInference` under `LiveCoordinator`. Fixing where the note pointed would have
+   changed nothing on the live path. Corrected in context.md's F0 block.
+3. **The endpoint policy *manufactures* the silent span.** `_observe_speech` emits
+   `leading_silence` over everything before the padded speech start, so the first span of every
+   meeting is silence by construction, not by luck of the input. That is why this fired on span
+   0000 on the host, and it is why the node can build it deterministically.
+4. **A classification fix has a wrong version that looks right.** Catching everything at the
+   decode seam and committing empty would make the suite green and turn a dead GPU into a
+   silently blank meeting. The distinction that had to be preserved is "produced nothing" vs
+   "failed", which is why the runner-side type exists at all.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - H2 is
+  open and the deployed service is still the unfixed `317df4d`.
+- **New candidate recorded (36, not started, out of scope):** a transient decoder failure still
+  ends the meeting. Honest classification, but a real reliability gap for the 300 s
+  certification; the fix is bounded per-span retry plus a typed degraded state, and it needs its
+  own authorization.
+- Next: **H2** - the two hard-cap freezers. `live-hardcap-repro.py --frames 8` is the red case in
+  0.4 s, and the regression node must give one `LiveSession` and one `EndpointPolicy` the *same*
+  hard cap (no harness in the repo does). Decide which freezer is the single authority, and
+  answer the orphan the second reading creates: spans the session freezes by itself are never
+  queued for decode.
+
+================================================================================
+## Iteration 3 (run 20260728-112922) - H2: one authority decides where a span ends
+================================================================================
+Target: candidate **H2**, the last of F0's three server blockers. Chosen because context.md
+fixes the order H3 -> H1 -> H2, both predecessors landed, and the amendment's own gate (a
+probe run that survives its full plan) cannot pass while 2.5 s of endpoint-free audio ends
+the meeting.
+
+### The design decision, and why the other reading was rejected
+The diagnosis offered two: (A) the session stops freezing on its own and the endpoint policy
+stays the single authority, or (B) the coordinator honours `FrameAck.frozen_span_ids` and the
+policy's cap goes away. **A.** B inverts the design - a boundary decided by the session would
+have to be pushed back into the policy to keep `_open_start` in step, and even then the
+policy's own later span can land *behind* the session's cursor and be refused by the same
+`ValueError` (session freezes 40000; policy then emits end_silence at 38000). B also has to
+solve the orphan separately. A closes the collision and the orphan with one removal.
+
+Files touched (3 tracked product + 6 tests + 1 Ralph tool; `moss_transcribe_diarize/` +
+`tests/`, which the second amendment authorizes):
+  moss_transcribe_diarize/app/live_session.py          (hard_cap_samples + freezer removed)
+  moss_transcribe_diarize/app/live_service_runtime.py  (_require_one_span_cap)
+  moss_transcribe_diarize/live_replay.py               (retired knob refused, not ignored)
+  tests/test_live_pipeline_seams.py                    (+3 nodes, 10 -> 13)
+  tests/test_live_session.py                           (+1 node; explicit freeze_until)
+  tests/test_live_identity.py                          (explicit freeze_until, 7 sites)
+  tests/test_live_service_runtime.py, tests/test_live_api.py,
+  tests/test_live_provider_bundle.py                   (declare both caps: deployed shape)
+  scripts/ralph-afk/live-hardcap-repro.py              (now a green check, not a repro)
+
+### The change
+1. `LiveSession` loses `hard_cap_samples` entirely - parameter, attribute and
+   `_freeze_hard_cap_spans`. `accept_frame` freezes nothing and returns `frozen_span_ids=()`.
+   The **client's** ack is unaffected: `live_service_runtime.accept_frame` has always rebuilt
+   `FrameAck` from `result.frozen_spans` (the coordinator's). That rebuild is precisely why
+   session-frozen spans were orphaned - frozen, never queued, never decoded.
+2. `LiveServiceRuntime._require_one_span_cap` refuses to open a session unless the endpoint
+   policy carries exactly `bounds_config.hard_cap_samples`. This is load-bearing, not tidiness:
+   without it, removing the session's freezer turns a `bounds`-capped/`endpoint`-uncapped
+   manifest into a session with **no** cap, where one span grows until retention backpressures.
+   It immediately caught a real fixture - `tests/test_live_provider_bundle.py`'s manifest
+   declared the cap only in `endpoint_config`.
+3. `live_replay.py` raises on `session_hard_cap_samples` rather than ignoring it: such a
+   manifest was authored against a session that closed its own spans and would replay
+   differently now.
+4. The only boundary the session still draws is `stop`'s tail flush. It cannot collide - it
+   fires only when `accepted > frozen_until`, i.e. only when nothing else closed the tail, and
+   on the runtime path `stop_endpoint()` has already closed it.
+
+### Validation (all offline on MacStudio; no server, Mac, or remote host was touched)
+- `pytest tests/test_live_pipeline_seams.py -q` -> **13 passed** (3.5 s), was 10.
+- **Red proven without touching git history**: `live_session.py` and `live_service_runtime.py`
+  restored from `HEAD`, the seam harness temporarily handed the cap the pre-fix session took,
+  re-run, then all three restored and verified by sha256 (identical). Pre-fix: **3 failed /
+  10 passed** - the three new nodes red with the deployed signature exactly,
+  `ValueError: frozen span end must advance.` at `live_session.py:237`, for continuous speech
+  *and* for opening silence; the ten H3/H1 nodes stayed green.
+- `live-hardcap-repro.py --frames 8` flipped **rc=3 -> rc=0**: was `REFUSED ValueError: frozen
+  span end must advance.` at accepted_samples=40000, now `survived 8 frames (64000 accepted
+  samples)` with `session_frozen_span_ids=[0]` == `coordinator_queued_span_ids=[0]` - the
+  orphan closed in the same line as the collision. `--speech-pattern 0` (silence),
+  `--frame-samples 1000` (not a frame-size artifact), `--speech-pattern 1100` (endpointing,
+  11 spans, all queued) and both webrtc cases are rc=0.
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider -rs` -> **551 passed /
+  2 skipped / 368 subtests** in 59.4 s (was 547/2/368; +4 = 3 seam nodes + 1 session node).
+  The two skips printed with `-rs` are `tests/test_large_upload.py:155,175` "Python 3.10
+  compatibility contract", the same pre-existing pair as every prior gate.
+- Swift untouched this iteration; the full Swift gate belongs to H4.
+
+### Learned
+1. **The blind spot was a *shape*, for the third time.** Iteration 1 found "every harness feeds
+   the provider a whole number of VAD frames"; iteration 10 found "every harness gives the
+   session no hard cap"; this iteration found that the second one is enforced by C2 in
+   production and by nothing in the suite. A fixture that omits a production value is invisible
+   to review because there is nothing wrong on the line you are reading.
+2. **Deleting a mechanism can silently delete a guarantee.** Removing the session's freezer is
+   correct, but on its own it would have left a `bounds`-only manifest running uncapped. The
+   equality check is the part of this change that is not a deletion, and it is the part that
+   keeps the safety property.
+3. **The declared-vs-enforced distinction is worth naming.** `bounds_config.hard_cap_samples`
+   now declares what the endpoint policy must do; it does not do anything itself. A config
+   value that is both a declaration and an independent mechanism is the collision, generalised.
+4. **The repro tool had to change with the fix.** `--session-hard-cap` cannot survive the
+   removal of the parameter it set; leaving it accepted-and-ignored would have made the tool
+   lie about what it was testing. It is now retired with an error that explains the fix, and the
+   script is a green check whose red form is only reachable by restoring the pre-fix file.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - the
+  deployed service is still `317df4d` and carries none of H1/H2/H3.
+- Next: **H4** - gate, merge, redeploy. Re-run `live-pipeline-probe.py` against the deployed
+  service *after* the redeploy (before it, it still dies at the first unaligned frame); full
+  Swift + Python gate; the single merge the second amendment authorizes via `merge-keeper.sh`
+  with `expected_main` advanced in-script from `317df4d` (never by CLI override); then push and
+  redeploy so all four checkouts return to one exact SHA. Run `merge-keeper.sh` in the
+  BACKGROUND. Note for the redeploy: the new `_require_one_span_cap` reads the host manifest,
+  which D2's finalizer wrote with `hard_cap_samples 40000` in **both** sections, so it passes -
+  but verify that before restarting the service, because a mismatch now refuses every session.
+
+================================================================================
+## Iteration 4 (run 20260728-112922) - H4a: the gate before the authorized merge
+================================================================================
+Target: candidate **H4**, step (a) - the full Swift/Python gate plus the merge-payload review
+that has to be honest before the second amendment's one authorized merge. Chosen because H1,
+H2 and H3 all landed and H4 is the only Phase H item left; split gate-then-merge exactly as
+run 20260728-072601 split G4 from G5, so the gate is recorded evidence rather than a step
+inside the merge script. **No tracked file changed this iteration** - only
+`scripts/ralph-afk/{context.md,progress.txt}`.
+
+### The gate, measured on MacStudio 2026-07-28 at 8b852f2 (tree clean before and after)
+- Both Swift products from an **empty** scratch path, separate invocations (never one
+  `--product A --product B`, which silently builds only B): `mtd-capture` 9.08 s wall / 8.08 s
+  build, `MOSSCaptureApp` 0.95 s / 0.62 s, **zero warnings**.
+- `swift test --package-path macos/MOSSCapture` -> **139 passed / 0 failures** (unchanged from
+  G4; Phase H touched no Swift source).
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider -rs` -> **551 passed /
+  2 skipped / 368 subtests** in 59.7 s. The two skips are `tests/test_large_upload.py:155,175`
+  "Python 3.10 compatibility contract", the same pre-existing pair as every prior gate - not
+  Darwin skips.
+- `pytest tests/test_macos_uds_tracer.py` alone -> **4 passed / 0 skips** in 14.7 s.
+- attempt-2 discriminator (`--target "$PWD"`) -> **10/10 true**.
+- `leak-scan.sh` -> `leak-scan: clean`.
+- `test -z "$(git status --porcelain)"` -> clean.
+
+### The merge payload, reviewed against the second amendment's scope
+`git diff --stat main HEAD -- ':!scripts/ralph-afk'` is exactly **15 files, +917/-106**:
+nine under `moss_transcribe_diarize/` (live_adapters, live_coordinator, live_portal,
+live_provider_bundle, live_service_runtime, live_session, the new leaf transcription_outcome,
+vllm_runner, live_replay) and six test files (the new tests/test_live_pipeline_seams.py plus
+test_live_api, test_live_identity, test_live_provider_bundle, test_live_service_runtime,
+test_live_session). **No macos/, no ops/, no deployment template, no doc.** The two entries a
+reviewer would not predict from the blocker names were read in full and are in scope:
+`live_portal.py` is H1's six-line skip of empty commits when joining rows (without it an
+accounted-silent span opens a blank row), and `live_replay.py` is H2's refusal of the retired
+`session_hard_cap_samples` knob.
+
+### The pre-redeploy check iteration 3 asked for - done now, not at restart time
+Read-only against the host's deployed `live-provider-manifest.json`:
+  endpoint_config.hard_cap_samples = 40000, bounds_config.hard_cap_samples = 40000, equal
+  speech_provider = {kind: webrtc, frame_samples: 160}
+  "session_hard_cap_samples" present anywhere in the document = False
+So H2's new `LiveServiceRuntime._require_one_span_cap` admits the deployed manifest instead of
+refusing every session, and H3's construction refusal admits 160 (10 ms at 16 kHz is one of the
+three legal webrtcvad lengths). Both new checks fail the service **closed**, so this belongs
+before a restart, not after one. Recorded as a standing command in context.md's Validation.
+
+### Learned
+1. **Both Phase-H fixes added a refusal that the deployed configuration has to satisfy, and
+   neither is exercised by anything on the host until a session opens.** A manifest that was
+   fine yesterday is now either admitted or fatal, so "does the deployed config still pass the
+   new gate" is a distinct pre-deploy step from "do the tests pass". It cost one read-only ssh
+   here; discovering it from a dead service after the restart would have cost the rollback.
+2. **The gate is unchanged in shape but the numbers moved only on the Python side** (537+2 ->
+   551+2, +14 = the 13 seam nodes plus the session node), which is itself the evidence that the
+   cycle stayed server-side: a Swift count that moved would mean the amendment's scope leaked.
+
+- **Blocker (unchanged):** E3's physical TCC clicks on m4mbp. Still correct to defer - the
+  deployed service is still `317df4d` and carries none of H1/H2/H3.
+- Next: **H4 step (b)** - the merge. Join `main` into the feature branch first and prove it
+  content-free with `git merge-tree --write-tree` before running it; advance `expected_main`
+  from `317df4d...` **in-script** with a comment citing the second amendment (never by CLI
+  override); run `merge-keeper.sh` in the **BACKGROUND** (a foreground kill strands a worktree
+  holding `main` and blocks the retry; recover with `git -C <wt> merge --abort && git worktree
+  remove --force <wt>`). Then (c) publish + redeploy + four-way SHA, and only then (d) the
+  probe, which is the amendment's actual gate.

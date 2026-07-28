@@ -94,6 +94,39 @@ Everything else stays frozen. This authorization does not reopen general product
 permit a third merge, and does not weaken any existing gate. After that merge the original
 post-merge freeze resumes: only Ralph evidence may change on the feature branch.
 
+## Second authorized amendment - 2026-07-28, server decode-seam fix cycle
+
+The F0 probe drove the deployed live service through the whole pipeline from a real remote pinned
+TLS peer and found the session dies within ~3 s of ordinary audio. Evidence is in progress.txt under
+"F0 server-side live pipeline probe". Neither blocker is reachable by any existing gate: no test in
+this repo puts the real VAD endpointer and a real decoder in one process.
+
+The operator has therefore authorized a **second** follow-up fix cycle, again strictly limited:
+
+- **Blocker 1** - `vllm_runner.py:245` `_validate_transcription_response` raises a bare
+  `RuntimeError` for an empty parse, which escapes before `live_adapters.py:360-364` can classify it
+  as the typed `LiveProviderError` that already exists for the identical condition. A span the
+  decoder cannot parse must be **dropped or committed empty, never terminal**. Decide and record
+  which, then implement it.
+- **Blocker 2** - `live_session.py:237` `frozen span end must advance`, reached from the coordinator
+  at `live_coordinator.py:128` / `:231`. Before concluding, rule the probe's identical per-lane
+  `capture_timestamp_ns` in or out by re-running the probe with a per-lane offset; a real capture
+  never produces identical lane timestamps.
+- Regression tests that put the **real** `vllm_runner` validation seam under the live coordinator,
+  including an empty transcript and a leading-silence span. The absence of that seam from the suite
+  is the root cause and must be closed, not just the two symptoms.
+- Re-running `scripts/ralph-afk/live-pipeline-probe.py` against the deployed service as the gate,
+  plus one further reviewed no-ff merge to `main` through `merge-keeper.sh`, then redeploy so all
+  four checkouts return to one exact SHA.
+
+Everything else stays frozen. This does not reopen general product work, does not permit a further
+merge beyond the one named here, and does not weaken any gate. Server-side fixes may touch
+`moss_transcribe_diarize/` only where the two blockers and their tests require it. After that merge
+the post-merge freeze resumes.
+
+**Order matters:** do not spend the operator's TCC clicks until this cycle is deployed. E3 exists to
+enable the canary, and the canary cannot pass on the current build.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:

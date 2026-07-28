@@ -49,13 +49,33 @@ def test_accepts_ordered_16khz_pcm_and_backpressures_before_eviction():
         session.accept_frame(frame(2, 1))
 
 
-def test_hard_cap_freezes_independent_spans_and_publishes_only_in_order():
-    session = LiveSession(max_retained_samples=8000, hard_cap_samples=4000)
-    session.accept_frame(frame(0, 2000))
-    ack = session.accept_frame(frame(1, 6000))
+def test_accepting_audio_never_freezes_a_span_by_itself():
+    """The session records a partition; the endpoint policy decides one.
 
-    assert ack.frozen_span_ids == (0, 1)
-    first, second = [session._frozen_spans[span_id] for span_id in ack.frozen_span_ids]
+    Accepting audio used to freeze the session's own `hard_cap` span, which collided with
+    the identical span the endpoint policy emits for the same sample and was never queued
+    for decode either way. Eight seconds of audio is more than any deployed cap (2.5 s) and
+    must still leave the partition entirely in the caller's hands.
+    """
+    session = LiveSession(max_retained_samples=160000)
+
+    for sequence in range(16):
+        ack = session.accept_frame(frame(sequence, 8000))
+        assert ack.frozen_span_ids == ()
+
+    snapshot = session.snapshot()
+    assert snapshot.accepted_samples == 128000
+    assert snapshot.frozen_until_sample == 0
+    assert snapshot.pending_span_ids == ()
+
+
+def test_frozen_spans_are_independent_and_publish_only_in_order():
+    session = LiveSession(max_retained_samples=8000)
+    session.accept_frame(frame(0, 2000))
+    session.accept_frame(frame(1, 6000))
+
+    first = session.freeze_until(4000, reason="hard_cap")
+    second = session.freeze_until(8000, reason="hard_cap")
 
     assert session.submit_canonical(result(second, transcript(0.25, "second"))) is True
     blocked = session.snapshot()
@@ -76,8 +96,9 @@ def test_hard_cap_freezes_independent_spans_and_publishes_only_in_order():
 
 
 def test_provisional_suffix_is_replace_only_and_stale_generations_are_ignored():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
+    session = LiveSession(max_retained_samples=4000)
     session.accept_frame(frame(0, 4000))
+    session.freeze_until(4000, reason="hard_cap")
     epoch, old_generation, start_sample = session.begin_provisional()
     assert session.publish_provisional(
         epoch=epoch,
@@ -110,9 +131,9 @@ def test_provisional_suffix_is_replace_only_and_stale_generations_are_ignored():
 
 
 def test_canonical_validation_fails_closed_and_preserves_unresolved_samples():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
 
     with pytest.raises(LiveSessionFailed, match="stable session identity"):
         session.submit_canonical(result(span, identity_confirmed=False))
@@ -127,9 +148,9 @@ def test_canonical_validation_fails_closed_and_preserves_unresolved_samples():
 
 
 def test_stale_epoch_results_are_ignored_after_abort():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000, session_epoch=7)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000, session_epoch=7)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
 
     asyncio.run(session.abort("caller cancelled"))
 
@@ -164,9 +185,9 @@ def test_stop_flush_requires_exact_accepted_accounted_equality():
 
 
 def test_replay_after_committed_prefix_prunes_retention_and_keeps_hash_chain():
-    session = LiveSession(max_retained_samples=4, hard_cap_samples=2)
-    first_ack = session.accept_frame(frame(0, 2))
-    first_span = session._frozen_spans[first_ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4)
+    session.accept_frame(frame(0, 2))
+    first_span = session.freeze_until(2, reason="hard_cap")
 
     session.submit_canonical(result(first_span, transcript(2 / LIVE_SAMPLE_RATE, "first")))
     first_snapshot = session.snapshot()
@@ -175,10 +196,10 @@ def test_replay_after_committed_prefix_prunes_retention_and_keeps_hash_chain():
     assert len(first_snapshot.committed) == 1
     first_hash = first_snapshot.committed_prefix_hash
 
-    replay_ack = session.accept_frame(frame(1, 4))
-    assert replay_ack.frozen_span_ids == (1, 2)
-    second_span = session._frozen_spans[1]
-    third_span = session._frozen_spans[2]
+    session.accept_frame(frame(1, 4))
+    second_span = session.freeze_until(4, reason="hard_cap")
+    third_span = session.freeze_until(6, reason="hard_cap")
+    assert (second_span.id, third_span.id) == (1, 2)
     session.submit_canonical(result(third_span, transcript(2 / LIVE_SAMPLE_RATE, "third")))
     assert session.snapshot().accounted_samples == 2
 
@@ -196,9 +217,9 @@ def test_replay_after_committed_prefix_prunes_retention_and_keeps_hash_chain():
 
 
 def test_canonical_result_mismatch_is_failure_injection_not_partial_commit():
-    session = LiveSession(max_retained_samples=4000, hard_cap_samples=4000)
-    ack = session.accept_frame(frame(0, 4000))
-    span = session._frozen_spans[ack.frozen_span_ids[0]]
+    session = LiveSession(max_retained_samples=4000)
+    session.accept_frame(frame(0, 4000))
+    span = session.freeze_until(4000, reason="hard_cap")
     bad = CanonicalResult(
         span_id=span.id,
         epoch=span.epoch,

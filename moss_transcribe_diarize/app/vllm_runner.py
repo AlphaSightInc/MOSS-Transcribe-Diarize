@@ -15,6 +15,7 @@ from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT, load_audio_i
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
 from .model_runner import StatusCallback, TranscriptionResult, generation_progress
+from .transcription_outcome import EmptyTranscriptionError
 
 
 class VllmRunner:
@@ -236,13 +237,21 @@ def _validate_transcription_response(
     generated_tokens: int,
     audio_path: str | Path,
 ) -> None:
+    """Fail closed when the model produced nothing transcribable for this audio.
+
+    All three conditions describe the same thing -- the request succeeded and the model said
+    nothing usable -- so they raise the typed `EmptyTranscriptionError` rather than a bare
+    `RuntimeError`. A transport or server failure is a different thing and still leaves this
+    function as some other exception.
+    """
+
     audio = str(Path(audio_path).expanduser())
     if generated_tokens <= 0:
-        raise RuntimeError(f"vLLM transcription returned zero generated tokens for {audio}.")
+        raise EmptyTranscriptionError(f"vLLM transcription returned zero generated tokens for {audio}.")
     if not text:
-        raise RuntimeError(f"vLLM transcription returned empty transcript text for {audio}.")
+        raise EmptyTranscriptionError(f"vLLM transcription returned empty transcript text for {audio}.")
     if not parse_transcript(text):
-        raise RuntimeError(f"vLLM transcription returned zero parsed segments for {audio}.")
+        raise EmptyTranscriptionError(f"vLLM transcription returned zero parsed segments for {audio}.")
 
 
 def _raise_vllm_error(error: Any) -> None:
