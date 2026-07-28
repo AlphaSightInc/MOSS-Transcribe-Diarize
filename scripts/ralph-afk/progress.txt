@@ -866,3 +866,75 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   `frame_samples=8000`) with generated bundle hashes, never hand-edited, plus descriptor/config
   admission and capacity-headroom tests. B3 already made the client send 8000-sample 16 kHz frames,
   so the host manifest bounds are the last thing standing between the two ends of the wire.
+
+## Iteration 12 (run 20260728-023004-98501, its iteration 4) - generated manifest bounds (C2)
+- Target: Phase C candidate C2. B3 made the Mac client send exact 8000-sample 16 kHz frames, but
+  the bounds the server admits them against live in the *host* manifest, which nothing in the repo
+  generated or checked. The deployed provisional still carried the 7.5 s span cap and 30 s
+  retention, so a >15-minute meeting would have been admitted against pre-retune bounds.
+- Files: `moss_transcribe_diarize/app/live_manifest_finalizer.py` (new),
+  `ops/finalize-live-provider-manifest.py` (new, tracked wrapper),
+  `tests/test_live_manifest_finalizer.py` (new), `scripts/ralph-afk/{context.md,progress.txt}`.
+  No existing product source changed.
+- Method: make the bounds **generated, with every relation checked**, rather than typed into a
+  JSON file. The three tuned bounds are required flags (the plan's latency remedy tunes the span
+  cap 40000 -> 32000 -> 24000, so they cannot be constants), and everything else is a derived
+  relation the tool refuses to violate. Hashes are regenerated from the retuned sections; admission
+  is then proven with the runtime's own readers (`_endpoint_config`, `_bounds`,
+  `LiveServiceDescriptor`) before anything is written. Output discipline copied from B5's
+  `moss-tool-lib.sh`: dry-run plan, rollback line before the first mutation, `unchanged:` re-run,
+  backup instead of delete, `evidence: key=value`.
+- Validation:
+  - `pytest tests/test_live_manifest_finalizer.py -q` -> **17 passed**
+  - `pytest tests -q -p no:cacheprovider` -> **492 passed, 2 skipped, 368 subtests** in 40.0s
+    (was 475/2/368; +17 nodes, no regressions)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`
+  - Swift untouched this iteration (no Swift source changed); last measured 121 passed at
+    iteration 11.
+- Evidence:
+  - **The real host input was measured before trusting the tool** (read-only ssh probe, nothing
+    mutated): the staged provisional carries `frame_samples 4000`, `hard_cap_samples 120000` in
+    *both* `endpoint_config` and `bounds_config`, `max_retained_samples 480000`,
+    `max_frame_samples 16000`, `decoder max_samples 120000`, `min_silence_samples 8000`, paddings
+    1600, `source_revision "PROVISIONAL-UPDATE-AFTER-KEEPER"`. So every field the finalizer does
+    not set already satisfies the contract and D2 will not be refused - and the test fixture now
+    mirrors those exact values instead of invented ones.
+  - The two hard caps are separate fields with separate readers: `EndpointPolicy` closes the span
+    and `LiveSession` freezes it. The host file happens to hold them equal; nothing enforced it.
+    The tool now sets both from one flag and refuses a divergence, because a smaller freeze cap
+    would split spans the endpoint had not closed.
+  - Capacity headroom is measured, not asserted in prose: a `LiveLaneIngress` at the generated
+    960000 accepts one 2.5 s span plus a full 15 s reconnect burst on **both** lanes
+    (35 frames/lane = 280000 samples), the oldest burst frame still replays to the identical ack
+    (70 acks used of the shared 256-entry window), the lane fills to exactly 120 frames = 60.0 s,
+    and frame 121 raises `LiveV2LaneCapacityError`.
+  - Mutation rehearsal 1 (drop the `max_retained_samples` assignment): 5 nodes fail, including the
+    capacity-headroom node and the ops-tool end-to-end node. Reverted -> green.
+  - Mutation rehearsal 2 (inherit `config_hashes` from the input instead of regenerating): **7**
+    nodes fail - the tool's own admission step refuses to write, so a stale-hash manifest cannot
+    reach the host even if a test had missed it. Reverted -> green.
+  - Mutation rehearsal 3 (write over an existing differing manifest without the backup): the
+    backup/rollback node fails; the printed `rollback: mv ...` is executed by that test and really
+    restores the previous bytes. Reverted -> green.
+  - Mutation rehearsal 4 (drop `hard_cap_samples <= decoder_config.max_samples`): the
+    160000-cap refusal node fails. Reverted -> green.
+  - Refusals cover: the `PROVISIONAL-...` placeholder, an uppercase SHA, a short SHA, a 4000-sample
+    frame, a cap that is not a whole wire frame, a cap below `min_silence_samples`, a cap beyond the
+    decoder bound, retention below burst+cap, a manifest whose *untuned* `min_silence_samples`
+    drifts, output == input, unreadable and non-JSON input. Every refusal leaves no output file.
+- Learned: (1) The plan's ordered latency remedy (2.0 s span cap) is why the bounds cannot be
+  constants in the server - but the *relations* can be, and the relations are what a wrong flag
+  violates. Required flags plus checked relations gave both. (2) Verifying admission inside the
+  generator - with the runtime's readers, before writing - turned "the tests check the tool" into
+  "the tool cannot emit a manifest the runtime would reject", which is what rehearsal 2 exposed.
+  (3) Probing the real host input first was worth more than any local fixture: it proved the two
+  fields the tool deliberately does not set (`min_silence_samples`, `max_frame_samples`) already
+  hold contract-compatible values, so D2 has no hidden blocker.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: C3 - the tracked deployment and certification bundle: TLS generator with four SANs, live
+  env/systemd templates, start-web port/runs-dir overrides, two-port Windows networking, loopback
+  `ops/live-pair.sh`, `LOCAL_DEPLOYMENT.md` (which must document the C2 finalizer), and the
+  app-owned latency probe that emits only redacted aggregate timings. C3 is the largest remaining
+  item before the C4 gate; consider splitting it (transport/TLS artifacts first, latency probe
+  second) rather than one oversized iteration.

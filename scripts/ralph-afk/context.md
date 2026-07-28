@@ -42,11 +42,12 @@ added the retained-until-ACK outbox (B2); iteration 7 added the 16 kHz/8000-samp
 converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent transport (B4);
 iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 recorded the Phase B
 client gate (B6) and changed no product source; iteration 11 bound view authority to the session
-lifecycle (C1).
+lifecycle (C1); iteration 12 generated the retuned manifest bounds (C2).
 Test totals on the branch: Swift **121 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **475 passed / 2 skipped / 368 subtests**
-including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3) and
-`tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9).
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **492 passed / 2 skipped / 368 subtests**
+including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3),
+`tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9) and
+`tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12).
 
 **Phase B client gate: GREEN at `3fb5567` (iteration 10).** Product-tree SHA `3fb5567`; the
 checkpoint commit adds only `scripts/ralph-afk/*`, so
@@ -229,6 +230,35 @@ the browser's authority and leaves capture streaming, and it is idempotent (seco
 Sessions are still memory-only in the persisted state file, so a restart revokes every view while
 paired devices survive.
 
+**Manifest-bounds contract (new, iteration 12).** The deployed manifest's bounds are **generated**,
+never hand-edited: `moss_transcribe_diarize/app/live_manifest_finalizer.py` holds the wire contract
+(0.5 s/8000-sample frame, 1 s/16000-sample contract maximum, 0.5 s/8000-sample min silence, 15 s
+client outbox → `LIVE_RECONNECT_BURST_SAMPLES` 240000 per lane) and `ops/finalize-live-provider-
+manifest.py` is the thin tracked wrapper D2 runs from the deployed checkout (it inserts the repo
+root on `sys.path` so the reviewed revision generates the file, not an installed copy). The three
+bounds a deployment states are **required flags**, because the plan's latency remedy tunes the span
+cap (40000 → 32000 → 24000); everything else is a checked relation, so a wrong flag is refused
+rather than deployed: `frame_samples` must equal the client's 8000; `frame_samples ≤
+max_frame_samples ≤ 16000`; `endpoint_config.hard_cap_samples` must **equal**
+`bounds_config.hard_cap_samples` (the endpoint closes the span and `LiveSession` freezes it — a
+divergence silently splits spans); `min_silence_samples` must be the contract 8000; the cap must be
+a whole number of wire frames, exceed `min_silence_samples`, and fit `decoder_config.max_samples`;
+retention must be a whole number of frames and hold a full reconnect burst **plus one open span**
+(240000 + 40000 = 280000 ≤ 960000, i.e. 45 s spare). The 15 s outbox replays
+`30 × 2 = 60` frames against the shared 256-entry ack window, so duplicate retries cannot hit
+`LiveV2PrunedReplayError`. Hashes are regenerated from the retuned sections and never inherited
+(inheriting them is caught at write time by the admission step, not only by tests); admission is
+proven with the runtime's own readers (`_endpoint_config`, `_bounds`, `LiveServiceDescriptor`).
+Output discipline matches B5: `--dry-run` prints `plan:`/`rollback:`/`evidence:` and writes nothing,
+a re-run prints `unchanged:` without touching the inode, a differing file is moved to
+`<output>.backup-<utc>` with the `rollback:` line printed before the write, and the provisional
+input is never overwritten.
+*Measured on the host 2026-07-27*: the staged provisional carries `frame_samples 4000`,
+`hard_cap_samples 120000` in both sections, `max_retained_samples 480000`, `max_frame_samples
+16000`, `decoder max_samples 120000`, `min_silence_samples 8000`, paddings 1600 — so every value
+the finalizer does not set already satisfies the contract and D2 will not be refused. The test
+fixture mirrors those exact values.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -333,8 +363,10 @@ not add a Screen Recording preflight in its place (M31 forbids it).
 `onnxruntime 1.23.2` installed with metadata; WeSpeaker ONNX staged and hash-verified;
 `live.crt`/`live.key` staged but SANs cover only `ga0-alienware-rtx4070ti.local` +
 `IP:192.168.68.38` (**no tailnet SAN**); provider manifest is
-`live-provider-manifest.provisional.json` with `source_revision:
-"PROVISIONAL-UPDATE-AFTER-KEEPER"`.
+`live-provider-manifest.provisional.json` (0600, `~/.local/share/moss-transcribe-diarize/live/`)
+with `source_revision: "PROVISIONAL-UPDATE-AFTER-KEEPER"` and the pre-retune bounds measured in
+iteration 12 (see the manifest-bounds contract). D2 finalizes it in place of the provisional file;
+nothing on the host has been mutated.
 
 **Mac state.** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. `/Applications/MOSSCapture.app` absent.
 Checkout is at upstream `40cf854` with `origin` = **OpenMOSS upstream**, not the AlphaSight fork.
@@ -405,6 +437,11 @@ swift test --package-path macos/MOSSCapture \
 swift test --package-path macos/MOSSCapture \
   --filter 'LanesPublishConcurrently|ATickArrivingDuringADrain|StopWaitsForTheRunningPass|PinnedProviderKeepsOneSession|ProductionPumpTicksOnce'
 
+# --- C2 manifest bounds (17 nodes: retune + regenerated hashes, descriptor admission, reconnect-
+#     burst capacity headroom on both lanes with replayable acks, 9 refusals, dry-run, unchanged
+#     re-run, backup + working rollback, tracked ops tool end to end). Scratch paths only. -------
+python3 -m pytest tests/test_live_manifest_finalizer.py -q
+
 # --- B5 packaging tools (9 nodes: entitlement drop, reproducible bundle, install-location
 #     refusal, untouched idempotent install, backup + working rollback, tampered-bundle refusal,
 #     three dry-run plans, keychain refusals). Scratch paths only; no keychain/app is mutated. ---
@@ -447,7 +484,11 @@ curl -sk https://100.64.0.8:7861/api/live/descriptor | head -c 200
 ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOSSCapture.app; \
   codesign -dv /Applications/MOSSCapture.app 2>&1 | head -5; codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1'
 
-# --- host manifest finalization (tool arrives in Phase C) ----------------
+# --- host manifest finalization (tool tracked since iteration 12; D2 runs it, never earlier) ----
+# Rehearse it locally first - it mutates nothing without --input/--output on the host:
+#   python3 ops/finalize-live-provider-manifest.py --input <provisional> --output <final> \
+#     --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 \
+#     --max-retained-samples 960000 --frame-samples 8000 --dry-run
 printf '%s\n' \
   'set -euo pipefail' \
   'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
@@ -536,6 +577,8 @@ edit the control-plane discriminator scripts to keep them green.
    bounds the server admits them against (`bounds_config.max_frame_samples`, `frame_samples`,
    `max_retained_samples` — read from the host provider manifest via
    `live_provider_bundle.py:269,912`) must be the retuned contract values before D-phase pairing.
+   **Closed by iteration 12 (C2)**: the generator refuses any manifest the client's frames would
+   not fit.
 8. **B4 — bounded concurrent transport** `[done — iteration 8]`: `CaptureFramePublishPump`
    (`CapturePublishPump.swift`) is the only caller of `transport.publish`; one serial queue per
    lane makes in-flight work exactly the lane count, `Contention.skip`/`.wait` stops passes from
@@ -578,12 +621,18 @@ frozen except for defects the server work exposes.
     `test_v2_http_maps_lane_capacity_to_429_without_mutating_or_sharing_capacity`); outage,
     ambiguous retry and outbox overflow are the B2 Swift nodes. The gate iteration must record that
     clause-to-node map rather than assume it.
-12. **C2 — bounds retune**: `hard_cap_samples=40000`,
-    `max_retained_samples=960000`, `frame_samples=8000`; generated bundle hashes, never hand
-    edited. Test descriptor/config admission and capacity headroom.
-13. **C3 — tracked deployment and certification bundle**: manifest finalizer, TLS generator,
+12. **C2 — bounds retune** `[done — iteration 12]`: `live_manifest_finalizer.py` +
+    `ops/finalize-live-provider-manifest.py` generate `hard_cap_samples=40000` (both sections),
+    `max_retained_samples=960000`, `frame_samples=8000` with regenerated bundle hashes and refuse
+    any combination the wire contract cannot carry — see the manifest-bounds contract above.
+    Seventeen nodes; four mutation rehearsals recorded in progress.txt. Residue for C3: the tool is
+    tracked but **undocumented** in `LOCAL_DEPLOYMENT.md`, which C3 owns; residue for D2: the host
+    file must be finalized before the live service starts, and the source revision must be the
+    40-hex merge SHA (the placeholder is refused).
+13. **C3 — tracked deployment and certification bundle**: TLS generator,
     live env/service templates, start-web overrides, two-port Windows networking, loopback
-    pairing helper, deployment docs, and an **app-owned latency probe**. The app—not the CLI—
+    pairing helper, deployment docs (including the C2 finalizer), and an **app-owned latency
+    probe**. The app—not the CLI—
     uses view authority, maps `committed_samples` to converted client capture timestamps, and
     emits only redacted p50/p95/max plus snapshot/events fetch timings. Test
     generation/default-off/secrecy/7860-preservation and deterministic latency math without host
