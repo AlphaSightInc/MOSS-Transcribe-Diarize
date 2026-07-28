@@ -3031,3 +3031,86 @@ leaf); batch `http://192.168.68.38:7860/` 200; plaintext `http://100.64.0.8:7861
   unavailable, the highest-value remaining loop-runnable work is F-phase *preparation* that needs no
   TCC: nothing in F1/F2/F3 qualifies (all three need a running capture), so the honest next action is
   to hold at this blocker rather than manufacture an iteration.
+
+================================================================================
+## run 20260728-072601 / iteration 8 - F4a rollback rehearsal, rollbacks recorded FIRST
+================================================================================
+
+- Target: **F4a** - the PRD acceptance clause "Rollback rehearsed and recorded: live service
+  disabled, server checkout reverted to `163e969`, and `http://192.168.68.38:7860/` still serving -
+  then restored."
+- **Why this candidate, off the strict phase order.** Iteration 7 closed G6's automatable half and
+  concluded that everything left is E3's human TCC clicks. That is true of F1/F2/F3 - all three need
+  a running capture - but it is **not** true of the rollback clause: it touches only the server, and
+  it is the one remaining PRD acceptance item the loop can close without the operator. So candidate
+  32 (**F4**) is split by evidence the same way iteration 20 split E2: **F4a** is the rollback
+  rehearsal (runnable now, closes a clause on its own) and **F4b** is the final close (still gated on
+  every other item having evidence). Rehearsing earlier is also strictly better than rehearsing
+  later: the value of a rollback is knowing it works *before* you are committed, and after
+  certification the certified state is the thing you least want to disturb.
+- Authorized action: candidate 32 (F4) explicitly names "rehearse/record rollback, restore service".
+  Its "only when every PRD acceptance item has evidence" condition governs *closing the loop*, not
+  the rehearsal. Nothing else is touched: no Mac, no TCC, no push, no merge, no tracked source.
+
+### Pre-state, measured read-only this iteration (server, 2026-07-28)
+- Checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize`: HEAD `317df4d728b6765dbe365a3166158ba581299557`
+  (detached), tree `3b37815fd1ba68d83e8f2441f8d4d9a2778446a3`, `git status --porcelain` **empty**,
+  local `main` ref still `163e969a054dd7f894e550ff611e9c5a7620ae4d`. `git diff --name-only 163e969
+  317df4d` is 87 files.
+- Units: `moss-vllm` MainPID **322117** / `moss-web` MainPID **301112** / `moss-live-web` MainPID
+  **334346**, all `active`/`running`/`enabled`, all `NRestarts=0`, ActiveEnterTimestamps
+  2026-07-26 22:05:29 / 2026-07-24 21:37:11 / 2026-07-28 00:50:29.
+- Listeners: `0.0.0.0:7860` pid 301112 and `0.0.0.0:7861` pid 334346.
+- From MacStudio: served leaf hashes to the D2 pin
+  `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`; `/live` **200**,
+  `/api/live/descriptor` **200** over pinned TLS; plaintext `http://100.64.0.8:7861/live` **000**;
+  `http://192.168.68.38:7860/` **200**, `/api/jobs` **200** (real body, 143 job dirs),
+  `/api/runtime` **200**.
+- Live state files (ext4, **outside** the repo, so no checkout can reach them):
+  `live-auth.json` inode 11374 sha256 `9d306766…`; `live.crt` inode 12436 sha256 `1839a186…`;
+  `live.key` inode 12123 sha256 `7bb3173f…`; `live-provider-manifest.json` inode 10565 sha256
+  `8bef5c36…`.
+- Unit: `~/.config/systemd/user/moss-live-web.service` sha256 `090b7d98…`, byte-identical to the
+  tracked `ops/systemd/moss-live-web.service`; enable symlink present under `default.target.wants/`.
+  `ExecStart=/bin/bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/start-web.sh`,
+  EnvironmentFiles `ops/moss.env` (ignore_errors=yes) + `ops/moss-live.env` (**ignore_errors=no**).
+- Untracked-and-therefore-safe at **both** SHAs (`git ls-tree` empty for each): `runs/` (143 job
+  dirs), `live-runs/`, `ops/moss-live.env`. `.gitignore:13,14,32`. A checkout cannot delete them.
+- `ops/systemd/moss-live-web.service` does **not** exist at `163e969` (`git cat-file -e` fails);
+  `ops/start-web.sh` does.
+
+### The ordering hazard this rehearsal must respect, and why `disable` is the right verb
+`ExecStart` points at `ops/start-web.sh` **inside the reverted checkout**. At `163e969` that script
+predates `MOSS_WEB_PORT`/`MOSS_RUNS_DIR`, so a live unit started while the checkout is back at
+`163e969` would ignore the live profile and try to bring up a **batch** server. Therefore: disable
+the live unit **before** the checkout moves back, and restore the checkout **before** the unit is
+re-enabled. `disable --now` (not `stop`) is what the recorded D3 rollback says and is also the
+safer verb - a disabled unit cannot be pulled in by `default.target` if anything re-runs it.
+
+### Rollbacks, recorded before the mutations they cover (prd.md "Reversibility")
+1. **`systemctl --user disable --now moss-live-web.service`** stops the live service and removes the
+   `default.target.wants/` symlink. The unit file itself is untouched.
+   Rollback: `systemctl --user enable --now moss-live-web.service`.
+   Independent of the tool: the unit file is byte-identical to the tracked
+   `ops/systemd/moss-live-web.service`, so even a lost unit file is restorable with
+   `ops/install-services.sh --with-live` from the restored checkout.
+2. **`git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969`** moves `HEAD` only - no ref is
+   written, no branch moves, `main` stays at `163e969` and the tree is clean going in.
+   Rollback: `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 317df4d728b6765dbe365a3166158ba581299557`.
+   Both SHAs are already in the object store (`163e969` is an ancestor of `317df4d`), so neither
+   direction needs the network.
+3. **Nothing else is mutated.** No file outside the checkout is written; the live TLS pair, the
+   manifest, `live-auth.json`, `ops/moss-live.env`, `runs/` and `live-runs/` are all outside the
+   checkout or untracked, and their inodes+hashes above are the check that this held.
+4. **Accepted, deliberate loss:** the two stale 2026-07-28T03:10 in-memory live sessions die with
+   the process. That is not a regression - E3's runbook already says `pair` first precisely so the
+   canary uses a session the signed app created. Device pairings live in `live-auth.json` on disk;
+   proving they survive the cycle is part of this iteration's evidence, not a risk it takes.
+5. **Stop condition.** If after the restore the served leaf does not hash to
+   `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`, stop and record a blocker:
+   that pin is what every paired Mac stores, and a rotated pin would break E3 before it starts.
+6. **Untouched by design:** the Windows portproxy/firewall/scheduled-task half of the D3 rollback is
+   *recorded* (context.md Validation) but deliberately **not** rehearsed - the PRD's rollback clause
+   names three things and none of them is the Windows forward, and removing it would risk the
+   sign-in task for no acceptance credit. The client-side probe while the service is down covers the
+   part that matters behaviorally: a portproxy row with nothing behind it serves nothing.
