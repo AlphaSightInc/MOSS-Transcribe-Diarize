@@ -362,7 +362,9 @@ extension NativeCapturedAudioBuffer {
             sampleRate: Int(buffer.format.sampleRate),
             channelCount: Swift.max(channelCount, 1),
             frameCount: frameCount,
-            firstSampleMonotonicNS: time.hostTime,
+            // Raw Mach ticks. They are converted to nanoseconds off this thread; a reading the
+            // engine did not fill in travels as zero and is rejected there rather than guessed at.
+            firstSampleMonotonicNS: time.isHostTimeValid ? time.hostTime : 0,
             deviceEpoch: deviceEpoch,
             discontinuity: false,
             samples: samples

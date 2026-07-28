@@ -38,8 +38,9 @@ with `--no-ff` (conflict-free: A-034 branches from the same `af3ac36` and touche
 from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (A3); iteration 3
 moved the portal handoff into the app (A2); iteration 4 rebuilt the tracer around the immutable
 lab bundle (A4); iteration 5 made the file secret store the production default (B1); iteration 6
-added the retained-until-ACK outbox (B2). Test totals on the branch: Swift **106 passed**
-(67 → 81 → 92 → 95 → 98 → 106); Python **457 passed / 2 skipped / 346 subtests** including
+added the retained-until-ACK outbox (B2); iteration 7 added the 16 kHz/8000-sample wire format and
+converted-nanosecond timestamps (B3). Test totals on the branch: Swift **116 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116); Python **457 passed / 2 skipped / 346 subtests** including
 `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3).
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
@@ -58,8 +59,8 @@ behavioral (see below). Never edit those control-plane scripts to recolor this.
 production phases widen scope, and its allowlist is the thirteen registered A4 paths. It is
 **green at the frozen checkpoint** — `git diff --name-only af3ac366 1ede498` is exactly that
 allowlist — and it now fails on the tip on `CaptureController.swift` plus the new
-`CaptureOutbox.swift`, which Phase B is authorized to add. Verify it against `1ede498`, never
-against the tip, and do not add paths to the script.
+`CaptureOutbox.swift` and `NativeLaneWireFormat.swift`, which Phase B is authorized to add. Verify
+it against `1ede498`, never against the tip, and do not add paths to the script.
 
 **Lab bundle contract (new, iteration 4).** The tracer's one fixed path is
 `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` (gitignored via `macos/MOSSCapture/
@@ -112,6 +113,27 @@ degraded state. The `moss-live-helper-health.v1` heartbeat wire is untouched.
 5xx → `serverUnavailable`, the transient `URLError` set → `ambiguous`; 4xx, `missingCaptureBearer`,
 `missingCertificatePin`, `secureConnectionFailed`, `cancelled` → not retryable.
 
+**Wire-format contract (new, iteration 7).** `NativeLaneWireFormat.swift` holds everything that is
+unsafe on a Core Audio callback thread, and `NativeLaneFrameEmitter` is the only caller.
+`NativeLaneWireFormat.live` is the domain contract (16000 Hz, 8000 samples); the emitter takes it
+plus a `MachHostTimeConverting` and a resampler factory, all defaulted, so the products get the
+contract and tests can state a timebase. Per lane, `NativeLaneWireStream` runs: convert host ticks
+→ ns; downmix to mono; resample through **one stateful `AVAudioConverter`** (identity short-circuit
+when the device is already on the grid); coalesce into exact 8000-sample frames. Timestamps are
+**re-derived from every buffer's own converted capture instant** (`pendingStartNS = capturedNS −
+duration(pending)`), never accumulated from the frame cadence, so a meeting-length run tracks the
+device clock instead of drifting; the cost is ≤ 1 wire sample (62.5 µs) of cadence jitter and a
+fixed converter group delay measured at 0.67 ms. A frame is emitted **only** at full size; the
+trailing partial leaves through `flush()`, which `NativeDualCaptureSource.stop` calls before
+parking the tail for one last `pendingFrames()`, and `CaptureController.stop` now drains once after
+stopping the source so that tail actually reaches the wire. An unusable capture instant — zero
+ticks, `AVAudioTime` without `isHostTimeValid`, `AudioTimeStamp` without `.hostTimeValid` — makes
+the buffer be **refused**, counted (`drainRejectedBufferCounts()` → a `.discontinuity` lane fact),
+and the lane's next frame `discontinuity = true`. Never fabricate a timestamp. A device-timeline
+gap beyond one wire sample, a `deviceEpoch` change, or a driver-flagged buffer breaks the timeline
+the same way. `MachTimebaseHostTimeConverter` divides before multiplying and returns `nil` rather
+than wrapping.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -154,10 +176,12 @@ typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitize
    instead of `.transportUnavailable`.
 4. Viewer expiry — `VIEW_TTL_SECONDS = 900` fixed at `bind_session`, no renewal. Reproduced:
    authorized at t=899, rejected at t=3600.
-5. Unbounded callback-shaped blocking POSTs — native queue emission follows Core Audio callback
-   sizes rather than fixed 0.5 s frames; `URLSessionCaptureHTTPClient.send` blocks on a semaphore
-   and `publishPendingFrames` iterates serially. Request rate therefore varies with device
-   callback cadence and can outrun the pump at the measured 72 ms average / 146 ms max RTT.
+5. Unbounded callback-shaped blocking POSTs. **Half closed by iteration 7 (B3)**: emission is now
+   exactly two 0.5 s frames per second per lane instead of one per Core Audio callback, so the
+   steady-state request rate no longer depends on device cadence. Still open for B4:
+   `URLSessionCaptureHTTPClient.send` blocks on a semaphore and `publishPendingFrames` iterates
+   serially, so an outage recovery still issues its whole backlog sequentially inside one tick at
+   the measured 72 ms average / 146 ms max RTT.
 6. Secret store broken — code requested access group `com.alphasight.moss.capture.shared` while
    the entitlement declares `$(AppIdentifierPrefix)com.alphasight.moss.capture`; strings differ and
    a self-signed identity has no Team ID. Keychain writes also fail `-25308` from any non-GUI
@@ -166,15 +190,17 @@ typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitize
    still declares `keychain-access-groups` with the unresolvable `$(AppIdentifierPrefix)` literal
    (SwiftPM never substitutes it). Nothing signs with it yet; `build-app.sh` must drop that key
    rather than sign an entitlement the identity cannot satisfy.
-7. No client-side 16 kHz conversion — tap defaults 48 kHz (`SystemAudioTap.swift:70`), mic uses
-   device rate (`MicrophoneCapture.swift:332`); mixer resamples by linear interpolation with no
-   anti-alias filter (`live_mixer.py:305-327`).
-8. Wire timestamps are mislabeled — microphone assigns `AVAudioTime.hostTime` and system audio
-   assigns `AudioTimeStamp.mHostTime` directly to `firstSampleMonotonicNS`, which becomes
-   `capture_timestamp_ns` without conversion. These values are Mach host ticks, not nanoseconds;
-   the observed timebase is 125/3. Convert with `AudioConvertHostTimeToNanos` before transport,
-   then preserve the converted first-sample timestamp through resampling/coalescing. Reject
-   zero/invalid host time as typed discontinuity/failure.
+7. No client-side 16 kHz conversion — devices stayed at their native rate and the server mixer
+   resampled by linear interpolation with no anti-alias filter (`live_mixer.py:305-327`).
+   **Closed on the feature branch by iteration 7 (B3)**: both lanes leave the Mac at 16 kHz mono in
+   exact 8000-sample frames, so the mixer grid is 1:1 and uplink drops to 0.68 Mbit/s. Measured
+   duration conservation: 96×1024 at 48 kHz → exactly 32768 output samples; 129×1024 at 44.1 kHz →
+   47926 vs 47925 ideal (one sample of ratio remainder).
+8. Wire timestamps were mislabeled — raw `AVAudioTime.hostTime` / `AudioTimeStamp.mHostTime` ticks
+   travelled as `capture_timestamp_ns`, collapsing the timeline by the 125/3 timebase.
+   **Closed on the feature branch by iteration 7 (B3)** — see the wire-format contract above. The
+   drivers still hand raw ticks to the queue on purpose; conversion happens off the callback thread
+   and is source-gated by `testRealtimeCallbacksNeitherConvertHostTimeNorResample`.
 9. **Undetermined microphone permission hung `start` forever** — **closed by iteration 2**.
    `MicrophoneCapture.start` used to throw only on `.denied` and let `.undetermined` fall through
    to `driver.currentInputDeviceID()`, whose `engine.inputNode` access blocks inside
@@ -259,6 +285,12 @@ swift test --package-path macos/MOSSCapture --filter 'SecretStore|ProductEntrypo
 #     stalled lane, wire-sequence authority, per-session numbering, start unwind) --------------
 swift test --package-path macos/MOSSCapture \
   --filter 'Outbox|Ambiguous|RetryPolicy|Stalled|NumbersItsLane|Unwinds'
+
+# --- B3 wire-format behavioral nodes (11: timebase, steady frames, 48/44.1 kHz duration,
+#     cross-lane domain, refused instant, terminal flush, gap splice, source+controller tail, and
+#     two realtime-callback source gates) --------------------------------------------------------
+swift test --package-path macos/MOSSCapture \
+  --filter 'HostTicks|CanonicalFrames|ConserveDuration|HostTimeDomain|CaptureInstant|TerminalFlush|TimelineGap|RealtimeCallbacks|FlushedTail'
 
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
@@ -370,16 +402,23 @@ edit the control-plane discriminator scripts to keep them green.
    both lanes in one loop), so a recovery tick that drains a 15 s backlog issues 60 sequential
    round trips inside a 0.5 s tick with no re-entry guard. B4's concurrent lanes, persistent
    session, and non-overlapping pump are what bound that.
-7. **B3 — 16 kHz mono conversion/coalescing + real nanosecond timestamps**: convert raw
-   `hostTime`/`mHostTime` ticks with `AudioConvertHostTimeToNanos`; one stateful
-   `AVAudioConverter` per lane; callback work still copy/enqueue only; preserve the converted
-   first-sample timestamp through coalescing. Test the 125/3 timebase, cross-lane clock
-   consistency, 48 kHz and 44.1 kHz inputs, output rate 16000, exact steady 8000-sample frames,
-   invalid/zero timestamp rejection, partial terminal flush, duration conservation, and no
-   callback-thread DSP.
+7. **B3 — 16 kHz mono conversion/coalescing + real nanosecond timestamps** `[done — iteration 7]`:
+   `NativeLaneWireFormat.swift` + the rewritten `NativeLaneFrameEmitter` convert host ticks with
+   `AudioConvertHostTimeToNanos`, run one stateful `AVAudioConverter` per lane, and coalesce exact
+   8000-sample 16 kHz frames; the drivers still only copy and enqueue. Eleven nodes cover the
+   injected 125/3 timebase, exact steady frames, 48/44.1 kHz duration conservation, one shared
+   cross-lane time domain, a refused unusable capture instant, the terminal partial flush and its
+   delivery through `CaptureController.stop`, a spliced gap, and the no-callback-DSP source gates.
+   Residue for C2: the client now really does send 8000-sample 16 kHz frames, so the manifest
+   bounds the server admits them against (`bounds_config.max_frame_samples`, `frame_samples`,
+   `max_retained_samples` — read from the host provider manifest via
+   `live_provider_bundle.py:269,912`) must be the retuned contract values before D-phase pairing.
 8. **B4 — bounded concurrent transport**: 0.5 s pump; persistent URLSession; at most one
    in-flight POST per lane, lanes concurrent; no overlapping pump re-entry. Test bounded
-   in-flight work and wall time—never use a sleep-only timing assertion.
+   in-flight work and wall time—never use a sleep-only timing assertion. B3 makes the request
+   rate deterministic (2 POSTs/s/lane instead of one per Core Audio callback), so what B4 has to
+   bound is the recovery burst: 15 s of retained audio is 30 frames per lane, still issued
+   serially inside one 0.5 s tick with no re-entry guard.
 9. **B5 — tracked Mac packaging/install tools**:
    `macos/scripts/bootstrap-signing-identity.sh`, `build-app.sh`, and `install-app.sh`;
    idempotent, scratch-path testable, no real keychain/app/install mutation during tests.

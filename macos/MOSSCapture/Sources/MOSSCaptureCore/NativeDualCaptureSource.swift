@@ -139,6 +139,7 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
     private var reportedDroppedBuffers: [CaptureLane: UInt64] = [:]
     private var latestFrames: [CaptureLane: CaptureFrame] = [:]
     private var admissions: [CaptureLane: NativeLaneAdmission] = [:]
+    private var flushedTail: [CaptureFrame] = []
 
     public convenience init(queueCapacity: Int = 128) {
         self.init(
@@ -212,9 +213,13 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
     public func pendingFrames() throws -> [CaptureFrame] {
         lock.lock()
         let isStarted = started
+        // The last frame of a lane is shorter than the rest and only exists once `stop` has flushed
+        // the converters, so a drain after the stop still has audio to hand over.
+        let tail = flushedTail
+        flushedTail = []
         lock.unlock()
         guard isStarted else {
-            return []
+            return tail
         }
         let frames = emitter.frames(from: queue.drain())
         lock.lock()
@@ -262,10 +267,14 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
         health.invalidateGeneration()
         microphone.stop()
         system.stop()
+        // Drain what the stopped lanes left behind, then end each converter's stream so the last
+        // partial frame of the meeting is published instead of being dropped on the floor.
+        let tail = emitter.frames(from: queue.drain()) + emitter.flush()
         lock.lock()
         started = false
         activeGeneration = nil
         admissions.removeAll(keepingCapacity: true)
+        flushedTail = tail
         lock.unlock()
     }
 
@@ -413,6 +422,9 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
 
     private func enqueueCounterFacts(for frames: [CaptureFrame], generation: UInt64) {
         let droppedByLane = queue.droppedBuffersByLaneSnapshot()
+        // A buffer whose capture instant was unusable is dropped rather than timestamped by guess.
+        // The audio is gone and the lane's timeline broke, which is exactly a discontinuity.
+        let rejectedByLane = emitter.drainRejectedBufferCounts()
         let discontinuitiesByLane = Dictionary(
             grouping: frames.filter(\.discontinuity),
             by: \.lane
@@ -421,6 +433,7 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
         lock.lock()
         for lane in CaptureLane.allCases {
             let discontinuities = discontinuitiesByLane[lane, default: 0]
+                + rejectedByLane[lane, default: 0]
             if discontinuities > 0 {
                 facts.append((lane, .discontinuity(count: discontinuities)))
             }

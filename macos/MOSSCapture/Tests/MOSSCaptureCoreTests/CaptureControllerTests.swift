@@ -862,7 +862,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(
@@ -904,7 +905,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(
@@ -942,7 +944,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(
@@ -984,7 +987,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 2)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 2),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(
@@ -1015,7 +1019,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 2)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 2),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(
@@ -1043,7 +1048,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(
@@ -1071,7 +1077,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         XCTAssertThrowsError(
@@ -1334,7 +1341,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(configuration: laneConfiguration())
@@ -1367,7 +1375,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(configuration: laneConfiguration())
@@ -1395,7 +1404,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(configuration: laneConfiguration())
@@ -1422,7 +1432,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(configuration: laneConfiguration())
@@ -1450,7 +1461,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(configuration: laneConfiguration())
@@ -1473,7 +1485,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         XCTAssertThrowsError(try source.start(configuration: laneConfiguration())) { error in
@@ -1499,7 +1512,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(configuration: laneConfiguration())
@@ -1527,7 +1541,8 @@ final class CaptureControllerTests: XCTestCase {
         let source = NativeDualCaptureSource(
             system: system,
             microphone: microphone,
-            queue: RealTimeNativeAudioBufferQueue(capacity: 8)
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: laboratoryEmitter()
         )
 
         try source.start(configuration: laneConfiguration())
@@ -1766,7 +1781,7 @@ final class CaptureControllerTests: XCTestCase {
             )
         )
 
-        let emitter = NativeLaneFrameEmitter()
+        let emitter = laboratoryEmitter()
         let frames = emitter.frames(from: queue.drain())
 
         XCTAssertEqual(queue.droppedBuffers, 1)
@@ -1798,6 +1813,304 @@ final class CaptureControllerTests: XCTestCase {
             ]
         )
         XCTAssertEqual(nextSystem.first?.sequence, 2)
+    }
+
+    func testHostTicksBecomeRealNanosecondsAndAZeroReadingIsRefused() throws {
+        // A timebase far from 1:1 is the whole point of the conversion: publishing ticks as
+        // nanoseconds would compress the server's timeline by exactly this ratio.
+        XCTAssertEqual(labTimebase.nanoseconds(forHostTicks: 3), 125)
+        XCTAssertEqual(labTimebase.nanoseconds(forHostTicks: 12_000_000), 500_000_000)
+        XCTAssertNil(labTimebase.nanoseconds(forHostTicks: 0))
+
+        // A host that has been up for years must not wrap on the way through the numerator, and a
+        // reading that genuinely cannot be expressed in nanoseconds is unusable, not a small number
+        // that would pass for a valid capture instant.
+        let tenYearsOfTicks = labHostTicks(forNanoseconds: 10 * 365 * 24 * 3_600 * 1_000_000_000)
+        let converted = try XCTUnwrap(labTimebase.nanoseconds(forHostTicks: tenYearsOfTicks))
+        let exact = Double(tenYearsOfTicks) * 125.0 / 3.0
+        XCTAssertEqual(Double(converted), exact, accuracy: exact * 1e-9)
+        XCTAssertNil(labTimebase.nanoseconds(forHostTicks: UInt64.max))
+
+        // The production converter must agree with this machine's own declared timebase, whatever
+        // that timebase happens to be.
+        var timebase = mach_timebase_info_data_t()
+        XCTAssertEqual(mach_timebase_info(&timebase), KERN_SUCCESS)
+        let hostTicks: UInt64 = 12_000_000
+        XCTAssertEqual(
+            HostTimeNanosecondConverter().nanoseconds(forHostTicks: hostTicks),
+            MachTimebaseHostTimeConverter(
+                numerator: UInt64(timebase.numer),
+                denominator: UInt64(timebase.denom)
+            ).nanoseconds(forHostTicks: hostTicks)
+        )
+        XCTAssertNil(HostTimeNanosecondConverter().nanoseconds(forHostTicks: 0))
+    }
+
+    func testDeviceRateInputBecomesSteadyCanonicalFramesOnTheConvertedHostClock() throws {
+        let emitter = NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+        let callbacks = 96      // 96 x 1024 at 48 kHz = 2.048 s of audio
+        var frames: [CaptureFrame] = []
+        for index in 0..<callbacks {
+            frames += emitter.frames(from: [
+                deviceBuffer(
+                    lane: .system,
+                    callbackIndex: index,
+                    sampleRate: 48_000,
+                    frameCount: 1_024
+                )
+            ])
+        }
+
+        // Callback-shaped output would have been 96 frames of 1024 samples at 48 kHz.
+        XCTAssertEqual(frames.count, 4)
+        XCTAssertEqual(Set(frames.map(\.sampleCount)), [8_000])
+        XCTAssertEqual(Set(frames.map(\.sampleRate)), [16_000])
+        XCTAssertEqual(Set(frames.map(\.pcm16.count)), [16_000])
+        XCTAssertEqual(Set(frames.map(\.silent)), [false])
+        XCTAssertEqual(frames.map(\.discontinuity), [false, false, false, false])
+
+        let firstCaptureNS = try XCTUnwrap(
+            labTimebase.nanoseconds(
+                forHostTicks: deviceHostTicks(callbackIndex: 0, frameCount: 1_024, sampleRate: 48_000)
+            )
+        )
+        let firstFrameNS = try XCTUnwrap(frames.first?.captureTimestampNS)
+        // Never earlier than the instant the audio was captured, and later only by the converter's
+        // fixed group delay — measured here well under a millisecond.
+        XCTAssertGreaterThanOrEqual(firstFrameNS, firstCaptureNS)
+        XCTAssertLessThan(firstFrameNS - firstCaptureNS, 2_000_000)
+
+        // Half a second of audio is 500,000,000 ns on the wire, not 500,000,000 ticks. The slack is
+        // one wire sample, which is all the re-anchoring of each frame on the device clock costs.
+        let cadence = zip(frames.dropFirst(), frames).map {
+            Int64($0.captureTimestampNS) - Int64($1.captureTimestampNS)
+        }
+        for step in cadence {
+            XCTAssertLessThanOrEqual(abs(step - 500_000_000), 62_500, "step \(step)")
+        }
+    }
+
+    func testFortyEightAndFortyFourPointOneKilohertzInputConserveDuration() throws {
+        for (sampleRate, callbacks) in [(48_000, 96), (44_100, 129)] {
+            let emitter = NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+            var produced = 0
+            for index in 0..<callbacks {
+                produced += emitter.frames(from: [
+                    deviceBuffer(
+                        lane: .system,
+                        callbackIndex: index,
+                        sampleRate: sampleRate,
+                        frameCount: 1_024
+                    )
+                ]).reduce(0) { $0 + $1.sampleCount }
+            }
+            produced += emitter.flush().reduce(0) { $0 + $1.sampleCount }
+
+            let inputSamples = callbacks * 1_024
+            let expected = inputSamples * 16_000 / sampleRate
+            // One sample of slack for the ratio's remainder; anything more is lost or invented
+            // audio, which is what an unfiltered decimation on the server used to hide.
+            XCTAssertLessThanOrEqual(abs(produced - expected), 1, "\(sampleRate) Hz produced \(produced)")
+        }
+    }
+
+    func testBothLanesShareOneConvertedHostTimeDomain() throws {
+        let emitter = NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+        var byLane: [CaptureLane: [CaptureFrame]] = [:]
+        for index in 0..<96 {
+            for lane in CaptureLane.allCases {
+                let frames = emitter.frames(from: [
+                    deviceBuffer(
+                        lane: lane,
+                        callbackIndex: index,
+                        sampleRate: 48_000,
+                        frameCount: 1_024,
+                        deviceEpoch: lane == .system ? 1 : 7
+                    )
+                ])
+                byLane[lane, default: []] += frames
+            }
+        }
+
+        let system = try XCTUnwrap(byLane[.system])
+        let microphone = try XCTUnwrap(byLane[.microphone])
+        XCTAssertEqual(system.count, 4)
+        XCTAssertEqual(microphone.count, 4)
+        // Two lanes captured at the same host instants must land on the same wire instants, or the
+        // server mixes audio that never happened together.
+        XCTAssertEqual(system.map(\.captureTimestampNS), microphone.map(\.captureTimestampNS))
+        XCTAssertEqual(Set(system.map(\.deviceEpoch)), [1])
+        XCTAssertEqual(Set(microphone.map(\.deviceEpoch)), [7])
+    }
+
+    func testUnusableCaptureInstantIsRefusedRatherThanFabricated() throws {
+        let emitter = NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+        var frames: [CaptureFrame] = []
+        for index in 0..<48 {
+            frames += emitter.frames(from: [
+                deviceBuffer(
+                    lane: .system,
+                    callbackIndex: index,
+                    sampleRate: 48_000,
+                    frameCount: 1_024,
+                    // What a device reports when it never filled the host time in.
+                    hostTicks: index == 10 ? 0 : nil
+                )
+            ])
+        }
+
+        XCTAssertEqual(frames.count, 2)
+        XCTAssertEqual(Set(frames.map(\.sampleCount)), [8_000])
+        // The audio of the refused buffer is gone; the hole is declared instead of being papered
+        // over with a made-up capture instant.
+        XCTAssertEqual(frames.map(\.discontinuity), [true, false])
+        XCTAssertEqual(emitter.drainRejectedBufferCounts(), [.system: 1])
+        XCTAssertEqual(emitter.drainRejectedBufferCounts(), [:])
+        XCTAssertTrue(frames.allSatisfy { $0.captureTimestampNS > 0 })
+    }
+
+    func testTerminalFlushReleasesTheTrailingPartialFrameExactlyOnce() throws {
+        let emitter = NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+        var frames: [CaptureFrame] = []
+        for index in 0..<96 {
+            frames += emitter.frames(from: [
+                deviceBuffer(
+                    lane: .system,
+                    callbackIndex: index,
+                    sampleRate: 48_000,
+                    frameCount: 1_024
+                )
+            ])
+        }
+        XCTAssertEqual(frames.count, 4)
+
+        let flushed = emitter.flush()
+        XCTAssertEqual(flushed.count, 1)
+        let tail = try XCTUnwrap(flushed.first)
+        // 2.048 s of audio is four whole frames plus 0.048 s: the remainder leaves on the stop,
+        // and only a stop may emit a short frame.
+        XCTAssertEqual(tail.sampleCount, 32_768 - 4 * 8_000)
+        XCTAssertEqual(tail.sampleRate, 16_000)
+        XCTAssertEqual(tail.sequence, 4)
+        XCTAssertEqual(tail.pcm16.count, tail.sampleCount * 2)
+        XCTAssertTrue(emitter.flush().isEmpty)
+    }
+
+    func testADeviceTimelineGapMarksTheSplicedFrameAndKeepsFollowingTheDeviceClock() throws {
+        let emitter = NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+        var frames: [CaptureFrame] = []
+        // 24 contiguous callbacks, then six callbacks' worth of audio never arrives.
+        for index in Array(0..<24) + Array(30..<54) {
+            frames += emitter.frames(from: [
+                deviceBuffer(
+                    lane: .system,
+                    callbackIndex: index,
+                    sampleRate: 48_000,
+                    frameCount: 1_024
+                )
+            ])
+        }
+
+        XCTAssertEqual(frames.count, 2)
+        XCTAssertEqual(frames.map(\.discontinuity), [false, true])
+        let step = Int64(frames[1].captureTimestampNS) - Int64(frames[0].captureTimestampNS)
+        // The wire timeline follows the device clock across the gap instead of pretending the
+        // spliced audio was continuous, so the step is one frame plus the missing 128 ms.
+        let missingNS = Int64(6 * 1_024) * 1_000_000_000 / 48_000
+        XCTAssertLessThanOrEqual(abs(step - (500_000_000 + missingNS)), 62_500, "step \(step)")
+    }
+
+    func testRealtimeCallbacksNeitherConvertHostTimeNorResample() throws {
+        let callbackSources = try ["MicrophoneCapture", "SystemAudioTap"].map { name in
+            try String(
+                contentsOf: packageRoot()
+                    .appendingPathComponent("Sources/MOSSCaptureCore/\(name).swift"),
+                encoding: .utf8
+            )
+        }
+        for source in callbackSources {
+            XCTAssertFalse(source.contains("AVAudioConverter"))
+            XCTAssertFalse(source.contains("AudioConvertHostTimeToNanos"))
+        }
+        let conversionStage = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources/MOSSCaptureCore/NativeLaneWireFormat.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(conversionStage.contains("AVAudioConverter"))
+        XCTAssertTrue(conversionStage.contains("AudioConvertHostTimeToNanos"))
+        XCTAssertEqual(
+            MicrophoneCapture.sourceVector.realtimeCallbackWork,
+            ["copy native buffer", "enqueue monotonic first-sample time"]
+        )
+        XCTAssertEqual(
+            SystemAudioTap.sourceVector.realtimeCallbackWork,
+            ["copy native buffer", "enqueue monotonic first-sample time"]
+        )
+    }
+
+    func testNativeDualCaptureSourceHandsOverItsFlushedTailAfterStop() throws {
+        let system = RecordingNativeCaptureComponent(
+            buffersOnStart: [
+                deviceBuffer(lane: .system, callbackIndex: 0, sampleRate: 48_000, frameCount: 1_024)
+            ]
+        )
+        let microphone = RecordingNativeCaptureComponent()
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 8),
+            emitter: NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        // A third of a frame: nothing may leave yet, because a short frame mid-stream would break
+        // the steady cadence the server depends on.
+        XCTAssertTrue(try source.pendingFrames().isEmpty)
+
+        try source.stop(deadline: Date(timeIntervalSince1970: 1))
+        let tail = try source.pendingFrames()
+
+        XCTAssertEqual(tail.count, 1)
+        XCTAssertEqual(tail.first?.lane, .system)
+        XCTAssertEqual(tail.first?.sampleRate, 16_000)
+        XCTAssertEqual(tail.first?.sampleCount, 1_024 / 3)
+        XCTAssertTrue(try source.pendingFrames().isEmpty)
+    }
+
+    func testCaptureControllerPublishesTheSourcesFlushedTailOnStop() throws {
+        let tailFrame = CaptureFrame(
+            lane: .microphone,
+            sequence: 9,
+            sampleRate: 16_000,
+            sampleCount: 341,
+            captureTimestampNS: 1_500_000_000,
+            deviceEpoch: 7,
+            silent: false,
+            discontinuity: false,
+            pcm16: Data(repeating: 1, count: 682)
+        )
+        let source = TerminalTailCaptureSource(tail: [tailFrame])
+        let transport = FakeCaptureTransportAdapter()
+        let controller = CaptureController(
+            source: source,
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter()
+        )
+        let configuration = laneConfiguration()
+
+        try controller.start(configuration: configuration)
+        XCTAssertTrue(transport.publishedFrames.isEmpty)
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        // The last partial frame of a meeting only exists after the stop flushes the converters,
+        // so a stop that does not drain silently discards it.
+        XCTAssertEqual(transport.publishedFrames.map(\.sampleCount), [341])
+        XCTAssertEqual(stopped.publishedFrameCount, 1)
+        XCTAssertEqual(stopped.outbox.retainedFrames, 0)
     }
 
     func testNativeLaneHealthStableCodeVocabularyIsClosed() throws {
@@ -3578,6 +3891,69 @@ final class CaptureControllerTests: XCTestCase {
         return data
     }
 
+    /// An emitter whose wire frame is a single sample, so one native buffer is one wire frame and
+    /// the lane bookkeeping these tests are about — sequences, epochs, health counters, admission —
+    /// stays legible. The whole lab timeline is shorter than one wire sample period, so the buffers
+    /// read as one continuous run whatever tick values a test picks. The production grid
+    /// (16 kHz, 8000-sample frames) and its timeline have their own nodes below.
+    private func laboratoryEmitter() -> NativeLaneFrameEmitter {
+        NativeLaneFrameEmitter(
+            wireFormat: NativeLaneWireFormat(sampleRate: 16_000, frameSamples: 1),
+            hostTime: MachTimebaseHostTimeConverter(numerator: 1, denominator: 1)
+        )
+    }
+
+    /// A stated timebase far from 1:1, so the tick-to-nanosecond contract is checkable without
+    /// depending on the timebase of whichever Mac runs the suite. It is the ratio measured on the
+    /// capture Mac; the production converter asks CoreAudio for the real one.
+    private var labTimebase: MachTimebaseHostTimeConverter {
+        MachTimebaseHostTimeConverter(numerator: 125, denominator: 3)
+    }
+
+    private func labHostTicks(forNanoseconds nanoseconds: UInt64) -> UInt64 {
+        nanoseconds * 3 / 125
+    }
+
+    /// Host ticks for the start of one device callback, on a timeline that never starts at zero —
+    /// a zero host time is the invalid reading, not the first sample of a capture.
+    private func deviceHostTicks(callbackIndex: Int, frameCount: Int, sampleRate: Int) -> UInt64 {
+        let nanoseconds = 1_000_000_000
+            + UInt64(callbackIndex) * UInt64(frameCount) * 1_000_000_000 / UInt64(sampleRate)
+        return labHostTicks(forNanoseconds: nanoseconds)
+    }
+
+    /// One device callback's worth of audio at the device's own rate, carrying a tone so the
+    /// converter has real content to filter.
+    private func deviceBuffer(
+        lane: CaptureLane,
+        callbackIndex: Int,
+        sampleRate: Int,
+        frameCount: Int,
+        deviceEpoch: UInt64 = 1,
+        hostTicks: UInt64? = nil,
+        discontinuity: Bool = false
+    ) -> NativeCapturedAudioBuffer {
+        let first = callbackIndex * frameCount
+        let samples = (0..<frameCount).map { index -> Float in
+            Float(sin(2.0 * Double.pi * 220.0 * Double(first + index) / Double(sampleRate)))
+        }
+        return NativeCapturedAudioBuffer(
+            lane: lane,
+            sampleRate: sampleRate,
+            channelCount: 1,
+            frameCount: frameCount,
+            firstSampleMonotonicNS: hostTicks
+                ?? deviceHostTicks(
+                    callbackIndex: callbackIndex,
+                    frameCount: frameCount,
+                    sampleRate: sampleRate
+                ),
+            deviceEpoch: deviceEpoch,
+            discontinuity: discontinuity,
+            samples: samples
+        )
+    }
+
     private func nativeBuffer(
         lane: CaptureLane,
         timestamp: UInt64,
@@ -3608,6 +3984,43 @@ final class CaptureControllerTests: XCTestCase {
         let data = try XCTUnwrap(request.httpBody)
         let object = try JSONSerialization.jsonObject(with: data)
         return try XCTUnwrap(object as? [String: Any])
+    }
+}
+
+/// A source whose audio only becomes available once it has been stopped, which is how the real
+/// source behaves for the trailing partial frame: the converters are flushed by the stop.
+private final class TerminalTailCaptureSource: CaptureSourceAdapter {
+    private let tail: [CaptureFrame]
+    private var stopped = false
+    private var handedOver = false
+
+    init(tail: [CaptureFrame]) {
+        self.tail = tail
+    }
+
+    func start(configuration: CaptureConfiguration) throws {}
+
+    func pendingFrames() throws -> [CaptureFrame] {
+        guard stopped, !handedOver else {
+            return []
+        }
+        handedOver = true
+        return tail
+    }
+
+    func status() -> [CaptureLaneStatus] {
+        CaptureLane.allCases.map {
+            CaptureLaneStatus(
+                lane: $0,
+                sequence: 0,
+                deviceEpoch: 0,
+                state: stopped ? "stopped" : "capturing"
+            )
+        }
+    }
+
+    func stop(deadline: Date) throws {
+        stopped = true
     }
 }
 

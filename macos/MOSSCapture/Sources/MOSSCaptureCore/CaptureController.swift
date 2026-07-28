@@ -258,7 +258,14 @@ public final class CaptureController {
     @discardableResult
     public func stop(deadline: Date) throws -> CaptureStatus {
         try state.requireRunning()
+        let configuration = state.runningConfiguration()
         try source.stop(deadline: deadline)
+        if let configuration {
+            // The meeting's last partial frame only exists once the source has flushed, so the
+            // final drain belongs after the stop. A failure here loses nothing — unacknowledged
+            // audio stays in the outbox and the returned status reports the depth it kept.
+            try? publishPendingFrames(configuration: configuration)
+        }
         let lanes = source.status()
         let (task, stopped) = state.finishStop(lanes: lanes, outbox: outbox.snapshot())
         task?.cancel()

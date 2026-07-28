@@ -446,12 +446,20 @@ extension NativeCapturedAudioBuffer {
             }
         }
 
+        // Raw Mach ticks, converted to nanoseconds off this thread. A timestamp the HAL did not
+        // mark valid travels as zero, which the conversion stage refuses instead of inventing a
+        // capture instant for.
+        var hostTicks: UInt64 = 0
+        if let inputTime, inputTime.pointee.mFlags.contains(.hostTimeValid) {
+            hostTicks = inputTime.pointee.mHostTime
+        }
+
         return NativeCapturedAudioBuffer(
             lane: lane,
             sampleRate: sampleRate,
             channelCount: Swift.max(channelCount, 1),
             frameCount: frameCount,
-            firstSampleMonotonicNS: inputTime?.pointee.mHostTime ?? 0,
+            firstSampleMonotonicNS: hostTicks,
             deviceEpoch: deviceEpoch,
             discontinuity: false,
             samples: samples

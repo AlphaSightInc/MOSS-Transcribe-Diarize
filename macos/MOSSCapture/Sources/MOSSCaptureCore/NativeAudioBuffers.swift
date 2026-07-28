@@ -74,59 +74,112 @@ public final class RealTimeNativeAudioBufferQueue {
     }
 }
 
+/// Turns the native buffers a lane produced into wire frames.
+///
+/// Everything that is not safe on a Core Audio callback thread happens here: the channel mixdown,
+/// the anti-aliased conversion to the canonical rate, the Mach-tick to nanosecond conversion, and
+/// the coalescing into exactly-sized frames. The callbacks themselves only copy and enqueue.
+///
+/// The sequence numbers stamped here are a source-local production count. `CaptureFrameOutbox`
+/// owns the identity a frame keeps on the wire.
 public final class NativeLaneFrameEmitter {
+    private let wireFormat: NativeLaneWireFormat
+    private let hostTime: MachHostTimeConverting
+    private let makeResampler: (NativeLaneWireFormat) -> NativeLaneResampling
+    private var streams: [CaptureLane: NativeLaneWireStream] = [:]
     private var nextSequence: [CaptureLane: UInt64] = [:]
+    private var reportedRejections: [CaptureLane: UInt64] = [:]
 
-    public init() {}
+    public convenience init() {
+        self.init(wireFormat: .live)
+    }
+
+    init(
+        wireFormat: NativeLaneWireFormat = .live,
+        hostTime: MachHostTimeConverting = HostTimeNanosecondConverter(),
+        makeResampler: @escaping (NativeLaneWireFormat) -> NativeLaneResampling = { format in
+            AVAudioConverterLaneResampler(outputSampleRate: format.sampleRate)
+        }
+    ) {
+        self.wireFormat = wireFormat
+        self.hostTime = hostTime
+        self.makeResampler = makeResampler
+    }
 
     public func frames(from buffers: [NativeCapturedAudioBuffer]) -> [CaptureFrame] {
-        buffers.map { buffer in
-            let sequence = nextSequence[buffer.lane, default: 0]
-            nextSequence[buffer.lane] = sequence + 1
-            let pcm16 = Self.monoPCM16(from: buffer)
-            return CaptureFrame(
-                lane: buffer.lane,
-                sequence: sequence,
-                sampleRate: buffer.sampleRate,
-                sampleCount: buffer.frameCount,
-                captureTimestampNS: buffer.firstSampleMonotonicNS,
-                deviceEpoch: buffer.deviceEpoch,
-                silent: Self.isSilent(buffer),
-                discontinuity: buffer.discontinuity,
-                pcm16: pcm16
-            )
+        buffers.flatMap { buffer in
+            stream(for: buffer.lane).append(buffer).map(frame(from:))
         }
     }
 
-    private static func monoPCM16(from buffer: NativeCapturedAudioBuffer) -> Data {
+    /// Ends every lane's stream and releases its trailing partial frame. Capture is over by the
+    /// time this runs, so audio shorter than a whole frame either leaves now or is lost.
+    public func flush() -> [CaptureFrame] {
+        CaptureLane.allCases.flatMap { lane in
+            streams[lane].map { $0.flush().map(frame(from:)) } ?? []
+        }
+    }
+
+    /// Buffers dropped because their capture instant was unusable, counted per lane since the last
+    /// call. The audio is gone, so the loss is reported rather than papered over with a made-up
+    /// timestamp; the lane's next frame also carries `discontinuity`.
+    func drainRejectedBufferCounts() -> [CaptureLane: UInt64] {
+        var counts: [CaptureLane: UInt64] = [:]
+        for (lane, stream) in streams {
+            let total = stream.rejectedBuffers
+            let reported = reportedRejections[lane, default: 0]
+            if total > reported {
+                counts[lane] = total - reported
+                reportedRejections[lane] = total
+            }
+        }
+        return counts
+    }
+
+    private func stream(for lane: CaptureLane) -> NativeLaneWireStream {
+        if let stream = streams[lane] {
+            return stream
+        }
+        let stream = NativeLaneWireStream(
+            lane: lane,
+            wireFormat: wireFormat,
+            hostTime: hostTime,
+            resampler: makeResampler(wireFormat)
+        )
+        streams[lane] = stream
+        return stream
+    }
+
+    private func frame(from chunk: NativeLaneWireChunk) -> CaptureFrame {
+        let sequence = nextSequence[chunk.lane, default: 0]
+        nextSequence[chunk.lane] = sequence + 1
+        return CaptureFrame(
+            lane: chunk.lane,
+            sequence: sequence,
+            sampleRate: wireFormat.sampleRate,
+            sampleCount: chunk.samples.count,
+            captureTimestampNS: chunk.captureTimestampNS,
+            deviceEpoch: chunk.deviceEpoch,
+            silent: Self.isSilent(chunk.samples),
+            discontinuity: chunk.discontinuity,
+            pcm16: Self.pcm16(from: chunk.samples)
+        )
+    }
+
+    private static func pcm16(from samples: [Float]) -> Data {
         var pcm = Data()
-        pcm.reserveCapacity(buffer.frameCount * MemoryLayout<Int16>.size)
-        for frameIndex in 0..<buffer.frameCount {
-            let mono = monoSample(in: buffer, frameIndex: frameIndex)
-            let clamped = Swift.max(-1.0, Swift.min(1.0, mono))
-            var sample = Int16((clamped * Float(Int16.max)).rounded()).littleEndian
-            withUnsafeBytes(of: &sample) { bytes in
+        pcm.reserveCapacity(samples.count * MemoryLayout<Int16>.size)
+        for sample in samples {
+            let clamped = Swift.max(-1.0, Swift.min(1.0, sample))
+            var encoded = Int16((clamped * Float(Int16.max)).rounded()).littleEndian
+            withUnsafeBytes(of: &encoded) { bytes in
                 pcm.append(contentsOf: bytes)
             }
         }
         return pcm
     }
 
-    private static func monoSample(in buffer: NativeCapturedAudioBuffer, frameIndex: Int) -> Float {
-        guard buffer.channelCount > 0, buffer.frameCount > 0 else {
-            return 0
-        }
-        var total: Float = 0
-        for channel in 0..<buffer.channelCount {
-            let index = channel * buffer.frameCount + frameIndex
-            if index < buffer.samples.count {
-                total += buffer.samples[index]
-            }
-        }
-        return total / Float(buffer.channelCount)
-    }
-
-    private static func isSilent(_ buffer: NativeCapturedAudioBuffer) -> Bool {
-        buffer.samples.allSatisfy { abs($0) < 1.0 / 32_768.0 }
+    private static func isSilent(_ samples: [Float]) -> Bool {
+        samples.allSatisfy { abs($0) < 1.0 / 32_768.0 }
     }
 }

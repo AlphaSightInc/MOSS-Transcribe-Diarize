@@ -480,3 +480,89 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   copy/enqueue only. The outbox needs no change for it: capacity is duration-based and it re-stamps
   sequence after coalescing, so B3 only has to preserve the converted first-sample timestamp
   through the converter and emit exact frames.
+
+## Iteration 7 - canonical 16 kHz wire format and converted-nanosecond timestamps (B3)
+- Target: Phase B candidate B3 / plan D13 + D14. Kill defects 7 and 8: both lanes must leave the
+  Mac as 16 kHz mono in exact 8000-sample frames, and `capture_timestamp_ns` must be real
+  nanoseconds in one Mac host-time domain rather than raw Mach ticks.
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/NativeLaneWireFormat.swift` (new);
+  `.../{NativeAudioBuffers,NativeDualCaptureSource,CaptureController,MicrophoneCapture,
+  SystemAudioTap}.swift`; `macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift`;
+  `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: everything unsafe on a Core Audio callback thread moved into one new file and one caller.
+  `NativeLaneWireStream` (per lane) converts host ticks to nanoseconds, downmixes to mono,
+  resamples through one stateful `AVAudioConverter`, and coalesces exact 8000-sample frames;
+  `NativeLaneFrameEmitter` sequences and encodes what comes out. The drivers still only copy and
+  enqueue, and they now hand over zero ticks when `AVAudioTime.isHostTimeValid` /
+  `AudioTimeStamp.mFlags.hostTimeValid` is absent, which the conversion stage refuses.
+  Two design choices carried the iteration. (1) Frame timestamps are re-derived from every
+  buffer's own converted capture instant (`pendingStartNS = capturedNS - duration(pending)`)
+  instead of accumulated as `anchor + n x 500 ms`: cadence-accumulated stamps would drift away
+  from the host clock by the audio-device clock error over a meeting-length run, and the Phase F
+  latency number is measured against exactly that clock. Cost: <= 1 wire sample of cadence jitter
+  plus a fixed converter group delay, both measured below. (2) The outbox's capacity is in audio
+  seconds, so the frame-size and rate change needed no edit there - 15 s per lane is now 30 frames
+  instead of a rate-dependent count.
+  A frame is emitted only at full size; the trailing partial leaves through `flush()`, which
+  `NativeDualCaptureSource.stop` calls before parking the tail for one final `pendingFrames()`,
+  and `CaptureController.stop` now drains once after stopping the source so the tail actually
+  reaches the wire instead of being dropped at the end of every meeting.
+- Validation:
+  - `swift build --product mtd-capture` -> OK; `--product MOSSCaptureApp` -> OK
+  - `swift test --package-path macos/MOSSCapture` -> **116 passed, 0 failures** (was 106: +10 nodes)
+  - `swift test --filter 'HostTicks|CanonicalFrames|ConserveDuration|HostTimeDomain|CaptureInstant|TerminalFlush|TimelineGap|RealtimeCallbacks|FlushedTail'`
+    -> 11 passed (the 10 new nodes plus the pre-existing realtime-callback source gate)
+  - `pytest tests/test_macos_uds_tracer.py -q -p no:cacheprovider` -> **3 passed in 9.14s**, 0 skips
+  - `pytest tests -q -p no:cacheprovider` -> **457 passed, 2 skipped, 346 subtests** (unchanged;
+    no server module touched)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10**, unchanged
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+  - `ls -d ~/Library/Application\ Support/MOSSCapture` -> absent (no real-home side effect)
+  - `validate-phase-a-locality.sh` on the tip -> still FAILS by design, now also on
+    `NativeLaneWireFormat.swift`. Frozen green stays `1ede498`; script not edited.
+- Evidence:
+  - New nodes: `testHostTicksBecomeRealNanosecondsAndAZeroReadingIsRefused`,
+    `testDeviceRateInputBecomesSteadyCanonicalFramesOnTheConvertedHostClock`,
+    `testFortyEightAndFortyFourPointOneKilohertzInputConserveDuration`,
+    `testBothLanesShareOneConvertedHostTimeDomain`,
+    `testUnusableCaptureInstantIsRefusedRatherThanFabricated`,
+    `testTerminalFlushReleasesTheTrailingPartialFrameExactlyOnce`,
+    `testADeviceTimelineGapMarksTheSplicedFrameAndKeepsFollowingTheDeviceClock`,
+    `testRealtimeCallbacksNeitherConvertHostTimeNorResample`,
+    `testNativeDualCaptureSourceHandsOverItsFlushedTailAfterStop`,
+    `testCaptureControllerPublishesTheSourcesFlushedTailOnStop`.
+  - Measured, not asserted abstractly. 96 x 1024 samples at 48 kHz produce exactly 4 frames of
+    8000 samples at 16000 Hz (callback-shaped output would have been 96 frames of 1024 at 48 kHz)
+    plus a 768-sample terminal flush: 32768 output samples for 98304 input, exact 3:1.
+    44.1 kHz: 129 x 1024 = 132096 input -> 47926 output vs 47925 ideal, one sample of remainder.
+    Frame cadence measured at 500,041,666 / 500,000,000 / 499,979,209 ns - within one wire sample
+    (62,500 ns) of 500 ms. First frame lands 666,625 ns after the first buffer's converted capture
+    instant: the converter's fixed group delay, never earlier than the capture.
+  - Gap node: six missing callbacks (128 ms) produce exactly one frame flagged discontinuous and a
+    step of 500 ms + the missing 128 ms, proving the wire timeline follows the device clock across
+    a splice rather than pretending the audio was continuous.
+  - Mutation rehearsal 1 (unit contract): passed the raw `firstSampleMonotonicNS` through instead
+    of converting it -> 4 nodes fail and the suite crashes on an empty frame list; the steady-frame
+    node reports `[true, true, true, true]` discontinuities and a first-frame timestamp of 0
+    against the required >= 1,000,000,000. Reverted -> green.
+  - Mutation rehearsal 2 (exact frames): let `drainWholeFrames` emit short frames mid-stream ->
+    frame counts go 4 -> 96 and 2 -> 48, sizes become `[330, 341, 342]`, cadence collapses to the
+    21.3 ms callback interval, and the cross-lane node fails on both lanes. Reverted -> green,
+    116 passed.
+  - `MachTimebaseHostTimeConverter` overflow found by the first run of its own node: `whole *
+    numerator` traps on an absurd tick count (signal 5). It now divides first, reports overflow,
+    and returns nil rather than wrapping a huge reading into a small plausible timestamp.
+- Learned: (1) A sample-rate converter's retained samples make "timestamp = anchor + n frames" and
+  "timestamp = capture instant - pending duration" differ by a constant group delay and about one
+  output sample of jitter. Choosing the second is what keeps a 16-minute soak's timestamps on the
+  device clock; choosing the first would have looked exact in tests and drifted in the meeting.
+  (2) The 15 s outbox window survived the rate change untouched only because iteration 6 measured
+  it in audio seconds - a frame-count window would have silently become 7.5 s of retention here.
+  (3) The existing lane tests are about admission, health and sequencing, not about audio, so they
+  now run on an explicit one-sample lab wire format; making the format a stated parameter rather
+  than a hidden constant is what let the production grid be tested for real.
+- Blocker: none.
+- Next: B4 - one persistent URLSession, at most one in-flight POST per lane with the lanes
+  concurrent, and no overlapping pump re-entry. The thing to bound is the recovery burst, not the
+  steady state: B3 fixed steady state at 2 POSTs/s/lane, but draining a 15 s backlog is still 30
+  sequential semaphore-blocked round trips per lane inside one 0.5 s tick.
