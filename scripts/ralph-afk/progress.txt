@@ -1912,3 +1912,34 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   rather than editing a shell profile. Build both Swift products with **separate** `--product`
   invocations. State C4 review note (a) when `build-app.sh` unlocks the keychain with the password
   on argv. After this step the E1 rollback stops being free.
+
+## Iteration 22 (run 20260728-023004-98501, its iteration 14) - E2b: build, sign and install the app on m4mbp
+- Target: Phase E candidate E2b - run the reviewed `macos/scripts/build-app.sh` then
+  `macos/scripts/install-app.sh` on m4mbp so `/Applications/MOSSCapture.app` and `mtd-capture` exist,
+  signed by the E1 identity. Highest-leverage open candidate: it closes the PRD's "Signed app
+  installed" acceptance clause outright, and E3 (the human TCC clicks) has nothing to click on until
+  an installed bundle exists.
+
+### Rollback recorded BEFORE any mutation (PRD "Reversibility")
+- Pre-mutation state on m4mbp, measured read-only this iteration:
+  - checkout HEAD `f9285d69ed7bcc592bb41b3dcdf29e3221968f44`, tree `815f23b0d7cd0c3f...`, `dirty_lines=0`
+  - `/Applications/MOSSCapture.app` **absent**; `~/Library/Application Support/MOSSCapture` **absent**;
+    `~/.local/bin/mtd-capture` **absent**; `macos/MOSSCapture/.build` **absent** (no build output at all)
+  - `/Applications` is `drwxrwxr-x root:admin` and `ga0` is in `admin`, so the install needs no sudo
+  - reviewed tools present and executable: `build-app.sh` sha256 `74b26414ef0b2902...`,
+    `install-app.sh` sha256 `0d59c6c78bbfd516...`, `moss-tool-lib.sh` sha256 `087793c68214d75d...`
+    (non-executable by design)
+  - E1 identity intact: `moss-signing.keychain-db` present, password file 0600, keychain fourth in the
+    user search list after the three pre-existing entries, default keychain still `login.keychain-db`
+  - Swift 6.3.3 / swift-driver 1.148.6, macOS 26.5.2, 81 GiB free, no MOSSCapture process running
+- Rollback, printed by the tools themselves before their first mutation:
+    rm -rf '/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/macos/MOSSCapture/.build/product'
+    rm -rf '/Applications/MOSSCapture.app' && rm -f '/Users/ga0/.local/bin/mtd-capture'
+  This is a **first** install, so no backup path is created and the second command is complete on its
+  own. The full build-output rollback is `rm -rf .../macos/MOSSCapture/.build` (the whole scratch
+  directory is absent right now and is gitignored).
+- **After this step the E1 rollback stops being free.** `security delete-keychain` would mint a new
+  leaf on the next bootstrap, changing the designated requirement of any rebuilt bundle - and from E3
+  on that costs the human's TCC grants. E1 rollback is therefore retired as an option here.
+- Nothing outside those three paths is touched: no keychain change, no search-list change, no shell
+  profile edit, no trust/SIP/Gatekeeper change.
