@@ -5433,3 +5433,55 @@ input verbatim** rather than by a hasattr:
   session); the m4mbp device AB600574-FD93-4321-967E-652AB064A70B must stay `revoked: false`.
   If a fifth blocker appears, J4 means the 409 now carries the word that names it: read
   `identity_reason` and `submission_refusal` off the failure detail before building any host probe.
+
+--------------------------------------------------------------------------------
+run 20260728-112922 | iteration 16 | J5 step (d) - rollbacks recorded BEFORE the probe
+--------------------------------------------------------------------------------
+Target: candidate 42(d) - the THIRD amendment's actual gate. Run both probes against the
+redeployed service (`6a540fe`, which now carries J1/J2/J3/J4) and require a run that survives its
+FULL plan with committed spans advancing and speaker labels present. This block is written and
+committed BEFORE anything on the host is touched, per prd.md's reversibility constraint.
+
+Pre-state, read read-only from the host this iteration (nothing mutated to obtain it):
+  host HEAD               6a540fe086cf819ba0e07a948da9fec0766202c3
+  moss-live-web.service   MainPID 343344, NRestarts=0, ActiveState=active, /live (loopback) 200
+  moss-web.service        MainPID 301112, NRestarts=0, ActiveState=active
+  live-auth.json devices  6: AB600574-FD93-4321-967E-652AB064A70B revoked=False (m4mbp, the only
+                          one that matters) + five prior probe devices, all revoked=True
+  live-runs/              0 entries;  /tmp/mtd-live-*  0 entries
+
+Mutations this iteration intends to make, each with its rollback:
+
+1. One pairing code minted on the host loopback (`ops/live-pair.sh --url https://127.0.0.1:7861`).
+   A minted-but-unexchanged code expires on its own (PAIRING_TTL_SECONDS = 300); an exchanged one
+   becomes the device below. Rollback: the device revoke in 2 (a code has no separate revoke).
+
+2. One device pairing exchanged from MacStudio over the real pinned tailnet TLS hop, device id
+   `ralph-j5d-probe-<utc>`. This appends an entry to the host's `live-auth.json`.
+   Rollback (loopback-only, no restart, MANDATORY after every probe run):
+     curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<device-id>
+   It marks revoked rather than deleting, so `live-auth.json` only grows; the deeper rollback is
+   restoring `live-auth.json.ralph-f0-backup-20260728T091927Z` (sha256 9d306766...), which costs a
+   service restart and is NOT the default. The m4mbp device
+   `AB600574-FD93-4321-967E-652AB064A70B` must stay `revoked: false` - nothing here touches it.
+
+3. One live session created and stopped by that device (memory-only; sessions do not survive a
+   restart). Rollback: the probe's own `POST /stop`, and failing that the device revoke in 2,
+   which releases every session the device owns.
+
+The offline half of the gate (`live-hardcap-repro.py`) mutates NOTHING - no server, no GPU, no
+network - and was run first, before this block, for exactly that reason.
+
+No other mutation is authorized by this candidate: no service restart, no manifest change, no
+checkout move on any host, no Mac action, no TCC. `--fail-fast` stays on (a terminal failure is
+sticky; continuing only buries the response that explains it).
+
+Stop conditions:
+  - a pin mismatch on the tailnet hop aborts the run before any pairing exists (the probe raises
+    before sending) -> record a blocker, revoke nothing, do not retry against a changed leaf;
+  - a terminal failure aborts the run at the first non-200 -> revoke the device, record the
+    signature INCLUDING J4's new `identity_reason` / `submission_refusal` fields, and do NOT
+    attempt a product fix on this branch: the freeze has resumed and `merge-keeper.sh`'s guard
+    refuses a fifth merge. That would need a FOURTH amendment.
+  - both batch units must keep MainPID 301112 / NRestarts=0 and the live unit MainPID 343344 /
+    NRestarts=0; `live-runs/` must still be 0 entries and no `/tmp/mtd-live-*` may survive.
