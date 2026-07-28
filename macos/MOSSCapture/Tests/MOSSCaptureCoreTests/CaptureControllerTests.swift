@@ -2921,6 +2921,91 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(client.requests.isEmpty)
     }
 
+    func testPairingPayloadTrimsHowItWasTypedAndSendsExactlyWhatItParsed() throws {
+        // The payload is pasted into `mtd-capture pair` and ended with Ctrl-D. A Return pressed
+        // first, a terminal that ends lines with CRLF, or a paste that carries indentation all put
+        // characters around the payload that are not part of it.
+        let pin = String(repeating: "a", count: 64)
+        let canonical = "mtd1.secret.\(pin)"
+        let typedForms: [(String, String)] = [
+            ("Return before Ctrl-D", canonical + "\n"),
+            ("CRLF terminal", canonical + "\r\n"),
+            ("indented paste", "  \t" + canonical + " \n"),
+            ("uppercase pin with a newline", "mtd1.secret.\(pin.uppercased())\n"),
+        ]
+
+        for (label, typed) in typedForms {
+            let client = QueuedCaptureHTTPClient(responses: [
+                CaptureHTTPResponse(
+                    statusCode: 200,
+                    body: try JSONEncoder().encode(TestPairingResponseBody(
+                        deviceID: "device-a",
+                        deviceToken: "device-token"
+                    ))
+                ),
+                CaptureHTTPResponse(
+                    statusCode: 200,
+                    body: try JSONEncoder().encode(TestSessionResponseBody(
+                        id: "session-a",
+                        ownerDeviceID: "device-a",
+                        viewToken: "view-token"
+                    ))
+                ),
+            ])
+            let exchange = URLSessionCapturePairingExchangeAdapter(
+                client: client,
+                deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+            )
+
+            let result = try exchange.pair(
+                serverURL: URL(string: "https://moss.example")!,
+                pairingPayload: Data(typed.utf8)
+            )
+
+            XCTAssertEqual(result.sessionID, "session-a", label)
+            XCTAssertEqual(result.certificatePinSHA256Hex, pin, label)
+            // The server sees only what was transmitted, so the transmitted payload must be the
+            // canonical string the pin was validated from — not the bytes that arrived on stdin.
+            let pairingBody = try jsonBody(try XCTUnwrap(client.requests.first, label))
+            XCTAssertEqual(pairingBody["pairing_payload"] as? String, canonical, label)
+        }
+    }
+
+    func testPairingPayloadWhitespaceFaultsAreReportedAgainstThePayloadNotTheCertificate() throws {
+        // Whitespace that survives the trim is inside a field: the payload itself is broken, and
+        // saying `invalidPinnedHash` would send the operator to look at the server's certificate.
+        let pin = String(repeating: "a", count: 64)
+        let client = QueuedCaptureHTTPClient(responses: [])
+        let exchange = URLSessionCapturePairingExchangeAdapter(
+            client: client,
+            deviceIdentity: StaticCaptureDeviceIdentityAdapter(deviceID: "device-a")
+        )
+
+        let whitespaceCases: [(String, String, CaptureSecurityError)] = [
+            ("nothing but whitespace", " \t\n ", .missingPairingPayload),
+            ("space inside the secret", "mtd1.sec ret.\(pin)", .invalidPairingPayload),
+            (
+                "pin wrapped across two lines",
+                "mtd1.secret.\(String(repeating: "a", count: 32))\n\(String(repeating: "a", count: 32))",
+                .invalidPairingPayload
+            ),
+            ("space inside the prefix", "mtd 1.secret.\(pin)", .invalidPairingPayload),
+        ]
+
+        for (label, typed, expected) in whitespaceCases {
+            XCTAssertThrowsError(
+                try exchange.pair(
+                    serverURL: URL(string: "https://moss.example")!,
+                    pairingPayload: Data(typed.utf8)
+                ),
+                label
+            ) { error in
+                XCTAssertEqual(error as? CaptureSecurityError, expected, label)
+            }
+        }
+        XCTAssertTrue(client.requests.isEmpty)
+    }
+
     func testPairingExchangeStopsBeforeSessionWhenPairingFails() throws {
         let client = QueuedCaptureHTTPClient(responses: [
             CaptureHTTPResponse(statusCode: 403, body: Data())

@@ -52,10 +52,11 @@ m4mbp checkout with the published SHA (E2a), iteration 21 created the signing id
 and iteration 22 built, signed and installed the app there (E2b) — none of 17-22 changed a tracked
 file. Iteration 23 recorded the E3 blocker. **The post-merge freeze is then reopened exactly once**
 by the prd.md amendment of 2026-07-28: run `20260728-072601` iteration 1 landed G1 (the ATS
-declaration plus its gates), so the branch carries tracked product source again, strictly within
-the amendment's four items.
-Test totals on the branch: Swift **132 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132); Python **537 passed / 2 skipped / 368 subtests**
+declaration plus its gates) and iteration 2 landed G2 (the pairing-payload trim and the canonical
+wire form), so the branch carries tracked product source again, strictly within the amendment's
+four items.
+Test totals on the branch: Swift **134 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134); Python **537 passed / 2 skipped / 368 subtests**
 including `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -434,6 +435,32 @@ an_unpinned_leaf`) proves the *other* half of the declaration's safety case: wit
 trust decision is the pin's, so it pairs once honestly and then serves a leaf the payload's pin does
 not describe and requires refusal. Non-vacuity rehearsed both ways.
 
+**Pairing-payload contract (new, run 20260728-072601 iteration 2 / G2).** The payload is typed by a
+human — paste, Return, Ctrl-D — so `CapturePairingPayload.init` treats surrounding whitespace as
+punctuation of the *input*, not of the payload: it trims `.whitespacesAndNewlines` first, and only
+then splits. Two consequences are contractual.
+*The error now accuses the right thing.* Whitespace that survives the trim is **inside** a field, so
+the guard refuses it as `invalidPairingPayload`; before this a wrapped or space-broken payload
+reached the strict 64-hex check and came back as `invalidPinnedHash`, an error that sends the
+operator to inspect the server's certificate for their own keystroke. Whitespace-only input is
+`missingPairingPayload`, not `invalidPairingPayload`.
+*What was parsed is what is sent.* `URLSessionCapturePairingExchangeAdapter.pair` used to validate
+the parsed payload and then put the **raw stdin bytes** in the HTTP body
+(`String(decoding: pairingPayload, as: UTF8.self)`), so the client validated one string and
+transmitted another. It now sends `parsedPayload.wireRepresentation` =
+`"mtd1.<secret>.<lowercased pin>"`. That mattered beyond tidiness: the server strips the pin field
+(`live_auth._normalize_cert_sha256` → `.strip().lower()`) but not the prefix, so a trailing newline
+would have been forgiven on the wire while a leading space would have come back as a 401 the app
+reports only as `nonSuccessStatus(401)`. Lowercasing is safe because both sides normalize the pin;
+the secret is `secrets.token_urlsafe(32)` (`[A-Za-z0-9_-]`, no dot, no whitespace), so trimming can
+never eat a legitimate character. Canonicalization happens at exactly one place — the parse — and
+the CLI still ships the raw bytes across the UDS unaltered.
+Measured red/green: with the trim removed the tracer's real `mtd-capture pair` with a trailing
+newline answers `exit=70 {"ok":false,"error":"invalidPairingPayload"}`; with the trim *and* the
+internal-whitespace guard removed the same input reproduces the shipped signature
+`invalidPinnedHash`; with the wire form reverted to the raw bytes the body assertion fails showing
+`…aaaa\n` on the wire.
+
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
 (`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
@@ -719,6 +746,9 @@ facts decide whether the human step succeeds on the first try:
    `input.readAll()`; empty stdin is `rc=65`. So the operator runs
    `mtd-capture pair --server <https-url>`, pastes the payload, presses **Ctrl-D** — that keeps it
    out of argv *and* out of shell history, which is what the PRD's secret-hygiene clause needs.
+   Since G2 (run 20260728-072601 iteration 2) a Return pressed before Ctrl-D is harmless; before it
+   that keystroke failed the pair with `invalidPinnedHash`. That fix reaches the host only when
+   E2b is re-run there after the G4 merge.
    Full surface: `pair --server <https-url> | start [--label <name>] | stop | status | handoff |
    latency`; anything else is the usage line and `rc=64`.
 2. **The CLI cannot launch the app by itself here.** `NSWorkspaceLaunchServicesCaptureAppLauncher`
@@ -807,6 +837,12 @@ python3 -m pytest tests/test_macos_uds_tracer.py -q
 swift test --package-path macos/MOSSCapture --filter 'BundleDeclaresTheTransport'
 python3 -m pytest tests/test_macos_packaging_tools.py -q -k entitlement_the_identity
 python3 -m pytest tests/test_macos_uds_tracer.py -q -k 'immutable_first_install or unpinned_leaf'
+# --- G2 pairing-payload trim + canonical wire form (2 Swift nodes; the tracer's second real
+#     pairing now feeds `payload + b"\n"`, so the whole stdin -> UDS -> app -> HTTPS path is
+#     covered at no extra runtime). ---------------------------------------------------------------
+swift test --package-path macos/MOSSCapture --filter 'PairingPayloadTrims|PairingPayloadWhitespace'
+python3 -m pytest tests/test_macos_uds_tracer.py -q -k cross_real_uds
+
 # Reproducing the failure itself needs a REMOTE non-exempt peer, i.e. m4mbp -> 100.64.0.8. The
 # ad-hoc probe that measured the matrix is disposable; rebuild it in /tmp when needed, never in
 # the repo. Bare binary vs the same binary inside an ad-hoc `.app` is the whole experiment.
@@ -1393,10 +1429,15 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     Residue for the G4 merge: the fix is proven by probe on MacStudio and by shape gates in the
     suite; the *product* path is confirmed only when the rebuilt app on m4mbp pairs against
     `https://100.64.0.8:7861` (E3), so E2b must be re-run there after the merge.
-27. **G2 - trim the pairing payload.** `CapturePairingPayload.init` (`CaptureSecurity.swift:616-628`)
-    never trims its input, so an operator who presses Return before Ctrl-D sends 65 bytes where the
-    pin field must be 64 and gets `invalidPinnedHash` - an error that accuses the certificate for a
-    whitespace fault. Trim surrounding whitespace before splitting; keep the strict 64-hex check.
+27. **G2 - trim the pairing payload** `[done - iteration 2 of run 20260728-072601]`:
+    `CapturePairingPayload.init` trims `.whitespacesAndNewlines` before splitting, refuses
+    whitespace *inside* a field as `invalidPairingPayload` instead of letting it reach the hex
+    check, and the exchange adapter now sends `wireRepresentation` rather than the raw stdin bytes -
+    see the pairing-payload contract above. The strict 64-hex check is unchanged. Two Swift nodes
+    plus the tracer's second real pairing (fed `payload + b"\n"`); three mutation rehearsals
+    recorded in progress.txt, one of which reproduces the shipped `invalidPinnedHash` exactly.
+    Residue for G4: nothing - this item needs no host work; the fix ships to m4mbp with the same
+    E2b re-run G1 already requires.
 28. **G3 - classify and log control-channel failures.** `sanitizedControlError`
     (`CaptureSecurity.swift:1243-1256`) maps every unrecognised error to the bare string
     `control_failed`, and `MOSSCaptureApp/main.swift` has no logging of any kind - no `os_log`, no
@@ -1408,9 +1449,11 @@ live server at all. Scope is exactly these four items; nothing else may touch tr
     pass after. The `100.64.0.0/10` tracer case this item asked for is **done** (iteration 1 of run
     20260728-072601) - but measurement showed it cannot be the ATS gate, because a server this
     tracer starts is always reached over loopback. See the ATS contract block; the node it became
-    proves the pin instead, and the declaration is gated by shape in three places. Remaining for
-    G4: G2's and G3's own regression tests, then re-run the full client gate and perform the single
-    authorized merge through `merge-keeper.sh`. After it, the post-merge freeze resumes.
+    proves the pin instead, and the declaration is gated by shape in three places. G2's regression
+    tests are **done** (iteration 2), red/green rehearsed. Remaining for G4: G3's own regression
+    tests, then re-run the full client gate and perform the single authorized merge through
+    `merge-keeper.sh`. After it, the post-merge freeze resumes and E2b must be re-run on m4mbp so
+    the installed app carries G1+G2+G3.
 
 ## Non-candidates
 

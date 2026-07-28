@@ -610,15 +610,42 @@ public struct CapturePairingResult: Equatable {
 }
 
 public struct CapturePairingPayload: Equatable {
+    static let prefix = "mtd1"
+
     public var secret: String
     public var certificatePinSHA256Hex: String
 
+    /// The canonical `<prefix>.<secret>.<pin>` form, and the only thing that may go on the wire.
+    ///
+    /// The payload arrives by hand — an operator pastes it into `mtd-capture pair` and ends the
+    /// input — so the bytes carry the terminal's punctuation, not just the payload's. Sending the
+    /// raw bytes instead would validate one string and transmit another; the server only ever sees
+    /// what was transmitted, so the two must be the same string.
+    public var wireRepresentation: String {
+        "\(Self.prefix).\(secret).\(certificatePinSHA256Hex)"
+    }
+
     public init(data: Data, validator: FullCertificatePinValidator = FullCertificatePinValidator()) throws {
-        guard let payload = String(data: data, encoding: .utf8), !payload.isEmpty else {
+        // Surrounding whitespace belongs to how the payload was typed, never to the payload: a
+        // Return pressed before Ctrl-D appends a newline to the pin field, and 65 characters
+        // against a strict 64-hex check reads as `invalidPinnedHash` — an error that accuses the
+        // server's certificate for the operator's keystroke.
+        guard let raw = String(data: data, encoding: .utf8) else {
+            throw CaptureSecurityError.missingPairingPayload
+        }
+        let payload = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !payload.isEmpty else {
             throw CaptureSecurityError.missingPairingPayload
         }
         let fields = payload.split(separator: ".", omittingEmptySubsequences: false)
-        guard fields.count == 3, fields[0] == "mtd1", !fields[1].isEmpty else {
+        // Whitespace that survives the trim is *inside* a field — a payload broken across lines by
+        // whatever carried it. That is a corrupt payload and says so, rather than reaching the
+        // hex check and blaming the certificate again.
+        guard fields.count == 3,
+              fields[0] == Self.prefix,
+              !fields[1].isEmpty,
+              !fields.contains(where: { $0.contains(where: \.isWhitespace) })
+        else {
             throw CaptureSecurityError.invalidPairingPayload
         }
         let pin = String(fields[2])
@@ -1021,7 +1048,8 @@ public final class URLSessionCapturePairingExchangeAdapter: CapturePairingExchan
     public func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
         let parsedPayload = try CapturePairingPayload(data: pairingPayload)
         let client = try client(parsedPayload.certificatePinSHA256Hex)
-        let payload = String(decoding: pairingPayload, as: UTF8.self)
+        // What was parsed is what is sent. The raw bytes are the operator's keystrokes.
+        let payload = parsedPayload.wireRepresentation
         let deviceID = try deviceIdentity.loadDeviceID()
         let pairing = try postPairing(
             client: client,

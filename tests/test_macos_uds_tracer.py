@@ -327,11 +327,16 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                 value="0" * 64,
             )
             second_pairing_payload = _issue_pairing(loopback_url)
+            # Typed the way an operator types it: paste, Return, Ctrl-D. The trailing newline is
+            # part of ending the input, not part of the payload, and it must survive the whole
+            # real path - stdin, the UDS hop, the app's parse and the HTTPS body the server
+            # actually reads. Feeding the clean bytes here would only ever prove the machine's
+            # own round trip.
             second_pair = _run_cli(
                 cli_exe,
                 ["pair", "--server", server_url],
                 env=env,
-                stdin=second_pairing_payload,
+                stdin=second_pairing_payload + b"\n",
             )
             assert second_pair.returncode == 0, second_pair.diagnostic
             _assert_secret_absent(

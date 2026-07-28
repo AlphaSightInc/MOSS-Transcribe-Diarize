@@ -2377,3 +2377,67 @@ Two things follow, and the second one contradicts the plan:
   G4's gate and the single authorized merge. After the merge, E2b must be re-run on m4mbp so the
   installed app carries the fix - the shape gates prove the declaration ships, but only that host
   can prove the product path, because only it has a remote non-exempt peer.
+
+## Iteration 2 (run 20260728-072601-15601) - G2: the pairing payload is trimmed, and the trimmed
+## payload is the one that goes on the wire
+- Target: candidate G2 from the prd.md amendment of 2026-07-28 - the pairing-payload whitespace
+  defect that turned an operator's Return into `invalidPinnedHash`, an error blaming the server's
+  certificate for a keystroke.
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureSecurity.swift` (+31/-3),
+  `macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift` (+85),
+  `tests/test_macos_uds_tracer.py` (+6/-1), `scripts/ralph-afk/{context.md,progress.txt}`.
+
+### The second half of the defect, found while fixing the first
+Trimming in `CapturePairingPayload.init` alone would have been a half-fix.
+`URLSessionCapturePairingExchangeAdapter.pair` parsed the payload for the pin and then put the
+**raw stdin bytes** in the HTTP body (`String(decoding: pairingPayload, as: UTF8.self)`) - the
+client validated one string and transmitted another. Read against the server: `live_auth.
+_normalize_cert_sha256` does `.strip().lower()` on the pin field but nothing strips the prefix, so
+a trailing newline would have been forgiven on the wire while a leading space would have come back
+as 401, which the app surfaces only as `nonSuccessStatus(401)` - a second whitespace fault wearing
+a second wrong error. The adapter now sends `parsedPayload.wireRepresentation`.
+Three changes, all in one parse:
+1. trim `.whitespacesAndNewlines` before splitting; whitespace-only input is `missingPairingPayload`;
+2. whitespace that survives the trim is *inside* a field, so refuse it as `invalidPairingPayload`
+   rather than letting it reach the strict 64-hex check and blame the certificate again;
+3. `wireRepresentation` = `"mtd1.<secret>.<lowercased pin>"` is what is transmitted.
+Safety of the trim was checked against the generator, not assumed: the secret is
+`secrets.token_urlsafe(32)` (`[A-Za-z0-9_-]`, no dot, no whitespace) and both sides lowercase the
+pin, so canonicalization cannot eat a legitimate character.
+
+### Validation
+- `swift test --package-path macos/MOSSCapture` -> **134 passed / 0 failures** (was 132).
+- `python3 -m pytest tests/test_macos_uds_tracer.py -q` -> **4 passed**, 0 skips, 14.3 s.
+- `python3 -m pytest tests -q -p no:cacheprovider` -> **537 passed / 2 skipped / 368 subtests** in
+  60.9 s (unchanged count: the tracer node was strengthened in place, not added to).
+- Both Swift products build, separate invocations, zero warnings.
+- Phase A attempt-2 discriminator **10/10**; `leak-scan: clean`.
+- Mutation rehearsals, each applied and reverted:
+  1. wire form reverted to the raw bytes -> the body assertion fails on all four typed forms,
+     showing `mtd1.secret.aaaa…\n` (and `\r\n`, and the indented form) actually on the wire.
+  2. trim removed -> the trailing-newline node fails; through the **real process path** the tracer's
+     `mtd-capture pair` answers `exit=70 {"ok":false,"error":"invalidPairingPayload"}`.
+  3. trim *and* the internal-whitespace guard removed -> the same input reproduces the shipped
+     signature exactly: `invalidPinnedHash`. The same mutation also crashed the whitespace node's
+     stub client on `removeFirst` from an empty response queue - i.e. without the guard a payload
+     with a space inside the secret really does reach the network.
+- Nothing outside the repo was mutated: no host touched, no service restarted, no payload minted,
+  no app rebuilt or reinstalled on m4mbp.
+
+### Learned
+1. **A canonicalization that does not reach the wire is not a fix.** The parse and the transmission
+   have to be the same string; anywhere they diverge, the validation applies to a string the peer
+   never sees. Grepping for the *other* use of the raw input was what turned a one-line trim into
+   the actual fix.
+2. **Check the tolerant peer before deciding what the fix must cover.** The server strips the pin
+   and not the prefix, so trailing and leading whitespace fail in two different places with two
+   different error shapes. Only reading `_normalize_cert_sha256` made that asymmetry visible.
+3. **Put the operator's keystrokes into the existing real-process node instead of adding one.**
+   Feeding the tracer's second pairing `payload + b"\n"` covers stdin -> UDS -> app -> HTTPS at zero
+   extra runtime, and it is the node that proved mutation 2 for real rather than in a stub.
+- Blocker: unchanged and still the only one - E3's two GUI clicks on m4mbp. G2 does not need them.
+- Next: **G3** - classify `URLError`/`NSError` into a typed non-secret shape (domain + code, never a
+  token or payload) and log unclassified control-channel failures in `MOSSCaptureApp/main.swift`,
+  which is what would have shown `-1200/-9802` on the first attempt; then G4's full client gate and
+  the single authorized merge through `merge-keeper.sh`. After the merge, re-run E2b on m4mbp so the
+  installed app carries G1+G2+G3, then the corrected E3 order (pair first, then start, then clicks).
