@@ -40,11 +40,24 @@ moved the portal handoff into the app (A2); iteration 4 rebuilt the tracer aroun
 lab bundle (A4); iteration 5 made the file secret store the production default (B1); iteration 6
 added the retained-until-ACK outbox (B2); iteration 7 added the 16 kHz/8000-sample wire format and
 converted-nanosecond timestamps (B3); iteration 8 added the bounded concurrent transport (B4);
-iteration 9 added the tracked Mac packaging/install tools (B5).
+iteration 9 added the tracked Mac packaging/install tools (B5); iteration 10 recorded the Phase B
+client gate (B6) and changed no product source.
 Test totals on the branch: Swift **121 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121); Python **466 passed / 2 skipped / 346 subtests**
 including `tests/test_macos_uds_tracer.py` **3 passed** (1 hung → 2 → 3) and
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9).
+
+**Phase B client gate: GREEN at `3fb5567` (iteration 10).** Product-tree SHA `3fb5567`; the
+checkpoint commit adds only `scripts/ralph-afk/*`, so
+`git diff --name-only 3fb5567 HEAD -- ':!scripts/ralph-afk'` is empty. Recorded: both Swift products
+build from an empty scratch path in 8.7 s with **zero warnings**; `swift test` **121 passed /
+0 failures**; `pytest tests` **466 passed / 2 skipped / 346 subtests** (the two skips are
+`tests/test_large_upload.py`'s pre-existing Python-3.10 compatibility contract, not Darwin skips);
+the Darwin tracer is **3 passed / 0 skips** *from a deleted lab bundle*, so the whole chain from no
+bundle to a paired built app is proven cold; B1/B2/B3/B4 filters 5/10/11/5 passed; attempt-2
+discriminator **10/10**; `leak-scan: clean`; and MacStudio is left with no
+`~/Library/Application Support/MOSSCapture`, no `/Applications/MOSSCapture.app` and no
+`moss-signing.keychain-db`. **Phase C is open.**
 
 **IDEA-044 attempt-2 checkpoint: GREEN at `1ede498` (iteration 4).** Discriminators **10/10** and **16/16**;
 all eleven registered commands plus `validate-phase-a-locality.sh` pass; tracer is 3 passed /
@@ -81,7 +94,10 @@ proof. A reinstall happens only when the built product's Mach-O UUID or sha256 c
 rewrites the evidence as a new first install. Everything else — certificate, server, port, UDS,
 secret store, artifacts — stays per-test temporary. Ad-hoc signing means the cdhash is stable
 across runs, so the lab bundle is the only surface on which real TCC continuity could later be
-observed; that observation is still the E3 human step.
+observed; that observation is still the E3 human step. Measured in iteration 10: deleting the whole
+`idea044-lab` directory and re-running reproduces `bundle_sha256 990bc18f…`,
+`executable_sha256 5b0f5c98…` and `designated => cdhash H"d01b39e2…"` byte for byte, so the identity
+is a property of the built inputs, not of the surviving directory.
 
 **Secret-store contract (new, iteration 5).** `CaptureSecretStoreSelection.makeDefault()` is the
 only resolver and both composition roots call it with no arguments, so app and CLI cannot drift:
@@ -509,12 +525,16 @@ edit the control-plane discriminator scripts to keep them green.
    search-list membership is what works. Residue for E2: `install-app.sh` defaults the CLI to
    `~/.local/bin` and reports `bin_dir_on_path`; if that is not on m4mbp's PATH, pass `--bin-dir`
    rather than editing a shell profile from the loop.
-10. **B6 — client gate**: both Swift products build; Swift suite and full Python suite green;
-   Darwin built-process tracer zero skips; retry/concurrency/conversion tests green; leak scan
-   clean. Record the exact SHA. The Phase-A source discriminators are historical evidence, not
-   final gates after the deliberate B1–B5 production changes.
+10. **B6 — client gate** `[done — iteration 10]`: green at product-tree `3fb5567` — see the Phase B
+   client gate block above for the recorded numbers. The Phase-A source discriminators stayed at
+   10/10 but are historical evidence, not final gates, after the deliberate B1–B5 production
+   changes. Residue for C4: this gate is the *client* half; the keeper merge re-runs it plus the
+   Phase C reliability tests on the merge commit.
 
 ### Phase C — server meeting reliability, then one merge
+
+**Gate opened by iteration 10's green B6 checkpoint.** Server work may now start; the Mac client is
+frozen except for defects the server work exposes.
 
 11. **C1 — session-lifecycle view authority**: active-session-only + 12 h cap + immediate revoke
     on clean terminal, abort, device revocation, or operator revoke. Test virtual 60 minutes,

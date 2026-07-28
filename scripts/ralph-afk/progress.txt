@@ -740,3 +740,68 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   Darwin tracer with zero skips, and the leak scan, all recorded with the exact SHA. Everything in
   the gate has been run green this iteration except recording it as one checkpoint; after that,
   Phase C opens with C1 (session-lifecycle view authority, defect 4).
+
+## Iteration 10 (run 20260728-023004-98501, its iteration 2) - Phase B client gate (B6)
+- Target: Phase B candidate B6. Record the client gate as one checkpoint at one SHA, so Phase C can
+  open and so C4's keeper merge has a client baseline to compare against. No product source changed.
+- Files: `scripts/ralph-afk/{context.md,progress.txt}` only.
+- Method: run the gate over the untouched product tree of `3fb5567`, and make two of its steps cold
+  rather than cached, because a gate that only re-reads build output proves the cache, not the tree:
+  (1) built both products into an **empty** `--scratch-path` instead of trusting `.build`;
+  (2) deleted `macos/MOSSCapture/.build/idea044-lab` entirely before the tracer, so the run had to
+      re-do the first install of the lab bundle from nothing.
+- Validation (all on product-tree `3fb5567`, clean `git status`):
+  - `swift build --scratch-path /tmp/moss-b6-scratch --product mtd-capture` -> complete in 7.73s
+    (8.06s wall, 601% cpu); `--product MOSSCaptureApp` -> complete in 0.63s; a repeat build piped
+    through `grep -ciE 'warning:|error:'` -> **0**
+  - `swift test --package-path macos/MOSSCapture` -> **121 tests, 0 failures** in 0.77s
+  - `pytest tests -q -p no:cacheprovider -rs` -> **466 passed, 2 skipped, 346 subtests** in 36.4s;
+    468 collected. Both skips are `tests/test_large_upload.py:155,175` "Python 3.10 compatibility
+    contract" - pre-existing, not Darwin, not permission-related.
+  - `pytest tests/test_macos_uds_tracer.py -q -rs` after `rm -rf .build/idea044-lab` ->
+    **3 passed in 7.20s, 0 skips**
+  - B1 `SecretStore|ProductEntrypoints|DormantKeychain` -> 5 passed; B2
+    `Outbox|Ambiguous|RetryPolicy|Stalled|NumbersItsLane|Unwinds` -> 10 passed; B3
+    `HostTicks|CanonicalFrames|ConserveDuration|HostTimeDomain|CaptureInstant|TerminalFlush|
+    TimelineGap|RealtimeCallbacks|FlushedTail` -> 11 passed; B4
+    `LanesPublishConcurrently|ATickArrivingDuringADrain|StopWaitsForTheRunningPass|
+    PinnedProviderKeepsOneSession|ProductionPumpTicksOnce` -> 5 passed
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **10/10 true**
+  - `leak-scan.sh` -> `leak-scan: clean`; `git diff --check` -> clean
+  - host left clean: `~/Library/Application Support/MOSSCapture`, `/Applications/MOSSCapture.app`
+    and `~/Library/Keychains/moss-signing.keychain-db` all absent afterwards; scratch path removed.
+- Evidence:
+  - **Gate SHA: `3fb5567fd405177ece6fafbef9e0e53293986e0d`** (feature branch `ralph/live-meeting-mvp`).
+    This iteration's commit touches only `scripts/ralph-afk/*`, so the gated product tree is
+    verifiable with `git diff --name-only 3fb5567 HEAD -- ':!scripts/ralph-afk'` -> empty.
+  - The cold lab-bundle reinstall reproduced the previous install **byte for byte**:
+    `bundle_sha256 990bc18ff8b71ea2a4223b36e628007931a3ad504a9b20e63f26ac42b1b0eb69`,
+    `executable_sha256 5b0f5c98772a92ebcc5fd70b56db26854f57a6eeec1ae773d630dabe6f0b60d6`,
+    `designated => cdhash H"d01b39e2ec9a6d472d9ce4237d1e6b4ed5bb8dd0"`, from
+    `built_product macho_uuid C00C5875-23B6-3AFD-A3B7-A6B966D1B70C`. So the bundle identity the
+    tracer pins is a function of the built inputs, not of a directory that happened to survive.
+  - PRD "production client gate" clauses map to running nodes, not to prose: the built-app/built-CLI
+    two-step pairing over real same-user UDS and a real private-IP TLS server with full-certificate
+    pinning is `test_built_macos_app_cli_cross_real_uds_and_private_tls_server` (it asserts both
+    products exist in the bin dir, makes a per-test certificate for a private non-loopback IPv4, and
+    drives the app through `MOSS_CAPTURE_CONTROL_SOCKET`); app-only pasteboard/view authority is the
+    same node plus discriminator checks 1-4; per-lane permission transitions and the denied-lane
+    typed failure are `test_permission_denial_contract_isolated_from_real_capture_path` plus
+    discriminator checks 5-9; frames-queued-until-ack is the B2 filter; 16 kHz mono with converted
+    `capture_timestamp_ns` is the B3 filter.
+- Learned: (1) Two of the gate's steps were cache reads pretending to be builds - `swift build` on a
+  warm `.build` returned in 0.14s and the tracer reuses a lab bundle by design. Forcing both cold
+  cost 15 s and turned "the products still build and install" from an assumption into a measurement.
+  (2) Recording *which node* satisfies each PRD clause is worth more than the pass counts: the counts
+  will drift with every later iteration, but the clause-to-node map is what makes a later regression
+  legible, and writing it out is what confirmed no clause is resting on prose alone.
+  (3) Distinguishing the two `test_large_upload.py` skips (a Python-3.10 compatibility contract) from
+  "skips" in the PRD's sense (Darwin tracer skips) matters - the gate says *the tracer* has zero
+  skips, and the suite's two are unrelated and pre-existing.
+- Blocker: none. TCC clicks (E3) remain the one irreducible human step.
+- Next: C1 - session-lifecycle view authority (defect 4). `VIEW_TTL_SECONDS = 900` fixed at
+  `bind_session` is the last confirmed defect still open, and it fails a >15-minute meeting outright.
+  Bind authority to the active session with a 12 h absolute cap and immediate revoke on clean
+  terminal, abort, device revocation and operator revoke; test virtual 60 minutes, the exact cap,
+  every terminal/revocation boundary, and restart behavior. Keep tokens out of URL, storage and logs;
+  do not invent a post-terminal grace period without persistence.
