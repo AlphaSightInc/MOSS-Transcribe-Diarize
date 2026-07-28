@@ -99,21 +99,26 @@ carries the word that names it out of the process, in the event and in the failu
 leaves **J5 alone** in Phase J. See the named-refusal contract block. Iteration 13 ran **J5 step
 (a)**: the full Swift/Python gate green at `517306b`, the seam coverage reviewed clause by clause
 against the third amendment, and the merge payload reviewed against Phase J's scope; it changed no
-tracked file outside `scripts/ralph-afk/`. See the J5a gate block.
+tracked file outside `scripts/ralph-afk/`. See the J5a gate block. Iteration 14 ran **J5 step (b)** —
+**the third amendment's one authorized merge** at `6a540fe` — and changed no tracked product source,
+only `merge-keeper.sh`'s guard. **The post-merge freeze has resumed: from `d35be63` on, the feature
+branch may again carry only `scripts/ralph-afk/*`.** See the fourth-keeper-merge block.
 
-**PRD acceptance scoreboard after iteration 13 of run 20260728-112922** (iteration 13 moved no
-scoreboard line either — J1-J4 are fixes awaiting Phase J's merge and redeploy; the local gate is
-now green but the *host* still runs `b817871`).
+**PRD acceptance scoreboard after iteration 14 of run 20260728-112922** (iteration 14 moved the
+merge line — Phase J's authorized merge is done at `6a540fe` — and **moved "one exact SHA
+everywhere" backwards on purpose, to 1/4**: local `main` is `6a540fe` while `origin/main`, the host
+checkout and m4mbp all still read `b817871`. That is the expected shape between (b) and (c); J5c
+restores 3/4 by publishing and redeploying).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
-merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
-the redeploy), batch service unharmed, signed app installed, **rollback rehearsed and recorded**.
-**One exact SHA everywhere is 3/4 green at `b817871`** — local `main`, `origin/main` and the host
-checkout all read it; **m4mbp is the only laggard and is still offline** (re-checked iteration 8:
-`ping m4mbp.local` and `ping m4mbp` both 100 % loss, `ssh m4mbp` "Operation timed out"), so its
-`git fetch && git checkout b817871` is the one mechanical step left. No Mac rebuild is needed for
-it. Open: permissions granted, the 60 s canary, the 300 s
-certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
+merge (plus all three amendments' authorized follow-up merges), live service answering (re-measured
+after the H4c redeploy), batch service unharmed, signed app installed, **rollback rehearsed and
+recorded**.
+**One exact SHA everywhere is 1/4 until J5c** — and even after it, 3/4, because **m4mbp is offline**
+(re-checked iteration 8: `ping m4mbp.local` and `ping m4mbp` both 100 % loss, `ssh m4mbp` "Operation
+timed out"), so its `git fetch && git checkout 6a540fe` is the one mechanical step left. No Mac
+rebuild is needed for it — this cycle is server-only. Open: permissions granted, the 60 s canary, the
+300 s certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
 
 **Those open items are still not merely waiting on E3.** Iterations 9 and 10 proved they cannot pass
 on the deployed build; the second amendment fixed those three blockers (H3, H1, H2) and iteration 6
@@ -121,7 +126,8 @@ deployed them; and iteration 7's gate run then found a **fourth** blocker on the
 H4d block. Phase J is now authorized and **J1 (iteration 9) and J2 (iteration 10) close both of
 blocker 4's input classes on the branch, J3 (iteration 11) closes the transient-decoder class that
 would have been the fifth, and J4 (iteration 12) makes the next one readable without a host-side
-probe**; the path stays gated until Phase J's gate/merge/redeploy (J5) put them on the host. So the
+probe**; J5a gated them and J5b (iteration 14) merged them, so the one step between the branch and
+the host is now **J5c's push + redeploy**. So the
 certification path is gated on **Phase J**, not on the operator: E3's physical
 TCC clicks stay unspent, because a canary against a service that dies at the first 2.5 s of
 continuous speech would burn the one irreducible human step for nothing. This is the third time the
@@ -220,6 +226,38 @@ recur, and it stayed unexplained rather than diagnosed.
 **Not pushed** — `origin/main` is still `317df4d`; publishing is H4 step (c).
 *The guard is live and was rehearsed non-vacuously after the merge:* the same dry run now prints
 `ERROR: main moved from expected pre-merge SHA 317df4d…`, rc=1, so a **fourth** merge is refused.
+
+**Fourth keeper merge — the THIRD amendment's ONE authorized merge: DONE at `6a540fe` (new,
+iteration 14 / J5b).** Feature tip `d35be63b3751a913cae4b2b287cdcff73c7e23d6`, merge
+`6a540fe086cf819ba0e07a948da9fec0766202c3`, `main^1 = b817871…` (the third merge),
+`main^2 = d35be63…`. `git diff d35be63 6a540fe` is **empty** and both trees are
+`b1f4ab91a2bd2f65166540c52d3296c8dbbc4ffb`, so the merge commit carries exactly the feature tree.
+Against the published `b817871` the whole delta is **21 files**: the J5a-reviewed fifteen (nine
+`moss_transcribe_diarize/`, six tests, **+1475/-134** — the exact figure J5a predicted) plus six
+`scripts/ralph-afk/*` (`context`, `prd`, `progress`, `merge-keeper`, and the two tools
+`build-span-sweep.py` / `live-identity-seam-probe.py`).
+`git diff --name-only b817871 6a540fe -- macos ops docs LOCAL_DEPLOYMENT.md CONTEXT.md` is
+**empty** — like H4's, this merge is **server-only**, so the deployed service **does** change
+behavior and the redeploy in step (c) **does** need a `moss-live-web.service` restart, while
+**no Mac rebuild is needed**: the app installed on m4mbp in G6 is still current at this SHA.
+*The suite on the merged tree, measured inside the merge worktree (the script's own gate):* both
+Swift products built there first in separate invocations (`mtd-capture` 7.56 s, `MOSSCaptureApp`
+0.63 s, then the test build 6.74 s); `swift test` **139 passed / 0 failures** in 1.23 s —
+CaptureControllerTests 127 + MTDCaptureCLITests 12, unchanged from J5a, which is how a server-only
+cycle proves it stayed server-only; `pytest tests` **590 passed / 2 skipped / 368 subtests** in
+62.62 s, matching J5a's local numbers exactly. No stall; the whole script ran in ~2 min.
+**Not pushed** — `origin/main` is still `b817871`; publishing is J5 step (c). The primary worktree is
+the only one left (`git worktree list` shows one entry) and the tree is clean, so the script's EXIT
+trap ran and no worktree is holding `main`.
+*The guard is live and was rehearsed non-vacuously after the merge:* the same dry run now prints
+`ERROR: main moved from expected pre-merge SHA b817871…`, rc=1, so a **fifth** merge is refused
+until a fourth amendment advances the line in-script.
+*The history join, done first and proven content-free before it was made:*
+`git merge-tree --write-tree main HEAD` returned HEAD's own tree `7141ec53…` **before** the join, the
+join commit `3ba0f74` then left that tree unchanged (`git diff 9d68d2d 3ba0f74 -- .` empty), and
+`git diff --name-only 517306b 3ba0f74 -- ':!scripts/ralph-afk'` was empty — i.e. the product tree the
+J5a gate measured is byte-identical to the one merged. Only then was `merge-base --is-ancestor main
+HEAD` honestly true (it printed NO before the join).
 
 **H4c redeploy: DONE at `b817871` (run 20260728-112922 iteration 6).** `git push origin main`
 fast-forwarded `317df4d..b817871` on the AlphaSight fork; the host checkout fetched and detached at
@@ -2912,13 +2950,15 @@ and 37 are folded in here; settle them together or the next gate run finds the f
       against the amendment's clauses, plus three nodes elsewhere. Gate green at `517306b`
       (139 / 590+2 / tracer 4 / 10/10 / leak-scan clean / repro rc=0 / tree clean); payload reviewed
       as exactly 15 server+test files, no `macos/`, no `ops/`, no doc. See the J5a gate block.
-    - **(b) the merge** `[open - do this next]`. Join `main` into the feature branch first and prove
-      it content-free with `git merge-tree --write-tree` **before** running it; advance
-      `expected_main` from `317df4d...` to `b817871...` **in-script** with a comment citing the third
-      amendment (never by CLI override) and **commit that** before running; run `merge-keeper.sh` in
-      the **BACKGROUND**. The dry run currently refuses (rc=1), which is the proof no unauthorized
-      merge can slip through.
-    - **(c) publish + redeploy.** `git push origin main`, fetch/detach the host checkout, restart
+    - **(b) the merge** `[done - run 20260728-112922 iteration 14]`. Done exactly by the standing
+      procedure: join first (`merge-tree --write-tree` returned HEAD's own tree `7141ec53…`, so the
+      join `3ba0f74` was proven content-free **before** it was made), `expected_main` advanced
+      `317df4d… → b817871…` **in-script** with a comment citing the third amendment and committed as
+      `d35be63` (which then became the feature tip the merge captured), and the script run in the
+      **background**. Merge `6a540fe`, tree identical to the feature tree, payload exactly the
+      fifteen J5a predicted at +1475/-134 plus six Ralph files. Guard rehearsed after: a **fifth**
+      merge now refuses. See the fourth-keeper-merge block.
+    - **(c) publish + redeploy** `[open - do this next]`. `git push origin main`, fetch/detach the host checkout, restart
       `moss-live-web.service` (this cycle is **server-only**, so the restart is required and no Mac
       rebuild is needed), then poll `/live` - a single probe before ~10 s returns 000. Re-verify the
       served leaf still hashes to the D2 pin `a35ca9fc…` and that the batch unit's MainPID did not
