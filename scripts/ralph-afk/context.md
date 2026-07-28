@@ -1592,6 +1592,50 @@ only reachable through the first.
     log the refusal server-side, give it a typed code, or stop discarding it client-side. Pick one
     when 53 is authorized; nothing is blocked on it now.
 
+### Phase M - survive a lane fault (2026-07-28, fifth amendment: 48, 49, 50, 53 AUTHORIZED)
+
+The operator authorized candidates **48, 49, 50 and 53** together on 2026-07-28. Candidate 54 is
+**closed** - answered by `scripts/ralph-afk/live-lane-refusal-probe.py` with no product change.
+Read the "The 409 is NAMED, and the meeting was survivable" block before designing anything: the
+peer lane survives a lane fault, a heartbeat after the refusal returns 200, and **the only thing
+that killed F3 was the skipped `emitHealth`**.
+
+Governing rule from the amendment: **a fault on one lane must not end the meeting.** No publish
+failure may stop the heartbeat; a transient resource condition must not permanently disable a lane.
+
+Take the decisions before the patches, and record the reasoning in progress.txt:
+- **D-a. Is `macos_buffer_overrun` a failure or a degradation?** (`NativeLaneHealth.swift:8,217-220`;
+  `LiveV2Session` has no un-fail path, so today one dropped buffer disables the lane for the whole
+  meeting.) State what an overrun means for the PRD's zero-loss clause, which is about *accepted*
+  audio.
+- **D-b. May a failed lane recover?** K4's "a new session id is a new question" is the precedent;
+  apply it or explain why it does not hold.
+- **D-c. What bounds a runaway decode?** Cap, abandon, or commit partial - justified against the
+  zero-loss and speaker-continuity clauses.
+
+53. **[AUTHORIZED]** A throwing publish must not skip `emitHealth`
+    (`CaptureController.swift:417`). Root cause of both red certification runs.
+48. **[AUTHORIZED - L1]** `emitHealth` at `CaptureController.swift:403` sits outside the
+    `do/catch` at `:387-402` and before `scheduler.schedule` at `:404`. A failed start-time
+    heartbeat leaves both lanes hot with no pump, no `sessionRefusal`, and `alreadyRunning`
+    blocking recovery. 53 and 48 are the same omission on two paths - fix them as one shape.
+49. **[AUTHORIZED - L2]** `NativeLaneHealth` keeps `projection.failure` across a stop/start inside
+    one process, so the next `start` reports lanes that died in the previous attempt.
+50. **[AUTHORIZED]** Bound the runaway decode per D-c. Measured in F1: 2 of 42 spans at RTF
+    3.398/3.318 (8.49 s and 8.29 s for a 2.5 s span), degenerate repeat loops, and the serial queue
+    makes each one the entire latency tail. Neither of the plan's ordered remedies attacks this.
+54. **[CLOSED - answered, not fixed]** The refusal reason is known. 53's fix **may** stop discarding
+    the server's refusal detail where it must tell a permanent lane-failed 409 from a recoverable
+    one; that is the only part of 54 in scope.
+
+**Coverage gap to close deliberately:** `tests/test_live_api.py:1055` fails the microphone lane and
+then posts a *system* frame, asserting the peer survives. Nothing in the suite posts a frame **on
+the lane that failed** - the same shape as every blocker in Phases H and J.
+
+**Gate:** full Swift/Python; the lane-refusal probe; then **re-run F1 and F3 and require both
+green**, with candidate 51's harness fix in place so the label clause is meaningfully verified.
+Then one merge (`expected_main` is `6a540fe…` -> advance in-script), push, redeploy.
+
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.

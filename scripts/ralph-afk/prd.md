@@ -211,6 +211,58 @@ Everything else stays frozen; exactly one further merge. **This cycle is diagnos
 the fix for the lane failure itself** - once `status` names the codes, the cause becomes a normal
 candidate and may need its own authorization. Do not guess at the cause before reading the code.
 
+## Fifth authorized amendment - 2026-07-28, survive a lane fault
+
+Candidate 54 is **answered and closed** without any product change: the F3 killer 409 is
+`{"detail": "v2 system lane is failed."}`, and the probe proved **the meeting was survivable** - the
+peer lane's next frame returns 200 and a heartbeat sent after the refusal returns 200 with the
+session still registered. *The only thing that killed F3 was the skipped `emitHealth`.*
+
+The operator has authorized candidates **48, 49, 50 and 53** in one cycle.
+
+**Governing rule, extending the third amendment's:** a fault on one lane must not end the meeting.
+No publish failure may stop the heartbeat, and a transient resource condition must not permanently
+disable a lane. The session ends only when it genuinely cannot continue.
+
+Three decisions this cycle must make **explicitly, with the reasoning recorded before the patch**:
+
+1. **Is `macos_buffer_overrun` a lane failure or a lane degradation?** `NativeLaneHealth.swift:8,
+   217-220` classes it as a failure; `LiveV2Session` then has **no un-fail path**, so one dropped
+   buffer disables that lane for the rest of the meeting. Weigh that against a degradation carrying
+   a dropped-frame count. The PRD's zero-loss clause is about *accepted* audio; decide what an
+   overrun means for it and say so.
+2. **May a failed lane recover?** If an overrun stays a failure, decide whether `LiveV2Session`
+   gains an un-fail path, and what evidence justifies it. If it becomes a degradation, say what
+   still constitutes a genuine lane failure.
+3. **What bounds a runaway decode (candidate 50)?** Two of 42 spans decoded at RTF 3.398/3.318 as
+   degenerate repeat loops, and the serial queue turns each into the whole latency tail. Neither of
+   the plan's ordered remedies attacks it. Choose - cap the decode, abandon the span, or commit it
+   partial - and justify the choice against the PRD's zero-loss and speaker-continuity clauses.
+
+Scope, inside `macos/`, `moss_transcribe_diarize/`, `ops/` only where required, and `tests/`:
+
+- **53** - a throwing publish must not skip `emitHealth` (`CaptureController.swift:417`).
+- **48 (L1)** - `emitHealth` at `CaptureController.swift:403` sits outside the `do/catch` at
+  `:387-402` and before `scheduler.schedule` at `:404`; a failed start-time heartbeat leaves both
+  lanes hot with no pump and no recorded refusal, and `alreadyRunning` then blocks recovery.
+- **49 (L2)** - `NativeLaneHealth` keeps `projection.failure` across a stop/start inside one
+  process. K4 already ruled that "a new session id is a new question"; apply the same argument or
+  explain why it does not hold.
+- **50** - bound the runaway decode per decision 3.
+- Where 53's fix must tell a permanent lane-failed refusal from a recoverable one, it **may** stop
+  discarding the server's refusal detail - the two 409s are already distinguishable on the wire.
+  That is the only part of candidate 54 in scope; do not widen it further.
+- **Close the coverage gap that let this ship:** `tests/test_live_api.py:1055` fails the microphone
+  lane and then posts a *system* frame. Nothing in the suite posts a frame **on the lane that
+  failed**. Add that, plus red-before/green-after nodes for each decision above.
+- **Gate:** full Swift/Python gate; the lane-refusal probe; then **re-run the two red
+  certification runs - F1 (60 s canary) and F3 (16-minute soak)** - and require both green, with
+  candidate 51's harness fix in place so the label clause is meaningfully verified. Then one further
+  reviewed no-ff merge through `merge-keeper.sh` (advance `expected_main` in-script), push, redeploy.
+
+Exactly one further merge. After it the post-merge freeze resumes. **Never ask the operator for the
+TCC clicks again** - both grants hold `auth_value=2` and survive rebuilds.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:

@@ -11018,3 +11018,27 @@ classification (L2's second question), with "resynchronise the sequence" struck.
 in it as a blocker - only as an optional durability item. The remaining Ralph-only work is
 **candidate 51** (give the two lanes different audio), which unblocks F2's label clause but not
 F2 itself.
+
+## Supervisor - operator authorizes candidates 48, 49, 50 and 53 (2026-07-28)
+- The operator authorized all four remaining product-source candidates in one decision. Recorded in
+  prd.md as the "Fifth authorized amendment"; Phase M in context.md carries the work.
+- **Candidate 54 is closed, not authorized** - iteration 11 answered it with an offline probe and no
+  product change. The supervisor had told the operator 54 needed authorization; that was wrong, and
+  the loop's own distinction is the correct one: the *fix* for 54 is product source, the *answer*
+  was a probe against code the loop may read freely. Check that split before deferring a question.
+- The finding that shapes this cycle: **the meeting was survivable.** The failed lane 409s
+  permanently, but the peer lane's next frame returns 200 and a heartbeat after the refusal returns
+  200 with the session still registered. The skipped `emitHealth` is the whole of what killed F3, so
+  53 is a small well-aimed change rather than a hunt.
+- 53 and 48 are the same omission on two paths (the pump path and the start path); fix them as one
+  shape rather than twice. 49 is the state that makes a second attempt inherit the first one's
+  corpse. 50 is a different subsystem and may be taken separately, but it gates the latency clause.
+- Three decisions must be recorded BEFORE the patches - overrun as failure vs degradation, whether a
+  failed lane may recover, and what bounds a runaway decode. The first two are one question asked at
+  two layers; answering them separately is how the earlier cycles produced relocated failures.
+- **The gate is the two red runs, not the unit suite.** F1 and F3 must both go green with candidate
+  51's harness fix in place, so the speaker-label clause is meaningfully verified rather than
+  confounded by the echo. A green unit suite has never once predicted this path.
+- Supervisor state check at authorization time: loop RUNNING (pid 14512, run 20260728-181020,
+  iteration 12 of 30), `main` `fc7097d`, tree clean, 0 tracked product files changed since the fifth
+  merge, four-way SHA 4/4. The loop will pick this amendment up on its next iteration; no relaunch.
