@@ -15,7 +15,13 @@ from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT, load_audio_i
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
 from .model_runner import StatusCallback, TranscriptionResult, generation_progress
-from .transcription_outcome import EmptyTranscriptionError
+from .transcription_outcome import EmptyTranscriptionError, TransientTranscriptionError
+
+
+# Statuses that describe the server's condition rather than the request's merits, so the same
+# request may be answered on a later attempt. Every other status is a verdict on the request
+# itself and would be returned identically forever.
+_RETRYABLE_HTTP_STATUSES = frozenset({408, 425, 429})
 
 
 class VllmRunner:
@@ -176,9 +182,22 @@ class VllmRunner:
                     return {"text": raw}
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"vLLM request failed with HTTP {exc.code}: {detail}") from exc
+            message = f"vLLM request failed with HTTP {exc.code}: {detail}"
+            # The status decides, and it decides here: downstream can classify an exception
+            # type but never a message string, and this is the only place the code is in hand.
+            if _is_retryable_status(exc.code):
+                raise TransientTranscriptionError(message) from exc
+            raise RuntimeError(message) from exc
         except urllib.error.URLError as exc:
-            raise RuntimeError(f"Failed to connect to vLLM API: {exc.reason}") from exc
+            # The request never reached an answer -- refused, reset, unresolved, timed out.
+            raise TransientTranscriptionError(f"Failed to connect to vLLM API: {exc.reason}") from exc
+        except TimeoutError as exc:
+            # A read that ran out of time escapes `urlopen` unwrapped.
+            raise TransientTranscriptionError(f"vLLM request timed out: {exc}") from exc
+
+
+def _is_retryable_status(code: int) -> bool:
+    return code in _RETRYABLE_HTTP_STATUSES or 500 <= int(code) < 600
 
 
 def _media_to_wav_bytes(path: str | Path) -> bytes:

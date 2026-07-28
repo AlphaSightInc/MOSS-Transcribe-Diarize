@@ -15,7 +15,7 @@ from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_session import CanonicalResult, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
 from .live_span_bounds import span_segments
-from .transcription_outcome import EmptyTranscriptionError
+from .transcription_outcome import EmptyTranscriptionError, TransientTranscriptionError
 
 
 class LiveProviderError(RuntimeError):
@@ -24,6 +24,17 @@ class LiveProviderError(RuntimeError):
 
 class LiveProviderAdmissionError(LiveProviderError):
     pass
+
+
+class LiveProviderTransientError(LiveProviderError):
+    """The decoder did not answer for this span, and the same bytes may decode later.
+
+    A `LiveProviderError` subclass so that every caller which already treats a decode
+    failure as a failure keeps doing so; the subclass exists so the one caller that can act
+    on the difference -- the live coordinator, which owns the span -- can offer the span
+    again instead of ending the meeting. What is transient is decided by the exception the
+    runner raises, never by its message.
+    """
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,9 +257,18 @@ class RunnerBoundedWavInference:
                 )
             except LiveProviderError:
                 raise
+            except (TransientTranscriptionError, ConnectionError, TimeoutError) as exc:
+                # The request never got an answer. The bare exception types are here so this
+                # holds for any runner, not only the one that types its own transport
+                # failures: a reset socket and an expired deadline mean the same thing
+                # whoever raises them.
+                raise LiveProviderTransientError(
+                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}"
+                ) from exc
             except Exception as exc:
                 # Nothing leaves this seam unclassified. A decoder that failed is not a span
-                # with nothing to say, and must stay distinguishable from one.
+                # with nothing to say, and must stay distinguishable from one -- and from a
+                # decoder that merely blinked.
                 raise LiveProviderError(
                     f"canonical decode failed: {exc.__class__.__name__}: {exc}"
                 ) from exc

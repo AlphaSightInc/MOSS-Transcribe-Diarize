@@ -4783,3 +4783,130 @@ it did before:
 - Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
 - Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
   green.
+
+## Iteration 11 (run 20260728-112922) - J3: a decoder that did not answer is not one that failed
+Target: candidate 40 / J3 - "a transient decoder failure is terminal", the third item of the third
+prd.md amendment (Phase J, the live path's terminal-failure policy). It was flagged "do this next"
+by iteration 10 and is the last fix class before J4 (reason) and J5 (gate/merge/redeploy).
+Result: FIXED on the branch, offline evidence only. Phase J now has one item left before its gate.
+
+Why this candidate: the amendment names it, iteration 10 left it as the next item with its starting
+facts already verified, and it is the fifth instance of the one shape the third amendment exists to
+settle - a non-fatal condition on the live path treated as fatal.
+
+Files touched:
+  moss_transcribe_diarize/app/transcription_outcome.py  + TransientTranscriptionError
+  moss_transcribe_diarize/app/vllm_runner.py            _post_multipart classifies by status;
+                                                        + _is_retryable_status, + TimeoutError arm
+  moss_transcribe_diarize/app/live_adapters.py          + LiveProviderTransientError; transcribe_pcm
+                                                        maps it and bare ConnectionError/TimeoutError
+  moss_transcribe_diarize/app/live_coordinator.py       + DECODE_ATTEMPTS_PER_SPAN (2),
+                                                        MAX_CONSECUTIVE_UNANSWERED_SPANS (3),
+                                                        DECODER_DID_NOT_ANSWER; + _decode(),
+                                                        _unanswered_span(); prepare_work_item routes
+  tests/test_live_pipeline_seams.py                     +12 nodes (32 -> 44); StubbedTransportVllmRunner
+                                                        now stubs urlopen, not _post_multipart;
+                                                        + CannedHttpResponse, FailingTransport
+  scripts/ralph-afk/context.md                          transient-decode contract block; branch state,
+                                                        scoreboard, test totals; candidate 40 done,
+                                                        41 (J4) flagged next with three inputs;
+                                                        candidate 36's resolution recorded; Validation
+                                                        gained J3's red/green recipe
+  scripts/ralph-afk/progress.txt                        this entry
+
+### The ruling, stated once
+A FAILURE A LATER ATTEMPT COULD ANSWER DIFFERENTLY IS TRANSIENT AND DEGRADES; A FAILURE ANY LATER
+ATTEMPT WOULD ANSWER IDENTICALLY IS PERMANENT AND STAYS TERMINAL. AN OUTAGE THAT DOES NOT END IS NOT
+TRANSIENT HOWEVER IT STARTED.
+The classification is made where the evidence is - `vllm_runner._post_multipart`, the one place that
+still holds the HTTP status. Before this it flattened HTTP 4xx, HTTP 5xx and every URLError into a
+single bare RuntimeError whose only distinguishing feature was English prose, so no downstream code
+could classify without parsing a message. Transient: 408/425/429, every 5xx, any URLError (refused,
+reset, unresolved, timed out) and a bare TimeoutError from a slow read. Permanent: every other
+status - a verdict on the request itself, which would be returned identically forever.
+`LiveProviderTransientError` subclasses `LiveProviderError`, so every existing caller that treats a
+decode failure as a failure is unchanged; only the coordinator, which owns the span, acts on it.
+`transcribe_pcm` also maps bare ConnectionError/TimeoutError so the rule holds for ANY runner, not
+just the one that types its own transport failures.
+The policy is in the coordinator, the same single decision point J2 used:
+  DECODE_ATTEMPTS_PER_SPAN = 2. The bytes are identical and nothing is committed until an attempt
+    answers, so a retry can only add an answer - it can never publish a span twice. No delay: what
+    this recovers is a dropped connection, and a decoder that is gone refuses instantly.
+  MAX_CONSECUTIVE_UNANSWERED_SPANS = 3, RESET BY ANY SPAN THAT DECODES. Below the line a span is
+    committed empty with empty_reason="decoder_did_not_answer" (H1's accounting path, so stop can
+    still drain); at it, a LiveProviderError naming the consecutive count ends the session.
+Why a count of spans and not a timer: no clock in the coordinator, the unit is what the policy is
+about, and it separates "a blip every few minutes" from "the GPU is gone" without a wall-time
+threshold. At the 2.5 s span cap the worst case is ~7.5 s of blank meeting before the outage is named.
+H1's line survives: a dead decoder still may not render as a blank meeting - it renders as at most
+two empty spans and then a named terminal failure.
+
+### Commands and results
+python3 -m pytest tests/test_live_pipeline_seams.py -q  -> 44 passed (32 + 12)
+python3 -m pytest tests -q                              -> 583 passed / 2 skipped / 368 subtests
+                                                           in 59.6 s (was 571/2/368; delta +12)
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 -> rc=0, unchanged by this fix
+# red proof, no git history touched, restore sha256-verified 7d365b24... both ways:
+cp moss_transcribe_diarize/app/vllm_runner.py /tmp/j3-fixed/
+git show HEAD:moss_transcribe_diarize/app/vllm_runner.py > moss_transcribe_diarize/app/vllm_runner.py
+python3 -m pytest tests/test_live_pipeline_seams.py -q
+  -> 7 failed / 37 passed. Exactly the seven transient nodes; the four permanent status rows stay
+     green, which is itself the proof that the 400/401/404 path was not touched. The red is the
+     deployed failure verbatim: LiveServiceFailureRecord(kind=integrity, code='LiveProviderError',
+     message='canonical decode failed: RuntimeError: Failed to connect to vLLM API:
+     [Errno 104] Connection reset by peer', retryable=False, detail=None).
+cp /tmp/j3-fixed/vllm_runner.py moss_transcribe_diarize/app/vllm_runner.py  -> sha256 equal
+No Swift source changed, so `swift test` was not re-run; J5's gate re-measures it.
+
+### The twelve nodes
+- an eight-row status table through the REAL runner (URLError, 503, 429, 500, TimeoutError transient;
+  400, 401, 404 permanent), asserting the type rather than the message.
+- one dropped connection mid-meeting: two spans, both published with their words, THREE transport
+  attempts for them - the retry is visible in the count, not inferred.
+- a 503 outage: two spans degrade (empty, named, accounted), the third ends the session, the message
+  carries both "consecutive spans" and "503", and the attempt count is exactly 3 x 2.
+- a meeting that blinks five times but never three in a row: alive, four named-empty spans, two with
+  words, committed == accounted.
+- a 400: terminal at the first span after EXACTLY ONE attempt - the discriminator that proves this is
+  not a retry-everything.
+One existing node was re-pointed: test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say used a
+ConnectionResetError as its example of a failed decoder. That input is transient by this ruling, so
+it now uses ValueError("model weights are not loaded") and additionally asserts the error is NOT
+transient. Same claim, an example that still means it.
+
+### Learned
+1. **THE STUB WAS SITTING ON THE CODE UNDER TEST.** The first version of the transient nodes passed
+   nothing: StubbedTransportVllmRunner overrides `_post_multipart`, which is exactly where the status
+   code becomes a typed outcome, so the tests exercised the stub's own re-raise. Moving the stub down
+   one layer - `urlopen`, with a CannedHttpResponse or a factory that raises a fresh exception per
+   attempt - made the product's request build, response unpack and transport classification all real,
+   and every earlier node in the file gained that coverage for free. The rule this file already
+   states ("stub only what is genuinely off-host") had drifted one layer too high, and only a test
+   that needed the lower layer could notice.
+2. **A retry is safe exactly when nothing has been committed and the input is fixed.** The span's PCM
+   is already frozen and retained, and no session state moves until submit, so a second attempt has
+   no way to double-publish. That is why the retry could go in without a dedup key or an idempotency
+   token - the ordering the session already enforces is doing that work.
+3. **Per-span rulings cannot express "it never came back".** Committing an unanswered span empty is
+   right for one span and wrong for a hundred. The consecutive counter is the smallest thing that
+   makes both true, and it has to be reset by success or a long meeting accumulates its way to a
+   terminal failure with no outage anywhere in it - which is the node that proves it.
+
+- Next: **J4** (candidate 41) - `reason` must reach the failure detail and the canonical_processed
+  event. Three concrete inputs are now on the table, all verified this iteration:
+  (i) `_failure_from_exception` (live_service_runtime.py:801-810) falls through to
+  code=exc.__class__.__name__, so J3's own outage arrives as code='LiveProviderError' with
+  detail=None and only its message carries the facts;
+  (ii) submit_prepared_canonical still returns bare False for six conditions all reported as
+  canonical_not_submitted, and after J2 the only reachable one is a stale preparation - so the code
+  now positively misnames it;
+  (iii) BoundedCausalIdentityPreparer's `reason` still dies in an uncommitted proposed snapshot, and
+  after J2 it is the only thing that distinguishes an abstention from an evidence-provider outage.
+  Then J5: real-seam coverage review, both probes against the deployed service, full Swift/Python
+  gate, the single authorized merge (expected_main 317df4d..., advanced in-script), push, redeploy.
+- **Not done here, deliberately:** J3's real-audio confirmation on the host. The fix is not deployed
+  and the freeze forbids deploying it before Phase J's merge, so it is J5's gate - the same deferral
+  J1 and J2 recorded. It costs no human step when it comes.
+- Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
+- Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
+  green - the same rule that has now held five times.

@@ -91,10 +91,13 @@ the new leaf `moss_transcribe_diarize/app/live_span_bounds.py` and called from a
 the branch carries tracked server source again, strictly within Phase J's scope. See the span-bound
 contract block. Iteration 10 landed **J2** — a non-`prepared` identity preparation now publishes the
 span's words with no speaker attributed instead of ending the meeting — which removes the *last*
-blocker-4 input class on this path. See the unresolved-identity contract block.
+blocker-4 input class on this path. See the unresolved-identity contract block. Iteration 11 landed
+**J3** — a decoder that did not answer is now told apart from one that failed, retried once, and
+degraded rather than made terminal — which closes candidate 36 and leaves J4 and J5 in Phase J. See
+the transient-decode contract block.
 
-**PRD acceptance scoreboard after iteration 10 of run 20260728-112922** (iteration 10 moved no
-scoreboard line either — J1 and J2 are fixes awaiting Phase J's gate, merge and redeploy).
+**PRD acceptance scoreboard after iteration 11 of run 20260728-112922** (iteration 11 moved no
+scoreboard line either — J1, J2 and J3 are fixes awaiting Phase J's gate, merge and redeploy).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
@@ -110,7 +113,8 @@ certification, the 16-minute soak, the run-time half of secret hygiene, and the 
 on the deployed build; the second amendment fixed those three blockers (H3, H1, H2) and iteration 6
 deployed them; and iteration 7's gate run then found a **fourth** blocker on the same seam — see the
 H4d block. Phase J is now authorized and **J1 (iteration 9) and J2 (iteration 10) close both of
-blocker 4's input classes on the branch**; the path stays gated until J3-J4 land and Phase J's
+blocker 4's input classes on the branch, and J3 (iteration 11) closes the transient-decoder class
+that would have been the fifth**; the path stays gated until J4 lands and Phase J's
 gate/merge/redeploy (J5) put them on the host. So the certification path is gated on **Phase J**, not on the operator: E3's physical
 TCC clicks stay unspent, because a canary against a service that dies at the first 2.5 s of
 continuous speech would burn the one irreducible human step for nothing. This is the third time the
@@ -119,9 +123,9 @@ driven end to end. Iteration 8 put a number on that judgement: at the measured 6
 rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 now would most likely
 buy one aborted run.
 Test totals on the branch: Swift **139 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **571 passed / 2 skipped / 368 subtests**
-including `tests/test_live_pipeline_seams.py` **32 passed** (new in run 20260728-112922 iteration 1,
-+5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10),
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **583 passed / 2 skipped / 368 subtests**
+including `tests/test_live_pipeline_seams.py` **44 passed** (new in run 20260728-112922 iteration 1,
++5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10, +12 in iteration 11),
 `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -410,6 +414,64 @@ code='canonical_not_submitted', retryable=False, detail={'span_id': 0, 'identity
 — the same 409 H4d's probe received. The restore is sha256-verified
 (`667caa64…` both ways). `live-hardcap-repro.py --frames 8` unchanged at rc=0.
 **Not yet observed on the host.** Like J1, the real-audio confirmation belongs to J5's gate.
+
+**Transient-decode contract (new, iteration 11 / J3). A decoder that did not answer is not a decoder
+that failed.** *The rule: a failure a later attempt could answer differently is transient and
+degrades; a failure any later attempt would answer identically is permanent and stays terminal. An
+outage that does not end is not transient however it started.* Four files, each holding the part of
+the question it owns:
+- `transcription_outcome.TransientTranscriptionError` — the shared vocabulary, beside
+  `EmptyTranscriptionError` and a `RuntimeError` for the same reason: batch callers that treat any
+  runner failure as fatal are unchanged.
+- `vllm_runner._post_multipart` — **the classification is made where the status code is still in
+  hand.** HTTP 408/425/429 and every 5xx, plus any `URLError` (refused, reset, unresolved, timed out)
+  and a bare `TimeoutError` from a slow read, raise the transient type; every other status keeps the
+  bare `RuntimeError`. Before this the runner flattened *all* of them into one `RuntimeError` whose
+  only distinguishing feature was English prose, so no downstream code could classify without parsing
+  a message.
+- `live_adapters.LiveProviderTransientError(LiveProviderError)` — a subclass, so every existing
+  caller that treats a decode failure as a failure is unchanged and only the one caller that can act
+  on the difference sees it. `transcribe_pcm` also maps bare `ConnectionError`/`TimeoutError`, so the
+  rule holds for any runner, not only the one that types its own transport failures.
+- `live_coordinator` — the policy, and the same single decision point J2 used.
+  `DECODE_ATTEMPTS_PER_SPAN` = 2 (the bytes are identical and nothing is committed until an attempt
+  answers, so a retry can only add an answer; no delay, because what this recovers is a dropped
+  connection and a decoder that is gone refuses instantly). `MAX_CONSECUTIVE_UNANSWERED_SPANS` = 3,
+  **reset by any span that decodes** — at most ~7.5 s of blank meeting at the 2.5 s span cap before
+  the outage is named. Below that line a span commits **empty** with
+  `empty_reason="decoder_did_not_answer"` (H1's accounting path, so `stop` can still drain); at it,
+  a `LiveProviderError` naming the consecutive count ends the session.
+*Why the count and not a timer:* it needs no clock in the coordinator, it is measured in the unit the
+policy is about (spans), and it makes "a blip every few minutes" and "the GPU is gone" different
+things without either one being a threshold on wall time.
+*What this preserves from H1:* a dead decoder still may not render as a blank meeting — it renders as
+at most two empty spans and then a terminal failure that names the outage.
+*The seam's own stub was the defect's hiding place.* `StubbedTransportVllmRunner` replaced
+`_post_multipart` — exactly where the status code becomes a typed outcome — so a failure node using it
+would have tested the stub. It now replaces only `urlopen` (a `CannedHttpResponse` or a
+`FailingTransport` factory that raises a fresh exception per attempt), so the product's request
+build, response unpack and transport classification are all real. **Every earlier node in the file
+gained that coverage for free.**
+*Twelve nodes in `tests/test_live_pipeline_seams.py`* (32 → 44): the eight-row status table through
+the real runner, one dropped connection mid-meeting costing one retry and not the meeting, a 503
+outage degrading two spans and then ending the session named, a meeting that blinks five times but
+never three in a row surviving with all its words, and a 400 that is terminal after **exactly one**
+attempt — the discriminator that proves this is not a retry-everything.
+*One test had to be re-pointed, the honest cost:*
+`test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say` used a `ConnectionResetError` as its
+example of a decoder that failed. That input is now transient by ruling, so the node uses a
+`ValueError("model weights are not loaded")` and additionally asserts the error is **not** transient.
+*Red/green rehearsed offline (MacStudio, no server):* restoring **only** `vllm_runner.py` from `HEAD`
+(the other three files' new names are imported by the test module, so restoring them would produce a
+collection error and prove nothing — J2's lesson, applied) turns exactly the seven transient nodes
+red, the four permanent status rows and everything else green. The red is the deployed failure
+verbatim: `LiveServiceFailureRecord(kind=integrity, code='LiveProviderError', message='canonical
+decode failed: RuntimeError: Failed to connect to vLLM API: [Errno 104] Connection reset by peer')`.
+Restore sha256-verified (`7d365b24…` both ways). `live-hardcap-repro.py --frames 8` unchanged at rc=0.
+*Left for J4, deliberately:* the terminal failure's `code` is still the exception class name
+(`LiveProviderError`) and its `detail` is `None`. The **message** names the outage and the status, so
+nothing is lost, but the machine-readable half of "name it" is J4's item, not J3's.
+**Not yet observed on the host.** Like J1 and J2, real-audio confirmation belongs to J5's gate.
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -1889,6 +1951,12 @@ python3 -m pytest tests/test_live_pipeline_seams.py -q
 # blast radius is five nodes across three files, so run them together:
 #   python3 -m pytest tests/test_live_pipeline_seams.py tests/test_live_coordinator.py \
 #           tests/test_live_replay.py -q            # 5 failed / 36 passed before, 41 passed after
+# J3 (iteration 11) adds 12 more -> 44 passed (~3.6 s). Red-prove it by restoring ONLY
+# vllm_runner.py: TransientTranscriptionError, LiveProviderTransientError and the coordinator's three
+# policy constants are all imported by the test module, so restoring their files breaks collection
+# instead of behaviour. With no transient classification at the source the whole chain reverts, so
+# this one restore reds all seven transient nodes (7 failed / 37 passed) while the four permanent
+# status rows stay green - which is also the proof that the 400/401/404 path was never touched.
 
 # --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
 #     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived.
@@ -2520,7 +2588,9 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
     leading-silence span and a pure-silence meeting that stops with exact accounting. Red/green
     rehearsed; H2's offline repro is bit-for-bit unchanged by it. See the empty-span decode contract
     block above.
-    *Left open by it, deliberately:* a transient decoder failure is still terminal - candidate 36.
+    *Left open by it, deliberately:* a transient decoder failure is still terminal - candidate 36,
+    closed as J3 in iteration 11. Its "only the HTTP hop is a stand-in" is also now literally true:
+    J3 moved the stub down to `urlopen`, because `_post_multipart` is where the status is classified.
 33. **H2 - two independent hard-cap freezers collide** `[done - run 20260728-112922 iteration 3]`.
     Resolved by the first of the two readings: the endpoint policy is the single authority and
     `LiveSession` no longer partitions audio at all - the `hard_cap_samples` parameter, the attribute
@@ -2592,6 +2662,12 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
     **Iteration 7 makes this cheaper to fix than to defer:** it is the same "a non-fatal outcome is
     treated as fatal" shape as candidate 37, on the same code path, and one amendment could settle
     both classification questions at once.
+    *How J3 answered it, and where it departed from this entry:* the bounded per-span retry is as
+    written, but the span **is** committed empty afterwards - with `empty_reason` naming it - because
+    an uncommitted span strands `stop` on accounting (H1's constraint, which this entry predates).
+    The "blank meeting" concern is met by the *consecutive* count instead: two degraded spans is the
+    most a session can publish before the outage is declared terminal and named, and any span that
+    decodes resets it. A per-span rule alone could not have separated a hiccup from a dead GPU.
 
 37. **Blocker 4 - a span whose speech reaches its end is terminal** `[superseded by Phase J; the
     third amendment landed. (a) is DONE as J1 in iteration 9; (b) is J2 and (c) is J4 - work them
@@ -2665,18 +2741,28 @@ and 37 are folded in here; settle them together or the next gate run finds the f
     in `tests/test_live_pipeline_seams.py` plus one in `tests/test_live_replay.py`; three tests that
     used an abstention to *manufacture* a terminal failure were re-pointed at a genuinely stale
     preparation. See the unresolved-identity contract block above.
-40. **J3 - a transient decoder failure must not be terminal** (was candidate 36) `[open - do this
-    next]`. Same shape, same path, and the last fix before J4/J5. H1 deliberately kept a genuinely
-    failed decoder terminal so a dead GPU cannot render as a blank meeting - preserve that
-    distinction: transient and retryable degrade, permanent stays terminal and named.
-    *Where it stands after J2:* `live_service_runtime._process_in_flight_item` turns **every**
-    exception from `prepare_work_item` into `_failure_from_exception`, and
-    `RunnerBoundedWavInference.transcribe_pcm` wraps the runner's `ConnectionResetError` (and every
-    other exception) into one untyped `LiveProviderError`. So a socket reset mid-meeting and a
-    permanently misconfigured endpoint are indistinguishable today; that classification is the work.
-41. **J4 - `reason` must survive.** It must reach the failure detail and the `canonical_processed`
-    event. H4d cost a host-side probe precisely because the process classified the refusal correctly
-    and then discarded the one word naming it; H1/H3 were easier because they left tracebacks.
+40. **J3 - a transient decoder failure must not be terminal** (was candidate 36) `[done - run
+    20260728-112922 iteration 11]`. Answered as the candidate asked and generalized one step: the
+    distinction is drawn on **whether a later attempt could answer differently**, typed at the source
+    (`vllm_runner` classifies by status code, where the code is still in hand) rather than sniffed
+    from a message downstream. A transient span is retried once, then committed empty and named
+    (`decoder_did_not_answer`); three consecutive unanswered spans end the session naming the outage,
+    which is how H1's "a dead GPU may not render as a blank meeting" survives. Twelve nodes; the
+    file's own stub was fixed to replace only `urlopen`, because it had been replacing the classifier
+    itself. See the transient-decode contract block above.
+41. **J4 - `reason` must survive** `[open - do this next]`. It must reach the failure detail and the
+    `canonical_processed` event. H4d cost a host-side probe precisely because the process classified
+    the refusal correctly and then discarded the one word naming it; H1/H3 were easier because they
+    left tracebacks.
+    *Where it stands after J3:* three concrete inputs are on the table. (i) `_failure_from_exception`
+    (`live_service_runtime.py:801-810`) falls through to `code=exc.__class__.__name__`, so J3's
+    decoder outage arrives as `code='LiveProviderError'` with `detail=None` and only its message
+    carries the facts. (ii) `submit_prepared_canonical` still returns bare `False` for **six**
+    distinct conditions, all reported as `canonical_not_submitted` (iteration 8's finding, and after
+    J2 the only reachable one is a stale preparation - so the code now lies about *which* it was).
+    (iii) `BoundedCausalIdentityPreparer`'s `reason` still dies in an uncommitted proposed snapshot;
+    after J2 it is what distinguishes an abstention from an evidence-provider outage, and it reaches
+    nothing.
 42. **J5 - real-seam coverage, then gate/merge/redeploy.** Nothing in the repo puts the real
     decoder's timestamps under the real identity preparer. Add nodes to
     `tests/test_live_pipeline_seams.py` for each of J1-J3, red before and green after, restoring

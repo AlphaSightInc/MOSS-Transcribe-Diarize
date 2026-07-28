@@ -15,6 +15,11 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import io
+import json
+import urllib.error
+import urllib.request
+from unittest import mock
 
 import pytest
 
@@ -25,11 +30,17 @@ from moss_transcribe_diarize.app.live_adapters import (
     InferenceTranscript,
     LiveProviderConfig,
     LiveProviderError,
+    LiveProviderTransientError,
     RunnerBoundedWavInference,
     admit_live_provider,
 )
 from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter
-from moss_transcribe_diarize.app.live_coordinator import LiveCoordinator
+from moss_transcribe_diarize.app.live_coordinator import (
+    DECODE_ATTEMPTS_PER_SPAN,
+    DECODER_DID_NOT_ANSWER,
+    MAX_CONSECUTIVE_UNANSWERED_SPANS,
+    LiveCoordinator,
+)
 from moss_transcribe_diarize.app.live_endpoint import (
     EndpointPolicy,
     EndpointPolicyConfig,
@@ -304,13 +315,46 @@ def test_a_provider_config_that_declares_two_different_span_caps_is_refused():
 # --------------------------------------------------------------------------------------
 
 
+class CannedHttpResponse:
+    """What `urlopen` hands back, with the model's answer already in it."""
+
+    def __init__(self, payload: dict):
+        self.headers = {"Content-Type": "application/json"}
+        self._body = json.dumps(payload).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+    def read(self) -> bytes:
+        return self._body
+
+
+class FailingTransport:
+    """The socket refusing, the way the network and the backend actually refuse.
+
+    A factory rather than one exception instance, so every attempt raises a fresh one: a
+    retried span must not pass merely because an earlier attempt already read the error body.
+    """
+
+    def __init__(self, factory):
+        self.factory = factory
+
+    def __call__(self):
+        raise self.factory()
+
+
 class StubbedTransportVllmRunner(VllmRunner):
-    """The product runner with only its HTTP hop replaced by a canned answer.
+    """The product runner with only its *socket* replaced.
 
     Everything the live path actually runs stays real: the wav the coordinator wrote is
-    read back through `_media_to_wav_bytes`, the response is unpacked by the product's own
-    code, and `_validate_transcription_response` -- the seam F0 caught -- decides. Only the
-    GPU on the other side of the socket is a stand-in.
+    read back through `_media_to_wav_bytes`, `_post_multipart` builds the request, unpacks
+    the response and classifies transport failures, and `_validate_transcription_response`
+    -- the seam F0 caught -- decides. Only what is on the other side of the socket is a
+    stand-in. Replacing `_post_multipart` instead would put the stub exactly where the
+    status code is turned into a typed outcome, i.e. it would test the stub.
     """
 
     def __init__(self, responses):
@@ -319,9 +363,33 @@ class StubbedTransportVllmRunner(VllmRunner):
         self.decoded_wav_bytes: list[int] = []
 
     def _post_multipart(self, url, *, file_bytes, **kwargs):
-        del url, kwargs
         self.decoded_wav_bytes.append(len(file_bytes))
-        return self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
+        answer = self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
+
+        def urlopen(request, timeout=None):
+            del request, timeout
+            if callable(answer):
+                return answer()
+            return CannedHttpResponse(answer)
+
+        with mock.patch.object(urllib.request, "urlopen", urlopen):
+            return super()._post_multipart(url, file_bytes=file_bytes, **kwargs)
+
+
+def _http_error(code: int, detail: bytes = b"backend is busy") -> FailingTransport:
+    return FailingTransport(
+        lambda: urllib.error.HTTPError(
+            "http://vllm.seam.test:8000/v1/audio/transcriptions",
+            code,
+            "error",
+            {},
+            io.BytesIO(detail),
+        )
+    )
+
+
+def _connection_reset() -> FailingTransport:
+    return FailingTransport(lambda: urllib.error.URLError(ConnectionResetError(104, "Connection reset by peer")))
 
 
 # The three answers that mean "the model produced nothing for this audio". The third is the
@@ -556,19 +624,203 @@ def test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say():
     Nothing leaves the decode seam unclassified -- that is what made the bare `RuntimeError`
     fatal -- but a decoder that *failed* must not be silently committed as silence either,
     or a dead GPU would render as a blank meeting. It is named, and it stays terminal.
+
+    The example here is a decoder that cannot work at all. A decoder that merely did not
+    answer is the other half of the same seam and answers differently; see the transient
+    nodes below.
     """
 
-    class FailingRunner:
+    class BrokenRunner:
         def transcribe(self, *args, **kwargs):
-            raise ConnectionResetError("vLLM socket closed")
+            raise ValueError("model weights are not loaded")
 
-    decoder = RunnerBoundedWavInference(FailingRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    decoder = RunnerBoundedWavInference(BrokenRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
 
     with pytest.raises(LiveProviderError) as caught:
         decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
 
-    assert "ConnectionResetError" in str(caught.value)
-    assert isinstance(caught.value.__cause__, ConnectionResetError)
+    assert not isinstance(caught.value, LiveProviderTransientError)
+    assert "ValueError" in str(caught.value)
+    assert isinstance(caught.value.__cause__, ValueError)
+
+
+# --------------------------------------------------------------------------------------
+# The transient-decoder seam: a decoder that did not answer is not a decoder that failed.
+# The classification is made from the exception the runner raises -- never from its message
+# -- and only the coordinator, which owns the span, acts on it.
+# --------------------------------------------------------------------------------------
+
+GOOD_RESPONSE = {"text": "[0.00][S01]hello there[1.10]", "usage": {"prompt_tokens": 3, "completion_tokens": 9}}
+
+# Frames alternating silence and speech, which the deployed endpoint policy cuts into one
+# span per transition. Six spans is enough to blink through, recover, and blink again.
+ALTERNATING_SPEECH = (False, True, False, True, False, True, False)
+
+
+@pytest.mark.parametrize(
+    "answer, transient",
+    [
+        (_connection_reset(), True),
+        (_http_error(503), True),
+        (_http_error(429), True),
+        (_http_error(500), True),
+        (FailingTransport(lambda: TimeoutError("timed out")), True),
+        (_http_error(400, b"malformed multipart"), False),
+        (_http_error(401, b"no"), False),
+        (_http_error(404, b"no such route"), False),
+    ],
+)
+def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+    """One table, drawn where the status code is still in hand.
+
+    Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+    message, so the live path could not tell "the socket dropped" from "the request is
+    wrong" without parsing English. The status decides, and it decides at the source.
+    """
+    decoder = RunnerBoundedWavInference(
+        StubbedTransportVllmRunner([answer]),
+        max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+    )
+
+    with pytest.raises(LiveProviderError) as caught:
+        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
+
+    assert isinstance(caught.value, LiveProviderTransientError) is transient
+
+
+def test_a_decoder_that_blinks_costs_one_retry_and_not_the_meeting():
+    """The ordinary case this whole node exists for: one dropped connection mid-meeting.
+
+    The span's bytes are unchanged and nothing has been committed, so offering them again
+    is free of consequence -- and it is the only thing that keeps the words. Before this,
+    a single `ConnectionResetError` from the vLLM socket ended the meeting.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[_connection_reset(), GOOD_RESPONSE],
+        speech=(False, False, True, True, False),
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(5):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    # Two spans, both published with their words -- and three transport attempts for them,
+    # because the first span was offered twice.
+    assert len(runner.decoded_wav_bytes) == 3
+    assert len(snapshot.session.committed) == 2
+    assert all("hello there" in item.transcript for item in snapshot.session.committed)
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["empty_reason"] for event in processed] == [None, None]
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples == 33600
+
+
+def test_an_outage_that_outlives_transience_ends_the_meeting_and_says_so():
+    """The line H1 drew, kept: a dead decoder may not render as a blank meeting.
+
+    Each unanswered span degrades on its own -- committed empty, named, accounting intact --
+    but a decoder that answers nothing is not transient however it started. The
+    *consecutive* count is what separates the two, and the terminal failure names the
+    condition rather than reporting some span as unsubmittable.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[_http_error(503)],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    # The spans before the last one degraded: empty, named, and accounted for.
+    assert [event["empty_reason"] for event in processed] == [DECODER_DID_NOT_ANSWER] * (
+        MAX_CONSECUTIVE_UNANSWERED_SPANS - 1
+    )
+    assert [event["submitted"] for event in processed] == [True] * (MAX_CONSECUTIVE_UNANSWERED_SPANS - 1)
+    assert [item.transcript for item in snapshot.session.committed] == [""] * (
+        MAX_CONSECUTIVE_UNANSWERED_SPANS - 1
+    )
+
+    assert snapshot.terminal_failure is not None
+    assert "consecutive spans" in snapshot.terminal_failure.message
+    assert "503" in snapshot.terminal_failure.message
+    # Every span was offered the full number of attempts, and the meeting ended on the
+    # first span that could not be degraded any further -- not on the first failure.
+    assert len(runner.decoded_wav_bytes) == MAX_CONSECUTIVE_UNANSWERED_SPANS * DECODE_ATTEMPTS_PER_SPAN
+
+
+def test_a_span_that_decodes_resets_the_outage_count():
+    """Blinking is not an outage, however often the decoder blinks.
+
+    A count that only ever rose would turn a long meeting with an occasional hiccup into a
+    terminal failure with no outage anywhere in it. Five unanswered spans here, never three
+    in a row, and the meeting keeps every word it was given.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    blink = _connection_reset()
+    runtime, runner = _decode_seam_runtime(
+        responses=[blink, blink, blink, blink, GOOD_RESPONSE, blink, blink, blink, blink, GOOD_RESPONSE],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["empty_reason"] for event in processed] == [
+        DECODER_DID_NOT_ANSWER,
+        DECODER_DID_NOT_ANSWER,
+        None,
+        DECODER_DID_NOT_ANSWER,
+        DECODER_DID_NOT_ANSWER,
+        None,
+    ]
+    assert all(event["submitted"] for event in processed)
+    # Nothing is lost to a degraded span: the committed prefix still covers every sample
+    # the session accepted, which is what lets `stop` drain.
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples
+    assert sum("hello there" in item.transcript for item in snapshot.session.committed) == 2
+
+
+def test_a_request_the_backend_refuses_on_its_merits_is_terminal_without_a_retry():
+    """The other half of the ruling, and the discriminator that proves it is not a retry-all.
+
+    A 400 would be a 400 forever, so offering the span again would only spend the meeting's
+    time to learn the same thing. Exactly one transport attempt, and the session is terminal
+    at the first span.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[_http_error(400, b"malformed multipart")],
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is not None
+    assert "400" in snapshot.terminal_failure.message
+    assert "consecutive" not in snapshot.terminal_failure.message
+    assert len(runner.decoded_wav_bytes) == 1
+    assert snapshot.session.committed == ()
 
 
 def _span(span_id: int, sample_count: int) -> FrozenSpan:
