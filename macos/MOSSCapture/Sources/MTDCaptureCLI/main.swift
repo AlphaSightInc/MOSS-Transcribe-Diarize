@@ -25,7 +25,6 @@ struct MTDCaptureCLI {
             input: pairingPayloadInput,
             standardOutput: StandardOutput(fileHandle: .standardOutput),
             standardError: StandardOutput(fileHandle: .standardError),
-            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: secretStore),
             skipLaunch: ProcessInfo.processInfo.environment["MOSS_CAPTURE_SKIP_LAUNCH"] == "1"
         )
         let exitCode = commandLine.run(arguments: Array(CommandLine.arguments.dropFirst()))

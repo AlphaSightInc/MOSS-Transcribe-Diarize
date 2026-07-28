@@ -190,3 +190,58 @@ there. This loop is the single writer on this repo; the governed aisight-coding-
   while its own TCC prompt is on screen.
 - Next: A2 — move `handoff` into the app dispatcher and strip view-token/pasteboard authority from
   the CLI (discriminator checks 1-4), then the tracer evidence for check 10, then A4.
+
+## Iteration 3 - app-owned UDS handoff (A2)
+- Target: Phase A candidate A2 — move view authority and the pasteboard write out of the CLI and
+  into the app dispatcher (discriminator checks 1-4)
+- Files: `macos/MOSSCapture/Sources/MOSSCaptureCore/{CaptureSecurity,CaptureCommandLine}.swift`,
+  `macos/MOSSCapture/Sources/{MOSSCaptureApp,MTDCaptureCLI}/main.swift`,
+  `macos/MOSSCapture/Tests/{MOSSCaptureCoreTests/CaptureControllerTests.swift,
+  MTDCaptureCLITests/MTDCaptureCLITests.swift}`; `scripts/ralph-afk/{context.md,progress.txt}`
+- Method: `CapturePortalHandoffConfirmation` / `CapturePortalHandoffAdapter` /
+  `PasteboardCapturePortalHandoff` moved from `CaptureCommandLine.swift` to `CaptureSecurity.swift`
+  (a registered path, and where the dispatcher that now owns them lives); the confirmation stopped
+  being its own Codable wire type and became a plain value the dispatcher maps onto a new
+  `ControlChannelResponse.viewAuthority` field, so the CLI relays one response type for every
+  command. `ControlCommandDispatcher` gained an optional `portalHandoff` and `case "handoff"`;
+  `MOSSCaptureApp/main.swift` is the only injector. The CLI's two-round-trip
+  `status`-then-local-handoff path is gone: it now sends one
+  `ControlChannelRequest(command: "handoff")`. `CaptureCLIError` lost
+  `portalHandoffUnavailable`/`pasteboardUnavailable`; those are now `CaptureSecurityError` cases,
+  so `sanitizedControlError` names them without leaking anything.
+- Validation:
+  - `swift build --product mtd-capture` -> OK; `--product MOSSCaptureApp` -> OK
+  - `swift test --package-path macos/MOSSCapture` -> **95 passed, 0 failures** (was 92)
+  - `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_macos_uds_tracer.py -q
+    -p no:cacheprovider` -> **2 passed in 8.48 s**. This is the real evidence: the tracer runs the
+    *built* CLI's `handoff` against the *built* app over real same-user UDS, asserts the exact body
+    `{"ok": true, "sessionID": ..., "portalURL": .../live, "viewAuthority": "copied-to-pasteboard"}`,
+    asserts no secret appears in CLI output, and `_assert_named_pasteboard_matches_store` still
+    matches — the named pasteboard is now written by the app process, not the CLI
+  - `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider` -> **456 passed,
+    2 skipped, 346 subtests** (unchanged, no regression)
+  - `spikes/idea-044-attempt2-red-control/repro.py --target "$PWD"` -> **9/10** (was 5/10);
+    checks 1-4 now PASS
+  - `bash scripts/ralph-afk/validate-phase-a-locality.sh` -> PASS; `git diff --check` -> clean
+- Evidence: new Swift nodes
+  `testAppDispatcherOwnsHandoffAndAnswersWithNonSecretViewAuthorityStatus`,
+  `testHandoffFailsTypedWhenAuthorityIsMissingPasteboardFailsOrNoAdapterIsInjected`,
+  `testOnlyTheAppCompositionRootHoldsViewAuthorityAndPasteboardAccess`,
+  `testCLIHandoffIsOneUDSRequestAndRelaysOnlyTheAppsNonSecretConfirmation` (real UDS server whose
+  handler is a real `ControlCommandDispatcher`), plus inverted source assertions in
+  `testShimCommandsStayControlOnlyAndAudioFrameworkFree`
+- Learned: (1) the missing-authority case must fail *before* the pasteboard is touched, otherwise
+  a half-paired app could clear the user's general pasteboard on every failed `handoff`; asserted
+  by `copyAttempts == 0`. (2) The tracer's exact-dict handoff assertion is what forced the
+  confirmation onto `ControlChannelResponse` rather than a second wire type — `JSONEncoder` omits
+  nil optionals, so the added `viewAuthority` field is invisible to `pair`/`start`/`stop`/`status`
+  and every existing response assertion still holds. (3) Check 10's only missing literal is
+  `MOSSCapture.app`: the tracer already asserts `CFBundleIdentifier`, `sha256` and `codesign`, but
+  against a throwaway per-test `MOSSCaptureTracer.app` under `tmp_path`
+  (`tests/test_macos_uds_tracer.py:408-427`). Check 10 is a real design demand — one immutable
+  first-install lab bundle at a fixed path with reused evidence — not a token to sprinkle in.
+- Blocker: none.
+- Next: A4 step (a) — rebuild the tracer around the fixed lab bundle
+  `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` with first-install `sha256`/`codesign -dr -`
+  evidence captured once and re-asserted unchanged, keeping the M38 JUnit node contract; then A4
+  step (b), the eleven registered commands.

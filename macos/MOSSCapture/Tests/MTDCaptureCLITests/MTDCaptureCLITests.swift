@@ -178,7 +178,7 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(standardError.data.isEmpty)
     }
 
-    func testCLIExplicitHandoffCopiesViewAuthorityWithoutOutputLeak() throws {
+    func testCLIHandoffIsOneUDSRequestAndRelaysOnlyTheAppsNonSecretConfirmation() throws {
         let path = FileManager.default.temporaryDirectory
             .appendingPathComponent("moss-cli-handoff-\(UUID().uuidString)")
             .appendingPathComponent("secrets.json")
@@ -190,54 +190,71 @@ final class MTDCaptureCLITests: XCTestCase {
         }
         let store = try FileCaptureSecretStore(path: path)
         let serverURL = URL(string: "https://moss.example")!
+        try store.saveControlSecret("control-secret")
         try store.saveCaptureServerURL(serverURL)
         try store.saveCaptureSessionID("session-handoff")
         try store.saveCaptureViewToken("view-token-secret")
-        var copiedToken: String?
-        let handoff = PasteboardCapturePortalHandoff(
+        let copiedTokens = CopiedTokenBox()
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: UnusedPairingExchange(),
             sessionStore: store,
-            copyViewToken: {
-                copiedToken = $0
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: store) { viewToken in
+                copiedTokens.append(viewToken)
                 return true
             }
         )
-        let client = RecordingControlChannelClient(
-            response: ControlChannelResponse(ok: true, running: false)
-        )
+        let socketPath = temporarySocketPath()
+        let receivedRequest = ControlRequestBox()
+        let serverFinished = expectation(description: "app answered the CLI handoff request")
+        let server = UnixDomainControlServer(
+            socketPath: socketPath,
+            authenticator: SameUserUDSAuthenticator(secrets: store)
+        ) { request in
+            receivedRequest.store(request)
+            return try dispatcher.dispatch(request)
+        }
+        DispatchQueue.global().async {
+            try? server.serveOnce()
+            serverFinished.fulfill()
+        }
+        try waitForSocket(at: socketPath)
+
         let standardOutput = RecordingCLIOutput()
         let standardError = RecordingCLIOutput()
         let commandLine = CaptureCommandLine(
             launcher: RecordingCaptureAppLauncher(),
             socketChecker: StaticSocketChecker(exists: true),
-            client: client,
+            client: UnixDomainControlClient(socketPath: socketPath, secrets: store),
             input: StaticCLIInput(data: Data()),
             standardOutput: standardOutput,
-            standardError: standardError,
-            portalHandoff: handoff
+            standardError: standardError
         )
 
         XCTAssertEqual(commandLine.run(arguments: ["handoff"]), 0)
 
-        let confirmation = try JSONDecoder().decode(
-            CapturePortalHandoffConfirmation.self,
-            from: standardOutput.data.dropTrailingNewline()
-        )
-        XCTAssertEqual(client.requests.map(\.command), ["status"])
-        XCTAssertEqual(copiedToken, "view-token-secret")
+        wait(for: [serverFinished], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(receivedRequest.load()).command, "handoff")
+        XCTAssertEqual(copiedTokens.load(), ["view-token-secret"])
         XCTAssertEqual(
-            confirmation,
-            CapturePortalHandoffConfirmation(
+            try JSONDecoder().decode(
+                ControlChannelResponse.self,
+                from: standardOutput.data.dropTrailingNewline()
+            ),
+            ControlChannelResponse(
+                ok: true,
                 sessionID: "session-handoff",
-                portalURL: serverURL.appendingPathComponent("live")
+                portalURL: serverURL.appendingPathComponent("live"),
+                viewAuthority: "copied-to-pasteboard"
             )
         )
-        XCTAssertEqual(confirmation.viewAuthority, "copied-to-pasteboard")
         XCTAssertTrue(standardError.data.isEmpty)
         let combinedOutput = String(
             decoding: standardOutput.data + standardError.data,
             as: UTF8.self
         )
         XCTAssertFalse(combinedOutput.contains("view-token-secret"))
+        XCTAssertFalse(combinedOutput.contains("control-secret"))
         XCTAssertFalse(combinedOutput.contains("?"))
         XCTAssertFalse(combinedOutput.contains("#"))
     }
@@ -250,7 +267,10 @@ final class MTDCaptureCLITests: XCTestCase {
         XCTAssertTrue(source.contains("stop"))
         XCTAssertTrue(source.contains("status"))
         XCTAssertTrue(source.contains("handoff"))
-        XCTAssertTrue(source.contains("PasteboardCapturePortalHandoff"))
+        XCTAssertTrue(source.contains("ControlChannelRequest(command: \"handoff\")"))
+        XCTAssertFalse(source.contains("PasteboardCapturePortalHandoff"))
+        XCTAssertFalse(source.contains("loadCaptureViewToken"))
+        XCTAssertFalse(source.contains("NSPasteboard"))
         XCTAssertTrue(source.contains("LaunchServices"))
         XCTAssertTrue(source.contains("UnixDomainControlClient"))
         XCTAssertTrue(source.contains("sendRequest"))
@@ -441,6 +461,29 @@ private final class RecordingCLIOutput: CaptureCLIOutput {
 
     func write(_ data: Data) throws {
         self.data.append(data)
+    }
+}
+
+private struct UnusedPairingExchange: CapturePairingExchangeAdapter {
+    func pair(serverURL: URL, pairingPayload: Data) throws -> CapturePairingResult {
+        throw CLIProbeError.launchFailed
+    }
+}
+
+private final class CopiedTokenBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var tokens: [String] = []
+
+    func append(_ token: String) {
+        lock.lock()
+        tokens.append(token)
+        lock.unlock()
+    }
+
+    func load() -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return tokens
     }
 }
 

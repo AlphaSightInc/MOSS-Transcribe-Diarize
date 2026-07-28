@@ -48,7 +48,8 @@ final class ProductionCaptureRuntime {
             pairingExchange: URLSessionCapturePairingExchangeAdapter(deviceIdentity: keyStore),
             captureTokenStore: keyStore,
             certificatePinStore: keyStore,
-            sessionStore: keyStore
+            sessionStore: keyStore,
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: keyStore)
         )
         return ProductionCaptureRuntime(
             server: UnixDomainControlServer(

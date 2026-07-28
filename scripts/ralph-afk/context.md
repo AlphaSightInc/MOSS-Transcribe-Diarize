@@ -35,15 +35,31 @@ branch after the iteration-1 graft unless stated.
 
 **Branch state.** Iteration 1 merged `acl/IDEA-044--A-034@67a27b8` into `ralph/live-meeting-mvp`
 with `--no-ff` (conflict-free: A-034 branches from the same `af3ac36` and touches paths disjoint
-from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (A3). Test totals
-on the branch: Swift **92 passed** (67 → 81 → 92); Python **456 passed / 2 skipped /
-346 subtests** including `tests/test_macos_uds_tracer.py` **2 passed** (was 1 passed, 1 hung).
+from the Ralph scripts). Iteration 2 added the per-lane permission coordinator (A3); iteration 3
+moved the portal handoff into the app (A2). Test totals on the branch: Swift **95 passed**
+(67 → 81 → 92 → 95); Python **456 passed / 2 skipped / 346 subtests** including
+`tests/test_macos_uds_tracer.py` **2 passed** (was 1 passed, 1 hung).
 
-**IDEA-044 attempt-2 discriminator: 5/10** (`spikes/idea-044-attempt2-red-control/repro.py`,
-run against the worktree). All five permission checks (5-9) are green. The five open ones are
-checks 1-4 (A2 app-owned handoff) and check 10 (tracer must additionally assert `CFBundleIdentifier`,
-the fixed lab bundle path `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app`, `sha256`, and
-`codesign` evidence). Run that script first in any Phase-A iteration: it *is* the A4 gate.
+**IDEA-044 attempt-2 discriminator: 9/10** (`spikes/idea-044-attempt2-red-control/repro.py`,
+run against the worktree). Checks 1-9 are green. The one open check is 10: the tracer must
+additionally assert the fixed lab bundle path
+`macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app` — the only literal it still lacks; it
+already carries `handoff`, `CFBundleIdentifier`, `permission`, `sha256`, and `codesign`, but it
+builds a throwaway per-test `MOSSCaptureTracer.app` under `tmp_path`
+(`tests/test_macos_uds_tracer.py:408-427`) instead of one immutable first-install lab bundle
+whose `sha256`/`codesign -dr -` evidence is captured once and reused. Run that script first in
+any Phase-A iteration: it *is* the A4 gate.
+
+**Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
+owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
+(`CaptureSecurity.swift`); `MOSSCaptureApp/main.swift` is the only composition root that builds
+`PasteboardCapturePortalHandoff`, so only the app reads `capture-view-token` and writes the
+pasteboard (honouring `MOSS_CAPTURE_PASTEBOARD_NAME` in the *app* process). The CLI sends one
+`ControlChannelRequest(command: "handoff")` and relays the response verbatim; `handoff` no longer
+costs two round trips. The non-secret confirmation rides on `ControlChannelResponse` as
+`viewAuthority` ("copied-to-pasteboard"), so `{ok, sessionID, portalURL, viewAuthority}` is the
+whole wire answer. Missing authority → typed `portalHandoffUnavailable`; a pasteboard refusal →
+typed `pasteboardUnavailable`; neither reaches stdout as anything but a sanitized error name.
 
 **Feasibility — settled, do not re-litigate.**
 - Warm 12-run decode p95: 7.5 s span → **0.241 s**; 2.5 s → **0.162 s**. One pre-warm
@@ -222,28 +238,28 @@ only after the durable result is in progress.txt.
    persistence, environment-selected `FileCaptureSecretStore` (Keychain still the default with no
    `MOSS_CAPTURE_SECRET_STORE_PATH`), and `tests/test_macos_uds_tracer.py`. Grafted verbatim, not
    rewritten.
-2. **A2 — app-owned UDS `handoff`** — **now the top candidate** (discriminator checks 1-4): app
-   reads view authority and writes pasteboard; CLI sends one authenticated UDS request and relays
-   non-secret status only. Grafted state to replace: `MTDCaptureCLI/main.swift` gives the **CLI** a
-   `PasteboardCapturePortalHandoff(sessionStore:)`, so today the CLI reads `capture-view-token`
-   itself. Required: `case "handoff"` in the app dispatcher (`CaptureSecurity.swift`),
-   `PasteboardCapturePortalHandoff` injected in `MOSSCaptureApp/main.swift`,
-   `ControlChannelRequest(command: "handoff"` in `CaptureCommandLine.swift`, and **no**
-   `PasteboardCapturePortalHandoff`/`loadCaptureViewToken`/`NSPasteboard` left in
-   `CaptureCommandLine.swift` + `MTDCaptureCLI/main.swift`.
+2. **A2 — app-owned UDS `handoff`** `[done — iteration 3]`: `case "handoff"` plus
+   `CapturePortalHandoffAdapter`/`PasteboardCapturePortalHandoff` now live in
+   `CaptureSecurity.swift` next to the dispatcher, injected only by `MOSSCaptureApp/main.swift`;
+   `CaptureCommandLine.swift` sends `ControlChannelRequest(command: "handoff")` and keeps no
+   view-token or pasteboard authority. Discriminator checks 1-4 green.
 3. **A3 — explicit per-lane permission coordinator** `[done — iteration 2]`:
    `NativeLanePermissionCoordinator` in `NativeDualCaptureSource.swift`,
    `AVCaptureDevice.requestAccess(for: .audio)` in `MicrophoneCapture.swift`, and
    `SystemAudioPermission` in `SystemAudioTap.swift`. Discriminator checks 5-9 green; tracer
    `2 passed`.
-4. **A4 — compatibility checkpoint**: run the exact eleven registered IDEA-044 attempt-2
-   commands plus `bash scripts/ralph-afk/validate-phase-a-locality.sh`. Required: 10/10, 16/16,
-   zero Darwin skips, all other commands green. Commit and record the exact SHA. **Do not merge,
-   push, or begin Phase B until this is green.** Check 10 needs tracer work beyond A2: the fixed
-   lab bundle path, `CFBundleIdentifier`, reused `sha256`/`codesign -dr -` evidence, and the
-   M38 JUnit node contract (pending/grant and pending/deny nodes, zero Darwin skips). The
-   granted dual-lane node needs real TCC grants, which is the E3 human step — expect this to be
-   where A4 parks.
+4. **A4 — compatibility checkpoint** — **now the top candidate**, in two steps.
+   (a) **Tracer lab bundle (discriminator check 10):** replace the throwaway per-test
+   `MOSSCaptureTracer.app` with one immutable first-install bundle at the fixed path
+   `macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app`, built and ad-hoc signed once, its
+   `sha256` and `codesign -dr -` evidence captured on first install and reused (and re-asserted
+   unchanged) on later runs; keep the M38 JUnit node contract — pending/grant and pending/deny
+   nodes, zero Darwin skips.
+   (b) **Checkpoint:** run the exact eleven registered IDEA-044 attempt-2 commands plus
+   `bash scripts/ralph-afk/validate-phase-a-locality.sh`. Required: 10/10, 16/16, zero Darwin
+   skips, all other commands green. Commit and record the exact SHA. **Do not merge, push, or
+   begin Phase B until this is green.** The granted dual-lane node needs real TCC grants, which
+   is the E3 human step — expect this to be where A4 parks.
 
 ### Phase B — production Mac reliability
 

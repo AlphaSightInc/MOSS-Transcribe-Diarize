@@ -2,6 +2,9 @@ import CryptoKit
 import Darwin
 import Foundation
 import Security
+#if canImport(AppKit)
+import AppKit
+#endif
 
 private enum CaptureSecretStoreAccount {
     static let controlSecret = "local-control-secret"
@@ -37,6 +40,8 @@ public enum CaptureSecurityError: Error, Equatable {
     case invalidPairingPayload
     case missingPairingServer
     case missingCaptureConfiguration
+    case portalHandoffUnavailable
+    case pasteboardUnavailable
 }
 
 public final class KeychainCaptureSecretStore: CaptureKeyStoreAdapter, CaptureBearerTokenAdapter {
@@ -383,6 +388,7 @@ public struct ControlChannelResponse: Codable, Equatable {
     public var running: Bool?
     public var sessionID: String?
     public var portalURL: URL?
+    public var viewAuthority: String?
     public var publishedFrameCount: Int?
     public var pumpFailure: CapturePumpFailure?
     public var error: String?
@@ -392,6 +398,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         running: Bool? = nil,
         sessionID: String? = nil,
         portalURL: URL? = nil,
+        viewAuthority: String? = nil,
         publishedFrameCount: Int? = nil,
         pumpFailure: CapturePumpFailure? = nil,
         error: String? = nil
@@ -400,6 +407,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.running = running
         self.sessionID = sessionID
         self.portalURL = portalURL
+        self.viewAuthority = viewAuthority
         self.publishedFrameCount = publishedFrameCount
         self.pumpFailure = pumpFailure
         self.error = error
@@ -580,12 +588,94 @@ public protocol CaptureSessionStoreAdapter {
 
 extension KeychainCaptureSecretStore: CaptureSessionStoreAdapter {}
 
+/// Non-secret result of a portal handoff. The view token itself never leaves the app: it goes
+/// straight to the pasteboard, and only this status crosses the control channel.
+public struct CapturePortalHandoffConfirmation: Equatable {
+    public static let copiedToPasteboard = "copied-to-pasteboard"
+
+    public var sessionID: String
+    public var portalURL: URL
+    public var viewAuthority: String
+
+    public init(
+        sessionID: String,
+        portalURL: URL,
+        viewAuthority: String = CapturePortalHandoffConfirmation.copiedToPasteboard
+    ) {
+        self.sessionID = sessionID
+        self.portalURL = portalURL
+        self.viewAuthority = viewAuthority
+    }
+}
+
+public protocol CapturePortalHandoffAdapter {
+    func perform() throws -> CapturePortalHandoffConfirmation
+}
+
+/// App-owned handoff: reads the stored view authority and writes it to the pasteboard. Only the
+/// app composition root builds one, so the CLI never holds view authority.
+public final class PasteboardCapturePortalHandoff: CapturePortalHandoffAdapter {
+    public static let pasteboardNameEnvironmentKey = "MOSS_CAPTURE_PASTEBOARD_NAME"
+
+    private let sessionStore: CaptureSessionStoreAdapter
+    private let copyViewToken: (String) -> Bool
+
+    public convenience init(
+        sessionStore: CaptureSessionStoreAdapter,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) {
+        self.init(sessionStore: sessionStore) { viewToken in
+            #if canImport(AppKit)
+            let pasteboard: NSPasteboard
+            if let name = environment[Self.pasteboardNameEnvironmentKey], !name.isEmpty {
+                pasteboard = NSPasteboard(name: NSPasteboard.Name(name))
+            } else {
+                pasteboard = .general
+            }
+            pasteboard.clearContents()
+            return pasteboard.setString(viewToken, forType: .string)
+            #else
+            _ = viewToken
+            return false
+            #endif
+        }
+    }
+
+    init(
+        sessionStore: CaptureSessionStoreAdapter,
+        copyViewToken: @escaping (String) -> Bool
+    ) {
+        self.sessionStore = sessionStore
+        self.copyViewToken = copyViewToken
+    }
+
+    public func perform() throws -> CapturePortalHandoffConfirmation {
+        guard let serverURL = try sessionStore.loadCaptureServerURL(),
+              serverURL.scheme == "https",
+              let sessionID = try sessionStore.loadCaptureSessionID(),
+              !sessionID.isEmpty,
+              let viewToken = try sessionStore.loadCaptureViewToken(),
+              !viewToken.isEmpty
+        else {
+            throw CaptureSecurityError.portalHandoffUnavailable
+        }
+        guard copyViewToken(viewToken) else {
+            throw CaptureSecurityError.pasteboardUnavailable
+        }
+        return CapturePortalHandoffConfirmation(
+            sessionID: sessionID,
+            portalURL: livePortalURL(from: serverURL)
+        )
+    }
+}
+
 public final class ControlCommandDispatcher {
     private let controller: CaptureController
     private let pairingExchange: CapturePairingExchangeAdapter
     private let captureTokenStore: CaptureBearerTokenStoreAdapter?
     private let certificatePinStore: CaptureCertificatePinStoreAdapter?
     private let sessionStore: CaptureSessionStoreAdapter?
+    private let portalHandoff: CapturePortalHandoffAdapter?
     private var pairedConfiguration: CaptureConfiguration?
 
     public init(
@@ -593,13 +683,15 @@ public final class ControlCommandDispatcher {
         pairingExchange: CapturePairingExchangeAdapter,
         captureTokenStore: CaptureBearerTokenStoreAdapter? = nil,
         certificatePinStore: CaptureCertificatePinStoreAdapter? = nil,
-        sessionStore: CaptureSessionStoreAdapter? = nil
+        sessionStore: CaptureSessionStoreAdapter? = nil,
+        portalHandoff: CapturePortalHandoffAdapter? = nil
     ) {
         self.controller = controller
         self.pairingExchange = pairingExchange
         self.captureTokenStore = captureTokenStore
         self.certificatePinStore = certificatePinStore
         self.sessionStore = sessionStore
+        self.portalHandoff = portalHandoff
     }
 
     public func dispatch(_ request: ControlChannelRequest) throws -> ControlChannelResponse {
@@ -641,6 +733,17 @@ public final class ControlCommandDispatcher {
             return ControlChannelResponse(status: controller.status())
         case "stop":
             return ControlChannelResponse(status: try controller.stop(deadline: Date()))
+        case "handoff":
+            guard let portalHandoff else {
+                throw CaptureSecurityError.portalHandoffUnavailable
+            }
+            let confirmation = try portalHandoff.perform()
+            return ControlChannelResponse(
+                ok: true,
+                sessionID: confirmation.sessionID,
+                portalURL: confirmation.portalURL,
+                viewAuthority: confirmation.viewAuthority
+            )
         default:
             throw CaptureSecurityError.unknownCommand(request.command)
         }

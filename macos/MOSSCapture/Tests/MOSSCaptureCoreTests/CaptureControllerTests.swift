@@ -2076,6 +2076,110 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(transport.configurations.map(\.label), ["restart"])
     }
 
+    func testAppDispatcherOwnsHandoffAndAnswersWithNonSecretViewAuthorityStatus() throws {
+        let path = temporarySecretStorePath()
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let store = try FileCaptureSecretStore(path: path)
+        let serverURL = URL(string: "https://moss.example/?token=leak#fragment")!
+        try store.saveCaptureServerURL(serverURL)
+        try store.saveCaptureSessionID("session-handoff")
+        try store.saveCaptureViewToken("view-token-secret")
+        var copiedTokens: [String] = []
+        let dispatcher = ControlCommandDispatcher(
+            controller: CaptureController.fakeForLocalDevelopment(),
+            pairingExchange: StaticPairingExchange(result: CapturePairingResult(sessionID: "unused")),
+            sessionStore: store,
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: store) { viewToken in
+                copiedTokens.append(viewToken)
+                return true
+            }
+        )
+
+        let response = try dispatcher.dispatch(ControlChannelRequest(command: "handoff"))
+
+        XCTAssertEqual(copiedTokens, ["view-token-secret"])
+        XCTAssertEqual(
+            response,
+            ControlChannelResponse(
+                ok: true,
+                sessionID: "session-handoff",
+                portalURL: URL(string: "https://moss.example/live")!,
+                viewAuthority: "copied-to-pasteboard"
+            )
+        )
+        let encoded = String(decoding: try JSONEncoder().encode(response), as: UTF8.self)
+        XCTAssertFalse(encoded.contains("view-token-secret"))
+        XCTAssertFalse(encoded.contains("?"))
+        XCTAssertFalse(encoded.contains("#"))
+    }
+
+    func testHandoffFailsTypedWhenAuthorityIsMissingPasteboardFailsOrNoAdapterIsInjected() throws {
+        let path = temporarySecretStorePath()
+        defer { try? FileManager.default.removeItem(at: URL(fileURLWithPath: path).deletingLastPathComponent()) }
+        let store = try FileCaptureSecretStore(path: path)
+        try store.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try store.saveCaptureSessionID("session-handoff")
+
+        func makeDispatcher(
+            portalHandoff: CapturePortalHandoffAdapter?
+        ) -> ControlCommandDispatcher {
+            ControlCommandDispatcher(
+                controller: CaptureController.fakeForLocalDevelopment(),
+                pairingExchange: StaticPairingExchange(result: CapturePairingResult(sessionID: "unused")),
+                sessionStore: store,
+                portalHandoff: portalHandoff
+            )
+        }
+
+        var copyAttempts = 0
+        let unpaired = makeDispatcher(
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: store) { _ in
+                copyAttempts += 1
+                return true
+            }
+        )
+        XCTAssertThrowsError(try unpaired.dispatch(ControlChannelRequest(command: "handoff"))) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .portalHandoffUnavailable)
+        }
+        XCTAssertEqual(copyAttempts, 0, "a missing view token must never reach the pasteboard")
+
+        try store.saveCaptureViewToken("view-token-secret")
+        let pasteboardFailure = makeDispatcher(
+            portalHandoff: PasteboardCapturePortalHandoff(sessionStore: store) { _ in false }
+        )
+        XCTAssertThrowsError(try pasteboardFailure.dispatch(ControlChannelRequest(command: "handoff"))) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .pasteboardUnavailable)
+        }
+
+        let noAdapter = makeDispatcher(portalHandoff: nil)
+        XCTAssertThrowsError(try noAdapter.dispatch(ControlChannelRequest(command: "handoff"))) { error in
+            XCTAssertEqual(error as? CaptureSecurityError, .portalHandoffUnavailable)
+        }
+    }
+
+    func testOnlyTheAppCompositionRootHoldsViewAuthorityAndPasteboardAccess() throws {
+        let sources = packageRoot().appendingPathComponent("Sources")
+        func read(_ target: String, _ file: String) throws -> String {
+            try String(
+                contentsOf: sources.appendingPathComponent(target).appendingPathComponent(file),
+                encoding: .utf8
+            )
+        }
+        let appMain = try read("MOSSCaptureApp", "main.swift")
+        let cliMain = try read("MTDCaptureCLI", "main.swift")
+        let commandLine = try read("MOSSCaptureCore", "CaptureCommandLine.swift")
+        let security = try read("MOSSCaptureCore", "CaptureSecurity.swift")
+
+        XCTAssertTrue(appMain.contains("PasteboardCapturePortalHandoff(sessionStore:"))
+        XCTAssertTrue(security.contains("case \"handoff\""))
+        XCTAssertTrue(commandLine.contains("ControlChannelRequest(command: \"handoff\")"))
+        for source in [cliMain, commandLine] {
+            XCTAssertFalse(source.contains("PasteboardCapturePortalHandoff"))
+            XCTAssertFalse(source.contains("loadCaptureViewToken"))
+            XCTAssertFalse(source.contains("NSPasteboard"))
+        }
+    }
+
     func testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory() throws {
         let source = try String(
             contentsOf: packageRoot()
