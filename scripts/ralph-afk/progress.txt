@@ -5674,3 +5674,41 @@ an operator decision, not a loop decision, and F1's own Phase F measurement is t
 BLOCKED - not complete. No further machine work advances any acceptance clause.
 
 [loop 20260728-112922-76267] blocked at iteration 16
+
+## Supervisor - E3 CLOSED, and a fourth amendment for lane observability (2026-07-28)
+- **The operator granted both TCC permissions.** `sqlite3` on m4mbp reports
+  `kTCCServiceAudioCapture|com.alphasight.moss.capture|2` and
+  `kTCCServiceMicrophone|com.alphasight.moss.capture|2`. E3 is closed. **Never ask for those clicks
+  again** - they persist across rebuilds because the designated requirement is certificate-leaf
+  based and byte-identical across the G6 rebuild.
+- Attended session with the operator, live against the deployed `6a540fe`:
+  - `pair` -> 200 (`c9fc8e6c…`), `start` -> `nonSuccessStatus(400)` on the first heartbeat while the
+    prompts were still being answered; `status` then read `running:true` with 0 published frames.
+  - `stop` flushed a 9-frame outbox burst (13:51:19-20, all 200), then nothing.
+  - App relaunched from Finder (pid 60550 -> 14978, exactly one instance). Re-paired ->
+    `f362c1f5…` -> `start` `ok:true`. **One heartbeat 200, then every heartbeat 403, zero frames.**
+- Supervisor diagnosis, each step measured rather than argued:
+  - 403 is `live_auth.py:262-265` "session is not owned by this device", reached because
+    `self._sessions.get(session_id)` is None - the session had already been **released**.
+  - `live_helper_failure.observe` releases a session when `_terminal_reason` fires, and that returns
+    non-None only for `helper_failed` or **all lanes failed**. `CaptureHTTPTransport` sends the
+    top-level state as `running ? "capturing" : "stopped"` and never `"failed"`, so the reason is
+    `helper_all_lanes_failed`: **both capture lanes are reporting failed**.
+  - Ruled out by direct measurement, not reasoning: TCC (both granted); pin/network (bare-binary
+    pinned GET -> 200, m4mbp sees leaf `a35ca9fc…`); heartbeat schema (paired fresh from MacStudio
+    and sent **five** faithful payload shapes - all 200, probe device `ralph-hb-probe` revoked
+    afterwards, m4mbp's `AB600574-…` left as the only active device); duplicate helpers (exactly one
+    `MOSSCaptureApp` process); stale session (the fresh session fails identically).
+- **Why the cause is unobservable, which is the actual blocker.** The app knows the per-lane codes
+  and puts them in every heartbeat, and all three surfaces discard them:
+  `ControlChannelResponse.init(status:)` (`CaptureSecurity.swift:607`) drops `status.lanes`; the app
+  logs only *unclassified* failures so a typed lane failure is silent; the server's terminal path
+  records a generic reason, skips `_fail_lane`, and logs neither. `log show` for the app process and
+  for `tccd` returned nothing at all.
+- This makes the PRD clause "`mtd-capture status` reports both lanes active" **unimplementable as
+  shipped** - not failing, impossible: the response type has no lane field.
+- Operator decision: **fourth amendment authorized**, scoped to observability (prd.md "Fourth
+  authorized amendment"; candidates K1-K5 in context.md). It is deliberately NOT a fix for the lane
+  failure - once `status` names the codes, the cause becomes an ordinary candidate.
+- Host state left clean: no product source changed by the supervisor; server `6a540fe`, all three
+  services active `NRestarts=0`, `live-runs/` empty, batch 200 and live 200; four-way SHA still 4/4.

@@ -3173,6 +3173,41 @@ similar one. Each probe run costs ~1-2.5 s of vLLM and no service disturbance, s
 re-measured after any fix without a Mac. The wespeaker ONNX evidence provider is confirmed working
 on the host: a control run reached `prepared` through it.
 
+### Phase K - lane observability (2026-07-28, fourth amendment)
+
+**E3 IS CLOSED - both TCC grants are recorded (`auth_value=2`). Never ask the operator to click
+again.** What remains is that both lanes report `failed` and nothing anywhere records why.
+
+Observed on m4mbp, app pid 14978 (a fresh process launched after the grants), session
+`f362c1f5db1e44fb8692fa98aa9affe4`: `pair` 200 -> `start` `ok:true, running:true` -> **one**
+heartbeat 200 -> every later heartbeat **403**, zero frame POSTs. The 403 is
+`live_auth.py:262-265` "session is not owned by this device" because `self._sessions.get()` returns
+None - the session was released. `live_helper_failure._terminal_reason` returns terminal only for
+`helper_failed` or all-lanes-failed, and `CaptureHTTPTransport` sends top-level state as
+`running ? "capturing" : "stopped"`, never `"failed"` - therefore **both lanes failed**.
+An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox flush.
+
+43. **K1 - carry lane state on the control channel.** `ControlChannelResponse.init(status:)`
+    (`CaptureSecurity.swift:607`) copies running/sessionID/publishedFrameCount/pumpFailure/outbox
+    and **silently drops `status.lanes`**, which the app already holds and already sends in
+    heartbeats. Add lane, state and `failureCode` to the response so `mtd-capture status` can meet
+    the PRD's "reports both lanes active" clause. Codes and states only - no audio, no token.
+44. **K2 - log typed lane failures in the app.** G3 logs only unclassified failures, so the typed
+    failure that ends a meeting is quieter than an unknown one. Use the same non-secret shape.
+45. **K3 - record the terminal reason and per-lane codes server-side.** The terminal path in
+    `live_helper_failure.observe` marks the session, calls `_terminal_failure` with a generic
+    reason and **skips `_fail_lane`**, so the codes the client sent are discarded. Log them.
+46. **K4 - a dead session must not look healthy.** After the release the client still answers
+    `running: true` while every request 403s. Surface it in `status`.
+47. **K5 - gate, merge, redeploy, re-read.** Regression nodes red-before/green-after; full
+    Swift/Python gate; one merge (`expected_main` is `b817871…` -> advance in-script); push;
+    redeploy; then re-run `pair` -> `start` on m4mbp and **read the lane failure codes**. Only then
+    diagnose the cause - it is a new candidate and may need its own authorization.
+
+Do not guess the cause before K5 reports the codes. Candidates already ruled out by measurement:
+TCC (both granted), pinning/network (probe 200s), schema (five faithful heartbeat shapes 200), and
+duplicate helper instances (exactly one app process).
+
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.
