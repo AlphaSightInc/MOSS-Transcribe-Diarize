@@ -5714,3 +5714,62 @@ BLOCKED - not complete. No further machine work advances any acceptance clause.
   services active `NRestarts=0`, `live-runs/` empty, batch 200 and live 200; four-way SHA still 4/4.
 
 [loop 20260728-181020-14512] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+================================================================================
+run 20260728-181020 | iteration 1 | K1 - the control channel carries lane state
+================================================================================
+Target: candidate K1 (fourth amendment, lane observability). `ControlChannelResponse.init(status:)`
+copied running/sessionID/publishedFrameCount/pumpFailure/outbox and silently dropped
+`status.lanes`, so the response type had no lane data at all - which is why the attended session
+could infer "both lanes failed" from a 403 but could never read the code, and why the PRD clause
+"`mtd-capture status` reports both lanes active" was unimplementable as shipped.
+
+Files touched (all tracked `macos/`, inside Phase K's scope; no server source):
+- `Sources/MOSSCaptureCore/CaptureController.swift` - new `CaptureStatus.reportedLanes()`: maps
+  `CaptureLane.allCases` onto the source's statuses, substituting `state: "stopped"` for a lane the
+  source did not report.
+- `Sources/MOSSCaptureCore/CaptureSecurity.swift` - new `ControlChannelLaneStatus`
+  (lane / state / `failureCode?`, `Codable, Equatable`), new `ControlChannelResponse.lanes`, and
+  `init(status:)` fills it from `reportedLanes()`.
+- `Sources/MOSSCaptureCore/CaptureHTTPTransport.swift` - `HelperHeartbeatPayload` now calls the same
+  `reportedLanes()` instead of repeating the projection inline. Behaviour-identical (it already
+  applied exactly these defaults); the point is that the server and the operator cannot be told
+  different things about which lanes exist.
+- Tests: `CaptureControllerTests.swift` +2 nodes, `MTDCaptureCLITests.swift` +1 node and one
+  `StaticLaneStatusCaptureSource` double.
+`mtd-capture status` needed no change - the CLI JSON-encodes whatever the app answers.
+
+Design decisions, recorded rather than left implicit:
+- **Typed codes and states only.** `sequence`, `deviceEpoch`, `droppedFrames`, `discontinuities`
+  stay off the control channel (the server already gets them in the heartbeat; the operator's
+  question is "which lane died and why"), and `NativeLaneFailure.cause` is deliberately excluded -
+  it is a free-form string, i.e. the one field on this path that could carry an arbitrary payload.
+- **An absent lane is named, not omitted.** Absent and failed read identically to an operator, which
+  is half of what made E3's failure unreadable.
+
+Validation (MacStudio, swift 6.3.2 / pyenv 3.12.10):
+- `swift test` in `macos/MOSSCapture`: **142 passed, 0 failures** (was 139; +3 new nodes).
+- `python3 -m pytest tests/test_macos_uds_tracer.py -q`: **4 passed** in 18.90s - the real-process
+  Darwin tracer, which builds and drives both products over a real UDS, is unaffected.
+- Red-before, in a scratch copy under /tmp (repo never mutated, copy deleted afterwards):
+  1. **Sources at HEAD + the new tests** -> compile error `cannot find 'ControlChannelLaneStatus'
+     in scope` (MTDCaptureCLITests.swift:255). The type is genuinely new.
+  2. **The shipped defect reintroduced** (delete the `lanes:` line from `init(status:)`) -> all
+     three new nodes fail on assertion: `("nil") is not equal to (...)` in both suites, including
+     across the real socket.
+  3. **`reportedLanes()` returns `lanes` directly** (drops the absent-lane default) -> the new
+     core node fails on both of its assertions, and `testHTTPHealthPostsVersionedHeartbeat...` and
+     `testHTTPHealthSerializesTypedLaneFailureCode` both still **pass**. So that default had no
+     coverage anywhere in the suite before this iteration.
+
+Learned: the heartbeat's per-lane defaults were untested, which is exactly the kind of gap that let
+"both lanes failed" become invisible - the projection existed but only in the surface nobody could
+read locally. Sharing one `reportedLanes()` between the two surfaces makes that class of divergence
+structural rather than a convention.
+
+Next: **K2** - log typed lane failures in the app alongside G3's unclassified-failure logging (the
+`ControlChannelFailureLogging` seam and `OSLogControlChannelFailureLog` already exist; a typed lane
+failure that ends a meeting must not be quieter than an unknown one). Then K3 (server-side terminal
+reason + per-lane codes), K4 (a released session must not read `running: true`), K5 (gate, one
+merge with `expected_main` advanced in-script, push, redeploy, re-read the codes on m4mbp).
+Do not guess the lane-failure cause before K5 reports it.

@@ -195,6 +195,79 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(health.attemptCount, 3)
     }
 
+    func testControlChannelStatusCarriesEveryLanesStateAndTypedFailureCode() throws {
+        let failed = CaptureStatus(
+            running: true,
+            sessionID: "session-a",
+            lanes: [
+                CaptureLaneStatus(
+                    lane: .system,
+                    sequence: 4,
+                    deviceEpoch: 2,
+                    state: "failed",
+                    droppedFrames: 1,
+                    discontinuities: 2,
+                    failureCode: "macos_permission_denied"
+                ),
+                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
+            ],
+            publishedFrameCount: 10,
+            lastHealthSequence: 5
+        )
+
+        let response = ControlChannelResponse(status: failed)
+
+        XCTAssertEqual(
+            response.lanes,
+            [
+                ControlChannelLaneStatus(
+                    lane: "system",
+                    state: "failed",
+                    failureCode: "macos_permission_denied"
+                ),
+                ControlChannelLaneStatus(lane: "microphone", state: "capturing"),
+            ],
+            "the code that ends a meeting has to reach the operator's status, not only the server"
+        )
+
+        let encoded = try XCTUnwrap(
+            String(data: JSONEncoder().encode(response), encoding: .utf8)
+        )
+        for forbidden in ["pcm", "token", "secret", "cause"] {
+            XCTAssertFalse(
+                encoded.lowercased().contains(forbidden),
+                "lane reporting carries states and typed codes only, never \(forbidden)"
+            )
+        }
+    }
+
+    func testControlChannelStatusNamesALaneTheSourceNeverReported() throws {
+        // A lane the source omits is exactly the case that made the failure unreadable: absent and
+        // failed look the same to an operator. Both surfaces name every lane in the contract.
+        let silent = CaptureStatus(
+            running: true,
+            sessionID: "session-a",
+            lanes: [
+                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
+            ],
+            publishedFrameCount: 0,
+            lastHealthSequence: 1
+        )
+
+        XCTAssertEqual(
+            ControlChannelResponse(status: silent).lanes,
+            [
+                ControlChannelLaneStatus(lane: "system", state: "stopped"),
+                ControlChannelLaneStatus(lane: "microphone", state: "capturing"),
+            ]
+        )
+        XCTAssertEqual(
+            silent.reportedLanes().map(\.lane),
+            CaptureLane.allCases,
+            "the heartbeat and the control channel project the same lane set, in the same order"
+        )
+    }
+
     func testPumpMapsCaptureHTTPTransportErrorToTransportUnavailableAndRecovers() throws {
         let scheduler = FakeCaptureSchedulerAdapter()
         let health = FailOnceHTTPTransportHealthAdapter()

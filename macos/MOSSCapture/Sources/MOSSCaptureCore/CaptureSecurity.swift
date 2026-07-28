@@ -556,12 +556,39 @@ public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging {
     }
 }
 
+/// One capture lane as the control channel reports it: which lane, what it is doing, and — when it
+/// failed — the typed code that names the failure. States and codes only; never audio, never a
+/// secret, and never the free-form cause string, which is not a typed value.
+public struct ControlChannelLaneStatus: Codable, Equatable {
+    public var lane: String
+    public var state: String
+    public var failureCode: String?
+
+    public init(lane: String, state: String, failureCode: String? = nil) {
+        self.lane = lane
+        self.state = state
+        self.failureCode = failureCode
+    }
+
+    public init(status: CaptureLaneStatus) {
+        self.init(
+            lane: status.lane.rawValue,
+            state: status.state,
+            failureCode: status.failureCode
+        )
+    }
+}
+
 public struct ControlChannelResponse: Codable, Equatable {
     public var ok: Bool
     public var running: Bool?
     public var sessionID: String?
     public var portalURL: URL?
     public var viewAuthority: String?
+    /// What each lane is doing. The app already sends this to the server in every heartbeat; the
+    /// control channel reports the same projection so an operator can read a lane failure locally
+    /// instead of inferring it from a session that stopped answering.
+    public var lanes: [ControlChannelLaneStatus]?
     public var publishedFrameCount: Int?
     public var pumpFailure: CapturePumpFailure?
     /// How much captured audio is still waiting for an acknowledgement, and — once audio has been
@@ -582,6 +609,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         sessionID: String? = nil,
         portalURL: URL? = nil,
         viewAuthority: String? = nil,
+        lanes: [ControlChannelLaneStatus]? = nil,
         publishedFrameCount: Int? = nil,
         pumpFailure: CapturePumpFailure? = nil,
         outboxRetainedFrames: Int? = nil,
@@ -595,6 +623,7 @@ public struct ControlChannelResponse: Codable, Equatable {
         self.sessionID = sessionID
         self.portalURL = portalURL
         self.viewAuthority = viewAuthority
+        self.lanes = lanes
         self.publishedFrameCount = publishedFrameCount
         self.pumpFailure = pumpFailure
         self.outboxRetainedFrames = outboxRetainedFrames
@@ -609,6 +638,7 @@ public struct ControlChannelResponse: Codable, Equatable {
             ok: true,
             running: status.running,
             sessionID: status.sessionID,
+            lanes: status.reportedLanes().map(ControlChannelLaneStatus.init(status:)),
             publishedFrameCount: status.publishedFrameCount,
             pumpFailure: status.pumpFailure,
             outboxRetainedFrames: status.outbox.retainedFrames,

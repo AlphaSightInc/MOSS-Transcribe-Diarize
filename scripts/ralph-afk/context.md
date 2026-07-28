@@ -109,10 +109,18 @@ tracked file. Iteration 16 ran **J5 step (d)**, the third amendment's own gate, 
 the deployed service survived a full 20 s two-lane plan with nine committed spans and four speaker
 labels, and the two spans the boundary sweep proved fatal now prepare on the host. See the J5d gate
 block. It changed no tracked product source (it repaired the Ralph probe's own reporting).
+**The freeze is then reopened a fourth time** by the prd.md amendment of 2026-07-28 (lane
+observability, Phase K), after the operator granted both TCC permissions and the attended session
+found both capture lanes reporting `failed` with the code recorded nowhere: run
+`20260728-181020` iteration 1 landed **K1** — `ControlChannelResponse.lanes` and the shared
+`CaptureStatus.reportedLanes()` projection — so the branch carries tracked `macos/` source again,
+strictly within Phase K's scope. See the lane-reporting contract block.
 
 **PRD acceptance scoreboard after iteration 16 of run 20260728-112922** ("one exact SHA everywhere"
 is GREEN 4/4 at `6a540fe` since iteration 15; iteration 16 closed the last *machine* gate — Phase J's
-probe — so **every remaining open item now depends on E3's physical TCC clicks**).
+probe. **E3 is now CLOSED too** — both TCC grants hold `auth_value=2` — and the blocker that replaced
+it is that both capture lanes report `failed` for a reason no surface records, which is what Phase K
+makes legible).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus all three amendments' authorized follow-up merges), **one exact SHA everywhere (4/4)**,
@@ -120,22 +128,19 @@ live service answering (re-measured after the J5c redeploy **and, for the first 
 itself** — the host the PRD clause actually names), batch service unharmed, signed app installed
 (re-verified at this SHA: inode `211648186` and the E1 DR both unchanged), **rollback rehearsed and
 recorded**.
-Open: permissions granted, the 60 s canary, the
+Open: **permissions granted — half green**: both TCC grants hold (`auth_value=2`, E3 closed), but
+"`mtd-capture status` reports both lanes active" is not met — K1 made it *expressible* (the response
+had no lane field at all), and both lanes still report `failed`. Also open: the 60 s canary, the
 300 s certification, the 16-minute soak, the run-time half of secret hygiene, and the final close.
 
-**Those open items ARE now waiting on E3, and only on E3 — that changed in iteration 16.** For four
-runs the honest answer was "no": iterations 9/10 proved the canary could not pass on the deployed
-build, the second amendment fixed three blockers, iteration 7's gate found a fourth, and Phase J
-settled the whole class (J1 clamp, J2 unattributed publish, J3 transient decode, J4 named refusal).
-J5a gated them, J5b merged them, J5c deployed them, and **J5d drove the deployed service end to end
-and it survived** — 40/40 ticks, nine committed spans, four speaker labels, clean stop with exact
-accounting. See the J5d gate block. **The rule "spend the human step last, and only against a build
-a machine has already driven end to end" has now been satisfied, not deferred:** iteration 8 priced
-the alternative at a ~22 % chance of a 60 s canary finishing, and iteration 16 measured the same
-machine path at 100 % of one full plan. **E3's clicks are the next thing to spend, and nothing in
-this loop can advance without them.**
-Test totals on the branch: Swift **139 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **590 passed / 2 skipped / 368 subtests**
+**E3 was the blocker for four runs; it is spent, and the clicks did not finish the job.** Phase J
+settled the terminal-failure class (J1 clamp, J2 unattributed publish, J3 transient decode, J4 named
+refusal), J5a-d gated/merged/deployed/proved it, and the operator then granted both permissions —
+and the capture still dies, because **both lanes report `failed`** and every surface that could name
+the code discards it (see the Phase K block). **Never ask for the TCC clicks again.** The path
+forward is K1-K5: make the failure legible, then diagnose it as an ordinary candidate.
+Test totals on the branch: Swift **142 passed**
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142); Python **590 passed / 2 skipped / 368 subtests**
 including `tests/test_live_pipeline_seams.py` **50 passed** (new in run 20260728-112922 iteration 1,
 +5 in iteration 2, +3 in iteration 3, +11 in iteration 9, +8 in iteration 10, +12 in iteration 11,
 +6 in iteration 12) and `tests/test_live_identity.py` **8 passed** (+1 in iteration 12),
@@ -1324,6 +1329,26 @@ structural rather than assumed.
 `NSURLErrorCancelled`, i.e. *this client* refused the leaf — whereas the ATS block G1 fixed is
 -1200 with underlying -9802, i.e. the *OS* refused the connection. Same `control_failed` for both;
 only the detail tells them apart, and that distinction is what nobody could make in E3.
+
+**Lane-reporting contract (new, run 20260728-181020 iteration 1 / K1).** *One projection, two
+surfaces.* `CaptureStatus.reportedLanes()` (`CaptureController.swift`) maps `CaptureLane.allCases`
+onto the source's statuses and substitutes `state: "stopped"` for a lane the source did not report.
+Both reporting surfaces call it: the heartbeat's `HelperHeartbeatPayload`
+(`CaptureHTTPTransport.swift`, behaviour unchanged — it already applied exactly these defaults
+inline) and the new `ControlChannelResponse.lanes`. That is the point of the shared call: the
+server and the operator can no longer be told different things about which lanes exist.
+*What crosses the socket.* `ControlChannelLaneStatus` is `lane` / `state` / `failureCode?` and
+nothing else. `sequence`, `deviceEpoch`, `droppedFrames` and `discontinuities` stay off the control
+channel (the server gets them in the heartbeat; the operator asked "which lane died and why"), and
+`NativeLaneFailure.cause` is deliberately excluded — it is a free-form string, so it is not a typed
+code and is the one field that could carry an arbitrary payload. `mtd-capture status` needs no
+change: the CLI JSON-encodes whatever the app answers.
+*An absent lane is named, not omitted* — absent and failed looked identical to an operator, which is
+half of why E3's failure was unreadable. The mutation that returns `lanes` directly is caught by the
+new node and by **nothing else in the suite** (`testHTTPHealth*` both still passed under it), so that
+default had no coverage before this iteration.
+*This is diagnostic groundwork only.* K1 makes the lane failure legible; it does not change which
+lanes fail, and K5's re-read on m4mbp is what turns the codes into a candidate.
 
 **Handoff contract (new, iteration 3).** View authority is app-only. `ControlCommandDispatcher`
 owns `case "handoff"` and an injected `CapturePortalHandoffAdapter`
@@ -3187,11 +3212,11 @@ None - the session was released. `live_helper_failure._terminal_reason` returns 
 `running ? "capturing" : "stopped"`, never `"failed"` - therefore **both lanes failed**.
 An earlier session (`c9fc8e6c…`) behaved identically after a 9-frame outbox flush.
 
-43. **K1 - carry lane state on the control channel.** `ControlChannelResponse.init(status:)`
-    (`CaptureSecurity.swift:607`) copies running/sessionID/publishedFrameCount/pumpFailure/outbox
-    and **silently drops `status.lanes`**, which the app already holds and already sends in
-    heartbeats. Add lane, state and `failureCode` to the response so `mtd-capture status` can meet
-    the PRD's "reports both lanes active" clause. Codes and states only - no audio, no token.
+43. **K1 - carry lane state on the control channel** `[done - run 20260728-181020 iteration 1]`:
+    `ControlChannelLaneStatus` (lane / state / `failureCode`, `Codable`) and
+    `ControlChannelResponse.lanes`; `init(status:)` fills it from the new
+    `CaptureStatus.reportedLanes()`, which the heartbeat now shares. See the lane-reporting
+    contract block. `mtd-capture status` prints both lanes and a failed lane's typed code.
 44. **K2 - log typed lane failures in the app.** G3 logs only unclassified failures, so the typed
     failure that ends a meeting is quieter than an unknown one. Use the same non-secret shape.
 45. **K3 - record the terminal reason and per-lane codes server-side.** The terminal path in

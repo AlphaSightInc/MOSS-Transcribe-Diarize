@@ -105,6 +105,17 @@ public struct CaptureStatus: Equatable {
         self.pumpFailure = pumpFailure
         self.outbox = outbox
     }
+
+    /// Every lane the contract defines, in a stable order, carrying the source's status when it has
+    /// one. Reporting surfaces project from this rather than from `lanes` directly, so none of them
+    /// can disagree about which lanes exist: a lane the source never reported is named as stopped,
+    /// never omitted.
+    public func reportedLanes() -> [CaptureLaneStatus] {
+        CaptureLane.allCases.map { lane in
+            lanes.first { $0.lane == lane }
+                ?? CaptureLaneStatus(lane: lane, sequence: 0, deviceEpoch: 0, state: "stopped")
+        }
+    }
 }
 
 public enum CapturePumpFailure: String, Codable, Equatable {
