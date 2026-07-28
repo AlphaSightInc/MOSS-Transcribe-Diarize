@@ -7,10 +7,9 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from moss_transcribe_diarize.transcript_parser import parse_transcript
+from .live_span_bounds import LIVE_SAMPLE_RATE, span_segments
 
 
-LIVE_SAMPLE_RATE = 16000
 PCM16_BYTES_PER_SAMPLE = 2
 
 
@@ -430,16 +429,11 @@ class LiveSession:
             )
         if not result.transcript.strip():
             return (f"canonical span {span.id} returned empty transcript.", "empty canonical transcript.")
-        segments = parse_transcript(result.transcript)
-        if not segments:
+        # Timestamps outside the span are clamped into it rather than refused -- see
+        # `live_span_bounds`. The bound is answered in one place because this copy and the
+        # identity preparer's both sit on the same submission path.
+        if not span_segments(result.transcript, sample_count=span.sample_count):
             return (f"canonical span {span.id} returned zero parsed segments.", "unparseable canonical transcript.")
-        duration = span.sample_count / float(LIVE_SAMPLE_RATE)
-        for segment in segments:
-            if segment.start < 0 or segment.end > duration:
-                return (
-                    f"canonical span {span.id} returned timestamps outside frozen span.",
-                    "canonical timestamp bounds failed.",
-                )
         return None
 
     def _identity_preparation_is_current(self, result: CanonicalResult, span: FrozenSpan) -> bool:

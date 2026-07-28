@@ -85,9 +85,14 @@ amendment's cycle did not finish. The fix needs a *third* amendment: the freeze 
 guessing at it — 44 host decodes over 33 hard-cap spans (`scripts/ralph-afk/build-span-sweep.py`,
 new) — which answers the amendment's first open question with a number; see the boundary-sweep
 block. It changed no tracked product source.
+**The freeze is then reopened a third time** by the prd.md amendment of 2026-07-28 (the live path's
+terminal-failure policy, Phase J): iteration 9 landed **J1** — the span-bound clamp, answered once in
+the new leaf `moss_transcribe_diarize/app/live_span_bounds.py` and called from all three copies — so
+the branch carries tracked server source again, strictly within Phase J's scope. See the span-bound
+contract block.
 
-**PRD acceptance scoreboard after iteration 8 of run 20260728-112922** (iteration 8 moved no
-scoreboard line — it added evidence for blocker 4 and re-confirmed m4mbp is still offline).
+**PRD acceptance scoreboard after iteration 9 of run 20260728-112922** (iteration 9 moved no
+scoreboard line either — J1 is a fix awaiting Phase J's gate, merge and redeploy).
 Green with evidence:
 IDEA-044 checkpoint, production client gate, server meeting-reliability gate, the reviewed keeper
 merge (plus both amendments' authorized follow-up merges), live service answering (re-measured after
@@ -102,7 +107,9 @@ certification, the 16-minute soak, the run-time half of secret hygiene, and the 
 **Those open items are still not merely waiting on E3.** Iterations 9 and 10 proved they cannot pass
 on the deployed build; the second amendment fixed those three blockers (H3, H1, H2) and iteration 6
 deployed them; and iteration 7's gate run then found a **fourth** blocker on the same seam — see the
-H4d block. So the certification path is gated on **blocker 4**, not on the operator: E3's physical
+H4d block. Phase J is now authorized and **J1 (iteration 9) closes blocker 4's timestamp half on the
+branch**; the path stays gated until J2-J4 land and Phase J's gate/merge/redeploy (J5) put them on
+the host. So the certification path is gated on **Phase J**, not on the operator: E3's physical
 TCC clicks stay unspent, because a canary against a service that dies at the first 2.5 s of
 continuous speech would burn the one irreducible human step for nothing. This is the third time the
 same rule has held: **spend the human step last**, and only against a build a machine has already
@@ -110,9 +117,9 @@ driven end to end. Iteration 8 put a number on that judgement: at the measured 6
 rate a 60 s canary has a **~22 %** chance of finishing at all, so spending E3 now would most likely
 buy one aborted run.
 Test totals on the branch: Swift **139 passed**
-(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **551 passed / 2 skipped / 368 subtests**
-including `tests/test_live_pipeline_seams.py` **13 passed** (new in run 20260728-112922 iteration 1,
-+5 in iteration 2, +3 in iteration 3),
+(67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139); Python **562 passed / 2 skipped / 368 subtests**
+including `tests/test_live_pipeline_seams.py` **24 passed** (new in run 20260728-112922 iteration 1,
++5 in iteration 2, +3 in iteration 3, +11 in iteration 9),
 `tests/test_macos_uds_tracer.py` **4 passed** (1 hung → 2 → 3 → 4),
 `tests/test_macos_packaging_tools.py` **9 passed** (new in iteration 9),
 `tests/test_live_manifest_finalizer.py` **17 passed** (new in iteration 12),
@@ -323,6 +330,41 @@ epoch". 37(c) is not a nicety.
 measurement. They are not service output — `live-runs/` is empty and nothing persists audio — but
 they should be removed before the secret-hygiene clause is signed off. This iteration deleted only
 its own artifacts.
+
+**Span-bound contract (new, iteration 9 / J1). One rule, one function, three callers.**
+`moss_transcribe_diarize/app/live_span_bounds.py` is a new leaf module — it imports only
+`transcript_parser`, so `live_session` can import *it* without a cycle — and it now owns both the
+live audio grid (`LIVE_SAMPLE_RATE`, moved here and re-exported from `live_session`, so every
+`from .live_session import LIVE_SAMPLE_RATE` still resolves) and `span_segments(transcript, *,
+sample_count)`.
+*The rule, decided against the boundary sweep rather than against taste: a decoder timestamp outside
+its span is **clamped into** the span, never refused.* `min(max(value, 0), duration)` per endpoint,
+`end` never below `start`, non-finite → 0.0, and the segment object is only rebuilt when a value
+actually moved. The reasoning is the sweep's: the observed overshoot reaches **two** ticks so a
+one-tick tolerance still kills a meeting; a clamp cannot be exceeded by a tail nobody has sampled;
+`live_provider_bundle._speaker_intervals_by_label` already clamps these same segments one call
+later, so this moves an existing policy to where the value is first read; and the decoder is
+deterministic, so no retry rescues a refusal.
+Three callers, all previously carrying their own copy of the bound, now carry none:
+`BoundedCausalIdentityPreparer.prepare` (`live_identity.py`) — which also means the *evidence
+provider and the relabeled transcript now see clamped values*, so a published span never claims
+audio the span does not hold; `LiveSession._canonical_validation_error` (both submission paths); and
+`live_adapters._validated_segments` (`LiveProvider.decode_canonical`, still unreachable from the live
+path but no longer a fourth divergence waiting to happen).
+*What the helper deliberately does not decide:* an unparseable transcript still returns `()` and each
+caller classifies it for itself — H1's empty-span commit, `unparseable_transcript`, a provider error.
+*Found while testing it:* the `start < 0` half of the old bound was **unreachable through the
+parser** — `parse_transcript("[-0.4][S01]x[1.0]")` yields nothing, so a negative start becomes
+"unparseable" rather than "outside the span". That matches the sweep's 44 decodes with min start
+0.00, and it is why the clamp's low half is defensive rather than the other half of the defect.
+*Red/green rehearsed offline (MacStudio, no server):* restoring the three consumer files from `HEAD`
+(the new leaf module is untracked at `HEAD`, so it survives the restore) turns exactly the three
+seam nodes red — `LiveProviderError: canonical inference returned timestamps outside frozen span.`
+and the identity/session equivalents — and leaves the eight helper-contract nodes green; restoring
+the fixed files back is sha256-verified. `live-hardcap-repro.py --frames 8` is unchanged at rc=0.
+**Not yet observed on the host.** J1's real-audio confirmation is the sweep's two known-failing
+spans (`12208+10*8000` and `12208+32*8000`), which belongs to J5's gate — the fix is not deployed and
+the freeze rules say it may not be until Phase J's merge.
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -1792,6 +1834,10 @@ python3 -m pytest tests/test_live_pipeline_seams.py -q
 #   for f in $FILES; do cp "$f" "$TMP/$(basename $f)"; git show HEAD:"$f" > "$f"; done
 #   python3 -m pytest tests/test_live_pipeline_seams.py -q
 #   for f in $FILES; do cp "$TMP/$(basename $f)" "$f"; done   # then compare sha256 both ways
+# J1 (iteration 9) adds 11 nodes to the same file -> 24 passed (~3.6 s). Red-prove it the same way
+# with FILES = live_session.py live_identity.py live_adapters.py; the new leaf live_span_bounds.py
+# is untracked at HEAD, so it survives the restore and the three seam nodes fail for the real
+# reason (3 failed / 21 passed), rather than the file failing to import.
 
 # --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
 #     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived.
@@ -2485,8 +2531,8 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
        `ralph-h4d-probe-20260728T123400Z` revoked, both services untouched (MainPIDs 338545 /
        301112, `NRestarts=0`), `live-runs/` 0 entries, no `/tmp/mtd-live-*`.
 
-36. **A transient decoder failure ends the meeting** `[open; out of the amendment's scope, do not
-    start without authorization]`. One vLLM timeout or one reset socket is now a named
+36. **A transient decoder failure ends the meeting** `[superseded by Phase J - it is candidate 40
+    (J3) and authorized there; kept for its reasoning]`. One vLLM timeout or one reset socket is now a named
     `LiveProviderError` and still terminal for the whole session (`live_service_runtime`
     `_process_in_flight_item` -> `_fail`). For a 300 s certification over a tailnet that is a real
     reliability gap, and the honest fix is a bounded per-span retry plus a typed degraded state -
@@ -2496,8 +2542,9 @@ H-diagnosis block and the repro commands in Validation), so none was waiting on 
     treated as fatal" shape as candidate 37, on the same code path, and one amendment could settle
     both classification questions at once.
 
-37. **Blocker 4 - a span whose speech reaches its end is terminal** `[open; needs a THIRD prd.md
-    amendment - do not start without it]`. The decoder's closing timestamp lands at ≈ the duration
+37. **Blocker 4 - a span whose speech reaches its end is terminal** `[superseded by Phase J; the
+    third amendment landed. (a) is DONE as J1 in iteration 9; (b) is J2 and (c) is J4 - work them
+    there, this entry is kept for its evidence]`. The decoder's closing timestamp lands at ≈ the duration
     of the audio it is handed (2.51 for a 2.50 s span), the identity preparer and the session both
     reject `segment.end > span duration` with **no tolerance**, and a non-`prepared` preparation is
     a non-retryable terminal failure. A hard-cap span is 2.5 s of continuous speech by construction,
@@ -2545,18 +2592,22 @@ Authorized after H4d found the fourth defect of one shape. **Treat the shape, no
 only a condition that makes the session genuinely unable to continue may be terminal. Candidates 36
 and 37 are folded in here; settle them together or the next gate run finds the fifth.
 
-38. **J1 - the timestamp tolerance, answered once.** `live_identity.py:101-102` rejects
-    `segment.end > duration` with no tolerance, so a hard-cap span - 2.5 s of continuous speech with
-    no endpoint **by construction** - fails with `reason="timestamp_outside_span"`. Decide the
-    tolerance deliberately and apply the identical answer in `BoundedCausalIdentityPreparer.prepare`
-    **and** `LiveSession._canonical_validation_error` (`live_session.py:436-442`), which carries the
-    same strict bound. Fixing one alone relocates the failure. **Read the boundary-sweep block
-    before choosing:** granularity is the natural *basis* but not a sufficient answer - the measured
-    overshoot reaches **two** ticks (2.52 in a 2.50 s span), so a one-tick tolerance still kills one
-    of the two known-failing spans. The sweep's recommendation is a clamp, with three reasons and a
-    6.1 %-per-span rate behind it, and a third copy of the same bound to fold in
-    (`live_adapters.py:387`).
-39. **J2 - a non-`prepared` preparation must not end the meeting.** `live_session.py:449` admits
+38. **J1 - the timestamp tolerance, answered once** `[done - run 20260728-112922 iteration 9]`.
+    Answered as the sweep recommended: **clamp into the span, no tolerance constant anywhere.** The
+    rule lives once, in the new leaf module `app/live_span_bounds.py`, and all three copies of the
+    bound (`live_identity.py`, `live_session.py`, `live_adapters.py`) were deleted in favour of
+    calling it - so the fix cannot relocate the failure to the copy nobody edited. Eleven nodes in
+    `tests/test_live_pipeline_seams.py`: the H4d transcript through the real runtime (commits,
+    labeled, meeting continues), the same overshoot through `LiveSession` alone and through
+    `LiveProvider.decode_canonical`, the clamp's own table driven by the sweep's measured values,
+    and the two "not a bound question" cases. Red/green rehearsed by restoring the three consumers
+    from `HEAD` - exactly the three seam nodes fail - and the restore is sha256-verified. See the
+    span-bound contract block above.
+    *Open, deliberately deferred to J5:* real-audio confirmation on the host (the sweep's two
+    known-failing spans). The fix is not deployed and may not be until Phase J's merge.
+39. **J2 - a non-`prepared` preparation must not end the meeting** `[open - do this next]`. J1 made
+    it the *only* thing standing between the branch and a hard-cap span that publishes, and it is
+    the second of the two input classes blocker 4 covers. `live_session.py:449` admits
     only `status == "prepared"`; `live_service_runtime.py:745-751` converts the resulting False into
     a non-retryable terminal failure. `abstain` is a *designed* outcome
     (`live_identity.py:106,121,127`) for ambiguous identity or exhausted speaker capacity, so the

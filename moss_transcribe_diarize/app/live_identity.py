@@ -6,15 +6,15 @@ from typing import Protocol
 
 from scipy.optimize import linear_sum_assignment
 
-from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_transcript
+from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_session import (
     FrozenSpan,
-    LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
     PCM16_BYTES_PER_SAMPLE,
 )
+from .live_span_bounds import span_segments
 
 
 class LiveIdentityError(RuntimeError):
@@ -93,13 +93,12 @@ class BoundedCausalIdentityPreparer:
         if len(pcm) != expected_pcm_bytes:
             return self._failed(span, transcript, base_snapshot, "pcm_span_mismatch")
 
-        segments = tuple(parse_transcript(transcript))
+        # Segments are clamped into the span, not refused for leaving it -- see
+        # `live_span_bounds`. Everything downstream (evidence scoring, the relabeled
+        # transcript this preparation publishes) therefore sees timestamps the span holds.
+        segments = span_segments(transcript, sample_count=span.sample_count)
         if not segments:
             return self._failed(span, transcript, base_snapshot, "unparseable_transcript")
-
-        duration = span.sample_count / float(LIVE_SAMPLE_RATE)
-        if any(segment.start < 0 or segment.end > duration for segment in segments):
-            return self._failed(span, transcript, base_snapshot, "timestamp_outside_span")
 
         local_speakers = _local_speakers(segments)
         if len(local_speakers) > self.config.max_speakers:

@@ -4556,3 +4556,100 @@ Two consequences for whoever reads this next:
    That is a machine-only check: no Mac, no operator, ~25 s per span.
 Next iteration should take J1+J2 together (one tolerance answer, one ruling on non-`prepared`),
 red-first in tests/test_live_pipeline_seams.py, exactly as H1-H3 were done.
+
+## Iteration 9 (run 20260728-112922) - J1: the span bound answered once, as a clamp
+Target: candidate 38 / J1 - "a decoder timestamp that overshoots its span kills the meeting",
+the first item of the third prd.md amendment (Phase J, the live path's terminal-failure policy).
+Result: FIXED on the branch, offline evidence only. First tracked product change since the freeze
+resumed at 9e0780a, and it is inside Phase J's scope (moss_transcribe_diarize/ + tests/).
+
+Why this candidate: the amendment authorizes it, iteration 8 already measured the decision it
+needed (2 of 33 hard-cap spans overshoot, at +0.01 s and +0.02 s), and at that 6.1 % per-span rate
+it is what makes a 60 s canary a coin flip. J2 was left for the next iteration: it is a separate
+policy ruling on a separate input class (abstain), not part of "answer the bound once".
+
+Files touched:
+  moss_transcribe_diarize/app/live_span_bounds.py   NEW leaf module - the rule and the grid.
+  moss_transcribe_diarize/app/live_session.py       imports LIVE_SAMPLE_RATE from it (re-exported,
+                                                    so every existing import still resolves);
+                                                    _canonical_validation_error's bound deleted.
+  moss_transcribe_diarize/app/live_identity.py      prepare()'s bound deleted; segments now clamped
+                                                    before evidence scoring and relabeling.
+  moss_transcribe_diarize/app/live_adapters.py      _validated_segments' bound deleted.
+  tests/test_live_pipeline_seams.py                 +11 nodes (13 -> 24).
+  scripts/ralph-afk/context.md                      span-bound contract block; branch state,
+                                                    scoreboard and test totals; candidates 36/37
+                                                    marked superseded, 38 done, 39 flagged next;
+                                                    Validation gained the red/green recipe.
+  scripts/ralph-afk/progress.txt                    this entry.
+
+### The decision, stated once
+A decoder timestamp outside its span is CLAMPED INTO the span, never refused. No tolerance
+constant exists anywhere in the tree after this change. Four reasons, all from iteration 8's sweep:
+the measured overshoot reaches TWO quantisation ticks so a one-tick tolerance still loses a span;
+any fixed epsilon is a guess about a tail sampled 44 times, while a clamp cannot be exceeded;
+live_provider_bundle._speaker_intervals_by_label already clamps these same segments one call later,
+so this moves an existing policy to where the value is first read; and the decoder is deterministic
+for identical bytes, so no retry rescues a refusal.
+The rule lives in ONE function - `span_segments(transcript, *, sample_count)` in the new leaf
+`app/live_span_bounds.py` - and all three former copies call it. Fixing fewer than three would have
+relocated the failure: live_identity.py:101 (the one H4d hit), live_session.py:438 (the same
+submission path, one call later) and live_adapters.py:387 (dead on the live path today, a fourth
+divergence tomorrow). LIVE_SAMPLE_RATE moved into the leaf and is re-exported by live_session so no
+import site changed.
+
+### Commands and results
+python3 -m pytest tests/test_live_pipeline_seams.py -q      -> 24 passed (13 pre-existing + 11 new)
+python3 -m pytest tests -q                                  -> 562 passed / 2 skipped /
+                                                               368 subtests in 60.0 s
+                                                               (was 551/2/368 - the delta is 11)
+python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8   -> rc=0, unchanged by this fix
+# red proof, no git history touched (restore verified by sha256 both ways):
+FILES="live_session.py live_identity.py live_adapters.py"    # under moss_transcribe_diarize/app
+for f in $FILES; do cp $f /tmp/j1-fixed/; git show HEAD:"$f" > "$f"; done
+python3 -m pytest tests/test_live_pipeline_seams.py -q
+  -> 3 failed / 21 passed. Exactly the three seam nodes, and the failure printed is the deployed
+     one: LiveProviderError: canonical inference returned timestamps outside frozen span.
+     The new leaf module is untracked at HEAD, so it survives the restore and the file still
+     imports - the red is the defect, not a collection error.
+for f in $FILES; do cp /tmp/j1-fixed/$(basename $f) $f; done  -> sha256 identical to pre-restore
+
+### What the 11 nodes assert
+1  the H4d transcript ("[0.11][S01]Good morning everyone...[2.51]" in a 2.50 s hard-cap span)
+   through the real runtime: no terminal failure, span 0..40000 committed, "[2.5]" present and
+   "2.51" absent, identity_status "prepared", speaker-0001 born, meeting continues past it
+2  the same overshoot through LiveSession.submit_canonical alone (the second copy)
+3  the same overshoot through LiveProvider.decode_canonical (the third copy)
+4-9 the clamp table, driven by the sweep's measured values: +0.01 and +0.02 -> 2.5; end == duration
+   unchanged; wholly inside unchanged; wholly after -> a zero-length segment at the span end; a
+   two-segment transcript where only the offending segment moves
+10 a negative start yields no segments at all (see below)
+11 an unparseable transcript is still () - the helper does not decide that question
+
+### Learned
+1. **One half of the bound was unreachable.** `parse_transcript("[-0.4][S01]x[1.0]")` returns
+   nothing: the parser does not accept a negative timestamp token, so `segment.start < 0` could
+   never fire and a negative start would have been classified "unparseable" instead. That explains
+   the sweep's min start of 0.00 across 44 decodes structurally rather than statistically. The
+   clamp still covers it, cheaply, for a future parser or a non-vLLM decoder.
+2. **Put the shared rule in a module the pre-fix files do not need.** Because
+   `live_span_bounds.py` does not exist at HEAD, restoring all three consumers still leaves the
+   test file importable, so the red proof shows the defect rather than an ImportError. Had the
+   helper gone into live_session.py, the same restore would have produced a collection error and
+   proven nothing.
+3. **Clamping in the preparer changes what identity sees, and that is the point.** The evidence
+   provider and the relabeled transcript now receive in-span values, so a published span cannot
+   claim audio it does not hold - the clamp keeps the committed prefix honest, which a widened
+   bound would not have.
+
+- Next: **J2** (candidate 39) - a non-`prepared` preparation, `abstain` above all, must commit the
+  span un-relabeled instead of ending the meeting. It is now the only thing on this path between
+  the branch and a hard-cap span that publishes. Then J3 (transient decoder failure), J4 (`reason`
+  must reach the failure detail and the canonical_processed event), then J5's gate/merge/redeploy.
+- **Not done here, deliberately:** J1's real-audio confirmation on the host (the sweep's two
+  known-failing spans, 12208+10*8000 and 12208+32*8000, must publish). The fix is not deployed and
+  the freeze forbids deploying it before Phase J's merge, so that is J5's gate. It costs no human
+  step when it comes.
+- Blocker (unchanged): m4mbp offline, so "one exact SHA everywhere" stays 3/4 at b817871.
+- Blocker (unchanged): E3's TCC clicks stay unspent until Phase J is deployed and both probes are
+  green - the same rule that has now held four times.

@@ -19,9 +19,14 @@ import hashlib
 import pytest
 
 from moss_transcribe_diarize.app.live_adapters import (
+    FakeBoundedWavInference,
+    FakeStableIdentity,
+    FakeVad,
     InferenceTranscript,
+    LiveProviderConfig,
     LiveProviderError,
     RunnerBoundedWavInference,
+    admit_live_provider,
 )
 from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter
 from moss_transcribe_diarize.app.live_coordinator import LiveCoordinator
@@ -45,9 +50,11 @@ from moss_transcribe_diarize.app.live_service_runtime import (
 from moss_transcribe_diarize.app.live_session import (
     LIVE_SAMPLE_RATE,
     AudioFrame,
+    CanonicalResult,
     FrozenSpan,
     LiveSession,
 )
+from moss_transcribe_diarize.app.live_span_bounds import span_segments
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 
 DEPLOYED_VAD_FRAME_SAMPLES = 160
@@ -552,3 +559,163 @@ def test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say():
 
 def _span(span_id: int, sample_count: int) -> FrozenSpan:
     return FrozenSpan(id=span_id, epoch=0, start_sample=0, end_sample=sample_count, reason="hard_cap")
+
+
+# --------------------------------------------------------------------------------------
+# The span-bound seam: the real decoder's timestamps under the real identity preparer.
+# --------------------------------------------------------------------------------------
+
+# What the deployed vLLM endpoint returned for span 1 of the H4d probe run, rebuilt
+# sample-for-sample on the host: a closing marker 0.01 s past the 2.50 s hard-cap span it
+# was decoded from. The 33-span sweep that followed measured this on 2 of 33 spans, at
+# +0.01 s and +0.02 s, and never at any other value.
+HARD_CAP_OVERSHOOT_TRANSCRIPT = "[0.11][S01]Good morning everyone. This is the microphone.[2.51]"
+
+
+def test_a_hard_cap_span_whose_speech_reaches_its_end_still_publishes():
+    """The H4d blocker: the ordinary case, not an edge case.
+
+    A hard-cap span is 2.5 s of unbroken speech *by construction* -- it exists precisely
+    because no endpoint was found -- and the decoder puts its closing marker at ~= the end
+    of whatever audio it is handed. So a span that ends inside speech reports an end at or
+    just past its own duration, `BoundedCausalIdentityPreparer.prepare` refused it with
+    `timestamp_outside_span`, and `live_service_runtime` turned the resulting `False` into a
+    non-retryable terminal failure: any speaker who talked for 2.5 s without pausing ended
+    the meeting.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime, runner = _decode_seam_runtime(
+        responses=[{"text": HARD_CAP_OVERSHOOT_TRANSCRIPT, "usage": {"prompt_tokens": 3, "completion_tokens": 11}}],
+        speech=(True,) * 6,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    committed = [(item.start_sample, item.end_sample, item.transcript) for item in snapshot.session.committed]
+    assert [item[:2] for item in committed] == [(0, DEPLOYED_HARD_CAP_SAMPLES)]
+    assert "Good morning everyone." in committed[0][2]
+    # The published timestamps are inside the span: the overshoot is clamped, not carried
+    # through into a committed prefix that claims audio the span does not hold.
+    assert "[2.5]" in committed[0][2]
+    assert "2.51" not in committed[0][2]
+
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert [event["identity_status"] for event in processed] == ["prepared"]
+    assert [event["submitted"] for event in processed] == [True]
+    # Identity work ran rather than being skipped: the span carries a speaker label.
+    assert snapshot.session.identity_snapshot.canonical_speakers == ("speaker-0001",)
+    assert "[S01]" in committed[0][2]
+
+    # The meeting continues past the span that used to end it.
+    runtime.accept_frame(created.session_id, _frame(5, DEPLOYED_MIXED_FRAME_SAMPLES))
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+    assert len(runner.decoded_wav_bytes) == 1
+
+
+def test_the_session_answers_the_span_bound_the_same_way_the_preparer_does():
+    """Fixing one copy of the bound relocates the failure instead of removing it.
+
+    `LiveSession._canonical_validation_error` carries its own copy, and it is reached from
+    both submission paths -- so a preparer that clamps while the session still refuses would
+    turn a `prepared` span into `LiveSessionFailed` one call later.
+    """
+    session = LiveSession(max_retained_samples=960000)
+    for sequence in range(DEPLOYED_HARD_CAP_SAMPLES // DEPLOYED_MIXED_FRAME_SAMPLES):
+        session.accept_frame(_frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    span = session.freeze_until(DEPLOYED_HARD_CAP_SAMPLES, reason="hard_cap")
+
+    submitted = session.submit_canonical(
+        CanonicalResult(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            transcript=HARD_CAP_OVERSHOOT_TRANSCRIPT,
+        )
+    )
+
+    assert submitted is True
+    snapshot = session.snapshot()
+    assert snapshot.status == "active"
+    assert snapshot.committed_samples == DEPLOYED_HARD_CAP_SAMPLES
+
+
+def test_the_provider_decode_path_answers_the_span_bound_the_same_way():
+    """The third copy of the bound, in `live_adapters._validated_segments`.
+
+    Nothing in the product constructs a `LiveProvider` today -- the coordinator calls
+    `decoder.transcribe_pcm` directly -- so this copy is unreachable on the live path and
+    was a fourth divergence waiting for whoever wires it up. It now answers through the same
+    helper as the other two.
+    """
+    provider = admit_live_provider(
+        LiveProviderConfig(name="seam-overshoot", assets=()),
+        vad=FakeVad(),
+        identity=FakeStableIdentity(confirmed=True),
+        inference=FakeBoundedWavInference(
+            transcript=HARD_CAP_OVERSHOOT_TRANSCRIPT,
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        ),
+    )
+    span = _span(0, DEPLOYED_HARD_CAP_SAMPLES)
+
+    result = provider.decode_canonical(span, b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+
+    assert result.identity_confirmed is True
+    assert result.transcript == HARD_CAP_OVERSHOOT_TRANSCRIPT
+
+
+@pytest.mark.parametrize(
+    ("transcript", "expected"),
+    [
+        pytest.param("[0.11][S01]x[2.51]", ((0.11, 2.5),), id="measured_one_tick_overshoot"),
+        pytest.param("[0.11][S01]x[2.52]", ((0.11, 2.5),), id="measured_two_tick_overshoot"),
+        pytest.param("[0][S01]x[2.5]", ((0.0, 2.5),), id="ends_exactly_at_the_span_end"),
+        pytest.param("[0.5][S01]x[1.25]", ((0.5, 1.25),), id="wholly_inside_the_span"),
+        pytest.param("[9][S01]x[12]", ((2.5, 2.5),), id="wholly_after_the_span"),
+        pytest.param("[0][S01]a[1][1][S02]b[9]", ((0.0, 1.0), (1.0, 2.5)), id="only_the_offending_segment_moves"),
+    ],
+)
+def test_a_timestamp_outside_the_span_is_clamped_into_it(transcript, expected):
+    """The tolerance question, answered once and by measurement rather than by taste.
+
+    The sweep's larger overshoot is *two* quantisation ticks, so the obvious "allow one
+    tick" would still have killed one of the two known-failing spans; any fixed epsilon is a
+    guess about a tail that was sampled 44 times. A clamp cannot be exceeded by a number
+    nobody has drawn yet, it keeps the committed prefix honest about what the span holds,
+    and it is the answer the evidence provider already gives these same segments one call
+    later (`live_provider_bundle._speaker_intervals_by_label`).
+    """
+    segments = span_segments(transcript, sample_count=DEPLOYED_HARD_CAP_SAMPLES)
+
+    assert tuple((segment.start, segment.end) for segment in segments) == expected
+    # The text is never touched: clamping is a statement about the span, not the words.
+    assert all(segment.text for segment in segments)
+
+
+def test_a_negative_timestamp_never_reaches_the_bound_at_all():
+    """Why the low half of the clamp is defensive rather than the other half of the defect.
+
+    The refused bound had two halves, `start < 0` and `end > duration`, and the 33-span
+    sweep never saw a start below 0.00 in 44 decodes. This is the structural reason: the
+    transcript parser does not accept a negative timestamp token, so a decoder that emitted
+    one produces no segments at all and the caller classifies *that* instead. The clamp
+    still covers it, because a future parser or a non-vLLM decoder may express one.
+    """
+    assert span_segments("[-0.4][S01]x[1.0]", sample_count=DEPLOYED_HARD_CAP_SAMPLES) == ()
+
+
+def test_an_unparseable_transcript_is_still_not_a_set_of_segments():
+    """The clamp answers only the bound question; "nothing parsed" stays the caller's call.
+
+    Each caller classifies it differently -- H1's empty-span commit, an abstention, a
+    provider error -- so the shared helper must not decide it for them.
+    """
+    assert span_segments("silence", sample_count=DEPLOYED_MIXED_FRAME_SAMPLES) == ()
+    assert span_segments("   ", sample_count=DEPLOYED_MIXED_FRAME_SAMPLES) == ()

@@ -11,9 +11,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_transcript
+from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_session import CanonicalResult, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
+from .live_span_bounds import span_segments
 from .transcription_outcome import EmptyTranscriptionError
 
 
@@ -379,13 +380,10 @@ def _sha256(path: Path) -> str:
 def _validated_segments(transcript: str, span: FrozenSpan) -> tuple[TranscriptSegment, ...]:
     if not transcript.strip():
         raise LiveProviderError("canonical inference returned empty transcript.")
-    segments = tuple(parse_transcript(transcript))
+    # The same clamp as the identity preparer and the session use -- see `live_span_bounds`.
+    segments = span_segments(transcript, sample_count=span.sample_count)
     if not segments:
         raise LiveProviderError("canonical inference returned zero parsed segments.")
-    duration = span.sample_count / float(LIVE_SAMPLE_RATE)
-    for segment in segments:
-        if segment.start < 0 or segment.end > duration:
-            raise LiveProviderError("canonical inference returned timestamps outside frozen span.")
     return segments
 
 
