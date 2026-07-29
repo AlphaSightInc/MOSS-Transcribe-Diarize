@@ -34,10 +34,20 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # D-c the live decode bounded by a token cap derived from the span's own duration, decision D-a
 # reclassifying macos_buffer_overrun as a lane DEGRADATION rather than a lane failure, and the
 # closed coverage gap that posts a frame on the lane that failed) authorizes exactly one further
-# merge, whose pre-merge main is therefore fc7097d. Advancing this default is a
-# reviewable diff on purpose: a SEVENTH merge still fails here, and a command-line
+# merge, whose pre-merge main was therefore fc7097d and which landed as 77e0014.
+# The SIXTH prd.md amendment of 2026-07-28 (live speaker identity, Phase N) also authorizes one
+# merge, but it is explicitly sequenced AFTER Phase M's gate and is UNSPENT — no Phase N source
+# exists on this branch, so it is not what advances this line.
+# The SEVENTH prd.md amendment of 2026-07-28 (a wall clock is not a duration, Phase P: P1 the live
+# decode measuring its own elapsed time on time.monotonic() instead of reading the runner's
+# wall-clock elapsed_sec, P2 the general ruling that untrustworthy timing metadata DEGRADES to a
+# null elapsed/RTF on canonical_processed rather than ending the meeting, P3 the real-seam
+# regressions driving the coordinator with a negative elapsed_sec, and P4 the sweep of every other
+# site that subtracted two time.time() readings and called the result a duration) authorizes
+# exactly one further merge, whose pre-merge main is therefore 77e0014. Advancing this default is a
+# reviewable diff on purpose: an EIGHTH merge still fails here, and a command-line
 # RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-fc7097d0c729ee9a96b8bf95878582e07b5b1145}"
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-77e0014ac2a1eee1edb29b109024807e9489daa5}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
