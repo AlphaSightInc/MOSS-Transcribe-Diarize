@@ -15185,3 +15185,5 @@ corrupts the RTF metric even on spans that survive.
   proved Phase M works on the real host, and root-caused candidate 56. Relaunching with fresh budget.
 - State at relaunch: `main` 77e0014, tree clean, four-way SHA 4/4, m4mbp awake with both TCC grants
   `auth_value=2`, all three services `NRestarts=0`, batch and live both 200.
+
+[loop 20260729-025318-86584] start budget=30 agent=claude branch=ralph/live-meeting-mvp
