@@ -115,9 +115,15 @@ public final class NativeLaneFrameEmitter {
     /// Ends every lane's stream and releases its trailing partial frame. Capture is over by the
     /// time this runs, so audio shorter than a whole frame either leaves now or is lost.
     public func flush() -> [CaptureFrame] {
-        CaptureLane.allCases.flatMap { lane in
+        let tail = CaptureLane.allCases.flatMap { lane in
             streams[lane].map { $0.flush().map(frame(from:)) } ?? []
         }
+        // AVAudioConverter cannot accept a second stream after end-of-stream. A later meeting must
+        // therefore construct fresh lane streams instead of reusing the converters just flushed.
+        streams.removeAll(keepingCapacity: true)
+        nextSequence.removeAll(keepingCapacity: true)
+        reportedRejections.removeAll(keepingCapacity: true)
+        return tail
     }
 
     /// Buffers dropped because their capture instant was unusable, counted per lane since the last

@@ -1384,7 +1384,7 @@ final class CaptureControllerTests: XCTestCase {
         )
         try controller.stop(deadline: Date(timeIntervalSince1970: 1))
         source.enqueue(frames: [laneFrame(.system, captureTimestampNS: 2, sequence: 41)])
-        try controller.start(
+        let restarted = try controller.start(
             configuration: CaptureConfiguration(
                 sessionID: "session-b",
                 serverURL: URL(string: "https://127.0.0.1/live")!
@@ -1393,6 +1393,8 @@ final class CaptureControllerTests: XCTestCase {
 
         XCTAssertEqual(transport.accepted.map(\.sequence), [0, 0])
         XCTAssertEqual(transport.accepted.map(\.captureTimestampNS), [1, 2])
+        XCTAssertEqual(restarted.publishedFrameCount, 1)
+        XCTAssertEqual(restarted.lastHealthSequence, 1)
         XCTAssertEqual(
             transport.sessionIDs,
             ["session-a", "session-b"],
@@ -3061,6 +3063,37 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(tail.sequence, 4)
         XCTAssertEqual(tail.pcm16.count, tail.sampleCount * 2)
         XCTAssertTrue(emitter.flush().isEmpty)
+    }
+
+    func testTerminalFlushAllowsAFreshDeviceStreamForTheNextMeeting() throws {
+        let emitter = NativeLaneFrameEmitter(wireFormat: .live, hostTime: labTimebase)
+        for index in 0..<48 {
+            _ = emitter.frames(from: [
+                deviceBuffer(
+                    lane: .system,
+                    callbackIndex: index,
+                    sampleRate: 48_000,
+                    frameCount: 1_024
+                )
+            ])
+        }
+        _ = emitter.flush()
+
+        var restarted: [CaptureFrame] = []
+        for index in 100..<148 {
+            restarted += emitter.frames(from: [
+                deviceBuffer(
+                    lane: .system,
+                    callbackIndex: index,
+                    sampleRate: 48_000,
+                    frameCount: 1_024
+                )
+            ])
+        }
+
+        XCTAssertEqual(restarted.count, 2)
+        XCTAssertEqual(restarted.map(\.sequence), [0, 1])
+        XCTAssertEqual(Set(restarted.map(\.sampleCount)), [8_000])
     }
 
     func testADeviceTimelineGapMarksTheSplicedFrameAndKeepsFollowingTheDeviceClock() throws {

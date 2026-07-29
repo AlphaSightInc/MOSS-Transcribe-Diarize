@@ -98,7 +98,11 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 6d55da7 after deployment found both production listeners restart-looping: WSL had
 # moved to mirrored networking while the Windows sign-in task kept restoring NAT portproxy rows.
 # This operator-authorized closeout makes that target-repo deployment tool mode-aware.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-6d55da7de0ca24babeb49bca762a731d85d19a9b}"
+# Advanced to 60f7767 after the final F3 proof exposed an in-process second-meeting failure:
+# AVAudioConverter remained at end-of-stream after the first clean stop. This production closeout
+# gives each meeting fresh converters and per-session counters, and closes the browser-storage
+# regression already measured green by the deployed probe.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-60f776765b4a71c6296dff94f9f0af8674a9f54b}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
