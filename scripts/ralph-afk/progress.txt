@@ -16720,3 +16720,196 @@ STOP CONDITIONS, decided before the run so a bad result is not argued away:
   * the run is RED or UNDECIDED -> that is a RESULT, not a reason to re-run with
     different knobs. Record it, diagnose from the evidence, let the next iteration
     act.
+
+## run 20260729-025318-86584 - iteration 11 - F2 IS GREEN: the 300 s locked
+## certification passed on the real hosts, interruption and all
+
+TARGET: candidate 25 / F2, the PRD's 300-second locked certification run - the
+loop's one unblocked acceptance clause, recommended by name in iteration 10.
+Chosen because everything else on the board needs an operator authorization the
+loop cannot obtain.
+
+FILES TOUCHED: scripts/ralph-afk/live-canary-clauses.py (the reducer scoping fix,
+candidate 62), scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt.
+NO product source, NO ops/, NO deploy, NO merge, NO restart, NO rebuild.
+
+VALIDATION COMMAND AND RESULT:
+  python3 scripts/ralph-afk/live-canary-clauses.py \
+    /tmp/i11-f2-evidence/ralph-cert --user-visible-gate-ms 6000 \
+    --interrupt-report /tmp/i11-f2-evidence/ralph-cert/interrupt.json
+  -> rc=0. SIX GREEN, no RED, no UNDECIDED.
+
+THE RUN. Session 0047a5ad5de74bc68f70ab1261f3c6a9, label
+ralph-i11-f2-20260729T044456Z, 300 s locked program + 15 s settle + stop, on the
+deployed 42abc5a with OUTPUT_MODE=muted. Fresh app launched (pgrep 89687),
+re-paired from a payload minted on the server loopback and piped straight into
+mtd-capture's stdin (never on argv, never to a file), driver nohup'd on m4mbp,
+5 s interruption armed on the server BEFORE the driver launched.
+Evidence /tmp/i11-f2-evidence/ralph-cert; reduction /tmp/i11-clauses.txt.
+
+THE CLAUSES, MEASURED:
+  simultaneous lanes    both capturing from t+2.2 s; both v2 lanes finished
+                        health=active, failure_code=None, failed_samples=0
+                        (system 4990123 samples, microphone 5059200)
+  silence/mute          30 s at t+70..100 s; version 365 -> 371 across it, spans
+                        kept committing, status active throughout
+  5 s INTERRUPTION      5.050 s measured on CLOCK_MONOTONIC at the server,
+                        deletes=1, rule_still_present=no, chain back to
+                        "-P INPUT ACCEPT". THE CLIENT SAW IT (1 refused poll,
+                        code 000) and resumed, first 200 at t+239.3 s.
+  ambiguous/duplicate   the mechanism at 1 Hz: publishedFrameCount FROZE at 902
+   retry                for 5.2 s, outboxRetainedFrames rose 2 -> 10,
+                        pumpFailure=transportUnavailable, then published replayed
+                        902 -> 909 -> 923 -> 928 -> 933 and retention drained to 0.
+                        The server accepted the replay EXACTLY ONCE.
+  two speakers          16 canonical speakers for 2 real voices (candidate 55);
+                        both program voices on the SYSTEM lane (candidate 51)
+  clean stop/drain      retained=0, both lanes stopped, sessionRefusal null
+  USER-VISIBLE p95      3859.6 ms vs the 6000 ms gate - GREEN and QUALIFIED:
+                        sufficientSamples TRUE (n=113), mixerOriginResolved true,
+                        fetchFailures 0, rejected 0/0/39. Components separately:
+                          committed p95 2459.0 ms (p50 1907.2, max 7740.6)
+                          render bound 1400.6 ms = cycle 1000 + snapshot p95
+                                                   223.9 + events p95 176.7
+                        Caveat travels with it: timelineIntact=false, so the
+                        number covers a PREFIX of the meeting.
+  decoder p95 RTF       0.670 over 161 spans (p50 0.131, max 20.577 on a 0.069 s
+                        span; total decode 50.0 s, max 1.42 s). D-c capped 4/161.
+  ZERO LOSS,            client publishedFrameCount 1257 at stop == the server
+   ZERO DOUBLE COUNT    journal's 1257 x "POST .../frames" all 200. And the
+                        stronger statement the journal supports: 4748 of the
+                        session's 4749 log lines are HTTP 200 - the 4749th is the
+                        terminal line. ZERO non-200 on the server for the whole
+                        run, interruption included.
+  outbox/memory bound   outbox run-wide peak 10 frames against its 15 s/lane
+                        bound, back to 0 within 3 s; retained samples 23996 of
+                        the 960000 bound (2.5 %).
+  secret hygiene        handoff returned viewAuthority: copied-to-pasteboard (never
+                        the token), pasteboard cleared to 0, live-runs 0 entries
+                        (no raw audio persisted), no /tmp/mtd-live-*.
+
+WHAT THIS RUN PROVES THAT F1 COULD NOT. F1 was 85 s of undisturbed meeting. This
+is 300 s with a DELIBERATE 5 s outage, and the three fixes the last three phases
+bought are all visible in the same ten seconds of evidence: 53 kept the heartbeat
+alive (622 heartbeats, all 200), D-a turned the resulting macos_buffer_overrun at
+t+233.0 s into a DEGRADATION that kept capturing to the end of the run, and the
+retained-until-ACK outbox replayed every frame without the server double-counting
+one. The outage is also what CAUSED the overrun - backpressure from a blocked
+uplink - which is the exact sequence D-a was authorized for and had never once
+been observed end to end.
+
+THE MARKERS. The system marker LANDED and was rewritten PHONETICALLY - candidate
+59's fourth and clearest measurement. `cardamom`, delivered isolated and repeated
+at -r 130 at the end of phase A, comes back as span 29 at t+67.5 s:
+  [0.06][S01]Pardon me, pardon me, pardon me.[1.68]
+three repetitions, right phase, right lane, right instant, in a MUTED run. The
+in-sentence delivery is span 138, "The cold word cardigan is recorded once more
+for". So the tap is upstream of the output mute and the marker survives to the
+transcript; the decoder's language model is what an exact string match loses to,
+not the capture path. Any future marker check must be phonetic.
+The room marker did NOT land - candidate 51's limit, fourth measurement. MacStudio
+spoke `obsidian` isolated and repeated 10 times into the room window; m4mbp's
+default input was again the BUILT-IN microphone, and spans 90-107 hold nothing but
+hallucinated near-silence ("I'm sorry, I can't assist with that request." x 9).
+
+THE REDUCER FIX THIS RUN REQUIRED FIRST - candidate 62. live-canary-clauses.py
+keyed "this is a soak" on the PRESENCE of view-checks.tsv, and live-cert.sh writes
+that file too. So a 300 s certification silently acquired the 16-minute soak's two
+view-authority clauses: the 900 s boundary it cannot reach (UNDECIDED) and "a clean
+stop immediately revokes it" (RED, on candidate 60). F2 COULD NEVER HAVE GONE
+GREEN, for a defect outside its own clause list that no 300 s run can reach - the
+fifth instance of the class candidates 57 and 59 name.
+  * The discriminator is EVIDENCE, not a flag: a soak is a directory that DECLARES
+    VIEW_CLAUSE_AGE in times.env - the boundary it asks to be measured against -
+    which only live-soak.sh writes. A flag would be forgettable, and a forgotten
+    flag is the silent-omission failure iteration 22 already paid for.
+  * The certification still PRINTS every line, marked "OBSERVED (not a clause of
+    this run)". Nothing is subtracted silently.
+  * Section 9(a) stays ASSERTED for both, deliberately. The per-minute
+    accepted-audio floor is not the soak's clause under another name: a minute of a
+    locked 300 s program below the floor means the two lanes were not capturing
+    simultaneously, which IS F2's own first clause. Measured, so the silence window
+    is not a false alarm: accepted_samples advances on every published frame
+    whether or not anyone speaks - F3 speaks once a minute and still records
+    57.8-61.5 s per minute.
+  RED-BEFORE / GREEN-AFTER, real for the negative control and synthetic for the
+  defect. Five REAL directories reduce BYTE-IDENTICALLY after the change:
+    /tmp/i9-f3-evidence/ralph-soak      rc=3  (the soak RED intact - the control)
+    /tmp/i6-f1-evidence/ralph-canary    rc=0
+    /tmp/i26-f1-evidence                rc=2
+    /tmp/i26b-f1-evidence               rc=2
+    /tmp/ralph-f1-evidence              rc=3
+  Two SYNTHETIC certification directories, built from F3's data with a cert-shaped
+  times.env, went rc=3 -> rc=0 with the soak findings moving to OBSERVED.
+  Evidence /tmp/i11-before-*.txt and /tmp/i11-after-*.txt.
+
+TWO CORRECTIONS TO ITERATION 10'S INSTRUMENT, both worth more than the numbers:
+  1. `--delay 215` is the WRONG arming number and 240 is the right one. The window
+     must land inside the driver's [T_START+200, T_START+260] phase; with
+     Delta = T_ARM -> T_START that needs Delta in [D-255, D-200]. D=215 tolerates
+     only Delta in [0,15] s - a scp, an ssh and two system_profiler calls can spend
+     that. D=240 tolerates Delta in [0,40] s and is what this green run used.
+     Measured Delta was 2.0 s and the drop landed at T_START+226.7 s, 33 s inside.
+  2. The report's t_drop_begin_wall is a SERVER WALL-CLOCK reading and must not be
+     trusted to locate the window on the client's timeline. The child sleeps
+     monotonically but stamps the wall clock, and this host's wall clock is the one
+     that steps (candidate 56): the report said T_ARM + 229.2 s for a 240 s delay,
+     i.e. 10.8 s of apparent drift. It happened not to matter - INT_SKEW is +/-6 s
+     and the client's one refused poll landed 0.9 s inside the window - but that
+     was luck, not design. The CLIENT-side signal is the reliable one and it is
+     unambiguous: publishedFrameCount freezes and outboxRetainedFrames rises.
+
+A DURABLE HOST CORRECTION, and it cost four probes before anything was touched:
+THE THREE MOSS UNITS ARE `systemctl --user` UNITS. A bare `systemctl show
+moss-live-web -p MainPID` prints MainPID=0 / LoadState=not-found /
+ActiveState=inactive - which reads exactly like "the live service is dead" - and
+`sudo systemctl` is wrong for the same reason. The unit files are at
+/home/devcontainers/.config/systemd/user/{moss-live-web,moss-web,moss-vllm}.service,
+all three enabled. The only correct probe is `systemctl --user show ...`;
+cross-check with `ps -eo pid,etime,args | grep mtd-subtitle-web`.
+
+HOSTS LEFT CLEAN, measured after:
+  server   HEAD 42abc5a worktree clean; live MainPID 355607 / batch 301112 and
+           322117, all NRestarts=0; batch / and /api/jobs 200; live-runs 0 entries;
+           no /tmp/mtd-live-*; 0 journal tracebacks; device store 13 / 1 unrevoked
+           (pair minted no new row); iptables -S INPUT = "-P INPUT ACCEPT";
+           /tmp/ralph-cert-interrupt.json and /tmp/live-cert-interrupt.sh removed.
+  m4mbp    app killed (pgrep empty), /tmp/live-cert.sh + /tmp/ralph-cert +
+           /tmp/ralph-cert-run.log removed, volume back to 31 unmuted, pasteboard
+           0, app inode 212080356 and CLI sha 450c20bf.. UNCHANGED (no rebuild, so
+           no TCC exposure), both TCC grants still auth_value=2.
+
+THE ONE KNOWN DEFECT THIS RUN RE-RECORDED RATHER THAN REDISCOVERED: candidate 60.
+The session's only terminal line is `helper_lease_expired lanes=none` at 00:50:44,
+29 s after the run's own stop, and the journal contains ZERO calls to .../stop.
+Printed under section 9 as OBSERVED; it is not an F2 clause.
+
+WHAT I LEARNED:
+  * Building the instrument and running it are two different acts of engineering,
+    and the second one finds what the first cannot. Iteration 10 proved the
+    interruption mechanism on the server and still shipped an arming delay with a
+    15 s tolerance and a window timestamp taken on the one clock this project has
+    proven untrustworthy. Neither is visible without a real run.
+  * A verdict word must name what it decides - fifth instance. This time the cost
+    was not a misleading line but an UNREACHABLE GREEN: F2's own clause list does
+    not contain "clean stop immediately revokes view authority", so judging it
+    against that clause meant the loop's last unblocked acceptance item could never
+    have passed, no matter how well the product behaved.
+  * The outage caused the buffer overrun. Five iterations of Phase M argued about
+    whether macos_buffer_overrun should be a failure or a degradation; this run is
+    the first evidence of what actually produces one on a healthy Mac - uplink
+    backpressure - and of D-a's ruling paying for itself inside a passing run.
+
+RECOMMENDED NEXT STEP. The loop has now run every certification it can run alone:
+F1 GREEN, F2 GREEN, F3 5-GREEN/1-RED. Everything remaining needs the operator:
+  1. candidate 60 (F3's one RED, tracked source under macos/) needs an eighth
+     authorization, and with F1 and F2 both green it is the ONLY thing standing
+     between the loop and a fully green certification set;
+  2. Phase N is authorized but gated on "Phase M's gate green" - the operator's
+     call, and the evidence for either answer is now complete;
+  3. the PRD's F2 system-audio-denied variant needs a recorded plan that does not
+     spend a TCC grant, and F1/F2's "two speakers" half needs a microphone input on
+     m4mbp that can actually hear a second voice (four measurements say the
+     built-in mic across the room cannot);
+  4. candidate 61 (live-canary-analyze.py crashes on any pruned directory) is loop
+     tooling and needs no authorization - it is the cheapest remaining item.
