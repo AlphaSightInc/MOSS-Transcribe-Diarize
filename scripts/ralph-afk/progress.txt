@@ -15767,3 +15767,74 @@ not cut short; both iteration-26 runs failed that test for a reason that no
 longer exists. Mint a fresh pairing code (the probe's is spent and its device is
 revoked), `pair` before `start` so the session id and bearer are the run's own,
 and revoke nothing belonging to m4mbp.
+
+## run 20260729-025318-86584 - iteration 6 - rollbacks recorded BEFORE the F1 canary
+## touches any host
+
+TARGET: P5(d) / Phase M gate step (d) - F1, the 60 s canary, on the real hosts,
+with candidate 51's lane-separating harness. Nothing blocks it: Phase P is merged
+as 42abc5a, deployed 4/4, and candidate 56 is proven dead on the server
+(iteration 5). This block is the PRD's "every server or Mac mutation must have
+its rollback command recorded in progress.txt before it is applied".
+
+BASELINE, read-only, taken before anything was touched:
+  server  HEAD 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870, worktree clean
+          moss-live-web MainPID 355607 NRestarts=0 active
+          moss-web      MainPID 301112 NRestarts=0 active
+          moss-vllm     MainPID 322117 NRestarts=0 active
+          live-runs 0 entries; device store 13 devices / 1 unrevoked
+          (AB600574-FD93-4321-967E-652AB064A70B = m4mbp's - NEVER revoke it)
+  m4mbp   HEAD 42abc5a, TCC 322 rows, kTCCServiceAudioCapture=2 and
+          kTCCServiceMicrophone=2 for com.alphasight.moss.capture
+          output volume 31, output muted false
+          pasteboard 79 bytes ALREADY (operator content, pre-run - so a non-zero
+          pasteboard AFTER the run is not automatically this run's leak; the
+          driver's own `pbcopy < /dev/null` + its printed length is the clause)
+          /Applications/MOSSCapture.app inode 212080356,
+          mtd-capture sha256 450c20bf.. (the 77e0014 product, correct: P7 touched
+          nothing under macos/)
+          no stale /tmp/ralph-canary
+  MacStudio: no MOSSCapture install; nothing to roll back here.
+
+MUTATIONS THIS ITERATION AND THEIR ROLLBACKS, each applied only if needed:
+  1. m4mbp: launch /Applications/MOSSCapture.app from the GUI session (`open -a`).
+     ROLLBACK: pkill -x MOSSCaptureApp
+  2. m4mbp: `mtd-capture pair` against https://100.64.0.8:7861 with a payload
+     minted on the server loopback. This REUSES the stored capture-device-id, so
+     it mints NO new device row; it rewrites capture-bearer / capture-session-id /
+     capture-view-token in ~/Library/Application Support/MOSSCapture/secrets.json.
+     ROLLBACK: none is wanted - re-pairing is the normal path and the previous
+     session's credentials are already spent. DO NOT revoke m4mbp's device row;
+     it is the one unrevoked device and revoking it would need a new pairing to
+     restore. If a probe device is ever created by mistake:
+       DELETE https://127.0.0.1:7861/api/live/devices/<device_id>   (assert 200
+       AND the {"device_id": ...} body - a POST .../revoke 404s for
+       route-not-found and reads exactly like "already revoked")
+  3. m4mbp: the driver mutes the system output (OUTPUT_MODE=muted is the
+     lane-separating mechanism). The driver's own EXIT/INT/TERM trap restores
+     whatever it found.
+     ROLLBACK if the driver is killed:
+       ssh ga0@m4mbp 'osascript -e "set volume without output muted"; \
+                      osascript -e "set volume output volume 31"'
+  4. m4mbp: /tmp/live-canary.sh and /tmp/ralph-canary/ and /tmp/ralph-canary-run.log
+     ROLLBACK: rm -rf /tmp/live-canary.sh /tmp/ralph-canary /tmp/ralph-canary-run.log
+  5. m4mbp: the pasteboard receives the view authority at `handoff`.
+     ROLLBACK: pbcopy < /dev/null   (the driver does this itself at step 16)
+  6. server: one pairing CODE minted on the loopback by ops/live-pair.sh, and one
+     live SESSION created by the Mac. Both are consumed/closed by the run.
+     ROLLBACK: none; a session ends at `stop` and view authority is revoked with
+     it. NO checkout, NO restart, NO unit change, NO manifest or TLS touch - this
+     iteration deploys nothing.
+  7. MacStudio: `say` during the driver's room window, to try to give the
+     microphone lane content of its own. Iteration 12 measured that MacStudio's
+     speaker never reached m4mbp's microphone (which is AirPods Pro over
+     Bluetooth), so this is expected to fail and is recorded either way. No
+     volume change is made on MacStudio, so there is nothing to restore.
+
+STOP CONDITIONS, decided before the run so a bad result is not argued away:
+  * served leaf != pin a35ca9fc.. -> the driver aborts rc=3; record a blocker and
+    touch nothing else.
+  * any batch MainPID moves, or NRestarts != 0 on any unit -> stop and record.
+  * the run is RED or UNDECIDED -> that is a RESULT, not a reason to re-run with
+    different knobs. Record it, diagnose from the evidence, and let the next
+    iteration act.
