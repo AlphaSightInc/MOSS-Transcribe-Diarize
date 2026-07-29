@@ -63,7 +63,8 @@
 > *The trigger recorded above was met on its own terms:* the F1-on-`42abc5a` block's clause was
 > re-measured on `7a4f59c`, and the gates index's closed rows were the named next-cheapest cut. **What
 > replaced the Phase N blocks is the thing to read instead of them:** a **step index** table and an
-> **eighteen-point decisions list**, both under the Phase N candidate section — every payload
+> **decisions list** (18 points at the compaction, 19 since iteration 3), both under the Phase N
+> candidate section — every payload
 > manifest, suite count and red-before revert table is gone, because each was only meaningful against
 > the tree it was written for and that code is now merged, deployed and certified.
 > **Measured: 263 219 → 199 877 bytes (2709 → 2011 lines), −24.1 %** before the cross-reference
@@ -257,6 +258,18 @@ carry is in the retired-evidence index below).**
   system**, while iteration 23 measured that same sweep at **+5.82 pp** offline (93.44 -> 99.26 %).
   60 and 65 belong in one authorization: fixing 60 alone lights the session-end half and leaves the
   cadence half exactly as unreadable as it is now.
+- **AND ITERATION 3 OF THIS RUN ANSWERED WHY, WHICH CHANGES WHAT THAT AUTHORIZATION SHOULD COVER:
+  candidate 55's fragmentation is what disables the sweep, so 55 belongs in that authorization and
+  is arguably its whole point.** Two offline probes, no host and no product change. From F1's and
+  F2's own evidence: only **2 of 16** (F2) and **2 of 12** (F1) canonical speakers ever hold an
+  admitted album exemplar — every other one holds nothing but the single sub-1.0 s fragment that
+  minted it, and `_album_view` admits each of those stand-ins into the sweep's **reference set**.
+  Run at that shape, the production `sweep()` answers **`kept_ambiguous` on every unit**: its
+  matcher abstains for exactly the reason the live matcher did, because 16 mutually-confusable
+  references built from 2 voices cannot clear the 0.1 margin. **Zero re-matched corrections**; the
+  same harness with those speakers banked yields **16**. So ADR-0002's +5.82 pp is a property of the
+  LibriSpeech fixture, **fixing 60 alone would publish nothing**, and the ordering is 55 first. See
+  candidate 65's cause block, and candidates 55 and 60, all re-priced.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64 and 65; F1's two REDs; the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
@@ -1203,6 +1216,21 @@ python3 scripts/ralph-afk/view-reader-probe.py     # live-pipeline-probe.py's Co
 # view-reader-probe.py caught `self._stop = threading.Event()` shadowing threading.Thread._stop,
 # which threading.Thread.join() calls internally: every run would have died at reader.join().
 
+# --- candidate 65's two probes (iteration 3 of run 20260729-094359). Offline, no host, no session,
+#     no product change; both import production's own parsers and matcher rather than modelling
+#     them. Re-run either against any future evidence directory or after any identity change. ------
+# What reached the album and the sweep on a FINISHED run. Takes span bodies from snap-full-*.json
+# when the driver pruned snapshot.tsv (cert/soak) and from snapshot.tsv when it did not (canary),
+# and always names which answered. rc=6 is a named refusal for an unreadable layout, never a
+# traceback. Coverage is reported because the bodies are a prefix by design (candidate 61).
+python3 scripts/ralph-afk/identity-evidence-probe.py /tmp/i1-f2-evidence/ralph-cert \
+    /tmp/i30-f1-evidence/ralph-canary /tmp/i9-f3-evidence/ralph-soak    # rc=0
+# What the PRODUCTION sweep does with a ledger and album in that shape, with its own dispositions
+# as the answer. Asserts on the correction's *reason* (re-matched vs merge-driven), not on a count,
+# and carries its own falsification control plus a sensitivity sweep over the one quantity it
+# invents (the per-unit noise spread; F2's vectors were never retained).
+python3 scripts/ralph-afk/sweep-fixpoint-probe.py                        # rc=0
+
 # --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
 #     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
 # --- J5d: the third amendment's gate, GREEN in iteration 16. Re-runnable end to end; each run
@@ -1642,6 +1670,16 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     `S00`. **The "latency of labelling" reading is now conditional on candidate 65**: it assumed the
     sweep repairs the fragmentation retrospectively, and on the deployed system no sweep publishes
     anything, so today 55's cost is permanent in a real meeting rather than deferred.
+    **PROMOTED IN ITERATION 3 OF RUN `20260729-094359`, and this is the largest change to 55's price
+    in the loop's history: 55 is not merely fragmentation the sweep can heal — 55 is WHY THE SWEEP
+    CANNOT HEAL ANYTHING.** Candidate 65's cause probe measured that F2's fragmentation leaves 14 of
+    16 canonical speakers on a provisional stand-in, that `_album_view` admits every stand-in into
+    the sweep's reference set, and that the production `sweep()` then answers **`kept_ambiguous` on
+    every unit** — zero re-matched corrections — while the identical harness with those 14 banked
+    yields 16. So iteration 23's "the sweep's share is all of it, 55 is a latency of labelling" is
+    **true on the fixture and false on a real meeting**, and the two are no longer separable items:
+    an authorization for 60 or 65 that leaves 55 open buys an `identity_finalized` event and no
+    correction. See candidate 65's cause block.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1699,6 +1737,16 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     the driver's `post-stop` view check 0.3 s after `ok:true running:false` answered snapshot **200**
     and events **200**. `identity_finalized` **0** again. Every run since iteration 9 that has looked
     has found it; nothing about it is intermittent.
+    **RE-PRICED DOWNWARDS IN ITERATION 3 OF RUN `20260729-094359`, and stated plainly because the
+    loop argued this one upwards twice.** Iteration 30 promoted 60 from "the PRD's word
+    *immediately*" to "ADR-0002's second acceptance half is unreachable in production"; candidate
+    65's cause probe shows the second half of that claim does not hold. On F2's **measured** shape
+    the production sweep returns `kept_ambiguous` on **every** unit, so wiring `stop` would fire the
+    session-end sweep, record `identity_finalized` — and publish **no correction**. 60 is back to
+    what it was first filed as: a **bounded 30 s view-authority exposure** failing the soak clause's
+    word *immediately*, plus the event that would make candidate 65 readable. Still worth an
+    authorization; no longer the one that buys convergence. **Sequence it with or behind candidate
+    55.**
 65. **Neither half of Phase N step 3 produces a correction on a real meeting, and an empty cadence
     sweep leaves no record to tell "found nothing" from "never ran".** `[open, new — run
     `20260729-094359` iteration 1; found by F2 on the deployed `7a4f59c`]`. Measured over a **319 s**
@@ -1722,6 +1770,34 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     instead of an absence. Tracked product source; **needs its own authorization** — and it should be
     weighed together with candidate 60, because a fix to 60 alone would light up the session-end half
     while leaving the cadence half exactly as unreadable as it is now.
+    ***THE CAUSE HALF IS ANSWERED — run `20260729-094359` iteration 3, and it is the FIRST branch:
+    the deployed album disagrees with the fixture, and candidate 55's fragmentation is what disables
+    the sweep.*** Two offline probes, no host, no session and no product change (both in the fence).
+    **Measured from the runs' own evidence** by `identity-evidence-probe.py`, through production's
+    `span_segments` / `_speaker_intervals_by_label` at the deployed `min_segment_samples` **8000**
+    read off the host manifest: on **F2** only **2 of 16** canonical speakers ever hold an admitted
+    album exemplar (`{S01: 74, S06: 1}`), and only **one** of them could ever have moved; on **F1**
+    **2 of 12** (`{S02: 17, S01: 1}`). Fourteen of F2's sixteen hold nothing but the single sub-1.0 s
+    fragment that minted them. (The evidence floor bites first: only **99/162** of F2's segments and
+    **243/1371** of F3's clear 0.5 s at all.)
+    **Reproduced on the production `sweep()`** by `sweep-fixpoint-probe.py` at that shape: all 105
+    ledger units come back **`kept_ambiguous`** — `assign_speakers` raises for *every* span, i.e. the
+    sweep's matcher abstains for exactly the reason the live matcher did, because `_album_view`
+    (`live_identity_sweep.py:659-668`) puts each provisional stand-in **into the reference set**, so
+    16 mutually-confusable references built from 2 voices cannot satisfy the 0.1 margin. **Zero
+    re-matched corrections**, on both readings of F2's second bank and stable across the invented
+    noise spread 0.10–0.50. The only correction the shape admits at all is a **merge**, which needs
+    an admitted bank on *both* sides (decision 7) — 14 of 16 never earn one. **Falsification control,
+    same harness:** give those 14 admitted banks and the same ledger yields **16 re-matched
+    corrections + 15 merges**, and one deliberately mislabelled unit is corrected once. The harness
+    can produce corrections; the *shape* is what blocks them.
+    ***What this re-prices, and it is the thing to read before the next authorization.*** ADR-0002's
+    measured +5.82 pp is a property of a corpus where every speaker earns an admitted bank
+    (LibriSpeech read speech); it does not transfer to a meeting whose minority speakers are born
+    from fragments. **So fixing candidate 60 alone would publish nothing** — the session-end sweep
+    would fire, record `identity_finalized`, and return `kept_ambiguous` on every unit. 65's
+    diagnosability half stands unchanged and is now worth *more*, because "swept and proposed
+    nothing" is precisely what is happening and no surface says so.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
@@ -2010,6 +2086,17 @@ step 4 and any future identity work are constrained by them.**
     carrying its final canonical speaker, so it never models the transient one-span reconcile lag. And
     on the deployed system **neither half of step 3 publishes a correction** (candidates 60 and 65),
     so the convergence half of the acceptance bar is unmet in production however green the harness is.
+19. **The corpus gap in 18 is not a caveat any more - it is measured, and it is the whole of why the
+    sweep is inert** (iteration 3 of run `20260729-094359`). Every fixture speaker earns an admitted
+    bank; on F1 and F2 only **2 of 12** and **2 of 16** do. A speaker with no bank keeps its minting
+    fragment as its reference (`FingerprintAlbum.reference`, the `_hold_provisional` path) and
+    `_album_view` puts that stand-in into the sweep's reference set anyway - deliberately, so the
+    sweep answers the question the meeting is asking. The consequence was not foreseen: 16 references
+    drawn from 2 voices are mutually confusable, `assign_speakers` abstains for the whole span, and
+    the sweep returns `kept_ambiguous` on **every** unit. **The sweep therefore inherits, rather than
+    repairs, the live matcher's ambiguity — on exactly the meetings that need repair most.** Any
+    future identity work must treat "the harness measures the sweep at +5.82 pp" as a statement about
+    LibriSpeech until it is re-measured on a corpus with fragment-born speakers.
 
 ### (superseded) Phase N as first written - retired to progress.txt
 

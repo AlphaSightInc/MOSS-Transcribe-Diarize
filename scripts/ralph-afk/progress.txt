@@ -22902,3 +22902,147 @@ while being unable to say whether it ran).  If the loop must act alone in the
 meantime, **Phase N step 4** is the only unblocked product item and its
 constraints are written down; weigh it against the fact that it would be measured
 offline only while 60 and 65 hold.
+
+================================================================================
+RUN 20260729-094359-88967  ITERATION 3
+CANDIDATE 65's CAUSE IS ANSWERED - THE SWEEP IS DISABLED BY CANDIDATE 55
+================================================================================
+
+TARGET.  Candidate 65 states its own resolution rule: "the two facts have to be
+reconciled by measurement, not by argument: *either* the deployed ledger/album
+disagrees with the fixture in a way the harness cannot see, *or* the correction
+was proposed and something upstream of `take_identity_revision` dropped it."
+Iteration 2's recommended next step named an authorization covering 60 and 65 as
+what unblocks the acceptance bar.  This iteration bought that decision its
+missing input: WHY no sweep publishes a correction.  Diagnosis only - no product
+source, no test, no host, no session, no TCC.
+
+WHAT I DID.  Two probes under scripts/ralph-afk/, both importing production's own
+parsers and matcher rather than modelling them (Phase N decision 5's rule applied
+to a measurement).
+
+  scripts/ralph-afk/identity-evidence-probe.py
+    Reads a finished run's evidence and measures how much of the meeting ever
+    reached the album and the sweep ledger, through production's `span_segments`
+    and `_speaker_intervals_by_label` at the DEPLOYED `min_segment_samples`,
+    read off the host manifest rather than out of a document (decision 16):
+      identity_provider.min_segment_samples = 8000   (0.5 s)
+      identity_config = {max_speakers 16, min_match_score 0.35,
+                         min_match_margin 0.1}
+      no album_* keys -> code defaults, admission 1.0 s, k=10
+    Takes span bodies from snap-full-*.json where the driver pruned snapshot.tsv
+    (cert/soak) and from snapshot.tsv where it did not (canary), and always names
+    which answered; coverage is reported because the bodies are a prefix by
+    design (candidate 61).  rc=6 is a named refusal, never a traceback.
+
+  scripts/ralph-afk/sweep-fixpoint-probe.py
+    Builds a real FingerprintAlbum and a real SweepLedger in that measured shape
+    and runs the production `sweep()` on it, reporting its own dispositions.
+    Asserts on a correction's REASON (re-matched vs merge-driven), not on a
+    count, and carries a falsification control plus a sensitivity sweep over the
+    one quantity it invents.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/identity-evidence-probe.py \
+      /tmp/i1-f2-evidence/ralph-cert /tmp/i30-f1-evidence/ralph-canary \
+      /tmp/i9-f3-evidence/ralph-soak                                  -> rc=0
+
+    F2 (deployed 7a4f59c, 319 s, snap-full-0180.json, 154/171 spans)
+      evidence floor    99/162 segments clear 8000 samples   (61.1 %)
+      album admission   77/88 observations clear 1.0 s       (87.5 %)
+      references        2 of 16 canonical speakers ever hold an admitted
+                        exemplar: {S01: 74, S06: 1}; ONE could have moved
+      published         label_revision_version=0, revised_transcript on 0 spans
+    F1 (deployed 7a4f59c, 86 s, snapshot.tsv, 52/52 spans)
+      evidence floor    30/41 segments   (73.2 %)
+      album admission   18/28            (64.3 %)
+      references        2 of 12: {S02: 17, S01: 1}; ONE could have moved
+    F3 (42abc5a, pre-album, 1029 s, snap-full-0330.json, 414/443 spans)
+      evidence floor    243/1371 segments (17.7 %)
+      album admission   45/219            (20.5 %)
+      references        3 of 16: {S03: 18, S09: 12, S01: 10}
+      (F3 predates the album, so its bank figures are what the album WOULD have
+       received, not what it did.  Stated so the row is not over-read.)
+
+  python3 scripts/ralph-afk/sweep-fixpoint-probe.py                   -> rc=0
+
+    F2's shape, second bank = one voice banked twice
+      105 spans / 105 units   dispositions {kept_ambiguous: 105}
+      corrections 1 (0 re-matched, 1 from a merge)   merges 1
+    F2's shape, second bank = two real voices
+      105 spans / 105 units   dispositions {kept: 1, kept_ambiguous: 104}
+      corrections 0 (0 re-matched)                   merges 0
+    sensitivity over the invented noise spread (the probe's only invention)
+      0.10 / 0.20 / 0.35 -> kept_ambiguous 105, 0 re-matched
+      0.50               -> kept 13 / kept_ambiguous 92, 0 re-matched
+      0.80               -> kept 57 / kept_ambiguous 36, 12 re-matched
+    CONTROL, the same 16 speakers all holding admitted banks
+      corrections 31 (16 re-matched, 15 from a merge)  merges 15
+    POSITIVE CONTROL, one voice-A unit labelled speaker-0002
+      corrections 1 (1 re-matched)
+
+  python3 -m py_compile <both probes>                                 -> ok
+  git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'          -> EMPTY
+    (so both probes still speak for the deployed service)
+
+THE FINDING.
+  Candidate 65's FIRST branch is the answer, and it names a different culprit
+  than the loop expected.  **Candidate 55's fragmentation is what disables the
+  sweep.**  A canonical speaker born from a sub-1.0 s fragment never earns an
+  admitted bank, so `FingerprintAlbum.reference` returns the minting fragment
+  itself (`_hold_provisional`), and `_album_view` (live_identity_sweep.py:
+  659-668) deliberately puts that stand-in INTO the sweep's reference set - "a
+  speaker with no admitted bank is un-mergeable but still matchable".  The
+  consequence was not foreseen: 16 references drawn from 2 real voices are
+  mutually confusable, `assign_speakers` fails the 0.1 margin and raises, and the
+  sweep marks EVERY unit `kept_ambiguous`.  The sweep therefore INHERITS the live
+  matcher's ambiguity instead of repairing it - on exactly the meetings that need
+  repair most.  The only correction the shape admits at all is a merge, and a
+  merge needs an admitted bank on BOTH sides (Phase N decision 7), which 14 of 16
+  speakers never earn.  Both halves of step 3 are blocked by one cause.
+
+WHAT THIS RE-PRICES.
+  * Candidate 55 is PROMOTED and is now the ordering constraint.  Iteration 23's
+    "the sweep's share is all of it, so 55 is a latency of labelling" is true on
+    the fixture and false on a real meeting.
+  * Candidate 60 is RE-PRICED DOWNWARDS, honestly, because the loop argued it up
+    twice.  Wiring `stop` would fire the session-end sweep, record
+    `identity_finalized`, and publish NO correction.  60 returns to what it was
+    first filed as - a bounded 30 s view-authority exposure that fails the soak
+    clause's word *immediately*, plus the event that makes 65 readable.
+  * Candidate 65's diagnosability half is unchanged and worth MORE: "swept and
+    proposed nothing" is exactly what is happening, and no surface says so.
+  * ADR-0002's measured +5.82 pp (93.44 -> 99.26 %) is a property of a corpus in
+    which every speaker earns an admitted bank.  Recorded as Phase N decision 19.
+
+WHAT I LEARNED (two things).
+  1. **A caveat that is written down is not the same as a caveat that is
+     measured.**  Phase N decision 18 already said the corpus was clean read
+     speech and that `min_segment_samples` skips the fragments a real room
+     produces.  It read as a limit on the accuracy NUMBER.  Measured, the same
+     fact is a limit on whether the MECHANISM runs at all - 2 of 16 speakers
+     banked, and the sweep inert.  The gap between the two readings cost three
+     iterations of attributing the silence to candidate 60.
+  2. **The evidence to answer this was already on disk.**  /tmp/i1-f2-evidence
+     and /tmp/i30-f1-evidence have sat there since iterations 1 and 30 carrying
+     every span body needed; the answer took no host, no session and no
+     operator.  Before proposing a run, check what the last run already recorded.
+
+BLOCKERS.  Nothing blocked this iteration.  Unchanged from iteration 2 and
+re-verified against prd.md's tail (last prd.md commit is still 0456177, the
+ADR-0002 supersession; no ninth authorization exists):
+  * Candidates 55, 58, 60, 64, 65 and F1's two REDs are tracked product source or
+    gate definitions under the post-merge freeze, and merge-keeper.sh's
+    expected_main guard refuses a ninth merge.
+  * The F2 system-audio-denied variant would spend a TCC grant; F1/F2's second
+    voice is bounded by m4mbp's built-in microphone (five runs).
+  * Phase N step 4 remains the one open product item needing no authorization.
+
+RECOMMENDED NEXT STEP.  The authorization argument has changed shape and should
+be put to the operator in its new form: **one authorization covering 55 + 60 +
+65, with 55 as the load-bearing member** - because 60 and 65 alone buy an event
+and a log line and no correction, and the measurement for that is now on record.
+If the loop must act alone first, the cheapest remaining evidence is to re-run
+the accuracy harness with a fragment-born-speaker corpus (fixture change only,
+no product source) and measure what the sweep recovers there - that would price
+55's fix before anyone writes it.
