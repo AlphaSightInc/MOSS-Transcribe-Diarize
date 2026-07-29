@@ -16069,3 +16069,30 @@ rc=0) - iteration 26 found the soak driver's abort glob matched every healthy
 poll, and an instrument that has not run this iteration is not evidence that it
 works. Candidate 59 is cheap and could be fixed in the same iteration as the
 soak's ~19 minutes of waiting, but it is loop tooling and must not delay F3.
+
+## run 20260729-025318-86584 - iteration 6, addendum - a second concurrent
+## operator commit, and the `git add -A` hazard it exposes
+
+Recorded after the iteration's own commit, because it is a near-miss rather than
+an outcome and the next iteration must not have to rediscover it.
+
+128eae4 "docs: prototype gates A/B/C passed - ADR-0002 accepted", author
+AlphaSightInc, 2026-07-28 23:48:25 -0400 - i.e. 35 SECONDS before this loop's
+iteration-6 commit (1c3a369, 23:49:00). That is the SECOND concurrent operator
+commit to ralph/live-meeting-mvp in two iterations; 00620ab landed during
+iteration 5. Both are docs/-only, so neither changes anything this loop has
+measured and neither touches product source, tests or ops/.
+
+NOTHING WAS LOST THIS TIME - `git show 1c3a369 -- docs/` is empty, because the
+operator committed their own work before my `git add -A` ran. THE NEAR-MISS IS
+THE POINT: had the timing gone the other way by half a minute, `git add -A`
+would have staged the operator's uncommitted work-in-progress and published it
+under a `ralph:` subject, which is both a lie about authorship and a silent
+widening of an iteration's payload.
+
+THE DURABLE RULE, now in context.md: stage this loop's evidence EXPLICITLY -
+`git add scripts/ralph-afk/` - or, when a product change is in play, stage the
+reviewed payload by path. NEVER `git add -A` on this branch again. And run
+`git log --format='%h %an %ad %s' --date=iso -5` before any merge: the tip may
+have moved more than once since the iteration began, and the merge fences assume
+they know what the feature tip contains.

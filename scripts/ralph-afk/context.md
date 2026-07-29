@@ -83,6 +83,16 @@ is why `git diff --name-only 42abc5a HEAD -- ':!scripts/ralph-afk'` now lists
 instead of being empty. **Do not revert it** and do not treat it as loop drift; do re-check the tip
 before any future merge, because the freeze's "only Ralph evidence changes on this branch" premise no
 longer holds by itself.
+**IT HAPPENED AGAIN IN ITERATION 6, and it is now a standing hazard, not an anecdote.** `128eae4`
+*"docs: prototype gates A/B/C passed - ADR-0002 accepted"* was committed by the operator at 23:48:25,
+**35 seconds before** this loop's own iteration-6 commit — the second concurrent operator commit in
+two iterations, both `docs/`-only. Nothing was lost this time (`git show <my sha> -- docs/` is empty,
+because the operator committed their own work first), but the near-miss is the point: **`git add -A`
+on this branch can stage an operator's uncommitted work-in-progress and publish it under a `ralph:`
+commit message.** *The durable rule:* stage this loop's evidence **explicitly** —
+`git add scripts/ralph-afk/` — or, when a product change is in play, stage the reviewed payload by
+path. Never `git add -A` here again. And check `git log --format='%h %an %ad %s' --date=iso -5`
+before any merge: the tip may have moved twice since the iteration began.
 
 **PRD acceptance scoreboard (rows unchanged since iteration 9 except where noted; Phase M's local
 gate is green at `21a73ea`, the sixth merge landed as `77e0014` in iteration 19, and **it is now
