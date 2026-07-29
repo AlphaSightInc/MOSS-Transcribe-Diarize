@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import math
+import logging
 from collections import deque
 from dataclasses import dataclass
 from typing import Protocol
@@ -12,6 +12,7 @@ from .live_adapters import (
     InferenceTranscript,
     LiveProviderError,
     LiveProviderTransientError,
+    trustworthy_duration_sec,
 )
 from .live_arbiter import ArbiterWorkItem, InferenceArbiter
 from .live_endpoint import EndpointPolicy, EndpointPolicyError, EndpointSpan, SpeechObservation
@@ -31,6 +32,9 @@ from .live_session import (
 
 class LiveCoordinatorError(RuntimeError):
     pass
+
+
+_DECODE_LOG = logging.getLogger("moss_transcribe_diarize.live.decode")
 
 
 # How many times one span's audio is offered to a decoder that did not answer. The bytes are
@@ -460,13 +464,20 @@ def _canonical_decode_measurement(span: FrozenSpan, elapsed_sec: float | None) -
     if sample_count <= 0:
         raise LiveCoordinatorError("canonical span sample count must be positive.")
     duration_sec = sample_count / float(LIVE_SAMPLE_RATE)
-    if elapsed_sec is None:
-        rtf = None
-    else:
-        elapsed_sec = float(elapsed_sec)
-        if not math.isfinite(elapsed_sec) or elapsed_sec < 0:
-            raise LiveCoordinatorError("canonical decode elapsed_sec must be finite and non-negative.")
-        rtf = elapsed_sec / duration_sec
+    # The same rule the adapter states, applied where every span passes: a duration that
+    # cannot be trusted is reported as unknown -- elapsed and RTF both null on
+    # `canonical_processed` -- and the span still commits. It is logged rather than only
+    # nulled, because a measurement that silently disappears is how four cycles were spent
+    # not knowing why a meeting stopped.
+    trustworthy = trustworthy_duration_sec(elapsed_sec)
+    if elapsed_sec is not None and trustworthy is None:
+        _DECODE_LOG.warning(
+            "live canonical decode timing untrustworthy: span_id=%s field=elapsed_sec value=%r",
+            span.id,
+            elapsed_sec,
+        )
+    elapsed_sec = trustworthy
+    rtf = None if elapsed_sec is None else elapsed_sec / duration_sec
     return {
         "canonical_decode_elapsed_sec": elapsed_sec,
         "frozen_span_sample_count": sample_count,

@@ -23,6 +23,15 @@ What it deliberately mirrors from the Mac client
 * The pump cadence: one frame per lane per 0.5 s tick, lanes independent, paced against
   a wall clock rather than sent as fast as the socket allows.
 * The portal's read path: snapshot(since_version) then events(since_seq), serially.
+* Optionally (`--concurrent-readers N`) the Mac's *read concurrency*: N extra view
+  readers, each on its own pinned connection and its own thread, polling snapshot and
+  events while frames are being posted. On m4mbp two readers run at once -- the app's
+  own latency probe and the portal poller -- and F1 measured 325 + 56 snapshot fetches
+  in 73.3 s, i.e. ~4.4 reads/s against 4 frame posts/s. `live_snapshot`/`live_events`
+  are sync `def` handlers that Starlette runs in its threadpool while
+  `accept_live_frame` is `async def` on the event loop, so a strictly serial probe
+  structurally cannot overlap a read with a write. Default 0, which leaves every
+  earlier run comparable.
 
 What it deliberately does NOT mirror
 ------------------------------------
@@ -53,6 +62,7 @@ import ssl
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import wave
 from dataclasses import dataclass, field
@@ -152,6 +162,119 @@ class PinnedClient:
             except (ValueError, UnicodeDecodeError):
                 return response.status, raw.decode("utf-8", "replace"), elapsed
         raise ProbeError("unreachable")
+
+
+class ConcurrentViewReader(threading.Thread):
+    """A view reader on its own pinned connection, polling while frames are posted.
+
+    `PinnedClient` holds one socket and is not thread-safe, so each reader owns one --
+    which is also what the Mac does: the app's latency probe and the portal poller are
+    two independent HTTPS clients.
+
+    It records *when* a read first stopped returning 200 and *what the server said*.
+    That is the point: on the Mac both readers 401 at the same instant a frame first
+    409s, and neither host keeps the body, so no recorded run names the cause.
+    """
+
+    def __init__(
+        self,
+        *,
+        name: str,
+        host: str,
+        port: int,
+        pin: str,
+        session_id: str,
+        view_token: str,
+        interval: float,
+    ) -> None:
+        super().__init__(name=name, daemon=True)
+        self._client = PinnedClient(host, port, pin)
+        self._session_id = session_id
+        self._token = view_token
+        self._interval = max(0.0, interval)
+        # NOT `self._stop`: threading.Thread.join() calls its own private _stop().
+        self._stop_event = threading.Event()
+        self._started_monotonic: float | None = None
+        self.snapshot_ms: list[float] = []
+        self.events_ms: list[float] = []
+        self.status_counts: dict[str, int] = {}
+        self.first_non_200: dict | None = None
+        self.last_non_200: dict | None = None
+        self.error: str | None = None
+        self.last_version: int | None = None
+        self.last_seq = 0
+        self.polls = 0
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    def run(self) -> None:
+        self._started_monotonic = time.monotonic()
+        try:
+            while not self._stop_event.is_set():
+                self._poll_once()
+                self.polls += 1
+                if self._stop_event.wait(self._interval):
+                    break
+        except Exception as exc:  # a reader must never take the run down with it
+            self.error = f"{type(exc).__name__}: {exc}"
+        finally:
+            self._client.close()
+
+    def _poll_once(self) -> None:
+        path = f"/api/live/sessions/{self._session_id}/snapshot"
+        if self.last_version is not None:
+            path += f"?since_version={self.last_version}"
+        status, body, elapsed = self._client.request("GET", path, bearer=self._token)
+        self.snapshot_ms.append(elapsed * 1000.0)
+        self._record("snapshot", status, body)
+        if status == 200 and isinstance(body, dict) and body.get("snapshot"):
+            session = (body["snapshot"].get("session") or {})
+            version = session.get("version")
+            if isinstance(version, int):
+                self.last_version = version
+
+        status, body, elapsed = self._client.request(
+            "GET",
+            f"/api/live/sessions/{self._session_id}/events?since_seq={self.last_seq}",
+            bearer=self._token,
+        )
+        self.events_ms.append(elapsed * 1000.0)
+        self._record("events", status, body)
+        if status == 200 and isinstance(body, dict):
+            for event in body.get("events") or ():
+                self.last_seq = max(self.last_seq, int(event.get("seq", 0)) + 1)
+
+    def _record(self, kind: str, status: int, body: object) -> None:
+        key = f"{kind}:{status}"
+        self.status_counts[key] = self.status_counts.get(key, 0) + 1
+        if status == 200:
+            return
+        started = self._started_monotonic or time.monotonic()
+        entry = {
+            "kind": kind,
+            "status": status,
+            # View-route bodies are `{"detail": ...}` or a failure record; no route
+            # echoes a token, so keeping the body cannot leak one.
+            "body": body if isinstance(body, (dict, str)) else repr(body),
+            "at_seconds": round(time.monotonic() - started, 3),
+        }
+        if self.first_non_200 is None:
+            self.first_non_200 = entry
+        self.last_non_200 = entry
+
+    def summary(self) -> dict:
+        return {
+            "name": self.name,
+            "polls": self.polls,
+            "status_counts": dict(sorted(self.status_counts.items())),
+            "first_non_200": self.first_non_200,
+            "last_non_200": self.last_non_200,
+            "snapshot_p95_ms": _p95(self.snapshot_ms),
+            "events_p95_ms": _p95(self.events_ms),
+            "handshakes": self._client.handshakes,
+            "error": self.error,
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +419,46 @@ def build_schedule(
     return tuple(mic), tuple(system)
 
 
+def build_continuous_track(
+    voice: str,
+    lines: tuple[str, ...],
+    total_seconds: float,
+    workdir: Path,
+    lead_seconds: float,
+) -> array.array:
+    """Tile `lines` back to back so the lane is voiced for the whole run.
+
+    `build_lane_track` lays a handful of utterances on a silent timeline, so between turns
+    the lane sends frames whose every sample is zero and whose wire `silent` flag is true.
+    A real capture device never does that: the microphone hears the room and the process
+    tap carries the program, so on the Mac **both lanes are non-silent continuously** and
+    every span closes on the 2.5 s hard cap with content on both lanes. That difference is
+    measured, not assumed -- iteration 26's F1 run B committed 12 spans in 30 s, all
+    `hard_cap`, while iteration 23's 120 s probe run committed 36 of 59 spans *empty*. It
+    is the largest remaining gap between what this probe drives and what the real client
+    drives, which is why it is a mode rather than a rewrite: `alternating` stays the
+    default so every earlier run remains comparable.
+
+    Utterances are concatenated rather than placed at offsets, so no silence can appear
+    between them however long `say` makes each line.
+    """
+
+    total_samples = int(total_seconds * SAMPLE_RATE)
+    track = array.array("h", bytes(max(0, total_samples) * 2))
+    rendered = [synthesize(voice, line, workdir) for line in lines]
+    cursor = int(max(0.0, lead_seconds) * SAMPLE_RATE)
+    index = 0
+    while cursor < total_samples:
+        samples = rendered[index % len(rendered)]
+        index += 1
+        if not samples:
+            continue
+        end = min(cursor + len(samples), total_samples)
+        track[cursor:end] = samples[: end - cursor]
+        cursor = end
+    return track
+
+
 def redact_snapshot(snapshot: dict) -> dict:
     """Session facts worth reporting; no tokens live in a snapshot, but be explicit."""
     session = snapshot.get("session") or {}
@@ -362,6 +525,16 @@ def main() -> int:
     parser.add_argument("--mic-voice", default="Samantha")
     parser.add_argument("--system-voice", default="Fred")
     parser.add_argument(
+        "--lane-audio",
+        choices=("alternating", "continuous"),
+        default="alternating",
+        help="alternating: one lane speaks while the other sends silent frames (the "
+        "original schedule). continuous: both lanes are voiced for the whole run, which "
+        "is what a real Mac capture does -- the microphone hears the room and the tap "
+        "carries the program, so no lane is ever silent and every span closes on the hard "
+        "cap with content on both lanes.",
+    )
+    parser.add_argument(
         "--lane-offset-ms",
         default="",
         help="comma-separated LANE=MS shifts applied to that lane's whole "
@@ -371,6 +544,22 @@ def main() -> int:
     )
     parser.add_argument("--poll-every-ticks", type=int, default=2)
     parser.add_argument("--stop-deadline", type=float, default=30.0)
+    parser.add_argument(
+        "--concurrent-readers",
+        type=int,
+        default=0,
+        help="extra view readers, each on its own thread and its own pinned connection, "
+        "polling snapshot+events while frames are posted. The Mac runs 2 (the app's "
+        "latency probe and the portal poller); 0 keeps this probe strictly serial and "
+        "every earlier run comparable.",
+    )
+    parser.add_argument(
+        "--reader-interval",
+        type=float,
+        default=0.22,
+        help="seconds between polls per concurrent reader; 0.22 reproduces F1's measured "
+        "~4.4 snapshot reads per second per reader",
+    )
     parser.add_argument(
         "--no-fail-fast",
         dest="fail_fast",
@@ -408,14 +597,25 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="moss-probe-say-") as tmp:
         workdir = Path(tmp)
         mic_schedule, system_schedule = build_schedule(args.seconds, args.lead_seconds)
-        tracks = {
-            "microphone": build_lane_track(args.mic_voice, mic_schedule, args.seconds, workdir),
-            "system": build_lane_track(args.system_voice, system_schedule, args.seconds, workdir),
-        }
+        if args.lane_audio == "continuous":
+            tracks = {
+                "microphone": build_continuous_track(
+                    args.mic_voice, MIC_LINES, args.seconds, workdir, args.lead_seconds
+                ),
+                "system": build_continuous_track(
+                    args.system_voice, SYSTEM_LINES, args.seconds, workdir, args.lead_seconds
+                ),
+            }
+        else:
+            tracks = {
+                "microphone": build_lane_track(args.mic_voice, mic_schedule, args.seconds, workdir),
+                "system": build_lane_track(args.system_voice, system_schedule, args.seconds, workdir),
+            }
     lane_frames = {lane: frames_of(track) for lane, track in tracks.items()}
     tick_count = max(len(frames) for frames in lane_frames.values())
     report["audio"] = {
         "voices": {"microphone": args.mic_voice, "system": args.system_voice},
+        "lane_audio": args.lane_audio,
         "lead_seconds": args.lead_seconds,
         "lane_offset_ms": {
             lane: offset / 1e6 for lane, offset in lane_offset_ns.items()
@@ -469,6 +669,21 @@ def main() -> int:
             "provider_manifest_hash": descriptor.get("provider_manifest_hash"),
         },
     }
+
+    # --- the Mac's read concurrency, if asked for -------------------------------------
+    readers: list[ConcurrentViewReader] = []
+    for index in range(max(0, args.concurrent_readers)):
+        reader = ConcurrentViewReader(
+            name=f"view-reader-{index + 1}",
+            host=args.host,
+            port=args.port,
+            pin=args.pin,
+            session_id=session_id,
+            view_token=view_token,
+            interval=args.reader_interval,
+        )
+        readers.append(reader)
+        reader.start()
 
     # --- publish, paced like the production pump ------------------------------------
     origin_ns = time.time_ns() - int(TICK_SECONDS * 1e9)
@@ -585,6 +800,13 @@ def main() -> int:
                                     "submission_refusal",
                                     "empty_reason",
                                     "canonical_decode_rtf",
+                                    # D-c (candidate 50, iteration 16) put the decode bound and
+                                    # its verdict on this event. Collecting the RTF alone made the
+                                    # probe unable to say whether a span was CAPPED or merely
+                                    # fast, which is the whole question the cap was added to answer.
+                                    "canonical_decode_elapsed_sec",
+                                    "canonical_decode_token_cap",
+                                    "canonical_decode_capped",
                                     "frozen_span_duration_sec",
                                 )
                             }
@@ -604,6 +826,20 @@ def main() -> int:
         "wall_seconds": round(time.monotonic() - started_wall, 2),
         "tls_handshakes": client.handshakes,
     }
+
+    # Stopped before the `stop` call, so a 401 recorded by a reader means the session
+    # stopped being viewable *during the meeting* -- which is candidate 56 -- and not
+    # because this probe ended it.
+    for reader in readers:
+        reader.stop()
+    for reader in readers:
+        reader.join(timeout=10.0)
+    if readers:
+        report["concurrent_readers"] = {
+            "count": len(readers),
+            "interval_seconds": args.reader_interval,
+            "readers": [reader.summary() for reader in readers],
+        }
 
     # --- stop and drain --------------------------------------------------------------
     status, body, _ = client.request(
@@ -662,6 +898,7 @@ def main() -> int:
 
     report["events_seen"] = events_seen
     report["canonical_events"] = canonical_events
+    report["decode"] = _decode_summary(canonical_events)
     report["view_authority_after_stop"] = _probe_view_after_stop(client, session_id, view_token)
 
     text = json.dumps(report, indent=2, sort_keys=False)
@@ -675,6 +912,104 @@ def main() -> int:
     # span as S00 is a survived run and a failed gate. Say so in the exit code rather than
     # leaving it for a reader of the JSON.
     return 0 if report["transcript"]["attributed_speakers"] else 5
+
+
+def _expected_cap_function():
+    """The cap the deployed service *should* have applied, preferring the product's own function.
+
+    Restating the derivation here would let the probe drift from the code it is checking, which
+    is the mistake the lane-refusal probe already avoided by importing the suite's payload
+    builders. So import `canonical_decode_token_cap` when this checkout is importable, and fall
+    back to the recorded literal (`68 + ceil(87 x duration_sec)`, iteration 16) only when it is
+    not -- the probe must still run from a host that has no package. The report says which was
+    used, because "matches the product" and "matches a number I typed" are different claims.
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from moss_transcribe_diarize.app.live_adapters import (  # noqa: PLC0415
+            canonical_decode_token_cap,
+        )
+    except Exception:  # pragma: no cover - exercised only on a host without the checkout
+        return (lambda samples: 68 + math.ceil(87 * (samples / 16000)), "recorded-literal")
+    return (lambda samples: canonical_decode_token_cap(sample_count=samples), "product-function")
+
+
+def _decode_summary(canonical_events: list[dict]) -> dict:
+    """Reduce the decode measurements D-c added to the `canonical_processed` event.
+
+    F1 measured a committed p95 of 9053 ms whose entire tail came from two spans out of 42
+    that decoded for 8.49 s and 8.29 s as degenerate repeat loops. D-c's answer was a token
+    cap derived from the span's own duration (`68 + ceil(87 x duration_sec)`), so the
+    question this section exists to answer is not "was the decode fast" but three sharper
+    ones: is a cap in force at all, does the cap the service applied match the derivation on
+    record, and did any span actually hit it. A run where nothing is capped still answers the
+    first two -- an absent cap and an unexercised cap are different results and must not
+    reduce to the same silence.
+    """
+    measured = [
+        event
+        for event in canonical_events
+        if isinstance(event.get("canonical_decode_elapsed_sec"), (int, float))
+    ]
+    summary: dict = {
+        "spans_total": len(canonical_events),
+        "spans_measured": len(measured),
+        "cap_present_count": sum(
+            1 for event in measured if isinstance(event.get("canonical_decode_token_cap"), int)
+        ),
+        "capped_count": sum(1 for event in measured if event.get("canonical_decode_capped")),
+        "capped_span_ids": [
+            event.get("span_id") for event in measured if event.get("canonical_decode_capped")
+        ],
+    }
+    if not measured:
+        return summary
+
+    elapsed = sorted(float(event["canonical_decode_elapsed_sec"]) for event in measured)
+    rtfs = sorted(
+        float(event["canonical_decode_rtf"])
+        for event in measured
+        if isinstance(event.get("canonical_decode_rtf"), (int, float))
+    )
+    summary["elapsed_sec"] = {
+        "min": round(elapsed[0], 3),
+        "p50": round(elapsed[max(1, math.ceil(0.50 * len(elapsed))) - 1], 3),
+        "p95": round(elapsed[max(1, math.ceil(0.95 * len(elapsed))) - 1], 3),
+        "max": round(elapsed[-1], 3),
+    }
+    if rtfs:
+        summary["rtf"] = {
+            "min": round(rtfs[0], 3),
+            "p50": round(rtfs[max(1, math.ceil(0.50 * len(rtfs))) - 1], 3),
+            "p95": round(rtfs[max(1, math.ceil(0.95 * len(rtfs))) - 1], 3),
+            "max": round(rtfs[-1], 3),
+            "bound": 1.0,
+            "p95_under_bound": rtfs[max(1, math.ceil(0.95 * len(rtfs))) - 1] < 1.0,
+        }
+
+    # Re-derive the cap the service should have applied, from the span duration it reported.
+    # This is the ONLY check that can tell "D-c is deployed" from "D-c is in the source tree":
+    # the number has to come back off the wire matching the recorded derivation, not merely be
+    # present. Mismatches are listed rather than counted so a drift names its span.
+    expected_cap, cap_source = _expected_cap_function()
+    summary["cap_expectation_source"] = cap_source
+    mismatches = []
+    caps_seen = set()
+    for event in measured:
+        cap = event.get("canonical_decode_token_cap")
+        duration = event.get("frozen_span_duration_sec")
+        if not isinstance(cap, int) or not isinstance(duration, (int, float)):
+            continue
+        caps_seen.add(cap)
+        expected = expected_cap(round(float(duration) * 16000))
+        if cap != expected:
+            mismatches.append(
+                {"span_id": event.get("span_id"), "cap": cap, "expected": expected, "duration_sec": duration}
+            )
+    summary["caps_observed"] = sorted(caps_seen)
+    summary["cap_derivation_mismatches"] = mismatches
+    summary["cap_derivation_holds"] = not mismatches and bool(caps_seen)
+    return summary
 
 
 def _p95(values: list[float]) -> float | None:

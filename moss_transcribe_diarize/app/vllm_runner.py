@@ -68,7 +68,12 @@ class VllmRunner:
         status_callback: StatusCallback | None = None,
     ) -> TranscriptionResult:
         del max_length
-        started = time.time()
+        # A duration comes off the monotonic clock. `time.time()` is a *timestamp* and can
+        # step: the deployed host's NTP resynchronisation moved it ~1.5 s backwards every
+        # ~32.3 s, which made this subtraction negative and, downstream, ended live
+        # meetings. The live path no longer reads this field at all, but a wrong number is
+        # still wrong -- every RTF the batch path has reported came off the same clock.
+        started = time.monotonic()
         if status_callback is not None:
             status_callback("loading_model", 0.05, None)
         wav_bytes = _media_to_wav_bytes(audio_path)
@@ -108,7 +113,7 @@ class VllmRunner:
             text=text,
             prompt_len=prompt_len,
             generated_tokens=generated_tokens,
-            elapsed_sec=time.time() - started,
+            elapsed_sec=time.monotonic() - started,
             model=self.model_path,
             audio=str(Path(audio_path).expanduser()),
             decoding=decoding,

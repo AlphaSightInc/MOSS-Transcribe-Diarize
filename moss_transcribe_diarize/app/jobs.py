@@ -697,7 +697,10 @@ class JobManager:
         _atomic_write_json(job.job_path, job.to_dict())
 
     def _should_save_live_progress(self, job_id: str) -> bool:
-        now = time.time()
+        # An in-process throttle is an interval, so it is measured monotonically. The other
+        # `time.time()` calls in this file are `created_at`/`updated_at` *timestamps*, which
+        # are persisted and compared across restarts and must stay on the wall clock.
+        now = time.monotonic()
         last_saved = self._progress_save_times.get(job_id, 0.0)
         if now - last_saved < 0.5:
             return False
