@@ -244,6 +244,10 @@ carry is in the retired-evidence index below).**
   *horizon* — measured at **one span** today, moved to **one meeting** — opt-in, zero TTL after
   session end, one mode-enforcing root off the batch filesystem, and a cap whose pressure degrades
   the tape rather than the meeting. Step 2 is unblocked for code; read the ADR before writing any.**
+  **STEP 2's WRITER IS LANDED IN SOURCE (iteration 19): `live_tape.py` + 32 nodes, Python 694/2/368,
+  15 of the 32 red-proved by three semantic reverts. It is NOT wired to the transport** — that is
+  the next iteration and the point at which the deployed service could ever write a byte. See the
+  N-tape block.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -265,14 +269,16 @@ recorded and survive a bundle replacement. **Never ask the operator for those cl
 
 **Test totals on the branch.** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **662 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
-→ 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, **→ 662 with N-recal's 6,
-iteration 17**) — the two
+→ 158); Python **694 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
+→ 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, → 662 with N-recal's 6,
+**→ 694 with N-tape's 32, iteration 19**) — the two
 skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Suite wall clock **71.25 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
-evidence in the repo). Per-file: `test_live_pipeline_seams.py` **60**, `test_live_identity.py` **8**,
+Suite wall clock **70.73 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
+evidence in the repo — the tape suite costs 3.6 s). Per-file: `test_live_pipeline_seams.py` **60**,
+`test_live_identity.py` **8**,
 `test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **21**,
+`test_live_tape.py` **32**,
 `test_live_provider_bundle.py` **28**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
 `test_live_manifest_finalizer.py` **23** (17 → 23 with N-recal), `test_live_deployment_credentials.py` **14**,
@@ -846,6 +852,7 @@ evidence, is in the progress.txt archive under the same title.
 | **Session refusal** (K4) | 401/403/404/410 → `CaptureStatus.sessionRefusal` / `ControlChannelResponse.sessionRefusal`, recorded from the tick **and** the stop drain, so `running: true` never stands alone while every request refuses. A new session id is a new question. |
 | **Fingerprint album** (N-album, it. 15 of run `20260729-025318`; **in source only, not deployed**) | **Matching is not enrollment.** The evidence floor (`identity_provider.min_segment_samples`) does not move, so a short span is still *labelled*; enrollment needs ADR-0002's **1.0 s**. Per canonical speaker: up to **k=10** exemplars, matched against their **duration-weighted centroid**; plus **one** sub-admission stand-in used only while the bank is empty, discarded — never averaged — by the first real exemplar. Neither tier is recency-driven. Every refusal is a named disposition and nothing here raises. |
 | **Manifest calibration** (N-recal, it. 17 of run `20260729-025318`; **in source only, not deployed**) | A **free** deployed parameter is stated by the deployment, never inherited. `finalize-live-provider-manifest.py` requires `--min-match-score` / `--min-match-margin`, writes them into `identity_config`, hash-covers them, names them in the plan and the evidence, and refuses a pair `live_provider_bundle._identity_config` rejects. The calibrated pair is named once, in `live_identity_album.py`, and the accuracy harness imports it — so the measured pair and the deployable pair cannot diverge. |
+| **Session tape** (N-tape, it. 19 of run `20260729-025318`; **in source only, unwired, not deployed**) | **A tape is placed by capture timestamp and bounded by a declaration.** Three PCM16 tracks + an atomically republished `index.json`; the **gap manifest is the complement of coverage**, so a dropped frame is silence *and* a named gap and a late frame fills it. Retention is opt-in — no root, no tape, no behaviour change. `declared()` refuses a root inside the checkout, sharing a filesystem with a runs tree, or on a filesystem where `chmod` is a no-op. No frame ever raises: cap, write failure and inadmissible frame each stop taping with a typed degradation. The reaper is driven by session state + TTL, runs at startup, and skips what it cannot read as a tape. |
 | **Duration vs timestamp** (P1/P2, it. 1 of run `20260729-025318`) | A **duration** is measured on `time.monotonic()`; `time.time()` is a **timestamp** and may step. The live decode measures itself and never reads the runner's `elapsed_sec`. Timing metadata that cannot be trusted converts to `None` (`live_adapters.trustworthy_duration_sec`) — elapsed and RTF null on `canonical_processed`, span committed, one WARNING on `moss_transcribe_diarize.live.decode` — never terminal. |
 
 **The one class all of Phase J, L1 and candidates 50/53/56 belong to:** *a condition the design
@@ -963,6 +970,14 @@ for p in ('album','overwrite'):
     r = H.replay_all(policy=p)
     print(p, round(H.mean_accuracy(r)*100,1), round(H.min_accuracy(r)*100,1))
 "
+
+# --- N-tape: the session tape recorder, 32 nodes, ~3.6 s (iteration 19). ADR-0002 gate C's
+#     assembly cases + ADR-0003 D2-D6. Offline, no host, no server, tmp_path only. ------------
+python3 -m pytest tests/test_live_tape.py -q
+# Its three red-before reverts, re-runnable by hand against a COPY of the module (restore after):
+#   1. `offset_samples` -> `return self.sample_count`          (arrival-order placement)  -> 8 red
+#   2. cap check + TTL comparison -> `if False:`                                          -> 3 red
+#   3. D4's four admission rules -> `if False:`                                           -> 4 red
 
 # --- K3 terminal record (8 nodes: the terminal heartbeat's codes into expiry/journal/log, the
 #     lease expiry's `lanes=none`, the record's bounded shape, the default sink's level, three
@@ -1651,10 +1666,49 @@ iteration 16 built the harness below; the convergence half still is not, because
 *Superseded by measurement:* this block's guess that the album might explain candidate 55 is wrong —
 see candidate 55 and finding 2 under N-gate.
 
-**N-tape / N-sweep / N-batch — steps 2, 3 and 4, open.** Tape recorder (per-lane + mixed durable
-assembly with a gap manifest and a retention TTL), retrospective sweep (re-VAD/re-embed/re-cluster
+**N-sweep / N-batch — steps 3 and 4, open.** Retrospective sweep (re-VAD/re-embed/re-cluster
 the tape, seeded by live labels, **never re-ASR**, versioned silent corrections), then batch Tier-B
 unified onto the same album engine.
+
+**N-tape — STEP 2's WRITER IS LANDED IN SOURCE** `[iteration 19; NOT wired, NOT gated, NOT merged,
+NOT deployed]`. New `moss_transcribe_diarize/app/live_tape.py` + `tests/test_live_tape.py`. Payload
+**2 files**, both new, under `moss_transcribe_diarize/` + `tests/`; **none under `macos/` or
+`ops/`**. Python **694 / 2 / 368** (+32, +3.6 s).
+***The red-before is three semantic reverts, 15 of the 32 nodes***, run and restored in-iteration:
+place frames in arrival order instead of by capture timestamp → **8 red** (duplicates, reorder, the
+dropped-frame gap, burst loss, the late fill, resume's manifest, silence-vs-drop, the mixer skip);
+drop the cap check and the TTL comparison → **3 red**; drop D4's four admission rules → **4 red**.
+***The shape, in one paragraph.*** Three tracks per session — `system.pcm`, `microphone.pcm`,
+`mixed.pcm`, raw PCM16 mono at 16 kHz — plus `index.json`, republished atomically (staged +
+`os.replace`) on **every** append, which is what makes checkpoint/resume exact at any frame. Every
+placement is computed from the frame's `capture_timestamp_ns`, never from arrival order; coverage is
+a merged interval list and **the gap manifest is its complement**, so a late frame *removes* a gap
+rather than appending a correction. A frame that precedes everything seen rebases the track forward
+in 1 MiB chunks (impossible downstream of the v2 ingress, which refuses a non-next sequence — it
+exists for the appender's own contract, and gate C's reorder case fires it twice).
+***Four decisions taken here, recorded so they are not re-argued.***
+1. **The tape never raises because of a frame.** Cap reached, write failed, or a frame it cannot
+   place → one typed degradation (`tape_capacity_exhausted` / `tape_write_failed` /
+   `tape_frame_not_admissible`) carrying the byte counts, taping stops, the call returns. D5, and
+   the third amendment's rule applied to a disk.
+2. **`declared()` refuses a root, loudly, at construction** — that one *is* an exception, because a
+   root that cannot hold audio safely must stop the service starting with retention enabled rather
+   than silently disabling it. The checkout is derived from `Path(__file__).parents[2]`, never named.
+3. **The reaper never deletes what it cannot read as a tape.** An unreadable or torn `index.json` is
+   logged and skipped. A crashed meeting's tape has no `ended_at`, so it ages from `updated_at` —
+   which is what makes D6's startup reap able to reach it at all.
+4. **The TTL subtracts two `time.time()` readings, deliberately.** A retention deadline must survive
+   a process restart and `time.monotonic()` does not; this is P4's recorded exception. Noted in the
+   module because the *Duration vs timestamp* contract otherwise reads as a blanket prohibition —
+   and the host's known backward steps can only **delay** a reap, never make one premature.
+***What it does NOT do, so a green suite is not mistaken for step 2.*** **Nothing calls it.** No
+transport, mixer or ingress line changed, no manifest/env/unit key exists, and no deployment declares
+a root — so the deployed service is byte-for-byte unchanged and every recorded hygiene result keeps
+its meaning (which is D2 working, not an omission). The wiring is the next iteration: tee
+`append_lane_frame` after the ingress ack and `append_mixed` at
+`LiveCompatibilityMixer.admit_available`'s sealed commit, `release()` on session stop, `reap()` at
+service start. Gate C's *byte-exact under real outbox replay* is proved against the appender here,
+not against the wired path.
 
 **N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
 `docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the

@@ -19383,3 +19383,149 @@ D4/D5/D6 as the writer's contract, with prototype gate C's seven assembly cases
 The alternative - gating and merging steps 1+63 alone - stays contraindicated by
 the amendment's own words: the album alone is "a terminal-state failure if shipped
 alone", and a merge is the loop's scarcest resource.
+
+================================================================================
+RUN 20260729-025318  ITERATION 19  -  THE TAPE RECORDER'S WRITER (PHASE N STEP 2),
+LANDED IN SOURCE AND RED-PROVED, DELIBERATELY UNWIRED
+================================================================================
+
+TARGET.  ADR-0002 implementation step 2, the tape recorder - the candidate
+iteration 18 named as the next step, and the only Phase N item that needs neither
+an operator nor a host.  Its stated precondition (a written retention decision)
+was met by ADR-0003 in iteration 18, so this iteration writes the code that ADR
+constrains.
+
+Standing hazard re-checked FIRST, as the record requires: `git log --oneline -3
+-- scripts/ralph-afk/prd.md` -> tail unchanged at `0456177`; `git log -8` -> no
+operator commit since iteration 18's own `5369b1e`.  No ninth amendment exists,
+and none is needed: Phase N is authorized and this is its step 2.
+
+FILES TOUCHED (2 new + working memory; no macos/, no ops/, no existing product
+source modified at all)
+  moss_transcribe_diarize/app/live_tape.py   NEW - the writer, the store, the reaper
+  tests/test_live_tape.py                    NEW - 32 nodes
+  scripts/ralph-afk/context.md               N-tape block, contracts row, fence, totals
+
+VALIDATION.
+  PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_live_tape.py -q
+      -> 32 passed in 3.59 s
+  PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+      -> 694 passed, 2 skipped, 368 subtests in 70.73 s
+         (662 -> 694 = exactly the 32 new nodes; the two skips are still the
+          pre-existing test_large_upload.py Python-3.10 contract, never Darwin)
+  git status --porcelain -> exactly the two new files, nothing else
+
+RED-BEFORE, BY THREE SEMANTIC REVERTS - 15 OF THE 32 NODES.  The module is new,
+so "red before" cannot mean a prior commit; it means the suite fails when the
+behaviour it claims is removed.  Each revert was applied to the module, run, and
+restored from a byte-identical copy (sha re-verified after each restore).
+  1. `_Track.offset_samples` -> `return self.sample_count`, i.e. place frames in
+     ARRIVAL ORDER like a naive appender               -> 8 RED
+     (duplicates, reorder, the dropped-frame gap, burst loss, the late fill,
+      resume's gap manifest, silence-vs-drop, the skipped mixer interval)
+  2. the cap check and the TTL comparison -> `if False:` -> 3 RED
+     (cap degradation, positive-TTL retention, the crashed-tape startup reap)
+  3. D4's four admission rules -> `if False:`            -> 4 RED
+     (root inside the checkout, root sharing a filesystem with a runs tree, root
+      inside a runs tree by name, a filesystem that does not enforce modes)
+
+THE SHAPE THAT LANDED.  Three tracks per session - system.pcm, microphone.pcm,
+mixed.pcm, raw PCM16 mono at the canonical 16 kHz - plus index.json, which is the
+gap manifest and the resume checkpoint.  Every placement is computed from the
+frame's capture_timestamp_ns, never from arrival order.  Coverage is a merged
+half-open interval list and THE GAP MANIFEST IS ITS COMPLEMENT, so a late frame
+removes a gap instead of appending a correction, and a resumed tape reconstructs
+coverage from the persisted gaps + sample_count (one representation, so the two
+can never disagree).  index.json is republished atomically - staged file plus
+os.replace, the lesson the port-publish race already cost this repo a merge -
+on EVERY append, which is what makes checkpoint/resume exact at any frame rather
+than at a checkpoint interval.
+
+FOUR DECISIONS, RECORDED SO THEY ARE NOT RE-ARGUED.
+
+1. THE TAPE NEVER RAISES BECAUSE OF A FRAME.  Cap reached, write failed, or a
+   frame it cannot place (wrong sample rate, bad PCM length, tape already ended)
+   -> one typed degradation carrying the byte counts (tape_capacity_exhausted /
+   tape_write_failed / tape_frame_not_admissible), taping stops, the call returns
+   and the meeting continues on live labels alone.  ADR-0003 D5, which is the
+   third amendment's governing rule applied to a disk.  This is the loop's
+   signature defect class - a non-fatal condition wearing a fatal type - ruled
+   out BEFORE the code has a caller rather than after a red soak.
+
+2. `declared()` REFUSES A ROOT LOUDLY, AT CONSTRUCTION, AND THAT ONE IS AN
+   EXCEPTION.  A root that cannot hold audio safely must stop the service
+   starting with retention enabled, not silently disable it - the opposite
+   default from (1), and deliberately so: (1) is about a frame during a meeting,
+   this is about a deployment before one.  The checkout boundary is derived from
+   Path(__file__).resolve().parents[2], never named, so the rule holds on any
+   host; D4(4) is asserted by chmod-then-read-back, which is the only way to
+   catch a 9p drvfs mount where chmod is a silent no-op; and D4(3) is checked
+   BOTH by st_dev equality and by name containment, because on a single-filesystem
+   host the device test alone cannot see "inside the runs tree".
+
+3. THE REAPER NEVER DELETES WHAT IT CANNOT READ AS A TAPE.  An unreadable, torn
+   or foreign directory under the root is logged and skipped.  A reaper that
+   removes what it does not understand is a worse failure than a tape that
+   outlives its TTL.  A crashed meeting's tape has no `ended_at`, so it is aged
+   from `updated_at` - which is precisely what lets D6's startup reap reach it;
+   an unfinished tape treated as "not yet ended" would be immortal, which is the
+   failure D6 exists to name.
+
+4. THE TTL SUBTRACTS TWO time.time() READINGS, DELIBERATELY, AND SAYS SO.  A
+   retention deadline has to survive a process restart and time.monotonic() does
+   not.  This is P4's recorded exception (persisted/expiry timestamps), but the
+   shipped "Duration vs timestamp" contract reads as a blanket prohibition, so
+   the module states the exemption at the site.  The direction is also checked:
+   on the one host where the clock is KNOWN to step, it steps BACKWARDS, and a
+   backward step can only delay a reap, never make one premature.
+
+WHAT IS EXPLICITLY NOT DONE - AND THIS IS THE PART A LATER READER MUST NOT MISS.
+NOTHING CALLS THIS MODULE.  No line of live_transport.py, live_mixer.py or
+live_ingest.py changed; no manifest, env or unit key exists; no deployment
+declares a root.  The deployed service is byte-for-byte unchanged and every
+recorded hygiene result (live-runs/ 0 entries, no surviving /tmp/mtd-live-*)
+keeps its meaning.  That is ADR-0003 D2 working as designed, not an omission -
+but it does mean STEP 2 IS NOT FINISHED, and a green 694 must not be read as a
+shipped tape.  Gate C's "byte-exact under real outbox replay" is proved against
+the appender, not against the wired path.
+
+WHAT WAS LEARNED.
+
+1. THE INGRESS ALREADY NORMALISES WHAT GATE C TESTS, AND THE APPENDER STILL HAS
+   TO SURVIVE IT.  LiveLaneIngress refuses a frame that is not the lane's next
+   sequence, so downstream of it reorder is impossible and the rebase path can
+   never fire in production.  Gate C nevertheless replays raw outbox retry order
+   INTO THE APPENDER, so the appender's contract is wider than its wiring.  Two
+   of the 32 nodes exist only for that gap, and the rebase they exercise is the
+   most expensive code in the module - worth keeping precisely because the day
+   the tee point moves upstream of the ingress, it is the only thing standing
+   between a reordered replay and a tape whose every offset is wrong.
+
+2. A GAP MANIFEST DERIVED FROM COVERAGE CANNOT DRIFT FROM THE FILE; ONE WRITTEN
+   ALONGSIDE IT CAN.  The first design held gaps as their own list and appended
+   an entry when a sequence was skipped.  It needed a second rule for the late
+   frame that fills one, and a third for the resume that has to reconcile them.
+   Complement-of-coverage needs none: the late-fill node and the resume node are
+   the same code path, and there is no state in which the manifest and the tape
+   disagree.
+
+3. "CAPTURED SILENCE" AND "DROPPED FRAME" ARE THE SAME BYTES AND MUST NOT BE THE
+   SAME FACT.  Both are zeros on disk.  Only the manifest tells a quiet room from
+   a lost frame, and a sweep seeded from the wrong one would relabel exactly the
+   seconds that never arrived.  There is a node asserting both regions are zero
+   AND that only one is a gap.
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  Wire it, in one iteration, inside
+moss_transcribe_diarize/ + tests/: `append_lane_frame` after the v2 ingress ack
+in live_transport.py's frame route, `append_mixed` at
+LiveCompatibilityMixer.admit_available's sealed commit (the tee point ADR-0002
+names), `release()` on the stop/terminal paths that already call
+v2_mixers.release, and `reap()` once at service start.  The store is constructed
+only when a root is declared, so the wiring's own red-before is that the deployed
+configuration (no root) must produce a byte-identical service - assert that, not
+just the taped path.  The declaration surface itself (an ops/moss-live.env key
+plus its finalizer/manifest treatment) is a second, separable change and should
+NOT be bundled: candidate 63 already established that a free deployed parameter
+is stated by the deployment, and the TTL and cap are two more of them.
