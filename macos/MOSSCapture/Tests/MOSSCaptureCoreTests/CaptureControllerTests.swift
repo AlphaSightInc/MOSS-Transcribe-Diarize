@@ -433,6 +433,218 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertFalse(stopped.running)
     }
 
+    // MARK: - the stop/heartbeat race (F3 on 5111b36, t+1025.6s sessionDisowned)
+
+    func testAHeartbeatLandingAsTheServerIsToldToStopIsNotASessionRefusal() throws {
+        // The fence half: a tick that has NOT started when `stop` begins must be refused outright.
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let health = SessionReleasingHealthAdapter()
+        let sessionStop = OrderObservingSessionStopAdapter()
+        let controller = CaptureController(
+            source: TerminalTailCaptureSource(tail: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health,
+            sessionStop: sessionStop
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-fence",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        sessionStop.observe = {
+            health.sessionReleased = true
+            scheduler.runScheduledOperation()
+        }
+
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertNil(stopped.sessionRefusal, "a clean stop must not report its own session disowned")
+        XCTAssertFalse(health.emittedAfterRelease, "the fenced tick must not reach the server at all")
+        XCTAssertEqual(sessionStop.recordedStops.count, 1)
+        XCTAssertFalse(stopped.running)
+    }
+
+    func testStopWaitsForAHeartbeatThatWasAlreadyRunningBeforeReleasingTheServer() throws {
+        // The quiescence half, and the one the first version of this fix got wrong: production
+        // calls `stop(deadline: Date())`, so a wait bounded by THAT deadline never waits at all.
+        let scheduler = ConcurrentCaptureScheduler()
+        let health = BlockingHealthAdapter()
+        let sessionStop = OrderObservingSessionStopAdapter()
+        let controller = CaptureController(
+            source: TerminalTailCaptureSource(tail: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health,
+            sessionStop: sessionStop,
+            tickQuiescenceSeconds: 5.0
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-quiesce",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        // A tick is inside `emitHealth` and stays there until this test lets it out.
+        let tickEntered = expectation(description: "tick entered emitHealth")
+        health.onEntry = { tickEntered.fulfill() }
+        DispatchQueue.global().async { scheduler.runScheduledOperation() }
+        wait(for: [tickEntered], timeout: 5)
+
+        let stopReturned = expectation(description: "stop returned")
+        DispatchQueue.global().async {
+            _ = try? controller.stop(deadline: Date())
+            stopReturned.fulfill()
+        }
+
+        // The stop is now inside the quiescence wait. The server must not have been told yet.
+        Thread.sleep(forTimeInterval: 0.3)
+        XCTAssertTrue(
+            sessionStop.recordedStops.isEmpty,
+            "the server must not be released while a heartbeat is still in flight"
+        )
+
+        health.release()
+        wait(for: [stopReturned], timeout: 5)
+        XCTAssertEqual(sessionStop.recordedStops.count, 1, "the stop still reaches the server")
+        XCTAssertTrue(health.entered, "the tick really did run — the wait was not vacuous")
+    }
+
+    func testATickThatOutrunsTheQuiescenceDeadlineStillCannotRecordASelfInducedRefusal() throws {
+        // The bound protects the stop's latency; the SUPPRESSION protects the verdict. A wedged
+        // tick must not be able to stamp `sessionDisowned` on a meeting the operator ended.
+        let scheduler = ConcurrentCaptureScheduler()
+        let health = BlockingHealthAdapter()
+        let sessionStop = OrderObservingSessionStopAdapter()
+        let controller = CaptureController(
+            source: TerminalTailCaptureSource(tail: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health,
+            sessionStop: sessionStop,
+            // Far too short for the tick below: the stop gives up waiting and proceeds.
+            tickQuiescenceSeconds: 0.05
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-outrun",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        let tickEntered = expectation(description: "tick entered emitHealth")
+        health.onEntry = { tickEntered.fulfill() }
+        DispatchQueue.global().async { scheduler.runScheduledOperation() }
+        wait(for: [tickEntered], timeout: 5)
+
+        let stopped = try controller.stop(deadline: Date())
+        XCTAssertNil(stopped.sessionRefusal)
+
+        // Now let the outrun tick finish, and fail it the way the released server would.
+        health.failNext = CaptureHTTPTransportError.nonSuccessStatus(403)
+        health.release()
+        Thread.sleep(forTimeInterval: 0.3)
+
+        XCTAssertNil(
+            controller.status().sessionRefusal,
+            "a tick that outran the quiescence bound must not record a self-induced refusal"
+        )
+    }
+
+    func testAGenuineDrainRefusalIsStillRecordedWhileStopping() throws {
+        // The suppression must be surgical: the periodic tick's verdict is dropped, the final
+        // drain's is not. This is the operator's answer to "did my stop reach a live session".
+        let controller = CaptureController(
+            source: TerminalTailCaptureSource(
+                tail: [laneFrame(.microphone, sampleCount: 8_000, captureTimestampNS: 1_500_000_000)]
+            ),
+            transport: RefusingCaptureTransportAdapter(
+                failure: CaptureHTTPTransportError.nonSuccessStatus(403)
+            ),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter(),
+            sessionStop: OrderObservingSessionStopAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-drain-refusal",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(
+            stopped.sessionRefusal,
+            .sessionDisowned,
+            "the final drain's refusal is the operator's evidence and must survive the fence"
+        )
+    }
+
+    func testASourceStopThatThrowsLeavesNoLiveTimerAndNoLatchedFence() throws {
+        // `stop` closes the fence before `source.stop`, so a throw there must still cancel the timer
+        // and reopen the fence — otherwise the next meeting starts with its heartbeat fenced off.
+        let scheduler = CancellationRecordingScheduler()
+        let controller = CaptureController(
+            source: ThrowingStopCaptureSource(),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: FakeCaptureHealthAdapter()
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-throwing-stop",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        XCTAssertThrowsError(try controller.stop(deadline: Date(timeIntervalSince1970: 1)))
+        XCTAssertEqual(scheduler.cancellations.count, 1)
+        XCTAssertTrue(
+            scheduler.cancellations[0].cancelled,
+            "the periodic timer is cancelled even when stop throws"
+        )
+        XCTAssertTrue(
+            controller.status().running,
+            "a source that refused to stop leaves the controller running rather than half-stopped"
+        )
+
+        // The fence reopened: a fresh meeting's tick is admitted and emits again.
+        let health = FakeCaptureHealthAdapter()
+        let second = CaptureController(
+            source: TerminalTailCaptureSource(tail: []),
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: scheduler,
+            health: health
+        )
+        try second.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-after-throw",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+        let emissionsAfterStart = health.emissions.count
+        scheduler.runScheduledOperation(at: scheduler.cancellations.count - 1)
+        XCTAssertGreaterThan(
+            health.emissions.count,
+            emissionsAfterStart,
+            "a tick after a throwing stop must not find the fence latched shut"
+        )
+    }
+
     func testAStopTheServerCannotBeToldAboutStillStopsLocallyAndNamesTheRefusal() throws {
         // The fifth amendment's rule: the capture is already off and the audio already drained, so
         // rethrowing here would report a failed stop for a meeting that has ended either way — and
@@ -1564,7 +1776,19 @@ final class CaptureControllerTests: XCTestCase {
             "recordSessionRefusal",
             "snapshot",
             "finishStop",
+            // The stop fence. `enterTick`/`leaveTick`/`beginStopping`/`clearStopping` are guarded by
+            // `tickGate` rather than `lock`, because `beginStopping` has to WAIT while a tick
+            // already inside the fence finishes and that tick takes `lock` for its own snapshot —
+            // waiting on `lock` would block the thing being waited for. Ordering is one-way and
+            // enforced by that: tickGate then lock, never the reverse. `recordTickVerdict` reads the
+            // generation, so it is a plain `lock` method.
+            "enterTick",
+            "leaveTick",
+            "beginStopping",
+            "clearStopping",
+            "recordTickVerdict",
         ])
+        let tickGateFenced = Set(["enterTick", "leaveTick", "beginStopping", "clearStopping"])
         let actualMethods = Set(
             try matches(
                 pattern: #"(?m)^\s{4}func\s+([A-Za-z0-9_]+)\s*\("#,
@@ -1580,8 +1804,9 @@ final class CaptureControllerTests: XCTestCase {
                 ).dropFirst().first?
                     .components(separatedBy: "\n    func ").first
             )
-            XCTAssertTrue(methodSource.contains("lock.lock()"), method)
-            XCTAssertTrue(methodSource.contains("lock.unlock()"), method)
+            let fence = tickGateFenced.contains(method) ? "tickGate" : "lock"
+            XCTAssertTrue(methodSource.contains("\(fence).lock()"), method)
+            XCTAssertTrue(methodSource.contains("\(fence).unlock()"), method)
         }
     }
 
@@ -6429,6 +6654,131 @@ private final class TerminalTailCaptureSource: CaptureSourceAdapter {
 
     func stop(deadline: Date) throws {
         stopped = true
+    }
+}
+
+/// Answers 403 once the server has given the session up — what a real server does to a heartbeat
+/// that lands after `stopServerSession` released it.
+private final class SessionReleasingHealthAdapter: CaptureHealthAdapter {
+    var sessionReleased = false
+    private(set) var emittedAfterRelease = false
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        guard sessionReleased else {
+            return
+        }
+        emittedAfterRelease = true
+        throw CaptureHTTPTransportError.nonSuccessStatus(403)
+    }
+}
+
+/// A heartbeat that parks inside `emit` until a test lets it out, so "a tick was already running
+/// when the stop began" is an ordering the test controls rather than one it hopes for.
+///
+/// `start` emits once before the periodic task exists, so blocking is armed explicitly afterwards.
+private final class BlockingHealthAdapter: CaptureHealthAdapter, @unchecked Sendable {
+    private let gate = DispatchSemaphore(value: 0)
+    private let lock = NSLock()
+    private var armed = false
+    private var didEnter = false
+    private var entryCallback: (() -> Void)?
+    private var pendingFailure: Error?
+
+    var onEntry: (() -> Void)? {
+        get { lock.lock(); defer { lock.unlock() }; return entryCallback }
+        set { lock.lock(); entryCallback = newValue; armed = true; lock.unlock() }
+    }
+
+    var failNext: Error? {
+        get { lock.lock(); defer { lock.unlock() }; return pendingFailure }
+        set { lock.lock(); pendingFailure = newValue; lock.unlock() }
+    }
+
+    var entered: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return didEnter
+    }
+
+    func emit(
+        status: CaptureStatus,
+        configuration: CaptureConfiguration,
+        sentMonotonicNS: UInt64
+    ) throws {
+        lock.lock()
+        let shouldBlock = armed
+        if shouldBlock {
+            didEnter = true
+        }
+        let callback = entryCallback
+        lock.unlock()
+        guard shouldBlock else {
+            return
+        }
+        callback?()
+        gate.wait()
+        lock.lock()
+        let failure = pendingFailure
+        lock.unlock()
+        if let failure {
+            throw failure
+        }
+    }
+
+    func release() {
+        gate.signal()
+    }
+}
+
+/// Refuses every publish, so the FINAL DRAIN's refusal can be told apart from a periodic tick's.
+private final class RefusingCaptureTransportAdapter: CaptureTransportAdapter {
+    private let failure: Error
+
+    init(failure: Error) {
+        self.failure = failure
+    }
+
+    func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
+        throw failure
+    }
+}
+
+/// A source whose `stop` throws, for the path where the fence has already closed.
+private final class ThrowingStopCaptureSource: CaptureSourceAdapter {
+    func start(configuration: CaptureConfiguration) throws {}
+
+    func pendingFrames() throws -> [CaptureFrame] { [] }
+
+    func status() -> [CaptureLaneStatus] {
+        CaptureLane.allCases.map {
+            CaptureLaneStatus(lane: $0, sequence: 0, deviceEpoch: 0, state: "capturing")
+        }
+    }
+
+    func stop(deadline: Date) throws {
+        throw NativeCaptureError.deviceUnavailable("stop refused by the device")
+    }
+}
+
+/// Hands back the cancellation it issued, so a test can assert the timer was cancelled even on a
+/// path that throws before the controller would normally reach it.
+private final class CancellationRecordingScheduler: CaptureSchedulerAdapter {
+    private(set) var cancellations: [FakeCaptureCancellation] = []
+    private var operations: [() -> Void] = []
+
+    func schedule(label: String, operation: @escaping () -> Void) -> CaptureCancellation {
+        let cancellation = FakeCaptureCancellation()
+        cancellations.append(cancellation)
+        operations.append(operation)
+        return cancellation
+    }
+
+    func runScheduledOperation(at index: Int) {
+        operations[index]()
     }
 }
 

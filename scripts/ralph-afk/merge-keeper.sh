@@ -85,7 +85,12 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # exactly one further merge, whose pre-merge main is therefore 7a4f59c. Advancing this default
 # is a reviewable diff on purpose: a TENTH merge still fails here, and a command-line
 # RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-7a4f59c3ca023b5ac7b9df814b92645c10d204dd}"
+# Advanced to 5111b36 for the stop-race fix the operator directed on 2026-07-29, after F3 on the
+# deployed 5111b36 came back 7 GREEN / 1 RED with `sessionRefusal sessionDisowned` 1.7 s after a
+# clean stop. That merge carries exactly two product files — CaptureController.swift and its tests —
+# from a branch cut at this same SHA, deliberately excluding the feature branch's prototype and docs
+# commits. An ELEVENTH merge still fails here.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-5111b36c2fc04c408cc320707d34a08ea56317b7}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
