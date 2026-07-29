@@ -146,7 +146,7 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). See the F1-green block. |
+| 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). See the F1-green block. **RE-RUN ON THE DEPLOYED `7a4f59c` (iteration 30, Phase N gate step (d) first half): rc=3, five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the F1-on-Phase-N block. |
 | 300 s certification (F2) | **GREEN on `42abc5a`** (iteration 11, `live-canary-clauses.py --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **3859.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.670** < 1, **1257 published == 1257 POST /frames, and every one of the session's 4748 HTTP requests answered 200**, a **5.050 s** interruption seen by the client and survived, outbox 0 → **10** → 0. **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the F2-green block |
 | 16-minute soak (F3) | **RAN AGAINST `42abc5a` AND FINISHED ITS WHOLE PLAN (iteration 9) — 5 clauses GREEN, 1 RED.** Candidate 53's minute-14.6 death is gone: 17/17 full minutes, every poll 200, view authority live at age 1024 s. The RED is **new candidate 60** — a clean stop does not revoke view authority, because no client code path calls the server's `POST …/stop`. `live-canary-clauses.py` rc=3. See the F3 block. |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
@@ -362,6 +362,19 @@ carry is in the retired-evidence index below).**
   tiled synthetic lanes — the abstain path working as designed (J2), and the reason an F1 run whose
   spans read `S00` is a matcher declining to guess, not a dead session.
   **What remains of Phase N's gate is (d) F1/F2 only.**
+- **AND PHASE N'S GATE STEP (d) IS HALF RUN — F1 AGAINST `7a4f59c` (iteration 30): rc=3, five GREEN
+  and two RED, and it found the thing the whole phase turns on.** The identity half is the best this
+  project has measured on real hosts — **12 canonical speakers for 2 voices (was 16), capacity never
+  saturated (was t+65.6 s), 36 prepared / 16 empty, zero abstains and zero refusals at the calibrated
+  0.35/0.1**, and the system lane's program keeps **one** identity (`S02`) across the 28 s room window
+  and back. **But `identity_finalized` fired 0 times, in 467 events and in the server journal, and the
+  journal has 0 hits on `…/stop`.** Step 3's session-end sweep — iteration 23 measured it as
+  essentially the whole 93.44 → 99.26 % convergence gain — is reachable only from the server's `stop`
+  route, and **candidate 60 means no client ever calls it**. `identity_revision_version` stayed 0 for
+  all 52 spans, so no cadence sweep landed a correction either: **a real meeting today gets the album
+  and nothing else.** That re-prices candidate 60 from a 30 s view-authority exposure to *the reason
+  ADR-0002's second acceptance half is unreachable in production*. The two REDs each have a named
+  cause and neither is a Phase N regression — see the F1-on-Phase-N block and candidate 64.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -571,6 +584,59 @@ and **322117**, all `NRestarts=0`, batch `/` 200, `live-runs` 0, device store **
 (m4mbp's — never revoked, and `pair` minted no new row). m4mbp: app killed, `/tmp` scratch removed,
 volume back to 31 unmuted, pasteboard 0, both TCC grants still `auth_value=2`, app inode
 `212080356` and CLI sha `450c20bf…` unchanged (no rebuild, so no TCC exposure).
+
+**F1 ON PHASE N — the label clause is finally readable, and the session-end sweep never runs
+(run `20260729-025318` iteration 30, Phase N gate step (d) first half). READ THIS BEFORE F2.**
+60 s canary on the **deployed `7a4f59c`** — album + sweeper + revision + calibrated 0.35/0.1 matcher
+live for the first time — with candidate 51's muted lane-separating harness. Session
+`31ec5caa…`, label `ralph-i30-f1-20260729T093408Z`, evidence `/tmp/i30-f1-evidence/ralph-canary`,
+reductions `/tmp/i30-clauses.txt` (rc=3) and `/tmp/i30-analyze.txt` (rc=4).
+
+| PRD clause | measured (iteration 6 on `42abc5a` in brackets) |
+| --- | --- |
+| continuously updating transcript with labels | version **0 → 310**, **52** committed spans (36 non-empty), status `active` throughout, `terminal_failure` null [0→308, 47/38] |
+| view authority for the whole run | **53/53** driver polls 200, and the server's own tally is **1275 requests, every one 200**: 382 GET snapshot + 382 GET events + 341 POST frames + 170 POST heartbeat, **0 non-200** [370/370] |
+| zero loss, zero double count | client `publishedFrameCount` **341** == server **341 POST /frames all 200** — exact. Stop drain `retained=0`, both lanes `stopped`, `sessionRefusal` null; both v2 lanes `health=active`, `failure_code=None`, `failed_samples=0` [329 == 329] |
+| no lane fault, no terminal | **two** lane-health transitions in the whole run (start, stop) — nothing in between. 170 heartbeats 200, **0** journal tracebacks. Only terminal line is `helper_lease_expired lanes=none`, again the lease and not the stop |
+| **user-visible p95 ≤ 4000 ms** | **4150.8 ms — RED by 150.8 ms (3.8 %)**, and **QUALIFIED** (`sufficientSamples` true n=48, `mixerOriginResolved` true, `timelineIntact` true, `fetchFailures` 0, rejected 0/0/0). Components: committed p95 **2666.96** + render bound **1483.85** (cycle 1000 + snapshot p95 283.61 + events p95 200.24) [3909.3 = 2402.4 + 1506.8] |
+| **decoder p95 RTF < 1** | **2.365 — RED**, and the number is **3 spans out of 52**: 0.03 s→0.108 s (rtf 3.599), 0.06 s→0.194 s (3.229), 0.07 s→0.166 s (2.365). p50 **0.142**, 20 spans under 1.0 s, **total decode wall 17.09 s over an 86 s meeting = aggregate 0.20**. D-c cap present on all 52, capped 0 [p95 0.911, max 3.908 on a 0.36 s span — same mechanism, it just did not reach p95] |
+| secret hygiene, run-time half | `handoff` returns `viewAuthority: copied-to-pasteboard`, token never printed, pasteboard cleared to **0**, `live-runs` 0, no `/tmp/mtd-live-*`, 0 tracebacks |
+
+***The identity half, which is why step (d) exists, and it is the best this project has measured.***
+**12** canonical speakers for 2 real voices (inflation ×6.0) against iteration 6's **16**, and the
+16-bound was **never reached** where iteration 6 saturated at t+65.6 s. `identity_status` is **36
+prepared / 16 empty_span** with `identity_reason` **null on all 52** — *zero* abstains and *zero*
+refusals at the calibrated 0.35/0.1. And the label track shows the album's actual thesis working on a
+real meeting: the system lane's program is **one dominant identity that survives a 28 s
+interruption** — `program-a {S02:14, S01:1, S03:1, S04:1}`, room window, then `program-c {S02:6,
+S10:1}`. `S02` comes back. The 10 minority identities are minted in the **room window**
+(`{S01:7, S05–S09 one each}`) and at the edges: that is **candidate 55**, which iteration 16 already
+measured the album does *not* fix (births are unchanged by design; priced at 4.5 pp live / 0 pp
+final).
+
+***THE FINDING, and it is the most valuable thing this run produced.*** `identity_finalized` appears
+**0 times in 467 events and 0 times in the server journal**, and the journal has **0** hits on
+`…/{sid}/stop`. Phase N step 3's session-end sweep — landed in iteration 26, and the thing
+iteration 23 measured as essentially the entire live→file convergence gain (**93.44 → 99.26 %**) — is
+reachable only from `POST /api/live/sessions/{id}/stop`, and **candidate 60 is that no client code
+path ever calls it**. `identity_revision_version` also stayed **0** for all 52 spans, so no cadence
+sweep landed a correction either. **A real meeting on the deployed system today gets the album and
+nothing else.** Candidate 60 was filed as a bounded 30 s view-authority exposure; it is also the
+reason ADR-0002's *second* acceptance half is unreachable in production. That is the argument for the
+next authorization, and it is now measured rather than reasoned.
+
+***Neither RED is a Phase N regression, and neither may be answered by moving a gate.***
+The latency delta against iteration 6 is **entirely committed** (+264.6 ms; the render bound went
+*down* 23 ms), and the PRD names the ordered remedies for exactly this — 2.0 s span cap first, then
+the 0.5 s poll interval. The second alone is arithmetic: the render bound carries **1000 ms of portal
+cycle**, so halving it lands the run at ~**3651 ms**. Both are tracked product source under the
+post-merge freeze. The RTF RED is a **measurement-contract** question, not a throughput one — see
+candidate 64 — and the loop must not answer it by filtering the reducer.
+*Hosts left clean, measured after:* server `HEAD 7a4f59c` worktree clean, live MainPID **365632** /
+batch **301112** and **322117**, all `NRestarts=0`, batch `/` and `/api/jobs` 200, live `/live` 200,
+`live-runs` 0, no `/tmp/mtd-live-*`, 0 tracebacks. m4mbp: app killed, `/tmp` scratch removed, volume
+back to 31 unmuted, pasteboard 0, both TCC grants `auth_value=2`, app inode **212080356** and CLI
+sha256 `450c20bf…` unchanged (no rebuild, so no TCC exposure).
 
 **F3 RAN ITS WHOLE PLAN AND FOUND ONE REAL DEFECT — the 16-minute soak, run `20260729-025318`
 iteration 9. READ THIS BEFORE PHASE N OR ANY EIGHTH-AMENDMENT DECISION.** 17 minutes on the
@@ -1798,6 +1864,17 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     self-healing, but it is the PRD clause's word *immediately*, and it was already visible in F1's
     "29 s after the run's own stop" line without being named. Tracked product source under `macos/`;
     **needs its own authorization**. Full detail in the candidate-60 block above.
+    **RE-PRICED IN ITERATION 30, and this is now the strongest open argument for an authorization.**
+    F1 on `7a4f59c` reproduced it (journal: **0** hits on `…/stop`, terminal line
+    `helper_lease_expired` again) and measured its *second* consequence: `identity_finalized` fired
+    **0 times in 467 events and 0 times in the journal**, because
+    `LiveServiceRuntime._finalize_identity_locked` (`live_service_runtime.py:541`) hangs off the stop
+    route and nothing else. **Phase N step 3's session-end sweep therefore never runs in a real
+    meeting** — the sweep iteration 23 measured as essentially the whole 93.44 → 99.26 % live→file
+    convergence gain. This is no longer "the PRD's word *immediately*"; it is *ADR-0002's second
+    acceptance half is unreachable in production*. The fix shape is unchanged (a transport call after
+    the final drain, with the fifth amendment's rule that a stop which cannot reach the server must
+    still stop locally), and the payoff is now two clauses, not one.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
@@ -1845,6 +1922,22 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     the eighth amendment already warns that changing these *"is a decision to record, not a knob to
     tune until green"*. Reproduce with `tests/live_identity_accuracy.replay_all`; see the N-gate
     block.
+64. **The decoder RTF clause measures per-call overhead on a sub-100-ms span, not throughput.**
+    `[open, new — iteration 30; **F1's second RED**]`. Measured on `7a4f59c`: p95 RTF **2.365** over
+    52 spans, and **only 3 spans exceed 1.0** — durations **0.03 s / 0.06 s / 0.07 s**, elapsed
+    0.108 / 0.194 / 0.166 s. A span of 0.03 s can never satisfy RTF < 1: that would need a GPU decode
+    round trip under 30 ms, which nothing here does. The same three spans put p50 at **0.142** and
+    total decode wall at **17.09 s over an 86 s meeting — aggregate 0.20, i.e. 5× headroom.** The
+    mechanism is not new (iteration 6's max was 3.908 on a 0.36 s span) and is **not** a Phase N
+    regression; what changed is that this run's span shape put a micro-span *at* p95.
+    **Do not answer this by filtering the reducer.** Three honest answers exist and the choice is a
+    decision, not a tuning: (a) rule the clause per-span as written and accept that a meeting with
+    micro-endpoints fails it; (b) rule it on decode *throughput* — total decode wall over meeting
+    wall — which is what "the decoder keeps up" means and what the plan's RTF < 1 was for; (c) keep
+    per-span but require a floor duration, and say what the floor is and why. (b) and (c) are gate
+    definitions, so they need the operator: **needs its own authorization**, and the reasoning must be
+    recorded before any reducer change, exactly as candidates 57/59/61/62 were. Loop tooling *only* if
+    the answer is (a); otherwise it touches the acceptance contract.
 62. **The reducer asked a certification run the soak's questions.** `[done — iteration 11]`. See
     "THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS" in progress.txt. Loop tooling; it made
     F2 ungreenable for candidate 60, a defect outside F2's clause list.

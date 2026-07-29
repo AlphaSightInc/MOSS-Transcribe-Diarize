@@ -21196,3 +21196,192 @@ no git checkout on either host, no service restart, no manifest regeneration, no
 Swift build, no install, no TCC interaction of any kind.  Both grants stay
 auth_value=2 and are re-checked read-only afterwards.
 
+
+================================================================================
+ITERATION 30 (run 20260729-025318) - Phase N gate step (d), first half:
+F1, the 60 s canary, re-run against the deployed 7a4f59c
+================================================================================
+
+TARGET.  The one open candidate: Phase N's gate step (d).  Steps (a) green at
+1e1cf3f, (b) the eighth merge 7a4f59c, (c) published and deployed 4/4 - so the
+album, the sweeper, the label revision, the session-end finalize and the
+calibrated 0.35/0.1 matcher were all running in production for the first time
+and had never been measured by a certification run.  prd.md's ADR-0002
+supersession asks for "F1 and F2 with candidate 51's distinct-voice harness, and
+the speaker-label clause meaningfully verified rather than merely present."
+This iteration ran F1.  No tracked source changed; no service restarted; nothing
+was rebuilt or reinstalled.
+
+PRE-STATE, MEASURED.  server HEAD 7a4f59c clean, three units active, live
+MainPID 365632 / batch 301112 / vllm 322117 all NRestarts=0.  m4mbp HEAD
+7a4f59c, app NOT running, volume 31 unmuted, pasteboard 0.  prd.md unchanged at
+0456177 (checked first, per the standing rule that a previous iteration's "no
+new authorization" report cannot be trusted) and
+`git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty.
+
+PROCEDURE.  The retired F1 prelude plus the lane-separating driver:
+  1. ssh ga0@m4mbp 'open -a /Applications/MOSSCapture.app'  -> pid 55482,
+     status running:false, both lanes stopped (a FRESH app, per K5d)
+  2. one pairing code minted on the SERVER loopback with ops/live-pair.sh,
+     payload extracted with `sed -n 's/^payload: //p'` -> **113 bytes**, guarded
+     on >= 110 (iteration 29's lesson, which cost a mint), piped to
+     `mtd-capture pair` as its OWN ssh invocation - never argv, never a file
+  3. scp scripts/ralph-afk/live-canary.sh -> /tmp on m4mbp, then nohup'd:
+     MARKER_SYSTEM=cardamom MARKER_ROOM=obsidian OUTPUT_MODE=muted
+     ROOM_WINDOW_SECONDS=28  label ralph-i30-f1-20260729T093408Z
+  4. MacStudio spoke `obsidian` isolated and repeated at -r 130 into the
+     announced room window (ROOM_WINDOW_OPEN at 09:34:45Z)
+  5. scp -r the evidence, both reducers, then the server journal for this session
+
+VALIDATION AND RESULT.
+  python3 scripts/ralph-afk/live-canary-clauses.py /tmp/i30-f1-evidence/ralph-canary
+    -> **rc=3**  (five clauses GREEN, TWO RED)
+  python3 scripts/ralph-afk/live-canary-analyze.py … --voices 2
+    -> rc=4  (system marker `cardamom` VERBATIM at span 14 t+30.6 s in a MUTED
+       run; room marker `obsidian` NOT TRANSCRIBED - the FOURTH measurement of
+       candidate 51's hardware limit, not a defect)
+
+  GREEN, with the iteration-6 figure on 42abc5a in brackets:
+    * transcript grows continuously: version 0 -> 310, 52 spans (36 non-empty),
+      status active throughout, terminal_failure null            [0->308, 47/38]
+    * view authority for the whole run: 53/53 driver polls 200, and the SERVER's
+      own tally is 1275 requests every one 200 - 382 GET snapshot, 382 GET
+      events, 341 POST frames, 170 POST heartbeat, **0 non-200**       [370/370]
+    * zero loss / zero double count: client publishedFrameCount **341** ==
+      server **341 POST /frames all 200**, exact.  Stop drain retained=0, both
+      lanes stopped, sessionRefusal null; both v2 lanes health=active,
+      failure_code=None, failed_samples=0                            [329==329]
+    * no lane fault: TWO lane-health transitions in the whole run (start, stop)
+      and nothing in between; 0 journal tracebacks
+    * secret hygiene run-time half: handoff returns
+      `viewAuthority: copied-to-pasteboard` (never the token), pasteboard
+      cleared to 0, live-runs 0, no /tmp/mtd-live-*
+
+  RED 1 - user-visible p95 **4150.8 ms vs the 4000 ms gate**, a miss of 150.8 ms
+  (3.8 %), and QUALIFIED: sufficientSamples true (n=48), mixerOriginResolved
+  true, timelineIntact true, fetchFailures 0, rejected 0/0/0.  Components stated
+  separately as Phase F requires: committed p95 **2666.96** + render bound
+  **1483.85** (portal cycle 1000 + snapshot p95 283.61 + events p95 200.24).
+  Against iteration 6 (3909.3 = 2402.4 + 1506.8) the delta is **entirely
+  committed, +264.6 ms; the render bound went DOWN 23 ms.**
+  The PRD names the ordered remedies for exactly this - 2.0 s span cap first,
+  then the 0.5 s poll interval - and forbids relaxing the gate.  The second is
+  arithmetic: the render bound carries 1000 ms of portal cycle, so halving it
+  lands this run at ~3651 ms.  Both are tracked product source under the
+  post-merge freeze, so both need an authorization.  Note the same number is
+  GREEN against F2's 6000 ms gate.
+
+  RED 2 - decoder p95 RTF **2.365 vs < 1.0**, and the number is **three spans out
+  of 52**, all shorter than 0.1 s:
+        span 39  dur 0.03 s  elapsed 0.108 s  rtf 3.599
+        span  8  dur 0.06 s  elapsed 0.194 s  rtf 3.229
+        span 31  dur 0.07 s  elapsed 0.166 s  rtf 2.365
+  p50 is **0.142**, 20 of 52 spans are under 1.0 s, and total decode wall is
+  **17.09 s over an 86 s meeting - aggregate 0.20, i.e. 5x headroom**.  With
+  n=52 the p95 index lands on the third-largest, which is exactly the third
+  micro-span.  A 0.03 s span cannot satisfy RTF < 1 without a sub-30-ms GPU
+  round trip.  D-c's cap was present on all 52 spans and capped 0 of them.
+  This is NOT a Phase N regression: iteration 6 recorded max 3.908 on a 0.36 s
+  span with the identical mechanism, it simply did not reach p95 that run.
+  Filed as candidate 64 with three honest answers spelled out; the loop did NOT
+  touch the reducer, because two of the three are gate definitions.
+
+THE IDENTITY HALF - what step (d) exists to read, and it is the best measured.
+  * **12 canonical speakers for 2 real voices** (inflation x6.0) against
+    iteration 6's **16**, and the 16-bound was **never reached** where iteration
+    6 saturated at t+65.6 s of an 85 s meeting.
+  * identity_status **36 prepared / 16 empty_span**, identity_reason **null on
+    all 52** - zero abstains and zero refusals at the calibrated 0.35/0.1.
+  * The album's thesis visible on a real meeting: the system lane's program keeps
+    **one** identity across a 28 s interruption -
+      program-a (system)   {S02:14, S01:1, S03:1, S04:1}
+      room-window (mic)    {S01:7, S05:1, S06:1, S07:1, S08:1, S09:1}
+      program-c (system)   {S02:6, S10:1}
+    S02 goes away for 28 s and comes back.  A short span was labelled against a
+    prototype and never became one.
+  * The 10 minority identities are minted in the ROOM WINDOW and at the edges -
+    candidate 55, which iteration 16 already measured the album does not fix
+    (births unchanged by design; 4.5 pp live / 0 pp final).
+
+THE FINDING, and it is worth more than the two REDs.
+  `identity_finalized` appears **0 times in 467 events and 0 times in the server
+  journal**, and the journal has **0** hits on `…/{sid}/stop`.  Phase N step 3's
+  session-end sweep - landed in iteration 26, and the thing iteration 23 measured
+  as essentially the entire live->file convergence gain (93.44 -> 99.26 %) - is
+  reachable only from `POST /api/live/sessions/{id}/stop` via
+  `LiveServiceRuntime._finalize_identity_locked` (live_service_runtime.py:541),
+  and **candidate 60 is that no client code path ever calls that route**.
+  `identity_revision_version` also stayed **0** for all 52 spans, so no cadence
+  sweep landed a correction either.  **A real meeting on the deployed system
+  today gets the album and nothing else.**
+  Candidate 60 was filed in iteration 9 as a bounded, self-healing 30 s
+  view-authority exposure - "the PRD's word *immediately*".  It is also the
+  reason ADR-0002's SECOND acceptance half (demonstrated live->file convergence)
+  is unreachable in production.  That is now measured rather than reasoned, and
+  it is the strongest open argument for the next authorization.
+
+FILES TOUCHED.  scripts/ralph-afk/context.md (F1 scoreboard row, the
+F1-on-Phase-N block, the step-(d) entry, candidate 60 re-priced, candidate 64
+added), scripts/ralph-afk/progress.txt.  **No product source, no tests, no ops.**
+
+EVIDENCE PATHS.  /tmp/i30-f1-evidence/ralph-canary (full driver directory),
+/tmp/i30-clauses.txt (rc=3), /tmp/i30-analyze.txt (rc=4).  Session
+31ec5caa76b145af851c66a0669b730e, label ralph-i30-f1-20260729T093408Z.
+
+HOSTS LEFT CLEAN, MEASURED AFTER (every rollback in this iteration's pre-record
+block was applied or proved unnecessary):
+  server: HEAD 7a4f59c worktree clean; live MainPID 365632, batch 301112, vllm
+    322117, all NRestarts=0; live-runs 0 entries; no /tmp/mtd-live-*; 0
+    tracebacks; batch / and /api/jobs 200; live /live 200
+  m4mbp : app killed (pgrep empty), volume 31 unmuted, pasteboard 0, /tmp
+    scratch removed, BOTH TCC grants still auth_value=2, app inode 212080356 and
+    CLI sha256 450c20bf… unchanged - no rebuild, so no TCC exposure
+  NOTED HONESTLY: MacStudio's own output volume was raised to 70 to deliver the
+    room marker and left at **50**; its pre-run value was not captured.  It is
+    the orchestrator, not a measured host, and no clause reads it - but it is
+    recorded here rather than left as a silent change.
+
+WHAT I LEARNED (three things).
+  1. **A clause can be RED for a reason that is not the system's fault, and the
+     reducer cannot tell you which.**  Both of this run's REDs needed the raw
+     events to interpret: one is a 150 ms miss with a remedy the PRD already
+     names, the other is arithmetic on a 0.03 s span.  This is the fifth time
+     the loop has met "a verdict word that does not name what it decides"
+     (candidates 57, 59, 61, 62, now 64) - and the first time the honest fix is
+     a DECISION rather than a repair.
+  2. **A green suite proved a mechanism that a real meeting never reaches.**
+     tests/live_identity_accuracy.py has been running a session-end sweep
+     unconditionally since iteration 23 and measured 99.26 % from it; iteration
+     26 wired the product's own `finalize_identity` to the stop route; and the
+     client has never called that route.  Every layer was individually correct
+     and covered.  **The only instrument that could see it was a real client
+     against a real server** - the same gap H1/K1/53/60 each occupied.
+  3. **Two open defects can be the same defect.**  Candidate 60 and "the sweep
+     never runs" are one bug with two prices, and the second price is an entire
+     ADR acceptance half.  Re-read old candidates against new code before
+     ranking them: 60 was filed before step 3 existed.
+
+BLOCKERS.  Nothing blocked this iteration.  What is blocked for the NEXT one, and
+on what:
+  * F2 (step (d)'s second half) needs no authorization and no operator input -
+    it is ~10 minutes of host time with live-cert.sh + live-cert-interrupt.sh.
+    It was not run here because one logical change per iteration is the rule and
+    the budget ended.  Its 6000 ms gate would pass this run's 4150.8 ms.
+  * Both of F1's REDs, candidate 60, candidate 55, candidate 58 and candidate 64
+    are tracked product source or gate definitions under the post-merge freeze:
+    **all need the operator.**
+  * F1's "two speakers" half is still limited by candidate 51's MEASURED
+    hardware ceiling - m4mbp's built-in microphone cannot hear a voice across
+    the room; four runs now say so.  That needs different hardware, not another
+    iteration.
+
+RECOMMENDED NEXT STEP.  **Run F2** - it is the last unblocked measurement the
+loop owns, it completes Phase N's gate step (d), and its gate is the one this
+run's latency number already clears.  Then, for the operator: the next
+authorization should be **candidate 60**, and the argument is no longer the PRD's
+word *immediately* - it is that the session-end sweep, which is where ADR-0002's
+convergence acceptance half comes from, cannot execute on the deployed system at
+all.  The fix is one transport call after the final drain in
+`CaptureController.stop`, under the fifth amendment's existing rule that a stop
+which cannot reach the server must still stop locally.
+
