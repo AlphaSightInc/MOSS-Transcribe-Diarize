@@ -7,6 +7,16 @@ Iteration 16 adds section 5: WHOSE request rate each of those two constants
 actually changes. Iteration 15's honest limit named the wrong request stream,
 and the answer sharpens candidate 68 rather than softening it.
 
+ITERATION 23 (Phase Q item Q3) APPLIED THE REMEDY, so section 3's checks are
+INVERTED: they used to assert that nothing tied the two constants together,
+which was the defect, and a probe that keeps asserting a defect exists is a
+probe asserting the fix did not land. They now assert the tie. That inversion
+IS the red-before/green-after evidence and needs no other instrument: at
+dafcae1 the four checks below read the other way and this file passed 20/20;
+`git show dafcae1 -- scripts/ralph-afk/latency-remedy-probe.py` is that reading.
+Section 1 still reads `portalCycleMS == 1000` because it reads F3's real
+report, which was measured BEFORE the remedy and does not change retroactively.
+
 No product change, no host, no session. Reads one real evidence directory and
 three tracked source files."""
 import json, re, subprocess, sys, pathlib
@@ -38,7 +48,7 @@ check("renderBound == portalCycle + snapshotP95 + eventsP95",
       abs(render - (cycle + snap + ev)) < 1e-6, f"residual {render-(cycle+snap+ev):.9f} ms")
 check("userVisible == committedP95 + renderBound",
       abs(uv - (committed + render)) < 1e-6, f"residual {uv-(committed+render):.9f} ms")
-check("the portal-cycle term is a whole 1000.0 ms of the gated number",
+check("the portal-cycle term was a whole 1000.0 ms of the gated number (PRE-remedy)",
       cycle == 1000, f"{100.0*cycle/uv:.1f} % of userVisibleMS")
 
 print("\n2. THE COUNTERFACTUAL - portalCycle 1000 -> 500 subtracts exactly 500.0 ms")
@@ -54,7 +64,7 @@ for name, meas, gate in runs:
 check("F1's RED closes with margin to spare", 4150.8-500.0 < 4000.0,
       f"miss was 150.8 ms; the remedy is worth 500.0 ms = {500.0/150.8:.1f}x the miss")
 
-print("\n3. THE TWO CONSTANTS, AND NOTHING TIES THEM")
+print("\n3. THE TWO CONSTANTS, AND WHAT NOW TIES THEM (inverted by Q3, iteration 23)")
 portal = (REPO/"moss_transcribe_diarize/app/live_portal.py").read_text()
 m = re.search(r"const pollDelayMs = (\d+);", portal)
 check("server portal schedules its next cycle at pollDelayMs", bool(m),
@@ -63,8 +73,11 @@ swift = (REPO/"macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureLatencyProbe.swi
 m2 = re.search(r"portalCycleSeconds: Double = ([0-9.]+)", swift)
 check("app's gate constant asserts the same cadence independently", bool(m2),
       f"CaptureLatencyProbe.swift portalCycleSeconds = {m2.group(1) if m2 else '?'}")
-check("the two agree TODAY", m and m2 and float(m.group(1))/1000.0 == float(m2.group(1)),
+check("the two agree", m and m2 and float(m.group(1))/1000.0 == float(m2.group(1)),
       f"{m.group(1)} ms vs {float(m2.group(1))*1000:.0f} ms")
+check("and the remedy is APPLIED - both halves at 0.5 s, neither alone",
+      m and m2 and float(m.group(1)) == 500.0 and float(m2.group(1)) == 0.5,
+      f"pollDelayMs={m.group(1)} ms, portalCycleSeconds={m2.group(1)} s")
 
 def rg(pattern, *paths):
     """Tracked source only. A plain `grep -rn` here also reads `macos/.build`
@@ -76,15 +89,17 @@ def rg(pattern, *paths):
     return [l for l in r.stdout.splitlines() if l.strip()]
 
 py_refs = rg("pollDelayMs", "tests")
-check("NO python test asserts the portal's poll cadence", not py_refs,
+check("a python test asserts the portal's poll cadence", bool(py_refs),
       f"{len(py_refs)} hits in tests/")
-cross = [l for l in rg("pollDelayMs", "macos") + rg("portalCycleSeconds", "tests",
-                       "moss_transcribe_diarize")]
-check("NO test or source crosses the language boundary between them", not cross,
-      f"{len(cross)} cross-language hits")
+# The tie has to hold from BOTH sides: one node alone leaves the other language free to move.
+swift_side = rg("pollDelayMs", "macos/MOSSCapture/Tests")
+python_side = rg("portalCycleSeconds", "tests")
+check("the tie is asserted from BOTH sides of the language boundary",
+      bool(swift_side) and bool(python_side),
+      f"{len(swift_side)} swift-reads-portal, {len(python_side)} python-reads-swift")
 selfref = rg("portalCycleMS, 1_000", "macos/MOSSCapture/Tests")
-check("the ONLY assertion on the term compares the constant to itself", bool(selfref),
-      selfref[0].split(":")[0] if selfref else "none found")
+check("no assertion on the term compares the constant to itself any more", not selfref,
+      f"{len(selfref)} self-comparisons left")
 
 print("\n4. IS THE PORTAL POLL A DOMAIN-CONTRACT VALUE? (prd.md Constraints)")
 prd = (REPO/"scripts/ralph-afk/prd.md").read_text()
@@ -118,8 +133,18 @@ check("pollDelayMs schedules the BROWSER's next cycle and nothing else",
       any("schedulePoll(pollDelayMs)" in l for l in poll_sites)
       and all("live_portal.py" in l for l in poll_sites),
       f"{len(poll_sites)} sites, all in live_portal.py's served script")
+# Scoped to Sources since Q3, and comments excluded: the enforcing node reads the portal on
+# purpose and the constant's doc comment NAMES the server's copy on purpose - what must stay true
+# is that no measurement CODE reads it, which is a different claim from "the token is absent".
+def code_lines(hits):
+    return [h for h in hits
+            if not h.split(":", 2)[-1].lstrip().startswith(("//", "#"))]
+
+poll_in_sources = code_lines(rg("pollDelayMs", "macos/MOSSCapture/Sources"))
 check("pollDelayMs appears NOWHERE in the measurement path",
-      not rg("pollDelayMs", "macos"), "0 hits under macos/")
+      not poll_in_sources,
+      f"0 code hits under macos/MOSSCapture/Sources ({len(rg('pollDelayMs', 'macos/MOSSCapture/Sources'))} "
+      f"in comments, naming the tie); {len(swift_side)} in Tests (the enforcing node)")
 
 # The real report says which stream the gated p95s come from.
 times = dict(l.split("=", 1) for l in (F3DIR/"times.env").read_text().splitlines() if "=" in l)
@@ -141,6 +166,7 @@ check("the driver's poll stream is a DIFFERENT stream from the gated one",
 
 print("     => moving pollDelayMs alone: gated number moves 0.0 ms, a browser waits 500 ms less")
 print("     => moving portalCycleSeconds alone: gated number moves -500.0 ms, nobody waits less")
+print("     => SINCE Q3 neither is possible alone: two nodes, one per language, fail on either")
 
 print(f"\n{'FAILED: ' + ', '.join(fail) if fail else 'ALL CHECKS PASSED'}")
 sys.exit(1 if fail else 0)

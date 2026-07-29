@@ -376,8 +376,8 @@ final class MTDCaptureCLITests: XCTestCase {
                 ),
                 snapshotFetch: CaptureLatencyDistribution(count: 96, p50MS: 40, p95MS: 90, maxMS: 140),
                 eventsFetch: CaptureLatencyDistribution(count: 96, p50MS: 30, p95MS: 70, maxMS: 110),
-                renderBoundMS: 1_160,
-                userVisibleMS: 2_960
+                renderBoundMS: 660,
+                userVisibleMS: 2_460
             )
         )
         let dispatcher = ControlCommandDispatcher(
@@ -424,8 +424,8 @@ final class MTDCaptureCLITests: XCTestCase {
         )
         // Both components of the gated number reach the operator separately.
         XCTAssertEqual(response.latency?.committedLatency.p95MS, 1_800)
-        XCTAssertEqual(response.latency?.renderBoundMS, 1_160)
-        XCTAssertEqual(response.latency?.userVisibleMS, 2_960)
+        XCTAssertEqual(response.latency?.renderBoundMS, 660)
+        XCTAssertEqual(response.latency?.userVisibleMS, 2_460)
         XCTAssertTrue(standardError.data.isEmpty)
         let combinedOutput = String(
             decoding: standardOutput.data + standardError.data,

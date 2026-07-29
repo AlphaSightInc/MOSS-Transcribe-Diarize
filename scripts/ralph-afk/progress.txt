@@ -27622,3 +27622,170 @@ six unchanged - stage by path (`git add scripts/ralph-afk/...`, never `-A`),
 re-read prd.md's tail before writing the journal, check the tip again before any
 merge.  prd.md's tail is still `bb8daad`, i.e. nine amendments, Phase Q as
 authorized, and no new cycle.
+
+=== ITERATION 23 (run 20260729-094359) - Q3: the cadence moves in both languages,
+    and two nodes make sure it can never move in one ===========================
+
+TARGET.  Phase Q item Q3 / candidate 71 (ninth amendment, item (c)) - "the cadence
+fix - both halves together, and the enforcing node is the durable part".  Chosen
+because it was iteration 22's recommended next step and because it is the item
+standing directly in front of F1's only surviving RED.  Authorized work; no new
+authorization needed, no host, no session, no TCC click.
+
+FILES.  moss_transcribe_diarize/app/live_portal.py (pollDelayMs 1000 -> 500, and
+a comment naming the app-side restatement); macos/.../CaptureLatencyProbe.swift
+(portalCycleSeconds 1.0 -> 0.5, and a doc comment saying it is a RESTATEMENT of
+the server's constant, not an independent knob); macos/.../CaptureControllerTests
+.swift (the new enforcing node + repositoryRoot() helper + the three expectations
+that moved: portalCycleMS 1000->500, renderBound 1160->660, userVisible 2660->2160);
+macos/.../MTDCaptureCLITests.swift (a serialization fixture that encoded the old
+cadence: renderBound 1160->660, userVisible 2960->2460); tests/test_live_portal.py
+(the Python enforcing node); scripts/ralph-afk/latency-remedy-probe.py (section 3
+inverted + two scoping repairs); scripts/ralph-afk/context.md.
+NOT touched: prototypes/streaming-diarization/ - see the addendum below.
+
+THE VALUE DECISION, RECORDED BEFORE THE PATCH (the fifth amendment's shape).
+1.0 s -> 0.5 s on BOTH halves.  This is the plan's own SECOND ordered latency
+remedy, applied in the only form prd.md's Constraints permit:
+
+  remedy 1 (2.0 s span cap) moves `hard_cap_samples` 40000, which prd.md's
+    Constraints declare a DOMAIN-CONTRACT value -> unavailable to this loop
+    under any reading.
+  remedy 2 (0.5 s poll) appears NOWHERE in that list, checked term by term by
+    the probe's section 4.  Note "pump interval 0.5 s" in the list is the
+    CLIENT's frame tick (frameQuantisationMS 500) - a different quantity that
+    happens to share the number.
+
+  Worth exactly -500.0 ms on the gated sum: F1 4150.8 -> 3650.8 against a 4000 ms
+  gate (3.3x the 150.8 ms miss), F2 4078.6 -> 3578.6 and F3 4106.5 -> 3606.5
+  against 6000.  The cost is a real browser's request rate doubling; schedulePoll
+  fires that long AFTER both fetches complete so cycles cannot pile up, and both
+  endpoints are incremental (since_version / since_seq).  F1/F2/F3 open no
+  browser, so a re-run records the full -500 ms and leaves the viewer cost
+  unpriced: THE GATE UNDER-COUNTS THE COST, it does not over-count the benefit.
+  Say that when quoting the re-run.
+
+THE ENFORCING NODE IS TWO NODES, BECAUSE ONE IS NOT ENOUGH.  A node on either
+side alone leaves the OTHER language free to move:
+
+  Swift  CaptureControllerTests.testPortalCycleContractMatchesTheServedPortalCadence
+         reads live_portal.py from the checkout (new repositoryRoot(), two levels
+         above the existing packageRoot()) and compares the REPORTED portalCycleMS
+         - not the constant - against the served pollDelayMs.
+  Python tests/test_live_portal.py::test_live_portal_poll_cadence_and_the_app_
+         render_bound_are_one_number renders the SERVED page through TestClient,
+         reads the Swift constant, and additionally asserts the render bound is
+         still BUILT FROM the constant rather than from a literal.
+
+  Both also assert `schedulePoll(pollDelayMs)` is what schedules, because a
+  constant nothing reads would satisfy an equality check while the page polled at
+  any rate at all.
+
+VALIDATION.
+  python3 -m pytest tests/test_live_portal.py -q          -> 15 passed (was 14)
+  swift build --package-path macos/MOSSCapture --product mtd-capture      -> ok
+  swift build --package-path macos/MOSSCapture --product MOSSCaptureApp   -> ok
+  swift test --package-path macos/MOSSCapture --scratch-path /tmp/i23-swift-scratch
+                                                          -> 159 passed, 0 failures,
+                                                             0 warnings, FRESH scratch
+  python3 -m pytest -q                                    -> 810 passed, 2 skipped,
+                                                             368 subtests, 76.72 s
+  python3 scripts/ralph-afk/latency-remedy-probe.py       -> rc=0, all checks
+  awk '/^## Validation/,/^## Candidates/' context.md | grep -v '^#' | bash -n
+                                                          -> rc=0, 93 command lines
+
+  RED-BEFORE, four directions, by TEMPORARY semantic revert of tracked source with
+  a shell trap guaranteeing restore (backups /tmp/i23-sw.bak, /tmp/i23-py.bak):
+    A  portalCycleSeconds 0.5 -> 1.0        Python RED, Swift RED
+       (Swift: XCTAssertEqual failed: ("500.0") is not equal to ("1000.0") -
+        the reported render bound and the portal's actual poll schedule have
+        drifted apart)
+    B  pollDelayMs 500 -> 1000              Python RED, Swift RED
+    C  schedulePoll(pollDelayMs) -> schedulePoll(500)   Python RED, Swift RED
+       (Swift: XCTAssertTrue failed - pollDelayMs must be what schedules the
+        portal's next cycle)
+    D  renderBoundMS = <literal> instead of the constant   Python RED
+  `git diff --stat` after each restore confirmed only the intended edits remained.
+
+WHAT I LEARNED.
+ 1. A PROBE THAT ASSERTS A DEFECT STILL EXISTS BECOMES, THE MOMENT THE DEFECT IS
+    FIXED, A PROBE ASSERTING THE FIX DID NOT LAND.  latency-remedy-probe.py's
+    section 3 was "THE TWO CONSTANTS, AND NOTHING TIES THEM" - four checks that
+    all went FAIL the instant the tie existed.  The wrong answer is to delete
+    them; the right one is to INVERT them, because the inversion is exactly the
+    red-before/green-after evidence and needs no second instrument.  At dafcae1
+    the checks read the other way and the probe passed 20/20; `git show dafcae1
+    -- scripts/ralph-afk/latency-remedy-probe.py` is that reading, and the
+    docstring now says so.  Added one check the old shape could not express:
+    BOTH halves must read 0.5 s, so "neither alone" is asserted rather than
+    trusted.
+ 2. THE ONE CHECK THAT NEEDED REAL THOUGHT WAS "pollDelayMs APPEARS NOWHERE IN
+    THE MEASUREMENT PATH", AND IT FAILED ON MY OWN DOC COMMENT.  Writing that the
+    Swift constant is a restatement of the server's `pollDelayMs` puts the token
+    under macos/Sources, and a token-presence check cannot tell a comment from a
+    read.  The claim always meant "no measurement CODE reads the server's
+    constant", so the check now filters comment lines and reports both counts
+    ("0 code hits ... 1 in comments, naming the tie").  Narrowing a check to what
+    it always meant is not weakening it; deleting it because my own change
+    tripped it would have been.
+ 3. THE SERIALIZATION FIXTURE WAS THE SUBTLE STALENESS.  MTDCaptureCLITests fed a
+    hand-built report with renderBound 1160 = 1000 + 90 + 70 and asserted it back.
+    Nothing about it depends on the constant, so it stayed green - and would have
+    sat there as a plausible-looking report encoding a superseded cadence for any
+    reader who did the arithmetic.  Updated to 660 / 2460.  This is the same shape
+    as the sixth compaction's stale-command finding, one level quieter.
+ 4. THE STREAK OF "NO REBUILD NEEDED" ENDS HERE, AND IT IS A GATE FACT, NOT
+    HOUSEKEEPING.  The installed app has been the 77e0014 product through five
+    checkouts because P7's and N8's payloads touched 0 files under macos/.  Q3
+    touches macos/, so PHASE Q's REDEPLOY NEEDS AN m4mbp REBUILD + REINSTALL or
+    the app keeps reporting a 1000 ms render bound and F1 measures the remedy at
+    0.0 ms.  Recorded in the install block and in candidate 73's gate line, and
+    both TCC grants must be re-measured after it (the DR is byte-identical across
+    rebuilds, which is why they survive - but measure, do not assume).
+ 5. TWO FIXES I DECLINED, BOTH RECORDED SO THEY ARE NOT RE-DISCOVERED AS NEW.
+    Documenting the cadence in ADR-0001/CONTEXT.md beside the 5 s drain and the
+    two 10 s timeouts - that fence covers DOCUMENTED constants and adding one is a
+    doc review this amendment does not scope.  And the deeper fix: serve the
+    cadence in /api/live/descriptor and have the probe READ it, so there is one
+    number rather than two and no enforcing node is needed at all.  That is a
+    product contract change on both sides and needs its own authorization.
+
+EVIDENCE PATHS.  Candidate 71 in context.md (the decision, the cost, both nodes,
+all four red-before directions, and the two declined fixes); candidate 68 marked
+ANSWERED with its diagnosis left intact; the F1 scoreboard row (RED until Phase
+Q's own F1 re-run - the -500 ms is arithmetic on a report, not a measurement);
+the latency-remedy block's header and its point 2; the Validation fence's Q3
+entry with all four revert directions; the install block in Deployed reality; the
+invariant bullet at "What survives those blocks"; candidate 73's gate line.
+
+BLOCKERS.  None.  The deliberately-broken offline-probe invariant is now broader:
+`git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` lists Q1's and Q3's
+product source, so neither the server NOR the installed client is what this
+checkout describes until Phase Q's redeploy.
+
+RECOMMENDED NEXT STEP.  Q4 (candidate 72) - the Mac client's clean stop - which is
+the last open Phase Q item and the last thing between the branch and Phase Q's
+gate.  A transport call after the final drain, with the fifth amendment's rule
+that a stop which cannot reach the server must still stop locally; it re-opens the
+Swift half of the gate, which this iteration has just re-run clean at 159.  After
+Q4: the full gate, the accuracy harness, F1 and F3 re-run (remembering the m4mbp
+rebuild+reinstall, without which F1 cannot see the cadence remedy at all), one
+merge, push, redeploy.  If context.md's paging cost bites first, the ninth
+compaction is the cheaper iteration and its target is named in the compaction log.
+Two things NOT to do: do not re-run F1 to "confirm" the -500 ms before the
+reinstall - it would measure 0.0 ms and read as the remedy failing - and do not
+move either cadence constant again without the other; that is now a test failure
+rather than a judgement call, which is the whole point of the item.
+
+--- iteration 23, addendum: the SEVENTH concurrent operator touch, uncommitted --
+
+`git status` at the end of this iteration shows `prototypes/streaming-diarization/
+README.md` modified and `prototypes/streaming-diarization/proto_corpus_5m30m.py`
+untracked - the operator's bench work IN PROGRESS in the working tree, not yet
+committed.  Nothing of mine is under prototypes/, and this iteration staged by
+path (`git add` of the eight files listed above) exactly as the procedure requires,
+so neither file was swept into a `ralph:` commit.  Seven touches now: two carried
+authorizations, one carried a binding evidence rule, three were bench or docs
+commits, and this one is uncommitted work sitting in the tree - which is the case
+`git add -A` would have published under my message.  prd.md's tail is still
+`bb8daad`, i.e. nine amendments, Phase Q as authorized, and no new cycle.

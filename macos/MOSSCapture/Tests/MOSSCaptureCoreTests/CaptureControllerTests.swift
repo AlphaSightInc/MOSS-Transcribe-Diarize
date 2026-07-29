@@ -5181,6 +5181,12 @@ final class CaptureControllerTests: XCTestCase {
         return url
     }
 
+    /// `macos/MOSSCapture` is two levels below the checkout, and the checkout is where the server
+    /// source this package has to agree with lives.
+    private func repositoryRoot() -> URL {
+        packageRoot().deletingLastPathComponent().deletingLastPathComponent()
+    }
+
     private func swiftSources(under root: URL) throws -> String {
         try textSources(under: root, pathExtension: "swift")
     }
@@ -5696,16 +5702,48 @@ final class CaptureControllerTests: XCTestCase {
         }
 
         let report = sampler.report(polling: true)
-        XCTAssertEqual(report.portalCycleMS, 1_000)
+        XCTAssertEqual(report.portalCycleMS, 500)
         XCTAssertEqual(report.snapshotFetch.p95MS, 90)
         XCTAssertEqual(report.eventsFetch.p95MS, 70)
-        XCTAssertEqual(report.renderBoundMS, 1_160)
+        XCTAssertEqual(report.renderBoundMS, 660)
         XCTAssertEqual(report.committedLatency.p95MS, 1_500)
-        XCTAssertEqual(report.userVisibleMS, 2_660)
+        XCTAssertEqual(report.userVisibleMS, 2_160)
         XCTAssertEqual(
             report.userVisibleMS,
             try XCTUnwrap(report.committedLatency.p95MS) + (try XCTUnwrap(report.renderBoundMS)),
             "the gated number must stay the sum of the two recorded components"
+        )
+    }
+
+    /// The gated latency number contains a term that asserts what the *server's* portal does, and
+    /// the app schedules nothing from it. So the two values can drift apart in either direction and
+    /// every existing assertion would still pass: moving this constant alone would take 500 ms off a
+    /// reported number with no change to what a reader waits, and moving the portal's alone would
+    /// hand a reader 500 ms the report never records. This node fails on either.
+    func testPortalCycleContractMatchesTheServedPortalCadence() throws {
+        let portal = try String(
+            contentsOf: repositoryRoot().appendingPathComponent(
+                "moss_transcribe_diarize/app/live_portal.py"
+            ),
+            encoding: .utf8
+        )
+        let declared = try matches(pattern: #"const pollDelayMs = (\d+);"#, in: portal)
+        XCTAssertEqual(declared.count, 1, "the portal must declare its poll cadence exactly once")
+        let servedMS = try XCTUnwrap(Double(try XCTUnwrap(declared.first)))
+
+        // The declaration is only the cadence if it is also what schedules the next cycle; a
+        // constant nothing reads would satisfy an equality check while the page polled at any rate.
+        XCTAssertTrue(
+            portal.contains("schedulePoll(pollDelayMs)"),
+            "pollDelayMs must be what schedules the portal's next cycle"
+        )
+
+        // Compare against the number the report actually carries, not against the constant, so a
+        // literal substituted into the report is caught as well as a moved constant.
+        XCTAssertEqual(
+            CaptureLatencySampler().report(polling: true).portalCycleMS,
+            servedMS,
+            "the reported render bound and the portal's actual poll schedule have drifted apart"
         )
     }
 

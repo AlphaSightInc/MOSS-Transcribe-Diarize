@@ -453,6 +453,48 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["domRowCount"], 200)
         self.assertEqual(probe["domRowCount"], probe["rowCount"])
 
+    def test_live_portal_poll_cadence_and_the_app_render_bound_are_one_number(self):
+        """The PRD's user-visible latency is measured as `committedP95 + renderBound`, and the
+        render bound's leading term is the app's *restatement* of this page's poll cadence. The app
+        schedules nothing from its copy and this page reads nothing from the app's, so the two can
+        drift apart in either direction with every other assertion still green: move the Swift
+        constant alone and a gated number improves with no change to what a reader waits; move this
+        one alone and a reader gains time the gate never records. Fail on either.
+        """
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+        script = _extract_portal_script(html)
+
+        served = re.findall(r"const pollDelayMs = (\d+);", script)
+        self.assertEqual(len(served), 1, "the served portal must declare its poll cadence once")
+        served_ms = float(served[0])
+
+        # A constant nothing reads would satisfy the equality below while the page polled at any
+        # rate at all, so the cadence has to be what actually schedules the next cycle.
+        self.assertIn("schedulePoll(pollDelayMs)", script)
+
+        swift = (
+            REPO_ROOT / "macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureLatencyProbe.swift"
+        ).read_text(encoding="utf-8")
+        declared = re.findall(r"portalCycleSeconds: Double = ([0-9.]+)", swift)
+        self.assertEqual(len(declared), 1, "the app must declare the portal cycle once")
+        self.assertEqual(
+            float(declared[0]) * 1000.0,
+            served_ms,
+            "the app's reported render bound and the portal's actual poll schedule disagree: "
+            f"portalCycleSeconds={declared[0]} s vs pollDelayMs={served[0]} ms",
+        )
+
+        # And the term must still reach the sum: a literal substituted for the constant would keep
+        # the two declarations equal while the reported bound stopped describing this page.
+        self.assertIn(
+            "renderBoundMS = CaptureLatencyContract.portalCycleSeconds * 1_000",
+            swift,
+            "the render bound must be built from the declared cycle, not from a literal",
+        )
+
     def test_idea_038_context_and_adr_keep_portal_constants_and_evidence_tier_missing(self):
         from fastapi.testclient import TestClient
 

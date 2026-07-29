@@ -193,7 +193,7 @@ less often than the table it introduces; correct it with the rows.**
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **RED ON THE DEPLOYED `7a4f59c`, AND SINCE ITERATION 22 THE RED IS ONE CLAUSE, NOT TWO.** The run is unchanged (iteration 30, Phase N gate step (d) first half, rc=3); what changed is the **reducer**, which now answers the RTF clause by Q2's derived definition. Re-reduced: **seven GREEN and ONE RED** — decoder p95 RTF **0.580** over 49 spans >= 0.13 s (3 excluded, their RTF 2.365–3.599, printed in the verdict sentence) plus a new **aggregate RTF 0.203** over all 52 spans with nothing excluded, both GREEN; the surviving RED is user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %). **The RTF number that stood here was 2.365, carried entirely by 3 spans shorter than 0.1 s — candidate 70 records why that is a measurement of the decoder's fixed per-request cost and not of the decoder.** F1 is still re-run as Phase Q's gate; this is a re-reduction of existing evidence, not a new run. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). *Superseded, kept for one reason:* F1 was **GREEN on `42abc5a`** (iteration 6, rc=0) at p95 **3909.3 ms** and RTF **0.911**, 329 published == 329 accepted, and that is the **only** run in this loop's history where the user-visible clause passed at the 4000 ms gate. **One half is NOT certified in either run:** "two speakers" were both on the *system* lane (candidate 51's measured microphone limit). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED is untouched by it — and is **now answered separately** by Q2's definition (candidate 70), so **the latency miss is the only thing standing between F1 and green**. See the latency-remedy block and candidate 68. |
+| 60 s canary (F1) | **RED ON THE DEPLOYED `7a4f59c`, AND SINCE ITERATION 22 THE RED IS ONE CLAUSE, NOT TWO.** The run is unchanged (iteration 30, Phase N gate step (d) first half, rc=3); what changed is the **reducer**, which now answers the RTF clause by Q2's derived definition. Re-reduced: **seven GREEN and ONE RED** — decoder p95 RTF **0.580** over 49 spans >= 0.13 s (3 excluded, their RTF 2.365–3.599, printed in the verdict sentence) plus a new **aggregate RTF 0.203** over all 52 spans with nothing excluded, both GREEN; the surviving RED is user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %). **The RTF number that stood here was 2.365, carried entirely by 3 spans shorter than 0.1 s — candidate 70 records why that is a measurement of the decoder's fixed per-request cost and not of the decoder.** F1 is still re-run as Phase Q's gate; this is a re-reduction of existing evidence, not a new run. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). *Superseded, kept for one reason:* F1 was **GREEN on `42abc5a`** (iteration 6, rc=0) at p95 **3909.3 ms** and RTF **0.911**, 329 published == 329 accepted, and that is the **only** run in this loop's history where the user-visible clause passed at the 4000 ms gate. **One half is NOT certified in either run:** "two speakers" were both on the *system* lane (candidate 51's measured microphone limit). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED is untouched by it — and is **now answered separately** by Q2's definition (candidate 70), so **the latency miss is the only thing standing between F1 and green**. **ITERATION 23 APPLIED THAT REMEDY ON THE BRANCH (Q3, candidate 71) — both halves at 0.5 s, with an enforcing node in each language.** The −500 ms is **arithmetic on a report, not yet a measurement**: this row stays RED until Phase Q's own F1 re-run measures it on a redeployed build. See the latency-remedy block and candidates 71 and 68. |
 | 300 s certification (F2) | **GREEN ON THE DEPLOYED `7a4f59c`** (run `20260729-094359` iteration 1, `live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **4078.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.577** < 1, **1261 published == 1261 POST /frames, and every one of the session's 4766 logged requests answered 200**, a **5.090 s** interruption seen by the client and survived, outbox 0 → **5** → 0. (Was GREEN on `42abc5a` in iteration 11 of the previous run: 3859.6 ms, RTF 0.670, 1257 == 1257 — that block is archived in progress.txt.) **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the **F2 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction) |
 | 16-minute soak (F3) | **RE-RUN ON THE DEPLOYED `7a4f59c` (run `20260729-094359` iteration 12) — 5 GREEN, 1 RED, rc=3, and it is now the current F3 evidence.** 17/17 full minutes, 648 spans, 381/381 portal polls 200, view authority 200 at age **903.6 s and 1023.0 s**, user-visible p95 **4106.5 ms** ≤ 6000 **qualified and `timelineIntact` true**, decoder p95 RTF **0.568**, **no lane fault at all**, clean drain `retained=0`. The RED is **candidate 60**, unchanged and expected — the Mac client never calls `POST …/stop`, so the post-stop view check answered 200. **The run also falsified candidate 65's headline: the CADENCE sweep published three corrections mid-meeting.** See the **F3 on Phase N** row in the gates index and the deployed-sweep block below (§1). (The prior `42abc5a` run — iteration 9 of run `20260729-025318`, same 5/1 shape — is superseded as evidence; its row is kept in the gates index for the before/after deltas.) |
 | Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The *browser storage* half is now MEASURED ON THE DEPLOYED PAGE — iteration 10, `portal-storage-probe.py` rc=0, five clauses GREEN, six negative controls all detected.** It had never been measured at all: `leak-scan.sh` never scans the portal (iteration 7), the tracked static assertion (`tests/test_live_portal.py:217-219`) reads a **locally rendered** page, and the harness's `storageWrites` recorder (`:618,657,737,812,841`) has **no assertion anywhere in the suite** — dead instrumentation a runtime write would pass. See the portal-storage block below. **What is still open is the tracked *regression*, not the evidence — candidate 66** |
@@ -339,8 +339,10 @@ Phase M/P landing narratives it used to carry are in progress.txt under that pas
   client's `stop`), their coverage gap, their gate (full Swift/Python → F1 and F3 → **one** merge →
   push → redeploy). **Q1 (candidate 69) LANDED ON THE BRANCH IN ITERATION 21** — measured, covered
   by nine red-before nodes, Python green at 809. **Q2 (candidate 70) LANDED IN ITERATION 22** —
-  loop tooling only, so it re-opens neither suite. **Q3 and Q4 are open**, and both touch `macos/`
-  and therefore re-open the Swift half of the gate.
+  loop tooling only, so it re-opens neither suite. **Q3 (candidate 71) LANDED IN ITERATION 23** —
+  both cadence halves at 0.5 s, an enforcing node in each language, Python **810** and Swift
+  **159** green. **Q4 (candidate 72) is the last open item**; it touches `macos/` and re-opens the
+  Swift half of the gate, which Q3 has just re-run clean.
   **STILL needs an authorization:** candidates **58**, **66**, and **Phase N step 4** — which prd.md
   now names *"out of scope"* for Phase Q in as many words, *"worth its own authorization later"*, so
   the split iteration 18 recorded is now the operator's own wording. **Candidate 65 is WITHDRAWN**,
@@ -420,12 +422,12 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch. Python re-measured whole at iteration 21 (Q1): 809 passed / 2 skipped /
-368 subtests in ~74 s** (801 -> 809: five preparer nodes and three provider nodes for the birth
-floor; the accuracy harness's five candidate-55 nodes were re-stated, not added). **Swift is still
-the Phase N figure — 158 passed / 0 failed, 0 warnings on a fresh scratch — and is unre-run because
-nothing under `macos/` has changed since; Q3 and Q4 will change that and must re-run it.** The two
-skips are the
+**Test totals on the branch. Python re-measured whole at iteration 23 (Q3): 810 passed / 2 skipped /
+368 subtests in ~77 s** (801 -> 809 at Q1: five preparer nodes and three provider nodes for the
+birth floor, the accuracy harness's five candidate-55 nodes re-stated rather than added; 809 -> 810
+at Q3: the Python half of the cadence-enforcing node). **Swift re-measured at iteration 23 —
+159 passed / 0 failed, 0 warnings on a fresh scratch** (158 -> 159: the Swift half of the same
+node). Q4 touches `macos/` and must re-run both. The two skips are the
 pre-existing `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract and are
 **never** Darwin skips. The growth chain (604 -> 801 across Phase P and Phase N steps 1-3) and the
 per-file node counts are retired to progress.txt with the fourth compaction - regenerate them with
@@ -488,7 +490,9 @@ it had died at t+31.5 s on `77e0014`.
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
   **AS OF ITERATION 21 THE INVARIANT IS BROKEN, DELIBERATELY, AND STAYS BROKEN UNTIL PHASE Q's
   REDEPLOY.** Q1 put `moss_transcribe_diarize/app/live_identity.py` and `live_provider_bundle.py` on
-  the branch, so `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` lists product source
+  the branch and **iteration 23's Q3 added `live_portal.py` and `CaptureLatencyProbe.swift`, so the
+  installed `.app` is now stale as well as the server**, so
+  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` lists product source
   and **no offline probe speaks for the deployed service any more** — exactly the state Phase N
   steps 1-3 held from iteration 15 to iteration 28. A measurement about the *running* service must
   come from the running service until gate step (c) of Phase Q lands. (Iteration 20's reading, now
@@ -570,9 +574,13 @@ have called F1 it.30 UNDECIDED on 49 perfectly measurable spans.
 
 **WHAT THE GATED LATENCY NUMBER IS MADE OF, AND WHAT THE PLAN'S SECOND ORDERED REMEDY IS WORTH —
 run `20260729-094359` iteration 15. READ THIS BEFORE RE-RUNNING F1 OR ARGUING ABOUT ITS LATENCY
-RED.** `scripts/ralph-afk/latency-remedy-probe.py`, rc=0, **14/14** checks, offline: one real
-`latency-final.json` (iteration 12's F3) plus two tracked source constants. No host, no session, no
-product change.
+RED.** `scripts/ralph-afk/latency-remedy-probe.py`, rc=0, offline: one real
+`latency-final.json` (iteration 12's F3) plus two tracked source constants. No host, no session.
+**THE REMEDY IS APPLIED AS OF ITERATION 23 (Q3, candidate 71) — both halves at 0.5 s — so the probe
+now asserts the TIE where it used to assert that nothing tied them, and section 1's
+`portalCycleMS == 1000` is labelled PRE-remedy because it reads F3's real report, which was measured
+before and does not change retroactively.** The −500 ms below is still arithmetic on that report;
+what turns it into a measurement is Phase Q's F1 re-run on a redeployed build.
 
 `userVisibleMS = committedP95 + portalCycleMS + snapshotFetchP95 + eventsFetchP95` — **residual
 0.000000000 ms** on F3's real report (2674.0095 + 1000 + 241.501792 + 191.003041 = 4106.514333).
@@ -594,7 +602,9 @@ F1 missed by 150.8 ms; the remedy is worth **3.3×** the miss.
 2. **The remedy's own trap is candidate 68:** the 1000 ms lives in `live_portal.py:146`
    (`pollDelayMs`) *and* `CaptureLatencyProbe.swift:18` (`portalCycleSeconds`), and nothing ties them,
    so moving the Swift one alone would take 500 ms off a PRD number with no change to what a human
-   sees. **Both move together or neither moves.**
+   sees. **Both move together or neither moves.** *Closed in iteration 23:* both moved, and two
+   enforcing nodes — one per language, each reading the other's source — now fail on either half
+   moving alone. See candidate 71 for the four red-before directions.
 3. **WHOSE REQUEST RATE EACH CONSTANT CHANGES — measured in iteration 16 (probe section 5), and it
    CORRECTS the honest limit this line used to carry.** The two constants are causally disconnected
    **in both directions**: `portalCycleSeconds` has three tracked sites (declaration, report default,
@@ -926,7 +936,16 @@ with `BatchMode=yes`, **detached at `7a4f59c`** (tree `16de7f62…`, the merge's
   `macos/`, so all three SHAs build a byte-identical client. Re-measured after both P5(c)'s and
   N8c's checkouts — inode `212080356`, mtime unchanged, and
   CLI sha256 `450c20bf…` **unchanged**, which is the positive proof no rebuild happened and therefore
-  that the TCC grants were never at risk. *One measurement trap:* `212080356` is the **bundle
+  that the TCC grants were never at risk.
+  ***THAT STREAK ENDS WITH PHASE Q, AND ITERATION 23 IS WHERE IT ENDED.*** Q3 changed
+  `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureLatencyProbe.swift`, so Phase Q's payload is the
+  **first since M6c to touch `macos/`** and the installed client is now genuinely stale rather than
+  correctly-identical. **Phase Q's redeploy therefore needs an m4mbp rebuild + reinstall, which the
+  last five did not** — the third amendment's housekeeping note (*"no rebuild or reinstall is needed
+  unless `macos/` changes"*) now applies in its other branch. Recheck both TCC grants after it (the
+  DR is byte-identical across rebuilds, which is why they survive, but *measure* rather than assume),
+  and **F1 cannot measure the −500 ms until that reinstall happens** — the analytic render bound is
+  computed inside the app. *One measurement trap:* `212080356` is the **bundle
   directory's** inode; the Mach-O at `Contents/MacOS/MOSSCaptureApp` is `212080361` and the CLI is
   `212080364`. Compare like with like or a healthy install reads as replaced. (K5c's `fc7097d` install was digest `267ada93…`, CLI `c11e89ff…`,
   inode `211995344`.) Both verify
@@ -1636,6 +1655,18 @@ scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
 #   a 25-span events.tsv with 20 at 0.05 s and 5 at 1.0 s   # gated 5 < RTF_MIN_GATED_SPANS
 # The probe REFUSES below 3 directories / 300 spans: a floor derived from one run is a floor fitted
 # to that run's noise - per-run Theil-Sen puts C/m between 0.590 s and 2.007 s.
+# Q3's CADENCE TIE (iteration 23, candidate 71). Two nodes, one per language, each reading the
+# other's source; the probe's section 3 asserts the tie and that BOTH halves read 0.5 s:
+#   python3 -m pytest tests/test_live_portal.py -q -k poll_cadence      # 1 passed
+#   swift test --package-path macos/MOSSCapture \
+#     --filter testPortalCycleContractMatchesTheServedPortalCadence     # 1 test, 0 failures
+#   python3 scripts/ralph-afk/latency-remedy-probe.py                   # rc=0, needs it.12's F3 dir
+# Red-before is a TEMPORARY SEMANTIC REVERT of tracked source, so back both files up first and
+# restore under a shell trap; four directions, each of which must go red:
+#   portalCycleSeconds 0.5 -> 1.0 | pollDelayMs 500 -> 1000
+#   schedulePoll(pollDelayMs) -> schedulePoll(500)          # declared but not scheduled
+#   renderBoundMS = CaptureLatencyContract.portalCycleSeconds * 1_000 -> a literal
+# The probe's section 1 reads F3's PRE-remedy report and must keep saying portalCycleMS == 1000.
 # Validated in iteration 21 against iteration 12's canary (reproduces committed p95 8342.697 ms and
 # user-visible 9702.2 ms), against /tmp/ralph-f1-evidence (reproduces decoder p95 RTF 0.706 and
 # prints the t+86.0 s system-lane failure), and it REFUSES the F3 soak layout by name.
@@ -2029,10 +2060,10 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     "THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS" in progress.txt. Loop tooling; it made
     F2 ungreenable for candidate 60, a defect outside F2's clause list.
 68. **The user-visible latency gate's analytic half is an unenforced duplicate of the portal's poll
-    cadence — so the gate can be moved 500 ms without changing what a human sees.** `[open, new —
-    run `20260729-094359` iteration 15; found while pricing F1's latency RED. Tracked product source
-    in **two** languages; **needs its own authorization**, and it is item (d) of the authorization
-    request.]` `CaptureLatencyProbe.swift:328` computes
+    cadence — so the gate can be moved 500 ms without changing what a human sees.** `[ANSWERED by
+    Q3, iteration 23 — two enforcing nodes, one per language, and both constants at 0.5 s. The
+    diagnosis below is unchanged and is why the fix has the shape it has; read candidate 71 for what
+    was done. Found in iteration 15 while pricing F1's latency RED.]` `CaptureLatencyProbe.swift:328` computes
     `renderBoundMS = portalCycleSeconds*1000 + snapshotP95 + eventsP95`, and
     `userVisibleMS = committedP95 + renderBoundMS` — **verified to 0.000000000 ms residual** on F3's
     real `latency-final.json` (`portalCycleMS` 1000, snapshot p95 241.501792, events p95 191.003041,
@@ -2751,11 +2782,55 @@ now measured on the deployed service.
     (`--rtf-floor-sec 3.0`, above the 2.5 s hard cap) and too-few-gated (a 25-span fixture with 5
     above the floor) - and so is the duration-unknown branch, where a span from an older event
     schema is **COUNTED, never excluded**.
-71. **Q3 - the cadence fix, both halves or neither.** `portalCycleSeconds` moves the number and no
-    request rate; `pollDelayMs` moves the browser's wait and the number by 0.0 ms. Moving the Swift
-    one alone relaxes the gate while looking like a remedy - forbidden. **The enforcing node that
-    fails when the reported render bound and the actual schedule drift apart is required whatever is
-    decided about the value**, and is the durable part of this item.
+71. **Q3 - the cadence fix, both halves or neither.** `[LANDED ON THE BRANCH - iteration 23. NOT
+    merged, NOT deployed.]` `portalCycleSeconds` moves the number and no request rate;
+    `pollDelayMs` moves the browser's wait and the number by 0.0 ms. Moving the Swift one alone
+    relaxes the gate while looking like a remedy - forbidden.
+    **The value decision, recorded before the patch as the fifth amendment's shape requires: 1.0 s
+    -> 0.5 s on BOTH halves**, i.e. the plan's own **second** ordered latency remedy, applied in the
+    one form the PRD's Constraints permit. Remedy 1 (2.0 s span cap) moves `hard_cap_samples`, which
+    prd.md declares a **domain-contract value**, so the loop cannot take it under any reading;
+    remedy 2's portal poll is absent from that list, term by term (the probe's section 4 asserts
+    this, and *"pump interval 0.5 s"* in the list is the client's frame tick, a different quantity
+    that happens to share the number). Worth **exactly -500.0 ms** on the gated sum, which takes F1
+    from **4150.8 -> 3650.8** against its 4000 ms gate (**3.3x** the 150.8 ms miss) and moves F2 and
+    F3 further inside their 6000 ms one. **The cost is a real browser's request rate doubling** -
+    `schedulePoll` fires that long *after* both fetches complete, so cycles cannot pile up, and the
+    two endpoints are incremental (`since_version` / `since_seq`). F1/F2/F3 open no browser, so a
+    re-run records the full -500 ms and leaves the viewer cost unpriced: **the gate under-counts the
+    cost, it does not over-count the benefit.** Say that when quoting the re-run.
+    **The enforcing node - the durable part, and it is TWO nodes because one is not enough.** A node
+    on either side alone leaves the other language free to move: the Swift half
+    (`CaptureControllerTests.testPortalCycleContractMatchesTheServedPortalCadence`) reads
+    `live_portal.py` from the checkout and compares the **reported** `portalCycleMS` - not the
+    constant - against the served `pollDelayMs`; the Python half
+    (`test_live_portal_poll_cadence_and_the_app_render_bound_are_one_number`) renders the **served**
+    page through `TestClient`, reads the Swift constant, and additionally asserts the render bound
+    is still **built from** the constant rather than from a literal. Both also assert
+    `schedulePoll(pollDelayMs)` is what schedules, because a constant nothing reads would satisfy an
+    equality check while the page polled at any rate at all.
+    **Red-before, four directions, by temporary semantic revert with guaranteed restore** (backups
+    in `/tmp/i23-*.bak`): Swift constant moved alone, portal constant moved alone, cadence declared
+    but not scheduled, render bound built from a literal - **each fails the Python node**, and the
+    first two fail the Swift node as well (`XCTAssertEqual failed: ("500.0") is not equal to
+    ("1000.0")`). Python **809 -> 810**, Swift **158 -> 159**, 0 failures, 0 warnings on a fresh
+    scratch.
+    **`latency-remedy-probe.py`'s section 3 is INVERTED, and the inversion is the evidence.** Its
+    four "nothing ties them" checks asserted the **defect**; a probe that keeps asserting a defect
+    exists is a probe asserting the fix did not land. They now assert the tie, plus a new check that
+    both halves read 0.5 s so *neither alone* can pass. `git show dafcae1 --
+    scripts/ralph-afk/latency-remedy-probe.py` is the pre-fix reading. Two scoping repairs went with
+    it, both narrowing a claim to what it always meant: *"pollDelayMs appears nowhere in the
+    measurement path"* now reads **code** lines under `Sources` only (the constant's doc comment
+    names the server's copy on purpose, and a doc comment is not a read), and the self-comparison
+    check is inverted rather than deleted.
+    **Considered and declined:** documenting the cadence in ADR-0001/CONTEXT.md beside the 5 s drain
+    and the two 10 s timeouts. That fence covers *documented* constants and adding one is a doc
+    review this amendment does not scope; the tie is enforced from both sides in code instead.
+    **Also declined, and it is the deeper fix if this ever drifts again:** serving the cadence in
+    `/api/live/descriptor` and having the probe read it, so there is one number rather than two and
+    an enforcing node becomes unnecessary. That is a product contract change on both sides and needs
+    its own authorization.
 72. **Q4 - a clean stop must reach the server (candidate 60).** The route works and the portal's
     Stop calls it; the Mac client does not, so view authority outlives a clean stop by up to the
     30 s lease (29.4 / 29 s measured). Transport call after the final drain; a stop that cannot
@@ -2765,13 +2840,18 @@ now measured on the deployed service.
     can be minted from a span with no embedded evidence. Then the full gate, the accuracy harness
     showing the birth floor's effect on canonical count, **F1 and F3 re-run**, one merge
     (`expected_main` is `7a4f59c` -> advance in-script), push, redeploy.
+    **THE REDEPLOY HAS TWO HALVES THIS TIME, AND THE SECOND HAS NOT BEEN NEEDED SINCE M6c.** Q3 put
+    `CaptureLatencyProbe.swift` in the payload, so the server checkout is not enough: **m4mbp needs a
+    rebuild + reinstall** or the app keeps reporting a 1000 ms render bound and F1 measures the
+    remedy at 0.0 ms. Re-check both TCC grants after it. See the install block in Deployed reality.
     **Q1's half is done (iteration 21):** the birth node exists, nine nodes are red-before by
     semantic revert, Python is **809 passed / 2 skipped / 368 subtests** (was 801), and the harness
     number the gate asks for is recorded in candidate 69. **Q2's half is done (iteration 22):** its
     coverage is `rtf-floor-probe.py` (9/9, two-sided fence) rather than a `tests/` node, because Q2
     changed only loop tooling - Python's 809 is therefore **unchanged and un-re-run**, correctly.
-    Q3/Q4 still owe theirs, and the Swift suite has not been re-run because nothing under `macos/`
-    has changed yet - Q3 and Q4 both will.
+    **Q3's half is done (iteration 23):** two enforcing nodes, one per language, each red-before in
+    four directions by temporary semantic revert; Python **810**, Swift **159**, 0 warnings on a
+    fresh scratch. **Q4 still owes its coverage** and will re-open both suites.
 74. **`PROVISIONAL` is unreachable on the live path now that Q1 has landed** `[open, no
     authorization needed to decide, product change would need one]`. The album's second tier holds
     exactly one sub-admission observation *while a speaker has no exemplars*; with the birth floor
