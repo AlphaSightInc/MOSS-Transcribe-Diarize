@@ -81,6 +81,18 @@ LiveTranscribe corpora). Aggregate at grid-best (score 0.35, margin 0.1, adm 1.0
   Residual over-birth survives on 4 of 9 clips (4 canonicals for 3 voices, 3 for 2), so
   the floor bounds the unenrollable births, not all of them.
 
+### Updated regression fixture `youtube_rtfl_first_90s` (`proto_fixture_90s.py`, 2026-07-29)
+Operator flagged the golden was updated on m4mbp at 10:53; fetched AFTER that update.
+(The two main corpora were md5-verified identical local-vs-remote — no stale goldens.)
+Hardest clip in the collection: K=4 in 90 s including a single-appearance speaker,
+decisecond boundaries, 2.4 s of sub-floor micro-turns. Results:
+
+- grid-best: overwrite 57.6 / album 92.4 / **album+sweep 93.7** — beats the whole-file
+  oracle (87.6) by +6.1 pp. Deployed score 0.5 caps at 81.2 even with sweep.
+- birth floor 1.0 s: minted speakers 7 → 5 (true 4), accuracy unchanged at 93.7% —
+  consistent with the Q1 finding.
+- Kept OUT of the 9-clip binding aggregate (95.2%) deliberately; reported standalone.
+
 ## Fidelity notes
 - Embedder: PRODUCTION class `_OnnxWeSpeakerEmbedder` via `WeSpeakerResNet152LmAdapter`,
   loaded from the repo file, with the pinned ONNX (sha verified = spec.state_sha256).
