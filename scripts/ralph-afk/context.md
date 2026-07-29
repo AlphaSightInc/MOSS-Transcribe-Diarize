@@ -63,6 +63,9 @@
     — current controlling revision, the design rationale and decisions D1-D14. Authoritative.
   - `CONTEXT.md` (repo glossary — lane, mixer, v2 contract, portal, helper terms)
   - `docs/adr/0001-live-v2-json-http-contract.md`
+  - `docs/adr/0002-two-tier-diarization-fingerprint-album.md` + `docs/design-streaming-diarization.md`
+    — the authoritative live-identity design (Phase N); `docs/adr/0003-live-session-audio-retention.md`
+    — the retention bound step 2 must implement
   - `LOCAL_DEPLOYMENT.md` (server layout; Phase C updates it)
 - **Ignore `scripts/aisight-coding-loop/`** — an inert older loop bundle with identically named
   `prd.md`/`context.md`/`prompt.md`/`progress.txt`. This loop lives only in `scripts/ralph-afk/`.
@@ -236,8 +239,11 @@ carry is in the retired-evidence index below).**
   recalibration (candidate 63), which the ADR-0002 supersession names in its own words and the
   sixth amendment already ruled a *free* parameter. Iteration 16 filed it as needing an
   authorization; iteration 17 re-read the contract and landed it.** The accuracy half of the gate
-  was built in iteration 16; step 2 collides with the PRD's no-raw-audio clause by design (a
-  decision to record before any code).
+  was built in iteration 16. **Step 2's collision with the PRD's no-raw-audio clause is SETTLED
+  (iteration 18): `docs/adr/0003-live-session-audio-retention.md` re-reads the clause as a
+  *horizon* — measured at **one span** today, moved to **one meeting** — opt-in, zero TTL after
+  session end, one mode-enforcing root off the batch filesystem, and a cap whose pressure degrades
+  the tape rather than the meeting. Step 2 is unblocked for code; read the ADR before writing any.**
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -1648,9 +1654,46 @@ see candidate 55 and finding 2 under N-gate.
 **N-tape / N-sweep / N-batch — steps 2, 3 and 4, open.** Tape recorder (per-lane + mixed durable
 assembly with a gap manifest and a retention TTL), retrospective sweep (re-VAD/re-embed/re-cluster
 the tape, seeded by live labels, **never re-ASR**, versioned silent corrections), then batch Tier-B
-unified onto the same album engine. Step 2 is where the PRD's *"no raw audio is persisted"* clause
-and the ADR's retention posture collide; the PRD amendment says to re-read the clause against the
-ADR, which is a decision to record before any code, not a licence to start writing audio.
+unified onto the same album engine.
+
+**N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
+`docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the
+PRD both require the *"no raw audio is persisted"* re-reading **in writing before any code**; step 2
+was the only Phase N item needing neither an operator nor a host, so it was the cheapest unblocked
+thing left. Read the ADR before writing a byte of the tape — it is the shape step 2 must implement,
+not a permission it may interpret.
+***The framing that made it decidable, and it is measured, not argued.*** The clause is **not** a
+prohibition on audio reaching a disk — live audio touches disk on **every span today**:
+`live_adapters.py:298` writes the span's PCM into a `TemporaryDirectory(prefix="mtd-live-")` for the
+decoder and `live_provider_bundle.py:561` does the same for the identity encoder. The clause is a
+statement about a **horizon**, today **one span**, and the loop's own hygiene evidence (`live-runs/`
+0 entries, no surviving `/tmp/mtd-live-*`) is exactly that horizon holding. So the decision is *how
+far the horizon may move*, and the answer is **one meeting**.
+***The seven rules, in one line each.*** D1 the horizon becomes the session and *persisted* keeps
+its force against anything longer-lived. D2 retention is **opt-in and off by default** — every gate
+recorded so far was measured against a no-tape service and a privacy posture must not arrive as a
+side effect of an upgrade. D3 **default TTL after session end is zero**: ADR-0002's final sweep runs
+at session end and the album is what is handed forward, so at the default the PRD clause still holds
+literally at every post-meeting boundary; a positive TTL is **stated by the deployment**, never
+defaulted by a tool (candidate 63's rule). D4 one declared root: 0600/0700, outside the checkout,
+**not on the batch runs filesystem**, on a filesystem that enforces modes — which disqualifies
+`/mnt/d` twice over and leaves ext4 `~/.local/share/moss-transcribe-diarize/live/`. D5 the cap is
+declared and **storage pressure degrades the tape, never the meeting** (the third amendment's rule
+applied to a disk). D6 the **service** reaps, at startup too, so a crashed session's tape is not
+immortal. D7 what stays absolutely forbidden — no audio on the Mac, in a log, in an evidence
+directory, or under batch `runs/`; the token half of the clause is untouched.
+***The one measured argument that is easy to miss:*** a runaway tape breaks the PRD's *"batch
+service unharmed"* clause **without touching the batch service** — `server.py:447` answers **507**
+when free space drops below `2 × content_length + 512 MB`, and at ~0.3 GB/hr that headroom is under
+two hours of one meeting. That is why D4(3) is a rule and not a preference.
+***What the clause becomes for a future hygiene check:*** two forms selected by whether a root is
+declared. Undeclared (today's server) it is **unchanged**, so every recorded certification run keeps
+its meaning. Declared: audio only under that root, every tape mapping to a session active or within
+TTL, modes 0600/0700, total bytes ≤ cap, nothing under the checkout or batch `runs/`.
+*Deliberately not decided:* the on-disk format and gap-manifest schema (already fixed by ADR-0002
+§Decision 1 / design §3.2), whether the **album** may outlive a meeting (derived data, not raw
+audio — but cross-meeting albums are ADR-0002 §8 fog and stay closed), the numeric TTL and cap for
+any deployment, and re-ASR of the tape (forbidden by ADR-0002 and not softened).
 
 **N-gate — THE HARNESS EXISTS AND THE ALBUM IS MEASURED ON PRODUCTION CODE** `[iteration 16]`.
 `tests/live_identity_accuracy.py` + `tests/test_live_identity_accuracy.py` +

@@ -19235,3 +19235,151 @@ Phase N item that needs neither an operator input nor a host.  The alternative,
 gating and merging steps 1 + this recalibration on their own, is contraindicated
 by the amendment's own words: the album alone is "a terminal-state failure if
 shipped alone", and a merge is the loop's scarcest resource.
+
+================================================================================
+RUN 20260729-025318  ITERATION 18  -  THE RETENTION DECISION IS RECORDED, SO
+PHASE N STEP 2 (THE TAPE RECORDER) IS UNBLOCKED FOR CODE
+================================================================================
+
+TARGET.  ADR-0002 implementation step 2's stated precondition.  Both the ADR and
+prd.md's supersession section require the PRD clause "no raw audio is persisted"
+to be re-read against ADR-0002 IN WRITING BEFORE ANY CODE - "a decision to record
+before any code, not a licence to start writing audio".  Iteration 17 named it
+the next step and the only Phase N item needing neither an operator nor a host.
+
+Standing hazard re-checked FIRST, as the record requires: `git log --oneline -4
+-- scripts/ralph-afk/prd.md` -> tail unchanged at `0456177`; `git log -8` -> no
+operator commit since iteration 17's own `78b44d1`.  No ninth amendment exists.
+
+FILES TOUCHED (2; one new tracked doc, no product source, no test, no ops/)
+  docs/adr/0003-live-session-audio-retention.md   NEW - the decision
+  scripts/ralph-afk/context.md                    N-tape block, stands-where, Ground
+
+WHY AN ADR AND NOT A CONTEXT.MD PARAGRAPH.  The decision changes how a PRD
+ACCEPTANCE CLAUSE is read, so it has to be reviewable by the operator in the
+place they already keep design decisions - they wrote ADR-0002 and
+docs/design-streaming-diarization.md themselves, and §8 of that design lists
+"Retention TTL / privacy posture for stored session audio" as an OPEN QUESTION.
+This answers that question in its own file.  Same precedent as iteration 17
+touching LOCAL_DEPLOYMENT.md: a tracked doc supporting an authorized phase.
+
+THE FRAMING THAT MADE IT DECIDABLE, AND IT IS MEASURED, NOT ARGUED.  The clause
+is NOT a prohibition on audio reaching a disk.  Live audio touches disk on EVERY
+SPAN TODAY:
+    live_adapters.py:298        TemporaryDirectory(prefix="mtd-live-", dir=scratch)
+                                -> the decoder's wav, removed on context exit
+    live_provider_bundle.py:561 TemporaryDirectory() -> the identity encoder's
+In memory the horizon is longer and also bounded: LiveSession prunes committed
+frames against max_retained_samples 960000 (60 s), a domain-contract value.
+So the clause is a statement about a HORIZON - today one span, ~2.5 s - and the
+loop's own recorded hygiene evidence (`live-runs/` 0 entries, no surviving
+/tmp/mtd-live-*) is exactly that horizon holding in F1, F2 and F3.  The question
+is therefore how far the horizon may move, and the answer is ONE MEETING.  A
+blanket enforcement forbids step 2 and with it ADR-0002's own acceptance bar
+(convergence needs a sweep and a sweep needs a substrate); a blanket waiver hands
+an unbounded write path to a host that also serves the batch service, whose
+"unharmed" clause is in the same PRD bar.  Neither reading was available.
+
+THE SEVEN RULES (full text and reasoning in the ADR).
+  D1  The horizon becomes the session; "persisted" keeps its force against
+      anything longer-lived.
+  D2  Retention is OPT-IN and OFF BY DEFAULT.  Two reasons: every gate this loop
+      recorded was measured against a no-tape service, and a privacy posture must
+      never arrive as a side effect of upgrading a binary.
+  D3  DEFAULT TTL AFTER SESSION END IS ZERO.  ADR-0002 runs its final sweep at
+      session end and the album is the compressed context handed forward, so
+      nothing in the design needs the audio afterwards.  At the default the PRD
+      clause still holds LITERALLY at every boundary an operator can observe
+      after a meeting.  A positive TTL is STATED BY THE DEPLOYMENT, never
+      defaulted by a tool - candidate 63's rule, applied a second time.
+  D4  ONE DECLARED ROOT: 0600 in 0700, outside the checkout (a rollback is
+      `git checkout <sha>` and `git clean` must never be a reaper), NOT on the
+      batch runs filesystem, and on a filesystem that enforces modes.  /mnt/d is
+      disqualified TWICE (9p drvfs without `metadata` -> 777 and chmod is a
+      no-op; and it is where BATCH_RUNS_DIR and MOSS_RUNS_DIR both live).  ext4
+      ~/.local/share/moss-transcribe-diarize/live/ satisfies all four today.
+  D5  The cap is declared and STORAGE PRESSURE DEGRADES THE TAPE, NEVER THE
+      MEETING - the third amendment's governing rule applied to a disk: typed
+      degradation with the byte counts, sweeps lose their substrate, the session
+      continues, frame acks never block.
+  D6  THE SERVICE REAPS, AT STARTUP TOO.  A TTL that only fires while the process
+      lives is not a retention policy; helper-lease expiry already makes an
+      abandoned meeting terminal, so no new timer is needed for that half.
+  D7  Still absolutely forbidden: audio on the Mac beyond the outbox's in-memory
+      frames, in a log/journal/telemetry/snapshot/event/portal response, in any
+      evidence directory pulled off a host, or under batch runs/.  The token half
+      of the clause is untouched and keeps its absolute reading.
+
+THE ONE MEASURED ARGUMENT THAT IS EASY TO MISS.  A runaway tape breaks the PRD's
+"batch service unharmed" clause WITHOUT TOUCHING THE BATCH SERVICE.  server.py:447
+`_admit_upload_request` answers 507 Insufficient storage whenever
+`disk_usage(runs_dir).free < 2 * content_length + 512 MB`, and at ADR-0002's
+~0.3 GB/hr that headroom is under two hours of ONE meeting.  That is why D4(3) is
+a rule and not a preference, and it is the kind of coupling that would otherwise
+have been found by a red certification run three phases later.
+
+WHAT THE CLAUSE BECOMES, SO IT STAYS TESTABLE RATHER THAN BECOMING A WAIVER.  Two
+forms, selected by whether a root is declared:
+  * undeclared (today's deployed server): UNCHANGED - live-runs/ 0 entries, no
+    surviving /tmp/mtd-live-*, no audio artifact on either host.  Every recorded
+    certification run therefore keeps its meaning.
+  * declared: audio ONLY under that root; every tape maps to a session active or
+    within TTL; modes 0600/0700; total bytes <= the declared cap; nothing under
+    the checkout, nothing under batch runs/, nothing on the Mac.
+
+VALIDATION.  Doc-only change; the evidence that matters is that every source
+claim the decision rests on is true at this tip, each checked by one command:
+  grep -n TemporaryDirectory live_adapters.py live_provider_bundle.py
+      -> :298 (prefix="mtd-live-") and :561                            CONFIRMED
+  sed -n '447,457p' moss_transcribe_diarize/app/server.py
+      -> 507 at free < 2*content_length + 512 MB                       CONFIRMED
+  grep -n 'BATCH_RUNS_DIR=' ops/start-web.sh                -> ${PROJECT_DIR}/runs
+  grep -n 'MOSS_RUNS_DIR='  ops/moss-live.env.example
+      -> /mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs - i.e. BOTH runs trees
+         are on the drvfs mount, which is D4(3)+D4(4) in one line     CONFIRMED
+  grep -n max_retained_samples live_session.py -> the 60 s in-memory bound
+  PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+      -> 662 passed, 2 skipped, 368 subtests (unchanged from iteration 17, as a
+         doc-only change must be)
+  git status --porcelain -> only the two files above
+
+WHAT WAS LEARNED.
+
+1. A CLAUSE THAT LOOKS ABSOLUTE CAN BE A HORIZON, AND READING IT LITERALLY WOULD
+   HAVE BEEN WRONG IN BOTH DIRECTIONS.  "No raw audio is persisted" was already
+   false as a literal statement about the running service - the decoder writes a
+   wav per span - and the loop has been certifying it green for six phases by
+   measuring the horizon (nothing survives) rather than the letter (nothing is
+   written).  Naming that explicitly is what made the ADR-0002 collision
+   tractable in one iteration instead of an authorization request.
+
+2. THE FAMILIAR CLASS SHOWS UP IN STORAGE TOO.  "A condition the design
+   contemplates is handled everywhere except the path that ends the meeting" is
+   this loop's signature defect (H/J's four blockers, 53, 56).  A full disk during
+   a taped meeting is the same shape waiting to be written, which is why D5 rules
+   it a degradation BEFORE the code exists rather than after a red soak.
+
+3. A DECISION RECORD IS CHEAPER THAN THE CODE IT CONSTRAINS, AND ONLY IF IT COMES
+   FIRST.  D2 (opt-in) is the rule that preserves every gate this loop has already
+   recorded; had step 2 shipped default-on, F1/F2/F3's hygiene evidence would all
+   have needed re-running against a service that behaves differently.
+
+BLOCKERS: none for this iteration.
+
+WHAT IS EXPLICITLY NOT DONE.  No tape code exists; no host was touched; no
+manifest, unit or env file gained a retention key.  The ADR deliberately does not
+decide the on-disk format or gap-manifest schema (ADR-0002 §Decision 1 and design
+§3.2 already fix raw PCM + JSON index, WAV on demand, teed at the mixer's sealed-
+interval commit), whether the album may outlive a meeting (derived data, not raw
+audio - but cross-meeting albums are ADR-0002 §8 fog and stay closed), the numeric
+TTL/cap for any deployment, or re-ASR of the tape (forbidden by ADR-0002).
+
+RECOMMENDED NEXT STEP.  Phase N step 2 itself - the tape recorder, in
+moss_transcribe_diarize/ + tests/, opt-in per D2 so the deployed service is
+unchanged until a root is declared.  Start at the tee point the design names (the
+mixer's sealed-interval commit, live_mixer.py `_sealed_intervals`) and implement
+D4/D5/D6 as the writer's contract, with prototype gate C's seven assembly cases
+(duplicates/reorder/drops/burst loss/checkpoint-resume) as the red-before shape.
+The alternative - gating and merging steps 1+63 alone - stays contraindicated by
+the amendment's own words: the album alone is "a terminal-state failure if shipped
+alone", and a merge is the loop's scarcest resource.
