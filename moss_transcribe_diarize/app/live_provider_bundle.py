@@ -24,6 +24,7 @@ from .live_identity_album import (
     FingerprintAlbum,
     cosine_similarity,
 )
+from .live_identity_sweep import LiveIdentitySweeper
 from .live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -292,10 +293,7 @@ def build_live_runtime_factory(
                 runner,
                 max_samples=_positive_int(config.decoder_config.get("max_samples"), "decoder_config.max_samples"),
             ),
-            identity_preparer_factory=lambda: BoundedCausalIdentityPreparer(
-                config=_identity_config(config.identity_config),
-                evidence_provider=_identity_evidence_provider(config, encoder=identity_encoder),
-            ),
+            identity_preparer_factory=lambda: _identity_preparer(config, encoder=identity_encoder),
         )
 
     return factory
@@ -530,6 +528,7 @@ class WeSpeakerLiveEvidenceProvider:
         canonical_embedding: Callable[[LiveIdentitySnapshot, str], Sequence[float] | None] | None = None,
         min_segment_samples: int = 1,
         album: FingerprintAlbum | None = None,
+        sweeper: LiveIdentitySweeper | None = None,
     ):
         if min_segment_samples <= 0:
             raise LiveProviderBundleAdmissionError("wespeaker min_segment_samples must be positive.")
@@ -544,6 +543,12 @@ class WeSpeakerLiveEvidenceProvider:
         # splitting reading from writing across two objects is what let a 0.5 s fragment
         # overwrite a good prototype in the first place.
         self._album = album
+        # ADR-0002 step 3. The sweeper retains the *same* vectors the album is offered, because
+        # this is the only object in the live path that ever holds one -- but it retains them on
+        # a wider rule: the album hears assignments, the sweeper hears every embedded unit,
+        # including the ones an abstention left unlabelled. A sweeper with no album has nothing
+        # to re-match against, so the two are constructed together or not at all.
+        self._sweeper = sweeper
         self._pending_vectors: dict[int, dict[str, tuple[tuple[float, ...], float]]] = {}
         self._canonical_vectors: dict[str, tuple[float, ...]] = {}
 
@@ -556,6 +561,13 @@ class WeSpeakerLiveEvidenceProvider:
         base_snapshot: LiveIdentitySnapshot,
     ) -> tuple[LiveSpeakerEvidence, ...]:
         self._reconcile_committed_vectors(base_snapshot)
+        if self._sweeper is not None:
+            # The cadence fires *before* this span's own evidence is retained, and the meeting
+            # time is the span's start. Both halves of that matter: a sweep that could see the
+            # span currently being prepared would propose a label for it before the live path
+            # had assigned one, and every one of those would be a correction to a transcript
+            # nobody had read yet.
+            self._sweeper.maybe_sweep(meeting_seconds=span.start_sample / LIVE_SAMPLE_RATE)
         intervals_by_speaker = _speaker_intervals_by_label(span, segments, self.min_segment_samples)
         if not intervals_by_speaker:
             return ()
@@ -572,6 +584,20 @@ class WeSpeakerLiveEvidenceProvider:
             speaker: (vector, _intervals_duration(intervals_by_speaker[speaker]))
             for speaker, vector in local_vectors.items()
         }
+        if self._sweeper is not None:
+            # Retained unlabelled, now, rather than only when a preparation reconciles it. An
+            # abstained span never reconciles -- that is what `_forget_stale_pending` is for --
+            # and an abstained span is precisely the one a later sweep has something to say
+            # about, so retaining only what was already labelled would make the sweep unable to
+            # improve the spans the live path found hardest.
+            for speaker, (vector, duration_sec) in self._pending_vectors[span.id].items():
+                self._sweeper.record(
+                    span_id=span.id,
+                    local_speaker=speaker,
+                    canonical_speaker=None,
+                    vector=vector,
+                    duration_sec=duration_sec,
+                )
         self._forget_stale_pending()
         if not base_snapshot.canonical_speakers:
             return ()
@@ -633,6 +659,18 @@ class WeSpeakerLiveEvidenceProvider:
             if observation is None:
                 continue
             vector, duration_sec = observation
+            if self._sweeper is not None:
+                # The same unit again, now carrying the label the live path gave it. The ledger
+                # answers `replaced`, the unit count does not move, and the retained evidence
+                # now says what a reader was shown -- which is what a correction is measured
+                # against.
+                self._sweeper.record(
+                    span_id=span_id,
+                    local_speaker=local_speaker,
+                    canonical_speaker=canonical_speaker,
+                    vector=vector,
+                    duration_sec=duration_sec,
+                )
             if self._album is None:
                 self._canonical_vectors[canonical_speaker] = vector
                 continue
@@ -732,18 +770,54 @@ def _identity_encoder(config: LiveProviderBundleConfig):
     return WeSpeakerResNet152LmAdapter(state_asset.path, spec=spec, device=config.runtime.device)
 
 
+def _identity_preparer(
+    config: LiveProviderBundleConfig,
+    *,
+    encoder: Any,
+) -> BoundedCausalIdentityPreparer:
+    """One session's identity stack: the matcher's config, the album, and the sweeper.
+
+    The config is built once and handed to both halves deliberately. A sweep re-matches with
+    `assign_speakers`, the very function the live path assigns with (N-sweep decision 2), so a
+    sweeper holding a second `LiveIdentityConfig` would be a second calibration -- the exact
+    thing candidate 63 removed one layer up, where the album could be measured at one pair of
+    thresholds and deployed at another.
+    """
+
+    identity_config = _identity_config(config.identity_config)
+    return BoundedCausalIdentityPreparer(
+        config=identity_config,
+        evidence_provider=_identity_evidence_provider(
+            config,
+            encoder=encoder,
+            identity_config=identity_config,
+        ),
+    )
+
+
 def _identity_evidence_provider(
     config: LiveProviderBundleConfig,
     *,
     encoder: Any,
+    identity_config: LiveIdentityConfig,
 ) -> WeSpeakerLiveEvidenceProvider:
+    """The album and the sweeper are built here together, and the config is not optional.
+
+    ADR-0002 classes the album shipped without the retrospective sweep as a terminal-state
+    failure, so a code path that could produce one without the other would be a way to ship the
+    documented failure by omission. Requiring the config rather than defaulting it is what makes
+    that unwritable: there is no argument list that yields an album and no sweeper.
+    """
+
+    album = _fingerprint_album(config.identity_provider)
     return WeSpeakerLiveEvidenceProvider(
         encoder=encoder,
         min_segment_samples=_positive_int(
             config.identity_provider.get("min_segment_samples"),
             "identity_provider.min_segment_samples",
         ),
-        album=_fingerprint_album(config.identity_provider),
+        album=album,
+        sweeper=LiveIdentitySweeper(album=album, config=identity_config),
     )
 
 

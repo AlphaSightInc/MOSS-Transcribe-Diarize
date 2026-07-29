@@ -20139,3 +20139,174 @@ be deferrable with evidence rather than by omission; (c) what the portal shows a
 reader when 4-8 % of the speech they have already read changes speaker, which is
 the "living document" ADR-0002 promises and the first user-visible consequence of
 any of this.  Finding 4 says the cadence itself can be generous.
+
+================================================================================
+ITERATION 24 (run 20260729-025318) - THE SWEEP IS ON THE LIVE PATH
+Phase N step 3, the wiring half.  ADR-0002 order: album -> tape -> SWEEP -> batch.
+================================================================================
+
+TARGET.  Iteration 23's own recommended next step, taken verbatim: "WIRE THE SWEEP
+(ADR-0002 step 3's other half), now that the engine is scored".  The engine has
+been pure and unwired since iteration 22 - nothing retained the evidence it
+re-matches and nothing ever called it.  This iteration retains the evidence and
+paces the sweep.  It deliberately does NOT rewrite a transcript; see WHAT THIS
+DOES NOT DO.
+
+FILES TOUCHED (5; product source 2; NONE under macos/ or ops/):
+  moss_transcribe_diarize/app/live_identity_sweep.py   +LiveIdentitySweeper, batch scoring
+  moss_transcribe_diarize/app/live_provider_bundle.py  the two feeding points, the factory
+  scripts/ralph-afk/live-identity-seam-probe.py        follows the factory's new signature
+  tests/test_live_identity_sweep.py                    +14 nodes (40 -> 54)
+  tests/test_live_provider_bundle.py                   +6 nodes  (28 -> 34)
+
+VALIDATION.  `python3 -m pytest tests/ -q` -> 784 passed / 2 skipped / 368
+subtests in 74.81 s (was 764 / 2 / 368 in 78.34 s; +20 nodes, and the suite got
+FASTER because the accuracy harness runs 8 x 11 sweeps through the new scorer).
+The two skips are the pre-existing Python-3.10 contract at
+tests/test_large_upload.py:155,175.  Swift untouched, so 158 stands.
+
+FIVE DECISIONS, EACH RECORDED BECAUSE EACH COULD HAVE GONE THE OTHER WAY.
+
+1. WHERE THE LEDGER LIVES - iteration 23's open question (a).  With the album, in
+   `WeSpeakerLiveEvidenceProvider`.  It is the only object in the live path that
+   ever holds a vector, and the album and the ledger are fed by the same event;
+   splitting them would create two feeding paths that can disagree about who
+   spoke.  The sweeper (ledger + cadence + config + merge threshold) is its own
+   object so the *scheduling* question stays separable from the *retention* one.
+
+2. A UNIT IS RETAINED TWICE, AND THAT IS THE DESIGN, NOT AN ACCIDENT.  The album
+   only ever hears an assignment the live path MADE; the ledger hears every unit
+   the encoder embedded.  So a unit is recorded unlabelled when its vector is
+   computed and re-recorded carrying its canonical speaker when the next span's
+   preparation reconciles it - `SweepLedger.record` answers `replaced` for the
+   second and the unit count does not move.  The reason for the wider rule is in
+   the ledger's own docstring: an ABSTAINED span never reconciles, and an
+   abstained span is exactly the one a later album has the most to say about.
+   Retaining only what was already labelled would make the sweep unable to
+   improve the spans the live path found hardest.
+
+3. THE CADENCE FIRES BEFORE THE CURRENT SPAN'S EVIDENCE IS RETAINED, and the
+   meeting time it is paced by is the span's START.  A sweep that could see the
+   span being prepared would propose a label for it before the live path had
+   assigned one, and every one of those would be a "correction" to a transcript
+   nobody had read yet.  Because the reconcile runs first, at cadence time every
+   span except the one in flight is already settled.
+
+4. MEETING TIME, NEVER WALL TIME.  `SWEEP_INTERVAL_SECONDS` is a distance along
+   the transcript (a sample count divided by 16000), so a meeting that arrives in
+   a burst after an outage is swept the same number of times as one that arrived
+   smoothly - and, unlike a wall clock, it cannot step backwards.  That is the
+   Duration-vs-timestamp contract and candidate 56's entire cause.  The next
+   deadline is computed FROM THE TIME REACHED, not by adding an interval to the
+   previous one, so a long gap schedules one sweep rather than a burst of them
+   catching up over time in which no evidence was retained.  A non-finite or
+   non-numeric meeting time returns None and never raises.
+
+5. THE BUNDLE CANNOT BUILD AN ALBUM WITHOUT A SWEEPER.  ADR-0002 classes the
+   album shipped without the retrospective sweep as a TERMINAL-STATE FAILURE, so
+   a code path that could produce one without the other would be a way to ship
+   the documented failure by omission.  `_identity_evidence_provider`'s
+   `identity_config` is therefore REQUIRED, not defaulted: there is no argument
+   list that yields an album and no sweeper.  The new `_identity_preparer` builds
+   the config once and hands it to both halves, so a sweeper holding its own
+   `LiveIdentityConfig` - candidate 63 one layer down, measured at one
+   calibration and revised at another - is unwritable.
+
+THE MEASUREMENT THAT CHANGED THE PATCH.  ADR-0002 gate B reports a sweep at
+~0.1 ms for 600 s and "<10 ms extrapolated to 3 h".  Measured here on production
+code, at F3's own real shape (443 spans, 886 units, 16 canonical speakers, 256
+dimensions), scoring pair by pair through `cosine_similarity`:
+
+    F3 17 min   886 units   295 ms
+    1 h        3126 units  1032 ms
+    3 h        9380 units  3098 ms      <-- LONGER THAN THE 2.5 s SPAN CAP
+
+The sweep runs INLINE on the serial canonical pump, inside `provider.score()`
+inside `prepare_work_item`.  A 3.1 s stall once a minute on that queue is the
+same shape as candidate 50's runaway decode, which D-c exists to bound - and it
+would land on ~4 % of spans, right at the PRD's p95 boundary.  The ADR's figure
+is off by ~300x, so this is the second time its prose and its measurements
+disagree (iteration 22 ruled the first one: take the measured value).
+
+SO THE SCOPE WAS WIDENED, and prompt.md's own rule is the justification -
+"widen scope only when the focused result justifies it".  `_score_span` now
+scores a whole span against a reference matrix built ONCE PER SWEEP rather than
+once per pair.  Same numbers, measured:
+
+    F3 17 min   295 ms -> 39 ms      (7.5x)
+    1 h        1032 ms -> 125 ms     (8.3x)
+    3 h        3098 ms -> 366 ms     (8.5x)
+
+366 ms once per 60 s of meeting is ~0.6 % duty on the pump and well inside one
+span's budget.  The batch path is an OPTIMISATION and is provably
+indistinguishable: it refuses exactly what `cosine_similarity` refuses (a
+dimension mismatch, a vector with no length, a non-finite result), it decides
+that for the WHOLE SPAN so a span is never scored half one way and half the
+other, and it falls back to the untouched scalar rule otherwise.  The proof is
+not an assertion: the eight-meeting accuracy harness still measures 99.26 % mean
+/ 98.48 % min swept and 93.44 / 72.0 unswept, unchanged to the hundredth, and
+`residual_corrections` is still 0 on every meeting.
+
+RED-BEFORE - NINE SEMANTIC REVERTS, run and restored in-iteration (originals in
+/tmp/i24-redbefore; `git diff --stat` after restoring shows additions only):
+  1  no unlabelled retention at score time                     -> 5 red
+  2  the cadence moved AFTER this span's evidence is retained  -> 2 red
+  3  a reconciled assignment never reaches the ledger          -> 3 red
+  4  a sweep never applies its own revision to the ledger      -> 2 red
+  5  the bundle builds an album with no sweeper                -> 1 red
+  6  an untrustworthy meeting time is not guarded              -> 1 red
+  7  the next deadline is added to the previous one            -> 1 red
+  8  the batch path answers something other than the scalar    -> 14 red
+       (11 in the sweep suite AND the three accuracy convergence nodes - which
+        is what makes the accuracy harness the parity proof rather than a hope)
+  9  the batch path does not refuse a vector with no length    -> 1 red
+Revert 3 was run twice.  The FIRST run reddened only 2 nodes and left
+`test_a_reconciled_assignment_reaches_the_ledger_as_well_as_the_album` green -
+because a cadence sweep also writes labels into the ledger through
+`ledger.apply`, so the node passed whether or not the reconcile seam fed it at
+all.  The node now runs with the cadence switched off (interval 3600 s, sweeps
+== 0) and the revert reddens it.  Recorded because it is the exact hazard the
+red-before discipline exists to catch: a green node measuring the wrong cause.
+
+WHAT THIS DOES NOT DO - so a green suite is not mistaken for step 3 being done.
+  * NOTHING CONSUMES A REVISION.  `sweep_now` applies it to the LEDGER (which is
+    what makes the next sweep converge rather than re-propose forever) and
+    returns it, and the caller drops it.  No transcript is rewritten, no portal
+    shows a correction, no reader sees anything change.  Step 3's user-visible
+    half is the next iteration.
+  * THERE IS NO SESSION-END SWEEP.  Iteration 23 measured that the session-end
+    sweep is where essentially all the value is (600 s cadence gives 99.22 %
+    against 60 s's 99.26 %), and it needs a per-session teardown hook the
+    provider does not have.  It belongs with "who applies a revision", because
+    both are the same question about ownership.
+  * THE FINAL SPAN OF A MEETING STAYS UNLABELLED IN THE LEDGER.  A span is
+    labelled when the NEXT span's preparation reconciles it, and the last span
+    has no next.  Harmless today (nothing reads the ledger's labels but the
+    sweep, and no sweep runs after it); it must be closed by the session-end
+    hook feeding the final identity snapshot through `_reconcile_committed_
+    vectors` BEFORE the final sweep, or that sweep would issue a spurious
+    "labelled" correction for a span the live path had already labelled.
+  * THE ALBUM IS NEVER ITSELF MERGED, unchanged from iteration 22.
+  * The deployed service is unaffected in behaviour: the album, the matcher and
+    every published label are untouched, which is what the accuracy harness's
+    unchanged 93.44 / 72.0 proves.  The branch's unmerged-source condition is
+    what it was - offline probes have not spoken for the deployed 42abc5a since
+    iteration 15 and still do not.
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  APPLY A REVISION TO THE TRANSCRIPT - the user-visible
+half of step 3, and the last thing between Phase N and a gate.  What has to be
+decided before the patch, all three visible from the code now:
+  (a) WHERE THE REWRITE LIVES.  A committed span's label is baked into its
+      transcript string as a DISPLAY label (`[0.11][S03]words[1.75]`), the local
+      speaker is gone by then, and `CanonicalCommit.prefix_hash` chains the
+      committed list.  So either the session retains a per-span local->canonical
+      map (it is already in `preparation.proposed_snapshot.diagnostics`), or the
+      revision is carried beside the transcript and applied at render.  The hash
+      chain is the argument for the second: it records what was SAID, and a
+      living document's corrections are a different fact.
+  (b) THE SESSION-END SWEEP AND ITS RECONCILE, per the third bullet above.
+  (c) WHAT A READER SEES when 4-8 % of the speech they have already read changes
+      speaker.  ADR-0002 promises a "living document"; nothing in the portal
+      shows a version of a label yet.

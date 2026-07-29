@@ -15,7 +15,13 @@ import packaging
 import pytest
 
 from moss_transcribe_diarize.app import live_provider_bundle
-from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
+from moss_transcribe_diarize.app.live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig
+from moss_transcribe_diarize.app.live_identity_album import (
+    ALBUM_MIN_MATCH_MARGIN,
+    ALBUM_MIN_MATCH_SCORE,
+    FingerprintAlbum,
+)
+from moss_transcribe_diarize.app.live_identity_sweep import LABELLED, LiveIdentitySweeper
 from moss_transcribe_diarize.app.live_provider_bundle import (
     BUNDLE_SCHEMA_VERSION,
     LiveProviderBundleAdmissionError,
@@ -760,3 +766,204 @@ def test_the_album_takes_adr_0002_defaults_and_lets_the_manifest_override_them()
 def test_the_album_refuses_a_manifest_that_names_a_nonsensical_parameter(payload):
     with pytest.raises(LiveProviderBundleAdmissionError):
         live_provider_bundle._fingerprint_album(payload)
+
+
+# --------------------------------------------------------------------------------------
+# ADR-0002 step 3 on the live seam: what the sweeper retains, and when it re-matches it
+# --------------------------------------------------------------------------------------
+
+
+def _voice(angle_degrees: float) -> list[float]:
+    """A voiceprint on the unit circle, so every cosine in these nodes is readable by eye."""
+
+    import math
+
+    radians = math.radians(angle_degrees)
+    return [math.cos(radians), math.sin(radians)]
+
+
+def _sweep_seam(*, interval_seconds: float = 1.0):
+    """The real preparer over the real provider, with the real album and the real sweeper.
+
+    Nothing here is a stand-in except the encoder's forward pass, exactly as the accuracy
+    harness substitutes it: the matcher, the admission rule, the reconcile seam and the
+    cadence are all production code.
+    """
+
+    encoder = _ScriptedEncoder(
+        [
+            _voice(0),  # span 1, S01 -- the first voice, born as speaker-0001
+            _voice(90),  # span 1, S02 -- the second voice, born as speaker-0002
+            _voice(45),  # span 2 -- exactly between them, so the live path must abstain
+            _voice(30),  # span 3 -- the first voice again, and 4 s of it
+            _voice(30),  # span 4 -- whatever; this span exists to reconcile span 3
+        ]
+    )
+    album = FingerprintAlbum()
+    config = LiveIdentityConfig(
+        max_speakers=16,
+        min_match_score=ALBUM_MIN_MATCH_SCORE,
+        min_match_margin=ALBUM_MIN_MATCH_MARGIN,
+    )
+    sweeper = LiveIdentitySweeper(album=album, config=config, interval_seconds=interval_seconds)
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album, sweeper=sweeper)
+    return BoundedCausalIdentityPreparer(config=config, evidence_provider=provider), sweeper
+
+
+def _prepare(preparer, *, span_id, start_sec, segments, snapshot):
+    end_sec = max(end for _, end, _ in segments)
+    start_sample = int(start_sec * 16000)
+    sample_count = int(end_sec * 16000)
+    return preparer.prepare(
+        span=FrozenSpan(
+            id=span_id,
+            epoch=0,
+            start_sample=start_sample,
+            end_sample=start_sample + sample_count,
+            reason="end_silence",
+        ),
+        pcm=b"\0\0" * sample_count,
+        transcript="".join(f"[{start:g}][{label}]w[{end:g}]" for start, end, label in segments),
+        base_snapshot=snapshot,
+    )
+
+
+def _drive_sweep_seam(preparer):
+    """Four spans of a meeting the live path cannot label correctly on its own."""
+
+    snapshot = LiveIdentitySnapshot(version=0, canonical_speakers=())
+    statuses = []
+    for span_id, start_sec, segments in (
+        (1, 0.0, [(0.0, 1.0, "S01"), (1.0, 2.0, "S02")]),
+        (2, 2.0, [(0.0, 2.0, "S01")]),
+        (3, 4.0, [(0.0, 4.0, "S01")]),
+        (4, 8.0, [(0.0, 2.0, "S01")]),
+    ):
+        preparation = _prepare(
+            preparer,
+            span_id=span_id,
+            start_sec=start_sec,
+            segments=segments,
+            snapshot=snapshot,
+        )
+        statuses.append(preparation.status)
+        if preparation.status == "prepared":
+            snapshot = preparation.proposed_snapshot
+    return statuses
+
+
+def test_the_live_path_retains_the_evidence_a_sweep_rescues_an_abstained_span_with():
+    """ADR-0002 step 3, end to end on the seam the live path actually runs.
+
+    Span 2 sits exactly between the two voices born in span 1, so the matcher abstains -- the
+    designed outcome (J2), and the reason a reader sees that span unattributed. Span 3 then
+    gives `speaker-0001` four more seconds of speech, the album's centroid moves, and the
+    sweep at span 4 re-matches span 2's *retained* vector and labels it. None of that is
+    possible unless the unlabelled unit was retained when it was embedded, which is the
+    decision this wiring took.
+    """
+
+    preparer, sweeper = _sweep_seam()
+
+    statuses = _drive_sweep_seam(preparer)
+
+    assert statuses == ["prepared", "abstain", "prepared", "prepared"]
+    assert [
+        (item.span_id, item.local_speaker, item.previous_speaker, item.canonical_speaker, item.reason)
+        for item in sweeper.latest_revision.corrections
+    ] == [(2, "S01", None, "speaker-0001", LABELLED)]
+    assert sweeper.corrections == 1
+
+
+def test_the_cadence_never_sees_the_span_being_prepared():
+    """A sweep that could label the span in flight would correct a transcript nobody has read.
+
+    Span 4's own evidence is retained *after* its cadence sweep runs, so the revision that
+    rescues span 2 says nothing about span 4 -- whose label the live path is in the middle of
+    deciding. The ledger holds it; the revision does not touch it.
+    """
+
+    preparer, sweeper = _sweep_seam()
+
+    _drive_sweep_seam(preparer)
+
+    assert sweeper.ledger.canonical_speaker(4, "S01") is None
+    assert [item.span_id for item in sweeper.latest_revision.corrections] == [2]
+    assert sweeper.sweeps == 3
+
+
+def test_a_reconciled_assignment_reaches_the_ledger_as_well_as_the_album():
+    """The album hears assignments; the ledger hears every embedded unit, labelled or not.
+
+    Both are fed from the one place that holds a vector and an assignment together, so a unit
+    the album admitted and a unit the ledger retained can never disagree about who spoke. The
+    cadence is switched off for the length of this meeting on purpose: a sweep also writes
+    labels into the ledger, so with one running this node would pass whether or not the
+    reconcile seam fed it at all.
+    """
+
+    preparer, sweeper = _sweep_seam(interval_seconds=3600.0)
+
+    _drive_sweep_seam(preparer)
+
+    assert sweeper.sweeps == 0
+
+    assert sweeper.ledger.canonical_speaker(1, "S01") == "speaker-0001"
+    assert sweeper.ledger.canonical_speaker(1, "S02") == "speaker-0002"
+    assert sweeper.ledger.canonical_speaker(3, "S01") == "speaker-0001"
+    assert sweeper.ledger.unit_count == 5
+    assert sweeper.ledger.refused_units == 0
+    assert album_speakers(sweeper.album) == ["speaker-0001", "speaker-0002"]
+
+
+def album_speakers(album):
+    return sorted(album.speakers())
+
+
+def test_an_abstained_span_is_the_one_unit_the_album_never_hears():
+    """An abstention publishes words with no speaker, so there is no assignment to enrol -- and
+    that is exactly the span whose vector a later sweep has the most to say about."""
+
+    preparer, sweeper = _sweep_seam()
+
+    _drive_sweep_seam(preparer)
+
+    assert sweeper.album.exemplar_count("speaker-0001") == 2
+    assert sweeper.album.exemplar_count("speaker-0002") == 1
+    assert sweeper.ledger.span_count == 4
+
+
+def test_a_cadence_that_has_not_come_round_leaves_the_meeting_untouched():
+    preparer, sweeper = _sweep_seam(interval_seconds=3600.0)
+
+    statuses = _drive_sweep_seam(preparer)
+
+    assert statuses == ["prepared", "abstain", "prepared", "prepared"]
+    assert (sweeper.sweeps, sweeper.corrections) == (0, 0)
+    assert sweeper.latest_revision is None
+    assert sweeper.ledger.unit_count == 5
+
+
+def test_the_bundle_builds_one_album_and_one_sweeper_that_share_the_matcher_calibration(tmp_path):
+    """ADR-0002 calls the album shipped without the sweep a terminal-state failure, so the
+    factory that can produce one must produce the other, against the same album and the same
+    calibration. A sweeper holding its own `LiveIdentityConfig` would be candidate 63 again:
+    labels measured at one pair of thresholds and revised at another.
+    """
+
+    config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
+
+    preparer = build_live_runtime_factory(config, FakeRunner())()._identity_preparer_factory()
+
+    provider = preparer.evidence_provider
+    assert isinstance(provider, WeSpeakerLiveEvidenceProvider)
+    assert provider._sweeper is not None
+    assert provider._sweeper.album is provider._album
+    assert provider._sweeper.config is preparer.config
+    assert provider._sweeper.interval_seconds == live_provider_bundle_sweep_interval()
+
+
+def live_provider_bundle_sweep_interval() -> float:
+    from moss_transcribe_diarize.app.live_identity_sweep import SWEEP_INTERVAL_SECONDS
+
+    return SWEEP_INTERVAL_SECONDS

@@ -34,6 +34,7 @@ from moss_transcribe_diarize.app.live_identity_sweep import (
     SWEEP_INTERVAL_SECONDS,
     SWEEP_LEDGER_MAX_UNITS,
     SWEEP_MERGE_THRESHOLD,
+    LiveIdentitySweeper,
     SweepLedger,
     SweepRevision,
     sweep,
@@ -714,3 +715,263 @@ def test_a_kept_unit_is_counted_but_produces_no_correction():
 
     assert revision.corrections == ()
     assert dict(revision.dispositions) == {KEPT: 1}
+
+
+# --------------------------------------------------------------------------------------
+# The sweeper -- one meeting's retained evidence, cadence and applied revisions
+# --------------------------------------------------------------------------------------
+
+
+def sweeper_with(album: FingerprintAlbum, **kwargs) -> LiveIdentitySweeper:
+    return LiveIdentitySweeper(album=album, config=CONFIG, **kwargs)
+
+
+def test_the_sweeper_records_a_unit_twice_and_the_second_one_replaces_the_first():
+    """The live path's ordinary shape: a vector is retained before its label exists.
+
+    `_reconcile_committed_vectors` only learns an assignment when the *next* span is prepared,
+    so every unit arrives unlabelled first. If the second arrival counted as a new unit the
+    ledger's cap would be reached at half the meeting length it is sized for.
+    """
+
+    sweeper = sweeper_with(album_with(("speaker-0001", unit_vector(0), 4.0)))
+
+    first = sweeper.record(
+        span_id=7,
+        local_speaker="S01",
+        canonical_speaker=None,
+        vector=unit_vector(1),
+        duration_sec=2.0,
+    )
+    second = sweeper.record(
+        span_id=7,
+        local_speaker="S01",
+        canonical_speaker="speaker-0001",
+        vector=unit_vector(1),
+        duration_sec=2.0,
+    )
+
+    assert (first, second) == (RECORDED, REPLACED)
+    assert sweeper.ledger.unit_count == 1
+    assert sweeper.ledger.canonical_speaker(7, "S01") == "speaker-0001"
+
+
+def test_the_cadence_is_meeting_time_and_fires_once_per_interval():
+    sweeper = sweeper_with(album_with(("speaker-0001", unit_vector(0), 4.0)), interval_seconds=10.0)
+
+    assert sweeper.maybe_sweep(meeting_seconds=0.0) is None
+    assert sweeper.maybe_sweep(meeting_seconds=9.999) is None
+    assert sweeper.maybe_sweep(meeting_seconds=10.0) is not None
+    assert sweeper.maybe_sweep(meeting_seconds=12.5) is None
+    assert sweeper.maybe_sweep(meeting_seconds=19.9) is None
+    assert sweeper.maybe_sweep(meeting_seconds=20.1) is not None
+    assert sweeper.sweeps == 2
+
+
+def test_a_long_gap_schedules_the_next_sweep_from_now_rather_than_catching_up():
+    """A meeting that arrives in a burst after an outage is not swept once per skipped interval.
+
+    The evidence retained during a gap is nothing, so a burst of sweeps over it would re-match
+    the same ledger against the same album several times and produce identical revisions.
+    """
+
+    sweeper = sweeper_with(album_with(("speaker-0001", unit_vector(0), 4.0)), interval_seconds=10.0)
+
+    assert sweeper.maybe_sweep(meeting_seconds=305.0) is not None
+    assert sweeper.sweeps == 1
+    assert sweeper.maybe_sweep(meeting_seconds=309.0) is None
+    assert sweeper.maybe_sweep(meeting_seconds=310.0) is not None
+    assert sweeper.sweeps == 2
+
+
+def test_an_untrustworthy_meeting_time_does_not_sweep_and_does_not_raise():
+    """The *Duration vs timestamp* rule, one layer out: a bad number degrades, it never ends a
+    meeting. Meeting time is a sample count divided by the sample rate and cannot go backwards,
+    so a non-finite value here means a caller lost track of the meeting, not that time did."""
+
+    sweeper = sweeper_with(album_with(("speaker-0001", unit_vector(0), 4.0)), interval_seconds=10.0)
+
+    assert sweeper.maybe_sweep(meeting_seconds=float("nan")) is None
+    assert sweeper.maybe_sweep(meeting_seconds=float("-inf")) is None
+    assert sweeper.maybe_sweep(meeting_seconds=None) is None
+    assert sweeper.sweeps == 0
+    assert sweeper.maybe_sweep(meeting_seconds=10.0) is not None
+
+
+@pytest.mark.parametrize("interval", [0.0, -1.0, float("nan"), float("inf")])
+def test_the_sweeper_refuses_a_cadence_that_would_never_come_round(interval):
+    with pytest.raises(ValueError):
+        sweeper_with(album_with(("speaker-0001", unit_vector(0), 4.0)), interval_seconds=interval)
+
+
+def test_a_sweep_applies_its_own_revision_so_the_next_one_converges():
+    album = album_with(("speaker-0001", unit_vector(0), 4.0), ("speaker-0002", unit_vector(90), 4.0))
+    sweeper = sweeper_with(album, interval_seconds=10.0)
+    sweeper.record(
+        span_id=1,
+        local_speaker="S01",
+        canonical_speaker="speaker-0002",
+        vector=unit_vector(2),
+        duration_sec=2.0,
+    )
+
+    first = sweeper.maybe_sweep(meeting_seconds=10.0)
+    second = sweeper.maybe_sweep(meeting_seconds=20.0)
+
+    assert [item.canonical_speaker for item in first.corrections] == ["speaker-0001"]
+    assert second.corrections == ()
+    assert sweeper.sweeps == 2
+    assert sweeper.corrections == 1
+    assert sweeper.latest_revision is second
+
+
+def test_the_cumulative_correction_count_survives_a_revision_being_consumed():
+    """`corrections` answers "how much of this meeting has been rewritten", so it only grows."""
+
+    album = album_with(("speaker-0001", unit_vector(0), 4.0), ("speaker-0002", unit_vector(90), 4.0))
+    sweeper = sweeper_with(album, interval_seconds=10.0)
+    for span_id in (1, 2):
+        sweeper.record(
+            span_id=span_id,
+            local_speaker="S01",
+            canonical_speaker="speaker-0002",
+            vector=unit_vector(2),
+            duration_sec=2.0,
+        )
+        sweeper.maybe_sweep(meeting_seconds=10.0 * span_id)
+
+    assert sweeper.corrections == 2
+    assert sweeper.latest_revision.corrections != ()
+
+
+def test_an_empty_revision_is_not_logged_and_a_real_one_names_only_counts(caplog):
+    album = album_with(("speaker-0001", unit_vector(0), 4.0), ("speaker-0002", unit_vector(90), 4.0))
+    sweeper = sweeper_with(album)
+
+    with caplog.at_level("INFO", logger="moss_transcribe_diarize.live.identity"):
+        sweeper.sweep_now()
+        assert caplog.messages == []
+        sweeper.record(
+            span_id=1,
+            local_speaker="S01",
+            canonical_speaker="speaker-0002",
+            vector=unit_vector(2),
+            duration_sec=2.0,
+        )
+        sweeper.sweep_now()
+
+    assert caplog.messages == ["live identity sweep: spans=1 units=1 corrections=1 merges=0"]
+
+
+def test_the_sweeper_shares_the_album_it_re_matches_against():
+    """One album, not a copy: the whole point of a retrospective sweep is that it sees the
+    album as it stands *now*, including exemplars admitted after the unit it is re-matching."""
+
+    album = FingerprintAlbum()
+    sweeper = sweeper_with(album)
+    sweeper.record(
+        span_id=1,
+        local_speaker="S01",
+        canonical_speaker=None,
+        vector=unit_vector(0),
+        duration_sec=2.0,
+    )
+
+    assert sweeper.sweep_now().corrections == ()
+
+    album.observe(canonical_speaker="speaker-0001", vector=unit_vector(1), duration_sec=4.0, span_id=2)
+    rescued = sweeper.sweep_now()
+
+    assert [(item.canonical_speaker, item.reason) for item in rescued.corrections] == [
+        ("speaker-0001", LABELLED)
+    ]
+
+
+# --------------------------------------------------------------------------------------
+# Scoring a whole span at once, and the scalar rule it must never disagree with
+# --------------------------------------------------------------------------------------
+
+
+def _realistic_ledger_and_album(*, speakers=6, spans=40, dimension=32):
+    """A meeting shaped like a real one: many spans, several speakers, a real embedding width."""
+
+    import random
+
+    rng = random.Random(4)
+
+    def voice(seed):
+        local = random.Random(seed)
+        raw = [local.gauss(0.0, 1.0) for _ in range(dimension)]
+        norm = math.sqrt(sum(value * value for value in raw))
+        return tuple(value / norm for value in raw)
+
+    album = FingerprintAlbum()
+    for index in range(speakers):
+        for exemplar in range(3):
+            album.observe(
+                canonical_speaker=f"speaker-{index:04d}",
+                vector=voice(index * 10 + exemplar),
+                duration_sec=2.0,
+                span_id=exemplar,
+            )
+    ledger = SweepLedger()
+    for span_id in range(spans):
+        speaker = rng.randrange(speakers)
+        ledger.record(
+            span_id=span_id,
+            local_speaker="S01",
+            canonical_speaker=f"speaker-{rng.randrange(speakers):04d}",
+            vector=voice(speaker * 10 + rng.randrange(3)),
+            duration_sec=1.5,
+        )
+    return ledger, album
+
+
+def test_scoring_a_span_as_a_batch_answers_exactly_what_the_scalar_rule_answers(monkeypatch):
+    """The batch path is an optimisation, so it has to be provably indistinguishable.
+
+    Measured on F3's own shape -- 443 spans, 886 units, 16 speakers, 256 dimensions -- one
+    sweep costs 295 ms scoring pair by pair and 39 ms scoring span by span, and at three hours
+    3097 ms against 366 ms. The sweep runs inline on the serial canonical pump, where 3 s is
+    longer than the whole 2.5 s span cap, so the difference is between a cadence that fits
+    inside a live meeting and one that stalls it.
+    """
+
+    ledger, album = _realistic_ledger_and_album()
+
+    batched = sweep(ledger=ledger, album=album, config=CONFIG)
+    monkeypatch.setattr(
+        "moss_transcribe_diarize.app.live_identity_sweep._reference_matrix",
+        lambda references, reference_speakers: None,
+    )
+    scalar = sweep(ledger=ledger, album=album, config=CONFIG)
+
+    assert batched.corrections != ()
+    assert batched.to_dict() == scalar.to_dict()
+
+
+def test_a_unit_with_no_length_sends_its_span_down_the_scalar_path_and_is_named(recwarn):
+    """`_unit_rows` refuses exactly what `cosine_similarity` refuses, so a batch can never
+    answer where the scalar rule would have said "undefined".
+
+    The refusal is made *before* the division rather than caught after it: dividing by a zero
+    norm produces the same `None` either way, and also a `RuntimeWarning` per span for the life
+    of the meeting. A live service that has to emit noise to reach the right answer is one
+    nobody will read the logs of.
+    """
+
+    album = album_with(("speaker-0001", unit_vector(0), 4.0))
+    ledger = SweepLedger()
+    ledger.record(
+        span_id=1,
+        local_speaker="S01",
+        canonical_speaker="speaker-0001",
+        vector=(0.0, 0.0),
+        duration_sec=2.0,
+    )
+
+    revision = sweep(ledger=ledger, album=album, config=CONFIG)
+
+    assert dict(revision.dispositions) == {KEPT_UNSCORED: 1}
+    assert revision.corrections == ()
+    assert [str(item.message) for item in recwarn.list] == []

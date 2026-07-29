@@ -53,10 +53,13 @@ module proposes state exactly as `BoundedCausalIdentityPreparer` does, and for t
 
 from __future__ import annotations
 
+import logging
 import math
 from array import array
 from dataclasses import dataclass
 from typing import Iterator, Mapping, Sequence
+
+import numpy
 
 from .live_identity import (
     LiveIdentityConfig,
@@ -106,6 +109,8 @@ NO_REFERENCE = "no_reference"
 REASSIGNED = "reassigned"
 LABELLED = "labelled"
 MERGED = "merged"
+
+_SWEEP_LOG = logging.getLogger("moss_transcribe_diarize.live.identity")
 
 
 @dataclass(frozen=True, slots=True)
@@ -344,6 +349,10 @@ def sweep(
     corrections: list[SweepCorrection] = []
     merge_score = {item.absorbed: item.score for item in merges}
     reference_speakers = tuple(sorted(references))
+    # Once, not once per span: the album does not move during a sweep, and rebuilding this for
+    # every span is the difference between a sweep that fits inside a live meeting and one that
+    # does not. Measured on F3's own shape below.
+    reference_matrix = _reference_matrix(references, reference_speakers)
     swept_spans = 0
     swept_units = 0
 
@@ -357,7 +366,9 @@ def sweep(
             continue
 
         local_speakers = tuple(unit.local_speaker for unit in units)
-        evidence, score_by_pair, unscored = _score_span(units, references, reference_speakers)
+        evidence, score_by_pair, unscored = _score_span(
+            units, references, reference_speakers, reference_matrix
+        )
         ambiguous = False
         mapping: dict[str, str] = {}
         try:
@@ -427,6 +438,148 @@ def sweep(
         swept_units=swept_units,
         dispositions=tuple(sorted(dispositions.items())),
     )
+
+
+class LiveIdentitySweeper:
+    """One meeting's step-3 state: the retained evidence, the cadence, and what has been swept.
+
+    `sweep()` above is a pure function of a ledger and an album; this is the thing a live
+    session owns. It exists so that the two questions a running meeting has to answer -- *what
+    do I retain* and *when do I re-match it* -- have one owner rather than being spread over
+    whichever collaborator happened to be holding a vector at the time.
+
+    **The ledger is fed where the album is fed, and it is deliberately not the same event.**
+    The album only ever hears an assignment the live path *made*; the ledger hears every unit
+    the encoder embedded, labelled or not, because rescuing an abstained span is where a sweep
+    wins back the accuracy an abstention costs (J2 keeps the words and drops the claim; a sweep
+    is what can put the claim back later). So a unit arrives here twice in the ordinary case --
+    once unlabelled when its vector is computed, once carrying its canonical speaker when the
+    next span's preparation reconciles it -- and `SweepLedger.record` answers `replaced` for the
+    second, which is what that disposition is for.
+
+    **Meeting time paces the cadence, not wall time.** `SWEEP_INTERVAL_SECONDS` is a distance
+    along the transcript, so a meeting that arrives in a burst after a network outage is swept
+    the same number of times as one that arrived smoothly -- and, unlike a wall clock, it cannot
+    step backwards (the *Duration vs timestamp* contract, and candidate 56's whole cause).
+
+    Nothing here raises for a frame's worth of evidence: `record` returns the ledger's
+    disposition and `maybe_sweep` returns `None` when the cadence has not come round. A meeting
+    does not end because its identity layer had nothing useful to say.
+    """
+
+    def __init__(
+        self,
+        *,
+        album: FingerprintAlbum,
+        config: LiveIdentityConfig,
+        ledger: SweepLedger | None = None,
+        interval_seconds: float = SWEEP_INTERVAL_SECONDS,
+        merge_threshold: float = SWEEP_MERGE_THRESHOLD,
+    ):
+        interval = float(interval_seconds)
+        if not math.isfinite(interval) or interval <= 0.0:
+            raise ValueError("sweep interval_seconds must be positive and finite.")
+        self.album = album
+        self.config = config
+        self.ledger = SweepLedger() if ledger is None else ledger
+        self.interval_seconds = interval
+        self.merge_threshold = float(merge_threshold)
+        self._next_sweep_at = interval
+        self._sweeps = 0
+        self._corrections = 0
+        self._merges = 0
+        self._latest: SweepRevision | None = None
+
+    @property
+    def sweeps(self) -> int:
+        return self._sweeps
+
+    @property
+    def corrections(self) -> int:
+        """Every correction this meeting's sweeps have proposed, cumulative.
+
+        Cumulative rather than "outstanding" because a correction is a *fact about a span* the
+        moment it is proposed; whoever rewrites the transcript consumes revisions, and a counter
+        that shrank when they did would make "how much of this meeting has been rewritten"
+        unanswerable after the fact.
+        """
+
+        return self._corrections
+
+    @property
+    def merges(self) -> int:
+        return self._merges
+
+    @property
+    def latest_revision(self) -> SweepRevision | None:
+        return self._latest
+
+    def record(
+        self,
+        *,
+        span_id: int,
+        local_speaker: str,
+        canonical_speaker: str | None,
+        vector: Sequence[float],
+        duration_sec: float,
+    ) -> str:
+        return self.ledger.record(
+            span_id=span_id,
+            local_speaker=local_speaker,
+            canonical_speaker=canonical_speaker,
+            vector=vector,
+            duration_sec=duration_sec,
+        )
+
+    def maybe_sweep(self, *, meeting_seconds: float) -> SweepRevision | None:
+        """Sweep if this much committed meeting has gone by since the last one.
+
+        The next deadline is computed from the meeting time reached, not by adding an interval
+        to the previous deadline: a span that arrives after a long gap should schedule the next
+        sweep an interval from *now*, not fire a burst of them catching up on time in which no
+        evidence was retained.
+        """
+
+        try:
+            reached = float(meeting_seconds)
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(reached) or reached < self._next_sweep_at:
+            return None
+        self._next_sweep_at = (int(reached // self.interval_seconds) + 1) * self.interval_seconds
+        return self.sweep_now()
+
+    def sweep_now(self) -> SweepRevision:
+        """Re-match everything retained, apply the result to the ledger, and return it.
+
+        Applying to the ledger is what makes the *next* sweep converge -- an incumbent that was
+        not moved is proposed again forever. Applying to the transcript is a different question
+        with a different owner, and this returns the revision so that owner has it.
+        """
+
+        revision = sweep(
+            ledger=self.ledger,
+            album=self.album,
+            config=self.config,
+            merge_threshold=self.merge_threshold,
+        )
+        self._sweeps += 1
+        self._corrections += len(revision.corrections)
+        self._merges += len(revision.merges)
+        self.ledger.apply(revision)
+        self._latest = revision
+        if not revision.is_empty:
+            # Counts and speaker ids only. A revision names which spans changed speaker, and a
+            # span's words are the meeting -- they do not belong in a log line any more than a
+            # token does.
+            _SWEEP_LOG.info(
+                "live identity sweep: spans=%d units=%d corrections=%d merges=%d",
+                revision.swept_spans,
+                revision.swept_units,
+                len(revision.corrections),
+                len(revision.merges),
+            )
+        return revision
 
 
 def _album_view(
@@ -499,18 +652,67 @@ def _album_view(
     return references, leader_of, tuple(merges)
 
 
+def _reference_matrix(
+    references: Mapping[str, tuple[float, ...]],
+    reference_speakers: Sequence[str],
+):
+    """Every reference as one unit-normalised matrix, or `None` if they are not all comparable.
+
+    Built once per sweep rather than once per span, because it is the same matrix for all of
+    them and rebuilding it 443 times is most of what a sweep would otherwise cost.
+
+    `None` is not a failure: it means at least one reference has a different dimension or no
+    length, and the scalar path -- `cosine_similarity`, the identity layer's one similarity rule
+    -- answers each pair on its own and names the unscorable ones. Falling back for the whole
+    sweep rather than per pair is what keeps the two paths from ever disagreeing about an edge.
+    """
+
+    if not reference_speakers:
+        return None
+    dimension = len(references[reference_speakers[0]])
+    if dimension == 0 or any(len(references[speaker]) != dimension for speaker in reference_speakers):
+        return None
+    matrix = numpy.asarray(
+        [references[speaker] for speaker in reference_speakers],
+        dtype=numpy.float64,
+    )
+    return _unit_rows(matrix)
+
+
+def _unit_rows(matrix):
+    """Rows scaled to unit length, or `None` if any row has no usable length.
+
+    The same three refusals `cosine_similarity` makes -- a non-finite norm, a zero norm, a
+    non-finite result -- taken over a whole matrix at once, because a batch that answered where
+    the scalar rule refuses would make a sweep's score depend on how many spans were in flight.
+    """
+
+    if not numpy.isfinite(matrix).all():
+        return None
+    norms = numpy.sqrt((matrix * matrix).sum(axis=1))
+    if not numpy.isfinite(norms).all() or bool((norms <= 0.0).any()):
+        return None
+    return matrix / norms[:, None]
+
+
 def _score_span(
     units: Sequence[SweepUnit],
     references: Mapping[str, tuple[float, ...]],
     reference_speakers: Sequence[str],
+    reference_matrix=None,
 ) -> tuple[tuple[LiveSpeakerEvidence, ...], dict[tuple[str, str], float], set[str]]:
+    scores = _batch_scores(units, reference_matrix)
     evidence: list[LiveSpeakerEvidence] = []
     score_by_pair: dict[tuple[str, str], float] = {}
     unscored: set[str] = set()
-    for unit in units:
+    for row, unit in enumerate(units):
         scored = False
-        for canonical in reference_speakers:
-            score = cosine_similarity(unit.vector, references[canonical])
+        for column, canonical in enumerate(reference_speakers):
+            score = (
+                cosine_similarity(unit.vector, references[canonical])
+                if scores is None
+                else float(scores[row, column])
+            )
             if score is None:
                 continue
             scored = True
@@ -529,6 +731,29 @@ def _score_span(
             # nothing", which is a statement about voices rather than about arithmetic.
             unscored.add(unit.local_speaker)
     return tuple(evidence), score_by_pair, unscored
+
+
+def _batch_scores(units: Sequence[SweepUnit], reference_matrix):
+    """This span's units against every reference at once, clamped exactly as the scalar rule is.
+
+    `None` means "score this span the scalar way", and the two conditions that produce it are
+    the same ones `cosine_similarity` refuses on: a unit whose dimension does not match the
+    references, and a unit with no usable length. Both are decided for the whole span, so a
+    span is never scored half one way and half the other.
+    """
+
+    if reference_matrix is None or not units:
+        return None
+    dimension = reference_matrix.shape[1]
+    if any(len(unit.vector) != dimension for unit in units):
+        return None
+    rows = _unit_rows(numpy.asarray([tuple(unit.vector) for unit in units], dtype=numpy.float64))
+    if rows is None:
+        return None
+    scores = rows @ reference_matrix.T
+    if not numpy.isfinite(scores).all():
+        return None
+    return numpy.clip(scores, 0.0, 1.0)
 
 
 def _finite_float32(vector: Sequence[float]) -> array | None:
@@ -579,6 +804,7 @@ __all__ = [
     "KEPT_UNSCORED",
     "LABELLED",
     "MERGED",
+    "LiveIdentitySweeper",
     "NO_REFERENCE",
     "REASSIGNED",
     "RECORDED",

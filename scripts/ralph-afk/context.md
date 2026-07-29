@@ -274,6 +274,18 @@ carry is in the retired-evidence index below).**
   candidate 55's 4.5 pp from the final transcript completely** — capped-and-swept equals
   uncapped-and-swept to two decimals, while the 16-bound still costs the *live* transcript 5.30 pp.
   See the N-convergence block.
+- **AND STEP 3 IS NOW ON THE LIVE PATH (iteration 24): `LiveIdentitySweeper` — a ledger fed where
+  the album is fed, plus a meeting-time cadence — +20 nodes, Python 784/2/368, nine semantic
+  reverts.** The engine had been pure and unwired since iteration 22; the live path now *retains*
+  the evidence it re-matches and *paces* it. **Nothing consumes a revision yet**: `sweep_now`
+  applies it to the ledger (which is what makes the next sweep converge) and returns it, and no
+  transcript is rewritten — that is the next step, and it is the last one before Phase N's gate.
+  Two things it settled that outlive it: **the ledger retains every embedded unit, labelled or
+  not**, because an abstained span never reconciles and is exactly the span a later album has the
+  most to say about; and **ADR-0002's gate-B sweep cost is off by ~300×** — measured on F3's own
+  shape a pair-by-pair sweep costs 295 ms at 17 min and **3098 ms at three hours, longer than the
+  2.5 s span cap**, on the serial pump. Batch scoring took that to 39/366 ms with the accuracy
+  harness's 99.26/98.48 unchanged. See the N-sweep-wiring block.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -293,27 +305,29 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch (Python +6 in iteration 23; the Swift number is unchanged because
+**Test totals on the branch (Python +20 in iteration 24; the Swift number is unchanged because
 nothing under `macos/` was touched).** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **758 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
+→ 158); Python **784 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
 → 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, → 662 with N-recal's 6,
 → 694 with N-tape's 32, → 703 with N-tape-wiring's 9,
 → 718 with N-tape-declaration's 15,
 → 758 with N-sweep's 40,
-**→ 764 with N-convergence's 6, iteration 23**) — the two
+→ 764 with N-convergence's 6,
+**→ 784 with N-sweep-wiring's 20, iteration 24**) — the two
 skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Suite wall clock **78.34 s** (was 71.50 s; the accuracy harness costs **20.2 s** — 11 s before the
-sweep cadence — and is the only accuracy evidence in the repo; the tape suite costs 3.6 s, the
-sweep suite 0.1 s). Per-file:
+Suite wall clock **74.81 s** — it went *down* 3.5 s while gaining 20 nodes, because the accuracy
+harness runs 8 × 11 sweeps through iteration 24's batch scorer (measured alone: **17.49 s**, was
+20.2 s, and it is the only accuracy evidence in the repo; the tape suite costs 3.6 s, the sweep
+suite's own nodes still total 0.1 s of `call` time). Per-file:
 `test_live_pipeline_seams.py` **60**,
 `test_live_identity.py` **8**,
 `test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **27** (21 → 27 with
 N-convergence),
-`test_live_identity_sweep.py` **40**,
+`test_live_identity_sweep.py` **54** (40 → 54 with N-sweep-wiring),
 `test_live_tape.py` **37**, `test_live_api.py` **33**, `test_live_helper_failure.py` **12**,
-`test_live_provider_bundle.py` **28**,
+`test_live_provider_bundle.py` **34** (28 → 34 with N-sweep-wiring),
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
 `test_live_manifest_finalizer.py` **23** (17 → 23 with N-recal), `test_live_deployment_credentials.py` **14**,
 `test_live_service_deployment.py` **45** (30 → 45 with N-tape-declaration).
@@ -1754,9 +1768,12 @@ iteration 16 built the harness below; the convergence half still is not, because
 *Superseded by measurement:* this block's guess that the album might explain candidate 55 is wrong —
 see candidate 55 and finding 2 under N-gate.
 
-**N-sweep / N-batch — steps 3 and 4, open.** Retrospective sweep (re-VAD/re-embed/re-cluster
-the tape, seeded by live labels, **never re-ASR**, versioned silent corrections), then batch Tier-B
-unified onto the same album engine.
+**N-sweep / N-batch — step 3's remaining half and step 4, open.** The sweep's engine is landed
+(N-sweep), scored (N-convergence) and now **wired to the live path** (N-sweep-wiring); what is left
+of step 3 is the half a reader can see — a session-end sweep and a **versioned transcript revision**
+— and then step 4, batch Tier-B unified onto the same album engine. *Re-VAD from the tape is
+explicitly not part of step 3:* N-sweep decision 1 ruled that a sweep re-matches retained vectors
+and never re-hears audio, so a sweep repairs an assignment and never a segmentation.
 
 **N-tape — STEP 2's WRITER IS LANDED IN SOURCE** `[iteration 19; NOT wired, NOT gated, NOT merged,
 NOT deployed]`. New `moss_transcribe_diarize/app/live_tape.py` + `tests/test_live_tape.py`. Payload
@@ -1950,9 +1967,10 @@ there is no cadence, no ledger on the live path, no transcript revision, no vers
 the album is never itself merged. The accuracy harness cannot yet answer ADR-0002's **convergence**
 half (gate B) because it has no sweep and no file oracle. Those are the next two steps, in that
 order — **measure the engine in the harness, then wire it** — because a sweep wired before it is
-measured is a transcript rewriter nobody has scored. *The first of those two is DONE in iteration 23
-and the engine is scored: **99.26 % / 98.48 %**, `residual_corrections` 0, merges 0. See
-N-convergence. Wiring it is now the unblocked step, and it starts from a measured engine.*
+measured is a transcript rewriter nobody has scored. *Both of those are DONE: iteration 23 scored the engine
+(**99.26 % / 98.48 %**, `residual_corrections` 0, merges 0 — see N-convergence) and iteration 24
+wired it (see N-sweep-wiring). What is still true of this block: the album is never itself merged,
+and no transcript is rewritten.*
 
 **N-convergence — ADR-0002's GATE B IS ANSWERED ON PRODUCTION CODE, AND TWO EXPECTATIONS ARE
 REFUTED** `[iteration 23; `tests/` only — no product source, nothing wired, not gated, not merged,
@@ -2010,6 +2028,73 @@ are production's — taken from the intervals the encoder was asked to embed, th
 `_intervals_duration` hands the album. The corpus limit is unchanged and now binds harder: clean
 read speech, no overlap, and `min_segment_samples` skips the sub-floor fragments a real room
 produces, so **99.26 % is the identity layer's ceiling on easy audio**, not a production forecast.
+*The "nothing is wired" sentence expired in iteration 24 — see N-sweep-wiring. The corpus limit and
+the ceiling reading do not.*
+
+**N-sweep-wiring — THE SWEEP IS ON THE LIVE PATH, AND NOTHING CONSUMES A REVISION YET**
+`[iteration 24; NOT gated, NOT merged, NOT deployed]`. Payload **5 files** — `live_identity_sweep.py`
+(+`LiveIdentitySweeper`, + batch scoring), `live_provider_bundle.py`, the loop's own
+`live-identity-seam-probe.py` following the factory's new signature, and two under `tests/`;
+**none under `macos/`**, none under `ops/`. Python **784 / 2 / 368** (+20: 14 sweep, 6 bundle).
+***The shape.*** `LiveIdentitySweeper(album, config)` owns the ledger, the cadence and the merge
+threshold, and lives in `WeSpeakerLiveEvidenceProvider` beside the album. Two feeding points, both
+inside `score()`: every embedded unit is recorded **unlabelled** when its vector is computed, and
+re-recorded **carrying its canonical speaker** when the next span's preparation reconciles it —
+`SweepLedger.record` answers `replaced` and the unit count does not move. The cadence runs after the
+reconcile and **before** this span's evidence is retained, paced by `span.start_sample /
+LIVE_SAMPLE_RATE`.
+***Five decisions, recorded so they are not re-argued.***
+1. **The ledger lives with the album** (iteration 23's open question (a)): the provider is the only
+   object that ever holds a vector, and two feeding paths could disagree about who spoke. The
+   *sweeper* is its own object so scheduling stays separable from retention.
+2. **A unit is retained twice, on purpose.** The album hears assignments; the ledger hears every
+   embedded unit, because an **abstained** span never reconciles and is exactly the span a later
+   album has the most to say about. Retaining only what was labelled would make the sweep unable to
+   improve the spans the live path found hardest.
+3. **The cadence never sees the span being prepared.** A sweep that could would propose a label for
+   a transcript nobody had read yet. Because the reconcile runs first, every span but the one in
+   flight is settled at cadence time.
+4. **Meeting time, never wall time**, and the next deadline is computed *from the time reached* — so
+   a burst after an outage schedules one sweep, not a catch-up burst over time in which nothing was
+   retained. A non-finite meeting time returns `None` and never raises (the *Duration vs timestamp*
+   contract, one layer out).
+5. **The bundle cannot build an album without a sweeper.** ADR-0002 calls the album shipped alone a
+   terminal-state failure, so `_identity_evidence_provider`'s `identity_config` is **required**, not
+   defaulted, and the new `_identity_preparer` builds it once for both halves — a sweeper with its
+   own calibration is candidate 63 one layer down, and it is now unwritable.
+***THE MEASUREMENT THAT CHANGED THE PATCH — ADR-0002's gate-B sweep cost is off by ~300×.*** The ADR
+reports ~0.1 ms at 600 s and "<10 ms extrapolated to 3 h". Measured on production code at F3's own
+shape (443 spans / 886 units / 16 speakers / 256 dims), scoring pair by pair: **295 ms at 17 min,
+1032 ms at 1 h, 3098 ms at 3 h** — and the sweep runs **inline on the serial canonical pump**, so a
+3.1 s stall is *longer than the 2.5 s span cap*, on ~4 % of spans, right at the PRD's p95 boundary.
+Same shape as candidate 50's runaway decode, which D-c exists to bound. So `_score_span` now scores
+a whole span against a reference matrix built **once per sweep**: **39 / 125 / 366 ms**, 7.5–8.5×.
+The batch path refuses exactly what `cosine_similarity` refuses (dimension mismatch, no length,
+non-finite), decides it for the **whole span**, and falls back to the untouched scalar rule
+otherwise. *The parity proof is not an assertion:* the eight-meeting harness still measures
+**99.26 / 98.48** swept and **93.44 / 72.0** unswept, unchanged, with `residual_corrections` 0 — and
+reverting the batch path to a constant reddens **14** nodes including all three convergence ones.
+***Red-before: nine semantic reverts*** (`/tmp/i24-redbefore`): no unlabelled retention → **5 red**;
+cadence moved after retention → **2**; no reconcile record → **3**; no `ledger.apply` → **2**; no
+sweeper in the bundle → **1**; meeting time unguarded → **1**; deadline added rather than computed →
+**1**; batch answers something else → **14**; batch does not refuse a zero-length vector → **1**.
+*Revert 3 was run twice and that is the durable lesson:* the first run left
+`test_a_reconciled_assignment_reaches_the_ledger…` **green**, because a cadence sweep also writes
+labels through `ledger.apply`, so the node passed whether or not the reconcile seam fed it. It now
+runs with the cadence off (`sweeps == 0`). **A green node can be measuring the wrong cause, and only
+a revert finds out.**
+***What it does NOT do.*** **Nothing consumes a revision** — `sweep_now` applies it to the *ledger*
+(which is what makes the next sweep converge instead of re-proposing forever) and returns it; no
+transcript is rewritten and no reader sees a correction. **There is no session-end sweep**, which is
+where iteration 23 measured essentially all the value (600 s cadence → 99.22 % vs 60 s's 99.26 %);
+it needs a per-session teardown hook the provider does not have, and it belongs with "who applies a
+revision" because both are the same ownership question. **The final span of a meeting stays
+unlabelled in the ledger** — a span is labelled when the *next* one reconciles it — which is
+harmless today and must be closed by that same hook feeding the final snapshot through
+`_reconcile_committed_vectors` **before** the final sweep, or that sweep issues a spurious
+`labelled` correction for a span the live path already labelled. The album is still never itself
+merged. The deployed service's labels are untouched, which is what the harness's unchanged
+93.44 / 72.0 proves.
 
 **N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
 `docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the
@@ -2086,9 +2171,12 @@ admission 1.0 s, k=10, cap 16):*
    **shipping requirement**, not a refinement, and it is a tracked-source change needing its own
    decision. (Overwrite at the deployed thresholds is 35.2 %.)
 
-**N-gate — what is still open.** Live→file convergence (needs the sweep, step 3); F1/F2 with the
-label clause meaningfully verified — still blocked by candidate 51's measured hardware limit; then
-one merge, push, redeploy. The accuracy half of the bar is now instrumented and green for step 1.
+**N-gate — what is still open.** ~~Live→file convergence (needs the sweep, step 3)~~ **answered in
+iteration 23: 99.26 % mean / 98.48 % min swept, `residual_corrections` 0** — see N-convergence.
+What remains: the versioned transcript revision a reader can see (step 3's other half); F1/F2 with
+the label clause meaningfully verified — still blocked by candidate 51's measured hardware limit;
+then one merge, push, redeploy. The accuracy half of the bar is instrumented and green for the album
+and for the sweep.
 
 **N-recal — THE CALIBRATION THE ALBUM IS MEASURED AT IS NOW THE ONE A DEPLOYMENT CAN STATE**
 `[candidate 63, iteration 17; source only — the host manifest is regenerated at Phase N's redeploy]`.
