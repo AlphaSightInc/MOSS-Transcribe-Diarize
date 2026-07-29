@@ -27789,3 +27789,181 @@ authorizations, one carried a binding evidence rule, three were bench or docs
 commits, and this one is uncommitted work sitting in the tree - which is the case
 `git add -A` would have published under my message.  prd.md's tail is still
 `bb8daad`, i.e. nine amendments, Phase Q as authorized, and no new cycle.
+
+=========================================================================
+iteration 24 (run 20260729-094359-88967) - Q4: a clean stop reaches the
+server, and the optional seam it rides on is enforced rather than trusted
+=========================================================================
+
+TARGET.  Phase Q item Q4, candidate 72 (the ninth amendment's item (d)) -
+the last open Phase Q item.  The `/stop` route works, the portal's Stop
+button calls it, and a stop through it revokes view authority in 0 s; the
+Mac client simply never called it, so `mtd-capture stop` left view
+authority alive for up to the 30 s helper lease (measured 29.4 s / 29 s)
+and skipped the session's final sweep.
+
+FILES TOUCHED (product source, under the ninth amendment's `macos/` scope).
+  macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureController.swift
+      + CaptureStopContract (drainDeadlineSeconds 5.0, requestTimeoutSeconds 10.0)
+      + CaptureSessionStopAdapter protocol
+      + optional `sessionStop:` init parameter, appended so no existing
+        construction changes
+      + stopServerSession(configuration:) called AFTER the final drain
+  macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureHTTPTransport.swift
+      + CaptureHTTPSessionStopAdapter, POST .../stop {"deadline": 5.0} on
+        the shared pinned client, with its own request timeout
+  macos/MOSSCapture/Sources/MOSSCaptureCore/FakeCaptureAdapters.swift
+      + FakeCaptureSessionStopAdapter (recording, optionally refusing)
+  macos/MOSSCapture/Sources/MOSSCaptureApp/main.swift          (the wiring)
+  macos/MOSSCapture/Tests/MOSSCaptureCoreTests/CaptureControllerTests.swift
+      + 4 new nodes, 1 existing node extended
+  scripts/ralph-afk/live-cert.sh   (comment only - see learning 4)
+  scripts/ralph-afk/context.md, progress.txt
+
+THE THREE DECISIONS, RECORDED BEFORE THE PATCH AS THE FIFTH AMENDMENT'S
+SHAPE REQUIRES.
+
+ 1. WHERE THE CALL LIVES: a third adapter, not a third method on an
+    existing one, and in the CONTROLLER, not the dispatcher.
+    CaptureTransportAdapter is the frame-publish seam and
+    CaptureHealthAdapter the heartbeat seam - one endpoint, one seam - so
+    the stop gets its own.  Putting it in ControlCommandDispatcher's
+    "stop" case would have worked today (that is the only route a stop
+    takes) and would silently miss any future automatic stop; "a clean
+    stop must reach the server" is a property of stopping capture, not of
+    the control channel.
+ 2. WHEN: after the final drain.  The meeting's last partial frame only
+    exists once the source has flushed, and a server told to stop while
+    frames are still unconsumed spends its whole drain deadline waiting -
+    this loop has already paid that once, at `{"deadline": 0.0}` with
+    queued work answering 409 `stop deadline expired with unresolved
+    work`.
+ 3. WHAT A FAILURE MAY DO: nothing but change the report.  Every failure
+    is swallowed and a refusal recorded.  The capture is already off and
+    the audio already drained, so rethrowing would report a failed stop
+    for a meeting that ended either way AND leave `alreadyRunning`
+    refusing the next one.  The stop is attempted even when a refusal is
+    already on record: a client cannot know what the server holds -
+    assuming it could is the whole of this defect - and the cost of being
+    wrong is one request that answers 403.
+
+VALIDATION.
+  swift build --package-path macos/MOSSCapture --product MOSSCaptureApp -> ok
+  swift build --package-path macos/MOSSCapture --product mtd-capture    -> ok
+  swift test --package-path macos/MOSSCapture
+             --scratch-path /tmp/i24-swift-scratch  -> 164 passed, 0 failures,
+                                                       0 warnings, FRESH scratch
+                                                       (was 159)
+  python3 -m pytest -q                               -> 810 passed, 2 skipped,
+                                                       368 subtests, 73.38 s
+                                                       (UNCHANGED, correctly)
+  python3 -m pytest tests/test_macos_uds_tracer.py -q -> 4 passed, 0 skipped
+  awk '/^## Validation/,/^## Candidates/' context.md | grep -v '^#' | bash -n
+                                                     -> rc=0, 93 command lines
+
+  RED-BEFORE, SIX DIRECTIONS, each naming a DIFFERENT node, by TEMPORARY
+  semantic revert of tracked source under a shell trap guaranteeing
+  restore (backups /tmp/i24-ctrl.bak, /tmp/i24-app.bak; both verified
+  byte-identical after with `cmp`):
+    A  the stopServerSession call deleted from stop()
+         -> testCleanStopTellsTheServerTheMeetingIsOverAfterTheFinalDrain
+            ("0" is not equal to "1" - a clean stop reaches the server
+             exactly once) AND testAStopTheServerCannotBeToldAbout... red
+    B  the call moved BEFORE the final drain
+         -> the ordering assert only: ("Optional(0)") is not equal to
+            ("Optional(1)") - the server is told to stop after the final
+            drain, not before it
+    C  `catch { recordSessionRefusal }` -> `try?`
+         -> testAStopTheServerCannotBeToldAboutStillStopsLocallyAndNames-
+            TheRefusal: ("nil") is not equal to ("sessionDisowned")
+    D  main.swift not handed `sessionStop:`
+         -> testProductionPumpTicksOncePerCanonicalWireFrameOnOneShared-
+            PinnedProvider, BOTH new asserts (shared provider, and the
+            controller is given the adapter)
+    E  drainDeadlineSeconds 5.0 -> 3.0
+         -> testStopContractMatchesTheServedPortalControlTimings ("3.0"
+            is not equal to "5.0") AND the wire-shape node
+    F  requestTimeoutSeconds 10.0 -> 60.0
+         -> the same tie node ("60000.0" is not equal to "10000.0")
+
+WHAT I LEARNED.
+
+ 1. THE SERVER HALF OF THIS ITEM WAS ALREADY COVERED, AND CHECKING
+    BEFORE WRITING SAVED A REDUNDANT NODE.  `tests/test_live_api.py:503`
+    test_clean_stop_immediately_revokes_view_authority already drives a
+    CAPTURE bearer through POST /stop and asserts the viewer's snapshot
+    and events both turn 401, and `CAPTURE_ACTIONS` carries "stop".  So
+    the gap was never "does the route accept this caller" - it was
+    exactly one missing client call, which is what candidate 60 said and
+    what four earlier iterations mispriced.  The seam that remains
+    uncovered by any suite is "the BUILT app's stop reaches the DEPLOYED
+    server", and that is F3's post-stop view check, i.e. Phase Q's own
+    gate.
+ 2. AN OPTIONAL DEPENDENCY IS A "KNOWN BUT NOT SHOWN" DEFECT WAITING TO
+    HAPPEN, AND THE ANSWER IS A NODE, NOT A REQUIRED PARAMETER.  Making
+    `sessionStop:` required would have edited ~20 existing
+    CaptureController constructions for no behavioural gain; leaving it
+    optional means a shipped stack left unwired compiles and silently
+    does nothing - the same shape as the fourth amendment's dropped lane
+    data.  Extending the EXISTING production-wiring node (which already
+    reads main.swift and asserts the one shared pinned provider) cost two
+    asserts and makes direction D a test failure rather than a code
+    review.  Extending a wiring node beats adding a parallel one: there
+    is now one place that says what the shipped runtime is made of.
+ 3. ONE TIE NODE HERE, WHERE Q3 NEEDED TWO, AND THE DIFFERENCE IS THE
+    REASON.  Q3's cadence needed an enforcing node in each language
+    because either side could move alone and neither was pinned.  /stop's
+    two timings are already pinned on the Python side by tracked tests
+    (tests/test_live_portal.py:319 asserts the body is {"deadline": 5.0},
+    :505 asserts the served constant), so Swift is the only side a drift
+    can enter from and one node reading live_portal.py closes it.  Both
+    numbers are the PORTAL'S: /stop has two callers, and a route whose
+    callers disagree about how long a drain may take would make a
+    meeting's ending depend on which one ended it.  The node also asserts
+    timeout > drain, because a request that expires before the drain it
+    asked for would report every clean stop failed.
+ 4. AN INSTRUMENT'S COMMENT THAT NAMES AN OPEN DEFECT BECOMES A FALSE
+    STATEMENT THE MOMENT THE DEFECT IS FIXED - the same shape iteration
+    23 found in latency-remedy-probe.py, one level quieter.
+    live-cert.sh:409 read "the client never calls the server's stop
+    route, so view authority is expected to survive here ... A 200 is the
+    KNOWN defect".  Updated in the same change that falsified it: a 200
+    is now the defect and a 401/403 the fix, WITH the qualifier that
+    reads 200 until the installed app is rebuilt.  The clause reducer
+    needed no change at all - live-canary-clauses.py section 9(c)
+    computes `revoked = sc != "200" and ec != "200"` and colours it, so
+    it was written to measure the outcome rather than to expect the
+    defect.  That is the difference between an instrument and an
+    assertion of the status quo.
+ 5. THE DARWIN TRACER PROVES NOTHING ABOUT THIS ITEM, AND SAYING SO IS
+    PART OF THE EVIDENCE.  It stayed 4 passed / 0 skips, but on MacStudio
+    it takes the `permissionDenied` branch where `stop` throws
+    `notRunning` before any transport call is made.  A green tracer here
+    is a no-regression result, not a confirmation.
+
+EVIDENCE PATHS.  Candidate 72 in context.md (the seam, all three
+decisions, both constants, the coverage and the six red-before
+directions); candidate 73's Q4 line (all four Phase Q items are now on the
+branch, so what is left is the gate); the routing bullet at "AUTHORIZED
+AND OPEN"; the F3 scoreboard row (RED until Phase Q's own F3 re-run, on a
+REBUILT app); the test-totals paragraph (Swift 159 -> 164, Python 810
+unchanged); the Validation fence's Q4 entry; the broken-invariant bullet
+and the install block, both of which now name four more `macos/` files.
+
+BLOCKERS.  None.  Two facts that bound the next iteration: the installed
+`/Applications/MOSSCapture.app` is still the `77e0014` product, so NEITHER
+Q3's cadence remedy NOR Q4's stop exists on the Mac that F1 and F3 drive -
+running either now would measure the remedy at 0.0 ms and the stop at 200
+and read as both fixes failing.  The m4mbp rebuild + reinstall is part of
+Phase Q's redeploy, not an optional step.
+
+RECOMMENDED NEXT STEP.  Q5, the gate, in the amendment's own order: full
+Swift/Python (both green as of this iteration), the accuracy harness
+showing the birth floor's effect on canonical count, then F1 and F3 -
+which require the m4mbp rebuild+reinstall FIRST - then one merge through
+merge-keeper.sh (advance `expected_main` 7a4f59c in-script, never by CLI
+override), push, redeploy, and re-check both TCC grants after the
+reinstall.  If context.md's paging cost bites first, the ninth compaction
+is the cheaper iteration and its target is named in the compaction log
+(Phase N's two N-batch probe narratives, then "Open diagnostic
+candidates"); context.md is now ~275 KB.

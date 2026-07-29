@@ -307,6 +307,53 @@ public final class CaptureHTTPHealthAdapter: CaptureHealthAdapter {
     }
 }
 
+/// Ends the server's session over the same pinned transport the frames and heartbeats use.
+///
+/// The body is the portal's: `{"deadline": <seconds>}`, the one value that route reads. The request
+/// carries its own timeout because this is the only server call an operator waits on — every other
+/// one is a pump tick that a dead network may keep for as long as URLSession's default allows.
+public final class CaptureHTTPSessionStopAdapter: CaptureSessionStopAdapter {
+    private let client: (CaptureConfiguration) throws -> CaptureHTTPClient
+    private let bearerToken: CaptureBearerTokenAdapter
+
+    public init(client: CaptureHTTPClient, bearerToken: CaptureBearerTokenAdapter) {
+        self.client = { _ in client }
+        self.bearerToken = bearerToken
+    }
+
+    public init(
+        clientProvider: CaptureHTTPClientProvider = PinnedURLSessionCaptureHTTPClientProvider(),
+        certificatePin: CaptureCertificatePinAdapter,
+        bearerToken: CaptureBearerTokenAdapter
+    ) {
+        self.client = { _ in
+            try clientProvider.client(certificatePinSHA256Hex: certificatePin.loadCaptureCertificatePin())
+        }
+        self.bearerToken = bearerToken
+    }
+
+    public func stopSession(
+        configuration: CaptureConfiguration,
+        drainDeadlineSeconds: Double
+    ) throws {
+        var request = try authorizedJSONRequest(
+            url: liveURL(
+                base: configuration.serverURL,
+                sessionID: configuration.sessionID,
+                action: "stop"
+            ),
+            bearerToken: bearerToken.loadCaptureBearerToken(),
+            body: SessionStopPayload(deadline: drainDeadlineSeconds)
+        )
+        request.timeoutInterval = CaptureStopContract.requestTimeoutSeconds
+        try requireSuccess(try client(configuration).send(request))
+    }
+}
+
+private struct SessionStopPayload: Encodable {
+    var deadline: Double
+}
+
 public final class StaticCaptureBearerTokenAdapter: CaptureBearerTokenAdapter {
     private let token: String?
 

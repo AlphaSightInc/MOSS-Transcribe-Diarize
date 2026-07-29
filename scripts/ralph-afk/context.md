@@ -195,7 +195,7 @@ less often than the table it introduces; correct it with the rows.**
 | Rollback rehearsed and recorded | GREEN (F4a) |
 | 60 s canary (F1) | **RED ON THE DEPLOYED `7a4f59c`, AND SINCE ITERATION 22 THE RED IS ONE CLAUSE, NOT TWO.** The run is unchanged (iteration 30, Phase N gate step (d) first half, rc=3); what changed is the **reducer**, which now answers the RTF clause by Q2's derived definition. Re-reduced: **seven GREEN and ONE RED** — decoder p95 RTF **0.580** over 49 spans >= 0.13 s (3 excluded, their RTF 2.365–3.599, printed in the verdict sentence) plus a new **aggregate RTF 0.203** over all 52 spans with nothing excluded, both GREEN; the surviving RED is user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %). **The RTF number that stood here was 2.365, carried entirely by 3 spans shorter than 0.1 s — candidate 70 records why that is a measurement of the decoder's fixed per-request cost and not of the decoder.** F1 is still re-run as Phase Q's gate; this is a re-reduction of existing evidence, not a new run. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). *Superseded, kept for one reason:* F1 was **GREEN on `42abc5a`** (iteration 6, rc=0) at p95 **3909.3 ms** and RTF **0.911**, 329 published == 329 accepted, and that is the **only** run in this loop's history where the user-visible clause passed at the 4000 ms gate. **One half is NOT certified in either run:** "two speakers" were both on the *system* lane (candidate 51's measured microphone limit). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED is untouched by it — and is **now answered separately** by Q2's definition (candidate 70), so **the latency miss is the only thing standing between F1 and green**. **ITERATION 23 APPLIED THAT REMEDY ON THE BRANCH (Q3, candidate 71) — both halves at 0.5 s, with an enforcing node in each language.** The −500 ms is **arithmetic on a report, not yet a measurement**: this row stays RED until Phase Q's own F1 re-run measures it on a redeployed build. See the latency-remedy block and candidates 71 and 68. |
 | 300 s certification (F2) | **GREEN ON THE DEPLOYED `7a4f59c`** (run `20260729-094359` iteration 1, `live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **4078.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.577** < 1, **1261 published == 1261 POST /frames, and every one of the session's 4766 logged requests answered 200**, a **5.090 s** interruption seen by the client and survived, outbox 0 → **5** → 0. (Was GREEN on `42abc5a` in iteration 11 of the previous run: 3859.6 ms, RTF 0.670, 1257 == 1257 — that block is archived in progress.txt.) **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the **F2 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction) |
-| 16-minute soak (F3) | **RE-RUN ON THE DEPLOYED `7a4f59c` (run `20260729-094359` iteration 12) — 5 GREEN, 1 RED, rc=3, and it is now the current F3 evidence.** 17/17 full minutes, 648 spans, 381/381 portal polls 200, view authority 200 at age **903.6 s and 1023.0 s**, user-visible p95 **4106.5 ms** ≤ 6000 **qualified and `timelineIntact` true**, decoder p95 RTF **0.568**, **no lane fault at all**, clean drain `retained=0`. The RED is **candidate 60**, unchanged and expected — the Mac client never calls `POST …/stop`, so the post-stop view check answered 200. **The run also falsified candidate 65's headline: the CADENCE sweep published three corrections mid-meeting.** See the **F3 on Phase N** row in the gates index and the deployed-sweep block below (§1). (The prior `42abc5a` run — iteration 9 of run `20260729-025318`, same 5/1 shape — is superseded as evidence; its row is kept in the gates index for the before/after deltas.) |
+| 16-minute soak (F3) | **RE-RUN ON THE DEPLOYED `7a4f59c` (run `20260729-094359` iteration 12) — 5 GREEN, 1 RED, rc=3, and it is now the current F3 evidence.** 17/17 full minutes, 648 spans, 381/381 portal polls 200, view authority 200 at age **903.6 s and 1023.0 s**, user-visible p95 **4106.5 ms** ≤ 6000 **qualified and `timelineIntact` true**, decoder p95 RTF **0.568**, **no lane fault at all**, clean drain `retained=0`. The RED is **candidate 60**, unchanged and expected — the Mac client never calls `POST …/stop`, so the post-stop view check answered 200. **ITERATION 24 FIXED IT ON THE BRANCH (Q4, candidate 72): the client now calls the route after its final drain.** The row stays RED until Phase Q's own F3 re-run measures it — and that re-run needs the **m4mbp rebuild+reinstall**, because the app that answers `stop` is the one in `/Applications`, not the one in this checkout. **The run also falsified candidate 65's headline: the CADENCE sweep published three corrections mid-meeting.** See the **F3 on Phase N** row in the gates index and the deployed-sweep block below (§1). (The prior `42abc5a` run — iteration 9 of run `20260729-025318`, same 5/1 shape — is superseded as evidence; its row is kept in the gates index for the before/after deltas.) |
 | Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The *browser storage* half is now MEASURED ON THE DEPLOYED PAGE — iteration 10, `portal-storage-probe.py` rc=0, five clauses GREEN, six negative controls all detected.** It had never been measured at all: `leak-scan.sh` never scans the portal (iteration 7), the tracked static assertion (`tests/test_live_portal.py:217-219`) reads a **locally rendered** page, and the harness's `storageWrites` recorder (`:618,657,737,812,841`) has **no assertion anywhere in the suite** — dead instrumentation a runtime write would pass. See the portal-storage block below. **What is still open is the tracked *regression*, not the evidence — candidate 66** |
 | Final close (F4b) | open |
 
@@ -341,8 +341,12 @@ Phase M/P landing narratives it used to carry are in progress.txt under that pas
   by nine red-before nodes, Python green at 809. **Q2 (candidate 70) LANDED IN ITERATION 22** —
   loop tooling only, so it re-opens neither suite. **Q3 (candidate 71) LANDED IN ITERATION 23** —
   both cadence halves at 0.5 s, an enforcing node in each language, Python **810** and Swift
-  **159** green. **Q4 (candidate 72) is the last open item**; it touches `macos/` and re-opens the
-  Swift half of the gate, which Q3 has just re-run clean.
+  **159** green. **Q4 (candidate 72) LANDED IN ITERATION 24** — the Mac client's clean stop now
+  reaches the server, five Swift nodes, six red-before directions, Swift **164** and Python **810**
+  green. **ALL FOUR PHASE Q ITEMS ARE ON THE BRANCH; what is left is Q5's GATE** — the accuracy
+  harness's canonical-count number, **F1 and F3**, one merge, push, redeploy **including the m4mbp
+  rebuild+reinstall** (Q3 and Q4 both changed `macos/`, so the installed app is not what this
+  checkout describes and F1 would measure the cadence remedy at 0.0 ms and F3 the stop at 200).
   **STILL needs an authorization:** candidates **58**, **66**, and **Phase N step 4** — which prd.md
   now names *"out of scope"* for Phase Q in as many words, *"worth its own authorization later"*, so
   the split iteration 18 recorded is now the operator's own wording. **Candidate 65 is WITHDRAWN**,
@@ -422,12 +426,14 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch. Python re-measured whole at iteration 23 (Q3): 810 passed / 2 skipped /
-368 subtests in ~77 s** (801 -> 809 at Q1: five preparer nodes and three provider nodes for the
+**Test totals on the branch. Python re-measured whole at iteration 24 (Q4): 810 passed / 2 skipped /
+368 subtests in ~73 s** (801 -> 809 at Q1: five preparer nodes and three provider nodes for the
 birth floor, the accuracy harness's five candidate-55 nodes re-stated rather than added; 809 -> 810
-at Q3: the Python half of the cadence-enforcing node). **Swift re-measured at iteration 23 —
-159 passed / 0 failed, 0 warnings on a fresh scratch** (158 -> 159: the Swift half of the same
-node). Q4 touches `macos/` and must re-run both. The two skips are the
+at Q3: the Python half of the cadence-enforcing node; **unchanged at Q4, which touches only
+`macos/`**). **Swift re-measured at iteration 24 — 164 passed / 0 failed, 0 warnings on a fresh
+scratch** (158 -> 159: the Swift half of the cadence node; 159 -> 164: Q4's clean stop - two
+controller nodes, two HTTP-adapter nodes and the portal-timings tie, with the production-wiring
+node extended rather than duplicated). The two skips are the
 pre-existing `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract and are
 **never** Darwin skips. The growth chain (604 -> 801 across Phase P and Phase N steps 1-3) and the
 per-file node counts are retired to progress.txt with the fourth compaction - regenerate them with
@@ -490,8 +496,9 @@ it had died at t+31.5 s on `77e0014`.
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
   **AS OF ITERATION 21 THE INVARIANT IS BROKEN, DELIBERATELY, AND STAYS BROKEN UNTIL PHASE Q's
   REDEPLOY.** Q1 put `moss_transcribe_diarize/app/live_identity.py` and `live_provider_bundle.py` on
-  the branch and **iteration 23's Q3 added `live_portal.py` and `CaptureLatencyProbe.swift`, so the
-  installed `.app` is now stale as well as the server**, so
+  the branch, **iteration 23's Q3 added `live_portal.py` and `CaptureLatencyProbe.swift`, so the
+  installed `.app` is now stale as well as the server**, and **iteration 24's Q4 added four more
+  files under `macos/`**, so
   `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` lists product source
   and **no offline probe speaks for the deployed service any more** — exactly the state Phase N
   steps 1-3 held from iteration 15 to iteration 28. A measurement about the *running* service must
@@ -940,7 +947,10 @@ with `BatchMode=yes`, **detached at `7a4f59c`** (tree `16de7f62…`, the merge's
   ***THAT STREAK ENDS WITH PHASE Q, AND ITERATION 23 IS WHERE IT ENDED.*** Q3 changed
   `macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureLatencyProbe.swift`, so Phase Q's payload is the
   **first since M6c to touch `macos/`** and the installed client is now genuinely stale rather than
-  correctly-identical. **Phase Q's redeploy therefore needs an m4mbp rebuild + reinstall, which the
+  correctly-identical. **Iteration 24's Q4 doubled the reason** — `CaptureController.swift`,
+  `CaptureHTTPTransport.swift`, `FakeCaptureAdapters.swift` and `MOSSCaptureApp/main.swift` — so
+  without the rebuild F1 measures the cadence remedy at 0.0 ms **and** F3's post-stop view check
+  still answers 200. **Phase Q's redeploy therefore needs an m4mbp rebuild + reinstall, which the
   last five did not** — the third amendment's housekeeping note (*"no rebuild or reinstall is needed
   unless `macos/` changes"*) now applies in its other branch. Recheck both TCC grants after it (the
   DR is byte-identical across rebuilds, which is why they survive, but *measure* rather than assume),
@@ -1667,6 +1677,18 @@ scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
 #   schedulePoll(pollDelayMs) -> schedulePoll(500)          # declared but not scheduled
 #   renderBoundMS = CaptureLatencyContract.portalCycleSeconds * 1_000 -> a literal
 # The probe's section 1 reads F3's PRE-remedy report and must keep saying portalCycleMS == 1000.
+# Q4's CLEAN STOP (iteration 24, candidate 72). Five Swift nodes, no Python:
+#   swift test --package-path macos/MOSSCapture --scratch-path /tmp/i24-swift-scratch --filter \
+#     'testCleanStopTellsTheServerTheMeetingIsOverAfterTheFinalDrain|testAStopTheServerCannotBeToldAboutStillStopsLocallyAndNamesTheRefusal|testStopContractMatchesTheServedPortalControlTimings|testProductionPumpTicksOncePerCanonicalWireFrameOnOneSharedPinnedProvider|testHTTPSessionStopPostsTheDrainDeadlineOnItsOwnBoundedRequest'
+# Red-before is a TEMPORARY SEMANTIC REVERT of CaptureController.swift and MOSSCaptureApp/main.swift
+# under a shell trap; six directions, each naming a DIFFERENT node:
+#   A stopServerSession call deleted        B call moved BEFORE the final drain
+#   C catch -> try? (refusal not recorded)  D main.swift not handed sessionStop:
+#   E drainDeadlineSeconds 5.0 -> 3.0       F requestTimeoutSeconds 10.0 -> 60.0
+# The server half needs NO new node: tests/test_live_api.py:503
+# test_clean_stop_immediately_revokes_view_authority already drives capture-bearer -> /stop ->
+# view 401. The seam nothing covers is "the BUILT app's stop reaches the DEPLOYED server", which is
+# F3's post-stop view check -- i.e. Phase Q's own gate, after the m4mbp rebuild.
 # Validated in iteration 21 against iteration 12's canary (reproduces committed p95 8342.697 ms and
 # user-visible 9702.2 ms), against /tmp/ralph-f1-evidence (reproduces decoder p95 RTF 0.706 and
 # prints the t+86.0 s system-lane failure), and it REFUSES the F3 soak layout by name.
@@ -2831,10 +2853,52 @@ now measured on the deployed service.
     `/api/live/descriptor` and having the probe read it, so there is one number rather than two and
     an enforcing node becomes unnecessary. That is a product contract change on both sides and needs
     its own authorization.
-72. **Q4 - a clean stop must reach the server (candidate 60).** The route works and the portal's
-    Stop calls it; the Mac client does not, so view authority outlives a clean stop by up to the
-    30 s lease (29.4 / 29 s measured). Transport call after the final drain; a stop that cannot
-    reach the server must still stop locally. Buys neither convergence nor `identity_finalized`.
+72. **Q4 - a clean stop must reach the server (candidate 60).** `[LANDED ON THE BRANCH -
+    iteration 24. NOT merged, NOT deployed, and NOT on the installed app.]` The route works and the
+    portal's Stop calls it; the Mac client did not, so view authority outlived a clean stop by up to
+    the 30 s lease (29.4 / 29 s measured) and the session's final sweep never ran.
+    **The seam: a third adapter, not a third method on an existing one.** `CaptureSessionStopAdapter`
+    sits beside `CaptureTransportAdapter` and `CaptureHealthAdapter` for the reason those two are
+    separate from each other - one endpoint, one seam - so "this stack publishes frames but cannot
+    end a session" is a **wiring fact a test reads** rather than a behaviour to be inferred.
+    `CaptureHTTPSessionStopAdapter` posts `{"deadline": 5.0}` to `.../stop` on the same pinned
+    client the frames and heartbeats share.
+    **Optional on the controller, and the hazard that creates is answered directly.** A required
+    parameter would have edited ~20 existing constructions for nothing; the price is that a shipped
+    stack left unwired would compile and silently do nothing. That is exactly the "known but not
+    shown" shape this loop keeps finding, so the existing production-wiring node
+    (`testProductionPumpTicksOncePerCanonicalWireFrameOnOneSharedPinnedProvider`) now also asserts
+    `sessionStop: CaptureHTTPSessionStopAdapter(` appears in `main.swift` and that it is handed the
+    one shared provider. Direction D of the red-before ladder is that node, failing.
+    **Ordering, decided: after the final drain.** The meeting's last partial frame only exists once
+    the source has flushed, and a server told to stop while frames are still unconsumed spends its
+    whole drain deadline waiting for them (measured once already: `{"deadline": 0.0}` with queued
+    work answers 409 `stop deadline expired with unresolved work`). The node reads the *transport's*
+    published count at the moment the stop is sent - 1, not 0 - so the ordering is asserted rather
+    than commented.
+    **Both numbers are the portal's, not this client's.** `CaptureStopContract.drainDeadlineSeconds`
+    5.0 and `requestTimeoutSeconds` 10.0 are the `/stop` route's two documented control timings
+    (ADR-0001, CONTEXT.md, `tests/test_live_portal.py:319,505`). One node reads `live_portal.py`
+    from the checkout and compares both. **Only ONE node, where Q3 needed two**, and the difference
+    is the reason: the portal's constants are already pinned on the Python side by tracked tests, so
+    Swift is the only side a drift can enter from. It also asserts `timeout > drain`, because a
+    request that expires before the drain it asked for would report every clean stop failed.
+    **The failure rule (fifth amendment): a stop that cannot reach the server still stops locally.**
+    Every failure is swallowed - the capture is already off and the audio already drained, so
+    rethrowing would report a failed stop for a meeting that ended either way and leave
+    `alreadyRunning` refusing the next one. What a failure *may* change is the report: a refusal is
+    recorded, so `status` says the session was already gone. The node asserts the next `start`
+    succeeds, which is the operator-visible half. **It is attempted even when a refusal is already
+    on record** - a client cannot know what the server holds, and assuming it could is the whole of
+    this defect; the cost of being wrong is one request that answers 403.
+    **Coverage: five Swift nodes, six red-before directions, each naming a different node** (see the
+    fence). **The server half needed no new node** - `tests/test_live_api.py:503` already drives
+    capture-bearer -> `/stop` -> view 401, and `CAPTURE_ACTIONS` carries `"stop"`.
+    Swift **159 -> 164**, 0 failures, 0 warnings on a fresh scratch; Python **810**, unchanged and
+    correctly so. The Darwin tracer stays 4 passed / 0 skips - on MacStudio it takes the
+    `permissionDenied` branch, where `stop` throws `notRunning` before any transport call, **so the
+    tracer proves nothing about this item**.
+    Buys neither convergence nor `identity_finalized`.
 73. **Q5 - close the coverage gap, then gate/merge/redeploy.** Nothing asserts what a canonical
     speaker was born from. Red-before/green-after per decision, plus a node that fails if a birth
     can be minted from a span with no embedded evidence. Then the full gate, the accuracy harness
@@ -2851,7 +2915,11 @@ now measured on the deployed service.
     changed only loop tooling - Python's 809 is therefore **unchanged and un-re-run**, correctly.
     **Q3's half is done (iteration 23):** two enforcing nodes, one per language, each red-before in
     four directions by temporary semantic revert; Python **810**, Swift **159**, 0 warnings on a
-    fresh scratch. **Q4 still owes its coverage** and will re-open both suites.
+    fresh scratch. **Q4's half is done (iteration 24):** five Swift nodes, six red-before directions,
+    Swift **164**, Python **810** unchanged, tracer 4/0. **ALL FOUR PHASE Q ITEMS ARE NOW ON THE
+    BRANCH, so what remains of Q5 is the gate itself** - full Swift/Python (both re-run clean this
+    iteration), the accuracy harness's canonical-count number, **F1 and F3**, one merge, push,
+    redeploy including the m4mbp rebuild+reinstall.
 74. **`PROVISIONAL` is unreachable on the live path now that Q1 has landed** `[open, no
     authorization needed to decide, product change would need one]`. The album's second tier holds
     exactly one sub-admission observation *while a speaker has no exemplars*; with the birth floor
