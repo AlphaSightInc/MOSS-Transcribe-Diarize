@@ -27071,3 +27071,145 @@ a degradation that makes the causal pass imperfect is what would exercise it.
 - State at authorization: loop RUNNING (pid 88967, run 20260729-094359, iteration 20 of 30), `main`
   7a4f59c, four-way SHA 4/4, 8 authorized merges and 0 unauthorized, F2 GREEN, F1 5G/2R, F3 5G/1R.
   No relaunch; the loop picks this up next iteration.
+
+================================================================================
+RUN 20260729-094359 ITERATION 20 - THE PERFECT CAUSAL PASS WAS HIDING WHICH
+READING OF STEP 4 IS RIGHT, AND THE NINTH AMENDMENT LANDED WHILE THIS RAN
+================================================================================
+
+TARGET.  The one open free measurement iteration 19 named: §6(7) of the
+authorization request - "§4(f)'s sweep half is untested here, and says so.  The
+production sweep() proposed 0 corrections and 0 merges on the batch path,
+because the causal pass was already perfect.  That is convergence by vacuity."
+And its sibling §6(6), the 100 % ceiling.  Both are limits of iterations 17/18,
+both were free to close, and neither needed an operator, a host or a TCC click.
+
+FILES TOUCHED.  scripts/ralph-afk/degraded-causal-pass-probe.py (NEW),
+authorization-request-55-60-65.md (§4(f) rewritten, §6(6)/§6(7) rewritten,
+§6(8)/§6(9) new, the it.20 correction row, the title, and the ANSWERED status
+table), context.md (the routing rule rewritten, the offline-probe invariant
+re-derived, the step-4 table row, the N-batch headline, finding 4 corrected, the
+new evidence block, and status tags on candidates 55/60/64/65), this file.
+NO product source, NO test, NO ops, NO host, NO session, NO TCC click, no
+authorization spent.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/degraded-causal-pass-probe.py   -> rc=0, 6.6 s,
+  all checks passed (harness-integrity checks only - see "the check I did not
+  keep" below).  Evidence /tmp/i20-degraded.txt.
+
+WHAT THE PROBE DOES.  It degrades the local (causal) diarization pass the two
+ways a real diarizer is wrong and hands the IDENTICAL labels to both engines
+through ONE monkeypatched `base.build_case` - never a copy.  The batch resolver
+reaches it as a bare module global, the album arm through `base.`, so the claim
+"both engines saw the same input" is structural rather than asserted.  The
+degradation is LABEL-ONLY (geometry, unit intervals, encoder cache and truth
+untouched), a pure CRC32-seeded function of (meeting, mode, rate), and memoised,
+because each arm calls build_case several times and every call must agree.
+
+  * split   - over-segmentation: one local speaker's segments in one window cut
+              into two contiguous labels.  What ADR-0002's sweep MERGE exists for.
+  * confuse - label confusion: a segment attributed to another speaker present in
+              the same window.  What a merge can NOT repair, so a win under split
+              cannot be read as a win under any error.
+
+THE CONTROL IS THE POINT.  `none` reproduces iteration 17's and iteration 18's
+published numbers to the last digit through this harness - 80.0667 / 63.3330 /
+100.0000 / 100.0000 - which is what makes the degraded rows measurements of the
+ENGINES rather than of the harness.  It also reproduces both limits verbatim:
+0 corrections, 0 merges (vacuous sweep) and 0 impure / 0 extra nodes (the ceiling).
+
+  causal pass          batch    album only    album+sweep    Tier A + album
+  perfect (control)    80.07    100.00        100.00         100.00
+  over-segmented .30   57.84     30.50 (-27)   44.80 (-13)    79.34 (+21.50)
+  over-segmented .60   42.73     17.74 (-25)   27.82 (-15)    58.58 (+15.85)
+  confused .10         47.17     87.45 (+40)   87.45 (+40)    88.47 (+41.29)
+  confused .25         27.06     51.06 (+24)   47.00 (+20)    47.00 (+19.94)
+
+WHAT I LEARNED.
+ 1. A PERFECT INPUT MAKES TWO DESIGNS INDISTINGUISHABLE, AND THAT IS EXACTLY WHEN
+    A PROBE FEELS MOST CONCLUSIVE.  ADR-0002's step 4 admits two readings and
+    iteration 18 measured BOTH at 100.00 %, so the choice looked free.  It is not.
+    Under over-segmentation "the album replaces both tiers" is WORSE THAN THE
+    ENGINE IT REPLACES (-27.34 pp, still -13.04 after the sweep) while "the album
+    replaces Tier B only" wins at every condition (+21.50).  STEP 4 MUST KEEP
+    TIER A, and no measurement before this one could have said so.  Iteration 18's
+    finding 4 - "Tier A adds ZERO once the album is present", filed among the
+    findings "recorded so they are not re-argued" - is true ONLY under the one
+    condition where the arms cannot differ.  Corrected in place.
+ 2. THE MECHANISM IS COUNTED, NOT INFERRED, AND IT IS A UNIT-OF-ANALYSIS BUG.  At
+    split@0.30 the causal pass adds 44 nodes and the album mints 6 extra
+    canonicals, so 38 CUT HALVES WERE MATCHED ONTO AN EXISTING CANONICAL.
+    `assign_speakers` is one-to-one WITHIN A SPAN - and A WINDOW IS NOT A SPAN.
+    Two local labels in one window can be the same person, so the live path's
+    one-to-one rule is FALSE on the batch path, and it pushes the second half of a
+    cut turn onto ANOTHER SPEAKER - worse than a spurious birth, because it also
+    poisons that speaker's centroid.  A live invariant carried onto the batch path
+    unexamined is the defect, not a threshold.
+ 3. §6(7) IS CLOSED IN BOTH DIRECTIONS, AND THE SECOND ONE IS THE USEFUL HALF.
+    The sweep is NOT vacuous once the causal pass is imperfect: 25 corrections /
+    6 merges worth +14.30 pp at @0.30, 23 / 16 worth +10.08 pp at @0.60, each
+    reaching a FIXPOINT (residual 0).  AND IT CAN HURT: under confusion at @0.25
+    the sweep moved the mean the WRONG WAY, 51.06 -> 47.00 (-4.06 pp), because a
+    merge over blended centroids can join two real speakers.  Step 4's gate must
+    measure both directions, not only the repair.
+ 4. THE CHECK I DID NOT KEEP, AND WHY THAT IS NOT WEAKENING A GATE.  The first
+    draft asserted "the album beats batch under every degradation" as a FAILING
+    check, and it failed twice - which is how the split result was found.  That
+    assertion was my HYPOTHESIS, never a contract, and a probe whose pass
+    condition is its own expected answer cannot report a surprise.  It is now a
+    printed classification with the sign shown per condition, and the failing
+    checks are harness integrity only: the control reproduces the published
+    numbers, the degradations are non-nominal, and each sweep reaches a fixpoint.
+ 5. THE UNITS BUG THAT LOOKED LIKE A BROKEN CONTROL.  `lia.speaker_accuracy`
+    returns a FRACTION; the first run printed "0.80 % mean" and failed all four
+    control checks.  The control was exact and the reporting was wrong.  A control
+    that fails is worth reading twice before the thing it controls is doubted.
+
+THE NINTH AMENDMENT LANDED MID-ITERATION - THE FOURTH CONCURRENT OPERATOR COMMIT
+AND THE SECOND CARRYING AN AUTHORIZATION.  `6e3e4fe` "ralph: authorize the birth
+floor, the stop, the RTF gate and the cadence (Phase Q)" was committed at
+10:14:08, EIGHT MINUTES after this iteration began, alongside `44ed003` and
+`b6b6c5c` (a new root AGENTS.md, the streaming-diarization bench, and a REAL-AUDIO
+gate: album+sweep 95.2 % mean / 87.4 % worst clip on 9 golden interview clips,
+which is the first real-conversation evidence against ADR-0002 §7's caveat).  It
+was caught only because the Edit tool reported context.md had changed on disk.
+  GRANTED: candidates 55 (option 1 - birth floor at 1.0 s of embedded speech),
+  60, 64 (as a gate DEFINITION: derive the minimum span duration from
+  measurement, never choose it to pass, always report the excluded count), and
+  the cadence fix (both constants or neither, plus the enforcing node).
+  WITHDRAWN: candidate 65, outright.
+  DEFERRED IN AS MANY WORDS: Phase N step 4 - "Out of scope ... worth its own
+  authorization later" - which is what this iteration's evidence is for.
+So this measurement is NOT the loop's next work; PHASE Q IS.  Iteration 19's
+routing rule was correct when written and false eight minutes into iteration 20;
+it is rewritten in context.md with the re-derivation rule stated at the top.
+
+EVIDENCE PATHS.  /tmp/i20-degraded.txt (the full run),
+scripts/ralph-afk/degraded-causal-pass-probe.py (the probe, with its five
+fidelity limits in the module docstring), the degraded-causal-pass block in
+context.md, §4(f)/§6(6)-§6(9) of authorization-request-55-60-65.md.
+
+BLOCKERS.  None.  Nothing this iteration needed an authorization, a host or an
+operator input.  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` is
+NO LONGER EMPTY - nine paths, all from the operator's two `bench:` commits
+(AGENTS.md, docs/design-streaming-diarization.md, prototypes/streaming-
+diarization/*).  None is product source, a test or `ops/`, and no runtime reads
+any of them, so the offline-probe invariant HOLDS AS WRITTEN.  Re-run the diff;
+do not trust this line.
+
+RECOMMENDED NEXT STEP.  START PHASE Q.  It is authorized, it is the only thing
+standing between the loop and F1/F3, and it needs no further permission.  Take
+Q1 (the birth floor at 1.0 s of embedded speech) first: it is the item with a
+recorded decision to write down BEFORE the patch, it is measured to move the
+album from 93.44 % to ~98.7 % offline, and the accuracy harness already
+reproduces its effect deterministically.  Note AGENTS.md - new at the repo root
+this iteration - now makes "prototype and MEASURE before writing production
+code" the repo method norm and names prototypes/streaming-diarization/ the
+standing bench; Q1's reasoning-before-patch requirement and that norm are the
+same instruction from two directions.  Two things NOT to do: do not re-argue 55's
+mechanism from the record (corrected twice, now measured on the deployed
+service), and do not re-file candidate 65.  The free follow-up to THIS iteration,
+whenever step 4 is authorized, is the boundary-jitter degradation named in §6(9)
+- it is the one thing that would close Tier A's upper bound - and AGENTS.md asks
+that its verdict land in the bench's NOTES.md and the design doc, not only here.

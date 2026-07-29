@@ -287,10 +287,41 @@ Phase M/P landing narratives it used to carry are in progress.txt under that pas
   proven is the **cause** (losing ~20 pp on a task this separable is structural, not perceptual),
   never the production number. Tier A adds **zero** once the album is present, at its most favourable.
   **The work is authorized; the ninth MERGE is not** — step 4 is now §4(f) of the request document.
-- **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
-  candidates 55, 58, 60, 64, 65, **66** and **68**; F1's two REDs — which are **two different items with
-  two different answers**, the RTF one being candidate 64's gate-definition ruling and the latency one
-  being the priced remedy above; the F2 system-audio-denied variant (producing it
+  **ITERATION 20 REMOVED THE CEILING AND ONE OF STEP 4's TWO READINGS DIED UNDER IT.** Both
+  iterations above measured a **perfect** local diarization, which is why `album_only` and
+  `tier_a_album` both read 100.00 % and the choice between ADR-0002's two readings looked free.
+  `degraded-causal-pass-probe.py` (rc=0, offline, 6 s) degrades the causal pass and hands the
+  **identical** labels to both engines through one monkeypatched `build_case`; the `none` control
+  reproduces 80.0667 / 63.3330 / 100.0000 / 100.0000 exactly. Under **over-segmentation**
+  *"the album replaces both tiers"* is **worse than the engine it replaces** — **30.50 %** vs batch's
+  57.84 (**−27.34 pp**) at @0.30, −24.99 at @0.60, still −13.04 after the sweep — while
+  *"the album replaces Tier B only"* wins at every condition (**79.34 %**, **+21.50 pp**). **Step 4
+  must keep Tier A, and this is the only measurement that says so.** The mechanism is counted:
+  44 extra nodes produce **6** extra births, so **38 cut halves were matched onto an EXISTING
+  canonical** — `assign_speakers` is one-to-one *within a span*, and **a window is not a span**, so
+  the live path's one-to-one rule is false on the batch path and pushes the second half of a cut
+  turn onto another speaker, poisoning that speaker's centroid as well. See the degraded-causal-pass
+  block below.
+- **THE ROUTING RULE - REWRITTEN IN ITERATION 20, BECAUSE THE NINTH AMENDMENT LANDED WHILE THAT
+  ITERATION WAS RUNNING AND MOVED HALF OF IT.** `6e3e4fe` *"ralph: authorize the birth floor, the
+  stop, the RTF gate and the cadence (Phase Q)"* was committed by the operator at 10:14:08, **eight
+  minutes after** iteration 20 began, and it **grants candidates 55, 60, 64 and the cadence fix
+  (68's enforcing node)** and **withdraws candidate 65 outright**. The list below was correct when
+  iteration 19 wrote it and was false eight minutes into iteration 20 — the fourth time the operator
+  has committed to this branch mid-iteration and the second time with an authorization inside it.
+  **Read prd.md's tail and `git log -3` at the START of every iteration; never trust this bullet
+  without re-deriving it.**
+  **AUTHORIZED AND OPEN — this is the loop's next work, and it needs no further permission:**
+  Phase Q's four items (candidates 69-72 in the Phase Q section: the birth floor at 1.0 s of
+  embedded speech, the RTF gate *definition*, the cadence fix with its enforcing node, and the Mac
+  client's `stop`), their coverage gap, their gate (full Swift/Python → F1 and F3 → **one** merge →
+  push → redeploy).
+  **STILL needs an authorization:** candidates **58**, **66**, and **Phase N step 4** — which prd.md
+  now names *"out of scope"* for Phase Q in as many words, *"worth its own authorization later"*, so
+  the split iteration 18 recorded is now the operator's own wording. **Candidate 65 is WITHDRAWN**,
+  not deferred: both sweeps publish on the deployed service and the two *"it never runs"* readings
+  were this loop's own blind instruments.
+  *Everything below this line is unchanged and still true:* the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
   loop is forbidden to ask for again); F1/F2's "two speakers" half (blocked by candidate 51's
   **measured** hardware limit - m4mbp's built-in microphone cannot hear a second voice across the
@@ -427,9 +458,16 @@ it had died at t+31.5 s on `77e0014`.
 - ***An offline probe speaks for the deployed service only while
   `git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty*** — compare against
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
-  **TRUE AGAIN SINCE run `20260729-025318` iteration 29**, measured rather than assumed:
-  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` is **empty**, so every offline probe
-  speaks for the deployed service once more. It was false from iteration 15 (when Phase N steps 1-3
+  **STILL TRUE AT ITERATION 20 BUT THE DIFF IS NO LONGER EMPTY, AND THE DISTINCTION MATTERS.**
+  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` now lists **nine** paths — `AGENTS.md`,
+  `docs/design-streaming-diarization.md` and seven under `prototypes/streaming-diarization/` — all of
+  them the operator's own commits `44ed003` and `b6b6c5c` at 10:07 and 10:14 on 2026-07-29. **None is
+  product source, a test, or `ops/`**, and no runtime reads any of them, so the rule holds as written
+  (*no product source, no test, no `ops/`* — it was never about docs, and it is not about a bench
+  either). **Re-run the diff rather than trusting this sentence:** the moment a path under
+  `moss_transcribe_diarize/`, `tests/` or `ops/` appears, every offline probe stops speaking for the
+  deployed service. It was **empty** from run `20260729-025318` iteration 29 until iteration 20 of
+  this run. It was false from iteration 15 (when Phase N steps 1-3
   put tracked product source on the branch) to iteration 28 — and note that **the merge alone did
   not restore it**: merging moves `main`, while the rule compares against the **deployed** SHA, which
   only moved at gate step (c). (It was true from iteration 5 to iteration 14,
@@ -1657,7 +1695,10 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
 
 ### Open diagnostic candidates — the numbered ones, in one place
 
-55. **Identity capacity saturates in the first minute** (iteration 12). The 16-speaker bound is
+55. **AUTHORIZED 2026-07-29 AS PHASE Q ITEM (a) — see candidate 69.** The operator took **option 1**,
+    the birth floor at the album's admission (**1.0 s of embedded speech**). Every *"needs its own
+    authorization"* below is superseded; the diagnosis is not. **Identity capacity saturates in the
+    first minute** (iteration 12). The 16-speaker bound is
     reached at t+45.5 s (t+51.8 s in F1), so a voice arriving later can never be labelled. Degrades
     quality without ending a session, so no gate sees it. Tracked product source; **needs its own
     authorization**. **PRICED IN ITERATION 16 and NOT subsumed by the album**: the accuracy harness
@@ -1733,7 +1774,10 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     Third instance of that class in this loop. Note the cheap negative control that already exists:
     the room marker was absent **and** its phase produced only one-word fragments, so absence of
     content and rewriting of a word look nothing alike in the evidence — only in the verdict.
-60. **A clean stop never reaches the server, so it does not revoke view authority.** `[open, new —
+60. **AUTHORIZED 2026-07-29 AS PHASE Q ITEM (d) — see candidate 72.** A transport call after the
+    final drain, with the fifth amendment's rule that a stop which cannot reach the server must
+    still stop locally. Every *"needs its own authorization"* below is superseded.
+    **A clean stop never reaches the server, so it does not revoke view authority.** `[open, new —
     run `20260729-025318` iteration 9; **F3's one RED**]`. `CaptureController.stop` drains and
     returns; **no MAC-CLIENT code path** calls `POST /api/live/sessions/{id}/stop` (as filed this read
     "no client code path", which iteration 7 falsified - the portal and the F0 probe both call it),
@@ -1762,7 +1806,12 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     consequences: 60 buys neither convergence nor the `identity_finalized` event (it is worth having
     on its own merits — a Mac stop should behave like the portal's), and **the loop needs no
     authorization to measure the session-end sweep**, because the probe already can.
-65. **An empty cadence sweep leaves no record to tell "found nothing" from "never ran".**
+65. **WITHDRAWN BY THE OPERATOR 2026-07-29 IN THE NINTH AMENDMENT — not deferred, withdrawn.**
+    *"Both the session-end sweep (19 corrections on 31 spans) and the cadence sweep publish on the
+    deployed service, and the two 'it never runs' readings were the loop's own blind instruments."*
+    Do not re-file it and do not carry the diagnosability half into another ask. The body below is
+    kept because its measurements are cited elsewhere; its **ask** is closed.
+    **An empty cadence sweep leaves no record to tell "found nothing" from "never ran".**
     `[open, new — run `20260729-094359` iteration 1; **RE-FILED under this title in iteration 14**,
     which is what iteration 12 instructed and no iteration had applied — the original title said
     *"Neither half of Phase N step 3 produces a correction on a real meeting"* and both halves have
@@ -1862,7 +1911,12 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     the number that matters and corrects all of it:** what was actually deployed was `0.5 / 0.05`
     (83.72 % mean / 69.20 % min), below ADR-0002's >= 90 % bar, not the `0.5 / 0.2` those blocks
     recorded.
-64. **The decoder RTF clause measures per-call overhead on a sub-100-ms span, not throughput.**
+64. **RULED 2026-07-29 AS PHASE Q ITEM (b) — see candidate 70.** The operator did **not** pick (a),
+    (b) or (c) as written: the ruling is *"a gate definition, not a filter"* — **state a minimum span
+    duration below which RTF is not a meaningful ratio, derive it from measurement rather than
+    choosing it to pass, and always report the excluded count**. A silent exclusion does not answer
+    the clause. Every *"needs its own authorization"* below is superseded.
+    **The decoder RTF clause measures per-call overhead on a sub-100-ms span, not throughput.**
     `[open, new — iteration 30; **F1's second RED**]`. Measured on `7a4f59c`: p95 RTF **2.365** over
     52 spans, and **only 3 spans exceed 1.0** — durations **0.03 s / 0.06 s / 0.07 s**, elapsed
     0.108 / 0.194 / 0.166 s. A span of 0.03 s can never satisfy RTF < 1: that would need a GPU decode
@@ -1992,7 +2046,7 @@ below the table.
 | **2 - tape** | ADR-0003 first (the retention decision in writing before any code), then the appender, the five live call sites, and the three `MOSS_LIVE_RETENTION_*` keys - **opt-in, off by default, and still off on the host** | 18, 19, 20, 21 | `live_tape.py`, `live_transport.py`, `web_cli.py`, `ops/moss-live.env.example` |
 | **3 - sweep** | the engine; its ADR-0002 gate-B score (**99.26 / 98.48 %**, `residual_corrections` **0**, merges **0**); the `LiveIdentitySweeper` ledger + cadence on the live path; `revise_labels` + the label track + the portal render; and the session-end `finalize_identity` with its `identity_finalized` event | 22, 23, 24, 25, 26 | `live_identity_sweep.py`, `live_session.py`, `live_span_bounds.py`, `live_coordinator.py`, `live_service_runtime.py`, `live_portal.py` |
 | **gate** | (a) GREEN at `1e1cf3f` -> (b) merge **`7a4f59c`** -> (c) deployed 4/4 with the host manifest regenerated at 0.35/0.1 -> (d) F1 **5 GREEN / 2 RED**, F2 **6 GREEN / 0 RED** | 27, 28, 29, 30, then it. 1 of this run | see the gates index |
-| **4 - batch unification** | **OPEN, and now PRICED ON BOTH SIDES** - the engine it would replace scores **80.07 % mean / 63.33 % min** (its Tier B worth **exactly zero**) where the album engine on the **same batch input** scores **100.00 %**, i.e. **+19.93 pp**. The *work* needs no new authorization; the **ninth merge** does. See N-batch below | baseline 17, counterfactual 18 | `batch-tierb-baseline-probe.py`, `album-batch-counterfactual-probe.py` |
+| **4 - batch unification** | **OPEN, PRICED ON BOTH SIDES, AND DEFERRED BY THE NINTH AMENDMENT** - the engine it would replace scores **80.07 % mean / 63.33 % min** (its Tier B worth **exactly zero**) where the album engine on the **same batch input** scores **100.00 %**, i.e. **+19.93 pp** — but only with a *perfect* causal pass; degrade it and the *"album replaces both tiers"* reading **loses by 27 pp** while *"album replaces Tier B only"* wins by 21.5, so **step 4 must keep Tier A**. prd.md's Phase Q puts step 4 **out of scope**, *"worth its own authorization later"*: neither the work nor the merge is open now. See N-batch below | baseline 17, counterfactual 18, degradation 20 | `batch-tierb-baseline-probe.py`, `album-batch-counterfactual-probe.py`, `degraded-causal-pass-probe.py` |
 
 **N-batch — STEP 4, THE ONLY OPEN PHASE N ITEM, and it needs no new authorization.** Steps 1-3 are
 code-complete, gated, merged (`7a4f59c`), deployed 4/4 and certified by F1 and F2; step 4 is
@@ -2016,8 +2070,14 @@ revisions across ~17 deadlines (iteration 12, inside F3). Step 4 would therefore
 **live** engine, not an inert one. *What survives of the caveat, restated honestly:* the deployed
 sweep has never published a **reassignment** — all 49 corrections across four swept meetings are
 `S00 -> Sxx` — so a convergence measurement on a meeting shaped like candidate 55's would be
-measuring fill-ins, not repairs. Step 4 remains the one item here the loop can start without the
-operator.
+measuring fill-ins, not repairs.
+***THE HEADLINE ABOVE AND THE LAST SENTENCE OF THIS PARAGRAPH ARE SUPERSEDED BY THE NINTH AMENDMENT,
+which landed mid-iteration-20*** `[6e3e4fe, 10:14:08]`. They read *"the only open Phase N item, and it
+needs no new authorization"* and *"the one item here the loop can start without the operator"* — the
+**work** reading iteration 18 already narrowed. prd.md's Phase Q now settles it in the operator's own
+words: step 4 is **"Out of scope: ADR-0002 step 4 (batch unification) … worth its own authorization
+later."** It is not the loop's next work; **Phase Q is.** Everything above this line about *how* step
+4 must be built is unaffected and still binding.
 
 ***STEP 4 NOW HAS THE BASELINE IT NEVER HAD, AND THE ENGINE IT WOULD REPLACE IS WORSE THAN THE LIVE
 ONE ON THE SAME AUDIO*** `[iteration 17; `scripts/ralph-afk/batch-tierb-baseline-probe.py`, rc=0,
@@ -2112,13 +2172,72 @@ born, every labelled local is offered to the album under the live admission rule
    it is at its most favourable here, handed a perfect local diarization. That limit inflates
    `tier_a_album` and the 80.07 % baseline **equally** and does not touch `album_only`, so the
    headline comparison is the conservative one.
+   ***FALSIFIED AS A GENERAL CLAIM BY ITERATION 20, AND THIS IS THE FINDING THE NEXT ONE SHOULD
+   CARRY.*** It is true **only** when the causal pass is perfect, which is the one condition under
+   which the two arms cannot differ — Tier A links what the album would have linked anyway. Degrade
+   the causal pass and the two arms separate by **49 pp**. Read finding 4 as *"a perfect causal pass
+   hides which reading of step 4 is right"*, never as *"Tier A is redundant"*.
 *Two things the probe does NOT establish, printed by it as limits:* the **sweep half is untested** —
 production `sweep()` proposed **0** corrections and **0** merges, because the causal pass was already
-perfect, which is convergence by vacuity; and this is a **prototype**, not a resolver. *Sequencing,
-stated once:* prd.md authorizes the **work** (*"Phase N remains authorized"*), `merge-keeper.sh`
-refuses the **ninth merge**, so writing step 4 today would put tracked product source on the branch
-and break the offline-probe invariant until an authorization arrives. It is filed as **§4(f)** of
-`authorization-request-55-60-65.md`, last by cost, with §6(6) and §6(7) carrying its two limits.
+perfect, which is convergence by vacuity; and this is a **prototype**, not a resolver.
+**BOTH LIMITS ARE NOW MEASURED — see the degraded-causal-pass block immediately below.**
+
+***THE CEILING IS REMOVED, THE SWEEP IS NO LONGER VACUOUS, AND ONE OF STEP 4's TWO READINGS IS
+FALSIFIED*** `[iteration 20; `scripts/ralph-afk/degraded-causal-pass-probe.py`, rc=0, all checks
+passed, offline, 6.6 s. No product source, no host, no session, no authorization spent.
+Evidence `/tmp/i20-degraded.txt`.]* Iterations 17 and 18 both measured a **perfect** local
+diarization — `build_case` hands every window each unit's true speaker, rotated per window — so
+`album_only` and `tier_a_album` both read 100.00 % and ADR-0002's two readings of step 4 looked
+interchangeable. This probe degrades the causal pass the two ways a real diarizer is wrong and hands
+the **identical** labels to both engines through **one monkeypatched `base.build_case`** (never a
+copy — the batch resolver reaches it as a bare global, the album arm through `base.`). The
+degradation is label-only, so window geometry, unit intervals, the encoder cache and truth are
+untouched; it is a pure CRC32-seeded function of (meeting, mode, rate) and memoised, so the several
+calls each arm makes return identical labels. **The `none` control reproduces the published
+80.0667 / 63.3330 / 100.0000 / 100.0000 to the last digit**, which is what makes the degraded rows
+measurements of the engines rather than of the harness.
+
+| causal pass | batch | album only | album+sweep | **Tier A + album** |
+| --- | --- | --- | --- | --- |
+| perfect (control) | 80.07 | **100.00** (+19.93) | 100.00 | 100.00 |
+| over-segmented @0.30 | 57.84 | 30.50 (**−27.34**) | 44.80 (−13.04) | **79.34** (+21.50) |
+| over-segmented @0.60 | 42.73 | 17.74 (**−24.99**) | 27.82 (−14.91) | **58.58** (+15.85) |
+| confused @0.10 | 47.17 | 87.45 (+40.27) | 87.45 (+40.27) | **88.47** (+41.29) |
+| confused @0.25 | 27.06 | **51.06** (+24.00) | 47.00 (+19.94) | 47.00 (+19.94) |
+
+**Three findings, and the first is a design constraint on step 4 rather than a number.**
+1. **STEP 4 MUST KEEP TIER A.** *"The album replaces both tiers"* is **worse than the engine it
+   replaces** under over-segmentation (−27.34 pp, and still −13.04 after the sweep); *"the album
+   replaces Tier B only"* wins at **every** condition. **The mechanism is counted, not inferred:**
+   at @0.30 the causal pass adds **44** nodes and the album mints only **6** extra canonicals, so
+   **38 cut halves were matched onto an *existing* canonical**. `assign_speakers` is one-to-one
+   *within a span* — and **a window is not a span**. Two local labels in one window *can* be the
+   same person, so the live path's one-to-one rule is **false on the batch path**, and it pushes the
+   second half of a cut turn onto **another speaker**, which is worse than a spurious birth because
+   it poisons that speaker's centroid too.
+2. **§6(7) IS CLOSED: the sweep is not vacuous once the causal pass is imperfect.** **25 corrections
+   / 6 merges** at @0.30 worth **+14.30 pp** (30.50 → 44.80) and **23 / 16** at @0.60 worth
+   **+10.08 pp**, each reaching a **fixpoint** (residual 0). ADR-0002 step 3's machinery
+   demonstrably helps a batch resolver. ***And it can hurt:*** under label **confusion** at @0.25
+   the sweep moved the mean the **wrong way, 51.06 → 47.00 (−4.06 pp)** — a merge over blended
+   centroids can join two real speakers. **Step 4's gate must measure both directions.**
+3. **§6(6)'s ceiling now has a floor.** The winning arm falls to **79.34 %** / **58.58 %** under
+   degradation and still beats batch by +21.50 / +15.85 pp: *the ranking survives, the level does
+   not.* Robust to confusion, fragile to over-segmentation.
+
+**Two limits, and the second bounds the headline.** The error model is **synthetic and uniform** — a
+real diarizer errs where the audio is hard, so these scores are optimistic about *which* units break
+and honest about *how many*; read the gap and the counts, not the level. And **the degradation moves
+labels and never boundaries, while Tier A links on boundaries**, so `tier_a_album` is an **upper
+bound**. That is not a biased comparison — the batch baseline runs the same Tier A over the same
+exact intervals, so the inflation is shared and the gap is the comparable quantity, while
+`album_only` reads no boundary at all and is the **conservative** arm. **A boundary-jitter
+degradation is the probe that closes this, and the loop can run it without an authorization.**
+
+*Sequencing, restated for the ninth amendment:* step 4 is filed as **§4(f)** of
+`authorization-request-55-60-65.md` and prd.md's Phase Q now puts it **out of scope**, *"worth its
+own authorization later"* — so neither the work nor the merge is open. §6(6), §6(7), §6(8) and
+§6(9) of that document carry these numbers and limits.
 
 **Decisions that outlive the retired step blocks - recorded here so they are not re-argued, because
 step 4 and any future identity work are constrained by them.**

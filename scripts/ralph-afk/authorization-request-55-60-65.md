@@ -1,4 +1,4 @@
-# Authorization request — candidates 55, 65, 60, the latency remedy, and 66
+# Authorization request — candidates 55, 65, 60, the latency remedy, 66, and Phase N step 4
 
 *Written by the loop for the operator, run `20260729-094359` iteration 6, and **kept current in
 place** — corrections are applied to the body, not stacked on top of it, so what you read below is
@@ -8,6 +8,23 @@ every proposal is a proposal.*
 This is the loop's request for a **ninth** amendment. `merge-keeper.sh`'s `expected_main` guard
 refuses a ninth merge, and every item below is tracked product or test source under the post-merge
 freeze, so none of it can start without you.
+
+> **ANSWERED — 2026-07-29, prd.md's ninth amendment (Phase Q, operator commit `6e3e4fe`).** This
+> document is kept because the amendment tells the loop to read it, and because §2, §3b and §6 are
+> the measurements behind the decisions. **Its status, item by item:**
+>
+> | item | outcome |
+> | --- | --- |
+> | **(a)** candidate 55, the birth floor | **GRANTED**, and the operator chose **option 1** — the floor sits at the album's admission, **1.0 s of embedded speech** |
+> | **(b)** candidate 65, the empty cadence sweep | **WITHDRAWN.** Both sweeps publish; the two *"it never runs"* readings were the loop's own blind instruments. Do not re-file it |
+> | **(c)** candidate 60, the clean stop | **GRANTED**, on its own merits — it buys neither convergence nor `identity_finalized` |
+> | **(d)** the latency remedy / cadence | **GRANTED as a rule, not a value:** move **both** constants or neither, and ship the **enforcing node** regardless of what is decided about the cadence |
+> | **(e)** candidate 66, browser-storage regression | **not mentioned.** Still needs an authorization |
+> | **(f)** Phase N step 4, batch unification | **DEFERRED in as many words** — *"Out of scope … worth its own authorization later"* |
+> | §5's candidate 64, the RTF gate | **GRANTED as a definition, not a filter:** state a minimum span duration, **derive** it from measurement rather than choosing it to pass, and **always report the excluded count** |
+>
+> §5's other three deferrals (candidate 58, the system-audio-denied variant, the two-speaker half)
+> are untouched and still stand.
 
 > **What has changed since this was written, so you can see which of your own earlier readings are
 > stale.** Each correction is already applied in the body.
@@ -20,6 +37,7 @@ freeze, so none of it can start without you.
 > | it. 15 | Counts brought current (**49** corrections across **four** deployed swept meetings, not 46 across three). **§4(d) is new** and prices F1's latency RED, which §5 previously deferred to you with no number attached. **§4(e) is new** — candidate 66, the cheapest item on the list. |
 > | it. 16 | §4(d)'s cost paragraph said the change makes the portal issue *"twice as many snapshot+events pairs (F3: 381 polls → ~760)"*. **Wrong stream.** The gated fetch p95s are measured by the **app's own probe** at a fixed **0.25 s** cadence (4001 samples over F3's 1019.7 s); the 381 was the *soak driver's* view polls. Halving the portal's poll adds load only from a **real browser**, and no certification run opens one — so the risk is that the gate **under-counts** the cost, not that the benefit shrinks. The §4(d) trap and §6(5) are rewritten; the ask itself is unchanged. |
 > | it. 18 | **§4(f) is new** — Phase N step 4 (batch unification). Nothing here is a correction: the item is added because it now has a *price* on both sides. Iteration 17 measured the engine it replaces (**80.07 % / 63.33 %**, Tier B worth **0.00 pp**), and iteration 18 measured the counterfactual (**100.00 %**, **+19.93 pp**, one canonical per true speaker) on the identical corpus and scorer. The work is already authorized by prd.md; the **ninth merge** is what is not, which is why it appears in this document at all. §6(6) and §6(7) carry its two limits. |
+> | it. 20 | **§6(7) is closed and §6(6) has a floor, and one of §4(f)'s two readings is FALSIFIED.** Iteration 18's +19.93 pp was measured with a *perfect* local diarization, which made the two readings of step 4 indistinguishable at 100 % each. Degrade the causal pass and *"the album replaces both tiers"* is **worse than the engine it replaces** (−27.34 pp at 30 % over-segmentation) while *"the album replaces Tier B only"* wins everywhere (+21.50). **Step 4 must keep Tier A.** The sweep is also no longer untested: 25 corrections / 6 merges worth **+14.30 pp** — and, in the other direction, **−4.06 pp** under label confusion. §4(f), §6(6) and §6(7) are rewritten and §6(8)/§6(9) are new; the ask itself is unchanged. |
 
 ---
 
@@ -323,9 +341,36 @@ same `speaker_accuracy`:
   what loses the 20 pp either; and **Tier A adds zero** once the album is present, at its most
   favourable (the probe hands it a perfect local diarization).
 
+- **iteration 20** — the same two engines under a **deliberately imperfect causal pass**, which is
+  what §6(6) and §6(7) said was missing. `scripts/ralph-afk/degraded-causal-pass-probe.py`, rc=0,
+  offline, one monkeypatched `build_case` so both engines provably see the same degraded labels; the
+  `none` control reproduces 80.0667 / 63.3330 / 100.0000 / 100.0000 exactly.
+
+  | causal pass | batch | album only | +sweep | Tier A + album |
+  | --- | --- | --- | --- | --- |
+  | perfect (the control) | 80.07 | **100.00** (+19.93) | 100.00 | 100.00 |
+  | over-segmented @0.30 | 57.84 | 30.50 (**−27.34**) | 44.80 (−13.04) | **79.34** (+21.50) |
+  | over-segmented @0.60 | 42.73 | 17.74 (**−24.99**) | 27.82 (−14.91) | **58.58** (+15.85) |
+  | confused @0.10 | 47.17 | 87.45 (+40.27) | 87.45 | **88.47** (+41.29) |
+  | confused @0.25 | 27.06 | **51.06** (+24.00) | 47.00 (−4.06 vs unswept) | 47.00 |
+
+  **The degradation separates two readings of step 4 that the perfect pass could not tell apart.**
+  At 100 % they were both 100 %; under over-segmentation *"the album replaces both tiers"* is
+  **worse than the engine it replaces** and *"the album replaces Tier B only"* wins everywhere.
+  **Step 4 must keep Tier A**, and this measurement is why.
+
+  **The mechanism is counted, not inferred.** At @0.30 the causal pass adds **44** nodes and the
+  album mints only **6** extra canonicals — so **38 cut halves were matched onto an *existing*
+  canonical**. `assign_speakers` is one-to-one *within a span*, so the second half of a cut turn
+  cannot take its own speaker's canonical and is pushed onto another speaker's, which is worse than
+  a spurious birth because it also poisons that speaker's album centroid. **A window is not a span:
+  two local labels in one window can be the same person, and the live path's one-to-one rule is
+  false on the batch path.** That is a design constraint on step 4, not a threshold.
+
 *This asks for the merge slot, not a decision:* the shape is settled by ADR-0002 and by decision 5 —
 the batch path calls `live_identity.assign_speakers` against a `FingerprintAlbum`, never a third
-implementation. *The honest limit is in §6(6) and it is load-bearing: 100 % is a ceiling.*
+implementation. *The honest limits are §6(6), §6(7) and §6(9), and they are load-bearing: 100 % is a
+ceiling, the winning arm keeps Tier A, and Tier A's own arm is an upper bound.*
 
 **Coverage the cycle must close, because it is what let all of this ship green.** Nothing in the
 suite asserts anything about *what a canonical speaker was born from*. Add a red-before /
@@ -388,18 +433,37 @@ on the batch path — and the only one whose *work* is already authorized and wh
    direction: the added load of a **real browser** polling at 2 Hz, which no certification run
    creates because none of them opens a browser. A re-run of F1 therefore confirms the −500 ms and
    still does **not** price the viewer load — say so rather than reading a green re-run as proof.
-6. **§4(f)'s 100 % is a CEILING, and the probe measures why it saturates rather than asserting that
-   it does not.** A 150 s window hands the matcher **20-61 s** of one speaker (median per meeting,
-   minimum 1.0 s), and at that duration the worst per-meeting gap between the *lowest* same-speaker
-   cross-window cosine and the *highest* cross-speaker one is **+0.190** (best +0.616). On clean
-   read speech with a perfect local diarization, window stitching is a separable task. So the number
-   to carry forward is **not** "batch will score 100 %" but "an engine that loses ~20 pp on a task
-   this separable is losing it **structurally, not perceptually**" — the cause and the direction.
-   The same §7 caveat ADR-0002 carries applies: a real conversational recording is still required,
-   and this corpus cannot produce one.
-7. **§4(f)'s sweep half is untested here, and says so.** The production `sweep()` proposed **0**
-   corrections and **0** merges on the batch path, because the causal pass was already perfect.
-   That is convergence by vacuity, not evidence that step 3's machinery helps a batch resolver.
+6. **§4(f)'s 100 % is a CEILING, and iteration 20 measured how far below it the engine falls.** A
+   150 s window hands the matcher **20-61 s** of one speaker (median per meeting, minimum 1.0 s),
+   and at that duration the worst per-meeting gap between the *lowest* same-speaker cross-window
+   cosine and the *highest* cross-speaker one is **+0.190** (best +0.616). On clean read speech with
+   a perfect local diarization, window stitching is a separable task. So the number to carry forward
+   is **not** "batch will score 100 %" but "an engine that loses ~20 pp on a task this separable is
+   losing it **structurally, not perceptually**" — the cause and the direction. *Iteration 20 put a
+   floor under that:* degrade the causal pass and the winning arm falls to **79.34 %** (@0.30
+   over-segmentation) and **58.58 %** (@0.60), still ahead of batch by **+21.50** and **+15.85 pp**.
+   The ranking survives; the level does not. The same §7 caveat ADR-0002 carries applies: a real
+   conversational recording is still required, and this corpus cannot produce one.
+7. **§4(f)'s sweep half is NO LONGER untested — iteration 20 closed it.** It used to read: the
+   production `sweep()` proposed **0** corrections and **0** merges on the batch path because the
+   causal pass was already perfect, which is convergence by vacuity rather than evidence that step
+   3's machinery helps a batch resolver. Under over-segmentation the sweep is **not** vacuous:
+   **25 corrections / 6 merges** at @0.30 and **23 / 16** at @0.60, moving the mean **30.50 → 44.80**
+   (+14.30 pp) and **17.74 → 27.82** (+10.08 pp), each reaching a **fixpoint** (residual 0). *The
+   part that is not a win:* under label **confusion** at @0.25 the sweep moved the mean the wrong
+   way, **51.06 → 47.00 (−4.06 pp)** — a merge over blended centroids can join two real speakers.
+   Step 3's machinery helps a batch resolver against over-segmentation and can hurt it against
+   confusion, and step 4's gate must measure both directions rather than only the repair.
+8. **Iteration 20's error model is synthetic and uniform.** A real diarizer errs where the audio is
+   hard — short turns, overlaps, low energy — and this one errs uniformly at random, so the degraded
+   scores are optimistic about *which* units break and honest about *how many*. Read the engine gap
+   and the sweep counts, not the absolute accuracy.
+9. **The degradation moves labels and never boundaries, and Tier A links on boundaries**, so
+   `tier_a_album` — the arm that wins under over-segmentation — is an **upper bound**. It is not a
+   biased comparison: the batch baseline runs the same Tier A over the same exact intervals, so the
+   inflation is shared and the gap is the comparable quantity, while `album_only` reads no boundary
+   at all and is the conservative arm. **A boundary-jitter degradation is the probe that would close
+   this**, and the loop can run it without an authorization.
 8. **§4(d) deliberately leaves the larger term alone.** Committed latency is **2674 / 2680 ms** of
    the ~4.1 s, and that is what remedy 1 (the span cap) attacks. This ask does not touch it, so it
    buys the 4000 ms gate back and no more — a future latency regression in the committed half would
