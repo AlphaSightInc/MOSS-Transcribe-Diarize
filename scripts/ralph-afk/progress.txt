@@ -25203,3 +25203,97 @@ mid-iteration three times, once with an authorization inside it.  If one lands,
 `scripts/ralph-afk/authorization-request-55-60-65.md` is the request already on
 the table, and candidate 66 (two asserts and one accessor in a tracked test)
 remains the cheapest item on the list.
+
+## run 20260729-094359-88967 - iteration 12 - rollbacks recorded BEFORE the F3
+## soak re-run touches any host
+
+TARGET: F3, the 16-minute active-view soak, RE-RUN AGAINST THE DEPLOYED 7a4f59c.
+It is the ONLY PRD acceptance clause whose evidence still speaks for superseded
+code: the current F3 record (run 20260729-025318 iteration 9, 5 GREEN / 1 RED)
+was measured on 42abc5a, i.e. BEFORE the album, the tape and the sweep landed,
+and Phase N changed exactly the live identity path a 17-minute meeting
+exercises.  F1 and F2 were both re-run on 7a4f59c; F3 never was, and the gates
+index says so in as many words ("Never re-run against Phase N, so it speaks for
+42abc5a, not for the deployed 7a4f59c").
+
+WHY THIS NEEDS NO AUTHORIZATION.  It is a certification run with loop-owned
+tooling against the deployed service and the installed bundle: no product
+source, no test, no ops/, no checkout, no restart, no rebuild, no reinstall, no
+TCC click.  prd.md's last commit is still 0456177 (re-read FIRST this iteration,
+per the standing rule) - so no new amendment exists and none is needed.
+
+INSTRUMENT CHECKED FIRST, because an instrument that has not run this iteration
+is not evidence that it works:
+  python3 scripts/ralph-afk/soak-abort-probe.py -> VERDICT: PASS, 90/90, rc=0
+  (4 control-dead abort, 1 status-stopped aborts; 54 healthy + 28 status-running
+   + 2 lane-fault + 1 status-lane-fault do NOT abort - a lane fault never aborts)
+
+BASELINE, read-only, taken before anything was touched:
+  branch    HEAD 5c6b104, tree clean; git diff --name-only 7a4f59c HEAD
+            -- ':!scripts/ralph-afk' is EMPTY, so an offline probe and the
+            deployed service still speak for each other
+  server    HEAD 7a4f59c3ca023b5ac7b9df814b92645c10d204dd, worktree clean
+            moss-live-web MainPID 365632 NRestarts=0 ActiveState=active
+            moss-web      MainPID 301112 NRestarts=0
+            moss-vllm     MainPID 322117 NRestarts=0
+            live-runs 0 entries; no /tmp/mtd-live-*; iptables INPUT == -P INPUT ACCEPT
+  m4mbp     HEAD 7a4f59c, clean; NO app running, NO live-soak running, no stale
+            /tmp/ralph-soak
+            /Applications/MOSSCapture.app inode 212080356 mtime 2026-07-28T18:22:32Z
+            mtd-capture sha256 450c20bf.. (the 77e0014 product - correct: P7 and
+            N8 touched 0 files under macos/)
+            output volume 31, output muted false, pasteboard 0 bytes
+            TCC: kTCCServiceAudioCapture=2, kTCCServiceMicrophone=2
+  MacStudio output volume 50, muted false.  No MOSSCapture install; nothing to
+            roll back here beyond the volume.
+
+MUTATIONS THIS ITERATION AND THEIR ROLLBACKS, each applied only if needed:
+  1. m4mbp: launch /Applications/MOSSCapture.app from the GUI session (`open -a`).
+     ROLLBACK: ssh ga0@m4mbp 'pkill -x MOSSCaptureApp'
+  2. m4mbp: `mtd-capture pair` against https://100.64.0.8:7861 with a payload
+     minted on the server loopback.  REUSES the stored capture-device-id, so it
+     mints NO new device row; it rewrites capture-bearer / capture-session-id /
+     capture-view-token in ~/Library/Application Support/MOSSCapture/secrets.json.
+     ROLLBACK: none is wanted - re-pairing is the normal path.  DO NOT revoke
+     m4mbp's device row AB600574-FD93-4321-967E-652AB064A70B.  If a probe device
+     is ever created by mistake:
+       curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<device_id>
+       (assert 200 AND the {"device_id": ...} body - a POST .../revoke 404s for
+        route-not-found and reads exactly like "already revoked")
+  3. m4mbp: the driver mutes the system output (OUTPUT_MODE=muted is candidate
+     51's lane-separating mechanism).  Its own EXIT/INT/TERM trap restores what
+     it found.  ROLLBACK if the driver is killed:
+       ssh ga0@m4mbp 'osascript -e "set volume without output muted"; \
+                      osascript -e "set volume output volume 31"'
+  4. m4mbp: /tmp/live-soak.sh, /tmp/ralph-soak/, /tmp/ralph-soak-run.log
+     ROLLBACK: ssh ga0@m4mbp 'rm -rf /tmp/live-soak.sh /tmp/ralph-soak /tmp/ralph-soak-run.log'
+  5. m4mbp: the pasteboard receives the view authority at `handoff`.
+     ROLLBACK: ssh ga0@m4mbp 'pbcopy < /dev/null'  (the driver does this itself)
+  6. server: one pairing CODE minted on the loopback by ops/live-pair.sh, and one
+     live SESSION created by the Mac.  Both are consumed/closed by the run.
+     ROLLBACK: none; a session ends at `stop`.  NO checkout, NO restart, NO unit
+     change, NO manifest or TLS touch - this iteration deploys nothing.
+  7. MacStudio: `say` during the driver's room windows (minutes 4 and 12), to try
+     to give the microphone lane content of its own.  Measured FIVE times to NOT
+     reach m4mbp's microphone (candidate 51's hardware limit), so it is expected
+     to fail and is recorded either way.  ROLLBACK: osascript -e 'set volume
+     output volume 50' (the pre-run value, captured above).
+
+STOP CONDITIONS, decided before the run so a bad result is not argued away:
+  * served leaf != pin a35ca9fc.. -> the driver aborts rc=3; record a blocker and
+    touch nothing else.
+  * any batch MainPID moves, or NRestarts != 0 on any unit -> stop and record.
+  * the run is RED or UNDECIDED -> that is a RESULT, not a reason to re-run with
+    different knobs.  Record it, diagnose from the evidence, let the next
+    iteration act.
+
+WHAT THE PRIOR EVIDENCE SAYS TO EXPECT, so this run is not read naively:
+  1. Candidate 60 will reproduce: `CaptureController.stop` does not call the
+     server's stop route, so the clean-stop revocation clause is expected RED
+     again.  Iteration 7 proved the ROUTE revokes immediately (401) - the defect
+     is client-side only and needs an authorization nobody has granted.
+  2. Identity saturation: F2 on this same deployed code saturated 16 canonicals
+     at t+127.1 s of a 319 s meeting.  A 1020 s meeting has ~15 minutes AFTER
+     saturation, so most labels late in this run will be S00 by design (J2).
+  3. The CADENCE sweep (candidate 65) crosses ~17 60-second deadlines here
+     against F2's five; `identity_revision_version` was 0 on all 171 F2 spans.
