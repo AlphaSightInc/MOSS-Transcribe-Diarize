@@ -23511,3 +23511,142 @@ MUTATIONS THIS ITERATION WILL MAKE ON ga0-alienware-rtx4070ti, and their undo:
   live MainPID 365632 / batch 301112 + 322117 all NRestarts=0 (measured before the
   run), no service restart, no checkout move, no manifest regeneration, no m4mbp
   contact at all (this probe needs no Mac).
+
+================================================================================
+RUN 20260729-094359 ITERATION 7 - THE SESSION-END SWEEP RUNS AND PUBLISHES ON THE
+DEPLOYED SERVICE, AND THE INSTRUMENT THAT SAID OTHERWISE WAS STRUCTURALLY BLIND
+================================================================================
+TARGET.  Off the numbered candidate list, and justified by evidence rather than by
+the list (prompt.md permits this and requires the justification recorded).  Every
+open PRD clause needs an operator authorization; iteration 6 recommended Phase N
+step 4 or a fifth compaction.  While checking whether the PRD's secret-hygiene
+clause covers "browser storage" (it is never mentioned in 1.8 MB of progress.txt),
+two facts surfaced that outrank both: VIEW_ACTIONS contains "stop", and the /live
+portal has a Stop button wired to POST /api/live/sessions/{id}/stop.  That
+falsifies the premise under candidate 60's re-pricing, candidate 65's session-end
+half, and five blocks of this loop's own record.
+
+WHAT WAS WRONG, IN TWO PARTS.
+ 1. PREMISE.  Candidate 60's "no client code path calls POST .../stop" is true only
+    of the MAC CAPTURE CLIENT.  CAPTURE_ACTIONS *and* VIEW_ACTIONS both carry
+    `stop` (live_auth.py:18-19); the /live portal calls it (live_portal.py:154,
+    569,585,634, asserted at tests/test_live_portal.py:319); and THIS LOOP'S OWN F0
+    PROBE has called it since Phase F (live-pipeline-probe.py:847,
+    bearer=device_token).  Iteration 29 even recorded the result - "view
+    401/revoked after a clean stop" - while iteration 30 was writing that the route
+    is never called.
+ 2. INSTRUMENT.  `identity_finalized` is written by _record_event
+    (live_service_runtime.py:835-846) into the session's IN-MEMORY event list and
+    NEVER to the journal, so every "0 hits in the server journal" reading is 0
+    whether the sweep ran or not.  And it is recorded INSIDE `stop`, after the last
+    possible view poll, by the same call that revokes view authority AND releases
+    the session from the access store.  Measured this iteration: a post-stop events
+    read returns 401 with the view token and 403 "session is not owned by this
+    device." with the capture token.  NO CLIENT CAN EVER READ IT.  This is the
+    SECOND instance of a defect already written down in this file - "an events
+    poller is structurally blind at the instant that matters" (retired candidate-56
+    reading 3) - and it was not recognised.
+
+VALIDATION COMMAND AND RESULT.  Three runs, deployed 7a4f59c, from MacStudio over
+the pinned leaf; no Mac, no TCC, no operator, no product change.  Parity checked
+before and after: git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk' EMPTY.
+  cat <payload> | python3 scripts/ralph-afk/live-pipeline-probe.py \
+    --host 100.64.0.8 --port 7861 --pin a35ca9fc... --device-id ralph-i7*-<utc> \
+    --seconds 75 --lead-seconds 1.0 --lane-audio continuous \
+    --lane-offset-ms system=137 --report /tmp/i7{,b,c}-probe.json     -> rc=0 x3
+  python3 -m py_compile scripts/ralph-afk/live-pipeline-probe.py      -> ok
+  run 1 /tmp/i7-probe.json   baseline; server journal 1 hit on sessions/.../stop
+                             (F1/F2/F3 had 0 - because THEIR drivers never called it)
+  run 2 /tmp/i7b-probe.json  post-stop drain added -> 403, the blindness measured
+  run 3 /tmp/i7c-probe.json  revision projection added -> the corrections read
+
+THE MEASUREMENT.
+  stop status                    200 on all three runs.  _finalize_identity_locked
+                                 runs BEFORE session.stop, so a raise would have
+                                 failed the stop => the session-end sweep RAN.
+  view_authority_after_stop      snapshot 401, revoked:true, all three runs.  The
+                                 PRD soak clause's word "immediately" is satisfied
+                                 BY THE ROUTE.
+  post_stop_events               401 (view) / 403 "session is not owned by this
+                                 device." (capture).  The blindness, measured.
+  revised_transcript             19 OF 31 COMMITTED ITEMS.  19/19 change the label
+                                 (18 x S00->S01, 1 x S00->S01,S00).  ZERO
+                                 byte-identical rewrites.  WORDS BYTE-IDENTICAL IN
+                                 ALL 19 - Phase N decision 10 holding on the wire.
+                                 Live {S00:25,S01:5,S02:1} -> {S01:24,S00:7,S02:1}.
+  event_kinds                    canonical_processed 30, canonical_queued 30,
+                                 canonical_started 44, frame_accepted 206,
+                                 session_created 2, span_frozen 30.
+
+THE HONEST BOUND, recorded because this will be quoted.  The probe's meeting held
+2 CANONICAL SPEAKERS FOR 2 REAL VOICES - the healthy ~1.0 refs/voice regime -
+against F2's 16 for 2.  So this does NOT refute iteration 5's measurement that at
+8.40 references per real voice the production sweep answers kept_ambiguous on
+84.1 % of units.  CANDIDATE 55'S FRAGMENTATION ARGUMENT SURVIVES WHOLE, and so
+does the 55-before-60 ordering.  What is falsified is only the claim built on top
+of it: "the session-end sweep never runs in a real meeting" and "ADR-0002's second
+acceptance half is worth zero / unreachable in production".  Both withdrawn.
+The corrections observed are exactly the S00->S01 relabelling of abstained spans
+that iteration 23 measured offline at +5.82 pp.
+
+FILES TOUCHED.  scripts/ralph-afk/live-pipeline-probe.py (loop tooling: event_kinds
+histogram; _drain_events_after_stop, which reads post-stop events with CAPTURE
+authority and reports status rather than raising; identity_revision_version /
+revised_transcript / revised_speakers on each committed item).  context.md (the
+standing summary's lead bullet, a new evidence block, candidates 60 and 65, the
+secret-hygiene scoreboard row, and a new Validation-fence recipe).
+authorization-request-55-60-65.md (a correction banner and §4(c), so the operator
+does not read a falsified claim).  No product source, no tests.
+
+A SECOND, SMALLER FINDING, filed not fixed.  The PRD's secret-hygiene clause names
+BROWSER STORAGE and the "static half green" claim does not cover it: leak-scan.sh
+scans only macos/MOSSCapture/Sources, the tracer test and the tracer artifacts.
+What does cover it is tracked - tests/test_live_portal.py:217-219 asserts the
+served page carries no localstorage/sessionstorage/document.cookie, and the token
+is an autocomplete="off" password input held in a JS local and sent only as
+Authorization: Bearer.  ONE REAL GAP: the JS harness instruments localStorage and
+sessionStorage with a recording Proxy and returns `storageWrites` to Python
+(:618,657,737,812,841) and NO NODE EVER ASSERTS IT IS EMPTY.  Dead instrumentation
+- a runtime write would pass today.  Tracked source, so it needs an authorization.
+
+WHAT I LEARNED.
+ 1. **When a fact is only ever observed as an absence, audit the observer before
+    the system.**  Five blocks and four iterations were built on "identity_finalized
+    fired 0 times".  Nobody asked whether a client CAN see it.  The answer was two
+    greps away (_record_event writes to a list; stop revokes and releases), and it
+    turned a headline finding into a measurement of the instrument.
+ 2. **"No client code path calls X" needs the word CLIENT quantified.**  The claim
+    was made about the Mac app, generalised to "production", and never checked
+    against the portal - which is the PRD's own reader - or against the loop's own
+    probe, which had been calling the route for six phases.
+ 3. **A probe that redacts is a probe that can be standing next to the answer.**
+    live-pipeline-probe.py projected `transcript` and dropped `revised_transcript`,
+    so every run since Phase N step 3 landed reported a swept and an unswept span
+    identically.  Three added dict keys turned four iterations of offline modelling
+    into one direct measurement.
+
+BLOCKERS.  Nothing blocked this iteration.  Re-verified at the start: the last
+prd.md commit is still 0456177, no ninth authorization exists, merge-keeper.sh's
+expected_main guard refuses a ninth merge.  All three probe devices REVOKED (200
+with body each); device store back to ONE unrevoked device (m4mbp).  Hosts clean:
+server HEAD 7a4f59c worktree clean, live MainPID 365632 / batch 301112 + 322117,
+all NRestarts=0, live-runs 0, no /tmp/mtd-live-*, 0 journal tracebacks, batch /
+and /api/jobs 200.  m4mbp never contacted.
+
+RECOMMENDED NEXT STEP.  The obvious one, and it needs no operator: RE-RUN THIS
+PROBE AGAINST A FRAGMENTED MEETING.  Iteration 5 modelled 8.40 references per real
+voice offline and predicted 84.1 % kept_ambiguous; the probe can now read what the
+session-end sweep publishes on the real service, so that prediction is testable
+rather than argued.  The probe's clean TTS audio produces 2 canonical speakers, so
+the run needs the fragmenting condition - near-silence / one-word fragments on a
+lane - which is what F2's harness produces and what candidate 55 is about.  That
+single number would settle whether 55 is the load-bearing item the request claims.
+Second: the storageWrites assertion gap above.  Do NOT spend another iteration
+re-arguing 60 or 65 from the record - the record was wrong and is now corrected.
+URGENT AND MECHANICAL, ahead of both: context.md is 249 137 bytes against the Read
+tool's 256 KB HARD CAP, and this iteration alone added ~14 KB.  The next iteration
+that adds a block of any size will make context.md unreadable in one call, exactly
+as happened at the fourth compaction.  Do the fifth compaction FIRST; the cheapest
+cut is still the three retired-evidence index tables (~11 KB of pure navigation,
+mergeable into one), and the five blocks this iteration falsified are now
+retirable too.

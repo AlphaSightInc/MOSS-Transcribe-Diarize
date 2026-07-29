@@ -696,6 +696,11 @@ def main() -> int:
     last_version = None
     last_seq = 0
     events_seen = 0
+    # Which kinds, not merely how many. `events_seen` was a bare count for six runs, and a
+    # count cannot answer "did the session-end sweep run", which is the question ADR-0002's
+    # second acceptance half turns on. Counting by kind costs nothing and makes the absence
+    # of a kind a measurement rather than an inference.
+    event_kinds: dict[str, int] = {}
     # J4 makes every refusal on the live path carry the word that names it. Keeping the
     # canonical_processed payloads is what turns "the run survived" into "and here is why
     # each span published the way it did" without a host-side probe.
@@ -786,6 +791,8 @@ def main() -> int:
             if status == 200 and isinstance(body, dict):
                 for event in body.get("events") or ():
                     events_seen += 1
+                    kind = str(event.get("kind") or "")
+                    event_kinds[kind] = event_kinds.get(kind, 0) + 1
                     last_seq = max(last_seq, int(event.get("seq", last_seq)))
                     if event.get("kind") == "canonical_processed":
                         payload = event.get("payload") or {}
@@ -874,6 +881,13 @@ def main() -> int:
                 "identity_snapshot_version": item.get("identity_snapshot_version"),
                 "speakers": speakers_in(str(item.get("transcript") or "")),
                 "transcript": item.get("transcript"),
+                # Phase N decision 10 publishes a correction BESIDE the transcript: `transcript`
+                # and `prefix_hash` never move, and the revision lands in `revised_transcript`
+                # under a bumped `identity_revision_version`. Projecting only `transcript` made
+                # every prior run of this probe report an unswept and a swept span identically.
+                "identity_revision_version": item.get("identity_revision_version"),
+                "revised_transcript": item.get("revised_transcript"),
+                "revised_speakers": speakers_in(str(item.get("revised_transcript") or "")),
             }
             for item in items
         ],
@@ -896,7 +910,19 @@ def main() -> int:
         report["latency"]["render_bound_ms"] = round(render_bound, 1)
         report["latency"]["user_visible_ms"] = round(committed_p95 + render_bound, 1)
 
+    # The events a stop EMITS are the ones no run has ever read. `canonical_queued`,
+    # `identity_finalized` and `session_closed` are all recorded inside `stop`, i.e. after the
+    # last view poll, and the same stop revokes view authority -- so a view-token reader is
+    # structurally blind to exactly the events that say how the meeting ended. Capture
+    # authority is not: `CAPTURE_ACTIONS` carries `events`, and the capture path authorizes on
+    # session OWNERSHIP, never on `VIEWABLE_SESSION_STATUSES`. So the owning device can still
+    # read them once the session is closed.
+    post_stop = _drain_events_after_stop(client, session_id, device_token, last_seq)
+    for kind, count in (post_stop.get("kinds") or {}).items():
+        event_kinds[kind] = event_kinds.get(kind, 0) + count
+    report["post_stop_events"] = post_stop
     report["events_seen"] = events_seen
+    report["event_kinds"] = dict(sorted(event_kinds.items()))
     report["canonical_events"] = canonical_events
     report["decode"] = _decode_summary(canonical_events)
     report["view_authority_after_stop"] = _probe_view_after_stop(client, session_id, view_token)
@@ -1018,6 +1044,47 @@ def _p95(values: list[float]) -> float | None:
     ordered = sorted(values)
     rank = max(1, math.ceil(0.95 * len(ordered)))
     return round(ordered[rank - 1], 1)
+
+
+def _drain_events_after_stop(
+    client: PinnedClient, session_id: str, device_token: str, since_seq: int
+) -> dict:
+    """Read the events a clean stop emitted, with the authority that still may.
+
+    Reports the kinds and, for `identity_finalized`, its whole payload -- that event is
+    recorded whether or not the final sweep changed anything (ADR-0002's final sweep;
+    `live_service_runtime._finalize_identity_locked`), so its payload is the only surface in
+    the system that tells "the last sweep ran and found nothing" from "the last sweep never
+    ran". It is recorded through `_record_event`, which appends to the session's in-memory
+    event list and writes NOTHING to the journal -- so a journal grep for it is 0 either way
+    and is not evidence. Read the events.
+
+    A non-200 is reported by status rather than raised: this runs after the run's own verdict
+    is already decided, and losing the report to an exception here would be the worse trade.
+    """
+
+    status, body, _ = client.request(
+        "GET",
+        f"/api/live/sessions/{session_id}/events?since_seq={since_seq}",
+        bearer=device_token,
+    )
+    result: dict = {"status": status, "since_seq": since_seq, "authority": "capture"}
+    if status != 200 or not isinstance(body, dict):
+        result["body"] = body
+        return result
+    events = list(body.get("events") or ())
+    kinds: dict[str, int] = {}
+    finalized: list[dict] = []
+    for event in events:
+        kind = str(event.get("kind") or "")
+        kinds[kind] = kinds.get(kind, 0) + 1
+        if kind == "identity_finalized":
+            finalized.append(dict(event.get("payload") or {}))
+    result["count"] = len(events)
+    result["kinds"] = dict(sorted(kinds.items()))
+    result["identity_finalized"] = finalized
+    result["session_end_sweep_ran"] = bool(finalized)
+    return result
 
 
 def _probe_view_after_stop(client: PinnedClient, session_id: str, view_token: str) -> dict:

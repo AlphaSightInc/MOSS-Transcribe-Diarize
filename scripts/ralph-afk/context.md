@@ -176,7 +176,7 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). Full block retired to progress.txt with the fourth compaction. **RE-RUN ON THE DEPLOYED `7a4f59c` (iteration 30, Phase N gate step (d) first half): rc=3, five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the F1-on-Phase-N block. |
 | 300 s certification (F2) | **GREEN ON THE DEPLOYED `7a4f59c`** (run `20260729-094359` iteration 1, `live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **4078.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.577** < 1, **1261 published == 1261 POST /frames, and every one of the session's 4766 logged requests answered 200**, a **5.090 s** interruption seen by the client and survived, outbox 0 → **5** → 0. (Was GREEN on `42abc5a` in iteration 11 of the previous run: 3859.6 ms, RTF 0.670, 1257 == 1257 — that block is archived in progress.txt.) **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the F2-on-Phase-N block |
 | 16-minute soak (F3) | **RAN AGAINST `42abc5a` AND FINISHED ITS WHOLE PLAN (iteration 9) — 5 clauses GREEN, 1 RED.** Candidate 53's minute-14.6 death is gone: 17/17 full minutes, every poll 200, view authority live at age 1024 s. The RED is **new candidate 60** — a clean stop does not revoke view authority, because no client code path calls the server's `POST …/stop`. `live-canary-clauses.py` rc=3. See the F3 block. |
-| Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
+| Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The clause's *browser storage* half was never separately measured and the "static half" does NOT cover it** — `leak-scan.sh` scans only `macos/MOSSCapture/Sources`, the tracer test and the tracer's artifacts, never the portal (found iteration 7). What *does* cover it is tracked: `tests/test_live_portal.py:217-219` asserts the served page contains no `localstorage` / `sessionstorage` / `document.cookie`, and the token is an `autocomplete="off"` password input held in a JS local and sent only as `Authorization: Bearer`. **One gap, cheap and open:** the JS harness instruments `localStorage`/`sessionStorage` with a recording Proxy and returns `storageWrites` to Python (`:618,657,737,812,841`) — and **no node ever asserts it is empty**. Dead instrumentation; a runtime write would pass today |
 | Final close (F4b) | open |
 
 **What stands between the loop and the bar (rewritten iteration 30; the Phase M narrative it used to
@@ -248,7 +248,44 @@ carry is in the retired-evidence index below).**
   gate and decoder p95 RTF **2.365**, causes named as candidate 64 and the plan's latency remedies,
   neither a Phase N regression) and F2 rc=0 (6 GREEN - p95 **4078.6 ms** <= 6000, RTF **0.577**,
   1261 published == 1261 accepted, every one of 4766 logged requests 200).
-- **THE ONE FINDING BOTH HALVES OF STEP (d) PRODUCED, and it outweighs either verdict: no sweep
+- **>>> ITERATION 7 OF THIS RUN FALSIFIED THE BULLET BELOW BY DIRECT MEASUREMENT ON THE DEPLOYED
+  SERVICE. READ THIS FIRST; the next bullet is kept only because five other blocks still cite it.
+  The session-end sweep RUNS and PUBLISHES on a real meeting — 19 corrections on 31 spans.** Three
+  `live-pipeline-probe.py` runs against the deployed `7a4f59c`, no product change, no operator, no
+  TCC, no Mac. The chain the loop built across iterations 30/1/3/4/5/6 rests on one false premise and
+  one blind instrument:
+  **(1) `POST …/stop` is NOT unreachable.** Candidate 60's *"no client code path calls it"* is true
+  only of the **Mac capture client**. `CAPTURE_ACTIONS` **and** `VIEW_ACTIONS` both contain `stop`
+  (`live_auth.py:18-19`); the **`/live` portal has a Stop button wired to that route**
+  (`live_portal.py:154,569,585,634`, asserted at `tests/test_live_portal.py:319`); and
+  **this loop's own F0 probe has called it since Phase F** (`live-pipeline-probe.py:847`,
+  `bearer=device_token`). Iteration 29 even recorded the result — *"view 401/revoked after a clean
+  stop"* — while iteration 30 was writing that the route is never called.
+  **(2) `identity_finalized` is unobservable to EVERY client, so 0 sightings was never evidence.**
+  It is written by `_record_event` (`live_service_runtime.py:835-846`), which appends to the
+  session's **in-memory** event list and writes **nothing to the journal** — so *"0 hits in the
+  server journal"* is 0 whether the sweep ran or not. And it is recorded **inside** `stop`, after the
+  last possible view poll, by the same call that (a) revokes view authority and (b) releases the
+  session from the access store: measured this iteration, a post-stop events read returns **401** with
+  the view token and **403 `session is not owned by this device.`** with the capture token. ***This is
+  the SECOND instance of a defect the loop already wrote down*** — "an events poller is structurally
+  blind at the instant that matters" (retired candidate-56 reading 3) — and it was not recognised.
+  **(3) What the sweep actually did, measured.** `stop` returned **200** (so
+  `_finalize_identity_locked` completed — it runs before `session.stop` and a raise would have failed
+  the stop), and the stop response's own committed items carry the corrections: **19 of 31 spans
+  hold a `revised_transcript`**, **all 19 change the label** (18 × `S00 → S01`, 1 × `S00 → S01,S00`),
+  **none is a byte-identical rewrite**, and the **words are byte-identical in every one** — Phase N
+  decision 10's rule holding on the wire. The transcript goes from **25 `S00` spans to 7**.
+  ***The honest bound, so this is not over-read in the other direction:*** the probe's meeting had
+  **2 canonical speakers for 2 real voices** — the healthy 1.0 refs/voice regime — against F2's 16
+  for 2. So this does **not** refute iteration 5's measurement that at 8.4 refs/voice the sweep is
+  84.1 % `kept_ambiguous`; the fragmentation argument (candidate 55) survives intact. What it kills is
+  the stronger claim the loop built on top of it — *"the session-end sweep never runs in a real
+  meeting"* / *"ADR-0002's second acceptance half is worth zero on the deployed system"*. It runs, it
+  publishes, and its corrections are exactly the `S00 → S01` relabelling of abstained spans that
+  iteration 23 measured offline at +5.82 pp. See the iteration-7 evidence block below.
+- **(SUPERSEDED IN PART BY THE BULLET ABOVE — the observations are real, the inference is not.)**
+  **THE ONE FINDING BOTH HALVES OF STEP (d) PRODUCED, and it outweighs either verdict: no sweep
   publishes a correction on a real meeting.** `identity_finalized` fired **0** times in both runs and
   the journal has **0** hits on `.../stop` (candidate 60 - no client code path calls the stop route),
   and `identity_revision_version` stayed **0** on all 52 spans of F1 and all 171 of F2 even though F2
@@ -684,6 +721,45 @@ so no TCC exposure). MacStudio's own volume was raised to 70 for the room marker
 *The system marker landed VERBATIM* — `cardamom` at span 29, t+67.6 s, in a **muted** run; the room
 marker `obsidian` again did not reach the microphone (fifth measurement of candidate 51's hardware
 limit), so "two speakers" is again two voices on the SYSTEM lane.
+
+**THE SESSION-END SWEEP RUNS AND PUBLISHES ON THE DEPLOYED SERVICE — run `20260729-094359`
+iteration 7. READ THIS BEFORE ANY 55/60/65 AUTHORIZATION, AND BEFORE TRUSTING ANY "0 sightings of
+`identity_finalized`" LINE ANYWHERE IN THIS FILE.** Three `live-pipeline-probe.py` runs against the
+deployed `7a4f59c` from MacStudio over the pinned leaf — no Mac, no TCC, no operator, no product
+change, `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty before and after.
+
+| question | measured |
+| --- | --- |
+| is `POST …/stop` reachable by a client? | **yes, by both authorities.** `CAPTURE_ACTIONS` and `VIEW_ACTIONS` both contain `stop`; the `/live` portal's Stop button calls it; the F0 probe has called it since Phase F. Server journal: **1** hit on `sessions/…/stop` for the probe's session (F1/F2/F3: 0 — because *their drivers* never called it) |
+| does a clean stop through the route revoke view authority? | **yes, immediately** — `view_authority_after_stop` `snapshot_status` **401**, `revoked: true`, on all three runs. The PRD soak clause's *immediately* is satisfied **by the route**; candidate 60 is exactly and only that the **Mac client** does not call it |
+| can any client read `identity_finalized`? | **no.** Post-stop events read: **401** with the view token, **403 `session is not owned by this device.`** with the capture token. `_record_event` writes to an in-memory list and **never to the journal**, so every "0 in the journal" reading in this file is uninformative, not negative |
+| did the session-end sweep run? | **yes** — `stop` **200** on all three runs, and `_finalize_identity_locked` runs *before* `session.stop`, so a raise would have failed the stop |
+| did it publish? | **yes — 19 of 31 committed items carry a `revised_transcript`**, **19/19 change the label** (18 × `S00 → S01`, 1 × `S00 → S01,S00`), **0** byte-identical rewrites, and the **words are byte-identical in all 19** (decision 10 holding on the wire). Live histogram `{S00:25, S01:5, S02:1}` → final `{S01:24, S00:7, S02:1}` |
+
+*Runs:* `/tmp/i7-probe.json` (baseline, event kinds not yet projected), `/tmp/i7b-probe.json` (post-stop
+drain added → the 403), `/tmp/i7c-probe.json` (revision projection added → the 19). Each cost one
+pairing code, one device and one session; **all three devices were revoked**, 200 with body, leaving
+17 devices / **1 unrevoked**. *Hosts left clean, measured after:* server `HEAD 7a4f59c` worktree clean,
+live MainPID **365632** / batch **301112** and **322117**, all `NRestarts=0`, `live-runs` **0**, no
+`/tmp/mtd-live-*`, **0** journal tracebacks, batch `/` and `/api/jobs` **200**. m4mbp untouched.
+
+***The honest bound.*** The probe's meeting held **2 canonical speakers for 2 real voices** — the
+healthy ~1.0 refs/voice regime — against F2's **16 for 2**. This therefore does **not** refute
+iteration 5's `sweep-multiplicity-probe.py` result that at 8.40 refs/voice the production sweep
+answers `kept_ambiguous` on 84.1 % of units. **Candidate 55's fragmentation argument survives whole.**
+What is falsified is only the claim built on top of it — that the session-end half *never runs* and
+that ADR-0002's second acceptance half is *unreachable in production*. Both are false. *The next
+measurement this makes possible, and it is the one that matters:* re-run this probe against a
+meeting with F2's fragmentation and read the same `revised_transcript` field, which turns iteration
+5's offline model into a deployed number.
+
+*What changed in the instrument (loop tooling only, `scripts/ralph-afk/live-pipeline-probe.py`):*
+`event_kinds` (a histogram, not a bare count — six runs reported `events_seen` as an integer, and a
+count cannot answer "did the sweep run"); `_drain_events_after_stop`, which reads the post-stop
+events with **capture** authority and reports the status rather than raising; and
+`identity_revision_version` / `revised_transcript` / `revised_speakers` on each committed item —
+without which an unswept and a swept span report identically, which is why every prior run of this
+probe was silent on the thing it was standing right next to.
 
 **THE MARKER IS MATCHED PHONETICALLY — candidate 59 `[done — iteration 13]`. READ THIS BEFORE
 READING ANY `live-canary-analyze.py` MARKER LINE** (full block, with the six-directory measurement
@@ -1324,6 +1400,42 @@ python3 scripts/ralph-afk/birth-floor-probe.py /tmp/i1-f2-evidence/ralph-cert \
 # COUNTERFACTUAL - suppressing a birth changes later matching - so they bound, never simulate.
 # See Phase N decision 20 and scripts/ralph-afk/authorization-request-55-60-65.md.
 
+# --- iteration 7: READ THE SESSION-END SWEEP ON THE DEPLOYED SERVICE. No Mac, no TCC, no operator,
+#     no product change; ~3 min per run. Costs one pairing code, ONE DEVICE (REVOKE IT) and one
+#     session, and restarts nothing. This is the only instrument in the loop that can answer
+#     ADR-0002's second acceptance half against the running system. ------------------------------
+# 1. parity first, or the run speaks for a service you are not testing:
+#      git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'      # must be EMPTY
+# 2. mint on the host loopback; ops/live-pair.sh takes NO --device-id (the CLIENT names the device):
+#      printf '%s\n' "cd /mnt/d/Coding/MOSS-Transcribe-Diarize && bash ops/live-pair.sh 2>&1" \
+#        | ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s" \
+#        | sed -n 's/^payload: //p' | tr -d '\n' > /tmp/payload     # expect 113 chars, NOT 122
+# 3. run under `bash -c` (the zsh trap) with the payload on STDIN, >= 75 s so the 60 s cadence
+#    deadline is crossed and enough spans commit to see a revision:
+#      cat /tmp/payload | python3 scripts/ralph-afk/live-pipeline-probe.py --host 100.64.0.8 \
+#        --port 7861 --pin a35ca9fc… --device-id "ralph-<it>-<utc>" --seconds 75 --lead-seconds 1.0 \
+#        --lane-audio continuous --lane-offset-ms system=137 --report /tmp/probe.json
+# 4. READ THESE THREE FIELDS, which is the whole point and which no run before iteration 7 had:
+#      .stop.status                     200 => `_finalize_identity_locked` COMPLETED (it runs before
+#                                       session.stop, so a raise would have failed the stop)
+#      .transcript.items[].revised_transcript   the corrections themselves. Compare against
+#                                       .transcript[].transcript: the WORDS must be byte-identical
+#                                       and only the [Sxx] tags may move (Phase N decision 10).
+#      .event_kinds                     a histogram, not a count. `events_seen` alone cannot answer
+#                                       "did the sweep run".
+#    Iteration 7 measured 19 of 31 spans revised, 19/19 label-changing, 0 byte-identical rewrites,
+#    words unchanged in all 19, {S00:25,S01:5,S02:1} -> {S01:24,S00:7,S02:1}, on 2 canonical
+#    speakers for 2 real voices. A meeting at F2's 8.4 refs/voice is the run still not taken.
+# 5. `.post_stop_events` is EXPECTED to be 403 `session is not owned by this device.` — a clean stop
+#    releases the session from the access store, and it already revoked view authority (401). That
+#    is the finding, not a probe failure: `identity_finalized` is unreadable by EVERY client and is
+#    never journalled, so NEVER read "0 hits on identity_finalized" as evidence about the sweep.
+# 6. THEN REVOKE THE DEVICE, in the same iteration (loopback, on the host). Assert the 200 AND its
+#    {"device_id": …} body — a POST …/revoke 404s for route-not-found and reads like "already gone":
+#      curl -sk -X DELETE 'https://127.0.0.1:7861/api/live/devices/<device-id>'
+#    then confirm the store is back to ONE unrevoked device (m4mbp), and that HEAD, all three
+#    MainPIDs, NRestarts=0, live-runs 0, /tmp/mtd-live-* and journal tracebacks are all unchanged.
+
 # --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
 #     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
 # --- J5d: the third amendment's gate, GREEN in iteration 16. Re-runnable end to end; each run
@@ -1888,6 +2000,18 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     which a real meeting cannot do — but it is enough to say that **60 before 55 is not merely
     unhelpful, it is unmeasured risk**. The ordering (55 first) is now the recommendation on both
     counts.
+    **ITERATION 7 RE-SCOPED 60 BACK TO WHAT IT IS, AND DELETED ITS SECOND CLAUSE.** Measured on the
+    deployed service: the route is reachable by **both** authorities, the `/live` portal's Stop
+    button calls it, this loop's own F0 probe has called it since Phase F, and a stop through it
+    **revokes view authority immediately (401)** *and* **ran the session-end sweep, which published
+    19 corrections on 31 spans**. Candidate 60 is therefore a **client** defect and nothing more:
+    `CaptureController.stop` does not call a route that works. Every sentence in this file of the
+    form *"the session-end sweep never runs in a real meeting"* or *"ADR-0002's second acceptance
+    half is unreachable in production"* is **withdrawn** — each was inferred from `identity_finalized`
+    sightings, and that event is unreadable by every client (see the iteration-7 block). Two
+    consequences: 60 buys neither convergence nor the `identity_finalized` event (it is worth having
+    on its own merits — a Mac stop should behave like the portal's), and **the loop needs no
+    authorization to measure the session-end sweep**, because the probe already can.
 65. **Neither half of Phase N step 3 produces a correction on a real meeting, and an empty cadence
     sweep leaves no record to tell "found nothing" from "never ran".** `[open, new — run
     `20260729-094359` iteration 1; found by F2 on the deployed `7a4f59c`]`. Measured over a **319 s**
@@ -1965,6 +2089,20 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     hold **no** reference at all — see Phase N decision 20. 65's diagnosability half is unchanged
     and is item (b) of `scripts/ralph-afk/authorization-request-55-60-65.md`; **no further probe
     of 65's cause is worth an iteration.**
+    ***ITERATION 7 SPLITS 65 IN TWO AND WITHDRAWS ONE HALF.*** The **session-end** half never
+    rested on a measurement: `identity_finalized` is written by `_record_event` into an in-memory
+    list, **never to the journal**, **inside** the same `stop` that revokes view authority and
+    releases the session — so no client can read it (measured: **401** with the view token, **403
+    `session is not owned by this device.`** with the capture token), and "0 sightings" is the
+    *expected* reading whether it ran or not. On the deployed service it **did** run and **did**
+    publish: **19 of 31 spans came back with a label-changing `revised_transcript`**. What survives
+    is **the CADENCE half**, unchanged and now the whole of 65 — `sweep_now` sets `_unconsumed` and
+    logs only when the revision is non-empty, so an empty cadence sweep is still indistinguishable
+    from one that never happened. *And iteration 7 adds a third item of the same shape:* even the
+    session-end half's **payload** — the counts `identity_finalized` carries — is unreachable by any
+    client, so a reader can see *that* labels moved and never *what the sweep decided*. All of it is
+    one diagnosability defect and belongs in one authorization; **the cause half of 65 is closed**,
+    since the sweep demonstrably publishes when the meeting is not fragmented.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a

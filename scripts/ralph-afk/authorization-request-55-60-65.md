@@ -1,5 +1,26 @@
 # Authorization request — candidates 55, 65 and 60, in that order
 
+> **CORRECTION, added in iteration 7 before you read this — one claim in §4(c) below was wrong, and
+> it was the loop's own instrument that was at fault rather than the product.** Three
+> `live-pipeline-probe.py` runs against the deployed `7a4f59c` measured that **the session-end sweep
+> runs and publishes on a real meeting**: `POST …/stop` is reachable by *both* capture and view
+> authority, the **`/live` portal's Stop button already calls it**, a stop through it **revokes view
+> authority immediately (401)**, and the stop response carried **19 label-changing corrections on 31
+> spans** (18 × `S00 → S01`, words byte-identical in every one). The loop had inferred the opposite
+> from `identity_finalized` firing 0 times — but that event is written to an **in-memory** list,
+> never to the journal, **inside** the same `stop` that revokes view authority and releases the
+> session, so **no client can read it** (measured: 401 with the view token, 403 `session is not owned
+> by this device.` with the capture token). Zero sightings was the expected reading whether it ran or
+> not.
+> **What this changes in the ask:** §4(c)'s last sentence — *"step 3's session-end sweep has never
+> run in a real meeting"* — is **withdrawn**; candidate 60 is a client defect worth fixing on its own
+> merits and buys neither convergence nor the event. §4(b) is **unchanged and now larger**: it should
+> cover the session-end half's *payload* too, since a reader can see that labels moved but never what
+> the sweep decided. **§§1–3, the whole candidate-55 case, and the ordering are untouched** — the
+> probe's meeting held 2 canonical speakers for 2 real voices, so it says nothing against iteration
+> 5's measurement that at F2's 8.4 references per voice the sweep is 84.1 % `kept_ambiguous`.
+
+
 *Written by the loop for the operator, run `20260729-094359` iteration 6. Nothing here has been
 implemented; every number below is measured, and every proposal is a proposal.*
 
@@ -133,9 +154,14 @@ the cadence half the same ruling.
 **(c) Candidate 60 — a clean stop must reach the server**, sequenced with or behind (a). A
 transport call after the final drain, with the fifth amendment's rule that a stop which cannot
 reach the server must still stop locally. Measured three times: view authority outlives a clean
-stop by up to the 30 s helper lease (29.4 s / 29 s), and `LiveServiceRuntime.
-_finalize_identity_locked` hangs off that route and nothing else, so step 3's session-end sweep
-has never run in a real meeting.
+stop by up to the 30 s helper lease (29.4 s / 29 s).
+**Corrected in iteration 7:** this entry used to end *"…and `LiveServiceRuntime.
+_finalize_identity_locked` hangs off that route and nothing else, so step 3's session-end sweep has
+never run in a real meeting."* That is **withdrawn** — the route works, the portal's Stop button
+calls it, and a stop through it revoked view authority in 0 s and published 19 corrections. What is
+left is exactly what 60 was first filed as: **the Mac client does not call a route that works**, so
+`mtd-capture stop` leaves view authority alive for up to 30 s and skips the final sweep the portal's
+Stop would have run. Worth fixing; not the item that buys convergence.
 
 **Coverage the cycle must close, because it is what let all of this ship green.** Nothing in the
 suite asserts anything about *what a canonical speaker was born from*. Add a red-before /
