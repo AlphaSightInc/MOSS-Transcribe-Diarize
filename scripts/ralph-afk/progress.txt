@@ -15438,3 +15438,128 @@ RECOMMENDED NEXT STEP (P5 step b, the seventh merge), in the standing order:
   5. rehearse the guard non-vacuously afterwards: RALPH_MERGE_DRY_RUN=1 must
      print "main moved from expected pre-merge SHA 77e0014..." and exit 1
 Then (c) push + server-only redeploy, then (d) F1 and F3.
+
+================================================================================
+RUN 20260729-025318-86584  ITERATION 4  -  THE SEVENTH KEEPER MERGE, 42abc5a
+================================================================================
+TARGET: P5 step (b), the seventh keeper merge - the highest-leverage open
+candidate and the one thing standing between Phase P's landed code and every
+remaining PRD clause. Authorized by the SEVENTH prd.md amendment of 2026-07-28
+("a wall clock is not a duration"), which permits exactly one further reviewed
+no-ff merge through merge-keeper.sh with expected_main advanced in-script.
+
+FIRST, THE UN-JOURNALED HALF OF ITERATION 3. progress.txt ends at iteration 2,
+but two commits exist past it, so iteration 3 did work and was cut off before it
+could record it. Read out of the commits themselves, both of which are exactly
+steps 1-3 of iteration 2's recommended next step:
+  cfa3a96  join main 77e0014 into ralph/live-meeting-mvp   (the history join;
+           its message records that `git merge-tree --write-tree main HEAD`
+           returned HEAD's OWN tree 59b5077b…, i.e. the join was proven
+           content-free BEFORE it was made - fence 1 of the standing procedure)
+  96137b1  advance expected_main to 77e0014 IN merge-keeper.sh, citing the
+           seventh amendment, and recording that the SIXTH amendment (Phase N)
+           is authorized-but-UNSPENT and is not what advances the line
+Verified rather than assumed this iteration: `git merge-base --is-ancestor main
+HEAD` is now TRUE, and the worktree was clean. Nothing from iteration 3 needed
+redoing and nothing needed undoing.
+
+WHAT THIS ITERATION DID.
+  1. RALPH_MERGE_DRY_RUN=1 ./scripts/ralph-afk/merge-keeper.sh
+     -> "Keeper merge dry-run: PASS feature=96137b19… main_before=77e0014…" rc=0
+        (all four fences green: branch, clean tree, expected_main, ancestry)
+  2. ./scripts/ralph-afk/merge-keeper.sh  IN THE BACKGROUND, log /tmp/i4-merge.log
+     - background, not a time-capped foreground shell: a foreground timeout kill
+       skips the script's EXIT trap and strands a worktree holding main.
+     -> MERGE_KEEPER_RC=0
+
+THE MERGE'S OWN GATE, run inside the temporary worktree ON THE MERGED TREE before
+the commit was made (this is the PRD's full post-merge suite; it runs pre-commit
+against post-merge content, which is the same bytes and is what all six previous
+merges recorded):
+  swift build --product mtd-capture        complete (7.44s)
+  swift build --product MOSSCaptureApp     complete (0.65s)
+  swift test                               158 tests, 0 failures
+  pytest tests -q                          608 passed, 2 skipped, 368 subtests
+                                             passed in 61.83s
+Both totals are exactly what context.md records for the branch, so the merge
+introduced no drift: Swift 158 unchanged (no macos/ file was touched at all) and
+Python 608 = 604 + Phase P's four seam nodes.
+
+RESULT AND THE POST-MERGE FENCES, each measured this iteration:
+  merge SHA          42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+  parent^1 (main)    77e0014ac2a1eee1edb29b109024807e9489daa5   (= expected_main)
+  parent^2 (feature) 96137b19d3c18656b212bc6297a679278cd48a67   (= captured tip)
+  merge tree         06d78525e7a8bc691361ac0c763dd9b150d13519
+  feature tree       06d78525e7a8bc691361ac0c763dd9b150d13519   IDENTICAL
+    -> the merge added nothing and dropped nothing. That equality is the
+       strongest available statement that main now contains exactly the reviewed
+       feature tip; it is stronger than an empty `git diff` because it compares
+       the whole tree object, not a filtered path set.
+  git diff --stat main HEAD -- ':!scripts/ralph-afk'   EMPTY
+  branch still ralph/live-meeting-mvp at 96137b1, `git status --porcelain` empty
+  `git worktree list` back to ONE entry; no /var/folders tmp.* residue
+    -> the EXIT trap cleaned up; no stranded worktree is holding main.
+  GUARD REHEARSED NON-VACUOUSLY, which is the point of advancing it in-script:
+    RALPH_MERGE_DRY_RUN=1 ./scripts/ralph-afk/merge-keeper.sh
+    -> "ERROR: main moved from expected pre-merge SHA 77e0014…"  rc=1
+    An EIGHTH merge is now refused. Seven merges made, seven amendments' worth of
+    authorization spent (C4/G5/H4/J5b/K5b/M6/P7) and the sixth amendment's Phase N
+    merge still unspent and still sequenced behind Phase M's gate.
+
+PAYLOAD, re-confirmed at merge time (identical to iteration 2's review):
+  7 files, +285/-38, all under moss_transcribe_diarize/ or tests/
+  ZERO files under macos/  ->  P5 step (c) is the J5c shape, SERVER-ONLY. m4mbp
+  needs a `git fetch <fork url> && git checkout 42abc5a` for the four-way SHA
+  clause and NOTHING ELSE - no rebuild, no reinstall, no codesign, and therefore
+  no exposure of the TCC grants, which key on the designated requirement.
+
+WHAT A MERGE DOES NOT DO, recorded because the four-way SHA clause moved BACKWARD
+this iteration and a later reader must not read that as a regression. Local main
+is 42abc5a; origin/main, the server checkout and the m4mbp checkout are all still
+77e0014. That is 1/4, and it is the expected and unavoidable state between a
+merge and its redeploy - M6 sat in exactly this state between iterations 19 and
+20 of the previous run. It also means the standing rule still reads FALSE:
+`git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is NON-EMPTY, so no
+offline probe speaks for the deployed service and NO CERTIFICATION RUN MAY BE
+USED AS EVIDENCE until (c) completes. The deployed server still dies at ~13% per
+32 s of wall-clock step.
+
+WHAT I LEARNED / WHAT IS WORTH CARRYING.
+- The two-fence procedure is now seven-for-seven with no variation. Proving the
+  join content-free BEFORE making it (merge-tree --write-tree vs HEAD's own tree)
+  and advancing expected_main in-script rather than by env override are the two
+  habits that make each merge reviewable after the fact; iteration 3 followed
+  both without being able to journal them, and the commit messages alone were
+  enough to reconstruct exactly what was done. That is an argument for keeping
+  merge-mechanics facts in commit messages and not only in progress.txt.
+- Comparing TREE OBJECTS beats comparing diffs for "the merge changed nothing".
+  A path-filtered `git diff` can be empty while an unfiltered change exists; two
+  identical tree SHAs cannot.
+
+RECOMMENDED NEXT STEP (P5 step (c), push + SERVER-ONLY redeploy), in the K5c
+order that has worked four times, and note the rollbacks go in FIRST:
+  1. Commit the pre-recorded rollbacks BEFORE touching any host:
+       server:  git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 77e0014
+                (and the complete rollback to pre-loop is still `checkout 163e969`)
+       m4mbp:   git -C /Users/ga0/Desktop/.../MOSS-Transcribe-Diarize checkout 77e0014
+                (its own `main` ref is untouched upstream 40cf854, so `checkout
+                main` remains the complete rollback)
+       no bundle backup is needed this time - the app is not being replaced.
+  2. git push the fork's main (42abc5a). Never force, never from the branch.
+  3. Server: checkout 42abc5a, `systemctl --user restart moss-live-web.service`,
+     POLL /live for 200 (8-11 s, never a single sample). Assert batch MainPIDs
+     301112 / 322117 and NRestarts=0 unmoved, batch / still 200.
+  4. Prove the running image is the new one by CONTENT, not by SHA: the venv is
+     an editable install pointing at the checkout, so a strings/import witness
+     against a file whose content DIFFERS across 77e0014→42abc5a is the check
+     (live_adapters.py's monotonic success branch is the natural witness; pick a
+     control word too, as M6c did).
+  5. m4mbp: `git fetch <fork URL by URL, never the name origin> && git checkout
+     42abc5a`. No rebuild. Then the four-way `git rev-parse HEAD` = 42abc5a.
+  6. ONLY THEN F1 (live-canary.sh) and F3 (live-soak.sh), both OUTPUT_MODE=muted,
+     reduced by live-canary-clauses.py (the soak with --user-visible-gate-ms 6000).
+     Iteration 29's reducer will now say UNDECIDED rather than RED for a run too
+     short to answer - read that word carefully.
+Still open and unauthorized, unchanged by this iteration: candidate 55 (identity
+capacity saturates in the first minute), candidate 58 (the replay evaluator calls
+a declared-absent measurement invalid), and Phase N.

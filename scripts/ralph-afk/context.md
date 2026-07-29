@@ -63,13 +63,15 @@
 ## Where the loop stands
 
 **Branch and freeze.** Branch `ralph/live-meeting-mvp`, cut from `main af3ac36`. Fourteen phases have
-landed on it (A-E client/server/deploy/install, then five operator-authorized post-merge fix cycles
-G, H, J, K, M). **Six keeper merges have been made and all six are spent** — `f9285d6` (C4),
-`317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b), **`77e0014` (M6, iteration 19)** —
-and `merge-keeper.sh`'s `expected_main` guard now refuses a **seventh** (rehearsed non-vacuously:
-`main moved from expected pre-merge SHA fc7097d…`, rc=1). **Phase M's product work is merged**, so
+landed on it (A-E client/server/deploy/install, then six operator-authorized post-merge fix cycles
+G, H, J, K, M, P). **Seven keeper merges have been made and all seven are spent** — `f9285d6` (C4),
+`317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b), `77e0014` (M6, iteration 19),
+**`42abc5a` (P7, run `20260729-025318` iteration 4)** — and `merge-keeper.sh`'s `expected_main`
+guard now refuses an **eighth** (rehearsed non-vacuously: `main moved from expected pre-merge SHA
+77e0014…`, rc=1). **Phase P's product work is merged**, so
 `git diff main HEAD -- ':!scripts/ralph-afk'` is **empty again** and the branch carries no
-unmerged tracked source. Every tracked product change since `f9285d6` was made under a named
+unmerged tracked source. **But `42abc5a` is NOT published and NOT deployed** — local `main` is one
+merge ahead of `origin/main`, the server checkout and the m4mbp checkout, all three still `77e0014`. Every tracked product change since `f9285d6` was made under a named
 amendment. Per-phase detail is in the closed-phase index below and in full in the progress.txt
 archive.
 
@@ -83,8 +85,8 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | IDEA-044 compatibility checkpoint | GREEN, frozen at `1ede498` (10/10 and 16/16, 11 commands, 0 Darwin skips) |
 | Production client gate | GREEN (B6 `3fb5567`, re-gated G4 `23dc163`, K5a `cd7faf9`) |
 | Server meeting-reliability gate | GREEN at `f400d426`, clause→node map recorded |
-| One reviewed keeper merge (+ 5 authorized follow-ups) | GREEN, six merges, each reviewed against its amendment's scope |
-| One exact SHA everywhere | **GREEN — 4/4 at `77e0014`** (iteration 20): local `main`, `origin/main`, the server checkout and the m4mbp checkout. |
+| One reviewed keeper merge (+ 6 authorized follow-ups) | GREEN, seven merges, each reviewed against its amendment's scope |
+| One exact SHA everywhere | **RED-by-construction until P5(c)** — local `main` is `42abc5a` (the seventh merge, iteration 4); `origin/main`, the server checkout and the m4mbp checkout are all still `77e0014`. This is 1/4, and it is the expected state between a merge and its redeploy; M6 passed through the identical state between iterations 19 and 20. |
 | Live service answering | GREEN — `/live` and `/api/live/descriptor` 200 over the pinned leaf from MacStudio **and from m4mbp** |
 | Batch service unharmed | GREEN — `http://192.168.68.38:7860/` and `/api/jobs` 200; batch MainPIDs never restarted |
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
@@ -105,17 +107,19 @@ carry is in the retired-evidence index below).**
   metadata degrades to null and is logged, stated once as a conversion), P3 (four real-seam nodes,
   red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
   Python 608/2/368 green. See the Phase P block.
-- **WHAT NOW BLOCKS EVERYTHING IS P5, and it is ordinary work: gate → merge #7 → push → redeploy →
-  Mac needs no rebuild (no `macos/` file changed) → THEN F1 and F3.** **Step (a), the gate, is DONE
-  and GREEN at `5bc4f7f` (iteration 2)** — see the Phase P gate row in the index below; the payload
-  is 7 files / +285/−38, every path inside `moss_transcribe_diarize/` or `tests/`, **0 under
-  `macos/`**, so the redeploy is server-only and the Mac needs only a `git checkout`. Next is the
-  merge. `merge-keeper.sh`'s
-  `expected_main` must be advanced in-script to `77e0014` citing the seventh amendment, exactly as
-  the six previous merges did, and a **history join is required first** — `git merge-base
-  --is-ancestor main HEAD` is FALSE at `5bc4f7f`. Until the redeploy, the deployed service still carries the defect, so
+- **WHAT NOW BLOCKS EVERYTHING IS P5(c), and it is ordinary work: push → redeploy the SERVER ONLY →
+  m4mbp checkout with no rebuild → THEN F1 and F3.** Steps (a) and (b) are **both DONE**: the gate is
+  GREEN at `5bc4f7f` (iteration 2) and the **seventh merge landed as `42abc5a` (iteration 4)**, whose
+  in-worktree gate on the merged tree was Swift 158/0 and Python 608/2/368, whose tree is
+  byte-identical to the feature tip's, and after which an eighth merge refuses. See the P7 row in the
+  index below. The payload is 7 files / +285/−38, every path inside `moss_transcribe_diarize/` or
+  `tests/`, **0 under `macos/`** — so (c) is the **J5c shape**: `git push`, then on the server
+  `git checkout 42abc5a` + `systemctl --user restart moss-live-web.service` + poll `/live` for 200
+  (8-11 s), and on m4mbp `git fetch <fork URL> && git checkout 42abc5a` for the four-way SHA clause
+  with **no rebuild, no reinstall and no risk to the TCC grants**. Pre-record the rollbacks before
+  touching either host. Until that redeploy the deployed service still carries the defect, so
   **no certification run may be used as evidence** and no offline probe speaks for the host — the
-  standing rule below now reads FALSE for the first time since iteration 20:
+  standing rule below still reads FALSE:
   `git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is **non-empty**.
 - **Phase M gate steps (a), (b) and (c) are DONE** — local gate green at `21a73ea`, sixth merge
   `77e0014`, and all four checkouts deployed at it. **Only (d) remains: F1 and F3, both green**, and
@@ -195,9 +199,10 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
 - ***An offline probe speaks for the deployed service only while
   `git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty*** — compare against
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
-  **FALSE since run `20260729-025318` iteration 1:** all four checkouts still hold `77e0014` while
-  the branch carries Phase P's six product/test files. Until P5 redeploys, no probe and no
-  certification run against the host measures the code in this branch.
+  **FALSE since run `20260729-025318` iteration 1:** the deployed SHA on every host is still
+  `77e0014` while the branch carries Phase P's six product/test files — and merging them as
+  `42abc5a` (iteration 4) did **not** change that, because a merge publishes nothing. Until P5(c)
+  redeploys, no probe and no certification run against the host measures the code in this branch.
 - **The certification order, decided once and binding:** gate → merge → publish + redeploy
   (+ Mac rebuild) → F1 and F3. An amendment that lists the runs *before* the merge is physically
   unreachable — the runs exercise the **deployed** server and the **installed** bundle — and H4, J5
@@ -461,7 +466,7 @@ So if the tap call does block, `mtd-capture start` blocks with **no timeout** an
 the expected appearance of an unanswered prompt, not a defect, and a hung `status` is not evidence
 that the app died. Diagnose it with `pgrep -x MOSSCaptureApp` and `sample`, never by killing the app.
 
-## Deployed reality — all four checkouts at `77e0014`
+## Deployed reality — every host still at `77e0014` (local `main` is `42abc5a`, unpublished)
 
 **Server (`ga0-alienware-rtx4070ti`, WSL Ubuntu, checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize`).**
 Detached at **`77e0014`** since M6c (run `20260728-181020` iteration 20); it was `fc7097d` (K5c),
@@ -733,6 +738,7 @@ progress.txt archive under each title.
 | **Phase M gate step (a)** | GREEN at **`21a73ea`** — Swift 158/0 (0 warnings, fresh scratch), Python 604+2/368, tracer 4/0 skips, 10/10, lane-refusal probe rc=0, 7/7 hard-cap cases, leak-scan clean, tree clean; payload 10 files / +983/-51 all in scope. |
 | **M6 gate + merge #6** | Merge **`77e0014`**, parents `fc7097d` + feature tip `4ac5d95`; join `1b6a9f4` proven content-free first. In-worktree gate on the merged tree: Swift 158/0, Python 604+2/368 in 64.4 s. Merge tree == feature tree `d2094369…`. **Not server-only** (4 files under `macos/`), so step (c) is the K5c shape: restart **and** Mac rebuild+reinstall. Guard rehearsed: a seventh merge refuses. |
 | **Phase P gate step (a)** | GREEN at **`5bc4f7f`** (run `20260729-025318` it. 2) — Swift **158/0** with **0 warnings** on a fresh scratch, Python **608 passed / 2 skipped / 368 subtests** in 59.95 s, tracer **4/0 skips**, discriminator **10/10**, lane-refusal probe rc=0 (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `77e0014`), seven hard-cap cases rc=0, `soak-abort-probe` 90/90, `view-reader-probe` pass, leak-scan clean, tree clean. Payload **7 files / +285/−38**, all in `moss_transcribe_diarize/` + `tests/`, **none under `macos/`**. *Payload review added one thing the four-site sweep table could not:* `grep -rnE '(time\.time\(\)\s*-\|-\s*time\.time\(\))' moss_transcribe_diarize/` returns **nothing** — the class is empty by search, not merely by enumeration; every surviving `time.time()` is a persisted or expiry **timestamp** (`live_transport._request_now`, `jobs` `created_at`/`updated_at`, `windowed_transcription:367`), which is P4's recorded ruling. |
+| **P7 merge #7** | Merge **`42abc5a`** (run `20260729-025318` it. 4), parents `77e0014` + feature tip `96137b1`; join `cfa3a96` proven content-free first (`merge-tree --write-tree` returned HEAD's own tree). In-worktree gate on the merged tree: Swift **158/0**, Python **608 passed / 2 skipped / 368 subtests** in 61.83 s. **Merge tree == feature tree `06d78525…`** — the merge added nothing and dropped nothing. **Server-only** (0 files under `macos/`), so step (c) is the J5c shape: restart, and on m4mbp a checkout with **no rebuild and no reinstall**. Guard rehearsed non-vacuously: an **eighth** merge prints `main moved from expected pre-merge SHA 77e0014…`, rc=1. Temp worktree removed by the EXIT trap; `git worktree list` back to one. |
 | **M6c redeploy** | GREEN — four-way SHA **4/4 at `77e0014`**. Server MainPID 346453 → 350731, `/live` 200 in 9 s, batch untouched; D-c exercised on the host (cap 286/112) and the venv proven editable-from-the-checkout; Mac rebuilt + reinstalled (inode 211995344 → 212080356), DR byte-identical a fourth time, both TCC grants still `auth_value=2`, and the install proven to carry D-a by a strings witness **with a control word**. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
@@ -2112,16 +2118,16 @@ until then, so a red run measures this bug and nothing else.
       six `test_live_vad.py` nodes that asserted the *superseded* rule were **restated** with a
       docstring naming what they supersede, and the replacement assertion (a real monotonic
       measurement is present) is strictly stronger than the one it replaced.
-    - **(b) the seventh merge** `[open - NEXT]`. **A history join is required**:
-      `git merge-base --is-ancestor main HEAD` is FALSE at `5bc4f7f`, so run the standing two-fence
-      procedure — prove `git merge-tree --write-tree main HEAD` returns HEAD's own tree, join with
-      `git merge --no-ff main`, advance `expected_main` to `77e0014` **in the script** citing the
-      seventh amendment, commit that (it becomes the captured feature tip), then run
-      `merge-keeper.sh` **in the background**.
-    - **(c) push + redeploy** `[open]`. **Server-only** — 0 files under `macos/`, so this is the
-      J5c shape, not K5c's: `git checkout <merge sha>` + `systemctl --user restart
-      moss-live-web.service` + poll `/live` for 200 (8-11 s), and on m4mbp a `git fetch <fork URL>
-      && git checkout <sha>` for the four-way SHA clause with **no rebuild and no reinstall**.
+    - **(b) the seventh merge** `[done - it. 4]`. Landed as **`42abc5a`**, parents `77e0014` +
+      feature tip `96137b1`. The standing two-fence procedure ran in full: the join `cfa3a96` was
+      proven content-free *before* it was made, `expected_main` was advanced **in the script**
+      (`96137b1`) citing the seventh amendment rather than by `RALPH_MERGE_MAIN_BEFORE`, and
+      `merge-keeper.sh` ran **in the background**. Numbers in the P7 row of the index below.
+    - **(c) push + redeploy** `[open - NEXT]`. **Server-only** — 0 files under `macos/`, so this is
+      the J5c shape, not K5c's: `git push` the fork's `main`, then `git checkout 42abc5a` +
+      `systemctl --user restart moss-live-web.service` + poll `/live` for 200 (8-11 s), and on m4mbp
+      a `git fetch <fork URL> && git checkout 42abc5a` for the four-way SHA clause with **no rebuild
+      and no reinstall**. Pre-record both hosts' rollbacks before touching either.
     - **(d) F1 then F3** `[open]` — the Phase M gate step (d) that candidate 56 blocked.
     Note in the journal that this also repairs the PRD's decoder p95 RTF clause, measured from this
     same number and therefore unreliable in every prior run. `[recorded - it. 1]`
@@ -2129,7 +2135,8 @@ until then, so a red run measures this bug and nothing else.
 Explicitly out of scope: mandatory client retention of the 409 refusal body. Right fix, wrong cycle;
 it needs its own authorization.
 
-**P1-P4 ARE LANDED, LOCALLY GREEN AND UNMERGED (run `20260729-025318` iteration 1).** Six files:
+**P1-P4 ARE LANDED, GREEN AND MERGED as `42abc5a` (code from run `20260729-025318` iteration 1,
+merged iteration 4) — but NOT YET DEPLOYED.** Six files:
 `live_adapters.py`, `live_coordinator.py`, `vllm_runner.py`, `model_runner.py`, `jobs.py`,
 `tests/test_live_pipeline_seams.py`, plus the two superseded nodes in `tests/test_live_vad.py`.
 Python **608 passed / 2 skipped / 368 subtests** in 59 s (604 → 608: four new seam nodes).
