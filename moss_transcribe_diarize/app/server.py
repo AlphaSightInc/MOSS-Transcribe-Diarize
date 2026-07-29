@@ -13,6 +13,7 @@ from .live_auth import LiveAccessRegistry
 from .live_helper_failure import LiveHelperLeaseConfigError
 from .live_portal import attach_live_portal
 from .live_service_runtime import LiveServiceRuntime
+from .live_tape import LiveSessionTapeStore
 from .live_transport import attach_live_routes
 from .model_runner import ModelRunner
 from .speaker_identity import (
@@ -51,6 +52,11 @@ def create_app(
     live_server_cert_sha256: str | None = None,
     live_helper_lease_seconds: float | None = None,
     live_access_registry: LiveAccessRegistry | None = None,
+    # ADR-0003 D2: retention is opt-in, so the store arrives already declared or not at
+    # all. What *declares* it -- an env key, a manifest field -- is a separate change on
+    # purpose: a free deployed parameter is stated by the deployment, and until one states
+    # it this argument stays None and the service is the one every gate was measured on.
+    live_tape_store: LiveSessionTapeStore | None = None,
 ):
     try:
         from fastapi import FastAPI, HTTPException, Request
@@ -115,6 +121,7 @@ def create_app(
                 live_runtime,
                 live_access_registry,
                 live_helper_lease_seconds=live_helper_lease_seconds,
+                tape_store=live_tape_store,
             )
         except LiveHelperLeaseConfigError as exc:
             raise ValueError(str(exc)) from exc

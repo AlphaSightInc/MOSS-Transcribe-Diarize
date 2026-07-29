@@ -759,6 +759,123 @@ class LiveSessionTapeStore:
         return tuple(reaped)
 
 
+class LiveSessionTapeRecorder:
+    """The wired side of the tape: one guard for every call site on the live path.
+
+    Constructed with the store a deployment declared, or with `None` when it declared none
+    (D2) -- in which case every method here is a no-op and the service does exactly what it
+    did before the tape existed. That is not a convenience: every gate this loop has
+    recorded was measured against a no-tape service, so `None` is what keeps those results
+    meaningful, and it is the default all the way out to `create_app`.
+
+    **Nothing here raises.** `LiveSessionTape` already promises that no *frame* ends a
+    meeting, but the store's own calls -- create, release, reap -- touch a filesystem and
+    can, and a route that lets a disk error escape ends the meeting with a 500. That would
+    be ADR-0003 D5 violated by the very substrate it was written for, so the rule is
+    enforced once, here, rather than at each of the eight call sites.
+    """
+
+    __slots__ = ("_store",)
+
+    def __init__(self, store: LiveSessionTapeStore | None):
+        self._store = store
+
+    @property
+    def enabled(self) -> bool:
+        return self._store is not None
+
+    def create(self, session_id: str) -> None:
+        if self._store is None:
+            return
+        try:
+            self._store.create(session_id)
+        except Exception as exc:  # noqa: BLE001 - D5: a tape never ends a meeting
+            self._failed("create", session_id, exc)
+
+    def append_lane_frame(self, session_id: str, frame: LiveV2Frame) -> None:
+        """Tee one *acknowledged* lane frame.
+
+        Acknowledged, not received: the tape records what the session accepted, so a frame
+        the ingress refused is absent from both the meeting and the tape. A replay the
+        ingress re-acks arrives here too and lands as a duplicate, because placement is by
+        capture timestamp -- the same reason a retried outbox cannot double-write.
+        """
+
+        tape = self._tape(session_id)
+        if tape is None:
+            return
+        try:
+            tape.append_lane_frame(frame)
+        except Exception as exc:  # noqa: BLE001 - D5
+            self._failed("append", session_id, exc)
+
+    def append_mixed(
+        self,
+        session_id: str,
+        *,
+        pcm: bytes,
+        start_timestamp_ns: int,
+        sample_count: int,
+        sample_rate: int = LIVE_SAMPLE_RATE,
+    ) -> None:
+        tape = self._tape(session_id)
+        if tape is None:
+            return
+        try:
+            tape.append_mixed(
+                pcm=pcm,
+                start_timestamp_ns=start_timestamp_ns,
+                sample_count=sample_count,
+                sample_rate=sample_rate,
+            )
+        except Exception as exc:  # noqa: BLE001 - D5
+            self._failed("append", session_id, exc)
+
+    def release(self, session_id: str) -> None:
+        """End this session's tape, on every path that ends the session.
+
+        Including the ones nobody asked for: a lease expiry is the *usual* terminal path on
+        the real hosts, and a tape left open there would stay in the store's active set, be
+        skipped by every reap, and outlive its TTL forever -- the immortal tape D6 exists
+        to prevent.
+        """
+
+        if self._store is None:
+            return
+        try:
+            self._store.release(session_id)
+        except Exception as exc:  # noqa: BLE001 - D5
+            self._failed("release", session_id, exc)
+
+    def reap(self, *, active_session_ids: Sequence[str] = ()) -> tuple[str, ...]:
+        if self._store is None:
+            return ()
+        try:
+            return self._store.reap(active_session_ids=active_session_ids)
+        except Exception as exc:  # noqa: BLE001 - D5
+            self._failed("reap", "-", exc)
+            return ()
+
+    def _tape(self, session_id: str) -> LiveSessionTape | None:
+        if self._store is None:
+            return None
+        try:
+            return self._store.get(session_id)
+        except Exception as exc:  # noqa: BLE001 - D5
+            self._failed("lookup", session_id, exc)
+            return None
+
+    @staticmethod
+    def _failed(action: str, session_id: str, exc: BaseException) -> None:
+        _TAPE_LOG.warning(
+            "live session tape %s failed: session_id=%s error=%s: %s",
+            action,
+            session_id,
+            type(exc).__name__,
+            exc,
+        )
+
+
 def _merge(intervals: Sequence[tuple[int, int]], start: int, end: int) -> list[tuple[int, int]]:
     merged: list[tuple[int, int]] = []
     for item_low, item_high in sorted([*intervals, (start, end)]):

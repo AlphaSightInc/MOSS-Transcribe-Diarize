@@ -19529,3 +19529,132 @@ just the taped path.  The declaration surface itself (an ops/moss-live.env key
 plus its finalizer/manifest treatment) is a second, separable change and should
 NOT be bundled: candidate 63 already established that a free deployed parameter
 is stated by the deployment, and the TTL and cap are two more of them.
+
+================================================================================
+RUN 20260729-025318 ITERATION 20 - THE TAPE IS ON THE LIVE PATH (Phase N step 2,
+the wiring)
+================================================================================
+
+TARGET.  Iteration 19's recommended next step, and the only Phase N item needing
+neither an operator nor a host: wire `live_tape.py` to the transport.  Step 2's
+writer existed and NOTHING CALLED IT, which is the same "implemented on one side
+of a seam, uncalled from the other" shape as candidate 60 - a green 694 was not
+a shipped tape.
+
+VALIDATION.  PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+  -> 703 passed / 2 skipped / 368 subtests in 70.59 s   (was 694/2/368)
+Focused: tests/test_live_api.py 33, tests/test_live_tape.py 37,
+tests/test_live_helper_failure.py 12 -> 82 collected, all green in 4.5 s.
+
+PAYLOAD - 6 files, +528/-4.  moss_transcribe_diarize/app/live_tape.py (+117,
+LiveSessionTapeRecorder), live_transport.py (+57), live_helper_failure.py (+7),
+server.py (+7), tests/test_live_api.py (+215), tests/test_live_tape.py (+129).
+NONE under macos/ or ops/.  `git diff --name-only 42abc5a HEAD -- ':!scripts/ralph-afk'`
+grows by four product/test files; the branch already carried unmerged product
+source from iterations 15-19, so no offline probe changed its meaning.
+
+THE RED-BEFORE IS FOUR SEMANTIC REVERTS, EACH NAMING A DIFFERENT NODE.  Sources
+copied to /tmp/i20-redbefore first and restored after each; the suite was green
+again at the end (70 passed across the two files).
+
+  revert                                                  red nodes
+  ------------------------------------------------------  ---------
+  1. drop `tapes.append_lane_frame` + `_tape_mixed` in     1
+     the frames route                                       (the taped route)
+  2. the recorder's six `except Exception` guards ->       2
+     a class that is never raised                            (route full-disk +
+                                                              the recorder's own)
+  3. `_release_registries`'s tape release -> `if False:`   1  (lease expiry)
+  4. drop `tapes.release` on the stop path                 2
+
+The fifth node - "an undeclared retention root leaves the live path untaped" -
+has no revert by construction: it asserts an INVARIANT (there is no default
+root), and the only change that could redden it is inventing one.  It is written
+as a full mixed meeting followed by a grep of the whole tree for `.pcm` and
+`index.json`, so it fails the moment a default appears.
+
+THE SHAPE, IN ONE PARAGRAPH.  `LiveSessionTapeRecorder(store_or_None)` is the
+only tape object the transport holds.  It is constructed ALWAYS - with `None`
+when no root is declared - and every method is then a no-op, so "the service
+every gate was measured on" is a state of the wiring rather than the absence of
+it.  Five call sites: `create` at session create; `append_lane_frame` after the
+v2 ingress ack in the frames route; `append_mixed` at
+`LiveCompatibilityMixer.admit_available`'s sealed commit, at BOTH the mid-meeting
+call and the `final=True` one in stop; `release` beside every
+`v2_mixers.release` (six in live_transport plus
+`LiveHelperFailureCoordinator._release_registries`); and `reap()` once at
+`attach_live_routes`, which is service start.  `create_app` gained
+`live_tape_store=None` and `web_cli.py` does not pass it.
+
+THREE DECISIONS, WITH THE REASONING, SO THEY ARE NOT RE-ARGUED.
+
+1. THE TEE IS AFTER THE ACK, NOT BEFORE IT.  The tape records what the session
+   ACCEPTED.  A frame the ingress refused is in neither the meeting nor the tape,
+   which is the only reading under which the tape and the transcript describe the
+   same audio.  The consequence worth stating: a replay the ingress re-acks
+   inside LIVE_V2_REPLAY_ACK_WINDOW does reach the tape, and lands as the
+   appender's `duplicate` - because placement is by capture timestamp, an outbox
+   retry cannot double-write.  That is gate C's property arriving for free at the
+   wired path rather than being re-implemented at it.
+
+2. THE TAPE'S LIFECYCLE IS THE MIXED TRACK'S LIFECYCLE.  `release` is paired with
+   `v2_mixers.release`, not with `access.release_session`, because once the mixer
+   is gone no further mixed audio can exist for that session and a tape kept open
+   past it could only accumulate lane frames with no mixed track.  THE SITE THAT
+   MAKES THIS LOAD-BEARING IS THE COORDINATOR'S: a helper lease expiry is the
+   USUAL terminal path on the real hosts - F1's only terminal line was
+   `helper_lease_expired`, and F3's was too - and a tape left open there stays in
+   the store's active set, is skipped by every reap (`reap` unions
+   `active_session_ids` with `self._tapes`), and outlives its TTL for the life of
+   the process.  That is the immortal tape ADR-0003 D6 exists to prevent, reached
+   by the path a clean stop never takes.
+
+3. THE NEVER-RAISES RULE IS ENFORCED AT THE RECORDER, NOT AT EIGHT CALL SITES.
+   `LiveSessionTape` already promises that no FRAME raises; the store's own
+   create/release/reap touch a filesystem and can.  An OSError escaping
+   `POST /frames` is a 500, i.e. a meeting ended by the substrate ADR-0003 D5 was
+   written to protect - the third amendment's rule violated by its own remedy.
+   Each swallow logs one WARNING naming the action (create/lookup/append/release/
+   reap) and the error, so a tape that silently vanishes is never indistinguish-
+   able from one that was never enabled.  The route node proves the whole meeting
+   - four frames, a mixed commit and a clean stop - survives a store whose every
+   method raises ENOSPC.
+
+WHAT WAS LEARNED.
+
+1. A STOP WITH QUEUED WORK NEEDS A DEADLINE, AND ITS 409 READS LIKE A TAPE BUG.
+   The first two route nodes failed at `stop` with 409 `live service stop
+   deadline expired with unresolved work` on `{"deadline": 0.0}` - in BOTH the
+   taped and the untaped run, which is what proved it had nothing to do with the
+   tape.  The pre-existing mixing test never stops, so nothing in the suite had
+   paid this before.  `{"deadline": 5.0}` is the fix and it is recorded in the
+   fence.
+
+2. THE COORDINATOR ALREADY HAD THE RIGHT SEAM AND IT COST NOTHING TO USE IT.
+   `LiveHelperFailureCoordinator` takes its registries as `_SessionReleaseRegistry`
+   - a structural protocol whose whole content is `release(session_id)`.  Naming
+   the recorder's method `release` (mirroring the store's vocabulary) made it
+   satisfy that protocol with no new type, no new protocol and a one-line
+   constructor change.  Vocabulary chosen to match an existing seam is cheaper
+   than vocabulary chosen to read well in isolation.
+
+3. THE MIXED TRACK'S TIMESTAMP IS IN THE DIAGNOSTICS, NOT IN THE FRAME.  The
+   `AudioFrame` a mix commits carries a runtime SEQUENCE; only
+   `LiveMixDiagnostics.start_timestamp_ns` says where in wall-clock time the
+   interval begins, and that is the entire basis on which the tape places it.
+   Teeing `mixed.frame` alone would have produced a tape that looks right and is
+   silently arrival-ordered - the exact defect iteration 19's first revert exists
+   to catch, arriving through the wiring instead of through the appender.
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  The declaration surface, in one iteration, inside
+ops/ + moss_transcribe_diarize/ + tests/: an `ops/moss-live.env` key for the
+retention root plus the TTL and the cap, threaded through `web_cli.py` to
+`create_app(live_tape_store=...)`.  Candidate 63's rule governs all three - a
+free deployed parameter is STATED by the deployment, never defaulted by a tool -
+and ADR-0003 D3 already fixes the one value a tool may choose (TTL 0).  Until it
+lands the deployed service still cannot write a byte, which is why it was
+deliberately not bundled here: the wiring is provable offline, the declaration
+changes what a running host does.  Step 3 (the retrospective sweep) is what makes
+the tape pay, and it is the first Phase N item that needs the tape wired.

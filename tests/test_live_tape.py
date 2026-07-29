@@ -34,6 +34,7 @@ from moss_transcribe_diarize.app.live_tape import (
     TAPE_INDEX_FILENAME,
     TAPE_WRITE_FAILED,
     LiveSessionTape,
+    LiveSessionTapeRecorder,
     LiveSessionTapeStore,
     LiveTapeRootError,
 )
@@ -586,3 +587,131 @@ def test_release_ends_the_tape_but_does_not_delete_it(tmp_path):
     assert json.loads(tape.index_path.read_text())["ended_at"] == 250.0
     assert store.get("session-a") is None
     assert store.release("session-a") is None
+
+
+# --------------------------------------------------------------------------------------
+# The recorder -- the wired side, where D2 and D5 have to hold for the live path
+# --------------------------------------------------------------------------------------
+
+
+class _HostileStore:
+    """Every store call fails, the way a full or unmounted disk fails: mid-meeting."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def _fail(self, action: str):
+        self.calls.append(action)
+        raise OSError(28, "No space left on device")
+
+    def create(self, session_id):  # noqa: ANN001 - stub
+        self._fail("create")
+
+    def get(self, session_id):  # noqa: ANN001 - stub
+        self._fail("get")
+
+    def release(self, session_id):  # noqa: ANN001 - stub
+        self._fail("release")
+
+    def reap(self, *, active_session_ids=()):
+        self._fail("reap")
+
+
+def test_an_undeclared_recorder_is_a_no_op_at_every_call_site(tmp_path):
+    """D2. No declared root means the service behaves exactly as it did before the tape.
+
+    Every gate this loop has recorded was measured against a no-tape service, so this is
+    what keeps those results meaningful -- and it is the default all the way to create_app.
+    """
+
+    recorder = LiveSessionTapeRecorder(None)
+
+    assert recorder.enabled is False
+    recorder.create("session-a")
+    recorder.append_lane_frame("session-a", _frame(0))
+    recorder.append_mixed(
+        "session-a", pcm=_pcm(0), start_timestamp_ns=ORIGIN_NS, sample_count=FRAME_SAMPLES
+    )
+    recorder.release("session-a")
+
+    assert recorder.reap() == ()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_the_recorder_records_both_lanes_and_the_mixed_track_and_ends_the_tape(tmp_path):
+    store = _store(tmp_path)
+    recorder = LiveSessionTapeRecorder(store)
+
+    recorder.create("session-a")
+    recorder.append_lane_frame("session-a", _frame(0, lane=LiveLane.SYSTEM))
+    recorder.append_lane_frame("session-a", _frame(0, lane=LiveLane.MICROPHONE))
+    recorder.append_mixed(
+        "session-a",
+        pcm=_pcm(7),
+        start_timestamp_ns=ORIGIN_NS,
+        sample_count=FRAME_SAMPLES,
+    )
+    tape = store.get("session-a")
+    assert tape is not None
+    assert tape.read_track(LiveLane.SYSTEM.value) == _pcm(0)
+    assert tape.read_track(LiveLane.MICROPHONE.value) == _pcm(0)
+    assert tape.read_track(MIXED_TRACK) == _pcm(7)
+    assert tape.gaps(MIXED_TRACK) == ()
+
+    recorder.release("session-a")
+
+    assert store.get("session-a") is None
+    assert json.loads(tape.index_path.read_text())["ended_at"] is not None
+
+
+def test_no_store_failure_reaches_the_live_path(tmp_path, caplog):
+    """D5, at the seam. A disk error that escapes a route ends the meeting with a 500.
+
+    `LiveSessionTape` already promises no *frame* raises; the store's own create/release/
+    reap touch a filesystem and can, so the recorder is where the rule is enforced -- and
+    it is enforced loudly, because a substrate that vanishes silently is indistinguishable
+    from one that was never enabled.
+    """
+
+    store = _HostileStore()
+    recorder = LiveSessionTapeRecorder(store)
+
+    with caplog.at_level("WARNING", logger="moss_transcribe_diarize.live.tape"):
+        recorder.create("session-a")
+        recorder.append_lane_frame("session-a", _frame(0))
+        recorder.append_mixed(
+            "session-a", pcm=_pcm(0), start_timestamp_ns=ORIGIN_NS, sample_count=FRAME_SAMPLES
+        )
+        recorder.release("session-a")
+        assert recorder.reap() == ()
+
+    assert store.calls == ["create", "get", "get", "release", "reap"]
+    actions = [record.getMessage() for record in caplog.records]
+    assert len(actions) == 5
+    assert all("No space left on device" in message for message in actions)
+
+
+def test_a_frame_for_a_session_with_no_tape_is_ignored(tmp_path):
+    """A frame that arrives after release -- or before create ever succeeded -- is not an
+    error; it is a session the tape does not have. Only the failure that caused it was."""
+
+    recorder = LiveSessionTapeRecorder(_store(tmp_path))
+
+    recorder.append_lane_frame("session-a", _frame(0))
+
+    assert not (tmp_path / "tape-root" / "session-a").exists()
+
+
+def test_the_recorder_reaps_a_crashed_meetings_tape(tmp_path):
+    """D6 through the wired path: what the service calls at startup is this."""
+
+    store = _store(tmp_path, retention_ttl_seconds=0.0)
+    tape = store.create("session-a", now=100.0)
+    tape.append_lane_frame(_frame(0))
+    directory = tape.directory
+    del tape, store
+
+    restarted = LiveSessionTapeRecorder(_store(tmp_path, retention_ttl_seconds=0.0))
+
+    assert restarted.reap() == ("session-a",)
+    assert not directory.exists()
