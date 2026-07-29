@@ -23,6 +23,15 @@ What it deliberately mirrors from the Mac client
 * The pump cadence: one frame per lane per 0.5 s tick, lanes independent, paced against
   a wall clock rather than sent as fast as the socket allows.
 * The portal's read path: snapshot(since_version) then events(since_seq), serially.
+* Optionally (`--concurrent-readers N`) the Mac's *read concurrency*: N extra view
+  readers, each on its own pinned connection and its own thread, polling snapshot and
+  events while frames are being posted. On m4mbp two readers run at once -- the app's
+  own latency probe and the portal poller -- and F1 measured 325 + 56 snapshot fetches
+  in 73.3 s, i.e. ~4.4 reads/s against 4 frame posts/s. `live_snapshot`/`live_events`
+  are sync `def` handlers that Starlette runs in its threadpool while
+  `accept_live_frame` is `async def` on the event loop, so a strictly serial probe
+  structurally cannot overlap a read with a write. Default 0, which leaves every
+  earlier run comparable.
 
 What it deliberately does NOT mirror
 ------------------------------------
@@ -53,6 +62,7 @@ import ssl
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import wave
 from dataclasses import dataclass, field
@@ -152,6 +162,119 @@ class PinnedClient:
             except (ValueError, UnicodeDecodeError):
                 return response.status, raw.decode("utf-8", "replace"), elapsed
         raise ProbeError("unreachable")
+
+
+class ConcurrentViewReader(threading.Thread):
+    """A view reader on its own pinned connection, polling while frames are posted.
+
+    `PinnedClient` holds one socket and is not thread-safe, so each reader owns one --
+    which is also what the Mac does: the app's latency probe and the portal poller are
+    two independent HTTPS clients.
+
+    It records *when* a read first stopped returning 200 and *what the server said*.
+    That is the point: on the Mac both readers 401 at the same instant a frame first
+    409s, and neither host keeps the body, so no recorded run names the cause.
+    """
+
+    def __init__(
+        self,
+        *,
+        name: str,
+        host: str,
+        port: int,
+        pin: str,
+        session_id: str,
+        view_token: str,
+        interval: float,
+    ) -> None:
+        super().__init__(name=name, daemon=True)
+        self._client = PinnedClient(host, port, pin)
+        self._session_id = session_id
+        self._token = view_token
+        self._interval = max(0.0, interval)
+        # NOT `self._stop`: threading.Thread.join() calls its own private _stop().
+        self._stop_event = threading.Event()
+        self._started_monotonic: float | None = None
+        self.snapshot_ms: list[float] = []
+        self.events_ms: list[float] = []
+        self.status_counts: dict[str, int] = {}
+        self.first_non_200: dict | None = None
+        self.last_non_200: dict | None = None
+        self.error: str | None = None
+        self.last_version: int | None = None
+        self.last_seq = 0
+        self.polls = 0
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    def run(self) -> None:
+        self._started_monotonic = time.monotonic()
+        try:
+            while not self._stop_event.is_set():
+                self._poll_once()
+                self.polls += 1
+                if self._stop_event.wait(self._interval):
+                    break
+        except Exception as exc:  # a reader must never take the run down with it
+            self.error = f"{type(exc).__name__}: {exc}"
+        finally:
+            self._client.close()
+
+    def _poll_once(self) -> None:
+        path = f"/api/live/sessions/{self._session_id}/snapshot"
+        if self.last_version is not None:
+            path += f"?since_version={self.last_version}"
+        status, body, elapsed = self._client.request("GET", path, bearer=self._token)
+        self.snapshot_ms.append(elapsed * 1000.0)
+        self._record("snapshot", status, body)
+        if status == 200 and isinstance(body, dict) and body.get("snapshot"):
+            session = (body["snapshot"].get("session") or {})
+            version = session.get("version")
+            if isinstance(version, int):
+                self.last_version = version
+
+        status, body, elapsed = self._client.request(
+            "GET",
+            f"/api/live/sessions/{self._session_id}/events?since_seq={self.last_seq}",
+            bearer=self._token,
+        )
+        self.events_ms.append(elapsed * 1000.0)
+        self._record("events", status, body)
+        if status == 200 and isinstance(body, dict):
+            for event in body.get("events") or ():
+                self.last_seq = max(self.last_seq, int(event.get("seq", 0)) + 1)
+
+    def _record(self, kind: str, status: int, body: object) -> None:
+        key = f"{kind}:{status}"
+        self.status_counts[key] = self.status_counts.get(key, 0) + 1
+        if status == 200:
+            return
+        started = self._started_monotonic or time.monotonic()
+        entry = {
+            "kind": kind,
+            "status": status,
+            # View-route bodies are `{"detail": ...}` or a failure record; no route
+            # echoes a token, so keeping the body cannot leak one.
+            "body": body if isinstance(body, (dict, str)) else repr(body),
+            "at_seconds": round(time.monotonic() - started, 3),
+        }
+        if self.first_non_200 is None:
+            self.first_non_200 = entry
+        self.last_non_200 = entry
+
+    def summary(self) -> dict:
+        return {
+            "name": self.name,
+            "polls": self.polls,
+            "status_counts": dict(sorted(self.status_counts.items())),
+            "first_non_200": self.first_non_200,
+            "last_non_200": self.last_non_200,
+            "snapshot_p95_ms": _p95(self.snapshot_ms),
+            "events_p95_ms": _p95(self.events_ms),
+            "handshakes": self._client.handshakes,
+            "error": self.error,
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -422,6 +545,22 @@ def main() -> int:
     parser.add_argument("--poll-every-ticks", type=int, default=2)
     parser.add_argument("--stop-deadline", type=float, default=30.0)
     parser.add_argument(
+        "--concurrent-readers",
+        type=int,
+        default=0,
+        help="extra view readers, each on its own thread and its own pinned connection, "
+        "polling snapshot+events while frames are posted. The Mac runs 2 (the app's "
+        "latency probe and the portal poller); 0 keeps this probe strictly serial and "
+        "every earlier run comparable.",
+    )
+    parser.add_argument(
+        "--reader-interval",
+        type=float,
+        default=0.22,
+        help="seconds between polls per concurrent reader; 0.22 reproduces F1's measured "
+        "~4.4 snapshot reads per second per reader",
+    )
+    parser.add_argument(
         "--no-fail-fast",
         dest="fail_fast",
         action="store_false",
@@ -530,6 +669,21 @@ def main() -> int:
             "provider_manifest_hash": descriptor.get("provider_manifest_hash"),
         },
     }
+
+    # --- the Mac's read concurrency, if asked for -------------------------------------
+    readers: list[ConcurrentViewReader] = []
+    for index in range(max(0, args.concurrent_readers)):
+        reader = ConcurrentViewReader(
+            name=f"view-reader-{index + 1}",
+            host=args.host,
+            port=args.port,
+            pin=args.pin,
+            session_id=session_id,
+            view_token=view_token,
+            interval=args.reader_interval,
+        )
+        readers.append(reader)
+        reader.start()
 
     # --- publish, paced like the production pump ------------------------------------
     origin_ns = time.time_ns() - int(TICK_SECONDS * 1e9)
@@ -672,6 +826,20 @@ def main() -> int:
         "wall_seconds": round(time.monotonic() - started_wall, 2),
         "tls_handshakes": client.handshakes,
     }
+
+    # Stopped before the `stop` call, so a 401 recorded by a reader means the session
+    # stopped being viewable *during the meeting* -- which is candidate 56 -- and not
+    # because this probe ended it.
+    for reader in readers:
+        reader.stop()
+    for reader in readers:
+        reader.join(timeout=10.0)
+    if readers:
+        report["concurrent_readers"] = {
+            "count": len(readers),
+            "interval_seconds": args.reader_interval,
+            "readers": [reader.summary() for reader in readers],
+        }
 
     # --- stop and drain --------------------------------------------------------------
     status, body, _ = client.request(

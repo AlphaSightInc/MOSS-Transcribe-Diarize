@@ -126,11 +126,13 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
   and `scripts/ralph-afk/live-soak.sh` (iteration 22 — F3 with candidate 51's harness, in the repo,
   in a layout the reducer reads). Running the reducer on the real evidence also found that it had
   been passing F1's red directory; see "F3 has a repo driver now" below.
-- **Candidate 56 — a live session stops being viewable mid-meeting** (new, iteration 26; it is what
-  cut both F1 re-runs). **Iteration 27 could not reproduce it from a probe** and eliminated four
-  hypotheses doing so; the next experiment is named in that block. It blocks gate step (d), and F3
-  must not run until it is understood — a 17-minute soak that dies at 30 s costs seventeen minutes
-  to learn what a 60 s canary already said twice.
+- **Candidate 56 — a live session stops being viewable mid-meeting** (iteration 26; it is what cut
+  both F1 re-runs). **ANSWERED in iteration 28 with the failure record in hand**: the server's wall
+  clock steps ~1.5 s backwards every ~32.3 s, `vllm_runner.py:111` measures `elapsed_sec` on that
+  clock, and `live_adapters.py:344` turns a negative one into a non-retryable `LiveProviderError`
+  that ends the meeting. **The fix needs its own authorization** — it is tracked product source
+  under the post-merge freeze — and F1/F3 will keep dying at a ~13 %-per-32 s hazard until it
+  lands. See the candidate-56 answer block.
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
@@ -1056,10 +1058,72 @@ state), both TCC grants still `auth_value=2`; server `HEAD` `77e0014`, worktree 
 *Reusable:* evidence `/tmp/i26-f1-evidence/` and `/tmp/i26b-f1-evidence/` here, clause reductions
 `/tmp/i26-f1-clauses.txt` and `/tmp/i26b-f1-clauses.txt`.
 
+**CANDIDATE 56 IS ANSWERED, AND THE CAUSE IS THE HOST'S WALL CLOCK (new, iteration 28).
+READ THIS BEFORE ANY FURTHER CERTIFICATION RUN OR LATENCY CLAIM.** One probe run with iteration
+27's recorded next step — two concurrent view readers — reproduced the Mac's death
+symptom-for-symptom on the deployed `77e0014`, and the probe kept the body the app discards.
+
+***The failure record, which no host has ever recorded:***
+```json
+{"kind": "integrity", "code": "canonical_decode_failed", "retryable": false,
+ "message": "runner result elapsed_sec must be finite and non-negative.",
+ "detail": {"error_type": "LiveProviderError"}}
+```
+`POST /frames` 409 at tick 63 (**t+31.5 s**); **both** readers 401 `invalid bearer authority.` at
+**31.287 / 31.289 s** — the same instant, both readers, exactly the Mac's three-symptom cut. The
+session was healthy to that instant: 11 spans, all submitted, RTF p95 **0.162**, `capped 0`,
+`terminal_failure` null in the last readable snapshot, no lane fault, no heartbeat involved.
+
+***The mechanism, one line, and the product already contains its own fix.***
+`vllm_runner.py:111` returns `elapsed_sec=time.time() - started` — the **wall** clock.
+`RunnerBoundedWavInference.transcribe_pcm` takes `started = time.monotonic()` at
+`live_adapters.py:305` and uses it on the **empty-transcript** path (`:317`), then **throws that
+measurement away on the success path** and takes the runner's wall-clock number
+(`:344 _runner_elapsed_sec`). `_finite_non_negative_float` rejects a negative one as a
+**non-retryable** `LiveProviderError`, which `_process_in_flight_item` turns into
+`_fail` → terminal → every view 401 and every frame 409. The right measurement is sitting unused
+in the same function, on the branch next door.
+
+***And the wall clock on `ga0-alienware-rtx4070ti` is not monotone — measured, not inferred.***
+90 s of paired `time.time()` / `time.monotonic()` sampling at 20 ms on the host: **3 backward steps
+of −1.523 / −1.504 / −1.503 s**, at monotonic 1731399.207 / 1731431.460 / 1731463.740 — a
+**~1.5 s step backwards every ~32.3 s**, on a host whose `timedatectl` says *"System clock
+synchronized: yes, NTP service: active"*. Evidence `/tmp/i28-clock.txt`. This is the WSL2 clock
+being resynchronised, and it is a *host* fact, not a code fact — but a meeting must not end because
+NTP corrected a clock.
+***Which is why the death time looked random and why two probe runs survived.*** A decode brackets
+~0.33 s of wall time and spans freeze every 2.5 s, so a decode is in flight ~13 % of the time; one
+step every 32.3 s therefore kills a session with ~13 % probability per step. F1 run A died at
+**t+18.1 s**, run B at **t+32.1 s**, this run at **t+31.5 s**; iteration 23's 120 s run and
+iteration 27's 150 s run survived. That distribution is exactly what a periodic external event
+sampled by a 13 % duty cycle produces, and nothing about the audio explains it — which is why five
+audio hypotheses all came back clean.
+***The class is the same one the third amendment settled, for the fifth time.*** A decoder whose
+*timing metadata* is untrustworthy still returned a transcript. The span is fine; only the number
+used for RTF is not. `LiveProviderTransientError` (J3) already exists for "the decoder blinked" and
+degrades one span; this condition is strictly less serious and is terminal.
+***A second consequence, and it touches a PRD clause.*** `elapsed_sec` is the numerator of
+**`decoder p95 RTF < 1`**. Every RTF this project has recorded was measured on a clock that steps
+1.5 s backwards every 32 s, so any decode bracketing a step is wrong by ~1.5 s in either direction.
+Surviving spans are unaffected only because a *negative* one kills the run before it is reported.
+F1's two 8.5 s runaways are **not** clock artifacts — 1.5 s is far too small and both were
+corroborated by 2024/2019 generated tokens.
+*Reusable:* `scripts/ralph-afk/live-pipeline-probe.py --concurrent-readers N --reader-interval S`
+(default 0, so every earlier run stays comparable) and `scripts/ralph-afk/view-reader-probe.py`,
+which exercises the reader against a local pinned-TLS stub. Report `/tmp/i28-probe.json`, host
+baselines `/tmp/i28-host-baseline.txt` / `/tmp/i28-host-after.txt`. Device
+`ralph-i28-c56-readers-20260729T003541Z` **revoked** (12 devices / 1 unrevoked); all three MainPIDs
+and `NRestarts=0` unmoved, `live-runs` 0, 0 tracebacks, batch 200.
+*Whether the concurrent readers were load-bearing is UNSETTLED and probably no:* a reader takes the
+runtime lock and mutates nothing, and a 13 %-per-step hazard reproduces on its own eventually. They
+are still worth keeping — they are what dated the cut to the millisecond and proved both readers
+fail together.
+
 **Candidate 56 did NOT reproduce under continuous two-lane audio, and two of its likeliest causes
-are now ELIMINATED (new, iteration 27). READ THIS BEFORE THE NEXT ATTEMPT AT CANDIDATE 56.** The
-recorded next step was "drive `live-pipeline-probe.py` with a program that resembles the Mac's real
-capture more closely than iteration 23's did". The measured difference was found first, then run.
+were ELIMINATED (iteration 27; superseded by the block above — kept for the eliminations, which
+still hold).** The recorded next step was "drive `live-pipeline-probe.py` with a program that
+resembles the Mac's real capture more closely than iteration 23's did". The measured difference was
+found first, then run.
 - **What the probe could not produce, and now can.** `build_lane_track` lays a few utterances on a
   silent timeline, so between turns a lane sends frames whose every sample is zero and whose wire
   `silent` flag is **true**. A real capture never does that — the microphone hears the room and the
@@ -1911,6 +1975,14 @@ python3 scripts/ralph-afk/live-hardcap-repro.py --speech-provider webrtc --frame
 # The webrtc cases use a stand-in VAD enforcing only webrtcvad's 10/20/30 ms length contract,
 # because MacStudio has no native webrtcvad wheel. The real exception is recorded from the host.
 
+# --- The probe's own instruments, offline, no server and no pairing code (iterations 26, 28) -----
+#     Run BOTH before spending a host run on the driver they belong to: an instrument that has
+#     never run is not evidence that it works, and both of these found a real defect on first run.
+python3 scripts/ralph-afk/soak-abort-probe.py      # live-soak.sh's abort decision: 90/90, rc=0
+python3 scripts/ralph-afk/view-reader-probe.py     # live-pipeline-probe.py's ConcurrentViewReader
+# view-reader-probe.py caught `self._stop = threading.Event()` shadowing threading.Thread._stop,
+# which threading.Thread.join() calls internally: every run would have died at reader.join().
+
 # --- H blocker 4: the decode -> identity seam, ON THE HOST (iteration 7) ------------------------
 #     Reads the deployed manifest, sends ONE inference request to the same vLLM endpoint the
 #     service uses, and loads a second copy of the ONNX identity encoder (CPU). It mutates nothing:
@@ -2630,17 +2702,23 @@ authorization, and the cycle's gate (F1 and F3 both green) does not depend on it
     iteration 23's 120 s run on this same SHA was healthy, so the trigger is something real capture
     does that synthetic audio does not (variable frame sizes, real speech, the identity path).
     Reproduce it there before designing anything.
-    **Iteration 27 tried and FAILED to reproduce, eliminating four hypotheses** - see "Candidate 56
-    did NOT reproduce" above. Not continuously-voiced two-lane audio (150 s, `--lane-audio
-    continuous`, span density 0.40/s against the real run's 0.43/s, `non_200_count` 0, 60/60 spans
-    submitted); not span density; not the identity path (17 abstains, every one published); not the
-    helper lease or any heartbeat-driven terminal (run A died at t+18.1 s and the lease is 30 s, and
-    a terminal session's heartbeat still answers 200 - so "165 x 200" never meant "alive"); not lane
-    clock drift (the real mixed-frame geometry is periodic with period 9, i.e. fixed-offset
-    lockstep, which `--lane-offset-ms` already models). **The next experiment is a background reader
-    thread in the probe**: `live_snapshot`/`live_events` are sync `def` handlers running in
-    Starlette's threadpool concurrently with the `async def` frames handler, and the Mac has *two*
-    view readers polling while it publishes - an overlap this probe structurally cannot produce.
+    **Iteration 27 tried and FAILED to reproduce, eliminating four hypotheses** (all still valid,
+    and all about the audio): not continuously-voiced two-lane audio, not span density, not the
+    identity path, not the helper lease or any heartbeat-driven terminal, not lane clock drift.
+    ***ANSWERED IN ITERATION 28*** - see the candidate-56 answer block above. One probe run with
+    `--concurrent-readers 2` reproduced it at t+31.5 s and kept the 409 body:
+    `canonical_decode_failed` / *"runner result elapsed_sec must be finite and non-negative."* /
+    `LiveProviderError`, non-retryable. `vllm_runner.py:111` measures `elapsed_sec` on the **wall**
+    clock (`time.time() - started`) and the deployed host's wall clock steps **~1.5 s backwards
+    every ~32.3 s** (measured: 3 steps in 90 s). `live_adapters.py:344` then rejects the negative
+    number as a non-retryable provider error and `_process_in_flight_item` ends the meeting.
+    *Shape of the fix, not a decision, and it needs authorization:* `transcribe_pcm` **already**
+    takes `started = time.monotonic()` (`live_adapters.py:305`) and uses it on the empty-transcript
+    branch (`:317`); the success branch discards it. Either use it, or degrade the timing metadata
+    (elapsed/RTF null) instead of raising - a decoder that returned a transcript on an untrustworthy
+    clock has not made the meeting impossible to continue. **Also fix the metric, not only the
+    crash:** `elapsed_sec` is the numerator of the PRD's `decoder p95 RTF < 1` clause, so every RTF
+    recorded so far came off that stepping clock.
 57. **The clause reducer calls a passing latency number RED** `[open - loop tooling, no
     authorization needed; found in iteration 26]`. `live-canary-clauses.py` printed
     `USER-VISIBLE p95 = 3921.8 ms vs gate 4000 ms  RED`. The number is *under* the gate; it is red

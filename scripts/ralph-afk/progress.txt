@@ -13697,3 +13697,164 @@ the remaining un-mirrored client behaviours are, in order: the outbox replaying
 an unacked frame (idempotent_frames), a `discontinuity: true` frame, and a
 per-lane device_epoch change (the Mac's mic lane sits at 188 while system is 0).
 Do NOT re-run F3 until 56 is understood.
+
+
+================================================================================
+run 20260728-181020 | iteration 28 | candidate 56 - mirror the Mac's READ
+                                     CONCURRENCY in the probe
+================================================================================
+PLANNED MUTATION, RECORDED BEFORE IT IS APPLIED (prd.md "Reversibility").
+  What: ONE pairing code minted on the SERVER LOOPBACK with ops/live-pair.sh and
+        immediately consumed by ONE live-pipeline-probe.py run against the
+        deployed 77e0014 from MacStudio over the tailnet. It creates ONE device
+        row in live-auth.json and ONE live session, which the run stops itself.
+  Why:  iteration 27's recorded next step - live_snapshot/live_events are sync
+        `def` handlers Starlette runs in its threadpool while accept_live_frame
+        is `async def` on the event loop, and the probe was strictly serial, so
+        it structurally could not overlap a read with a write. The Mac runs TWO
+        concurrent view readers at ~4.4 reads/s each.
+  ROLLBACK, on the host, loopback only, no restart needed:
+        curl -sk -X DELETE https://127.0.0.1:7861/api/live/devices/<device-id>
+  Nothing else on the server or on m4mbp is touched; m4mbp is not used at all.
+
+Target: candidate 56 - a live session stops being viewable mid-meeting and
+nothing records why. It cut BOTH F1 re-runs against 77e0014 and blocks Phase M
+gate step (d). Iteration 27's recorded next step was the experiment: give the
+probe background view readers, because live_snapshot/live_events are sync `def`
+handlers Starlette runs in its threadpool while accept_live_frame is `async def`
+on the event loop, and the Mac polls with TWO readers while it publishes.
+
+Files touched: scripts/ralph-afk/live-pipeline-probe.py (ConcurrentViewReader +
+--concurrent-readers/--reader-interval, reported under report.concurrent_readers),
+scripts/ralph-afk/view-reader-probe.py (NEW - exercises that reader offline),
+scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt.
+
+*** CANDIDATE 56 IS ANSWERED, AND IT IS THE HOST'S WALL CLOCK. ***
+
+VALIDATION 1 - the instrument, before it cost a pairing code.
+  python3 scripts/ralph-afk/view-reader-probe.py -> 9/9 PASS, rc=0
+  It drives ConcurrentViewReader against a throwaway pinned-TLS stub on 127.0.0.1
+  (self-signed leaf, the reader given that leaf's own DER sha256, so the pin path
+  is exercised rather than bypassed) and asserts: both routes polled; since_version
+  and since_seq ADVANCE (a replaying reader would hide the cut behind cached
+  events); the first non-200 captured WITH ITS BODY and an offset; first_non_200
+  stays first; stop()/join() terminate it; a reader that cannot connect records
+  `error` instead of taking the run down.
+  IT FOUND A REAL DEFECT ON ITS FIRST RUN: `self._stop = threading.Event()`
+  shadows threading.Thread's private _stop(), which Thread.join() calls
+  internally, so join() died with "TypeError: 'Event' object is not callable".
+  Every host run would have crashed at reader.join() - after spending the pairing
+  code. Renamed to _stop_event. (Iteration 26's lesson, applied and repaid.)
+
+VALIDATION 2 - the run. 150 s planned against the deployed 77e0014 from MacStudio
+over the tailnet: --lane-audio continuous --lane-offset-ms system=137
+--lead-seconds 0 --concurrent-readers 2 --reader-interval 0.22, device
+ralph-i28-c56-readers-20260729T003541Z (REVOKED after, 200).
+  probe rc=0, report /tmp/i28-probe.json
+  *** REPRODUCED AT TICK 63 (t+31.5 s), SYMPTOM-FOR-SYMPTOM ***
+  frames    POST /frames -> 409 on the microphone lane; 64+63 frames accepted
+            before it, non_200_count 1, fail-fast stopped there by design
+  readers   BOTH readers 401 {"detail":"invalid bearer authority."} at 31.287 s
+            and 31.289 s - the same instant, both readers, 1 TLS handshake each,
+            no reader error. That is the Mac's three-symptom cut exactly.
+  healthy   to that instant: 11 spans all submitted, RTF p95 0.162 (max 0.162),
+            capped 0, cap_derivation_holds true, 2 canonical speakers,
+            terminal_failure null in the last readable snapshot, NO lane fault,
+            NO heartbeat involved (this probe sends none).
+
+THE BODY THE APP DISCARDS, AND NO HOST HAS EVER RECORDED:
+  {"kind":"integrity","code":"canonical_decode_failed","retryable":false,
+   "message":"runner result elapsed_sec must be finite and non-negative.",
+   "detail":{"error_type":"LiveProviderError"}}
+
+THE MECHANISM, ONE LINE, AND THE PRODUCT ALREADY CONTAINS ITS OWN FIX.
+  vllm_runner.py:111   elapsed_sec = time.time() - started        <- WALL clock
+  live_adapters.py:305 started = time.monotonic()                 <- taken...
+  live_adapters.py:317 elapsed_sec = time.monotonic() - started   <- ...and used
+                       ONLY on the empty-transcript branch
+  live_adapters.py:344 elapsed_sec = _runner_elapsed_sec(result)  <- the success
+                       branch throws the monotonic measurement away and takes the
+                       runner's wall-clock number
+  live_adapters.py:508-527 _finite_non_negative_float rejects a negative one as a
+                       NON-RETRYABLE LiveProviderError
+  live_service_runtime.py:733 _process_in_flight_item -> _fail -> terminal
+  live_transport.py:87-101 -> live_auth.py:377-385  every view route 401
+  live_service_runtime.py:462 _raise_terminal        every frame 409
+  One cause, both symptoms, no lane and no lease - as iteration 26 deduced.
+
+VALIDATION 3 - and the wall clock on ga0-alienware-rtx4070ti IS NOT MONOTONE.
+90 s of paired time.time()/time.monotonic() sampling at 20 ms on the host
+(/tmp/i28-clock.txt): 4297 samples, THREE backward steps of -1.523536,
+-1.504152 and -1.502687 s at monotonic 1731399.207 / 1731431.460 / 1731463.740 -
+intervals of 32.25 s and 32.28 s. A ~1.5 s STEP BACKWARDS EVERY ~32.3 s, on a
+host whose timedatectl reports "System clock synchronized: yes / NTP service:
+active". This is WSL2 being resynchronised. It is a HOST fact, not a code fact -
+but a meeting must not end because NTP corrected a clock.
+
+WHY THE DEATH TIME LOOKED RANDOM, AND WHY TWO PROBE RUNS SURVIVED. A decode
+brackets ~0.33 s of wall time and a span freezes every 2.5 s, so a decode is in
+flight ~13% of the time; one step per 32.3 s therefore kills a session with ~13%
+probability per step. F1 run A died at t+18.1 s, run B at t+32.1 s, this run at
+t+31.5 s; iteration 23's 120 s run and iteration 27's 150 s run survived. That is
+exactly the distribution a periodic EXTERNAL event sampled by a 13% duty cycle
+produces - and it is why five straight audio hypotheses came back clean.
+
+THE CLASS, FOR THE FIFTH TIME. A decoder whose TIMING METADATA is untrustworthy
+still returned a transcript. The span is fine; only the number used for RTF is
+not. J3's LiveProviderTransientError already exists for "the decoder blinked" and
+degrades one span - this condition is strictly less serious and is terminal.
+
+A SECOND CONSEQUENCE THAT TOUCHES A PRD CLAUSE. elapsed_sec is the numerator of
+"decoder p95 RTF < 1". Every RTF this project has recorded came off a clock that
+steps 1.5 s backwards every 32 s, so any decode bracketing a step is wrong by
+~1.5 s in one direction or the other. Surviving spans are unaffected only because
+a NEGATIVE one kills the run before it can be reported. F1's two 8.5 s runaways
+are NOT clock artifacts: 1.5 s is far too small, and both were corroborated by
+2024 and 2019 generated tokens from the deployed tokenizer.
+
+HOST CLEAN, checked after (/tmp/i28-host-after.txt against /tmp/i28-host-baseline
+.txt): HEAD 77e0014, git status clean; moss-live-web 350731 / moss-web 301112 /
+moss-vllm 322117 all NRestarts=0 and unmoved since iteration 20; live-runs 0
+entries; no /tmp/mtd-live-*; 0 journal tracebacks; 0 `live helper terminal` lines;
+batch 200; device store 12 devices / 1 unrevoked (m4mbp's AB600574..., this run's
+probe device revoked). The planned mutation above was the only one, and its
+rollback ran. m4mbp was not touched at all.
+
+Learned.
+(1) THE RECORDED NEXT STEP WAS RIGHT FOR THE WRONG REASON. Concurrent readers
+    reproduced it, but a reader takes the runtime lock and mutates nothing, and a
+    13%-per-step hazard reproduces on its own eventually. Honest verdict: the
+    readers are probably NOT load-bearing; what they bought was the timestamp -
+    both readers 401 within 2 ms of each other and 200 ms before the frame 409,
+    which is what pins the cut to one instant and one cause.
+(2) FIVE HYPOTHESES ABOUT THE AUDIO FAILED BECAUSE THE CAUSE WAS NOT IN THE
+    AUDIO. Iterations 26 and 27 tested lane voicing, span density, identity,
+    lease arithmetic and lane drift. The trigger was an external periodic event
+    on the host. When a family of hypotheses all come back clean, the next
+    question is not "which one did I model wrong" but "is the cause even in the
+    thing I am varying".
+(3) A WALL CLOCK IS NOT A DURATION. The product measures the same quantity two
+    ways, twelve lines apart, and uses the wrong one on the branch that matters.
+    Anything that subtracts two time.time() readings and treats the result as a
+    duration is a latent terminal failure on any host that runs NTP.
+(4) THE PROBE THAT COST NOTHING PAID FOR ITSELF TWICE OVER. view-reader-probe.py
+    took ten minutes and caught a crash that would have burned the pairing code
+    AND the iteration. Iteration 26 paid that bill; this one did not.
+
+Next: candidate 56's FIX needs its own authorization - it is tracked product
+source under the post-merge freeze, in moss_transcribe_diarize/. Recommended
+scope for that authorization, all inside moss_transcribe_diarize/ and tests/:
+  (a) measure the live decode's elapsed on time.monotonic() - transcribe_pcm
+      ALREADY takes it at live_adapters.py:305 and uses it at :317; the success
+      branch at :344 need only stop discarding it;
+  (b) rule, once, that untrustworthy timing metadata degrades (elapsed/RTF null,
+      recorded on canonical_processed) rather than ending the meeting - the third
+      amendment's governing rule applied to the fifth instance of its class;
+  (c) a real-seam regression in tests/test_live_pipeline_seams.py driving the
+      coordinator with a runner whose result carries a NEGATIVE elapsed_sec, red
+      before and green after;
+  (d) note that this also repairs the PRD's decoder-RTF clause, which is measured
+      from this number.
+Until it lands, F1 and F3 will keep dying at ~13% per 32 s - so do NOT re-run
+either as a gate first. Candidate 57 (the reducer calls a passing latency number
+RED) is loop tooling, needs no authorization, and is the cheapest open item.
