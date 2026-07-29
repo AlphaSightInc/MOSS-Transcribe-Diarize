@@ -68,12 +68,21 @@ G, H, J, K, M, P). **Seven keeper merges have been made and all seven are spent*
 `317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b), `77e0014` (M6, iteration 19),
 **`42abc5a` (P7, run `20260729-025318` iteration 4)** — and `merge-keeper.sh`'s `expected_main`
 guard now refuses an **eighth** (rehearsed non-vacuously: `main moved from expected pre-merge SHA
-77e0014…`, rc=1). **Phase P's product work is merged**, so
-`git diff main HEAD -- ':!scripts/ralph-afk'` is **empty again** and the branch carries no
-unmerged tracked source. **But `42abc5a` is NOT published and NOT deployed** — local `main` is one
-merge ahead of `origin/main`, the server checkout and the m4mbp checkout, all three still `77e0014`. Every tracked product change since `f9285d6` was made under a named
+77e0014…`, rc=1). **Phase P's product work is merged, published and DEPLOYED to all four checkouts
+at `42abc5a`** (run `20260729-025318` iteration 5), so the branch carries no unmerged tracked
+product source. Every tracked product change since `f9285d6` was made under a named
 amendment. Per-phase detail is in the closed-phase index below and in full in the progress.txt
 archive.
+**One non-Ralph commit is on the branch.** `00620ab` *"docs: streaming diarization design +
+ADR-0002 (two-tier, fingerprint album)"* was authored by **AlphaSightInc** at 03:23:50Z on
+2026-07-29 — i.e. the operator committed to the feature branch **while iteration 5 was running**, and
+the branch tip moved under the loop. It adds two files under `docs/` and **no product source, no
+test and no `ops/`**, so it changes nothing this loop has measured and nothing the service reads. It
+is why `git diff --name-only 42abc5a HEAD -- ':!scripts/ralph-afk'` now lists
+`docs/adr/0002-two-tier-diarization-fingerprint-album.md` and `docs/design-streaming-diarization.md`
+instead of being empty. **Do not revert it** and do not treat it as loop drift; do re-check the tip
+before any future merge, because the freeze's "only Ralph evidence changes on this branch" premise no
+longer holds by itself.
 
 **PRD acceptance scoreboard (rows unchanged since iteration 9 except where noted; Phase M's local
 gate is green at `21a73ea`, the sixth merge landed as `77e0014` in iteration 19, and **it is now
@@ -86,13 +95,13 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Production client gate | GREEN (B6 `3fb5567`, re-gated G4 `23dc163`, K5a `cd7faf9`) |
 | Server meeting-reliability gate | GREEN at `f400d426`, clause→node map recorded |
 | One reviewed keeper merge (+ 6 authorized follow-ups) | GREEN, seven merges, each reviewed against its amendment's scope |
-| One exact SHA everywhere | **RED-by-construction until P5(c)** — local `main` is `42abc5a` (the seventh merge, iteration 4); `origin/main`, the server checkout and the m4mbp checkout are all still `77e0014`. This is 1/4, and it is the expected state between a merge and its redeploy; M6 passed through the identical state between iterations 19 and 20. |
+| One exact SHA everywhere | **GREEN — 4/4 at `42abc5a`** (run `20260729-025318` iteration 5). Local `main`, `origin/main`, the server checkout and the m4mbp checkout all print `42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870`. |
 | Live service answering | GREEN — `/live` and `/api/live/descriptor` 200 over the pinned leaf from MacStudio **and from m4mbp** |
 | Batch service unharmed | GREEN — `http://192.168.68.38:7860/` and `/api/jobs` 200; batch MainPIDs never restarted |
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **RED — re-run TWICE against `77e0014` in iteration 26 and cut off at t+18.1 s / t+32.1 s by a NEW blocker (candidate 56).** Phase M's fixes are confirmed working (165 × 200 heartbeats through a permanently failing publish; no lane fault at all), and the committed p95 fell 8343–9148 ms → **2567/2592 ms** — but both runs are too short to qualify (`sufficientSamples` false). See the F1-re-run block. |
+| 60 s canary (F1) | **RED-and-STALE — never run against `42abc5a`.** The last two runs (iteration 26, on `77e0014`) were cut at t+18.1 s / t+32.1 s by candidate 56, which is now fixed, deployed and proven dead on the server. Those runs' numbers stand as evidence about Phase M (165 × 200 heartbeats through a permanently failing publish, committed p95 8343–9148 ms → 2567/2592 ms) and as **nothing at all** about latency (`sufficientSamples` false in both). **This is the next run.** |
 | 300 s certification (F2) | not run; the harness is ready (candidate 51, iteration 12) and 53/48/49/D-a/D-c have all landed, so the next F1/F3 run is the gate rather than another diagnosis |
 | 16-minute soak (F3) | **RED** — "F3 — the 16-minute soak" is RETIRED to progress.txt |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
@@ -107,20 +116,12 @@ carry is in the retired-evidence index below).**
   metadata degrades to null and is logged, stated once as a conversion), P3 (four real-seam nodes,
   red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
   Python 608/2/368 green. See the Phase P block.
-- **WHAT NOW BLOCKS EVERYTHING IS P5(c), and it is ordinary work: push → redeploy the SERVER ONLY →
-  m4mbp checkout with no rebuild → THEN F1 and F3.** Steps (a) and (b) are **both DONE**: the gate is
-  GREEN at `5bc4f7f` (iteration 2) and the **seventh merge landed as `42abc5a` (iteration 4)**, whose
-  in-worktree gate on the merged tree was Swift 158/0 and Python 608/2/368, whose tree is
-  byte-identical to the feature tip's, and after which an eighth merge refuses. See the P7 row in the
-  index below. The payload is 7 files / +285/−38, every path inside `moss_transcribe_diarize/` or
-  `tests/`, **0 under `macos/`** — so (c) is the **J5c shape**: `git push`, then on the server
-  `git checkout 42abc5a` + `systemctl --user restart moss-live-web.service` + poll `/live` for 200
-  (8-11 s), and on m4mbp `git fetch <fork URL> && git checkout 42abc5a` for the four-way SHA clause
-  with **no rebuild, no reinstall and no risk to the TCC grants**. Pre-record the rollbacks before
-  touching either host. Until that redeploy the deployed service still carries the defect, so
-  **no certification run may be used as evidence** and no offline probe speaks for the host — the
-  standing rule below still reads FALSE:
-  `git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is **non-empty**.
+- **PHASE P IS FULLY LANDED: (a) gate, (b) merge and (c) push + redeploy are ALL DONE, and the fix is
+  PROVEN ON THE REAL SERVER.** The gate was green at `5bc4f7f` (iteration 2), the seventh merge landed
+  as `42abc5a` (iteration 4) — merged tree byte-identical to the feature tip's, an eighth merge
+  refuses — and iteration 5 published it and redeployed all four checkouts. **The only remaining
+  Phase P/M step is (d): F1 then F3.** See the P5(c) block below for the redeploy evidence and the
+  probe that used to die.
 - **Phase M gate steps (a), (b) and (c) are DONE** — local gate green at `21a73ea`, sixth merge
   `77e0014`, and all four checkouts deployed at it. **Only (d) remains: F1 and F3, both green**, and
   (d) is what candidate 56 blocks. Both halves are fully instrumented and waiting — `live-canary.sh`,
@@ -134,8 +135,8 @@ carry is in the retired-evidence index below).**
   bound is reached at t+45.5 s (t+51.8 s in F1), so a voice arriving later can never be labelled.
   Degrades quality without ending a session, so no gate sees it. Tracked product source; needs its
   own authorization, and Phase N's `N1`/`N3` may subsume it.
-- **Phase N (live speaker identity) is authorized but gated** behind Phase M's green, so it is
-  blocked by candidate 56 too.
+- **Phase N (live speaker identity) is authorized but gated** behind Phase M's green — i.e. behind
+  F1 and F3, which are now the only thing in front of it.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" below.
@@ -199,10 +200,10 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
 - ***An offline probe speaks for the deployed service only while
   `git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty*** — compare against
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
-  **FALSE since run `20260729-025318` iteration 1:** the deployed SHA on every host is still
-  `77e0014` while the branch carries Phase P's six product/test files — and merging them as
-  `42abc5a` (iteration 4) did **not** change that, because a merge publishes nothing. Until P5(c)
-  redeploys, no probe and no certification run against the host measures the code in this branch.
+  **TRUE FOR PRODUCT SOURCE since run `20260729-025318` iteration 5**: the deployed SHA on every host
+  is `42abc5a` and the only paths that diff are the operator's two `docs/` files from `00620ab`,
+  which no runtime reads. Read the rule as *no product source, no test, no `ops/`* — it was never
+  about docs, and a blanket "non-empty" reading of it would now block every probe for no reason.
 - **The certification order, decided once and binding:** gate → merge → publish + redeploy
   (+ Mac rebuild) → F1 and F3. An amendment that lists the runs *before* the merge is physically
   unreachable — the runs exercise the **deployed** server and the **installed** bundle — and H4, J5
@@ -219,6 +220,54 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
   `perl -e "alarm shift; exec @ARGV" <sec> <cmd>…`. `pair` **reuses** the stored
   `capture-device-id`, so it mints no new device row. **Do not read an empty `log show` as an absent
   log line** — widen the window and drop `--style` before concluding anything.
+
+**PHASE P IS DEPLOYED AND CANDIDATE 56 IS DEAD ON THE REAL SERVER — P5(c), run `20260729-025318`
+iteration 5. READ THIS BEFORE F1 OR F3.** `42abc5a` is published and running on all four checkouts,
+and *the identical probe invocation that killed a session at t+31.5 s three iterations ago now runs
+its whole plan.*
+
+***The green-after, and it is the SAME command as the red-before.*** 150 s from MacStudio over the
+tailnet: `--lane-audio continuous --lane-offset-ms system=137 --lead-seconds 0
+--concurrent-readers 2 --reader-interval 0.22`, byte-for-byte iteration 28's invocation, device
+`ralph-i5-p5c-verify-20260729T032746Z` (**revoked**, 13 devices / 1 unrevoked). Report
+`/tmp/i5-probe.json`.
+
+| | iteration 28, on `77e0014` | iteration 5, on `42abc5a` |
+| --- | --- | --- |
+| ticks | died at **63 of 300** (t+31.5 s) | **300 / 300**, wall 150.01 s |
+| `POST /frames` | **409**, `non_200_count` 1 | **`non_200_count` 0** |
+| the two view readers | **both 401 at 31.287 / 31.289 s** | **463 + 462 polls, every one 200** |
+| accounting | 64+63 frames, then nothing | `accepted == accounted == committed == 2 400 000` (exactly 150 s) |
+| spans | 11, then terminal | **60 committed, 0 empty**, `terminal_failure` null, status `closed` |
+
+Also green in the same run: **6 canonical speakers**, 22 unattributed spans published as `S00` (J2
+holding at volume), decode **62/62 measured**, `capped 0`, `cap_derivation_holds` true, and view
+authority correctly 401 **after** the stop. Host after: `HEAD 42abc5a` clean, live MainPID 355607 /
+`NRestarts=0`, batch **301112 / 322117** and `NRestarts=0` unmoved, batch `/` 200, `live-runs` 0,
+no `/tmp/mtd-live-*`, **0** journal tracebacks.
+
+***Why a 150 s survival is not the whole argument, and what makes it conclusive anyway.*** Iteration
+27's 150 s run **also** survived on the broken build — at ~13 % duty cycle a 150 s window carries only
+~0.6 expected kills, so survival alone proves little. Three measurements together do:
+1. the hazard was **live during this very run** — the host clock still steps **−1.464 / −1.437 /
+   −1.466 s at 32.29 s intervals**, measured immediately after (see Deployed reality), so ~4-5 steps
+   fell inside the 150 s;
+2. the **deployed source can no longer reach the wall clock** on the decode path — verified under the
+   service's own venv, not by SHA: `vllm_runner` and `model_runner` each hold **0** `time.time() - `
+   and **1** `time.monotonic() - `, and `RunnerBoundedWavInference.transcribe_pcm` no longer contains
+   `_runner_elapsed_sec` at all while it does contain `time.monotonic() - started`;
+3. the failure record itself is reproduced **field for field from a test** by P3's seam nodes, so the
+   red-before does not depend on catching a host in the act.
+
+***The honest limit, so nobody misreads the journal.*** `spans_measured == spans_total == 62` and
+**0** `live.decode` WARNINGs — i.e. **no span degraded to a null elapsed**. That is the *expected*
+green shape, not a sign the fix is inert: P1 removed the wall clock from the measurement, so P2's
+null path is defense in depth for a *different* untrustworthy input and is exercised by the seam
+tests, never by this host. A run that logged P2 degradations would mean something else is wrong.
+
+***And this is the PRD's `decoder p95 RTF < 1` clause's first trustworthy measurement.*** Every RTF
+this project ever recorded came off the stepping clock. Measured monotonically across 62 spans:
+**p95 0.18**, p50 0.131, max 0.288, `p95_under_bound` true; elapsed p95 0.45 s, max 0.72 s.
 
 **F1 RAN TWICE AGAINST `77e0014` AND BOTH RUNS DIED THE SAME WAY — a NEW blocker, and it is NOT
 the one Phase M fixed (new, iteration 26). READ THIS BEFORE F3 OR ANY FURTHER CERTIFICATION RUN.**
@@ -466,10 +515,11 @@ So if the tap call does block, `mtd-capture start` blocks with **no timeout** an
 the expected appearance of an unanswered prompt, not a defect, and a hung `status` is not evidence
 that the app died. Diagnose it with `pgrep -x MOSSCaptureApp` and `sample`, never by killing the app.
 
-## Deployed reality — every host still at `77e0014` (local `main` is `42abc5a`, unpublished)
+## Deployed reality — all four checkouts at `42abc5a`
 
 **Server (`ga0-alienware-rtx4070ti`, WSL Ubuntu, checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize`).**
-Detached at **`77e0014`** since M6c (run `20260728-181020` iteration 20); it was `fc7097d` (K5c),
+Detached at **`42abc5a`** since P5(c) (run `20260729-025318` iteration 5), **MainPID 355607**,
+`NRestarts=0`; before that `77e0014` (M6c), `fc7097d` (K5c),
 `6a540fe` (J5c), `b817871` (H4c), `317df4d` (G5), `f9285d6` (D1). The checkout's own `main` ref is
 still **`163e969`**, so `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete
 one-command rollback that moves nothing but `HEAD` — rehearsed for real and undone in F4a.
@@ -477,8 +527,17 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
   `live_adapters.__file__` is under `/mnt/d/Coding/…`), which is why a restart picks up a checkout
   and why `git checkout` + `systemctl restart` is the whole redeploy.
 - `moss-live-web.service`: installed (byte-identical to `ops/systemd/`), enabled, active, TLS on
-  `0.0.0.0:7861`, **MainPID 350731**, `NRestarts=0`. `/live` answers 200 ~8-11 s after a restart —
-  **poll for 200, never sample once**; a single early probe returns `000` and reads like a failure.
+  `0.0.0.0:7861`, **MainPID 355607** (was 350731 before P5(c)), `NRestarts=0`. `/live` answers 200
+  ~8-11 s after a restart — **poll for 200, never sample once**; a single early probe returns `000`
+  and reads like a failure.
+- **The host's wall clock steps ~1.5 s BACKWARDS every ~32.3 s and this is a permanent host fact.**
+  Re-measured after the P5(c) restart, 100 s at 20 ms, 4768 samples: **−1.464 / −1.437 / −1.466 s at
+  t 14.076 / 46.370 / 78.661 s**, i.e. intervals of 32.29 s and 32.29 s — the same shape iteration 28
+  measured (−1.523/−1.504/−1.503 at 32.25/32.28 s) on a host whose `timedatectl` still says
+  synchronized. It is WSL2 resynchronising, nothing in this repo fixes it, and **nothing needs to**:
+  Phase P made the live decode measure itself monotonically, so the step can no longer reach any
+  duration. Treat any future `time.time()`-derived duration on this host as a live defect, not a
+  theoretical one — this is the one host where that bug is guaranteed to fire.
 - Batch, never restarted by any step of this loop: `moss-web` **MainPID 301112**, `moss-vllm`
   **MainPID 322117**, both `NRestarts=0`. Those two values are what every later probe must still show.
   The running batch process is still the `163e969` *image* (`INDEX_HTML`/`FAVICON_SVG` are
@@ -495,8 +554,16 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
   the deployed-SHA check. Use the four-way `git rev-parse` plus venv introspection.
 - `live-auth.json` holds one **unrevoked** device, m4mbp's
   `AB600574-FD93-4321-967E-652AB064A70B`, plus several revoked probe devices from F0/H2/J5d. Device
-  *count* is not a signal; count unrevoked devices. Baseline copy:
-  `live-auth.json.ralph-f0-backup-20260728T091927Z`, sha256 `9d306766…`.
+  *count* is not a signal; count unrevoked devices — **13 devices / 1 unrevoked** after P5(c).
+  Baseline copy: `live-auth.json.ralph-f0-backup-20260728T091927Z`, sha256 `9d306766…`.
+  **Two traps, both of which cost iteration 5 a wrong answer before they were read out of the
+  source.** (1) The revoke route is **`DELETE /api/live/devices/{device_id}`**
+  (`live_transport.py:460`) — a `POST …/revoke` returns **404 for route-not-found**, which reads
+  exactly like "device already gone" and would leave a probe device live. Assert the 200 **and** its
+  `{"device_id": …}` body. (2) The persisted device record's keys are
+  `paired_at / revoked / revoked_at / token_digest` — **the device id is the dict KEY, not a field**,
+  so `x.get("device_id")` prints `None` for every row and a filter written on it silently matches
+  nothing.
 - Windows host: portproxy `0.0.0.0:7861 → 172.30.115.123:7861` beside the untouched 7860 and 5100
   rows; firewall rule `MOSS-Transcribe-Diarize-Live` (Inbound/Allow/**Private** only); the sign-in
   scheduled task argument list ends `-RefreshOnly -IncludeLive`. `webrtcvad-wheels 2.0.14` and
@@ -506,7 +573,7 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
 
 **m4mbp (the capture Mac).** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. Checkout
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`, reachable as `ga0@m4mbp`
-with `BatchMode=yes`, **detached at `77e0014`** (tree `d2094369…`), clean.
+with `BatchMode=yes`, **detached at `42abc5a`** (tree `06d78525…`, the merge's own tree), clean.
 - **`origin` is not the same repository on every host.** Here `origin` is the AlphaSight fork;
   **on m4mbp `origin` is OpenMOSS and the fork is `alphasight`**. `git fetch origin main` there
   fetches upstream and the checkout then fails `fatal: unable to read tree`, which reads like
@@ -518,7 +585,11 @@ with `BatchMode=yes`, **detached at `77e0014`** (tree `d2094369…`), clean.
   path the PRD's live clause names. The batch clause is measured from MacStudio.
 - `/Applications/MOSSCapture.app` + `~/.local/bin/mtd-capture` installed from **`77e0014`** (M6c,
   iteration 20): bundle digest `c7c12ce2…`, CLI sha256 `450c20bf…`, inode `212080356`,
-  mtime `2026-07-28T18:22:32Z`. (K5c's `fc7097d` install was digest `267ada93…`, CLI `c11e89ff…`,
+  mtime `2026-07-28T18:22:32Z`. **The checkout is `42abc5a` but the INSTALL is still the `77e0014`
+  product, and that is correct, not drift:** P7's payload touched **0** files under `macos/`, so the
+  two SHAs build a byte-identical client. Re-measured after P5(c)'s checkout — inode `212080356` and
+  CLI sha256 `450c20bf…` **unchanged**, which is the positive proof no rebuild happened and therefore
+  that the TCC grants were never at risk. (K5c's `fc7097d` install was digest `267ada93…`, CLI `c11e89ff…`,
   inode `211995344`.) Both verify
   `codesign --verify --strict`; the bundle satisfies its DR. The **designated requirement is
   `identifier "com.alphasight.moss.capture" and certificate leaf =
@@ -739,6 +810,7 @@ progress.txt archive under each title.
 | **M6 gate + merge #6** | Merge **`77e0014`**, parents `fc7097d` + feature tip `4ac5d95`; join `1b6a9f4` proven content-free first. In-worktree gate on the merged tree: Swift 158/0, Python 604+2/368 in 64.4 s. Merge tree == feature tree `d2094369…`. **Not server-only** (4 files under `macos/`), so step (c) is the K5c shape: restart **and** Mac rebuild+reinstall. Guard rehearsed: a seventh merge refuses. |
 | **Phase P gate step (a)** | GREEN at **`5bc4f7f`** (run `20260729-025318` it. 2) — Swift **158/0** with **0 warnings** on a fresh scratch, Python **608 passed / 2 skipped / 368 subtests** in 59.95 s, tracer **4/0 skips**, discriminator **10/10**, lane-refusal probe rc=0 (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `77e0014`), seven hard-cap cases rc=0, `soak-abort-probe` 90/90, `view-reader-probe` pass, leak-scan clean, tree clean. Payload **7 files / +285/−38**, all in `moss_transcribe_diarize/` + `tests/`, **none under `macos/`**. *Payload review added one thing the four-site sweep table could not:* `grep -rnE '(time\.time\(\)\s*-\|-\s*time\.time\(\))' moss_transcribe_diarize/` returns **nothing** — the class is empty by search, not merely by enumeration; every surviving `time.time()` is a persisted or expiry **timestamp** (`live_transport._request_now`, `jobs` `created_at`/`updated_at`, `windowed_transcription:367`), which is P4's recorded ruling. |
 | **P7 merge #7** | Merge **`42abc5a`** (run `20260729-025318` it. 4), parents `77e0014` + feature tip `96137b1`; join `cfa3a96` proven content-free first (`merge-tree --write-tree` returned HEAD's own tree). In-worktree gate on the merged tree: Swift **158/0**, Python **608 passed / 2 skipped / 368 subtests** in 61.83 s. **Merge tree == feature tree `06d78525…`** — the merge added nothing and dropped nothing. **Server-only** (0 files under `macos/`), so step (c) is the J5c shape: restart, and on m4mbp a checkout with **no rebuild and no reinstall**. Guard rehearsed non-vacuously: an **eighth** merge prints `main moved from expected pre-merge SHA 77e0014…`, rc=1. Temp worktree removed by the EXIT trap; `git worktree list` back to one. |
+| **P5(c) redeploy** | GREEN — four-way SHA **4/4 at `42abc5a`**. Push fast-forwarded `77e0014..42abc5a`; server MainPID 350731 → 355607 with `/live` 200 at 8 s and the descriptor 200; manifest admission re-checked **after** the checkout under the service venv (`available=True`, `failures=[]`, hash `61d97ffe…` unchanged); content parity by hashing all **five** changed product files against `git show` at **both** SHAs (each matches the new and differs from the old); the deployed fix **exercised**, not hasattr'd; m4mbp checked out with the app inode and CLI hash unchanged (no rebuild, no TCC exposure); both grants still `auth_value=2`; batch MainPIDs unmoved and `/` 200. Then the 150 s probe above. |
 | **M6c redeploy** | GREEN — four-way SHA **4/4 at `77e0014`**. Server MainPID 346453 → 350731, `/live` 200 in 9 s, batch untouched; D-c exercised on the host (cap 286/112) and the venv proven editable-from-the-checkout; Mac rebuilt + reinstalled (inode 211995344 → 212080356), DR byte-identical a fourth time, both TCC grants still `auth_value=2`, and the install proven to carry D-a by a strings witness **with a control word**. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
@@ -2028,14 +2100,15 @@ amendment's literal order is unreachable and why this one drops nothing.**
     quality without ending a session, so no gate sees it. Tracked product source; **needs its own
     authorization** — and Phase N's `N1`/`N3` may subsume it, since a 0.5 s fragment that becomes a
     prototype is a plausible source of the phantom speakers that exhaust the bound.
-56. **A live session stops being viewable mid-meeting.** `[FIXED IN SOURCE — run 20260729
-    iteration 1; UNMERGED and UNDEPLOYED]`. Cause: the server host's wall clock steps ~1.5 s
+56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
+    merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
     `live_adapters.py:344` turned a negative one into a non-retryable `LiveProviderError` that ended
     the meeting. Authorized as **Phase P** by the seventh amendment and implemented as P1-P4; see
     the candidate-56 answer block for the failure record and the clock measurement, and the Phase P
-    block for what landed. **It still blocks the acceptance bar until P5 lands it on the host:** the
-    deployed `77e0014` has none of this, so F1 and F3 would still die at the ~13 %-per-32 s hazard.
+    block for what landed. **It blocks nothing now:** the same probe invocation that reproduced it at
+    t+31.5 s ran its full 150 s plan on the deployed `42abc5a` with zero non-200s, while the host
+    clock was measured still stepping every 32.29 s. The hazard is permanent; the defect is gone.
 57. **The reducer called a passing latency number RED.** `[done — iteration 29]`. See "The reducer
     stopped calling a passing number RED" below. Loop tooling; no authorization was needed.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
@@ -2123,12 +2196,12 @@ until then, so a red run measures this bug and nothing else.
       proven content-free *before* it was made, `expected_main` was advanced **in the script**
       (`96137b1`) citing the seventh amendment rather than by `RALPH_MERGE_MAIN_BEFORE`, and
       `merge-keeper.sh` ran **in the background**. Numbers in the P7 row of the index below.
-    - **(c) push + redeploy** `[open - NEXT]`. **Server-only** — 0 files under `macos/`, so this is
-      the J5c shape, not K5c's: `git push` the fork's `main`, then `git checkout 42abc5a` +
-      `systemctl --user restart moss-live-web.service` + poll `/live` for 200 (8-11 s), and on m4mbp
-      a `git fetch <fork URL> && git checkout 42abc5a` for the four-way SHA clause with **no rebuild
-      and no reinstall**. Pre-record both hosts' rollbacks before touching either.
-    - **(d) F1 then F3** `[open]` — the Phase M gate step (d) that candidate 56 blocked.
+    - **(c) push + redeploy** `[done - it. 5]`. The J5c shape, exactly as planned: push
+      fast-forwarded `77e0014..42abc5a`, the server checked out and restarted (MainPID 350731 →
+      355607, `/live` 200 at **8 s**), and m4mbp checked out with **no rebuild**. Four-way SHA
+      **4/4**. Evidence in the P5(c) block above, including the probe that used to die.
+    - **(d) F1 then F3** `[open - NEXT, and now unblocked]` — the Phase M gate step (d) that
+      candidate 56 blocked. Nothing stands in front of it any more.
     Note in the journal that this also repairs the PRD's decoder p95 RTF clause, measured from this
     same number and therefore unreliable in every prior run. `[recorded - it. 1]`
 

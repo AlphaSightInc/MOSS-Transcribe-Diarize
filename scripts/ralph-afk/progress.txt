@@ -15602,3 +15602,168 @@ Pre-state measured this iteration, both hosts reachable, both clean:
    77e0014..42abc5a on the AlphaSight fork. The PRD forbids force-push, so the
    rollback for a bad publish is a FORWARD revert commit through a future
    authorized merge, never a rewind. That is why the merge's gate ran first.
+
+--------------------------------------------------------------------------------
+RUN 20260729-025318-86584  ITERATION 5  -  RESULT: P5(c), PHASE P IS DEPLOYED
+--------------------------------------------------------------------------------
+TARGET: P5 step (c) - publish the seventh keeper merge 42abc5a and redeploy, the
+only open item in front of every remaining PRD clause. Authorized explicitly by
+the seventh prd.md amendment ("...push, redeploy. Only then re-run F1 and F3").
+
+WHAT WAS DONE, IN THE K5c/J5c ORDER, ROLLBACKS FIRST.
+  0. Rollbacks pre-recorded and COMMITTED (7ea36ee) before either host was
+     touched - see the block above this one. Pre-state measured, not assumed:
+     both hosts 77e0014, both clean, three MainPIDs matching context.md.
+  1. git push origin main   ->  77e0014..42abc5a  main -> main   (fast-forward
+     asserted with `git merge-base --is-ancestor` BEFORE pushing; never forced)
+  2. SERVER /mnt/d/Coding/MOSS-Transcribe-Diarize:
+       git fetch origin main --quiet
+       git checkout 42abc5a          PRE_HEAD=77e0014 -> POST_HEAD=42abc5a
+       venv introspection            live_adapters.__file__ = /mnt/d/Coding/...
+                                     (the editable install, re-proved this run)
+       manifest admission AFTER the checkout, under the service venv:
+         EndpointPolicyConfig(min_speech=1600, min_silence=8000, pre/post=1600,
+                              hard_cap=40000)
+         LiveServiceBounds(max_frame=16000, queue=16, retained=960000,
+                           speakers=16, events=1000, hard_cap=40000, drain=5.0)
+         available=True  failures=[]  manifest_hash=61d97ffe... (UNCHANGED)
+       systemctl --user restart moss-live-web.service
+       POLLED /live -> 200 after 8 s; /api/live/descriptor -> 200
+       MainPID 350731 -> 355607, NRestarts=0, ActiveState=active
+       batch moss-web 301112 / moss-vllm 322117, NRestarts=0 - BOTH UNMOVED
+  3. CONTENT PARITY, the K5c discriminator (this merge adds no new file, so each
+     CHANGED file is hashed on the host against `git show` at BOTH SHAs; matching
+     the new hash while differing from the old is the whole test). sha256[0:16]:
+       jobs.py             host 9dc8d6b18bc885a2  new 9dc8d6b1..  old c29e433c..
+       live_adapters.py    host c0f0646801453b75  new c0f06468..  old aa481428..
+       live_coordinator.py host 22c722c6f9b16695  new 22c722c6..  old 561105b9..
+       model_runner.py     host 118b781c6c762132  new 118b781c..  old bec0c7ef..
+       vllm_runner.py      host a7731038457ff0c5  new a7731038..  old 7d365b24..
+     5/5 match NEW and differ from OLD. Control (live_session.py, unchanged
+     across the two SHAs) matches both at 24d156b1.. - it proves the method runs,
+     and proves nothing about the deploy, which is exactly why it is a control.
+  4. THE DEPLOYED FIX EXERCISED, not hasattr'd, under the service's own venv:
+       trustworthy_duration_sec(0.25)      -> 0.25   <- control, a good number
+       trustworthy_duration_sec(-1.5)      -> None   <- the step degrades
+       trustworthy_duration_sec(nan)       -> None
+       InferenceTranscript(elapsed_sec=-1.5).elapsed_sec -> None, DID NOT RAISE
+       vllm_runner   'time.time() - ' x0   'time.monotonic() - ' x1
+       model_runner  'time.time() - ' x0   'time.monotonic() - ' x1
+       RunnerBoundedWavInference.transcribe_pcm: '_runner_elapsed_sec' ABSENT,
+                                                 'time.monotonic() - started' PRESENT
+     That last line is the fix stated as a property of the deployed source: the
+     success branch can no longer reach the runner's number at all.
+  5. m4mbp: git fetch alphasight main (BY THE FORK'S REMOTE NAME - `origin` there
+     is OpenMOSS) && git checkout 42abc5a. HEAD 77e0014 -> 42abc5a, tree
+     06d78525 = the merge's own tree, clean, `main` ref still upstream 40cf854.
+     NO REBUILD: app inode 212080356 and CLI sha256 450c20bf.. UNCHANGED, which
+     is the positive evidence the bundle was never replaced and the TCC grants
+     were never exposed. Both grants re-read: kTCCServiceAudioCapture=2 and
+     kTCCServiceMicrophone=2 for com.alphasight.moss.capture.
+
+VALIDATION 1 - THE FOUR-WAY SHA, the PRD clause in full. 4/4:
+  local main      42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+  origin/main     42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+  server checkout 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+  m4mbp checkout  42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+
+VALIDATION 2 - THE PRD SERVICE CLAUSES, from the hosts they name:
+  from m4mbp over the tailnet: served leaf sha256 == the D2 pin
+    a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff,
+    /live 200, /api/live/descriptor 200   (pinned HTTPS, hash compared before use)
+  from MacStudio: batch / 200 and /api/jobs 200 over plaintext 7860
+
+VALIDATION 3 - THE EFFECT, WHICH IS THE POINT OF THE WHOLE ITERATION.
+Re-ran ITERATION 28's EXACT probe invocation - the one that killed a session at
+t+31.5 s on 77e0014 - against the redeployed 42abc5a. Same flags, same audio,
+same two concurrent readers: --seconds 150 --lane-audio continuous
+--lane-offset-ms system=137 --lead-seconds 0 --concurrent-readers 2
+--reader-interval 0.22. Device ralph-i5-p5c-verify-20260729T032746Z, REVOKED.
+Report /tmp/i5-probe.json.
+                          it.28 on 77e0014          it.5 on 42abc5a
+  ticks                   died at 63 of 300         300 / 300, wall 150.01 s
+  POST /frames            409, non_200_count 1      non_200_count 0
+  the two view readers    both 401 at 31.287/.289   463 + 462 polls, ALL 200
+  accounting              stopped mid-run           accepted == accounted ==
+                                                    committed == 2 400 000
+  spans                   11 then terminal          60 committed, 0 empty
+  terminal_failure        canonical_decode_failed   null; status "closed"
+  identity                2 speakers                6 canonical speakers,
+                                                    22 spans published as S00
+  decode                  n/a                       62/62 measured, capped 0,
+                                                    cap_derivation_holds true
+  view auth after stop    n/a                       401 (correctly revoked)
+
+VALIDATION 4 - AND THE HAZARD IS STILL LIVE, so validation 3 is not luck. 100 s
+of paired time.time()/time.monotonic() at 20 ms on the host immediately after the
+run, 4768 samples: THREE backward steps of -1.463977 / -1.437171 / -1.466207 s at
+t 14.076 / 46.370 / 78.661 - intervals 32.29 s and 32.29 s. Iteration 28 measured
+-1.523/-1.504/-1.503 at 32.25/32.28 s. The host is unchanged; only the code is.
+
+WHY THE ARGUMENT NEEDS ALL FOUR, stated because a later reader will be tempted to
+lean on the probe alone. Iteration 27's 150 s run ALSO survived on the broken
+build: at a ~13 % decode duty cycle a 150 s window carries only ~0.6 expected
+kills, so survival by itself is weak evidence. What makes this conclusive is the
+conjunction - the identical invocation, the hazard measured live in the same
+window (~4-5 steps inside 150 s), the deployed source proven unable to read the
+wall clock on the decode path, and P3's seam nodes reproducing iteration 28's
+failure record field-for-field from a test with no host at all.
+
+THE HONEST LIMIT, so the journal is not misread. spans_measured == spans_total ==
+62 and ZERO `live.decode` WARNINGs: no span degraded to a null elapsed. That is
+the EXPECTED green shape, not an inert fix. P1 removed the wall clock from the
+measurement, so P2's null path is defense in depth against a different
+untrustworthy input and is exercised by the seam tests, never by this host. A run
+that DID log P2 degradations would mean something else is wrong.
+
+AND THIS REPAIRS A PRD CLAUSE, as the seventh amendment's (d) required be noted.
+`decoder p95 RTF < 1` is computed from the very number that was measured on the
+stepping clock, so every RTF this project has recorded was untrustworthy. First
+trustworthy measurement, 62 spans, monotonic: RTF p95 0.18, p50 0.131, max 0.288,
+p95_under_bound true; elapsed p95 0.45 s, max 0.72 s.
+
+HOSTS LEFT CLEAN. Server HEAD 42abc5a, worktree clean, live MainPID 355607 /
+NRestarts=0 / active, batch 301112 and 322117 / NRestarts=0 unmoved, batch / 200,
+live-runs 0 entries, no /tmp/mtd-live-*, 0 journal tracebacks, device store 13
+devices / 1 unrevoked (m4mbp's). m4mbp checkout clean at 42abc5a, app untouched,
+both TCC grants auth_value=2. No raw audio persisted anywhere.
+
+TWO REUSABLE FACTS THIS ITERATION PAID FOR, both about revoking a probe device:
+  * The route is DELETE /api/live/devices/{device_id} (live_transport.py:460). A
+    POST .../revoke returns 404 for ROUTE-NOT-FOUND, which reads exactly like
+    "already revoked" - a silent way to leave a probe device live on the server.
+    Assert the 200 AND its {"device_id": ...} body, which is what caught it here.
+  * The persisted device record's keys are paired_at / revoked / revoked_at /
+    token_digest. THE DEVICE ID IS THE DICT KEY, NOT A FIELD - so a filter or a
+    print written on x.get("device_id") yields None for every row and any
+    matching logic built on it silently matches nothing.
+
+ONE THING THAT WAS NOT MINE. Commit 00620ab "docs: streaming diarization design +
+ADR-0002 (two-tier, fingerprint album)", author AlphaSightInc, committed
+03:23:50Z - i.e. the operator committed to ralph/live-meeting-mvp WHILE this
+iteration was running, and HEAD moved from my 7ea36ee to 00620ab under me. Two
+files, both under docs/, no product source, no test, no ops/. It changes nothing
+measured here and nothing the service reads. NOT reverted, and it should not be:
+it is the operator's branch too. Recorded because (a) it is why
+`git diff --name-only 42abc5a HEAD -- ':!scripts/ralph-afk'` is no longer empty,
+and the standing "an offline probe speaks for the deployed service" rule must be
+read as "no product source, no test, no ops/" rather than as a blanket
+emptiness check, and (b) the freeze's premise that only Ralph evidence changes on
+this branch no longer holds by itself, so any future merge must re-check the tip.
+
+RECOMMENDED NEXT STEP - P5(d) / Phase M gate step (d): F1, THEN F3. Everything
+that blocked them is deployed and proven. Both drivers are in the repo and both
+were validated in earlier iterations:
+  scripts/ralph-afk/live-canary.sh  and  scripts/ralph-afk/live-soak.sh, both
+  OUTPUT_MODE=muted (candidate 51's harness, so the lanes carry different
+  content and the speaker-label clause is meaningfully verified), reduced by
+  scripts/ralph-afk/live-canary-clauses.py (the soak with
+  --user-visible-gate-ms 6000).
+Read the verdict word carefully: since iteration 29 the reducer says UNDECIDED,
+not RED, for a run too short to answer the latency gate - and a missing
+latency-final.json is UNDECIDED too, never silence. F1 needs >= 20 committed
+advances for `sufficientSamples`, which the 60 s plan produces only if the run is
+not cut short; both iteration-26 runs failed that test for a reason that no
+longer exists. Mint a fresh pairing code (the probe's is spent and its device is
+revoked), `pair` before `start` so the session id and bearer are the run's own,
+and revoke nothing belonging to m4mbp.
