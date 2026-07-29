@@ -58,7 +58,9 @@
 > paragraph per open item plus the Phase N decisions list, which is load-bearing by construction,
 > while "Read before…" holds **three overlapping sweep blocks** (session-end, at-F2's-fragmentation,
 > cadence) that each supersede part of the one before and could be one block with three tables.
-> **Headroom: ~26 KB below the 256 KB cap** — updated in iteration 17, which added ~6 KB (the N-batch
+> **Headroom: ~20 KB below the 256 KB cap** — updated in iteration 18, which added ~6 KB (the N-batch
+> counterfactual, its standing-summary bullet, and the routing rule's authorized-to-write vs
+> authorized-to-merge split). Iteration 17 added ~6 KB before it (the N-batch
 > baseline measurement and its standing-summary bullet). Before that, iteration 16 added 4.3 KB (the request-stream correction into the latency-remedy block,
 > now ~41 KB and still the eighth pass's target, plus candidate 68's sharpening and one instrument
 > rule). Iteration 15 added 6.1 KB before it. *The per-section numbers above are the seventh pass's;
@@ -278,6 +280,16 @@ carry is in the retired-evidence index below).**
   `cannot_link_conflict` refuses **195 of 310** proposals. **Retuning `IdentityResolverConfig` to the
   album's parameters is measured to buy nothing; step 4 must replace the linking structure.** See the
   N-batch block.
+  **ITERATION 18 SUPPLIED THE COUNTERFACTUAL, AND IT IS +19.93 pp.** The **production live identity
+  engine** over the **identical** batch input (the same `build_case`, imported rather than
+  re-derived) scores **100.00 % mean / min** against 80.07 / 63.33 — **one canonical per true speaker,
+  30 births for 30 voices** — with the whole gain at k >= 3. It wins at **batch's own 0.70/0.20** too
+  (+19.90), so with iteration 17's zero the ruling closes **in both directions: step 4 is not a
+  recalibration either way.** ***The 100 % is a CEILING and the probe measures why:*** a 150 s window
+  carries 20-61 s per speaker, where the worst same-vs-cross cosine gap is **+0.190** — so what is
+  proven is the **cause** (losing ~20 pp on a task this separable is structural, not perceptual),
+  never the production number. Tier A adds **zero** once the album is present, at its most favourable.
+  **The work is authorized; the ninth MERGE is not** — step 4 is now §4(f) of the request document.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64, 65, **66** and **68**; F1's two REDs — which are **two different items with
   two different answers**, the RTF one being candidate 64's gate-definition ruling and the latency one
@@ -286,14 +298,20 @@ carry is in the retired-evidence index below).**
   loop is forbidden to ask for again); F1/F2's "two speakers" half (blocked by candidate 51's
   **measured** hardware limit - m4mbp's built-in microphone cannot hear a second voice across the
   room, five runs now say so); and F4b, which closes only when everything else has evidence.
-  **Does NOT need one:** Phase N **step 4** (batch Tier-B unification - ADR-0002's own step 4 of 4,
-  covered by prd.md's *"Phase N remains authorized. Take it in ADR-0002's shape"*), **candidate 67**
+  **Does NOT need one:** **candidate 67**
   (done, iteration 13), **re-running any certification run**
   (F1/F2/F3 are the PRD's own clauses driven by loop-owned tooling against the deployed service and
   the installed bundle - iteration 12 re-ran F3 on this basis, spending no operator input and no TCC
-  click), and this loop's own tooling and working memory. *Re-derive that list from prd.md's tail every iteration rather than
-  from this line:* the operator has committed to this branch mid-iteration three times, once with an
-  authorization inside it.
+  click), and this loop's own tooling and working memory.
+  **SPLIT SINCE ITERATION 18, because the old wording was a premise a decision would lean on:**
+  Phase N **step 4** used to be listed above as needing nothing. Half of that is right — prd.md's
+  *"Phase N remains authorized. Take it in ADR-0002's shape"* authorizes the **work** — but
+  `merge-keeper.sh`'s `expected_main` guard refuses a **ninth merge**, so the product change could be
+  written and **could not be landed**, and it would break the offline-probe-speaks-for-the-deployed-
+  service invariant for every iteration until it was. ***Authorized to write is not authorized to
+  merge; say which one you mean.*** *Re-derive this whole list from prd.md's tail every iteration
+  rather than from this line:* the operator has committed to this branch mid-iteration three times,
+  once with an authorization inside it.
 - **STEP 2's RETENTION IS CODE-COMPLETE AND OFF ON THE HOST.** `ops/moss-live.env` is host-local and
   untracked and the tracked template ships all three `MOSS_LIVE_RETENTION_*` keys **commented out**,
   so the deployed `7a4f59c` retains **no audio** and the PRD's *"no raw audio is persisted"* clause
@@ -2039,7 +2057,7 @@ below the table.
 | **2 - tape** | ADR-0003 first (the retention decision in writing before any code), then the appender, the five live call sites, and the three `MOSS_LIVE_RETENTION_*` keys - **opt-in, off by default, and still off on the host** | 18, 19, 20, 21 | `live_tape.py`, `live_transport.py`, `web_cli.py`, `ops/moss-live.env.example` |
 | **3 - sweep** | the engine; its ADR-0002 gate-B score (**99.26 / 98.48 %**, `residual_corrections` **0**, merges **0**); the `LiveIdentitySweeper` ledger + cadence on the live path; `revise_labels` + the label track + the portal render; and the session-end `finalize_identity` with its `identity_finalized` event | 22, 23, 24, 25, 26 | `live_identity_sweep.py`, `live_session.py`, `live_span_bounds.py`, `live_coordinator.py`, `live_service_runtime.py`, `live_portal.py` |
 | **gate** | (a) GREEN at `1e1cf3f` -> (b) merge **`7a4f59c`** -> (c) deployed 4/4 with the host manifest regenerated at 0.35/0.1 -> (d) F1 **5 GREEN / 2 RED**, F2 **6 GREEN / 0 RED** | 27, 28, 29, 30, then it. 1 of this run | see the gates index |
-| **4 - batch unification** | **OPEN, and now MEASURED** - the engine it would replace scores **80.07 % mean / 63.33 % min** where the live album scores 93.44 / 92.18 on the identical corpus, and its Tier B moves that number by **exactly zero**. See N-batch below. Needs no new authorization | baseline measured 17 | `batch-tierb-baseline-probe.py` |
+| **4 - batch unification** | **OPEN, and now PRICED ON BOTH SIDES** - the engine it would replace scores **80.07 % mean / 63.33 % min** (its Tier B worth **exactly zero**) where the album engine on the **same batch input** scores **100.00 %**, i.e. **+19.93 pp**. The *work* needs no new authorization; the **ninth merge** does. See N-batch below | baseline 17, counterfactual 18 | `batch-tierb-baseline-probe.py`, `album-batch-counterfactual-probe.py` |
 
 **N-batch — STEP 4, THE ONLY OPEN PHASE N ITEM, and it needs no new authorization.** Steps 1-3 are
 code-complete, gated, merged (`7a4f59c`), deployed 4/4 and certified by F1 and F2; step 4 is
@@ -2115,10 +2133,57 @@ decision 5's "the matcher is ONE function" holds on the live path and has never 
 seam.
 **The three fidelity limits are printed by the probe itself with their directions** — perfect Tier A
 (upper bound for batch), <= 2.5 s evidence units (pessimistic for Tier B, which is why the k=10 arm
-exists and still moves nothing), LibriSpeech read speech (ADR-0002 §7's own caveat). *What the probe
-does NOT measure:* any counterfactual unified engine. It prices the baseline and rules out the cheap
-answer; it does not prove the album engine would score better on the batch path, and the next step
-that would is a step-4 prototype gate in ADR-0002's own shape.
+exists and still moves nothing), LibriSpeech read speech (ADR-0002 §7's own caveat).
+
+***AND THE COUNTERFACTUAL THE BASELINE DELIBERATELY DID NOT MEASURE IS NOW MEASURED: +19.93 pp***
+`[iteration 18; `scripts/ralph-afk/album-batch-counterfactual-probe.py`, rc=0, 9/9 checks, offline,
+~20 s. No product source, no host, no session, no authorization.]* The **production live identity
+engine** — `assign_speakers`, `FingerprintAlbum`, `cosine_similarity`, `duration_weighted_centroid`,
+`SweepLedger`, `sweep` — driven over the **identical batch input**: the probe imports
+`batch-tierb-baseline-probe.py`'s own `build_case` by `importlib` rather than re-deriving it, because
+"two engines saw the same windows" is the one precondition a second copy of that code would quietly
+break. A window is a span; its local speakers are matched one-to-one at 0.35/0.1, the unmatched are
+born, every labelled local is offered to the album under the live admission rule.
+
+| arm | mean | min | vs shipped batch |
+| --- | --- | --- | --- |
+| batch shipped (recomputed in-process, never copied) | 80.07 % | 63.33 % | — |
+| **`album_only`** — the album replaces **both** tiers | **100.00 %** | **100.00 %** | **+19.93 pp** |
+| `album_only_top3` — query from batch Tier B's own top-3 units | 100.00 % | 100.00 % | +19.93 |
+| `album_only_batch_thresholds` — the album engine at **batch's 0.70/0.20** | 99.97 % | 99.74 % | +19.90 |
+| `tier_a_album` — the album replaces **Tier B only**, Tier A links kept | 100.00 % | 100.00 % | +19.93 |
+| `*_swept` — either, plus the production `sweep()` | 100.00 % | 100.00 % | +19.93 |
+
+**Four findings, and the second is the one to carry.**
+1. **Per meeting the gain is entirely at k >= 3**, exactly where the baseline falls: +0.00/+0.00 on
+   the two k=2 meetings (batch already scores 100 %), then **+15.23 to +36.67 pp** on the six k>=3
+   ones. And **30 births for 30 true speakers** — *exactly one canonical per voice*, against batch's
+   16-17 labels for 6 speakers and candidate 55's 16 on the live side.
+2. **THE 100 % IS A CEILING, AND THE PROBE MEASURES WHY IT SATURATES RATHER THAN ASSERTING IT DOES
+   NOT.** A 150 s window hands the matcher **20-61 s** of one speaker (median per meeting; min 1.0 s),
+   and at that duration the worst per-meeting gap between the **lowest** same-speaker cross-window
+   cosine and the **highest** cross-speaker one is **+0.190** (best +0.616; same-speaker minima
+   0.570-0.915, cross-speaker maxima 0.214-0.479). So window stitching on clean read speech with a
+   perfect local diarization is a **separable** task. ***What this establishes is the cause, not the
+   production number: an engine that loses ~20 pp on a task this separable is losing it
+   STRUCTURALLY, NOT PERCEPTUALLY.***
+3. **The mirror of iteration 17 completes the ruling in both directions.** Batch's engine at the
+   album's thresholds moves by **0.0000000000 pp**; the album's engine at **batch's own** 0.70/0.20
+   still wins by **+19.90 pp**, and ADR-0002's 0.35/0.10 is worth only **+0.03 pp** here. Only
+   **9 of 335** same-speaker cross-window node pairs fall below batch's 0.70 floor (**0** below the
+   album's 0.35), so the floor is not what loses the 20 pp either. **Step 4 is not a recalibration in
+   either direction.**
+4. **Tier A adds ZERO once the album is present** — `album_only` == `tier_a_album` to the digit — and
+   it is at its most favourable here, handed a perfect local diarization. That limit inflates
+   `tier_a_album` and the 80.07 % baseline **equally** and does not touch `album_only`, so the
+   headline comparison is the conservative one.
+*Two things the probe does NOT establish, printed by it as limits:* the **sweep half is untested** —
+production `sweep()` proposed **0** corrections and **0** merges, because the causal pass was already
+perfect, which is convergence by vacuity; and this is a **prototype**, not a resolver. *Sequencing,
+stated once:* prd.md authorizes the **work** (*"Phase N remains authorized"*), `merge-keeper.sh`
+refuses the **ninth merge**, so writing step 4 today would put tracked product source on the branch
+and break the offline-probe invariant until an authorization arrives. It is filed as **§4(f)** of
+`authorization-request-55-60-65.md`, last by cost, with §6(6) and §6(7) carrying its two limits.
 
 **Decisions that outlive the retired step blocks - recorded here so they are not re-argued, because
 step 4 and any future identity work are constrained by them.**

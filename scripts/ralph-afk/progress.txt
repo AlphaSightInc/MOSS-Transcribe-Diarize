@@ -26531,3 +26531,141 @@ merge-keeper.sh's expected_main guard refuses a ninth merge, so any product chan
 would sit on the branch and break the offline-probe invariant until an
 authorization arrives.  The eighth compaction ("Read before any certification
 run", ~41 KB) remains due on cost-per-iteration grounds; headroom is now ~26 KB.
+
+================================================================================
+RUN 20260729-094359  ITERATION 18
+PHASE N STEP 4 HAS ITS COUNTERFACTUAL: THE ALBUM ENGINE SCORES 100.00% ON THE
+BATCH PATH WHERE THE SHIPPED RESOLVER SCORES 80.07%, AND THE PROBE MEASURES WHY
+THAT NUMBER SATURATES INSTEAD OF CLAIMING IT DOES NOT
+================================================================================
+
+TARGET.  Phase N step 4's prototype gate, in ADR-0002's own shape - exactly the
+next step iteration 17 named.  That iteration priced the engine step 4 would
+replace (80.07% mean / 63.33% min) and ruled out the cheap fix (batch Tier B
+moves the score by 0.0000000000 pp at every threshold), but deliberately measured
+NO counterfactual, so "unification is worth doing" was still an argument.  This
+iteration turns it into a number.
+
+WHAT I BUILT.  scripts/ralph-afk/album-batch-counterfactual-probe.py - the
+PRODUCTION live identity engine (assign_speakers, FingerprintAlbum,
+cosine_similarity, duration_weighted_centroid, SweepLedger, sweep) driven over the
+IDENTICAL batch input.  It imports iteration 17's probe by importlib and calls
+that module's own build_case rather than re-deriving the windows: the whole claim
+is that two engines saw the same input, and a second copy of that code is exactly
+how that stops being true.  A window is a span - its local speakers are matched
+one-to-one at 0.35/0.1, the unmatched are born, every labelled local is offered to
+the album under the live admission rule - and it is scored with the album's own
+speaker_accuracy over the same denominator.  Six arms, two of them controls.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/album-batch-counterfactual-probe.py  -> rc=0, ALL
+    CHECKS PASSED, 9 checks in 8 sections, ~20 s.  Full output
+    /tmp/i18-album-batch.txt
+
+  ARM (identical corpus, identical input, identical scorer)   mean      min
+    batch shipped, recomputed in-process                     80.07%   63.33%
+    album_only  (album replaces BOTH tiers)                 100.00%  100.00%
+    album_only_top3 (batch Tier B's own top-3 selection)    100.00%  100.00%
+    album_only_batch_thresholds (0.70 / 0.20)                99.97%   99.74%
+    tier_a_album (album replaces Tier B only)               100.00%  100.00%
+    album_only_swept / tier_a_album_swept                   100.00%  100.00%
+
+  PER MEETING (batch -> best album arm):  k2_s0 100.00 -> 100.00 (+0.00)
+    k2_s1 100.00 -> 100.00 (+0.00)  k3_s0 78.26 -> 100.00 (+21.74)
+    k3_s1 74.10 -> 100.00 (+25.90)  k4_s0 84.77 -> 100.00 (+15.23)
+    k4_s1 73.31 -> 100.00 (+26.69)  k6_s0 63.33 -> 100.00 (+36.67)
+    k6_s1 66.76 -> 100.00 (+33.24).  30 births for 30 true speakers.
+
+  SEPARATION AT WINDOW GRANULARITY (median s/node, min same-speaker cosine, max
+    cross-speaker cosine, gap):  k2_s0 61.2 / 0.826 / 0.401 / +0.425
+    k2_s1 59.2 / 0.915 / 0.299 / +0.616   k3_s0 39.2 / 0.788 / 0.214 / +0.574
+    k3_s1 39.1 / 0.696 / 0.464 / +0.232   k4_s0 25.6 / 0.767 / 0.479 / +0.288
+    k4_s1 25.7 / 0.570 / 0.380 / +0.190   k6_s0 20.0 / 0.673 / 0.458 / +0.215
+    k6_s1 22.1 / 0.755 / 0.410 / +0.345.
+    335 same-speaker cross-window node pairs; 9 (2.7%) below batch's
+    tier_b_similarity 0.70; 0 (0.0%) below the album's 0.35.
+
+WHAT I LEARNED.
+ 1. UNIFICATION IS WORTH +19.93 pp ON THIS CORPUS, AND THE GAIN IS ENTIRELY AT
+    k>=3.  Batch already scores 100% on both two-speaker meetings; from three
+    speakers up it loses 15-37 pp.  The album arm produces EXACTLY ONE CANONICAL
+    PER TRUE SPEAKER - 30 births for 30 voices - against batch's 16-17 labels for
+    6 speakers and candidate 55's 16 on the live side.  Both fragmentations
+    disappear under the same engine.
+ 2. A PERFECT SCORE IS A CLAIM ABOUT THE TASK, NOT ONLY THE ENGINE, AND IT HAS TO
+    BE CHECKED RATHER THAN CELEBRATED.  100.00% on every meeting was the first
+    result, and reporting it as-is would have been the loop's own "known but not
+    shown" defect pointed at itself.  So the probe measures the separability
+    directly: a 150 s window hands the matcher 20-61 s of one speaker, where the
+    WORST per-meeting gap between the lowest same-speaker cross-window cosine and
+    the highest cross-speaker one is +0.190.  The task is separable.  THEREFORE
+    the number to carry forward is not "batch will score 100%" but "an engine that
+    loses ~20 pp on a task this separable is losing it STRUCTURALLY, NOT
+    PERCEPTUALLY" - the cause and the direction, never the production number.
+    That distinction is now limit 6 of the probe and 6(6) of the request.
+ 3. THE RULING NOW CLOSES IN BOTH DIRECTIONS.  Iteration 17: batch's engine at the
+    album's thresholds moves by 0.0000000000 pp.  Iteration 18: the album's engine
+    at BATCH's 0.70/0.20 still wins by +19.90 pp, and ADR-0002's 0.35/0.10 is
+    worth only +0.03 pp here.  And only 9 of 335 same-speaker node pairs fall
+    below batch's 0.70 floor, so even that floor is not what loses the 20 pp.
+    Step 4 is not a recalibration in either direction - it is the linking
+    structure, as iteration 17 concluded from one side and this confirms from the
+    other.
+ 4. TIER A ADDS ZERO ONCE THE ALBUM IS PRESENT, at its most favourable.
+    album_only == tier_a_album to the digit, and the probe hands Tier A a PERFECT
+    local diarization - the baseline probe's own limit, inherited.  That limit
+    inflates tier_a_album and the 80.07% baseline EQUALLY and does not touch
+    album_only, so the headline comparison is the conservative one.  A real
+    diarizer's two windows disagree; this one's never do, and Tier A still
+    contributed nothing.
+ 5. THE SWEEP HALF IS UNTESTED HERE AND THE PROBE SAYS SO.  Production sweep()
+    proposed 0 corrections and 0 merges on the batch path, because the causal pass
+    was already perfect.  That is convergence by vacuity, not evidence that step
+    3's machinery helps a batch resolver - recorded as limit 8 / 6(7) rather than
+    reported as a green residual.
+ 6. "AUTHORIZED TO WRITE" IS NOT "AUTHORIZED TO MERGE", AND THE ROUTING RULE SAID
+    ONLY THE FIRST.  context.md listed step 4 under "Does NOT need an
+    authorization".  Half right: prd.md authorizes the WORK, and merge-keeper.sh's
+    expected_main guard refuses the NINTH merge, so the product change could be
+    written and could not be landed - and would break the
+    offline-probe-speaks-for-the-deployed-service invariant for every iteration
+    until it was.  The routing rule is split accordingly.  This is the same shape
+    the seventh compaction caught twice: a stale premise inside a decision.
+
+FILES TOUCHED.  scripts/ralph-afk/album-batch-counterfactual-probe.py (new),
+scripts/ralph-afk/authorization-request-55-60-65.md (new item 4(f), the cost
+order, limits 6(6) and 6(7), one change-log row),
+scripts/ralph-afk/context.md (the N-batch counterfactual layer, the step-4 index
+row, the standing-summary bullet, the routing-rule split, the headroom line), this
+file.  NO product source, NO test, NO ops, NO host, NO session, NO TCC click, no
+authorization spent.  `git diff --name-only HEAD -- ':!scripts/ralph-afk'` is
+empty, so the offline-probe invariant is intact.
+
+EVIDENCE PATHS.  scripts/ralph-afk/album-batch-counterfactual-probe.py (tracked,
+offline, re-runnable in ~20 s), /tmp/i18-album-batch.txt (this run's full output),
+scripts/ralph-afk/batch-tierb-baseline-probe.py (build_case, resolve_meeting,
+owning_window - imported, not copied), tests/live_identity_accuracy.py
+(speaker_accuracy, replay_all, the fixture gate),
+tests/fixtures/live_identity_accuracy/*.npz,
+moss_transcribe_diarize/app/live_identity.py:257 (assign_speakers),
+moss_transcribe_diarize/app/live_identity_album.py:79,196,233,
+moss_transcribe_diarize/app/live_identity_sweep.py:202,330,
+moss_transcribe_diarize/app/speaker_identity.py:20-28,195,726.
+
+BLOCKERS.  None new.  Nothing this iteration needed an authorization, a host or an
+operator input.  Open and needing an amendment prd.md does not carry: candidates
+55, 58, 60, 64, 65, 66, 68, and - as of this iteration's correction - Phase N step
+4's MERGE, now filed as 4(f) of the request document, last by cost.
+
+RECOMMENDED NEXT STEP.  Phase N step 4 is now fully priced on both sides and the
+loop cannot land it, so the open work without an operator is down to loop-owned
+tooling and working memory.  The eighth compaction pass is the standing candidate
+- target "Read before any certification run" (~41 KB, three overlapping sweep
+blocks that could be one block with three tables), headroom now ~20 KB - and it is
+due on cost-per-iteration grounds rather than on the vanished hard cap.  Do NOT
+write step 4's resolver: it cannot be merged, and tracked product source on this
+branch breaks the invariant that every offline probe in this file speaks for the
+deployed service.  If an iteration wants more evidence on step 4 instead, the one
+measurement this probe leaves open is the sweep half - it converged vacuously
+here because the causal pass was perfect, so a corpus or a degradation that makes
+the causal pass imperfect is what would exercise it.

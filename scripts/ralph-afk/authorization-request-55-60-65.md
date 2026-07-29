@@ -19,6 +19,7 @@ freeze, so none of it can start without you.
 > | it. 12 | §1's headline — *"neither half of Phase N step 3 publishes a correction"* — is **FALSIFIED**. The **cadence** sweep published three mid-meeting revisions during the 17-minute F3 soak on the deployed `7a4f59c`. Both halves publish. §1 and §4(b) are rewritten; the ask is *narrower and better founded*, not weaker. |
 > | it. 15 | Counts brought current (**49** corrections across **four** deployed swept meetings, not 46 across three). **§4(d) is new** and prices F1's latency RED, which §5 previously deferred to you with no number attached. **§4(e) is new** — candidate 66, the cheapest item on the list. |
 > | it. 16 | §4(d)'s cost paragraph said the change makes the portal issue *"twice as many snapshot+events pairs (F3: 381 polls → ~760)"*. **Wrong stream.** The gated fetch p95s are measured by the **app's own probe** at a fixed **0.25 s** cadence (4001 samples over F3's 1019.7 s); the 381 was the *soak driver's* view polls. Halving the portal's poll adds load only from a **real browser**, and no certification run opens one — so the risk is that the gate **under-counts** the cost, not that the benefit shrinks. The §4(d) trap and §6(5) are rewritten; the ask itself is unchanged. |
+> | it. 18 | **§4(f) is new** — Phase N step 4 (batch unification). Nothing here is a correction: the item is added because it now has a *price* on both sides. Iteration 17 measured the engine it replaces (**80.07 % / 63.33 %**, Tier B worth **0.00 pp**), and iteration 18 measured the counterfactual (**100.00 %**, **+19.93 pp**, one canonical per true speaker) on the identical corpus and scorer. The work is already authorized by prd.md; the **ninth merge** is what is not, which is why it appears in this document at all. §6(6) and §6(7) carry its two limits. |
 
 ---
 
@@ -301,6 +302,31 @@ answered **today**; nothing keeps it answered tomorrow, and nothing runs the pro
 receive it, and give the harness's fake `document` a recording `cookie` accessor so the surface the
 static check names is the surface the runtime check can see.
 
+**(f) Phase N step 4 — a merge slot, now that batch unification has a measured price.** ADR-0002's
+own fourth of four. prd.md's *"Phase N remains authorized. Take it in ADR-0002's shape"* covers the
+**work**; what it does not cover is a **ninth merge**, and `merge-keeper.sh`'s `expected_main` guard
+refuses one. So the loop can write step 4 and cannot land it — and tracked product source sitting
+unmerged on this branch breaks the invariant that an offline probe speaks for the deployed service.
+Two iterations have priced it rather than argued it, on the same eight LibriSpeech meetings and the
+same `speaker_accuracy`:
+
+- **iteration 17** — the engine step 4 would replace scores **80.07 % mean / 63.33 % min** where the
+  live album scores 93.44 / 92.18, and its Tier B moves that by **exactly 0.0000000000 pp** at the
+  album's thresholds *and* at k=10, because `_tier_b_evidence:726` offers Tier B only singleton
+  components (36 of 71) and `cannot_link_conflict` refuses 195 of 310 proposals.
+- **iteration 18** — the counterfactual. The **production live identity engine**
+  (`assign_speakers` + `FingerprintAlbum` + `sweep`) driven over the *identical* windows scores
+  **100.00 % / 100.00 %** — **+19.93 pp** — with exactly one canonical per true speaker (**30 births
+  for 30 speakers**) against batch's **16-17 labels for 6 speakers**. It wins at **batch's own
+  0.70 / 0.20** thresholds too (+19.90 pp), so step 4 is not a recalibration in either direction; only
+  **9 of 335** same-speaker cross-window node pairs fall below batch's 0.70 floor, so the floor is not
+  what loses the 20 pp either; and **Tier A adds zero** once the album is present, at its most
+  favourable (the probe hands it a perfect local diarization).
+
+*This asks for the merge slot, not a decision:* the shape is settled by ADR-0002 and by decision 5 —
+the batch path calls `live_identity.assign_speakers` against a `FingerprintAlbum`, never a third
+implementation. *The honest limit is in §6(6) and it is load-bearing: 100 % is a ceiling.*
+
 **Coverage the cycle must close, because it is what let all of this ship green.** Nothing in the
 suite asserts anything about *what a canonical speaker was born from*. Add a red-before /
 green-after node per decision, and one that fails if a birth can be minted from a span with no
@@ -314,9 +340,10 @@ the only thing that makes moving either constant honest — plus `F1` re-run, wh
 reviewed no-ff merge through `merge-keeper.sh` (advance
 `expected_main` **in-script**, never by CLI override), push, redeploy, and re-run F1 and F2.
 
-**If you want to grant only part of this, the order by cost is (e), (d), (b), (c), (a).** (e) and
-(d) are each a handful of lines and each closes or protects a PRD acceptance clause; (a) is the one
-that needs three decisions from you before any patch.
+**If you want to grant only part of this, the order by cost is (e), (d), (b), (c), (a), (f).** (e)
+and (d) are each a handful of lines and each closes or protects a PRD acceptance clause; (a) is the
+one that needs three decisions from you before any patch; (f) is the largest by far — a new resolver
+on the batch path — and the only one whose *work* is already authorized and whose *merge* is not.
 
 ## 5. Not in this ask, and why
 
@@ -361,7 +388,19 @@ that needs three decisions from you before any patch.
    direction: the added load of a **real browser** polling at 2 Hz, which no certification run
    creates because none of them opens a browser. A re-run of F1 therefore confirms the −500 ms and
    still does **not** price the viewer load — say so rather than reading a green re-run as proof.
-6. **§4(d) deliberately leaves the larger term alone.** Committed latency is **2674 / 2680 ms** of
+6. **§4(f)'s 100 % is a CEILING, and the probe measures why it saturates rather than asserting that
+   it does not.** A 150 s window hands the matcher **20-61 s** of one speaker (median per meeting,
+   minimum 1.0 s), and at that duration the worst per-meeting gap between the *lowest* same-speaker
+   cross-window cosine and the *highest* cross-speaker one is **+0.190** (best +0.616). On clean
+   read speech with a perfect local diarization, window stitching is a separable task. So the number
+   to carry forward is **not** "batch will score 100 %" but "an engine that loses ~20 pp on a task
+   this separable is losing it **structurally, not perceptually**" — the cause and the direction.
+   The same §7 caveat ADR-0002 carries applies: a real conversational recording is still required,
+   and this corpus cannot produce one.
+7. **§4(f)'s sweep half is untested here, and says so.** The production `sweep()` proposed **0**
+   corrections and **0** merges on the batch path, because the causal pass was already perfect.
+   That is convergence by vacuity, not evidence that step 3's machinery helps a batch resolver.
+8. **§4(d) deliberately leaves the larger term alone.** Committed latency is **2674 / 2680 ms** of
    the ~4.1 s, and that is what remedy 1 (the span cap) attacks. This ask does not touch it, so it
    buys the 4000 ms gate back and no more — a future latency regression in the committed half would
    consume the +349.2 ms margin.
