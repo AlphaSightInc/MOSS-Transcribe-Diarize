@@ -23184,3 +23184,150 @@ knob for it does not exist yet, so the honest options are (a) build one in the
 probe by forcing births without moving the matcher, or (b) state the correlation
 to the operator as a correlation.  Do NOT spend another iteration re-deriving a
 mechanism from invented vectors.
+
+================================================================================
+ITERATION 5 (run 20260729-094359) - THE INERT SWEEP'S CAUSE IS A PRODUCT, AND
+THE MERGE IS THE DEFENCE THAT A STAND-IN DISABLES
+================================================================================
+
+TARGET.  Iteration 4's own recommended next step, and the decisive experiment it
+recorded as impossible: "drive the accuracy harness to F2's references-per-voice
+ratio and see whether ambiguity follows the curve... a fixture knob for it does
+not exist yet."  Three iterations had now moved candidates 55/60/65 on this one
+quantity - iteration 3 blamed provisional STAND-INS, iteration 4 falsified that
+and left a three-point correlation on MULTIPLICITY - and the next authorization
+request was going to be written from whichever of them was last.  Diagnosis only:
+no product source, no test source, no fixture, no host, no session, no TCC.
+
+WHAT I DID.  One probe, scripts/ralph-afk/sweep-multiplicity-probe.py, with two
+experiments because the obvious knob is confounded and the probe says so rather
+than picking the flattering one.
+
+  A - THE BIRTH LADDER.  sweep() takes its own `config` (live_identity_sweep.py:
+      330) and the accuracy harness happens to hand it the LIVE one.  So A raises
+      the live matcher's min_match_score to force births up to the 16-speaker cap
+      while PINNING the sweep's matcher at the deployed 0.35/0.1, with a
+      `following` arm printed beside it to show what the unpinned measurement
+      would have claimed.  A's declared limit: starving the live matcher also
+      wrecks the labels the album learns from, so A moves reference QUALITY as
+      well as COUNT and cannot attribute an effect to either.  It also saturates -
+      at 0.85+ the live path abstains, so the album observes nothing (decision 2)
+      and the ratio FALLS.  Only one meeting point reached 6.0.
+
+  B - SHARD THE ALBUM.  The knob iteration 4 said did not exist.  B holds the
+      whole live path at the deployed 0.35/0.1 in every row and changes only what
+      the sweep matches against: each album speaker's own exemplars are
+      redistributed over m labels through the album's PUBLIC observe(), so every
+      reference is a real vector of a real voice, the copy is one the production
+      admission rules could have produced, and nothing writes private state.  Two
+      modes:
+        banked       shards admitted   -> `_album_view` MAY merge them back
+        provisional  shards sub-admission -> unmergeable, because decision 7 needs
+                     an admitted bank on BOTH sides.  This is F2's measured shape.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/sweep-multiplicity-probe.py     -> rc=0
+      (evidence /tmp/i5-multiplicity.txt, 46.9 s)
+  python3 -m pytest tests/test_live_identity_accuracy.py -q -> 27 passed
+  python3 -m py_compile scripts/ralph-afk/sweep-multiplicity-probe.py -> ok
+  git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk' -> EMPTY
+
+  Experiment B, totals over the eight fixture meetings:
+
+    reference set              refs/voice  kept_ambiguous  corr  merges  final%
+    album as built (control)      1.40        1.1 %         116     0    99.26
+    split over 2, BANKED          1.40        1.1 %        1143    51    99.26
+    split over 4, banked          1.43        2.5 %        1081   154    97.91
+    split over 8, banked          3.10       20.3 %        1146   278    91.43
+    all stand-in, NOT split       1.40        3.8 %         123     0    98.93
+    split over 2, stand-in        2.40       74.4 %         810     0    69.85
+    split over 4, stand-in        4.40       87.2 %         650     0    62.72
+    split over 8, stand-in        8.40       84.1 %         850     0    46.82
+
+  `banked m=1` is the positive control and reproduces the tracked deployed numbers
+  exactly (1.40 / 1.1 % / 116 / 93.44 -> 99.26), so the harness did not move under
+  the probe.  Experiment A's own numbers: pinned, at >= 6.0 refs/voice, 23.3 %
+  ambiguous and 85 corrections - superseded by B for the causal question.
+
+THE FINDING - THE CAUSE IS A PRODUCT, AND THE MECHANISM IS THE MERGE.
+
+  Splitting 42 references into 84 costs NOTHING while the shards stay bankable:
+  `_album_view` merges them straight back to 42 (51 merges) and ambiguity and
+  final accuracy are unmoved to three significant figures.  The IDENTICAL split
+  held sub-admission cannot merge at all, every shard survives into the reference
+  set, and the matcher's margin rule then abstains on 74.4 % of units.
+
+    stand-ins WITHOUT multiplicity   3.8 %   <- control
+    multiplicity WITHOUT stand-ins   1.1 %   <- control
+    both together                   74.4 %
+
+  So `_album_view`'s merge IS the sweep's defence against fragmentation, and a
+  provisional stand-in disables it.  Iteration 3 was right that the stand-in is
+  load-bearing and wrong about why: not that a stand-in is CONFUSABLE (iteration 4
+  falsified that, and this probe's own 3.8 % control agrees), but that a stand-in
+  is UNMERGEABLE.  Iterations 3 and 4 are reconciled rather than one discarded.
+
+  At F2's own shape - 8.40 references per real voice, none bankable - the
+  production sweep is 84.1 % kept_ambiguous.  That is candidate 65's cause half,
+  settled on real encoder geometry with a control on both sides.
+
+TWO HONEST LIMITS, recorded because the numbers are easy to over-read.
+  1. The defence is strong, not absolute: at m=8 a banked shard holding one
+     exemplar drifts below the 0.70 merge threshold, which is why that row still
+     reaches 20.3 %.
+  2. The final-accuracy column is a MODEL COLLAPSING, not a forecast.  It holds
+     the live labels healthy (93.44 %) while fragmenting only the album; a real
+     meeting fragments both together.  Read 46.82 % as "the corrections stop
+     tracking truth", never as what a real swept meeting would score.
+  And neither experiment observes m4mbp's own vectors, which nothing retains
+  today.  They show what multiplicity is SUFFICIENT to cause; they cannot show it
+  is what happened on the deployed system.
+
+WHAT THIS RE-PRICES.
+  * Candidate 55 gets its sharpest statement yet: its two symptoms are ONE defect
+    multiplied.  55 mints many ids per voice AND mints them from fragments too
+    short to bank, and the sweep's defence against the first is disabled by the
+    second.  The claim to put to the operator is the product, with both controls.
+  * Candidate 60's downward re-pricing (iteration 3, weakened in iteration 4) now
+    stands on measurement: wiring `stop` while 55 is open buys the
+    identity_finalized event and a sweep that abstains on five units in six.  And
+    B adds a risk nobody had priced - the corrections such a sweep publishes stop
+    tracking truth in the model - so 60 before 55 is not merely unhelpful, it is
+    unmeasured risk.  Ordering: 55 first, on both counts.
+  * Candidate 65's cause half is settled; its diagnosability half is untouched and
+    is worth MORE, because "swept and proposed nothing" is now known to be exactly
+    what happens, five times per 300 s meeting, with no surface saying so.
+  * ADR-0002's +5.82 pp keeps iteration 4's restoration: LibriSpeech's speakers
+    bank, so the fixture's sweep has its merge defence and the real meeting's does
+    not.  That is a difference in the meeting, not in the corpus's speaker banks.
+
+WHAT I LEARNED (the first generalises past this codebase).
+  1. **A factor that is harmless alone and a factor that is harmless alone can be
+     ruinous together, and a one-factor-at-a-time probe will exonerate both.**
+     Iteration 3 varied similarity and blamed stand-ins; iteration 4 varied the
+     admission gate and exonerated them; both measured one factor.  The 2x2 -
+     which cost one extra loop in the same probe - is what named the mechanism,
+     and its two single-factor cells are exactly the two earlier answers.
+  2. **The knob that varies one factor cleanly is often the object's own public
+     API, not a test seam.**  `observe()` builds the sharded album by the
+     production admission rules, so the constructed shape is one the system could
+     have reached; the alternative - writing `_exemplars` - would have measured a
+     state production may never produce.
+
+BLOCKERS.  Nothing blocked this iteration.  Re-verified against prd.md's tail: the
+last prd.md commit is still 0456177 (the ADR-0002 supersession); no ninth
+authorization exists, and merge-keeper.sh's expected_main guard refuses a ninth
+merge.  Candidates 55, 58, 60, 64, 65 and F1's two REDs remain tracked product
+source or gate definitions under the post-merge freeze.  Phase N step 4 remains
+the one open product item needing no authorization.
+
+RECOMMENDED NEXT STEP.  The cause half of 65 is now settled and the loop should
+stop measuring it.  Write the authorization request from the 2x2: 55 first, as
+"many ids per voice, each too short to bank, which disables the sweep's own merge
+defence", with the two control cells as the evidence; 65's diagnosability half
+beside it as the cheap half; 60 as the bounded 30 s view-authority exposure it was
+first filed as, sequenced BEHIND 55.  If instead an iteration wants product work
+it can start today, Phase N step 4 is the only one that needs no operator - and
+its own sequencing caveat (unifying batch onto an engine whose live half is inert)
+should be restated with this iteration's measurement, which explains WHY it is
+inert rather than merely that it is.

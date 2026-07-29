@@ -287,6 +287,20 @@ carry is in the retired-evidence index below).**
   survives on this weaker footing** (55's fragmentation is what puts many references on one voice)
   but ADR-0002's +5.82 pp is **not** shown to be a fixture artefact. See Phase N decision 19,
   rewritten.
+- **ITERATION 5 RAN THE EXPERIMENT ITERATION 4 SAID DID NOT EXIST, AND THE CAUSE OF THE INERT SWEEP
+  IS NOW MEASURED WITH A CONTROL ON BOTH SIDES: it is a PRODUCT — many references per voice ×
+  references too short to bank — and the mechanism is that `_album_view`'s MERGE is the defence
+  and a stand-in disables it.** `sweep-multiplicity-probe.py`, rc=0, ~47 s, no host, no product
+  change, deployed live path in every row; only the sweep's reference set moves, by redistributing
+  each speaker's own exemplars over `m` labels through the album's **public `observe`**. Split over
+  2 while **banked**: the sweep merges the shards straight back (42 → 84 → 42 references, 51
+  merges) and ambiguity and accuracy are **unmoved** (1.1 %, 99.26 %). The identical split held
+  **sub-admission**, which decision 7 makes unmergeable: **74.4 %** ambiguous. At F2's own **8.40**
+  references per real voice: **84.1 %**. The two controls are what make it a mechanism —
+  stand-ins **without** multiplicity cost 3.8 %, multiplicity **without** stand-ins costs 1.1 %.
+  *So the ordering (55 before 60/65) is now recommended on measurement rather than on inference,*
+  and iterations 3 and 4 are reconciled rather than one being discarded: the stand-in was
+  load-bearing, just not for the reason iteration 3 gave. See Phase N decision 19.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64 and 65; F1's two REDs; the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
@@ -1258,6 +1272,29 @@ python3 scripts/ralph-afk/album-bank-shape-probe.py                      # rc=0
 # The last row is the finding: an all-stand-in reference set STILL sweeps, so stand-ins are not
 # what makes the deployed sweep inert. rc=2 is a named refusal if the harness or fixture will not
 # load. See Phase N decision 19.
+# --- iteration 5's DECISIVE experiment: does ambiguity track reference MULTIPLICITY? Same harness,
+#     same wrapping discipline. ~47 s, no host, no product change. Two experiments, because the
+#     obvious knob is confounded and the probe says so rather than picking the flattering one. -----
+python3 scripts/ralph-afk/sweep-multiplicity-probe.py                    # rc=0
+# A - the birth ladder: raise the LIVE min_match_score to force births, PIN the sweep's matcher at
+#     the deployed 0.35/0.1 (sweep() takes its own config). Confounded on purpose-and-declared:
+#     starving the live matcher also wrecks what the album learns. Superseded by B; kept because it
+#     is production end to end. Expect at >= 6.0 refs/voice: 23.3 % ambiguous, 85 corrections.
+# B - shard the album: the live path stays the deployed 0.35/0.1 in EVERY row, and only the
+#     reference set moves. Each speaker's own exemplars are redistributed over m labels through the
+#     album's PUBLIC observe(), so every reference is a real vector of a real voice.
+# Expect (totals over the 8 meetings; the three controls are the first, fifth and second rows):
+#   banked      m=1  1.40 refs/voice   1.1 % ambiguous   116 corr    0 merges  ->  99.26 %
+#   banked      m=2  1.40              1.1 %            1143 corr   51 merges  ->  99.26 %
+#   banked      m=8  3.10             20.3 %            1146 corr  278 merges  ->  91.43 %
+#   provisional m=1  1.40              3.8 %             123 corr    0 merges  ->  98.93 %
+#   provisional m=2  2.40             74.4 %             810 corr    0 merges  ->  69.85 %
+#   provisional m=8  8.40             84.1 %             850 corr    0 merges  ->  46.82 %
+# banked m=1 must reproduce the tracked deployed numbers exactly or the harness moved under it.
+# THE FINDING IS THE CONTRAST, NOT ANY ROW: banked m=2 shards 42 references into 84 and `_album_view`
+# MERGES THEM BACK to 42 (51 merges, ambiguity and accuracy unmoved); the identical split held
+# sub-admission cannot merge (decision 7 needs a bank on both sides), and the sweep goes 74.4 %
+# ambiguous. Neither factor alone does it. See Phase N decision 19.
 
 # --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
 #     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
@@ -1716,6 +1753,16 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     still the ordering constraint and still the load-bearing member of any 55/60/65 authorization,
     but the claim to put to the operator is *multiplicity*, not *unbanked references* — and it is a
     three-point correlation, which should be stated as such rather than as a proven mechanism.
+    **ITERATION 5 TURNED THAT CORRELATION INTO A MEASURED MECHANISM, and it is the sharpest
+    statement of 55's cost the loop has: 55's two symptoms are ONE defect multiplied.** With the
+    deployed live path untouched and only the sweep's reference set sharded
+    (`sweep-multiplicity-probe.py`), splitting a voice over 2 labels costs **nothing** while the
+    shards stay banked (the sweep merges them back; 1.1 % ambiguous, 99.26 % final) and costs
+    **74.4 % ambiguity** the moment they are stand-ins. At F2's own **8.40** references per real
+    voice the sweep answers `kept_ambiguous` on **84.1 %** of units. So the thing to put to the
+    operator is: candidate 55 mints *many* ids per voice **and** mints them from fragments too
+    short to bank, and the sweep's own defence against the first is disabled by the second. See
+    Phase N decision 19.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1790,6 +1837,17 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     modelling reference *similarity*, which is a plausible model of F2's 8.0 references per voice —
     so 60 is still probably not the item that buys convergence, but the loop has never measured that
     on real geometry. Say "probably" to the operator, not "measured".
+    **ITERATION 5 MEASURED IT ON REAL GEOMETRY, AND THE DOWNWARD RE-PRICING NOW STANDS ON
+    MEASUREMENT.** At F2's own reference shape — 8.40 references per real voice, none of them
+    bankable — the production sweep answers `kept_ambiguous` on **84.1 %** of units
+    (`sweep-multiplicity-probe.py`, Phase N decision 19). So wiring `stop` while 55 is open buys
+    the `identity_finalized` event and a sweep that abstains on five units in six. *And the probe
+    adds a risk the loop had not considered:* the corrections such a sweep does publish stop
+    tracking truth in the model (final 46.82 % against a live 93.44 %). That number is a model
+    collapsing, not a forecast — it holds the live labels healthy while fragmenting only the album,
+    which a real meeting cannot do — but it is enough to say that **60 before 55 is not merely
+    unhelpful, it is unmeasured risk**. The ordering (55 first) is now the recommendation on both
+    counts.
 65. **Neither half of Phase N step 3 produces a correction on a real meeting, and an empty cadence
     sweep leaves no record to tell "found nothing" from "never ran".** `[open, new — run
     `20260729-094359` iteration 1; found by F2 on the deployed `7a4f59c`]`. Measured over a **319 s**
@@ -1850,6 +1908,18 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     ambiguity tracks references per real voice (1.40 → 1.1 %, 1.77 → 11.4 %; F2 is 8.0). The
     diagnosability half is untouched by all of this and is now the **only** part of 65 that is
     settled — which makes it, not the cause half, the part worth putting in an authorization.
+    ***THE CAUSE HALF IS SETTLED IN ITERATION 5, on real geometry and with a control on both
+    sides — `sweep-multiplicity-probe.py`, Phase N decision 19.*** The deployed cadence sweep
+    publishes nothing because F2's reference set is **many stand-ins per voice**, and a stand-in is
+    **unmergeable**, so the sweep's own defence against multiplicity never fires: at F2's 8.40
+    references per real voice the production sweep is **84.1 % `kept_ambiguous`**, while the
+    identical split with bankable shards merges back to the deployed shape and stays at 1.1 %.
+    So 65's cause is candidate 55's fragmentation after all — but through the merge, not through
+    confusability, and the two controls (stand-ins without multiplicity 3.8 %, multiplicity without
+    stand-ins 1.1 %) are what make it a mechanism rather than a third correlation. **65's
+    diagnosability half is unchanged and still the part that is cheap to authorize**, and it is
+    now *more* clearly worth it: "swept and proposed nothing" is exactly what is happening, five
+    times per 300 s meeting, and no surface says so.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
@@ -2164,6 +2234,34 @@ step 4 and any future identity work are constrained by them.**
     footing.** *The durable lesson:* iteration 3 measured the right numbers on invented vectors and
     attributed them to the one difference it could see; the sensitivity sweep it recorded was
     already saying the result came from reference *similarity*, and nothing read it that way.
+    **ITERATION 5 RAN THAT DECISIVE EXPERIMENT AND THE ANSWER IS A PRODUCT, NOT A FACTOR —
+    `sweep-multiplicity-probe.py`, rc=0, ~47 s, real encoder geometry, deployed live path in every
+    row.** The knob iteration 4 said did not exist does: the album's **public `observe`** will
+    redistribute a speaker's own exemplars across `m` labels, so multiplicity moves while the
+    matcher, the live path and the vectors do not. Measured over the 8 fixture meetings:
+    | reference set | refs/voice | `kept_ambiguous` | merges | final accuracy |
+    | --- | --- | --- | --- | --- |
+    | album as built (control) | 1.40 | **1.1 %** | 0 | **99.26 %** |
+    | split over 2, **banked** | **1.40** | **1.1 %** | **51** | **99.26 %** |
+    | split over 8, banked | 3.10 | 20.3 % | 278 | 91.43 % |
+    | all stand-in, **not split** (control) | 1.40 | **3.8 %** | 0 | **98.93 %** |
+    | split over 2, **stand-in** | 2.40 | **74.4 %** | 0 | 69.85 % |
+    | split over 8, stand-in | **8.40** — F2's ratio | **84.1 %** | 0 | 46.82 % |
+    ***The mechanism, and it reconciles iterations 3 and 4 instead of choosing between them:
+    `_album_view`'s MERGE is the defence against multiplicity, and a stand-in disables it.***
+    Splitting 42 references into 84 changes **nothing** when the shards are banked — the sweep
+    merges them straight back to 42 and both ambiguity and accuracy are unmoved — and the identical
+    split held sub-admission cannot merge at all (decision 7 requires an admitted bank on *both*
+    sides), so every shard survives into the reference set and the matcher's margin rule abstains.
+    **Neither stand-ins alone (3.8 %) nor multiplicity alone (1.1 %) does it; the product does
+    (74.4 %).** Iteration 3 was right that the stand-in is load-bearing and wrong about *why* —
+    it is not that a stand-in is confusable, it is that a stand-in is **unmergeable**.
+    *Two honest limits.* (1) Extreme splitting defeats the merge even when banked — at m=8 a shard
+    holding one exemplar drifts below the 0.70 threshold, which is why that row reaches 20.3 %; the
+    defence is strong, not absolute. (2) The final-accuracy column is a **model** collapsing: it
+    holds the live labels healthy (93.44 %) while the album is fragmented, and a real meeting
+    fragments both together, so read it as "the corrections stop tracking truth", **not** as a
+    forecast of what a real swept meeting would score.
 
 ### (superseded) Phase N as first written - retired to progress.txt
 
