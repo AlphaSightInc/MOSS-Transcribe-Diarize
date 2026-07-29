@@ -35,8 +35,8 @@
 > ranges from it, and what remains is the full gate, the probes, the three drivers, the reducers and
 > the two redeploy templates. *Headroom after this pass was ~45 KB, i.e. about five iterations at
 > the measured drift* — do not wait for the 256 KB error again.
-> **Re-measured after iteration 9: 221 272 B, headroom ~35 KB, about four iterations. The sixth pass
-> is due by roughly iteration 13 and the fence is now 631 lines.**
+> **Re-measured after iteration 10: 227 384 B, headroom ~28 KB, about three iterations. The sixth
+> pass is due by roughly iteration 13 and the fence is now 642 lines.**
 
 ## Ground
 
@@ -137,7 +137,7 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). Full block retired to progress.txt with the fourth compaction. **RE-RUN ON THE DEPLOYED `7a4f59c` (iteration 30, Phase N gate step (d) first half): rc=3, five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). |
 | 300 s certification (F2) | **GREEN ON THE DEPLOYED `7a4f59c`** (run `20260729-094359` iteration 1, `live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **4078.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.577** < 1, **1261 published == 1261 POST /frames, and every one of the session's 4766 logged requests answered 200**, a **5.090 s** interruption seen by the client and survived, outbox 0 → **5** → 0. (Was GREEN on `42abc5a` in iteration 11 of the previous run: 3859.6 ms, RTF 0.670, 1257 == 1257 — that block is archived in progress.txt.) **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the **F2 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction) |
 | 16-minute soak (F3) | **RAN AGAINST `42abc5a` AND FINISHED ITS WHOLE PLAN (iteration 9) — 5 clauses GREEN, 1 RED.** Candidate 53's minute-14.6 death is gone: 17/17 full minutes, every poll 200, view authority live at age 1024 s. The RED is **new candidate 60** — a clean stop does not revoke view authority, because the **Mac** client never calls the server's `POST …/stop` — the route itself works and revokes **immediately**, measured in iteration 7. `live-canary-clauses.py` rc=3. See the **F3 soak** row in the gates index. |
-| Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The clause's *browser storage* half was never separately measured and the "static half" does NOT cover it** — `leak-scan.sh` scans only `macos/MOSSCapture/Sources`, the tracer test and the tracer's artifacts, never the portal (found iteration 7). What *does* cover it is tracked: `tests/test_live_portal.py:217-219` asserts the served page contains no `localstorage` / `sessionstorage` / `document.cookie`, and the token is an `autocomplete="off"` password input held in a JS local and sent only as `Authorization: Bearer`. **One gap, cheap and open:** the JS harness instruments `localStorage`/`sessionStorage` with a recording Proxy and returns `storageWrites` to Python (`:618,657,737,812,841`) — and **no node ever asserts it is empty**. Dead instrumentation; a runtime write would pass today |
+| Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The *browser storage* half is now MEASURED ON THE DEPLOYED PAGE — iteration 10, `portal-storage-probe.py` rc=0, five clauses GREEN, six negative controls all detected.** It had never been measured at all: `leak-scan.sh` never scans the portal (iteration 7), the tracked static assertion (`tests/test_live_portal.py:217-219`) reads a **locally rendered** page, and the harness's `storageWrites` recorder (`:618,657,737,812,841`) has **no assertion anywhere in the suite** — dead instrumentation a runtime write would pass. See the portal-storage block below. **What is still open is the tracked *regression*, not the evidence — candidate 66** |
 | Final close (F4b) | open |
 
 **What stands between the loop and the bar (rewritten iteration 30; the Phase M narrative it used to
@@ -255,7 +255,7 @@ carry is in the retired-evidence index below).**
     across three meetings, are `S00 → Sxx`; not one is a reassignment.** See the sweep-at-F2's-
     fragmentation block below.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
-  candidates 55, 58, 60, 64 and 65; F1's two REDs; the F2 system-audio-denied variant (producing it
+  candidates 55, 58, 60, 64, 65 and **66**; F1's two REDs; the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
   loop is forbidden to ask for again); F1/F2's "two speakers" half (blocked by candidate 51's
   **measured** hardware limit - m4mbp's built-in microphone cannot hear a second voice across the
@@ -304,6 +304,15 @@ carry is in the retired-evidence index below).**
   (the fourth caught seven stale "not deployed" rows). *The measured lesson for the sixth pass:* this
   was the **smallest** of the five because the duplication is gone — the fence is now 25 % of the
   file and the next pass has to take it deliberately. See the compaction log at the top.
+- **THE SECRET-HYGIENE CLAUSE'S LAST UNMEASURED HALF IS ANSWERED** `[iteration 10]`. The browser-
+  storage half had **no** measurement of any kind — the tracked static check reads a locally
+  rendered page, `leak-scan.sh` never opens the portal, and the suite's own `storageWrites` recorder
+  has no assertion behind it. `scripts/ralph-afk/portal-storage-probe.py` measures the **deployed**
+  page: rc=0, five clauses GREEN, six negative controls all detected, and the served script proven
+  **byte-identical** to this checkout's render — the first time the deployed portal has been tied to
+  a reviewed revision by hash. Loop tooling and one unauthenticated `GET`; no authorization needed
+  and none available. What it does **not** buy is a regression: that is **candidate 66**, two
+  asserts and one accessor in a tracked test, and the cheapest authorization on the list.
 Candidates 55 and 56 are tracked product source under the post-merge freeze. **Candidate 54 is ANSWERED**
 (iteration 11) and **candidate 51 is DONE** (iteration 12), neither spending an authorization: the
 409 is `LiveV2SessionTerminalError` — `"v2 system lane is failed."` — armed by the client's *own*
@@ -571,6 +580,36 @@ events with **capture** authority and reports the status rather than raising; an
 `identity_revision_version` / `revised_transcript` / `revised_speakers` on each committed item —
 without which an unswept and a swept span report identically, which is why every prior run of this
 probe was silent on the thing it was standing right next to.
+
+**THE PORTAL WRITES NOTHING TO BROWSER STORAGE, MEASURED ON THE DEPLOYED PAGE — run
+`20260729-094359` iteration 10, `scripts/ralph-afk/portal-storage-probe.py --report
+/tmp/i10-portal-deployed.json`, rc=0, ~4 s.** One unauthenticated `GET /live` over the pinned leaf;
+no pairing code, no device, no session, no token, no product change. Five clauses, all GREEN:
+
+| clause | measured |
+| --- | --- |
+| the deployed page **is this checkout's page** | served script sha256 `7682008cc7b7…` (17 992 B) **byte-identical** to this checkout's render. *Nothing had ever proven this* — `/api/live/descriptor`'s `source_revision` is a manifest field stamped when the finalizer last ran, not the running code's revision |
+| no storage identifier in the served page | **7** scanned (`localstorage`, `sessionstorage`, `document.cookie`, `indexeddb`, `window.name`, `navigator.storage`, `caches.open`), **none present** — the tracked suite's 3 plus the four surfaces it never named, and on the *deployed* page rather than a local render |
+| nothing is written to browser storage at runtime | `storageWrites` **empty** on both harness scenarios that return it (`happy`, `retry`), 9 requests driven |
+| the view token reaches no URL and no rendered text | absent from every request URL and every rendered node; carried **only** as `Authorization: Bearer`, **9/9** headers |
+| the recorder catches a deliberate write | **6/6** controls detected |
+
+*How it reaches the surfaces the tracked harness cannot see, without editing the tracked suite:* a
+prologue is prepended to a **copy** of the served script that routes `document.cookie`,
+`window.name`, `indexedDB` and `caches` writes **into the harness's own `localStorage` Proxy**, so
+one recorder answers for every surface and the probe's assertion is exactly the one-liner a future
+tracked node would make — `storageWrites == []`. The harness's fake `document` has no `cookie`
+accessor, so without that prologue a cookie write is **invisible**, not absent.
+*Why the controls are not decoration:* a recorder nobody has ever seen fire may not work, and this
+one had never fired in the loop's history. Each control splices one deliberate write
+(`localStorage`, `sessionStorage`, `document.cookie`, `window.name`, `indexedDB`, `caches`) into a
+copy of the served script and **must** be caught; an undetected control makes the run UNDECIDED
+(rc=5), never green.
+***Honest limits, three.*** (1) The two scenarios drive connect → poll → events → stop → abort and
+a reconnect; a write on a path neither reaches is unmeasured. (2) The controls fire at eval time,
+not mid-poll — they prove the recorder is live, not that every code path is instrumented. (3) This
+is **evidence, not a regression**: nothing in the tracked suite asserts it, so the next portal edit
+can reintroduce a write and the whole gate stays green. That is candidate 66.
 
 **THE MARKER IS MATCHED PHONETICALLY — candidate 59 `[done — iteration 13]`. READ THIS BEFORE
 READING ANY `live-canary-analyze.py` MARKER LINE** (full block, with the six-directory measurement
@@ -1309,7 +1348,18 @@ python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-lane-refu
 #     D-c is landed, deployed and measured (7.571x on the deployed engine); the cap derivation is
 #     re-checked on every run by `cap_derivation_holds` in live-pipeline-probe.py's report. --------
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
+#     It scans macos/MOSSCapture/Sources, the tracer test and the tracer artifacts - NEVER the
+#     portal. The clause's browser-storage half is the next command, not this one. ---------------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
+
+# --- the clause's BROWSER-STORAGE half (iteration 10). Read-only: one unauthenticated GET /live
+#     over the pinned leaf, no pairing code, no device, no session. ~4 s. rc 0 green / 3 red /
+#     5 a control went undetected / 6 named refusal. `--offline` measures this checkout's render
+#     instead and makes the deployed-parity clause UNDECIDED (use it when the tailnet is down).
+#     Needs `node` on PATH; it drives the TRACKED harness in tests/test_live_portal.py, so a change
+#     to that harness changes what this measures - which is deliberate. -------------------------
+python3 scripts/ralph-afk/portal-storage-probe.py --report /tmp/portal-storage.json
+python3 scripts/ralph-afk/portal-storage-probe.py --offline   # no host contact
 
 # --- Phase A compatibility checkpoint (historical; frozen at 1ede498) ----
 # Run the exact eleven registered commands from:
@@ -1936,6 +1986,21 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
 62. **The reducer asked a certification run the soak's questions.** `[done — iteration 11]`. See
     "THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS" in progress.txt. Loop tooling; it made
     F2 ungreenable for candidate 60, a defect outside F2's clause list.
+66. **The portal's browser-storage hygiene has evidence but no regression.** `[open, new — run
+    `20260729-094359` iteration 10; the **evidence** half is DONE, see the portal-storage block
+    above]`. `tests/test_live_portal.py` builds a recording `localStorage`/`sessionStorage` Proxy,
+    threads `storageWrites` back to Python through two scenarios — and **no node asserts it**
+    (measured: `grep -n storageWrites tests/test_live_portal.py | grep -i assert` matches nothing,
+    while the file's 14 nodes pass). Iteration 10 measured the deployed page green on all five
+    clauses, so the PRD row is answered *today*; what is missing is the one line that keeps it
+    answered tomorrow. *Shape of the fix, not a decision:* assert `storageWrites == []` in the two
+    nodes that already receive it, and give the harness's fake `document` a recording `cookie`
+    accessor so the surface the static check names is also the surface the runtime check can see.
+    Tracked test source under the post-merge freeze, and it can never reach `main` while the guard
+    refuses a ninth merge — so it **needs its own authorization**, and it is the cheapest item on
+    that list by a wide margin (two asserts and one accessor). Until then the probe is the only
+    thing standing between a reintroduced write and a green gate, and **nothing runs the probe
+    automatically**.
 
 ### Phase N - live speaker identity - FOLLOW ADR-0002, NOT THE SIXTH AMENDMENT
 

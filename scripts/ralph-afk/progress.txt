@@ -24569,3 +24569,162 @@ now due by about iteration 13 (221 KB, ~35 KB of headroom) and must take the
 631-line Validation fence deliberately.  Do NOT re-argue candidates 55, 60 or 65
 from the record: 55's mechanism was corrected twice and is now measured on the
 deployed service.
+
+================================================================================
+RUN 20260729-094359 - ITERATION 10
+THE PORTAL'S BROWSER-STORAGE HALF IS MEASURED, ON THE DEPLOYED PAGE, WITH SIX
+NEGATIVE CONTROLS - AND THE DEPLOYED PORTAL IS TIED TO A REVIEWED REVISION BY
+HASH FOR THE FIRST TIME
+================================================================================
+
+TARGET.  Iteration 9's first recommendation: the storageWrites assertion gap
+filed in iteration 7.  Chosen because it is the ONLY PRD acceptance clause left
+that this loop can move without an authorization and without the operator.  The
+scoreboard's own words were "the clause's *browser storage* half was never
+separately measured" - and that was literally true: `leak-scan.sh` scans
+macos/MOSSCapture/Sources, the tracer test and the tracer artifacts and never
+opens the portal; the tracked static assertion (tests/test_live_portal.py:217-219)
+reads a LOCALLY RENDERED page; and the suite's own recording localStorage /
+sessionStorage Proxy threads `storageWrites` back to Python at :812 and :841
+where NO node asserts anything about it.
+
+  $ grep -n storageWrites tests/test_live_portal.py | grep -i assert
+  (no output)                        # 14 nodes pass; the recorder is decoration
+  $ python3 -m pytest tests/test_live_portal.py -q
+  14 passed, 2 warnings, 4 subtests passed in 3.98s
+
+THE ROUTING DECISION, MADE BEFORE ANY CODE.  The obvious fix - assert
+`storageWrites == []` in the two nodes that already receive it - edits a TRACKED
+test.  Under the post-merge freeze only Ralph evidence may change on this branch,
+merge-keeper.sh's expected_main guard refuses a ninth merge, and a tracked edit
+would make `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'`
+permanently non-empty, which by this file's own standing rule stops every offline
+probe from speaking for the deployed service.  So the tracked half was filed as
+CANDIDATE 66 (needs its own authorization; two asserts and one accessor, the
+cheapest item on that list) and this iteration built the EVIDENCE half as loop
+tooling instead.  The PRD asks for evidence recorded in progress.txt, not for a
+test - and evidence about the DEPLOYED page is strictly stronger than a node
+about a local render.
+
+WHAT LANDED.  scripts/ralph-afk/portal-storage-probe.py, new, loop tooling only.
+ 1. Fetches /live from the deployed service over the pinned leaf (one
+    unauthenticated GET; no pairing code, no device, no session, no token) and
+    extracts the single inline script.
+ 2. Renders /live from THIS checkout through the tracked suite's own app factory
+    (`test_live_portal._make_live_app`) and compares the two scripts by sha256.
+ 3. Scans the served page for seven storage identifiers - the tracked suite's
+    three plus the four surfaces it never named.
+ 4. Drives the TRACKED node harness (`_run_node_probe`) on the DEPLOYED script for
+    the two scenarios that return `storageWrites`, and asserts it is empty.  This
+    is the missing assertion, made against the real page.
+ 5. Six negative controls, each splicing one deliberate write into a COPY of the
+    served script; an undetected control makes the run UNDECIDED (rc=5), never
+    green.
+ Exit codes: 0 green / 3 red / 5 a control went blind / 6 named refusal.
+
+THE ONE DESIGN CHOICE WORTH RECORDING.  The harness's fake `document` has no
+`cookie` accessor, so `document.cookie = x` inside it sets a plain property and is
+INVISIBLE - absent and unmeasurable look identical.  Rather than fork the harness
+(a second implementation giving a second opinion - the hazard Phase N decision 5
+exists to rule out) the probe PREPENDS a prologue to its copy of the script that
+routes `document.cookie`, `window.name`, `indexedDB` and `caches` writes INTO the
+harness's own localStorage Proxy.  One recorder answers for every surface, and the
+probe's assertion is exactly the one-liner candidate 66 would add.
+
+VALIDATION COMMAND AND RESULT.
+  $ python3 scripts/ralph-afk/portal-storage-probe.py --report /tmp/i10-portal-deployed.json
+  GREEN  deployed page is this checkout's page
+           served script sha256 7682008cc7b7 == local render
+  GREEN  no browser-storage identifier appears in the served page
+           7 identifiers scanned, present: none
+  GREEN  the portal writes nothing to browser storage at runtime
+           2 scenarios driven (happy, retry), storageWrites empty in all
+  GREEN  the view token reaches no URL and no rendered text
+           carried only as Authorization: Bearer (9 headers)
+  GREEN  the recorder catches a deliberate write on every surface
+           6 controls spliced, all detected
+  rc=0                                                          (4.2 s wall)
+
+  deployed  GET /live 200, leaf a35ca9fc..., html 21971 B sha256 3c4be8c4...,
+            script 17992 B sha256 7682008cc7b7f4b7bcfab1bdffd4de3e387793cc2a019d13b132a2020f7c1d28
+  local     script 17992 B sha256 7682008cc7b7...      -> parity TRUE
+  static    scanned localstorage, sessionstorage, document.cookie, indexeddb,
+            window.name, navigator.storage, caches.open      -> present: none
+  runtime   happy  6 requests, 6 Authorization headers, storageWrites []
+            retry  3 requests, 3 Authorization headers, storageWrites []
+            token in a request URL: false;  token in rendered text: false;
+            every header exactly "Bearer <token>"
+  controls  localStorage TRUE, sessionStorage TRUE, document.cookie TRUE,
+            window.name TRUE, indexedDB TRUE, caches TRUE
+            (cookie recorded as ["__probe:document.cookie:0",
+             "mtd-view=portal-view-secret"] - the prologue is live, not asserted)
+
+  Offline mode also validated (/tmp/i10-portal-offline.json): rc=5, four clauses
+  GREEN and the deployed-parity clause UNDECIDED, which is the correct verdict for
+  a run that did not fetch the deployed page.  A verdict word names what it
+  decides - the sixth application of that rule in this loop.
+
+EVIDENCE PATHS.  /tmp/i10-portal-deployed.json (rc=0),
+/tmp/i10-portal-offline.json (rc=5, the --offline control).
+
+THREE FINDINGS.
+ 1. THE CLAUSE'S BROWSER-STORAGE HALF IS GREEN ON THE DEPLOYED PAGE, and it was
+    not merely unproven before - it was UNMEASURABLE.  No instrument in the repo
+    or in this loop had ever run the served portal script and looked at what it
+    wrote.  Five clauses, six controls, one GET.
+ 2. THE DEPLOYED PORTAL IS NOW TIED TO A REVIEWED REVISION BY HASH.  The served
+    script is byte-identical to this checkout's render.  Nothing had ever proven
+    that: /api/live/descriptor's `source_revision` is a manifest field stamped
+    when the finalizer last ran, not the running code's revision (it sat stale at
+    f9285d69 for six merges), and the four-way `git rev-parse` proves what the
+    checkouts hold, not what the process is serving.  This is a cheap, repeatable
+    content check on the live service's own output and it belongs in any future
+    redeploy verification.
+ 3. GREEN EVIDENCE IS NOT A REGRESSION, and the difference is the whole of
+    candidate 66.  The next portal edit can reintroduce a storage write and every
+    gate in this repo stays green, because nothing runs this probe automatically
+    and the tracked recorder still asserts nothing.  Filed with the shape of the
+    fix and the reason it needs an authorization it cannot get today.
+
+WHAT I LEARNED.
+ 1. A DEAD INSTRUMENT IS WORSE THAN A MISSING ONE, because it reads as coverage.
+    The harness has recorded storage writes since the portal was written and the
+    number has never been looked at; a reader of the test file would reasonably
+    conclude the surface was covered.  When auditing coverage, grep for the
+    ASSERTION, not for the instrumentation.
+ 2. WHEN THE FIX IS FROZEN, MEASURE THE THING THE FIX WOULD HAVE PROTECTED.  The
+    freeze blocked the two-line test edit, but nothing blocked measuring the real
+    system - and the measurement turned out stronger than the test would have
+    been, because it speaks for the deployed page rather than a local render.  A
+    frozen branch is not a frozen question.
+ 3. INSTRUMENTING A SURFACE THE HARNESS CANNOT SEE BEATS FORKING THE HARNESS.
+    Routing four extra surfaces into the existing Proxy kept ONE recorder and made
+    the probe's assertion identical to the one a tracked node would make, so
+    candidate 66 is a one-liner rather than a port.
+
+BLOCKERS.  None this iteration.  prd.md's last commit is still 0456177 - no new
+authorization exists, and none was needed: the probe is loop tooling and the run
+is one read-only unauthenticated GET.  Nothing was minted on the host, so there is
+nothing to roll back; `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'`
+is empty before and after, so every offline probe still speaks for the deployed
+service.
+
+FILES TOUCHED.  scripts/ralph-afk/portal-storage-probe.py (new),
+scripts/ralph-afk/context.md (the secret-hygiene scoreboard row, the new measured
+block, the standing-summary bullet, the routing rule, candidate 66, the fence
+recipe, the compaction headroom), scripts/ralph-afk/progress.txt.  NO product
+source, no tests, no ops, no deploy, no merge.
+
+RECOMMENDED NEXT STEP.  THE SIXTH COMPACTION, and it is now the urgent one:
+context.md is 227 384 B against the Read tool's 256 KB hard cap, so headroom is
+~28 KB and at the measured 5-10 KB/iteration drift that is about three
+iterations.  The fifth pass already recorded what the sixth has to do and why it
+must be planned rather than improvised: the duplication is gone, the Validation
+fence is 642 lines and ~25 % of the file, and it is a single block that `bash -n`
+checks as a unit - so the pass has to take the fence deliberately, range by range,
+archiving each verbatim.  Do it BEFORE the file crosses the cap again; iteration 2
+of this run had to page context.md blind by offset because the fourth pass waited
+too long.  After that, the open loop-tooling queue is empty and every remaining
+product item (55, 58, 60, 64, 65, 66, F1's two REDs) needs an authorization
+prd.md does not carry - so re-read prd.md's tail FIRST every iteration, since the
+operator has committed to this branch mid-iteration three times.
