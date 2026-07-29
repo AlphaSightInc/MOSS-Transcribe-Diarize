@@ -10,6 +10,7 @@
 > | 3rd | `20260729-025318` it. 14 | 245 562 → 148 157 B (−39.7 %) | 26 blocks, including **11 ranges of the Validation fence** (closed phases' per-node recipes, spent one-time host recipes) and the Phase L/M/P candidate lists |
 > | 4th | `20260729-094359` it. 2 | 263 219 → 199 877 B (−24.1 %) | 8 ranges: the Phase-N landing narrative and its 12 per-step blocks, the superseded `N1`-`N5` list, 22 closed rows of the gates index, candidate 60's full block, F1-on-`42abc5a`, the test-totals chain |
 > | 5th | `20260729-094359` it. 8 | 249 137 → 210 671 B (−15.4 %) | 14 ranges: the four compaction narratives themselves, the two retired-evidence index tables (merged into one), the standing summary's it. 3–7 bullets, the F1/F2/F3 certification narratives, Phase N's spent gate/merge/redeploy rows, the port-publish race, and the superseded layers of candidates 55/60/65 and decision 19 |
+> | 6th | `20260729-094359` it. 11 | 227 379 → 215 772 B (−5.1 %) | **the Validation fence, as the fifth pass planned**: 16 ranges — the C1/K3/H-blocker/J5d/F4a/M6c narrow recipes, the four Phase-N red-before revert ladders, candidate 65's five-probe cause chain, the spent keeper-merge notes, and three stale duplicates |
 >
 > **The trigger to watch is the `Read` tool's 256 KB HARD CAP, not a `Read` count.** At 263 219 B the
 > fourth pass opened with `File content (257KB) exceeds maximum allowed size` and context.md had to be
@@ -25,18 +26,36 @@
 > confirms what the fourth found: a size pass catches **staleness**, because a claim that no iteration
 > re-reads is exactly the claim that goes stale (this one retired five blocks asserting a fact
 > iteration 7 had already falsified).
-> **The fifth pass is the SMALLEST of the five (−15.4 % against −22.9/−24.1/−28.6/−39.7 %), and the
-> reason is measured rather than guessed: the duplication is gone and the remaining bulk is the
-> Validation fence.** Section sizes after this pass — fence **52.5 KB (25 % of the file)**, Phase N
-> 27.5 KB, "Where the loop stands" 24.2 KB, "Read before any certification run" 23.7 KB, open
-> candidates 24.7 KB, "Deployed reality" 16.9 KB, shipped contracts 14.0 KB, gates index 9.6 KB.
-> **So the sixth pass has to take the fence, and it should be planned rather than improvised:** it is
-> one 618-line code block that `bash -n` checks as a unit, the third pass already removed 11 spent
-> ranges from it, and what remains is the full gate, the probes, the three drivers, the reducers and
-> the two redeploy templates. *Headroom after this pass was ~45 KB, i.e. about five iterations at
-> the measured drift* — do not wait for the 256 KB error again.
-> **Re-measured after iteration 10: 227 384 B, headroom ~28 KB, about three iterations. The sixth
-> pass is due by roughly iteration 13 and the fence is now 642 lines.**
+> **THE SIXTH PASS TOOK THE FENCE, EXACTLY AS THE FIFTH PLANNED, and it is the smallest of the six
+> (−5.1 %) for a reason that is now measured twice over: what is left is not duplication, it is
+> content.** *Stated honestly in two numbers, because they are different questions:* the sixteen
+> ranges removed **14 730 B**, and this pass's own log entry and standing-summary bullet cost
+> **3.1 KB** back, so the file ends at 215 772 B. A compaction that records why it retired what it
+> retired is not free, and the record is what made this pass cheap to plan.
+> The fence went **642 → 484 lines, 52.5 → 40.0 KB**, and every retired range was a
+> *spent recipe* (a closed phase's narrow nodes, a landed step's red-before ladder, a settled
+> diagnostic chain) rather than a repeated fact. Each retirement left a pointer naming the script or
+> command that still exists, so no instrument became unfindable.
+> **Section sizes after this pass — and they name the SEVENTH pass's target without argument:**
+> **Candidates 67.2 KB (32 % of the file)**, fence 40.0 KB, "Read before any certification run"
+> 30.5 KB, "Where the loop stands" 27.0 KB, "Deployed reality" 16.9 KB, shipped contracts 14.0 KB,
+> gates index 9.6 KB. The Candidates section is now larger than the fence ever was; inside it the
+> Phase N step index (~27 KB of per-step blocks for steps that are merged, deployed and certified)
+> is the obvious range, and it is the same *spent-recipe* shape this pass just retired.
+> **Headroom after this pass: ~46 KB, about five to six iterations at the measured drift — slightly
+> more than the fifth pass left. The seventh is due by roughly iteration 17.**
+>
+> ***The half that is not about size, for the third pass running.*** The fourth caught seven stale
+> "not deployed" rows, the fifth caught nine claims iteration 7 had already falsified, and this one
+> caught **four stale values inside executable recipes** — which is worse, because a stale sentence
+> misleads a reader while a stale command misleads a *host*. The F4a rollback rehearsal's restore
+> line said `git checkout 317df4d`, the **second of eight** merges: followed literally in an
+> emergency it would have rolled the server back six merges and left it there. The lane-refusal
+> probe's parity command — the one command whose entire job is to say whether an offline probe still
+> speaks for the deployed service — compared against `77e0014`, two merges stale. A second
+> manifest-admission recipe carried the superseded `61d97ffe…` hash, and a post-checkout inode check
+> quoted K5c's `211995344`. **A SHA inside a recipe is not a fact, it is a cache, and every redeploy
+> invalidates it; the fence now says so at each site that holds one.**
 
 ## Ground
 
@@ -304,6 +323,23 @@ carry is in the retired-evidence index below).**
   (the fourth caught seven stale "not deployed" rows). *The measured lesson for the sixth pass:* this
   was the **smallest** of the five because the duplication is gone — the fence is now 25 % of the
   file and the next pass has to take it deliberately. See the compaction log at the top.
+- **Candidate 52 — the sixth compaction** `[done — run `20260729-094359` iteration 11]`. **The
+  Validation fence, taken deliberately range by range as the fifth pass instructed.** 227 379 →
+  215 772 B, **−5.1 %** (the ranges removed 14 730 B; this pass's own record cost 3.1 KB back);
+  the fence itself **642 → 484 lines, 52.5 → 40.0 KB**;
+  16 ranges archived verbatim under `ARCHIVE OF context.md SUPERSEDED BLOCKS - RUN 20260729-094359
+  ITERATION 11`, each verified byte-for-byte present in progress.txt **and** absent here by script,
+  fence still `bash -n` clean, 0 dangling cross-references (one was found and repaired: the E-phase
+  pointer promised the m4mbp rebuild recipe "is kept below"). Every range was a **spent recipe**, not
+  a repeated fact — closed phases' narrow nodes (C1, K3, H blockers 2/3, J5d, F4a, M6c), the four
+  Phase-N red-before revert ladders for steps that are merged and deployed, and candidate 65's
+  five-probe cause chain that iteration 6 closed and iteration 9 corrected — and each left a pointer
+  naming the script or command that still exists. ***The staleness half, and it is the sharpest of
+  the three passes that have had one:*** four stale values were caught **inside executable recipes**,
+  where a stale value misleads a host rather than a reader. The worst is **F4a's restore line, which
+  said `git checkout 317df4d`** — the second of eight merges — so the loop's own emergency rollback
+  recipe would have rolled the server back six merges and left it there. See the compaction log at
+  the top for the other three and for the rule they produced.
 - **THE SECRET-HYGIENE CLAUSE'S LAST UNMEASURED HALF IS ANSWERED** `[iteration 10]`. The browser-
   storage half had **no** measurement of any kind — the tracked static check reads a locally
   rendered page, `leak-scan.sh` never opens the portal, and the suite's own `storageWrites` recorder
@@ -966,11 +1002,8 @@ python3 -m pytest tests/test_live_auth.py tests/test_live_portal.py -q
 python3 -m pytest tests/test_live_service_runtime.py tests/test_live_provider_bundle.py \
   tests/test_live_mixer.py tests/test_live_ingest.py -q
 
-# --- C1 view-authority nodes (10 = 9 new + the pre-existing action/session scope node:
-#     60 virtual minutes, exact cap, five lifecycle statuses, unwired fail-closed, operator
-#     revoke, restart, clean stop, failed stop, loopback-only route) ----------------------------
-python3 -m pytest tests/test_live_auth.py tests/test_live_api.py -q \
-  -k 'view_authority or view_revocation or revokes_the_view'
+# --- C1 view-authority nodes (10) - the narrow recipe is RETIRED to progress.txt; the
+#     server-reliability gate is GREEN at f400d426 and the full gate below runs them. --------
 
 # --- N-gate: live speaker accuracy on production code, 27 nodes, ~20 s (iterations 16 + 23) ----
 #     Fixture integrity + the two silence splits (16 parametrised), five measured live claims,
@@ -1000,65 +1033,31 @@ for tag, kw in (('album',{}), ('overwrite',{'policy':'overwrite'}),
 #     no server, no fixture. The matcher extraction is proved behaviour-preserving by the
 #     accuracy numbers above staying at 93.4 / 72.0, not by these nodes. -------------------------
 python3 -m pytest tests/test_live_identity_sweep.py -q
-# Its ten red-before reverts, re-runnable against a COPY of the module (restore after). Each
-# names DIFFERENT nodes; the third is over-broad and only evidences the union node:
-#   1. `_union(parent, left, right)` -> `pass`                                   -> 6 red
-#   2. leader `min(members, key=(-duration, id))` -> `min(members)`              -> 2 red
-#   3. `union.extend(banks[speaker])` -> `pass`                                  -> 13 red
-#   4. `ambiguous = True` -> count + `continue`                                  -> 1 red
-#   5. `if unit.local_speaker in unscored:` -> `if False:`                       -> 1 red
-#   6. the ledger cap check -> `if False:`                                       -> 1 red
-#   7. `entry.canonical_speaker = correction.canonical_speaker` -> `pass`        -> 2 red
-#   8. `duration_weighted_centroid(bank)` -> `... or album.reference(speaker)`   -> 1 red
-#   9. `_finite_float32`'s `if not values:` -> `if False:`                       -> 1 red
-#  10. `reference = album.reference(speaker)` -> `reference = None`              -> 1 red
+# Its ten red-before reverts (each naming DIFFERENT nodes) are RETIRED to progress.txt: the
+# step is merged, deployed and certified, and red-before evidence only reads against the tree
+# it was written for. Re-derive by reverting one line against a COPY of the module.
 
 # --- N-revision: a sweep's correction reaching the reader, 9 nodes (iteration 25). The seam node
 #     is the one that matters -- real coordinator + session + preparer + provider + album + sweeper,
 #     five 2 s spans, only the ONNX forward pass and the GPU decode scripted. ~4 s for all four. ---
 python3 -m pytest tests/test_live_session.py tests/test_live_pipeline_seams.py \
   tests/test_live_portal.py tests/test_live_identity_sweep.py -q          # expect 145 passed
-# Its ten red-before reverts, against COPIES of the four sources (restore after). Nine name
-# DIFFERENT nodes; 3 and 4 both name the seam node:
-#   1. portal `item.revised_transcript || item.transcript` -> `item.transcript`      -> 1 red
-#   2. `_revised_span`'s `if not track:` -> `if True:`                               -> 7 red
-#   3. the coordinator's `getattr(..., "take_identity_revision", None)` -> `None`    -> 1 red
-#   4. drop `local_speakers=` on `submit_unlabeled_canonical`                        -> 1 red
-#   5. the re-render guard -> `if False:`                                            -> 1 red
-#   6. the label-collision guard -> `if False:`                                      -> 1 red
-#   7. `if canonical_speaker in canonical_speakers:` -> `if True:`                   -> 1 red
-#   8. `take_revision` returns without clearing `_unconsumed`                        -> 1 red
-#   9. `published = commit.revised_transcript ... else transcript` -> `transcript`   -> 1 red
-#  10. drop `local_speakers=` on the PREPARED path's `CanonicalResult`               -> 1 red
+# Its ten red-before reverts are RETIRED to progress.txt (same reason as N-sweep's).
 # The portal node needs `node` on PATH (it drives the real page's JS); it is skipped without it.
 
 # --- N-tape: the session tape recorder, 37 nodes, ~3.6 s (iterations 19 + 20). ADR-0002 gate C's
 #     assembly cases + ADR-0003 D2-D6, then the recorder. Offline, no host, no server, tmp_path. ---
 python3 -m pytest tests/test_live_tape.py -q
-# Its three red-before reverts, re-runnable by hand against a COPY of the module (restore after):
-#   1. `offset_samples` -> `return self.sample_count`          (arrival-order placement)  -> 8 red
-#   2. cap check + TTL comparison -> `if False:`                                          -> 3 red
-#   3. D4's four admission rules -> `if False:`                                           -> 4 red
+# Its three red-before reverts are RETIRED to progress.txt.
 # --- N-tape-wiring: the tape teed onto the REAL routes, 4 nodes inside test_live_api.py (33) ------
 python3 -m pytest tests/test_live_api.py tests/test_live_tape.py tests/test_live_helper_failure.py -q
-# Its four reverts (copy the three sources to /tmp first; each names a DIFFERENT node):
-#   1. drop `tapes.append_lane_frame` + `_tape_mixed` in the frames route            -> 1 red
-#   2. the recorder's six `except Exception` guards -> a class never raised          -> 2 red
-#   3. `LiveHelperFailureCoordinator._release_registries`'s tape release -> `if False:` -> 1 red
-#   4. drop `tapes.release` on the stop path                                         -> 2 red
-# A stop in these nodes needs `{"deadline": 5.0}`: with a queued span, deadline 0.0 answers 409
-# `stop deadline expired with unresolved work` and reads exactly like a tape defect.
+# Its four reverts, and the `{"deadline": 5.0}` gotcha a stop in these nodes needs, are
+# RETIRED to progress.txt.
 
-# --- K3 terminal record (8 nodes: the terminal heartbeat's codes into expiry/journal/log, the
-#     lease expiry's `lanes=none`, the record's bounded shape, the default sink's level, three
-#     expiry-stamp nodes, and the real coordinator+v2 registry+runtime seam plus its
-#     one-failed-lane guard). ~4 s. --------------------------------------------------------------
+# --- K3 terminal record (8 nodes) - RETIRED to progress.txt with its logging-config proof;
+#     Phase K is closed, merged and deployed. The narrow command it named: ------------------
 python3 -m pytest tests/test_live_helper_failure.py tests/test_live_session_v2.py \
   tests/test_live_pipeline_seams.py -q
-# Proof the line survives the deployed logging config (prints to stderr; no service needed):
-python3 -c "import logging.config,uvicorn.config as u; \
-from moss_transcribe_diarize.app.live_helper_failure import LiveHelperTerminalRecord as R, log_live_helper_terminal as L; \
-logging.config.dictConfig(u.LOGGING_CONFIG); L(R(session_id='s1',reason='helper_all_lanes_failed',lane_failures={'system':'device_unavailable'}))"
 
 # --- narrow: Mac client --------------------------------------------------
 swift build --package-path macos/MOSSCapture --product mtd-capture
@@ -1078,10 +1077,8 @@ python3 -m pytest tests/test_macos_uds_tracer.py -q
 # ad-hoc probe that measured the matrix is disposable; rebuild it in /tmp when needed, never in
 # the repo. Bare binary vs the same binary inside an ad-hoc `.app` is the whole experiment.
 
-# Reinstall the fixed lab bundle from scratch (safe: gitignored build output). Do this only to
-# re-prove the first-install path; normal runs must reuse it.
-rm -rf macos/MOSSCapture/.build/idea044-lab
-
+# --- the lab-bundle reinstall line is RETIRED to progress.txt (Phase A is closed and the
+#     checkpoint is frozen at 1ede498; the tracer re-creates the bundle itself). ------------
 # --- Phase A discriminator (the A4 gate; run it before and after any Phase-A change) --------
 PYTHONDONTWRITEBYTECODE=1 python3 \
   "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-attempt2-red-control/repro.py" \
@@ -1089,14 +1086,13 @@ PYTHONDONTWRITEBYTECODE=1 python3 \
 # The 16-check sibling is historical after B1 and reads 14/16 on the tip (09 and 15 assert the
 # superseded Keychain default). Its frozen green is commit 1ede498, not the tip.
 
-# --- B1/B2/B3/B4/C3c Swift --filter recipes and the C2/C3a/C3b/B5 pytest slices and by-hand tool
-#     invocations are RETIRED to progress.txt (closed phases; the full gate below runs them all).
-#     The one warning worth keeping: NEVER pass `--rotate` to ops/generate-live-tls.sh again — it
-#     invalidates every pairing payload and every pin a Mac has stored. -----------------------------
-# --- E1 (signing identity), E2b (build/sign/install on m4mbp) and E3 (the TCC read-only checks and
-#     the operator's GUI steps) are SPENT and RETIRED to progress.txt. E3 is closed forever; the
-#     read-only TCC check that remains live is in the Deployed-reality TCC block. The m4mbp
-#     rebuild+reinstall recipe, which is the only one of these still re-runnable, is kept below. ----
+# --- The B1-B5 / C2 / C3a-c and E1 / E2b / E3 narrow recipes are RETIRED to progress.txt
+#     (closed phases; the full gate below runs them all), AND SO IS the m4mbp
+#     rebuild+reinstall recipe this line used to promise "is kept below" - see the M6c
+#     pointer further down. Two warnings survive them: NEVER pass `--rotate` to
+#     ops/generate-live-tls.sh again (it invalidates every pairing payload and every pin a
+#     Mac has stored), and E3 is closed forever - the read-only TCC check that remains live
+#     is in the Deployed-reality TCC block. -------------------------------------------------
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
 
@@ -1145,29 +1141,17 @@ printf '%s\n' \
 # Run it --dry-run FIRST and read the two `plan: set identity_config.…` lines and the
 # `evidence: identity_min_match_*` lines; they are what makes the calibration reviewable.
 
-# --- host manifest admission by the runtime's own readers (read-only; re-run any time) ----------
-#   from_manifest -> _endpoint_config(payload["endpoint_config"]) and _bounds(payload["bounds_config"])
-#   (they take their own sub-mappings, NOT the whole payload), then _preflight_payload(path)
-#   Expect available=True, failures=[], manifest_hash 61d97ffef1bbdc0d4278c0fd719d5d31b0ac5f69e1654573ada5091653fecb95
+# --- a SECOND manifest-admission recipe stood here carrying the SUPERSEDED manifest_hash
+#     61d97ffe… (the host has been 0cb775da… since iteration 29). RETIRED to progress.txt;
+#     the live one is the pre-redeploy admission check further down. -----------------------
 
 # --- the H3/H1/J1-J4 per-node counts and their semantic-revert red-prove recipes are RETIRED to
 #     progress.txt. The file itself is still the live seam suite (60 nodes): ------------------------
 python3 -m pytest tests/test_live_pipeline_seams.py -q
-# --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
-#     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived.
-#     Every case below is rc=0 from H2 (iteration 3) on; `--session-hard-cap` is retired and only
-#     'none' is accepted, because LiveSession no longer partitions audio. -------------------------
-python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8                      # blocker 2, speech
-python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 --speech-pattern 0   # blocker 2, silence
-python3 scripts/ralph-afk/live-hardcap-repro.py --frames 45 --frame-samples 1000  # not frame-size
-python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8 --session-hard-cap none  # retired knob
-python3 scripts/ralph-afk/live-hardcap-repro.py --frames 24 --speech-pattern 1100   # endpoints, ok
-python3 scripts/ralph-afk/live-hardcap-repro.py --speech-provider webrtc --frame-samples 5808 \
-  --frames 3                                    # blocker 3 - rc=3 before H3, now rc=0 (survives)
-python3 scripts/ralph-afk/live-hardcap-repro.py --speech-provider webrtc --frame-samples 8000 \
-  --frames 4                                                                   # blocker 3 control
-# The webrtc cases use a stand-in VAD enforcing only webrtcvad's 10/20/30 ms length contract,
-# because MacStudio has no native webrtcvad wheel. The real exception is recorded from the host.
+# --- H blockers 2 and 3: the seven offline `live-hardcap-repro.py` cases are RETIRED to
+#     progress.txt - every one has been rc=0 since H2 (iteration 3) and Phase H is closed.
+#     The script is still in the repo and still the hard-cap repro named by every amendment
+#     gate: `python3 scripts/ralph-afk/live-hardcap-repro.py --frames 8` is the smoke case. --
 
 # --- The probe's own instruments, offline, no server and no pairing code (iterations 26, 28) -----
 #     Run BOTH before spending a host run on the driver they belong to: an instrument that has
@@ -1177,66 +1161,14 @@ python3 scripts/ralph-afk/view-reader-probe.py     # live-pipeline-probe.py's Co
 # view-reader-probe.py caught `self._stop = threading.Event()` shadowing threading.Thread._stop,
 # which threading.Thread.join() calls internally: every run would have died at reader.join().
 
-# --- candidate 65's two probes (iteration 3 of run 20260729-094359). Offline, no host, no session,
-#     no product change; both import production's own parsers and matcher rather than modelling
-#     them. Re-run either against any future evidence directory or after any identity change. ------
-# What reached the album and the sweep on a FINISHED run. Takes span bodies from snap-full-*.json
-# when the driver pruned snapshot.tsv (cert/soak) and from snapshot.tsv when it did not (canary),
-# and always names which answered. rc=6 is a named refusal for an unreadable layout, never a
-# traceback. Coverage is reported because the bodies are a prefix by design (candidate 61).
-python3 scripts/ralph-afk/identity-evidence-probe.py /tmp/i1-f2-evidence/ralph-cert \
-    /tmp/i30-f1-evidence/ralph-canary /tmp/i9-f3-evidence/ralph-soak    # rc=0
-# What the PRODUCTION sweep does with a ledger and album in that shape, with its own dispositions
-# as the answer. Asserts on the correction's *reason* (re-matched vs merge-driven), not on a count,
-# and carries its own falsification control plus a sensitivity sweep over the one quantity it
-# invents (the per-unit noise spread; F2's vectors were never retained).
-python3 scripts/ralph-afk/sweep-fixpoint-probe.py                        # rc=0
-# --- iteration 4's AUDIT of those two, on the real fixture instead of invented vectors. Wraps the
-#     production album (subclass) and the production sweep (call-through) inside the tracked
-#     accuracy harness, and moves ONLY the admission gate, so the bank/stand-in split is the one
-#     thing that differs between its three configurations. ~9 s, no host, no product change.
-python3 scripts/ralph-afk/album-bank-shape-probe.py                      # rc=0
-# Expect: banked 42/42 refs, 1.1 % kept_ambiguous, 115 corrections, 93.50 -> 99.26
-#         deployed 31/42, 1.1 %, 116 corrections, 93.44 -> 99.26   (the deployed shape)
-#         standin  0/53,  11.4 %, 140 corrections, 82.89 -> 88.54  (the falsification control)
-# The last row is the finding: an all-stand-in reference set STILL sweeps, so stand-ins are not
-# what makes the deployed sweep inert. rc=2 is a named refusal if the harness or fixture will not
-# load. See Phase N decision 19.
-# --- iteration 5's DECISIVE experiment: does ambiguity track reference MULTIPLICITY? Same harness,
-#     same wrapping discipline. ~47 s, no host, no product change. Two experiments, because the
-#     obvious knob is confounded and the probe says so rather than picking the flattering one. -----
-python3 scripts/ralph-afk/sweep-multiplicity-probe.py                    # rc=0
-# A - the birth ladder: raise the LIVE min_match_score to force births, PIN the sweep's matcher at
-#     the deployed 0.35/0.1 (sweep() takes its own config). Confounded on purpose-and-declared:
-#     starving the live matcher also wrecks what the album learns. Superseded by B; kept because it
-#     is production end to end. Expect at >= 6.0 refs/voice: 23.3 % ambiguous, 85 corrections.
-# B - shard the album: the live path stays the deployed 0.35/0.1 in EVERY row, and only the
-#     reference set moves. Each speaker's own exemplars are redistributed over m labels through the
-#     album's PUBLIC observe(), so every reference is a real vector of a real voice.
-# Expect (totals over the 8 meetings; the three controls are the first, fifth and second rows):
-#   banked      m=1  1.40 refs/voice   1.1 % ambiguous   116 corr    0 merges  ->  99.26 %
-#   banked      m=2  1.40              1.1 %            1143 corr   51 merges  ->  99.26 %
-#   banked      m=8  3.10             20.3 %            1146 corr  278 merges  ->  91.43 %
-#   provisional m=1  1.40              3.8 %             123 corr    0 merges  ->  98.93 %
-#   provisional m=2  2.40             74.4 %             810 corr    0 merges  ->  69.85 %
-#   provisional m=8  8.40             84.1 %             850 corr    0 merges  ->  46.82 %
-# banked m=1 must reproduce the tracked deployed numbers exactly or the harness moved under it.
-# THE FINDING IS THE CONTRAST, NOT ANY ROW: banked m=2 shards 42 references into 84 and `_album_view`
-# MERGES THEM BACK to 42 (51 merges, ambiguity and accuracy unmoved); the identical split held
-# sub-admission cannot merge (decision 7 needs a bank on both sides), and the sweep goes 74.4 %
-# ambiguous. Neither factor alone does it. See Phase N decision 19.
-# --- iteration 6: WHERE an unbankable reference comes from. Reads the two real meetings' own
-#     published transcripts through production's span grammar and interval filter; no host, no
-#     product change, no fixture, <2 s. Classifies every canonical speaker by its BIRTH span. -------
-python3 scripts/ralph-afk/birth-floor-probe.py /tmp/i1-f2-evidence/ralph-cert \
-    /tmp/i9-f3-evidence/ralph-soak --json /tmp/i6-birth-floor.json      # rc=0
-# Expect F2: 16 canonical for 2 voices (8.0 refs/voice); born no_reference 14 / provisional 1 /
-#            banked 1; a birth floor at 0.5 s leaves 2 (1.0 refs/voice), at 1.0 s leaves 1.
-#        F3: 16; no_reference 13 / provisional 1 / banked 2; floors leave 3 (1.5) and 2 (1.0).
-# rc=6 is a named refusal for an unreadable layout. `--real-voices` defaults to 2 (F1/F2/F3's
-# harness limit, candidate 51); pass the truth for any future run. The floor columns are a
-# COUNTERFACTUAL - suppressing a birth changes later matching - so they bound, never simulate.
-# See Phase N decision 20 and scripts/ralph-afk/authorization-request-55-60-65.md.
+# --- candidate 65/55's CAUSE chain: five offline instruments (identity-evidence-probe.py,
+#     sweep-fixpoint-probe.py, album-bank-shape-probe.py, sweep-multiplicity-probe.py,
+#     birth-floor-probe.py). All five are still in scripts/ralph-afk/ and re-runnable; their
+#     invocations and every expected number are RETIRED to progress.txt, because iteration 6
+#     closed the diagnostic chain ("no further probe of 65's cause is worth an iteration")
+#     and iteration 9 then CORRECTED their offline mechanism on the deployed service. Read
+#     Phase N decisions 19 and 20 and the sweep-at-F2's-fragmentation block for what they
+#     settled; read the archive for how to re-run one. ---------------------------------------
 
 # --- iteration 7: READ THE SESSION-END SWEEP ON THE DEPLOYED SERVICE. No Mac, no TCC, no operator,
 #     no product change; ~3 min per run. Costs one pairing code, ONE DEVICE (REVOKE IT) and one
@@ -1289,28 +1221,9 @@ python3 scripts/ralph-afk/birth-floor-probe.py /tmp/i1-f2-evidence/ralph-cert \
 
 # --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
 #     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
-# --- J5d: the third amendment's gate, GREEN in iteration 16. Re-runnable end to end; each run
-#     costs one pairing code, one device (REVOKE IT) and one session, and no service restart. ------
-# 1. offline half first, because it mutates nothing (all seven cases above -> rc=0).
-# 2. online half: mint on the host loopback, pipe the payload on STDIN, never argv, never a file.
-#    The zsh trap applies here too - run the whole thing under `bash -c`, or the probe receives one
-#    argument and argparse rejects it ("unrecognized arguments: --frames 8" for a real option).
-#    printf '%s' "$PAYLOAD" | python3 scripts/ralph-afk/live-pipeline-probe.py \
-#      --host 100.64.0.8 --port 7861 --pin a35ca9fc… --device-id "ralph-j5d-probe-<utc>" \
-#      --seconds 20 --lead-seconds 1.0 --lane-offset-ms system=137 --report /tmp/moss-j5d.json
-#    PASS = rc 0 (rc 5 = spans committed but every speaker is S00; rc 3 = nothing committed),
-#    publish.non_200_count 0, stop.snapshot accepted == accounted == committed, and
-#    transcript.attributed_speakers non-empty. Then REVOKE the device (loopback, on the host).
-# 3. J1 on real audio, deterministically - do NOT wait for a live span to overshoot (only ~6 % do):
-#    python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-j5d-sweep \
-#      --report /tmp/moss-j5d-sweep/index.json --seconds 20 --lead-seconds 1.0 \
-#      --lane-offset-ms system=137 --cut 92208:40000 --cut 268208:40000
-#    sha256 must be 844e6eff… / 038cf855… (the build is byte-deterministic across iterations), then
-#    ship both wavs + live-identity-seam-probe.py in ONE stdin script and run them under the
-#    service venv. Pre-J1 both were rc=4 timestamp_outside_span; deployed they are rc=0 prepared.
-#    `rm -f "$D"/*.wav` in the SAME invocation - audio does not belong in /tmp on the server.
-# 4. after any run: host HEAD unchanged, both MainPIDs unchanged with NRestarts=0, live-runs/ 0,
-#    no /tmp/mtd-live-*, 0 journal tracebacks, both probe devices revoked, m4mbp device NOT revoked.
+# --- J5d, the third amendment's gate (GREEN in iteration 16): its three-step recipe and the
+#     build-span-sweep.py J1 check are RETIRED to progress.txt. What survives it is the
+#     live-pipeline-probe.py report's `decode` section, which every probe run still reads: --
 # 5. SINCE ITERATION 23 the report carries a `decode` section reducing D-c's own event fields:
 #    spans_measured / cap_present_count / capped_count / capped_span_ids, elapsed_sec and rtf
 #    quartiles, caps_observed, and cap_derivation_mismatches. `cap_expectation_source` says whether
@@ -1332,12 +1245,14 @@ python3 scripts/ralph-afk/birth-floor-probe.py /tmp/i1-f2-evidence/ralph-cert \
 #     rc=0 every recorded expectation held, rc=3 the diagnosis is wrong, rc=2 it could not run.
 #     Valid as evidence about the DEPLOYED service only while the branch carries no product source
 #     and all four checkouts are one SHA - check that first, it is one command.
-#     It was SPENT from iteration 16 (candidate 50 changed moss_transcribe_diarize/) until M6c
-#     redeployed in iteration 20; it is VALID again now that all four checkouts hold 77e0014.
+#     It has been SPENT twice and is VALID again: from iteration 16 until M6c redeployed, and from
+#     Phase N step 1 until N8c redeployed. All four checkouts hold 7a4f59c.
 #     THE DURABLE RULE, because this flipped twice: compare against the DEPLOYED SHA, never against
 #     `main` — between a merge and its redeploy those are different commits, and branch-vs-main
-#     parity then says nothing about the running service.
-git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'   # deployed SHA; non-empty == probe != service
+#     parity then says nothing about the running service. **AND THE SHA IN THIS COMMAND IS ITSELF A
+#     THING THAT GOES STALE**: it read 77e0014, two merges behind the deployed service, from
+#     iteration 20 until iteration 11 of run 20260729-094359 found it. Update it at every redeploy.
+git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'   # DEPLOYED sha; non-empty == probe != service
 git diff --name-only main    HEAD -- ':!scripts/ralph-afk'   # branch parity; NOT the same question
 python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-lane-refusal.json
 # It imports tests/test_live_api.py BY FILE PATH (`tests/` is not a package, so
@@ -1399,15 +1314,10 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
 PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_large_upload.py -q -rs   # names the 2 skips
 test -z "$(git status --porcelain)"
 
-# --- keeper merge #1: SPENT in iteration 16, main was f9285d6. ----------------------------------
-# --- keeper merge #2: SPENT in iteration 5 of run 20260728-072601. main is now 317df4d. ---------
-# --- keeper merge #6: SPENT in iteration 19 of run 20260728-181020. main is now 77e0014, and the
-#     six spent pre-merge SHAs in order are af3ac36 / f9285d6 / 317df4d / b817871 / 6a540fe /
-#     fc7097d. Both fences satisfied honestly again: join 1b6a9f4 proven content-free by
-#     `git merge-tree --write-tree main HEAD` == HEAD's own tree BEFORE running it, then
-#     expected_main advanced in-script and committed as 4ac5d95 so it became the captured tip.
-# Both fences were satisfied honestly (join first, then the in-script expected_main) and the guard
-# is live again: the dry run below now REFUSES, which is the proof no further merge can slip through.
+# --- the spent notes for keeper merges #1/#2/#6 are RETIRED to progress.txt. EIGHT merges
+#     are spent (f9285d6 / 317df4d / b817871 / 6a540fe / fc7097d / 77e0014 / 42abc5a /
+#     7a4f59c) and the guard refuses a NINTH. Both fences are satisfied the same way every
+#     time - join first, then advance expected_main IN-SCRIPT and commit it. -----------------
 RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "main moved from …"
 # To dry-run the guard while the tree is DIRTY (e.g. to check a proposed expected_main before
 # committing it), the script needs BOTH flags — RALPH_MERGE_DRY_RUN=1 alone still refuses:
@@ -1416,48 +1326,19 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # skips its EXIT trap and strands a worktree holding `main`, which then blocks the retry. Recover
 # with: git -C <wt> merge --abort && git worktree remove --force <wt>
 
-# --- M6c: publish + redeploy the SIXTH merge (SPENT in iteration 20 of run 20260728-181020) ------
-# The push fast-forwarded fc7097d..77e0014; never re-run it and never force-push. The K5c shape
-# again (server restart AND a Mac rebuild+reinstall). Everything K5c's block below says still holds;
-# only the three things this run ADDED are recorded here.
-# 1. PROVE THE VENV RESOLVES THE PACKAGE FROM THE CHECKOUT, or "restart picks up the checkout" is an
-#    assumption. One line, read-only, under the SERVICE's own interpreter:
-#      "$HOME/.local/share/moss-transcribe-diarize/venv/bin/python" -c \
-#        "import moss_transcribe_diarize.app.live_adapters as a; print(a.__file__)"
-#      # must print /mnt/d/Coding/MOSS-Transcribe-Diarize/... — an editable install
-# 2. EXERCISE the deployed change instead of hasattr-ing it. For D-c, on the host:
-#      canonical_decode_token_cap(sample_count=40000) -> 286 ; (sample_count=8000) -> 112
-#      NOTE the parameter is KEYWORD-ONLY; a positional call raises TypeError, which under
-#      `2>/dev/null` looks exactly like the symbol being absent.
-# 3. A STRINGS WITNESS NEEDS A CONTROL WORD. New-vs-backup 1/0 proves the bytes changed; a third
-#    word present in BOTH proves the grep works and the 0 is a real absence:
-#      for w in macos_health_facts_dropped degraded macos_buffer_overrun; do
-#        strings -a <binary> | grep -c "$w"; done      # new 1/1/1, pre-M6c backup 0/0/1
-#    Run it on the APP binary too, not only the CLI — the app is what captures.
-# Rollback for THIS install (the ONLY copy of the fc7097d bytes):
-#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-20260728T222244Z' '/Applications/MOSSCapture.app'
-#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-20260728T222244Z' '/Users/ga0/.local/bin/mtd-capture'
-# Two traps this run hit, both of which report a SKIPPED check as a passing one:
-#   * `set -o pipefail` + `ls /tmp/glob-with-no-match 2>/dev/null | wc -l` -> ls exits 2, the
-#     pipeline fails, `set -e` aborts, and every later check silently never runs.
-#   * `live-runs/` is /mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs (the unit's --runs-dir), NOT
-#     under ~/.local/share. A "0 entries" answer from a nonexistent path is not evidence.
-# --- m4mbp rebuild + reinstall (the half J5c did NOT need). Stop any running app FIRST or the
-#     re-read interrogates the old product: pkill -f '/Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp'
-#   git fetch alphasight main --quiet && git checkout fc7097d…   # rollback: checkout 6a540fe…
-#   macos/scripts/build-app.sh --dry-run && macos/scripts/build-app.sh --configuration release
-#   macos/scripts/install-app.sh --dry-run && macos/scripts/install-app.sh
-# Rollback for THIS install (the ONLY copy of the pre-K5c bytes; SwiftPM is not reproducible here):
-#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-20260728T191937Z' '/Applications/MOSSCapture.app'
-#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z' '/Users/ga0/.local/bin/mtd-capture'
-# MEASURED, not assumed: the TCC grants SURVIVE a rebuild+reinstall (both still auth_value=2) even
-# though the inode changes (211648186 -> 211995344). They are keyed to bundle id + signing identity.
-# Always re-run the E3 read-only query after any reinstall anyway — it is the one input this loop
-# cannot re-obtain, and it costs one ssh.
-# Prove the INSTALLED product (not just the checkout) carries the cycle, with a DISCRIMINATING
-# witness — a vocabulary absent from the backup binary and present in the new one:
-#   strings /Users/ga0/.local/bin/mtd-capture | grep -c '^sessionRefusal$'          # 3 (K4)
-#   strings /Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z | grep -c '^sessionRefusal$'  # 0
+# --- M6c's publish+redeploy recipe AND the m4mbp rebuild+reinstall recipe are RETIRED to
+#     progress.txt (grep "M6c: publish + redeploy the SIXTH merge"). N8c below is the kept
+#     template; M6c is the strictly larger one and is what a merge touching `macos/` needs.
+#     The four rules out of it that are not shape but law: PROVE the venv resolves the
+#     package from the checkout (an editable install) rather than assuming it; EXERCISE the
+#     deployed change instead of `hasattr`-ing it (and note `canonical_decode_token_cap` is
+#     KEYWORD-ONLY - a positional call raises TypeError, which under 2>/dev/null looks
+#     exactly like the symbol being absent); a `strings` witness needs a CONTROL WORD present
+#     in BOTH binaries, or a 0 cannot be told from a broken grep; and two shapes report a
+#     SKIPPED check as a passing one - `set -o pipefail` with a no-match `ls` glob, and
+#     reading `live-runs/` from a path that does not exist. The bundle rollbacks are the
+#     ONLY copies of those bytes and are named in Deployed reality; the current install is
+#     the 77e0014 product with backup-20260728T222244Z beside it. ---------------------------
 # --- N8c: publish + redeploy the EIGHTH merge (SPENT in iteration 29). The J5c shape - server
 #     restart plus an m4mbp checkout with NO rebuild - plus ONE step no prior redeploy had. Order
 #     matters and this is the order that worked:
@@ -1474,40 +1355,37 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 #   THE ORDERING TRAP: the finalizer's REQUIRED --min-match-score/--min-match-margin flags only
 #   exist at the NEW revision, so the checkout must precede the finalizer. Running it against the
 #   old checkout is an argparse rc=2, which reads like a broken command rather than a wrong order.
-# --- the J5c and K5c and D1 publish/redeploy recipes are RETIRED to progress.txt; M6c above is the
-#     kept template (it is the strictly larger one: restart AND Mac rebuild). ----------------------
+# --- the J5c, K5c, D1 AND M6c publish/redeploy recipes are all RETIRED to progress.txt. N8c above
+#     is the one kept in full (server restart + manifest regeneration + an m4mbp checkout); M6c is
+#     the strictly larger one (it adds the Mac rebuild) and its four laws are in the pointer above. 
 # --- m4mbp: `origin` IS NOT THE ALPHASIGHT FORK THERE. The names are INVERTED relative to this
 #     host: on m4mbp `origin` = OpenMOSS upstream and the fork is `alphasight`. `git fetch origin`
 #     there fetches the wrong repo and the checkout then fails `fatal: unable to read tree (<sha>)`,
 #     which looks like corruption and means "never fetched". Resolve the remote by URL:
 ssh -o BatchMode=yes ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize && \
   git remote -v | grep AlphaSightInc'
-#   then: git fetch alphasight main --quiet && git checkout <sha>     # rollback: checkout 317df4d…
-#   Check whether the app was disturbed (STALE PREMISE: iteration 6 proved the inode does NOT carry
-#   the TCC grants — the bundle id + signing identity do; see the K5c block):
-#     stat -f "inode=%i mtime=%Sm" -t "%Y-%m-%dT%H:%M:%SZ" /Applications/MOSSCapture.app
-#     current: inode=211995344 mtime=2026-07-28T15:19:30Z  (K5c's rebuild; was 211648186 from G6)
-# --- m4mbp cannot reach the batch service and that is TOPOLOGY, not a regression: m4mbp is
-#     192.168.1.240, the batch address is 192.168.68.38 (different LAN, 100% loss). The hosts meet
-#     only on the tailnet 100.64.0.4 -> 100.64.0.8. Measure the batch clause from MacStudio.
-# --- H4c's redeploy, E2a's m4mbp checkout and D3's live-service install are SPENT and RETIRED to
-#     progress.txt. All three are one-time steps whose result is in Deployed reality. --------------
-# --- F4a: the rollback rehearsal (SPENT in iteration 8; re-runnable, and re-run it exactly in this
-#     order — see the rollback-rehearsal block for why ExecStart forces it). Everything below is on
-#     the server; pipe each as a script on stdin per the remote-quoting gotcha. -------------------
-systemctl --user disable --now moss-live-web.service          # rollback: enable --now
-git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969  # rollback: checkout 317df4d…
-# ... assert from a client: 7861 dead (000) on tailnet AND LAN, http://192.168.68.38:7860/ 200,
-#     /api/jobs 200 (141 jobs), /api/runtime 200; batch MainPIDs 322117/301112 with NRestarts=0.
-# ... optional, and worth it: the batch-restart argv probe below, run at 163e969, must still print
-#     tests/test_live_service_deployment.py:51-62's BATCH_ARGV.
-git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 317df4d728b6765dbe365a3166158ba581299557
-systemctl --user enable --now moss-live-web.service
+#   then: git fetch alphasight main --quiet && git checkout <sha>     # rollback: checkout 7a4f59c
+#   (that rollback SHA is the DEPLOYED one and moves with every redeploy; it read a six-merges-stale
+#    317df4d until iteration 11 of run 20260729-094359. m4mbp's own `main` ref is untouched upstream
+#    40cf854, so `git checkout main` there is NOT a rollback to this project's main.)
+#   The post-checkout inode check that stood here quoted K5c's inode 211995344; the install
+#   has been 212080356 since M6c and the premise was already marked stale (the TCC grants key
+#   on bundle id + signing identity, not the inode). RETIRED to progress.txt, with the
+#   duplicated m4mbp-cannot-reach-the-batch-LAN topology note - both live in Deployed reality.
+# --- F4a: the rollback rehearsal (SPENT in iteration 8; the PRD clause is GREEN). The full
+#     recipe with its assertions is RETIRED to progress.txt, together with the rollback-
+#     rehearsal block's four enabling facts. THE ORDER IS FORCED BY ExecStart - the live unit
+#     runs ops/start-web.sh FROM THE CHECKOUT, and at 163e969 that script brings up a BATCH
+#     server - so `disable --now` before the checkout moves and restore the checkout before
+#     `enable --now`; use `disable`, not `stop`. NEVER `git clean` there: it would delete the
+#     untracked ops/moss-live.env the restore depends on. The two mutations, each with its
+#     rollback (the restore SHA is the DEPLOYED one and moved with every redeploy - it read a
+#     six-merges-stale 317df4d until iteration 11 corrected it): ------------------------------
+systemctl --user disable --now moss-live-web.service            # rollback: enable --now
+git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969    # rollback: checkout 7a4f59c
 # Then POLL (~10 s) for https://127.0.0.1:7861/live -> 200; a single probe at 6 s returns 000.
-# Stop condition: the served leaf must still hash to the D2 pin a35ca9fc…, else every paired Mac
-# is broken — do not proceed, record a blocker.
-# While rolled back, `git status --porcelain` reports `?? ops/moss-live.env`. That is expected.
-# NEVER `git clean` there: it would delete the untracked live profile the restore depends on.
+# Stop condition: the served leaf must still hash to the D2 pin a35ca9fc…, else every paired
+# Mac is broken - do not proceed, record a blocker.
 
 # --- pinned live reachability from any client host (read-only; run from MacStudio or m4mbp) ----
 # Pin first, then trust exactly that leaf — this is what the Mac client's full-certificate pin does.
