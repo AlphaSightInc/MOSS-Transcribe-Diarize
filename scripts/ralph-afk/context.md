@@ -101,9 +101,9 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **RED-and-STALE — never run against `42abc5a`.** The last two runs (iteration 26, on `77e0014`) were cut at t+18.1 s / t+32.1 s by candidate 56, which is now fixed, deployed and proven dead on the server. Those runs' numbers stand as evidence about Phase M (165 × 200 heartbeats through a permanently failing publish, committed p95 8343–9148 ms → 2567/2592 ms) and as **nothing at all** about latency (`sufficientSamples` false in both). **This is the next run.** |
-| 300 s certification (F2) | not run; the harness is ready (candidate 51, iteration 12) and 53/48/49/D-a/D-c have all landed, so the next F1/F3 run is the gate rather than another diagnosis |
-| 16-minute soak (F3) | **RED** — "F3 — the 16-minute soak" is RETIRED to progress.txt |
+| 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). See the F1-green block. |
+| 300 s certification (F2) | not run; the harness is ready (candidate 51, iteration 12) and F1 now passes with it, so F2 is a scale-up rather than a diagnosis |
+| 16-minute soak (F3) | **RED-and-STALE — never run against `42abc5a`.** Its one recorded death (candidate 53, minute 14.6) is fixed, merged and proven. **This is the next run.** |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
 
@@ -116,27 +116,27 @@ carry is in the retired-evidence index below).**
   metadata degrades to null and is logged, stated once as a conversion), P3 (four real-seam nodes,
   red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
   Python 608/2/368 green. See the Phase P block.
-- **PHASE P IS FULLY LANDED: (a) gate, (b) merge and (c) push + redeploy are ALL DONE, and the fix is
-  PROVEN ON THE REAL SERVER.** The gate was green at `5bc4f7f` (iteration 2), the seventh merge landed
-  as `42abc5a` (iteration 4) — merged tree byte-identical to the feature tip's, an eighth merge
-  refuses — and iteration 5 published it and redeployed all four checkouts. **The only remaining
-  Phase P/M step is (d): F1 then F3.** See the P5(c) block below for the redeploy evidence and the
-  probe that used to die.
-- **Phase M gate steps (a), (b) and (c) are DONE** — local gate green at `21a73ea`, sixth merge
-  `77e0014`, and all four checkouts deployed at it. **Only (d) remains: F1 and F3, both green**, and
-  (d) is what candidate 56 blocks. Both halves are fully instrumented and waiting — `live-canary.sh`,
-  `live-soak.sh`, `live-canary-clauses.py`, `soak-abort-probe.py`, all in the repo.
+- **PHASE P IS FULLY LANDED and its gate step (d) IS HALF DONE.** (a) gate green at `5bc4f7f`,
+  (b) seventh merge `42abc5a`, (c) published and deployed 4/4, and **(d) F1 IS GREEN (iteration 6)**.
+  **The only remaining Phase P/M step is F3, the 16-minute soak.** See the F1-green block and the
+  P5(c) block below.
+- **Phase M gate steps (a), (b), (c) are DONE and (d) is half done** — local gate green at `21a73ea`,
+  sixth merge `77e0014`, deployed, and F1 green on `42abc5a`. **Only F3 remains.** Both halves are
+  fully instrumented — `live-canary.sh`, `live-soak.sh`, `live-canary-clauses.py`,
+  `soak-abort-probe.py`, all in the repo.
 - **Phase M's product work is PROVEN on the real hosts** (iteration 26, two F1 re-runs against the
   deployed `77e0014`): 53/48 kept the heartbeat alive through **165 × 200** ticks with a permanently
   failing publish, D-a/49 produced **no lane fault at all**, and D-c took the committed p95 from
   8343–9148 ms to **2567/2592 ms**. Neither run is a qualified latency measurement — both were cut
   short by candidate 56 and `sufficientSamples` is false in both.
-- **Candidate 55 — identity capacity saturates in the first minute** (iteration 12). The 16-speaker
-  bound is reached at t+45.5 s (t+51.8 s in F1), so a voice arriving later can never be labelled.
-  Degrades quality without ending a session, so no gate sees it. Tracked product source; needs its
-  own authorization, and Phase N's `N1`/`N3` may subsume it.
+- **Candidate 55 — identity capacity saturates in the first minute** (iteration 12; **reproduced in
+  iteration 6's GREEN F1**). The 16-speaker bound is reached at t+45.5 s / t+51.8 s / **t+65.6 s**,
+  so a voice arriving later can never be labelled. Iteration 6 named its consumer exactly: **9 of the
+  16 slots were minted by one-word `Hi.` fragments** of microphone ambient noise. Degrades quality
+  without ending a session, so no gate sees it — and now demonstrably not even a passing one.
+  Tracked product source; needs its own authorization, and Phase N's `N1`/`N3` may subsume it.
 - **Phase N (live speaker identity) is authorized but gated** behind Phase M's green — i.e. behind
-  F1 and F3, which are now the only thing in front of it.
+  F3, now the only thing in front of it.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" below.
@@ -195,6 +195,7 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
 | **Candidate 49's mechanism was wrong in the record** (it. 13) | the watermark, not the projection | candidate 49 |
 | **The lanes are separated** (it. 12) | muting separates the lanes, and the echo was **not** what made 16 canonical speakers | candidates 51 and 55 |
 | **The 409 is NAMED, and the meeting was survivable** (it. 11) | `LiveV2SessionTerminalError` → `"v2 system lane is failed."`; the peer lane and a later heartbeat both 200 | candidate 54; `live-lane-refusal-probe.py` |
+| **F1 RAN TWICE AGAINST `77e0014`** (run `20260729-025318` it. 6 archive banner) | both runs cut at one instant with three simultaneous symptoms; the eliminations that ruled out lanes, heartbeat, host load and decode | candidate 56, which Phase P fixed; **superseded by the F1-green block** |
 
 **What survives those blocks, because nothing else in this file says it.**
 - ***An offline probe speaks for the deployed service only while
@@ -269,71 +270,47 @@ tests, never by this host. A run that logged P2 degradations would mean somethin
 this project ever recorded came off the stepping clock. Measured monotonically across 62 spans:
 **p95 0.18**, p50 0.131, max 0.288, `p95_under_bound` true; elapsed p95 0.45 s, max 0.72 s.
 
-**F1 RAN TWICE AGAINST `77e0014` AND BOTH RUNS DIED THE SAME WAY — a NEW blocker, and it is NOT
-the one Phase M fixed (new, iteration 26). READ THIS BEFORE F3 OR ANY FURTHER CERTIFICATION RUN.**
-m4mbp answered at 23:51:39Z after five iterations, so gate step (d) finally ran. Two canaries on
-the deployed `77e0014` with candidate 51's muted harness, on the real hosts.
+**F1 IS GREEN — the 60 s canary passed on the real hosts, run `20260729-025318` iteration 6.
+READ THIS BEFORE F3.** First green certification run in this loop's history, on the deployed
+`42abc5a` with candidate 51's muted lane-separating harness. `live-canary-clauses.py` **rc=0**.
+Session `3386547d…`, evidence `/tmp/i6-f1-evidence/ralph-canary`, reductions `/tmp/i6-clauses.txt`
+and `/tmp/i6-analyze.txt`.
 
-| | run A `1fd0a901…` | run B `ed9f91ea…` |
-| --- | --- | --- |
-| host state | woke 3 min earlier, **load 31.83** | settled, **load 3.24**, tailnet **0 % loss / 27 ms** |
-| frames 200 → then 409 | 71 → **259** | 124 → **203** |
-| cut at | **t+18.1 s** | **t+32.1 s** |
-| heartbeats | **165 × 200, zero non-200** | **165 × 200, zero non-200** |
+| PRD clause | measured |
+| --- | --- |
+| continuously updating transcript with labels | version **0 → 308**, **47** committed spans (38 non-empty), speakers `S01`–`S16`, status `active` throughout |
+| view authority for the whole run | **370/370** view requests 200 — and the number decomposes: **52** portal-poller polls + **318** app-latency-probe polls, the two readers whose *simultaneous* 401 was candidate 56's signature |
+| **user-visible p95 ≤ 4000 ms** | **3909.3 ms — GREEN, and QUALIFIED for the first time**: `sufficientSamples` **true** (n=44), `mixerOriginResolved` true, `timelineIntact` true, `fetchFailures` 0, rejected 0/0/0. Components separately: committed p95 **2402.4 ms** + render bound **1506.8 ms** (cycle 1000 + snapshot p95 285.9 + events p95 220.9) |
+| **decoder p95 RTF < 1** | **0.911** over 47 spans (p50 0.160, max 3.908 on a 0.36 s span). Second trustworthy RTF this project has recorded — Phase P's monotonic measurement |
+| zero loss, zero double count | client `publishedFrameCount` **329** at stop == server's **329 POST /frames, all 200**. Stop drain `retained=0`, both lanes `stopped`, `sessionRefusal` null. Both v2 lanes `health=active`, `failure_code=None`, `failed_samples=0` |
+| no lane fault, no terminal | **165** heartbeats all 200, `terminal_failure` null, 0 journal tracebacks; the only terminal line is `helper_lease_expired lanes=none` **29 s after the run's own stop** |
+| secret hygiene, run-time half | `handoff` returns `viewAuthority: copied-to-pasteboard` (never the token), the unauthenticated portal HTML carries only the *header name*, pasteboard cleared to **0**, no audio artifact anywhere, `live-runs` 0, no `/tmp/mtd-live-*` |
 
-***The cut is ONE instant with THREE simultaneous symptoms*** (run B: last frame 200 and first frame
-409 both 19:59:56; last snapshot 200 19:59:56, first 401 19:59:57):
-1. every view route answers **401 `{"detail":"invalid bearer authority."}`** — both readers at once,
-   the portal poller *and* the app's own probe (`fetchFailures` 202/258, and the server's snapshot
-   tally splits exactly into the two readers);
-2. **`POST /frames` answers 409 permanently** on both lanes, so `publishedFrameCount` freezes and
-   the client's outbox fills to its **60**-frame bound (`outboxDegradation overflowedLaneRetention`);
-3. the client reports `pumpFailure: transportUnavailable` — G3/K's deliberate mapping of any
-   `CaptureHTTPTransportError`, which is why a *permanently closed session* reads as a *transient
-   network problem*.
-
-***What this is NOT, and the eliminations are measured, not assumed.***
-- **Not the K5d/F1/F3 chain, and not a lane fault at all.** No lane ever failed: both lanes
-  `capturing` throughout, server-side `health=active` / `failure_code=None` / `failed_samples=0` on
-  **both**, a clean stop with both `stopped`, and `sessionRefusal: null`. D-a and 49 are not in it.
-- **Not a stopped heartbeat.** 165 × 200 in both runs with zero non-200 — ***53's fix demonstrably
-  works***: a publish that fails on every tick for 50+ seconds no longer stops the heartbeat. The
-  only `live helper terminal:` line in either run is `helper_lease_expired` **after** the run's own
-  stop (19:56:52 for a run that stopped ~19:56:25).
-- **Not the host waking up.** Run B reproduced it with load 3.24 and a clean tailnet; it lasted
-  longer (32 s vs 18 s), which is the only thing that moved.
-- **Not the decode.** `capped 0 of 10` in run A; the last events before the cut are ordinary —
-  `frame_accepted` seq 96, `canonical_processed` with `identity_status: prepared`,
-  `empty_reason: null`.
-***The mechanism, read out of the source.*** `invalid bearer authority` is raised at exactly one
-place, `live_auth.py:282`, when `_view_for_digest` returns None; for a token that is neither expired
-nor revoked that means `_session_is_viewable` (`:382-385`) went false — `_session_status(session_id)`
-left `VIEWABLE_SESSION_STATUSES`. **The session stopped being viewable at that instant**, which is
-also exactly what makes `POST /frames` answer the *closed-session* 409 (the overload iteration 11
-named beside the lane-failed one). One cause, both symptoms, no lane involved.
-***And the reason is recorded NOWHERE — the same defect that forced a probe to be built twice.***
-Zero journal tracebacks, no terminal line at the cut, an event stream that ends mid-sentence, and
-every route that could report it answers 401 or 409. The 409 body *does* carry
-`live_v2_terminal_failure_response(…terminal_reason)`, and the client discards it by G3's contract.
-*Iteration 23's 120 s `live-pipeline-probe.py` against this same SHA was healthy end to end
-(240 ticks, `non_200_count` 0)* — so the trigger is something the Mac's real capture does that the
-probe's synthetic audio does not. **That probe is the cheapest next instrument: it already keeps the
-refusal body, and it costs no Mac.**
-
-*The green sub-clauses, recorded because they are real and because they must not be over-read.*
-**Committed p95 2567.4 ms (run A) and 2592.2 ms (run B)**, where four prior runs measured
-**8343–9148 ms** — the first time the committed half has been near the gate, and user-visible
-**3921.8 / 3970.7 ms** are *both under the 4000 ms canary gate*. **Neither is a qualified
-measurement:** `sufficientSamples` is **false** in both (n=8 and n=12 against the plan's 20), and
-both runs were cut off at 18 s and 32 s. It is evidence that D-c's cap plus a short clean window
-looks nothing like F1's 9 s tail; it is not the latency verdict. Also green in both: the served leaf
-hashed to the D2 pin before any request, portal 200/21282 bytes, pasteboard cleared to 0, no raw
-audio persisted, no new device row (`10 devices / 1 unrevoked`, m4mbp's), all three server MainPIDs
-and `NRestarts=0` unmoved, and batch `/` 200.
-*Hosts left clean:* app killed, `/tmp` scratch removed, output unmuted at volume 31 (the pre-run
-state), both TCC grants still `auth_value=2`; server `HEAD` `77e0014`, worktree clean.
-*Reusable:* evidence `/tmp/i26-f1-evidence/` and `/tmp/i26b-f1-evidence/` here, clause reductions
-`/tmp/i26-f1-clauses.txt` and `/tmp/i26b-f1-clauses.txt`.
+***The system marker LANDED, and the reducer said it did not.*** `cardamom` was delivered isolated
+and repeated at −r 130 (the fix written in iteration 12 and never exercised until now) and comes back
+as span 15, **`[0.11][S03]Cockamom, cockamom, cockamom.[1.75]`**, at t+30.6 s — inside `program-a`,
+the phase whose marker it is, three times, on the system lane, in a **muted** run. That is the
+cross-check passing: the tap is upstream of the output mute and the marker survived to the
+transcript. `live-canary-analyze.py` scores it **absent** because it matches the word exactly, so it
+printed `rc=5` on a run whose marker clause holds. Logged as **candidate 59** — same shape as 57.
+***The room marker did not land, and that is the harness's recorded limit, not a defect.*** MacStudio
+spoke `obsidian` isolated and repeated into the room window; m4mbp's microphone (default input was
+the **built-in** `MacBook Pro Microphone` this run, not iteration 12's AirPods) returned only
+one-word fragments. **So "two speakers" is still two voices on the SYSTEM lane**, program A vs
+program B, with the microphone lane carrying room noise. Candidate 51's limit stands and the PRD's
+"two speakers plus identifiable system audio" half is *not* fully certified by this run.
+***And candidate 55 is now measured inside a GREEN run, which is exactly why no gate sees it.***
+Identity **saturated at t+65.6 s of an 85 s meeting**: 16 canonical speakers for 2 real voices, and
+**9 of them (`S07`–`S15`) were minted by one-word `Hi.` fragments** of microphone-lane ambient noise
+during the room window. Span 44 then abstained `speaker_capacity_exceeded` (J2 held — it published
+under `S00` rather than ending the meeting). One decode hallucinated on that noise
+(span 34, *"I'm sorry, I can't assist with that request."*). The meeting was perfect; the identity
+was not.
+*Hosts left clean:* server `HEAD 42abc5a` worktree clean, live MainPID **355607** / batch **301112**
+and **322117**, all `NRestarts=0`, batch `/` 200, `live-runs` 0, device store **13 / 1 unrevoked**
+(m4mbp's — never revoked, and `pair` minted no new row). m4mbp: app killed, `/tmp` scratch removed,
+volume back to 31 unmuted, pasteboard 0, both TCC grants still `auth_value=2`, app inode
+`212080356` and CLI sha `450c20bf…` unchanged (no rebuild, so no TCC exposure).
 
 **CANDIDATE 56 IS ANSWERED, AND THE CAUSE IS THE HOST'S WALL CLOCK (new, iteration 28).
 READ THIS BEFORE ANY FURTHER CERTIFICATION RUN OR LATENCY CLAIM.** One probe run with iteration
@@ -805,7 +782,8 @@ progress.txt archive under each title.
 | **J5d gate** | **GREEN at `6a540fe`** — the first run in the loop's history to finish: 40/40 ticks, `non_200_count` 0, nine committed spans tiling the meeting end to end, `accepted == accounted == committed == 320000`, speakers S01-S04, and **both degrade-not-die paths fired inside the same green run** (H1's empty span, J2's `S00`). Decoder RTF 0.055-0.431. |
 | **F4a rollback rehearsal** | GREEN — see the rollback block above. |
 | **K5d re-read** | Named the lane failure `macos_buffer_overrun` and traced it to Phase L. Phase K closed; the fourth amendment spent. |
-| **F1 canary / F3 soak** | **RED** — see the two blocks above. One defect, candidate 53. |
+| **F1 canary (it. 8) / F3 soak (it. 9)** | **RED** — one defect, candidate 53, since fixed. Both blocks retired to progress.txt. |
+| **F1 canary, run `20260729-025318` it. 6** | **GREEN, rc=0** — the first green certification run. user-visible p95 **3909.3 ms** ≤ 4000 **and qualified** (`sufficientSamples` true, n=44), decoder p95 RTF **0.911** < 1, **329 published == 329 accepted**, 370/370 view polls 200 across both readers, 165/165 heartbeats 200, no lane fault, `terminal_failure` null, 0 tracebacks, hosts left clean. Not certified by it: the "two speakers" half (both voices were on the system lane). See the F1-green block. |
 | **Phase M gate step (a)** | GREEN at **`21a73ea`** — Swift 158/0 (0 warnings, fresh scratch), Python 604+2/368, tracer 4/0 skips, 10/10, lane-refusal probe rc=0, 7/7 hard-cap cases, leak-scan clean, tree clean; payload 10 files / +983/-51 all in scope. |
 | **M6 gate + merge #6** | Merge **`77e0014`**, parents `fc7097d` + feature tip `4ac5d95`; join `1b6a9f4` proven content-free first. In-worktree gate on the merged tree: Swift 158/0, Python 604+2/368 in 64.4 s. Merge tree == feature tree `d2094369…`. **Not server-only** (4 files under `macos/`), so step (c) is the K5c shape: restart **and** Mac rebuild+reinstall. Guard rehearsed: a seventh merge refuses. |
 | **Phase P gate step (a)** | GREEN at **`5bc4f7f`** (run `20260729-025318` it. 2) — Swift **158/0** with **0 warnings** on a fresh scratch, Python **608 passed / 2 skipped / 368 subtests** in 59.95 s, tracer **4/0 skips**, discriminator **10/10**, lane-refusal probe rc=0 (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `77e0014`), seven hard-cap cases rc=0, `soak-abort-probe` 90/90, `view-reader-probe` pass, leak-scan clean, tree clean. Payload **7 files / +285/−38**, all in `moss_transcribe_diarize/` + `tests/`, **none under `macos/`**. *Payload review added one thing the four-site sweep table could not:* `grep -rnE '(time\.time\(\)\s*-\|-\s*time\.time\(\))' moss_transcribe_diarize/` returns **nothing** — the class is empty by search, not merely by enumeration; every surviving `time.time()` is a persisted or expiry **timestamp** (`live_transport._request_now`, `jobs` `created_at`/`updated_at`, `windowed_transcription:367`), which is P4's recorded ruling. |
@@ -1732,7 +1710,9 @@ and the **server**, which behaves correctly at every step of the client-side fai
     `--lane-offset-ms system=137 --lead-seconds 0` spent F0's open caveat and found blocker 3. The
     device was revoked, both batch units and the live unit kept their MainPIDs/NRestarts/timestamps,
     `live-runs/` is still 0 entries and no `/tmp/mtd-live-*` survives. See the H-diagnosis block.
-24. **F1 — 60 s canary** per prd.md. `[RUN — RED — run 20260728-181020 iteration 8]`. See the F1
+24. **F1 — 60 s canary** per prd.md. `[GREEN — run 20260729-025318 iteration 6, rc=0; see the
+    F1-green block. The RED history below is iteration 8's run and is kept only for what it
+    diagnosed.]` See the F1
     block above. Green: continuously updating labelled transcript (42 spans, version 0 → 283),
     decoder p95 RTF **0.706**, zero double count (340 published == 340 accepted), run-time secret
     hygiene, no raw audio persisted. Red: **user-visible p95 10426 ms vs ≤ 4000 ms**, and **0.5 s of
@@ -1741,8 +1721,10 @@ and the **server**, which behaves correctly at every step of the client-side fai
     must be re-run, not re-argued. F1 is re-runnable end to end from
     `/tmp/ralph-f1-canary.sh` and costs no operator input.
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-    `[open — do NOT run before candidate 51; F1 proved the harness confounds the label clause, and a
-    300 s run would spend five times the wall clock on the same confound]`
+    `[open — candidate 51's guard is SPENT: the harness is fixed and iteration 6 proved it carries a
+    green 85 s meeting. Sequence it after F3, which is the authorized gate step; F2 is a PRD
+    acceptance clause in its own right and its 5 s-interruption / denied-lane halves have no driver
+    yet — `live-canary.sh` does neither.]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
     `[RUN — RED — run 20260728-181020 iteration 9]`. See "F3 — the 16-minute soak" (RETIRED, grep progress.txt). Green for 14 minutes:
@@ -2111,6 +2093,19 @@ amendment's literal order is unreachable and why this one drops nothing.**
     clock was measured still stepping every 32.29 s. The hazard is permanent; the defect is gone.
 57. **The reducer called a passing latency number RED.** `[done — iteration 29]`. See "The reducer
     stopped calling a passing number RED" below. Loop tooling; no authorization was needed.
+59. **The marker check calls a landed marker absent, because it matches the word exactly.**
+    `[open, new — run `20260729-025318` iteration 6; loop tooling, no authorization needed]`.
+    `live-canary-analyze.py` scored `cardamom` **NOT FOUND** in a run whose transcript contains
+    `Cockamom, cockamom, cockamom.` — isolated, repeated, three times, in the correct phase, on the
+    correct lane. The decoder rewrites a rare noun **phonetically**, which is precisely why the
+    driver was changed in iteration 12 to say the marker alone and slowly; the reducer never learned
+    the same lesson, so `rc=5` was printed over a marker clause that holds. *Shape of the fix, not a
+    decision:* compare on a phonetic/edit-distance key rather than equality, and — the part that
+    matters more — make the **verdict word name what it decides**, as candidate 57 had to: "the
+    marker word was not transcribed verbatim" is not "nothing from this lane reached the transcript".
+    Third instance of that class in this loop. Note the cheap negative control that already exists:
+    the room marker was absent **and** its phase produced only one-word fragments, so absence of
+    content and rewriting of a word look nothing alike in the evidence — only in the verdict.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
@@ -2200,8 +2195,14 @@ until then, so a red run measures this bug and nothing else.
       fast-forwarded `77e0014..42abc5a`, the server checked out and restarted (MainPID 350731 →
       355607, `/live` 200 at **8 s**), and m4mbp checked out with **no rebuild**. Four-way SHA
       **4/4**. Evidence in the P5(c) block above, including the probe that used to die.
-    - **(d) F1 then F3** `[open - NEXT, and now unblocked]` — the Phase M gate step (d) that
-      candidate 56 blocked. Nothing stands in front of it any more.
+    - **(d) F1 then F3** `[F1 done - it. 6, GREEN, rc=0; F3 OPEN and NEXT]` — the Phase M gate step
+      (d) that candidate 56 blocked. F1 passed on the first attempt against `42abc5a`; see the
+      F1-green block. **F3 is now the single remaining item in front of Phase N.** Run it with
+      `live-soak.sh OUTPUT_MODE=muted` nohup'd on m4mbp, reduce with
+      `live-canary-clauses.py --user-visible-gate-ms 6000`, and read the F1 run's two live warnings
+      into it: decoder p95 RTF was **0.911**, close to the bound and driven by short
+      silence-endpointed spans (a 17-minute run has far more of them), and identity saturates at
+      **t+65.6 s**, so every speaker label after minute 1 of the soak is `S00` by design.
     Note in the journal that this also repairs the PRD's decoder p95 RTF clause, measured from this
     same number and therefore unreliable in every prior run. `[recorded - it. 1]`
 

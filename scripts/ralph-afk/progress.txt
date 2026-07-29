@@ -15838,3 +15838,234 @@ STOP CONDITIONS, decided before the run so a bad result is not argued away:
   * the run is RED or UNDECIDED -> that is a RESULT, not a reason to re-run with
     different knobs. Record it, diagnose from the evidence, and let the next
     iteration act.
+
+ARCHIVE OF context.md SUPERSEDED BLOCK - RUN 20260729-025318 ITERATION 6
+The block below ("F1 RAN TWICE AGAINST 77e0014 AND BOTH RUNS DIED THE SAME WAY") is
+retired from context.md VERBATIM because F1 is now GREEN against the deployed 42abc5a
+(this iteration). Its diagnosis was candidate 56, which Phase P fixed, merged, deployed
+and proved dead. Its conclusions still carried in context.md: the Phase M eliminations
+and the candidate-56 answer block. Nothing was deleted.
+-----BEGIN RETIRED BLOCK-----
+**F1 RAN TWICE AGAINST `77e0014` AND BOTH RUNS DIED THE SAME WAY — a NEW blocker, and it is NOT
+the one Phase M fixed (new, iteration 26). READ THIS BEFORE F3 OR ANY FURTHER CERTIFICATION RUN.**
+m4mbp answered at 23:51:39Z after five iterations, so gate step (d) finally ran. Two canaries on
+the deployed `77e0014` with candidate 51's muted harness, on the real hosts.
+
+| | run A `1fd0a901…` | run B `ed9f91ea…` |
+| --- | --- | --- |
+| host state | woke 3 min earlier, **load 31.83** | settled, **load 3.24**, tailnet **0 % loss / 27 ms** |
+| frames 200 → then 409 | 71 → **259** | 124 → **203** |
+| cut at | **t+18.1 s** | **t+32.1 s** |
+| heartbeats | **165 × 200, zero non-200** | **165 × 200, zero non-200** |
+
+***The cut is ONE instant with THREE simultaneous symptoms*** (run B: last frame 200 and first frame
+409 both 19:59:56; last snapshot 200 19:59:56, first 401 19:59:57):
+1. every view route answers **401 `{"detail":"invalid bearer authority."}`** — both readers at once,
+   the portal poller *and* the app's own probe (`fetchFailures` 202/258, and the server's snapshot
+   tally splits exactly into the two readers);
+2. **`POST /frames` answers 409 permanently** on both lanes, so `publishedFrameCount` freezes and
+   the client's outbox fills to its **60**-frame bound (`outboxDegradation overflowedLaneRetention`);
+3. the client reports `pumpFailure: transportUnavailable` — G3/K's deliberate mapping of any
+   `CaptureHTTPTransportError`, which is why a *permanently closed session* reads as a *transient
+   network problem*.
+
+***What this is NOT, and the eliminations are measured, not assumed.***
+- **Not the K5d/F1/F3 chain, and not a lane fault at all.** No lane ever failed: both lanes
+  `capturing` throughout, server-side `health=active` / `failure_code=None` / `failed_samples=0` on
+  **both**, a clean stop with both `stopped`, and `sessionRefusal: null`. D-a and 49 are not in it.
+- **Not a stopped heartbeat.** 165 × 200 in both runs with zero non-200 — ***53's fix demonstrably
+  works***: a publish that fails on every tick for 50+ seconds no longer stops the heartbeat. The
+  only `live helper terminal:` line in either run is `helper_lease_expired` **after** the run's own
+  stop (19:56:52 for a run that stopped ~19:56:25).
+- **Not the host waking up.** Run B reproduced it with load 3.24 and a clean tailnet; it lasted
+  longer (32 s vs 18 s), which is the only thing that moved.
+- **Not the decode.** `capped 0 of 10` in run A; the last events before the cut are ordinary —
+  `frame_accepted` seq 96, `canonical_processed` with `identity_status: prepared`,
+  `empty_reason: null`.
+***The mechanism, read out of the source.*** `invalid bearer authority` is raised at exactly one
+place, `live_auth.py:282`, when `_view_for_digest` returns None; for a token that is neither expired
+nor revoked that means `_session_is_viewable` (`:382-385`) went false — `_session_status(session_id)`
+left `VIEWABLE_SESSION_STATUSES`. **The session stopped being viewable at that instant**, which is
+also exactly what makes `POST /frames` answer the *closed-session* 409 (the overload iteration 11
+named beside the lane-failed one). One cause, both symptoms, no lane involved.
+***And the reason is recorded NOWHERE — the same defect that forced a probe to be built twice.***
+Zero journal tracebacks, no terminal line at the cut, an event stream that ends mid-sentence, and
+every route that could report it answers 401 or 409. The 409 body *does* carry
+`live_v2_terminal_failure_response(…terminal_reason)`, and the client discards it by G3's contract.
+*Iteration 23's 120 s `live-pipeline-probe.py` against this same SHA was healthy end to end
+(240 ticks, `non_200_count` 0)* — so the trigger is something the Mac's real capture does that the
+probe's synthetic audio does not. **That probe is the cheapest next instrument: it already keeps the
+refusal body, and it costs no Mac.**
+
+*The green sub-clauses, recorded because they are real and because they must not be over-read.*
+**Committed p95 2567.4 ms (run A) and 2592.2 ms (run B)**, where four prior runs measured
+**8343–9148 ms** — the first time the committed half has been near the gate, and user-visible
+**3921.8 / 3970.7 ms** are *both under the 4000 ms canary gate*. **Neither is a qualified
+measurement:** `sufficientSamples` is **false** in both (n=8 and n=12 against the plan's 20), and
+both runs were cut off at 18 s and 32 s. It is evidence that D-c's cap plus a short clean window
+looks nothing like F1's 9 s tail; it is not the latency verdict. Also green in both: the served leaf
+hashed to the D2 pin before any request, portal 200/21282 bytes, pasteboard cleared to 0, no raw
+audio persisted, no new device row (`10 devices / 1 unrevoked`, m4mbp's), all three server MainPIDs
+and `NRestarts=0` unmoved, and batch `/` 200.
+*Hosts left clean:* app killed, `/tmp` scratch removed, output unmuted at volume 31 (the pre-run
+state), both TCC grants still `auth_value=2`; server `HEAD` `77e0014`, worktree clean.
+*Reusable:* evidence `/tmp/i26-f1-evidence/` and `/tmp/i26b-f1-evidence/` here, clause reductions
+`/tmp/i26-f1-clauses.txt` and `/tmp/i26b-f1-clauses.txt`.
+-----END RETIRED BLOCK-----
+
+## run 20260729-025318-86584 - iteration 6 - F1 IS GREEN: the 60 s canary passed
+## on the real hosts, and the first green certification run in this loop's history
+
+TARGET: P5(d) / Phase M gate step (d), first half - F1, the 60 s canary, against
+the deployed 42abc5a with candidate 51's muted lane-separating harness. Chosen
+because context.md names it "the next run" and nothing stands in front of it:
+Phase P is merged, deployed 4/4, and candidate 56 was proven dead on the server
+in iteration 5.
+
+FILES TOUCHED: scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt only.
+NO product source, NO ops/, NO deploy, NO merge, NO restart, NO rebuild.
+
+VALIDATION COMMAND AND RESULT:
+  python3 scripts/ralph-afk/live-canary-clauses.py /tmp/i6-f1-evidence/ralph-canary
+  -> rc=0, three GREEN verdicts, no RED and no UNDECIDED.
+  python3 scripts/ralph-afk/live-canary-analyze.py /tmp/i6-f1-evidence/ralph-canary --voices 2
+  -> rc=5 (both markers scored absent) - and rc=5 is WRONG about the system
+     marker; see candidate 59 below.
+
+THE RUN. Session 3386547d3cd5437fac926fe0930409e7, label
+ralph-i6-f1-20260729T034040Z, ~85 s of meeting. Fresh app launched (pgrep 55514),
+paired from a payload minted on the server loopback and piped on stdin, driver
+nohup'd on m4mbp with MARKER_SYSTEM=cardamom MARKER_ROOM=obsidian
+OUTPUT_MODE=muted ROOM_WINDOW_SECONDS=25, polled from MacStudio.
+Evidence /tmp/i6-f1-evidence/ralph-canary; reductions /tmp/i6-clauses.txt and
+/tmp/i6-analyze.txt.
+
+THE CLAUSES, MEASURED:
+  transcript          version 0 -> 308, 47 committed spans (38 non-empty),
+                      speakers S01..S16, status active throughout, and it grew on
+                      52 of 52 portal polls
+  view authority      370/370 view requests 200 - and the number DECOMPOSES:
+                      52 portal-poller polls + 318 app-latency-probe polls. Those
+                      are the two readers whose SIMULTANEOUS 401 was candidate
+                      56's signature; both held for the whole run.
+  USER-VISIBLE p95    3909.3 ms vs the 4000 ms gate - GREEN, and QUALIFIED for
+                      the first time in this project: sufficientSamples TRUE
+                      (n=44), mixerOriginResolved true, timelineIntact true,
+                      fetchFailures 0, rejected 0/0/0. Components separately, as
+                      the plan's Phase F procedure requires:
+                        committed p95 2402.4 ms (p50 1957.6, max 2736.9)
+                        render bound 1506.8 ms = cycle 1000 + snapshot p95 285.9
+                                                 + events p95 220.9
+  decoder p95 RTF     0.911 over 47 spans (min 0.045, p50 0.160, max 3.908 on a
+                      0.36 s span; total decode 14.2 s, max 1.41 s). Under the
+                      < 1 bound, and only the SECOND trustworthy RTF this project
+                      has recorded - Phase P's monotonic measurement.
+  zero loss / zero    client publishedFrameCount 329 at stop == the server's own
+  double count        329 POST /frames, ALL 200. Stop drain retained=0, both
+                      lanes stopped, sessionRefusal null. Both v2 lanes
+                      health=active, failure_code=None, failed_samples=0.
+  no lane fault       165 heartbeats, all 200. terminal_failure null. 0 journal
+                      tracebacks. The ONLY terminal line is
+                      `live helper terminal: ... reason=helper_lease_expired
+                      lanes=none` at 23:42:33, i.e. 29 s AFTER the run's own stop
+                      - the normal post-stop expiry, same shape as iteration 26.
+  D-c on the wire     token cap in force on every span (20 distinct values
+                      73..286); 2 of 47 spans actually capped, and both committed
+                      (spans 1 and 44). First run in which the cap has been
+                      EXERCISED on the real client rather than merely present.
+  secret hygiene      handoff returns viewAuthority "copied-to-pasteboard", never
+                      the token; token_len printed, token never; the
+                      unauthenticated portal HTML (200, 21282 bytes) contains
+                      only the HEADER NAME in its JS, no value; pasteboard
+                      cleared to 0 bytes; no .wav/.pcm/.caf anywhere in the
+                      evidence; live-runs 0 and no /tmp/mtd-live-* on the server.
+  pin                 served leaf hashed to a35ca9fc.. BEFORE any request.
+
+THE SYSTEM MARKER LANDED, AND THE REDUCER SAID IT DID NOT. This is the one thing
+this iteration got wrong on first reading, and it matters because rc=5 would have
+been recorded as a failed marker clause.
+  span 15, t+30.6..32.6 s, inside phase program-a whose marker is `cardamom`, on
+  the system lane, in a MUTED run:
+    [0.11][S03]Cockamom, cockamom, cockamom.[1.75]
+The driver's iteration-12 change - say the marker ALONE, REPEATED, at -r 130 -
+was never exercised until now, and it WORKED: the marker survived to the
+transcript, three times, in the right phase. What failed is
+live-canary-analyze.py's EXACT-WORD match against a decoder that rewrites a rare
+noun PHONETICALLY - the very failure mode the driver change was written for.
+Logged as candidate 59. Same class as candidate 57 (iteration 29) and as
+iteration 22's finding: a verdict word must name the thing it decides. "The
+marker word was not transcribed verbatim" is not "nothing from this lane reached
+the transcript", and the evidence tells them apart trivially - the system phases
+produced 38 labelled fragments, the room phase produced one-word noise.
+
+THE ROOM MARKER DID NOT LAND, AND THAT IS THE HARNESS'S LIMIT, NOT A DEFECT.
+MacStudio spoke `obsidian` isolated and repeated into the room window (this
+iteration's one addition to the recorded procedure). m4mbp's microphone returned
+only one-word fragments - and note the input device was the BUILT-IN `MacBook Pro
+Microphone` this run, not iteration 12's AirPods Pro, so the negative result is
+stronger than iteration 12's: it is not a Bluetooth-headset artifact. THEREFORE:
+the PRD's "two speakers plus identifiable system audio" clause is only HALF
+certified by this run. The two voices (Samantha, Reed) were both on the SYSTEM
+lane; the microphone lane carried room noise. Candidate 51's recorded limit -
+"a run is program vs room, not two speakers" - stands, and it should be stated
+plainly rather than allowed to ride on a green rc.
+
+CANDIDATE 55 IS NOW MEASURED INSIDE A GREEN RUN, which is exactly the point of it.
+  identity saturated at t+65.6 s of an 85 s meeting: 16 canonical speakers for 2
+  real voices (inflation x8.0)
+  9 of the 16 slots - S07..S15 - were minted by ONE-WORD `Hi.` fragments of
+  microphone ambient noise during the 25 s room window
+  span 44 then abstained `speaker_capacity_exceeded` and J2 held: it published
+  under S00 rather than ending the meeting
+  span 34 shows the decoder hallucinating on that same noise:
+  "I'm sorry, I can't assist with that request."
+So a passing gate and a broken identity coexist in one run. That is the argument
+for Phase N, and it is now made from a green certification rather than a red one.
+
+TWO WARNINGS THIS RUN CARRIES INTO F3, both recorded so the soak is not read
+naively:
+  1. decoder p95 RTF 0.911 is CLOSE to the < 1 bound and is driven by short
+     silence-endpointed spans where fixed decode cost dominates a small
+     denominator - a 17-minute soak has far more of them than an 85 s canary.
+  2. identity saturates at t+65.6 s, so essentially every speaker label after
+     minute 1 of a 16-minute soak will be S00 by design. That is J2 working, not
+     a regression, and the soak's label clause must be read that way.
+
+HOSTS LEFT CLEAN, all measured after the run:
+  server  HEAD 42abc5a, worktree clean; moss-live-web 355607, moss-web 301112,
+          moss-vllm 322117, all NRestarts=0; batch / 200; live-runs 0 entries;
+          no /tmp/mtd-live-*; 0 tracebacks; device store 13 devices / 1 unrevoked
+          (m4mbp's AB600574.., NOT revoked - `pair` reused the stored device id
+          and minted no new row, exactly as recorded)
+  m4mbp   app killed, /tmp/ralph-canary + /tmp/live-canary.sh +
+          /tmp/ralph-canary-run.log removed, output volume 31 and unmuted (the
+          driver's own trap restored it; topology-before == topology-after),
+          pasteboard 0 bytes, both TCC grants still auth_value=2, app inode
+          212080356 and CLI sha256 450c20bf.. UNCHANGED - no rebuild, so the
+          grants were never exposed.
+
+WHAT I LEARNED, beyond the numbers:
+  * A green run is where a latent quality defect is most visible and least
+    likely to be looked for. Candidate 55 has been "open, needs authorization"
+    for eighteen iterations on the strength of red runs; this run shows it
+    consuming 9 of 16 slots on literal noise while every PRD clause passes.
+  * The pasteboard held 79 bytes of operator content BEFORE the run. Recorded in
+    the pre-run rollback block, which is why the post-run 0 bytes could be read
+    as this run's hygiene rather than argued about.
+  * `live-canary-analyze.py` and `live-canary-clauses.py` disagree by design
+    (rc=5 vs rc=0) and BOTH must be read: the first answers lane separation, the
+    second answers the PRD. Neither is the whole verdict, and this run is the
+    first where the disagreement was substantive.
+
+RECOMMENDED NEXT STEP - F3, the 16-minute soak, the single remaining Phase M/P
+gate item and the only thing in front of Phase N. Same prelude as this run (fresh
+app, mint on the server loopback, pair on stdin, nohup the driver, poll the log
+from MacStudio):
+  scp scripts/ralph-afk/live-soak.sh ga0@m4mbp:/tmp/
+  nohup env OUTPUT_MODE=muted bash /tmp/live-soak.sh <label> > log 2>&1 &
+  python3 scripts/ralph-afk/live-canary-clauses.py <dir> --user-visible-gate-ms 6000
+Run `python3 scripts/ralph-afk/soak-abort-probe.py` FIRST (it must print 90/90,
+rc=0) - iteration 26 found the soak driver's abort glob matched every healthy
+poll, and an instrument that has not run this iteration is not evidence that it
+works. Candidate 59 is cheap and could be fixed in the same iteration as the
+soak's ~19 minutes of waiting, but it is loop tooling and must not delay F3.
