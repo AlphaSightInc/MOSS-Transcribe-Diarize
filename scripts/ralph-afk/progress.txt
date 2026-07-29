@@ -20759,3 +20759,110 @@ redeploy - and note that THIS redeploy is the one that must regenerate the host
 manifest with `--min-match-score 0.35 --min-match-margin 0.1` under the
 DEPLOYMENT VENV's python (see N-recal and the finalizer defect), or the live
 service runs the album at 75.0 %.  Then (d) F1.
+
+
+================================================================================
+ITERATION 28 (run 20260729-025318) - THE EIGHTH KEEPER MERGE IS MADE
+Phase N gate step (b): steps 1-3 of ADR-0002 are on `main` at 7a4f59c
+================================================================================
+
+TARGET.  Phase N's gate, step (b) - the one further reviewed no-ff merge the
+prd.md section "Phase N is SUPERSEDED by ADR-0002" authorizes.  Chosen because
+iteration 27 left it as the single recommended next step and as the only thing
+between three landed, gated steps of ADR-0002 and a service that runs them; no
+other open candidate is unblocked (55, 58, 60 and the F2 denied-lane variant all
+need an authorization prd.md does not carry).
+
+FILES TOUCHED.  `scripts/ralph-afk/merge-keeper.sh` only (+15/-3: `expected_main`
+77e0014 -> 42abc5a, plus the review comment naming the authorizing section, what
+the Phase N payload is, and the measured acceptance it passed).  Everything else
+this iteration is git history: the join commit, the guard commit, the merge.
+
+VALIDATION, in the order run.
+  bash -n scripts/ralph-afk/merge-keeper.sh                       -> syntax ok
+  RALPH_MERGE_DRY_RUN=1 RALPH_MERGE_ALLOW_DIRTY=1 ...merge-keeper  -> PASS rc=0
+  bash scripts/ralph-afk/merge-keeper.sh   (BACKGROUND)            -> PASS rc=0
+  RALPH_MERGE_DRY_RUN=1 ...merge-keeper (guard rehearsal, after)   -> rc=1
+Evidence: /tmp/i28-merge.log (389+ lines, the whole keeper run).
+
+THE TWO FENCES, satisfied in the standing order.
+  FENCE 1, the history join.  Proven content-free BEFORE it was run:
+    `git merge-tree --write-tree main HEAD` returned HEAD's OWN tree
+    89a3c321..., and `main` was NOT an ancestor of HEAD (so the join was
+    genuinely required, not ceremonial).  `git merge --no-ff main` -> 96ba30e.
+    Afterwards `git diff --stat 483104d 96ba30e -- .` is EMPTY, the post-join
+    tree is still 89a3c321..., and `merge-base --is-ancestor main HEAD` is now
+    honestly true.
+  FENCE 2, `expected_main` advanced IN-SCRIPT and committed first -> 732e1f6,
+    which is therefore the feature tip the merge captured.  The comment cites
+    operator commit 0456177 and states the thing that makes this an advance
+    rather than a loosening: the section does NOT create a new fix cycle, it
+    re-shapes the ALREADY AUTHORIZED Phase N of the sixth amendment and ends its
+    "after Phase M's gate" sequencing, which Phase M's landed gate spent.
+
+THE MERGE.  `7a4f59c`, parents 42abc5a + 732e1f6, message "merge: live meeting
+transcription MVP keeper", committed 05:10:28 -0400.
+  * IN-WORKTREE GATE ON THE MERGED TREE (not on the feature tree - this is the
+    point of the temporary worktree): both Swift products built, Swift
+    **158 test cases passed**, all suites passed; Python **801 passed, 2 skipped,
+    368 subtests passed in 77.59 s**.  Identical to gate (a)'s numbers at 1e1cf3f,
+    which is the check that the join carried nothing.
+  * MERGE TREE == FEATURE TREE: both `16de7f6264deca...`.  The merge added
+    nothing and dropped nothing - the same proof P7 and M6 recorded.
+  * PAYLOAD SPLIT, because the single diffstat (53 files, +16234/-1474) is
+    misleading: **44 files / +8172/-126** outside `scripts/ralph-afk`, which is
+    EXACTLY the payload iteration 27 reviewed, digit for digit; the other 9 files
+    and +8062/-1348 are this loop's own evidence (context.md, progress.txt,
+    merge-keeper.sh and artifacts), carried to `main` as every prior merge did.
+  * **0 files under `macos/`** -> the merge is SERVER-ONLY, so step (c) is the
+    J5c shape: server restart plus an m4mbp checkout with no rebuild, no
+    reinstall, and therefore NO TCC EXPOSURE.
+  * The EXIT trap ran: `git worktree list` is back to one entry, the primary
+    worktree is clean and still on `ralph/live-meeting-mvp` at 732e1f6.
+  * GUARD REHEARSED NON-VACUOUSLY IMMEDIATELY AFTER: the dry run now prints
+    `ERROR: main moved from expected pre-merge SHA 42abc5aec2d2...` and exits 1.
+    A NINTH merge is refused until another amendment advances the line.
+
+TWO FACTS WORTH NAMING IN THE MERGE RECORD.
+  1. `main` now carries FOUR files that are the operator's own work, three of
+     them for the first time: `docs/adr/0002-two-tier-diarization-fingerprint-
+     album.md` and `docs/design-streaming-diarization.md` (commits 00620ab and
+     128eae4, committed straight to the feature branch mid-iteration), plus this
+     loop's `docs/adr/0003-live-session-audio-retention.md`.  Recorded so a
+     future reader does not mistake them for loop drift.
+  2. THE TAPE IS STILL OFF AND THE MERGE DID NOT TURN IT ON.  `git show
+     main:ops/moss-live.env.example` has all three `MOSS_LIVE_RETENTION_*` keys
+     COMMENTED OUT (lines 52, 57, 64).  A redeploy of this SHA therefore retains
+     no audio until an operator edits the host-local `ops/moss-live.env` - which
+     is what makes step (c) safe to run without re-litigating ADR-0003.
+
+ROLLBACK, recorded even though nothing published and no host was touched.
+  `git update-ref refs/heads/main 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870`
+  `git update-ref refs/heads/ralph/live-meeting-mvp 483104df7e80d748675698e...`
+  Both are safe because NOTHING IS PUSHED: `origin/main` is still 42abc5a and
+  the feature branch has no remote.  After step (c)'s push the first of these
+  stops being available, which is the real reason the push is a separate step.
+
+WHAT I LEARNED (one durable thing, and it cost nothing only because it was
+checked rather than trusted).  Iteration 27 recorded the join's proof as
+"`merge-tree --write-tree` returns HEAD's own tree **556c9101**" so that this
+iteration would not have to redo it.  Measured here, the answer was **89a3c321**
+- because iteration 27's OWN evidence commit (483104d) moved the tree after it
+took that reading.  The CONCLUSION held (the tree is still HEAD's own, so the
+join is still content-free) but the recorded HASH was stale by one commit.  RULE:
+a tree hash is only true of the commit that produced it; re-run `merge-tree
+--write-tree` at merge time and compare it to `git rev-parse HEAD^{tree}`
+MEASURED IN THE SAME BREATH, never to a hash carried across an iteration.
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  PHASE N GATE STEP (c) - push and redeploy, which is the
+only thing that makes the eighth merge real and restores "one exact SHA
+everywhere" (now 1/4: local `main` 7a4f59c, `origin/main` / server / m4mbp all
+still 42abc5a).  The J5c shape applies: push `42abc5a..7a4f59c` fast-forward,
+server checkout + restart, m4mbp checkout with NO rebuild and NO reinstall.
+THE ONE THING THIS REDEPLOY MUST NOT SKIP, because no gate can see it: regenerate
+the host manifest with `--min-match-score 0.35 --min-match-margin 0.1` under the
+DEPLOYMENT VENV's python (see N-recal and the finalizer defect in context.md), or
+the live service runs the album at the deployed 0.5/0.2 pair, which measures
+**75.0 %** instead of 93.44 %.  Then (d) F1.
