@@ -311,6 +311,15 @@ Phase M/P landing narratives it used to carry are in progress.txt under that pas
   has committed to this branch mid-iteration and the second time with an authorization inside it.
   **Read prd.md's tail and `git log -3` at the START of every iteration; never trust this bullet
   without re-deriving it.**
+  **A FIFTH TIME, IN ITERATION 21, AND IT MOVED prd.md AGAIN.** `bb8daad` *"ralph: record the
+  operator's real-audio bench evidence as binding"* landed at 10:21:37 while iteration 21 was
+  running and added the ninth amendment's **item (e)**: the bench's real conversational audio
+  **outranks the LibriSpeech fixtures wherever the two disagree**, the calibrated matcher is
+  confirmed (not changed) at 0.35 / 0.1, and the F-certification distinct-voice harness takes the
+  real corpora alongside TTS. Nothing was clobbered - the operator's own section and this loop's
+  edits are both in the tree - but the near-miss is now routine enough to be a procedure: **stage by
+  path, re-read prd.md's tail before writing the journal, and check the tip again before any
+  merge.** Five commits, two of them carrying authorizations, one carrying a binding evidence rule.
   **AUTHORIZED AND OPEN — this is the loop's next work, and it needs no further permission:**
   Phase Q's four items (candidates 69-72 in the Phase Q section: the birth floor at 1.0 s of
   embedded speech, the RTF gate *definition*, the cadence fix with its enforcing node, and the Mac
@@ -2616,6 +2625,13 @@ now measured on the deployed service.
     16-speaker cap, which is why the *accuracy* gain the LibriSpeech 600 s meetings show cannot
     appear there. Residual over-birth survives on 4 of 9 clips - the floor bounds the *unenrollable*
     births, not all of them.
+    **Which number governs, under the ninth amendment's item (e).** Real audio outranks the fixtures
+    wherever they disagree, and here they disagree on **magnitude, not direction**: both say the
+    canonical count falls and no correct label is lost; only LibriSpeech shows an accuracy gain,
+    because only a 600 s meeting saturates 16 speakers and pays the capacity-abstain cost. So
+    **quote 3.56 -> 3.00 with accuracy unchanged as Q1's headline** and treat 93.4 -> 99.1 as what
+    the fix is worth *on a meeting long enough to saturate* - which is what F3 is, and what F1 is
+    not.
     **The amendment's first consequence needs one correction, and it is not cosmetic.** "Deferred,
     not lost - the ledger retains it, a sweep relabels it" is true only **above the 0.5 s evidence
     floor**, where a vector exists to retain. Below it nothing was embedded, nothing reaches the

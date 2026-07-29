@@ -27402,3 +27402,38 @@ both re-open the Swift suite.  Two things NOT to do: do not re-run F1 or F3 for
 Q1's benefit before the merge (the deployed service does not have the fix), and
 do not remove the `PROVISIONAL` tier as a drive-by - candidate 74 is a decision,
 not a cleanup.
+
+--- iteration 21, addendum: the FIFTH concurrent operator commit, and it re-ranks
+    this iteration's own two measurements ---------------------------------------
+
+`bb8daad` "ralph: record the operator's real-audio bench evidence as binding"
+landed at 10:21:37, WHILE this iteration was running, and added the ninth
+amendment's item (e).  Caught by re-reading `git log` before committing rather
+than by any tool warning.  Nothing was clobbered: the operator's context.md
+section and prd.md text and this iteration's edits are all in the tree.
+
+WHAT IT CHANGES FOR Q1.  Item (e) rules that real conversational audio OUTRANKS
+the LibriSpeech fixtures wherever the two disagree.  Q1's two measurements
+disagree on MAGNITUDE, not direction:
+
+  * both say canonical count falls and no correct label is lost;
+  * only LibriSpeech shows an ACCURACY gain (93.4 -> 99.1 live), because only a
+    600 s meeting saturates 16 speakers and pays the capacity-abstain cost;
+  * the 9 real clips are 60-180 s, top out at 5 canonicals, and never saturate -
+    so their accuracy is identical either way (95.2 / 87.4).
+
+So the headline to quote for Q1 is **3.56 -> 3.00 canonicals with accuracy
+unchanged**, and 93.4 -> 99.1 is what the fix is worth ON A MEETING LONG ENOUGH TO
+SATURATE - which is what F3 is (16 canonicals, saturated at t+138.1 s of 1029 s)
+and what F1 is not.  Recorded in candidate 69 so the gate is not read against the
+wrong number.
+
+Item (e) also confirms rather than changes the deployed matcher (0.35 / 0.1,
+already shipped as candidate 63 at `7a4f59c`) and adopts the real corpora into the
+F-certification distinct-voice harness alongside TTS, without retiring candidate
+51's measured microphone limit.  Neither touches Q1.
+
+FIVE CONCURRENT OPERATOR COMMITS NOW, two carrying authorizations and one carrying
+a binding evidence rule.  The procedure that has survived all five: stage by path
+(never `git add -A`), re-read prd.md's tail before writing the journal, and check
+the tip again before any merge.
