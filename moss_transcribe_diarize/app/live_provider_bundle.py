@@ -618,6 +618,29 @@ class WeSpeakerLiveEvidenceProvider:
                 )
         return tuple(evidence)
 
+    def finalize_identity(self, *, base_snapshot: LiveIdentitySnapshot) -> None:
+        """Settle the meeting's last preparation, then sweep once more, in that order.
+
+        ADR-0002's final sweep. Both halves are here rather than in the caller because both
+        are facts about retained evidence, and the order between them is load-bearing: a
+        span's vectors acquire their canonical speaker when the *next* span's preparation
+        reconciles them, so at session end the last span is still retained unlabelled. A
+        sweep run before that reconcile would re-match the last span against the album and
+        propose a `labelled` correction for a span the live path had already labelled --
+        a rewrite that changes nothing, reported as if it had.
+
+        Sweeping unconditionally is the point of the call: `maybe_sweep` is paced by the
+        following span's start, so the meeting's last interval has nothing to trigger it, and
+        that interval is where the accuracy harness (`tests/live_identity_accuracy.py`)
+        measures essentially all of the sweep's gain.
+        What it produces is left for `take_identity_revision` exactly as a cadence sweep
+        leaves it -- this makes a correction available and never publishes one.
+        """
+
+        self._reconcile_committed_vectors(base_snapshot)
+        if self._sweeper is not None:
+            self._sweeper.sweep_now()
+
     def take_identity_revision(self) -> SweepRevision | None:
         """The newest unpublished sweep result, or `None` when this stack cannot sweep.
 

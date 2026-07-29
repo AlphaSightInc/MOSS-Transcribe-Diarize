@@ -831,6 +831,12 @@ def _prepare(preparer, *, span_id, start_sec, segments, snapshot):
 def _drive_sweep_seam(preparer):
     """Four spans of a meeting the live path cannot label correctly on its own."""
 
+    return _drive_sweep_seam_to_snapshot(preparer)[0]
+
+
+def _drive_sweep_seam_to_snapshot(preparer):
+    """The same meeting, plus the identity state a session would be holding at its end."""
+
     snapshot = LiveIdentitySnapshot(version=0, canonical_speakers=())
     statuses = []
     for span_id, start_sec, segments in (
@@ -849,7 +855,7 @@ def _drive_sweep_seam(preparer):
         statuses.append(preparation.status)
         if preparation.status == "prepared":
             snapshot = preparation.proposed_snapshot
-    return statuses
+    return statuses, snapshot
 
 
 def test_the_live_path_retains_the_evidence_a_sweep_rescues_an_abstained_span_with():
@@ -967,3 +973,69 @@ def live_provider_bundle_sweep_interval() -> float:
     from moss_transcribe_diarize.app.live_identity_sweep import SWEEP_INTERVAL_SECONDS
 
     return SWEEP_INTERVAL_SECONDS
+
+
+def test_the_session_end_finalize_labels_the_last_spans_evidence_before_it_sweeps():
+    """ADR-0002's final sweep, and the order inside it, on the seam the live path runs.
+
+    The cadence is off for the whole of this meeting, so this is the *only* sweep it gets --
+    which is the ordinary case for any meeting shorter than one interval, and the tail of
+    every meeting longer than one. Span 4's evidence is retained unlabelled while the meeting
+    runs, because a span is labelled when the *following* preparation reconciles it and
+    nothing follows the last one; the finalize settles that first and only then re-matches,
+    so the sweep sees a ledger that agrees with the transcript rather than proposing a
+    correction for a span the live path had already labelled.
+    """
+
+    preparer, sweeper = _sweep_seam(interval_seconds=3600.0)
+
+    statuses, final_snapshot = _drive_sweep_seam_to_snapshot(preparer)
+
+    assert statuses == ["prepared", "abstain", "prepared", "prepared"]
+    assert sweeper.sweeps == 0
+    assert sweeper.ledger.canonical_speaker(4, "S01") is None
+
+    preparer.finalize_identity(base_snapshot=final_snapshot)
+
+    assert sweeper.ledger.canonical_speaker(4, "S01") == "speaker-0001"
+    assert sweeper.sweeps == 1
+    # The abstained span is rescued, and the last span -- now settled -- is left alone.
+    assert [
+        (item.span_id, item.local_speaker, item.canonical_speaker, item.reason)
+        for item in sweeper.latest_revision.corrections
+    ] == [(2, "S01", "speaker-0001", LABELLED)]
+
+
+def test_a_provider_that_cannot_sweep_still_settles_its_last_span():
+    """The reconcile is not the sweep's errand; it is how the meeting's evidence ends up true.
+
+    A stack with no sweeper has nothing to re-match, but the album it does have must still
+    hear the last span's assignment -- and the pre-ADR-0002 stack, which keeps its reference
+    vectors itself, must still record it. Neither has anything to say at session end, and
+    saying nothing must not mean raising.
+    """
+
+    encoder = _ScriptedEncoder([_voice(0), _voice(0)])
+    config = LiveIdentityConfig(
+        max_speakers=16,
+        min_match_score=ALBUM_MIN_MATCH_SCORE,
+        min_match_margin=ALBUM_MIN_MATCH_MARGIN,
+    )
+    album = FingerprintAlbum()
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album)
+    preparer = BoundedCausalIdentityPreparer(config=config, evidence_provider=provider)
+
+    first = _prepare(
+        preparer,
+        span_id=1,
+        start_sec=0.0,
+        segments=[(0.0, 2.0, "S01")],
+        snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()),
+    )
+    assert first.status == "prepared"
+    assert album.exemplar_count("speaker-0001") == 0
+
+    preparer.finalize_identity(base_snapshot=first.proposed_snapshot)
+
+    assert album.exemplar_count("speaker-0001") == 1
+    assert provider.take_identity_revision() is None

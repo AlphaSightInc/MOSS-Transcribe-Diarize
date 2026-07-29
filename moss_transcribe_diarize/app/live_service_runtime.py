@@ -537,6 +537,8 @@ class LiveServiceRuntime:
                 if queued:
                     self._mark_ready_locked(state)
             await self._wait_for_drain(state, end_time=end_time)
+            with self._lock:
+                self._finalize_identity_locked(state)
             remaining = max(0.0, end_time - loop.time())
             snapshot = await state.session.stop(remaining)
         except Exception as exc:
@@ -585,6 +587,38 @@ class LiveServiceRuntime:
         snapshot = await state.session.abort(reason)
         with self._lock:
             return self._snapshot(state, session_snapshot=snapshot)
+
+    def _finalize_identity_locked(self, state: _RuntimeSession) -> None:
+        """Run ADR-0002's final sweep for a meeting that reached a clean stop.
+
+        Placed after the drain and before `session.stop` so the stop response already carries
+        the corrected transcript; a closed session is revisable anyway, so this is ordering
+        for the reader's benefit rather than a requirement.
+
+        **The abort path deliberately does not do this.** An aborted session is terminal,
+        a terminal session is not viewable, and a correction published to it would reach no
+        reader -- so the only thing a final sweep could add there is work on the one path
+        that must do as little as possible.
+
+        The event is recorded whether or not anything changed. "The last sweep ran and found
+        nothing" and "the last sweep never ran" are opposite facts about a meeting, and the
+        only way to tell them apart after the fact is a line that appears either way.
+        """
+
+        if state.terminal_failure is not None:
+            return
+        result = state.coordinator.finalize_identity()
+        self._record_event(
+            state,
+            "identity_finalized",
+            {
+                "identity_revision_version": result.identity_revision_version,
+                "identity_revision_spans": result.identity_revision_spans,
+                "identity_revision_units": result.identity_revision_units,
+                "identity_revision_merges": result.identity_revision_merges,
+                "identity_revision_refusals": dict(result.identity_revision_refusals),
+            },
+        )
 
     def _require_one_span_cap(self, endpoint_policy: EndpointPolicy) -> None:
         """Refuse a provider config that declares the span cap twice with two values.

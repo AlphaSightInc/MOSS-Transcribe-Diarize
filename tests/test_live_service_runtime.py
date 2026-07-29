@@ -984,3 +984,79 @@ def test_runtime_terminal_failure_is_session_local():
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------------------
+# ADR-0002's final sweep, from the runtime's side: which ending runs it, and where in the
+# ending it runs. The correction it produces is measured on the real parts in
+# `test_live_pipeline_seams`; what these two nodes pin is that the meeting's last sweep
+# happens on the path a reader is still watching, and not on the path nobody can see.
+# --------------------------------------------------------------------------------------
+
+
+@dataclass
+class FinalizingIdentity(PreparingIdentity):
+    def __post_init__(self) -> None:
+        self.finalized: list[LiveIdentitySnapshot] = []
+
+    def finalize_identity(self, *, base_snapshot: LiveIdentitySnapshot) -> None:
+        self.finalized.append(base_snapshot)
+
+
+def test_a_clean_stop_settles_identity_after_the_drain_and_before_the_session_closes():
+    """The stop response is what a reader is handed, so the correction belongs inside it.
+
+    After the drain, because a sweep that ran with spans still in flight would be re-matching
+    an unfinished meeting; before the close, because the snapshot `stop` returns is the last
+    thing many readers ever fetch. A closed session is revisable anyway -- this ordering is a
+    courtesy rather than a constraint, and it is asserted because nothing else would notice
+    if it silently moved.
+    """
+
+    identity = FinalizingIdentity()
+    runtime = _runtime(speech=(True, False), identity=identity)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+
+    asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+
+    assert len(identity.finalized) == 1
+    events = runtime.events(created.session_id)
+    event_kinds = [event.kind for event in events]
+    assert event_kinds[-2:] == ["identity_finalized", "session_closed"]
+    # Ordering by event position would be satisfied by settling identity *after* the session
+    # closed, because `session_closed` is recorded later still. The version each event was
+    # stamped with is what separates the two: `LiveSession.stop` bumps on the way through, so
+    # a finalize that ran before it necessarily carries a lower version than the close does.
+    versions = {event.kind: event.snapshot_version for event in events}
+    assert versions["identity_finalized"] < versions["session_closed"]
+    # Recorded whether or not anything changed: "the last sweep found nothing" and "the last
+    # sweep never ran" are opposite facts that would otherwise both read as an absence.
+    payload = [event for event in runtime.events(created.session_id) if event.kind == "identity_finalized"][0].payload
+    assert payload == {
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+    }
+
+
+def test_an_abort_does_not_sweep_a_session_no_reader_could_see():
+    """An aborted session is terminal, and a terminal session is not viewable.
+
+    A correction published to one reaches nobody, so the only thing a final sweep could add
+    on the abort path is work on the one path that must do as little as possible.
+    """
+
+    identity = FinalizingIdentity()
+    runtime = _runtime(speech=(True, False), identity=identity)
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+
+    asyncio.run(runtime.abort(created.session_id, "operator"))
+
+    assert identity.finalized == []
+    assert "identity_finalized" not in [event.kind for event in runtime.events(created.session_id)]

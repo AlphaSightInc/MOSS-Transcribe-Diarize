@@ -172,6 +172,20 @@ class BoundedCausalIdentityPreparer:
         take = getattr(self.evidence_provider, "take_identity_revision", None)
         return None if take is None else take()
 
+    def finalize_identity(self, *, base_snapshot: LiveIdentitySnapshot) -> None:
+        """Tell the evidence provider the meeting has ended, if it has anything to settle.
+
+        Relayed rather than implemented for the same reason `take_identity_revision` is: the
+        preparer is pure and holds no evidence, so what a session end means is entirely the
+        provider's business. Asked for by name, because the stacks that predate ADR-0002
+        step 3 -- `NoLiveSpeakerEvidence` and every hand-built double -- have nothing to
+        settle and must not have to say so.
+        """
+
+        finalize = getattr(self.evidence_provider, "finalize_identity", None)
+        if finalize is not None:
+            finalize(base_snapshot=base_snapshot)
+
     def _assign(
         self,
         local_speakers: tuple[str, ...],

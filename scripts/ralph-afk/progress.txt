@@ -20499,3 +20499,160 @@ the transcript half is done, so the hook has somewhere to deliver to.  After tha
 Phase N's gate: the accuracy harness plus F1/F2 with the label clause meaningfully
 verified, then a merge, push and redeploy - and the redeploy is the one that
 regenerates the host manifest at the calibrated 0.35/0.1 (see N-recal).
+
+================================================================================
+RUN 20260729-025318  ITERATION 26 - THE SESSION-END SWEEP (Phase N step 3, the
+last piece)
+================================================================================
+
+TARGET.  The candidate iteration 25 recommended and iterations 22/24/25 each
+recorded as the open half of ADR-0002 step 3: THE SESSION-END SWEEP.  Three
+things were already decided for it and all three were honoured - the hook is
+per-session teardown, the final reconcile must precede the final sweep, and the
+transcript half (`revise_labels`) was already built to accept a revision on a
+closed session.  No new authorization: Phase N is open under the ADR-0002
+supersession (operator commit 0456177), and this is step 3's remaining work.
+
+FILES.  Product: `live_provider_bundle.py` (+`finalize_identity`),
+`live_identity.py` (the relay), `live_coordinator.py`
+(+`CoordinatorFinalizeResult`, +`finalize_identity`, +`IDENTITY_FINALIZE_FAILED`,
++`_merged_refusals`), `live_service_runtime.py` (+`_finalize_identity_locked`,
+the `stop` call site, the `identity_finalized` event).  Tests:
+`test_live_coordinator.py` +3, `test_live_provider_bundle.py` +2,
+`test_live_pipeline_seams.py` +1, `test_live_service_runtime.py` +2.
+NONE under `macos/`, none under `ops/`.  8 files, +495/-4.
+
+VALIDATION.  `python3 -m pytest -q` -> **801 passed / 2 skipped / 368 subtests**
+in 75.89 s (793/2/368 before; the two skips are the pre-existing 3.10 contract).
+Swift untouched and therefore not re-run - the payload contains no `macos/` file.
+
+WHY IT IS A REAL GAP, NOT A REFINEMENT.  The cadence is paced by the NEXT span's
+start (`score()` -> `maybe_sweep(meeting_seconds=span.start_sample/16000)`), so:
+  * a meeting shorter than one interval is NEVER swept - at the shipped
+    SWEEP_INTERVAL_SECONDS of 60 s that is every F1-length canary;
+  * every longer meeting's final interval is never swept;
+  * and the last span's evidence is retained UNLABELLED for good, because a
+    span's vectors acquire their canonical speaker when the FOLLOWING span's
+    preparation reconciles them and nothing follows the last one.
+The accuracy harness has been measuring the opposite the whole time:
+`tests/live_identity_accuracy.py:430` runs `run_sweep(apply=True)` at session end
+unconditionally, and that call is inside the 99.26 % mean / 98.48 % min figure
+iteration 23 recorded.  So the product could not reach its own gate's number.
+
+THE SHAPE.  One optional capability, asked for by name at each of three layers,
+exactly as `take_identity_revision` already is:
+  provider  `WeSpeakerLiveEvidenceProvider.finalize_identity(base_snapshot)` -
+            `_reconcile_committed_vectors(base_snapshot)` THEN
+            `sweeper.sweep_now()`, and it publishes nothing: what the sweep
+            produces is left in the sweeper's unconsumed slot exactly as a
+            cadence sweep leaves it.
+  preparer  `BoundedCausalIdentityPreparer.finalize_identity` - relay only.
+  coordinator `LiveCoordinator.finalize_identity()` - hands the stack
+            `session.snapshot().identity_snapshot`, then calls the SAME
+            `_publish_identity_revision()` every span uses, and returns the five
+            revision fields a span already reports.
+  runtime   `_finalize_identity_locked` in `stop`, after `_wait_for_drain` and
+            before `session.stop`, plus the `identity_finalized` event.
+
+FOUR DECISIONS, RECORDED SO THEY ARE NOT RE-ARGUED.
+1. THE ORDER IS RECONCILE THEN SWEEP, and it is load-bearing rather than tidy.
+   Reversed, the final sweep re-matches the last span while the ledger still has
+   it unlabelled, and proposes a `labelled` correction for a span the live path
+   had ALREADY labelled correctly - a rewrite that changes nothing, reported as
+   if it had changed something (`revise_labels` counts the span as revised and
+   bumps the version even when `applied` is 0).  Semantic revert 1 measures it:
+   `identity_revision_spans` goes 1 -> 2.
+2. THE ABORT PATH DELIBERATELY DOES NOT SWEEP.  An aborted session is terminal,
+   a terminal session is not in VIEWABLE_SESSION_STATUSES, and a correction
+   published to one reaches no reader - so the only thing a final sweep could add
+   there is work on the one path that must do as little as possible.  Stated as a
+   rule rather than an omission, and asserted by its own node.
+3. NOTHING HERE IS TERMINAL.  A meeting that reached a clean stop has already
+   succeeded; an identity stack that raises on the way out costs the transcript
+   its last correction and nothing else.  It is counted by NAME
+   (`identity_finalize_failed`, merged into the same `identity_revision_refusals`
+   map the session's own refusals use) because reporting zero corrections would
+   be indistinguishable from a meeting nobody needed to correct.  Third
+   amendment's governing rule, applied to teardown.
+4. THE EVENT IS RECORDED WHETHER OR NOT ANYTHING CHANGED.  "The last sweep ran
+   and found nothing" and "the last sweep never ran" are opposite facts about a
+   meeting; the only way to tell them apart after the fact is a line that appears
+   either way.  Same five keys as `canonical_processed`'s revision half, so the
+   loop's reducers read it with the code they already have.
+
+RED-BEFORE: TWELVE SEMANTIC REVERTS (`/tmp/i26-redbefore/run.py`, applied and
+restored in-iteration), every one red, and every one of the 8 new nodes named by
+at least one:
+   1  sweep before reconcile                          -> 2 red
+   2  the final sweep never runs                      -> 2 red
+   3  the final reconcile never runs                  -> 3 red
+   4  the preparer does not relay                     -> 3 red
+   5  the coordinator settles but never publishes     -> 1 red
+   6  a stack that cannot settle ends the meeting     -> 1 red
+   7  the stop path never settles identity            -> 1 red
+   8  the abort path settles it too                   -> 1 red
+   9  the event is recorded only when something moved -> 1 red
+  10  identity is settled AFTER the session closes    -> 1 red
+  11  settled against a snapshot that is not this
+      meeting's                                       -> 2 red
+  12  the capability is required, not asked for       -> 8 red
+TWO OF THEM WERE GREEN ON THE FIRST PASS AND THE NODES WERE WRONG, NOT THE
+REVERTS - this is the third consecutive iteration to hit that hazard.
+  * Revert 8 was a no-op because `abort` calls `_fail` BEFORE anything else and
+    `_finalize_identity_locked` returns early on a terminal session; the honest
+    revert inserts the call ahead of `_fail`, and then the node bites.
+  * Revert 10 was a no-op because `session_closed` is recorded AFTER the try
+    block, so "identity_finalized immediately precedes session_closed" holds
+    wherever inside `stop` the finalize sits.  The node now asserts what actually
+    separates the two placements: `LiveSession.stop` bumps the version twice on
+    its way through, so a finalize that ran BEFORE it necessarily carries a
+    strictly lower `snapshot_version` than the close does.  Event ORDER was the
+    wrong instrument; the version each event was stamped with is the right one.
+
+THE SEAM NODE, which is the one that matters.
+`test_the_session_end_sweep_corrects_the_span_a_paced_sweep_never_reaches` drives
+the real LiveCoordinator, LiveSession, BoundedCausalIdentityPreparer,
+WeSpeakerLiveEvidenceProvider, FingerprintAlbum and LiveIdentitySweeper at the
+SHIPPED 60 s cadence through four two-second spans - so the paced sweep never
+fires at all, which is the ordinary case for a canary-length meeting.  Span 2 is
+equidistant between the two births, abstains, and J2 publishes it under S00;
+nothing corrects it while the meeting runs (`sweeper.sweeps == 0`, every span's
+`identity_revision_units` 0, `committed[2].revised_transcript is None`), and the
+last span's unit is retained unlabelled.  `finalize_identity()` then settles span
+3 into the ledger and album (`ledger.canonical_speaker(3,"S01")` None ->
+`speaker-0001`), sweeps once, and the reader's transcript acquires
+`[0][S01]who is this[2]` beside an untouched `[0][S00]who is this[2]`.  A second
+finalize proposes nothing and does not move `label_revision_version` - the
+convergence claim, asserted rather than assumed.
+
+WHAT THIS DOES NOT DO - so a green suite is not mistaken for step 3 being done.
+  * THE ACCURACY NUMBER IS NOT RE-MEASURED.  The harness already ran a session-end
+    sweep, so 99.26/98.48 is unchanged by this patch - what changed is that the
+    PRODUCT can now reach it.  The remaining harness/product discrepancy is
+    honest and worth stating: the harness records each unit already carrying its
+    final canonical speaker, so it never models the one-span reconcile lag at
+    all.  This closes the PERMANENT part of that lag (the last span); the
+    transient part - the span in flight is unlabelled at cadence time - stays,
+    deliberately, and is iteration 24's decision 3.
+  * NO MERGE IS EVER APPLIED TO THE ALBUM, unchanged from iterations 22/24/25.
+  * THE SWEEP COST NOW LANDS INSIDE `stop`.  Measured in iteration 24 at 39 ms
+    (17 min) / 125 ms (1 h) / 366 ms (3 h) for the batch-scored sweep, under the
+    runtime lock and before `remaining` is recomputed - so it is spent out of the
+    caller's stop deadline.  Acceptable against a multi-second deadline and worth
+    watching if a meeting ever gets much longer than three hours.
+  * THE DEPLOYED SERVICE IS UNAFFECTED and the branch's unmerged-source condition
+    is what it was: offline probes have not spoken for the deployed 42abc5a since
+    iteration 15 and still do not.
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  PHASE N's GATE, which is now the only thing between step
+3 and a merge: re-run the accuracy harness as the recorded gate number (it is
+already a suite node, so this is a measurement to WRITE DOWN rather than to
+build), then F1/F2 with the label clause meaningfully verified - the half that is
+still blocked by candidate 51's measured hardware limit and needs the operator's
+call, not the loop's.  Step 4 (batch Tier-B unified onto the same album engine)
+is the other open item and is independently shippable.  Note for whoever merges:
+`merge-keeper.sh`'s `expected_main` still names 77e0014 and must be advanced
+IN-SCRIPT to 42abc5a, never by CLI override, and the branch tip must be re-read
+first - the operator has committed to this branch three times mid-iteration.
