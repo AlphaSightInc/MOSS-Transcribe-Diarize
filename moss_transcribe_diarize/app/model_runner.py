@@ -126,7 +126,9 @@ class ModelRunner:
                 if status_callback is not None:
                     status_callback("transcribing", generation_progress(generated_tokens, max_new_tokens), generated_tokens)
 
-            started = time.time()
+            # Monotonic, for the same reason as `VllmRunner.transcribe`: a wall clock is a
+            # timestamp, and a timestamp that steps backwards makes a duration negative.
+            started = time.monotonic()
             result = generate_transcription(
                 self._model,
                 self._processor,
@@ -148,7 +150,7 @@ class ModelRunner:
                 text=result["text"],
                 prompt_len=int(result["prompt_len"]),
                 generated_tokens=int(result["generated_tokens"]),
-                elapsed_sec=time.time() - started,
+                elapsed_sec=time.monotonic() - started,
                 model=self.model_path,
                 audio=str(Path(audio_path).expanduser()),
                 decoding=decoding,

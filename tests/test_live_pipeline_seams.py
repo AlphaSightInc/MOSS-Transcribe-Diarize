@@ -18,6 +18,7 @@ import hashlib
 import io
 import json
 import logging
+import time
 import urllib.error
 import urllib.request
 from dataclasses import replace
@@ -85,6 +86,7 @@ from moss_transcribe_diarize.app.live_session import (
 from moss_transcribe_diarize.app.live_span_bounds import span_segments
 from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2Frame
 from moss_transcribe_diarize.app.live_v2_session import LiveV2SessionRegistry
+from moss_transcribe_diarize.app import vllm_runner
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 
 DEPLOYED_VAD_FRAME_SAMPLES = 160
@@ -470,8 +472,9 @@ def _decode_seam_runtime(
     evidence_provider=None,
     speech_provider=None,
     prepared_by=None,
+    runner=None,
 ) -> tuple[LiveServiceRuntime, StubbedTransportVllmRunner]:
-    runner = StubbedTransportVllmRunner(responses)
+    runner = StubbedTransportVllmRunner(responses) if runner is None else runner
 
     def identity_preparer():
         preparer = BoundedCausalIdentityPreparer(
@@ -851,6 +854,209 @@ def test_a_request_the_backend_refuses_on_its_merits_is_terminal_without_a_retry
 
 def _span(span_id: int, sample_count: int) -> FrozenSpan:
     return FrozenSpan(id=span_id, epoch=0, start_sample=0, end_sample=sample_count, reason="hard_cap")
+
+
+# --------------------------------------------------------------------------------------
+# The timing seam: a wall clock is not a duration.
+#
+# Measured on ga0-alienware-rtx4070ti on 2026-07-29, 90 s of paired time.time()/
+# time.monotonic() sampling at 20 ms: three backward steps of -1.523 / -1.504 / -1.503 s at
+# ~32.3 s intervals, on a host whose `timedatectl` reports NTP active and synchronised. A
+# decode brackets ~0.33 s of wall time and spans freeze every 2.5 s, so ~13 % of steps land
+# inside a decode -- which is why live meetings died at t+18.1 s, t+31.5 s and t+32.1 s and
+# why two longer probe runs survived untouched. Nothing in the audio explains it, and five
+# audio hypotheses were eliminated before the clock was measured.
+#
+# No node in this repo had ever put a runner's own duration measurement under the live
+# coordinator, which is why a subtraction of two wall-clock readings shipped.
+# --------------------------------------------------------------------------------------
+
+WALL_CLOCK_BACKWARD_STEP_SEC = 1.523
+
+
+class SteppingWallClock:
+    """A `time` stand-in whose wall clock steps backwards between two readings.
+
+    `monotonic` delegates to the real one -- that is the whole point of the distinction, and
+    a fake that stepped both would prove nothing about which clock the product reads.
+    """
+
+    def __init__(self, *, step_sec: float = WALL_CLOCK_BACKWARD_STEP_SEC):
+        self.step_sec = step_sec
+        self.wall_calls = 0
+
+    def time(self) -> float:
+        # Odd-numbered readings are the "after" of a bracket, and every bracket spans a step.
+        self.wall_calls += 1
+        return 1_800_000.0 - (self.step_sec if self.wall_calls % 2 == 0 else 0.0)
+
+    def monotonic(self) -> float:
+        return time.monotonic()
+
+
+class ClockSteppingRunner(StubbedTransportVllmRunner):
+    """The real runner, decoding across a backward wall-clock step every time."""
+
+    def __init__(self, responses):
+        super().__init__(responses)
+        self.clock = SteppingWallClock()
+        self.reported_elapsed_sec: list[float] = []
+
+    def transcribe(self, *args, **kwargs):
+        with mock.patch.object(vllm_runner, "time", self.clock):
+            result = super().transcribe(*args, **kwargs)
+        self.reported_elapsed_sec.append(result.elapsed_sec)
+        return result
+
+
+def test_a_wall_clock_step_backwards_mid_decode_does_not_end_the_meeting():
+    """The production failure, reproduced through the seam that produced it.
+
+    Before this cycle the adapter took the runner's wall-clock `elapsed_sec`, rejected the
+    negative one as a non-retryable `LiveProviderError`, and the coordinator turned that into
+    a terminal failure: the session left `VIEWABLE_SESSION_STATUSES`, every view poll answered
+    401 and every frame answered the closed-session 409, mid-meeting, with the reason recorded
+    nowhere. The transcript was never in doubt -- only the number used to compute RTF.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runner = ClockSteppingRunner([GOOD_RESPONSE])
+    runtime, _ = _decode_seam_runtime(
+        responses=None,
+        speech=ALTERNATING_SPEECH,
+        scheduler=scheduler,
+        runner=runner,
+    )
+    created = runtime.create()
+
+    for sequence in range(len(ALTERNATING_SPEECH)):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.terminal_failure is None
+    # Every decode brackets a step, so this is the worst case rather than a sampled one.
+    assert len(runner.decoded_wav_bytes) == 6
+    processed = _events(runtime, created.session_id, "canonical_processed")
+    assert len(processed) == 6
+    assert all(event["submitted"] for event in processed)
+    assert all("hello there" in item.transcript for item in snapshot.session.committed)
+    # And the measurement survives too: the span is timed on a clock that cannot step, so
+    # the PRD's decoder-RTF clause is answerable rather than merely non-fatal.
+    assert all(event["canonical_decode_elapsed_sec"] >= 0.0 for event in processed)
+    assert all(0.0 <= event["canonical_decode_rtf"] < 1.0 for event in processed)
+    assert snapshot.session.committed_samples == snapshot.session.accounted_samples
+
+
+def test_the_real_runner_reports_a_duration_a_stepping_wall_clock_cannot_make_negative():
+    """The other half, stated where the wrong clock was read.
+
+    The live path no longer reads this field, so this node is what keeps the runner honest
+    for the batch path -- which computes its own RTF from the same number and has been doing
+    it on a stepping clock for as long as this host has been deployed.
+    """
+    scheduler = _ManualCanonicalPumpScheduler()
+    runner = ClockSteppingRunner([GOOD_RESPONSE])
+    runtime, _ = _decode_seam_runtime(
+        responses=None,
+        speech=(False, True, False),
+        scheduler=scheduler,
+        runner=runner,
+    )
+    created = runtime.create()
+    for sequence in range(3):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+    scheduler.drain()
+
+    assert runner.reported_elapsed_sec
+    assert all(elapsed >= 0.0 for elapsed in runner.reported_elapsed_sec)
+
+
+def test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span():
+    """The rule stated on the adapter, so it holds for a runner with any clock at all.
+
+    A runner reports whatever clock it happens to hold. The live decode's duration is the
+    adapter's own measurement, taken on the monotonic clock it already reads for the
+    empty-transcript branch twelve lines away -- and which it used to throw away here.
+    """
+
+    class NegativeElapsedResult:
+        text = "[0.00][S01]hello there[1.10]"
+        prompt_len = 3
+        generated_tokens = 9
+        elapsed_sec = -WALL_CLOCK_BACKWARD_STEP_SEC
+
+    class NegativeElapsedRunner:
+        def transcribe(self, *args, **kwargs):
+            del args, kwargs
+            return NegativeElapsedResult()
+
+    decoder = RunnerBoundedWavInference(NegativeElapsedRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+
+    inferred = decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
+
+    assert "hello there" in inferred.transcript
+    assert inferred.elapsed_sec is not None and inferred.elapsed_sec >= 0.0
+    assert inferred.elapsed_sec != NegativeElapsedResult.elapsed_sec
+    # And the type says the same thing about any value it cannot trust: unknown, not fatal.
+    assert InferenceTranscript("[0][S01]x[1]", elapsed_sec=-1.0).elapsed_sec is None
+    assert InferenceTranscript("[0][S01]x[1]", elapsed_sec=float("nan")).elapsed_sec is None
+    assert InferenceTranscript("[0][S01]x[1]", elapsed_sec=0.25).elapsed_sec == 0.25
+
+
+def test_a_decode_whose_timing_cannot_be_trusted_commits_the_span_with_no_rtf(caplog):
+    """The general rule, at the one place every span passes through.
+
+    Untrustworthy timing *metadata* degrades: elapsed and RTF are recorded null on
+    `canonical_processed` and the meeting continues. This is the fifth condition of that
+    shape -- after an unparseable span, an abstained preparation, a transient decoder failure
+    and a timestamp a hair past the span -- so it is answered as a rule and not as a guard on
+    one field. The null is logged, because a measurement that silently disappears is exactly
+    the "known but not shown" defect that cost this project four diagnostic cycles.
+    """
+
+    class UntrustworthyTimingDecoder:
+        max_samples = DEPLOYED_DECODER_MAX_SAMPLES
+
+        def transcribe_pcm(self, *, span, pcm):
+            del span, pcm
+            # Not an `InferenceTranscript`: the adapter is not the only implementation of
+            # `BoundedWavInference`, and the coordinator must hold the line on its own.
+            class Result:
+                transcript = "[0.00][S01]hello there[0.50]"
+                elapsed_sec = float("-inf")
+                token_cap = None
+                capped = False
+
+            return Result()
+
+    coordinator = LiveCoordinator(
+        session_key="seam",
+        session=LiveSession(max_retained_samples=960000),
+        endpoint_policy=EndpointPolicy(
+            EndpointPolicyConfig(min_speech_samples=1600, min_silence_samples=8000, hard_cap_samples=None)
+        ),
+        speech_provider=ScriptedSpeech((False,)),
+        decoder=UntrustworthyTimingDecoder(),
+        identity_preparer=BoundedCausalIdentityPreparer(
+            config=LiveIdentityConfig(max_speakers=16, min_match_score=0.5, min_match_margin=0.1)
+        ),
+        arbiter=InferenceArbiter(),
+    )
+    coordinator.accept_frame(_frame(0, DEPLOYED_MIXED_FRAME_SAMPLES))
+    assert len(coordinator.flush_endpoint()) == 1
+
+    with caplog.at_level(logging.WARNING, logger="moss_transcribe_diarize.live.decode"):
+        result = coordinator.process_work_item(coordinator.arbiter.next_work())
+
+    assert result.submitted is True
+    assert result.committed_samples == DEPLOYED_MIXED_FRAME_SAMPLES
+    assert result.canonical_decode_elapsed_sec is None
+    assert result.canonical_decode_rtf is None
+    # The span's own duration is still reported -- only the measurement of it is unknown.
+    assert result.frozen_span_sample_count == DEPLOYED_MIXED_FRAME_SAMPLES
+    assert caplog.messages == [
+        "live canonical decode timing untrustworthy: span_id=0 field=elapsed_sec value=-inf"
+    ]
 
 
 # --------------------------------------------------------------------------------------

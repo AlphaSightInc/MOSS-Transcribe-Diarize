@@ -15187,3 +15187,154 @@ corrupts the RTF metric even on spans that survive.
   `auth_value=2`, all three services `NRestarts=0`, batch and live both 200.
 
 [loop 20260729-025318-86584] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+## run 20260729-025318-86584 - iteration 1 - Phase P, P1-P4: a wall clock is not a duration
+
+TARGET. Candidate 56 / Phase P items 60-63 (P1 monotonic measurement, P2 the
+degrade rule, P3 the real-seam regression, P4 the class sweep), authorized by
+the seventh prd.md amendment. Chosen because context.md named it the single
+thing blocking the whole acceptance bar, and because the amendment that unblocks
+it landed in the launch commit (72d8614).
+
+FILES TOUCHED (six, all inside the amendment's scope of moss_transcribe_diarize/
+and tests/; no macos/, no ops/, no docs):
+  moss_transcribe_diarize/app/live_adapters.py     P1 + P2
+  moss_transcribe_diarize/app/live_coordinator.py  P2
+  moss_transcribe_diarize/app/vllm_runner.py       P4 (the named defect site)
+  moss_transcribe_diarize/app/model_runner.py      P4
+  moss_transcribe_diarize/app/jobs.py              P4
+  tests/test_live_pipeline_seams.py                P3 (+4 nodes)
+  tests/test_live_vad.py                           two superseded nodes rewritten
+
+P1 - THE DECODE MEASURES ITSELF. RunnerBoundedWavInference.transcribe_pcm now
+takes `elapsed_sec = time.monotonic() - started` after a successful decode, from
+the reading the function already had at :305 and already used on the empty-
+transcript branch at :317. The runner's `elapsed_sec` is not read at all - the
+durable rule is "the live decode measures itself", not "the runner must be
+trusted", because a runner reports whatever clock it happens to hold. Both
+branches now bracket the same interval on the same clock.
+
+P2 - THE RULE, STATED ONCE AS A CONVERSION. `trustworthy_duration_sec(value) ->
+float | None` in live_adapters replaces `_finite_non_negative_float` and
+`_runner_elapsed_sec` (both deleted). A duration is a finite non-negative number
+or it is not known; it is never a failure. Applied at the two layers that used
+to raise:
+  - InferenceTranscript.__post_init__  (raised ValueError -> records None)
+  - live_coordinator._canonical_decode_measurement (raised LiveCoordinatorError
+    -> elapsed and RTF both null, span still commits)
+The coordinator LOGS the degradation - WARNING on logger
+`moss_transcribe_diarize.live.decode`, naming span id, field and the rejected
+value - because a measurement that silently disappears is the same "known but
+not shown" defect that has now cost this project four diagnostic cycles. It is a
+conversion rather than a guard so the next caller inherits the rule instead of
+re-deriving it.
+
+P3 - THE MISSING SEAM IS CLOSED. Four nodes in tests/test_live_pipeline_seams.py
+under "The timing seam: a wall clock is not a duration", with the host's measured
+clock behaviour recorded in the section comment (-1.523/-1.504/-1.503 s at
+~32.3 s, ~13 % duty cycle, the three death times it explains). `SteppingWallClock`
+fakes only `time.time()` and delegates `monotonic()` to the real one - a fake that
+stepped both would prove nothing about which clock the product reads.
+
+VALIDATION - RED BEFORE, PER HALF, BY SEMANTIC REVERT (/tmp/i1-redbefore.py,
+which patches, runs, and restores in a finally block):
+  revert vllm_runner to time.time()      -> FAILED ...the_real_runner_reports_a_duration_a_stepping_wall_clock_cannot_make_negative
+  revert the adapter to the runner's num -> FAILED ...a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span
+  revert the coordinator to raising      -> FAILED ...a_decode_whose_timing_cannot_be_trusted_commits_the_span_with_no_rtf
+  revert InferenceTranscript to raising  -> FAILED (the same negative-elapsed node)
+  restore                                -> 4 passed
+  BOTH wall-clock halves reverted = the true pre-fix state (/tmp/i1-redbefore-e.py):
+    FAILED ...a_wall_clock_step_backwards_mid_decode_does_not_end_the_meeting
+    assert LiveServiceFailureRecord(kind=INTEGRITY, code='canonical_decode_failed',
+      message='...runner result elapsed_sec must be finite and non-negative.',
+      retryable=False, detail={'error_type': 'LiveProviderError'}) is None
+  That is iteration 28's probe record FIELD FOR FIELD, reproduced from a test with
+  no host, no GPU and no network. The seam whose absence let this ship is closed.
+  Round B is the informative one: with only the adapter reverted the full-stack
+  node still PASSES, because the fixed runner hands it a positive number. The
+  fix is genuinely defense in depth, which is also why the per-half nodes exist -
+  the production node alone would not catch either half being undone.
+
+VALIDATION - GREEN AFTER:
+  python3 -m pytest tests/test_live_pipeline_seams.py tests/test_live_coordinator.py \
+    tests/test_live_service_runtime.py tests/test_live_service_replay.py \
+    tests/test_live_api.py -q   ->  136 passed, 329 subtests, 6.09 s
+  python3 -m pytest -q          ->  608 passed, 2 skipped, 368 subtests, 59.03 s
+  (604 -> 608: the four new seam nodes. The two skips are the pre-existing
+  test_large_upload.py Python-3.10 contract.) No Swift file was touched.
+
+  FIRST RUN OF THE FULL SUITE WAS RED, AND THAT WAS THE POINT: six nodes in
+  tests/test_live_vad.py asserted the SUPERSEDED rule - that the adapter reads
+  the runner's elapsed_sec and REJECTS an invalid one - including a five-way
+  parametrization named `rejects_invalid_decode_elapsed_sec`. They were rewritten
+  to state the new rule (`measures_the_decode_whatever_the_runner_reports`) with
+  a docstring saying what they supersede and why, not deleted and not weakened.
+  Worth recording: those nodes are exactly why the defect felt "tested".
+
+P4 - THE CLASS SWEPT, FOUR SITES, EACH RULED:
+  vllm_runner.py:71,111    FIXED -> monotonic. The named defect. The live path no
+                           longer reads the field, but the BATCH path computes its
+                           own RTF from it, so a wrong number was still wrong.
+  model_runner.py:129,151  FIXED -> monotonic. Identical shape in the local-GPU
+                           runner, same TranscriptionResult field, same consumers.
+  jobs.py:700              FIXED -> monotonic. `now - last_saved < 0.5` is an
+                           interval and the dict is in-process only; a backward
+                           step silently suppressed progress saves for up to the
+                           step's width.
+  live_transport.py:621    DELIBERATE, UNCHANGED. `_request_now()` is a TIMESTAMP,
+                           not a duration: it feeds view-authority expiry, the 12 h
+                           absolute cap and the 30 s helper lease, all of which must
+                           survive a restart and therefore must be wall-clock. A
+                           1.5 s step shifts an expiry by 1.5 s; it cannot make a
+                           duration negative. Same ruling for jobs.py's persisted
+                           created_at/updated_at.
+
+P5's (d) NOTE, RECORDED NOW AS THE AMENDMENT ASKS. elapsed_sec is the numerator
+of the PRD's `decoder p95 RTF < 1` clause, so every RTF this project has ever
+recorded - live and batch - came off a clock that steps ~1.5 s backwards every
+~32 s. Any decode bracketing a step was wrong by ~1.5 s in one direction or the
+other; only the negative ones were visible, because they killed the run before
+the number could be reported. From this commit the clause is measurable for the
+first time. (F1's two 8.5 s runaways are NOT clock artifacts: 1.5 s is far too
+small and both were corroborated by 2024/2019 generated tokens.)
+
+NEW CANDIDATE 58, FOUND WHILE DOING P2 AND DELIBERATELY NOT FIXED HERE.
+live_service_replay._canonical_decode_rtf_evaluation (:660-694) runs every
+canonical_processed payload through _required_finite_non_negative_float, so a
+NULL canonical_decode_elapsed_sec becomes an "invalid measurement" and forces
+canonical_decode_rtf_passed false. A DECLARED ABSENCE is not a CORRUPT
+MEASUREMENT - iteration 29's lesson exactly, one layer down, in a verifier
+instead of a reducer. It is pre-existing (J3's _unanswered_span has emitted null
+elapsed since Phase J) but P2 makes the null a designed outcome rather than only
+an outage one. Left open on purpose: changing a verifier's pass rule inside a
+cycle authorized for something else is how a gate gets weakened to look better.
+It needs its own authorization AND a recorded decision about what a run
+containing degraded spans may certify - note that today a run with ZERO
+canonical_processed events already passes vacuously (p95 None), so "exclude
+nulls" is not obviously the right answer.
+
+WHAT I DID NOT DO, AND WHY. No merge, no push, no host contact, no F1/F3. The
+amendment orders P5 after the code (gate -> merge -> redeploy -> runs) and the
+certification order has been settled by precedent four times: the runs exercise
+the DEPLOYED server, so running them now would measure 77e0014, which still has
+the defect. `git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is
+non-empty for the first time since iteration 20, so no offline probe speaks for
+the host either.
+
+RECOMMENDED NEXT STEP (P5, and it is ordinary work now):
+  1. Full gate on this tree: Swift 158 (nothing in macos/ changed, so this is a
+     re-assertion, not a risk), Python 608/2/368, tracer 4/0 skips, discriminator
+     10/10, leak scan.
+  2. Advance expected_main to 77e0014 IN merge-keeper.sh with a comment citing the
+     seventh amendment, COMMIT that, then run merge-keeper.sh IN THE BACKGROUND
+     (never a time-capped foreground shell - see the standing lesson).
+  3. Push, then redeploy the server only: `git checkout <merge sha>` +
+     `systemctl restart moss-live-web`, poll /live for 200 (8-11 s), batch MainPIDs
+     301112/322117 unmoved. NO Mac rebuild is needed - no macos/ file changed - but
+     m4mbp's checkout still needs `git fetch <fork url> && git checkout <sha>` for
+     the four-way SHA clause.
+  4. THEN F1 (live-canary.sh) and F3 (live-soak.sh), both OUTPUT_MODE=muted, both
+     reduced by live-canary-clauses.py (the soak with --user-visible-gate-ms 6000).
+Separately and cheaply: the host's stepping wall clock is a WSL2 fact worth
+fixing on the host too. The code no longer dies of it, but the host clock is
+still wrong and it is the kind of thing that will bite a different metric later.

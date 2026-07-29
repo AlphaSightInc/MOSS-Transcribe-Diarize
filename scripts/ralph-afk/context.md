@@ -98,17 +98,20 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 
 **What stands between the loop and the bar (rewritten iteration 30; the Phase M narrative it used to
 carry is in the retired-evidence index below).**
-- **ONE THING BLOCKS EVERYTHING, and the loop cannot obtain it: candidate 56's fix needs a
-  SEVENTH operator authorization.** A live session stops being viewable mid-meeting because the
-  server host's wall clock steps ~1.5 s backwards every ~32.3 s, `vllm_runner.py:111` measures
-  `elapsed_sec` on that clock, and `live_adapters.py:344` turns a negative one into a non-retryable
-  `LiveProviderError` that ends the meeting. It is **answered** (iteration 28, with the failure
-  record in hand) but its fix is **tracked product source under the post-merge freeze**, all six
-  authorized merges are spent, and `merge-keeper.sh` refuses a seventh. Until it lands, F1 and F3
-  die at a ~13 %-per-32 s hazard, so **neither certification clause can be answered and the PRD
-  acceptance bar cannot be met by this loop**. See the candidate-56 answer block; the recommended
-  authorization scope is written verbatim at the end of iteration 28's progress.txt entry
-  (`grep "candidate 56's FIX needs its own authorization"`).
+- **THE SEVENTH AUTHORIZATION WAS GRANTED, and Phase P's code half is DONE (run `20260729-025318`
+  iteration 1).** Candidate 56 — a live session stops being viewable mid-meeting because the server
+  host's wall clock steps ~1.5 s backwards every ~32.3 s and a negative `elapsed_sec` was terminal —
+  is **fixed in source**: P1 (the decode measures itself monotonically), P2 (untrustworthy timing
+  metadata degrades to null and is logged, stated once as a conversion), P3 (four real-seam nodes,
+  red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
+  Python 608/2/368 green. See the Phase P block.
+- **WHAT NOW BLOCKS EVERYTHING IS P5, and it is ordinary work: gate → merge #7 → push → redeploy →
+  Mac needs no rebuild (no `macos/` file changed) → THEN F1 and F3.** `merge-keeper.sh`'s
+  `expected_main` must be advanced in-script to `77e0014` citing the seventh amendment, exactly as
+  the six previous merges did. Until the redeploy, the deployed service still carries the defect, so
+  **no certification run may be used as evidence** and no offline probe speaks for the host — the
+  standing rule below now reads FALSE for the first time since iteration 20:
+  `git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is **non-empty**.
 - **Phase M gate steps (a), (b) and (c) are DONE** — local gate green at `21a73ea`, sixth merge
   `77e0014`, and all four checkouts deployed at it. **Only (d) remains: F1 and F3, both green**, and
   (d) is what candidate 56 blocks. Both halves are fully instrumented and waiting — `live-canary.sh`,
@@ -138,9 +141,10 @@ recorded and survive a bundle replacement. **Never ask the operator for those cl
 
 **Test totals on the branch.** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **604 passed / 2 skipped / 368 subtests** — the two skips are the pre-existing
+→ 158); Python **608 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
+run `20260729-025318` iteration 1) — the two skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Per-file: `test_live_pipeline_seams.py` **56**, `test_live_identity.py` **8**,
+Per-file: `test_live_pipeline_seams.py` **60**, `test_live_identity.py` **8**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
 `test_live_manifest_finalizer.py` **17**, `test_live_deployment_credentials.py` **14**,
 `test_live_service_deployment.py` **30**.
@@ -186,8 +190,9 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
 - ***An offline probe speaks for the deployed service only while
   `git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty*** — compare against
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
-  True right now: all four checkouts hold `77e0014` and the branch's product source is identical to
-  `main`.
+  **FALSE since run `20260729-025318` iteration 1:** all four checkouts still hold `77e0014` while
+  the branch carries Phase P's six product/test files. Until P5 redeploys, no probe and no
+  certification run against the host measures the code in this branch.
 - **The certification order, decided once and binding:** gate → merge → publish + redeploy
   (+ Mac rebuild) → F1 and F3. An amendment that lists the runs *before* the merge is physically
   unreachable — the runs exercise the **deployed** server and the **installed** bundle — and H4, J5
@@ -690,11 +695,14 @@ evidence, is in the progress.txt archive under the same title.
 | **Lane-failure log** (K2) | The app records a **typed** lane failure alongside G3's unclassified one, through `LaneFailureLoggingHealthAdapter`, with one `CaptureLaneStates` vocabulary. *Extended by D-a (it. 15):* a **degradation** is recorded the same way, once per lane per generation, and the line's verb comes from the state — so grep `capture lane ` , not `failed`. |
 | **Terminal record** (K3) | The heartbeat that ends a session carries the failed lanes' typed codes into `LiveV2Session.expire`, `runtime.abort`, the `session_aborted` event and one host-journal line. |
 | **Session refusal** (K4) | 401/403/404/410 → `CaptureStatus.sessionRefusal` / `ControlChannelResponse.sessionRefusal`, recorded from the tick **and** the stop drain, so `running: true` never stands alone while every request refuses. A new session id is a new question. |
+| **Duration vs timestamp** (P1/P2, it. 1 of run `20260729-025318`) | A **duration** is measured on `time.monotonic()`; `time.time()` is a **timestamp** and may step. The live decode measures itself and never reads the runner's `elapsed_sec`. Timing metadata that cannot be trusted converts to `None` (`live_adapters.trustworthy_duration_sec`) — elapsed and RTF null on `canonical_processed`, span committed, one WARNING on `moss_transcribe_diarize.live.decode` — never terminal. |
 
-**The one class all of Phase J, L1 and candidates 50/53 belong to:** *a condition the design
+**The one class all of Phase J, L1 and candidates 50/53/56 belong to:** *a condition the design
 contemplates is handled everywhere except the one path that ends (or degrades) the meeting.* Four
 blockers in Phase H/J were this shape; L1 and 53 were the same shape and were fixed as one in
-iteration 14; **50 and 55 are the two still unfixed.** Suspect this class first.
+iteration 14; 50 landed as Phase M's D-c; **56 was the fifth instance and is Phase P**; **55 is the
+one still unfixed.** Suspect this class first — and note the tell it now has a name for: every
+instance so far was a *non-fatal* condition wearing a *fatal* type.
 
 ## Gates, merges and redeploys — index
 
@@ -2008,16 +2016,23 @@ amendment's literal order is unreachable and why this one drops nothing.**
     quality without ending a session, so no gate sees it. Tracked product source; **needs its own
     authorization** — and Phase N's `N1`/`N3` may subsume it, since a 0.5 s fragment that becomes a
     prototype is a plausible source of the phantom speakers that exhaust the bound.
-56. **A live session stops being viewable mid-meeting.** `[ANSWERED — iteration 28; the FIX is
-    unauthorized]`. Cause: the server host's wall clock steps ~1.5 s backwards every ~32.3 s,
-    `vllm_runner.py:111` measures `elapsed_sec` on it, and `live_adapters.py:344` turns a negative
-    one into a non-retryable `LiveProviderError` that ends the meeting. See the candidate-56 answer
-    block for the failure record, the mechanism and the clock measurement. **This is what blocks the
-    whole acceptance bar:** F1 and F3 die at a ~13 %-per-32 s hazard until it lands, and its fix is
-    tracked product source under the post-merge freeze. The recommended authorization scope is
-    written out verbatim at the end of iteration 28's progress.txt entry.
+56. **A live session stops being viewable mid-meeting.** `[FIXED IN SOURCE — run 20260729
+    iteration 1; UNMERGED and UNDEPLOYED]`. Cause: the server host's wall clock steps ~1.5 s
+    backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
+    `live_adapters.py:344` turned a negative one into a non-retryable `LiveProviderError` that ended
+    the meeting. Authorized as **Phase P** by the seventh amendment and implemented as P1-P4; see
+    the candidate-56 answer block for the failure record and the clock measurement, and the Phase P
+    block for what landed. **It still blocks the acceptance bar until P5 lands it on the host:** the
+    deployed `77e0014` has none of this, so F1 and F3 would still die at the ~13 %-per-32 s hazard.
 57. **The reducer called a passing latency number RED.** `[done — iteration 29]`. See "The reducer
     stopped calling a passing number RED" below. Loop tooling; no authorization was needed.
+58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
+    20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
+    summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
+    *degraded* measurement is indistinguishable from a *corrupt* one — iteration 29's lesson one
+    layer down. Pre-existing (J3 has emitted nulls since Phase J) but now reachable by design.
+    Tracked product source; needs its own authorization and a recorded decision about what a run
+    with degraded spans should be allowed to certify. Detail in the Phase P block.
 
 ### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)
 
@@ -2068,26 +2083,76 @@ Authorized after iteration 28 root-caused candidate 56. **Phase P precedes Phase
 NOT be re-run as a gate until it is deployed** - every certification run dies at ~13 % per 32 s
 until then, so a red run measures this bug and nothing else.
 
-60. **P1 - use the monotonic reading that is already taken.** `vllm_runner.py:111` computes
-    `elapsed_sec = time.time() - started` on the wall clock. `live_adapters.py:305` takes
-    `time.monotonic()` and uses it correctly on the empty-transcript branch at `:317`; the success
-    branch at `:344` discards it for the runner's wall-clock value. An NTP step backwards makes
-    `elapsed` negative, the session leaves `VIEWABLE_SESSION_STATUSES`, later polls 401 and frames
-    answer the closed-session 409 - the overload iteration 11 named beside the lane-failed one.
-61. **P2 - untrustworthy timing metadata degrades, it does not end the meeting.** Record
-    `elapsed`/RTF null on `canonical_processed` and continue. State it as the general rule - this is
-    the **fifth** instance of the third amendment's class, so a guard on this one field is not the
-    fix.
-62. **P3 - real-seam regression** in `tests/test_live_pipeline_seams.py`: drive the coordinator with
-    a runner result carrying a **negative** `elapsed_sec`; red before, green after.
-63. **P4 - sweep the class.** Enumerate every place that subtracts two `time.time()` readings and
-    treats the result as a duration; fix or record each. The site is not the defect, the pattern is.
-64. **P5 - gate, merge, redeploy, THEN re-run F1 and F3.** Note in the journal that this also
-    repairs the PRD's decoder p95 RTF clause, measured from this same number and therefore
-    unreliable in every prior run.
+60. **P1 - use the monotonic reading that is already taken.** `[done - run 20260729 it. 1]` The
+    success branch no longer reads the runner's `elapsed_sec` **at all**; it takes
+    `time.monotonic() - started` from the reading the function already had, so both branches now
+    measure the same bracket on the same clock. A runner reports whatever clock it holds, so the
+    durable rule is *the live decode measures itself*, not *the runner must be trusted*.
+61. **P2 - untrustworthy timing metadata degrades, it does not end the meeting.** `[done - it. 1]`
+    Stated once as `live_adapters.trustworthy_duration_sec(value) -> float | None`, a **conversion**
+    rather than a guard, and applied at both layers that used to raise: `InferenceTranscript.
+    __post_init__` and `live_coordinator._canonical_decode_measurement`. Elapsed and RTF are both
+    recorded null on `canonical_processed`, the span still commits, and the degradation is
+    **logged** (`moss_transcribe_diarize.live.decode`, WARNING, naming span id / field / value) -
+    because a measurement that silently disappears is the "known but not shown" shape again.
+62. **P3 - real-seam regression** `[done - it. 1]` Four nodes in `tests/test_live_pipeline_seams.py`
+    under "The timing seam: a wall clock is not a duration". Red-before proved by semantic revert,
+    one half at a time - see the Phase P block below for which revert reddens which node.
+63. **P4 - sweep the class.** `[done - it. 1]` Four sites enumerated, three fixed, one ruled
+    deliberate. See the sweep table in the Phase P block below.
+64. **P5 - gate, merge, redeploy, THEN re-run F1 and F3.** `[open - the whole remaining phase]`
+    Note in the journal that this also repairs the PRD's decoder p95 RTF clause, measured from this
+    same number and therefore unreliable in every prior run.
 
 Explicitly out of scope: mandatory client retention of the 409 refusal body. Right fix, wrong cycle;
 it needs its own authorization.
+
+**P1-P4 ARE LANDED, LOCALLY GREEN AND UNMERGED (run `20260729-025318` iteration 1).** Six files:
+`live_adapters.py`, `live_coordinator.py`, `vllm_runner.py`, `model_runner.py`, `jobs.py`,
+`tests/test_live_pipeline_seams.py`, plus the two superseded nodes in `tests/test_live_vad.py`.
+Python **608 passed / 2 skipped / 368 subtests** in 59 s (604 → 608: four new seam nodes).
+No Swift file was touched.
+
+***The red-before is per-half, by semantic revert, and each half has its own named node.*** Reverting
+one edit at a time and re-running the four nodes:
+
+| revert | node that goes red |
+| --- | --- |
+| `vllm_runner` reads `time.time()` again | `…the_real_runner_reports_a_duration_a_stepping_wall_clock_cannot_make_negative` |
+| the adapter takes the runner's number again | `…a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span` |
+| the coordinator raises on an untrusted duration | `…a_decode_whose_timing_cannot_be_trusted_commits_the_span_with_no_rtf` |
+| `InferenceTranscript` raises again | the same negative-elapsed node (it asserts the type-level rule too) |
+| **both wall-clock halves together = the true pre-fix state** | `…a_wall_clock_step_backwards_mid_decode_does_not_end_the_meeting` |
+
+That last revert reproduces **iteration 28's probe record field for field** —
+`kind=integrity, code='canonical_decode_failed', retryable=False,
+detail={'error_type': 'LiveProviderError'}`, message *"runner result elapsed_sec must be finite and
+non-negative."* — from a test, with no host. That is the seam whose absence let this ship: nothing
+in the repo had ever put a runner's **own duration measurement** under the live coordinator.
+*Note what round B proved:* with only the adapter reverted the full-stack node still **passes**,
+because the fixed runner hands it a positive number. Defense in depth is real here, and it is also
+why the per-half nodes exist — the production node alone would not catch either half being undone.
+
+**P4's sweep, all four sites, with the ruling for each.**
+
+| site | ruling |
+| --- | --- |
+| `vllm_runner.py:71,111` (the named defect) | **fixed** → `time.monotonic()`. The live path no longer reads the field, but the **batch** path computes its own RTF from it, so a wrong number was still wrong. |
+| `model_runner.py:129,151` | **fixed** → `time.monotonic()`. Identical shape in the local-GPU runner; same `TranscriptionResult.elapsed_sec` field, same consumers. |
+| `jobs.py:700` `_should_save_live_progress` | **fixed** → `time.monotonic()`. `now - last_saved < 0.5` is an interval, and the dict is in-process only. A backward step silently suppressed progress saves for up to the step. |
+| `live_transport.py:621` `_request_now()` | **deliberate, unchanged.** It is a *timestamp*, not a duration: it feeds view-authority expiry, the 12 h absolute cap and the 30 s helper lease, all of which must survive a restart and therefore must be wall-clock. A 1.5 s step shifts an expiry by 1.5 s; it cannot make a duration negative. Same for `jobs.py`'s persisted `created_at`/`updated_at`. |
+
+**Known and NOT fixed this cycle — the replay evaluator calls a declared absence an invalid
+measurement.** `live_service_replay._canonical_decode_rtf_evaluation` (`:660-694`) runs every
+`canonical_processed` payload through `_required_finite_non_negative_float`, so a **null**
+`canonical_decode_elapsed_sec` lands in `canonical_decode_rtf_invalid_measurements` and forces
+`canonical_decode_rtf_passed` false. This is **pre-existing, not introduced here**: J3's
+`_unanswered_span` has emitted a null elapsed since Phase J. But P2 makes the null a *designed*
+outcome rather than only a decoder-outage one, so the evaluator now conflates *degraded* with
+*invalid* — iteration 29's lesson, one layer down, in a verifier instead of a reducer. Logged as
+**candidate 58**; it is a gate-reporting question, not a meeting-reliability one, and widening this
+cycle to change a verifier's pass rule is exactly what "never weaken a gate to look better" forbids
+without a decision recorded first.
 
 **What F1's two runs already established, and must not be re-derived:** Phase M works - a publish
 that failed on every tick for 50 s kept 165 consecutive heartbeats alive and left both lanes

@@ -296,12 +296,22 @@ def test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav(tmp_path):
     result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
 
     assert result.transcript == "[0][S01]ok[0.25]"
-    assert result.elapsed_sec == 0.01
+    # The adapter's own monotonic measurement, not the 0.01 the runner reported.
+    assert result.elapsed_sec is not None and result.elapsed_sec >= 0.0
     assert runner.params == (1, 2, LIVE_SAMPLE_RATE, 4000)
 
 
 @pytest.mark.parametrize("elapsed_sec", [None, -0.01, float("nan"), float("inf"), "slow"])
-def test_runner_bounded_wav_inference_rejects_invalid_decode_elapsed_sec(tmp_path, elapsed_sec):
+def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports(tmp_path, elapsed_sec):
+    """Supersedes "rejects an invalid runner elapsed_sec", which was the shipped defect.
+
+    A runner reports whatever clock it holds -- `VllmRunner` reported a *wall* clock, and the
+    deployed host's NTP stepped it ~1.5 s backwards every ~32.3 s -- so rejecting the number
+    ended live meetings for a reason that was never about the audio. The live decode's
+    duration is the adapter's own monotonic measurement, and a runner's timing metadata is
+    not read at all. See the timing seam in `tests/test_live_pipeline_seams.py`.
+    """
+
     class TimingRunner:
         def transcribe(self, audio_path, **kwargs):
             del audio_path, kwargs
@@ -319,8 +329,10 @@ def test_runner_bounded_wav_inference_rejects_invalid_decode_elapsed_sec(tmp_pat
     adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
     frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
 
-    with pytest.raises(LiveProviderError, match="runner result elapsed_sec"):
-        adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+
+    assert result.transcript == "[0][S01]ok[0.25]"
+    assert result.elapsed_sec is not None and result.elapsed_sec >= 0.0
 
 
 def test_inference_arbiter_preserves_batch_canonical_provisional_priority():

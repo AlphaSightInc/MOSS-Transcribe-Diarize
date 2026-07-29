@@ -144,13 +144,9 @@ class InferenceTranscript:
     capped: bool = False
 
     def __post_init__(self) -> None:
-        if self.elapsed_sec is None:
-            return
-        object.__setattr__(
-            self,
-            "elapsed_sec",
-            _finite_non_negative_float(self.elapsed_sec, "elapsed_sec"),
-        )
+        # Timing metadata that cannot be trusted is recorded as *unknown*, never raised. See
+        # `trustworthy_duration_sec` for the rule and why it is a rule rather than a guard.
+        object.__setattr__(self, "elapsed_sec", trustworthy_duration_sec(self.elapsed_sec))
 
 
 OPTIONAL_LIVE_PROVIDER_KINDS = frozenset(
@@ -336,12 +332,20 @@ class RunnerBoundedWavInference:
                     f"canonical decode failed: {exc.__class__.__name__}: {exc}",
                     detail={"span_id": span.id, "cause": exc.__class__.__name__},
                 ) from exc
+            # This decode's duration is measured here, on the same monotonic clock as the
+            # empty-transcript branch above, and the runner's own `elapsed_sec` is not read.
+            # A runner reports whatever clock it happens to hold -- `VllmRunner` reported a
+            # *wall* clock until this cycle -- and a wall clock is a timestamp, not a
+            # duration: NTP resynchronised the deployed host ~1.5 s backwards every ~32.3 s,
+            # so any decode bracketing a step produced an elapsed wrong by that much, and a
+            # negative one ended the meeting. Only a monotonic difference is a duration.
+            elapsed_sec = time.monotonic() - started
         generated_tokens = int(getattr(result, "generated_tokens", 0) or 0)
         return InferenceTranscript(
             transcript=str(result.text),
             prompt_len=int(getattr(result, "prompt_len", 0) or 0),
             generated_tokens=generated_tokens,
-            elapsed_sec=_runner_elapsed_sec(result),
+            elapsed_sec=elapsed_sec,
             token_cap=token_cap,
             capped=generated_tokens >= token_cap,
         )
@@ -505,23 +509,27 @@ def _write_pcm16_wav(path: Path, pcm: bytes) -> None:
         wav.writeframes(pcm)
 
 
-def _runner_elapsed_sec(result) -> float:
-    try:
-        return _finite_non_negative_float(
-            getattr(result, "elapsed_sec", None),
-            "runner result elapsed_sec",
-        )
-    except ValueError as exc:
-        raise LiveProviderError(str(exc)) from exc
+def trustworthy_duration_sec(value) -> float | None:
+    """A duration is a finite non-negative number, or it is not known. It is never a failure.
 
+    The rule this states is general and it is about *metadata*, not about this one field: a
+    measurement the live path cannot trust degrades to `None` and the meeting continues.
+    Only a condition that makes the session genuinely unable to continue may be terminal,
+    and a decode whose clock misbehaved still returned a transcript -- the span is fine, the
+    words are publishable, and the only thing missing is the number used to compute RTF.
 
-def _finite_non_negative_float(value, label: str) -> float:
+    This is the fifth condition of that shape to have ended a meeting (an unparseable span,
+    an abstained identity preparation, a transient decoder failure, a timestamp a hair past
+    the span, and now an untrustworthy duration), which is why it is answered here as a
+    conversion rather than in each caller as a guard: the next caller inherits the rule.
+    """
+
     if value is None:
-        raise ValueError(f"{label} must be present.")
+        return None
     try:
         elapsed = float(value)
     except (TypeError, ValueError):
-        raise ValueError(f"{label} must be finite and non-negative.") from None
+        return None
     if not math.isfinite(elapsed) or elapsed < 0.0:
-        raise ValueError(f"{label} must be finite and non-negative.")
+        return None
     return elapsed
