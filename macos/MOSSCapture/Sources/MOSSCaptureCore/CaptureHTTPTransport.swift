@@ -234,17 +234,17 @@ public final class CaptureV2HTTPTransportAdapter: CaptureTransportAdapter {
     }
 
     public func publish(frame: CaptureFrame, configuration: CaptureConfiguration) throws {
-        let response = try client(configuration).send(
-            try authorizedJSONRequest(
-                url: liveURL(
-                    base: configuration.serverURL,
-                    sessionID: configuration.sessionID,
-                    action: "frames"
-                ),
-                bearerToken: bearerToken.loadCaptureBearerToken(),
-                body: StrictV2FramePayload(frame: frame)
-            )
+        var request = try authorizedJSONRequest(
+            url: liveURL(
+                base: configuration.serverURL,
+                sessionID: configuration.sessionID,
+                action: "frames"
+            ),
+            bearerToken: bearerToken.loadCaptureBearerToken(),
+            body: StrictV2FramePayload(frame: frame)
         )
+        request.timeoutInterval = CapturePumpContract.requestTimeoutSeconds
+        let response = try client(configuration).send(request)
         try requireSuccess(response)
     }
 }
@@ -287,22 +287,22 @@ public final class CaptureHTTPHealthAdapter: CaptureHealthAdapter {
         configuration: CaptureConfiguration,
         sentMonotonicNS: UInt64
     ) throws {
-        let response = try client(configuration).send(
-            try authorizedJSONRequest(
-                url: liveURL(
-                    base: configuration.serverURL,
-                    sessionID: configuration.sessionID,
-                    action: "heartbeat"
-                ),
-                bearerToken: bearerToken.loadCaptureBearerToken(),
-                body: HelperHeartbeatPayload(
-                    status: status,
-                    instanceID: instanceID,
-                    helperVersion: helperVersion,
-                    sentMonotonicNS: sentMonotonicNS
-                )
+        var request = try authorizedJSONRequest(
+            url: liveURL(
+                base: configuration.serverURL,
+                sessionID: configuration.sessionID,
+                action: "heartbeat"
+            ),
+            bearerToken: bearerToken.loadCaptureBearerToken(),
+            body: HelperHeartbeatPayload(
+                status: status,
+                instanceID: instanceID,
+                helperVersion: helperVersion,
+                sentMonotonicNS: sentMonotonicNS
             )
         )
+        request.timeoutInterval = CapturePumpContract.requestTimeoutSeconds
+        let response = try client(configuration).send(request)
         try requireSuccess(response)
     }
 }

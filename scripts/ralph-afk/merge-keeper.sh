@@ -102,7 +102,11 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # AVAudioConverter remained at end-of-stream after the first clean stop. This production closeout
 # gives each meeting fresh converters and per-session counters, and closes the browser-storage
 # regression already measured green by the deployed probe.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-60f776765b4a71c6296dff94f9f0af8674a9f54b}"
+# Advanced to 42bfc2a after the final-SHA F2 interruption exposed the pump leaving URLSession's
+# 60-second default on frame and heartbeat requests. A measured 5.140-second drop filled the native
+# system-audio queue before captured audio could reach the 15-second outbox. This closeout bounds
+# both serial pump requests to one second and pins that policy at both HTTP seams.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-42bfc2a075bf696b6e3e33e644daaf0f385eee18}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

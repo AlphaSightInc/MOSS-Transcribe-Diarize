@@ -3564,6 +3564,11 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "POST")
         XCTAssertEqual(request.url?.absoluteString, "https://moss.example/api/live/sessions/session-a/frames")
         XCTAssertNil(request.url?.query)
+        XCTAssertEqual(
+            request.timeoutInterval,
+            CapturePumpContract.requestTimeoutSeconds,
+            "a dead frame request must release the native drain before its realtime queue overruns"
+        )
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer capture-token")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
         XCTAssertEqual(Set(body.keys), [
@@ -3677,6 +3682,11 @@ final class CaptureControllerTests: XCTestCase {
         let microphone = try XCTUnwrap(lanes["microphone"])
         XCTAssertEqual(request.url?.absoluteString, "https://moss.example/api/live/sessions/session-a/heartbeat")
         XCTAssertNil(request.url?.query)
+        XCTAssertEqual(
+            request.timeoutInterval,
+            CapturePumpContract.requestTimeoutSeconds,
+            "the heartbeat follows a frame attempt on the same tick, so it needs the same fast bound"
+        )
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer capture-token")
         XCTAssertEqual(Set(body.keys), [
             "schema",
