@@ -19810,3 +19810,190 @@ clause).  It is inside the open Phase N and needs no host and no operator: re-VA
 silent corrections.  The accuracy harness from iteration 16 is the instrument that
 can measure live->file convergence once the sweep exists, which is the half of
 ADR-0002's acceptance bar the repo still cannot answer.
+
+================================================================================
+RUN 20260729-025318  ITERATION 22  -  PHASE N STEP 3: THE RETROSPECTIVE SWEEP'S
+ENGINE (N-sweep).  ADR-0002's rewrite half, in source, pure and unwired.
+================================================================================
+
+TARGET.  The highest-leverage open item in context.md: Phase N step 3, named by
+iteration 21's own recommended next step and by ADR-0002's implementation order
+(album -> tape -> sweep -> batch unification).  ADR-0002 classifies the album
+alone as "a terminal-state failure if shipped alone" - without retrospective
+rewrites, live accuracy repeats the sibling project's <80 % divergence.  The
+album (iteration 15) fixes what a label is matched AGAINST; only a sweep can fix
+a label already written down.  Chosen off no other list: prd.md's "Phase N is
+SUPERSEDED by ADR-0002" section keeps Phase N authorized and names step 3.
+
+Re-read at the start of the iteration, per the standing hazard: prd.md's tail is
+unchanged at 0456177 (the ADR-0002 supersession) and `git log -8` shows no new
+operator commit since iteration 21.  Nothing was frozen or unfrozen under me.
+
+FILES TOUCHED (5; NONE under macos/, NONE under ops/):
+  moss_transcribe_diarize/app/live_identity_sweep.py   NEW, the engine
+  tests/test_live_identity_sweep.py                    NEW, 40 nodes
+  moss_transcribe_diarize/app/live_identity.py         matcher extracted
+  moss_transcribe_diarize/app/live_identity_album.py   cosine + centroid + exemplars()
+  moss_transcribe_diarize/app/live_provider_bundle.py  _cosine_similarity now a wrapper
+  scripts/ralph-afk/{context.md,progress.txt}          this record
+
+VALIDATION.
+  python3 -m pytest tests/test_live_identity_sweep.py -q  -> 40 passed, 3.5 s
+  python3 -m pytest -q                                    -> 758 passed, 2 skipped,
+                                                             368 subtests, 71.50 s
+                                                             (718 -> 758, +40)
+  The accuracy harness re-measured through the extracted matcher:
+    album 93.4 / min 92.2 ; overwrite 72.0 / min 55.7
+  - identical to iteration 16's recorded numbers, which is the real proof the
+  extraction is behaviour-preserving.  A green unit suite would not have been.
+
+FOUR DECISIONS, MADE EXPLICITLY BEFORE THE PATCH.
+
+1. A SWEEP RE-MATCHES RETAINED EVIDENCE; IT NEVER RE-HEARS AUDIO.  ADR-0002's
+   prose says the sweep "re-embed[s]/re-cluster[s] the assembled tape".  Its
+   MEASURED gate B says a sweep costs ~0.1 ms at 600 s and <10 ms extrapolated
+   to three hours, while the same document measures embedding at 332-343 ms PER
+   UNIT.  Those two numbers cannot both describe re-embedding: a 600 s meeting
+   holds hundreds of units, so re-embedding it is minutes, not 0.1 ms.  The run
+   that PASSED the gate therefore re-matched the vectors the live path had
+   already computed, against the album as it stood at sweep time.  Implement the
+   measured thing, not the prose.  It is also what the album's own thesis says
+   out loud - "the album is the compressed context handed forward: later
+   processing never re-hears earlier audio".
+   THE HONEST COST, recorded so no convergence number is over-read: a sweep can
+   repair an ASSIGNMENT (this voice was labelled as the wrong speaker) and cannot
+   repair a SEGMENTATION (the span's local diarization split two voices wrongly,
+   or the evidence floor skipped a unit).  ADR-0002 section 7 carries the
+   identical caveat - "in-span local diarization assumed correct" - so gate B's
+   convergence was measured under exactly this limit.
+   CONSEQUENCE THE LOOP MUST CARRY: step 3 does NOT pay for step 2's tape.  The
+   tape's nearer value is crash/resume and being the substrate for the later
+   re-VAD sweep; iteration 21's "the first item the tape pays for" was too
+   optimistic and this entry supersedes it.
+
+2. THE MATCHER IS NOW ONE FUNCTION, CALLED BY BOTH PATHS.  `assign_speakers` was
+   extracted from `BoundedCausalIdentityPreparer._assign` (with
+   `_match_rejection_reason`) into a module-level function in live_identity.py;
+   the method now delegates.  A sweep that re-implemented the matcher would emit
+   "corrections" that are a second opinion from a second implementation - the
+   exact hazard tests/live_identity_accuracy.py was built to rule out, and the
+   one ADR-0002's own prototype fell into (its 98.5 % came from a re-implemented
+   matcher).  Same argument for the geometry: `cosine_similarity` and
+   `duration_weighted_centroid` now live once, in live_identity_album.py, and
+   `_cosine_similarity` in live_provider_bundle is a four-line wrapper that keeps
+   its two older typed admission errors verbatim so nothing about the deployed
+   provider's contract moves.
+
+3. THREE RULES BOUND WHAT A SWEEP MAY CHANGE, each because a correction can be
+   worse than the mistake.
+   (a) It never invents a canonical speaker - births are a live decision under
+       the 16-speaker cap, and a sweep that could birth would put labels in the
+       transcript no live reader ever saw.
+   (b) It never removes a label it cannot replace (J2: identity answers *who*,
+       never *whether*).  This one is enforced by the TYPE -
+       `SweepCorrection.canonical_speaker` is non-optional - so an erasure is
+       unrepresentable rather than merely unimplemented.  Recorded honestly: the
+       node asserting it is green by construction and no revert reddens it.
+   (c) A move must beat the incumbent's own score by `min_match_margin`.
+       MEASURED REDUNDANT at the deployed 0.35 / 0.1: the production matcher
+       already refuses to assign unless the winner beats every rival by the
+       margin, and the incumbent is a rival, so KEPT_BELOW_MARGIN never fires
+       there.  The first draft's test for it was unfalsifiable and was replaced
+       by one asserting the PROPERTY over real corrections.  The guard is kept
+       for a deployment stating a margin above its own match floor, where the
+       matcher's guarantee stops covering the incumbent.
+
+4. A MERGE IS A STRONGER CLAIM THAN A MATCH, SO IT NEEDS STRONGER EVIDENCE.  Two
+   album centroids at or above 0.70 (ADR-0002's threshold) are one voice born
+   twice.  A merge requires an ADMITTED bank on BOTH sides - a provisional
+   stand-in is one sub-admission fragment, and letting a fragment collapse two
+   speakers would re-open the door the album closed - matches on the DURATION-
+   WEIGHTED CENTROID OVER THE UNION of the exemplars (not the mean of two
+   centroids: the exemplars carry the seconds that weight them), and leaves the
+   id with the most admitted speech standing, so birth order never decides
+   identity.  Chains are transitive-closed by union-find: 0 deg and 50 deg are
+   0.643 apart and do not merge alone, but through 25 deg they are one voice.
+   THIS IS THE FIRST MECHANISM IN THE REPO THAT CAN REDUCE THE CANONICAL SPEAKER
+   COUNT, i.e. it can heal candidate 55's fragmentation retrospectively without
+   touching births.  It cannot buy back the capacity itself.
+
+TWO PROPERTIES THE SUITE STATES RATHER THAN HOPES FOR.  The sweep is
+deterministic (same ledger + album -> identical revision), and applying a
+revision leaves NOTHING for the next sweep to correct - convergence, not
+oscillation.  Merges do repeat on a second sweep, and that is honest: the album
+still holds both speakers until something merges the ALBUM, which is the wiring
+step's job, and the repeated claim is the revision saying so.
+
+THE LEDGER'S BOUND IS MEASURED, NOT ESTIMATED.  One 256-dimensional float32
+vector costs 1104 bytes as an array("f"); the same values as a Python tuple cost
+8232 (measured with sys.getsizeof, floats included).  At SWEEP_LEDGER_MAX_UNITS
+20 000 the ledger holds ~22 MB, against 165 MB for the tuple form - which is why
+storage is array("f") and why `spans()` is an iterator rather than a list.  F3's
+real 17-minute soak committed 443 spans in 1029 s = 0.43 spans/s, so three hours
+is ~4650 spans and, at the two-speaker spans that meeting produced, under 10 000
+units.  The cap is therefore ~2x a three-hour meeting.
+A FULL LEDGER REFUSES NEW UNITS RATHER THAN EVICTING OLD ONES - the opposite of
+a cache, deliberately.  A sweep's value is correcting the EARLY, low-quality
+decisions against a LATER, better album, so the oldest units have the most left
+to gain.  It is also live_tape's rule, and a project that answers "what does a
+cap do" two different ways has two contracts to keep in step.
+
+RED-BEFORE - TEN SEMANTIC REVERTS, 20 OF THE 40 NODES, run and restored
+in-iteration (originals in /tmp/i22-redbefore, restored and verified byte-equal;
+`git diff --stat` shows additions only):
+   1  `_union(parent, left, right)` -> `pass`                          -> 6 red
+   2  leader `min(members, key=(-duration, id))` -> `min(members)`      -> 2 red
+   3  `union.extend(banks[speaker])` -> `pass`                          -> 13 red
+   4  `ambiguous = True` -> count + `continue`                          -> 1 red
+   5  `if unit.local_speaker in unscored:` -> `if False:`               -> 1 red
+   6  the ledger cap check -> `if False:`                               -> 1 red
+   7  `entry.canonical_speaker = correction...` -> `pass`               -> 2 red
+   8  `duration_weighted_centroid(bank)` -> `... or album.reference(s)` -> 1 red
+   9  `_finite_float32`'s `if not values:` -> `if False:`               -> 1 red
+  10  `reference = album.reference(speaker)` -> `None`                  -> 1 red
+Revert 3 is OVER-BROAD and is recorded as such: dropping the union empties every
+group's reference, not just a merged one, so it reddens 13 nodes and evidences
+only the union node.  The 20 nodes no revert reddens are the ledger's
+record/replace/refuse parametrisation and the constructive invariants
+(never-invents, never-removes, determinism, the empty revision) - recorded
+rather than manufactured.
+
+WHAT WAS LEARNED.
+
+1. A GUARD THAT CANNOT FIRE IS A TEST THAT CANNOT FAIL, AND THE TEST FOUND IT.
+   The margin guard's first node was written to assert KEPT_BELOW_MARGIN and it
+   failed for a reason that had nothing to do with the margin - the two
+   references it used were 0.94 apart and merged.  Fixing the fixture would have
+   produced a node that merely re-asserted the matcher's own rule.  The general
+   form, third time this loop has paid for it: when a node is hard to construct,
+   ask whether the behaviour it wants is reachable at all before making the
+   fixture more elaborate.
+
+2. TWO NUMBERS IN A DESIGN DOCUMENT CAN CONTRADICT ITS PROSE, AND THE NUMBERS
+   WIN.  ADR-0002's sweep description and its measured sweep cost cannot both be
+   true.  The loop's standing rule - measured beats asserted - resolved a scope
+   question that would otherwise have cost an iteration of re-embedding work
+   that no gate asked for.
+
+3. AN OVER-BROAD REVERT IS STILL EVIDENCE, BUT ONLY FOR WHAT IT ISOLATES.
+   Reverting the union changed 13 nodes; reporting it as "13 nodes prove the
+   union rule" would be false.  Reported as one node's evidence plus a note.
+
+BLOCKERS: none for this iteration.
+
+WHAT THIS DOES NOT DO.  Nothing calls sweep().  There is no cadence, no ledger on
+the live path, no transcript revision, no versioned rewrite, and the album is
+never itself merged.  The deployed service is untouched - the payload is offline
+Python with no route, no flag and no env key - and the branch's existing
+unmerged-source condition is unchanged (offline probes have not spoken for the
+deployed 42abc5a since iteration 15 and still do not).
+
+RECOMMENDED NEXT STEP.  MEASURE THE ENGINE BEFORE WIRING IT: extend
+tests/live_identity_accuracy.py with a sweep cadence and a whole-file oracle, so
+the repo can answer ADR-0002's gate B (convergence: does the live-vs-file gap
+trend to zero?) on production code, the way iteration 16 answered gate A.  The
+harness already holds every unit's vector and its ground truth, so the ledger it
+needs is the replay loop's own bookkeeping.  Only then wire the sweep onto the
+live path - a transcript rewriter nobody has scored is worse than no rewriter.
+Two numbers to produce while there: the sweep's effect on the album policy's
+93.4 %, and the merge's share of candidate 55's 4.5 pp.

@@ -22,6 +22,7 @@ from .live_identity_album import (
     ALBUM_ADMISSION_SECONDS,
     ALBUM_EXEMPLARS_PER_SPEAKER,
     FingerprintAlbum,
+    cosine_similarity,
 )
 from .live_service_runtime import (
     LiveServiceBounds,
@@ -826,14 +827,20 @@ def _vector_values(vector: Sequence[float]) -> tuple[float, ...]:
 
 
 def _cosine_similarity(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    """The album's similarity rule, wrapped back into this module's typed refusals.
+
+    The arithmetic lives beside the album because a retrospective sweep has to score voices the
+    same way the live matcher does, and two implementations of "how alike are these voices" is
+    exactly the hazard `tests/live_identity_accuracy.py` was built to rule out. The two
+    admission errors are kept distinct here: they are this provider's older contract.
+    """
+
     if len(left) != len(right):
         raise LiveProviderBundleAdmissionError("wespeaker evidence vector dimensions must match.")
-    left_norm = math.sqrt(sum(item * item for item in left))
-    right_norm = math.sqrt(sum(item * item for item in right))
-    if left_norm <= 0.0 or right_norm <= 0.0:
+    score = cosine_similarity(left, right)
+    if score is None:
         raise LiveProviderBundleAdmissionError("wespeaker evidence vectors must be non-zero.")
-    score = sum(a * b for a, b in zip(left, right, strict=True)) / (left_norm * right_norm)
-    return max(0.0, min(1.0, score))
+    return score
 
 
 def _collect_preflight_failures(config: LiveProviderBundleConfig) -> list[str]:

@@ -134,11 +134,24 @@ class FingerprintAlbum:
 
         bank = self._exemplars.get(canonical_speaker)
         if bank:
-            centroid = _duration_weighted_centroid(bank)
+            centroid = duration_weighted_centroid(bank)
             if centroid is not None:
                 return centroid
         held = self._provisional.get(canonical_speaker)
         return held.vector if held is not None else None
+
+    def exemplars(self, canonical_speaker: str) -> tuple[AlbumExemplar, ...]:
+        """This speaker's admitted bank, read-only.
+
+        `reference()` answers "what do I match against"; a retrospective sweep needs the
+        evidence *behind* that answer, because a centroid over the union of two speakers'
+        banks is not the average of their two centroids -- the exemplars carry the durations
+        that weight it. The provisional stand-in is deliberately not exposed: it is one
+        sub-admission fragment, and every consumer of this accessor is making a claim
+        stronger than matching.
+        """
+
+        return tuple(self._exemplars.get(canonical_speaker, ()))
 
     def exemplar_count(self, canonical_speaker: str) -> int:
         return len(self._exemplars.get(canonical_speaker, ()))
@@ -180,6 +193,33 @@ class FingerprintAlbum:
         return PROVISIONAL
 
 
+def cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float | None:
+    """The identity layer's one similarity rule, clamped to `[0, 1]`.
+
+    Clamping is not cosmetic: `BoundedCausalIdentityPreparer` refuses evidence outside `[0, 1]`
+    outright, and two voiceprints that point away from each other are *no* evidence of a link,
+    not negative evidence of one -- the matcher's floor already says "unmatched".
+
+    Returns `None` -- never raises -- when the similarity is undefined: mismatched dimensions,
+    or a vector with no length. Callers on the live path turn that into a named refusal; the
+    live evidence provider, whose contract is older, wraps it back into its typed admission
+    error so nothing about the deployed matcher changes.
+    """
+
+    if len(left) != len(right):
+        return None
+    left_norm = math.sqrt(sum(item * item for item in left))
+    right_norm = math.sqrt(sum(item * item for item in right))
+    if not math.isfinite(left_norm) or not math.isfinite(right_norm):
+        return None
+    if left_norm <= 0.0 or right_norm <= 0.0:
+        return None
+    score = sum(a * b for a, b in zip(left, right, strict=True)) / (left_norm * right_norm)
+    if not math.isfinite(score):
+        return None
+    return max(0.0, min(1.0, score))
+
+
 def _finite_vector(vector: Sequence[float]) -> tuple[float, ...] | None:
     try:
         values = tuple(float(item) for item in vector)
@@ -190,14 +230,16 @@ def _finite_vector(vector: Sequence[float]) -> tuple[float, ...] | None:
     return values
 
 
-def _duration_weighted_centroid(bank: list[AlbumExemplar]) -> tuple[float, ...] | None:
+def duration_weighted_centroid(bank: Sequence[AlbumExemplar]) -> tuple[float, ...] | None:
     """Strategy C: weight each exemplar by the seconds of speech that produced it.
 
-    Returns `None` -- never raises -- for a bank whose exemplars disagree on dimension or whose
-    weighted sum is degenerate, so a corrupt album costs a speaker its reference for one span
-    instead of costing the meeting its session.
+    Returns `None` -- never raises -- for an empty bank, one whose exemplars disagree on
+    dimension, or one whose weighted sum is degenerate, so a corrupt album costs a speaker its
+    reference for one span instead of costing the meeting its session.
     """
 
+    if not bank:
+        return None
     dimension = len(bank[0].vector)
     if any(len(item.vector) != dimension for item in bank):
         return None
@@ -223,6 +265,8 @@ __all__ = [
     "AlbumExemplar",
     "FingerprintAlbum",
     "PROVISIONAL",
+    "cosine_similarity",
+    "duration_weighted_centroid",
     "REJECTED_BELOW_ADMISSION",
     "REJECTED_INVALID_DURATION",
     "REJECTED_INVALID_VECTOR",

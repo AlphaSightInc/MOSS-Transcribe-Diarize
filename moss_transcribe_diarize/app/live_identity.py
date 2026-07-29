@@ -161,76 +161,12 @@ class BoundedCausalIdentityPreparer:
         canonical_speakers: tuple[str, ...],
         evidence: tuple[LiveSpeakerEvidence, ...],
     ) -> tuple[tuple[str, str], ...]:
-        if not local_speakers or not canonical_speakers:
-            return ()
-
-        score_by_pair = _score_by_pair(local_speakers, canonical_speakers, evidence)
-        matrix = [
-            [-score_by_pair.get((local, canonical), 0.0) for canonical in canonical_speakers]
-            for local in local_speakers
-        ]
-        row_indexes, column_indexes = linear_sum_assignment(matrix)
-        assigned_rows: set[int] = set()
-        mapping: list[tuple[str, str]] = []
-        for row_index, column_index in sorted(zip(row_indexes, column_indexes, strict=True)):
-            local = local_speakers[row_index]
-            canonical = canonical_speakers[column_index]
-            score = score_by_pair.get((local, canonical), 0.0)
-            if score < self.config.min_match_score:
-                continue
-            rejection_reason = self._match_rejection_reason(
-                row_index,
-                column_index,
-                local_speakers,
-                canonical_speakers,
-                score_by_pair,
-            )
-            if rejection_reason is not None:
-                raise LiveIdentityError(rejection_reason)
-            assigned_rows.add(row_index)
-            mapping.append((local, canonical))
-
-        for row_index, local in enumerate(local_speakers):
-            if row_index in assigned_rows:
-                continue
-            if max((score_by_pair.get((local, canonical), 0.0) for canonical in canonical_speakers), default=0.0) >= (
-                self.config.min_match_score
-            ):
-                raise LiveIdentityError("same_span_cannot_link_conflict")
-        return tuple(mapping)
-
-    def _match_rejection_reason(
-        self,
-        row_index: int,
-        column_index: int,
-        local_speakers: tuple[str, ...],
-        canonical_speakers: tuple[str, ...],
-        score_by_pair: dict[tuple[str, str], float],
-    ) -> str | None:
-        local = local_speakers[row_index]
-        canonical = canonical_speakers[column_index]
-        score = score_by_pair.get((local, canonical), 0.0)
-        row_runner = max(
-            (
-                score_by_pair.get((local, other), 0.0)
-                for col, other in enumerate(canonical_speakers)
-                if col != column_index
-            ),
-            default=0.0,
+        return assign_speakers(
+            local_speakers=local_speakers,
+            canonical_speakers=canonical_speakers,
+            evidence=evidence,
+            config=self.config,
         )
-        column_runner = max(
-            (
-                score_by_pair.get((other, canonical), 0.0)
-                for row, other in enumerate(local_speakers)
-                if row != row_index
-            ),
-            default=0.0,
-        )
-        if score - column_runner < self.config.min_match_margin:
-            return "same_span_cannot_link_conflict"
-        if score - row_runner < self.config.min_match_margin:
-            return "ambiguous_identity"
-        return None
 
     def _failed(
         self,
@@ -285,6 +221,101 @@ def _non_prepared(
         status=status,
         reason=reason,
     )
+
+
+def assign_speakers(
+    *,
+    local_speakers: tuple[str, ...],
+    canonical_speakers: tuple[str, ...],
+    evidence: tuple[LiveSpeakerEvidence, ...],
+    config: LiveIdentityConfig,
+) -> tuple[tuple[str, str], ...]:
+    """One span's local speakers matched one-to-one onto canonical ones, or an ambiguity.
+
+    This is the matcher, and it is deliberately a free function rather than a method: a
+    retrospective sweep re-matches historical spans against a better album, and it has to reach
+    the *same* verdicts the live path reached or a "correction" is just a second opinion from a
+    second implementation. `tests/live_identity_accuracy.py` exists because ADR-0002's own
+    prototype numbers came from a re-implemented matcher; nothing else in this repository may
+    repeat that.
+
+    Raises `LiveIdentityError` naming the ambiguity. The live path turns that into an abstain
+    for the whole span; a sweep turns it into "this span keeps the labels it has". Both are the
+    same ruling -- an ambiguous span is not relabelled -- taken at different times.
+    """
+
+    if not local_speakers or not canonical_speakers:
+        return ()
+
+    score_by_pair = _score_by_pair(local_speakers, canonical_speakers, evidence)
+    matrix = [
+        [-score_by_pair.get((local, canonical), 0.0) for canonical in canonical_speakers]
+        for local in local_speakers
+    ]
+    row_indexes, column_indexes = linear_sum_assignment(matrix)
+    assigned_rows: set[int] = set()
+    mapping: list[tuple[str, str]] = []
+    for row_index, column_index in sorted(zip(row_indexes, column_indexes, strict=True)):
+        local = local_speakers[row_index]
+        canonical = canonical_speakers[column_index]
+        score = score_by_pair.get((local, canonical), 0.0)
+        if score < config.min_match_score:
+            continue
+        rejection_reason = _match_rejection_reason(
+            row_index,
+            column_index,
+            local_speakers,
+            canonical_speakers,
+            score_by_pair,
+            config,
+        )
+        if rejection_reason is not None:
+            raise LiveIdentityError(rejection_reason)
+        assigned_rows.add(row_index)
+        mapping.append((local, canonical))
+
+    for row_index, local in enumerate(local_speakers):
+        if row_index in assigned_rows:
+            continue
+        if max((score_by_pair.get((local, canonical), 0.0) for canonical in canonical_speakers), default=0.0) >= (
+            config.min_match_score
+        ):
+            raise LiveIdentityError("same_span_cannot_link_conflict")
+    return tuple(mapping)
+
+
+def _match_rejection_reason(
+    row_index: int,
+    column_index: int,
+    local_speakers: tuple[str, ...],
+    canonical_speakers: tuple[str, ...],
+    score_by_pair: dict[tuple[str, str], float],
+    config: LiveIdentityConfig,
+) -> str | None:
+    local = local_speakers[row_index]
+    canonical = canonical_speakers[column_index]
+    score = score_by_pair.get((local, canonical), 0.0)
+    row_runner = max(
+        (
+            score_by_pair.get((local, other), 0.0)
+            for col, other in enumerate(canonical_speakers)
+            if col != column_index
+        ),
+        default=0.0,
+    )
+    column_runner = max(
+        (
+            score_by_pair.get((other, canonical), 0.0)
+            for row, other in enumerate(local_speakers)
+            if row != row_index
+        ),
+        default=0.0,
+    )
+    if score - column_runner < config.min_match_margin:
+        return "same_span_cannot_link_conflict"
+    if score - row_runner < config.min_match_margin:
+        return "ambiguous_identity"
+    return None
 
 
 def _score_by_pair(
@@ -405,5 +436,6 @@ __all__ = [
     "LiveSpeakerEvidence",
     "LiveSpeakerEvidenceProvider",
     "NoLiveSpeakerEvidence",
+    "assign_speakers",
     "unattributed_transcript",
 ]

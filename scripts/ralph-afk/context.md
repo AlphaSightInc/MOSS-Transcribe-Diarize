@@ -253,8 +253,18 @@ carry is in the retired-evidence index below).**
   semantic reverts. STEP 2 IS CODE-COMPLETE.** **The deployed service still cannot write a byte** —
   `ops/moss-live.env` is host-local and untracked and the tracked template ships the three keys
   **commented out**, so retention stays off until an operator edits that host file. See the N-tape,
-  N-tape-wiring and N-tape-declaration blocks. Next for Phase N is **step 3, the retrospective
-  sweep**, which is the first item the tape pays for.
+  N-tape-wiring and N-tape-declaration blocks.
+- **PHASE N STEP 3's ENGINE IS LANDED IN SOURCE (iteration 22): `live_identity_sweep.py`, +40
+  nodes, Python 758/2/368, ten semantic reverts reddening 20 of the 40.** The sweep re-matches the
+  album against retained evidence and proposes corrections and merges; it is **pure and unwired** —
+  nothing schedules it and no transcript is rewritten yet. Three things it settled that outlive it:
+  the sweep **does not re-hear audio** (ADR-0002's prose says re-embed the tape, its *measured*
+  gate B says 0.1 ms per sweep against 332-343 ms per embedding, so the run that passed the gate
+  re-matched retained vectors — take the measured one); the production matcher is now a **free
+  function** `live_identity.assign_speakers` that both the live path and the sweep call, so the
+  repo cannot grow the second matcher ADR-0002's own prototype had; and a merge above 0.70 is the
+  first mechanism here that can **reduce** the canonical speaker count, i.e. it can heal candidate
+  55's fragmentation retrospectively without touching births. See the N-sweep block.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -274,19 +284,22 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch (Python +15 in iteration 21; the Swift number is unchanged because
+**Test totals on the branch (Python +40 in iteration 22; the Swift number is unchanged because
 nothing under `macos/` was touched).** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **703 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
+→ 158); Python **758 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
 → 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, → 662 with N-recal's 6,
 → 694 with N-tape's 32, → 703 with N-tape-wiring's 9,
-**→ 718 with N-tape-declaration's 15, iteration 21**) — the two
+→ 718 with N-tape-declaration's 15,
+**→ 758 with N-sweep's 40, iteration 22**) — the two
 skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Suite wall clock **70.59 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
-evidence in the repo — the tape suite costs 3.6 s). Per-file: `test_live_pipeline_seams.py` **60**,
+Suite wall clock **71.50 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
+evidence in the repo — the tape suite costs 3.6 s, the sweep suite 0.1 s). Per-file:
+`test_live_pipeline_seams.py` **60**,
 `test_live_identity.py` **8**,
 `test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **21**,
+`test_live_identity_sweep.py` **40**,
 `test_live_tape.py` **37**, `test_live_api.py` **33**, `test_live_helper_failure.py` **12**,
 `test_live_provider_bundle.py` **28**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
@@ -863,6 +876,7 @@ evidence, is in the progress.txt archive under the same title.
 | **Manifest calibration** (N-recal, it. 17 of run `20260729-025318`; **in source only, not deployed**) | A **free** deployed parameter is stated by the deployment, never inherited. `finalize-live-provider-manifest.py` requires `--min-match-score` / `--min-match-margin`, writes them into `identity_config`, hash-covers them, names them in the plan and the evidence, and refuses a pair `live_provider_bundle._identity_config` rejects. The calibrated pair is named once, in `live_identity_album.py`, and the accuracy harness imports it — so the measured pair and the deployable pair cannot diverge. |
 | **Session tape** (N-tape, it. 19 of run `20260729-025318`; **in source only, unwired, not deployed**) | **A tape is placed by capture timestamp and bounded by a declaration.** Three PCM16 tracks + an atomically republished `index.json`; the **gap manifest is the complement of coverage**, so a dropped frame is silence *and* a named gap and a late frame fills it. Retention is opt-in — no root, no tape, no behaviour change. `declared()` refuses a root inside the checkout, sharing a filesystem with a runs tree, or on a filesystem where `chmod` is a no-op. No frame ever raises: cap, write failure and inadmissible frame each stop taping with a typed degradation. The reaper is driven by session state + TTL, runs at startup, and skips what it cannot read as a tape. |
 | **Taped live path** (N-tape-wiring, it. 20 of run `20260729-025318`; **in source only, not deployed**) | **The recorder is the boundary, and `None` is a whole configuration.** The transport holds one `LiveSessionTapeRecorder`, constructed always and inert when no root is declared — so the untaped service is a state of the wiring, asserted by a route node, not an absence of it. Lane frames tee **after the ingress ack**; the mixed track tees at `admit_available`'s sealed commit, placed by the commit's own start timestamp. The tape is released wherever the **mixer** is, including the coordinator's lease-expiry teardown. Nothing in the recorder raises: a store failure is one WARNING naming the action, never a 500 on `POST /frames`. |
+| **Retrospective sweep** (N-sweep, it. 22 of run `20260729-025318`; **in source only, PURE and UNWIRED**) | **A sweep re-matches retained evidence against the album; it never re-hears audio, and it proposes — it does not apply.** One matcher for both paths (`live_identity.assign_speakers`), so a correction can never be a second implementation's second opinion. It may not invent a speaker, may not remove a label it cannot replace (unrepresentable: the correction's speaker is non-optional), and may not move a unit that fails the deployed margin. A merge at ≥ 0.70 needs an admitted bank on **both** sides, matches on the **union** of the exemplars, and leaves the id with the most admitted speech standing. Deterministic, and applying a revision leaves nothing for the next sweep to correct. The ledger is bounded at 20 000 units ≈ 22 MB and refuses new units rather than evicting old ones. |
 | **Duration vs timestamp** (P1/P2, it. 1 of run `20260729-025318`) | A **duration** is measured on `time.monotonic()`; `time.time()` is a **timestamp** and may step. The live decode measures itself and never reads the runner's `elapsed_sec`. Timing metadata that cannot be trusted converts to `None` (`live_adapters.trustworthy_duration_sec`) — elapsed and RTF null on `canonical_processed`, span committed, one WARNING on `moss_transcribe_diarize.live.decode` — never terminal. |
 
 **The one class all of Phase J, L1 and candidates 50/53/56 belong to:** *a condition the design
@@ -980,6 +994,23 @@ for p in ('album','overwrite'):
     r = H.replay_all(policy=p)
     print(p, round(H.mean_accuracy(r)*100,1), round(H.min_accuracy(r)*100,1))
 "
+
+# --- N-sweep: the retrospective sweep engine, 40 nodes, ~0.1 s (iteration 22). Pure; no host,
+#     no server, no fixture. The matcher extraction is proved behaviour-preserving by the
+#     accuracy numbers above staying at 93.4 / 72.0, not by these nodes. -------------------------
+python3 -m pytest tests/test_live_identity_sweep.py -q
+# Its ten red-before reverts, re-runnable against a COPY of the module (restore after). Each
+# names DIFFERENT nodes; the third is over-broad and only evidences the union node:
+#   1. `_union(parent, left, right)` -> `pass`                                   -> 6 red
+#   2. leader `min(members, key=(-duration, id))` -> `min(members)`              -> 2 red
+#   3. `union.extend(banks[speaker])` -> `pass`                                  -> 13 red
+#   4. `ambiguous = True` -> count + `continue`                                  -> 1 red
+#   5. `if unit.local_speaker in unscored:` -> `if False:`                       -> 1 red
+#   6. the ledger cap check -> `if False:`                                       -> 1 red
+#   7. `entry.canonical_speaker = correction.canonical_speaker` -> `pass`        -> 2 red
+#   8. `duration_weighted_centroid(bank)` -> `... or album.reference(speaker)`   -> 1 red
+#   9. `_finite_float32`'s `if not values:` -> `if False:`                       -> 1 red
+#  10. `reference = album.reference(speaker)` -> `reference = None`              -> 1 red
 
 # --- N-tape: the session tape recorder, 37 nodes, ~3.6 s (iterations 19 + 20). ADR-0002 gate C's
 #     assembly cases + ADR-0003 D2-D6, then the recorder. Offline, no host, no server, tmp_path. ---
@@ -1519,6 +1550,12 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     of the gap between production and ADR-0002's 98.5 %. The album was the hypothesis for its cause
     and the hypothesis is now measured wrong: births are unchanged by design, so the fragmentation
     survives the fix. It needs its own authorization and its own mechanism.
+    **Iteration 22 changed what that mechanism has to cover, though not the authorization.**
+    N-sweep's merge — two album centroids at ≥ 0.70 are one voice born twice — is the first thing in
+    this repo that can *reduce* the canonical count, so the fragmentation can be **healed
+    retrospectively** while the births stay untouched. What a merge cannot buy back is the capacity
+    itself: the 16-slot bound is still reached mid-meeting, so a voice arriving after saturation is
+    still never labelled live. Measure the merge's share of the 4.5 pp before deciding what is left.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1814,6 +1851,74 @@ unchanged. Retention becomes real only when an operator adds the keys to that ho
 "what the clause becomes for a future hygiene check" is the two-form test to run at that moment. No
 manifest/finalizer treatment: the root is a **host** fact like the TLS key path, not a provider
 config the manifest hash covers.
+
+**N-sweep — STEP 3's ENGINE IS LANDED IN SOURCE** `[iteration 22; PURE and UNWIRED — nothing
+schedules it, no transcript is rewritten, not gated, not merged, not deployed]`. ADR-0002 calls the
+album alone *"a terminal-state failure if shipped alone"*: without retrospective rewrites, live
+accuracy repeats the sibling project's divergence at <80 %. `live_identity_sweep.py` is the rewrite
+half. **Payload 5 files** — new `moss_transcribe_diarize/app/live_identity_sweep.py` and
+`tests/test_live_identity_sweep.py`, plus three surgical edits (`live_identity.py`,
+`live_identity_album.py`, `live_provider_bundle.py`); **none under `macos/`**, none under `ops/`.
+Python **758 / 2 / 368** (+40). Sweep suite 0.1 s.
+***Four decisions, each recorded before the patch because each could have gone the other way.***
+1. **A sweep re-matches retained evidence; it NEVER re-hears audio.** ADR-0002's prose says
+   "re-embed/re-cluster the assembled tape"; its **measured** gate B says a sweep costs ~0.1 ms at
+   600 s, and the same document measures embedding at **332-343 ms per unit**. Those two numbers
+   cannot both describe re-embedding, so the run that passed the gate re-matched vectors the live
+   path had already computed. *Take the measured one.* The honest cost, stated so no convergence
+   number is over-read: a sweep repairs an **assignment**, never a **segmentation** — ADR-0002 §7
+   carries the identical caveat ("in-span local diarization assumed correct"). **This means the tape
+   is not yet paid for by step 3**; re-VAD from the tape is a later, separately-measured refinement,
+   and the tape's nearer value is crash/resume and being the substrate for it.
+2. **The matcher is now ONE function, called by both paths.** `live_identity.assign_speakers` was
+   extracted from `BoundedCausalIdentityPreparer._assign` (behaviour-preserving; the accuracy
+   harness re-measures **93.4 / 72.0**, unchanged to the tenth). A sweep that re-implemented the
+   matcher would issue "corrections" that are a second opinion from a second implementation — the
+   exact hazard `tests/live_identity_accuracy.py` was built to rule out, and the one ADR-0002's own
+   prototype fell into. Likewise `cosine_similarity` and `duration_weighted_centroid` now live once,
+   in `live_identity_album.py`; `_cosine_similarity` in the bundle is a four-line wrapper that keeps
+   its two older typed admission errors verbatim.
+3. **Three rules bound what a sweep may change**: it never invents a canonical speaker (birth is a
+   live decision under the 16-cap); it never removes a label it cannot replace (J2 — and this one is
+   enforced by the **type**, `SweepCorrection.canonical_speaker` being non-optional, so an erasure is
+   unrepresentable rather than merely unimplemented); and a move must beat the incumbent by
+   `min_match_margin`. **The third is measurably redundant at the deployed 0.35 / 0.1** — the matcher
+   already refuses to assign unless the winner beats every rival, incumbent included, by the margin —
+   so `KEPT_BELOW_MARGIN` never fires there and the node asserts the *property* over real corrections
+   instead of a contrived tie. Kept for a deployment whose margin exceeds its own match floor.
+4. **A merge is a stronger claim than a match, so it needs an admitted bank on BOTH sides.** Two
+   album centroids at or above **0.70** are one voice born twice; the group's reference is the
+   duration-weighted centroid over the **union** of the exemplars (not the mean of two centroids —
+   the exemplars carry the seconds that weight them) and the id that survives is the one with the
+   most admitted speech, so birth order never decides identity. *This is the first mechanism in the
+   repo that can reduce the canonical speaker count* — it cannot stop candidate 55's births, but it
+   can heal them retrospectively. A provisional stand-in is matchable and **not** mergeable.
+***Two properties the suite states rather than hopes for.*** The sweep is **deterministic** (same
+ledger + album → identical revision), and **applying a revision leaves nothing for the next sweep to
+correct** — convergence, not oscillation. Merges *do* repeat on a second sweep, honestly: the album
+still holds both speakers until something merges the **album**, which is the wiring step's job.
+***The ledger's bound is measured, not estimated.*** One 256-dim float32 vector costs **1104 bytes**
+(`array("f")`); the same values as a Python tuple cost **8232**. At `SWEEP_LEDGER_MAX_UNITS` 20 000
+the ledger is **~22 MB**, against 165 MB for the tuple form. F3's real soak committed **443 spans in
+1029 s** = 0.43 spans/s, so three hours is ~4650 spans and well under 10 000 units — the cap is ~2×.
+A full ledger **refuses new units rather than evicting old ones** (the opposite of a cache, and the
+tape's own rule): a sweep's value is in correcting the *early* decisions against a *later* album.
+***Red-before: ten semantic reverts naming 20 of the 40 nodes***, run and restored in-iteration
+(`/tmp/i22-redbefore`, `git diff --stat` shows additions only): no merge at all → **6 red**; leader
+= lowest id → **2**; group matches on the leader's own bank → **13** (over-broad — that revert
+empties every reference, so read it only as evidence for the union node); an ambiguous span skipped
+entirely → **1**; an unscorable vector silently unmatched → **1**; the cap does not bind → **1**;
+`apply()` does not move the incumbent → **2**; a provisional-only speaker mergeable → **1**; an empty
+vector accepted → **1**; a provisional-only speaker given no reference → **1**. The 20 nodes no
+revert reddens are the ledger's record/replace/refuse parametrisation and the constructive
+invariants (never-invents, never-removes, determinism, the empty revision) — recorded rather than
+manufactured.
+***What it does NOT do, so the next iteration starts from the truth.*** Nothing calls `sweep()`:
+there is no cadence, no ledger on the live path, no transcript revision, no versioned rewrite, and
+the album is never itself merged. The accuracy harness cannot yet answer ADR-0002's **convergence**
+half (gate B) because it has no sweep and no file oracle. Those are the next two steps, in that
+order — **measure the engine in the harness, then wire it** — because a sweep wired before it is
+measured is a transcript rewriter nobody has scored.
 
 **N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
 `docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the
