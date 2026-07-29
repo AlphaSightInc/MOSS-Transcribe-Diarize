@@ -16096,3 +16096,92 @@ reviewed payload by path. NEVER `git add -A` on this branch again. And run
 `git log --format='%h %an %ad %s' --date=iso -5` before any merge: the tip may
 have moved more than once since the iteration began, and the merge fences assume
 they know what the feature tip contains.
+
+## run 20260729-025318-86584 - iteration 7 - rollbacks recorded BEFORE the F3
+## soak touches any host
+
+TARGET: P5(d) / Phase M gate step (d), SECOND half - F3, the 16-minute
+active-view soak, on the real hosts with candidate 51's muted lane-separating
+harness. It is the single remaining Phase M/P gate item and the only thing in
+front of Phase N. Nothing blocks it: F1 went green against the deployed 42abc5a
+in iteration 6, and candidate 56 is proven dead on the server. This block is the
+PRD's "every server or Mac mutation must have its rollback command recorded in
+progress.txt before it is applied".
+
+INSTRUMENT CHECKED FIRST, because an instrument that has not run this iteration
+is not evidence that it works (iteration 26 found the soak driver's abort glob
+matched every healthy poll):
+  python3 scripts/ralph-afk/soak-abort-probe.py -> VERDICT: PASS, 90/90, rc=0
+  (4 control-dead abort, 1 status-stopped aborts, 54 healthy + 28 status-running
+   + 2 lane-fault + 1 status-lane-fault do NOT abort - a lane fault never aborts)
+
+BASELINE, read-only, taken before anything was touched:
+  branch    HEAD fcf0d6f, tree clean; git diff --name-only 42abc5a HEAD
+            -- ':!scripts/ralph-afk' lists ONLY the operator's two docs/ files
+            (00620ab, 128eae4) - no product source, no test, no ops/, so an
+            offline probe and the deployed service still speak for each other
+  server    HEAD 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870, worktree clean
+            moss-live-web MainPID 355607 NRestarts=0
+            moss-web      MainPID 301112 NRestarts=0
+            moss-vllm     MainPID 322117 NRestarts=0
+            live-runs 0 entries; no /tmp/mtd-live-*
+            device store 13 rows / 1 unrevoked
+            = AB600574-FD93-4321-967E-652AB064A70B (m4mbp's - NEVER revoke it)
+  m4mbp     HEAD 42abc5a; TCC 322 rows with kTCCServiceAudioCapture=2 and
+            kTCCServiceMicrophone=2 for com.alphasight.moss.capture
+            output volume 31, output muted false
+            pasteboard 0 bytes (unlike iteration 6, which found 79 bytes of
+            operator content - so this run's post-run 0 is unambiguous)
+            /Applications/MOSSCapture.app inode 212080356,
+            mtd-capture sha256 450c20bf.. (the 77e0014 product, correct: P7
+            touched nothing under macos/)
+            no app running, no stale /tmp/ralph-soak, no stale /tmp/live-soak.sh
+  MacStudio no MOSSCapture install; nothing to roll back here.
+
+MUTATIONS THIS ITERATION AND THEIR ROLLBACKS, each applied only if needed:
+  1. m4mbp: launch /Applications/MOSSCapture.app from the GUI session (`open -a`).
+     ROLLBACK: pkill -x MOSSCaptureApp
+  2. m4mbp: `mtd-capture pair` against https://100.64.0.8:7861 with a payload
+     minted on the server loopback. REUSES the stored capture-device-id, so it
+     mints NO new device row; it rewrites capture-bearer / capture-session-id /
+     capture-view-token in ~/Library/Application Support/MOSSCapture/secrets.json.
+     ROLLBACK: none is wanted - re-pairing is the normal path. DO NOT revoke
+     m4mbp's device row. If a probe device is ever created by mistake:
+       DELETE https://127.0.0.1:7861/api/live/devices/<device_id>  (assert 200 AND
+       the {"device_id": ...} body - a POST .../revoke 404s for route-not-found
+       and reads exactly like "already revoked")
+  3. m4mbp: the driver mutes the system output (OUTPUT_MODE=muted is the
+     lane-separating mechanism). Its own EXIT/INT/TERM trap restores what it
+     found. ROLLBACK if the driver is killed:
+       ssh ga0@m4mbp 'osascript -e "set volume without output muted"; \
+                      osascript -e "set volume output volume 31"'
+  4. m4mbp: /tmp/live-soak.sh, /tmp/ralph-soak/, /tmp/ralph-soak-run.log
+     ROLLBACK: rm -rf /tmp/live-soak.sh /tmp/ralph-soak /tmp/ralph-soak-run.log
+  5. m4mbp: the pasteboard receives the view authority at `handoff`.
+     ROLLBACK: pbcopy < /dev/null   (the driver does this itself at step 14)
+  6. server: one pairing CODE minted on the loopback by ops/live-pair.sh, and one
+     live SESSION created by the Mac. Both are consumed/closed by the run.
+     ROLLBACK: none; a session ends at `stop` and view authority is revoked with
+     it. NO checkout, NO restart, NO unit change, NO manifest or TLS touch - this
+     iteration deploys nothing.
+  7. MacStudio: `say` during the driver's room windows (minutes 4 and 12), to try
+     to give the microphone lane content of its own. Measured twice already to
+     NOT reach m4mbp's microphone (iteration 12 with AirPods, iteration 6 with the
+     built-in mic), so it is expected to fail and is recorded either way. No
+     volume change is made on MacStudio; nothing to restore.
+
+STOP CONDITIONS, decided before the run so a bad result is not argued away:
+  * served leaf != pin a35ca9fc.. -> the driver aborts rc=3; record a blocker and
+    touch nothing else.
+  * any batch MainPID moves, or NRestarts != 0 on any unit -> stop and record.
+  * the run is RED or UNDECIDED -> that is a RESULT, not a reason to re-run with
+    different knobs. Record it, diagnose from the evidence, and let the next
+    iteration act.
+
+TWO WARNINGS F1 HANDED THIS RUN, recorded so the soak is not read naively:
+  1. decoder p95 RTF was 0.911, CLOSE to the < 1 bound, driven by short
+     silence-endpointed spans where fixed decode cost dominates a small
+     denominator - a 17-minute soak has far more of them than an 85 s canary.
+  2. identity saturates at t+65.6 s, so essentially every speaker label after
+     minute 1 of this soak will be S00 by design. That is J2 working, not a
+     regression, and the soak's label clause must be read that way.
