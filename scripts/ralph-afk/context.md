@@ -1,6 +1,6 @@
 # Context - MOSS live meeting transcription MVP
 
-> **Compaction log — seven passes, every one archived VERBATIM to progress.txt, nothing deleted.**
+> **Compaction log — eight passes, every one archived VERBATIM to progress.txt, nothing deleted.**
 > Grep progress.txt for `ARCHIVE OF context.md` to read any pass in full. **This log is the ONLY
 > record of a pass** — the per-pass bullets that used to duplicate it in "Where the loop stands" went
 > to progress.txt with the seventh.
@@ -14,6 +14,7 @@
 > | 5th | `20260729-094359` it. 8 | 249 137 → 210 671 B (−15.4 %) | 14 ranges: the four compaction narratives themselves, the two retired-evidence index tables (merged into one), the standing summary's it. 3–7 bullets, the F1/F2/F3 certification narratives, Phase N's spent gate/merge/redeploy rows, the port-publish race, and the superseded layers of candidates 55/60/65 and decision 19 |
 > | 6th | `20260729-094359` it. 11 | 227 379 → 215 772 B (−5.1 %) | **the Validation fence, as the fifth pass planned**: 16 ranges — the C1/K3/H-blocker/J5d/F4a/M6c narrow recipes, the four Phase-N red-before revert ladders, candidate 65's five-probe cause chain, the spent keeper-merge notes, and three stale duplicates |
 > | 7th | `20260729-094359` it. 14 | 231 932 → 218 689 B (−5.7 %) | **the Candidates section, as the sixth pass named it**: 9 ranges — candidate 55's six re-pricings, 65's four-iteration cause chain, 60's four, 63's `[open]` history, 67's pre-fix description, the five-iteration 55/60/65 chain in the standing summary, the four compaction bullets that duplicated this log, two spent probe-instrument recipes, and the six compaction narratives' prose. **27 747 B of ranges out, 9 539 B of distilled pointers in (net −18 208), and this pass's own record +4 965 B back.** Plus **six staleness repairs**: three assertions of a claim iterations 7 and 12 falsified, candidate 65's title re-filed as iteration 12 instructed and no iteration had applied, F1's and F3's `[…]` tags still naming superseded runs, and two broken block pointers — see rule (1) below |
+> | 8th | `20260729-094359` it. 19 | 241 160 → 233 281 B (−3.3 %) | **"Read before any certification run", as the seventh pass named it**: 4 ranges — **the four overlapping sweep blocks merged into one** (session-end it. 7, at-F2's-fragmentation it. 9, cadence it. 12, probe-reduction it. 13 → one block with three tables and four numbered instrument rules), the "three certification runs have one home now" pointer, the Phase P/M landing bullets plus the "Phase M proven on the real hosts" bullet that duplicated the retired-evidence index, and the "eighth authorization landed" bullet that restated prd.md a third time. **20 114 B of ranges out, 11 161 B of distilled pointers in (net −8 953), and this pass's own record put 1 074 B back.** Plus **four staleness repairs and nine cross-reference retargets onto one anchor** — see rule (1) |
 >
 > **The trigger to watch is the `Read` tool's 256 KB HARD CAP, not a `Read` count.** At 263 219 B the
 > fourth pass opened with `File content (257KB) exceeds maximum allowed size` and context.md had to be
@@ -46,25 +47,34 @@
 > and F3's still pointed at iteration 9's `42abc5a` soak after iteration 12 re-ran it on `7a4f59c`.
 > **After any certification run, correct BOTH.** Likewise a title: iteration 12 wrote *"re-file 65"*
 > and no iteration did it for two passes, so the falsified headline kept being cited.
+> ***The eighth pass extended that corollary one level up, and this is the cheapest staleness there
+> is to prevent:*** **A HEADER IS RE-READ LESS OFTEN THAN THE TABLE IT INTRODUCES.** The PRD
+> scoreboard's own header still read *"the two certification rows are RED-and-stale … F1 and F3 have
+> never run against Phase M"* — true when `77e0014` was the newest deploy, and left standing through
+> **two merges, one redeploy and three certification runs on `7a4f59c`**, while every row underneath
+> it was corrected each time. The rows were maintained precisely because they are what an iteration
+> reads; the sentence above them was not. *Its sibling in the same pass:* the standing summary still
+> told a reader that **"what now stands in front of Phase N is candidate 60"** after Phase N had been
+> written, gated, merged, deployed and certified. **When a row moves, re-read the sentence that
+> introduces it.**
 > **(2) A SHA inside a recipe is not a fact, it is a cache, and every redeploy invalidates it** - the
 > Validation fence says so at each site that holds one.
 >
-> **Section sizes after the seventh pass, naming the EIGHTH's target without argument.** Candidates
-> **63.6 KB (29.5 %)** — still the largest even after this pass took 12.9 KB out of it — Validation
-> fence **40.5 KB** (490 lines, `bash -n` clean, untouched here), "Read before any certification run"
-> **36.9 KB**, "Where the loop stands" **23.7 KB**, "Deployed reality" 16.7 KB, shipped contracts
-> 13.9 KB, gates index 11.1 KB, compaction log 4.4 KB. **The eighth pass's target is "Read before any
-> certification run" (36.9 KB), not Candidates**: what remains under Candidates is now one settled
-> paragraph per open item plus the Phase N decisions list, which is load-bearing by construction,
-> while "Read before…" holds **three overlapping sweep blocks** (session-end, at-F2's-fragmentation,
-> cadence) that each supersede part of the one before and could be one block with three tables.
-> **Headroom: ~20 KB below the 256 KB cap** — updated in iteration 18, which added ~6 KB (the N-batch
-> counterfactual, its standing-summary bullet, and the routing rule's authorized-to-write vs
-> authorized-to-merge split). Iteration 17 added ~6 KB before it (the N-batch
-> baseline measurement and its standing-summary bullet). Before that, iteration 16 added 4.3 KB (the request-stream correction into the latency-remedy block,
-> now ~41 KB and still the eighth pass's target, plus candidate 68's sharpening and one instrument
-> rule). Iteration 15 added 6.1 KB before it. *The per-section numbers above are the seventh pass's;
-> re-measure them at the eighth rather than trusting this line.*
+> **Section sizes RE-MEASURED at the eighth pass, naming the NINTH's target without argument.**
+> Candidates **74.6 KB (33 %)** — the largest again, and the seventh pass's "63.6 KB" is not
+> comparable because Phase N grew 11 KB after it — Validation fence **39.5 KB** (490 lines, `bash -n`
+> clean, untouched here), "Read before any certification run" **33.4 KB** (was 40.3 before this pass),
+> "Where the loop stands" **26.7 KB**, "Deployed reality" 16.3 KB, shipped contracts 13.6 KB, gates
+> index 10.8 KB, compaction log 7.8 KB. **The ninth pass's target is the Phase N section (38.4 KB
+> inside Candidates), specifically the two N-batch probe narratives** that iterations 17 and 18 added
+> (~7 KB between them): they are the baseline and the counterfactual for **step 4, which the loop is
+> authorized to write and forbidden to merge**, so they can become one table of two engines and three
+> findings the moment a ninth merge is authorized or step 4 is closed. Second target: "Open diagnostic
+> candidates" at 26.2 KB. *Re-measure with the `## heading` script rather than trusting this line —
+> it has been wrong once already, when a section grew under a stale figure.*
+> **Headroom: ~22 KB below the 256 KB cap.** Per-iteration drift for the four iterations before this
+> pass: it. 15 +6.1 KB, it. 16 +4.3 KB, it. 17 +6 KB, it. 18 +6 KB — i.e. **~5-6 KB an iteration is
+> the current rate**, so the ninth pass is due in roughly five.
 > **One new fact about the trigger, from iteration 16:** the `Read` tool now **pages** this file
 > instead of refusing it — it returned lines 1-537 of 2293 with `showing … cap 25000 tokens` and a
 > pointer to `offset=538`. So the 256 KB cap is no longer a wall that stops work; the **token** cap
@@ -150,10 +160,13 @@ scripts/ralph-afk/prd.md` at the START of every iteration, and never trust a pre
 report that no authorization exists.** An iteration that had believed its predecessor here would
 have compacted context.md a fourth time while an authorized phase sat open.
 
-**PRD acceptance scoreboard (rows unchanged since iteration 9 except where noted; Phase M's local
-gate is green at `21a73ea`, the sixth merge landed as `77e0014` in iteration 19, and **it is now
-deployed to all four checkouts (iteration 20)** — so the two certification rows are RED-and-stale
-rather than RED-and-current: F1 and F3 have never run against Phase M.)**
+**PRD acceptance scoreboard. Every row below is CURRENT against the deployed `7a4f59c`** — F1, F2
+and F3 have each been re-run on it (iterations 30, 1 and 12), so a RED here is RED-and-current, never
+RED-and-stale. *Repaired in the eighth compaction, which is the shape rule (1) predicts:* this header
+still said *"the two certification rows are RED-and-stale … F1 and F3 have never run against Phase M"*
+— written when `77e0014` was the newest deploy and left unread through two merges and three
+certification runs, while the rows underneath it were maintained every time. **A header is re-read
+less often than the table it introduces; correct it with the rows.**
 
 | clause | state |
 | --- | --- |
@@ -167,48 +180,38 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). Full block retired to progress.txt with the fourth compaction. **RE-RUN ON THE DEPLOYED `7a4f59c` (iteration 30, Phase N gate step (d) first half): rc=3, five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED (candidate 64) is untouched by it. Both need the operator; see the latency-remedy block and candidate 68. |
+| 60 s canary (F1) | **RED ON THE DEPLOYED `7a4f59c`** (iteration 30, Phase N gate step (d) first half, `live-canary-clauses.py` rc=3): **five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). *Superseded, kept for one reason:* F1 was **GREEN on `42abc5a`** (iteration 6, rc=0) at p95 **3909.3 ms** and RTF **0.911**, 329 published == 329 accepted, and that is the **only** run in this loop's history where the user-visible clause passed at the 4000 ms gate. **One half is NOT certified in either run:** "two speakers" were both on the *system* lane (candidate 51's measured microphone limit). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED (candidate 64) is untouched by it. Both need the operator; see the latency-remedy block and candidate 68. |
 | 300 s certification (F2) | **GREEN ON THE DEPLOYED `7a4f59c`** (run `20260729-094359` iteration 1, `live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **4078.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.577** < 1, **1261 published == 1261 POST /frames, and every one of the session's 4766 logged requests answered 200**, a **5.090 s** interruption seen by the client and survived, outbox 0 → **5** → 0. (Was GREEN on `42abc5a` in iteration 11 of the previous run: 3859.6 ms, RTF 0.670, 1257 == 1257 — that block is archived in progress.txt.) **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the **F2 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction) |
-| 16-minute soak (F3) | **RE-RUN ON THE DEPLOYED `7a4f59c` (run `20260729-094359` iteration 12) — 5 GREEN, 1 RED, rc=3, and it is now the current F3 evidence.** 17/17 full minutes, 648 spans, 381/381 portal polls 200, view authority 200 at age **903.6 s and 1023.0 s**, user-visible p95 **4106.5 ms** ≤ 6000 **qualified and `timelineIntact` true**, decoder p95 RTF **0.568**, **no lane fault at all**, clean drain `retained=0`. The RED is **candidate 60**, unchanged and expected — the Mac client never calls `POST …/stop`, so the post-stop view check answered 200. **The run also falsified candidate 65's headline: the CADENCE sweep published three corrections mid-meeting.** See the **F3 on Phase N** row in the gates index and the cadence-sweep block below. (The prior `42abc5a` run — iteration 9 of run `20260729-025318`, same 5/1 shape — is superseded as evidence; its row is kept in the gates index for the before/after deltas.) |
+| 16-minute soak (F3) | **RE-RUN ON THE DEPLOYED `7a4f59c` (run `20260729-094359` iteration 12) — 5 GREEN, 1 RED, rc=3, and it is now the current F3 evidence.** 17/17 full minutes, 648 spans, 381/381 portal polls 200, view authority 200 at age **903.6 s and 1023.0 s**, user-visible p95 **4106.5 ms** ≤ 6000 **qualified and `timelineIntact` true**, decoder p95 RTF **0.568**, **no lane fault at all**, clean drain `retained=0`. The RED is **candidate 60**, unchanged and expected — the Mac client never calls `POST …/stop`, so the post-stop view check answered 200. **The run also falsified candidate 65's headline: the CADENCE sweep published three corrections mid-meeting.** See the **F3 on Phase N** row in the gates index and the deployed-sweep block below (§1). (The prior `42abc5a` run — iteration 9 of run `20260729-025318`, same 5/1 shape — is superseded as evidence; its row is kept in the gates index for the before/after deltas.) |
 | Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The *browser storage* half is now MEASURED ON THE DEPLOYED PAGE — iteration 10, `portal-storage-probe.py` rc=0, five clauses GREEN, six negative controls all detected.** It had never been measured at all: `leak-scan.sh` never scans the portal (iteration 7), the tracked static assertion (`tests/test_live_portal.py:217-219`) reads a **locally rendered** page, and the harness's `storageWrites` recorder (`:618,657,737,812,841`) has **no assertion anywhere in the suite** — dead instrumentation a runtime write would pass. See the portal-storage block below. **What is still open is the tracked *regression*, not the evidence — candidate 66** |
 | Final close (F4b) | open |
 
-**What stands between the loop and the bar (rewritten iteration 30; the Phase M narrative it used to
-carry is in the retired-evidence index below).**
-- **THE SEVENTH AUTHORIZATION WAS GRANTED, and Phase P's code half is DONE (run `20260729-025318`
-  iteration 1).** Candidate 56 — a live session stops being viewable mid-meeting because the server
-  host's wall clock steps ~1.5 s backwards every ~32.3 s and a negative `elapsed_sec` was terminal —
-  is **fixed in source**: P1 (the decode measures itself monotonically), P2 (untrustworthy timing
-  metadata degrades to null and is logged, stated once as a conversion), P3 (four real-seam nodes,
-  red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
-  Python 608/2/368 green. See the Duration-vs-timestamp row in Shipped contracts; the Phase P gate
-  and P7 merge rows and the retired Phase P list are both in progress.txt.
-- **PHASE P IS FULLY LANDED and its gate step (d) IS RUN, both halves.** (a) gate green at `5bc4f7f`,
-  (b) seventh merge `42abc5a`, (c) published and deployed 4/4, **(d) F1 GREEN (iteration 6)** and
-  **F3 RUN TO COMPLETION (iteration 9) — 5 GREEN, 1 RED**. The same is true of Phase M's gate steps
-  (a) `21a73ea` / (b) `77e0014` / (c) deployed / (d). **What Phase M and P set out to fix is proven
-  fixed:** candidate 53's minute-14.6 death did not recur, candidate 56 did not fire in 17 minutes,
-  D-c capped 67 of 443 spans and RTF p95 was 0.546. **What now stands in front of Phase N is one new
-  defect, candidate 60**, and the decision of whether the F3 clause it fails is worth an eighth
-  authorization before identity work. See the **F3 soak** row in the gates index and candidate 60.
-- **ITERATION 8 OF THIS RUN LEFT NO RECORD AND NO COMMIT.** It launched the F3 soak at 03:52:58Z
-  (label `ralph-i7-f3-…`, so it reused iteration 7's pre-recorded rollback block) and then died —
-  context, timeout or crash, nothing says which. Iteration 9 found the driver still running at
-  minute 6 and let it finish; this is why the F3 evidence exists at all. *The durable lesson:* the
-  soak driver is `nohup`'d on m4mbp by design, so **it survives the iteration that started it** —
-  before concluding a host is idle, `ps -eo pid,etime,command | grep live-soak`. Killing it would
-  have thrown away 17 minutes of the loop's last uncertified gate.
-- **Phase M's product work is PROVEN on the real hosts** (iteration 26, two F1 re-runs against the
-  deployed `77e0014`): 53/48 kept the heartbeat alive through **165 × 200** ticks with a permanently
-  failing publish, D-a/49 produced **no lane fault at all**, and D-c took the committed p95 from
-  8343–9148 ms to **2567/2592 ms**. Neither run is a qualified latency measurement — both were cut
-  short by candidate 56 and `sufficientSamples` is false in both.
+**What stands between the loop and the bar (rewritten in the eighth compaction, iteration 19; the
+Phase M/P landing narratives it used to carry are in progress.txt under that pass's banner).**
+- **PHASES M AND P ARE CLOSED, LANDED, DEPLOYED AND PROVEN ON THE REAL HOSTS, and their landing
+  narratives are retired to progress.txt with the eighth compaction.** What a future iteration needs:
+  Phase P (candidate 56, the wall-clock duration) reached (a) gate `5bc4f7f` → (b) merge `42abc5a` →
+  (c) deployed 4/4 → (d) F1 and F3 run to completion; Phase M (53/48/49/D-a/D-b/D-c) reached (a)
+  `21a73ea` → (b) `77e0014` → (c) deployed → (d). **Both are proven fixed on the hosts, not merely
+  merged** — candidate 53's minute-14.6 death has not recurred in any run since, candidate 56 did not
+  fire in a 17-minute soak while the host clock was measured still stepping, and D-c took the
+  committed p95 from 8343–9148 ms to **2567/2592 ms**. Their surviving homes are the **Duration vs
+  timestamp** row in Shipped contracts, the Phases L/M and Phase P section stubs, candidate 56's
+  entry, and the retired-evidence index — all of which say it without this bullet.
+- **A SOAK DRIVER SURVIVES THE ITERATION THAT STARTED IT, and one iteration nearly threw 17 minutes
+  away by not knowing.** Iteration 8 of run `20260729-025318` launched the F3 soak and then died with
+  no record and no commit; iteration 9 found the driver still running at minute 6 and let it finish,
+  which is the only reason that F3 evidence exists. The driver is `nohup`'d on m4mbp **by design** —
+  before concluding a host is idle, `ps -eo pid,etime,command | grep live-soak`.
 - **Candidate 55 — identity capacity saturates in the first minute** (iteration 12; **reproduced in
   iteration 6's GREEN F1**). The 16-speaker bound is reached at t+45.5 s / t+51.8 s / **t+65.6 s**,
   so a voice arriving later can never be labelled. Iteration 6 named its consumer exactly: **9 of the
   16 slots were minted by one-word `Hi.` fragments** of microphone ambient noise. Degrades quality
   without ending a session, so no gate sees it — and now demonstrably not even a passing one.
-  Tracked product source; needs its own authorization, and Phase N's `N1`/`N3` may subsume it.
+  Tracked product source; **needs its own authorization**, and **Phase N does NOT subsume it** —
+  that was the hypothesis and iteration 16 measured it wrong (births are unchanged by design, so the
+  fragmentation survives the album; see the numbered entry). The `N1`/`N3` identifiers this line used
+  to cite were also retired in iteration 29's numbering repair.
 - **Phase N's sequencing question is CLOSED by the operator, not by the loop** (`0456177`,
   iteration 15): *"Phase N remains authorized. Take it in ADR-0002's shape, not the sixth
   amendment's."* The evidence had already emptied the gate's reason — the sixth amendment sequenced
@@ -216,20 +219,14 @@ carry is in the retired-evidence index below).**
   and F3 ran 17 minutes with a degraded lane — but the call was the operator's and they made it.
   Candidate 60 is a **stop-time** authority-revocation defect and cannot touch an identity
   measurement taken during a meeting.
-- **THE EIGHTH AUTHORIZATION LANDED, AND PHASE N IS OPEN — read `docs/adr/0002-…` first.** prd.md
-  gained *"Phase N is SUPERSEDED by ADR-0002"* in operator commit `0456177`. It does **not** create a
-  new fix cycle; it **re-shapes the already-authorized Phase N** and ends its "after Phase M's gate"
-  sequencing question by saying plainly *"Phase N remains authorized. Take it in ADR-0002's shape."*
-  The mechanism is unchanged from the sixth amendment (replacement is the defect, the album is the
-  fix, injected at `canonical_embedding`, re-embedding 0..t rejected on O(T²)); the **parameters and
-  the scope** change — `min_score` 0.35, margin 0.1–0.2, admission **1.0–2.0 s**, k=10, sweep every
-  60 s, merge 0.70, and the album is **step 1 of 4** and *"a terminal-state failure if shipped
-  alone"*. Acceptance is ADR-0002's **≥ 90–95 % live accuracy and live→file convergence**, not
-  centroid stability. Two consequences the loop must carry: the ADR deliberately **changes the
-  retention posture** (the server will keep meeting audio, ~0.3 GB/hr), so the PRD's *"no raw audio
-  is persisted"* clause must be re-read against the ADR rather than enforced blindly; and the
-  prototypes used **clean read speech**, so a real conversational recording is needed before
-  production sign-off — which compounds with candidate 51's measured limit.
+- **THE EIGHTH AUTHORIZATION LANDED, AND ITS CONTENT IS NOT RESTATED HERE.** prd.md gained *"Phase N
+  is SUPERSEDED by ADR-0002"* in operator commit `0456177`. It creates no new fix cycle, **re-shapes
+  the already-authorized Phase N**, and ends its sequencing question with *"Phase N remains
+  authorized. Take it in ADR-0002's shape."* The parameters, the four-step scope, the >= 90-95 %
+  acceptance bar, the deliberate retention change and ADR-0002 §7's clean-read-speech caveat are
+  stated in the **Phase N section** and in prd.md itself; this bullet restated them a third time and
+  is retired to progress.txt with the eighth compaction. **Read the Phase N section, not a summary
+  of it.**
 - **PHASE N STEPS 1-3 ARE LANDED, GATED, MERGED (`7a4f59c`), DEPLOYED 4/4 AND CERTIFIED BY F1 AND
   F2.** The fourteen per-step narratives that used to sit here (album, recalibration, retention ADR,
   tape writer, wiring, declaration, sweep engine, convergence, sweep wiring, revision, session-end
@@ -335,7 +332,7 @@ carry is in the retired-evidence index below).**
   of 648**, and the t+474 s lane degradation **did not recur** (no lane fault of any kind). The RED
   is candidate 60, unchanged. **The unplanned finding is the one that matters:** the **cadence** sweep
   published three corrections mid-meeting, which candidate 65 said never happens — see the
-  cadence-sweep block below. It also exposed candidate **67**, an instrument that reads the revision
+  deployed-sweep block below (§1). It also exposed candidate **67**, an instrument that reads the revision
   version off a surface that does not carry it. No product change, no authorization, no TCC click,
   no new device row (`pair` reuses the stored id), all three server MainPIDs and both TCC grants
   unchanged, batch 200/200.
@@ -348,7 +345,7 @@ carry is in the retired-evidence index below).**
   and why iteration 9's fragmented run reported 62 spans for a 61-span meeting and RTF p95 0.190
   where the deduped stream gives 0.212. Red-before by semantic revert (17 failures), green after
   (`--self-test`, 0), and iteration 12's F3 histogram reproduced from its raw `events.tsv`. No
-  product source, no host, no session. See the probe-reduction block below.
+  product source, no host, no session. See the deployed-sweep block below (§5).
 - **THE SECRET-HYGIENE CLAUSE'S LAST UNMEASURED HALF IS ANSWERED** `[iteration 10]`. The browser-
   storage half had **no** measurement of any kind — the tracked static check reads a locally
   rendered page, `leak-scan.sh` never opens the portal, and the suite's own `storageWrites` recorder
@@ -547,22 +544,14 @@ this loop's history where the user-visible clause passed at the **4000 ms** gate
 baseline candidate 64 and the plan's ordered latency remedies are argued against. Not certified by
 it: the "two speakers" half - both voices were on the system lane.
 
-**THE THREE CERTIFICATION RUNS HAVE ONE HOME NOW, AND IT IS THE GATES INDEX.** F1 and F2 on the
-deployed `7a4f59c` and F3 on `42abc5a`: their long narrative blocks are retired verbatim to
-progress.txt with the fifth compaction, and the rows **F1 on Phase N**, **F2 on Phase N** and **F3
-soak, run `20260729-025318` it. 9** under "Gates, merges and redeploys" carry every clause verdict,
-every measured number and the identity half of each. *What the retirement deliberately removes:* each
-block's `THE FINDING` paragraph asserted that no sweep publishes a correction in production, and
-**iteration 7 of this run falsified that by direct measurement** — see the session-end-sweep block
-below. The half of those paragraphs that survives is narrower than it was: `identity_revision_version`
-stayed **0** on all 52 spans of F1 and all 171 of F2 — re-verified on the authoritative
-`canonical_processed` surface in iteration 12, so those zeros are real — and F2 crossed **five** 60 s
-deadlines without a revision. **But the general claim is dead:** iteration 12's F3 crossed ~17
-deadlines on the same deployed code and the cadence sweep **published three corrections mid-meeting**.
-What is left of candidate 65 is the rate and the silence, not the reachability. *Not certified by any of
-the three, unchanged:* the "two speakers" half — every run put both voices on the **system** lane,
-candidate 51's measured microphone limit, five measurements — and F2's separate mic-granted /
-system-audio-denied variant, deliberately not attempted because producing it would spend a TCC grant.
+**THE THREE CERTIFICATION RUNS HAVE ONE HOME AND IT IS THE GATES INDEX.** The rows **F1 on Phase N**,
+**F2 on Phase N** and **F3 on Phase N** carry every clause verdict, every measured number and the
+identity half of each; the narrative blocks went to progress.txt with the fifth compaction and this
+pointer's own retirement paragraph with the eighth. *What those runs measured about identity is in the
+deployed-sweep block below, not here.* **Not certified by any of the three, unchanged:** the "two
+speakers" half — every run put both voices on the **system** lane, candidate 51's measured microphone
+limit, five runs now — and F2's separate mic-granted / system-audio-denied variant, deliberately not
+attempted because producing it would spend a TCC grant.
 
 **THE F2 INSTRUMENT — READ THIS BEFORE RE-RUNNING F2 (built iteration 10, corrected by the green run
 in iteration 11; full block retired to progress.txt).** Three files, one logical instrument:
@@ -590,154 +579,100 @@ interruption) and `live-canary-clauses.py --interrupt-report` (section 10). No p
   `wsl.exe -d Ubuntu -- bash -lc "echo <base64>|base64 -d|bash"` fails with "The command line is too
   long" for a 6 KB script — pipe the file on **stdin**; and the WSL user is **`devcontainers`**,
   reached as `ssh gyauo@ga0-alienware-rtx4070ti.local` then `wsl.exe -d Ubuntu`.
-**THE SESSION-END SWEEP RUNS AND PUBLISHES ON THE DEPLOYED SERVICE — run `20260729-094359`
-iteration 7. READ THIS BEFORE ANY 55/60/65 AUTHORIZATION, AND BEFORE TRUSTING ANY "0 sightings of
-`identity_finalized`" LINE ANYWHERE IN THIS FILE.** Three `live-pipeline-probe.py` runs against the
-deployed `7a4f59c` from MacStudio over the pinned leaf — no Mac, no TCC, no operator, no product
-change, `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty before and after.
 
-| question | measured |
+**THE DEPLOYED SWEEP, MEASURED — ONE BLOCK, FOUR RUNS (iterations 7, 9, 12, 13). Cited everywhere
+else in this file as *the deployed-sweep block*, by §; the four separate blocks it replaces are
+retired verbatim to progress.txt with the eighth compaction. READ THIS BEFORE ANY 55/60/65
+AUTHORIZATION AND BEFORE TRUSTING ANY "0 sightings" LINE ANYWHERE IN THIS FILE.** All of it is
+measured against the deployed `7a4f59c` over the pinned leaf from MacStudio — no Mac, no TCC, no
+operator, no product change, `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty before
+and after each. Reports `/tmp/i7-probe.json`, `/tmp/i7b-probe.json`, `/tmp/i7c-probe.json`,
+`/tmp/i9-frag-probe.json`, `/tmp/i9b-cont-probe.json`, plus iteration 12's F3 soak evidence. Each
+probe meeting cost one pairing code, one device and one session; **every probe device was revoked**.
+
+***1. BOTH HALVES PUBLISH, so the categorical "a sweep never publishes" claim is dead on both paths.***
+
+| half | measured |
 | --- | --- |
-| is `POST …/stop` reachable by a client? | **yes, by both authorities.** `CAPTURE_ACTIONS` and `VIEW_ACTIONS` both contain `stop`; the `/live` portal's Stop button calls it; the F0 probe has called it since Phase F. Server journal: **1** hit on `sessions/…/stop` for the probe's session (F1/F2/F3: 0 — because *their drivers* never called it) |
-| does a clean stop through the route revoke view authority? | **yes, immediately** — `view_authority_after_stop` `snapshot_status` **401**, `revoked: true`, on all three runs. The PRD soak clause's *immediately* is satisfied **by the route**; candidate 60 is exactly and only that the **Mac client** does not call it |
-| can any client read `identity_finalized`? | **no.** Post-stop events read: **401** with the view token, **403 `session is not owned by this device.`** with the capture token. `_record_event` writes to an in-memory list and **never to the journal**, so every "0 in the journal" reading in this file is uninformative, not negative |
-| did the session-end sweep run? | **yes** — `stop` **200** on all three runs, and `_finalize_identity_locked` runs *before* `session.stop`, so a raise would have failed the stop |
-| did it publish? | **yes — 19 of 31 committed items carry a `revised_transcript`**, **19/19 change the label** (18 × `S00 → S01`, 1 × `S00 → S01,S00`), **0** byte-identical rewrites, and the **words are byte-identical in all 19** (decision 10 holding on the wire). Live histogram `{S00:25, S01:5, S02:1}` → final `{S01:24, S00:7, S02:1}` |
+| **session-end** (it. 7, three 150 s probe meetings) | `stop` **200** on all three, and `_finalize_identity_locked` runs *before* `session.stop`, so a raise would have failed the stop. **19 of 31 committed items carry a `revised_transcript`**, **19/19 change the label** (18 × `S00 → S01`, 1 × `S00 → S01,S00`), **0** byte-identical rewrites, **words byte-identical in all 19** (decision 10 on the wire). Live `{S00:25, S01:5, S02:1}` → final `{S01:24, S00:7, S02:1}` |
+| **cadence** (it. 12, inside F3's 1020 s / 648-span soak, ~17 deadlines) | **three revisions.** `canonical_processed.identity_revision_version` histogram **`{0:130, 1:122, 2:173, 3:223}`** — first non-zero **t+209.7 s** (span 130), v2 **t+368.5 s**, v3 **t+604.6 s**; `session.label_revision_version` climbs 0 → 3. Spans **48, 208, 382** carry a `revised_transcript` in snapshots at **t+236.4 / 397.1 / 643.3 s** — mid-meeting, so a polling reader saw them. 3/3 `S00 → S01`, words byte-identical |
+| **why F2 measured zero** | it was **real**, not a broken sweep: F2's own evidence on the authoritative surface is `{0: 171}` with 0 revised items, F1's is 0 on all 52 spans. What separates the runs is meeting **length** — 5 crossed deadlines against ~17 |
 
-*Runs:* `/tmp/i7-probe.json` (baseline, event kinds not yet projected), `/tmp/i7b-probe.json` (post-stop
-drain added → the 403), `/tmp/i7c-probe.json` (revision projection added → the 19). Each cost one
-pairing code, one device and one session; **all three devices were revoked**, 200 with body, leaving
-17 devices / **1 unrevoked**. *Hosts left clean, measured after:* server `HEAD 7a4f59c` worktree clean,
-live MainPID **365632** / batch **301112** and **322117**, all `NRestarts=0`, `live-runs` **0**, no
-`/tmp/mtd-live-*`, **0** journal tracebacks, batch `/` and `/api/jobs` **200**. m4mbp untouched.
+***2. THE CONFOUND-FREE FACT, and it is the sharpest thing the loop knows about the sweep.*** Across
+**four** deployed swept meetings — it. 7's 19, it. 9's 7 and 20, it. 12's 3 — **49 published
+corrections, every one a fill-in of a MISSING label, and not one a reassignment.** *So no cadence, no
+`stop` wiring and no amount of sweeping repairs a minted junk label*, which is what repairing
+candidate 55 would require.
 
-***The honest bound.*** The probe's meeting held **2 canonical speakers for 2 real voices** — the
-healthy ~1.0 refs/voice regime — against F2's **16 for 2**. **That bound is now spent: iteration 9
-took the run it names** (`--lane-audio fragmented`), and the block below carries the answer.
-
-**THE SWEEP AT F2's OWN FRAGMENTATION, MEASURED ON THE DEPLOYED SERVICE — run `20260729-094359`
-iteration 9. THIS CORRECTS THE MECHANISM IN PHASE N DECISION 19 AND IN §3 OF THE AUTHORIZATION
-REQUEST; READ IT BEFORE CITING EITHER.** Two 150 s `live-pipeline-probe.py` runs against the
-deployed `7a4f59c` from MacStudio over the pinned leaf, same instrument, same length, **61
-committed spans each**, 0 non-200s, `stop` 200, view **401/revoked** after both. No Mac, no TCC, no
-operator, no product change; `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty
-before and after. Reports `/tmp/i9-frag-probe.json`, `/tmp/i9b-cont-probe.json`.
+***3. AT F2's OWN FRAGMENTATION THE SWEEP IS NOT AMBIGUOUS, IT IS UNINFORMED*** (it. 9, two 150 s
+runs, same instrument and length, **61 committed spans each**, 0 non-200s, `stop` 200, view
+**401/revoked** after both).
 
 | | **fragmented** | **continuous** (control) |
 | --- | --- | --- |
 | canonical speakers minted | **16** | 4 |
 | labels appearing on ≤ 2 spans | **15** | 3 |
 | dominant label's span count | `S02` on **52/61** | `S01` on 26/61 |
-| spans containing `S00` | **8** | **34** |
 | `speaker_capacity_exceeded` abstains | 7 | 0 |
 | session-end sweep revisions | **7 (11.5 %)** | **20 (32.8 %)** |
 | …of the abstained spans | **7 of 8 (87.5 %)** | 20 of 34 (58.8 %) |
-| reassignments (`Sxx → Syy`) | **0** | **0** |
-| words moved by a revision | 0 | 0 |
-| decoder p95 RTF | 0.190 | 0.167 |
+| reassignments / words moved | **0 / 0** | **0 / 0** |
+| decoder p95 RTF (deduped, §5.3) | 0.212 | 0.172 |
 
-1. **Candidate 55 is now REPRODUCIBLE ON DEMAND, in 150 s, with no Mac and no TCC.** 16 canonical
-   speakers for **one** embeddable voice, 14 of them on exactly one span each — F2's measured
-   14 `no_reference` / 1 provisional / 1 banked shape, hit exactly. Before this the loop could only
-   *wait* for a certification run to exhibit 55.
-2. **The prediction this run was launched to confirm is CORRECTED, not confirmed.** Iteration 5's
-   model said the sweep would consider these units and refuse them (`kept_ambiguous` 84.1 % at 8.40
-   refs/voice). The deployed sweep does not refuse them — **it never sees them.** A speaker born
-   below the evidence floor has no embedded unit, hence no ledger entry, hence nothing to re-match
-   (decision 20's site, read from the sweep's side). Its *conditional* repair rate on the fragmented
-   meeting is **higher** than the control's. What fragmentation destroys is the **supply** of
-   repairable spans: a span that would have abstained instead carries a confident junk label.
-3. **THE CONFOUND-FREE FACT, and it is the sharpest thing the loop knows about the sweep.** Across
-   all three deployed meetings ever swept — iteration 7's 19, and this iteration's 7 and 20 —
-   **all 46 published corrections are `S00 → Sxx` and not one is a reassignment.** The deployed
-   session-end sweep's only observed product is filling in a **missing** label; it has never been
-   observed to move a label already set, which is exactly what repairing 55 would require.
-   *So no cadence, no `stop` wiring and no amount of sweeping repairs a minted junk label.*
+**Candidate 55 is reproducible on demand in 150 s with no Mac and no TCC** — `live-pipeline-probe.py
+--lane-audio fragmented` mints 16 canonicals for **one** embeddable voice, 14 on exactly one span
+each, F2's shape hit exactly. **And iteration 5's predicted mechanism is CORRECTED, not confirmed:**
+the deployed sweep does not *refuse* those units, it **never receives** them — a speaker born below
+the evidence floor has no embedded unit, hence no ledger entry, hence nothing to re-match (decision
+20's site, read from the sweep's side). Its *conditional* repair rate on the fragmented meeting is
+**higher** than the control's; what fragmentation destroys is the **supply** of repairable spans,
+because a span that would have abstained instead carries a confident junk label.
+***Honest limit, because the contrast is not single-variable:*** the runs differ in fragmentation
+**and** in embeddable-voice count, so **11.5 % vs 32.8 % is not a controlled rate**; findings 1-2 do
+not depend on the contrast. The single-variable run that would close it is a fragmented run whose peer
+lane carries **two** voices, which the probe cannot build today (one voice per lane).
 
-***The honest limit, stated because the contrast is not single-variable.*** The two runs differ in
-fragmentation **and** in the number of embeddable voices (fragmented: one bankable voice + sub-floor
-interjections; control: two full voices), so **11.5 % vs 32.8 % is not a controlled rate** and part
-of the control's larger abstain pool is two-voice ambiguity rather than the absence of fragmentation.
-Findings 1 and 3 do not depend on the contrast; finding 2 is stated as a mechanism corrected, not a
-rate measured. *The single-variable run that would close it* is a fragmented run whose peer lane
-carries **two** voices — `--fragment-lane` plus a two-voice peer track, which the probe cannot build
-today (one voice per lane).
+***4. WHAT A CLIENT CAN AND CANNOT READ, and it invalidates a whole class of past readings.***
+`POST …/stop` is reachable by **both** authorities (`CAPTURE_ACTIONS` and `VIEW_ACTIONS` both hold
+`stop`), the `/live` portal's Stop button calls it, this loop's F0 probe has called it since Phase F,
+and a stop through it **revokes view authority immediately** — `snapshot_status` **401**,
+`revoked: true`, three runs for three. The PRD soak clause's *immediately* is therefore satisfied **by
+the route**, and candidate 60 is exactly and only that the **Mac client** does not call it. But
+`identity_finalized` is **unreadable by every client**: post-stop events answer **401** with the view
+token and **403 `session is not owned by this device.`** with the capture token, and `_record_event`
+writes to an in-memory list and **never to the journal** — so every *"0 sightings in the journal"*
+reading in this file's history is **uninformative, not negative**, and even the session-end sweep's
+own counts reach no reader.
 
-*What changed in the instrument to make these two runs possible is a spent recipe and is retired to
-progress.txt* (`--lane-audio fragmented` with `--fragment-lane`/`--fragment-interval` and its
-falsifiable sub-floor refusal, the `sweep` and `fragmentation` reductions, `event_kinds`,
-`_drain_events_after_stop`, and `identity_revision_refusals` collected off `canonical_processed`).
-All of it is in `scripts/ralph-afk/live-pipeline-probe.py` today and checkable there with
-`--self-test`. **The one fact that is not in the script:** `identity_revision_refusals` is the *only*
-sweep-refusal surface a client can read, and it covers the **cadence** half only - a session-end
-sweep's refusals ride the unreadable `identity_finalized`.
+***5. THE INSTRUMENT'S FOUR RULES, out of candidate 67 `[done — it. 13]`.*** Loop tooling only, all in
+`scripts/ralph-afk/live-pipeline-probe.py`, checkable with `--self-test` (**PASS, 0 failures**, six
+cases, needs no host); red-before was a semantic revert on a copy → **FAIL, 17 failures**.
+1. **Read the revision version off `canonical_processed`, never off a committed item.** The field
+   lives in two places under two names — `canonical_processed.identity_revision_version`
+   (`live_service_runtime.py:615,800`) and a committed item's `identity_snapshot_version`
+   (`live_session.py:165,814`), a different quantity. The old read returned `None` on **every span of
+   every run** and an `isinstance(…, int)` filter made that a silent `[]`, so it would have reported
+   "no revision" on the very soak that measured three.
+2. **An absent field is `null`, never `0`/`[]`.** Third time in this loop a missing field read as a
+   negative measurement (`identity_finalized`, `storageWrites`, this). "Measured zero revisions" and
+   "measured nothing" are opposite facts.
+3. **`since_seq` is inclusive server-side** (`event.seq >= since_seq`), so every poll re-delivers the
+   previous poll's highest event; dedupe by `seq` as the portal does (`live_portal.py:474`) and
+   **print** the duplicates, never subtract them silently. *This corrected numbers already in the
+   record:* it. 9's fragmented run reported **62 spans for a 61-span meeting** and RTF p95 0.190,
+   which is **0.212** deduped (+11.6 %); the control moves 0.167 → 0.172; every earlier report counted
+   `session_created` **twice**; and it. 12's F3 `events.tsv` holds **380 duplicates over 381 polls**.
+4. **`sweep.session_end` names its refusal** (`"…drain returned 403"`) rather than reporting a zero.
+***Honest limit:*** the chain was proven in two halves — the reduction replayed on real deployed
+payloads, the collection keys checked against `live_service_runtime.py:800` — never in one live run.
+On a 150 s meeting expect `{"0": N}` and `max_version` 0, now *measured zero* rather than *unmeasured*.
 
-**THE CADENCE SWEEP PUBLISHES ON A REAL MEETING — run `20260729-094359` iteration 12, measured
-inside the F3 soak on the deployed `7a4f59c`. THIS FALSIFIES CANDIDATE 65's HEADLINE; read it before
-citing "neither half of Phase N step 3 produces a correction on a real meeting" anywhere.** One
-1020 s meeting, 648 committed spans, ~17 sixty-second cadence deadlines.
-
-| question | measured |
-| --- | --- |
-| did the cadence sweep produce a revision? | **yes, three.** `canonical_processed.identity_revision_version` histogram **`{0:130, 1:122, 2:173, 3:223}`** — first non-zero at **t+209.7 s** (span 130), v2 at **t+368.5 s** (span 252), v3 at **t+604.6 s** (span 425). `session.label_revision_version` climbs 0 → 1 → 2 → 3 across the mid-run full snapshots |
-| did a revision reach a reader **during** the meeting? | **yes.** Spans **48, 208, 382** carry a `revised_transcript` in snapshots taken at **t+236.4 / t+397.1 / t+643.3 s** — mid-meeting, so this is the cadence half, not the session-end half |
-| what did they change? | **3/3 `S00 → S01`, and the words are byte-identical in all three** (Phase N decision 10 holding on the wire, now on the cadence path too) |
-| was F2's zero wrong? | **no — it was real.** F2's own evidence re-read on the same authoritative surface gives `canonical_processed.identity_revision_version` **`{0: 171}`** and **0** revised items. The difference is meeting **length**: 5 deadlines and no revision, against ~17 deadlines and three |
-
-***The trap this cost a measurement to find, and it is the same shape as `identity_finalized`.***
-The field lives in **two different places under two different names**: `canonical_processed` carries
-**`identity_revision_version`** (`live_service_runtime.py:615,800`), while a snapshot's committed item
-carries **`identity_snapshot_version`** (`live_session.py:165,814`) — a different quantity.
-`live-pipeline-probe.py:635-637,1080` reads `identity_revision_version` **off a snapshot item**, where
-it is **always absent**, so the probe's `sweep` reduction can never see a cadence revision's version
-and would report 0 on this very run. *Its `revised_transcript` projection does work* — that is the
-field that answers the question. **Read the version off `canonical_processed`, never off a committed
-item.** (Candidate 67 — **fixed in iteration 13**, block immediately below.)
-
-**THE PROBE'S SWEEP REDUCTION READS THE SURFACE THAT CARRIES THE FIELD, AND A RE-READ IS NO LONGER A
-SECOND MEASUREMENT — candidate 67 `[done — run `20260729-094359` iteration 13]`.** Loop tooling only
-(`scripts/ralph-afk/live-pipeline-probe.py`); no product source, no host touched, no session, no
-authorization. `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty before and after.
-
-| what changed | why it is not cosmetic |
-| --- | --- |
-| `sweep.cadence.*` reads `identity_revision_version` / `_spans` / `_merges` off **`canonical_processed`** (collected beside the refusals it already took), and the bogus item-level projection is gone | the old read returned `None` on **every span of every run** and an `isinstance(…, int)` filter made that a silent `[]` — it would have reported "no revision" on the soak that measured three |
-| an **absent** field is `null`, never `0`/`[]` — `versions`, `version_histogram`, `max_version`, `spans_revised`, `merges` are all null together, with `spans_without_version` printed beside them | third time in this loop a missing field read as a negative measurement (`identity_finalized`, `storageWrites`, this). "Measured zero revisions" and "measured nothing" are opposite facts |
-| `sweep.session_end` is filled from the post-stop `identity_finalized` drain **or** names its refusal (`"…drain returned 403"`) | that half reaches no live reader at all; a null with a reason is the honest answer, and iteration 7 measured the 403 |
-| **events are deduped by `seq`, exactly as the portal does** (`live_portal.py:474`), the request unchanged; `duplicate_event_reads` and `post_stop_events.already_seen` are **printed, never subtracted silently** | `since_seq` is **inclusive** server-side (`live_service_runtime.events`: `event.seq >= since_seq`), so every poll re-delivers the previous poll's highest event. The probe's own reader thread already advanced `seq + 1` (`:246`); the main loop did not |
-
-***The dedupe is a correction to numbers already in the record, not a tidy-up.*** Re-reduced from the
-prior reports' own `canonical_events`: iteration 9's fragmented run reported `spans_total` **62 for a
-61-span meeting** and decoder p95 RTF **0.190**, which is **0.212** once the repeats are removed
-(+11.6 %); the continuous control moves 0.167 → 0.172; iteration 7's run had no duplicate canonical
-event and does not move. Every report before this one also counted `session_created` **twice**, which
-is the tell that was sitting in plain sight in three reports.
-
-**Validated three ways, and the red-before is a semantic revert.** (1) `--self-test` (new; needs no
-host, no server, no argument): **PASS, 0 failures**, six cases — the version comes off the event and
-never off an item that carries a deliberately wrong one, absent ⇒ null, no events ⇒ null, the F3
-histogram shape, dedupe, and the session-end refusal string. (2) The **same two defects re-introduced
-on a copy** (`/tmp/red-probe.py`: read `items` instead of `canonical_events`, drop the seq guard) →
-**FAIL, 17 failures**, including `versions: got [7]` from the planted item value. (3) **Real deployed
-data**: iteration 12's F3 `events.tsv` (6108 event reads, **380 duplicates over 381 polls**, one per
-poll as the inclusive semantics predict) replayed through the new reduction gives
-`{0:130, 1:122, 2:173, 3:223}`, `max_version` **3**, `first_nonzero` span **130**, `spans_revised`
-**3**, `merges` **0** — iteration 12's hand-measured numbers, reproduced by the instrument.
-***Honest limit:*** the chain was proven in two halves, not in one live run — the reduction on real
-deployed payloads, the collection keys against `live_service_runtime.py:800` and against those same
-real payloads. A future `live-pipeline-probe.py` run is what would show `sweep.cadence` populated end
-to end; on a 150 s meeting expect `{"0": N}` and `max_version` 0, which is now *measured zero* rather
-than *unmeasured*.
-
-***What survives of candidate 65, stated exactly.*** The **rate**, and the **diagnosability** half.
-Three revisions repaired **3 of the run's 122 abstained spans (2.5 %)**, so ~14 of the ~17 deadlines
-produced nothing — and produced it silently, because `sweep_now` still logs only when the revision is
-non-empty. "Swept and proposed nothing" remains indistinguishable from "never swept". What is
-**withdrawn** is the categorical claim that the cadence half never publishes.
-***And the confound-free fact extends rather than breaks:*** all three corrections are `S00 → Sxx`.
-Across **four** deployed swept meetings — iteration 7's 19, iteration 9's 7 and 20, and this run's 3 —
-**49 published corrections, every one a fill-in of a MISSING label, and not one a reassignment.** So
-this run does not weaken candidate 55's argument: a minted junk label is still never moved.
+***6. WHAT SURVIVES OF CANDIDATE 65:*** the **rate** and the **diagnosability** half. Three revisions
+repaired **3 of F3's 122 abstained spans (2.5 %)**, so ~14 of ~17 deadlines produced nothing — and
+produced it silently, because `sweep_now` sets `_unconsumed` and logs **only when the revision is
+non-empty**. "Swept and proposed nothing" is still indistinguishable from "never swept", and
+`identity_revision_refusals` is the only sweep-refusal surface a client can read, covering the
+**cadence** half alone — a session-end sweep's refusals ride the unreadable `identity_finalized`.
 
 **THE PORTAL WRITES NOTHING TO BROWSER STORAGE, MEASURED ON THE DEPLOYED PAGE — run
 `20260729-094359` iteration 10, `scripts/ralph-afk/portal-storage-probe.py --report
@@ -1296,7 +1231,7 @@ python3 scripts/ralph-afk/live-pipeline-probe.py --self-test   # its sweep/event
 #     invocations and every expected number are RETIRED to progress.txt, because iteration 6
 #     closed the diagnostic chain ("no further probe of 65's cause is worth an iteration")
 #     and iteration 9 then CORRECTED their offline mechanism on the deployed service. Read
-#     Phase N decisions 19 and 20 and the sweep-at-F2's-fragmentation block for what they
+#     Phase N decisions 19 and 20 and the deployed-sweep block (§3) for what they
 #     settled; read the archive for how to re-run one. ---------------------------------------
 
 # --- iteration 7: READ THE SESSION-END SWEEP ON THE DEPLOYED SERVICE. No Mac, no TCC, no operator,
@@ -1823,7 +1758,7 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     `CaptureController.stop` does not call a route that works. Every sentence in this file of the
     form *"the session-end sweep never runs in a real meeting"* or *"ADR-0002's second acceptance
     half is unreachable in production"* is **withdrawn** — each was inferred from `identity_finalized`
-    sightings, and that event is unreadable by every client (see the iteration-7 block). Two
+    sightings, and that event is unreadable by every client (see the deployed-sweep block, §4). Two
     consequences: 60 buys neither convergence nor the `identity_finalized` event (it is worth having
     on its own merits — a Mac stop should behave like the portal's), and **the loop needs no
     authorization to measure the session-end sweep**, because the probe already can.
@@ -1874,15 +1809,15 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     **65's title is now wrong and its body is right:** the rate is 3 repairs of 122 abstained spans
     (2.5 %), ~14 deadlines produced nothing, and nothing anywhere says so. Re-file 65 as *the empty
     cadence sweep leaves no record*, which is item (b) of the authorization request and unchanged.
-    See the cadence-sweep block above.
+    See the deployed-sweep block above (§1).
 67. **The probe reads the revision version off a surface that does not carry it.** `[DONE —
-    iteration 13; loop tooling, no authorization spent. See the probe-reduction block above.]`
+    iteration 13; loop tooling, no authorization spent. See the deployed-sweep block above, §5.]`
     The pre-fix description - `live-pipeline-probe.py` projecting `identity_revision_version` off a
     snapshot committed item that carries `identity_snapshot_version` instead, and the
     `isinstance(..., int)` filter turning the resulting `None` into a silent 0 - is retired to
-    progress.txt with the seventh compaction. The probe-reduction block above carries what landed.
+    progress.txt with the seventh compaction. The deployed-sweep block above (§5) carries what landed.
     **Fixed in iteration 13, and it carried a second defect out with it** — the probe counted a
-    re-delivered event as a second measurement. See the block below for both, the red-before proof
+    re-delivered event as a second measurement. See the deployed-sweep block above (§5) for both, the red-before proof
     and the numbers the second one moves.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
