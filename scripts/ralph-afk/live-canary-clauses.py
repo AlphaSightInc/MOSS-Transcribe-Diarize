@@ -12,8 +12,13 @@ This reducer answers the clauses that decide a certification run:
     the probe disqualifies (too few committed advances, no mixer origin, no number at all) is
     UNDECIDED, never RED: "the gate was missed" and "the run cannot answer the gate" are
     different verdicts and must not share a word (candidate 57);
-  * decoder p95 RTF, and - since candidate 50 / D-c - the token cap actually in force and how
-    many spans hit it;
+  * decoder p95 RTF - since Q2 / candidate 64 the clause has a DEFINITION rather than a filter:
+    the p95 is taken over spans at or above a derived meaningfulness floor, the excluded count
+    and their RTF range are printed IN THE VERDICT SENTENCE so an exclusion can never be silent,
+    and AGGREGATE RTF over every span (nothing excluded) is gated beside it. A run whose spans
+    are so short that the floor would remove more than a twentieth of them is UNDECIDED, never
+    green. See the RTF_FLOOR_SEC block below and `rtf-floor-probe.py`;
+  * and - since candidate 50 / D-c - the token cap actually in force and how many spans hit it;
   * per-span COMMIT LAG measured off the event stream, which is what showed that F1's latency
     tail was two runaway spans stalling a serial queue rather than a floor;
   * accepted / accounted / committed equality and published-vs-accepted frames (zero loss, zero
@@ -51,6 +56,52 @@ from collections import Counter
 SAMPLE_RATE = 16000        # canonical live sample rate  (domain contract)
 FRAME_SAMPLES = 8000       # live frame size, 0.5 s      (domain contract)
 VIEW_CLAUSE_AGE = 900.0    # the RETIRED fixed expiry; the clause is "still works after it"
+
+# --------------------------------------------------------------------------------------------
+# Q2 / candidate 64 - the DEFINITION of the decoder-RTF clause, not a filter on it.
+#
+# RTF = decode_elapsed / span_duration, and decode_elapsed = C + (audio-proportional work), where
+# C is the fixed per-request cost of asking the decoder anything at all. For a span shorter than
+# C the ratio is forced above 1 by arithmetic alone, however fast the decoder is: it is measuring
+# the span's length, not the decoder.
+#
+# DERIVED, not chosen - `rtf-floor-probe.py` reproduces every number from five real certification
+# directories (1361 spans, two builds):
+#   * fastest decode ever observed          0.0564 s  -> the arithmetic floor
+#   * ALL 15 spans shorter than 0.130 s read RTF >= 1; the first span that ever read RTF < 1 is
+#     0.130 s long                                    -> the EMPIRICAL discrimination boundary
+#   * robust fit elapsed = 0.083 + 0.089 * duration   -> overhead is the MAJORITY term below
+#     0.93 s, so this floor sits far on the conservative side of the amendment's own parenthetical
+#   * every floor from 0.06 s to 0.93 s gives the SAME verdict on all five runs, so the value is
+#     not load-bearing
+#
+# WHICH READING GOVERNS, stated because "conservative" alone is ambiguous here. The floor is the
+# EMPIRICAL discrimination boundary. Conservatism chose that reading over the domination point the
+# amendment's parenthetical would have allowed - 0.13 s against 0.93 s, 7.2x fewer exclusions - and
+# that is the whole of its work. It is NOT a licence to sit below the boundary: a floor of 0.06 s
+# would leave in the 0.111 s and 0.120 s spans that also never discriminated, which under-applies
+# the definition rather than applying it carefully. `rtf-floor-probe.py` fences both directions and
+# only 0.12-0.13 passes all nine of its checks.
+#
+# The exclusion is never silent: the verdict string itself carries the excluded count and their
+# RTF range, and AGGREGATE RTF (total decode seconds / total audio seconds over EVERY span,
+# nothing excluded) is gated beside it - the throughput claim no exclusion can touch.
+RTF_FLOOR_SEC = 0.13
+
+# The guard on the gated statistic is a SAMPLE SIZE, not an exclusion share.
+#
+# A share cap was written first and removed: it made F1 it.30 UNDECIDED at 3 excluded spans of 52
+# (5.8%), and that run has 49 gated spans and plainly CAN answer the clause - the same
+# "a verdict word must name the thing it decides" defect candidate 57 fixed. Nor is a share the
+# hazard: a meeting with many brief utterances is a legitimate meeting, every excluded span's
+# decode cost is still charged in full to the AGGREGATE RTF below, and the excluded count travels
+# inside the verdict sentence, so an exclusion can neither hide nor launder anything.
+#
+# What a share cap was reaching for is real but is a question about the surviving population:
+# a nearest-rank p95 needs the top 5% to be at least one whole observation, so below n=20 the
+# "p95" IS the maximum wearing a percentile's name. That is derived from the estimator, not
+# chosen, and it moves no run in the corpus (the smallest gated population measured is 46).
+RTF_MIN_GATED_SPANS = 20
 
 
 def pct(values, p):
@@ -110,6 +161,12 @@ def main():
                     help="PRD gate for this run: 4000 for the 60 s canary, 6000 for the 300 s "
                          "certification and the soak")
     ap.add_argument("--rtf-gate", type=float, default=1.0)
+    ap.add_argument("--rtf-floor-sec", type=float, default=RTF_FLOOR_SEC,
+                    help="Q2 / candidate 64: the span duration below which RTF is not a meaningful "
+                         "ratio (fixed per-request decode cost dominates). DERIVED - see the "
+                         "RTF_FLOOR_SEC block and rtf-floor-probe.py. Overriding it is a "
+                         "sensitivity experiment, not a way to move a verdict: the excluded count "
+                         "is printed in the verdict sentence at every value.")
     ap.add_argument("--interrupt-report",
                     help="F2 only: the JSON written by live-cert-interrupt.sh on the server. "
                          "Without it the 5 s network-interruption clause is not asserted at all; "
@@ -310,6 +367,8 @@ def main():
         # -------------------------------------- 5. decoder, and D-c's token cap
         seen = set()
         rtf, elapsed, caps, capped, notable = [], [], [], 0, []
+        rtf_long, rtf_short, rtf_nodur = [], [], []   # Q2: at/above the floor, below it, unknown
+        audio_sec = 0.0
         per_span_decode = {}
         for t, code, body in ev_rows:
             if code != "200":
@@ -329,6 +388,18 @@ def main():
                 if e["kind"] == "canonical_processed":
                     if p.get("canonical_decode_rtf") is not None:
                         rtf.append(p["canonical_decode_rtf"])
+                        # Q2: classify by the span's OWN measured duration. The event carries it;
+                        # never infer it from elapsed/rtf, which would make the classification a
+                        # function of the number being classified.
+                        dur = p.get("frozen_span_duration_sec")
+                        if dur is None:
+                            rtf_nodur.append(p["canonical_decode_rtf"])
+                        elif dur >= args.rtf_floor_sec:
+                            rtf_long.append(p["canonical_decode_rtf"])
+                            audio_sec += dur
+                        else:
+                            rtf_short.append((p["canonical_decode_rtf"], dur))
+                            audio_sec += dur
                     if p.get("canonical_decode_elapsed_sec") is not None:
                         elapsed.append(p["canonical_decode_elapsed_sec"])
                         per_span_decode[span] = (p.get("canonical_decode_elapsed_sec"),
@@ -350,12 +421,53 @@ def main():
                     notable.append((e["kind"], json.dumps(p)[:200]))
         print(f"\n-- 5. decoder ({len(seen)} unique events) --")
         if rtf:
-            p95 = pct(rtf, 95)
-            ok = p95 < args.rtf_gate
-            (green if ok else red).append(f"decoder p95 RTF {p95:.3f} < {args.rtf_gate}")
+            floor = args.rtf_floor_sec
+            gated = rtf_long + rtf_nodur       # unclassifiable spans stay IN - never drop what
+            excluded = len(rtf_short)          # cannot be classified, only what is defined out
+            # The exclusion is part of the verdict SENTENCE, so a quoted verdict carries it.
+            excl_note = (f" [excluded {excluded} of {len(rtf)} spans shorter than {floor:g}s "
+                         f"({100 * excluded / len(rtf):.1f}%), "
+                         f"their RTF {min(r for r, _ in rtf_short):.3f}-"
+                         f"{max(r for r, _ in rtf_short):.3f}]" if excluded else
+                         f" [no span shorter than {floor:g}s; nothing excluded]")
+            if rtf_nodur:
+                excl_note += (f" [{len(rtf_nodur)} spans carry no frozen_span_duration_sec and are "
+                              f"COUNTED, not excluded]")
             print(f"   rtf n={len(rtf)} min={min(rtf):.3f} p50={statistics.median(rtf):.3f} "
-                  f"p95={p95:.3f} max={max(rtf):.3f}   "
-                  f"{'GREEN' if ok else 'RED'} vs < {args.rtf_gate}")
+                  f"p95(all)={pct(rtf, 95):.3f} max={max(rtf):.3f}   (unfiltered, for the record)")
+            if not gated:
+                undecided.append(f"decoder p95 RTF: every span is shorter than the {floor:g}s "
+                                 f"meaningfulness floor, so the ratio has nothing to measure"
+                                 + excl_note)
+                print(f"   ALL {len(rtf)} spans below the floor - UNDECIDED{excl_note}")
+            elif len(gated) < RTF_MIN_GATED_SPANS:
+                undecided.append(f"decoder p95 RTF: only {len(gated)} spans reach the {floor:g}s "
+                                 f"floor, below the {RTF_MIN_GATED_SPANS} a nearest-rank p95 needs "
+                                 f"to be anything but the maximum" + excl_note)
+                print(f"   only {len(gated)} gated spans < {RTF_MIN_GATED_SPANS} - "
+                      f"UNDECIDED{excl_note}")
+            else:
+                p95 = pct(gated, 95)
+                ok = p95 < args.rtf_gate
+                (green if ok else red).append(
+                    f"decoder p95 RTF {p95:.3f} < {args.rtf_gate} over {len(gated)} spans "
+                    f">= {floor:g}s" + excl_note)
+                print(f"   GATED p95={p95:.3f} over n={len(gated)} spans >= {floor:g}s   "
+                      f"{'GREEN' if ok else 'RED'} vs < {args.rtf_gate}{excl_note}")
+            # The throughput claim no exclusion can touch: EVERY span's decode seconds over EVERY
+            # span's audio seconds. A floor that hid a real backlog would show up here.
+            if audio_sec > 0:
+                agg = sum(elapsed) / audio_sec
+                ok = agg < args.rtf_gate
+                (green if ok else red).append(
+                    f"aggregate decode RTF {agg:.3f} < {args.rtf_gate} over ALL {len(rtf)} spans "
+                    f"({sum(elapsed):.1f}s decode / {audio_sec:.1f}s audio, nothing excluded)")
+                print(f"   AGGREGATE RTF={agg:.3f} = {sum(elapsed):.1f}s decode / {audio_sec:.1f}s "
+                      f"audio over all {len(rtf)} spans   "
+                      f"{'GREEN' if ok else 'RED'} vs < {args.rtf_gate}")
+            else:
+                undecided.append("aggregate decode RTF: no span carried frozen_span_duration_sec")
+                print("   AGGREGATE RTF - no span carried frozen_span_duration_sec - UNDECIDED")
             print(f"   decode seconds: total={sum(elapsed):.1f} max={max(elapsed):.2f} "
                   f"p95={pct(elapsed, 95):.2f}")
         if caps:

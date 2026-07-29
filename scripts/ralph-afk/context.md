@@ -24,7 +24,17 @@
 > reachable** without cutting something load-bearing; three to four is the working target.
 > **How to run one:** archive the ranges **verbatim** under a banner in progress.txt, then verify by
 > script that each body appears byte-for-byte there **and is absent here**, and that the surviving
-> fence still passes `bash -n`. New evidence goes in as *the conclusion plus the numbers that justify
+> fence still passes `bash -n`.
+> ***The `bash -n` half of that recipe was WRONG, and iteration 22 found it while adding to the
+> fence.*** Run on the whole section the fence has been **failing since at least the M6c entry**,
+> and iteration 21's bench block added a second failure - not because a command is malformed but
+> because bash parses **prose**: a backtick in a comment opens a command substitution once an
+> earlier odd apostrophe has closed the quote that was hiding it, so `` `simulate(birth_floor=)` ``
+> and `` `rollback: mv <backup> <output>` `` both abort the parse. The check to run is
+> **commands-only**, which is what a fence actually promises:
+> `awk '/^## Validation/,/^## Candidates/' context.md | grep -v '^#' | bash -n` — **93 command
+> lines, rc=0, at HEAD and after.** *A check that has never failed is not necessarily a check that
+> passes; this one had stopped reading the thing it named.* New evidence goes in as *the conclusion plus the numbers that justify
 > it* - the transcript belongs in progress.txt when it is written, not later.
 >
 > ***Two rules the seven passes produced, and rule (1) is why a pass is worth an iteration even when
@@ -72,9 +82,12 @@
 > findings the moment a ninth merge is authorized or step 4 is closed. Second target: "Open diagnostic
 > candidates" at 26.2 KB. *Re-measure with the `## heading` script rather than trusting this line —
 > it has been wrong once already, when a section grew under a stale figure.*
-> **Headroom: ~22 KB below the 256 KB cap.** Per-iteration drift for the four iterations before this
-> pass: it. 15 +6.1 KB, it. 16 +4.3 KB, it. 17 +6 KB, it. 18 +6 KB — i.e. **~5-6 KB an iteration is
-> the current rate**, so the ninth pass is due in roughly five.
+> **Headroom: NONE — the file passed the 256 KB cap during iteration 22 and now reads 271 KB.**
+> (The eighth pass wrote "~22 KB below"; it. 20 +2.7 KB, it. 21 +26.5 KB — Q1's landing was five
+> times a normal iteration — and it. 22 +9.8 KB spent it.) **The ninth pass is DUE NOW, not in
+> five.** Its target is unchanged and named below: Phase N's two N-batch probe narratives, then
+> "Open diagnostic candidates". Nothing is blocked — since iteration 16 the `Read` tool pages this
+> file rather than refusing it — so the cost is pages per iteration, not a stalled start.
 > **One new fact about the trigger, from iteration 16:** the `Read` tool now **pages** this file
 > instead of refusing it — it returned lines 1-537 of 2293 with `showing … cap 25000 tokens` and a
 > pointer to `offset=538`. So the 256 KB cap is no longer a wall that stops work; the **token** cap
@@ -180,7 +193,7 @@ less often than the table it introduces; correct it with the rows.**
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **RED ON THE DEPLOYED `7a4f59c`** (iteration 30, Phase N gate step (d) first half, `live-canary-clauses.py` rc=3): **five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). *Superseded, kept for one reason:* F1 was **GREEN on `42abc5a`** (iteration 6, rc=0) at p95 **3909.3 ms** and RTF **0.911**, 329 published == 329 accepted, and that is the **only** run in this loop's history where the user-visible clause passed at the 4000 ms gate. **One half is NOT certified in either run:** "two speakers" were both on the *system* lane (candidate 51's measured microphone limit). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED (candidate 64) is untouched by it. Both need the operator; see the latency-remedy block and candidate 68. |
+| 60 s canary (F1) | **RED ON THE DEPLOYED `7a4f59c`, AND SINCE ITERATION 22 THE RED IS ONE CLAUSE, NOT TWO.** The run is unchanged (iteration 30, Phase N gate step (d) first half, rc=3); what changed is the **reducer**, which now answers the RTF clause by Q2's derived definition. Re-reduced: **seven GREEN and ONE RED** — decoder p95 RTF **0.580** over 49 spans >= 0.13 s (3 excluded, their RTF 2.365–3.599, printed in the verdict sentence) plus a new **aggregate RTF 0.203** over all 52 spans with nothing excluded, both GREEN; the surviving RED is user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %). **The RTF number that stood here was 2.365, carried entirely by 3 spans shorter than 0.1 s — candidate 70 records why that is a measurement of the decoder's fixed per-request cost and not of the decoder.** F1 is still re-run as Phase Q's gate; this is a re-reduction of existing evidence, not a new run. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). *Superseded, kept for one reason:* F1 was **GREEN on `42abc5a`** (iteration 6, rc=0) at p95 **3909.3 ms** and RTF **0.911**, 329 published == 329 accepted, and that is the **only** run in this loop's history where the user-visible clause passed at the 4000 ms gate. **One half is NOT certified in either run:** "two speakers" were both on the *system* lane (candidate 51's measured microphone limit). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED is untouched by it — and is **now answered separately** by Q2's definition (candidate 70), so **the latency miss is the only thing standing between F1 and green**. See the latency-remedy block and candidate 68. |
 | 300 s certification (F2) | **GREEN ON THE DEPLOYED `7a4f59c`** (run `20260729-094359` iteration 1, `live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **4078.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.577** < 1, **1261 published == 1261 POST /frames, and every one of the session's 4766 logged requests answered 200**, a **5.090 s** interruption seen by the client and survived, outbox 0 → **5** → 0. (Was GREEN on `42abc5a` in iteration 11 of the previous run: 3859.6 ms, RTF 0.670, 1257 == 1257 — that block is archived in progress.txt.) **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the **F2 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction) |
 | 16-minute soak (F3) | **RE-RUN ON THE DEPLOYED `7a4f59c` (run `20260729-094359` iteration 12) — 5 GREEN, 1 RED, rc=3, and it is now the current F3 evidence.** 17/17 full minutes, 648 spans, 381/381 portal polls 200, view authority 200 at age **903.6 s and 1023.0 s**, user-visible p95 **4106.5 ms** ≤ 6000 **qualified and `timelineIntact` true**, decoder p95 RTF **0.568**, **no lane fault at all**, clean drain `retained=0`. The RED is **candidate 60**, unchanged and expected — the Mac client never calls `POST …/stop`, so the post-stop view check answered 200. **The run also falsified candidate 65's headline: the CADENCE sweep published three corrections mid-meeting.** See the **F3 on Phase N** row in the gates index and the deployed-sweep block below (§1). (The prior `42abc5a` run — iteration 9 of run `20260729-025318`, same 5/1 shape — is superseded as evidence; its row is kept in the gates index for the before/after deltas.) |
 | Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The *browser storage* half is now MEASURED ON THE DEPLOYED PAGE — iteration 10, `portal-storage-probe.py` rc=0, five clauses GREEN, six negative controls all detected.** It had never been measured at all: `leak-scan.sh` never scans the portal (iteration 7), the tracked static assertion (`tests/test_live_portal.py:217-219`) reads a **locally rendered** page, and the harness's `storageWrites` recorder (`:618,657,737,812,841`) has **no assertion anywhere in the suite** — dead instrumentation a runtime write would pass. See the portal-storage block below. **What is still open is the tracked *regression*, not the evidence — candidate 66** |
@@ -325,8 +338,9 @@ Phase M/P landing narratives it used to carry are in progress.txt under that pas
   embedded speech, the RTF gate *definition*, the cadence fix with its enforcing node, and the Mac
   client's `stop`), their coverage gap, their gate (full Swift/Python → F1 and F3 → **one** merge →
   push → redeploy). **Q1 (candidate 69) LANDED ON THE BRANCH IN ITERATION 21** — measured, covered
-  by nine red-before nodes, Python green at 809. **Q2, Q3 and Q4 are open**, and Q3/Q4 are the two
-  that touch `macos/` and therefore re-open the Swift half of the gate.
+  by nine red-before nodes, Python green at 809. **Q2 (candidate 70) LANDED IN ITERATION 22** —
+  loop tooling only, so it re-opens neither suite. **Q3 and Q4 are open**, and both touch `macos/`
+  and therefore re-open the Swift half of the gate.
   **STILL needs an authorization:** candidates **58**, **66**, and **Phase N step 4** — which prd.md
   now names *"out of scope"* for Phase Q in as many words, *"worth its own authorization later"*, so
   the split iteration 18 recorded is now the operator's own wording. **Candidate 65 is WITHDRAWN**,
@@ -541,6 +555,18 @@ the gate. `timelineIntact` false is deliberately **not** a disqualifier; the cav
 the verdict string instead, because the surviving samples are real but cover a **prefix**. A missing
 `latency-final.json` is UNDECIDED, never silence. *The rule behind all of it, now paid for four
 times:* **a verdict word must name the thing it decides.**
+***And since iteration 22 the RTF clause reads the same way — candidate 70.*** The p95 is taken
+over spans at or above the derived **0.13 s** meaningfulness floor; the excluded **count, share and
+RTF range live inside the verdict sentence**, so a verdict quoted anywhere carries its own
+exclusion; the unfiltered p95 is still printed above it "for the record"; a span from an older
+event schema with no `frozen_span_duration_sec` is **counted, never excluded**; and a new
+**aggregate RTF** clause — total decode seconds over total audio seconds across *every* span — is
+gated beside it, so no floor can hide a backlog. Two conditions make it UNDECIDED rather than
+green: every span below the floor, or fewer than **20** spans above it (below 20 a nearest-rank
+p95 *is* the maximum wearing a percentile's name). `--rtf-floor-sec` exists for sensitivity work
+only — **`--rtf-floor-sec 0` reproduces the pre-Q2 verdict exactly**, which is how the change was
+red-proved. *The fifth payment of the same rule:* the 5 % exclusion-share cap written first would
+have called F1 it.30 UNDECIDED on 49 perfectly measurable spans.
 
 **WHAT THE GATED LATENCY NUMBER IS MADE OF, AND WHAT THE PLAN'S SECOND ORDERED REMEDY IS WORTH —
 run `20260729-094359` iteration 15. READ THIS BEFORE RE-RUNNING F1 OR ARGUING ABOUT ITS LATENCY
@@ -1595,6 +1621,21 @@ scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
 # lane-health timeline printed only where it CHANGES). rc=0 all green, 3 a clause red, 2 unreadable:
 #   python3 scripts/ralph-afk/live-canary-clauses.py /tmp/ralph-c51-evidence/ralph-canary
 #   python3 scripts/ralph-afk/live-canary-clauses.py <dir> --user-visible-gate-ms 6000   # F2/F3
+# Q2's RTF DEFINITION and its two-sided fence (iteration 22, candidate 70). The floor lives once,
+# as RTF_FLOOR_SEC in live-canary-clauses.py, and the probe IMPORTS it - so an edit to the constant
+# fails here rather than drifting. Offline, ~3 s, reads five evidence directories on this host:
+#   python3 scripts/ralph-afk/rtf-floor-probe.py                      # 9/9, rc=0
+#   python3 scripts/ralph-afk/rtf-floor-probe.py --floor-sec 0        # 7/9, rc=1  (too small)
+#   python3 scripts/ralph-afk/rtf-floor-probe.py --floor-sec 0.93     # 6/9, rc=1  (too large)
+# The red-before for the reducer is a SEMANTIC REVERT with no edit, because the floor is a flag:
+#   python3 scripts/ralph-afk/live-canary-clauses.py /tmp/i30-f1-evidence/ralph-canary \
+#       --rtf-floor-sec 0    # reproduces the pre-Q2 verdict exactly: RED, p95 2.365 over 52 spans
+# Both UNDECIDED paths, the second needing a fixture because both F1 runs hold exactly 26 spans at
+# the 2.5 s hard cap and no floor can leave 1-19:
+#   ... --rtf-floor-sec 3.0                      # every span below the floor (cap is 2.5 s)
+#   a 25-span events.tsv with 20 at 0.05 s and 5 at 1.0 s   # gated 5 < RTF_MIN_GATED_SPANS
+# The probe REFUSES below 3 directories / 300 spans: a floor derived from one run is a floor fitted
+# to that run's noise - per-run Theil-Sen puts C/m between 0.590 s and 2.007 s.
 # Validated in iteration 21 against iteration 12's canary (reproduces committed p95 8342.697 ms and
 # user-visible 9702.2 ms), against /tmp/ralph-f1-evidence (reproduces decoder p95 RTF 0.706 and
 # prints the t+86.0 s system-lane failure), and it REFUSES the F3 soak layout by name.
@@ -2654,10 +2695,62 @@ now measured on the deployed service.
     reverts - `del WeSpeakerLiveEvidenceProvider.birth_deferrals` (6 red) and
     `_deferred_births -> {}` (3 red). Two further nodes deliberately stay green under both reverts:
     a short span is still *labelled*, and a provider without the capability births as before.
-70. **Q2 - the decoder-RTF gate definition (candidate 64).** State a minimum span duration below
-    which RTF is not a meaningful ratio, **derive** it from measurement rather than choosing it to
-    pass, and **always report the excluded count** beside the p95. A silent exclusion does not
-    answer the clause. F1 measured 2.365 from 3 spans < 0.1 s; F3 measured 0.568 over 648 spans.
+70. **Q2 - the decoder-RTF gate definition (candidate 64).** `[DONE - iteration 22. Loop tooling
+    only; no product source, no `macos/`, no host, no session, so the Swift half of the gate is
+    still untouched.]`
+    **The floor is 0.13 s and it is DERIVED, in four independent readings** over a corpus of
+    **1361 spans from five real certification directories on two builds** (`42abc5a` and the
+    deployed `7a4f59c`). `scripts/ralph-afk/rtf-floor-probe.py`, rc=0, **9/9**, reproduces every
+    number; the constant itself lives once, in `live-canary-clauses.py`'s `RTF_FLOOR_SEC`, and the
+    probe **imports** it rather than restating it, so an edit is caught rather than drifting.
+    - **(1) ARITHMETIC.** `elapsed = C + W(duration)`, so `RTF = C/duration + W/duration`: the
+      first term is an artifact of the denominator. The fastest decode ever observed is
+      **0.0564 s**, so no span at or below that can read RTF < 1 whatever the decoder does.
+    - **(2) EMPIRICAL - this is the reading that fixes the value.** All **15** spans shorter than
+      0.130 s read RTF >= 1 (range 1.112-5.735), and the **shortest span that ever read RTF < 1 is
+      exactly 0.130 s** (elapsed 0.1184, RTF 0.911). Below it the ratio has never discriminated;
+      its verdict is a restatement of the span's length.
+    - **(3) DOMINATION.** Theil-Sen over the pooled spans: `elapsed = 0.0827 + 0.0890 * duration`,
+      so fixed overhead is the **majority** term - the amendment's own parenthetical - right up to
+      **0.930 s**. The floor is **7.2x** more conservative than the criterion would allow.
+    - **(4) INSENSITIVE.** Across 25 floors spanning 0.0564-0.930 s **every one of the five runs
+      keeps the same verdict**. The value is not load-bearing, which is what makes "chosen to
+      pass" impossible: the weakest defensible floor already does the whole job and the strongest
+      buys nothing.
+    **Which reading governs, because "conservative" alone is ambiguous and this cost a rewrite.**
+    Conservatism chose the **empirical boundary over the domination point** (0.13 against 0.93) -
+    that is the whole of its work. It is **not** a licence to sit *below* the boundary: a 0.06 s
+    floor would leave in the 0.111 s and 0.120 s spans that also never discriminated, which
+    under-applies the definition rather than applying it carefully. **The probe fences both
+    directions** - at 0.0 two checks fail, at 0.93 three fail, and **only 0.12-0.13 passes all
+    nine**.
+    **The exclusion cannot be silent, in three ways.** The excluded count, share and RTF range are
+    inside the verdict **sentence**, so a verdict quoted anywhere carries them; the unfiltered
+    p95 is still printed "for the record"; and a new **aggregate RTF** clause is gated beside the
+    p95 - total decode seconds over total audio seconds across **every** span, nothing excluded -
+    which is the throughput claim no exclusion can touch (0.177-0.247 on the five runs, an order
+    of magnitude under the gate).
+    **The guard is a sample size, not an exclusion share, and the share cap was WRONG.** A 5 %
+    cap was written first and made F1 it.30 UNDECIDED at 3 excluded spans of 52 (5.8 %) - a run
+    with 49 gated spans that plainly *can* answer the clause. That is candidate 57's own defect
+    ("a verdict word must name the thing it decides") re-committed. Replaced by
+    `RTF_MIN_GATED_SPANS = 20`, derived from the estimator: below 20 a nearest-rank p95 **is** the
+    maximum wearing a percentile's name. It moves no run (smallest gated population 46).
+    **Effect on the record, stated rather than hidden:** the definition turns **exactly one** run
+    from RED to GREEN - F1 it.30, p95 **2.365 -> 0.580** over 49 spans, 3 excluded - and leaves
+    four unchanged (F1 it.6 0.911->0.842, F2 0.577->0.568, F3 it.12 0.568->0.553, F3 it.9
+    0.546->0.546, nothing excluded). A rule that re-coloured several runs at once would be a
+    filter wearing a definition's clothes; the probe asserts it moves at most one.
+    **Why not per-run self-calibration** (tried and rejected): the same robust fit applied to each
+    run *alone* puts `C/m` between **0.590 s and 2.007 s**, because a 60 s canary has ~50 spans
+    and the fit follows whichever runaway decodes it happened to see. A self-calibrating floor
+    would move with the noise it exists to be immune to.
+    **Coverage, red-before/green-after by semantic revert:** `--rtf-floor-sec 0` restores the
+    pre-Q2 verdict exactly (F1 RED at 2.365) and drops the probe to **7/9**; `--rtf-floor-sec
+    0.93` drops it to 6/9. Both UNDECIDED paths are exercised - all-spans-below-floor
+    (`--rtf-floor-sec 3.0`, above the 2.5 s hard cap) and too-few-gated (a 25-span fixture with 5
+    above the floor) - and so is the duration-unknown branch, where a span from an older event
+    schema is **COUNTED, never excluded**.
 71. **Q3 - the cadence fix, both halves or neither.** `portalCycleSeconds` moves the number and no
     request rate; `pollDelayMs` moves the browser's wait and the number by 0.0 ms. Moving the Swift
     one alone relaxes the gate while looking like a remedy - forbidden. **The enforcing node that
@@ -2674,8 +2767,11 @@ now measured on the deployed service.
     (`expected_main` is `7a4f59c` -> advance in-script), push, redeploy.
     **Q1's half is done (iteration 21):** the birth node exists, nine nodes are red-before by
     semantic revert, Python is **809 passed / 2 skipped / 368 subtests** (was 801), and the harness
-    number the gate asks for is recorded in candidate 69. Q2/Q3/Q4 still owe theirs, and the Swift
-    suite has not been re-run because nothing under `macos/` has changed yet - Q3 and Q4 both will.
+    number the gate asks for is recorded in candidate 69. **Q2's half is done (iteration 22):** its
+    coverage is `rtf-floor-probe.py` (9/9, two-sided fence) rather than a `tests/` node, because Q2
+    changed only loop tooling - Python's 809 is therefore **unchanged and un-re-run**, correctly.
+    Q3/Q4 still owe theirs, and the Swift suite has not been re-run because nothing under `macos/`
+    has changed yet - Q3 and Q4 both will.
 74. **`PROVISIONAL` is unreachable on the live path now that Q1 has landed** `[open, no
     authorization needed to decide, product change would need one]`. The album's second tier holds
     exactly one sub-admission observation *while a speaker has no exemplars*; with the birth floor

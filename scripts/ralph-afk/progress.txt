@@ -27437,3 +27437,188 @@ FIVE CONCURRENT OPERATOR COMMITS NOW, two carrying authorizations and one carryi
 a binding evidence rule.  The procedure that has survived all five: stage by path
 (never `git add -A`), re-read prd.md's tail before writing the journal, and check
 the tip again before any merge.
+
+=== run 20260729-094359 iteration 22 - Q2: the decoder-RTF clause gets a
+    DEFINITION, and the exclusion is written into the verdict sentence =========
+
+TARGET.  Phase Q item (b) / candidate 70 / candidate 64 - the ninth amendment's
+"the decoder-RTF gate needs a definition, not a filter".  Chosen because it was
+iteration 21's recommended next step and because it is the only remaining Phase Q
+item that touches NO product source and NO `macos/`, so it can be settled while
+the Swift half of the gate is still untouched.  Loop tooling only: no host, no
+session, no TCC click, no authorization needed beyond the amendment itself.
+
+FILES.  scripts/ralph-afk/rtf-floor-probe.py (new, 247 lines);
+scripts/ralph-afk/live-canary-clauses.py (the definition, applied);
+scripts/ralph-afk/context.md (candidate 70 rewritten as DONE, the F1 scoreboard
+row, the routing bullet, the verdict-reading block, the Validation fence entry,
+and two staleness repairs - see below).  No `moss_transcribe_diarize/`, no
+`macos/`, no `tests/`, no `ops/`.
+
+THE DERIVATION, four independent readings over 1361 spans from FIVE real
+certification directories on TWO builds (42abc5a and the deployed 7a4f59c).
+
+  Model: elapsed = C + W(duration), so RTF = C/duration + W/duration.  The first
+  term is an artifact of the denominator, not a property of the decoder.
+
+  (1) ARITHMETIC   fastest decode ever observed 0.0564 s.  No span at or below
+                   that can read RTF < 1 whatever the decoder does.
+  (2) EMPIRICAL    all 15 spans shorter than 0.130 s read RTF >= 1 (1.112-5.735);
+                   the shortest span that EVER read RTF < 1 is exactly 0.130 s
+                   (elapsed 0.1184, RTF 0.911).  This is the reading that fixes
+                   the value.
+  (3) DOMINATION   Theil-Sen: elapsed = 0.0827 + 0.0890 * duration, so overhead
+                   is the MAJORITY term - the amendment's own parenthetical -
+                   up to 0.930 s.  The floor is 7.2x more conservative than the
+                   criterion would permit.
+  (4) INSENSITIVE  across 25 floors spanning 0.0564-0.930 s every one of the five
+                   runs keeps the SAME verdict.
+
+FLOOR = 0.13 s, as RTF_FLOOR_SEC in live-canary-clauses.py.  The probe IMPORTS
+that constant rather than restating it, so the floor has exactly one definition
+and an edit to it fails the probe instead of drifting - the same "one number by
+construction" shape Q1 used for the birth floor.
+
+WHAT THE REDUCER NOW DOES.  p95 over spans >= the floor; the excluded COUNT,
+SHARE and RTF RANGE inside the verdict SENTENCE, so a verdict quoted anywhere
+carries its own exclusion; the unfiltered p95 still printed above it "for the
+record"; a span from an older event schema with no frozen_span_duration_sec
+COUNTED, never excluded; and a NEW aggregate-RTF clause gated beside the p95 -
+total decode seconds over total audio seconds across EVERY span, nothing
+excluded.  UNDECIDED (never green) when every span is below the floor, or when
+fewer than RTF_MIN_GATED_SPANS = 20 are above it.
+
+VALIDATION.
+  python3 scripts/ralph-afk/rtf-floor-probe.py                  -> 9/9, rc=0
+  python3 scripts/ralph-afk/rtf-floor-probe.py --floor-sec 0    -> 7/9, rc=1
+  python3 scripts/ralph-afk/rtf-floor-probe.py --floor-sec 0.93 -> 6/9, rc=1
+  per-floor sweep: 0.05 -> 8/9, 0.12 -> 9/9, 0.13 -> 9/9, 0.14 -> 7/9, 0.20 -> 7/9
+  i.e. the probe is a TWO-SIDED fence and only 0.12-0.13 survives it.
+
+  Red-before is a SEMANTIC REVERT needing no edit, because the floor is a flag:
+  `--rtf-floor-sec 0` reproduces the pre-Q2 verdict exactly (F1 it.30 RED, p95
+  2.365 over 52 spans).  Both UNDECIDED paths exercised: `--rtf-floor-sec 3.0`
+  (above the 2.5 s hard cap, so every span is below the floor) and a 25-span
+  fixture with 20 at 0.05 s and 5 at 1.0 s (gated 5 < 20).  The duration-unknown
+  branch exercised with a 30-span fixture whose last five carry no duration.
+
+  All five real directories re-reduced, and the aggregate clause is new in each:
+    F1 it.30  rc=3  p95 2.365 -> 0.580 over 49 (3 excluded, 5.8%)  agg 0.203
+    F1 it.6   rc=0  p95 0.911 -> 0.842 over 46 (1 excluded, 2.1%)  agg 0.177
+    F2 it.1   rc=0  p95 0.577 -> 0.568 over 170 (1 excluded, 0.6%) agg 0.184
+                    (with --interrupt-report; SEVEN green now, was six)
+    F3 it.12  rc=3  p95 0.568 -> 0.553 over 638 (10 excluded, 1.5%) agg 0.247
+    F3 it.9   rc=3  p95 0.546 -> 0.546 over 443 (0 excluded)        agg 0.226
+  Aggregate RTF 0.177-0.247 on every run - an order of magnitude under the gate.
+  EFFECT ON THE RECORD, asserted by the probe rather than left to the reader:
+  the definition moves EXACTLY ONE run from RED to GREEN and leaves four
+  unchanged.  F1's surviving RED is the 4150.8 ms latency miss, untouched.
+
+WHAT I LEARNED.
+ 1. THE ONE ARBITRARY NUMBER I WROTE WAS THE ONE THAT BROKE, AND IT BROKE AS
+    CANDIDATE 57's DEFECT.  A 5% exclusion-share cap went in first "to stop the
+    floor doing too much work"; it promptly called F1 it.30 UNDECIDED at 3
+    excluded spans of 52 - a run with 49 gated spans that plainly CAN answer the
+    clause.  That is "a verdict word must name the thing it decides", re-broken
+    four candidates after it was paid for.  It is also not the hazard: a meeting
+    with many brief utterances is a legitimate meeting, and every excluded span's
+    decode cost is still charged in full to the aggregate.  Replaced by a
+    SAMPLE-SIZE guard derived from the estimator - below n=20 a nearest-rank p95
+    IS the maximum wearing a percentile's name - which moves no run in the corpus
+    (smallest gated population 46).  I removed it because it was wrong, not
+    because it failed; the distinction is the whole of the discipline here.
+ 2. "CONSERVATIVE" IS AMBIGUOUS AND COST A REWRITE OF MY OWN REASONING.  I first
+    wrote "take the smallest end of the insensitivity plateau", which implies
+    0.057 - and that is NOT more careful, it is an UNDER-application: it leaves in
+    the 0.111 s and 0.120 s spans that also never discriminated.  Conservatism's
+    real work here was choosing the EMPIRICAL boundary (0.13) over the DOMINATION
+    point the amendment's own parenthetical would have allowed (0.93, 7.2x more
+    exclusions).  Both files now say which reading governs.
+ 3. THE HONEST GUARD AGAINST LAUNDERING IS NOT A CAP ON THE EXCLUSION, IT IS A
+    STATISTIC THE EXCLUSION CANNOT REACH.  Aggregate RTF over every span makes the
+    floor unable to hide a backlog no matter how large it is, which is why the
+    share cap was redundant as well as wrong.
+ 4. THE FLOOR MUST NOT SELF-CALIBRATE, AND THE MEASUREMENT SAYS SO.  The same
+    robust fit applied to each run ALONE puts C/m between 0.590 s and 2.007 s: a
+    60 s canary has ~50 spans and the fit follows whichever runaway decodes it
+    happened to see.  A per-run floor would move with exactly the noise it exists
+    to be immune to.  Recorded in the probe's docstring so it is not re-proposed.
+ 5. TWO REAL BUGS IN MY OWN FIRST CUT, both found only by driving the flag.  The
+    classification read the MODULE CONSTANT instead of args.rtf_floor_sec, so
+    `--rtf-floor-sec` moved nothing and both UNDECIDED paths were unreachable -
+    the flag looked like it worked because the default equals the constant.  And
+    the probe CRASHED at floor 0 (empty `below`, then a divide-by-zero) instead
+    of failing cleanly: a probe that raises where it should report FAIL is a probe
+    that cannot be used to red-prove anything.
+ 6. F1's TWO REDs WERE NEVER ONE PROBLEM.  The RTF red was an instrument defect
+    and is now answered without touching the service; the 4150.8 ms latency red is
+    real, priced at iteration 15, and needs the operator.  The scoreboard row said
+    "TWO RED" and both the row and candidate 70 now say so - the corollary the
+    seventh compaction paid for twice.
+ 7. A CHECK THAT HAS NEVER FAILED IS NOT NECESSARILY A CHECK THAT PASSES.  The
+    compaction log's own verification recipe says the surviving Validation fence
+    must pass `bash -n`.  Run as written it FAILS at HEAD, and has since at least
+    the M6c entry - not because a command is malformed but because bash parses
+    PROSE: a backtick inside a comment opens a command substitution once an
+    earlier odd apostrophe has closed the quote that was hiding it, so
+    `simulate(birth_floor=)` and `rollback: mv <backup> <output>` both abort the
+    parse.  The check that means what the fence promises is commands-only -
+    `... | grep -v '^#' | bash -n` - which is rc=0 over 93 command lines at HEAD
+    and after this iteration.  The recipe in the compaction log is corrected in
+    place.  I did NOT edit iteration 21's prose to satisfy the broken check: the
+    check was wrong, not the prose.
+
+EVIDENCE PATHS.  Candidate 70 in context.md (the rule, the four readings, every
+number); the RTF paragraph appended to "How to read any live-canary-clauses.py
+verdict"; the Validation fence entry with all six reproduction commands; the
+RTF_FLOOR_SEC and RTF_MIN_GATED_SPANS comment blocks in live-canary-clauses.py
+(the second of which records why the share cap was wrong); rtf-floor-probe.py's
+docstring (the model, which reading governs, and why not per-run calibration).
+Fixtures written this iteration: /tmp/i22-rtf-thin, /tmp/i22-rtf-nodur.
+
+BLOCKERS.  None.  The deliberately-broken invariant from iteration 21 is
+UNCHANGED and still correct to read that way: `git diff --name-only 7a4f59c HEAD
+-- ':!scripts/ralph-afk'` still lists Q1's product source, so no offline probe
+speaks for the deployed service until Phase Q's redeploy.  Nothing this iteration
+touched product source, so nothing about that state moved.
+
+  SIZE: context.md crossed the 256 KB Read cap during this iteration and now
+  reads 271 KB (it. 20 +2.7 KB, it. 21 +26.5 KB, it. 22 +9.8 KB).  The NINTH
+  compaction is due NOW rather than "in roughly five"; the headroom line in the
+  compaction log is corrected.  Not blocking - the Read tool has paged this file
+  since iteration 16 - but every iteration now pays in pages.
+
+RECOMMENDED NEXT STEP.  Q3 and Q4 together (candidates 71 and 72), since both
+touch `macos/` and both re-open the Swift half of the gate - doing them in one
+pass means one Swift re-run rather than two.  Q3's durable half is the ENFORCING
+NODE that fails when the reported render bound and the actual poll schedule drift
+apart; ship that whatever is decided about the 1000 ms value, and remember the
+amendment's "move both, or neither".  Q4 is a transport call after the final
+drain with the fifth amendment's rule that a stop which cannot reach the server
+must still stop locally.  If context.md's size starts costing pages before that,
+the ninth compaction is the cheaper iteration and its target is already named.
+Two things NOT to do: do not re-run F1 or F3 to "confirm" Q2 - the definition is a
+reducer change and the five existing directories already exercise it, while the
+deployed service still lacks Q1 - and do not treat F1's RTF clause as closed
+evidence for the PRD until Phase Q's own F1 re-run, which is where it will be
+measured on a build that has the birth floor.
+
+--- iteration 22, addendum: the SIXTH concurrent operator commit, and this one
+    changes nothing -----------------------------------------------------------
+
+`b6c8d15` "bench: measure updated youtube_rtfl_first_90s golden (standalone, not
+in binding aggregate)" landed at 10:57:43 while this iteration was running.
+Caught by `git log` before staging, as the procedure requires.  Two files, both
+under `prototypes/streaming-diarization/` (NOTES.md and a new
+proto_fixture_90s.py); no prd.md, no product source, no test, no `ops/`, and its
+own subject says the new golden is standalone rather than part of the binding
+aggregate.  So the ninth amendment's item (e) numbers - 95.2 % mean / 87.4 %
+worst over the 9 golden clips - are untouched, and nothing in Q1's or Q2's
+evidence moves.
+
+Six concurrent operator commits now: two carried authorizations, one carried a
+binding evidence rule, three were bench or docs.  The procedure has survived all
+six unchanged - stage by path (`git add scripts/ralph-afk/...`, never `-A`),
+re-read prd.md's tail before writing the journal, check the tip again before any
+merge.  prd.md's tail is still `bb8daad`, i.e. nine amendments, Phase Q as
+authorized, and no new cycle.
