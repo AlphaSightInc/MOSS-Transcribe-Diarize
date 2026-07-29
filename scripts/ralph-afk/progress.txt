@@ -15563,3 +15563,42 @@ order that has worked four times, and note the rollbacks go in FIRST:
 Still open and unauthorized, unchanged by this iteration: candidate 55 (identity
 capacity saturates in the first minute), candidate 58 (the replay evaluator calls
 a declared-absent measurement invalid), and Phase N.
+
+================================================================================
+RUN 20260729-025318-86584  ITERATION 5  -  P5(c) ROLLBACKS, PRE-RECORDED
+================================================================================
+TARGET: P5 step (c) - publish 42abc5a and redeploy the SERVER ONLY, then move the
+m4mbp checkout for the four-way SHA clause. Payload is 7 product/test files with
+ZERO under macos/, so this is the J5c shape: restart, no Mac rebuild, no
+reinstall, no codesign, and therefore no exposure of the TCC grants.
+
+THE ROLLBACKS, RECORDED BEFORE ANY HOST IS TOUCHED (PRD "Reversibility").
+Pre-state measured this iteration, both hosts reachable, both clean:
+  server  /mnt/d/Coding/MOSS-Transcribe-Diarize   HEAD 77e0014  worktree clean
+          moss-live-web MainPID 350731 NRestarts=0
+          moss-web      MainPID 301112 NRestarts=0   (never restarted by this loop)
+          moss-vllm     MainPID 322117 NRestarts=0   (never restarted by this loop)
+  m4mbp   /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize
+          HEAD 77e0014  worktree clean  remote `alphasight` = the AlphaSight fork
+  local   main 42abc5a, origin/main 77e0014, branch ralph/live-meeting-mvp dedb62b
+
+1. SERVER checkout + restart.  Rollback (apply in this order):
+     git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 77e0014ac2a1eee1edb29b109024807e9489daa5
+     systemctl --user restart moss-live-web.service
+     for i in $(seq 1 40); do curl -sk -o /dev/null -w '%{http_code}' https://127.0.0.1:7861/live; sleep 1; done
+   The complete pre-loop rollback is still `checkout 163e969` (rehearsed for real
+   in F4a). Nothing a paired Mac hashes moves: the TLS pair, the manifest and
+   live-auth.json live under ~/.local/share/... on ext4, outside the repo.
+
+2. m4mbp checkout.  Rollback:
+     git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout 77e0014ac2a1eee1edb29b109024807e9489daa5
+   and the complete rollback to upstream remains `git checkout main` (that ref is
+   deliberately untouched at OpenMOSS 40cf854). NO bundle backup is needed this
+   time: /Applications/MOSSCapture.app is NOT being replaced, so the K5c/M6c
+   `mv ...backup-<utc>` rollbacks stay valid for the installs they belong to and
+   nothing new is created.
+
+3. THE PUSH IS ONE-WAY AND HAS NO ROLLBACK. `git push origin main` fast-forwards
+   77e0014..42abc5a on the AlphaSight fork. The PRD forbids force-push, so the
+   rollback for a bad publish is a FORWARD revert commit through a future
+   authorized merge, never a rewind. That is why the merge's gate ran first.
