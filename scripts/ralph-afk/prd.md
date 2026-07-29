@@ -482,6 +482,26 @@ final sweep. A transport call after the final drain, with the fifth amendment's 
 which cannot reach the server must still stop locally. It buys neither convergence nor the
 `identity_finalized` event - fix it on its own merits.
 
+### (e) Real-audio evidence, operator-supplied 2026-07-29 (bench `b6b6c5c`) - binding
+
+The operator's benchmark harness is now in the repo at `prototypes/streaming-diarization/`, closing
+ADR-0002 §7's own caveat. **Real conversational audio outranks the LibriSpeech fixtures wherever the
+two disagree.** Measured: album+sweep **95.2 % mean / 87.4 % worst clip** over 9 golden interview
+clips, every 3-minute clip **>= 97.4 %**; the terminal sweep is **load-bearing**; merge threshold
+**0.70 is safe** (max real cross-speaker centroid similarity **0.259**); and `min_match_score` **0.5
+caps real accuracy at 90.7 %** where **0.35 reaches 95.2 %**.
+
+**Phase N decision, recorded per the operator's instruction:** the calibrated matcher is
+`min_match_score` **0.35** / `min_match_margin` **0.1**, justified by real-audio measurement rather
+than by fixture. **This confirms the deployed value rather than changing it** - the supervisor
+verified on 2026-07-29 that the live manifest already reads `0.35 / 0.1`, shipped as candidate 63
+with the Phase N merge. Verify and record; do not recalibrate again.
+
+**Adopt the real corpora in the F-certification distinct-voice harness alongside TTS**, per the
+operator. `data/real/` provisioning is in that README. This does **not** retire candidate 51's
+hardware limit - the built-in microphone still cannot hear a second voice across the room, measured
+six times - so play the corpora into the lanes rather than into the room.
+
 ### Coverage this cycle must close
 
 Nothing in the suite asserts **what a canonical speaker was born from**. Add a red-before /

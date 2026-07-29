@@ -27213,3 +27213,29 @@ service), and do not re-file candidate 65.  The free follow-up to THIS iteration
 whenever step 4 is authorized, is the boundary-jitter degradation named in §6(9)
 - it is the one thing that would close Tier A's upper bound - and AGENTS.md asks
 that its verdict land in the bench's NOTES.md and the design doc, not only here.
+
+## Supervisor - operator's real-audio bench evidence is recorded and binding (2026-07-29)
+- The operator committed `prototypes/streaming-diarization/` (bench `b6b6c5c`) with `AGENTS.md`
+  method norms, closing ADR-0002 §7's own caveat about clean read speech. **Real conversational
+  audio now outranks the LibriSpeech fixtures wherever the two disagree.**
+- Measured, all on 9 golden interview clips: album+sweep **95.2 % mean / 87.4 % worst**, every
+  3-minute clip **>= 97.4 %**; the terminal sweep is **load-bearing**; merge 0.70 is safe with max
+  real cross-speaker centroid similarity **0.259**; `min_match_score` 0.5 caps real accuracy at
+  **90.7 %** where 0.35 reaches **95.2 %**.
+- **Supervisor correction to the operator's framing, checked before recording:** the recalibration
+  they asked for is **already deployed**. The live manifest reads
+  `{"max_speakers": 16, "min_match_margin": 0.1, "min_match_score": 0.35}` - candidate 63 shipped it
+  with the Phase N merge at `7a4f59c`, and the supervisor re-verified it on the running host today.
+  So the 90.7 % number prices the **pre-recalibration** configuration. Recorded as a Phase-N decision
+  anyway because the *reasoning* belongs in the record and real audio is stronger evidence than the
+  fixture that originally justified it. **Do not recalibrate again - verify and record.**
+- The 95.2 % is also the supervisor's earlier prediction landing: when Phase N was first authorized
+  from a four-voice TTS prototype, the recorded caveat was that synthetic voices are cleaner than
+  humans and the absolute numbers would be worse. 99.26 % fixture -> 95.2 % real is exactly that,
+  and it still clears the bar.
+- **Instruction adopted: the F-certification distinct-voice harness takes the real corpora
+  (`data/real/`) alongside TTS.** It does NOT retire candidate 51 - the built-in microphone still
+  cannot hear a second voice across the room, measured six times - so the corpora must be played
+  into the lanes, not into the room.
+- Phase Q is unaffected in scope; this sharpens its evidence base. The birth floor is now being
+  taken against an architecture validated on real conversational speech.

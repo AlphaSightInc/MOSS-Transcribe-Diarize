@@ -2505,6 +2505,38 @@ including P4's four-site sweep table and P3's per-half red-before table — is i
 declared absence an invalid measurement. Explicitly out of scope then and now: mandatory client
 retention of the 409 refusal body — the right fix, needing its own authorization.
 
+### Real-audio evidence, operator-supplied 2026-07-29 (bench `b6b6c5c`) - BINDING
+
+The operator's benchmark harness now lives in the repo at `prototypes/streaming-diarization/` with
+`AGENTS.md` method norms. It closes ADR-0002 §7's own caveat ("clean read speech - replay a real
+conversational recording"). **These numbers are real conversational audio, not fixtures, and they
+outrank the LibriSpeech figures wherever the two disagree.**
+
+- **album+sweep on 9 golden interview clips: 95.2 % mean, 87.4 % worst clip; every 3-minute clip
+  >= 97.4 %.** Against LibriSpeech's 99.26 % and production's 66.4 %. The drop from fixture to real
+  audio is expected and still clears ADR-0002's 90-95 % bar.
+- **The terminal (session-end) sweep is load-bearing** - confirmed on real audio, not inferred.
+- **Merge threshold 0.70 is safe**: the maximum real cross-speaker centroid similarity measured is
+  **0.259**, so the 0.70 merge gate has wide margin on real voices.
+- **`min_match_score` 0.5 caps real-audio accuracy at 90.7 % mean; 0.35 reaches 95.2 %.**
+
+**Phase N decision (recorded per the operator's instruction): the calibrated matcher is
+`min_match_score` 0.35 / `min_match_margin` 0.1, and the justification is now real-audio measurement
+rather than fixture measurement.** Supervisor check on the deployed host, 2026-07-29: the live
+manifest already reads `{"max_speakers": 16, "min_match_margin": 0.1, "min_match_score": 0.35}` -
+candidate 63 shipped it with the Phase N merge at `7a4f59c`. So this decision **confirms** the
+deployed value rather than changing it; the 90.7 % figure prices the pre-recalibration configuration
+and is the strongest evidence yet that candidate 63 was necessary. **Do not "recalibrate" again -
+verify the manifest reads 0.35/0.1 and record that it does.**
+
+**Adopt the real corpora in the F-certification distinct-voice harness, alongside TTS** (operator
+instruction). Provisioning is in `prototypes/streaming-diarization/README.md`: `data/real/` holds
+`benchmark_diarization_1min` and `calibration_diarization_3min`, fetched from
+`ga0@m4mbp:/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/`. Candidate 51's harness currently
+speaks TTS through the Mac's output; real corpora give the label clause material that TTS cannot,
+and they do **not** remove candidate 51's hardware limit - the built-in microphone still cannot hear
+a second voice across the room, measured six times. Play them into the lanes rather than the room.
+
 ### Phase Q - the birth floor, the stop, the RTF gate, the cadence (2026-07-29, ninth amendment)
 
 **AUTHORIZED: candidates 55, 60, 64 and the cadence fix.** Candidate 65 is **withdrawn** - both
