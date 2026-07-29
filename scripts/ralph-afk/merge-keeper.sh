@@ -106,7 +106,11 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # 60-second default on frame and heartbeat requests. A measured 5.140-second drop filled the native
 # system-audio queue before captured audio could reach the 15-second outbox. This closeout bounds
 # both serial pump requests to one second and pins that policy at both HTTP seams.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-42bfc2a075bf696b6e3e33e644daaf0f385eee18}"
+# Advanced to b56ad39 after that bounded-turn deployment proved the 128-buffer raw queue was still
+# too shallow: one 5.460-second F2 turn held all 128 system buffers and dropped 146 more. This
+# closeout pairs the one-second request bounds with 1,024 buffers per lane, 3.7x the measured
+# 274-buffer demand.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-b56ad393fd18a5d19fe294252e704d6d8c043d2f}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

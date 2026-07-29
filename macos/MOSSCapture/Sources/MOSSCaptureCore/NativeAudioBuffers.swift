@@ -1,5 +1,10 @@
 import Foundation
 
+/// Per-lane raw callback headroom paired with the capture pump's bounded transport turn.
+public enum NativeCaptureQueueContract {
+    public static let capacityPerLane = 1_024
+}
+
 public struct NativeCapturedAudioBuffer: Equatable {
     public var lane: CaptureLane
     public var sampleRate: Int

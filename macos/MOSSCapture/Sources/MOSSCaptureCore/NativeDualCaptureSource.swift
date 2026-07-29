@@ -141,7 +141,9 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
     private var admissions: [CaptureLane: NativeLaneAdmission] = [:]
     private var flushedTail: [CaptureFrame] = []
 
-    public convenience init(queueCapacity: Int = 128) {
+    public convenience init(
+        queueCapacity: Int = NativeCaptureQueueContract.capacityPerLane
+    ) {
         self.init(
             system: SystemAudioTap(),
             microphone: MicrophoneCapture(),
