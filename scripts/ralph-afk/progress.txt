@@ -24388,3 +24388,32 @@ is about; --lane-audio and --lane-offset-ms are the knobs, and the F0 rollback
 block (revoke the device, assert the 200 AND its body) must be pre-recorded
 first.  Second: the storageWrites assertion gap iteration 7 filed.  Do NOT
 re-argue candidates 60 or 65 from the record.
+
+================================================================================
+RUN 20260729-094359 ITERATION 9 - PRE-RECORDED ROLLBACK, BEFORE ANY HOST CONTACT
+================================================================================
+WHAT THIS ITERATION WILL DO TO A HOST.  One `live-pipeline-probe.py` run against
+the deployed live service at 100.64.0.8:7861 from MacStudio over the pinned leaf
+a35ca9fc...  It mints ONE pairing code, ONE device and ONE session, posts frames,
+stops the session, and restarts nothing.  No product change, no deploy, no Mac.
+Device id: ralph-i9-frag-20260729T113555Z.
+
+ROLLBACK, recorded before it is applied (PRD "Reversibility"):
+  1. revoke the probe device, on the host loopback -- the route is DELETE, and a
+     POST .../revoke 404s for route-not-found and reads exactly like "already
+     gone", so assert the 200 AND its {"device_id": ...} body:
+       curl -sk -X DELETE \
+         'https://127.0.0.1:7861/api/live/devices/ralph-i9-frag-20260729T113555Z'
+  2. confirm the store is back to ONE unrevoked device (m4mbp's
+     AB600574-FD93-4321-967E-652AB064A70B).  Device COUNT is not the signal;
+     count unrevoked.  The device id is the dict KEY in live-auth.json, never a
+     field.
+  3. confirm nothing else moved: server HEAD still 7a4f59c, worktree clean,
+     moss-live-web MainPID 365632 / moss-web 301112 / moss-vllm 322117 all with
+     NRestarts=0, live-runs 0, no /tmp/mtd-live-*, 0 journal tracebacks, batch
+     http://192.168.68.38:7860/ and /api/jobs still 200.
+  4. the session needs no rollback: the probe stops it, and a stopped session is
+     released by the access store.  If the probe dies before its stop, the 30 s
+     helper lease expires the session on its own (measured in F2 and F3).
+There is nothing else to undo: the probe writes no file on the host, changes no
+config, and touches neither the manifest nor the TLS material.
