@@ -25297,3 +25297,188 @@ WHAT THE PRIOR EVIDENCE SAYS TO EXPECT, so this run is not read naively:
      saturation, so most labels late in this run will be S00 by design (J2).
   3. The CADENCE sweep (candidate 65) crosses ~17 60-second deadlines here
      against F2's five; `identity_revision_version` was 0 on all 171 F2 spans.
+
+================================================================================
+RUN 20260729-094359 ITERATION 12 - F3 IS RE-RUN ON THE DEPLOYED CODE, AND THE
+CADENCE SWEEP PUBLISHES AFTER ALL
+================================================================================
+
+TARGET.  F3, the 16-minute active-view soak, against the deployed 7a4f59c.  It
+was the ONLY PRD acceptance clause whose evidence still spoke for superseded
+code: the standing F3 record (run 20260729-025318 it. 9) was measured on
+42abc5a, i.e. BEFORE the album, the tape and the sweep landed, and Phase N
+changed exactly the live identity path a 17-minute meeting exercises.  F1 and F2
+were both re-run on 7a4f59c; F3 never was, and the gates index said so.
+Chosen over the alternatives because it needs no authorization (prd.md's last
+commit is still 0456177, re-read FIRST per the standing rule), no product
+change and no TCC click, and because every other open product item - 55, 58, 60,
+64, 65, 66 - needs an amendment that does not exist.
+
+INSTRUMENT CHECKED FIRST.  soak-abort-probe.py -> PASS, 90/90, rc=0.
+ROLLBACKS PRE-RECORDED AND COMMITTED BEFORE ANY HOST WAS TOUCHED (9359511).
+
+PROCEDURE.  The recorded prelude exactly: `open -a` a fresh app on m4mbp (pid
+95743, running:false, both lanes stopped) -> one pairing code minted on the
+SERVER LOOPBACK, payload extracted with `sed -n 's/^payload: //p'` -> 113 bytes
+-> piped to `mtd-capture pair` as its own ssh invocation (session
+34a71d7a2fc648a1b049f046afa9f762) -> scp live-soak.sh -> nohup'd with
+OUTPUT_MODE=muted MARKER_SYSTEM=cardamom MARKER_ROOM=obsidian.  MacStudio spoke
+`obsidian` isolated and repeated at -r 130, twice, at volume 70, into BOTH
+announced room windows (minutes 4 and 12), restoring volume 50 after each.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/live-canary-clauses.py \
+    /tmp/i12-f3-evidence/ralph-soak --user-visible-gate-ms 6000   ->  rc=3
+  GREEN  381/381 portal polls 200 over t+1.2 .. t+1029.8
+  GREEN  decoder p95 RTF 0.568 < 1.0 over 648 spans (p50 0.189, max 5.735,
+         total decode 252.4 s, D-c cap in force, capped 1 of 648)
+  GREEN  user-visible p95 4106.5 ms vs the 6000 ms gate, QUALIFIED - and
+         timelineIntact TRUE for once (n=605, mixerOriginResolved true, 0 fetch
+         failures); components stated separately: committed 2674.01 + render
+         bound 1432.50
+  GREEN  every full wall-clock minute carried >= 30 s of accepted audio and a
+         new committed span - 17 full minutes, 57.3-61.0 s each
+  GREEN  the same view authority answered 200/200/200 at age 1023.0 s (> 900),
+         and separately at 903.6 s
+  RED    the clean stop did not revoke view authority: the post-stop check 0.2 s
+         after `stop` answered snapshot=200 events=200 - CANDIDATE 60, expected
+         and unchanged (the Mac client never calls POST .../stop; iteration 7
+         proved the ROUTE revokes immediately)
+
+  python3 scripts/ralph-afk/live-canary-analyze.py <dir> --voices 2  ->  rc=4
+    system marker `cardamom` phonetically REWRITTEN as `carton of` x3 (0.80) in
+    a MUTED run -> the process tap is upstream of the mute, so muting remains a
+    valid lane-separation mechanism.  Room marker `obsidian` NOT TRANSCRIBED
+    despite two deliveries at volume 70 - the SIXTH measurement of candidate
+    51's hardware limit, not a defect.
+
+DELTAS AGAINST THE 42abc5a RUN, which is what re-running it bought:
+                              42abc5a (it. 9)      7a4f59c (this run)
+  committed spans             443                  648
+  portal polls                355/355 200          381/381 200
+  user-visible p95            4557.2 ms            4106.5 ms  (timelineIntact
+                                                   false -> TRUE)
+  decoder p95 RTF             0.546                0.568
+  D-c capped                  67 of 443            1 of 648
+  lane faults                 1 degraded t+474 s   NONE AT ALL
+  view authority age          1024.1 s / 200       1023.0 s / 200
+  clean-stop revocation       RED                  RED (candidate 60)
+Phase M's D-a/49 result therefore holds a second time on real hosts, and the
+lane degradation the previous soak recorded did not recur.
+
+THE FINDING, AND IT IS NOT THE VERDICT.  THE CADENCE SWEEP PUBLISHES ON A REAL
+MEETING.  Candidate 65 has said since iteration 1 of this run that "neither half
+of Phase N step 3 produces a correction on a real meeting", and since iteration
+7 that the CADENCE half specifically publishes nothing.  Measured here:
+  * canonical_processed.identity_revision_version histogram
+      {0: 130, 1: 122, 2: 173, 3: 223}
+    first non-zero at t+209.7 s (span 130), v2 at t+368.5 s (span 252), v3 at
+    t+604.6 s (span 425); session.label_revision_version climbs 0 -> 1 -> 2 -> 3
+    across the mid-run full snapshots.
+  * The corrections REACHED A READER MID-MEETING: spans 48, 208 and 382 carry a
+    `revised_transcript` in snapshots taken at t+236.4 / t+397.1 / t+643.3 s of
+    a run that ended at t+1029.  Mid-meeting => the cadence half, not the
+    session-end half.
+  * All three are S00 -> S01 and the WORDS ARE BYTE-IDENTICAL - Phase N decision
+    10 holding on the wire, now on the cadence path too.
+  * CROSS-CHECK, because a falsification of the loop's own record deserves one:
+    F2's evidence re-read on the SAME authoritative surface still gives
+    {0: 171} and 0 revised items.  F2's zero was REAL, not a field-name
+    artefact.  What separates the runs is meeting LENGTH - 5 deadlines and no
+    revision against ~17 and three.
+
+WHAT SURVIVES OF 65, STATED EXACTLY.  The rate and the silence, not the
+reachability.  Three revisions repaired 3 of this run's 122 abstained spans
+(2.5 %), so ~14 of ~17 deadlines produced nothing and produced it silently -
+`sweep_now` still logs only when the revision is non-empty, so "swept and
+proposed nothing" is still indistinguishable from "never swept".  65 should be
+re-filed as THE EMPTY CADENCE SWEEP LEAVES NO RECORD, which is item (b) of
+scripts/ralph-afk/authorization-request-55-60-65.md and unchanged.
+AND THE CONFOUND-FREE FACT EXTENDS RATHER THAN BREAKS: all three corrections are
+S00 -> Sxx.  Across four deployed swept meetings - iteration 7's 19, iteration
+9's 7 and 20, and this run's 3 - 49 published corrections, EVERY ONE a fill-in
+of a missing label, NOT ONE a reassignment.  Candidate 55's argument survives
+the first cadence sweep ever observed to publish.
+
+CANDIDATE 55 AT SOAK SCALE, on the deployed album: 16 canonicals for 2 real
+voices (inflation x8.0), SATURATED AT t+138.1 s of a 1029 s meeting - 11 s later
+than F2's t+127.1 s and still inside the first 14 %, so ~87 % of the meeting ran
+with no slot left for an arriving voice.  Of 17 labels seen: S00 138 spans, S05
+83, S01 35, and TWELVE labels on exactly one span each.  648 spans = 397 empty
+(decoder_returned_no_transcript) / 129 prepared / 122 abstain.
+
+CANDIDATE 67, NEW, AND IT IS WHY THIS TOOK A MEASUREMENT TO FIND.  The revision
+version lives in two places under two names: `canonical_processed` carries
+`identity_revision_version` (live_service_runtime.py:615,800) while a snapshot's
+committed item carries `identity_snapshot_version` (live_session.py:165,814) - a
+DIFFERENT quantity.  live-pipeline-probe.py:635-637,1080 reads
+`identity_revision_version` off a SNAPSHOT ITEM, where it is always absent, and
+the isinstance(..., int) filter turns that into a silent 0.  Every probe report's
+`sweep` reduction is therefore structurally blind to a cadence revision's
+version - it would have reported 0 on the run that just measured three.  Its
+`revised_transcript` projection beside it is correct and is what answered this
+iteration.  Loop tooling; no authorization needed.
+
+EVIDENCE PATHS.  /tmp/i12-f3-evidence/ralph-soak (the whole pulled directory:
+snapshot.tsv 381 rows, events.tsv 381, status.tsv 103, view-checks.tsv 4,
+phases.tsv 17, 13 x snap-full-*.json, times.env, topology-before/after.txt),
+/tmp/i12-room-speaker.sh + .log (the MacStudio room deliveries).
+
+HOSTS LEFT CLEAN, MEASURED AFTER.
+  server   HEAD 7a4f59c, worktree clean; moss-live-web MainPID 365632,
+           moss-web 301112, moss-vllm 322117, all NRestarts=0; live-runs 0; no
+           /tmp/mtd-live-*; 0 journal tracebacks; device store 19 devices /
+           1 unrevoked - UNCHANGED from iteration 9, because `pair` reuses the
+           stored capture-device-id and minted NO new row, exactly as the
+           rollback block predicted.
+  batch    http://192.168.68.38:7860/ 200 and /api/jobs 200.
+  m4mbp    app killed, /tmp/live-soak.sh + /tmp/ralph-soak +
+           /tmp/ralph-soak-run.log removed, pasteboard 0 bytes, HEAD 7a4f59c
+           clean, app inode 212080356 and CLI sha256 450c20bf.. UNCHANGED (no
+           rebuild, so the TCC grants were never exposed), both grants still
+           auth_value=2.
+           ONE DISCREPANCY, RECORDED RATHER THAN GLOSSED: output volume read 7
+           after the run against the pre-run 31, with muted correctly restored
+           to false.  The driver's trap restores the MUTE state only, so the
+           volume is not something it undoes.  I restored 31 - the value in my
+           own pre-recorded rollback - and read it back as 31/false.  Cause
+           unproven: either macOS moved it as part of the mute cycle or the
+           operator did (context.md already records the operator using this Mac
+           mid-run).  If a future run sees the same drop, the driver should
+           snapshot and restore the VOLUME too, not just the mute.
+  MacStudio volume back to 50.
+
+WHAT I LEARNED.
+ 1. A RE-RUN OF A PASSING-SHAPED GATE IS NOT A FORMALITY.  This run was taken to
+    remove staleness and it falsified a candidate the loop had been reasoning
+    from for eleven iterations.  The reason is structural: candidate 65 was
+    filed from a 319 s meeting and the behaviour it describes is a function of
+    MEETING LENGTH.  A claim measured at one scale is a claim about that scale.
+ 2. THE SAME NAME IN TWO PLACES IS WORSE THAN NO NAME.  `identity_revision_
+    version` vs `identity_snapshot_version` cost the loop a real finding for two
+    runs, and the failure mode was the exact one iteration 7 named for
+    `identity_finalized` and iteration 10 for `storageWrites`: A MISSING FIELD
+    READ AS A NEGATIVE MEASUREMENT.  Third instance.  An absent field must
+    project as null, never as 0.
+ 3. FALSIFYING YOUR OWN RECORD DESERVES A CONTROL.  Before withdrawing 65 I
+    re-read F2's evidence on the new surface; its zero held.  Without that the
+    honest conclusion ("length, not brokenness") would have been
+    indistinguishable from "the earlier measurement was wrong", and the loop has
+    already been wrong twice in that direction on this exact candidate.
+
+BLOCKERS.  None.  The RED is candidate 60 and it needs an authorization nobody
+has granted; it is a client defect with a bounded 30 s self-heal.
+
+FILES TOUCHED.  scripts/ralph-afk/context.md (F3 scoreboard row, a new gates-
+index row and the old one marked superseded, the cadence-sweep block, candidates
+55/65/67, the routing rule, the Phase N header note, the certification-runs
+paragraph), scripts/ralph-afk/progress.txt.  NO product source, NO test, NO ops.
+
+RECOMMENDED NEXT STEP.  Candidate 67 is the cheapest real item the loop owns and
+it is now load-bearing: the probe is the instrument every future sweep question
+will be asked through, and it cannot see the answer.  Fix the surface and make an
+absent field null.  After that, the SEVENTH compaction is due by ~iteration 17
+(the Candidates section, ~67 KB, is the measured target) - this iteration added
+~6 KB, so check the size before choosing.  Do NOT re-run F1 hoping for a
+different latency verdict: its two REDs are candidate 64 and the plan's ordered
+remedies, both the operator's decision.
