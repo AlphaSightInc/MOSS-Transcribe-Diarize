@@ -20656,3 +20656,106 @@ is the other open item and is independently shippable.  Note for whoever merges:
 `merge-keeper.sh`'s `expected_main` still names 77e0014 and must be advanced
 IN-SCRIPT to 42abc5a, never by CLI override, and the branch tip must be re-read
 first - the operator has committed to this branch three times mid-iteration.
+
+================================================================================
+RUN 20260729-025318  ITERATION 27 - PHASE N's GATE STEP (a) IS GREEN
+================================================================================
+
+TARGET.  The candidate iteration 26 recommended: Phase N's gate step (a), the
+full Swift/Python gate plus the payload review, on the tip `1e1cf3f` where step 3
+became code-complete.  It is the precondition for the eighth merge, and the merge
+is the precondition for a redeploy, which is the precondition for F1/F2 - the
+certification order this loop settled once and treats as binding.  No new
+authorization: prd.md's ADR-0002 supersession names the gate and permits one
+further merge ("Then one reviewed no-ff merge (advance `expected_main`
+in-script), push, redeploy").
+
+FILES.  `scripts/ralph-afk/context.md` and `progress.txt` only.  NO product
+source, no test, no `ops/` - this iteration measures, it does not change.
+
+VALIDATION - the gate, in the fence's own order.
+  fresh-scratch `swift build` x2      rc=0/0, **0 warning:, 0 error:**
+  `swift test`                        **158 passed, 0 failures**
+  `pytest tests -q`                   **801 passed / 2 skipped / 368 subtests**,
+                                      75.67 s
+  `pytest tests/test_large_upload.py -rs`  names both skips: :155 and :175,
+                                      "Python 3.10 compatibility contract" -
+                                      never a Darwin skip
+  `pytest tests/test_macos_uds_tracer.py`  **4 passed, 0 skips**
+  Phase A discriminator               **10/10 true**
+  leak-scan                           clean (source checks; no artifact dir)
+  live-lane-refusal-probe.py          **rc=0**, CONFIRMED - but a LOCAL
+                                      regression only: the branch carries
+                                      unmerged product source, so it does not
+                                      speak for the deployed 42abc5a
+  RALPH_MERGE_DRY_RUN=1 merge-keeper  **rc=1**, "main moved from expected
+                                      pre-merge SHA 77e0014..." - the guard is
+                                      live and still refuses an eighth merge
+  `git status --porcelain`            clean
+Logs: /tmp/i27-swift-fresh.log, /tmp/i27-swift-test.log, /tmp/i27-pytest.log,
+/tmp/i27-guard.log, /tmp/i27-lane-refusal.{log,json}.
+
+THE ACCURACY HALF, RE-MEASURED ON THE TIP RATHER THAN QUOTED.  ADR-0002's bar is
+"measured, not asserted", and the suite proves the harness works, not what the
+product scores.  Run directly through `tests/live_identity_accuracy.replay_all`:
+
+  album        final 93.44/92.18  live 93.44  corr   0  merges 0  resid 0
+  overwrite    final 72.02/55.68  live 72.02  corr   0  merges 0  resid 0
+  swept        final 99.26/98.48  live 93.44  corr 116  merges 0  resid 0
+  swept cap64  final 99.26/98.48  live 98.74  corr  16  merges 0  resid 0
+
+Every figure reproduces iterations 16 and 23 to the digit, which is itself the
+check that nothing in steps 2-3 disturbed step 1.  ADR-0002's TWO acceptance
+halves both hold on the code about to merge: >= 90-95 % live accuracy (93.44 %,
+min 92.18 %) and demonstrated live->file convergence (**residual_corrections 0**
+- a second sweep finds nothing left to correct).  And the cap64 row prices
+candidate 55 one more time: 5.30 pp of LIVE accuracy, **0 pp of final**.
+
+PAYLOAD REVIEW - 44 files, +8172/-126, the parts a diffstat cannot answer.
+  * SCOPE.  15 product files, 23 tests+fixtures, 2 `ops/`, 4 docs.  **0 under
+    `macos/`** -> the merge is SERVER-ONLY, so step (c) is the J5c shape: server
+    restart plus an m4mbp checkout with no rebuild, no reinstall, and therefore
+    no TCC exposure.  The `ops/` pair is ADR-0003's declaration surface only
+    (`start-web.sh` +21, `moss-live.env.example` +29, the three retention keys
+    shipped COMMENTED OUT so retention stays off until an operator edits the
+    host file).
+  * NO DOMAIN-CONTRACT VALUE MOVES, by search rather than by claim.  The product
+    diff removes 112 lines and not one of them matches
+    `16000|8000|40000|960000|7860|7861|43200|lease|min_silence|hard_cap|frame_samples`.
+  * THE 83 REMOVALS IN `live_identity.py` ARE A MOVE, NOT A DELETION.
+    `assign_speakers` and `_match_rejection_reason` went to module level (one
+    matcher, called by both the live path and the sweep - the repo cannot grow
+    the second matcher ADR-0002's own prototype had), and `_display_label` /
+    `_render_segments` / `_fmt_time` went into `live_span_bounds.py`.  Verified
+    rather than assumed: `render_segments` has exactly ONE definition and THREE
+    readers (`live_session.py:586,626`, `live_identity.py:406,417`), which is
+    N-revision's "the grammar's writer moved beside its reader".
+  * TWO OF THE FOUR DOC FILES ARE THE OPERATOR'S OWN - `docs/adr/0002-...` and
+    `docs/design-streaming-diarization.md`, from commits 00620ab and 128eae4.
+    The merge carries them to `main` for the first time.  Worth naming in the
+    merge record so nobody later reads them as loop drift.
+
+TWO THINGS CHECKED READ-ONLY SO ITERATION 28 NEED NOT REDISCOVER THEM.
+  1. THE JOIN IS REQUIRED AND IS ALREADY PROVEN CONTENT-FREE.  `main` is NOT an
+     ancestor of HEAD (fence 2 would refuse), and `git merge-tree --write-tree
+     main HEAD` returns HEAD's OWN tree **556c9101...** - so `git merge --no-ff
+     main` will carry no content, exactly as the standing pre-merge procedure
+     requires it be proven BEFORE the join is run.
+  2. `merge-keeper.sh:50` still names `expected_main=77e0014...` and must be
+     advanced IN-SCRIPT to 42abc5a with a comment citing the ADR-0002
+     supersession, then COMMITTED before the script runs - the real run refuses a
+     dirty tree and that commit becomes the captured feature tip.  Run the script
+     in the BACKGROUND (a foreground timeout kill skips its EXIT trap and strands
+     a worktree holding `main`).
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  THE EIGHTH MERGE, which is now the only thing between
+Phase N and a service that runs it: re-read the branch tip (`git log
+--format='%h %an %ad %s' -5` - the operator has committed here three times
+mid-iteration), join `main` no-ff, advance `expected_main` in-script to 42abc5a
+and commit it, then run `merge-keeper.sh` in the background.  Then (c) push +
+redeploy - and note that THIS redeploy is the one that must regenerate the host
+manifest with `--min-match-score 0.35 --min-match-margin 0.1` under the
+DEPLOYMENT VENV's python (see N-recal and the finalizer defect), or the live
+service runs the album at 75.0 %.  Then (d) F1.

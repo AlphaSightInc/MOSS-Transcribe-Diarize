@@ -317,6 +317,23 @@ carry is in the retired-evidence index below).**
   (`identity_finalize_failed`) rather than terminal; and the event is recorded **whether or not
   anything changed**, because "found nothing" and "never ran" are opposite facts. See the
   N-sweep-end block.
+- **AND PHASE N'S GATE STEP (a) IS GREEN (iteration 27): the whole of steps 1–3 is now merge-ready
+  at `1e1cf3f`.** Full transcript and payload review in the gates index; the short form is Swift
+  **158/0** with 0 warnings, Python **801/2/368**, tracer 4/0, discriminator 10/10, leak-scan clean,
+  lane-refusal probe rc=0, guard rc=1, tree clean — and the accuracy bar **re-measured on the tip**
+  rather than quoted: album 93.44/92.18, swept **99.26/98.48** with **residual 0**, so ADR-0002's two
+  acceptance halves (≥ 90 % live, live→file convergence) both hold on the code about to merge.
+  ***The two things iteration 28 does not have to rediscover, checked read-only this iteration.***
+  (1) **The join is required and is already proven content-free:** `main` is **not** an ancestor of
+  `HEAD`, and `git merge-tree --write-tree main HEAD` returns HEAD's own tree
+  **`556c9101…`** — so fence 1 is satisfiable by `git merge --no-ff main` and the join will carry no
+  content. (2) `merge-keeper.sh:50`'s `expected_main` still names **`77e0014`** and must be advanced
+  **in-script to `42abc5a`** with a comment citing the ADR-0002 supersession, then **committed**
+  before the script runs (the real run refuses a dirty tree, and that commit becomes the captured
+  feature tip). Payload is **server-only** — 0 files under `macos/` — so step (c) is the **J5c**
+  shape: server restart plus an m4mbp checkout with **no rebuild and no reinstall**, and therefore no
+  TCC exposure. Re-read `git log --format='%h %an %ad %s' -5` first: the operator has committed to
+  this branch three times mid-iteration.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -337,7 +354,8 @@ now carry different content, which took no product change at all. See those two 
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
 **Test totals on the branch (Python +8 in iteration 26; the Swift number is unchanged because
-nothing under `macos/` was touched).** Swift **158 passed**
+nothing under `macos/` was touched — and **both suites were re-run whole at iteration 27's gate**,
+so these are measured on the tip, not carried forward).** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
 → 158); Python **784 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
 → 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, → 662 with N-recal's 6,
@@ -979,6 +997,7 @@ progress.txt archive under each title.
 | **P7 merge #7** | Merge **`42abc5a`** (run `20260729-025318` it. 4), parents `77e0014` + feature tip `96137b1`; join `cfa3a96` proven content-free first (`merge-tree --write-tree` returned HEAD's own tree). In-worktree gate on the merged tree: Swift **158/0**, Python **608 passed / 2 skipped / 368 subtests** in 61.83 s. **Merge tree == feature tree `06d78525…`** — the merge added nothing and dropped nothing. **Server-only** (0 files under `macos/`), so step (c) is the J5c shape: restart, and on m4mbp a checkout with **no rebuild and no reinstall**. Guard rehearsed non-vacuously: an **eighth** merge prints `main moved from expected pre-merge SHA 77e0014…`, rc=1. Temp worktree removed by the EXIT trap; `git worktree list` back to one. |
 | **P5(c) redeploy** | GREEN — four-way SHA **4/4 at `42abc5a`**. Push fast-forwarded `77e0014..42abc5a`; server MainPID 350731 → 355607 with `/live` 200 at 8 s and the descriptor 200; manifest admission re-checked **after** the checkout under the service venv (`available=True`, `failures=[]`, hash `61d97ffe…` unchanged); content parity by hashing all **five** changed product files against `git show` at **both** SHAs (each matches the new and differs from the old); the deployed fix **exercised**, not hasattr'd; m4mbp checked out with the app inode and CLI hash unchanged (no rebuild, no TCC exposure); both grants still `auth_value=2`; batch MainPIDs unmoved and `/` 200. Then the 150 s probe above. |
 | **M6c redeploy** | GREEN — four-way SHA **4/4 at `77e0014`**. Server MainPID 346453 → 350731, `/live` 200 in 9 s, batch untouched; D-c exercised on the host (cap 286/112) and the venv proven editable-from-the-checkout; Mac rebuilt + reinstalled (inode 211995344 → 212080356), DR byte-identical a fourth time, both TCC grants still `auth_value=2`, and the install proven to carry D-a by a strings witness **with a control word**. |
+| **Phase N gate step (a)** | **GREEN at `1e1cf3f`** (run `20260729-025318` it. 27) — Swift **158/0** with **0 warnings and 0 errors** on a fresh scratch, Python **801 passed / 2 skipped / 368 subtests** in 75.67 s (skips named: `test_large_upload.py:155,175`, the 3.10 contract), tracer **4/0 skips**, discriminator **10/10 true**, leak-scan clean, lane-refusal probe **rc=0** (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `42abc5a`), guard rehearsed non-vacuously (rc=1, `main moved from expected pre-merge SHA 77e0014…`), tree clean. **The accuracy half re-measured on production code, which is what ADR-0002 asks for rather than a suite result:** album **93.44/92.18**, overwrite **72.02/55.68**, swept **99.26/98.48** (live 93.44, **116** corrections, **0** merges, **residual 0**), swept cap64 99.26/98.48 (live **98.74**). Both halves of ADR-0002's bar are met on the code about to merge — ≥ 90 % live and **live→file convergence proved by `residual_corrections` 0**. Payload **44 files / +8172/−126**: 15 product, 23 tests+fixtures, 2 `ops/`, 4 docs, **0 under `macos/`** → the merge is **server-only** (J5c redeploy shape). *Payload review, the parts a diffstat does not answer:* the product diff removes **112** lines and **not one** matches `16000\|8000\|40000\|960000\|7860\|7861\|43200\|lease\|min_silence\|hard_cap\|frame_samples` — no domain-contract value moves; `live_identity.py`'s 83 removals are a **move**, not a deletion (`assign_speakers`/`_match_rejection_reason` to module level, the span grammar to `live_span_bounds.py`, verified one writer / three readers); and **two of the four doc files are the operator's own** (`00620ab`, `128eae4` — ADR-0002 and the design), which the merge carries to `main` for the first time. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -2322,10 +2341,12 @@ admission 1.0 s, k=10, cap 16):*
 iteration 23: 99.26 % mean / 98.48 % min swept, `residual_corrections` 0** — see N-convergence.
 ~~The versioned transcript revision a reader can see~~ **landed in iteration 25 — see N-revision.**
 ~~The session-end sweep~~ **landed in iteration 26 — see N-sweep-end; step 3 is code-complete.**
-What remains: F1/F2 with
-the label clause meaningfully verified — still blocked by candidate 51's measured hardware limit;
-then one merge, push, redeploy. The accuracy half of the bar is instrumented and green for the album
-and for the sweep.
+~~Gate step (a)~~ **GREEN at `1e1cf3f` in iteration 27 — see the gates index row for the full
+transcript and the payload review.** What remains: **(b) the eighth merge**, (c) push + redeploy —
+which is also what regenerates the host manifest at the calibrated 0.35/0.1 (N-recal) — and (d) F1/F2
+with the label clause meaningfully verified, whose second-voice half is still blocked by candidate
+51's measured hardware limit. The accuracy half of the bar is instrumented and green for the album
+and for the sweep, and step (a) re-measured it on the tip rather than trusting the recorded number.
 
 **N-recal — THE CALIBRATION THE ALBUM IS MEASURED AT IS NOW THE ONE A DEPLOYMENT CAN STATE**
 `[candidate 63, iteration 17; source only — the host manifest is regenerated at Phase N's redeploy]`.
