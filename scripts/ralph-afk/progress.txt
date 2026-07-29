@@ -13453,3 +13453,137 @@ constraint. The mutations an F1 canary makes and how each is undone:
                        session; no checkout, no restart, no unit change
 Nothing on this list requires an operator, and none of it touches the deployed SHA.
 
+
+---- GATE STEP (d) RAN: F1 TWICE, BOTH RED, AND A NEW BLOCKER -----------------------
+
+m4mbp answered mid-iteration after five iterations of 100% ICMP loss, so gate step (d)
+of the fifth amendment finally ran. TWO canaries on the deployed 77e0014 with candidate
+51's muted harness (`scripts/ralph-afk/live-canary.sh`, sha256 f970d56c... verified
+identical on both hosts), nohup'd on m4mbp per iteration 21's lesson, on the real hosts.
+
+                              run A 1fd0a901...        run B ed9f91ea...
+  label                 ralph-f1-i26-...T235458Z  ralph-f1-i26b-...T235923Z
+  host state            woke 3 min earlier,       settled, load 3.24,
+                        load average 31.83        tailnet 0% loss / 27 ms avg
+  POST /frames          71 x 200, then 259 x 409  124 x 200, then 203 x 409
+  cut at                t+18.1 s                  t+32.1 s
+  POST /heartbeat       165 x 200, zero non-200   165 x 200, zero non-200
+  GET snapshot          81 x 200 / 306 x 401      146 x 200 / 236 x 401
+  committed p95         2567.4 ms (n=8)           2592.2 ms (n=12)
+  user-visible p95      3921.8 ms                 3970.7 ms
+  clause reducer        rc=3                      rc=3
+
+THE CUT IS ONE INSTANT WITH THREE SIMULTANEOUS SYMPTOMS. Run B, from the server's own
+access log: the last `POST /frames 200` and the first `POST /frames 409` are both at
+19:59:56; the last `GET snapshot 200` is 19:59:56 and the first 401 is 19:59:57.
+  1. every view route answers 401 {"detail":"invalid bearer authority."} - BOTH readers
+     at once, the portal poller AND the app's own latency probe (fetchFailures 202/258,
+     and the server's snapshot tally splits exactly into the two readers: 146 = 21
+     poller + 125 probe);
+  2. POST /frames answers 409 PERMANENTLY on both lanes, so publishedFrameCount freezes
+     and the client outbox fills to its 60-frame bound (outboxDegradation
+     overflowedLaneRetention at t+34.2 s / t+49.0 s);
+  3. the client reports pumpFailure: transportUnavailable - G3/K's deliberate mapping of
+     any CaptureHTTPTransportError, which is precisely why a PERMANENTLY CLOSED SESSION
+     reads on the client as a TRANSIENT NETWORK PROBLEM.
+
+WHAT IT IS NOT, each eliminated by measurement rather than assumption:
+  * NOT the K5d/F1/F3 chain and not a lane fault at all. No lane ever failed - both lanes
+    `capturing` throughout, server-side health=active / failure_code=None /
+    failed_samples=0 on BOTH lanes, clean stop with both `stopped`, sessionRefusal null.
+    D-a and candidate 49 are not implicated anywhere in this.
+  * NOT a stopped heartbeat. 165 x 200 in both runs with zero non-200, through 50+ s of a
+    publish that failed on every single tick. THIS IS CANDIDATE 53'S FIX WORKING, measured
+    on the real hosts for the first time: the exact condition that killed F3 at minute
+    14.6 now does not stop the heartbeat. The only `live helper terminal:` line in either
+    run is helper_lease_expired AFTER the run's own stop (19:56:52 for a run that stopped
+    ~19:56:25; 20:01:16 for one that stopped ~20:00:35) - i.e. the normal post-run expiry.
+  * NOT the host waking up. Run B reproduced it on a settled host with a clean tailnet.
+    The only thing that moved was how long it survived (32 s vs 18 s).
+  * NOT the decode. capped 0 of 10 in run A; the last events before the cut are ordinary
+    (frame_accepted seq 96, canonical_processed identity_status "prepared",
+    empty_reason null, submission_refusal null).
+
+THE MECHANISM, READ OUT OF THE SOURCE. `invalid bearer authority` is raised at exactly
+one place - live_auth.py:282 - when `_view_for_digest` returns None. For a token that is
+neither expired nor revoked (both checked at :375 before it), that means
+`_session_is_viewable` (:382-385) went false, i.e. `_session_status(session_id)` left
+VIEWABLE_SESSION_STATUSES. THE SESSION STOPPED BEING VIEWABLE AT THAT INSTANT - which is
+also exactly what makes POST /frames answer the CLOSED-SESSION 409, the overload
+iteration 11 named beside the lane-failed one. One cause, both symptoms, no lane in it.
+
+AND THE REASON IS RECORDED NOWHERE, which is the fourth time this loop has paid for the
+same omission. Zero journal tracebacks in the window, no terminal line at the cut, an
+event stream that ends mid-sentence because every later poll 401s, and a 409 body that
+DOES carry live_v2_terminal_failure_response(...terminal_reason) and is discarded by the
+client under G3's contract. Iteration 23's 120 s live-pipeline-probe.py run against this
+same SHA was healthy end to end (240 ticks, non_200_count 0), so the trigger is something
+the Mac's real capture does that synthetic audio does not - variable frame sizes (the
+recorded frames span 1987-7765 samples, not a constant 8000), real speech, the identity
+path. THAT PROBE IS THE CHEAPEST NEXT INSTRUMENT: it already keeps the refusal body and
+it needs no Mac.
+
+THE GREEN SUB-CLAUSES, recorded because they are real and because they must not be
+over-read. Committed p95 2567.4 / 2592.2 ms where FOUR prior runs measured 8343-9148 ms
+(K5d 9089, F1 9053, F3 9148, canary 8343) - the first time the committed half has been
+anywhere near the gate - and user-visible 3921.8 / 3970.7 ms are BOTH UNDER the 4000 ms
+canary gate. NEITHER IS A QUALIFIED MEASUREMENT: sufficientSamples is false in both (n=8
+and n=12 against the plan's 20) and both runs were cut off at 18 s and 32 s. It is
+evidence that D-c's cap plus a short clean window looks nothing like F1's 9 s tail; it is
+NOT the latency verdict, and quoting 3921.8 ms as a pass would be exactly the over-read
+iterations 23 and 24 warned about. Also green in both runs: the served leaf hashed to the
+D2 pin BEFORE any authenticated request, portal 200 / 21282 bytes, pasteboard cleared to
+0 bytes, no raw audio persisted, and no new device row.
+
+HOSTS LEFT CLEAN, checked after the runs against the pre-recorded rollback above:
+  m4mbp   app killed (pgrep 0), /tmp/ralph-canary + /tmp/live-canary.sh removed, output
+          UNMUTED at volume 31 (the pre-run state), pasteboard 0 bytes, both TCC grants
+          still auth_value=2, no /tmp/mtd-live-*
+  server  HEAD 77e0014, git status clean, moss-live-web 350731 / moss-web 301112 /
+          moss-vllm 322117 all NRestarts=0, live-runs 0 entries, no /tmp/mtd-live-*,
+          0 tracebacks, live-auth.json 10 devices / 1 unrevoked (m4mbp's - `pair` reused
+          the row and created nothing), batch http://192.168.68.38:7860/ 200
+Nothing needed rolling back.
+
+TWO NEW CANDIDATES.
+  56. A live session stops being viewable mid-meeting and nothing records why. Needs
+      authorization; it is tracked product source under the post-merge freeze. Reproduce
+      it with live-pipeline-probe.py before designing anything.
+  57. live-canary-clauses.py printed "USER-VISIBLE p95 = 3921.8 ms vs gate 4000 ms  RED"
+      - the number is UNDER the gate. It is red because sufficientSamples is false, which
+      the line above says. The message asserts a threshold comparison that PASSED, so a
+      reader trusting the verdict line learns the opposite of the truth. Loop tooling, no
+      authorization needed. Same shape as iteration 22's finding that the reducer printed
+      F1's lane failure and decided nothing: "the gate was missed" and "the run cannot
+      answer the gate" are different verdicts and must not share a word.
+
+Learned.
+(1) PHASE M WORKED, AND ONLY A REAL RUN COULD SAY SO. Five iterations of offline probes
+    measured what the fixes DO; this measured what they PREVENT. A publish that failed on
+    every tick for 50 seconds - the exact condition that ended F3 at minute 14.6 - kept
+    165 consecutive heartbeats alive and left both lanes healthy. That sentence could not
+    have been written without the Mac.
+(2) THE SAME OMISSION HAS NOW COST FOUR CYCLES: a condition ends the meeting and the one
+    word naming it is discarded. G3 classified it, J4 named the refusal, K3 recorded the
+    terminal reason, and the live path STILL throws away the only body that says why a
+    frame was refused. The next authorization should treat "the client keeps the refusal
+    detail" as the fix rather than as an option, which candidate 54 left on the table.
+(3) A SECOND RUN IS CHEAP AND SETTLES THE HOST QUESTION OUTRIGHT. Run A was defensible to
+    dismiss (a Mac three minutes out of a four-day sleep at load 31.83). Run B cost two
+    minutes and turned "probably an artifact" into "reproducible on a settled host", which
+    is the difference between a note and a candidate.
+(4) A THIRD SYMPTOM CAN BE THE SAME BUG WEARING THE CLIENT'S VOCABULARY. `pumpFailure:
+    transportUnavailable` is the client's honest report of a permanently closed session,
+    because 409 is deliberately excluded from CaptureSessionRefusal. Read the server's
+    status code before believing the client's category.
+
+Next: candidate 56, and it needs no Mac to start. Drive live-pipeline-probe.py against
+the deployed 77e0014 with a program that resembles the Mac's real capture more closely
+than iteration 23's did - variable frame sizes and a longer run - and capture the 409
+body, which already carries terminal_reason. If it reproduces, the reason is in hand
+without an authorization; only the FIX needs one. If it does not reproduce, the next
+discriminator is the identity path (candidate 55 saturates the 16-speaker bound in the
+first minute of exactly this kind of audio) - and note the two runs reached 7 speakers by
+t+16.6 s. Do NOT re-run F3 until 56 is understood: a 17-minute soak that dies at 30 s
+costs seventeen minutes to learn what a 60 s canary already said twice.
+
