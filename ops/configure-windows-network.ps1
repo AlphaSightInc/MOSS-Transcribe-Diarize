@@ -28,22 +28,38 @@ if ($IncludeLive) {
     }
 }
 
-$wslAddress = $null
-for ($attempt = 1; $attempt -le 20 -and -not $wslAddress; $attempt++) {
-    $addressOutput = (& wsl.exe -d Ubuntu -- hostname -I 2>$null) -join ' '
-    $wslAddress = [regex]::Match($addressOutput, '(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])').Value
-    if (-not $wslAddress) {
-        Start-Sleep -Seconds 2
-    }
+$networkingMode = ((& wsl.exe -d Ubuntu -- wslinfo --networking-mode 2>$null) -join '').Trim()
+if (-not $networkingMode) {
+    # Older WSL releases predate `wslinfo`; their WSL 2 network is NAT.
+    $networkingMode = 'nat'
 }
-if (-not $wslAddress) {
-    throw 'Could not determine the Ubuntu WSL IPv4 address.'
+$usesPortProxy = $networkingMode -ne 'mirrored'
+
+$wslAddress = $null
+if ($usesPortProxy) {
+    for ($attempt = 1; $attempt -le 20 -and -not $wslAddress; $attempt++) {
+        $addressOutput = (
+            & wsl.exe -d Ubuntu -- sh -lc 'ip -4 -o addr show dev eth0 scope global' 2>$null
+        ) -join ' '
+        $wslAddress = [regex]::Match(
+            $addressOutput,
+            '(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])'
+        ).Value
+        if (-not $wslAddress) {
+            Start-Sleep -Seconds 2
+        }
+    }
+    if (-not $wslAddress) {
+        throw 'Could not determine the Ubuntu WSL NAT IPv4 address.'
+    }
 }
 
 foreach ($forward in $forwards) {
     $listenPort = $forward.Port
     & netsh.exe interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=$listenPort 2>$null | Out-Null
-    & netsh.exe interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$listenPort connectaddress=$wslAddress connectport=$listenPort | Out-Null
+    if ($usesPortProxy) {
+        & netsh.exe interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$listenPort connectaddress=$wslAddress connectport=$listenPort | Out-Null
+    }
 
     if (-not (Get-NetFirewallRule -Name $forward.RuleName -ErrorAction SilentlyContinue)) {
         New-NetFirewallRule `
@@ -81,5 +97,9 @@ if (-not $RefreshOnly) {
 }
 
 foreach ($forward in $forwards) {
-    Write-Output "LAN forwarding ready: 0.0.0.0:$($forward.Port) -> ${wslAddress}:$($forward.Port)"
+    if ($usesPortProxy) {
+        Write-Output "NAT forwarding ready: 0.0.0.0:$($forward.Port) -> ${wslAddress}:$($forward.Port)"
+    } else {
+        Write-Output "Mirrored networking ready: WSL binds port $($forward.Port) directly"
+    }
 }

@@ -95,7 +95,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # local-only `pending` to a wire contract that calls it `starting`. This merge fixes that boundary,
 # keeps the denied lane survivable, and makes its environment-sensitive tests deterministic. A
 # THIRTEENTH merge still fails here.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-fa0ff6a33fd59923b9ac4ca4053b9501a38bde51}"
+# Advanced to 6d55da7 after deployment found both production listeners restart-looping: WSL had
+# moved to mirrored networking while the Windows sign-in task kept restoring NAT portproxy rows.
+# This operator-authorized closeout makes that target-repo deployment tool mode-aware.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-6d55da7de0ca24babeb49bca762a731d85d19a9b}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

@@ -66,8 +66,10 @@ wsl.exe -d Ubuntu -- systemctl --user restart moss-live-web.service
 wsl.exe -d Ubuntu -- journalctl --user -u moss-live-web.service -n 100 --no-pager
 ```
 
-The Windows sign-in task starts WSL and refreshes the LAN forwarding rule because
-the WSL NAT address may change after a restart.
+The Windows sign-in task starts WSL and refreshes networking after a restart.
+Under WSL NAT it refreshes `portproxy` because the NAT address may change. Under
+WSL mirrored networking it removes stale proxy rows—the WSL services bind the
+host addresses directly, and a proxy on the same port prevents them from starting.
 
 To refresh the Windows forwarding immediately, run this from an Administrator
 PowerShell window:
@@ -76,9 +78,9 @@ PowerShell window:
 & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1'
 ```
 
-That call forwards port 7860 only. Add `-IncludeLive` to also forward 7861 and
+That call exposes port 7860 only. Add `-IncludeLive` to also expose 7861 and
 start the live unit; the switch is written into the sign-in task so a refresh
-keeps forwarding the same ports:
+keeps exposing the same ports in either WSL networking mode:
 
 ```powershell
 & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1' -IncludeLive
