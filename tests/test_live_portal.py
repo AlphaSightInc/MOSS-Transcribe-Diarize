@@ -325,6 +325,7 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["connectionState"], "disconnected")
         self.assertTrue(probe["stopDisabledAfterTerminal"])
         self.assertEqual(probe["activeTimersAfterTerminal"], 0)
+        self.assertEqual(probe["storageWrites"], [])
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
     def test_live_portal_browser_contract_retries_without_cursor_gap_or_overlap(self):
@@ -344,6 +345,7 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["statusAfterFailure"], "Reconnecting: malformed snapshot session")
         self.assertEqual(probe["connectionAfterClosed"], "disconnected")
         self.assertEqual(probe["requestsAfterTerminalTimer"], 3)
+        self.assertEqual(probe["storageWrites"], [])
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
     def test_live_portal_shows_a_corrected_speaker_without_changing_the_words(self):
@@ -678,6 +680,14 @@ function installPortal(responses) {{
       return makeNode(id);
     }},
   }};
+  Object.defineProperty(document, "cookie", {{
+    get() {{
+      return "";
+    }},
+    set(value) {{
+      storageWrites.push(["document.cookie", String(value)]);
+    }},
+  }});
   const window = {{
     addEventListener(type, handler) {{
       windowListeners[type] = handler;

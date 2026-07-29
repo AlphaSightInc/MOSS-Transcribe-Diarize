@@ -692,6 +692,8 @@ private final class CaptureControllerState {
         self.configuration = configuration
         running = true
         generation &+= 1
+        publishedFrameCount = 0
+        healthSequence = nil
         pumpFailure = nil
         // A refusal names one session id, so a new session starts without the last one's verdict.
         sessionRefusal = nil
