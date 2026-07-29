@@ -497,9 +497,10 @@ final class CaptureControllerTests: XCTestCase {
         DispatchQueue.global().async { scheduler.runScheduledOperation() }
         wait(for: [tickEntered], timeout: 5)
 
+        let stopper = CaptureControllerStopper(controller: controller)
         let stopReturned = expectation(description: "stop returned")
         DispatchQueue.global().async {
-            _ = try? controller.stop(deadline: Date())
+            _ = stopper.stop(deadline: Date())
             stopReturned.fulfill()
         }
 
@@ -3628,7 +3629,7 @@ final class CaptureControllerTests: XCTestCase {
             sessionID: "session-a",
             lanes: [
                 CaptureLaneStatus(lane: .system, sequence: 4, deviceEpoch: 2, state: "capturing"),
-                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "capturing"),
+                CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "pending"),
             ],
             publishedFrameCount: 10,
             lastHealthSequence: 5
@@ -3660,6 +3661,8 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(body["helper_version"] as? String, "0.1.0")
         XCTAssertEqual(body["state"] as? String, "capturing")
         XCTAssertEqual(Set(lanes.keys), ["system", "microphone"])
+        XCTAssertEqual(system["state"] as? String, "capturing")
+        XCTAssertEqual(microphone["state"] as? String, "starting")
         XCTAssertEqual(system["device_epoch"] as? Int, 2)
         XCTAssertEqual(microphone["device_epoch"] as? Int, 8)
         XCTAssertTrue(system["failure_code"] is NSNull)
