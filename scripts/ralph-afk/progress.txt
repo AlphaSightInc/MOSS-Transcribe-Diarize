@@ -21489,3 +21489,273 @@ Swift build, no install, no TCC interaction of any kind.  Both grants stay
 auth_value=2 and are re-checked read-only afterwards.  No tracked product source,
 no test and no ops file changes - this iteration writes only
 scripts/ralph-afk/{context.md,progress.txt}.
+
+================================================================================
+ARCHIVE OF context.md SUPERSEDED BLOCK - RUN 20260729-094359 ITERATION 1
+"F2 IS GREEN" (run 20260729-025318 iteration 11, on the deployed 42abc5a)
+================================================================================
+RETIRED because its PRD clause was re-closed by a LATER run on a LATER deploy:
+iteration 1 of run 20260729-094359 re-ran F2 against 7a4f59c (Phase N steps 1-3
+live) and it returned rc=0 again - six GREEN, no RED, no UNDECIDED.  The
+retirement trigger recorded at the top of context.md is therefore met for this
+block and this block only.  Its successor is the F2-ON-PHASE-N block in
+context.md.  Verbatim below; nothing was deleted.
+--------------------------------------------------------------------------------
+**F2 IS GREEN — the 300 s locked certification passed on the real hosts, run `20260729-025318`
+iteration 11. READ THIS BEFORE ANY EIGHTH-AMENDMENT DECISION.** Second green certification run in
+this loop's history, on the deployed `42abc5a` with the muted lane-separating harness.
+`live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` **rc=0** — six GREEN, **no
+RED and no UNDECIDED**. Session `0047a5ad…`, label `ralph-i11-f2-20260729T044456Z`, evidence
+`/tmp/i11-f2-evidence/ralph-cert`, reduction `/tmp/i11-clauses.txt`.
+
+| PRD F2 clause | measured |
+| --- | --- |
+| simultaneous lanes | both `capturing` from t+2.2 s; server-side both v2 lanes finished `health=active`, `failure_code=None`, `failed_samples=0`; system 4 990 123 samples, microphone 5 059 200 |
+| silence/mute window | 30 s at t+70..100 s; version kept advancing (365 → 371 across it), spans kept committing, session `active` throughout |
+| **a 5-second network interruption** | **5.050 s measured on CLOCK_MONOTONIC** at the server, `deletes=1`, `rule_still_present=no`, chain back to `-P INPUT ACCEPT`. **The client saw it** — 1 refused poll (`000`) — and resumed (first 200 at t+239.3 s) |
+| ambiguous retry / duplicate retry | the mechanism, sampled at 1 Hz: `publishedFrameCount` **froze at 902** for 5.2 s, `outboxRetainedFrames` rose 2 → **10**, `pumpFailure transportUnavailable`, then published replayed 902 → 909 → 923 → 928 → 933 and retention drained to **0**. The server accepted the replay **exactly once** — see the accounting row |
+| two speakers | 16 canonical speakers for 2 voices (candidate 55 again); the two program voices are both on the **system** lane — candidate 51's limit, fourth measurement |
+| clean stop/drain | `retained=0`, both lanes `stopped`, `sessionRefusal` null, `outboxRetainedFrames` 0 |
+| **user-visible p95 ≤ 6000 ms** | **3859.6 ms — GREEN and QUALIFIED**: `sufficientSamples` **true** (n=113), `mixerOriginResolved` true, `fetchFailures` 0, rejected 0/0/39. Components separately: committed p95 **2459.0 ms** + render bound **1400.6 ms** (cycle 1000 + snapshot p95 223.9 + events p95 176.7). Caveat travels with it — `timelineIntact` **false**, so the number covers a **prefix** |
+| decoder p95 RTF < 1 | **0.670** over 161 spans (p50 0.131, max 20.577 on a 0.069 s span; total decode 50.0 s, max 1.42 s). D-c capped **4 of 161** |
+| **zero accepted-audio loss, zero double count** | client `publishedFrameCount` **1257** at stop == the server journal's **1257 × `POST …/frames` all 200**. And the stronger statement the journal supports: **4748 of the session's 4749 log lines are HTTP `200`** — the 4749th is the terminal line. **Zero non-200 on the server for the entire run**, interruption included |
+| outbox and memory bounded | outbox run-wide peak **10** frames against its 15 s/lane bound, back to 0 within 3 s; retained samples 23 996 of the 960 000 bound (2.5 %) |
+
+***What this run proves that F1 could not.*** F1 was 85 s of undisturbed meeting. This is 300 s with a
+**deliberate 5 s outage**, and the three fixes the last three phases bought are visible in the same
+ten seconds of evidence: 53 kept the heartbeat alive (**622 heartbeats, all 200**), D-a turned the
+resulting `macos_buffer_overrun` at t+233.0 s into a **degradation** that kept capturing to the end,
+and the outbox retained-until-ACK contract replayed every frame without the server double-counting
+one. *The outage is also what caused the overrun* — backpressure from a blocked uplink — which is
+the exact sequence D-a was authorized for and had never been observed end to end.
+
+***The system marker landed and was rewritten PHONETICALLY — candidate 59's fourth measurement, and
+the clearest one yet.*** `cardamom`, delivered isolated and repeated at `-r 130` at the end of phase
+A, comes back as span 29 at t+67.5 s: **`[0.06][S01]Pardon me, pardon me, pardon me.[1.68]`** —
+three repetitions, right phase, right lane, right instant, in a **muted** run. The in-sentence
+delivery is span 138, `The cold word cardigan is recorded once more for` (the driver said "The
+codeword cardamom is recorded once more for the system lane"). So the tap is upstream of the output
+mute and the marker survives to the transcript; **the decoder's language model is what the exact
+string match loses to**, not the capture path. Any future marker check must be phonetic.
+***The room marker did not land — candidate 51's limit, fourth measurement.*** MacStudio spoke
+`obsidian` isolated and repeated 10 times into the room window; m4mbp's default input was again the
+**built-in** microphone, and spans 90–107 hold nothing but hallucinated near-silence
+(`I'm sorry, I can't assist with that request.` × 9, `Hi.`, `Okay.`, `Mm-hmm.`). So "two speakers"
+is again two voices on the SYSTEM lane.
+***And candidate 55 saturated inside a second GREEN run*** — 16 canonical speakers by t+93.9 s of a
+300 s meeting for 2 real voices, then `speaker_capacity_exceeded` abstains published under `S00`
+(J2 holding). 24 of 151 spans committed empty (H1). No refusal, no terminal.
+*Hosts left clean, measured after:* server `HEAD 42abc5a` worktree clean, live MainPID **355607** /
+batch **301112** and **322117**, all `NRestarts=0`, batch `/` and `/api/jobs` 200, `live-runs` **0
+entries** (no raw audio persisted), no `/tmp/mtd-live-*`, **0** journal tracebacks, device store
+**13 / 1 unrevoked** (`pair` minted no new row), `iptables -S INPUT` = `-P INPUT ACCEPT`, server
+scratch removed. m4mbp: app killed, all `/tmp` scratch removed, volume back to 31 unmuted,
+pasteboard **0**, both TCC grants still `auth_value=2`, app inode `212080356` and CLI sha
+`450c20bf…` unchanged (no rebuild, so no TCC exposure).
+*The one known defect this run re-recorded rather than rediscovered:* **candidate 60** — the only
+terminal line is `helper_lease_expired lanes=none` at 00:50:44, **29 s after** the run's own stop,
+and the journal contains **0** calls to `…/stop`. Printed under section 9 as OBSERVED; it is not an
+F2 clause. See candidate 60.
+--------------------------------------------------------------------------------
+
+================================================================================
+ITERATION 1 (run 20260729-094359) - Phase N gate step (d), second half:
+F2, the 300 s locked certification, against the deployed 7a4f59c - GREEN
+================================================================================
+
+TARGET.  The candidate iteration 30 named as the loop's last unblocked
+measurement: F2, Phase N gate step (d)'s second half.  Steps (a) green at
+1e1cf3f, (b) merge 7a4f59c, (c) deployed 4/4, (d) F1 run (5 GREEN, 2 RED).  This
+iteration ran F2 and CLOSED THE GATE.  No tracked source changed, no service was
+restarted, nothing was rebuilt or reinstalled, no operator input was spent.
+
+PRE-STATE, MEASURED.  prd.md unchanged at 0456177 (eight amendments; re-read
+FIRST, per the standing rule that a previous iteration's "no new authorization"
+report cannot be trusted - the operator has committed to this branch three times
+mid-iteration).  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'`
+EMPTY, so the offline probes still speak for the deployed service.  server HEAD
+7a4f59c clean, live MainPID 365632 / batch 301112 / vllm 322117 all NRestarts=0,
+live-runs 0, iptables INPUT == `-P INPUT ACCEPT`.  m4mbp HEAD 7a4f59c, app NOT
+running, inode 212080356, CLI sha256 450c20bf…, volume 31 unmuted, pasteboard 0,
+both TCC grants auth_value=2.  MacStudio volume 50 (captured this time, which is
+the gap iteration 30 recorded honestly and this run closed).
+
+PROCEDURE.  The F2 instrument exactly as recorded, both halves in the recorded
+order:
+  1. ssh ga0@m4mbp 'open -a /Applications/MOSSCapture.app'  -> pid 59758, a
+     FRESH app (running:false, both lanes stopped)
+  2. one pairing code minted on the SERVER LOOPBACK with ops/live-pair.sh,
+     payload extracted with `sed -n 's/^payload: //p'` -> **113 bytes** (the file
+     is 114 with its newline; guard on >= 110, never on 122 - iteration 29's
+     lesson), piped to `mtd-capture pair` as its OWN ssh invocation
+  3. scp live-cert.sh -> m4mbp:/tmp ; live-cert-interrupt.sh piped ON STDIN into
+     WSL as a heredoc (the "command line is too long" trap)
+  4. ARM FIRST, LAUNCH SECOND, as the instrument requires:
+       bash live-cert-interrupt.sh --delay 240 --duration 5 --out /tmp/ralph-cert-interrupt.json
+       nohup env OUTPUT_MODE=muted MARKER_SYSTEM=cardamom MARKER_ROOM=obsidian \
+         bash /tmp/live-cert.sh ralph-i1-f2-20260729T094804Z
+     **Measured skew: T_ARM 1785318486.346 -> T_START 1785318486.979, i.e.
+     delta = 0.63 s**, so the window was due at T_START+239.4 and landed at
+     T_START+226.6 - inside the 60 s program-interrupt phase [200.1, 260.0] with
+     33 s of slack.  --delay 240 is the right number; 215 would have been tight.
+  5. MacStudio spoke `obsidian` isolated and repeated at -r 130 into the
+     announced room window (ROOM_WINDOW_OPEN at t+171.8), volume 70 -> 50 after
+  6. scp -r the evidence, the ROOT-OWNED interrupt report copied in as
+     interrupt.json, then both reducers and the server journal
+
+VALIDATION AND RESULT.
+  python3 scripts/ralph-afk/live-canary-clauses.py /tmp/i1-f2-evidence/ralph-cert \
+      --user-visible-gate-ms 6000 --interrupt-report .../interrupt.json
+    -> **rc=0  - SIX GREEN, NO RED, NO UNDECIDED**
+  python3 scripts/ralph-afk/live-canary-analyze.py … --voices 2
+    -> rc=4 (system marker `cardamom` VERBATIM at span 29 t+67.6 s in a MUTED
+       run; room marker `obsidian` NOT TRANSCRIBED - the FIFTH measurement of
+       candidate 51's hardware limit, not a defect)
+
+  THE SIX GREENS, with iteration 11's figures on 42abc5a in brackets:
+    * every portal poll 200 for the whole run (the 1 refused poll falls inside
+      the armed window and section 10 decides it)
+    * decoder p95 RTF **0.577** < 1.0 over 171 spans (p50 0.149, max 2.529,
+      total decode 58.3 s, D-c capped 3 of 171)                        [0.670]
+    * user-visible p95 **4078.6 ms** vs the 6000 ms gate, QUALIFIED
+      (sufficientSamples true n=114, mixerOriginResolved true, fetchFailures 0);
+      components stated separately: committed **2680.15** + render bound
+      **1398.44**; timelineIntact false, so it covers a PREFIX  [3859.6]
+    * every full wall-clock minute carried >= 30 s of accepted audio and a new
+      committed span (5 full minutes)
+    * a **5.090 s** interruption measured on CLOCK_MONOTONIC at the server
+      (deletes=1, rule_still_present=no, chain back to `-P INPUT ACCEPT`) was
+      SEEN by the client (1 refused poll) and the session resumed at t+239.0
+                                                                       [5.050]
+    * the outbox retained **5** frames across it and drained back to 0   [10]
+
+  THE ACCOUNTING, off the server's own tally rather than the mid-flight
+  snapshot: client publishedFrameCount **1261** at stop == the journal's
+  **1261 x POST …/frames all 200**.  Stronger: **every one of the session's 4766
+  logged requests answered 200** - 1261 frames + 624 heartbeats + 204 snapshots
+  + the event polls - zero non-200 for the entire run, interruption included.
+  [1257 == 1257; 4748 of 4749]
+
+  THE INTERRUPTION'S MECHANISM, sampled at 1 Hz: publishedFrameCount FROZE at
+  902 for ~4.2 s, outboxRetainedFrames rose 0 -> 5, pumpFailure
+  transportUnavailable at t+231.9 s, the system lane degraded
+  macos_buffer_overrun at the same instant AND KEPT CAPTURING (D-a), then
+  published replayed 902 -> 912 -> 922 -> … and retention drained to 0.  Both v2
+  lanes finished health=active, failure_code=None, failed_samples=0.  That is
+  53 + D-a + the retain-until-ACK outbox all visible in ten seconds of evidence,
+  now on the Phase N build.
+
+THE IDENTITY HALF - what step (d) exists to read, at five times F1's duration.
+  * **16 canonical speakers for 2 real voices, SATURATED at t+127.1 s** of a
+    319 s run - against 42abc5a's t+93.9 s, so the album pushed saturation 33 s
+    later and no further.  (F1's 86 s run reached 12 and never saturated.)
+  * identity_status **105 prepared / 50 empty_span / 16 abstain**; the abstains
+    name themselves - **15 speaker_capacity_exceeded** + 1
+    same_span_cannot_link_conflict, published under S00 (J2 holding).
+  * The album's thesis over a whole meeting: **S01 carries 93 of the 154
+    readable span labels and survives the 30 s silence window, the 28 s room
+    window and the 5 s outage** -
+      program-a         {S01:26, S02:8, S03:8, S00:2, S04:1, S05:1, S06:1}
+      silence           {S06:4, S07..S14 one each}
+      program-b         {S01:32, S00:2, S15:1, S16:1}
+      room-window (mic) {S00:7, S06:3}
+      program-interrupt {S01:29, S00:18, S06:1}
+      program-d         {S01:6, S00:3}
+    The 15 minority ids are minted in the SILENCE window (9 of them, on
+    microphone-lane near-silence) and at the edges: candidate 55, unchanged.
+
+THE FINDING, and it EXTENDS iteration 30's rather than repeating it.
+  identity_finalized fired **0 times** and the journal has **0** hits on
+  `…/{sid}/stop` (candidate 60, third measurement) - AND
+  `identity_revision_version` stayed **0 on all 171 spans** with **0**
+  `live identity sweep` lines in the journal.  This meeting was **319 s**, and
+  `LiveIdentitySweeper.maybe_sweep` is called per scored span
+  (live_provider_bundle.py:570) with meeting_seconds = span.start_sample/16000
+  at SWEEP_INTERVAL_SECONDS **60**, so **five** cadence deadlines were crossed.
+  So the cadence half RAN and PUBLISHED NOTHING while candidate 60 means the
+  session-end half never ran at all: **a real 300-second meeting on the deployed
+  system ends with the album's live labelling and no correction from either half
+  of step 3.**  Iteration 23 measured the sweep repairing exactly this
+  fragmentation offline (+5.82 pp, 93.44 -> 99.26 %), so the two facts have to be
+  reconciled by measurement.
+  And the evidence CANNOT say which of "swept and proposed nothing" or "never
+  swept" happened: sweep_now sets _unconsumed and logs ONLY when the revision is
+  non-empty, so an empty cadence sweep is invisible on every surface - the exact
+  distinction N-sweep-end's decision 4 records identity_finalized
+  unconditionally to preserve, granted to the session-end half and withheld from
+  the cadence half.  Filed as **candidate 65**.
+
+CANDIDATE 64 IS ANSWERED BY MEASUREMENT, THOUGH THE DECISION IS STILL THE
+OPERATOR'S.  F1 on this same deployed code the same day returned p95 RTF 2.365
+RED at n=52; F2 returned **0.577 GREEN at n=171**, with the same micro-spans
+present (max 2.529) and total decode 58.3 s over a 319 s meeting.  The clause's
+verdict is a function of the meeting's span count, not of whether the decoder
+kept up.  That is candidate 64's option (b) argued by measurement rather than by
+preference.  The loop did NOT touch the reducer.
+
+FILES TOUCHED.  scripts/ralph-afk/context.md (F2 scoreboard row; the iteration-11
+F2-green block RETIRED verbatim to progress.txt and REPLACED by the
+F2-on-Phase-N block; the step-(d) bullet; the Phase N header note; candidates 25,
+55, 60, 64 updated and candidate 65 added), scripts/ralph-afk/progress.txt.
+**No product source, no tests, no ops.**
+
+VALIDATION COMMANDS AND EVIDENCE PATHS.
+  /tmp/i1-f2-evidence/ralph-cert   (full driver directory, 2.2 MB, incl.
+                                    interrupt.json and 7 snap-full-*.json)
+  /tmp/i1-clauses.txt   rc=0    /tmp/i1-analyze.txt   rc=4
+  session b05f77623ea54d7995a000c51fb4f686, label ralph-i1-f2-20260729T094804Z
+
+HOSTS LEFT CLEAN, MEASURED AFTER (every rollback in this iteration's pre-record
+block was applied or proved unnecessary):
+  server: HEAD 7a4f59c worktree clean; live MainPID 365632, batch 301112, vllm
+    322117, all NRestarts=0; **iptables -S INPUT == `-P INPUT ACCEPT`** (the
+    rule self-deleted, deletes=1, and the belt-and-braces -D was not needed);
+    /tmp scratch removed (the report is ROOT-OWNED - `sudo rm`); live-runs 0
+    entries; no /tmp/mtd-live-*; 0 journal tracebacks; batch / and /api/jobs 200;
+    live /live 200
+  m4mbp : app killed, /tmp scratch removed, volume 31 unmuted, pasteboard 0,
+    BOTH TCC grants still auth_value=2, app inode 212080356 and CLI sha256
+    450c20bf… unchanged - no rebuild, so no TCC exposure
+  MacStudio: output volume back to **50**, its measured pre-value
+
+WHAT I LEARNED (three things).
+  1. **The same clause, the same code, the same day, opposite verdicts - and the
+     difference is the sample count.**  RTF p95 was RED at n=52 and GREEN at
+     n=171.  A percentile gate over a population the system itself chooses is a
+     gate on the population, not on the system.  That is the strongest argument
+     candidate 64 will get and it cost nothing extra to obtain.
+  2. **A green run is where the expensive findings are.**  Six GREEN clauses and
+     the run's most valuable output is that neither half of Phase N step 3
+     publishes anything.  A clause list cannot ask a question nobody wrote down;
+     the identity evidence had to be read out of the raw event stream.
+  3. **"Ran and found nothing" and "never ran" were already ruled to be opposite
+     facts (N-sweep-end decision 4) - and the ruling was applied to one half of
+     the mechanism only.**  The cadence half inherited the silence the
+     session-end half was deliberately given a record to escape.  A decision
+     recorded for one site is not a decision applied to its class.
+
+BLOCKERS.  Nothing blocked this iteration.  What is blocked for the NEXT one:
+  * **Every remaining item needs the operator.**  Phase N's gate step (d) is now
+    complete in both halves, F1/F2/F3 have all been run against the code that is
+    deployed, and there is no unblocked measurement left that the loop owns.
+  * Tracked product source or gate definitions under the post-merge freeze:
+    candidate 60 (the client never calls /stop), candidate 65 (no sweep publishes
+    a correction, and an empty sweep leaves no record), candidate 55 (capacity
+    saturates at t+127 s), candidate 58, candidate 64 (the RTF measurement
+    contract), and F1's two REDs.
+  * F2's system-audio-denied variant would spend a TCC grant; F1/F2's second
+    voice is limited by m4mbp's built-in microphone - five runs now say so.
+    Neither is an iteration away.
+
+RECOMMENDED NEXT STEP.  **Ask the operator for one authorization covering
+candidates 60 and 65 together**, and the argument is now measured end to end:
+Phase N steps 1-3 are merged, deployed and certified by both F1 and F2, and yet
+ADR-0002's second acceptance half - demonstrated live->file convergence - is
+worth exactly **zero** on the deployed system, because the session-end sweep is
+unreachable (60) and the cadence sweep publishes nothing while being unable to
+say whether it ran (65).  60 alone would light up the session-end half and leave
+the cadence half as unreadable as it is today, which is why they belong in one
+cycle.  The fix shapes are unchanged and small: a transport call after the final
+drain in CaptureController.stop (under the fifth amendment's rule that a stop
+which cannot reach the server must still stop locally), plus a record that a
+sweep ran and proposed nothing.
