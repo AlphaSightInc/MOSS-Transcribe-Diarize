@@ -174,8 +174,10 @@ def test_a_root_inside_a_runs_tree_is_refused_by_name(tmp_path, monkeypatch):
 def test_a_filesystem_that_does_not_enforce_modes_is_refused(tmp_path, monkeypatch):
     """D4(4). `/mnt/d` is a 9p drvfs mount where chmod is a silent no-op; say so early."""
 
+    root = tmp_path / "tape-root"
+    root.mkdir()
+    os.chmod(root, 0o755)
     monkeypatch.setattr("moss_transcribe_diarize.app.live_tape.os.chmod", lambda *a, **k: None)
-    (tmp_path / "tape-root").mkdir(mode=0o755)
 
     with pytest.raises(LiveTapeRootError, match="does not enforce modes"):
         _store(tmp_path)

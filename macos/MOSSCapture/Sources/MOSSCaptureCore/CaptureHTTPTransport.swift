@@ -437,7 +437,12 @@ private struct HelperHeartbeatPayload: Encodable {
                 (
                     laneStatus.lane.rawValue,
                     HelperLanePayload(
-                        state: laneStatus.state,
+                        // `pending` is a local permission/UI fact. The wire contract calls the
+                        // same nonterminal state `starting`; sending `pending` makes the server
+                        // reject the first heartbeat while the macOS prompt is still open.
+                        state: laneStatus.state == NativeLanePermissionState.pending.rawValue
+                            ? "starting"
+                            : laneStatus.state,
                         deviceEpoch: laneStatus.deviceEpoch,
                         droppedFrames: laneStatus.droppedFrames,
                         discontinuities: laneStatus.discontinuities,

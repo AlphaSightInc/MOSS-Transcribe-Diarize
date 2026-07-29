@@ -90,7 +90,12 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # clean stop. That merge carries exactly two product files — CaptureController.swift and its tests —
 # from a branch cut at this same SHA, deliberately excluding the feature branch's prototype and docs
 # commits. An ELEVENTH merge still fails here.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-5111b36c2fc04c408cc320707d34a08ea56317b7}"
+# Advanced to fa0ff6a for the operator-authorized production closeout on 2026-07-29. Fresh gates
+# exposed one test-only Swift concurrency warning plus a first-run permission heartbeat sending
+# local-only `pending` to a wire contract that calls it `starting`. This merge fixes that boundary,
+# keeps the denied lane survivable, and makes its environment-sensitive tests deterministic. A
+# THIRTEENTH merge still fails here.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-fa0ff6a33fd59923b9ac4ca4053b9501a38bde51}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

@@ -302,12 +302,12 @@ def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():
                 start_body = start.json()
                 assert start_body["ok"] is True
                 assert start_body["running"] is True
-                snapshot = _wait_for_server_observed_dual_lane_frames(
+                snapshot = _wait_for_server_observed_lane_outcomes(
                     server_url=server_url,
                     session_id="macos-tracer-session",
                     bearer_token=restarted["capture-bearer"],
                 )
-                _assert_server_observed_dual_lane_frames(snapshot)
+                _assert_server_observed_surviving_capture(snapshot)
 
                 status = _run_cli(cli_exe, ["status"], env=env, timeout=5.0)
                 assert status.returncode == 0, status.diagnostic
@@ -1156,19 +1156,24 @@ def _server_snapshot(*, server_url: str, session_id: str, bearer_token: str) -> 
     )
 
 
-def _assert_server_observed_dual_lane_frames(snapshot: dict[str, Any]) -> int:
+def _assert_server_observed_surviving_capture(snapshot: dict[str, Any]) -> int:
     v2_session = snapshot["v2_session"]
     assert v2_session["status"] == "active"
     lanes = v2_session["lanes"]
     observed_samples = 0
     for lane_name in ("system", "microphone"):
-        accepted = int(lanes[lane_name]["accepted_samples"])
-        assert accepted > 0, f"server observed no native samples for {lane_name}"
-        observed_samples += accepted
+        lane = lanes[lane_name]
+        accepted = int(lane["accepted_samples"])
+        if accepted:
+            observed_samples += accepted
+            continue
+        assert lane["health"] == "failed", f"server observed no outcome for {lane_name}"
+        assert lane["failure_code"], f"failed lane carried no typed reason: {lane_name}"
+    assert observed_samples > 0, "a survivable capture needs at least one publishing lane"
     return observed_samples
 
 
-def _wait_for_server_observed_dual_lane_frames(
+def _wait_for_server_observed_lane_outcomes(
     *,
     server_url: str,
     session_id: str,
@@ -1183,10 +1188,16 @@ def _wait_for_server_observed_dual_lane_frames(
             bearer_token=bearer_token,
         )
         lanes = last_snapshot["v2_session"]["lanes"]
-        if all(int(lanes[lane]["accepted_samples"]) > 0 for lane in ("system", "microphone")):
+        resolved = [
+            int(lanes[lane]["accepted_samples"]) > 0 or lanes[lane]["health"] == "failed"
+            for lane in ("system", "microphone")
+        ]
+        if all(resolved) and any(
+            int(lanes[lane]["accepted_samples"]) > 0 for lane in ("system", "microphone")
+        ):
             return last_snapshot
         time.sleep(0.1)
-    pytest.fail(f"server did not observe native samples on both lanes: {last_snapshot}")
+    pytest.fail(f"server did not observe a terminal outcome for both lanes: {last_snapshot}")
 
 
 def _assert_production_server_runtime(runtime: dict[str, Any]) -> None:
