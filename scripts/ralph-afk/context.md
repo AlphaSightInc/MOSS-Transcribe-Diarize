@@ -281,7 +281,7 @@ carry is in the retired-evidence index below).**
   room, five runs now say so); and F4b, which closes only when everything else has evidence.
   **Does NOT need one:** Phase N **step 4** (batch Tier-B unification - ADR-0002's own step 4 of 4,
   covered by prd.md's *"Phase N remains authorized. Take it in ADR-0002's shape"*), **candidate 67**
-  (the probe reads the revision version off the wrong surface), **re-running any certification run**
+  (done, iteration 13), **re-running any certification run**
   (F1/F2/F3 are the PRD's own clauses driven by loop-owned tooling against the deployed service and
   the installed bundle - iteration 12 re-ran F3 on this basis, spending no operator input and no TCC
   click), and this loop's own tooling and working memory. *Re-derive that list from prd.md's tail every iteration rather than
@@ -355,6 +355,16 @@ carry is in the retired-evidence index below).**
   version off a surface that does not carry it. No product change, no authorization, no TCC click,
   no new device row (`pair` reuses the stored id), all three server MainPIDs and both TCC grants
   unchanged, batch 200/200.
+- **THE INSTRUMENT EVERY SWEEP QUESTION IS ASKED THROUGH CAN NOW SEE THE ANSWER** `[iteration 13]`.
+  Candidate 67 is **done** — `live-pipeline-probe.py`'s sweep reduction reads the revision version off
+  `canonical_processed` rather than off a committed item that never carried it, an absent field is
+  `null` rather than a silent 0, and the session-end half names its refusal. **It carried a second
+  defect out with it:** `since_seq` is inclusive, so every poll re-delivered the previous poll's
+  highest event and the probe counted it again — which is why three reports say `session_created: 2`
+  and why iteration 9's fragmented run reported 62 spans for a 61-span meeting and RTF p95 0.190
+  where the deduped stream gives 0.212. Red-before by semantic revert (17 failures), green after
+  (`--self-test`, 0), and iteration 12's F3 histogram reproduced from its raw `events.tsv`. No
+  product source, no host, no session. See the probe-reduction block below.
 - **THE SECRET-HYGIENE CLAUSE'S LAST UNMEASURED HALF IS ANSWERED** `[iteration 10]`. The browser-
   storage half had **no** measurement of any kind — the tracked static check reads a locally
   rendered page, `leak-scan.sh` never opens the portal, and the suite's own `storageWrites` recorder
@@ -655,7 +665,42 @@ carries **`identity_snapshot_version`** (`live_session.py:165,814`) — a differ
 it is **always absent**, so the probe's `sweep` reduction can never see a cadence revision's version
 and would report 0 on this very run. *Its `revised_transcript` projection does work* — that is the
 field that answers the question. **Read the version off `canonical_processed`, never off a committed
-item.** (Candidate 67.)
+item.** (Candidate 67 — **fixed in iteration 13**, block immediately below.)
+
+**THE PROBE'S SWEEP REDUCTION READS THE SURFACE THAT CARRIES THE FIELD, AND A RE-READ IS NO LONGER A
+SECOND MEASUREMENT — candidate 67 `[done — run `20260729-094359` iteration 13]`.** Loop tooling only
+(`scripts/ralph-afk/live-pipeline-probe.py`); no product source, no host touched, no session, no
+authorization. `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty before and after.
+
+| what changed | why it is not cosmetic |
+| --- | --- |
+| `sweep.cadence.*` reads `identity_revision_version` / `_spans` / `_merges` off **`canonical_processed`** (collected beside the refusals it already took), and the bogus item-level projection is gone | the old read returned `None` on **every span of every run** and an `isinstance(…, int)` filter made that a silent `[]` — it would have reported "no revision" on the soak that measured three |
+| an **absent** field is `null`, never `0`/`[]` — `versions`, `version_histogram`, `max_version`, `spans_revised`, `merges` are all null together, with `spans_without_version` printed beside them | third time in this loop a missing field read as a negative measurement (`identity_finalized`, `storageWrites`, this). "Measured zero revisions" and "measured nothing" are opposite facts |
+| `sweep.session_end` is filled from the post-stop `identity_finalized` drain **or** names its refusal (`"…drain returned 403"`) | that half reaches no live reader at all; a null with a reason is the honest answer, and iteration 7 measured the 403 |
+| **events are deduped by `seq`, exactly as the portal does** (`live_portal.py:474`), the request unchanged; `duplicate_event_reads` and `post_stop_events.already_seen` are **printed, never subtracted silently** | `since_seq` is **inclusive** server-side (`live_service_runtime.events`: `event.seq >= since_seq`), so every poll re-delivers the previous poll's highest event. The probe's own reader thread already advanced `seq + 1` (`:246`); the main loop did not |
+
+***The dedupe is a correction to numbers already in the record, not a tidy-up.*** Re-reduced from the
+prior reports' own `canonical_events`: iteration 9's fragmented run reported `spans_total` **62 for a
+61-span meeting** and decoder p95 RTF **0.190**, which is **0.212** once the repeats are removed
+(+11.6 %); the continuous control moves 0.167 → 0.172; iteration 7's run had no duplicate canonical
+event and does not move. Every report before this one also counted `session_created` **twice**, which
+is the tell that was sitting in plain sight in three reports.
+
+**Validated three ways, and the red-before is a semantic revert.** (1) `--self-test` (new; needs no
+host, no server, no argument): **PASS, 0 failures**, six cases — the version comes off the event and
+never off an item that carries a deliberately wrong one, absent ⇒ null, no events ⇒ null, the F3
+histogram shape, dedupe, and the session-end refusal string. (2) The **same two defects re-introduced
+on a copy** (`/tmp/red-probe.py`: read `items` instead of `canonical_events`, drop the seq guard) →
+**FAIL, 17 failures**, including `versions: got [7]` from the planted item value. (3) **Real deployed
+data**: iteration 12's F3 `events.tsv` (6108 event reads, **380 duplicates over 381 polls**, one per
+poll as the inclusive semantics predict) replayed through the new reduction gives
+`{0:130, 1:122, 2:173, 3:223}`, `max_version` **3**, `first_nonzero` span **130**, `spans_revised`
+**3**, `merges` **0** — iteration 12's hand-measured numbers, reproduced by the instrument.
+***Honest limit:*** the chain was proven in two halves, not in one live run — the reduction on real
+deployed payloads, the collection keys against `live_service_runtime.py:800` and against those same
+real payloads. A future `live-pipeline-probe.py` run is what would show `sweep.cadence` populated end
+to end; on a 150 s meeting expect `{"0": N}` and `max_version` 0, which is now *measured zero* rather
+than *unmeasured*.
 
 ***What survives of candidate 65, stated exactly.*** The **rate**, and the **diagnosability** half.
 Three revisions repaired **3 of the run's 122 abstained spans (2.5 %)**, so ~14 of the ~17 deadlines
@@ -1209,8 +1254,14 @@ python3 -m pytest tests/test_live_pipeline_seams.py -q
 #     never run is not evidence that it works, and both of these found a real defect on first run.
 python3 scripts/ralph-afk/soak-abort-probe.py      # live-soak.sh's abort decision: 90/90, rc=0
 python3 scripts/ralph-afk/view-reader-probe.py     # live-pipeline-probe.py's ConcurrentViewReader
+python3 scripts/ralph-afk/live-pipeline-probe.py --self-test   # its sweep/event reductions: rc=0
 # view-reader-probe.py caught `self._stop = threading.Event()` shadowing threading.Thread._stop,
 # which threading.Thread.join() calls internally: every run would have died at reader.join().
+# --self-test (candidate 67, iteration 13) guards the two reductions that read a field off a
+# surface: the cadence version comes off `canonical_processed` and never off a committed item,
+# an absent field is null and never 0, and a re-delivered event (`since_seq` is INCLUSIVE) is
+# one measurement. Red-before is a semantic revert on a COPY - read `items` instead of
+# `canonical_events` and drop the seq guard - which fails 17 of its checks.
 
 # --- candidate 65/55's CAUSE chain: five offline instruments (identity-evidence-probe.py,
 #     sweep-fixpoint-probe.py, album-bank-shape-probe.py, sweep-multiplicity-probe.py,
@@ -1861,8 +1912,8 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     (2.5 %), ~14 deadlines produced nothing, and nothing anywhere says so. Re-file 65 as *the empty
     cadence sweep leaves no record*, which is item (b) of the authorization request and unchanged.
     See the cadence-sweep block above.
-67. **The probe reads the revision version off a surface that does not carry it.** `[open, new —
-    run `20260729-094359` iteration 12; loop tooling, no authorization needed]`.
+67. **The probe reads the revision version off a surface that does not carry it.** `[DONE —
+    iteration 13; loop tooling, no authorization spent. See the probe-reduction block below.]`
     `live-pipeline-probe.py:635-637,1080` projects `item.get("identity_revision_version")` from a
     **snapshot committed item**, which carries `identity_snapshot_version` instead — a different
     quantity from a different writer (`live_session.py:165,814` vs `live_service_runtime.py:615,800`).
@@ -1875,6 +1926,9 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     instance of "a verdict word must name the thing it decides" and the third where a missing field
     was read as a negative measurement (`identity_finalized`, then `storageWrites`, now this).
     The `revised_transcript` projection beside it is correct and is what answered this iteration.
+    **Fixed in iteration 13, and it carried a second defect out with it** — the probe counted a
+    re-delivered event as a second measurement. See the block below for both, the red-before proof
+    and the numbers the second one moves.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a

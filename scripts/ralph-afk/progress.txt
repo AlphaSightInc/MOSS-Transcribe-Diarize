@@ -25482,3 +25482,134 @@ absent field null.  After that, the SEVENTH compaction is due by ~iteration 17
 ~6 KB, so check the size before choosing.  Do NOT re-run F1 hoping for a
 different latency verdict: its two REDs are candidate 64 and the plan's ordered
 remedies, both the operator's decision.
+
+================================================================================
+RUN 20260729-094359 ITERATION 13 - THE INSTRUMENT EVERY SWEEP QUESTION IS ASKED
+THROUGH CAN NOW SEE THE ANSWER, AND A RE-READ IS NO LONGER A SECOND MEASUREMENT
+================================================================================
+
+TARGET.  Candidate 67, on iteration 12's own recommendation ("the cheapest real
+item the loop owns and it is now load-bearing").  live-pipeline-probe.py's sweep
+reduction read `identity_revision_version` off a SNAPSHOT COMMITTED ITEM, which
+carries `identity_snapshot_version` instead - a different quantity from a
+different writer (live_session.py:165,814 vs live_service_runtime.py:615,800) -
+so the read returned None on every span of every run and an isinstance(..., int)
+filter turned that into a silent 0.  The probe is the instrument every future
+sweep question will be asked through, and it would have reported "no revision"
+on the very soak that measured three.
+Chosen because it needs no authorization (prd.md's last commit is still 0456177,
+re-read FIRST per the standing rule - seven amendments plus the ADR-0002
+supersession, nothing new), no product change, no host and no TCC click, and
+because every other open product item - 55, 58, 60, 64, 65, 66 - needs an
+amendment that does not exist.
+
+WHAT I FOUND ON THE WAY, AND IT IS THE HALF THAT WAS NOT ON THE CANDIDATE LIST.
+`since_seq` is INCLUSIVE server-side (live_service_runtime.events: `event.seq >=
+since_seq`), so every poll re-delivers the previous poll's highest event.  The
+probe's own ConcurrentViewReader already advances `seq + 1` (:246); the MAIN
+loop did not, and counted the repeat as another event.  The tell was sitting in
+three reports in plain sight: `session_created: 2` for an event that occurs
+exactly once.  The portal - which this probe deliberately mirrors - keeps the
+same inclusive request and drops the repeat on the READER side
+(live_portal.py:474), so the faithful mirror is to dedupe here and leave the
+wire behaviour alone.
+
+FILES TOUCHED.  scripts/ralph-afk/live-pipeline-probe.py (loop tooling only),
+scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt.
+NO product source, NO test, NO ops.  `git diff --name-only 7a4f59c HEAD --
+':!scripts/ralph-afk'` empty before and after, so every offline probe still
+speaks for the deployed service.
+
+THE CHANGE, IN FOUR PARTS.
+ 1. `sweep.cadence.*` reads `identity_revision_version` / `_spans` / `_merges`
+    off `canonical_processed`, collected beside the `identity_revision_refusals`
+    the probe already took.  The bogus item-level projection is deleted; the
+    item keeps `identity_snapshot_version`, which is the version it does carry,
+    with a comment naming why the other one is not there.
+ 2. An ABSENT field is null, never 0 or []: `versions`, `version_histogram`,
+    `max_version`, `spans_revised` and `merges` go null together, with
+    `spans_without_version` printed beside them.  "Measured zero revisions" and
+    "measured nothing" are opposite facts about a meeting.
+ 3. `sweep.session_end` is filled from the post-stop `identity_finalized` drain
+    or names its refusal ("identity_finalized not read: post-stop events drain
+    returned 403").  That half reaches no live reader at all.
+ 4. Events are deduped by seq, exactly as the portal does, with the request
+    unchanged; `duplicate_event_reads` and `post_stop_events.already_seen` are
+    PRINTED, never subtracted silently.
+
+VALIDATION COMMANDS AND RESULTS.
+  python3 scripts/ralph-afk/live-pipeline-probe.py --self-test   ->  rc=0
+    PASS, 0 failures.  Six cases, and every one is written so the pre-fix code
+    fails it: the version comes off the event and never off an item carrying a
+    deliberately wrong one; absent => null; no events => null; the F3 histogram
+    shape; the dedupe; the session-end refusal string.  It needs no host, no
+    server and no argument, so the instrument is checkable where it is edited.
+  RED-BEFORE, by semantic revert on a COPY (/tmp/red-probe.py: read `items`
+  instead of `canonical_events`, drop the seq guard):
+    python3 /tmp/red-probe.py --self-test  ->  rc=1, FAIL, 17 failures,
+    including `versions: got [7]` - the planted item value, which is exactly
+    what the old code would have reported as a revision version.
+  REAL DEPLOYED DATA, iteration 12's F3 events.tsv replayed through the new
+  reduction (6108 event reads, 380 duplicates over 381 polls - one per poll, as
+  the inclusive semantics predict; `session_created` now 1, not 2):
+    version_histogram {0:130, 1:122, 2:173, 3:223}, max_version 3,
+    first_nonzero span 130, spans_revised 3, merges 0
+  - iteration 12's hand-measured numbers, reproduced by the instrument.
+    Replay command (reproducible; the probe has a dash in its name, so it loads
+    by file path and must be registered in sys.modules before exec_module):
+      importlib.util.spec_from_file_location("probe", <probe>) ->
+      probe._unseen_events(batch, seen) per events.tsv line -> collect
+      canonical_processed payloads -> probe._sweep_summary([], canonical)
+
+THE DEDUPE IS A CORRECTION TO NUMBERS ALREADY IN THE RECORD, NOT A TIDY-UP.
+Re-reduced from the prior reports' own `canonical_events` (dedupe by span_id):
+  /tmp/i9-frag-probe.json   spans_total 62 -> 59 for a 61-span meeting,
+                            decoder p95 RTF 0.190 -> 0.212  (+11.6 %)
+  /tmp/i9b-cont-probe.json  spans_total 61 -> 59, RTF p95 0.167 -> 0.172
+  /tmp/i7c-probe.json       29 -> 29, unchanged (no duplicate canonical event)
+Iteration 9's block quotes 0.190/0.167; both are slight under-reads.  Neither
+number is load-bearing for any PRD clause - the certification RTF comes from
+live-canary-clauses.py, not from this probe - so this is a correction to the
+loop's record, not to a gate.
+
+WHAT I LEARNED.
+ 1. A FIELD NAME IS AN INTERFACE, AND TWO NAMES FOR ONE IDEA IS A DEFECT ON
+    BOTH SIDES.  `identity_revision_version` and `identity_snapshot_version`
+    differ by one word and live one layer apart; the probe read the wrong one
+    for two runs and reported a confident 0.  The fix that matters is not the
+    corrected read, it is that an absent field now projects null - because the
+    NEXT renamed field will be caught by the null instead of by a measurement.
+ 2. FIXING AN INSTRUMENT'S READ IS THE MOMENT TO AUDIT ITS OTHER READS.  The
+    dedupe defect was not on any candidate list and was found only because the
+    canonical-event collection was open on the screen.  It had been inflating
+    `events_seen`, `event_kinds`, `spans_total` and the RTF percentiles since
+    the probe was written, and `session_created: 2` was printed in every report
+    the whole time.
+ 3. THE MIRROR CLAIM IS TESTABLE.  The probe's docstring says it mirrors the
+    portal's read path; the portal dedupes by seq and the probe did not, so the
+    claim was false in a way nobody had checked.  When a tool documents itself
+    as a mirror, the mirrored code is a specification - read it.
+
+BLOCKERS.  None.
+
+EVIDENCE PATHS.  /tmp/red-probe.py (the semantic revert, red-before),
+/tmp/i12-f3-evidence/ralph-soak/events.tsv (the real deployed event stream),
+/tmp/i9-frag-probe.json, /tmp/i9b-cont-probe.json, /tmp/i7c-probe.json.
+
+HONEST LIMIT.  The chain is proven in two halves, not in one live run: the
+reduction on real deployed payloads, and the collection keys against
+live_service_runtime.py:800 AND against those same real payloads (the replay
+extracted them from actual canonical_processed events, so the key names are
+verified against the wire, not just against source).  What no evidence here
+shows is `sweep.cadence` populated end to end by a live probe run; on a 150 s
+meeting expect {"0": N} and max_version 0, which is now a MEASURED zero rather
+than an unmeasured one.
+
+RECOMMENDED NEXT STEP.  The SEVENTH compaction: context.md is 231 932 B after
+this iteration (was 226 213), the Read tool's hard cap is 256 KB, and the
+measured drift is ~5-10 KB/iteration - so it is due within two or three
+iterations, and the sixth pass already named the target (the Candidates
+section, ~67 KB, of which the Phase N step index is ~27 KB of spent per-step
+recipes).  Do it before it is forced, as the fourth pass was.  The alternative
+if an authorization lands first: prd.md's tail is re-read at the start of every
+iteration and everything else open - 55, 58, 60, 64, 65, 66 - needs one.
