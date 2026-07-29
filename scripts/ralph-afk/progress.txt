@@ -15162,3 +15162,26 @@ Separately and cheaply, the host's wall clock stepping ~1.5 s backwards every
 corrupts the RTF metric even on spans that survive.
 
 [loop 20260728-181020-14512] blocked at iteration 30
+
+## Supervisor - operator authorizes the wall-clock fix (Phase P, 2026-07-28)
+- Recorded as the seventh prd.md amendment and Phase P (candidates 60-64), authorized "as scoped".
+- **Phase P precedes Phase N**, and F1/F3 must not be re-run as a gate until it is deployed: at
+  ~13 % per 32 s every certification run dies of this bug and measures nothing else.
+- Supervisor verified the root cause independently before authorizing: `vllm_runner.py:111` is
+  `elapsed_sec = time.time() - started` (wall clock); `live_adapters.py:305` takes
+  `time.monotonic()` and uses it correctly at `:317` on the empty-transcript branch, while `:344`
+  discards it on the success branch. Twelve lines apart, wrong one on the branch that matters.
+- The operator declined to widen this cycle to mandatory client-side retention of the 409 refusal
+  body. That remains the right fix and needs its own authorization. **The supervisor scoped it as
+  optional in the fifth amendment; that was a mistake and it has now cost four cycles** of not
+  knowing why a frame was refused. Recorded so the next authorization treats it as required.
+- Recognition due to the loop for the diagnosis: it tested lane voicing, span density, identity,
+  lease arithmetic and lane drift, and when all five came back clean it asked the right question -
+  "is the cause even in the thing I am varying" - rather than re-modelling the audio. It then
+  reported its own reproduction as right-for-the-wrong-reason (the concurrent readers are probably
+  not load-bearing; what they bought was the timestamp that pinned the cut to one instant).
+- Run 20260728-181020 ended at budget, iteration 30, exit 2. It landed Phase M in full, deployed it
+  as the sixth keeper merge (`77e0014`, four checkouts), measured D-c's effect (8.13 s -> 1.07 s),
+  proved Phase M works on the real host, and root-caused candidate 56. Relaunching with fresh budget.
+- State at relaunch: `main` 77e0014, tree clean, four-way SHA 4/4, m4mbp awake with both TCC grants
+  `auth_value=2`, all three services `NRestarts=0`, batch and live both 200.

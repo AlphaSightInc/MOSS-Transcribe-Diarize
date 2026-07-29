@@ -2062,6 +2062,40 @@ costs nothing and the three diagnostic numbers are now unambiguous.
 Keep the abstain path throughout: an ambiguous span stays unlabelled rather than guessing, and J2
 already ruled that an abstain must not end the meeting.
 
+### Phase P - the wall-clock duration (2026-07-28, seventh amendment) - DO THIS FIRST
+
+Authorized after iteration 28 root-caused candidate 56. **Phase P precedes Phase N, and F1/F3 must
+NOT be re-run as a gate until it is deployed** - every certification run dies at ~13 % per 32 s
+until then, so a red run measures this bug and nothing else.
+
+60. **P1 - use the monotonic reading that is already taken.** `vllm_runner.py:111` computes
+    `elapsed_sec = time.time() - started` on the wall clock. `live_adapters.py:305` takes
+    `time.monotonic()` and uses it correctly on the empty-transcript branch at `:317`; the success
+    branch at `:344` discards it for the runner's wall-clock value. An NTP step backwards makes
+    `elapsed` negative, the session leaves `VIEWABLE_SESSION_STATUSES`, later polls 401 and frames
+    answer the closed-session 409 - the overload iteration 11 named beside the lane-failed one.
+61. **P2 - untrustworthy timing metadata degrades, it does not end the meeting.** Record
+    `elapsed`/RTF null on `canonical_processed` and continue. State it as the general rule - this is
+    the **fifth** instance of the third amendment's class, so a guard on this one field is not the
+    fix.
+62. **P3 - real-seam regression** in `tests/test_live_pipeline_seams.py`: drive the coordinator with
+    a runner result carrying a **negative** `elapsed_sec`; red before, green after.
+63. **P4 - sweep the class.** Enumerate every place that subtracts two `time.time()` readings and
+    treats the result as a duration; fix or record each. The site is not the defect, the pattern is.
+64. **P5 - gate, merge, redeploy, THEN re-run F1 and F3.** Note in the journal that this also
+    repairs the PRD's decoder p95 RTF clause, measured from this same number and therefore
+    unreliable in every prior run.
+
+Explicitly out of scope: mandatory client retention of the 409 refusal body. Right fix, wrong cycle;
+it needs its own authorization.
+
+**What F1's two runs already established, and must not be re-derived:** Phase M works - a publish
+that failed on every tick for 50 s kept 165 consecutive heartbeats alive and left both lanes
+healthy, which is exactly the condition that ended F3 at minute 14.6. Committed p95 fell from
+8343-9148 ms across four prior runs to 2567/2592 ms, and user-visible to 3922/3971 ms against the
+4000 ms gate - **both unqualified** (`sufficientSamples` false, n=8 and n=12 against 20, runs cut at
+18 s and 32 s by this very bug). Do not quote those as a pass.
+
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.

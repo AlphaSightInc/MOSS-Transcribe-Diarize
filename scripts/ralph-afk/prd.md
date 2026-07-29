@@ -331,6 +331,46 @@ cleaner and more separable than humans in a room. The shape of the curve and the
 strategies will hold; the absolute numbers will be worse. Treat 2.0 s as a lower bound, not a
 target, and say so if real audio disagrees.
 
+## Seventh authorized amendment - 2026-07-28, a wall clock is not a duration
+
+Candidate 56 is root-caused and the operator authorized the fix as scoped. **This is Phase P and it
+comes first** - ahead of Phase N, and before F1 or F3 are re-run as a gate, because until it lands
+every certification run dies at ~13 % per 32 s and cannot answer any clause.
+
+**The defect.** `vllm_runner.py:111` computes `elapsed_sec = time.time() - started` on the **wall
+clock**. `live_adapters.py:305` takes a correct `time.monotonic()` reading and uses it on the
+empty-transcript branch at `:317`, then the success branch at `:344` **discards it** in favour of
+the runner's wall-clock value. An NTP step backwards makes `elapsed` negative, which is treated as a
+terminal failure: the session leaves `VIEWABLE_SESSION_STATUSES`, later polls 401 and frames answer
+the closed-session 409. Five audio hypotheses failed before this was found because the cause was
+never in the audio - it is an external periodic event on the host.
+
+Scope, inside `moss_transcribe_diarize/` and `tests/`:
+
+- **(a)** Use the monotonic reading already taken at `live_adapters.py:305` on the success branch at
+  `:344`. The correct value is measured and thrown away twelve lines from where it is needed.
+- **(b)** Rule **once** that untrustworthy timing metadata **degrades** - `elapsed`/RTF recorded
+  null on `canonical_processed` - rather than ending the meeting. This is the third amendment's
+  governing rule applied to the fifth instance of its class; state it as the general rule, not as a
+  guard on this one field.
+- **(c)** A real-seam regression in `tests/test_live_pipeline_seams.py` driving the coordinator with
+  a runner whose result carries a **negative** `elapsed_sec` - red before, green after.
+- **(d)** Note in the journal that this also repairs the PRD's **decoder p95 RTF** clause, which is
+  measured from this same number and has therefore been unreliable in every prior run.
+
+**Sweep the class, do not just patch the site.** Any other place that subtracts two `time.time()`
+readings and treats the result as a duration is the same latent failure. Enumerate them; fix or
+record each.
+
+**Gate:** full Swift/Python; the seam regression; then one further reviewed no-ff merge through
+`merge-keeper.sh` (advance `expected_main` in-script), push, redeploy. **Only then** re-run F1 and
+F3 as the Phase M gate. Exactly one further merge; the freeze resumes after it.
+
+**Not in scope, deliberately:** mandatory client-side retention of the 409 refusal body. The
+supervisor scoped it as optional in the fifth amendment and it has now cost four cycles of not
+knowing why a frame was refused; it remains the right fix and needs its own authorization. Do not
+widen this cycle to include it.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:
