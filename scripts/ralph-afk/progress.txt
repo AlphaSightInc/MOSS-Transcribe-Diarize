@@ -16185,3 +16185,166 @@ TWO WARNINGS F1 HANDED THIS RUN, recorded so the soak is not read naively:
   2. identity saturates at t+65.6 s, so essentially every speaker label after
      minute 1 of this soak will be S00 by design. That is J2 working, not a
      regression, and the soak's label clause must be read that way.
+
+## run 20260729-025318-86584 - iteration 9 - F3 RAN ITS WHOLE PLAN: 5 clauses
+## GREEN, 1 RED, and the RED is a real product defect (candidate 60)
+
+TARGET: P5(d) / Phase M gate step (d), second half - F3, the 16-minute
+active-view soak, against the deployed 42abc5a. It was the single remaining
+Phase M/P gate item and the only thing in front of Phase N.
+
+FIRST, WHAT I FOUND RATHER THAN WHAT I PLANNED. Iteration 8 of this run left NO
+progress.txt entry and NO commit - the last commit was iteration 7's rollback
+pre-record (368db32). A read-only host baseline found the reason: iteration 8 HAD
+launched the soak, at 03:52:58Z, under iteration 7's label
+`ralph-i7-f3-20260729T035258Z`, and then died (context, timeout or crash -
+nothing on either host says which). The driver was STILL RUNNING at minute 6,
+nohup'd on m4mbp exactly as its own header prescribes, with both lanes capturing
+and every snapshot active.
+  ps -eo pid,etime,command | grep live-soak
+    61564  05:57 bash /tmp/live-soak.sh ralph-i7-f3-20260729T035258Z
+    61632  05:54 bash /tmp/live-soak.sh --poll 331d8c57...
+    61633  05:54 bash /tmp/live-soak.sh --status-poll
+So this iteration did not START F3; it let F3 FINISH and then read it. Killing it
+would have destroyed 17 minutes of the loop's last uncertified gate, and the
+appearance that would have justified killing it - a Mac with a running app, a
+muted output and scratch dirs, left behind by an iteration that recorded nothing
+- is exactly the appearance of a crashed run. THE DURABLE RULE, now in
+context.md: the soak driver survives the iteration that started it BY DESIGN;
+before concluding a host is idle, `ps -eo pid,etime,command | grep live-soak`.
+
+VALIDATION COMMAND AND RESULT:
+  python3 scripts/ralph-afk/live-canary-clauses.py \
+    /tmp/i9-f3-evidence/ralph-soak --user-visible-gate-ms 6000   ->  rc=3
+  GREEN  every portal poll answered 200 for the whole run
+  GREEN  decoder p95 RTF 0.546 < 1.0
+  GREEN  user-visible p95 4557 ms vs gate 6000 ms [timelineIntact caveat]
+  GREEN  every full wall-clock minute carried >= 30s accepted audio and a new
+         committed span (17 full minutes)
+  GREEN  the same view authority answered 200/200 at age 1024.1s (> 900s)
+  RED    clean stop DID NOT revoke the view authority within 0.2s
+
+THE NUMBERS, session 331d8c578bd04c2db1d45aa07845c298, evidence
+/tmp/i9-f3-evidence/ralph-soak, reduction /tmp/i9-clauses.txt:
+  17/17 full minutes, 57.8-61.5 s accepted audio each, 24-29 new spans each
+  version 0 -> 3646, 443 committed spans, status active throughout,
+    terminal_failure null, 0 journal tracebacks
+  355/355 portal polls 200, window t+2.2 .. t+1029.1 s
+  view checks: t0 200/200/200 @1.2s; post900 @904.7s; post15 @1024.1s;
+    post-stop @1025.2s ALL 200
+  user-visible p95 4557.155 ms = committed p95 3009.410 + render bound 1547.745
+    sufficientSamples=True (n=199) mixerOriginResolved=True fetchFailures=0
+    timelineIntact=FALSE, rejectedAfterTimelineBreak=234 -> the caveat travels
+    with the number per candidate 57's ruling; it is a PREFIX measurement
+  decoder RTF n=443 min 0.041 p50 0.123 p95 0.546 max 1.402; decode total 231.5 s
+    D-c cap in force, 67 of 443 spans capped, slowest decode 1.47 s
+  lane system DEGRADED macos_buffer_overrun at t+474.2 s and KEPT CAPTURING to
+    the end; both v2 lanes finished health=active failure_code=None
+    failed_samples=0 - D-a working exactly as ruled
+  stop drain retained=0, both lanes stopped, sessionRefusal null, 4099 frames
+
+WHAT THE RUN PROVES ABOUT THE LAST THREE PHASES, which is why it was worth 17
+minutes: candidate 53 killed the previous F3 at minute 14.6 - this one ran the
+full 17 with a PERMANENTLY degraded lane and never lost the heartbeat. Candidate
+56 killed three runs inside 32 s - this one survived roughly 31 of the host's
+1.5 s backward clock steps. D-c's token cap fired 67 times and the RTF tail came
+in at 0.546 where F1's was 0.911.
+
+CANDIDATE 60 - THE ONE RED, AND IT IS A PRODUCT DEFECT. The PRD clause is "then
+clean stop immediately revokes it". Measured: view authority outlived the clean
+stop by 29.4 s. Three independent confirmations, deliberately not one:
+  1. THE WIRE. journalctl grep for `.../331d8c57.../stop` returns 0. The
+     session's only terminal line is
+       live helper terminal: session=331d8c57... reason=helper_lease_expired
+       lanes=none
+     at epoch 1785298234.271, which is 29.4 s AFTER t_stop 1785298204.832 - i.e.
+     the 30 s helper lease ended the session, not the stop.
+  2. THE SNAPSHOT. The portal poller kept answering 200 with status=active for
+     4 s past the stop (last poll t+1026.6 s, version 3646).
+  3. THE SOURCE. The Swift client builds every live URL in one function,
+     liveURL(base:sessionID:action:) at CaptureHTTPTransport.swift:450, and it
+     has exactly three callers - "frames" (:239), "heartbeat" (:292) and the
+     latency probe's snapshot/events (CaptureLatencyProbe.swift:576). There are
+     only two URLRequest(url:) sites in the entire client.
+     CaptureController.stop (CaptureController.swift:473-496) stops the source,
+     drains the outbox and returns. It never tells the server anything.
+AND THE SERVER HALF IS ALREADY BUILT AND ALREADY TESTED:
+  POST /api/live/sessions/{id}/stop exists at live_transport.py:325 (it even
+  takes a `deadline`), and tests/test_live_api.py:502 is literally
+  test_clean_stop_immediately_revokes_view_authority, passing.
+So this is the loop's familiar class one seam further out: the behaviour is
+implemented, contracted and covered on ONE side, and nothing calls it from the
+other. The C1 node proves the route revokes; the Swift suite proves the
+controller stops; NO test puts a real client's stop in front of a real server.
+IT WAS VISIBLE IN F1 AND WAS NOT NAMED - iteration 6 recorded "the only terminal
+line is helper_lease_expired lanes=none 29 s after the run's own stop" as a
+curiosity, in a run whose reducer had no soak clause to test it with.
+SEVERITY, stated so the authorization decision is a decision: exposure is
+BOUNDED at 30 s and self-heals (lease expires -> terminal -> 401), and no audio
+is lost because the client drains before returning. What fails is the word
+"immediately" and the promise that ending a meeting ends the browser's access to
+it. It also costs the accounting clause its clean read - F3's
+accepted-accounted = 14484 samples is INCONCLUSIVE only because the session was
+still active when the last snapshot was taken.
+Tracked product source under macos/ plus a test: FROZEN, needs its own
+authorization. Shape of a fix, not a decision: CaptureController.stop gains a
+transport call after the final drain, under the same rule the fifth amendment
+set - a stop that cannot reach the server must still stop locally, and the lease
+then does what it does today.
+
+THE QUALITY READING NO CLAUSE CAPTURES, and it is the argument for Phase N made
+from a nearly-green 17-minute run rather than from a red one:
+  262 of the 325 non-empty spans - 81% - transcribe to nothing but "Hi.". The
+  decoder hallucinates on a lane carrying near-silence between the soak's one
+  utterance per 60 s. Sampled across the run: t+109s "Hi.", t+379s "Hi.",
+  t+721s "Hi.Hi.Hi.Hi....", with real content only where the driver spoke
+  ("Minute five. The view authority is derived", "Or the fifteen minute
+  boundary.").
+  Identity saturated at t+117 s - 16 canonical speakers for 2 real voices - so
+  1100 of 1371 label tags are S00. J2 held throughout: speaker_capacity_exceeded
+  abstains published under S00 rather than ending the meeting.
+  THAT IS CANDIDATE 55'S MECHANISM AT 17-MINUTE SCALE. The `Hi.` fragments both
+  mint the phantom speakers and fill the transcript; they are one defect seen
+  from two sides.
+  THE SYSTEM MARKER LANDED VERBATIM THIS TIME - span 5 at t+9.5 s is
+  `[0.08][S03]Cardamom, Cardamom.` - so candidate 59's phonetic question does
+  not arise in this run's evidence. The room marker `obsidian` again did not
+  reach m4mbp's microphone: third measurement of candidate 51's harness limit.
+
+HOSTS LEFT CLEAN, all measured after:
+  server  HEAD 42abc5a worktree clean; moss-live-web 355607, moss-web 301112,
+          moss-vllm 322117, all NRestarts=0; batch / 200; live-runs 0; no
+          /tmp/mtd-live-*; 0 tracebacks; device store 13 rows / 1 unrevoked
+          (m4mbp's, not revoked - `pair` reused the stored device id)
+  m4mbp   app killed (pkill -x MOSSCaptureApp), /tmp/live-soak.sh +
+          /tmp/ralph-soak + /tmp/ralph-soak-run.log removed, output volume 31
+          unmuted (the driver's own trap restored it), pasteboard 0 bytes, both
+          TCC grants auth_value=2, app inode 212080356 and CLI sha256
+          450c20bf.. unchanged - no rebuild, so the grants were never exposed
+  NO checkout, NO restart, NO unit/manifest/TLS change: this iteration deployed
+  nothing. Every mutation was one of the six iteration 7 pre-recorded.
+
+FILES TOUCHED: scripts/ralph-afk/context.md (F3 result block, candidate-60
+block, scoreboard row, gates index row, candidate 26 and 60 entries, the Phase N
+gating line, the iteration-8 note) and this file. NO product source.
+
+WHAT I LEARNED:
+  * A gate that finally runs to completion is where a seam defect surfaces,
+    because only a clean stop can fail to revoke. Four red runs never reached
+    the clause that this one failed.
+  * "Covered on both sides of a seam" is not "covered across it". Both halves of
+    candidate 60 have passing tests; the wire between them has none. That is the
+    same shape as H1/K1/53 and it is now three seams deep.
+  * An iteration that leaves no record has not necessarily done nothing. Check
+    the hosts for live processes before assuming a crashed predecessor left only
+    garbage - here it had left the gate itself, half finished.
+
+RECOMMENDED NEXT STEP - put candidate 60 in front of the operator as the eighth
+amendment question, with the severity framing above, and note that Phase N's own
+sequencing rationale ("identity cannot be certified on a meeting that dies at
+minute 14.6") is now satisfied by this run regardless of how 60 is decided. If
+the operator prefers to spend the next authorization on identity instead, that
+is coherent: candidate 60 cannot affect an identity measurement taken during the
+meeting. Cheap unblocked loop work meanwhile: candidate 59 (the marker reducer)
+and F2, the 300 s certification, which is now a scale-up rather than a
+diagnosis - F1 is green and F3 reached every clause.

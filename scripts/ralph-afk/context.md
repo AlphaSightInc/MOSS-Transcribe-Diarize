@@ -113,7 +113,7 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Rollback rehearsed and recorded | GREEN (F4a) |
 | 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). See the F1-green block. |
 | 300 s certification (F2) | not run; the harness is ready (candidate 51, iteration 12) and F1 now passes with it, so F2 is a scale-up rather than a diagnosis |
-| 16-minute soak (F3) | **RED-and-STALE — never run against `42abc5a`.** Its one recorded death (candidate 53, minute 14.6) is fixed, merged and proven. **This is the next run.** |
+| 16-minute soak (F3) | **RAN AGAINST `42abc5a` AND FINISHED ITS WHOLE PLAN (iteration 9) — 5 clauses GREEN, 1 RED.** Candidate 53's minute-14.6 death is gone: 17/17 full minutes, every poll 200, view authority live at age 1024 s. The RED is **new candidate 60** — a clean stop does not revoke view authority, because no client code path calls the server's `POST …/stop`. `live-canary-clauses.py` rc=3. See the F3 block. |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
 
@@ -126,14 +126,21 @@ carry is in the retired-evidence index below).**
   metadata degrades to null and is logged, stated once as a conversion), P3 (four real-seam nodes,
   red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
   Python 608/2/368 green. See the Phase P block.
-- **PHASE P IS FULLY LANDED and its gate step (d) IS HALF DONE.** (a) gate green at `5bc4f7f`,
-  (b) seventh merge `42abc5a`, (c) published and deployed 4/4, and **(d) F1 IS GREEN (iteration 6)**.
-  **The only remaining Phase P/M step is F3, the 16-minute soak.** See the F1-green block and the
-  P5(c) block below.
-- **Phase M gate steps (a), (b), (c) are DONE and (d) is half done** — local gate green at `21a73ea`,
-  sixth merge `77e0014`, deployed, and F1 green on `42abc5a`. **Only F3 remains.** Both halves are
-  fully instrumented — `live-canary.sh`, `live-soak.sh`, `live-canary-clauses.py`,
-  `soak-abort-probe.py`, all in the repo.
+- **PHASE P IS FULLY LANDED and its gate step (d) IS RUN, both halves.** (a) gate green at `5bc4f7f`,
+  (b) seventh merge `42abc5a`, (c) published and deployed 4/4, **(d) F1 GREEN (iteration 6)** and
+  **F3 RUN TO COMPLETION (iteration 9) — 5 GREEN, 1 RED**. The same is true of Phase M's gate steps
+  (a) `21a73ea` / (b) `77e0014` / (c) deployed / (d). **What Phase M and P set out to fix is proven
+  fixed:** candidate 53's minute-14.6 death did not recur, candidate 56 did not fire in 17 minutes,
+  D-c capped 67 of 443 spans and RTF p95 was 0.546. **What now stands in front of Phase N is one new
+  defect, candidate 60**, and the decision of whether the F3 clause it fails is worth an eighth
+  authorization before identity work. See the F3 block and candidate 60.
+- **ITERATION 8 OF THIS RUN LEFT NO RECORD AND NO COMMIT.** It launched the F3 soak at 03:52:58Z
+  (label `ralph-i7-f3-…`, so it reused iteration 7's pre-recorded rollback block) and then died —
+  context, timeout or crash, nothing says which. Iteration 9 found the driver still running at
+  minute 6 and let it finish; this is why the F3 evidence exists at all. *The durable lesson:* the
+  soak driver is `nohup`'d on m4mbp by design, so **it survives the iteration that started it** —
+  before concluding a host is idle, `ps -eo pid,etime,command | grep live-soak`. Killing it would
+  have thrown away 17 minutes of the loop's last uncertified gate.
 - **Phase M's product work is PROVEN on the real hosts** (iteration 26, two F1 re-runs against the
   deployed `77e0014`): 53/48 kept the heartbeat alive through **165 × 200** ticks with a permanently
   failing publish, D-a/49 produced **no lane fault at all**, and D-c took the committed p95 from
@@ -145,8 +152,13 @@ carry is in the retired-evidence index below).**
   16 slots were minted by one-word `Hi.` fragments** of microphone ambient noise. Degrades quality
   without ending a session, so no gate sees it — and now demonstrably not even a passing one.
   Tracked product source; needs its own authorization, and Phase N's `N1`/`N3` may subsume it.
-- **Phase N (live speaker identity) is authorized but gated** behind Phase M's green — i.e. behind
-  F3, now the only thing in front of it.
+- **Phase N (live speaker identity) is authorized but gated** behind Phase M's green. F3 has now run
+  and is **not** unconditionally green — one clause fails on candidate 60. *Whether that gates
+  Phase N is the operator's call, and the evidence for either answer is in the F3 block:* the
+  amendment's reason for sequencing N after M was "identity quality cannot be certified on a meeting
+  that dies at minute 14.6", and **that meeting no longer dies** — it ran 17 minutes with a degraded
+  lane. Candidate 60 is a stop-time authority-revocation defect that cannot affect an identity
+  measurement taken during the meeting.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" below.
@@ -321,6 +333,83 @@ and **322117**, all `NRestarts=0`, batch `/` 200, `live-runs` 0, device store **
 (m4mbp's — never revoked, and `pair` minted no new row). m4mbp: app killed, `/tmp` scratch removed,
 volume back to 31 unmuted, pasteboard 0, both TCC grants still `auth_value=2`, app inode
 `212080356` and CLI sha `450c20bf…` unchanged (no rebuild, so no TCC exposure).
+
+**F3 RAN ITS WHOLE PLAN AND FOUND ONE REAL DEFECT — the 16-minute soak, run `20260729-025318`
+iteration 9. READ THIS BEFORE PHASE N OR ANY EIGHTH-AMENDMENT DECISION.** 17 minutes on the
+deployed `42abc5a` with the muted lane-separating harness, session `331d8c57…`, label
+`ralph-i7-f3-20260729T035258Z`. `live-canary-clauses.py --user-visible-gate-ms 6000` **rc=3**:
+**five clauses GREEN, one RED**. Evidence `/tmp/i9-f3-evidence/ralph-soak`, reduction
+`/tmp/i9-clauses.txt`.
+
+| PRD soak clause | measured |
+| --- | --- |
+| capture remains active for the whole soak | **17/17 full wall-clock minutes** each carried ≥ 57.8 s of accepted audio and 24-29 new committed spans; version 0 → 3646, **443 spans**, status `active` throughout, `terminal_failure` null, **0** journal tracebacks |
+| `/live` polling holds | **355/355** portal polls 200 across t+2.2 s .. t+1029.1 s |
+| **the same view authority works after minute 15** | **GREEN** — `post900` 200/200/200 at age 904.7 s and `post15` 200/200/200 at age **1024.1 s**, the same token minted at t+1.2 s |
+| **then clean stop immediately revokes it** | **RED — see candidate 60.** 0.2 s after `stop` returned `ok:true running:false`, snapshot and events both still **200** |
+| user-visible p95 ≤ 6000 ms | **4557.2 ms GREEN and QUALIFIED** (`sufficientSamples` true n=199, `mixerOriginResolved` true, `fetchFailures` 0): committed p95 **3009.4 ms** + render bound **1547.7 ms**. Caveat travels with it — `timelineIntact` **false**, 234 advances rejected after the break, so the number covers a **prefix** |
+| decoder p95 RTF < 1 | **0.546** over 443 spans (p50 0.123, max 1.402). D-c capped **67 of 443**; slowest decode 1.47 s |
+| lane fault | system lane **degraded** `macos_buffer_overrun` at t+474.2 s and **kept capturing to the end** — D-a working, not a clause failure. Both v2 lanes finished `health=active`, `failure_code=None`, `failed_samples=0` |
+| clean stop drain | `retained=0`, both lanes `stopped`, `sessionRefusal` null, 4099 frames published |
+
+***What this run PROVES about the last three phases, which is the point of running it.*** Candidate
+53 killed the previous F3 at **minute 14.6**; this one ran 17 minutes with a *permanently degraded*
+lane and never lost the heartbeat. Candidate 56 killed three runs inside 32 s; this one survived
+~31 clock steps. D-c's cap fired on 67 spans and the RTF tail stayed at 0.546 where F1's was 0.911.
+
+***The honest quality reading, which no clause captures and which is the argument for Phase N.***
+**262 of the 325 non-empty spans (81 %) transcribe to nothing but `Hi.`** — the decoder hallucinating
+on a lane carrying near-silence between the soak's one utterance per 60 s. Identity saturated at
+**t+117 s** (16 canonical speakers for 2 voices), so **1100 of 1371** label tags are `S00`; J2 held
+throughout (`speaker_capacity_exceeded` abstains published under `S00` rather than ending the
+meeting). *This is candidate 55's mechanism at 17-minute scale*: `Hi.` fragments are what mint the
+phantom speakers, and they are also what fills the transcript. **The system marker LANDED verbatim
+this time** — span 5 at t+9.5 s reads `[0.08][S03]Cardamom, Cardamom.` — so candidate 59's phonetic
+question does not arise here; the room marker `obsidian` again did not reach the microphone, the
+third measurement of candidate 51's recorded harness limit.
+*Hosts left clean, measured after:* server `HEAD 42abc5a` worktree clean, live MainPID **355607** /
+batch **301112** and **322117**, all `NRestarts=0`, batch `/` 200, `live-runs` 0, no `/tmp/mtd-live-*`,
+0 tracebacks, device store **13 / 1 unrevoked**. m4mbp: app killed, all `/tmp` scratch removed,
+volume back to 31 unmuted, pasteboard 0, both TCC grants `auth_value=2`, app inode `212080356` and
+CLI sha `450c20bf…` unchanged (no rebuild).
+
+**CANDIDATE 60 — A CLEAN STOP NEVER REACHES THE SERVER (new, iteration 9). This is F3's one RED and
+it is a product defect, not a harness artifact.** The PRD clause is *"then clean stop immediately
+revokes it"*; measured, the view authority outlived the stop by **29.4 s**.
+***Three independent confirmations, so nobody re-derives it.***
+1. **The wire.** `grep` of the live service journal for `…/331d8c57…/stop` returns **0**. The
+   session's only terminal line is `live helper terminal: … reason=helper_lease_expired lanes=none`
+   at epoch 1785298234.27 — **29.4 s after** `t_stop` 1785298204.83, i.e. the 30 s helper lease, not
+   the stop.
+2. **The snapshot.** The portal poller kept answering 200 with `status=active` for 4 s past the stop
+   (last poll t+1026.6 s, version 3646).
+3. **The source.** The Swift client builds live URLs in exactly one place, `liveURL(base:sessionID:
+   action:)` (`CaptureHTTPTransport.swift:450`), and it has **three** callers: `frames` (`:239`),
+   `heartbeat` (`:292`) and the latency probe's snapshot/events (`CaptureLatencyProbe.swift:576`).
+   There are only **two** `URLRequest(url:)` sites in the whole client. `CaptureController.stop`
+   (`CaptureController.swift:473-496`) stops the source, drains the outbox and returns — it never
+   tells the server anything.
+***And the server half is already built and already tested.*** `POST /api/live/sessions/{id}/stop`
+exists at `live_transport.py:325` and takes a `deadline`; `tests/test_live_api.py:502` is literally
+`test_clean_stop_immediately_revokes_view_authority` and passes. **So this is the loop's familiar
+class one turn further out:** the behaviour is implemented, contracted and covered on one side of the
+seam, and *nothing calls it from the other*. The C1 node proves the route revokes; the Swift suite
+proves the controller stops; **no test puts a real client's `stop` in front of a real server**, which
+is exactly the gap H1/K1/53 each occupied.
+***It was visible in F1 and was not named.*** The F1-green block records "the only terminal line is
+`helper_lease_expired lanes=none` **29 s after the run's own stop**" as a curiosity. It was this
+defect, in a run whose reducer had no soak clause to test it with.
+***Severity, stated so the authorization decision is a decision.*** The exposure is **bounded at
+30 s** and self-heals — the lease expires, the session goes terminal and view authority 401s — and no
+audio is lost, because the client drains before returning. What fails is the PRD's word *immediately*
+and the promise that closing a laptop's meeting closes the browser's access to it. It also costs the
+accounting clause its clean read: F3's `accepted − accounted = 14484 samples` is INCONCLUSIVE only
+because the session was still active when the last snapshot was taken.
+*Tracked product source under `macos/` (and a test under `tests/`), so it is frozen: **needs its own
+authorization**. Shape of the fix, not a decision: `CaptureController.stop` gains a transport call
+after the final drain, with the same "a publish failure must not stop the meeting ending" rule — a
+stop that cannot reach the server must still stop locally, and the lease then does what it does
+today.*
 
 **CANDIDATE 56 IS ANSWERED, AND THE CAUSE IS THE HOST'S WALL CLOCK (new, iteration 28).
 READ THIS BEFORE ANY FURTHER CERTIFICATION RUN OR LATENCY CLAIM.** One probe run with iteration
@@ -794,6 +883,7 @@ progress.txt archive under each title.
 | **K5d re-read** | Named the lane failure `macos_buffer_overrun` and traced it to Phase L. Phase K closed; the fourth amendment spent. |
 | **F1 canary (it. 8) / F3 soak (it. 9)** | **RED** — one defect, candidate 53, since fixed. Both blocks retired to progress.txt. |
 | **F1 canary, run `20260729-025318` it. 6** | **GREEN, rc=0** — the first green certification run. user-visible p95 **3909.3 ms** ≤ 4000 **and qualified** (`sufficientSamples` true, n=44), decoder p95 RTF **0.911** < 1, **329 published == 329 accepted**, 370/370 view polls 200 across both readers, 165/165 heartbeats 200, no lane fault, `terminal_failure` null, 0 tracebacks, hosts left clean. Not certified by it: the "two speakers" half (both voices were on the system lane). See the F1-green block. |
+| **F3 soak, run `20260729-025318` it. 9** | **rc=3 — 5 GREEN, 1 RED.** 17/17 full minutes, 443 spans, 355/355 portal polls 200, view authority 200 at age 1024.1 s, user-visible p95 **4557.2 ms** ≤ 6000 qualified, decoder p95 RTF **0.546**, one lane degraded at t+474 s and kept capturing, clean drain `retained=0`, hosts clean. RED: the clean stop did not revoke view authority — **candidate 60**. |
 | **Phase M gate step (a)** | GREEN at **`21a73ea`** — Swift 158/0 (0 warnings, fresh scratch), Python 604+2/368, tracer 4/0 skips, 10/10, lane-refusal probe rc=0, 7/7 hard-cap cases, leak-scan clean, tree clean; payload 10 files / +983/-51 all in scope. |
 | **M6 gate + merge #6** | Merge **`77e0014`**, parents `fc7097d` + feature tip `4ac5d95`; join `1b6a9f4` proven content-free first. In-worktree gate on the merged tree: Swift 158/0, Python 604+2/368 in 64.4 s. Merge tree == feature tree `d2094369…`. **Not server-only** (4 files under `macos/`), so step (c) is the K5c shape: restart **and** Mac rebuild+reinstall. Guard rehearsed: a seventh merge refuses. |
 | **Phase P gate step (a)** | GREEN at **`5bc4f7f`** (run `20260729-025318` it. 2) — Swift **158/0** with **0 warnings** on a fresh scratch, Python **608 passed / 2 skipped / 368 subtests** in 59.95 s, tracer **4/0 skips**, discriminator **10/10**, lane-refusal probe rc=0 (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `77e0014`), seven hard-cap cases rc=0, `soak-abort-probe` 90/90, `view-reader-probe` pass, leak-scan clean, tree clean. Payload **7 files / +285/−38**, all in `moss_transcribe_diarize/` + `tests/`, **none under `macos/`**. *Payload review added one thing the four-site sweep table could not:* `grep -rnE '(time\.time\(\)\s*-\|-\s*time\.time\(\))' moss_transcribe_diarize/` returns **nothing** — the class is empty by search, not merely by enumeration; every surviving `time.time()` is a persisted or expiry **timestamp** (`live_transport._request_now`, `jobs` `created_at`/`updated_at`, `windowed_transcription:367`), which is P4's recorded ruling. |
@@ -1737,7 +1827,12 @@ and the **server**, which behaves correctly at every step of the client-side fai
     yet — `live-canary.sh` does neither.]`
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-    `[RUN — RED — run 20260728-181020 iteration 9]`. See "F3 — the 16-minute soak" (RETIRED, grep progress.txt). Green for 14 minutes:
+    `[RE-RUN against `42abc5a` — 5 GREEN, 1 RED — run 20260729-025318 iteration 9. See the F3 block
+    above; the RED is candidate 60, and the two soak halves this entry called "unproven" are now
+    PROVEN: the same authority answered 200 at age 1024.1 s. Only "clean stop immediately revokes
+    it" fails, and it fails for a reason nothing to do with the soak.]*
+    *The RED history below is the run 20260728-181020 iteration-9 attempt, kept only for what it
+    diagnosed.* See "F3 — the 16-minute soak" (RETIRED, grep progress.txt). Green for 14 minutes:
     56–62 s of accepted audio every wall-clock minute, 412 committed spans, version 0 → 2647
     monotone, retained ≤ 25.8 % of its bound, 3430 published == 3430 accepted. Then at minute 14.1
     one `macos_buffer_overrun` wedged the publish path, the heartbeat stopped **because a throwing
@@ -2116,6 +2211,14 @@ amendment's literal order is unreachable and why this one drops nothing.**
     Third instance of that class in this loop. Note the cheap negative control that already exists:
     the room marker was absent **and** its phase produced only one-word fragments, so absence of
     content and rewriting of a word look nothing alike in the evidence — only in the verdict.
+60. **A clean stop never reaches the server, so it does not revoke view authority.** `[open, new —
+    run `20260729-025318` iteration 9; **F3's one RED**]`. `CaptureController.stop` drains and
+    returns; no client code path calls `POST /api/live/sessions/{id}/stop`, which exists at
+    `live_transport.py:325` and is covered by `tests/test_live_api.py:502`. Measured: view authority
+    answered 200 for **29.4 s** after a clean stop, until the 30 s helper lease expired. Bounded and
+    self-healing, but it is the PRD clause's word *immediately*, and it was already visible in F1's
+    "29 s after the run's own stop" line without being named. Tracked product source under `macos/`;
+    **needs its own authorization**. Full detail in the candidate-60 block above.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
