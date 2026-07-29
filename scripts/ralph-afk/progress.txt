@@ -21385,3 +21385,5 @@ all.  The fix is one transport call after the final drain in
 `CaptureController.stop`, under the fifth amendment's existing rule that a stop
 which cannot reach the server must still stop locally.
 
+
+[loop 20260729-025318-86584] budget exhausted after 30 iterations without completion
