@@ -291,6 +291,19 @@ public enum CaptureStopContract {
     /// URLSession's default minute: the local stop has already happened by the time this is sent,
     /// and the operator is waiting on the answer.
     public static let requestTimeoutSeconds: TimeInterval = 10.0
+    /// How long a stop may wait for a periodic tick that was already running when it began.
+    ///
+    /// This is deliberately NOT the deadline callers pass to `stop`: production calls
+    /// `controller.stop(deadline: Date())` (`CaptureSecurity.swift`), an already-expired instant
+    /// that means "flush the native source now". Reusing it made the quiescence wait a no-op on
+    /// exactly the path that needed it, so tick quiescence carries its own bound.
+    ///
+    /// Sized against what a tick actually does: one publish pass and one heartbeat, both bounded by
+    /// `requestTimeoutSeconds`. A tick still running past this is not going to finish in time to
+    /// matter, and the stop proceeds — a stop that hangs on a wedged tick would be a worse failure
+    /// than the late verdict this bound exists to avoid, which is why the verdict is suppressed
+    /// independently of whether the wait succeeded.
+    public static let tickQuiescenceSeconds: TimeInterval = 2.0
 }
 
 /// Ends the server's session when this client stops capturing.
@@ -381,6 +394,9 @@ public final class CaptureController {
     private let pump: CaptureFramePublishPump
     private let frameObserver: CaptureAcknowledgedFrameObserving?
     private let sessionStop: CaptureSessionStopAdapter?
+    /// Injectable so a test can drive the quiescence timeout deterministically instead of waiting
+    /// the production bound. Defaults to the contract.
+    private let tickQuiescenceSeconds: TimeInterval
     private let state = CaptureControllerState()
 
     public init(
@@ -393,8 +409,10 @@ public final class CaptureController {
         outbox: CaptureFrameOutbox = CaptureFrameOutbox(),
         pump: CaptureFramePublishPump = CaptureFramePublishPump(),
         frameObserver: CaptureAcknowledgedFrameObserving? = nil,
-        sessionStop: CaptureSessionStopAdapter? = nil
+        sessionStop: CaptureSessionStopAdapter? = nil,
+        tickQuiescenceSeconds: TimeInterval = CaptureStopContract.tickQuiescenceSeconds
     ) {
+        self.tickQuiescenceSeconds = tickQuiescenceSeconds
         self.source = source
         self.transport = transport
         self.keyStore = keyStore
@@ -461,9 +479,14 @@ public final class CaptureController {
         }
         let task = scheduler.schedule(label: "moss.capture.pump") { [weak self] in
             guard let self else { return }
-            guard let configuration = self.state.runningConfiguration() else {
+            // `enterTick` rather than `runningConfiguration`: a stop that has begun must be able to
+            // refuse this tick, and must know when one is already inside. See `beginStopping`.
+            guard let admitted = self.state.enterTick() else {
                 return
             }
+            let configuration = admitted.configuration
+            let generation = admitted.generation
+            defer { self.state.leaveTick() }
             do {
                 // A tick that finds the previous pass still draining skips its publish turn, but it
                 // still emits health: the server's helper lease is what a silent client loses, and
@@ -476,7 +499,7 @@ public final class CaptureController {
                     self.state.clearPumpFailure()
                 }
             } catch {
-                self.recordTransportVerdict(error)
+                self.state.recordTickVerdict(error, generation: generation)
             }
             // Outside the publish's `do`, because a publish that *throws* needs the heartbeat more
             // than a healthy one does. A lane the server has closed refuses the same retained frame
@@ -488,7 +511,7 @@ public final class CaptureController {
             do {
                 _ = try self.emitHealth(configuration: configuration)
             } catch {
-                self.recordTransportVerdict(error)
+                self.state.recordTickVerdict(error, generation: generation)
             }
         }
         state.storeHealthTask(task)
@@ -503,6 +526,18 @@ public final class CaptureController {
     public func stop(deadline: Date) throws -> CaptureStatus {
         try state.requireRunning()
         let configuration = state.runningConfiguration()
+        // Close the tick fence, cancel the timer, and let a tick already inside run out — all of it
+        // before anything tells the server the meeting is over.
+        //
+        // The quiescence bound is its own, NOT `deadline`: production calls `stop(deadline: Date())`
+        // to mean "flush the native source now", and reusing that instant made this wait a no-op on
+        // the only path that needed it. `clearStopping` is deferred so a throw below cannot latch
+        // the fence shut against the next meeting.
+        let (periodicTask, _) = state.beginStopping(
+            quiescenceDeadline: Date().addingTimeInterval(tickQuiescenceSeconds)
+        )
+        periodicTask?.cancel()
+        defer { state.clearStopping() }
         try source.stop(deadline: deadline)
         if let configuration {
             // The meeting's last partial frame only exists once the source has flushed, so the
@@ -627,6 +662,19 @@ public final class CaptureController {
 
 private final class CaptureControllerState {
     private let lock = NSLock()
+    /// Guards the tick fence alone, and is taken BEFORE `lock` wherever both are held.
+    ///
+    /// It is a separate fence because `beginStopping` has to *wait* on it while a tick already
+    /// inside the fence runs to completion, and that tick takes `lock` for its own snapshot —
+    /// waiting on `lock` would block the very thing being waited for.
+    private let tickGate = NSCondition()
+    private var stopping = false
+    private var ticksInFlight = 0
+    /// Bumped by every start and every stop. A tick carries the generation it was admitted under, so
+    /// a verdict that arrives after the meeting it belongs to has ended is recognisably stale — the
+    /// `stopping` flag cannot do this job alone, because it reopens when `stop` returns and a tick
+    /// that outran the quiescence bound finishes after that.
+    private var generation: UInt64 = 0
     private var configuration: CaptureConfiguration?
     private var running = false
     private var publishedFrameCount = 0
@@ -643,6 +691,7 @@ private final class CaptureControllerState {
         }
         self.configuration = configuration
         running = true
+        generation &+= 1
         pumpFailure = nil
         // A refusal names one session id, so a new session starts without the last one's verdict.
         sessionRefusal = nil
@@ -674,6 +723,87 @@ private final class CaptureControllerState {
         defer { lock.unlock() }
         guard running else {
             throw CaptureControllerError.notRunning
+        }
+    }
+
+    /// The periodic tick's entry. Admits the tick and counts it as in flight, or refuses once a stop
+    /// has begun — one atomic step, so a tick cannot pass the fence just as it closes and then be
+    /// missed by the quiescence wait.
+    func enterTick() -> (configuration: CaptureConfiguration, generation: UInt64)? {
+        tickGate.lock()
+        defer { tickGate.unlock() }
+        guard !stopping else {
+            return nil
+        }
+        lock.lock()
+        let admitted = running ? configuration : nil
+        let admittedGeneration = generation
+        lock.unlock()
+        guard let admitted else {
+            return nil
+        }
+        ticksInFlight += 1
+        return (admitted, admittedGeneration)
+    }
+
+    func leaveTick() {
+        tickGate.lock()
+        ticksInFlight -= 1
+        tickGate.broadcast()
+        tickGate.unlock()
+    }
+
+    /// Closes the fence, then waits — bounded by its own deadline, never the caller's source
+    /// deadline — for a tick already inside it. Returns the health task so the caller cancels the
+    /// timer before anything tells the server the meeting is over, and whether the wait succeeded.
+    ///
+    /// `DispatchSourceTimer.cancel()` does not wait for a handler that is already running, so
+    /// cancelling alone leaves exactly the window this closes.
+    func beginStopping(quiescenceDeadline: Date) -> (task: CaptureCancellation?, quiesced: Bool) {
+        tickGate.lock()
+        stopping = true
+        lock.lock()
+        generation &+= 1
+        lock.unlock()
+        while ticksInFlight > 0, Date() < quiescenceDeadline {
+            tickGate.wait(until: quiescenceDeadline)
+        }
+        let quiesced = ticksInFlight == 0
+        tickGate.unlock()
+        lock.lock()
+        let task = healthTask
+        lock.unlock()
+        return (task, quiesced)
+    }
+
+    /// `stopping` is a phase of one stop, never a latch: it reopens on every exit path, including
+    /// the throwing ones, or the next meeting's heartbeat would be fenced off before it began.
+    func clearStopping() {
+        tickGate.lock()
+        stopping = false
+        tickGate.unlock()
+    }
+
+    /// A periodic tick's verdict, which is dropped once a stop has begun.
+    ///
+    /// A tick that was inside the fence when `stop` closed it — or one that outran the quiescence
+    /// bound — is reporting on a session this client is deliberately ending. Its 403 is self
+    /// induced, and recording it as `sessionDisowned` overwrites the one verdict that is supposed
+    /// to mean the server took a live meeting away. This is why suppression does not depend on the
+    /// wait succeeding: the bound protects the stop's latency, the suppression protects the verdict.
+    ///
+    /// The final drain's refusal is recorded by `recordSessionRefusal` and is deliberately NOT
+    /// suppressed — that one answers "did my stop reach a session the server still had", and an
+    /// operator needs it.
+    func recordTickVerdict(_ error: Error, generation tickGeneration: UInt64) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard tickGeneration == generation else {
+            return
+        }
+        pumpFailure = CapturePumpFailure(error: error)
+        if let refusal = CaptureSessionRefusal(error: error) {
+            sessionRefusal = refusal
         }
     }
 
