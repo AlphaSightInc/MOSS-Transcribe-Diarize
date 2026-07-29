@@ -27043,3 +27043,31 @@ instead of memory, the one measurement still open and free is the sweep half of
 step 4's counterfactual: production sweep() converged VACUOUSLY there (0
 corrections, 0 merges) because the causal pass was already perfect, so a corpus or
 a degradation that makes the causal pass imperfect is what would exercise it.
+
+## Supervisor - operator authorizes 55, 60, 64 and the cadence fix (Phase Q, 2026-07-29)
+- Recorded as the ninth prd.md amendment and Phase Q (candidates 69-73). **Candidate 65 is withdrawn
+  entirely** - iteration 7 measured the session-end sweep publishing 19 corrections on 31 spans, and
+  iteration 12's F3 re-run measured the cadence sweep publishing too. Both "it never runs" readings
+  were the loop's own blind instruments, and the loop found both itself.
+- **55's birth condition: option 1, the album's admission (1.0 s of embedded speech)**, taken by the
+  operator on the supervisor's recommendation. The deferred-labelling cost is acceptable *because* a
+  sweep demonstrably publishes; that ordering is the whole argument and must stay in the record.
+- ADR-0002's "birth semantics unchanged" is read as constraining the album, not as asserting birth
+  was correct as written. The operator authorized 55 knowing it changes birth. **If the loop finds
+  evidence that reading is wrong, stop and say so rather than proceeding** - it is the operator's
+  document.
+- 64 is a gate DEFINITION, not a filter: derive the minimum span duration from measurement, never
+  choose it to pass, and always report the excluded count. A silent exclusion does not answer the
+  clause. This is the same rule the loop applied to itself when it refused to filter the reducer.
+- The cadence fix must move BOTH constants or neither. Moving `portalCycleSeconds` alone relaxes the
+  gate while looking like a remedy; moving `pollDelayMs` alone hands a human 500 ms the PRD never
+  records. **The enforcing node is required whatever is decided about the value** - it is the part
+  that stops the number and the schedule drifting apart again, and it outlives the decision.
+- 60 is correctly priced at last, after the loop argued it up twice and then down: the route works,
+  the portal's Stop calls it, the Mac client does not. Fix on its own merits.
+- Supervisor note on its own record: the recommendation to lower `min_segment_samples` - made from
+  the TTS prototype early on - is **measured wrong** and is recorded as such in the amendment. At
+  0.5 s same-speaker agreement is 0.378 against different-speaker 0.360.
+- State at authorization: loop RUNNING (pid 88967, run 20260729-094359, iteration 20 of 30), `main`
+  7a4f59c, four-way SHA 4/4, 8 authorized merges and 0 unauthorized, F2 GREEN, F1 5G/2R, F3 5G/1R.
+  No relaunch; the loop picks this up next iteration.

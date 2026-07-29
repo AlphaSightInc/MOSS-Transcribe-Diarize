@@ -2386,6 +2386,44 @@ including P4's four-site sweep table and P3's per-half red-before table — is i
 declared absence an invalid measurement. Explicitly out of scope then and now: mandatory client
 retention of the 409 refusal body — the right fix, needing its own authorization.
 
+### Phase Q - the birth floor, the stop, the RTF gate, the cadence (2026-07-29, ninth amendment)
+
+**AUTHORIZED: candidates 55, 60, 64 and the cadence fix.** Candidate 65 is **withdrawn** - both
+sweeps publish on the deployed service; the two "it never runs" readings were blind instruments.
+Read `scripts/ralph-afk/authorization-request-55-60-65.md` **with its iteration-7 correction banner**
+before starting, and do NOT re-argue 55's mechanism from the record: it was corrected twice and is
+now measured on the deployed service.
+
+69. **Q1 - the birth floor, at the album's admission (1.0 s of embedded speech).** The operator took
+    option 1 on the supervisor's recommendation. Record the reasoning before the patch. A new
+    speaker with a short first turn is **deferred, not lost** - the span publishes under `S00` (J2),
+    the ledger retains it, a sweep relabels it - and that is only acceptable because a sweep
+    demonstrably publishes. ADR-0002's "birth semantics unchanged" is read as constraining the
+    album, not as asserting birth was correct; if evidence says otherwise, stop and say so.
+    Measured wrong, do not re-propose: raising `max_speakers`; lowering `min_segment_samples`.
+70. **Q2 - the decoder-RTF gate definition (candidate 64).** State a minimum span duration below
+    which RTF is not a meaningful ratio, **derive** it from measurement rather than choosing it to
+    pass, and **always report the excluded count** beside the p95. A silent exclusion does not
+    answer the clause. F1 measured 2.365 from 3 spans < 0.1 s; F3 measured 0.568 over 648 spans.
+71. **Q3 - the cadence fix, both halves or neither.** `portalCycleSeconds` moves the number and no
+    request rate; `pollDelayMs` moves the browser's wait and the number by 0.0 ms. Moving the Swift
+    one alone relaxes the gate while looking like a remedy - forbidden. **The enforcing node that
+    fails when the reported render bound and the actual schedule drift apart is required whatever is
+    decided about the value**, and is the durable part of this item.
+72. **Q4 - a clean stop must reach the server (candidate 60).** The route works and the portal's
+    Stop calls it; the Mac client does not, so view authority outlives a clean stop by up to the
+    30 s lease (29.4 / 29 s measured). Transport call after the final drain; a stop that cannot
+    reach the server must still stop locally. Buys neither convergence nor `identity_finalized`.
+73. **Q5 - close the coverage gap, then gate/merge/redeploy.** Nothing asserts what a canonical
+    speaker was born from. Red-before/green-after per decision, plus a node that fails if a birth
+    can be minted from a span with no embedded evidence. Then the full gate, the accuracy harness
+    showing the birth floor's effect on canonical count, **F1 and F3 re-run**, one merge
+    (`expected_main` is `7a4f59c` -> advance in-script), push, redeploy.
+
+Out of scope, worth its own authorization later: ADR-0002 step 4, batch unification - the album
+engine measured **100 %** on the batch path where the shipped resolver scores **80 %**, and batch's
+disabled Tier-B moves the score by **zero**.
+
 ## Non-candidates
 
 - **The RTX 4090.** The operator fixed the 4070Ti as the target; the 4090 is committed elsewhere.
