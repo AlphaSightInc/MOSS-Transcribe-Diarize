@@ -296,6 +296,46 @@ def build_schedule(
     return tuple(mic), tuple(system)
 
 
+def build_continuous_track(
+    voice: str,
+    lines: tuple[str, ...],
+    total_seconds: float,
+    workdir: Path,
+    lead_seconds: float,
+) -> array.array:
+    """Tile `lines` back to back so the lane is voiced for the whole run.
+
+    `build_lane_track` lays a handful of utterances on a silent timeline, so between turns
+    the lane sends frames whose every sample is zero and whose wire `silent` flag is true.
+    A real capture device never does that: the microphone hears the room and the process
+    tap carries the program, so on the Mac **both lanes are non-silent continuously** and
+    every span closes on the 2.5 s hard cap with content on both lanes. That difference is
+    measured, not assumed -- iteration 26's F1 run B committed 12 spans in 30 s, all
+    `hard_cap`, while iteration 23's 120 s probe run committed 36 of 59 spans *empty*. It
+    is the largest remaining gap between what this probe drives and what the real client
+    drives, which is why it is a mode rather than a rewrite: `alternating` stays the
+    default so every earlier run remains comparable.
+
+    Utterances are concatenated rather than placed at offsets, so no silence can appear
+    between them however long `say` makes each line.
+    """
+
+    total_samples = int(total_seconds * SAMPLE_RATE)
+    track = array.array("h", bytes(max(0, total_samples) * 2))
+    rendered = [synthesize(voice, line, workdir) for line in lines]
+    cursor = int(max(0.0, lead_seconds) * SAMPLE_RATE)
+    index = 0
+    while cursor < total_samples:
+        samples = rendered[index % len(rendered)]
+        index += 1
+        if not samples:
+            continue
+        end = min(cursor + len(samples), total_samples)
+        track[cursor:end] = samples[: end - cursor]
+        cursor = end
+    return track
+
+
 def redact_snapshot(snapshot: dict) -> dict:
     """Session facts worth reporting; no tokens live in a snapshot, but be explicit."""
     session = snapshot.get("session") or {}
@@ -362,6 +402,16 @@ def main() -> int:
     parser.add_argument("--mic-voice", default="Samantha")
     parser.add_argument("--system-voice", default="Fred")
     parser.add_argument(
+        "--lane-audio",
+        choices=("alternating", "continuous"),
+        default="alternating",
+        help="alternating: one lane speaks while the other sends silent frames (the "
+        "original schedule). continuous: both lanes are voiced for the whole run, which "
+        "is what a real Mac capture does -- the microphone hears the room and the tap "
+        "carries the program, so no lane is ever silent and every span closes on the hard "
+        "cap with content on both lanes.",
+    )
+    parser.add_argument(
         "--lane-offset-ms",
         default="",
         help="comma-separated LANE=MS shifts applied to that lane's whole "
@@ -408,14 +458,25 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="moss-probe-say-") as tmp:
         workdir = Path(tmp)
         mic_schedule, system_schedule = build_schedule(args.seconds, args.lead_seconds)
-        tracks = {
-            "microphone": build_lane_track(args.mic_voice, mic_schedule, args.seconds, workdir),
-            "system": build_lane_track(args.system_voice, system_schedule, args.seconds, workdir),
-        }
+        if args.lane_audio == "continuous":
+            tracks = {
+                "microphone": build_continuous_track(
+                    args.mic_voice, MIC_LINES, args.seconds, workdir, args.lead_seconds
+                ),
+                "system": build_continuous_track(
+                    args.system_voice, SYSTEM_LINES, args.seconds, workdir, args.lead_seconds
+                ),
+            }
+        else:
+            tracks = {
+                "microphone": build_lane_track(args.mic_voice, mic_schedule, args.seconds, workdir),
+                "system": build_lane_track(args.system_voice, system_schedule, args.seconds, workdir),
+            }
     lane_frames = {lane: frames_of(track) for lane, track in tracks.items()}
     tick_count = max(len(frames) for frames in lane_frames.values())
     report["audio"] = {
         "voices": {"microphone": args.mic_voice, "system": args.system_voice},
+        "lane_audio": args.lane_audio,
         "lead_seconds": args.lead_seconds,
         "lane_offset_ms": {
             lane: offset / 1e6 for lane, offset in lane_offset_ns.items()

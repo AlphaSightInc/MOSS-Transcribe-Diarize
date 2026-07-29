@@ -126,6 +126,11 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
   and `scripts/ralph-afk/live-soak.sh` (iteration 22 — F3 with candidate 51's harness, in the repo,
   in a layout the reducer reads). Running the reducer on the real evidence also found that it had
   been passing F1's red directory; see "F3 has a repo driver now" below.
+- **Candidate 56 — a live session stops being viewable mid-meeting** (new, iteration 26; it is what
+  cut both F1 re-runs). **Iteration 27 could not reproduce it from a probe** and eliminated four
+  hypotheses doing so; the next experiment is named in that block. It blocks gate step (d), and F3
+  must not run until it is understood — a 17-minute soak that dies at 30 s costs seventeen minutes
+  to learn what a 60 s canary already said twice.
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
@@ -1050,6 +1055,63 @@ and `NRestarts=0` unmoved, and batch `/` 200.
 state), both TCC grants still `auth_value=2`; server `HEAD` `77e0014`, worktree clean.
 *Reusable:* evidence `/tmp/i26-f1-evidence/` and `/tmp/i26b-f1-evidence/` here, clause reductions
 `/tmp/i26-f1-clauses.txt` and `/tmp/i26b-f1-clauses.txt`.
+
+**Candidate 56 did NOT reproduce under continuous two-lane audio, and two of its likeliest causes
+are now ELIMINATED (new, iteration 27). READ THIS BEFORE THE NEXT ATTEMPT AT CANDIDATE 56.** The
+recorded next step was "drive `live-pipeline-probe.py` with a program that resembles the Mac's real
+capture more closely than iteration 23's did". The measured difference was found first, then run.
+- **What the probe could not produce, and now can.** `build_lane_track` lays a few utterances on a
+  silent timeline, so between turns a lane sends frames whose every sample is zero and whose wire
+  `silent` flag is **true**. A real capture never does that — the microphone hears the room and the
+  tap carries the program — so on the Mac **both lanes are non-silent continuously**. Measured, not
+  assumed: F1 run B committed **13 spans in 30 s, every one `hard_cap`**, while iteration 23's 120 s
+  probe run committed **36 of 59 spans empty**. `--lane-audio continuous` tiles each lane's lines
+  back to back so no frame is silent; `alternating` stays the default so every earlier run stays
+  comparable. Verified offline before the host run: **300/300 voiced frames on both lanes** at
+  `--lead-seconds 0`, against 250/300 for the old schedule.
+- ***And it did not reproduce.*** 150 s on the deployed `77e0014`, `--lane-offset-ms system=137`,
+  device `ralph-i27-c56-probe-20260729T001817Z` (**revoked**): 300 ticks, 600 frames,
+  `non_200_count` **0**, `accepted == accounted == committed == 2 400 000` (exactly 150 s),
+  **60 committed spans, all submitted, 0 empty**, `terminal_failure` null, `status` `closed`, and
+  view authority correctly 401 after the stop. **Span density matched the real run** — 0.40
+  spans/s here against run B's 0.43 — so "the Mac freezes spans faster" is not the trigger either.
+  Report `/tmp/i27-probe.json`.
+- **The identity path was exercised hard and stayed non-terminal:** 43 `prepared` + **17 `abstain`**
+  (15 `ambiguous_identity`, 2 `same_span_cannot_link_conflict`), **all 60 submitted**, 0 refusals —
+  J2's ruling holding at volume on real audio. **7** canonical speakers in 150 s, so dense synthetic
+  speech does *not* saturate candidate 55's 16-speaker bound the way the real microphone lane does.
+- ***The heartbeat/lease family is eliminated too, from data already in hand.*** Run A was cut at
+  **t+18.1 s**; the helper lease is **30 s** and is armed by the first heartbeat, so the earliest
+  possible expiry is t+30 s. And `_terminal_reason` fires only on `helper_failed` or all lanes
+  failed, which both runs' healthy lanes contradict. **The reading correction that matters:**
+  `LiveHelperFailureCoordinator.observe` returns early on `session_id in self._terminal_sessions`
+  and the route still answers **200** — so *"165 × 200 heartbeats" is NOT evidence the session was
+  alive*, and adding a heartbeat to the probe would be the wrong experiment.
+- **Drift is eliminated as well.** F1 run B's mixed mono frame sizes are **periodic with period 9**
+  (5305, 2460, 7764, 5774, 1990, 7765, 6243, 1521, 9172 — sum 47 994 ≈ 3 s, repeating), i.e. the two
+  lanes ran in **fixed-offset lockstep**, which is exactly what `--lane-offset-ms` already models.
+- ***Why the recorded evidence can never hold the answer, stated so nobody re-reads it hoping.***
+  `_fail` appends the `terminal_failure` event **under the same lock** that makes the very next view
+  request 401 (`live_transport.py:87-101` → `live_auth.py:377`), so an events poller is structurally
+  blind at the one instant that matters. Run B's merged event stream confirms it: 150 events, the
+  last is `frame_accepted` seq 149 with **all 13 spans submitted and `submission_refusal` null**, and
+  every later poll 401s.
+- **Where the answer does live:** a terminal `LiveServiceError` on `POST /frames` returns
+  `_failure_status(exc)` = **409** with a body carrying `failure.to_dict()` **and** the snapshot's
+  `terminal_failure` (`live_transport.py:267-272`). The probe keeps that body; the app discards it.
+- ***The strongest remaining un-mirrored property, and the next experiment.*** `live_snapshot` and
+  `live_events` are **sync `def`** handlers (`live_transport.py:285,307`) so Starlette runs them in
+  its threadpool, while `accept_live_frame` is **`async def`** and runs on the event loop. On the Mac
+  **two** view readers poll concurrently (the app's own latency probe *and* the portal poller) while
+  frames are posted; this probe is single-threaded and strictly serial, so it **structurally cannot**
+  overlap a read with a write. Give the probe a background reader thread before concluding anything
+  else.
+*Host untouched, checked after:* `HEAD` `77e0014`, worktree clean; `moss-live-web` **350731**,
+`moss-web` **301112**, `moss-vllm` **322117**, all `NRestarts=0`; `live-runs` 0, no `/tmp/mtd-live-*`,
+**0** tracebacks, batch `/` 200, device store **11 devices / 1 unrevoked** (m4mbp's `AB600574…`).
+*Reusable, and it cost one pairing code to learn:* `ops/live-pair.sh` prints **`payload: <PAYLOAD>`**,
+so the payload must be extracted with `sed -n 's/^payload: //p'` — `tail -1` alone hands the probe a
+122-byte string and the server answers **401 `pairing payload is invalid.`**.
 
 **Candidate 49's mechanism was wrong in the record, and is now measured (new, iteration 13;
 `[done]`).** The record said the lane failure "survives a stop/start inside one process" because
@@ -2568,6 +2630,17 @@ authorization, and the cycle's gate (F1 and F3 both green) does not depend on it
     iteration 23's 120 s run on this same SHA was healthy, so the trigger is something real capture
     does that synthetic audio does not (variable frame sizes, real speech, the identity path).
     Reproduce it there before designing anything.
+    **Iteration 27 tried and FAILED to reproduce, eliminating four hypotheses** - see "Candidate 56
+    did NOT reproduce" above. Not continuously-voiced two-lane audio (150 s, `--lane-audio
+    continuous`, span density 0.40/s against the real run's 0.43/s, `non_200_count` 0, 60/60 spans
+    submitted); not span density; not the identity path (17 abstains, every one published); not the
+    helper lease or any heartbeat-driven terminal (run A died at t+18.1 s and the lease is 30 s, and
+    a terminal session's heartbeat still answers 200 - so "165 x 200" never meant "alive"); not lane
+    clock drift (the real mixed-frame geometry is periodic with period 9, i.e. fixed-offset
+    lockstep, which `--lane-offset-ms` already models). **The next experiment is a background reader
+    thread in the probe**: `live_snapshot`/`live_events` are sync `def` handlers running in
+    Starlette's threadpool concurrently with the `async def` frames handler, and the Mac has *two*
+    view readers polling while it publishes - an overlap this probe structurally cannot produce.
 57. **The clause reducer calls a passing latency number RED** `[open - loop tooling, no
     authorization needed; found in iteration 26]`. `live-canary-clauses.py` printed
     `USER-VISIBLE p95 = 3921.8 ms vs gate 4000 ms  RED`. The number is *under* the gate; it is red

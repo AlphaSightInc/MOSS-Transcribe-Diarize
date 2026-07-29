@@ -13587,3 +13587,113 @@ first minute of exactly this kind of audio) - and note the two runs reached 7 sp
 t+16.6 s. Do NOT re-run F3 until 56 is understood: a 17-minute soak that dies at 30 s
 costs seventeen minutes to learn what a 60 s canary already said twice.
 
+
+================================================================================
+run 20260728-181020 | iteration 27 | candidate 56 - reproduce the mid-meeting
+                                     view/frame death from a probe
+================================================================================
+Target: the recorded next step from iteration 26 - "drive live-pipeline-probe.py
+against the deployed 77e0014 with a program that resembles the Mac's real capture
+more closely than iteration 23's did, and capture the 409 body, which already
+carries terminal_reason". Needs no Mac.
+
+Files touched: scripts/ralph-afk/live-pipeline-probe.py (new
+build_continuous_track + --lane-audio {alternating,continuous}, reported in
+report.audio.lane_audio), scripts/ralph-afk/context.md.
+
+THE DIFFERENCE WAS MEASURED FIRST, THEN RUN. build_lane_track lays a handful of
+utterances on a silent timeline, so between turns a lane sends frames whose every
+sample is zero and whose wire `silent` flag is true. A real capture never does
+that - the microphone hears the room and the process tap carries the program - so
+on the Mac BOTH lanes are non-silent continuously. The numbers that say so:
+F1 run B committed 13 spans in 30 s, EVERY ONE `hard_cap`; iteration 23's 120 s
+probe run committed 36 of 59 spans EMPTY. `--lane-audio continuous` tiles each
+lane's own lines back to back so no frame is silent. `alternating` stays the
+default so every earlier run remains comparable.
+  Offline check before spending a host run: continuous+lead 0 -> 300/300 voiced
+  frames on both lanes; continuous+lead 1.0 -> 298/300; alternating -> 250/300.
+
+VALIDATION - the run itself. 150 s against the deployed 77e0014 from MacStudio
+over the tailnet, --lane-offset-ms system=137 --lead-seconds 0 --lane-audio
+continuous, device ralph-i27-c56-probe-20260729T001817Z (REVOKED after).
+  probe rc=0, report /tmp/i27-probe.json
+  publish     300 ticks, 600 frames, non_200_count 0, 1 TLS handshake
+  accounting  accepted == accounted == committed == 2 400 000 (exactly 150 s)
+  spans       60 committed, ALL submitted, 0 empty, 0 refusals
+  identity    43 prepared + 17 abstain (15 ambiguous_identity, 2
+              same_span_cannot_link_conflict) - every abstain PUBLISHED
+  speakers    7 canonical (S01..S07), 17 unattributed spans
+  decode      60/60 carry the D-c cap, cap_derivation_holds true, capped_count 0,
+              elapsed p50 0.333 s / p95 0.441 s, RTF p95 0.176 (max 0.197 - and
+              NO warm-up outlier this time, unlike iteration 23's span-0 2.214)
+  latency     committed p95 2834.7 ms, render bound 1141.7, user-visible 3976.4
+  end state   status closed, terminal_failure null, view 401 after stop (revoked)
+
+*** CANDIDATE 56 DID NOT REPRODUCE. *** Span density matched the real run - 0.40
+spans/s here against run B's 0.43 - so neither "both lanes voiced" nor "the Mac
+freezes spans faster" nor the identity path is the trigger.
+
+THREE MORE HYPOTHESES ELIMINATED, TWO OF THEM FROM DATA ALREADY IN HAND.
+  * The helper lease / any heartbeat-driven terminal. Run A was cut at t+18.1 s;
+    the lease is 30 s and is armed by the first heartbeat, so the earliest
+    possible expiry is t+30 s. _terminal_reason fires only on helper_failed or
+    all lanes failed, which both runs' healthy lanes contradict. AND THE READING
+    CORRECTION THAT MATTERS: LiveHelperFailureCoordinator.observe returns early
+    on `session_id in self._terminal_sessions` and the route still answers 200 -
+    so "165 x 200 heartbeats" was never evidence that the session was alive.
+    Adding a heartbeat to the probe would have been the wrong experiment.
+  * Lane clock drift. F1 run B's mixed mono frame sizes are PERIODIC with period
+    9 - 5305, 2460, 7764, 5774, 1990, 7765, 6243, 1521, 9172, sum 47 994 ~ 3 s,
+    repeating - i.e. the two lanes ran in fixed-offset lockstep. That is exactly
+    what --lane-offset-ms already models; there is no drift to mirror.
+  * Reading the recorded F1 evidence again. _fail appends the terminal_failure
+    event UNDER THE SAME LOCK that makes the very next view request 401
+    (live_transport.py:87-101 -> live_auth.py:377), so an events poller is
+    structurally blind at the one instant that matters. Run B's merged event
+    stream proves it: 150 events, the last is frame_accepted seq 149, all 13
+    spans submitted with submission_refusal null, and every later poll 401s.
+
+WHERE THE ANSWER DOES LIVE, read out of the source: a terminal LiveServiceError
+on POST /frames returns _failure_status(exc) = 409 with a body carrying
+failure.to_dict() AND the snapshot's terminal_failure
+(live_transport.py:267-272). The probe keeps that body; the app discards it by
+G3's contract. So a reproduction is still the whole game.
+
+RECOMMENDED NEXT STEP - the strongest remaining un-mirrored property.
+live_snapshot and live_events are sync `def` handlers (live_transport.py:285,307)
+so Starlette runs them in its threadpool, while accept_live_frame is `async def`
+and runs on the event loop. On the Mac TWO view readers poll concurrently - the
+app's own latency probe and the portal poller - while frames are being posted.
+This probe is single-threaded and strictly serial, so it structurally cannot
+overlap a read with a write. Give it a background reader thread (two, to match)
+and re-run before designing anything.
+
+HOST CLEAN, checked after: HEAD 77e0014, git status clean; moss-live-web 350731 /
+moss-web 301112 / moss-vllm 322117 all NRestarts=0 (unmoved since iteration 20);
+live-runs 0 entries; no /tmp/mtd-live-*; 0 journal tracebacks; batch
+http://192.168.68.38:7860/ 200; device store 11 devices / 1 unrevoked - m4mbp's
+AB600574..., this run's probe device revoked (DELETE .../devices/<id> -> 200).
+
+Learned.
+(1) ops/live-pair.sh prints `payload: <PAYLOAD>`, so the payload must be pulled
+    with `sed -n 's/^payload: //p'`. `tail -1` alone hands the probe a 122-byte
+    string and the server answers 401 "pairing payload is invalid." - it cost one
+    pairing code to learn, and the recipe in context.md never said so.
+(2) A NEGATIVE RESULT IS ONLY WORTH THE HYPOTHESIS IT KILLS. The run cost one
+    pairing code and 150 s, and what makes it worth the iteration is that the
+    difference it tested was measured off the real evidence first (13/13 hard-cap
+    spans vs 36/59 empty), not guessed - so "continuous two-lane audio" is now a
+    closed question rather than a suspicion.
+(3) TWO OF THE FOUR ELIMINATIONS NEEDED NO RUN AT ALL. The lease arithmetic and
+    the mixed-frame periodicity were both already sitting in iteration 26's
+    evidence. Reading the recorded numbers harder is cheaper than another run,
+    and should come first every time.
+(4) A 200 CAN MEAN "I HAVE STOPPED LISTENING". The heartbeat route answers 200
+    for a session the coordinator has already marked terminal. Any future gate
+    that reads a 200 count as liveness is reading a mailbox, not a pulse.
+
+Next: the concurrent-reader probe change above. If that also comes back clean,
+the remaining un-mirrored client behaviours are, in order: the outbox replaying
+an unacked frame (idempotent_frames), a `discontinuity: true` frame, and a
+per-lane device_epoch change (the Mac's mic lane sits at 188 while system is 0).
+Do NOT re-run F3 until 56 is understood.
