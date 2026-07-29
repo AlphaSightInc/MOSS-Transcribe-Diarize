@@ -33,8 +33,10 @@
 > **So the sixth pass has to take the fence, and it should be planned rather than improvised:** it is
 > one 618-line code block that `bash -n` checks as a unit, the third pass already removed 11 spent
 > ranges from it, and what remains is the full gate, the probes, the three drivers, the reducers and
-> the two redeploy templates. *Headroom after this pass is only ~45 KB, i.e. about five iterations at
+> the two redeploy templates. *Headroom after this pass was ~45 KB, i.e. about five iterations at
 > the measured drift* — do not wait for the 256 KB error again.
+> **Re-measured after iteration 9: 221 272 B, headroom ~35 KB, about four iterations. The sixth pass
+> is due by roughly iteration 13 and the fence is now 631 lines.**
 
 ## Ground
 
@@ -245,6 +247,13 @@ carry is in the retired-evidence index below).**
     bound:* the probe's meeting held **2 canonical speakers for 2 real voices**, so it does not touch
     iteration 5's 84.1 % at 8.40 refs/voice — **candidate 55's argument and the 55-before-60 ordering
     survive whole.** See the session-end-sweep block below.
+  - **it. 9** (`--lane-audio fragmented`, two 150 s runs on the deployed service, 61 committed spans
+    each) — the bound iteration 7 left is **spent**, and iteration 5's mechanism is **corrected**:
+    at F2's own 16-canonical shape the sweep does not answer `kept_ambiguous`, **it never sees the
+    minted labels at all** (no embedded unit ⇒ no ledger entry), and it repairs **7 of 8** abstained
+    spans against the control's 20 of 34. **All 46 corrections the deployed sweep has ever published,
+    across three meetings, are `S00 → Sxx`; not one is a reassignment.** See the sweep-at-F2's-
+    fragmentation block below.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64 and 65; F1's two REDs; the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
@@ -493,14 +502,67 @@ live MainPID **365632** / batch **301112** and **322117**, all `NRestarts=0`, `l
 `/tmp/mtd-live-*`, **0** journal tracebacks, batch `/` and `/api/jobs` **200**. m4mbp untouched.
 
 ***The honest bound.*** The probe's meeting held **2 canonical speakers for 2 real voices** — the
-healthy ~1.0 refs/voice regime — against F2's **16 for 2**. This therefore does **not** refute
-iteration 5's `sweep-multiplicity-probe.py` result that at 8.40 refs/voice the production sweep
-answers `kept_ambiguous` on 84.1 % of units. **Candidate 55's fragmentation argument survives whole.**
-What is falsified is only the claim built on top of it — that the session-end half *never runs* and
-that ADR-0002's second acceptance half is *unreachable in production*. Both are false. *The next
-measurement this makes possible, and it is the one that matters:* re-run this probe against a
-meeting with F2's fragmentation and read the same `revised_transcript` field, which turns iteration
-5's offline model into a deployed number.
+healthy ~1.0 refs/voice regime — against F2's **16 for 2**. **That bound is now spent: iteration 9
+took the run it names** (`--lane-audio fragmented`), and the block below carries the answer.
+
+**THE SWEEP AT F2's OWN FRAGMENTATION, MEASURED ON THE DEPLOYED SERVICE — run `20260729-094359`
+iteration 9. THIS CORRECTS THE MECHANISM IN PHASE N DECISION 19 AND IN §3 OF THE AUTHORIZATION
+REQUEST; READ IT BEFORE CITING EITHER.** Two 150 s `live-pipeline-probe.py` runs against the
+deployed `7a4f59c` from MacStudio over the pinned leaf, same instrument, same length, **61
+committed spans each**, 0 non-200s, `stop` 200, view **401/revoked** after both. No Mac, no TCC, no
+operator, no product change; `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty
+before and after. Reports `/tmp/i9-frag-probe.json`, `/tmp/i9b-cont-probe.json`.
+
+| | **fragmented** | **continuous** (control) |
+| --- | --- | --- |
+| canonical speakers minted | **16** | 4 |
+| labels appearing on ≤ 2 spans | **15** | 3 |
+| dominant label's span count | `S02` on **52/61** | `S01` on 26/61 |
+| spans containing `S00` | **8** | **34** |
+| `speaker_capacity_exceeded` abstains | 7 | 0 |
+| session-end sweep revisions | **7 (11.5 %)** | **20 (32.8 %)** |
+| …of the abstained spans | **7 of 8 (87.5 %)** | 20 of 34 (58.8 %) |
+| reassignments (`Sxx → Syy`) | **0** | **0** |
+| words moved by a revision | 0 | 0 |
+| decoder p95 RTF | 0.190 | 0.167 |
+
+1. **Candidate 55 is now REPRODUCIBLE ON DEMAND, in 150 s, with no Mac and no TCC.** 16 canonical
+   speakers for **one** embeddable voice, 14 of them on exactly one span each — F2's measured
+   14 `no_reference` / 1 provisional / 1 banked shape, hit exactly. Before this the loop could only
+   *wait* for a certification run to exhibit 55.
+2. **The prediction this run was launched to confirm is CORRECTED, not confirmed.** Iteration 5's
+   model said the sweep would consider these units and refuse them (`kept_ambiguous` 84.1 % at 8.40
+   refs/voice). The deployed sweep does not refuse them — **it never sees them.** A speaker born
+   below the evidence floor has no embedded unit, hence no ledger entry, hence nothing to re-match
+   (decision 20's site, read from the sweep's side). Its *conditional* repair rate on the fragmented
+   meeting is **higher** than the control's. What fragmentation destroys is the **supply** of
+   repairable spans: a span that would have abstained instead carries a confident junk label.
+3. **THE CONFOUND-FREE FACT, and it is the sharpest thing the loop knows about the sweep.** Across
+   all three deployed meetings ever swept — iteration 7's 19, and this iteration's 7 and 20 —
+   **all 46 published corrections are `S00 → Sxx` and not one is a reassignment.** The deployed
+   session-end sweep's only observed product is filling in a **missing** label; it has never been
+   observed to move a label already set, which is exactly what repairing 55 would require.
+   *So no cadence, no `stop` wiring and no amount of sweeping repairs a minted junk label.*
+
+***The honest limit, stated because the contrast is not single-variable.*** The two runs differ in
+fragmentation **and** in the number of embeddable voices (fragmented: one bankable voice + sub-floor
+interjections; control: two full voices), so **11.5 % vs 32.8 % is not a controlled rate** and part
+of the control's larger abstain pool is two-voice ambiguity rather than the absence of fragmentation.
+Findings 1 and 3 do not depend on the contrast; finding 2 is stated as a mechanism corrected, not a
+rate measured. *The single-variable run that would close it* is a fragmented run whose peer lane
+carries **two** voices — `--fragment-lane` plus a two-voice peer track, which the probe cannot build
+today (one voice per lane).
+
+*What changed in the instrument (loop tooling only):* `--lane-audio fragmented` with
+`--fragment-lane` / `--fragment-interval`, whose builder **refuses** any fragment line that renders
+at or above the 0.5 s evidence floor — the mode is falsifiable rather than asserted, since an
+embeddable fragment would silently test the healthy regime; a `sweep` reduction (`revised_items`,
+`label_changing`, `byte_identical_rewrites`, `words_moved`) so 61 items are not read by hand as 31
+were; a `fragmentation` reduction (`canonical_speakers`, `references_per_real_voice`,
+`capacity_abstains`); and `identity_revision_refusals` collected off `canonical_processed`
+(`live_service_runtime.py:804`) — **the only sweep-refusal surface a client can read, and it covers
+the CADENCE half only**, because a session-end sweep's refusals ride the unreadable
+`identity_finalized`. Both of this iteration's runs predate that last field.
 
 *What changed in the instrument (loop tooling only, `scripts/ralph-afk/live-pipeline-probe.py`):*
 `event_kinds` (a histogram, not a bare count — six runs reported `events_seen` as an integer, and a
@@ -1172,6 +1234,19 @@ python3 scripts/ralph-afk/birth-floor-probe.py /tmp/i1-f2-evidence/ralph-cert \
 #      curl -sk -X DELETE 'https://127.0.0.1:7861/api/live/devices/<device-id>'
 #    then confirm the store is back to ONE unrevoked device (m4mbp), and that HEAD, all three
 #    MainPIDs, NRestarts=0, live-runs 0, /tmp/mtd-live-* and journal tracebacks are all unchanged.
+# --- iteration 9: THE SAME PROBE AT CANDIDATE 55's FRAGMENTATION, plus its control. Two runs,
+#     ~150 s each, two devices (REVOKE BOTH). This is the only way to produce 55 on demand. -------
+#      ... --seconds 150 --lane-audio fragmented --fragment-lane microphone --fragment-interval 3.0
+#      ... --seconds 150 --lane-audio continuous                       # the control, same length
+#    Read `.fragmentation` (canonical_speakers / references_per_real_voice / capacity_abstains) and
+#    `.sweep` (revised_items / label_changing / byte_identical_rewrites / words_moved). Iteration 9
+#    measured 16 canonical vs 4 and 7/61 revisions vs 20/61 -- and, the finding that needs no
+#    control, ZERO reassignments in either. The builder REFUSES a fragment line that renders at or
+#    above the 0.5 s evidence floor, so a `say` voice change cannot silently turn this back into the
+#    healthy regime; if it raises, shorten the line rather than lowering the floor.
+#    KNOWN CONFOUND, unclosed: the fragmented run's peer lane carries ONE voice and the control's
+#    two, so the revision RATES are not a single-variable contrast. Closing it needs a two-voice
+#    peer track, which the probe cannot build (one voice per lane).
 
 # --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
 #     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
@@ -1644,6 +1719,15 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     is now on the table**: `scripts/ralph-afk/authorization-request-55-60-65.md`, with the three
     decisions it must make explicitly, the two measured-wrong alternatives (raising `max_speakers`,
     lowering `min_segment_samples`) and the honest limits. See Phase N decision 20.
+    **ITERATION 9 REPRODUCED 55 ON THE DEPLOYED SERVICE ON DEMAND AND CHANGED WHY IT IS PERMANENT.**
+    `live-pipeline-probe.py --lane-audio fragmented`, 150 s, minted **16 canonical speakers for one
+    embeddable voice** with 14 of them on exactly one span each — F2's shape, hit exactly, with no
+    Mac and no TCC. The cost's mechanism is corrected: the sweep does **not** abstain on those
+    labels, it **never sees them** (no embedded unit ⇒ no ledger entry), and across all three
+    deployed swept meetings **every one of the 46 published corrections is `S00 → Sxx` and not one is
+    a reassignment**. So 55's fragmentation is unreachable by any sweep at any cadence, and item (a)
+    of the request — the birth floor — is the only one of the three that touches it. See the
+    sweep-at-F2's-fragmentation block above and §3b of the request.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1694,9 +1778,12 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     that, not them.** The three facts from those runs that survive unaltered: F1, F2 and F3's server
     journals each hold **0** hits on `…/{sid}/stop` (because *their drivers* never called it), the
     terminal line is `helper_lease_expired` about **29 s** after a clean stop in both F2 and F3, and
-    at F2's own **8.40** references per real voice the production sweep answers `kept_ambiguous` on
-    **84.1 %** of units — so wiring `stop` while 55 is open buys few corrections, and iteration 5's
-    model says it also buys unmeasured risk. **Sequence 60 with or behind candidate 55.**
+    at F2's own **8.40** references per real voice iteration 5's offline model answers
+    `kept_ambiguous` on **84.1 %** of units — so wiring `stop` while 55 is open buys few corrections.
+    **Sequence 60 with or behind candidate 55.** *(Iteration 9 measured the deployed version of that
+    third fact and the CONCLUSION HOLDS WITH A DIFFERENT REASON: the sweep does not refuse those
+    units, it never receives them, and it has never published a reassignment in three meetings —
+    see the sweep-at-F2's-fragmentation block above.)*
     **ITERATION 7 RE-SCOPED 60 BACK TO WHAT IT IS, AND DELETED ITS SECOND CLAUSE.** Measured on the
     deployed service: the route is reachable by **both** authorities, the `/live` portal's Stop
     button calls it, this loop's own F0 probe has called it since Phase F, and a stop through it
@@ -1747,7 +1834,14 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     identical split with bankable shards merges back to the deployed shape and stays at 1.1 %.
     So 65's cause is candidate 55's fragmentation after all — but through the merge, not through
     confusability, and the two controls (stand-ins without multiplicity 3.8 %, multiplicity without
-    stand-ins 1.1 %) are what make it a mechanism rather than a third correlation. **65's
+    stand-ins 1.1 %) are what make it a mechanism rather than a third correlation.
+    ***ITERATION 9 CORRECTED THE DOOR, NOT THE CONCLUSION.*** On the deployed service at F2's own
+    16-canonical shape the sweep does **not** answer `kept_ambiguous` — the minted labels have no
+    embedded unit, so they never enter the sweep's input, and the sweep's *conditional* repair rate
+    is **higher** there (7 of 8) than on the healthy control (20 of 34). Iteration 5's model produced
+    its 84.1 % by **giving** the sweep stand-in references; production gives it **none**. Both end at
+    "55 is not repaired", through different mechanisms, and only the deployed one is what a fix must
+    target. **65's
     diagnosability half is unchanged and still the part that is cheap to authorize**, and it is
     now *more* clearly worth it: "swept and proposed nothing" is exactly what is happening, five
     times per 300 s meeting, and no surface says so.
@@ -2106,6 +2200,16 @@ step 4 and any future identity work are constrained by them.**
     holds the live labels healthy (93.44 %) while the album is fragmented, and a real meeting
     fragments both together, so read it as "the corrections stop tracking truth", **not** as a
     forecast of what a real swept meeting would score.
+    ***(3) — ADDED IN ITERATION 9, AND IT IS THE LIMIT THE OTHER TWO DID NOT SEE.*** Every row of
+    this table **gives** the sweep a reference for each shard; the experiment could only shard
+    vectors that exist. Production gives it **none** — decision 20's `no_reference` births are
+    never embedded, so they hold no ledger unit and the sweep never scores them. Measured on the
+    deployed service at F2's own shape: the sweep repaired **7 of 8** abstained spans, a *higher*
+    conditional rate than the healthy control's 20 of 34, and published **zero** reassignments (as
+    did every other deployed run — 46 corrections, all `S00 → Sxx`). **The table's direction is
+    right and its door is wrong:** at F2's fragmentation the sweep is not ambiguous, it is
+    uninformed. Read the 84.1 % as an upper bound on what a *repairable* fragmentation would cost,
+    never as what production's does.
 20. **A canonical speaker is minted from audio the system refused to embed, and that one site
     produces BOTH halves of decision 19's product** (filed iteration 6 of run `20260729-094359`,
     `birth-floor-probe.py`, rc=0, offline, no product change). `BoundedCausalIdentityPreparer.

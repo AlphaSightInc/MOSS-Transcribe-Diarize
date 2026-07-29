@@ -419,6 +419,98 @@ def build_schedule(
     return tuple(mic), tuple(system)
 
 
+# Candidate 55's regime, in audio. A real meeting's microphone lane carries the room, and the
+# decoder answers with one-word interjections and `'...'` -- fragments too short for the evidence
+# floor (`min_segment_samples` 8000 = 0.5 s) to embed. `birth-floor-probe.py` measured 14 of F2's
+# 16 and 13 of F3's 16 canonical speakers born from exactly that, holding no reference at all.
+# These lines are chosen only for their LENGTH: each must render shorter than the evidence floor,
+# which the builder asserts rather than assumes.
+# Measured with `say` on both default voices, seconds rendered: Yeah. 0.457/0.443 · No. 0.414/0.443
+# · Ah. 0.354/0.396 · Oh. 0.353/0.373 · Hey. 0.386/0.436 · Huh. 0.412/0.390 -- every one under the
+# 0.5 s floor on both. Rejected for being over it on at least one voice: Okay. (0.574/0.570),
+# Mm hmm. (0.507/0.745), Right. (0.402/0.535), Hm. (0.203/0.721). The builder re-measures rather
+# than trusting this comment.
+FRAGMENT_LINES = (
+    "Yeah.",
+    "No.",
+    "Ah.",
+    "Oh.",
+    "Hey.",
+    "Huh.",
+)
+
+
+def build_fragment_track(
+    voice: str,
+    lines: tuple[str, ...],
+    total_seconds: float,
+    workdir: Path,
+    lead_seconds: float,
+    interval_seconds: float,
+) -> tuple[array.array, dict]:
+    """Short isolated utterances on an otherwise silent lane, one per `interval_seconds`.
+
+    This is the one input property no earlier mode produces: audio that mints a canonical
+    speaker the system then has nothing to say about. `continuous` gives a lane the album can
+    bank (iteration 7 measured 2 canonical speakers for 2 real voices, the healthy regime);
+    `alternating` gives it long turns separated by silence. Neither reaches F2's measured
+    **8.0 references per real voice**, which is the shape iteration 5's `sweep-multiplicity-probe`
+    predicts the sweep cannot repair.
+
+    The mechanism being reproduced, from Phase N decision 20: a local speaker whose segments
+    never total the evidence floor is never embedded, so it cannot match, so
+    `live_identity.py:129` births a canonical speaker for it -- with no reference and therefore
+    no bank, which decision 7 makes unmergeable. Pair this with a voiced peer lane and every span
+    closes on the hard cap carrying one bankable voice plus one unbankable fragment, which is
+    exactly what F2 and F3 recorded.
+
+    Returns the track and the measured facts that make the mode falsifiable: if a rendered
+    fragment ever reaches the evidence floor it would be embedded, the births would stop, and
+    the run would silently be testing something else.
+    """
+
+    floor_seconds = FRAME_SAMPLES / SAMPLE_RATE
+    total_samples = int(total_seconds * SAMPLE_RATE)
+    track = array.array("h", bytes(max(0, total_samples) * 2))
+    rendered = [synthesize(voice, line, workdir) for line in lines]
+    durations = [len(samples) / SAMPLE_RATE for samples in rendered]
+    too_long = [
+        (line, round(duration, 3))
+        for line, duration in zip(lines, durations)
+        if duration >= floor_seconds
+    ]
+    if too_long:
+        raise ProbeError(
+            "fragment lines must render shorter than the evidence floor "
+            f"({floor_seconds:.2f} s) or they are embeddable and the mode tests nothing: {too_long}"
+        )
+    step = max(interval_seconds, 0.0)
+    if step <= 0:
+        raise ProbeError("--fragment-interval must be greater than zero")
+    placed = 0
+    index = 0
+    start = max(0.0, lead_seconds)
+    while True:
+        offset = int(start * SAMPLE_RATE)
+        if offset >= total_samples:
+            break
+        samples = rendered[index % len(rendered)]
+        index += 1
+        end = min(offset + len(samples), total_samples)
+        track[offset:end] = samples[: end - offset]
+        placed += 1
+        start += step
+    facts = {
+        "fragments_placed": placed,
+        "interval_seconds": step,
+        "evidence_floor_seconds": floor_seconds,
+        "rendered_seconds": {
+            line: round(duration, 3) for line, duration in zip(lines, durations)
+        },
+    }
+    return track, facts
+
+
 def build_continuous_track(
     voice: str,
     lines: tuple[str, ...],
@@ -500,6 +592,54 @@ def speakers_in(transcript: str) -> list[str]:
     return seen
 
 
+def words_of(transcript: str) -> str:
+    """A committed transcript with its speaker tags removed.
+
+    Phase N decision 10 is that a revision moves labels and never words. Reading that off a
+    run needs the words isolated from the tags, and the tag grammar has exactly one shape.
+    """
+    return SPEAKER_TOKEN.sub("", transcript or "").strip()
+
+
+def _sweep_summary(items: list[dict]) -> dict:
+    """What the session-end sweep published, reduced to the numbers that decide it.
+
+    Iteration 7 read these by hand out of 31 items and that does not scale to a 150 s run.
+    More to the point, the loop's own rule -- a verdict word must name the thing it decides --
+    applies here: "the sweep ran" and "the sweep changed a label" and "the sweep rewrote a
+    span to itself" are three different findings, and only counting them apart tells a
+    fragmented meeting from a healthy one.
+    """
+    revised = [item for item in items if item.get("revised_transcript")]
+    label_changing = 0
+    byte_identical = 0
+    words_moved = 0
+    for item in revised:
+        original = str(item.get("transcript") or "")
+        revision = str(item.get("revised_transcript") or "")
+        if revision == original:
+            byte_identical += 1
+            continue
+        if words_of(revision) != words_of(original):
+            words_moved += 1
+        if speakers_in(revision) != speakers_in(original):
+            label_changing += 1
+    return {
+        "committed_items": len(items),
+        "revised_items": len(revised),
+        "label_changing": label_changing,
+        "byte_identical_rewrites": byte_identical,
+        "words_moved": words_moved,
+        "revision_versions": sorted(
+            {
+                int(item["identity_revision_version"])
+                for item in items
+                if isinstance(item.get("identity_revision_version"), int)
+            }
+        ),
+    }
+
+
 def transcript_of(snapshot: dict) -> list[dict]:
     session = snapshot.get("session") or {}
     items = []
@@ -526,13 +666,31 @@ def main() -> int:
     parser.add_argument("--system-voice", default="Fred")
     parser.add_argument(
         "--lane-audio",
-        choices=("alternating", "continuous"),
+        choices=("alternating", "continuous", "fragmented"),
         default="alternating",
         help="alternating: one lane speaks while the other sends silent frames (the "
         "original schedule). continuous: both lanes are voiced for the whole run, which "
         "is what a real Mac capture does -- the microphone hears the room and the tap "
         "carries the program, so no lane is ever silent and every span closes on the hard "
-        "cap with content on both lanes.",
+        "cap with content on both lanes. fragmented: the peer lane stays continuous while "
+        "--fragment-lane carries isolated sub-floor interjections, which is candidate 55's "
+        "measured regime -- a canonical speaker minted per span from audio the system "
+        "refuses to embed.",
+    )
+    parser.add_argument(
+        "--fragment-lane",
+        choices=LANES,
+        default="microphone",
+        help="which lane carries the fragments under --lane-audio fragmented; the "
+        "microphone is the lane a real room fragments, so it is the default",
+    )
+    parser.add_argument(
+        "--fragment-interval",
+        type=float,
+        default=3.0,
+        help="seconds between fragments under --lane-audio fragmented. At the deployed "
+        "2.5 s hard cap a value at or below it puts a fragment in nearly every span, which "
+        "is what drives the canonical count up; larger values fragment more slowly.",
     )
     parser.add_argument(
         "--lane-offset-ms",
@@ -597,6 +755,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="moss-probe-say-") as tmp:
         workdir = Path(tmp)
         mic_schedule, system_schedule = build_schedule(args.seconds, args.lead_seconds)
+        fragment_facts: dict | None = None
         if args.lane_audio == "continuous":
             tracks = {
                 "microphone": build_continuous_track(
@@ -604,6 +763,29 @@ def main() -> int:
                 ),
                 "system": build_continuous_track(
                     args.system_voice, SYSTEM_LINES, args.seconds, workdir, args.lead_seconds
+                ),
+            }
+        elif args.lane_audio == "fragmented":
+            voices = {"microphone": args.mic_voice, "system": args.system_voice}
+            peer_lines = {"microphone": MIC_LINES, "system": SYSTEM_LINES}
+            peer_lane = next(lane for lane in LANES if lane != args.fragment_lane)
+            fragment_track, fragment_facts = build_fragment_track(
+                voices[args.fragment_lane],
+                FRAGMENT_LINES,
+                args.seconds,
+                workdir,
+                args.lead_seconds,
+                args.fragment_interval,
+            )
+            fragment_facts["lane"] = args.fragment_lane
+            tracks = {
+                args.fragment_lane: fragment_track,
+                peer_lane: build_continuous_track(
+                    voices[peer_lane],
+                    peer_lines[peer_lane],
+                    args.seconds,
+                    workdir,
+                    args.lead_seconds,
                 ),
             }
         else:
@@ -627,6 +809,8 @@ def main() -> int:
             for lane, frames in lane_frames.items()
         },
     }
+    if fragment_facts is not None:
+        report["audio"]["fragments"] = fragment_facts
 
     client = PinnedClient(args.host, args.port, args.pin)
 
@@ -815,6 +999,14 @@ def main() -> int:
                                     "canonical_decode_token_cap",
                                     "canonical_decode_capped",
                                     "frozen_span_duration_sec",
+                                    # The ONE sweep-refusal surface a client can read
+                                    # (`live_service_runtime.py:804`). A session-end sweep's
+                                    # refusals ride `identity_finalized`, which no client can
+                                    # reach, so this covers the CADENCE half only -- and an
+                                    # empty map here with a revision published is the
+                                    # difference between "the sweep proposed nothing" and
+                                    # "it proposed something the session would not apply".
+                                    "identity_revision_refusals",
                                 )
                             }
                         )
@@ -891,6 +1083,36 @@ def main() -> int:
             }
             for item in items
         ],
+    }
+    report["sweep"] = _sweep_summary(report["transcript"]["items"])
+    cadence_refusals: dict[str, int] = {}
+    for event in canonical_events:
+        for reason, count in (event.get("identity_revision_refusals") or {}).items():
+            cadence_refusals[str(reason)] = cadence_refusals.get(str(reason), 0) + int(count)
+    report["sweep"]["cadence_refusals"] = dict(sorted(cadence_refusals.items()))
+    # The fragmentation the run set out to produce, measured on the wire rather than assumed.
+    # `canonical_speakers` counts what the session minted; the denominator is the number of
+    # distinct synthesized voices, which this probe knows exactly -- that ratio is the axis
+    # iteration 5's multiplicity model is defined on (F2 measured 8.0).
+    canonical = list(
+        ((report.get("stop") or {}).get("snapshot") or {}).get(
+            "identity_canonical_speakers"
+        )
+        or ()
+    )
+    real_voices = len({args.mic_voice, args.system_voice})
+    report["fragmentation"] = {
+        "canonical_speakers": len(canonical),
+        "real_voices": real_voices,
+        "references_per_real_voice": (
+            round(len(canonical) / real_voices, 2) if real_voices else None
+        ),
+        "labels_seen_in_transcript": report["transcript"]["speakers"],
+        "capacity_abstains": sum(
+            1
+            for event in canonical_events
+            if event.get("identity_reason") == "speaker_capacity_exceeded"
+        ),
     }
 
     report["latency"] = {

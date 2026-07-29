@@ -105,7 +105,50 @@ survivors are **banked at birth by construction**, so "a canonical speaker with 
 stops being representable and the merge defence can never be disabled again.
 
 *This is why 55 comes first.* Wiring `stop` (candidate 60) while 55 is open buys the
-`identity_finalized` event and a sweep that abstains on roughly five units in six.
+`identity_finalized` event and a sweep that cannot reach the labels 55 minted — see §3b, which
+measured that on the deployed service and changed the reason.
+
+## 3b. The deployed measurement, and it CORRECTS §3's mechanism
+
+Run `20260729-094359` iteration 9 reproduced §2's shape on the **deployed** `7a4f59c` on demand —
+`live-pipeline-probe.py --lane-audio fragmented`, 150 s, one bankable voice plus sub-floor
+interjections every 3 s — and ran a 150 s `continuous` control through the same instrument. Both
+committed exactly 61 spans, 0 non-200s, `stop` 200.
+
+| | fragmented | continuous (control) |
+| --- | --- | --- |
+| canonical speakers | **16** | 4 |
+| labels appearing on ≤ 2 spans | **15** | 3 |
+| spans containing `S00` | 8 | 34 |
+| `speaker_capacity_exceeded` abstains | 7 | 0 |
+| session-end sweep revisions | **7 (11.5 %)** | **20 (32.8 %)** |
+| of the abstained spans | **7 of 8 (87.5 %)** | 20 of 34 (58.8 %) |
+| reassignments (`Sxx → Syy`) | **0** | **0** |
+
+**§3's table predicted the sweep would consider these units and refuse them (`kept_ambiguous`).
+It does not. It never sees them.** A speaker born from audio below the evidence floor has no
+embedded unit, so it has no ledger entry, so it is not in the sweep's input at all — the sweep's
+*conditional* repair rate on the fragmented meeting is **higher** than the control's. What
+fragmentation destroys is the **supply** of repairable spans, by converting a span that would have
+abstained into one carrying a confident junk label.
+
+**The confound-free fact, and it is the strongest one here.** Across all three deployed meetings
+this loop has swept — iteration 7's 19 corrections, and this iteration's 7 and 20 — **every one of
+the 46 published corrections is `S00 → Sxx`, and not one is a reassignment.** The deployed
+session-end sweep's only observed product is filling in a label that was missing. It has never been
+observed to move a label that was already set, which is precisely what repairing candidate 55's
+fragmentation would require.
+
+*Honest limit:* the two runs differ in two variables, not one — fragmentation **and** the number of
+embeddable voices (the fragmented run's peer lane carries one voice, the control two), so
+11.5 % vs 32.8 % is not a single-variable contrast and part of the control's larger abstain pool is
+two-voice ambiguity. The reassignment count and the 16-for-one-voice shape do not depend on the
+contrast.
+
+*What this changes in the ask:* nothing about **(a)**, which gets stronger — a birth floor is now
+the only one of the three items that touches this defect at all, because 60 and 65 govern *reaching*
+and *reading* the sweep and the sweep provably cannot repair a minted label whatever cadence it runs
+at.
 
 ## 4. The ask
 

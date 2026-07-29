@@ -24417,3 +24417,155 @@ ROLLBACK, recorded before it is applied (PRD "Reversibility"):
      helper lease expires the session on its own (measured in F2 and F3).
 There is nothing else to undo: the probe writes no file on the host, changes no
 config, and touches neither the manifest nor the TLS material.
+
+================================================================================
+RUN 20260729-094359 ITERATION 9 - THE SWEEP AT F2's OWN FRAGMENTATION, MEASURED
+ON THE DEPLOYED SERVICE: THE PREDICTION'S DIRECTION HOLDS AND ITS MECHANISM IS
+WRONG
+================================================================================
+TARGET.  Iteration 8's recommendation, unchanged since iteration 7 filed it:
+re-run live-pipeline-probe.py against a FRAGMENTED meeting and read
+revised_transcript, which turns iteration 5's offline model (84.1 % kept_ambiguous
+at 8.40 references per real voice) into a deployed number and settles the
+load-bearing claim of authorization-request-55-60-65.md.  Re-verified the pick
+first: prd.md's last commit is still 0456177 (no ninth authorization), no operator
+commit since iteration 8's own 671573f, working tree clean, and
+`git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` EMPTY - so an offline
+probe still speaks for the deployed service.  Loop tooling and a read-only probe
+need no authorization.
+
+WHAT WAS DONE.
+ 1. `scripts/ralph-afk/live-pipeline-probe.py` gained `--lane-audio fragmented`
+    with `--fragment-lane` / `--fragment-interval`: the peer lane stays continuous
+    while the named lane carries isolated sub-floor interjections.  The builder
+    RENDERS each fragment line and REFUSES any that reaches the 0.5 s evidence
+    floor - the mode is falsifiable rather than asserted, because an embeddable
+    fragment would silently test the healthy regime.  (Measured and recorded in the
+    source: `Okay.` 0.574/0.570 and `Mm hmm.` 0.507/0.745 are over it on at least
+    one voice and were rejected; the six shipped lines are 0.353-0.457 on both.)
+ 2. Two reductions so 61 items are not read by hand as iteration 7 read 31:
+    `sweep` (revised_items / label_changing / byte_identical_rewrites /
+    words_moved / revision_versions) and `fragmentation` (canonical_speakers /
+    references_per_real_voice / capacity_abstains / labels_seen).
+ 3. `identity_revision_refusals` added to the collected `canonical_processed`
+    keys (`live_service_runtime.py:804`) - the ONLY sweep-refusal surface a client
+    can read, and it covers the CADENCE half only.  Both of this iteration's runs
+    predate that field.
+ 4. TWO RUNS against the deployed 7a4f59c from MacStudio over the pinned leaf,
+    150 s each, same instrument, same length: `fragmented` and a `continuous`
+    CONTROL.  Rollback pre-recorded in the previous commit (72d8e9c) before any
+    host contact.
+
+VALIDATION COMMAND AND RESULT.
+  offline: python3 -m py_compile + a builder harness (fragment track on both
+    voices, 10 fragments placed in 30 s at interval 3.0, 10 voiced frames of 60;
+    max rendered 0.443 s < the 0.5 s floor) and a `_sweep_summary` unit case
+    covering label-changing / byte-identical / words-moved / no-revision.  rc=0.
+  online (both rc=0, 300 ticks, 0 non-200s, stop 200, view 401/revoked after):
+    cat /tmp/i9-payload  | python3 scripts/ralph-afk/live-pipeline-probe.py \
+      --host 100.64.0.8 --port 7861 --pin a35ca9fc... \
+      --device-id ralph-i9-frag-20260729T113555Z --seconds 150 --lead-seconds 1.0 \
+      --lane-audio fragmented --fragment-lane microphone --fragment-interval 3.0 \
+      --lane-offset-ms system=137 --report /tmp/i9-frag-probe.json
+    cat /tmp/i9b-payload | ... --lane-audio continuous --report /tmp/i9b-cont-probe.json
+
+                                    fragmented    continuous (control)
+    committed spans                     61              61
+    canonical speakers minted           16               4
+    labels on <= 2 spans                15               3
+    dominant label's span count      S02 52/61       S01 26/61
+    spans containing S00                 8              34
+    speaker_capacity_exceeded            7               0
+    session-end sweep revisions      7 (11.5 %)     20 (32.8 %)
+      ... of the abstained spans     7 of 8 (87.5%) 20 of 34 (58.8%)
+    reassignments Sxx -> Syy             0               0
+    words moved by a revision            0               0
+    decoder p95 RTF                  0.190           0.167
+
+THREE FINDINGS.
+ 1. CANDIDATE 55 IS NOW REPRODUCIBLE ON DEMAND, in 150 s, with no Mac, no TCC and
+    no operator: 16 canonical speakers for ONE embeddable voice, 14 of them on
+    exactly one span each - F2's measured 14 no_reference / 1 provisional /
+    1 banked shape, hit exactly.  Before this the loop could only wait for a
+    certification run to exhibit 55.
+ 2. THE PREDICTION IS CORRECTED, NOT CONFIRMED.  Iteration 5's model said the
+    sweep would consider these units and refuse them (kept_ambiguous).  The
+    deployed sweep does not refuse them - it never sees them.  A speaker born
+    below the evidence floor has no embedded unit, so no ledger entry, so nothing
+    to re-match (decision 20's site read from the sweep's side).  Its CONDITIONAL
+    repair rate on the fragmented meeting is HIGHER than the control's.  What
+    fragmentation destroys is the SUPPLY of repairable spans: a span that would
+    have abstained instead carries a confident junk label.  Iteration 5 got its
+    84.1 % by GIVING the sweep stand-in references; production gives it none.
+ 3. THE CONFOUND-FREE FACT, and it is the sharpest thing the loop knows about the
+    sweep.  Across all three deployed meetings ever swept - iteration 7's 19, and
+    this iteration's 7 and 20 - ALL 46 PUBLISHED CORRECTIONS ARE S00 -> Sxx AND
+    NOT ONE IS A REASSIGNMENT.  The deployed session-end sweep's only observed
+    product is filling in a MISSING label; it has never been observed to move a
+    label already set, which is exactly what repairing 55 would require.  So no
+    cadence, no `stop` wiring and no amount of sweeping repairs a minted junk
+    label, and item (a) of the request - the birth floor - is the only one of the
+    three that touches this defect.
+
+HONEST LIMIT, stated because the contrast is not single-variable.  The two runs
+differ in fragmentation AND in the number of embeddable voices (fragmented: one
+bankable voice plus sub-floor interjections; control: two full voices), so
+11.5 % vs 32.8 % is NOT a controlled rate and part of the control's larger abstain
+pool is two-voice ambiguity rather than the absence of fragmentation.  Findings 1
+and 3 do not depend on the contrast; finding 2 is stated as a mechanism corrected,
+not a rate measured.  The run that would close it needs a fragmented lane against
+a TWO-VOICE peer track, which the probe cannot build today (one voice per lane).
+
+ROLLBACK APPLIED AND VERIFIED (pre-recorded in 72d8e9c).  Both probe devices
+revoked on the host loopback via DELETE /api/live/devices/<id>, each answering 200
+with its {"device_id": ..., "session_ids": []} body; store back to 19 devices /
+ONE unrevoked (m4mbp AB600574-...).  Host unchanged after: HEAD 7a4f59c, worktree
+clean, moss-live-web MainPID 365632 / moss-web 301112 / moss-vllm 322117 all
+active with NRestarts=0, live-runs 0, no /tmp/mtd-live-*, 0 journal tracebacks.
+Batch clause re-checked from MacStudio: http://192.168.68.38:7860/ 200 and
+/api/jobs 200.  m4mbp never contacted.
+
+FILES TOUCHED.  scripts/ralph-afk/live-pipeline-probe.py (the mode and the two
+reductions), scripts/ralph-afk/authorization-request-55-60-65.md (new section 3b
+carrying the deployed measurement, and section 3's closing sentence corrected),
+scripts/ralph-afk/context.md (the new measured block, the standing-summary bullet,
+candidates 55/60/65, Phase N decision 19's third honest limit, the fence recipe,
+the compaction headroom), scripts/ralph-afk/progress.txt.  NO product source, no
+tests, no ops, no deploy, no merge.
+
+WHAT I LEARNED.
+ 1. A PROBE THAT CAN PRODUCE A DEFECT BEATS ONE THAT CAN ONLY OBSERVE IT.  Six
+    candidate-55 iterations measured it out of certification-run leftovers; one
+    lane mode reproduces it in 150 s and turns 55 from an artefact of whichever
+    meeting happened to run into an experimental condition.  The generalisation
+    for the next diagnostic: ask whether the instrument can CREATE the condition
+    before spending another iteration correlating recordings of it.
+ 2. A MODEL THAT MUST INVENT ITS INPUT IS MODELLING SOMETHING ELSE.  Iteration 5's
+    sharding could only redistribute vectors that exist, so it could not represent
+    the production case where the vector was never computed - and it named the
+    wrong refusal for four iterations.  When a probe fabricates the very quantity
+    under test, record which real state it CANNOT reach.
+ 3. THE CHEAP CONTROL WAS WORTH ITS THREE MINUTES AND STILL WAS NOT ENOUGH.
+    Running the 150 s continuous control removed the length and instrument
+    confounds that a comparison against iteration 7's 75 s run would have carried,
+    and it exposed the one it could not remove (one voice vs two).  A control that
+    names the confound it leaves standing is worth more than one that implies
+    there is none.
+
+BLOCKERS.  None this iteration.  No authorization exists for any product change
+(prd.md's last commit is 0456177; merge-keeper.sh's expected_main guard refuses a
+ninth merge) and none was needed: the change is loop tooling and the runs are
+read-only against the deployed service.
+
+RECOMMENDED NEXT STEP.  The authorization request is now measured rather than
+modelled, and finding 3 makes its ordering argument stronger than the ambiguity
+model did - it is ready for the operator and nothing further this loop can measure
+will improve it.  So the next iterations should take, in order: (1) the
+storageWrites assertion gap iteration 7 filed - the JS harness instruments
+localStorage/sessionStorage and NO node asserts the result is empty, so a runtime
+write passes today; loop tooling plus a tracked test, cheap and closes the one
+unmeasured half of the secret-hygiene clause; (2) the sixth compaction, which is
+now due by about iteration 13 (221 KB, ~35 KB of headroom) and must take the
+631-line Validation fence deliberately.  Do NOT re-argue candidates 55, 60 or 65
+from the record: 55's mechanism was corrected twice and is now measured on the
+deployed service.
