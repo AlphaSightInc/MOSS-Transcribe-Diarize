@@ -43,6 +43,26 @@ scale (reassign+merge over cached vectors); extrapolated 3 h ≈ <10 ms — negl
 the 35-40x budget. Residual: mild ID fragmentation (6-9 canonical vs 2-6 true; extra
 births hold ≤~4% of time) — the sweep merge pass plus production UX naming absorbs it.
 
+### Real-audio replay (`proto_real_replay.py` + `proto_sweep_tuning.py`, 2026-07-29)
+9 real interview clips (Lex Fridman / Acquired, golden reference.jsonl turns; m4mbp
+LiveTranscribe corpora). Aggregate at grid-best (score 0.35, margin 0.1, adm 1.0 s):
+
+- **album+sweep 95.2% mean / 87.4% worst-clip** — beats the whole-file oracle
+  (94.5% / 72.7%). Album alone 94.0/85.6. Overwrite 90.6/65.8.
+- **3-min clips: 97.5-99.5% everywhere** (incl. the Shapiro/Destiny crosstalk clip,
+  99.3%). 1-min clips are the cold-start floor (87.4% worst, 3 speakers in 60 s) —
+  consistent with the authorized birth-floor/deferred-labelling amendment.
+- **Deployed `min_match_score` 0.5 caps album+sweep at 90.7% mean / 70.7% min on real
+  audio** → recalibration toward 0.35 is measured as REQUIRED, not optional.
+- **`SWEEP_MERGE_THRESHOLD` 0.70 is safe**: max TRUE cross-speaker centroid sim across
+  all 9 clips = 0.259 (same-gender co-hosts included). Enormous margin; merges never
+  false-fire.
+- Two harness lessons worth keeping: (1) an initial "sweep hurts on real audio"
+  finding was a harness bug — no terminal sweep at meeting end; production's
+  end-of-session pass is the correct design and the bench now mirrors it. (2) my
+  merge-false-positive hypothesis was cleanly falsified by measurement (all variants
+  identical) before it could become a steering error. Prototype-first caught both.
+
 ## Fidelity notes
 - Embedder: PRODUCTION class `_OnnxWeSpeakerEmbedder` via `WeSpeakerResNet152LmAdapter`,
   loaded from the repo file, with the pinned ONNX (sha verified = spec.state_sha256).

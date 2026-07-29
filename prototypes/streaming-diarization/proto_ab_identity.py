@@ -235,7 +235,9 @@ class Album:
 
 
 def simulate(cache, *, policy: str, min_score: float, margin: float,
-             admission: float = 2.0, sweep: bool = False):
+             admission: float = 2.0, sweep: bool = False,
+             merge_thr: float | None = MERGE_THR, sticky_delta: float = 0.0,
+             keep_uncertain: bool = False):
     rows, vecs, vec_idx = cache["rows"], cache["vecs"], cache["vec_idx"]
     order = np.argsort(rows[:, 2], kind="stable")
     refs: dict[int, np.ndarray] = {}
@@ -246,6 +248,39 @@ def simulate(cache, *, policy: str, min_score: float, margin: float,
     for i in order:
         span_units.setdefault(int(rows[i, 0]), []).append(int(i))
     sweep_log, next_sweep, sweep_cost = [], SWEEP_EVERY, 0.0
+
+    def run_sweep(t_now: float) -> None:
+        nonlocal retro, sweep_cost
+        if not refs:
+            return
+        t0 = time.perf_counter()
+        retro = assigned.copy()
+        cids = list(refs)
+        cpos = {c: k for k, c in enumerate(cids)}
+        R = np.stack([refs[c] for c in cids])
+        sims = R @ R.T
+        merged = {}
+        if merge_thr is not None:
+            for a in range(len(cids)):
+                for b in range(a + 1, len(cids)):
+                    if sims[a, b] >= merge_thr:
+                        merged[cids[b]] = merged.get(cids[a], cids[a])
+        past = [u for u in range(len(rows)) if rows[u, 3] <= t_now and vec_idx[u] >= 0]
+        V = vecs[vec_idx[past]]
+        S = V @ R.T
+        win = S.argmax(1)
+        okm = S.max(1) >= min_score
+        for j, u in enumerate(past):
+            c = cids[win[j]] if okm[j] else -1
+            cur = int(assigned[u])
+            if (c >= 0 and cur >= 0 and cur in cpos and c != cur
+                    and S[j, win[j]] - S[j, cpos[cur]] <= sticky_delta):
+                c = cur  # hysteresis: don't relabel without a decisive improvement
+            if keep_uncertain and c < 0 and cur >= 0:
+                c = cur  # a weak vector alone can't erase a span-context label
+            retro[u] = merged.get(c, c) if c >= 0 else -1
+        sweep_cost += time.perf_counter() - t0
+        sweep_log.append((t_now, retro.copy()))
 
     for span, unit_ids in sorted(span_units.items()):
         elig = [u for u in unit_ids if rows[u, 5] > 0]
@@ -290,26 +325,9 @@ def simulate(cache, *, policy: str, min_score: float, margin: float,
         t_now = rows[unit_ids[-1], 3]
         if sweep and t_now >= next_sweep:
             next_sweep += SWEEP_EVERY
-            t0 = time.perf_counter()
-            retro = assigned.copy()
-            cids = list(refs)
-            R = np.stack([refs[c] for c in cids])
-            sims = R @ R.T
-            merged = {}
-            for a in range(len(cids)):
-                for b in range(a + 1, len(cids)):
-                    if sims[a, b] >= MERGE_THR:
-                        merged[cids[b]] = merged.get(cids[a], cids[a])
-            past = [u for u in range(len(rows)) if rows[u, 3] <= t_now and vec_idx[u] >= 0]
-            V = vecs[vec_idx[past]]
-            S = V @ R.T
-            win = S.argmax(1)
-            okm = S.max(1) >= min_score
-            for j, u in enumerate(past):
-                c = cids[win[j]] if okm[j] else -1
-                retro[u] = merged.get(c, c) if c >= 0 else -1
-            sweep_cost += time.perf_counter() - t0
-            sweep_log.append((t_now, retro.copy()))
+            run_sweep(t_now)
+    if sweep:
+        run_sweep(float(rows[:, 3].max()))  # final sweep at meeting end (design §3.5)
     return assigned, retro if retro is not None else assigned, sweep_log, sweep_cost
 
 

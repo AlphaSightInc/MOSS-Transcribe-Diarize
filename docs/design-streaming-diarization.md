@@ -124,10 +124,20 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   burst loss; gap manifests exactly account for dropped frames; checkpoint/resume at
   40%+70% reproduced the uninterrupted mixed tape byte-identically.
 
+- **Real-audio gate — PASS (2026-07-29).** 9 real interview clips (Lex Fridman /
+  Acquired golden corpora from m4mbp, `proto_real_replay.py`): album+sweep **95.2%
+  mean / 87.4% worst-clip**, beating the whole-file oracle (94.5%/72.7%); all 3-min
+  clips 97.4-99.5% including a 3-speaker crosstalk clip; 1-min clips form the
+  cold-start floor, matching the birth-floor amendment's rationale. Measured
+  requirements that fall out: deployed `min_match_score` 0.5 caps real-audio accuracy
+  at 90.7% mean (recalibrate toward 0.35, recorded decision); `SWEEP_MERGE_THRESHOLD`
+  0.70 is safe (max true cross-speaker centroid sim 0.259 across all clips); the
+  terminal end-of-session sweep is load-bearing, not optional.
+
 Recommended starting parameters: min_score 0.35, margin 0.1-0.2, admission 1.0-2.0 s,
-k=10 exemplars, sweep every 60 s + merge threshold 0.70. Caveats before production
-sign-off: clean read speech (no overlap/noise) — replay a real conversational
-recording; in-span local diarization assumed correct (isolates the identity layer).
+k=10 exemplars, sweep every 60 s + merge threshold 0.70 + terminal sweep at session
+end. Remaining caveat: in-span local diarization assumed correct (isolates the
+identity layer; F1/F2's distinct-voice clauses cover it end-to-end).
 
 ## 8. Open questions (fog)
 
