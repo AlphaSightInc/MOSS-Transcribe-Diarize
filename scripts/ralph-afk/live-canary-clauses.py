@@ -20,9 +20,14 @@ This reducer answers the clauses that decide a certification run:
     double count);
   * the lane-health timeline, printed only where it CHANGES, so a degradation or a refusal is
     visible without reading a thousand identical status lines;
-  * and, for a SOAK directory (one that carries view-checks.tsv), the 16-minute clause word by
-    word: periodic accepted audio every wall-clock minute, the SAME view authority answering
-    after the retired 900 s expiry, and a clean stop revoking it immediately.
+  * and, for a SOAK directory, the 16-minute clause word by word: periodic accepted audio every
+    wall-clock minute, the SAME view authority answering after the retired 900 s expiry, and a
+    clean stop revoking it immediately. A soak is a directory that carries view-checks.tsv AND
+    DECLARES `VIEW_CLAUSE_AGE` in times.env - the boundary it asks to be measured against. The
+    300 s certification also runs timed view checks, and its own clause list says "clean
+    stop/drain" and nothing about revocation; asking it the soak's clause would make F2
+    ungreenable for candidate 60, a defect no 300 s run can reach. Its view checks are therefore
+    PRINTED under section 9 and marked OBSERVED, never subtracted silently.
 
 A directory whose snapshot or event layout this reducer does not understand loses only the
 sections that read those files, by name, and the run then exits 2 - never 0. Reading half a
@@ -144,7 +149,18 @@ def main():
     snap_rows = read_tsv(os.path.join(d, "snapshot.tsv"), 3)
     ev_rows = read_tsv(os.path.join(d, "events.tsv"), 3)
     view_rows = read_tsv(os.path.join(d, "view-checks.tsv"), 6)
-    is_soak = bool(view_rows)
+    # A directory carries view-checks.tsv whenever its driver ran timed view checks, and BOTH the
+    # 16-minute soak and the 300 s certification do. Only the SOAK is asked the PRD's clause
+    # "the same view authority works after minute 15, then clean stop immediately revokes it";
+    # F2's own clause list says "clean stop/drain" and says nothing about revocation, which
+    # sections 7 and 8 already decide. So the soak clause is asserted of a run that DECLARED it,
+    # by writing into times.env the boundary it is to be measured against - which only
+    # live-soak.sh does. Judging a 300 s certification against a 900 s boundary would be the
+    # fifth instance of candidates 57/59: a verdict word naming something the run was never
+    # asked, and here it would also make F2 UNGREENABLE for a defect outside its own clause list
+    # (candidate 60, which no run of this length can fix).
+    declared_clause_age = times.get("VIEW_CLAUSE_AGE")
+    is_soak = bool(view_rows) and declared_clause_age is not None
 
     # A layout this reducer cannot read costs only the sections that read it, and it costs the
     # run its green: `undecided` forces rc=2 at the end.
@@ -520,12 +536,32 @@ def main():
     # ------------------------------------------------------ 9. the soak clause
     # "capture remains active with periodic accepted audio and /live polling; the same view
     #  authority works after minute 15, then clean stop immediately revokes it."
-    # Only a directory that carries view-checks.tsv is a soak; a 60 s canary has no such clause
-    # and must not acquire one here.
-    if is_soak:
+    # Only a directory that carries view-checks.tsv AND declares the boundary is a soak; a 60 s
+    # canary has no such clause and must not acquire one here, and neither must the 300 s
+    # certification - see the is_soak comment above. A certification run still PRINTS every line
+    # below, because an excluded observation must be said out loud and never subtracted silently;
+    # it just does not become a verdict.
+    if view_rows:
         t_stop = float(times.get("T_STOP") or 0)
-        clause_age = float(times.get("VIEW_CLAUSE_AGE") or VIEW_CLAUSE_AGE)
-        print("\n-- 9. the 16-minute soak clause --")
+        clause_age = float(declared_clause_age or VIEW_CLAUSE_AGE)
+
+        def claim(bucket, msg):
+            """Record a section-9 finding as a verdict for a soak, as an observation otherwise."""
+            if is_soak:
+                bucket.append(msg)
+            else:
+                print(f"   OBSERVED (not a clause of this run): {msg}")
+
+        if is_soak:
+            print("\n-- 9. the 16-minute soak clause --")
+        else:
+            print("\n-- 9. timed view checks - OBSERVED, NOT ASSERTED --")
+            print("   this directory carries view-checks.tsv but times.env declares no "
+                  "VIEW_CLAUSE_AGE, so its driver did not claim to be a soak. The PRD asks "
+                  "'the same view authority works after minute 15, then clean stop immediately "
+                  "revokes it' of the 16-MINUTE SOAK only; a 300 s certification's own clause "
+                  "list says 'clean stop/drain', which sections 7 and 8 decide. Everything below "
+                  "is printed and nothing below reaches the verdict.")
 
         # (a) periodic accepted audio, per wall-clock minute
         if snap_ok:
@@ -561,6 +597,13 @@ def main():
                     flag += "  <-- no new committed span"
                 print(f"   {m:>6} {d_acc:>11.1f} {d_spans:>10}{flag}"
                       + ("   (partial)" if partial else ""))
+            # (a) IS asserted for a certification run as well, unlike (b) and (c). It is not the
+            # soak's "after minute 15" clause wearing a different name: a minute of a LOCKED
+            # 300 s program that carries less than the floor means the two lanes were not
+            # capturing simultaneously, which is F2's own first clause. Measured, so the silence
+            # window does not make this a false alarm: accepted_samples advances on every
+            # published frame whether or not anyone is speaking - F3's soak speaks once per
+            # minute and still records 57.8-61.5 s per minute.
             if not keys:
                 undecided.append("no 200 snapshot minutes to measure periodic audio")
             elif thin or silent:
@@ -588,7 +631,7 @@ def main():
         good_late = [c for c in late_ok if c[2] == "200" and c[3] == "200"]
         if good_late:
             tag, age, _, _ = good_late[-1]
-            green.append(f"the same view authority answered 200/200 at age {age:.1f}s "
+            claim(green, f"the same view authority answered 200/200 at age {age:.1f}s "
                          f"(> {clause_age:.0f}s), check '{tag}'")
         elif late_ok:
             tag, age, sc, ec = late_ok[-1]
@@ -598,17 +641,17 @@ def main():
             # session's death is red on its own (section 8 raises it); calling the authority red
             # as well would record a refutation the evidence does not contain.
             if first_refusal and first_refusal[0] <= age:
-                undecided.append(
+                claim(undecided,
                     f"view authority at age {age:.1f}s answered snapshot={sc} events={ec}, but "
                     f"the session was already refused ({first_refusal[1]}) at "
                     f"t+{first_refusal[0]:.1f}s - the 'works after minute 15' clause is UNPROVEN "
                     f"on this run, not disproven")
             else:
-                red.append(f"view authority refused past {clause_age:.0f}s with the session "
+                claim(red, f"view authority refused past {clause_age:.0f}s with the session "
                            f"still alive: check '{tag}' at age {age:.1f}s answered "
                            f"snapshot={sc} events={ec}")
         else:
-            undecided.append(f"no view check ran at age >= {clause_age:.0f}s before the stop - "
+            claim(undecided, f"no view check ran at age >= {clause_age:.0f}s before the stop - "
                              f"the 'works after minute 15' clause is UNPROVEN, not disproven")
 
         # (c) a clean stop revokes it immediately
@@ -618,13 +661,14 @@ def main():
             revoked = sc != "200" and ec != "200"
             print(f"\n   revoke: check '{tag}' ran {latency:.1f}s after the clean stop and "
                   f"answered snapshot={sc} events={ec}")
-            (green if revoked else red).append(
+            claim(green if revoked else red,
                 f"clean stop {'revoked' if revoked else 'DID NOT revoke'} the view authority "
                 f"within {latency:.1f}s (snapshot={sc} events={ec})")
         elif t_stop:
-            undecided.append("no view check after the clean stop - the revoke clause is unproven")
+            claim(undecided,
+                  "no view check after the clean stop - the revoke clause is unproven")
         else:
-            undecided.append("no T_STOP in times.env - the revoke clause is unproven")
+            claim(undecided, "no T_STOP in times.env - the revoke clause is unproven")
 
     # -------------------------------------------- 10. the F2 interruption clause
     # "a 5-second network interruption ... zero accepted-audio loss".

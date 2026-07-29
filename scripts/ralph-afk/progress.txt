@@ -16628,3 +16628,95 @@ Pre-record the m4mbp rollbacks first (the iteration-7 block is the template: app
 launch, pair, output mute, /tmp scratch, pasteboard) and read F1's two standing
 warnings into it - decoder p95 RTF was 0.911, close to the < 1 bound, and
 identity saturates at ~t+65 s so labels after minute 1 are S00 by design.
+
+## run 20260729-025318-86584 - iteration 11 - PRE-RECORD: the F2 certification
+## run's rollbacks, written BEFORE any host is touched (prd.md "Reversibility")
+
+TARGET: candidate 25 / F2 - the PRD's 300 s locked certification run, the loop's
+one unblocked acceptance clause. Iteration 10 built and proved the instrument and
+recommended the run by name.
+
+HOST STATE BEFORE, measured this iteration and read-only:
+  server  ga0-alienware-rtx4070ti, WSL Ubuntu, user devcontainers
+          HEAD 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870, worktree clean
+          moss-live-web  MainPID 355607  NRestarts=0  active
+          moss-web       MainPID 301112  NRestarts=0
+          moss-vllm      MainPID 322117  NRestarts=0
+          iptables -S INPUT  ->  "-P INPUT ACCEPT"  (no leftover DROP rule)
+          served leaf a35ca9fc..  (the D2 pin, so every paired Mac is intact)
+          https://100.64.0.8:7861/live 200, /api/live/descriptor 200
+          http://192.168.68.38:7860/ 200
+  m4mbp   HEAD 42abc5a, macOS 26.5.2, up 4 days, load 2.36
+          pgrep -x MOSSCaptureApp EMPTY - nothing to kill, so a fresh launch is
+          honest and the rollback below is exact
+          /Applications/MOSSCapture.app present
+  MacStudio: no MOSSCapture install; nothing to roll back here.
+
+A DURABLE CORRECTION TO THE HOST RECIPE, learned before anything was touched:
+  the three moss units are USER units. `systemctl show moss-live-web -p MainPID`
+  prints MainPID=0 / LoadState=not-found / ActiveState=inactive and reads exactly
+  like "the live service is dead"; it is not. The units live at
+  /home/devcontainers/.config/systemd/user/*.service and the only correct probe is
+      systemctl --user show moss-live-web -p MainPID -p NRestarts -p ActiveState
+  `sudo systemctl` is wrong for the same reason (root has no such unit). This cost
+  four probes and would have read as a dead server to the next reader.
+
+MUTATIONS THIS ITERATION AND THEIR ROLLBACKS, each applied only if needed:
+  1. SERVER: live-cert-interrupt.sh inserts, for exactly 5 s,
+       iptables -I INPUT ! -i lo -p tcp --dport 7861 -j DROP
+     from a detached setsid child that deletes it in a loop.
+     ROLLBACK, if the rule ever survives the window:
+       ssh gyauo@ga0-alienware-rtx4070ti.local, then in WSL:
+         sudo iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP
+       repeat until `sudo iptables -S INPUT` prints exactly "-P INPUT ACCEPT".
+     The reducer turns rule_still_present=yes into a RED naming this rollback, so
+     the condition cannot pass unnoticed.
+  2. SERVER: /tmp/live-cert-interrupt.sh (copied in) and /tmp/ralph-cert-interrupt.json
+     (written by the detached sudo child, therefore ROOT-OWNED).
+     ROLLBACK: sudo rm -f /tmp/ralph-cert-interrupt.json /tmp/live-cert-interrupt.sh
+  3. SERVER: one pairing CODE minted on the loopback by ops/live-pair.sh, and one
+     live SESSION created by the Mac.
+     ROLLBACK: none. An unexchanged code expires on its own (PAIRING_TTL_SECONDS
+     = 300); a session ends at stop and its view authority dies with it. NO
+     checkout, NO restart, NO unit change, NO manifest or TLS touch - this
+     iteration deploys nothing.
+  4. m4mbp: launch /Applications/MOSSCapture.app from the GUI session (`open -a`).
+     ROLLBACK: ssh ga0@m4mbp 'pkill -x MOSSCaptureApp'
+  5. m4mbp: `mtd-capture pair` against https://100.64.0.8:7861. REUSES the stored
+     capture-device-id, so it mints NO new device row; it rewrites capture-bearer /
+     capture-session-id / capture-view-token in
+     ~/Library/Application Support/MOSSCapture/secrets.json.
+     ROLLBACK: none is wanted - re-pairing is the normal path. DO NOT revoke
+     m4mbp's device row; it is the one unrevoked device and revoking it would need
+     a new pairing to restore.
+  6. m4mbp: the driver mutes system output (OUTPUT_MODE=muted is candidate 51's
+     lane-separating mechanism). Its own EXIT/INT/TERM trap restores what it found.
+     ROLLBACK if the driver is killed:
+       ssh ga0@m4mbp 'osascript -e "set volume without output muted"; \
+                      osascript -e "set volume output volume 31"'
+  7. m4mbp: /tmp/live-cert.sh, /tmp/ralph-cert/, /tmp/ralph-cert-run.log
+     ROLLBACK: rm -rf /tmp/live-cert.sh /tmp/ralph-cert /tmp/ralph-cert-run.log
+  8. m4mbp: the pasteboard receives the view authority at `handoff`.
+     ROLLBACK: pbcopy < /dev/null   (the driver does this itself at step 19)
+  9. MacStudio: `say` during the driver's room window. No volume change is made
+     here, so there is nothing to restore.
+
+THE ARMING ARITHMETIC, decided before arming rather than after:
+  the driver's interrupt PHASE is [T_START+200, T_START+260]; the armed window is
+  [T_ARM+D, T_ARM+D+5]. With D the delay and Delta = T_ARM -> T_START, the window
+  is inside the phase exactly when Delta is in [D-255, D-200].
+  live-cert.sh's header suggests D=215, which tolerates only Delta in [0,15] s -
+  and Delta here is a scp-free ssh launch plus the driver's own steps 0-3, which
+  include two system_profiler calls. D=240 is used instead: it tolerates Delta in
+  [0,40] s and centres the window near T_START+225 for a realistic Delta of ~15 s.
+  Recorded because the number in the header is not the number used.
+
+STOP CONDITIONS, decided before the run so a bad result is not argued away:
+  * served leaf != a35ca9fc.. -> the driver aborts rc=3; record a blocker, touch
+    nothing else.  (Checked already this iteration: it matches.)
+  * any batch MainPID moves, or NRestarts != 0 on any unit -> stop and record.
+  * the iptables rule survives its window -> apply rollback 1 immediately, before
+    anything else, and record it.
+  * the run is RED or UNDECIDED -> that is a RESULT, not a reason to re-run with
+    different knobs. Record it, diagnose from the evidence, let the next iteration
+    act.
