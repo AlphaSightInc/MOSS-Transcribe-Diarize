@@ -21389,3 +21389,103 @@ which cannot reach the server must still stop locally.
 [loop 20260729-025318-86584] budget exhausted after 30 iterations without completion
 
 [loop 20260729-094359-88967] start budget=30 agent=claude branch=ralph/live-meeting-mvp
+
+================================================================================
+PRE-RECORD - iteration 1 rollbacks, written BEFORE any host is touched
+run 20260729-094359 - Phase N gate step (d) SECOND HALF: F2, the 300 s locked
+certification, re-run against the deployed 7a4f59c
+================================================================================
+
+WHY THIS BLOCK EXISTS.  prd.md's Reversibility constraint: every server or Mac
+mutation must have its rollback command recorded in progress.txt BEFORE it is
+applied.  This iteration runs F2 (300 s locked certification + the 5 s network
+interruption) against the DEPLOYED 7a4f59c.  It is the step iteration 30 named
+as the loop's last unblocked measurement.  It changes NO tracked source,
+restarts NO service, rebuilds NOTHING, and asks the operator for nothing.
+
+PRE-STATE, MEASURED (not assumed) IMMEDIATELY BEFORE:
+  local   : HEAD 1bac1ad, main == origin/main == 7a4f59c,
+            `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` EMPTY,
+            prd.md unchanged at 0456177 (eight amendments; re-read first, per the
+            standing rule that a previous iteration's "no new authorization"
+            report cannot be trusted)
+  server  : HEAD 7a4f59c worktree clean; moss-live-web MainPID 365632,
+            moss-web 301112, moss-vllm 322117, all NRestarts=0 and active;
+            live-runs 0 entries; no /tmp/mtd-live-*;
+            `iptables -S INPUT` == `-P INPUT ACCEPT` (no leftover DROP rule)
+  m4mbp   : HEAD 7a4f59c clean; MOSSCaptureApp NOT running;
+            /Applications/MOSSCapture.app inode 212080356 mtime
+            2026-07-28T18:22:32Z; CLI sha256 450c20bf…; output volume 31,
+            muted false; pasteboard 0 bytes; BOTH TCC grants auth_value=2
+  MacStudio: output volume 50, muted false  (recorded because iteration 30 left
+            it at 50 without capturing its pre-value; this run restores 50)
+
+THE MUTATIONS AND THEIR ROLLBACKS, one per line, in the order they are applied:
+
+ 1. m4mbp: launch the app
+      apply    : ssh ga0@m4mbp 'open -a /Applications/MOSSCapture.app'
+      ROLLBACK : ssh ga0@m4mbp 'pkill -x MOSSCaptureApp'
+      (pre-state is "not running", so the rollback is exact)
+
+ 2. server: mint ONE pairing code on the loopback
+      apply    : ops/live-pair.sh --url https://127.0.0.1:7861 --cert <live.crt>
+      ROLLBACK : none needed - single-use, expires, consumed in the same minute.
+                 Do NOT revoke m4mbp's device row.
+
+ 3. m4mbp: mtd-capture pair (REUSES the stored capture-device-id, so it mints no
+    new device row - measured in K5d, iteration 29 and iteration 30)
+      apply    : printf '%s\n' "$PAYLOAD" | ssh ga0@m4mbp '~/.local/bin/mtd-capture pair --server https://100.64.0.8:7861'
+      ROLLBACK : re-pair with a fresh loopback code; idempotent for this device.
+
+ 4. SERVER, THE ONE MUTATION THAT IS NOT ON THE MAC: a 5 s inbound DROP rule on
+    tcp/7861, armed to fire once and delete itself.
+      apply    : bash live-cert-interrupt.sh --delay 240 --duration 5 \
+                   --out /tmp/ralph-cert-interrupt.json   (in WSL)
+      ROLLBACK : sudo iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP
+                 then `sudo iptables -S INPUT` must print exactly
+                 `-P INPUT ACCEPT`.  The rule self-deletes from a detached
+                 setsid child in a loop, so this is the belt-and-braces path for
+                 the case where that child dies mid-window.  VERIFIED AFTER,
+                 unconditionally, whatever the run does.
+      NOTE     : `! -i lo` keeps ops/live-pair.sh working and `--dport 7861`
+                 cannot reach the batch service on 7860 - the "batch service
+                 unharmed" clause is untouchable by this rule by construction.
+
+ 5. m4mbp: mute the output (this is how the two lanes are separated - candidate 51)
+      apply    : the driver's own step 3, OUTPUT_MODE=muted
+      ROLLBACK : ssh ga0@m4mbp 'osascript -e "set volume without output muted"; osascript -e "set volume output volume 31"'
+                 The driver's EXIT/INT/TERM trap restores what it found, but a
+                 dropped ssh link kills the driver mid-meeting and leaves the
+                 mute in place (iteration 21), so the explicit command above is
+                 run unconditionally after.
+
+ 6. MacStudio: output volume raised to deliver the room marker
+      apply    : osascript -e 'set volume output volume 70'
+      ROLLBACK : osascript -e 'set volume output volume 50'   (its pre-value,
+                 measured above rather than guessed)
+
+ 7. m4mbp: /tmp scratch
+      apply    : scp live-cert.sh -> /tmp, driver writes /tmp/ralph-cert/
+      ROLLBACK : ssh ga0@m4mbp 'rm -rf /tmp/ralph-cert /tmp/live-cert.sh /tmp/ralph-cert-run.log'
+
+ 8. server: /tmp scratch - the interrupt script and its ROOT-OWNED report
+      apply    : /tmp/live-cert-interrupt.sh, /tmp/ralph-cert-interrupt.json
+      ROLLBACK : rm -f /tmp/live-cert-interrupt.sh; sudo rm -f /tmp/ralph-cert-interrupt.json
+                 (the report is written by the detached child under sudo, so it
+                 is root-owned - measured in iteration 11, not a permissions bug)
+
+ 9. server: one live session is created and stopped by the driver
+      ROLLBACK : none available and none needed - a stopped session drains and
+                 the 30 s helper lease closes it (candidate 60 means the client's
+                 stop does not reach the server; the lease does).
+
+10. m4mbp: the pasteboard receives view authority (app-owned handoff)
+      ROLLBACK : the driver clears it at the end; verified after with
+                 ssh ga0@m4mbp 'pbpaste | wc -c'  -> must be 0
+
+NOT TOUCHED BY THIS ITERATION, stated so a later reader does not look for it:
+no git checkout on either host, no service restart, no manifest regeneration, no
+Swift build, no install, no TCC interaction of any kind.  Both grants stay
+auth_value=2 and are re-checked read-only afterwards.  No tracked product source,
+no test and no ops file changes - this iteration writes only
+scripts/ralph-afk/{context.md,progress.txt}.
