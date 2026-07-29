@@ -106,9 +106,14 @@ carry is in the retired-evidence index below).**
   red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
   Python 608/2/368 green. See the Phase P block.
 - **WHAT NOW BLOCKS EVERYTHING IS P5, and it is ordinary work: gate → merge #7 → push → redeploy →
-  Mac needs no rebuild (no `macos/` file changed) → THEN F1 and F3.** `merge-keeper.sh`'s
+  Mac needs no rebuild (no `macos/` file changed) → THEN F1 and F3.** **Step (a), the gate, is DONE
+  and GREEN at `5bc4f7f` (iteration 2)** — see the Phase P gate row in the index below; the payload
+  is 7 files / +285/−38, every path inside `moss_transcribe_diarize/` or `tests/`, **0 under
+  `macos/`**, so the redeploy is server-only and the Mac needs only a `git checkout`. Next is the
+  merge. `merge-keeper.sh`'s
   `expected_main` must be advanced in-script to `77e0014` citing the seventh amendment, exactly as
-  the six previous merges did. Until the redeploy, the deployed service still carries the defect, so
+  the six previous merges did, and a **history join is required first** — `git merge-base
+  --is-ancestor main HEAD` is FALSE at `5bc4f7f`. Until the redeploy, the deployed service still carries the defect, so
   **no certification run may be used as evidence** and no offline probe speaks for the host — the
   standing rule below now reads FALSE for the first time since iteration 20:
   `git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is **non-empty**.
@@ -727,6 +732,7 @@ progress.txt archive under each title.
 | **F1 canary / F3 soak** | **RED** — see the two blocks above. One defect, candidate 53. |
 | **Phase M gate step (a)** | GREEN at **`21a73ea`** — Swift 158/0 (0 warnings, fresh scratch), Python 604+2/368, tracer 4/0 skips, 10/10, lane-refusal probe rc=0, 7/7 hard-cap cases, leak-scan clean, tree clean; payload 10 files / +983/-51 all in scope. |
 | **M6 gate + merge #6** | Merge **`77e0014`**, parents `fc7097d` + feature tip `4ac5d95`; join `1b6a9f4` proven content-free first. In-worktree gate on the merged tree: Swift 158/0, Python 604+2/368 in 64.4 s. Merge tree == feature tree `d2094369…`. **Not server-only** (4 files under `macos/`), so step (c) is the K5c shape: restart **and** Mac rebuild+reinstall. Guard rehearsed: a seventh merge refuses. |
+| **Phase P gate step (a)** | GREEN at **`5bc4f7f`** (run `20260729-025318` it. 2) — Swift **158/0** with **0 warnings** on a fresh scratch, Python **608 passed / 2 skipped / 368 subtests** in 59.95 s, tracer **4/0 skips**, discriminator **10/10**, lane-refusal probe rc=0 (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `77e0014`), seven hard-cap cases rc=0, `soak-abort-probe` 90/90, `view-reader-probe` pass, leak-scan clean, tree clean. Payload **7 files / +285/−38**, all in `moss_transcribe_diarize/` + `tests/`, **none under `macos/`**. *Payload review added one thing the four-site sweep table could not:* `grep -rnE '(time\.time\(\)\s*-\|-\s*time\.time\(\))' moss_transcribe_diarize/` returns **nothing** — the class is empty by search, not merely by enumeration; every surviving `time.time()` is a persisted or expiry **timestamp** (`live_transport._request_now`, `jobs` `created_at`/`updated_at`, `windowed_transcription:367`), which is P4's recorded ruling. |
 | **M6c redeploy** | GREEN — four-way SHA **4/4 at `77e0014`**. Server MainPID 346453 → 350731, `/live` 200 in 9 s, batch untouched; D-c exercised on the host (cap 286/112) and the venv proven editable-from-the-checkout; Mac rebuilt + reinstalled (inode 211995344 → 212080356), DR byte-identical a fourth time, both TCC grants still `auth_value=2`, and the install proven to carry D-a by a strings witness **with a control word**. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
@@ -2100,9 +2106,25 @@ until then, so a red run measures this bug and nothing else.
     one half at a time - see the Phase P block below for which revert reddens which node.
 63. **P4 - sweep the class.** `[done - it. 1]` Four sites enumerated, three fixed, one ruled
     deliberate. See the sweep table in the Phase P block below.
-64. **P5 - gate, merge, redeploy, THEN re-run F1 and F3.** `[open - the whole remaining phase]`
+64. **P5 - gate, merge, redeploy, THEN re-run F1 and F3.**
+    - **(a) full local gate + payload review** `[done - it. 2]`. GREEN at `5bc4f7f`; the numbers are
+      in the Phase P gate row of the gates index. Nothing regressed and nothing was weakened: the
+      six `test_live_vad.py` nodes that asserted the *superseded* rule were **restated** with a
+      docstring naming what they supersede, and the replacement assertion (a real monotonic
+      measurement is present) is strictly stronger than the one it replaced.
+    - **(b) the seventh merge** `[open - NEXT]`. **A history join is required**:
+      `git merge-base --is-ancestor main HEAD` is FALSE at `5bc4f7f`, so run the standing two-fence
+      procedure — prove `git merge-tree --write-tree main HEAD` returns HEAD's own tree, join with
+      `git merge --no-ff main`, advance `expected_main` to `77e0014` **in the script** citing the
+      seventh amendment, commit that (it becomes the captured feature tip), then run
+      `merge-keeper.sh` **in the background**.
+    - **(c) push + redeploy** `[open]`. **Server-only** — 0 files under `macos/`, so this is the
+      J5c shape, not K5c's: `git checkout <merge sha>` + `systemctl --user restart
+      moss-live-web.service` + poll `/live` for 200 (8-11 s), and on m4mbp a `git fetch <fork URL>
+      && git checkout <sha>` for the four-way SHA clause with **no rebuild and no reinstall**.
+    - **(d) F1 then F3** `[open]` — the Phase M gate step (d) that candidate 56 blocked.
     Note in the journal that this also repairs the PRD's decoder p95 RTF clause, measured from this
-    same number and therefore unreliable in every prior run.
+    same number and therefore unreliable in every prior run. `[recorded - it. 1]`
 
 Explicitly out of scope: mandatory client retention of the 409 refusal body. Right fix, wrong cycle;
 it needs its own authorization.

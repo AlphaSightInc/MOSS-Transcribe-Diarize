@@ -15338,3 +15338,103 @@ RECOMMENDED NEXT STEP (P5, and it is ordinary work now):
 Separately and cheaply: the host's stepping wall clock is a WSL2 fact worth
 fixing on the host too. The code no longer dies of it, but the host clock is
 still wrong and it is the kind of thing that will bite a different metric later.
+
+================================================================================
+RUN 20260729-025318-86584  ITERATION 2  -  PHASE P GATE (P5 step a) - GREEN
+================================================================================
+TARGET: the recorded next step from iteration 1 - P5's step 1, the full local
+gate on the Phase P tree, plus the payload review that justifies the merge. No
+merge, no push, no host contact this iteration; the six previous merges each
+took gate and merge as separate iterations and the merge is the irreversible
+half.
+
+TREE: 5bc4f7f (branch ralph/live-meeting-mvp), worktree clean before and after.
+Nothing was edited this iteration except scripts/ralph-afk/{context.md,progress.txt}.
+
+GATE (script /tmp/i2-gate.sh, log /tmp/i2-gate.log, 14 numbered steps):
+  [1][2] fresh-scratch builds, ONE empty scratch, both products   rc=0
+  [3]    warning: count in BOTH fresh-scratch logs                0 and 0
+  [4]    default .build products rebuilt (the tracer executes these)  rc=0
+  [5]    swift test --package-path macos/MOSSCapture   158 tests, 0 failures
+  [6]    PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:cacheprovider
+           -> 608 passed, 2 skipped, 368 subtests in 59.95 s      rc=0
+  [7]    the two skips NAMED: tests/test_large_upload.py:155 and :175,
+           "Python 3.10 compatibility contract" - never Darwin skips
+  [8]    tests/test_macos_uds_tracer.py                4 passed, 0 skipped, 14.78 s
+  [9]    Phase A discriminator repro.py --target .    10/10 true   rc=0
+  [10]   live-lane-refusal-probe.py                   rc=0  (LOCAL regression only
+           - see the caveat below; it does NOT speak for the deployed 77e0014)
+  [11]   seven live-hardcap-repro.py cases            c1..c7 all rc=0
+  [12]   soak-abort-probe.py 90/90 rc=0 ; view-reader-probe.py all checks rc=0
+  [13]   leak-scan.sh                                 leak-scan: clean  rc=0
+  [14]   git status --porcelain empty                 TREE_CLEAN
+Swift 158 and Python 608/2/368 are exactly the totals context.md records, so
+Phase P regressed nothing: no Swift file was touched and the Python delta is the
+four new seam nodes from iteration 1 (604 -> 608).
+
+PAYLOAD REVIEW vs the seventh amendment's scope:
+  git diff --stat 77e0014 HEAD -- ':!scripts/ralph-afk'  ->  7 files, +285/-38
+    moss_transcribe_diarize/app/live_adapters.py     48 +/-   (P1, P2)
+    moss_transcribe_diarize/app/live_coordinator.py  27 +/-   (P2)
+    moss_transcribe_diarize/app/vllm_runner.py        9 +/-   (P4, the named site)
+    moss_transcribe_diarize/app/model_runner.py       6 +/-   (P4)
+    moss_transcribe_diarize/app/jobs.py               5 +/-   (P4)
+    tests/test_live_pipeline_seams.py               208 +/-   (P3, four nodes)
+    tests/test_live_vad.py                           20 +/-   (six superseded nodes restated)
+  Paths outside moss_transcribe_diarize/ or tests/: NONE.
+  Files under macos/: ZERO  ->  the redeploy is SERVER-ONLY (the J5c shape), and
+  m4mbp needs only `git fetch <fork url> && git checkout <sha>` for the four-way
+  SHA clause. No rebuild, no reinstall, no risk to the TCC grants.
+
+WHAT THE REVIEW ADDED THAT THE FOUR-SITE SWEEP TABLE COULD NOT. P4's table
+enumerates four sites and rules each. An enumeration proves the members it names
+were handled; it does not prove the class is empty. Searched instead:
+  grep -rnE "(time\.time\(\)\s*-|-\s*time\.time\(\))" --include='*.py' moss_transcribe_diarize/
+  -> no matches.
+So there is now NO place in the product that subtracts two wall-clock readings.
+Every surviving time.time() is a timestamp, and each is one P4 already ruled on:
+live_transport.py:621 _request_now (expiry/cap/lease, must survive a restart),
+jobs.py created_at/updated_at (persisted), windowed_transcription.py:367
+created_at (a dict field, never subtracted - checked, it has no other consumer in
+that module). The eight monotonic sites are the fixed ones plus live_adapters'
+two pre-existing readings.
+
+NOTHING WAS WEAKENED TO MAKE THIS GREEN, and the one place it could have been is
+worth naming. tests/test_live_vad.py held six nodes asserting the SUPERSEDED rule
+(the adapter reads the runner's elapsed_sec and REJECTS an invalid one), including
+a five-way parametrization literally named `rejects_invalid_decode_elapsed_sec`.
+Iteration 1 rewrote them as `..._measures_the_decode_whatever_the_runner_reports`
+with a docstring saying what they supersede and why. Re-read this iteration: the
+replacement assertion is `result.elapsed_sec is not None and >= 0.0` on ALL FIVE
+of the original invalid inputs (None, -0.01, nan, inf, "slow"), i.e. it demands a
+real measurement where the old node demanded an exception. That is a stronger
+assertion on the same inputs, not a deleted one.
+
+CAVEAT RECORDED SO A LATER READER CANNOT OVER-READ STEP [10]. The lane-refusal
+probe is evidence about the DEPLOYED service only while
+`git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty. It
+is non-empty (the seven files above), so this rc=0 says only that the probe's
+recorded expectations still hold against THIS tree's create_app. It is in the
+gate because it is a regression check, not because it speaks for the host.
+
+MERGE PRECONDITION FOUND, AND IT IS NOT OPTIONAL:
+  git merge-base --is-ancestor main HEAD   ->  FALSE at 5bc4f7f
+main (77e0014) is the sixth merge commit and is not an ancestor of the feature
+tip, so fence 2 of merge-keeper.sh will refuse until the history join is made.
+This is the same shape as every previous merge and the standing procedure covers
+it; recorded here so the merge iteration does not discover it at the refusal.
+
+RECOMMENDED NEXT STEP (P5 step b, the seventh merge), in the standing order:
+  1. git merge-tree --write-tree main HEAD  ==  HEAD's own tree   (prove the join
+     is content-free BEFORE running it)
+  2. git merge --no-ff main                 (the join)
+     then assert `git diff --stat <pre-join HEAD> HEAD -- .` and
+     `git diff --name-only 5bc4f7f HEAD -- ':!scripts/ralph-afk'` are both empty
+  3. advance expected_main to 77e0014ac2a1eee1edb29b109024807e9489daa5 IN
+     scripts/ralph-afk/merge-keeper.sh, with a comment citing the SEVENTH
+     amendment, and COMMIT it - never RALPH_MERGE_MAIN_BEFORE
+  4. run merge-keeper.sh IN THE BACKGROUND (a foreground timeout kill skips its
+     EXIT trap and strands a worktree holding main)
+  5. rehearse the guard non-vacuously afterwards: RALPH_MERGE_DRY_RUN=1 must
+     print "main moved from expected pre-merge SHA 77e0014..." and exit 1
+Then (c) push + server-only redeploy, then (d) F1 and F3.
