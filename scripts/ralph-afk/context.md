@@ -167,9 +167,12 @@ carry is in the retired-evidence index below).**
   operator's call, not the loop's; (4) the PRD's F2 **system-audio-denied variant** and F1's
   "two speakers" half are both blocked on inputs the loop is forbidden to spend or has measured it
   cannot produce (see those two blocks); (5) F4b closes only when everything else has evidence.
-  **Iteration 12 spent the loop-tooling half of that list:** candidate 61 is done, so F2 and F3 now
-  have a lane-separation verdict at all, and **candidate 59 — the exact-match marker comparison — is
-  the last item on this list that needs no authorization.**
+  **Iterations 12 and 13 spent the loop-tooling half of that list entirely:** candidate 61 gave F2
+  and F3 a lane-separation verdict at all, and candidate 59 made that verdict *correct* — F1 and F2
+  now name their system marker instead of calling it absent. **There is no remaining item on this
+  list that the loop can do without the operator.** Everything left (55, 58, 60, Phase N, the F2
+  denied-lane variant, F1/F2's second-voice half, F4b) needs an authorization, a TCC-free plan the
+  loop does not have, or a physical input it has measured it cannot produce.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" below.
@@ -324,8 +327,10 @@ and repeated at −r 130 (the fix written in iteration 12 and never exercised un
 as span 15, **`[0.11][S03]Cockamom, cockamom, cockamom.[1.75]`**, at t+30.6 s — inside `program-a`,
 the phase whose marker it is, three times, on the system lane, in a **muted** run. That is the
 cross-check passing: the tap is upstream of the output mute and the marker survived to the
-transcript. `live-canary-analyze.py` scores it **absent** because it matches the word exactly, so it
-printed `rc=5` on a run whose marker clause holds. Logged as **candidate 59** — same shape as 57.
+transcript. `live-canary-analyze.py` scored it **absent** because it matched the word exactly, so it
+printed `rc=5` on a run whose marker clause holds. That was **candidate 59** — same shape as 57 — and
+it is **FIXED in iteration 13**: this directory now reduces to `rc=4`, naming
+`REWRITTEN as 'cockamom' x3 (similarity 0.60) span 15 at t+30.6s`.
 ***The room marker did not land, and that is the harness's recorded limit, not a defect.*** MacStudio
 spoke `obsidian` isolated and repeated into the room window; m4mbp's microphone (default input was
 the **built-in** `MacBook Pro Microphone` this run, not iteration 12's AirPods) returned only
@@ -576,6 +581,52 @@ rc=2, `/tmp/ralph-f1-evidence` rc=3). Two synthetic certification directories bu
 with a cert-shaped `times.env` went **rc=3 → rc=0**, the soak findings moving to `OBSERVED`.
 Evidence `/tmp/i11-before-*.txt` / `/tmp/i11-after-*.txt`.
 
+**THE MARKER IS MATCHED PHONETICALLY NOW, AND F1 AND F2 HAVE A SYSTEM-LANE VERDICT — candidate 59
+`[done — iteration 13]`. READ THIS BEFORE READING ANY `live-canary-analyze.py` MARKER LINE.**
+`live-canary-analyze.py` compared the codeword with `marker.lower() in transcript.lower()`. The
+decoder rewrites a rare noun, so that comparison scored `cardamom` **absent** in three runs whose
+marker demonstrably landed — `Cockamom, cockamom, cockamom.` (F1 span 15), `Pardon me, pardon me,
+pardon me.` (F2 span 29) and, in the same F3 window as the verbatim hit, `Cardinal.` (span 4).
+- **Three tiers, and every marker line names which one answered.** **VERBATIM** (the word itself,
+  proof by itself) → **REWRITTEN** (a fragment inside a phase that *declares* this marker, whose
+  whole text is one token n-gram repeated — the driver's isolated-and-repeated delivery — within
+  **0.60** consonant-skeleton similarity) → **CORROBORATING** (any near-match ≥ **0.80** inside a
+  declared phase, **printed, never decisive**). A REWRITTEN match counts as reaching the transcript;
+  the verdict line says *"present (phonetically REWRITTEN as 'pardon me' x3, not verbatim)"*, so
+  nothing is claimed as verbatim that was not.
+- ***Neither the score nor the shape works alone — that is measured, not argued.*** Over the six
+  real evidence directories (**637 committed spans**) the repeated-delivery shape occurs **exactly
+  four times**: `cockamom` 0.60, `pardon me` 0.80, `cardamom` 1.00 — the three markers — and
+  `and parking` **0.29** (F3 span 215). A 0.60 floor sits in the middle of a 0.29 → 0.60 gap.
+  **Without** the shape, 0.60 also admits `we return` and `continuous` *inside F1's own marker
+  phase*; **raising** the score instead fails the other way — at 0.80 the room marker `obsidian`
+  is two hundredths above the program's own word `system` (0.75), and F3's `curtains` scores 0.80
+  on a span 546 s from any delivery. Hence: score ∧ shape ∧ position.
+- **Position does real work, and there is a case for it.** `pardon me` scores 0.60 against
+  `obsidian` too; only its being inside a phase that declares `cardamom` stops it answering the
+  room question. Synthetic case A moves the identical fragment into the room window and it *does*
+  answer — the constraint, not the score, is what separated them.
+- **The verdict words that were over-claiming are gone.** The docstring's `3 system marker missing
+  (mute killed the tap)` / `4 room marker missing (no independent microphone content)` asserted a
+  *cause* an absent string cannot support; 3/4/5 now carry none, and "room marker ABSENT → nothing
+  external reached the microphone lane" became "**NOT TRANSCRIBED** → the microphone lane's own
+  content is **UNPROVEN**". Seventh instance of *the verdict word must name what it decides*.
+- **Coverage is now measured whether or not the marker was found** — F2's `program-d` caveat used
+  to vanish the moment the verdict turned positive, which is the silent-omission failure again.
+  F3 gains the same line for `program-17`.
+*Red-before/green-after on six REAL directories:* **F1 `/tmp/i6-f1-evidence/ralph-canary` rc 5 → 4**
+(`REWRITTEN as 'cockamom' x3 … span 15 at t+30.6s`), **F2 `/tmp/i11-f2-evidence/ralph-cert` rc 5 → 4**
+(`'pardon me' x3, similarity 0.80, span 29`, with `cardigan` printed as corroborating), and the four
+negative controls unmoved: **F3 rc 4 → 4** (verbatim, and `curtains`/`cardinal` demoted to printed
+near-matches), `/tmp/i26-f1-evidence` and `/tmp/i26b-f1-evidence` **7 → 7**, `/tmp/ralph-f1-evidence`
+(no `phases.tsv`) **5 → 5**. Five synthetic branches: rewrite in the system phase **rc=7 system-only**,
+the same fragment in the room phase **rc=0**, the same tokens *buried in a sentence* **rc=5 with the
+0.80 printed as corroborating only**, a repetition at 0.29 **rc=5**, and a verbatim hit in an
+**unmuted** run rendering `(verbatim)`. Evidence `/tmp/i13-before-*.txt`, `/tmp/i13-after-*.txt`,
+`/tmp/i13-case-*`.
+*Nothing else moved:* the only changed file is `scripts/ralph-afk/live-canary-analyze.py`; no product
+source, no `ops/`, no host touched, nothing deployed, no device paired.
+
 **THE LANE-SEPARATION VERDICT EXISTS FOR F2 AND F3 NOW — candidate 61 `[done — iteration 12]`.**
 `live-canary-analyze.py` raised `KeyError: 'transcript'` on every certification and soak directory,
 because it read spans out of `snapshot.tsv`, which `live-cert.sh`/`live-soak.sh` prune to `span_id`
@@ -584,7 +635,7 @@ because it read spans out of `snapshot.tsv`, which `live-cert.sh`/`live-soak.sh`
 | directory | spans read from | verdict |
 | --- | --- | --- |
 | F3 soak | `snap-full-0330.json` — **414 of the run's final 443** spans, version 3415 of 3646, audio to t+958.5 s | **rc=4** — system marker `cardamom` at **span 5, t+9.5 s, phase `program-1`** → the tap is upstream of the output mute in a **muted 17-minute** run; room marker absent (candidate 51) |
-| F2 cert | `snap-full-0180.json` — **151 of 161**, version 1064 of 1128, audio to t+293.6 s | **rc=5** — 121 labelled system-phase fragments but no exact `cardamom`: that is **candidate 59**, the marker landed as *"Pardon me"*. Room absent |
+| F2 cert | `snap-full-0180.json` — **151 of 161**, version 1064 of 1128, audio to t+293.6 s | **rc=5 then, rc=4 since iteration 13** — 121 labelled system-phase fragments and no exact `cardamom`: that was **candidate 59**, and the reducer now names the marker itself, `REWRITTEN as 'pardon me' x3` at span 29. Room absent |
 
 - **Three sources, in order, and the reader is always told which one answered:** the last 200
   `snapshot.tsv` row is authoritative for the run's END (final version, final span count — pruning
@@ -1946,6 +1997,11 @@ scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
 # - the header names the source and the coverage instant. rc: 0 both markers, 3/4/5 one/other/neither
 # missing, 7 UNDECIDED (no delivery phase of that marker is covered - a run that died early reads
 # this way too), 6 a named refusal (no readable spans anywhere), 2 nothing to read.
+# AND IT MATCHES THE MARKER PHONETICALLY since iteration 13 (candidate 59) - VERBATIM, then
+# REWRITTEN (a fragment inside a phase that DECLARES the marker, whose whole text is one n-gram
+# repeated - the driver's isolated-and-repeated delivery - within 0.60 skeleton similarity), then
+# printed-only CORROBORATING near-matches at >= 0.80. Every marker line names which tier answered,
+# so "present" never hides "as a different word". Do NOT read a bare rc: the tier is the evidence.
 # The CERTIFICATION-CLAUSE reduction is a SECOND reducer - live-canary-analyze.py answers lane
 # separation, this one answers the PRD clauses (poll health + first non-200, growth, per-lane v2
 # health, the accounting equality, decoder RTF + D-c's token cap and capped count, per-span commit
@@ -1956,9 +2012,11 @@ scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
 # Validated in iteration 21 against iteration 12's canary (reproduces committed p95 8342.697 ms and
 # user-visible 9702.2 ms), against /tmp/ralph-f1-evidence (reproduces decoder p95 RTF 0.706 and
 # prints the t+86.0 s system-lane failure), and it REFUSES the F3 soak layout by name.
-# rc 0 both markers landed / 3 no system marker / 4 no room marker / 5 neither. rc is NOT the whole
-# answer: read section 1's prose, which separates "the mute killed the tap" from "the decoder
-# rewrote the marker word" - those look identical in a marker-only check and mean opposite things.
+# rc 0 both codewords reached the transcript / 3 not the system one / 4 not the room one / 5 neither.
+# rc is NOT the whole answer: read section 1's prose, which separates "the mute killed the tap" from
+# "the decoder rewrote the marker word" - those look identical in a marker-only check and mean
+# opposite things. Since iteration 13 the rewrite is matched rather than left to the reader, and
+# 3/4/5 deliberately carry no cause in the docstring any more.
 # ALWAYS afterwards, exactly as F1: `pkill -x MOSSCaptureApp`, `rm -rf /tmp/ralph-canary
 # /tmp/live-canary.sh`, both TCC grants re-checked (auth_value=2), mute and volume back.
 # The operator uses m4mbp while the loop runs: volume moved 50 -> 64 -> 50 during iteration 12 and
@@ -2413,7 +2471,10 @@ amendment's literal order is unreachable and why this one drops nothing.**
 57. **The reducer called a passing latency number RED.** `[done — iteration 29]`. See "The reducer
     stopped calling a passing number RED" below. Loop tooling; no authorization was needed.
 59. **The marker check calls a landed marker absent, because it matches the word exactly.**
-    `[open, new — run `20260729-025318` iteration 6; loop tooling, no authorization needed]`.
+    `[done — iteration 13; see "THE MARKER IS MATCHED PHONETICALLY NOW" above. Three tiers,
+    the middle one corroborated by the driver's own delivery shape; F1 and F2 both move rc 5 → 4
+    with the system marker named, F3 stays rc=4 on its verbatim hit.]`
+    *Originally:* `[open, new — run `20260729-025318` iteration 6; loop tooling, no authorization needed]`.
     `live-canary-analyze.py` scored `cardamom` **NOT FOUND** in a run whose transcript contains
     `Cockamom, cockamom, cockamom.` — isolated, repeated, three times, in the correct phase, on the
     correct lane. The decoder rewrites a rare noun **phonetically**, which is precisely why the

@@ -17027,3 +17027,145 @@ key) and the verdict word together, then re-reduce F1/F2/F3 - F3 is the positive
 control, since its marker matches verbatim and must stay rc=4. Everything else
 remaining (55, 58, 60, Phase N, the F2 denied-lane variant, F1/F2's second-voice
 half) needs the operator.
+
+================================================================================
+RUN 20260729-025318-86584  ITERATION 13  -  THE MARKER IS MATCHED PHONETICALLY
+(candidate 59)
+================================================================================
+TARGET: candidate 59 - live-canary-analyze.py compares the codeword with
+`marker.lower() in transcript.lower()`, so it scored `cardamom` ABSENT in three
+runs whose marker demonstrably landed. Chosen because iteration 12's recorded
+next step named it the last item on the open list needing NO authorization:
+55, 58 and 60 are tracked product source under the post-merge freeze, Phase N is
+gated on an operator call, and the two uncertified F1/F2 halves are blocked on a
+TCC grant the loop must not spend and a microphone the loop has measured cannot
+hear a second voice.
+
+FILES TOUCHED: scripts/ralph-afk/live-canary-analyze.py (only), plus this
+journal and context.md. No product source, no ops/, no host mutated, nothing
+deployed, no device paired. git diff --stat: 1 file, +216/-29.
+
+THE DEFECT, and why an exact comparison could never have worked. The decoder
+rewrites a rare noun phonetically - which is precisely why iteration 12 changed
+the DRIVER to deliver the marker alone and slowed. The reducer never learned the
+same lesson. Three landings it called absent:
+  F1 span 15  [0.11][S03]Cockamom, cockamom, cockamom.[1.75]   t+30.6s program-a
+  F2 span 29  [0.06][S01]Pardon me, pardon me, pardon me.[1.68] t+67.5s program-a
+  F3 span  4  ... [1.88][S03]Cardinal.[2.44]  - the same delivery window as the
+              verbatim hit at span 5, decoded twice, once each way
+  RED-BEFORE (/tmp/i13-before-*.txt): F1 rc=5, F2 rc=5, F3 rc=4, i26 rc=7,
+  i26b rc=7, /tmp/ralph-f1-evidence rc=5.
+
+THE MEASUREMENT THAT CHOSE THE DESIGN, taken BEFORE the patch, over all six real
+evidence directories (637 committed spans). I first tried score alone and it
+cannot work in either direction:
+  * at 0.60, `cardamom` also matches `we return` and `continuous` INSIDE F1's own
+    marker phase - the same 0.60 as the real rewrite `cockamom`. Score alone
+    cannot tell the marker from the program around it.
+  * at 0.80 the failure inverts: the room marker `obsidian` (skeleton PSTM, only
+    4 symbols) sits two hundredths above the program's own word `system` (0.75),
+    and F3's `curtains` scores 0.80 on a span 546 s from any delivery.
+  * the DELIVERY SHAPE is the missing signal, and it is nearly diagnostic on its
+    own: across all 637 spans a fragment that is one n-gram repeated and NOTHING
+    else occurs exactly FOUR times - cockamom 0.60, pardon me 0.80, cardamom
+    1.00 (the three markers) and `and parking` 0.29 (F3 span 215). A 0.60 floor
+    sits in the middle of a 0.29 -> 0.60 gap, not on a cliff edge.
+  * POSITION does real work too: `pardon me` scores 0.60 against `obsidian` as
+    well, and only its being inside a phase that DECLARES `cardamom` stops it
+    answering the room's question.
+So the rule is score AND shape AND position, each of which was measured to be
+insufficient alone.
+
+THE CHANGE, three parts.
+  1. THREE TIERS, AND EVERY MARKER LINE NAMES WHICH ONE ANSWERED.
+     VERBATIM      the word itself - proof by itself, no corroboration needed.
+     REWRITTEN     a fragment inside a phase that DECLARES this marker, whose
+                   whole text is one token n-gram repeated (trailing partial
+                   allowed - the endpointer can cut the last one), within 0.60
+                   consonant-skeleton similarity. Decisive.
+     CORROBORATING any near-match >= 0.80 inside a declared phase. PRINTED,
+                   NEVER DECISIVE - it is what a human looks at next, not a
+                   verdict. This is where `cardigan` (F2, the in-sentence
+                   delivery) and `curtains` (F3, a genuine false positive) land.
+     The skeleton is a deliberately coarse consonant key: vowels/h/w/y dropped,
+     letters collapsed into equivalence classes, a class repeated with no vowel
+     between collapsed. Similarity is 1 - levenshtein/max(len), which keeps a
+     SHORT marker strict on purpose.
+  2. THE VERDICT WORDS THAT WERE OVER-CLAIMING ARE GONE. The docstring read
+     "3 system marker missing (MUTE KILLED THE TAP)" and "4 room marker missing
+     (NO INDEPENDENT MICROPHONE CONTENT)" - a CAUSE that an absent string cannot
+     support. 3/4/5 now carry none; the cause lives in the verdict section where
+     its evidence is. "room marker ABSENT -> nothing external reached the
+     microphone lane" became "NOT TRANSCRIBED -> the microphone lane's own
+     content is UNPROVEN", and a landing prints which tier answered:
+     "system marker present (phonetically REWRITTEN as 'pardon me' x3
+     (similarity 0.80), not verbatim) in a MUTED run -> ...".
+  3. COVERAGE IS MEASURED WHETHER OR NOT THE MARKER WAS FOUND. It used to be
+     computed only on the absent path, so F2's "program-d ran past the readable
+     audio" caveat VANISHED the moment the verdict turned positive - the
+     silent-omission failure iteration 22 already paid for, in a new place. F3
+     gains the same line for program-17.
+
+GREEN-AFTER, six REAL directories (/tmp/i13-after-*.txt):
+  /tmp/i6-f1-evidence/ralph-canary    rc 5 -> 4  REWRITTEN as 'cockamom' x3
+                                      (skeleton KKMM vs KRTMM, 0.60) span 15
+  /tmp/i11-f2-evidence/ralph-cert     rc 5 -> 4  REWRITTEN as 'pardon me' x3
+                                      (PRTMM vs KRTMM, 0.80) span 29, with
+                                      `cardigan` 0.80 printed as corroborating
+  /tmp/i9-f3-evidence/ralph-soak      rc 4 -> 4  NEGATIVE CONTROL - verbatim hit
+                                      unchanged; `cardinal` and `curtains` both
+                                      demoted to printed near-matches, so the
+                                      one real false positive in the corpus
+                                      cannot flip a verdict
+  /tmp/i26-f1-evidence/ralph-canary   rc 7 -> 7  coverage control
+  /tmp/i26b-f1-evidence/ralph-canary  rc 7 -> 7  coverage control
+  /tmp/ralph-f1-evidence              rc 5 -> 5  no phases.tsv at all
+FIVE SYNTHETIC BRANCHES no real run produces (/tmp/i13-case-*):
+  A1 rewrite inside the system phase        rc=7, system REWRITTEN, room untouched
+  A2 the IDENTICAL fragment in the room phase rc=0 - so POSITION, not score, is
+     what separated them in A1
+  B  the same tokens at the same 0.80 buried in a sentence  rc=5, and the 0.80
+     appears only as CORROBORATING - the delivery shape is load-bearing
+  C  a genuine pure repetition scoring 0.29  rc=5 - the score is load-bearing
+  D  a verbatim hit in an UNMUTED run        renders "(verbatim)" on the branch
+     that says this proves nothing about the tap
+VALIDATION COMMANDS: python3 -m py_compile scripts/ralph-afk/live-canary-analyze.py
+(ok), then the eleven reductions above. No consumer keys on this rc - grep of
+scripts/ralph-afk/ finds no caller; live-canary-clauses.py is an independent
+reducer.
+
+WHAT I LEARNED:
+  * A fuzzy matcher tuned on ONE threshold is a coin flip here. The corpus has a
+    true positive at 0.60 and a false positive at 0.80, so no single score line
+    separates them. What separated them was a SECOND, INDEPENDENT signal that
+    came from the harness's own delivery contract - the marker is spoken alone
+    and repeated - and it was already sitting in the evidence unused.
+  * Measure the discriminator before writing it. Enumerating every pure
+    repetition in the corpus took five minutes and turned "0.60 feels loose"
+    into "0.29 -> 0.60 with nothing between", which is the difference between a
+    tuned constant and a measured one.
+  * A verdict that turns positive must not stop reporting what it did not
+    measure. The coverage caveat disappearing on success was a new instance of
+    silent omission introduced by MY OWN fix in the same iteration - caught only
+    because the before/after diff was read line by line rather than by rc.
+
+RECOMMENDED NEXT STEP. THE LOOP-TOOLING QUEUE IS EMPTY. Candidates 57, 59, 61
+and 62 are all done; F1 and F2 are GREEN and now carry a correct system-lane
+marker verdict; F3 ran its whole plan with one RED. Everything remaining needs
+the operator:
+  1. candidate 60 (a clean stop never reaches the server - F3's one RED) is
+     tracked product source under macos/ and needs an eighth authorization;
+  2. candidates 55 (identity saturates in the first minute) and 58 (the replay
+     evaluator calls a declared absence invalid) likewise;
+  3. Phase N is authorized but sequenced "after Phase M's gate", which F1 GREEN
+     + F2 GREEN + F3 5-GREEN/1-RED leaves as the operator's call - and the
+     amendment's stated reason for the sequencing ("a meeting that dies at
+     minute 14.6") no longer holds;
+  4. the PRD's F2 system-audio-denied variant would spend a TCC grant, and
+     F1/F2's "two speakers" half needs a microphone m4mbp does not have - four
+     runs now measure the built-in mic across the room returning only one-word
+     fragments;
+  5. F4b closes only when everything else has evidence.
+The next iteration should either repair/compact context.md from evidence (it is
+back above 240 KB) or take one of the above IF an authorization appears in
+prd.md. It must not start product work on 55/58/60 without one.
