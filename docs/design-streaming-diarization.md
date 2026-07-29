@@ -101,7 +101,33 @@ scenario (2.5 s span granularity, 0.5 s minimum evidence).
 
 ## 7. Prototype evidence
 
-(To be filled by prototypes A/B/C.)
+Run 2026-07-28/29, `prototypes/streaming-diarization/` (throwaway, git-excluded;
+verdict details in its `NOTES.md`). Production `_OnnxWeSpeakerEmbedder` +
+`WeSpeakerResNet152LmAdapter` with the pinned ONNX (sha verified); production live
+semantics (2.5 s span cap incl. mid-utterance cuts, 0.6 s silence split, per-interval
+0.5 s evidence floor, one-to-one score/margin matching, abstain, birth, 16-speaker
+cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 seeds,
+600 s, 30% short backchannel turns, fast turn-taking so multi-speaker spans occur).
+
+- **Gate A — PASS.** Album (min_score 0.35, margin 0.1, admission 1.0 s, k=10):
+  live accuracy 96.4-99.5% per meeting, mean 98.5%. At deployed margin 0.2 with
+  sweeps: 95.7-99.3%, mean 98.4%. Production's latest-span overwrite at its own best
+  config: 51.7-87.4%, mean 66.4% — reproducing the sibling project's <80% failure.
+- **Gate B — PASS.** No divergence in any meeting (the sibling failure mode). 6/8
+  meetings |live−file-oracle gap| ≤ ~3 pp; in 3 meetings the album+sweep beats the
+  whole-file AHC oracle by 30-47 pp (naive offline clustering chain-merges similar
+  voices; the quality-gated online album does not). Sweeps rescue mis-tuned configs
+  (min accuracy 76.7%→94.1%). Sweep cost ~0.1 ms per sweep at 600 s; <10 ms
+  extrapolated to 3 h. Embedding 332-343 ms/unit single-thread CPU — ~7x headroom
+  under the 2.5 s span cadence.
+- **Gate C — PASS.** 7/7 assembly cases byte-exact under duplicates/reorder/drops/
+  burst loss; gap manifests exactly account for dropped frames; checkpoint/resume at
+  40%+70% reproduced the uninterrupted mixed tape byte-identically.
+
+Recommended starting parameters: min_score 0.35, margin 0.1-0.2, admission 1.0-2.0 s,
+k=10 exemplars, sweep every 60 s + merge threshold 0.70. Caveats before production
+sign-off: clean read speech (no overlap/noise) — replay a real conversational
+recording; in-span local diarization assumed correct (isolates the identity layer).
 
 ## 8. Open questions (fog)
 

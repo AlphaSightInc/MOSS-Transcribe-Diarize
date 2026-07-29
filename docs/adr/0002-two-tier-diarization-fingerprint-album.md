@@ -1,7 +1,7 @@
 # ADR-0002: Two-tier diarization with a fingerprint album and retrospective sweeps
 
-- Status: **Proposed** — design accepted by product owner 2026-07-28; adoption gated on
-  the prototype evidence defined in `docs/design-streaming-diarization.md` §6.
+- Status: **Accepted** (2026-07-29) — design accepted by product owner 2026-07-28;
+  prototype gates A/B/C passed, evidence in `docs/design-streaming-diarization.md` §7.
 - Deciders: product owner (Gao) with Claude (architecture session, 2026-07-28);
   peer audit input from Codex (`AAgent/260728-moss-audio-flow-explain/`).
 
