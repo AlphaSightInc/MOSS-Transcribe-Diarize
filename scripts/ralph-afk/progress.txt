@@ -19658,3 +19658,155 @@ lands the deployed service still cannot write a byte, which is why it was
 deliberately not bundled here: the wiring is provable offline, the declaration
 changes what a running host does.  Step 3 (the retrospective sweep) is what makes
 the tape pay, and it is the first Phase N item that needs the tape wired.
+
+================================================================================
+RUN 20260729-025318 - ITERATION 21
+THE DECLARATION SURFACE - A DEPLOYMENT CAN TURN THE TAPE ON, AND THE TRACKED
+TEMPLATE DOES NOT (Phase N step 2, the last of it)
+================================================================================
+
+TARGET.  The candidate iteration 20 named as the next separable change and
+deliberately did not bundle: the retention declaration surface.  Iterations 18-20
+decided retention (ADR-0003), built the writer (`live_tape.py`) and put it on the
+live path (`LiveSessionTapeRecorder`, five call sites) - but `web_cli.py` passed
+no store, so `create_app` built `LiveSessionTapeRecorder(None)` and the deployed
+service could not write a byte.  This iteration closes that, which makes Phase N
+step 2 code-complete.  No authorization needed: step 2 is inside the already-open
+Phase N, and candidate 63's rule (a free deployed parameter is STATED by the
+deployment, never defaulted by a tool) plus ADR-0003 D2/D3/D4 already fix every
+decision this change had to take.
+
+FILES TOUCHED (5; none under macos/; the only product source is web_cli.py).
+  moss_transcribe_diarize/app/web_cli.py    +3 flags, `_live_tape_store`, and the
+                                            `create_app(live_tape_store=...)` call
+  ops/start-web.sh                          the three MOSS_LIVE_RETENTION_* keys
+  ops/moss-live.env.example                 the opt-in, documented COMMENTED OUT
+  LOCAL_DEPLOYMENT.md                       the operator-facing section + rollback
+  tests/test_live_service_deployment.py     +15 nodes (8 adapter, 7 CLI)
+
+VALIDATION.
+  bash -n ops/start-web.sh                                             -> ok
+  python3 -m pytest tests/test_live_service_deployment.py -q  -> 45 passed (was 30)
+  python3 -m pytest -q  -> 718 passed / 2 skipped / 368 subtests, 71.75 s
+                           (was 703 / 2 / 368 at iteration 20)
+  Swift not re-run: `git status` shows nothing under macos/.
+
+RED-BEFORE - FIVE SEMANTIC REVERTS, 14 OF THE 15 NEW NODES, run and restored
+in-iteration (originals copied to /tmp/i21-redbefore, restored, `git diff --stat`
+shows additions only):
+  A  drop `create_app(live_tape_store=live_tape_store)`   -> 1 red
+     (test_the_declared_store_reaches_the_application)
+  B  `_live_tape_store` returns None unconditionally      -> 6 red
+  C  drop `runs_directories=(args.runs_dir,)`             -> 1 red
+     (test_the_cli_hands_the_runs_directory_to_the_admission_check)
+  D  delete the adapter's whole retention block           -> 7 red
+  E  strip the template's commented retention block       -> 1 red
+The one node no revert reddens is
+`test_the_cli_builds_no_store_when_no_root_is_declared`: it is the off-by-default
+invariant and is green by construction.  Recorded rather than manufactured.
+
+THE SHAPE, IN ONE PARAGRAPH.  Three keys - MOSS_LIVE_RETENTION_ROOT,
+MOSS_LIVE_RETENTION_MAX_BYTES, MOSS_LIVE_RETENTION_TTL_SECONDS - which
+`ops/start-web.sh` translates into `--live-retention-root`,
+`--live-retention-max-bytes` and `--live-retention-ttl-seconds`, which
+`web_cli._live_tape_store` turns into `LiveSessionTapeStore.declared(...)` or
+`None`, handed to `create_app(live_tape_store=...)`.  Declaring the root is the
+whole switch.
+
+FOUR DECISIONS, WITH THE REASONING.
+
+1. THE TRACKED TEMPLATE SHIPS THE KEYS COMMENTED OUT, NOT AS `REPLACE_WITH_`
+   PATHS.  Every other live key in `moss-live.env.example` is required, so the
+   template reads as a form to fill in - and a form whose verbatim use turns
+   meeting-audio retention on would make a privacy posture a side effect of
+   copying a file.  ADR-0003 D2 says retention is opt-in and off by default;
+   "off by default" has to be a property of the tracked artifact, not of an
+   operator's restraint.  Two nodes hold it: one asserts the template used
+   verbatim emits no `--live-retention` flag at all, and one asserts the
+   COMMENTED keys are nonetheless read by the adapter - because the existing
+   `test_live_profile_sets_only_variables_the_adapter_reads` walks
+   `read_env_file`, which skips comments, so a typo in a commented key would
+   otherwise be invisible in exactly the file whose job is to be readable.
+
+2. A CAP OR A TTL WITH NO ROOT IS REFUSED, AT BOTH LAYERS.  The failure is
+   asymmetric and only one half is safe: retention off when an operator believes
+   it is off is fine, and retention off when they believe audio is being kept is
+   the "known but not shown" class this project has now paid for in candidates
+   57, 59, 60 and the fourth amendment.  The adapter refuses it and names the
+   missing key; `_live_tape_store` refuses it and names the flags that were
+   stated.  The set-but-empty root is refused separately by the adapter's own
+   `${VAR+set}` discipline, which start-web.sh already states in its own words:
+   "a variable a profile sets to nothing is a typo in that profile, not a request
+   for the default, and it must be refused rather than absorbed."
+
+3. THE TTL IS OPTIONAL AND UNSTATED MEANS 0; THE CAP IS REQUIRED.  Not a new
+   decision - ADR-0003 D3 and `LiveSessionTapeStore.declared`'s own docstring
+   already ruled it, and this change's job was to mirror it at the env layer
+   rather than invent a second rule.  Zero is the only value a tool may choose,
+   because at zero the PRD's "no raw audio is persisted" clause still holds
+   literally at every boundary an operator can observe after a meeting; a
+   positive TTL is the deployment stating that meeting audio outlives the
+   meeting.  The cap has no safe default in either direction (0 would mean
+   "never tape", unbounded is the D4(3) runaway), so it is required whenever a
+   root is declared.
+
+4. `runs_directories=(args.runs_dir,)` IS WHAT MAKES D4(3) REACHABLE AT ALL.
+   `declared()` refuses a root that shares a filesystem with a runs tree, but it
+   can only check the runs trees it is handed, and the wiring is the only place
+   that knows one: the live service's own `--runs-dir`.  On the deployment host
+   that is `/mnt/d/.../live-runs`, the same 9p filesystem the batch runs tree
+   lives on - so passing the one directory this process is told about is exactly
+   what refuses a root whose runaway tape would answer 507 to a BATCH upload
+   without ever touching the batch service (`server.py:447`, free space below
+   `2 x content_length + 512 MB`).  The typed `LiveTapeRootError` is deliberately
+   NOT caught: that is the reason it is an exception (N-tape decision 2 - a root
+   that cannot hold audio safely must stop the service starting with retention
+   enabled rather than silently disabling it), and `_live_runtime_factory` right
+   above it already sets the precedent of letting the manifest's own typed error
+   surface unaltered.
+
+WHAT WAS LEARNED.
+
+1. THE ADAPTER'S "THE SWITCH IS THE WHOLE SWITCH" CONTRACT DECIDED WHERE THE
+   RETENTION BLOCK GOES.  `test_disabled_live_mode_generates_no_live_flag_
+   whatever_else_is_set` deliberately asserts that `MOSS_LIVE_ENABLED=0` absorbs
+   every other live key without complaint.  So a retention key set while live is
+   disabled is tolerated, not refused - and that is the safe direction of the
+   asymmetry in decision 2, so following the existing contract cost nothing.  The
+   retention block therefore lives inside the live case, with no out-of-block
+   check to keep in step with it.
+
+2. A COMMENTED-OUT DECLARATION NEEDS ITS OWN TEST, AND THE SUITE ALREADY TOLD ME
+   SO.  The existing template test only ever sees uncommented keys.  Choosing to
+   ship the opt-in as comments therefore moved three keys out of the coverage the
+   file was built to give - which would have been a silent regression in the one
+   artifact whose whole purpose is to be copied correctly.  `commented_keys()` is
+   nine lines and closes it.  The general form: when a change moves something out
+   of an existing test's field of view, the change owes that test's guarantee
+   somewhere else.
+
+3. THE TESTS DRIVE `parse_args` THROUGH `sys.argv`, NOT A HAND-BUILT NAMESPACE.
+   A `Namespace(live_retention_root=...)` built in the test would pass even if the
+   flag were spelled differently in the parser - and the flag spelling is the
+   contract `ops/start-web.sh` has to match.  Driving the real parser means a
+   renamed flag fails here rather than on the deployment host.
+
+BLOCKERS: none for this iteration.
+
+WHAT THIS DOES NOT DO.  The deployed host still declares no root: `ops/moss-live.env`
+is host-local and untracked, nothing on the server was touched, and the tracked
+template's keys are comments - so the live service remains byte-for-byte the one
+every gate measured and the PRD's "no raw audio is persisted" clause holds
+unchanged.  No manifest or finalizer treatment either, on purpose: the retention
+root is a HOST fact like the TLS key path, not a provider config the manifest hash
+covers.  ADR-0003's "what the clause becomes for a future hygiene check" is the
+two-form test to run at the moment an operator first fills the keys in.
+
+RECOMMENDED NEXT STEP.  Phase N step 3, the retrospective sweep - the first item
+the tape actually pays for, and the one ADR-0002 says the album needs or live
+accuracy diverges from whole-file (the "terminal-state failure if shipped alone"
+clause).  It is inside the open Phase N and needs no host and no operator: re-VAD
+/ re-embed / re-cluster the tape seeded by live labels, never re-ASR, versioned
+silent corrections.  The accuracy harness from iteration 16 is the instrument that
+can measure live->file convergence once the sweep exists, which is the half of
+ADR-0002's acceptance bar the repo still cannot answer.

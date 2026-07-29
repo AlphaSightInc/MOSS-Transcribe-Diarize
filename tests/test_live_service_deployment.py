@@ -283,6 +283,247 @@ def test_live_profile_example_is_a_template_not_a_host_file() -> None:
     assert ignored.returncode == 0, "ops/moss-live.env is not gitignored"
 
 
+# --- the retention declaration (ADR-0003) --------------------------------------------------
+#
+# The tape recorder is on the live path and inert: it holds `None` unless a deployment declares
+# a root. These nodes cover the declaration itself, end to end -- the tracked template says how,
+# the adapter turns the profile into flags, and the CLI turns the flags into a store or refuses
+# them. The property that matters most is the one the certification runs rest on: the template
+# used verbatim still produces a service that retains nothing.
+
+RETENTION_KEYS = (
+    "MOSS_LIVE_RETENTION_ROOT",
+    "MOSS_LIVE_RETENTION_MAX_BYTES",
+    "MOSS_LIVE_RETENTION_TTL_SECONDS",
+)
+
+
+def commented_keys(path: Path) -> set[str]:
+    """Keys the template documents as commented-out lines, which `read_env_file` skips."""
+    found = set()
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("#"):
+            continue
+        key, sep, _ = stripped.lstrip("#").strip().partition("=")
+        if sep and re.fullmatch(r"[A-Z0-9_]+", key.strip()):
+            found.add(key.strip())
+    return found
+
+
+def test_the_tracked_live_profile_retains_nothing(home: Path) -> None:
+    """Off by default is a property of the template, not of an operator's restraint."""
+    argv = argv_of(run_adapter(home, LIVE_ENV_EXAMPLE))
+    assert not [arg for arg in argv if arg.startswith("--live-retention")]
+    assert not [key for key in LIVE_ENV_EXAMPLE if key.startswith("MOSS_LIVE_RETENTION")]
+    # Documented all the same: an opt-in nobody can find is an opt-in nobody takes.
+    assert set(RETENTION_KEYS) <= commented_keys(OPS / "moss-live.env.example")
+
+
+def test_the_commented_retention_keys_are_read_by_the_adapter() -> None:
+    """`test_live_profile_sets_only_variables_the_adapter_reads` cannot see a comment."""
+    adapter = (OPS / "start-web.sh").read_text()
+    for key in commented_keys(OPS / "moss-live.env.example"):
+        assert re.search(rf"\b{key}\b", adapter), f"{key} is documented but never read"
+
+
+def test_a_declared_retention_root_reaches_the_service_as_flags(home: Path) -> None:
+    env = dict(LIVE_ENV_EXAMPLE)
+    env["MOSS_LIVE_RETENTION_ROOT"] = "/srv/moss-live-tapes"
+    env["MOSS_LIVE_RETENTION_MAX_BYTES"] = "2147483648"
+    argv = argv_of(run_adapter(home, env))
+    assert argv[-4:] == [
+        "--live-retention-root", "/srv/moss-live-tapes",
+        "--live-retention-max-bytes", "2147483648",
+    ]
+    # An unstated TTL is not a flag: zero is the tool's choice and it belongs in one place.
+    assert "--live-retention-ttl-seconds" not in argv
+
+    env["MOSS_LIVE_RETENTION_TTL_SECONDS"] = "3600"
+    assert argv_of(run_adapter(home, env))[-2:] == ["--live-retention-ttl-seconds", "3600"]
+
+
+def test_a_declared_retention_root_requires_its_cap(home: Path) -> None:
+    env = dict(LIVE_ENV_EXAMPLE)
+    env["MOSS_LIVE_RETENTION_ROOT"] = "/srv/moss-live-tapes"
+    result = run_adapter(home, env)
+    assert result.returncode != 0
+    assert "MOSS_LIVE_RETENTION_MAX_BYTES" in result.stderr
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize(
+    "stated",
+    [
+        {"MOSS_LIVE_RETENTION_MAX_BYTES": "2147483648"},
+        {"MOSS_LIVE_RETENTION_TTL_SECONDS": "3600"},
+        {"MOSS_LIVE_RETENTION_MAX_BYTES": "1", "MOSS_LIVE_RETENTION_TTL_SECONDS": "3600"},
+    ],
+)
+def test_retention_values_without_a_root_are_refused_not_ignored(
+    home: Path, stated: dict[str, str]
+) -> None:
+    """An operator who states a cap believes audio is being kept. Silence would lie to them."""
+    env = dict(LIVE_ENV_EXAMPLE)
+    env.update(stated)
+    result = run_adapter(home, env)
+    assert result.returncode != 0
+    assert "MOSS_LIVE_RETENTION_ROOT" in result.stderr
+    assert result.stdout == ""
+
+
+def test_an_empty_retention_root_is_a_typo_not_a_request_for_the_default(home: Path) -> None:
+    env = dict(LIVE_ENV_EXAMPLE)
+    env["MOSS_LIVE_RETENTION_ROOT"] = ""
+    env["MOSS_LIVE_RETENTION_MAX_BYTES"] = "2147483648"
+    result = run_adapter(home, env)
+    assert result.returncode != 0
+    assert "MOSS_LIVE_RETENTION_ROOT" in result.stderr
+    assert result.stdout == ""
+
+
+def cli_args(monkeypatch: pytest.MonkeyPatch, *argv: str):
+    """The real flags through the real parser -- so a renamed flag fails here, not on a host."""
+    from moss_transcribe_diarize.app import web_cli
+
+    monkeypatch.setattr("sys.argv", ["mtd-subtitle-web", *argv])
+    return web_cli, web_cli.parse_args()
+
+
+def test_the_cli_builds_no_store_when_no_root_is_declared(monkeypatch) -> None:
+    web_cli, args = cli_args(monkeypatch, "--live")
+    assert web_cli._live_tape_store(args) is None
+
+
+def test_the_cli_declares_the_store_the_deployment_stated(monkeypatch, tmp_path: Path) -> None:
+    root = tmp_path / "tapes"
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--runs-dir", str(tmp_path / "absent-runs"),
+        "--live-retention-root", str(root),
+        "--live-retention-max-bytes", "4096",
+    )
+    store = web_cli._live_tape_store(args)
+    assert store is not None
+    assert store.root == root.resolve()
+    assert store.max_bytes_per_session == 4096
+    # ADR-0003 D3: unstated is zero, and zero is the only value a tool may choose.
+    assert store.retention_ttl_seconds == 0.0
+    assert root.stat().st_mode & 0o777 == 0o700
+
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--runs-dir", str(tmp_path / "absent-runs"),
+        "--live-retention-root", str(root),
+        "--live-retention-max-bytes", "4096",
+        "--live-retention-ttl-seconds", "3600",
+    )
+    assert web_cli._live_tape_store(args).retention_ttl_seconds == 3600.0
+
+
+@pytest.mark.parametrize(
+    "argv, named",
+    [
+        (("--live-retention-max-bytes", "4096"), "--live-retention-root"),
+        (("--live-retention-ttl-seconds", "3600"), "--live-retention-root"),
+    ],
+)
+def test_the_cli_refuses_retention_values_without_a_root(
+    monkeypatch, argv: tuple[str, ...], named: str
+) -> None:
+    web_cli, parsed = cli_args(monkeypatch, "--live", *argv)
+    with pytest.raises(SystemExit) as refusal:
+        web_cli._live_tape_store(parsed)
+    assert named in str(refusal.value)
+
+
+def test_the_cli_refuses_a_root_without_a_cap_and_a_root_without_live(
+    monkeypatch, tmp_path: Path
+) -> None:
+    web_cli, args = cli_args(monkeypatch, "--live", "--live-retention-root", str(tmp_path))
+    with pytest.raises(SystemExit) as refusal:
+        web_cli._live_tape_store(args)
+    assert "--live-retention-max-bytes" in str(refusal.value)
+
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live-retention-root", str(tmp_path),
+        "--live-retention-max-bytes", "4096",
+    )
+    with pytest.raises(SystemExit) as refusal:
+        web_cli._live_tape_store(args)
+    assert "--live" in str(refusal.value)
+
+
+def test_the_declared_store_reaches_the_application(monkeypatch, tmp_path: Path) -> None:
+    """The last link: a store nobody hands to `create_app` is a declaration that does nothing.
+
+    The two live-startup helpers are stubbed because they want a manifest and a certificate;
+    `_live_tape_store` and the `create_app` call are the seam this node exists for.
+    """
+    from moss_transcribe_diarize.app import web_cli
+
+    recorded: dict[str, object] = {}
+    monkeypatch.setattr(web_cli, "_live_runtime_factory", lambda args: None)
+    monkeypatch.setattr(
+        web_cli,
+        "_live_startup_config",
+        lambda args: dict.fromkeys(
+            (
+                "live_auth_state_path",
+                "live_server_cert_sha256",
+                "live_helper_lease_seconds",
+                "ssl_certfile",
+                "ssl_keyfile",
+            )
+        ),
+    )
+    monkeypatch.setattr(web_cli, "create_app", lambda **kwargs: recorded.update(kwargs))
+    monkeypatch.setitem(
+        __import__("sys").modules, "uvicorn", type("_U", (), {"run": staticmethod(lambda *a, **k: None)})
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "mtd-subtitle-web",
+            "--live",
+            "--runs-dir", str(tmp_path / "absent-runs"),
+            "--live-retention-root", str(tmp_path / "tapes"),
+            "--live-retention-max-bytes", "4096",
+        ],
+    )
+    web_cli.main()
+    store = recorded["live_tape_store"]
+    assert store is not None and store.root == (tmp_path / "tapes").resolve()
+
+    monkeypatch.setattr("sys.argv", ["mtd-subtitle-web", "--live"])
+    recorded.clear()
+    web_cli.main()
+    assert recorded["live_tape_store"] is None
+
+
+def test_the_cli_hands_the_runs_directory_to_the_admission_check(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """D4(3) is unreachable unless the wiring tells the store what the runs tree is."""
+    from moss_transcribe_diarize.app.live_tape import LiveTapeRootError
+
+    runs = tmp_path / "live-runs"
+    runs.mkdir()
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--runs-dir", str(runs),
+        "--live-retention-root", str(tmp_path / "tapes"),
+        "--live-retention-max-bytes", "4096",
+    )
+    with pytest.raises(LiveTapeRootError) as refusal:
+        web_cli._live_tape_store(args)
+    assert "filesystem" in str(refusal.value)
+
+
 def parse_unit(path: Path) -> dict[str, list[str]]:
     parsed: dict[str, list[str]] = {}
     for line in path.read_text().splitlines():

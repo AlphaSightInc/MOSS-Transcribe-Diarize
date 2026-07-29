@@ -79,6 +79,27 @@ case "${MOSS_LIVE_ENABLED:-0}" in
       --live-tls-keyfile "${MOSS_LIVE_TLS_KEYFILE}"
       --live-helper-lease-seconds "${MOSS_LIVE_HELPER_LEASE_SECONDS}"
     )
+    # Live session audio retention (ADR-0003 D2): opt-in, and off unless this profile
+    # declares a root. A profile that sets the key to nothing is a typo, not a request for
+    # the default, so it is refused the same way an empty port is.
+    if [ "${MOSS_LIVE_RETENTION_ROOT+set}" = set ] && [ -z "${MOSS_LIVE_RETENTION_ROOT}" ]; then
+      echo "MOSS_LIVE_RETENTION_ROOT must not be empty; remove the key to run without retention" >&2
+      exit 2
+    fi
+    if [ -n "${MOSS_LIVE_RETENTION_ROOT-}" ]; then
+      : "${MOSS_LIVE_RETENTION_MAX_BYTES:?MOSS_LIVE_RETENTION_MAX_BYTES is required when MOSS_LIVE_RETENTION_ROOT is declared}"
+      live_args+=(
+        --live-retention-root "${MOSS_LIVE_RETENTION_ROOT}"
+        --live-retention-max-bytes "${MOSS_LIVE_RETENTION_MAX_BYTES}"
+      )
+      # Absent means zero, the only value a tool may choose; a positive TTL is stated here.
+      if [ -n "${MOSS_LIVE_RETENTION_TTL_SECONDS-}" ]; then
+        live_args+=(--live-retention-ttl-seconds "${MOSS_LIVE_RETENTION_TTL_SECONDS}")
+      fi
+    elif [ -n "${MOSS_LIVE_RETENTION_MAX_BYTES-}${MOSS_LIVE_RETENTION_TTL_SECONDS-}" ]; then
+      echo "MOSS_LIVE_RETENTION_MAX_BYTES and MOSS_LIVE_RETENTION_TTL_SECONDS require MOSS_LIVE_RETENTION_ROOT: with no declared root no live audio is retained" >&2
+      exit 2
+    fi
     ;;
   *)
     echo "MOSS_LIVE_ENABLED must be 0 or 1" >&2

@@ -247,12 +247,14 @@ carry is in the retired-evidence index below).**
   **STEP 2's WRITER IS LANDED IN SOURCE (iteration 19): `live_tape.py` + 32 nodes, Python 694/2/368,
   15 of the 32 red-proved by three semantic reverts.**
   **AND IT IS WIRED (iteration 20): `LiveSessionTapeRecorder` + five call sites through the real
-  routes, +9 nodes, Python 703/2/368, four semantic reverts.** Step 2's code is complete. **The
-  deployed service still cannot write a byte** — `web_cli.py` declares no root, so it builds
-  `LiveSessionTapeRecorder(None)` and a route node asserts the whole meeting leaves no `.pcm` and no
-  `index.json` anywhere. What remains for step 2 is the **declaration surface** (an
-  `ops/moss-live.env` key + the TTL and cap as stated parameters), deliberately not bundled. See the
-  N-tape and N-tape-wiring blocks.
+  routes, +9 nodes, Python 703/2/368, four semantic reverts.**
+  **AND A DEPLOYMENT CAN NOW DECLARE IT (iteration 21): three `MOSS_LIVE_RETENTION_*` keys →
+  adapter flags → `LiveSessionTapeStore.declared` → `create_app`, +15 nodes, Python 718/2/368, five
+  semantic reverts. STEP 2 IS CODE-COMPLETE.** **The deployed service still cannot write a byte** —
+  `ops/moss-live.env` is host-local and untracked and the tracked template ships the three keys
+  **commented out**, so retention stays off until an operator edits that host file. See the N-tape,
+  N-tape-wiring and N-tape-declaration blocks. Next for Phase N is **step 3, the retrospective
+  sweep**, which is the first item the tape pays for.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -272,11 +274,13 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch.** Swift **158 passed**
+**Test totals on the branch (Python +15 in iteration 21; the Swift number is unchanged because
+nothing under `macos/` was touched).** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
 → 158); Python **703 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
 → 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, → 662 with N-recal's 6,
-→ 694 with N-tape's 32, **→ 703 with N-tape-wiring's 9, iteration 20**) — the two
+→ 694 with N-tape's 32, → 703 with N-tape-wiring's 9,
+**→ 718 with N-tape-declaration's 15, iteration 21**) — the two
 skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
 Suite wall clock **70.59 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
@@ -287,7 +291,7 @@ evidence in the repo — the tape suite costs 3.6 s). Per-file: `test_live_pipel
 `test_live_provider_bundle.py` **28**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
 `test_live_manifest_finalizer.py` **23** (17 → 23 with N-recal), `test_live_deployment_credentials.py` **14**,
-`test_live_service_deployment.py` **30**.
+`test_live_service_deployment.py` **45** (30 → 45 with N-tape-declaration).
 
 ## Read before any certification run or client fix
 
@@ -1761,8 +1765,55 @@ in production and the *"no raw audio is persisted"* clause holds unchanged — t
 asserted, not assumed (a route node runs a full mixed meeting and greps the tree for `.pcm` and
 `index.json`). The declaration surface — an `ops/moss-live.env` key, its finalizer/manifest
 treatment, and the TTL and cap, which are two more *free deployed parameters* under candidate 63's
-rule — is the next separable change and was deliberately not bundled. Step 3, the retrospective
-sweep, is what makes any of this pay.
+rule — is the next separable change and was deliberately not bundled. *Landed in iteration 21; see
+N-tape-declaration.* Step 3, the retrospective sweep, is what makes any of this pay.
+
+**N-tape-declaration — STEP 2 IS CODE-COMPLETE; A DEPLOYMENT CAN NOW TURN THE TAPE ON, AND THE
+TRACKED TEMPLATE DOES NOT** `[iteration 21; NOT gated, NOT merged, NOT deployed]`. Payload **5
+files** — `web_cli.py`, `ops/start-web.sh`, `ops/moss-live.env.example`, `LOCAL_DEPLOYMENT.md`, and
+`tests/test_live_service_deployment.py`; **none under `macos/`**, and the only product source is
+`web_cli.py`. Python **718 / 2 / 368** (+15: 8 adapter, 7 CLI). Deployment suite 30 → 45.
+***The red-before is five semantic reverts naming 14 of the 15 nodes***, run and restored
+in-iteration: drop `create_app(live_tape_store=…)` → **1 red**; make `_live_tape_store` return
+`None` always → **6 red**; drop `runs_directories=(args.runs_dir,)` → **1 red**; delete the
+adapter's retention block → **7 red**; strip the template's commented block → **1 red**. The one
+node no revert reddens is `test_the_cli_builds_no_store_when_no_root_is_declared`, which is the
+off-by-default invariant and is green by construction.
+***The shape.*** Three keys, `MOSS_LIVE_RETENTION_ROOT` / `_MAX_BYTES` / `_TTL_SECONDS`, translated
+by the adapter into `--live-retention-root` / `--live-retention-max-bytes` /
+`--live-retention-ttl-seconds`, which `web_cli._live_tape_store` turns into
+`LiveSessionTapeStore.declared(...)` or `None`, handed to `create_app(live_tape_store=…)`.
+***Four decisions, recorded so they are not re-argued.***
+1. **The tracked template ships the keys COMMENTED OUT, not as `REPLACE_WITH_` paths.** Every other
+   live key is required, so the template is a form to fill in; retention is D2's opt-in, and a
+   template whose verbatim use turns audio retention on would make a privacy posture a side effect
+   of copying a file. A node asserts the template used verbatim emits no `--live-retention` flag,
+   and a second node asserts the *commented* keys are nonetheless read by the adapter — because
+   `test_live_profile_sets_only_variables_the_adapter_reads` cannot see a comment, so a typo in a
+   commented key would otherwise be invisible.
+2. **A cap or a TTL with no root is REFUSED, at both layers.** The safe direction is only the
+   direction it fails in; the unsafe half is an operator who believes meeting audio is being kept.
+   The empty-string case is refused separately, by the adapter's own `${VAR+set}` discipline — *"a
+   variable a profile sets to nothing is a typo, not a request for the default."*
+3. **The TTL is optional and unstated means 0; the cap is required.** Straight from ADR-0003 D3 and
+   `declared()`'s own docstring — zero is the only value a tool may choose, because at zero the
+   PRD's audio clause still holds literally at every boundary observable after a meeting. Neither
+   end of the cap has a safe default (0 = never tape, unbounded = the D4(3) runaway), so it is
+   required. *Candidate 63's rule reaches the env layer unchanged.*
+4. **`runs_directories=(args.runs_dir,)` is what makes D4(3) reachable at all.** The runs tree is
+   the one filesystem this process is told about, and on the deployment host the live runs tree
+   shares its filesystem with the batch one — so passing it is what refuses a root whose runaway
+   tape would answer 507 to a batch upload without ever touching the batch service. The typed
+   `LiveTapeRootError` is deliberately **not** caught: that is why it is an exception (N-tape
+   decision 2), and `_live_runtime_factory` already sets the precedent of letting a manifest's own
+   error surface unaltered.
+***What it still does NOT do.*** **The deployed host still declares no root** — `ops/moss-live.env`
+is host-local and untracked, and nothing on the server was touched — so the service remains
+byte-for-byte the one every gate measured and the *"no raw audio is persisted"* clause holds
+unchanged. Retention becomes real only when an operator adds the keys to that host file; ADR-0003's
+"what the clause becomes for a future hygiene check" is the two-form test to run at that moment. No
+manifest/finalizer treatment: the root is a **host** fact like the TLS key path, not a provider
+config the manifest hash covers.
 
 **N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
 `docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the
