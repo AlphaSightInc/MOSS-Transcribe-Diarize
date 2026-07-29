@@ -16913,3 +16913,117 @@ F1 GREEN, F2 GREEN, F3 5-GREEN/1-RED. Everything remaining needs the operator:
      built-in mic across the room cannot);
   4. candidate 61 (live-canary-analyze.py crashes on any pruned directory) is loop
      tooling and needs no authorization - it is the cheapest remaining item.
+
+================================================================================
+RUN 20260729-025318-86584  ITERATION 12  -  THE LANE-SEPARATION VERDICT EXISTS
+FOR F2 AND F3 (candidate 61)
+================================================================================
+TARGET: candidate 61 - live-canary-analyze.py raises KeyError: 'transcript' on
+every certification and soak directory. Chosen because iteration 11's recorded
+next step named it the cheapest remaining item and the only one on the open list
+needing NO authorization: every other candidate (55, 58, 60) is tracked product
+source under the post-merge freeze, and Phase N is gated on an operator call.
+
+FILES TOUCHED: scripts/ralph-afk/live-canary-analyze.py (only), plus this
+journal and context.md. No product source, no ops/, no host mutated, nothing
+deployed, no device paired.
+
+THE DEFECT, stated as measured. The analyzer read committed spans out of
+snapshot.tsv. live-cert.sh and live-soak.sh project every poll through SNAP_PRUNE
+to {span_id} - a 16-minute run's full bodies are quadratic and would be ~38 MB -
+and keep the untouched response only in snap-full-NNNN.json every
+FULL_SNAPSHOT_EVERY (30) polls. So both of the loop's own certification
+directories were unreadable by the reducer built to read them.
+  RED-BEFORE (rc=1 + traceback at live-canary-analyze.py:142):
+    /tmp/i11-f2-evidence/ralph-cert   -> /tmp/i12-before-ralph-cert.txt
+    /tmp/i9-f3-evidence/ralph-soak    -> /tmp/i12-before-ralph-soak.txt
+
+THE CHANGE, three parts.
+  1. THREE SOURCES, IN ORDER, AND THE READER IS ALWAYS TOLD WHICH ANSWERED. The
+     last 200 snapshot.tsv row stays authoritative for the run's END - final
+     version and final span COUNT, because pruning keeps every span_id. The span
+     BODIES come from the newest readable snap-full-*.json. descriptor.bounds is
+     resolved alongside them: SNAP_PRUNE nulls it, which is why section 5 printed
+     "bound None" and the saturation line could never fire on a pruned run.
+  2. AN ABSENCE IS JUDGED AGAINST COVERAGE. A full snapshot every 30 polls means
+     the bodies are a PREFIX, so the header prints the coverage instant and each
+     not-found marker names how many of its delivery phases the evidence reached.
+  3. A NAMED REFUSAL REPLACES THE TRACEBACK (new rc=6), the rule
+     live-canary-clauses.py already applies to a layout it cannot read: it says
+     the EVIDENCE is unreadable, not that the lanes failed. New rc=7 UNDECIDED.
+
+THE RULE THAT SURVIVED A WRONG FIRST ATTEMPT, which is the part worth keeping.
+My first coverage rule was the strict one - ANY uncovered delivery phase makes
+the marker UNDECIDED. It went green on F2 and was wrong: the last full snapshot
+ALWAYS precedes the last phase, so that rule fires on EVERY pruned run, and a
+verdict that always trips decides nothing. It also suppressed the informative
+branch (the one that separates "the marker WORD was rewritten" from "no system
+audio decoded") on the one directory that needed it. The shipped rule is:
+UNDECIDED only when NO delivery phase of that marker is covered; otherwise the
+finding stands with the uncovered phases named. Sixth instance of "the verdict
+word must name what it decides" - and the first where the over-cautious wording
+was the defect rather than the over-confident one.
+  AND COVERAGE IS COVERAGE, WHATEVER ENDED IT. The check is deliberately NOT
+  gated on pruning. Iteration 26's two F1 runs, killed by candidate 56 at
+  t+13.9 s and t+27.5 s, have complete directories and no readable audio past
+  those instants; they move rc 5 -> 7. "The marker did not land" was never a
+  measurement of those runs. The remedy sentence differs by cause: keep a later
+  full snapshot vs. run it again.
+
+GREEN-AFTER, on the two directories that could not be read at all:
+  F3 soak  spans from snap-full-0330.json - 414 of the run's final 443, version
+           3415 of 3646, audio through t+958.5 s.  rc=4.
+           SYSTEM MARKER `cardamom` AT SPAN 5, t+9.5 s, PHASE program-1 -> in a
+           MUTED 17-minute run the process tap is upstream of the output mute.
+           Room marker absent - candidate 51's limit, unchanged.
+           Also now readable: per-phase labels (program phases S01/S03/S09, the
+           room window a single S01 fragment), 76 of 414 spans with a repeated
+           fragment, and section 5 firing for the first time on a pruned run -
+           bound 16, SATURATED at t+113.6 s of a 1028 s run (candidate 55).
+  F2 cert  spans from snap-full-0180.json - 151 of 161, version 1064 of 1128,
+           audio through t+293.6 s.  rc=5, measured across 3 of 4 delivery
+           phases with program-d named as unmeasured.
+           The system marker is absent AS AN EXACT STRING while the system
+           phases carry 121 labelled fragments - i.e. this rc=5 IS candidate 59,
+           the marker that landed as "Pardon me, pardon me, pardon me".
+           Saturation printed at t+93.5 s of a 319 s run.
+
+VALIDATION (the smallest commands that produce evidence, all on MacStudio):
+  python3 -m py_compile scripts/ralph-afk/live-canary-analyze.py            ok
+  five REAL directories, rc after:
+    /tmp/i6-f1-evidence/ralph-canary    rc=5  (NEGATIVE CONTROL - its output
+                                               differs from before by EXACTLY
+                                               one added provenance line,
+                                               "spans read from snapshot.tsv")
+    /tmp/i26-f1-evidence/ralph-canary   rc=7  (was 5; died at t+13.9 s)
+    /tmp/i26b-f1-evidence/ralph-canary  rc=7  (was 5; died at t+27.5 s)
+    /tmp/i11-f2-evidence/ralph-cert     rc=5  (was rc=1 traceback)
+    /tmp/i9-f3-evidence/ralph-soak      rc=4  (was rc=1 traceback)
+  four SYNTHETIC branches:
+    pruned snapshot.tsv, no snap-full-*     rc=6, named refusal, no traceback
+    snapshot.tsv absent, snap-full present  rc=5, source line says so
+    empty directory / missing directory     rc=2 both (unchanged)
+  Evidence /tmp/i12-before-*.txt, /tmp/i12-after-*.txt, /tmp/i12-case-*.
+
+WHAT I LEARNED:
+  * The instrument that reads the evidence has to be tested against the evidence
+    the DRIVERS actually write. live-cert.sh and live-soak.sh were both built
+    after this analyzer and both changed the layout under it; two green
+    certification runs happened before anyone tried to read the lane question
+    out of them.
+  * An over-cautious verdict is the same defect as an over-confident one. Both
+    stop naming what they decide. The strict coverage rule would have printed
+    UNDECIDED on every future certification directory forever.
+  * A directory that is COMPLETE can still be a prefix of the run it describes,
+    if the run died. Ignorance from pruning and ignorance from a dead session
+    look identical to a reducer and deserve the same verdict word.
+
+RECOMMENDED NEXT STEP. Candidate 59 - the exact-match marker comparison - is now
+the last item on the open list that needs no authorization, and this iteration
+handed it a fifth measurement plus a ready-made regression case: F2's directory
+reduces to rc=5 while carrying 121 labelled system-phase fragments and a marker
+that the decoder rewrote phonetically. Fix the comparison (phonetic/edit-distance
+key) and the verdict word together, then re-reduce F1/F2/F3 - F3 is the positive
+control, since its marker matches verbatim and must stay rc=4. Everything else
+remaining (55, 58, 60, Phase N, the F2 denied-lane variant, F1/F2's second-voice
+half) needs the operator.
