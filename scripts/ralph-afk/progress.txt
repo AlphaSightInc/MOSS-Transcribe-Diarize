@@ -13858,3 +13858,151 @@ scope for that authorization, all inside moss_transcribe_diarize/ and tests/:
 Until it lands, F1 and F3 will keep dying at ~13% per 32 s - so do NOT re-run
 either as a gate first. Candidate 57 (the reducer calls a passing latency number
 RED) is loop tooling, needs no authorization, and is the cheapest open item.
+
+================================================================================
+ITERATION 29 (run 20260728-181020) - candidate 57: the reducer called a passing
+latency number RED, and a directory with no latency report said nothing at all
+================================================================================
+
+TARGET. Candidate 57, minted in iteration 26 and the cheapest open item on the
+list: loop tooling, no authorization needed. Chosen because the ONLY thing
+between this loop and the acceptance bar - candidate 56's fix - is tracked
+product source under the post-merge freeze and needs a SEVENTH operator
+authorization this loop cannot grant. With F1/F3 unable to run as a gate, the
+next best spend is making sure the instrument that reduces them tells the truth.
+
+FILES TOUCHED (loop tooling and evidence only; product source diff vs main is
+still EMPTY, verified `git diff main HEAD -- ':!scripts/ralph-afk'`):
+  scripts/ralph-afk/live-canary-clauses.py   +66/-6   sha256 b87f05b470cd81d7...
+  scripts/ralph-afk/context.md               working memory
+
+THE DEFECT, REPRODUCED FIRST ON REAL EVIDENCE.
+  live-canary-clauses.py:367   ok = uv <= args.user_visible_gate_ms and rep.get("sufficientSamples")
+That single `and` folds two different verdicts into one word. Iteration 26's two
+canaries printed, verbatim:
+  USER-VISIBLE p95 = 3970.7 ms vs gate 4000 ms  RED
+  RED    user-visible p95 3971 ms vs gate 4000 ms
+3971 <= 4000. The line asserts a threshold comparison that PASSED and labels it
+with the word for failing it. A reader trusting the verdict learns the opposite
+of the truth - and in an operator-facing summary that reads "latency is red"
+when the honest reading is "latency is UNPROVEN".
+
+THE FIX, AND WHERE THE RULE COMES FROM. The app-owned probe already publishes
+its own validity flags (CaptureLatencyProbe.swift:335-338), so the reducer READS
+them rather than re-deriving the probe's minimum - a second copy of
+`minimumCommittedAdvances` in the reducer would drift from the product's. Three
+disqualifiers -> UNDECIDED, and the threshold comparison is not asserted at all:
+  userVisibleMS null        one of the two components was never measured
+  mixerOriginResolved false committed latency has no capture origin to measure against
+  sufficientSamples false   fewer advances than the probe's own minimum; the
+                            probe's docstring already says "a sample, not a
+                            distribution"
+Only a qualified report is compared to the gate, and then GREEN/RED mean exactly
+what they say.
+
+  timelineIntact false is DELIBERATELY NOT a disqualifier. Read the source: the
+  probe latches the flag and rejects every later advance
+  (rejectedAfterTimelineBreak), so the samples that survive are real and
+  sufficientSamples already decides whether enough of them remain. What it does
+  mean is that they cover a PREFIX of the meeting, so the caveat is appended to
+  the verdict string and travels with it instead of being a fourth silent flag.
+
+  A MISSING latency-final.json IS NOW UNDECIDED TOO. It used to print one line
+  and add nothing to any bucket, so a directory with no latency report could
+  reduce to rc=0 on the strength of the clauses it DID carry. That is the exact
+  omission this reducer exists to prevent and the same shape as iteration 22's
+  finding. /tmp/ralph-f1-evidence is a real directory with this shape.
+
+VALIDATION - RED BEFORE / GREEN AFTER ON FOUR REAL EVIDENCE DIRECTORIES, PLUS
+FOUR SYNTHETIC ONES FOR THE BRANCHES NO REAL RUN HAS PRODUCED.
+
+  dir                              gate    BEFORE                    AFTER
+  /tmp/i26-f1-evidence  (n=8)      4000ms  RED  3922 vs 4000         UNDECIDED
+  /tmp/i26b-f1-evidence (n=12)     4000ms  RED  3971 vs 4000         UNDECIDED
+  /tmp/ralph-f3-evidence (n=358)   6000ms  RED 10446 vs 6000         RED (unchanged)
+  /tmp/ralph-f1-evidence (no json) 4000ms  (silent, no bucket)       UNDECIDED
+
+  THE NEGATIVE CONTROL THAT MATTERS is F3: sufficientSamples true, 10446 ms
+  against a 6000 ms gate, and it stays RED. A qualified miss must not become
+  "undecided" - that would be weakening a gate, which is exactly what this
+  change must not do.
+
+  The UNDECIDED text now carries the number AND why it is inadmissible:
+    UNDECIDED  user-visible latency clause UNPROVEN, not failed (the run's own
+    number, 3971 ms, is not admissible): sufficientSamples=false - 12 committed
+    advances is below the probe's own minimum; that is a sample, not a distribution
+
+  Synthetic patches over F3's own report, to reach the branches real evidence
+  does not contain (script inline, output not kept - reproducible in 10 s):
+    qualified + 3500 ms                     -> GREEN
+    qualified + 3500 ms + timelineIntact=F  -> GREEN + the prefix caveat
+    mixerOriginResolved=false               -> UNDECIDED
+    userVisibleMS=null                      -> UNDECIDED  "(none)"
+  All five branches of the new code are exercised.
+
+  rc on all four real directories is still 3, because other clauses in those
+  runs are genuinely red (the sessions died). The change moves one clause out of
+  the red bucket; it does not turn any run green, and no run's rc improved.
+
+  python3 -m py_compile scripts/ralph-afk/live-canary-clauses.py -> ok
+  git status --porcelain -> only the two ralph-afk files
+  Evidence: /tmp/i29-before-{i26,i26b,f3}.txt /tmp/i29-after-{i26,i26b,f3,f1}.txt
+
+SECOND REPAIR, IN THE SAME WORKING-MEMORY UPDATE: THE CANDIDATE NUMBERS 55, 56
+AND 57 EACH MEANT TWO DIFFERENT THINGS. The sixth amendment minted Phase N as
+items 55-59 on the same day iterations 12 and 26 minted diagnostic candidates
+55, 56 and 57. So "candidate 56 needs authorization" resolved to EITHER the
+viewability blocker OR the duration-weighted centroid, and this iteration could
+not have recorded "57 is done" without creating a third reading. The amendment
+and every cross-reference already call the Phase N items N1-N5, so the duplicate
+numerals were dropped from that list and the three diagnostic numbers now have
+one meaning each, collected in a new "Open diagnostic candidates" section.
+This matters beyond tidiness: the next thing the operator has to read is the
+recommended scope for candidate 56's authorization, and it must not resolve to
+an identity item.
+
+NO HOST WAS TOUCHED. No ssh, no probe run, no device paired, no service
+restarted, no Mac. Nothing to roll back.
+
+Learned.
+(1) A VERDICT WORD MUST NAME THE THING IT DECIDES. "Missed the gate", "cannot
+    answer the gate" and "no data at all" are three states; two of them were
+    sharing one word and the third was sharing silence. This is the third time
+    this loop has paid for the same shape - iteration 22 found the reducer
+    printing F1's lane failure and deciding nothing, and four product cycles
+    (G3/J4/K3 and candidate 56) all turned on a condition whose one naming word
+    was discarded. The instrument is not exempt from the defect class it exists
+    to find.
+(2) A REDUCER MUST NOT RE-DERIVE THE PRODUCT'S CONSTANT. The obvious patch was
+    `if com['count'] < 20`. The probe already publishes `sufficientSamples`, and
+    a second copy of 20 in the reducer would silently disagree the day the
+    product's minimum changes. Read the flag; print the count.
+(3) THE CHEAPEST ITEM ON THE LIST WAS WORTH DOING EVEN AT ITERATION 29 OF 30.
+    The next real F1/F3 run - whenever candidate 56's fix is authorized - is
+    reduced by this script, and its two most interesting numbers (2567 and 2592
+    ms committed p95, the first time the committed half has been anywhere near
+    the gate) are exactly the ones the old code mislabelled.
+(4) A FIX THAT MOVES A CLAUSE OUT OF `red` NEEDS A NEGATIVE CONTROL OR IT IS
+    INDISTINGUISHABLE FROM WEAKENING THE GATE. F3's 10446-vs-6000 staying RED is
+    what makes this change safe to believe.
+
+BLOCKER, UNCHANGED AND NOW THE ONLY ONE: candidate 56's fix is tracked product
+source under the post-merge freeze and needs a SEVENTH operator authorization.
+Until it lands, F1 and F3 die at a ~13%-per-32 s hazard and neither certification
+clause can be answered, so the PRD acceptance bar cannot be met by this loop.
+The recommended scope is written verbatim at the end of iteration 28's entry
+(grep "candidate 56's FIX needs its own authorization"); in one line it is:
+measure the live decode's elapsed on time.monotonic() - which
+live_adapters.py:305 ALREADY takes and :317 already uses on the branch next door
+- rule that untrustworthy timing metadata degrades rather than ends the meeting,
+and add a real-seam regression driving the coordinator with a runner result
+carrying a NEGATIVE elapsed_sec.
+
+Next, if a 30th iteration runs and no authorization has arrived: the honest
+options are all evidence-only. Best of them is candidate 52 - context.md is back
+to 251 KB / ~2960 lines (five sequential Reads), and the retirement criterion
+recorded at the top of the file is now MET for the Phase L/M mechanism
+narratives and the F1/F3 diagnosis blocks: 53/48/49/D-a/D-c are merged at
+77e0014 and iteration 26 proved on the real hosts that they work, so those
+blocks are history and belong in progress.txt. That is a real reduction with a
+recorded trigger, not busywork.

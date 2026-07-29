@@ -7,7 +7,11 @@ This reducer answers the clauses that decide a certification run:
 
   * did the meeting stay alive, or did a lane fault end it (Phase M's whole subject);
   * user-visible p95 against the run's gate, with its two components stated SEPARATELY, because
-    the plan's Phase F procedure requires that and because only one of them is fixable in code;
+    the plan's Phase F procedure requires that and because only one of them is fixable in code -
+    and only when the app-owned probe's own validity flags say the number is admissible. A run
+    the probe disqualifies (too few committed advances, no mixer origin, no number at all) is
+    UNDECIDED, never RED: "the gate was missed" and "the run cannot answer the gate" are
+    different verdicts and must not share a word (candidate 57);
   * decoder p95 RTF, and - since candidate 50 / D-c - the token cap actually in force and how
     many spans hit it;
   * per-span COMMIT LAG measured off the event stream, which is what showed that F1's latency
@@ -363,14 +367,66 @@ def main():
               f"fetchFailures={rep.get('fetchFailures')} "
               f"rejected={rep.get('rejectedNegative')}/{rep.get('rejectedClockRegression')}/"
               f"{rep.get('rejectedAfterTimelineBreak')}")
-        if uv is not None:
-            ok = uv <= args.user_visible_gate_ms and rep.get("sufficientSamples")
+        # Candidate 57. "the gate was missed" and "the run cannot answer the gate" are different
+        # verdicts and must not share a word. This clause used to fold `sufficientSamples` into the
+        # threshold comparison, so iteration 26's two cut-short canaries printed
+        # `USER-VISIBLE p95 = 3970.7 ms vs gate 4000 ms  RED` - a comparison that PASSED, labelled
+        # with the word for failing it. A reader trusting the verdict line learned the opposite of
+        # the truth. Same shape as iteration 22's finding that the reducer printed F1's lane
+        # failure and decided nothing.
+        #
+        # The split, and where the rule comes from: the app-owned probe already publishes its own
+        # validity flags (CaptureLatencyProbe.report), so the reducer reads them rather than
+        # re-deriving the probe's minimum here - a second copy of that constant would drift.
+        #   mixerOriginResolved false -> committed latency has no capture origin to be measured
+        #                                against, so the number is not the gated quantity.
+        #   sufficientSamples   false -> fewer committed advances than the probe's own minimum;
+        #                                its docstring says this is "a sample, not a distribution".
+        #   userVisibleMS       null  -> one of the two components was never measured.
+        # Any of those three: UNDECIDED, and the threshold comparison is NOT asserted at all.
+        #   timelineIntact      false -> NOT a disqualifier. The probe latches it and rejects every
+        #                                later advance (rejectedAfterTimelineBreak), so the samples
+        #                                that survive are real and sufficientSamples already decides
+        #                                whether enough of them remain - but they cover a PREFIX of
+        #                                the run, so the caveat travels with the verdict.
+        disqualifiers = []
+        if uv is None:
+            disqualifiers.append("userVisibleMS is null - committed p95 or the render bound was "
+                                 "never measured")
+        if not rep.get("mixerOriginResolved"):
+            disqualifiers.append("mixerOriginResolved=false - committed latency has no capture "
+                                 "origin to be measured against")
+        if not rep.get("sufficientSamples"):
+            disqualifiers.append(f"sufficientSamples=false - {com.get('count')} committed advances "
+                                 f"is below the probe's own minimum; that is a sample, not a "
+                                 f"distribution")
+        caveat = ""
+        if not rep.get("timelineIntact"):
+            caveat = (" [timelineIntact=false: the probe stopped accepting advances mid-run, so "
+                      "this covers a PREFIX of the meeting]")
+        if disqualifiers:
+            shown = f"{uv:.1f} ms" if uv is not None else "(none)"
+            print(f"   USER-VISIBLE p95 = {shown}  NOT A QUALIFIED MEASUREMENT - this run does "
+                  f"NOT decide the {args.user_visible_gate_ms:.0f} ms gate, either way")
+            for why in disqualifiers:
+                print(f"     - {why}")
+            undecided.append(
+                f"user-visible latency clause UNPROVEN, not failed"
+                + (f" (the run's own number, {uv:.0f} ms, is not admissible)" if uv is not None
+                   else "")
+                + ": " + "; ".join(disqualifiers) + caveat)
+        else:
+            ok = uv <= args.user_visible_gate_ms
             (green if ok else red).append(
-                f"user-visible p95 {uv:.0f} ms vs gate {args.user_visible_gate_ms:.0f} ms")
+                f"user-visible p95 {uv:.0f} ms vs gate {args.user_visible_gate_ms:.0f} ms" + caveat)
             print(f"   USER-VISIBLE p95 = {uv:.1f} ms vs gate {args.user_visible_gate_ms:.0f} ms"
-                  f"  {'GREEN' if ok else 'RED'}")
+                  f"  {'GREEN' if ok else 'RED'}{caveat}")
     else:
+        # Saying nothing here would let a directory with no latency report reduce to rc=0 on the
+        # strength of the clauses it DOES carry - the omission this reducer exists to prevent.
         print("   (no latency report in this evidence directory)")
+        undecided.append("no latency-final.json in this evidence directory - the user-visible "
+                         "latency clause is UNPROVEN, not failed")
 
     # ------------------------------------------------- 8. lane health timeline
     # This section used to PRINT the client's own verdict and decide nothing, so F1's evidence

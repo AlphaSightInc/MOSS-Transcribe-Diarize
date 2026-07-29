@@ -136,6 +136,9 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 - **Candidate 55 — identity capacity saturates in the first minute** (new, iteration 12). The
   16-speaker bound is reached at t+45.5 s (and at t+51.8 s in F1), so a voice arriving later can
   never be labelled. Degrades quality without ending a session, so no gate sees it — like 50.
+- **Candidate 57 — the clause reducer called a passing latency number RED.** `[done —
+  iteration 29]`. Loop tooling, no authorization; fixed and proved on four real evidence
+  directories. See "The reducer stopped calling a passing number RED" below.
 All three are tracked product source under the post-merge freeze. **Candidate 54 is ANSWERED**
 (iteration 11) and **candidate 51 is DONE** (iteration 12), neither spending an authorization: the
 409 is `LiveV2SessionTerminalError` — `"v2 system lane is failed."` — armed by the client's *own*
@@ -1118,6 +1121,44 @@ and `NRestarts=0` unmoved, `live-runs` 0, 0 tracebacks, batch 200.
 runtime lock and mutates nothing, and a 13 %-per-step hazard reproduces on its own eventually. They
 are still worth keeping — they are what dated the cut to the millisecond and proved both readers
 fail together.
+
+**The reducer stopped calling a passing number RED — candidate 57 (new, iteration 29; `[done]`).
+READ THIS BEFORE TRUSTING ANY `live-canary-clauses.py` VERDICT LINE.** Iteration 26's two canaries
+printed `USER-VISIBLE p95 = 3970.7 ms vs gate 4000 ms  RED` — a threshold comparison that **passed**,
+wearing the word for failing it — because `ok = uv <= gate and sufficientSamples` folded *the run is
+too short to answer* into *the run missed the gate*. Both landed in the `red` bucket, so the verdict
+line asserted the opposite of the truth and the operator-facing summary would have read "latency is
+red" when the honest reading is "latency is unproven".
+- **The split, and where the rule comes from.** The app-owned probe already publishes its own
+  validity flags (`CaptureLatencyProbe.report`, `CaptureLatencyProbe.swift:335-338`), so the reducer
+  **reads** them instead of re-deriving the probe's minimum — a second copy of that constant would
+  drift. Three disqualifiers → **UNDECIDED**, and the threshold comparison is not asserted at all:
+  `userVisibleMS` null, `mixerOriginResolved` false, `sufficientSamples` false. Only a qualified
+  report is compared to the gate.
+- **`timelineIntact` false is deliberately NOT a disqualifier.** The probe latches it and rejects
+  every later advance (`rejectedAfterTimelineBreak`), so the surviving samples are real and
+  `sufficientSamples` already decides whether enough remain — but they cover a **prefix** of the
+  meeting, so the caveat is appended to the verdict string and travels with it.
+- **A missing `latency-final.json` is now UNDECIDED too**, not silence. It used to print one line
+  and add nothing to any bucket, so a directory with no latency report could reduce to **rc=0** on
+  the strength of the clauses it did carry — the exact omission this reducer exists to prevent, and
+  the same shape as iteration 22's finding.
+*Red-before/green-after on four REAL evidence directories, plus four synthetic ones for the branches
+no real run has produced.* Before: `/tmp/i26-f1-evidence` and `/tmp/i26b-f1-evidence` both
+`RED user-visible p95 3922/3971 ms vs gate 4000 ms`; F3 `RED … 10446 vs 6000`; `/tmp/ralph-f1-evidence`
+(no latency report) **silent**. After: the two cut-short canaries are
+`UNDECIDED … UNPROVEN, not failed (the run's own number, 3971 ms, is not admissible):
+sufficientSamples=false - 12 committed advances …`, **F3 is still RED** (the negative control that
+matters — a qualified miss must not become "undecided"), and F1's directory is UNDECIDED. Synthetic
+patches over F3's report exercised the rest: qualified-pass → **GREEN**; qualified-pass with
+`timelineIntact=false` → **GREEN + the prefix caveat**; `mixerOriginResolved=false` and null
+`userVisibleMS` → **UNDECIDED**. Evidence `/tmp/i29-before-*.txt` and `/tmp/i29-after-*.txt`.
+*Nothing else moved:* the only changed file is `scripts/ralph-afk/live-canary-clauses.py`; no
+product source, no host touched, and rc on all four real directories stays **3** because other
+clauses in those runs are genuinely red.
+*The general lesson, third time this loop has paid for it:* **a verdict word must name the thing it
+decides.** "Missed the gate", "cannot answer the gate" and "no data" are three states; two of them
+were sharing one word here, exactly as F1's lane failure once shared a word with "printed".
 
 **Candidate 56 did NOT reproduce under continuous two-lane audio, and two of its likeliest causes
 were ELIMINATED (iteration 27; superseded by the block above — kept for the eliminations, which
@@ -2856,6 +2897,24 @@ amendment's literal order is unreachable and why this one drops nothing.**
   ordered remedies become live for the first time. Both runs need their
   own pre-recorded rollbacks (volume, app, session, `/tmp` evidence) per iteration 12's list.
 
+### Open diagnostic candidates — the numbered ones, in one place
+
+55. **Identity capacity saturates in the first minute** (iteration 12). The 16-speaker bound is
+    reached at t+45.5 s (t+51.8 s in F1), so a voice arriving later can never be labelled. Degrades
+    quality without ending a session, so no gate sees it. Tracked product source; **needs its own
+    authorization** — and Phase N's `N1`/`N3` may subsume it, since a 0.5 s fragment that becomes a
+    prototype is a plausible source of the phantom speakers that exhaust the bound.
+56. **A live session stops being viewable mid-meeting.** `[ANSWERED — iteration 28; the FIX is
+    unauthorized]`. Cause: the server host's wall clock steps ~1.5 s backwards every ~32.3 s,
+    `vllm_runner.py:111` measures `elapsed_sec` on it, and `live_adapters.py:344` turns a negative
+    one into a non-retryable `LiveProviderError` that ends the meeting. See the candidate-56 answer
+    block for the failure record, the mechanism and the clock measurement. **This is what blocks the
+    whole acceptance bar:** F1 and F3 die at a ~13 %-per-32 s hazard until it lands, and its fix is
+    tracked product source under the post-merge freeze. The recommended authorization scope is
+    written out verbatim at the end of iteration 28's progress.txt entry.
+57. **The reducer called a passing latency number RED.** `[done — iteration 29]`. See "The reducer
+    stopped calling a passing number RED" below. Loop tooling; no authorization was needed.
+
 ### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)
 
 Authorized by the sixth prd.md amendment, which **overrides** the out-of-scope entry for
@@ -2871,19 +2930,26 @@ Measured by the supervisor on the real encoder (numbers and method in the amendm
   B (re-embed 0..t) reaches 0.999 but is quadratic (~23 min compute for a 16-min meeting) **and**
   has the worst short-probe match. B is rejected on evidence.
 
-55. **N1 - separate matching from enrollment.** The core defect: one threshold does both jobs, so a
-    0.5 s fragment can overwrite a good prototype. A short span may be *labelled* against a
-    prototype; it must never *become* one. Everything else in this phase depends on this split.
-56. **N2 - duration-weighted centroid (strategy C).** Wire it through the `canonical_embedding` hook
-    that already exists in `WeSpeakerLiveEvidenceProvider.__init__` and that
-    `_identity_evidence_provider` never passes. O(1) memory and compute per span.
-57. **N3 - raise the enrollment minimum to >= 2.0 s.** `identity_provider.min_segment_samples` is
-    **not** a domain-contract value; the contractual 8000 is the *live frame size*, a different
-    quantity sharing the number. Do not change the frame size. Treat 2.0 s as a lower bound - the
-    supervisor's voices were synthetic TTS and cleaner than real humans.
-58. **N4 - bounded bank (strategy D), only if measurement justifies it.** D and C were within 0.2%
-    of each other; adopt D only if a prototype must demonstrably survive a bad patch.
-59. **N5 - gate, merge, redeploy.** A tracked regression reproducing the duration curve that fails
+**Numbering, repaired in iteration 29 — Phase N items are `N1`-`N5` and carry NO number.** They
+were minted as 55-59 by the sixth amendment on the same day iterations 12 and 26 minted diagnostic
+candidates **55, 56 and 57**, so every one of those three numbers meant two different things and
+"candidate 56 needs authorization" resolved to *either* the viewability blocker *or* the centroid.
+The amendment and every cross-reference already say `N1`-`N5`, so dropping the duplicate numerals
+costs nothing and the three diagnostic numbers are now unambiguous.
+
+- **N1 - separate matching from enrollment.** The core defect: one threshold does both jobs, so a
+  0.5 s fragment can overwrite a good prototype. A short span may be *labelled* against a
+  prototype; it must never *become* one. Everything else in this phase depends on this split.
+- **N2 - duration-weighted centroid (strategy C).** Wire it through the `canonical_embedding` hook
+  that already exists in `WeSpeakerLiveEvidenceProvider.__init__` and that
+  `_identity_evidence_provider` never passes. O(1) memory and compute per span.
+- **N3 - raise the enrollment minimum to >= 2.0 s.** `identity_provider.min_segment_samples` is
+  **not** a domain-contract value; the contractual 8000 is the *live frame size*, a different
+  quantity sharing the number. Do not change the frame size. Treat 2.0 s as a lower bound - the
+  supervisor's voices were synthetic TTS and cleaner than real humans.
+- **N4 - bounded bank (strategy D), only if measurement justifies it.** D and C were within 0.2%
+  of each other; adopt D only if a prototype must demonstrably survive a bad patch.
+- **N5 - gate, merge, redeploy.** A tracked regression reproducing the duration curve that fails
     if the enrollment floor drops below the measured separation point; C must beat A on oracle
     alignment **and** same-speaker probe minimum on the real encoder; then F1 and F2 with candidate
     51's distinct-voice harness and the speaker-label clause **meaningfully verified**; then one
