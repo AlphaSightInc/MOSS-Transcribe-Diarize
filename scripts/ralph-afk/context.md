@@ -265,6 +265,15 @@ carry is in the retired-evidence index below).**
   repo cannot grow the second matcher ADR-0002's own prototype had; and a merge above 0.70 is the
   first mechanism here that can **reduce** the canonical speaker count, i.e. it can heal candidate
   55's fragmentation retrospectively without touching births. See the N-sweep block.
+- **AND STEP 3's ENGINE IS NOW MEASURED — ADR-0002's GATE B IS ANSWERED ON PRODUCTION CODE
+  (iteration 23): the swept transcript reaches 99.26 % mean / 98.48 % min against the album's
+  93.44 / 92.18, above the ADR's own 98.5 % whole-file figure.** `tests/` only, +6 nodes, Python
+  **764/2/368**, three semantic reverts reddening 4/3/1. Two things it settled that the engine's
+  unit suite could not: **the merge fires zero times on eight real meetings** (iteration 22 expected
+  it to be the mechanism — it is not; the gain is entirely **re-matching**), and **the sweep erases
+  candidate 55's 4.5 pp from the final transcript completely** — capped-and-swept equals
+  uncapped-and-swept to two decimals, while the 16-bound still costs the *live* transcript 5.30 pp.
+  See the N-convergence block.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -284,21 +293,24 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch (Python +40 in iteration 22; the Swift number is unchanged because
+**Test totals on the branch (Python +6 in iteration 23; the Swift number is unchanged because
 nothing under `macos/` was touched).** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
 → 158); Python **758 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
 → 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, → 662 with N-recal's 6,
 → 694 with N-tape's 32, → 703 with N-tape-wiring's 9,
 → 718 with N-tape-declaration's 15,
-**→ 758 with N-sweep's 40, iteration 22**) — the two
+→ 758 with N-sweep's 40,
+**→ 764 with N-convergence's 6, iteration 23**) — the two
 skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Suite wall clock **71.50 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
-evidence in the repo — the tape suite costs 3.6 s, the sweep suite 0.1 s). Per-file:
+Suite wall clock **78.34 s** (was 71.50 s; the accuracy harness costs **20.2 s** — 11 s before the
+sweep cadence — and is the only accuracy evidence in the repo; the tape suite costs 3.6 s, the
+sweep suite 0.1 s). Per-file:
 `test_live_pipeline_seams.py` **60**,
 `test_live_identity.py` **8**,
-`test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **21**,
+`test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **27** (21 → 27 with
+N-convergence),
 `test_live_identity_sweep.py` **40**,
 `test_live_tape.py` **37**, `test_live_api.py` **33**, `test_live_helper_failure.py` **12**,
 `test_live_provider_bundle.py` **28**,
@@ -982,18 +994,29 @@ python3 -m pytest tests/test_live_service_runtime.py tests/test_live_provider_bu
 python3 -m pytest tests/test_live_auth.py tests/test_live_api.py -q \
   -k 'view_authority or view_revocation or revokes_the_view'
 
-# --- N-gate: live speaker accuracy on production code, 21 nodes, ~11 s (iteration 16) ---------
-#     Fixture integrity + the two silence splits (16 parametrised) then five measured claims.
+# --- N-gate: live speaker accuracy on production code, 27 nodes, ~20 s (iterations 16 + 23) ----
+#     Fixture integrity + the two silence splits (16 parametrised), five measured live claims,
+#     then N-convergence's six (ADR-0002 gate B: the sweep cadence, applied and scored).
 python3 -m pytest tests/test_live_identity_accuracy.py -q
 # The numbers themselves, any configuration, without pytest -- this is how a future run
-# re-measures rather than re-derives. Configs are lru_cached, so each costs ~1.2 s once.
+# re-measures rather than re-derives. Configs are lru_cached, so each costs ~1.2 s once
+# (~3 s once a sweep_interval is passed: the sweep re-scores every retained unit in Python).
+# `sweep_interval` is meeting seconds and is only defined for policy='album'; passing it with
+# 'overwrite' RAISES on purpose, so "the sweep did not help" can never mean "there was no album".
 python3 -c "
 import sys; sys.path.insert(0,'tests'); sys.path.insert(0,'.')
 import live_identity_accuracy as H
-for p in ('album','overwrite'):
-    r = H.replay_all(policy=p)
-    print(p, round(H.mean_accuracy(r)*100,1), round(H.min_accuracy(r)*100,1))
+for tag, kw in (('album',{}), ('overwrite',{'policy':'overwrite'}),
+                ('swept',{'sweep_interval':60.0}), ('swept cap64',{'sweep_interval':60.0,'max_speakers':64})):
+    r = H.replay_all(**{'policy':'album', **kw})
+    print('%-12s final %.2f/%.2f  live %.2f  corr %d merges %d resid %d' % (
+        tag, H.mean_accuracy(r)*100, H.min_accuracy(r)*100, H.mean_live_accuracy(r)*100,
+        sum(x.corrections for x in r.values()), sum(x.merges for x in r.values()),
+        sum(x.residual_corrections for x in r.values())))
 "
+# Expect: album 93.44/92.18 · overwrite 72.0/55.7 · swept 99.26/98.48 · swept cap64 99.26/98.48,
+# merges 0 and residual 0 everywhere. `accuracy` is the transcript a reader ENDS with and
+# `live_accuracy` the one they read DURING the meeting; without a sweep the two are equal.
 
 # --- N-sweep: the retrospective sweep engine, 40 nodes, ~0.1 s (iteration 22). Pure; no host,
 #     no server, no fixture. The matcher extraction is proved behaviour-preserving by the
@@ -1556,6 +1579,15 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     retrospectively** while the births stay untouched. What a merge cannot buy back is the capacity
     itself: the 16-slot bound is still reached mid-meeting, so a voice arriving after saturation is
     still never labelled live. Measure the merge's share of the 4.5 pp before deciding what is left.
+    **ITERATION 23 MEASURED IT, AND RE-PRICED THE CANDIDATE.** The merge's share is **zero** — it
+    fires on none of the eight meetings, because a saturated capacity mints speakers from
+    sub-admission fragments that never earn the admitted bank a merge requires on both sides. The
+    **sweep's** share is **all of it**: capped-and-swept 99.26 % equals uncapped-and-swept 99.26 %,
+    so the 4.5 pp is gone from the *final* transcript entirely. What survives is the **live** cost,
+    now measured at **5.30 pp** (93.44 vs 98.74). So 55 is a **latency of labelling**, not a
+    permanent loss — an authorization for it is now a decision about what a reader sees *during* a
+    meeting, and should be weighed against wiring the sweep, which costs nothing more to authorize.
+    See the N-convergence block.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1918,7 +1950,66 @@ there is no cadence, no ledger on the live path, no transcript revision, no vers
 the album is never itself merged. The accuracy harness cannot yet answer ADR-0002's **convergence**
 half (gate B) because it has no sweep and no file oracle. Those are the next two steps, in that
 order — **measure the engine in the harness, then wire it** — because a sweep wired before it is
-measured is a transcript rewriter nobody has scored.
+measured is a transcript rewriter nobody has scored. *The first of those two is DONE in iteration 23
+and the engine is scored: **99.26 % / 98.48 %**, `residual_corrections` 0, merges 0. See
+N-convergence. Wiring it is now the unblocked step, and it starts from a measured engine.*
+
+**N-convergence — ADR-0002's GATE B IS ANSWERED ON PRODUCTION CODE, AND TWO EXPECTATIONS ARE
+REFUTED** `[iteration 23; `tests/` only — no product source, nothing wired, not gated, not merged,
+not deployed]`. Payload **2 files**, both under `tests/`: `live_identity_accuracy.py` gains a sweep
+cadence and `test_live_identity_accuracy.py` gains 6 nodes (21 → 27). Python **764 / 2 / 368** (+6,
++9 s). Iteration 22's own recommended next step — *"measure the engine before wiring it; a
+transcript rewriter nobody has scored is worse than no rewriter."*
+
+| configuration (8 LibriSpeech meetings, production code, ADR-0002 §7 thresholds) | mean | min |
+| --- | --- | --- |
+| **album + sweep, cap 16** (the transcript a reader ends with) | **99.26 %** | **98.48 %** |
+| album, cap 16 (the transcript a reader reads *during* the meeting) | 93.44 % | 92.18 % |
+| album + sweep, cap 64 | 99.26 % | 98.48 % |
+| album, cap 64 | 98.74 % | 96.34 % |
+| overwrite, cap 16 (the policy ADR-0002 replaced) | 72.0 % | 55.7 % |
+
+***What "whole-file" honestly means here, stated rather than dressed up.*** The file answer this
+converges *to* is **the same album engine run non-causally**, which is what the session-end sweep
+computes — and that is ADR-0002 step 4's own end state, not a stand-in for it. So the convergence
+half is true **by construction** and says nothing alone. What carries the weight is that both
+numbers are scored against **ground truth**: a rewriter that churned labels without improving them
+would show a large `rewritten_share` and a flat accuracy, and fails the node.
+***Four measured findings, two of which refute what iteration 22 expected.***
+1. **The sweep is worth +5.82 pp** and lands **above ADR-0002's own gate-A whole-file figure**
+   (98.5 %). It rewrites **4.2–7.7 %** of eligible speech, 10–19 corrections per 600 s meeting.
+2. **THE MERGE FIRES ZERO TIMES on all eight meetings — the gain is entirely re-matching.**
+   Iteration 22 landed the merge as candidate 55's retrospective cure and the expectation is wrong,
+   for a **structural** reason: a merge needs an *admitted* bank on both sides (N-sweep decision 4),
+   and the canonical speakers a saturated capacity mints are born from sub-admission fragments that
+   never earn one. Measured directly: the album ends a meeting holding **3–6** speakers of the 16
+   minted, only **2–3** of them banked, and the banked centroids sit at **0.19–0.43** against the
+   0.70 threshold — i.e. they are genuinely different voices. The node asserts `merges == 0` in
+   falsifiable form so a future parameter change re-opens the question instead of inheriting it.
+3. **THE SWEEP ERASES CANDIDATE 55's 4.5 pp FROM THE FINAL TRANSCRIPT ENTIRELY.** Capped-and-swept
+   **99.26** equals uncapped-and-swept **99.26** (|Δ| < 0.005), and capped-and-swept already beats
+   uncapped-**un**swept 98.74. The bound still costs the *live* transcript **5.30 pp**. So candidate
+   55 is re-priced, not closed: it is a **latency** of labelling, not a permanent loss of it — a
+   materially different thing to authorize a fix for, and it is what a reader watching live still
+   pays.
+4. **The cadence is nearly free of effect: 600 s gives 99.22 % against 60 s's 99.26 %.** The value
+   is in the *session-end* sweep, not in the pacing. `SWEEP_INTERVAL_SECONDS` 60 buys a reader
+   earlier corrections, not a better ending — worth knowing before the wiring step argues about it.
+***And the convergence property is asserted on real meetings, not just a built ledger:***
+`residual_corrections` — one extra sweep run *after* the applied session-end one — is **0 on every
+meeting**. The unit suite proves determinism over constructed evidence; this rules out the cadence
+failure it cannot see, two near-equal references trading a unit back and forth, each trade a
+visible transcript revision.
+***Red-before: three semantic reverts, each naming different nodes***, run and restored
+in-iteration (`/tmp/i23-redbefore`): never apply a sweep → **4 red**; run the sweep but never write
+the revision into the transcript → **3 red**; drop `ledger.apply` so the ledger keeps stale
+incumbents → **1 red** (the residual node alone, which is exactly what it is for).
+***What it does NOT do.*** Nothing is wired: the live path still has no ledger, no cadence and no
+transcript revision. The harness's ledger is the replay loop's own bookkeeping, and its durations
+are production's — taken from the intervals the encoder was asked to embed, the identical quantity
+`_intervals_duration` hands the album. The corpus limit is unchanged and now binds harder: clean
+read speech, no overlap, and `min_segment_samples` skips the sub-floor fragments a real room
+produces, so **99.26 % is the identity layer's ceiling on easy audio**, not a production forecast.
 
 **N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
 `docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the

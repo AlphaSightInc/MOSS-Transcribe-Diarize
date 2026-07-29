@@ -33,6 +33,26 @@ fixture is refused.
   in-span local diarization is assumed correct. ADR-0002 §7 carries the same caveat. These
   numbers bound the identity layer in isolation; a real conversational recording is still
   required before production sign-off.
+
+**The sweep, and what "whole-file" can honestly mean here** (added for ADR-0002 gate B).
+`sweep_interval` turns on step 3: every unit's vector is retained in a production
+`SweepLedger` as the live path commits it, and every `sweep_interval` seconds of *meeting*
+time the production `sweep()` re-matches all retained evidence against the album as it then
+stands. Corrections are applied to the transcript exactly as a caller would apply them, and
+one more sweep runs at session end -- ADR-0003 D3's "ADR-0002's final sweep runs at session
+end".
+
+The whole-file answer this converges *to* is the same album engine run non-causally over the
+whole meeting, which is what the final sweep computes. That is deliberate and it is stated
+rather than dressed up as an independent oracle: ADR-0002's step 4 unifies batch Tier B onto
+this same engine, so "the label every unit gets from the final album" *is* the file answer
+the design is heading for. It also means the convergence half is true by construction at
+session end, and therefore says nothing on its own. What carries the weight is the pair of
+numbers scored against **ground truth** -- `live_accuracy`, the label a reader saw when the
+span was committed, against `accuracy`, the label standing at the end -- plus
+`residual_corrections`, which is the one sweep run after the last applied one and must
+propose nothing. A rewriter that moved labels without moving the truth-scored number would
+show up as a large `rewritten_share` and a flat `accuracy`.
 """
 
 from __future__ import annotations
@@ -40,6 +60,7 @@ from __future__ import annotations
 import functools
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -54,6 +75,12 @@ from moss_transcribe_diarize.app.live_identity_album import (
     ALBUM_MIN_MATCH_MARGIN,
     ALBUM_MIN_MATCH_SCORE,
     FingerprintAlbum,
+)
+from moss_transcribe_diarize.app.live_identity_sweep import (
+    SWEEP_INTERVAL_SECONDS,
+    SWEEP_MERGE_THRESHOLD,
+    SweepLedger,
+    sweep,
 )
 from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
 from moss_transcribe_diarize.app.live_session import FrozenSpan, LiveIdentitySnapshot
@@ -133,13 +160,23 @@ class Meeting:
 
 @dataclass(frozen=True, slots=True)
 class ReplayResult:
+    """One meeting's replay. Without a sweep, `accuracy == live_accuracy` and the sweep
+    fields are zero, so every pre-sweep node keeps measuring exactly what it measured."""
+
     accuracy: float
+    live_accuracy: float
     canonical_speaker_count: int
+    final_speaker_count: int
     prepared_spans: int
     abstained_spans: int
     failed_spans: int
     labelled_units: int
     eligible_units: int
+    sweeps: int = 0
+    corrections: int = 0
+    merges: int = 0
+    residual_corrections: int = 0
+    rewritten_share: float = 0.0
 
 
 @functools.lru_cache(maxsize=None)
@@ -230,6 +267,8 @@ def replay(
     exemplars_per_speaker: int = ALBUM_EXEMPLARS_PER_SPEAKER,
     max_speakers: int = MAX_SPEAKERS,
     encoder: CachedEncoder | None = None,
+    sweep_interval: float | None = None,
+    merge_threshold: float = SWEEP_MERGE_THRESHOLD,
 ) -> ReplayResult:
     """Drive the production identity path over one meeting.
 
@@ -237,10 +276,25 @@ def replay(
     production code with `album=None`, which falls back to `_canonical_vectors` -- the
     latest-span replacement the album replaced. The old policy is still reachable, so the
     comparison needs no revert and no fork of the implementation.
+
+    `sweep_interval` adds step 3 on top, in seconds of meeting time. It is only defined for
+    `policy="album"`: a sweep re-matches retained evidence against *the album*, and the
+    overwrite policy has none. Refusing rather than silently sweeping against nothing keeps
+    "the sweep did not help here" from ever meaning "there was nothing to sweep against".
     """
 
     if policy not in ("album", "overwrite"):
         raise ValueError(f"unknown reference policy: {policy}")
+    album = (
+        FingerprintAlbum(
+            admission_seconds=admission_seconds,
+            exemplars_per_speaker=exemplars_per_speaker,
+        )
+        if policy == "album"
+        else None
+    )
+    if sweep_interval is not None and album is None:
+        raise ValueError("a sweep re-matches against the album; policy='overwrite' has none.")
 
     units = evidence_units(meeting)
     vector_index = meeting.vector_index
@@ -248,32 +302,58 @@ def replay(
     provider = WeSpeakerLiveEvidenceProvider(
         encoder=encoder,
         min_segment_samples=MIN_SEGMENT_SAMPLES,
-        album=(
-            FingerprintAlbum(
-                admission_seconds=admission_seconds,
-                exemplars_per_speaker=exemplars_per_speaker,
-            )
-            if policy == "album"
-            else None
-        ),
+        album=album,
     )
-    preparer = BoundedCausalIdentityPreparer(
-        config=LiveIdentityConfig(
-            max_speakers=max_speakers,
-            min_match_score=min_match_score,
-            min_match_margin=min_match_margin,
-        ),
-        evidence_provider=provider,
+    config = LiveIdentityConfig(
+        max_speakers=max_speakers,
+        min_match_score=min_match_score,
+        min_match_margin=min_match_margin,
     )
+    preparer = BoundedCausalIdentityPreparer(config=config, evidence_provider=provider)
 
     spans: dict[int, list[int]] = {}
     for index, pieces in enumerate(units):
         spans.setdefault(pieces[0].span, []).append(index)
 
     snapshot = LiveIdentitySnapshot(version=0, canonical_speakers=())
-    labels = np.full(len(units), -1, np.int64)
-    canonical_index: dict[str, int] = {}
     counts = {"prepared": 0, "abstain": 0, "failed": 0}
+    # The label a reader saw when the span committed, and the label standing now. They are the
+    # same list until a sweep moves one, which is the whole of what step 3 does.
+    live_canonical: list[str | None] = [None] * len(units)
+    final_canonical: list[str | None] = [None] * len(units)
+    unit_of: dict[tuple[int, str], int] = {}
+
+    ledger = SweepLedger() if sweep_interval is not None else None
+    sweeps = 0
+    corrections = 0
+    merged_pairs: set[tuple[str, str]] = set()
+    next_sweep_at = float(sweep_interval) if sweep_interval is not None else 0.0
+
+    def run_sweep(*, apply: bool) -> int:
+        """One production sweep. Returns how many corrections it proposed.
+
+        `apply=False` is the measurement-only call at the very end: a sweep that has already
+        been applied must find nothing left to do, and asking it is the only way to know.
+        """
+
+        nonlocal sweeps, corrections
+        revision = sweep(
+            ledger=ledger,
+            album=album,
+            config=config,
+            merge_threshold=merge_threshold,
+        )
+        if not apply:
+            return len(revision.corrections)
+        sweeps += 1
+        corrections += len(revision.corrections)
+        merged_pairs.update((item.kept, item.absorbed) for item in revision.merges)
+        for correction in revision.corrections:
+            final_canonical[unit_of[(correction.span_id, correction.local_speaker)]] = (
+                correction.canonical_speaker
+            )
+        ledger.apply(revision)
+        return len(revision.corrections)
 
     for span_id in sorted(spans):
         members = sorted(spans[span_id], key=lambda index: units[index][0].start)
@@ -284,6 +364,7 @@ def replay(
             continue
 
         label_of = {index: f"S{position + 1:02d}" for position, index in enumerate(members)}
+        unit_of.update({(span_id, label): index for index, label in label_of.items()})
         encoder.unit_of_start = {}
         encoder.vector_of_unit = {}
         segments: list[tuple[float, float, str]] = []
@@ -309,27 +390,85 @@ def replay(
             base_snapshot=snapshot,
         )
         counts[preparation.status] = counts.get(preparation.status, 0) + 1
-        if preparation.status != "prepared":
-            continue
-        diagnostics = dict(preparation.proposed_snapshot.diagnostics)
-        label_to_unit = {label: index for index, label in label_of.items()}
-        for assignment in diagnostics.get("assignments", "").split(","):
-            if "->" not in assignment:
-                continue
-            local, canonical = assignment.split("->", 1)
-            labels[label_to_unit[local]] = canonical_index.setdefault(canonical, len(canonical_index))
-        snapshot = preparation.proposed_snapshot
+        if preparation.status == "prepared":
+            diagnostics = dict(preparation.proposed_snapshot.diagnostics)
+            label_to_unit = {label: index for index, label in label_of.items()}
+            for assignment in diagnostics.get("assignments", "").split(","):
+                if "->" not in assignment:
+                    continue
+                local, canonical = assignment.split("->", 1)
+                live_canonical[label_to_unit[local]] = canonical
+                final_canonical[label_to_unit[local]] = canonical
+            snapshot = preparation.proposed_snapshot
+
+        if ledger is not None:
+            for index in members:
+                # The seconds production's own interval filter selected, taken from what the
+                # encoder was asked to embed -- the identical quantity `_intervals_duration`
+                # hands the album -- so the ledger's durations are the deployed path's, not a
+                # second derivation of them. A unit the evidence floor skipped was never
+                # embedded and has nothing a sweep could re-match.
+                intervals = encoder.intervals_seen.get(index)
+                if not intervals:
+                    continue
+                ledger.record(
+                    span_id=span_id,
+                    local_speaker=label_of[index],
+                    canonical_speaker=final_canonical[index],
+                    vector=meeting.vectors[vector_index[index]],
+                    duration_sec=sum(end - start for start, end in intervals),
+                )
+            if span_end >= next_sweep_at:
+                run_sweep(apply=True)
+                next_sweep_at = (int(span_end // sweep_interval) + 1) * float(sweep_interval)
+
+    residual = 0
+    if ledger is not None:
+        # ADR-0003 D3: the final sweep runs at session end. The extra unapplied sweep after it
+        # is the convergence claim asked out loud on real meetings -- applying a revision must
+        # leave nothing for the next sweep to correct.
+        run_sweep(apply=True)
+        residual = run_sweep(apply=False)
 
     eligible = meeting.rows[:, _ELIGIBLE] > 0
+    durations = meeting.rows[eligible, _DURATION]
+    rewritten = np.array(
+        [live_canonical[index] != final_canonical[index] for index in np.flatnonzero(eligible)],
+        dtype=bool,
+    )
+    live_labels, live_index = _label_array(live_canonical)
+    final_labels, final_index = _label_array(final_canonical)
     return ReplayResult(
-        accuracy=speaker_accuracy(meeting, labels),
-        canonical_speaker_count=len(canonical_index),
+        accuracy=speaker_accuracy(meeting, final_labels),
+        live_accuracy=speaker_accuracy(meeting, live_labels),
+        canonical_speaker_count=len(live_index),
+        final_speaker_count=len(final_index),
         prepared_spans=counts["prepared"],
         abstained_spans=counts["abstain"],
         failed_spans=counts["failed"],
-        labelled_units=int(np.count_nonzero(labels[eligible] >= 0)),
+        labelled_units=int(np.count_nonzero(final_labels[eligible] >= 0)),
         eligible_units=int(np.count_nonzero(eligible)),
+        sweeps=sweeps,
+        corrections=corrections,
+        merges=len(merged_pairs),
+        residual_corrections=residual,
+        rewritten_share=float(durations[rewritten].sum() / durations.sum()) if durations.size else 0.0,
     )
+
+
+def _label_array(canonicals: Sequence[str | None]) -> tuple[np.ndarray, dict[str, int]]:
+    """Canonical speaker names -> the dense integer labels `speaker_accuracy` scores.
+
+    Assigned in first-appearance order so the array is stable, and unlabelled units stay -1:
+    the scorer counts them against the meeting, which is what an unlabelled span costs a reader.
+    """
+
+    index: dict[str, int] = {}
+    labels = np.full(len(canonicals), -1, np.int64)
+    for position, canonical in enumerate(canonicals):
+        if canonical is not None:
+            labels[position] = index.setdefault(canonical, len(index))
+    return labels, index
 
 
 def speaker_accuracy(meeting: Meeting, labels: np.ndarray) -> float:
@@ -412,6 +551,8 @@ def replay_all(
     admission_seconds: float = ALBUM_ADMISSION_SECONDS,
     exemplars_per_speaker: int = ALBUM_EXEMPLARS_PER_SPEAKER,
     max_speakers: int = MAX_SPEAKERS,
+    sweep_interval: float | None = None,
+    merge_threshold: float = SWEEP_MERGE_THRESHOLD,
 ) -> dict[str, ReplayResult]:
     """Every meeting under one configuration. Cached: the suite pays each config once."""
 
@@ -424,6 +565,12 @@ def replay_all(
             admission_seconds=admission_seconds,
             exemplars_per_speaker=exemplars_per_speaker,
             max_speakers=max_speakers,
+            sweep_interval=sweep_interval,
+            merge_threshold=merge_threshold,
         )
         for name in MEETINGS
     }
+
+
+def mean_live_accuracy(results: dict[str, ReplayResult]) -> float:
+    return float(np.mean([result.live_accuracy for result in results.values()]))

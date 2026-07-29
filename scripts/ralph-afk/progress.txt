@@ -19997,3 +19997,145 @@ needs is the replay loop's own bookkeeping.  Only then wire the sweep onto the
 live path - a transcript rewriter nobody has scored is worse than no rewriter.
 Two numbers to produce while there: the sweep's effect on the album policy's
 93.4 %, and the merge's share of candidate 55's 4.5 pp.
+
+================================================================================
+RUN 20260729-025318 ITERATION 23 - THE SWEEP IS SCORED (ADR-0002 GATE B)
+================================================================================
+
+TARGET.  Iteration 22's own recommended next step, taken verbatim: "MEASURE THE
+ENGINE BEFORE WIRING IT - extend tests/live_identity_accuracy.py with a sweep
+cadence and a whole-file oracle, so the repo can answer ADR-0002's gate B on
+production code, the way iteration 16 answered gate A.  Only then wire the sweep
+onto the live path - a transcript rewriter nobody has scored is worse than no
+rewriter."  Phase N is open and authorized (prd.md's ADR-0002 supersession);
+this is step 3's measurement half and it needs no operator and no host.
+
+FILES TOUCHED - 2, BOTH UNDER tests/.  NO PRODUCT SOURCE, nothing under macos/,
+nothing under ops/, nothing wired.
+  tests/live_identity_accuracy.py       +177/-30   (sweep cadence + ledger)
+  tests/test_live_identity_accuracy.py  +6 nodes   (21 -> 27)
+
+VALIDATION.
+  python3 -m pytest tests/test_live_identity_accuracy.py -q   -> 27 passed, 20.15 s
+  PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+      -> 764 passed / 2 skipped / 368 subtests in 78.34 s   (was 758/2/368, 71.50 s)
+  The fence's re-measure recipe, run as written, prints exactly the table below.
+  Swift untouched (nothing under macos/), so 158 stands unre-run.
+
+THE NUMBERS.  Eight LibriSpeech meetings, production BoundedCausalIdentityPreparer
++ WeSpeakerLiveEvidenceProvider + FingerprintAlbum + live_identity_sweep, real
+encoder vectors replayed, ADR-0002 §7 thresholds (0.35 / 0.1, adm 1.0 s, k=10).
+
+  configuration                     mean      min     live-mean
+  album + sweep, cap 16            99.26 %   98.48 %    93.44 %
+  album,          cap 16           93.44 %   92.18 %    93.44 %
+  album + sweep, cap 64            99.26 %   98.48 %    98.74 %
+  album,          cap 64           98.74 %   96.34 %    98.74 %
+  overwrite,      cap 16           72.02 %   55.68 %    72.02 %
+
+  per meeting (60 s cadence): 11 sweeps, 10-19 corrections, 0 merges, 0 residual
+  corrections, 4.2-7.7 % of eligible speech rewritten, canonical count 16 -> 16.
+
+WHAT "WHOLE-FILE" MEANS HERE, DECIDED AND STATED RATHER THAN DRESSED UP.  The
+file answer the transcript converges TO is the same album engine run
+non-causally, which is precisely what the session-end sweep computes.  That is
+ADR-0002 step 4's own end state (batch Tier B unified onto this engine), not a
+stand-in for it - so it is the right target, and it also means the convergence
+half is true BY CONSTRUCTION and says nothing on its own.  The alternative
+considered and rejected was a hand-rolled agglomerative clusterer as an
+"independent" oracle: it would have been a second implementation issuing a
+second opinion, which is the exact hazard N-sweep decision 2 (one matcher, both
+paths) and this harness were built to rule out.  What carries the weight instead
+is that BOTH numbers are scored against GROUND TRUTH: `live_accuracy` is the
+label a reader saw when the span committed, `accuracy` the label standing at the
+end.  A rewriter that churned labels without improving them would show a large
+`rewritten_share` and a flat `accuracy`, and the node would fail.
+
+FOUR FINDINGS, TWO OF WHICH REFUTE WHAT ITERATION 22 EXPECTED.
+
+1. THE SWEEP IS WORTH +5.82 pp AND CLEARS ADR-0002's OWN WHOLE-FILE FIGURE.
+   99.26 % mean against the ADR's gate-A 98.5 %, and >= 98.48 % on every meeting,
+   from rewriting 4-8 % of eligible speech.  Step 3 is measured, not asserted.
+
+2. THE MERGE FIRES ZERO TIMES.  Iteration 22 landed it as candidate 55's
+   retrospective cure and named that expectation in context.md; it is wrong, for
+   a STRUCTURAL reason rather than an incidental one.  A merge requires an
+   ADMITTED exemplar bank on both sides (N-sweep decision 4), and the canonical
+   speakers a saturated capacity mints are born from sub-admission fragments that
+   never earn one.  Measured directly by instrumenting the album at session end:
+   of the 16 canonical speakers minted, the album ends holding only 3-6, of which
+   2-3 are banked; the banked centroids sit at 0.192 / 0.269 / 0.427 pairwise
+   maxima against the 0.70 merge threshold - i.e. they are genuinely different
+   voices and SHOULD NOT merge.  So every point of the gain is RE-MATCHING.
+   The node asserts merges == 0 in falsifiable form: if a parameter change ever
+   makes one fire, it fails and the finding is re-measured, not inherited.
+
+3. THE SWEEP ERASES CANDIDATE 55's 4.5 pp FROM THE FINAL TRANSCRIPT ENTIRELY.
+   Capped-and-swept 99.26 equals uncapped-and-swept 99.26 (|delta| < 0.005), and
+   capped-and-swept already beats uncapped-UNswept 98.74.  The 16-speaker bound
+   still costs the LIVE transcript 5.30 pp (93.44 vs 98.74).  Candidate 55 is
+   therefore RE-PRICED, not closed: it is a LATENCY of labelling, not a permanent
+   loss of it.  Authorizing a fix for it is now a decision about what a reader
+   sees DURING a meeting, and it should be weighed against wiring the sweep,
+   which is already authorized and costs no further permission.
+
+4. THE CADENCE IS NEARLY FREE OF EFFECT.  A 600 s interval (one mid-meeting sweep
+   plus the session-end one) gives 99.22 % against 60 s's 99.26 %.  The value is
+   in the SESSION-END sweep, not in the pacing.  SWEEP_INTERVAL_SECONDS 60 buys a
+   reader earlier corrections, not a better ending - worth knowing before the
+   wiring step argues about cadence cost against the GPU.
+
+AND THE CONVERGENCE PROPERTY IS ASSERTED ON REAL MEETINGS.  `residual_corrections`
+is one extra sweep run AFTER the applied session-end one, deliberately not
+applied; it is 0 on all eight.  test_live_identity_sweep already proves
+determinism over constructed evidence - what this adds is the cadence failure that
+suite cannot see: two near-equal references trading a unit back and forth, every
+trade a visible transcript revision a reader watches happen.
+
+RED-BEFORE - THREE SEMANTIC REVERTS, EACH NAMING DIFFERENT NODES, run and restored
+in-iteration (originals in /tmp/i23-redbefore, restored and re-verified green):
+  1  `apply = False` at the top of run_sweep (no sweep is ever applied)  -> 4 red
+       (converges / residual / closes-the-gap / gain-is-re-matching)
+  2  drop the write of corrections into final_canonical                 -> 3 red
+       (converges / closes-the-gap / gain-is-re-matching; residual stays green,
+        correctly - the LEDGER still converges, only the transcript does not)
+  3  drop `ledger.apply(revision)`                                      -> 1 red
+       (residual alone, which is exactly the node it is for)
+The two nodes no revert reddens are the integrity node (sweeping must not change
+what the live path wrote - green by construction, and that is the point of it)
+and the ValueError node.  Recorded rather than manufactured.
+
+ONE HARNESS FIDELITY CHOICE WORTH NAMING.  The ledger's durations are taken from
+the intervals the encoder was ASKED to embed, not from the fixture's duration
+column - the identical quantity `_intervals_duration` hands the album at
+live_provider_bundle.py:572.  So the retained evidence a sweep re-matches is the
+deployed path's own, and a unit the 0.5 s evidence floor skipped is absent from
+the ledger for the same reason it is absent from the album.
+
+WHAT THIS DOES NOT DO.  Nothing is wired.  The live path still has no ledger, no
+cadence, no transcript revision and no versioned rewrite; the album is still never
+itself merged.  No product source changed, so the branch's unmerged-source
+condition is exactly what it was (offline probes have not spoken for the deployed
+42abc5a since iteration 15 and still do not), and the deployed service is
+byte-for-byte the one every gate measured.  The corpus limit is unchanged and now
+binds harder: clean read speech, no overlap, no noise, and min_segment_samples
+skips the sub-floor fragments a real room produces - so 99.26 % is the identity
+layer's CEILING ON EASY AUDIO, not a production forecast.  ADR-0002 §7's own
+caveat and candidate 51's measured microphone limit both still stand in front of
+any production sign-off.
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  WIRE THE SWEEP (ADR-0002 step 3's other half), now that
+the engine is scored: a ledger fed from the live path where the album is already
+fed (live_provider_bundle._reconcile_committed_vectors is the one place that sees
+a committed assignment WITH its vector and duration), a cadence, and a versioned
+transcript revision the portal can show.  Three decisions it must take before the
+patch, each visible from here: (a) where the ledger lives, since the album lives
+in the evidence provider and the sweep needs both it and the session's transcript;
+(b) what a revision does to the album itself - a merge repeats every sweep until
+something merges the album, and finding 2 says no merge fires anyway, so this may
+be deferrable with evidence rather than by omission; (c) what the portal shows a
+reader when 4-8 % of the speech they have already read changes speaker, which is
+the "living document" ADR-0002 promises and the first user-visible consequence of
+any of this.  Finding 4 says the cadence itself can be generous.
