@@ -203,15 +203,15 @@ Phase M/P landing narratives it used to carry are in progress.txt under that pas
   no record and no commit; iteration 9 found the driver still running at minute 6 and let it finish,
   which is the only reason that F3 evidence exists. The driver is `nohup`'d on m4mbp **by design** —
   before concluding a host is idle, `ps -eo pid,etime,command | grep live-soak`.
-- **Candidate 55 — identity capacity saturates in the first minute** (iteration 12; **reproduced in
-  iteration 6's GREEN F1**). The 16-speaker bound is reached at t+45.5 s / t+51.8 s / **t+65.6 s**,
-  so a voice arriving later can never be labelled. Iteration 6 named its consumer exactly: **9 of the
-  16 slots were minted by one-word `Hi.` fragments** of microphone ambient noise. Degrades quality
-  without ending a session, so no gate sees it — and now demonstrably not even a passing one.
-  Tracked product source; **needs its own authorization**, and **Phase N does NOT subsume it** —
-  that was the hypothesis and iteration 16 measured it wrong (births are unchanged by design, so the
-  fragmentation survives the album; see the numbered entry). The `N1`/`N3` identifiers this line used
-  to cite were also retired in iteration 29's numbering repair.
+- **Candidate 55 — identity capacity saturates in the first minute — IS FIXED ON THE BRANCH AND NOT
+  YET ANYWHERE ELSE** `[iteration 21, Phase Q item Q1]`. The diagnosis stands unchanged (16-speaker
+  bound reached at t+45.5 s / t+51.8 s / t+65.6 s; 9 of 16 slots minted by one-word `Hi.` fragments
+  of microphone ambient noise; degrades quality without ending a session, so no gate saw it). What
+  changed is that the fix is written, measured and covered: **canonical speakers 16 -> 2-7 across
+  eight fixture meetings, live accuracy 93.4 % -> 99.1 %, and 3.56 -> 3.00 with accuracy untouched
+  on nine real interview clips.** Read candidate 69 for the rule, the seam and every number; it is
+  the only place they live. **Not merged, not deployed** — F2's and F3's 16-canonical measurements
+  still describe the running service.
 - **Phase N's sequencing question is CLOSED by the operator, not by the loop** (`0456177`,
   iteration 15): *"Phase N remains authorized. Take it in ADR-0002's shape, not the sixth
   amendment's."* The evidence had already emptied the gate's reason — the sixth amendment sequenced
@@ -315,7 +315,9 @@ Phase M/P landing narratives it used to carry are in progress.txt under that pas
   Phase Q's four items (candidates 69-72 in the Phase Q section: the birth floor at 1.0 s of
   embedded speech, the RTF gate *definition*, the cadence fix with its enforcing node, and the Mac
   client's `stop`), their coverage gap, their gate (full Swift/Python → F1 and F3 → **one** merge →
-  push → redeploy).
+  push → redeploy). **Q1 (candidate 69) LANDED ON THE BRANCH IN ITERATION 21** — measured, covered
+  by nine red-before nodes, Python green at 809. **Q2, Q3 and Q4 are open**, and Q3/Q4 are the two
+  that touch `macos/` and therefore re-open the Swift half of the gate.
   **STILL needs an authorization:** candidates **58**, **66**, and **Phase N step 4** — which prd.md
   now names *"out of scope"* for Phase Q in as many words, *"worth its own authorization later"*, so
   the split iteration 18 recorded is now the operator's own wording. **Candidate 65 is WITHDRAWN**,
@@ -395,9 +397,12 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch, measured whole at Phase N's gate (a) and re-measured on the merged tree
-at the N8 merge - not carried forward.** Swift **158 passed / 0 failed**, 0 warnings on a fresh
-scratch. Python **801 passed / 2 skipped / 368 subtests** in ~76 s; the two skips are the
+**Test totals on the branch. Python re-measured whole at iteration 21 (Q1): 809 passed / 2 skipped /
+368 subtests in ~74 s** (801 -> 809: five preparer nodes and three provider nodes for the birth
+floor; the accuracy harness's five candidate-55 nodes were re-stated, not added). **Swift is still
+the Phase N figure — 158 passed / 0 failed, 0 warnings on a fresh scratch — and is unre-run because
+nothing under `macos/` has changed since; Q3 and Q4 will change that and must re-run it.** The two
+skips are the
 pre-existing `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract and are
 **never** Darwin skips. The growth chain (604 -> 801 across Phase P and Phase N steps 1-3) and the
 per-file node counts are retired to progress.txt with the fourth compaction - regenerate them with
@@ -458,16 +463,17 @@ it had died at t+31.5 s on `77e0014`.
 - ***An offline probe speaks for the deployed service only while
   `git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty*** — compare against
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
-  **STILL TRUE AT ITERATION 20 BUT THE DIFF IS NO LONGER EMPTY, AND THE DISTINCTION MATTERS.**
-  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` now lists **nine** paths — `AGENTS.md`,
-  `docs/design-streaming-diarization.md` and seven under `prototypes/streaming-diarization/` — all of
-  them the operator's own commits `44ed003` and `b6b6c5c` at 10:07 and 10:14 on 2026-07-29. **None is
-  product source, a test, or `ops/`**, and no runtime reads any of them, so the rule holds as written
-  (*no product source, no test, no `ops/`* — it was never about docs, and it is not about a bench
-  either). **Re-run the diff rather than trusting this sentence:** the moment a path under
-  `moss_transcribe_diarize/`, `tests/` or `ops/` appears, every offline probe stops speaking for the
-  deployed service. It was **empty** from run `20260729-025318` iteration 29 until iteration 20 of
-  this run. It was false from iteration 15 (when Phase N steps 1-3
+  **AS OF ITERATION 21 THE INVARIANT IS BROKEN, DELIBERATELY, AND STAYS BROKEN UNTIL PHASE Q's
+  REDEPLOY.** Q1 put `moss_transcribe_diarize/app/live_identity.py` and `live_provider_bundle.py` on
+  the branch, so `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` lists product source
+  and **no offline probe speaks for the deployed service any more** — exactly the state Phase N
+  steps 1-3 held from iteration 15 to iteration 28. A measurement about the *running* service must
+  come from the running service until gate step (c) of Phase Q lands. (Iteration 20's reading, now
+  superseded: the diff listed nine paths — `AGENTS.md`, `docs/design-streaming-diarization.md` and
+  seven under `prototypes/streaming-diarization/` from the operator's `44ed003` and `b6b6c5c` — none
+  of them product source, a test or `ops/`, so the rule held as written; it was never about docs and
+  it is not about a bench either.) **Re-run the diff rather than trusting this sentence.**
+  It was **empty** from run `20260729-025318` iteration 29 until iteration 20 of this run. It was false from iteration 15 (when Phase N steps 1-3
   put tracked product source on the branch) to iteration 28 — and note that **the merge alone did
   not restore it**: merging moves `main`, while the rule compares against the **deployed** SHA, which
   only moved at gate step (c). (It was true from iteration 5 to iteration 14,
@@ -1121,9 +1127,36 @@ for tag, kw in (('album',{}), ('overwrite',{'policy':'overwrite'}),
         sum(x.corrections for x in r.values()), sum(x.merges for x in r.values()),
         sum(x.residual_corrections for x in r.values())))
 "
-# Expect: album 93.44/92.18 · overwrite 72.0/55.7 · swept 99.26/98.48 · swept cap64 99.26/98.48,
-# merges 0 and residual 0 everywhere. `accuracy` is the transcript a reader ENDS with and
-# `live_accuracy` the one they read DURING the meeting; without a sweep the two are equal.
+# Expect SINCE ITERATION 21 (Q1's birth floor): album 99.13/97.37 · overwrite 72.0/55.7 ·
+# swept 99.65/99.10 · swept cap64 99.65/99.10, merges 0 and residual 0 everywhere.
+# `accuracy` is the transcript a reader ENDS with and `live_accuracy` the one they read DURING
+# the meeting; without a sweep the two are equal. The 16-speaker cap NO LONGER BINDS, so
+# cap64 == cap16 on every field -- before Q1 it was worth +4.5 pp and the pre-Q1 expectation
+# was album 93.44/92.18 · swept 99.26/98.48.
+
+# --- Q1 birth floor: the two semantic reverts that prove the nine nodes red-before. Each is a
+#     pytest plugin in /tmp, run with `-p <name>`; neither touches the tree. -------------------
+#   /tmp/redbefore_plugin.py   (6 red in accuracy + provider bundle)
+#     from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
+#     del WeSpeakerLiveEvidenceProvider.birth_deferrals
+#   /tmp/redbefore2_plugin.py  (3 red in test_live_identity)
+#     from moss_transcribe_diarize.app.live_identity import BoundedCausalIdentityPreparer
+#     BoundedCausalIdentityPreparer._deferred_births = lambda self, *, span, candidates: {}
+PYTHONPATH=/tmp python3 -m pytest tests/test_live_identity_accuracy.py \
+  tests/test_live_provider_bundle.py -q -p redbefore_plugin    # expect 6 failed, 60 passed
+PYTHONPATH=/tmp python3 -m pytest tests/test_live_identity.py -q -p redbefore2_plugin
+                                                               # expect 3 failed, 10 passed
+# Two nodes stay GREEN under both on purpose: a short span is still LABELLED (matching is not
+# enrollment) and a provider without the capability births exactly as before.
+
+# --- Q1 on real conversational audio. The bench is a RE-IMPLEMENTATION sharing only the
+#     production embedder, so the production change does NOT flow through it -- the floor is
+#     `simulate(birth_floor=)`. Fully cached: ~0.5 s. Needs the bench's own venv and corpora
+#     (see prototypes/streaming-diarization/README.md); models and data are local-only. --------
+(cd prototypes/streaming-diarization && .venv/bin/python proto_real_replay.py)
+# Expect the operator's own aggregate unchanged -- grid-best/album+sweep mean 95.2 / min 87.4 --
+# and the Q1 block below it: canonical speakers 3.56 -> 3.00 mean, worst clip 5 -> 4, accuracy
+# identical on every clip. That the accuracy does NOT move is the finding, not a null result.
 
 # --- N-sweep: the retrospective sweep engine, 40 nodes, ~0.1 s (iteration 22). Pure; no host,
 #     no server, no fixture. The matcher extraction is proved behaviour-preserving by the
@@ -2545,13 +2578,66 @@ Read `scripts/ralph-afk/authorization-request-55-60-65.md` **with its iteration-
 before starting, and do NOT re-argue 55's mechanism from the record: it was corrected twice and is
 now measured on the deployed service.
 
-69. **Q1 - the birth floor, at the album's admission (1.0 s of embedded speech).** The operator took
-    option 1 on the supervisor's recommendation. Record the reasoning before the patch. A new
-    speaker with a short first turn is **deferred, not lost** - the span publishes under `S00` (J2),
-    the ledger retains it, a sweep relabels it - and that is only acceptable because a sweep
-    demonstrably publishes. ADR-0002's "birth semantics unchanged" is read as constraining the
-    album, not as asserting birth was correct; if evidence says otherwise, stop and say so.
-    Measured wrong, do not re-propose: raising `max_speakers`; lowering `min_segment_samples`.
+69. **Q1 - the birth floor, at the album's admission (1.0 s of embedded speech).** `[LANDED ON THE
+    BRANCH - iteration 21. NOT merged, NOT deployed.]` The operator took option 1 on the
+    supervisor's recommendation.
+    **The rule, as implemented: a birth must be enrollable.** Evidence too short to become a
+    *reference* is too short to create the speaker that would hold one. That is ADR-0002's
+    matching-is-not-enrollment asymmetry applied to the one path it never covered - the album made
+    a fragment unable to *overwrite* a prototype and left it able to *mint* one.
+    **Where the threshold lives, and why not in this module.** `BoundedCausalIdentityPreparer` owns
+    what a deferral *means*; the number is the album's own `admission_seconds`, read off the album
+    through a new optional provider capability `birth_deferrals(span_id, candidates)` asked for by
+    name exactly as `take_identity_revision`/`finalize_identity` are. So the birth floor and the
+    enrollment floor are **one number by construction** - a manifest that states
+    `album_admission_seconds` moves both, and there is no second constant to drift. **A stack with
+    no album defers nothing**: that is `NoLiveSpeakerEvidence`, every test double, and the
+    `policy="overwrite"` measurement baseline, which must keep measuring the album rather than the
+    floor.
+    **Per speaker, not per span.** A deferred local publishes `UNATTRIBUTED_SPEAKER` while a matched
+    local in the same span keeps its label; an abstain would drop a label the session had every
+    reason to write. `revise_labels` already exempts `S00` from its collision rule, and the
+    coordinator already carries `local_speakers` on the *prepared* path, so a deferred unit stays
+    addressable by a later sweep with no further change. Diagnostics gain
+    `deferred_births=S02=0.500`, seconds included, so a voice the encoder was never asked about
+    (0.000) is distinguishable from one that missed admission by a tenth.
+    **MEASURED, production objects, `tests/live_identity_accuracy.py`** (control = the capability
+    removed, which reproduces every pre-patch digit): canonical speakers **16 on all eight meetings
+    -> 2,2,4,3,4,4,7,6** for true k of 2,2,3,3,4,4,6,6; live accuracy **93.44 % -> 99.13 %**; swept
+    **99.26 % -> 99.65 %**; `policy="overwrite"` unchanged at **72.02 %** (the control that proves
+    the floor is album-scoped). **The 16-speaker cap stops binding entirely** - `max_speakers=64`
+    is now byte-identical to 16 on every meeting.
+    **MEASURED ON REAL CONVERSATIONAL AUDIO** (`prototypes/streaming-diarization/proto_real_replay.py`
+    `--` bench extended with `simulate(birth_floor=)`; 9 golden interview clips): canonical speakers
+    **3.56 -> 3.00 mean, worst clip 5 -> 4**, and album+sweep accuracy **95.2 % mean / 87.4 % worst
+    clip, identical on every clip**. The "a 1.0 s floor starves labelling on messy turns" risk did
+    **not** materialise. Two limits, both conservative: the bench cannot represent the
+    never-embedded case (so 3.56->3.00 is a **lower bound**), and 60-180 s clips never approach the
+    16-speaker cap, which is why the *accuracy* gain the LibriSpeech 600 s meetings show cannot
+    appear there. Residual over-birth survives on 4 of 9 clips - the floor bounds the *unenrollable*
+    births, not all of them.
+    **The amendment's first consequence needs one correction, and it is not cosmetic.** "Deferred,
+    not lost - the ledger retains it, a sweep relabels it" is true only **above the 0.5 s evidence
+    floor**, where a vector exists to retain. Below it nothing was embedded, nothing reaches the
+    ledger, and no sweep can ever relabel those words: they publish `S00` and stay `S00`. That is
+    the correct outcome - there is no evidence to identify with - but it is *not identifiable*,
+    not *deferred*. Say it that way.
+    **Second consequence, checked and found sound:** no evidence contradicts reading ADR-0002's
+    "birth semantics unchanged" as constraining the album. `live_identity_album`'s own docstring
+    says the provisional tier exists *because* "a speaker born from a 0.6 s span would have no
+    reference at all" - i.e. the album was written to compensate for this defect, not to bless it.
+    **A live consequence of that:** with the floor at admission, every birth now carries an
+    *admitted* exemplar from its first span, so `PROVISIONAL` is unreachable on the live path. Left
+    in place deliberately as the guard that keeps the two numbers safe if a deployment ever
+    decouples them - see candidate 74.
+    Measured wrong, do not re-propose: raising `max_speakers`; lowering `min_segment_samples`. And
+    now measured wrong too: the **weaker "any embedded speech at all" floor** (admission 0.01) gives
+    canonical **6.25 mean against 4.00** and lower accuracy - option 1 beats it on the corpus, which
+    is the choice the operator made without this number.
+    **Coverage (Q5's first half, done):** nine red-before/green-after nodes proved by two semantic
+    reverts - `del WeSpeakerLiveEvidenceProvider.birth_deferrals` (6 red) and
+    `_deferred_births -> {}` (3 red). Two further nodes deliberately stay green under both reverts:
+    a short span is still *labelled*, and a provider without the capability births as before.
 70. **Q2 - the decoder-RTF gate definition (candidate 64).** State a minimum span duration below
     which RTF is not a meaningful ratio, **derive** it from measurement rather than choosing it to
     pass, and **always report the excluded count** beside the p95. A silent exclusion does not
@@ -2570,6 +2656,31 @@ now measured on the deployed service.
     can be minted from a span with no embedded evidence. Then the full gate, the accuracy harness
     showing the birth floor's effect on canonical count, **F1 and F3 re-run**, one merge
     (`expected_main` is `7a4f59c` -> advance in-script), push, redeploy.
+    **Q1's half is done (iteration 21):** the birth node exists, nine nodes are red-before by
+    semantic revert, Python is **809 passed / 2 skipped / 368 subtests** (was 801), and the harness
+    number the gate asks for is recorded in candidate 69. Q2/Q3/Q4 still owe theirs, and the Swift
+    suite has not been re-run because nothing under `macos/` has changed yet - Q3 and Q4 both will.
+74. **`PROVISIONAL` is unreachable on the live path now that Q1 has landed** `[open, no
+    authorization needed to decide, product change would need one]`. The album's second tier holds
+    exactly one sub-admission observation *while a speaker has no exemplars*; with the birth floor
+    at admission, every born speaker is admitted from its first span, so the branch cannot be
+    reached. Left in place this iteration - it is the guard that makes the coupling safe if a
+    deployment ever states a birth floor below `album_admission_seconds`, and removing it is a
+    second change. **Decide before Phase Q's merge whether it is defence-in-depth or dead code**,
+    and if it stays, say in `live_identity_album`'s docstring that it is now reachable only through
+    a decoupled configuration. `tests/test_live_identity_album.py` still covers it directly, so the
+    branch is tested even though the live path no longer reaches it.
+75. **A manifest whose span cap is shorter than `album_admission_seconds` can never birth a
+    speaker** `[open, found in iteration 21, no gate sees it]`. The two numbers are unrelated in
+    the admission checks, so a bundle declaring `hard_cap_samples` 160 (0.01 s) and the default
+    1.0 s admission produces a live session that publishes every word under `S00` and reports
+    nothing wrong. It was found because exactly that configuration is what
+    `tests/test_live_provider_bundle.py`'s shared `_manifest` declares - two nodes flipped to
+    `S00` - and it was answered there by making the manifest state `album_admission_seconds`
+    0.005, which is the honest fix for a test bundle and **not** a fix for the hazard. The
+    deployed manifest is safe (2.5 s cap against a 1.0 s admission) and this is therefore not
+    urgent, but the guard belongs in `_validate_bundle` beside the existing
+    `min_segment_samples` check. Product source; needs an authorization.
 
 Out of scope, worth its own authorization later: ADR-0002 step 4, batch unification - the album
 engine measured **100 %** on the batch path where the shipped resolver scores **80 %**, and batch's

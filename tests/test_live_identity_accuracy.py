@@ -31,6 +31,7 @@ from live_identity_accuracy import (
     min_accuracy,
     replay,
     replay_all,
+    true_speaker_count,
 )
 
 
@@ -91,25 +92,40 @@ def test_the_album_beats_the_latest_span_overwrite_it_replaced():
     assert mean_accuracy(album) - mean_accuracy(overwrite) >= 0.15
 
 
-def test_accumulation_not_the_admission_floor_is_what_beats_overwrite():
-    """Measured: the top-k duration-weighted bank does the work; the duration gate is spare.
+def test_the_admission_gate_does_two_separable_jobs_and_this_measures_both():
+    """Matching is the bank's job; birth is the gate's. Neither substitutes for the other.
 
-    The superseded sixth amendment's central instruction was to raise an enrollment floor.
-    Measurement refutes it as the load-bearing part: dropping admission to effectively zero
-    costs nothing, because a full bank *is* a duration gate -- `_admit` evicts the shortest
-    exemplar -- while collapsing the bank to a single exemplar gives most of the overwrite
-    defect back. The admission gate still earns its place on the birth path (it decides what
-    is provisional), which is why it is kept; it is simply not what moves this number.
+    Until candidate 55's fix this node asserted the admission gate was *spare* -- true while
+    it governed only enrollment, because a full bank is itself a duration filter (`_admit`
+    evicts the shortest). Q1 gave it the second job, and the two are measured apart here:
+
+    * **matching** -- collapse the bank to one exemplar and most of the overwrite defect comes
+      back (0.892 against 0.991 banked, over 0.720 for overwrite). Admission does not rescue
+      that; accumulation does.
+    * **birth** -- drop admission to 0.01 s, which is the weaker "any embedded speech at all"
+      floor the ninth amendment records as *measured wrong*, and the mean canonical speaker
+      count rises 4.00 -> 6.25 for meetings holding 2-6 voices, costing 0.3 pp of accuracy.
+      The bank cannot rescue that either: a speaker that should never have existed has its
+      own bank.
+
+    One claim this node used to make is now **false and is deliberately not restated**: that
+    the bank's gain over a single exemplar exceeds the album's own gain over overwrite. The
+    birth floor lifts the *weakest* reference policy the most -- single-exemplar 0.792 ->
+    0.892 against banked 0.934 -> 0.991 -- because a noisy reference is exactly what spurious
+    births damage. The ordering flipped; the two jobs are what survive it.
     """
 
     banked = replay_all(policy="album")
-    no_floor = replay_all(policy="album", admission_seconds=0.01)
+    weak_floor = replay_all(policy="album", admission_seconds=0.01)
     single = replay_all(policy="album", exemplars_per_speaker=1)
     overwrite = replay_all(policy="overwrite")
 
-    assert abs(mean_accuracy(no_floor) - mean_accuracy(banked)) < 0.02
-    assert mean_accuracy(single) < mean_accuracy(banked) - 0.10
-    assert mean_accuracy(banked) - mean_accuracy(single) > mean_accuracy(single) - mean_accuracy(overwrite)
+    assert mean_accuracy(overwrite) < mean_accuracy(single) < mean_accuracy(banked) - 0.09
+
+    born = [banked[name].canonical_speaker_count for name in MEETINGS]
+    weakly_born = [weak_floor[name].canonical_speaker_count for name in MEETINGS]
+    assert sum(weakly_born) > sum(born) * 1.4
+    assert mean_accuracy(weak_floor) < mean_accuracy(banked)
 
 
 def test_the_deployed_matcher_thresholds_cost_the_album_its_bar():
@@ -141,27 +157,32 @@ def test_the_deployed_matcher_thresholds_cost_the_album_its_bar():
     assert mean_accuracy(adr) - mean_accuracy(deployed) >= 0.10
 
 
-def test_the_16_speaker_bound_is_what_holds_the_album_below_the_adrs_own_number():
-    """Candidate 55, measured offline and deterministically for the first time.
+def test_the_birth_floor_ends_the_capacity_saturation_candidate_55_priced():
+    """Candidate 55, before and after, on the code that ships.
 
-    Production fragments identities far more than ADR-0002's prototype did: every meeting
-    exhausts `max_identity_speakers` 16 for 2-6 real voices, and from then on an unmatched
-    voice can only abstain. Lift the bound and the album lands on the ADR's own figure --
-    which is also the strongest available check that this harness measures what the ADR
-    measured, since overwrite lands on *its* figure at the same time.
+    **Before Q1** every one of these meetings minted exactly 16 canonical speakers -- the
+    whole of `max_identity_speakers` -- for 2 to 6 real voices, and once saturated an
+    unmatched voice could only abstain. **After**, the count tracks the meeting: never more
+    than one canonical above the truth, and the 16-speaker bound stops binding altogether.
 
-    Nothing here proposes shipping a different bound; it prices the one that ships.
+    The last assertion is the one that would notice a regression: lifting the bound to 64
+    changes *nothing at all* -- every meeting's live accuracy, swept accuracy and canonical
+    count are identical -- which can only be true while no meeting is reaching it. It also
+    prices the bound honestly for the first time, because the bound was never the defect; the
+    births that filled it were.
     """
 
     capped = replay_all(policy="album")
     uncapped = replay_all(policy="album", max_speakers=64)
     uncapped_overwrite = replay_all(policy="overwrite", max_speakers=64)
 
-    assert mean_accuracy(uncapped) - mean_accuracy(capped) >= 0.03
-    assert mean_accuracy(uncapped) >= 0.97  # ADR-0002 gate A: 98.5 % mean
     assert mean_accuracy(uncapped_overwrite) <= 0.70  # ADR-0002 gate A: 66.4 % mean
     for name in MEETINGS:
-        assert capped[name].canonical_speaker_count == 16, name
+        voices = true_speaker_count(load_meeting(name))
+        assert voices <= capped[name].canonical_speaker_count <= voices + 1, name
+        assert capped[name].canonical_speaker_count == uncapped[name].canonical_speaker_count, name
+        assert capped[name].accuracy == uncapped[name].accuracy, name
+        assert capped[name].live_accuracy == uncapped[name].live_accuracy, name
 
 
 def test_the_retrospective_sweep_is_invisible_to_the_live_path():
@@ -195,17 +216,27 @@ def test_the_swept_transcript_converges_on_adr_0002s_whole_file_accuracy():
     see the harness docstring), so what this node actually proves is that converging there is
     worth something: both numbers are scored against ground truth, so a rewriter that churned
     labels without improving them would fail here rather than pass.
+
+    **Re-stated after candidate 55's birth floor, and the change is the finding.** Before Q1
+    the sweep carried 6.3 pp -- it was recovering the units a saturated capacity had stranded,
+    and it improved every meeting. Now the live path strands almost nothing, so the sweep
+    carries 0.5 pp and two of the eight meetings have nothing left to correct. The bar the ADR
+    states is on the *final* number and is unchanged and still met; what moved is how much of
+    it the reader already had while the meeting was running, which is the direction the fix
+    was for. The per-meeting assertion is therefore "never worse", not "always better": a
+    sweep that found nothing on an already-correct meeting is the success case, and one that
+    made a meeting worse is the failure this still catches.
     """
 
     swept = replay_all(policy="album", sweep_interval=SWEEP_INTERVAL_SECONDS)
 
     for name in MEETINGS:
         result = swept[name]
-        assert result.accuracy > result.live_accuracy, name
-        assert result.corrections > 0, name
+        assert result.accuracy >= result.live_accuracy, name
+    assert sum(1 for name in MEETINGS if swept[name].corrections > 0) >= len(MEETINGS) - 2
     assert min_accuracy(swept) >= 0.97
     assert mean_accuracy(swept) >= 0.98  # ADR-0002 gate A's own whole-file figure: 98.5 %
-    assert mean_accuracy(swept) - mean_live_accuracy(swept) >= 0.04
+    assert mean_accuracy(swept) > mean_live_accuracy(swept)
 
 
 def test_applying_a_revision_leaves_nothing_for_the_next_sweep_to_correct():
@@ -225,38 +256,44 @@ def test_applying_a_revision_leaves_nothing_for_the_next_sweep_to_correct():
         assert swept[name].residual_corrections == 0, name
 
 
-def test_the_sweep_closes_the_gap_the_16_speaker_bound_opens():
-    """Candidate 55 re-priced against the finished design: the bound costs the reader nothing.
+def test_the_birth_floor_gives_the_live_reader_what_the_sweep_used_to_have_to_recover():
+    """What Q1 bought, in the one unit that matters: the transcript during the meeting.
 
-    Measured in iteration 16, `max_identity_speakers` 16 costs the *live* transcript 4.5 pp,
-    which is the whole of the distance between production and ADR-0002's number. Measured
-    here, it costs the *swept* transcript nothing at all -- capped and uncapped land on the
-    same figure -- because the sweep re-matches the units a saturated capacity stranded.
+    Iteration 16 priced the saturated capacity at 4.5 pp of the *live* transcript and the
+    sweep was what recovered it -- correct, but a reader had to wait up to a cadence for a
+    label the system could have written immediately. With births gated on evidence the album
+    would enrol, the unswept live number lands within 0.2 pp of the old *swept* number
+    (0.9913 against 0.9926), and the sweep's remaining work is half a point.
 
-    That does not close candidate 55. A voice arriving after saturation is still unlabelled
-    for a reader watching live, and this corpus is read speech with a 0.5 s evidence floor.
-    It does say the defect is a *latency* of labelling rather than a permanent loss of it,
-    which is a materially different thing to authorize a fix for.
+    Asserted as relations between the runs rather than as literals: the corpus is regenerable
+    and the encoder is pinned, so what has to stay true is the ordering, not the digits. The
+    upper bound on the sweep's remaining gain is not a ceiling on quality -- it is the claim
+    that the live path is no longer leaving the sweep a pile of stranded units, and it fails
+    if a regression ever puts them back.
     """
 
-    capped = replay_all(policy="album", sweep_interval=SWEEP_INTERVAL_SECONDS)
-    uncapped = replay_all(policy="album", sweep_interval=SWEEP_INTERVAL_SECONDS, max_speakers=64)
-    uncapped_live = replay_all(policy="album", max_speakers=64)
+    live_now = replay_all(policy="album")
+    swept_now = replay_all(policy="album", sweep_interval=SWEEP_INTERVAL_SECONDS)
 
-    assert mean_accuracy(capped) >= mean_accuracy(uncapped_live)
-    assert abs(mean_accuracy(capped) - mean_accuracy(uncapped)) < 0.005
-    assert mean_live_accuracy(uncapped) - mean_live_accuracy(capped) >= 0.03
+    # The live path alone now reaches ADR-0002's whole-file gate, which before Q1 only the
+    # swept transcript did (live 0.928 -> 0.991, swept 0.993 -> 0.997).
+    assert mean_live_accuracy(swept_now) >= 0.98
+    assert mean_live_accuracy(swept_now) == mean_accuracy(live_now)
+    assert 0.0 < mean_accuracy(swept_now) - mean_live_accuracy(swept_now) < 0.02
 
 
 def test_the_gain_is_re_matching_and_not_a_single_merge():
     """The merge does not fire on this corpus, and the number says so out loud.
 
     Iteration 22 landed the merge expecting it to heal candidate 55's fragmentation. It does
-    not, here, and the reason is structural rather than incidental: a merge needs an *admitted*
-    exemplar bank on both sides, and the canonical speakers a saturated capacity mints are born
-    from sub-admission fragments that never earn one. The banked speakers, meanwhile, are
-    genuinely different voices -- their centroids sit at 0.19-0.43, nowhere near the 0.70
-    threshold.
+    not, here, and the reason has changed with candidate 55's fix while the answer has not.
+    *Before Q1* a merge was structurally unreachable: it needs an **admitted** exemplar bank on
+    both sides, and the canonical speakers a saturated capacity minted were born from
+    sub-admission fragments that never earned one. *After Q1* every birth carries an admitted
+    exemplar by construction -- so a merge is now eligible on every pair and still never fires,
+    because the speakers that remain are genuinely different voices whose centroids sit
+    nowhere near the 0.70 threshold. The claim is the stronger one now: not "it could not",
+    but "it could and declined".
 
     So every point of the gain above is re-matching. The node is kept in this falsifiable form
     on purpose: if a parameter change ever makes a merge fire on this corpus, this fails and
@@ -267,7 +304,9 @@ def test_the_gain_is_re_matching_and_not_a_single_merge():
 
     for name in MEETINGS:
         assert swept[name].merges == 0, name
-        assert 0.0 < swept[name].rewritten_share < 0.20, name
+        assert 0.0 <= swept[name].rewritten_share < 0.20, name
+    # A sweep that rewrote nothing anywhere would pass the loop above while proving nothing.
+    assert sum(swept[name].rewritten_share for name in MEETINGS) > 0.0
 
 
 def test_a_sweep_needs_an_album_to_re_match_against():

@@ -62,6 +62,24 @@ LiveTranscribe corpora). Aggregate at grid-best (score 0.35, margin 0.1, adm 1.0
   end-of-session pass is the correct design and the bench now mirrors it. (2) my
   merge-false-positive hypothesis was cleanly falsified by measurement (all variants
   identical) before it could become a steering error. Prototype-first caught both.
+- **Q1 birth floor (candidate 55) costs real audio nothing and buys it a speaker
+  count** — `proto_real_replay.py`, `simulate(birth_floor=admission)`, 9 golden clips
+  at grid-best 0.35/0.1/1.0. Canonical speakers minted **3.56 → 3.00 mean**, worst clip
+  **5 → 4**, on clips holding K=2-3 voices; album+sweep accuracy is **95.2 % mean /
+  87.4 % worst clip either way, identical on every clip to one decimal**. So the floor
+  removes speakers a reader should never have seen without removing a single correct
+  label, and the "a 1.0 s floor starves labelling on messy conversational turns" risk
+  did not materialise: no clip dropped to zero births and no clip's score fell.
+  *Two limits, both running the same way.* (a) This loop only sees units that cleared
+  the 0.5 s evidence floor, so the case that dominated production — a local speaker the
+  encoder was **never asked about**, 14 of one certification run's 16 canonicals — is
+  not representable here; 3.56 → 3.00 is a **lower bound**. (b) These clips are 60-180 s
+  and never approach the 16-speaker cap, so none of the *accuracy* gain that saturation
+  costs a long meeting can appear. On the 600 s LibriSpeech meetings, where capacity
+  does saturate, the same fix moves live accuracy **93.4 % → 99.1 %** and canonical
+  count **16 → 4.00** (`tests/test_live_identity_accuracy.py`, production objects).
+  Residual over-birth survives on 4 of 9 clips (4 canonicals for 3 voices, 3 for 2), so
+  the floor bounds the unenrollable births, not all of them.
 
 ## Fidelity notes
 - Embedder: PRODUCTION class `_OnnxWeSpeakerEmbedder` via `WeSpeakerResNet152LmAdapter`,

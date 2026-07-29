@@ -27,6 +27,13 @@ CONFIGS = [
     ("deployed-margin", dict(min_score=0.35, margin=0.2, admission=1.0)),
 ]
 
+# Phase Q1 (candidate 55): a birth needs evidence the album would enrol. The shipped fix sets
+# the floor to the album's own admission, so this pair is the deployed configuration with the
+# birth path before and after. Reported apart from CONFIGS because what it answers is not
+# "which thresholds" but "how many speakers did the meeting invent", and the aggregate line
+# above has to keep reproducing the 95.2 % the design doc records.
+BIRTH_FLOOR_CONFIG = dict(min_score=0.35, margin=0.1, admission=1.0)
+
 
 def load_truth(sample_dir: Path) -> list[tuple[float, float, int]]:
     speakers: dict[str, int] = {}
@@ -107,6 +114,31 @@ def main() -> None:
     for key in sorted(agg):
         v = agg[key]
         print(f"  {key:<28} mean={np.mean(v)*100:5.1f}%  min={np.min(v)*100:5.1f}%")
+
+    print("\n===== Q1 birth floor on real conversational audio (grid-best thresholds) =====")
+    print("  clip                         K  born@0.0 born@1.0   swp@0.0 swp@1.0")
+    born_off, born_on, acc_off, acc_on = [], [], [], []
+    for corpus, root, sweep_every in corpora:
+        H.SWEEP_EVERY = sweep_every
+        for sample_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+            cache = embed_sample(adapter, sample_dir)
+            rows = cache["rows"]
+            k_true = len({int(t) for t in rows[:, 1]})
+            counts, accs = [], []
+            for floor in (0.0, BIRTH_FLOOR_CONFIG["admission"]):
+                live, retro, _, _ = H.simulate(
+                    cache, policy="album", sweep=True, birth_floor=floor, **BIRTH_FLOOR_CONFIG
+                )
+                counts.append(len({int(c) for c in live if c >= 0}))
+                accs.append(H.accuracy(rows, retro))
+            born_off.append(counts[0]); born_on.append(counts[1])
+            acc_off.append(accs[0]); acc_on.append(accs[1])
+            print(f"  {sample_dir.name:<28} {k_true}  {counts[0]:>7}  {counts[1]:>7}   "
+                  f"{accs[0]*100:6.1f}  {accs[1]*100:6.1f}")
+    print(f"  {'MEAN':<28}    {np.mean(born_off):>7.2f}  {np.mean(born_on):>7.2f}   "
+          f"{np.mean(acc_off)*100:6.1f}  {np.mean(acc_on)*100:6.1f}")
+    print(f"  {'WORST CLIP':<28}    {max(born_off):>7}  {max(born_on):>7}   "
+          f"{min(acc_off)*100:6.1f}  {min(acc_on)*100:6.1f}")
 
 
 if __name__ == "__main__":

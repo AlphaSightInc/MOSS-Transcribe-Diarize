@@ -237,7 +237,21 @@ class Album:
 def simulate(cache, *, policy: str, min_score: float, margin: float,
              admission: float = 2.0, sweep: bool = False,
              merge_thr: float | None = MERGE_THR, sticky_delta: float = 0.0,
-             keep_uncertain: bool = False):
+             keep_uncertain: bool = False, birth_floor: float = 0.0):
+    """`birth_floor` is candidate 55 / Phase Q1: a birth needs enrollable evidence.
+
+    Production mints a canonical speaker for every local speaker a span's diarization
+    produced that did not match an existing one, with no duration condition at all -- so a
+    fragment spends a capacity slot on a voice the album can never hold. Setting this to the
+    album's `admission` reproduces the shipped fix; 0.0 reproduces the policy it replaced.
+
+    **Fidelity limit, and it runs one way.** This loop only ever sees units that cleared the
+    0.5 s evidence floor (`rows[:, 5]`), so the case that dominated production -- a local
+    speaker the encoder was never asked about, which is where 14 of one certification run's
+    16 canonical speakers came from -- cannot be represented here at all. What the bench can
+    measure is the 0.5-1.0 s half. Every canonical-count reduction it reports is therefore a
+    **lower bound** on the shipped fix's effect.
+    """
     rows, vecs, vec_idx = cache["rows"], cache["vecs"], cache["vec_idx"]
     order = np.argsort(rows[:, 2], kind="stable")
     refs: dict[int, np.ndarray] = {}
@@ -305,6 +319,8 @@ def simulate(cache, *, policy: str, min_score: float, margin: float,
                 taken.add(best)
                 pending.append((u, cids[best], v))
             else:
+                if rows[u, 4] < birth_floor:
+                    continue  # Q1: deferred, not born -- the unit stays unlabelled (S00)
                 if len(refs) + sum(1 for _, c, _ in pending if c == -1) >= MAX_SPK:
                     abstain = True
                     break

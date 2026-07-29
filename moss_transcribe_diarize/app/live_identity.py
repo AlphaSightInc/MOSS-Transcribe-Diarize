@@ -126,7 +126,12 @@ class BoundedCausalIdentityPreparer:
 
         assigned = dict(mapping)
         existing_count = len(base_snapshot.canonical_speakers)
-        births = [local for local in local_speakers if local not in assigned]
+        candidates = tuple(local for local in local_speakers if local not in assigned)
+        try:
+            deferred = self._deferred_births(span=span, candidates=candidates)
+        except Exception as exc:
+            return self._failed(span, transcript, base_snapshot, f"birth_evidence_failed:{exc.__class__.__name__}")
+        births = [local for local in candidates if local not in deferred]
         if existing_count + len(births) > self.config.max_speakers:
             return self._abstain(span, transcript, base_snapshot, "speaker_capacity_exceeded", local_speakers)
 
@@ -143,6 +148,7 @@ class BoundedCausalIdentityPreparer:
             local_speakers=local_speakers,
             assignments=assigned,
             canonical_speakers=canonical_speakers,
+            deferred_births=deferred,
         )
         snapshot = LiveIdentitySnapshot(
             version=base_snapshot.version + 1,
@@ -185,6 +191,41 @@ class BoundedCausalIdentityPreparer:
         finalize = getattr(self.evidence_provider, "finalize_identity", None)
         if finalize is not None:
             finalize(base_snapshot=base_snapshot)
+
+    def _deferred_births(
+        self,
+        *,
+        span: FrozenSpan,
+        candidates: tuple[str, ...],
+    ) -> dict[str, float]:
+        """Candidate births the evidence layer will not enrol, each with the seconds behind it.
+
+        Candidate 55: **a birth must not be minted from audio the system refused to embed.**
+        14 of one certification run's 16 canonical speakers, and 13 of another's, were born
+        from spans where no segment cleared the evidence floor -- so the encoder was never
+        asked for a vector, the album has nothing to enrol, and the new speaker exists only as
+        a capacity slot that no later span can match against. Sixteen canonical speakers for
+        two voices is what that costs, reached inside the first minute.
+
+        The floor is asked of the provider rather than held here, because the threshold that
+        answers "may this become a reference" is the album's admission gate and the album
+        lives in the provider. Asking makes the birth floor and the admission gate the *same*
+        number by construction; a constant restated in this module would be a second
+        calibration that agrees today and drifts later. What this class keeps is what a
+        deferral *means*, which is the half that belongs to birth.
+
+        Asked by name, exactly as `take_identity_revision` and `finalize_identity` are: a
+        stack with no album -- `NoLiveSpeakerEvidence`, the pre-ADR-0002 overwrite policy,
+        every test double -- has no admission gate, has refused nothing, and must keep
+        birthing as it always did rather than lose every label to a floor nothing enforces.
+        """
+
+        if not candidates:
+            return {}
+        deferrals = getattr(self.evidence_provider, "birth_deferrals", None)
+        if deferrals is None:
+            return {}
+        return dict(deferrals(span_id=span.id, candidates=candidates))
 
     def _assign(
         self,
@@ -414,9 +455,23 @@ def _render_transcript(
     assignments: dict[str, str],
     canonical_speakers: tuple[str, ...],
 ) -> str:
+    """The span's words under the canonical labels it established, and `S00` for the rest.
+
+    A local speaker with no assignment is a *deferred birth*: too little embedded speech to
+    become a canonical speaker, and no existing one it matched. Its words are published
+    exactly as an abstention publishes them -- kept, attributed to nobody -- because identity
+    answers *who*, never *whether* (J2). Deferring per speaker rather than abstaining for the
+    whole span is what keeps a two-voice span's confident match when the other voice is one
+    fragment: an abstain would drop a label the session had every reason to write.
+    """
+
     return render_segments(
         segments,
-        lambda segment: display_speaker_label(assignments[segment.speaker], canonical_speakers),
+        lambda segment: (
+            display_speaker_label(assignments[segment.speaker], canonical_speakers)
+            if segment.speaker in assignments
+            else UNATTRIBUTED_SPEAKER
+        ),
     )
 
 
@@ -428,8 +483,15 @@ def _diagnostics(
     local_speakers: tuple[str, ...],
     assignments: dict[str, str],
     canonical_speakers: tuple[str, ...],
+    deferred_births: dict[str, float] | None = None,
 ) -> tuple[tuple[str, str], ...]:
     assignment_text = ",".join(f"{local}->{assignments[local]}" for local in sorted(assignments))
+    # Named with the seconds that earned the refusal, because a deferral that recorded only
+    # "deferred" would leave a reader unable to tell a voice the evidence floor skipped
+    # entirely (0.000) from one that missed admission by a tenth of a second.
+    deferred_text = ",".join(
+        f"{local}={deferred_births[local]:.3f}" for local in sorted(deferred_births or {})
+    )
     return (
         ("schema_version", "1"),
         ("status", status),
@@ -438,6 +500,7 @@ def _diagnostics(
         ("span_samples", f"{span.start_sample}:{span.end_sample}"),
         ("local_speakers", ",".join(local_speakers)),
         ("assignments", assignment_text),
+        ("deferred_births", deferred_text),
         ("canonical_speakers", ",".join(canonical_speakers)),
     )
 

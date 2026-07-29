@@ -618,6 +618,44 @@ class WeSpeakerLiveEvidenceProvider:
                 )
         return tuple(evidence)
 
+    def birth_deferrals(
+        self,
+        *,
+        span_id: int,
+        candidates: Sequence[str],
+    ) -> tuple[tuple[str, float], ...]:
+        """Which of a span's would-be births this stack will not enrol, and the seconds behind each.
+
+        Candidate 55's fix, answered where the admission gate lives. `BoundedCausalIdentity
+        Preparer` owns what a deferral means; the *threshold* is the album's own
+        `admission_seconds`, so it is read from the album rather than restated -- the birth
+        floor and the enrollment floor are then one number by construction, and a manifest
+        that moves `album_admission_seconds` moves both.
+
+        A speaker whose evidence the encoder was never asked for reports **0.0 s**, not
+        absence: `_speaker_intervals_by_label` drops every segment below
+        `min_segment_samples`, so a local speaker present in the transcript and missing from
+        the pending map is exactly the fragment case -- the one that minted 14 of 16
+        canonical speakers in a certification run.
+
+        No album means no admission gate, so nothing is deferred. That is not a loophole: the
+        deployed bundle always builds one, and the album-less stacks are the pre-ADR-0002
+        overwrite policy and the harness control that measures it. Deferring there would
+        change a baseline instead of a behaviour.
+        """
+
+        if self._album is None:
+            return ()
+        floor = self._album.admission_seconds
+        pending = self._pending_vectors.get(span_id, {})
+        deferred: list[tuple[str, float]] = []
+        for local_speaker in candidates:
+            observation = pending.get(local_speaker)
+            seconds = 0.0 if observation is None else observation[1]
+            if seconds < floor:
+                deferred.append((local_speaker, seconds))
+        return tuple(deferred)
+
     def finalize_identity(self, *, base_snapshot: LiveIdentitySnapshot) -> None:
         """Settle the meeting's last preparation, then sweep once more, in that order.
 
