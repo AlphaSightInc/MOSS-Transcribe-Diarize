@@ -154,12 +154,17 @@ server lane-failure, expiry, abandonment, or recovery policy.
 
 The capture pump's frame POST and following heartbeat each carry a 1-second
 request timeout. They run serially, so this bounds a dead-network pump turn to
-2 seconds and lets native callback audio reach the 15-second outbox while the
-wire is unavailable. The threshold is measured rather than inferred: a
+2 seconds. The production raw callback queue carries 1,024 buffers per lane so
+audio can survive that bounded turn and then reach the 15-second outbox. Both
+limits are measured rather than inferred: a
 final-SHA F2 run on 2026-07-29 left the prior 60-second URLRequest default
 blocked through a 5.140-second interruption, filled the 128-buffer system-audio
 callback queue, and reported `macos_buffer_overrun`; the request returned only
-when the network did. Stop and browser control requests keep their separate
+when the network did. A second 5.460-second F2 with the one-second request
+bounds still held 128 system buffers and dropped 146 before the serial pump
+turn completed: 274 buffers of measured demand. The 1,024-buffer production
+capacity is 3.7 times that observation and is enforced independently for both
+lanes. Stop and browser control requests keep their separate
 10-second bound because they wait on the explicit 5-second server drain and do
 not gate native audio collection.
 

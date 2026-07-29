@@ -2884,6 +2884,61 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(nextSystem.first?.sequence, 2)
     }
 
+    func testProductionNativeQueueCoversMeasuredBlockedPumpTurn() throws {
+        let source = try String(
+            contentsOf: packageRoot()
+                .appendingPathComponent("Sources/MOSSCaptureCore/NativeDualCaptureSource.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(
+            source.contains(
+                "queueCapacity: Int = NativeCaptureQueueContract.capacityPerLane"
+            )
+        )
+
+        let capacityPerLane = NativeCaptureQueueContract.capacityPerLane
+        XCTAssertEqual(capacityPerLane, 1_024)
+        let queue = RealTimeNativeAudioBufferQueue(capacity: capacityPerLane)
+        for sequence in 0..<capacityPerLane {
+            for lane in CaptureLane.allCases {
+                queue.enqueueFromRealtimeCallback(
+                    NativeCapturedAudioBuffer(
+                        lane: lane,
+                        sampleRate: 16_000,
+                        channelCount: 1,
+                        frameCount: 1,
+                        firstSampleMonotonicNS: UInt64(sequence + 1),
+                        deviceEpoch: 1,
+                        discontinuity: false,
+                        samples: [0]
+                    )
+                )
+            }
+        }
+
+        XCTAssertEqual(queue.droppedBuffers, 0)
+        for lane in CaptureLane.allCases {
+            queue.enqueueFromRealtimeCallback(
+                NativeCapturedAudioBuffer(
+                    lane: lane,
+                    sampleRate: 16_000,
+                    channelCount: 1,
+                    frameCount: 1,
+                    firstSampleMonotonicNS: UInt64(capacityPerLane + 1),
+                    deviceEpoch: 1,
+                    discontinuity: false,
+                    samples: [0]
+                )
+            )
+        }
+        XCTAssertEqual(queue.droppedBuffers, UInt64(CaptureLane.allCases.count))
+        XCTAssertEqual(
+            queue.droppedBuffersByLaneSnapshot(),
+            [.system: 1, .microphone: 1]
+        )
+        XCTAssertEqual(queue.drain().count, capacityPerLane * CaptureLane.allCases.count)
+    }
+
     func testHostTicksBecomeRealNanosecondsAndAZeroReadingIsRefused() throws {
         // A timebase far from 1:1 is the whole point of the conversion: publishing ticks as
         // nanoseconds would compress the server's timeline by exactly this ratio.
