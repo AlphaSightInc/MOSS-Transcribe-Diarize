@@ -20866,3 +20866,95 @@ the host manifest with `--min-match-score 0.35 --min-match-margin 0.1` under the
 DEPLOYMENT VENV's python (see N-recal and the finalizer defect in context.md), or
 the live service runs the album at the deployed 0.5/0.2 pair, which measures
 **75.0 %** instead of 93.44 %.  Then (d) F1.
+
+
+================================================================================
+ITERATION 29 (run 20260729-025318) - PRE-RECORD: the rollbacks for Phase N gate
+step (c), written BEFORE any host is touched (prd.md "Reversibility")
+================================================================================
+
+TARGET.  Phase N gate step (c) - publish the eighth merge and redeploy, the only
+thing between three landed, gated steps of ADR-0002 and a service that runs them,
+and the only thing that restores "one exact SHA everywhere" (now 1/4).  Shape is
+J5c's: server checkout + restart, m4mbp checkout with NO rebuild and NO reinstall
+(the merge's payload is 0 files under `macos/`), plus the ONE thing no gate can
+see - regenerating the host manifest at the calibrated 0.35 / 0.1.
+
+PRE-STATE, measured read-only in this iteration before anything moved.
+  local `main`        7a4f59c3ca023b5ac7b9df814b92645c10d204dd
+  local feature HEAD  72d8a32b0e0fa752ff189f5ee1be553dbcd0a642 (tree clean)
+  `origin/main`       42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+  server checkout     42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870, worktree clean,
+                      checkout's own `main` ref still 163e969 (the F4a rollback)
+  m4mbp checkout      42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870, worktree clean
+  live unit           moss-live-web MainPID 355607, ActiveState=active, NRestarts=0
+  batch units         moss-web MainPID 301112, moss-vllm MainPID 322117, NRestarts=0
+  host manifest       identity_config = {max_speakers 16, min_match_score 0.5,
+                      min_match_margin 0.05}, source_revision f9285d69...
+  push payload        33 commits, 42abc5a..7a4f59c, strictly fast-forward
+                      (`git merge-base --is-ancestor origin/main main` is true)
+
+NOTE, and it corrects a number this file has carried since iteration 16: the
+deployed margin is **0.05**, not the 0.2 recorded as "the deployed pair".  N-gate
+measured 0.5/0.2 at 75.0 % mean; 0.5/0.05 is a pair nothing has measured.  Either
+way it is not the calibrated 0.35/0.1 the album is measured at, so the redeploy's
+manifest regeneration stands unchanged - but the "75.0 %" figure is the cost of
+the pair that was ASSUMED deployed, not of the one that IS.  Measured this
+iteration, after the redeploy, so the record stops being wrong.
+
+THE ROLLBACKS, one per mutation, in the order the mutations will be applied.
+
+1. PUSH `origin/main` 42abc5a -> 7a4f59c.
+   NO ROLLBACK EXISTS AND THAT IS DELIBERATE.  prompt.md forbids force-push, so a
+   published `main` is permanent.  This is why iteration 28 kept the push out of
+   the merge iteration: `git update-ref refs/heads/main 42abc5a` was a complete
+   undo right up to this command and stops being one the instant it runs.  What
+   remains available afterwards is a REVERT COMMIT on top, which is a new merge
+   and therefore needs its own authorization - so the push is the point of no
+   return for the eighth merge and is being run only because the gate's steps (a)
+   and (b) are both green and reviewed.
+   Pre-push proof that it is a fast-forward and not a rewrite:
+     git merge-base --is-ancestor origin/main main   # rc=0, measured above
+
+2. SERVER CHECKOUT 42abc5a -> 7a4f59c (`/mnt/d/Coding/MOSS-Transcribe-Diarize`).
+   ROLLBACK (one command, moves nothing but HEAD; the venv is an editable install
+   pointing at this checkout, so this plus a restart is a complete revert):
+     git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+     systemctl --user restart moss-live-web
+   DEEPER ROLLBACK, unchanged and rehearsed for real in F4a: disable the unit
+   FIRST, then `git checkout 163e969`, then restore the checkout before
+   `enable --now` - the unit's ExecStart runs ops/start-web.sh FROM the checkout
+   and at 163e969 that script brings up a BATCH server on the live port.
+
+3. HOST MANIFEST REGENERATION (0.5/0.05 -> 0.35/0.1), which rewrites
+   `~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json` and
+   changes identity_config_hash, combined_config_hash and the provider manifest
+   hash.  The finalizer prints its own `rollback: mv <backup> <output>` line, but
+   that name is minted at run time, so a DETERMINISTIC copy is taken first:
+     cp -p ~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json \
+           ~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json.ralph-i29-backup
+   ROLLBACK:
+     cp -p ~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json.ralph-i29-backup \
+           ~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json
+     systemctl --user restart moss-live-web
+   SAFE AGAINST ALREADY-PAIRED DEVICES: the manifest is not what a Mac pins.  The
+   TLS pair (live.crt/live.key) and the device store are untouched by this step,
+   so the pin a35ca9fc... does not move and m4mbp stays paired.  The stop
+   condition for any future run is still the PIN changing, and it does not here.
+
+4. M4MBP CHECKOUT 42abc5a -> 7a4f59c (no rebuild, no reinstall, no TCC exposure).
+   ROLLBACK:
+     ssh ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize \
+       && git checkout 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870'
+   The installed product is NOT touched, so /Applications/MOSSCapture.app stays
+   the 77e0014 build (inode 212080356, CLI sha256 450c20bf...) and both TCC grants
+   stay at auth_value=2.  On that host the fork is `alphasight`, NOT `origin` -
+   resolve the remote by URL, never by name.
+
+5. THE LOCAL BRANCH.  Nothing about this step moves `ralph/live-meeting-mvp`; its
+   own rollback stays `git update-ref refs/heads/ralph/live-meeting-mvp 72d8a32`.
+
+WHAT IS DELIBERATELY NOT DONE.  No Mac rebuild (0 files under `macos/`), no
+`ops/moss-live.env` edit (the three MOSS_LIVE_RETENTION_* keys ship COMMENTED OUT,
+so this redeploy retains no audio and the PRD's raw-audio clause holds unchanged),
+no pin rotation, no device revocation, no batch unit touched.
