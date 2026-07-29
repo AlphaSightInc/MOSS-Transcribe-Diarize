@@ -9,6 +9,13 @@ public enum CapturePumpContract {
     /// empty passes; ticking slower would make a lane carry more than one frame per tick and
     /// lengthen the time captured audio waits before it is even attempted.
     public static let interval: TimeInterval = 0.5
+
+    /// A frame attempt and its following heartbeat run serially on the pump queue. Bound each one
+    /// to one second so a dead network releases that queue within two seconds and native callback
+    /// buffers can move into the outbox's fifteen-second retention window. The F2 five-second
+    /// interruption measured the previous 60-second URLRequest default filling the native queue
+    /// before the request returned.
+    public static let requestTimeoutSeconds: TimeInterval = 1.0
 }
 
 public final class RepeatingCaptureSchedulerAdapter: CaptureSchedulerAdapter {
