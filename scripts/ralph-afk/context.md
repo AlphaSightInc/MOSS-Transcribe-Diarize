@@ -112,7 +112,7 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
 | 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). See the F1-green block. |
-| 300 s certification (F2) | not run; the harness is ready (candidate 51, iteration 12) and F1 now passes with it, so F2 is a scale-up rather than a diagnosis |
+| 300 s certification (F2) | not run — but it **has an instrument now** (iteration 10): `live-cert.sh` (the 300 s locked program) + `live-cert-interrupt.sh` (the 5 s network interruption, **proven on the real server: 5.110 s measured on CLOCK_MONOTONIC, self-deleted, chain back to `-P INPUT ACCEPT`**) + `live-canary-clauses.py --interrupt-report`. The **system-audio-denied half is deliberately NOT built** — it would spend a TCC grant. See the F2-instrument block |
 | 16-minute soak (F3) | **RAN AGAINST `42abc5a` AND FINISHED ITS WHOLE PLAN (iteration 9) — 5 clauses GREEN, 1 RED.** Candidate 53's minute-14.6 death is gone: 17/17 full minutes, every poll 200, view authority live at age 1024 s. The RED is **new candidate 60** — a clean stop does not revoke view authority, because no client code path calls the server's `POST …/stop`. `live-canary-clauses.py` rc=3. See the F3 block. |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
@@ -159,6 +159,13 @@ carry is in the retired-evidence index below).**
   that dies at minute 14.6", and **that meeting no longer dies** — it ran 17 minutes with a degraded
   lane. Candidate 60 is a stop-time authority-revocation defect that cannot affect an identity
   measurement taken during the meeting.
+- **F2 is now the loop's one unblocked PRD acceptance clause, and iteration 10 built its
+  instrument.** Everything else on the board needs the operator: candidates 55, 58 and 60 are
+  tracked product source under the post-merge freeze, and Phase N is authorized but gated on
+  "Phase M's gate green" — which F3's one RED (candidate 60) leaves as the operator's call, not the
+  loop's. **The next step is the F2 RUN**, not more tooling: arm
+  `live-cert-interrupt.sh --delay 215 --duration 5` on the server, then `nohup` `live-cert.sh` on
+  m4mbp, then reduce with `--user-visible-gate-ms 6000 --interrupt-report`.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" below.
@@ -410,6 +417,63 @@ authorization**. Shape of the fix, not a decision: `CaptureController.stop` gain
 after the final drain, with the same "a publish failure must not stop the meeting ending" rule — a
 stop that cannot reach the server must still stop locally, and the lease then does what it does
 today.*
+
+**F2 HAS AN INSTRUMENT, AND THE 5 s NETWORK INTERRUPTION IS PROVEN ON THE REAL SERVER — iteration
+10. READ THIS BEFORE RUNNING F2.** Three files, one logical instrument: `live-cert.sh` (m4mbp, the
+300 s locked program), `live-cert-interrupt.sh` (the server, in WSL, the interruption) and
+`live-canary-clauses.py --interrupt-report` (section 10). No product source, no `ops/`, no deploy.
+
+***The mechanism, chosen against three alternatives rather than by convenience.*** A 5 s outage has
+to leave the live SESSION alive or the rest of the run measures nothing.
+| candidate | ruling |
+| --- | --- |
+| drop the tailnet on m4mbp | **rejected** — no passwordless sudo there, `tailscale` not on PATH (only `/Applications/Tailscale.app`), and **ssh to m4mbp rides the tailnet** (100.64.0.1 → 100.64.0.4), so a client-side drop strands the host behind a recovery path that may need GUI auth |
+| restart/stop `moss-live-web` | **rejected** — the session lives in that process's memory; a restart destroys it. That is a server crash, not a network interruption |
+| `kill -STOP`/`-CONT` the live process | **rejected** — it does produce client timeouts, but the server then RECEIVES every frame after CONT, so "the network dropped it" and "the server got it late" stop being distinguishable, and the clause is about audio retained *because it never arrived* |
+| **`iptables -I INPUT ! -i lo -p tcp --dport 7861 -j DROP` for 5 s** | **CHOSEN** — packets dropped, process untouched, session survives. `! -i lo` keeps the server's own loopback (`ops/live-pair.sh`) working; `--dport 7861` cannot reach the batch service's 7860 |
+
+***Measured twice on the live server, and the second run was the packaged script.*** Ad-hoc rehearsal
+first (live 7861 timed out for ~4.6 s of observed drop while **batch 7860 answered 200 on all 22
+probes**), then `live-cert-interrupt.sh --delay 4 --duration 5`: **`measured_duration_s` 5.110 on
+CLOCK_MONOTONIC** (wall 5.108), `deletes` 1, `rule_still_present` **no**, `chain_after`
+`-P INPUT ACCEPT;`. Server after both: `HEAD 42abc5a` worktree clean, live **355607** / batch
+**301112** and **322117** all `NRestarts=0`, `live-runs` 0, no `/tmp/mtd-live-*`, **0** journal
+tracebacks, batch `/` and `/api/jobs` 200. *The instrument measures itself on CLOCK_MONOTONIC on
+purpose:* this host's wall clock steps ~1.5 s backwards every ~32.3 s (candidate 56), so a
+wall-clock duration here could report a 5 s outage as 3.5 s — repeating in the instrument the exact
+defect Phase P removed from the product.
+
+***Three properties that are the point, not decoration.***
+1. **It self-deletes from a detached `setsid` child, in a loop, so an orchestrator that dies
+   mid-window cannot leave the live port blocked.** Rollback if it ever does:
+   `sudo iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP`, then `-S INPUT` must print exactly
+   `-P INPUT ACCEPT`.
+2. **Arm the server job BEFORE launching the driver.** Then nothing after launch depends on the
+   orchestrator being alive — iteration 8's lesson. The price is clock skew, paid for by a **60 s
+   wide** `program-interrupt` phase and **1 Hz** status sampling for the whole run.
+3. **The reducer's positive control.** A run where the network never actually went down passes every
+   other clause trivially and looks identical to one that survived an outage. So section 10 credits
+   survival **only** if the client itself refused at least one poll inside the window; otherwise
+   **UNDECIDED — "THE CLIENT NEVER SAW THE OUTAGE, so surviving it proves nothing."**
+
+***And section 1 had to learn about the window, which is the near-miss worth recording.*** An F2 run
+causes its own refusals on purpose; before this change the reducer called that
+`RED the portal stopped answering 200 at t+42.7s` — *a run failed for the outage it exists to
+produce*. Fourth instance of the class candidates 57 and 59 name. Excluded polls are **printed, never
+subtracted silently**, and they must earn their keep in section 10.
+
+*Validated:* `bash -n` on both drivers; the two real evidence directories reduce **byte-identically**
+without the flag (F3 rc=3, F1 rc=0); six branches exercised on synthetic reports — real outage
+**rc=0 GREEN**, no refusal seen **UNDECIDED**, `rule_still_present=yes` **RED**, short window
+**UNDECIDED**, window outside the meeting **UNDECIDED**, report absent **UNDECIDED**. Cases
+`/tmp/i10-case-*.txt`.
+*Known limits, stated so the run is not over-read:* `$OUT` on the server is **root-owned** (the child
+runs under sudo) — readable by anyone, removable only with sudo. `wsl.exe -d Ubuntu -- bash -lc
+"echo <base64> | base64 -d | bash"` **fails with "The command line is too long"** for a 6 KB script;
+pipe the file on **stdin** instead (`ssh host "wsl.exe -d Ubuntu -- bash -c \"cat > /tmp/x.sh\"" <
+file`, md5 verified). And the server's WSL user is **`devcontainers`**, reached as
+`ssh gyauo@ga0-alienware-rtx4070ti.local` then `wsl.exe -d Ubuntu` — `ssh ga0@ga0-alienware-rtx4070ti`
+is publickey-denied.
 
 **CANDIDATE 56 IS ANSWERED, AND THE CAUSE IS THE HOST'S WALL CLOCK (new, iteration 28).
 READ THIS BEFORE ANY FURTHER CERTIFICATION RUN OR LATENCY CLAIM.** One probe run with iteration
@@ -1821,10 +1885,12 @@ and the **server**, which behaves correctly at every step of the client-side fai
     must be re-run, not re-argued. F1 is re-runnable end to end from
     `/tmp/ralph-f1-canary.sh` and costs no operator input.
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-    `[open — candidate 51's guard is SPENT: the harness is fixed and iteration 6 proved it carries a
-    green 85 s meeting. Sequence it after F3, which is the authorized gate step; F2 is a PRD
-    acceptance clause in its own right and its 5 s-interruption / denied-lane halves have no driver
-    yet — `live-canary.sh` does neither.]`
+    `[INSTRUMENT BUILT AND PROVEN — iteration 10; the RUN is the next step]`. The 5 s-interruption
+    half now has a driver and the mechanism is proven on the real server; see the F2-instrument
+    block. **The denied-lane half is still open and is NOT a scripting problem** — it is a separate
+    run by the PRD's own wording and producing it means taking a TCC grant away from
+    `com.alphasight.moss.capture`, i.e. spending the one input this loop is forbidden to ask for
+    again. It needs its own recorded plan before anyone writes code for it.
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
     `[RE-RUN against `42abc5a` — 5 GREEN, 1 RED — run 20260729-025318 iteration 9. See the F3 block

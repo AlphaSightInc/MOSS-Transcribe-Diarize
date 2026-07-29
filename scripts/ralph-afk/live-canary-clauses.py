@@ -105,6 +105,10 @@ def main():
                     help="PRD gate for this run: 4000 for the 60 s canary, 6000 for the 300 s "
                          "certification and the soak")
     ap.add_argument("--rtf-gate", type=float, default=1.0)
+    ap.add_argument("--interrupt-report",
+                    help="F2 only: the JSON written by live-cert-interrupt.sh on the server. "
+                         "Without it the 5 s network-interruption clause is not asserted at all; "
+                         "with it, a report that cannot be read is UNDECIDED, never silence.")
     ap.add_argument("--min-minute-audio-s", type=float, default=30.0,
                     help="soak only: the floor a wall-clock minute's accepted audio must clear "
                          "for 'periodic accepted audio'. Not a PRD constant - F3's healthy "
@@ -121,6 +125,21 @@ def main():
     t_audio0 = float(times.get("T_AUDIO0") or t0)
     print(f"== {times.get('LABEL', '?')}  session={times.get('SID', '?')}  "
           f"output_mode={times.get('OUTPUT_MODE', '?')}")
+
+    # The F2 interruption window, loaded HERE rather than in section 10, because section 1 has to
+    # know about it. An F2 run causes its own refusals on purpose: without this, the reducer would
+    # call the run RED for the outage the run exists to produce - candidate 57's defect exactly,
+    # a verdict word naming something it does not decide. The two hosts' wall clocks are
+    # independent and the SERVER's steps ~1.5 s backwards every ~32 s (candidate 56), so the
+    # window is widened by INT_SKEW on both sides: this asks "was this poll during the outage",
+    # not "when exactly".
+    INT_SKEW = 6.0
+    interrupt = load_json(args.interrupt_report) if args.interrupt_report else None
+    int_w0 = float((interrupt or {}).get("t_drop_begin_wall") or 0)
+    int_w1 = float((interrupt or {}).get("t_drop_end_wall") or 0)
+
+    def in_interrupt(t):
+        return bool(int_w0) and (int_w0 - INT_SKEW) <= float(t) <= (int_w1 + INT_SKEW)
 
     snap_rows = read_tsv(os.path.join(d, "snapshot.tsv"), 3)
     ev_rows = read_tsv(os.path.join(d, "events.tsv"), 3)
@@ -150,12 +169,22 @@ def main():
         # ------------------------------------------------------ 1. poll health
         codes = Counter(r[1] for r in snap_rows)
         ev_codes = Counter(r[1] for r in ev_rows) if ev_ok else {}
-        first_bad = next((float(r[0]) - t0 for r in snap_rows if r[1] != "200"), None)
+        during_int = [r for r in snap_rows if r[1] != "200" and in_interrupt(r[0])]
+        first_bad = next((float(r[0]) - t0 for r in snap_rows
+                          if r[1] != "200" and not in_interrupt(r[0])), None)
         print(f"\n-- 1. portal polls --\n   snapshot {dict(codes)}   events {dict(ev_codes)}")
         print(f"   poll window t+{float(snap_rows[0][0]) - t0:.1f}s .. "
               f"t+{float(snap_rows[-1][0]) - t0:.1f}s")
+        if during_int:
+            # Said out loud, never subtracted silently: an excluded refusal is still a refusal,
+            # and section 10 is where it has to earn its keep as evidence the outage was real.
+            print(f"   {len(during_int)} non-200 polls fall inside the armed interruption window "
+                  f"and are EXCLUDED from this clause - they are the outage this run caused on "
+                  f"purpose, and section 10 decides them")
         if first_bad is None:
-            green.append("every portal poll answered 200 for the whole run")
+            suffix = (f" (outside the {len(during_int)} polls of the armed interruption)"
+                      if during_int else "")
+            green.append(f"every portal poll answered 200 for the whole run{suffix}")
             print("   every poll 200 - view authority held for the whole run")
         else:
             # A soak STOPS the session on purpose, so polls after T_STOP are expected to refuse.
@@ -596,6 +625,120 @@ def main():
             undecided.append("no view check after the clean stop - the revoke clause is unproven")
         else:
             undecided.append("no T_STOP in times.env - the revoke clause is unproven")
+
+    # -------------------------------------------- 10. the F2 interruption clause
+    # "a 5-second network interruption ... zero accepted-audio loss".
+    #
+    # THE CLAUSE IS NOT ASSERTED UNLESS THE RUN CARRIES A REPORT. A canary or soak directory has
+    # no interruption in it, and printing "no interruption found - RED" over those would be the
+    # same defect candidate 57 fixed: a verdict word naming something it does not decide. So the
+    # section is silent without --interrupt-report, and UNDECIDED - never silent - when the flag
+    # is given and the report cannot be read.
+    #
+    # THE POSITIVE CONTROL IS THE POINT OF THIS SECTION. A run where the network never actually
+    # went down would pass every other clause in this file trivially, and would look exactly like
+    # a run that survived an outage. So the interruption must be OBSERVED from the client side -
+    # at least one view poll refused inside the window - before survival is credited to anything.
+    if args.interrupt_report is not None:
+        print("\n-- 10. the 5 s network interruption (F2) --")
+        rep = interrupt
+        t_stop_i = float(times.get("T_STOP") or 0)
+        if not rep:
+            undecided.append(f"interrupt report {args.interrupt_report} absent or unreadable - "
+                             f"the 5 s network-interruption clause is UNPROVEN, not failed")
+            print("   ABSENT or unreadable")
+        else:
+            nominal = float(rep.get("nominal_duration_s") or 0)
+            measured = rep.get("measured_duration_s")
+            w0, w1 = int_w0, int_w1
+            still = rep.get("rule_still_present")
+            print(f"   server window: nominal {nominal:.0f}s, measured "
+                  f"{measured if measured is None else f'{float(measured):.3f}'}s on "
+                  f"CLOCK_MONOTONIC (wall {float(rep.get('wall_duration_s') or 0):.3f}s), "
+                  f"deletes={rep.get('deletes')} rule_still_present={still}")
+            print(f"   chain after: {rep.get('chain_after')}")
+            if still == "yes":
+                red.append("the interruption rule was STILL PRESENT after the window - the live "
+                           "port is blocked and the server needs the recorded rollback")
+            if measured is None:
+                undecided.append("interrupt report carries no measured duration - the clause is "
+                                 "UNPROVEN")
+            elif float(measured) + 1.0 < nominal:
+                undecided.append(
+                    f"the network was down {float(measured):.2f}s, short of the {nominal:.0f}s "
+                    f"the clause names - the run measured a WEAKER interruption than the PRD "
+                    f"asks for, so it is UNPROVEN rather than passed")
+            # Correlate against the client's own polls. The two hosts' wall clocks are
+            # independent and the SERVER's steps ~1.5 s backwards every ~32 s (candidate 56), so
+            # the correlation window is deliberately loose: this is asking "did this client see
+            # an outage around then", not "when exactly".
+            skew = INT_SKEW
+            if not (w0 and t0 and w0 > t0 and (not t_stop_i or w0 < t_stop_i)):
+                undecided.append(
+                    f"the interruption window (wall {w0:.0f}) does not fall inside the meeting "
+                    f"({t0:.0f}..{t_stop_i:.0f}) - it was armed for the wrong moment and the "
+                    f"clause is UNPROVEN")
+            elif not snap_ok:
+                undecided.append("interruption clause undecided: snapshot layout")
+            else:
+                inside = [(float(t) - t0, c) for t, c, _ in snap_rows
+                          if w0 - skew <= float(t) <= w1 + skew]
+                after = [(float(t) - t0, c) for t, c, _ in snap_rows if float(t) > w1 + skew]
+                refused = [x for x in inside if x[1] != "200"]
+                resumed = [x for x in after if x[1] == "200"]
+                print(f"   client view polls in the window +/-{skew:.0f}s: {len(inside)} "
+                      f"({len(refused)} refused), after: {len(after)} ({len(resumed)} back to 200)")
+                if not inside:
+                    undecided.append("no client view poll fell inside the interruption window - "
+                                     "the clause is UNPROVEN on this run")
+                elif not refused:
+                    undecided.append(
+                        f"the server dropped inbound tcp for {float(measured or 0):.2f}s but all "
+                        f"{len(inside)} client polls in that window answered 200 - THE CLIENT "
+                        f"NEVER SAW THE OUTAGE, so surviving it proves nothing. UNPROVEN.")
+                elif not resumed:
+                    red.append("the client never got a 200 back after the interruption - the "
+                               "session did not survive the outage")
+                else:
+                    green.append(
+                        f"a {float(measured):.2f}s network interruption was seen by the client "
+                        f"({len(refused)} refused polls) and the session resumed "
+                        f"(first 200 at t+{resumed[0][0]:.1f}s)")
+            # The outbox is the mechanism the zero-loss clause rests on: accepted audio must be
+            # RETAINED while the link is down and drained after. The authoritative loss test is
+            # section 1's accepted==accounted==committed; this is the mechanism showing its work,
+            # so never seeing retention is REPORTED and not red - a 1 Hz sampler can miss a
+            # window this short.
+            # The peak is measured INSIDE the window, not across the run. A canary's ordinary
+            # start-up backlog would otherwise be credited to an outage it happened 40 s before,
+            # which is a claim the evidence does not support.
+            peak, peak_at, tail = 0, None, None
+            run_peak = 0
+            for t, body in read_tsv(os.path.join(d, "status.tsv"), 2):
+                try:
+                    s = json.loads(body)
+                except Exception:
+                    continue
+                r = s.get("outboxRetainedFrames")
+                if not isinstance(r, int):
+                    continue
+                tail = r
+                run_peak = max(run_peak, r)
+                if in_interrupt(t) and r > peak:
+                    peak, peak_at = r, float(t) - t0
+            print(f"   outbox retained: peak {peak} frames inside the window"
+                  + (f" at t+{peak_at:.1f}s" if peak_at is not None else "")
+                  + f"; run-wide peak {run_peak}; last sample {tail}")
+            if tail:
+                red.append(f"the outbox still held {tail} frames at the last status sample - "
+                           f"accepted audio that never reached the server")
+            elif peak:
+                green.append(f"the outbox retained {peak} frames across the interruption and "
+                             f"drained back to 0")
+            else:
+                print("   retention never observed above 0 inside the window - reported, not a "
+                      "clause failure: at 1 Hz a 5 s outage can pass between samples. Zero loss "
+                      "is decided by section 1's accounting, not here.")
 
     # ------------------------------------------------------------- the verdict
     print("\n-- verdict --")

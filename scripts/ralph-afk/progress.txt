@@ -16348,3 +16348,283 @@ is coherent: candidate 60 cannot affect an identity measurement taken during the
 meeting. Cheap unblocked loop work meanwhile: candidate 59 (the marker reducer)
 and F2, the 300 s certification, which is now a scale-up rather than a
 diagnosis - F1 is green and F3 reached every clause.
+
+## run 20260729-025318-86584 - iteration 10 - rollbacks recorded BEFORE the F2
+## network-interruption mechanism is rehearsed on the live server
+
+TARGET: F2, the 300 s locked certification - the largest PRD acceptance clause
+with ZERO infrastructure. `live-canary.sh` and `live-soak.sh` between them do
+simultaneous lanes, silence/mute, two voices and clean stop/drain; NEITHER does
+the "5-second network interruption", and the ambiguous-retry and duplicate-retry
+clauses are downstream of it. So the interruption is the one piece of F2 that no
+amount of scripting can substitute, and it is what this iteration settles.
+
+WHY THIS AND NOT SOMETHING ELSE. Candidates 55, 58 and 60 are tracked product
+source under the post-merge freeze and need the operator's authorization, which
+this loop cannot obtain; iteration 9 already put candidate 60 in front of them
+with the severity framing. Phase N is authorized but gated on "Phase M's gate
+green", and F3 is 5 GREEN / 1 RED - whether candidate 60 gates Phase N is the
+operator's call, not mine, so I am not spending the gate on it. Candidate 59 is
+cheap loop tooling but small. F2 is a PRD acceptance clause, is unblocked, is
+loop tooling only, and iteration 9 recommended it by name.
+
+BASELINE, read-only, taken before anything was touched:
+  branch    HEAD e329311, tree clean; git diff --name-only 42abc5a HEAD
+            -- ':!scripts/ralph-afk' lists ONLY the operator's two docs/ files
+            (00620ab, 128eae4) - no product source, no test, no ops/
+  server    reached as `ssh gyauo@ga0-alienware-rtx4070ti.local` then
+            `wsl.exe -d Ubuntu -- bash -lc ...` (the WSL user is `devcontainers`,
+            NOT ga0; `ssh ga0@ga0-alienware-rtx4070ti` is publickey-denied and
+            that cost one probe to learn)
+            HEAD 42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870
+            USER units (systemctl --user, not system): moss-live-web,
+            moss-web, moss-vllm all active running
+            listeners 0.0.0.0:7860 pid 301112 and 0.0.0.0:7861 pid 355607
+            sudo -n: PASSWORDLESS
+            iptables v1.8.10 (nf_tables); `iptables -S INPUT` is exactly
+            `-P INPUT ACCEPT` with NO rules
+  m4mbp     reachable, macOS 26.5.2, ssh arrives over the TAILNET
+            (100.64.0.1 -> 100.64.0.4), sudo NEEDS A PASSWORD, no driver
+            running, no app running
+  MacStudio nothing to roll back here.
+
+THE MECHANISM DECISION, made before the patch as the PRD requires for anything
+that mutates a host.
+  REJECTED - client-side interface/tailnet down on m4mbp. There is no
+    passwordless sudo there, `tailscale` is not on PATH (only
+    /Applications/Tailscale.app), and ssh to m4mbp RIDES the tailnet, so a
+    client-side tailnet drop would strand the host mid-run with a recovery path
+    that may need GUI auth. Unacceptable risk for a 5 s window.
+  REJECTED - restarting or stopping moss-live-web. The live session lives in
+    that process's memory; a restart destroys it. That is a server crash, not a
+    network interruption, and it would test nothing the PRD asks about.
+  REJECTED - kill -STOP / -CONT on the live process. It does produce client
+    timeouts, but the server then RECEIVES and processes every frame after CONT,
+    so "the network dropped it" and "the server got it late" are indistinguishable
+    in the evidence - and the clause is about audio the client must retain
+    BECAUSE it never arrived.
+  CHOSEN - drop inbound TCP to the live port at the server, for exactly 5 s:
+      sudo iptables -I INPUT ! -i lo -p tcp --dport 7861 -j DROP
+      (sleep 5)
+      sudo iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP
+    Packets are dropped, so the server never sees them and the client's outbox
+    must retain and replay - exactly the clause. The live process is untouched,
+    so the SESSION SURVIVES the interruption, which is what makes the run
+    meaningful. `! -i lo` keeps the server's own loopback path (ops/live-pair.sh,
+    /api/live/descriptor from the host) working, so a local mint during the
+    window is unaffected. Port 7861 ONLY: the batch service on 7860 cannot be
+    touched by this rule.
+
+MUTATIONS THIS ITERATION AND THEIR ROLLBACKS:
+  1. server: ONE 5-second DROP rule on INPUT for tcp/7861, applied as a
+     SELF-DELETING detached job so it heals even if this iteration dies:
+       setsid nohup sh -c 'iptables -I INPUT ! -i lo -p tcp --dport 7861 -j DROP;
+                           sleep 5;
+                           while iptables -C INPUT ! -i lo -p tcp --dport 7861 \
+                                 -j DROP 2>/dev/null; do
+                             iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP;
+                           done' &
+     ROLLBACK (idempotent, safe to run at any time, run it if anything looks
+     wrong and run it again at the end of the iteration to prove the chain is
+     clean):
+       sudo iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP
+       sudo iptables -S INPUT      # must print exactly `-P INPUT ACCEPT`
+     There is NO other server mutation: no checkout, no restart, no unit change,
+     no manifest or TLS touch, no deploy, no merge.
+  2. m4mbp: NONE this iteration. No app launch, no pair, no volume change, no
+     pasteboard write, no /tmp scratch. The F2 RUN is the next iteration's work;
+     this one only builds and proves its instrument.
+
+STOP CONDITIONS, decided before the rehearsal so a bad result is not argued away:
+  * batch `http://192.168.68.38:7860/` must answer 200 BEFORE, DURING and AFTER
+    the window. If it does not, the rule is wrong - roll back and record.
+  * any MainPID moves, or NRestarts != 0 on any unit -> stop and record.
+  * `iptables -S INPUT` must return to exactly `-P INPUT ACCEPT`. If it does
+    not, that is a blocker, not a footnote.
+
+## run 20260729-025318-86584 - iteration 10 - F2 HAS AN INSTRUMENT: the 5 s
+## network interruption is real, proven on the live server, and reducible
+
+TARGET: F2, the 300 s locked certification. Outcome: its instrument is built and
+proven; the RUN is the next iteration's work.
+
+FILES TOUCHED (all loop tooling, all under scripts/ralph-afk/):
+  live-cert.sh              NEW - the 300 s locked driver, runs on m4mbp
+  live-cert-interrupt.sh    NEW - the 5 s network interruption, runs on the
+                            server inside WSL
+  live-canary-clauses.py    section 10 (the interruption clause) + section 1
+                            learns about the window
+  context.md, progress.txt  the record
+NO product source, NO ops/, NO tests/, NO deploy, NO merge, NO restart, NO
+rebuild, NO m4mbp mutation at all.
+
+VALIDATION COMMANDS AND RESULTS:
+  bash -n live-cert.sh                                  -> syntax OK
+  bash -n live-cert-interrupt.sh                        -> syntax OK
+  live-canary-clauses.py /tmp/i9-f3-evidence/ralph-soak --user-visible-gate-ms 6000
+      -> rc=3, output BYTE-IDENTICAL to the pre-change run (diff -q clean)
+  live-canary-clauses.py /tmp/i6-f1-evidence/ralph-canary
+      -> rc=0, output BYTE-IDENTICAL to the pre-change run (diff -q clean)
+  bash live-cert-interrupt.sh --delay 4 --duration 5 --out /tmp/i10-interrupt.json
+      on the LIVE SERVER -> measured_duration_s 5.110 (CLOCK_MONOTONIC),
+      wall 5.108, deletes 1, rule_still_present "no",
+      chain_after "-P INPUT ACCEPT;", and the reducer's own load_json reads it
+  six synthetic branch cases (/tmp/i10-case-*.txt), listed below
+
+THE MECHANISM DECISION, made and recorded BEFORE the patch, as the PRD requires.
+A 5 s outage must leave the live SESSION alive or the rest of the run measures
+nothing. Three alternatives were rejected on evidence, not taste:
+  * DROP THE TAILNET ON m4mbp - rejected. No passwordless sudo there (measured),
+    `tailscale` is not on PATH (only /Applications/Tailscale.app), and ssh to
+    m4mbp RIDES the tailnet (SSH_CONNECTION 100.64.0.1 -> 100.64.0.4), so a
+    client-side drop strands the host behind a recovery path that may need GUI
+    auth. Unacceptable for a 5 s window.
+  * RESTART OR STOP moss-live-web - rejected. The session lives in that process's
+    memory; a restart destroys it. That is a server crash, not a network
+    interruption, and it tests nothing the clause asks about.
+  * kill -STOP / -CONT ON THE LIVE PROCESS - rejected. It does produce client
+    timeouts, but the server then RECEIVES and processes every frame after CONT,
+    so "the network dropped it" and "the server got it late" stop being
+    distinguishable in the evidence - and the clause is about audio the client
+    must retain BECAUSE it never arrived.
+  * CHOSEN: sudo iptables -I INPUT ! -i lo -p tcp --dport 7861 -j DROP, for
+    exactly 5 s. Packets are dropped so the server never sees them and the
+    client's outbox must retain and replay; the live PROCESS is untouched so the
+    session survives, which is what makes the rest of the run measurable.
+    `! -i lo` keeps the server's own loopback path (ops/live-pair.sh, a local
+    descriptor fetch) working through the window - a blanket dport rule would
+    cut the host off from its own service, which is not what "the network
+    dropped" means. `--dport 7861` ONLY: the batch service on 7860 is a PRD
+    acceptance clause in its own right and this rule cannot reach it.
+
+REHEARSED TWICE ON THE LIVE SERVER, and the second time with the packaged script.
+  ad-hoc rehearsal: live 7861 timed out (curl 000) across the window while batch
+    7860 answered 200 on ALL 22 probes; chain returned to "-P INPUT ACCEPT"
+  packaged: --delay 4 --duration 5 -> 5.110 s measured, self-deleted, chain clean
+  server after both: HEAD 42abc5a worktree clean; moss-live-web 355607,
+    moss-web 301112, moss-vllm 322117, ALL NRestarts=0 and MainPIDs UNMOVED;
+    live-runs 0; no /tmp/mtd-live-*; 0 journal tracebacks; from MacStudio
+    /api/live/descriptor 200, batch / 200, batch /api/jobs 200.
+  All server scratch removed (/tmp/live-cert-interrupt.sh, /tmp/i10-*.sh,
+  /tmp/i10-interrupt.json, /tmp/i10-drop.log).
+
+THE INSTRUMENT MEASURES ITSELF ON CLOCK_MONOTONIC, deliberately. This host's wall
+clock steps ~1.5 s BACKWARDS every ~32.3 s (candidate 56, measured in iteration
+28), so a wall-clock duration here could report a 5 s outage as 3.5 s - repeating
+inside the instrument the exact defect Phase P was authorized to remove from the
+product. The child reads /proc/uptime for the duration and records the wall
+numbers alongside so the two can be compared. This run: 5.110 vs 5.108, i.e. no
+step fell inside the window.
+
+THREE DESIGN PROPERTIES THAT ARE THE POINT, NOT DECORATION:
+  1. IT SELF-DELETES FROM A DETACHED setsid CHILD, in a delete-until-gone loop.
+     An orchestrator that dies mid-window must not leave the live port blocked.
+     Recorded rollback if it ever does:
+       sudo iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP
+       sudo iptables -S INPUT     # must print exactly `-P INPUT ACCEPT`
+     The script also REFUSES TO ARM on top of an existing identical rule: two
+     armed jobs would have the second delete the first's rule early and both
+     reports would then be wrong about what the client saw.
+  2. ARM THE SERVER JOB BEFORE LAUNCHING THE DRIVER. Then nothing after launch
+     depends on the orchestrator still being alive - iteration 8 of this run
+     nearly cost a 17-minute gate to exactly that. The price is clock skew
+     between the armed delay and the driver, and it is paid for by making the
+     phase the window lands in SIXTY SECONDS WIDE and sampling the client's
+     status at 1 Hz (not the soak's 10 s) for the whole run, so whatever the
+     skew, the outbox's retain-and-replay is bracketed by evidence.
+  3. THE REDUCER'S POSITIVE CONTROL, which is what stops a vacuous green. A run
+     where the network never actually went down passes every other clause
+     trivially and looks IDENTICAL to a run that survived an outage. So section
+     10 credits survival only if the client itself refused at least one poll
+     inside the window; otherwise UNDECIDED: "the server dropped inbound tcp for
+     N s but all M client polls in that window answered 200 - THE CLIENT NEVER
+     SAW THE OUTAGE, so surviving it proves nothing."
+
+AND SECTION 1 HAD TO LEARN ABOUT THE WINDOW - the near-miss worth recording. An
+F2 run causes its own refusals ON PURPOSE. Before this change the reducer scored
+the synthetic outage-seen case
+    RED  the portal stopped answering 200 at t+42.7s
+i.e. THE RUN WOULD HAVE FAILED FOR THE OUTAGE IT EXISTS TO PRODUCE. That is the
+fourth instance of the class candidates 57 and 59 name: a verdict word naming
+something it does not decide. Fixed by loading the interrupt report BEFORE
+section 1 and excluding polls inside the window +/- 6 s - and the exclusion is
+PRINTED, never subtracted silently ("N non-200 polls fall inside the armed
+interruption window and are EXCLUDED from this clause ... section 10 decides
+them"). The +/- 6 s skew is deliberate: the two hosts' wall clocks are
+independent and the server's steps backwards, so the correlation asks "was this
+poll during the outage", not "when exactly".
+
+SIX BRANCHES EXERCISED, on synthetic reports over real F1 evidence (the same
+technique candidate 57 used in iteration 29):
+  real outage seen           -> rc=0, GREEN "a 5.01s network interruption was
+                                seen by the client (4 refused polls) and the
+                                session resumed", GREEN outbox retained/drained,
+                                and section 1 GREEN "(outside the 4 polls of the
+                                armed interruption)"
+  window armed, no refusal   -> rc=2 UNDECIDED, the vacuous-green control
+  rule_still_present=yes     -> rc=3 RED, the instrument left the port blocked
+  measured 2.0s vs nominal 5 -> rc=2 UNDECIDED "a WEAKER interruption than the
+                                PRD asks for, so UNPROVEN rather than passed"
+  window outside the meeting -> rc=2 UNDECIDED, and section 1 correctly stays RED
+                                because those refusals are then UNEXPLAINED
+  report absent              -> rc=2 UNDECIDED, never silence
+Also corrected during validation: the outbox peak is now measured INSIDE the
+window, not across the run. The first draft credited F1's ordinary start-up
+backlog (2 frames at t+12.8 s) to an outage that happened 37 s later - a claim
+the evidence does not support.
+
+WHAT IS DELIBERATELY NOT BUILT, and it is not a scripting gap. The PRD's F2 also
+requires "a separate mic-granted / system-audio-denied run that still produces
+transcript". That is a SEPARATE RUN by the PRD's own wording, and producing it
+means taking a TCC grant away from com.alphasight.moss.capture. Both grants hold
+auth_value=2 and the PRD forbids ever asking the operator for those clicks again,
+so a driver that reset them would spend the one input this loop cannot obtain.
+It needs its own recorded plan before anyone writes code for it. Said out loud
+here so a green F2 run is not read as the whole clause.
+
+WHY THIS CANDIDATE AND NOT ANOTHER. Candidates 55, 58 and 60 are tracked product
+source under the post-merge freeze and need the operator's authorization, which
+this loop cannot obtain; iteration 9 already put candidate 60 in front of them
+with the severity framing. Phase N is authorized but gated on "Phase M's gate
+green", and F3 is 5 GREEN / 1 RED - whether candidate 60 gates Phase N is
+explicitly the operator's call, so spending the gate on my own reading of it
+would be overstepping. F2 is a PRD acceptance clause, is unblocked, is loop
+tooling only, and iteration 9 recommended it by name.
+
+WHAT I LEARNED:
+  * The server has PASSWORDLESS SUDO and iptables (v1.8.10, nf_tables), reached
+    as `ssh gyauo@ga0-alienware-rtx4070ti.local` then `wsl.exe -d Ubuntu`; the
+    WSL user is `devcontainers`, and `ssh ga0@ga0-alienware-rtx4070ti` is
+    publickey-denied. That asymmetry - root on the server, none on the Mac - is
+    what decided the mechanism, and it was worth four read-only probes to learn
+    before writing any code.
+  * `wsl.exe -d Ubuntu -- bash -lc "echo <base64> | base64 -d | bash"` fails with
+    "The command line is too long" for a 6 KB script. Pipe the file on STDIN
+    instead: ssh host 'wsl.exe -d Ubuntu -- bash -c "cat > /tmp/x.sh"' < file,
+    then verify with md5sum (done: 3802c95b.. both sides).
+  * A file written by a detached sudo child is ROOT-OWNED: readable by anyone,
+    removable only with sudo. Recorded in the script header so the next reader
+    does not file it as a permissions bug.
+  * Building an instrument for a clause forces the reducer to be honest about
+    that clause. Section 1's exclusion bug existed the moment a deliberate
+    outage became possible, and it was found by a synthetic case rather than by
+    burning a 300 s run on the real hosts.
+
+RECOMMENDED NEXT STEP - RUN F2, and in this order, which the drivers' headers
+already spell out:
+  1. server:  bash live-cert-interrupt.sh --delay 215 --duration 5 \
+                   --out /tmp/ralph-cert-interrupt.json
+              (copy it in on stdin; 215 = ~15 s of driver setup + ~200 s of
+               meeting, which lands the window inside the 60 s program-interrupt
+               phase with ~20 s of slack either side)
+  2. m4mbp:   scp scripts/ralph-afk/live-cert.sh ga0@m4mbp:/tmp/
+              nohup env OUTPUT_MODE=muted bash /tmp/live-cert.sh <label> \
+                    > /tmp/ralph-cert-run.log 2>&1 &
+  3. after:   copy the server's report into <dir>/interrupt.json (sudo to read
+              it out, sudo to remove it) and reduce with
+              live-canary-clauses.py <dir> --user-visible-gate-ms 6000 \
+                --interrupt-report <dir>/interrupt.json
+Pre-record the m4mbp rollbacks first (the iteration-7 block is the template: app
+launch, pair, output mute, /tmp scratch, pasteboard) and read F1's two standing
+warnings into it - decoder p95 RTF was 0.911, close to the < 1 bound, and
+identity saturates at ~t+65 s so labels after minute 1 are S00 by design.
