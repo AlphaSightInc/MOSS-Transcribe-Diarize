@@ -23480,3 +23480,34 @@ still the three retired-evidence index tables (~11 KB of pure navigation,
 mergeable into one).  Do NOT spend another iteration measuring candidate 55, 60
 or 65: the chain is site -> mechanism -> priced remedy, and the next move on it
 is the operator's.
+
+================================================================================
+PRE-RECORDED ROLLBACKS - run 20260729-094359 iteration 7, before the F0 probe re-run
+================================================================================
+WHY THIS RUN.  Iteration 7 found that candidate 60's claim "no client code path
+calls POST /api/live/sessions/{id}/stop" is TRUE ONLY OF THE MAC CAPTURE CLIENT,
+and that the loop generalised it into "Phase N step 3's session-end sweep never
+runs in a real meeting / ADR-0002's second acceptance half is unreachable in
+production".  live-pipeline-probe.py CALLS THAT ROUTE (line 847, bearer=device
+token).  So the session-end sweep is measurable on the deployed service today,
+with no product change, no operator, no TCC and no Mac.
+
+MUTATIONS THIS ITERATION WILL MAKE ON ga0-alienware-rtx4070ti, and their undo:
+  1. One pairing code minted on the host loopback by ops/live-pair.sh.
+     ROLLBACK: none needed - a pairing code is single-use and expires on its own.
+  2. One device row in ~/.local/share/moss-transcribe-diarize/live/live-auth.json,
+     device-id `ralph-i7-stopsweep-<utc>`.
+     ROLLBACK (MANDATORY, run in the same iteration):
+       DELETE /api/live/devices/{device_id} on the host loopback.  Assert the 200
+       AND its {"device_id": ...} body - a POST .../revoke returns 404 for
+       route-not-found, which reads exactly like "already gone".
+     Baseline to restore to: 14 devices / 1 unrevoked (m4mbp
+     AB600574-FD93-4321-967E-652AB064A70B).  Backup copy already on the host:
+     live-auth.json.ralph-f0-backup-20260728T091927Z, sha256 9d306766...
+  3. One live session, created and stopped by the probe itself.
+     ROLLBACK: none - the probe's own POST .../stop ends it; a lease expiry would
+     end it within 30 s regardless.
+  NOT MUTATED, and asserted after: server HEAD 7a4f59c (measured before the run),
+  live MainPID 365632 / batch 301112 + 322117 all NRestarts=0 (measured before the
+  run), no service restart, no checkout move, no manifest regeneration, no m4mbp
+  contact at all (this probe needs no Mac).
