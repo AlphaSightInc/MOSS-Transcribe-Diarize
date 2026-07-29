@@ -58,8 +58,8 @@
 > paragraph per open item plus the Phase N decisions list, which is load-bearing by construction,
 > while "Read before…" holds **three overlapping sweep blocks** (session-end, at-F2's-fragmentation,
 > cadence) that each supersede part of the one before and could be one block with three tables.
-> **Headroom: ~32 KB below the 256 KB cap, three to six iterations at the measured drift** — updated
-> in iteration 16, which added 4.3 KB (the request-stream correction into the latency-remedy block,
+> **Headroom: ~26 KB below the 256 KB cap** — updated in iteration 17, which added ~6 KB (the N-batch
+> baseline measurement and its standing-summary bullet). Before that, iteration 16 added 4.3 KB (the request-stream correction into the latency-remedy block,
 > now ~41 KB and still the eighth pass's target, plus candidate 68's sharpening and one instrument
 > rule). Iteration 15 added 6.1 KB before it. *The per-section numbers above are the seventh pass's;
 > re-measure them at the eighth rather than trusting this line.*
@@ -266,6 +266,18 @@ carry is in the retired-evidence index below).**
   **real browser's** rate, and F1/F2/F3 open no browser, so a re-run **under-counts the cost** rather
   than over-counting the benefit. Candidate 68 gets *stronger*: the two constants are causally
   disconnected **in both directions**, so either one moved alone is wrong in its own direction.
+- **PHASE N STEP 4 IS NO LONGER AN ORDERING ITEM — THE ENGINE IT REPLACES IS MEASURED, AND THE CHEAP
+  VERSION OF THE FIX IS RULED OUT** `[iteration 17]`. The batch identity engine had never been scored
+  on anything, so step 4 could not be told from tidying. Driven through production
+  `IdentityResolver.resolve` on the **same eight meetings** and scored by **the album's own scorer**:
+  **80.07 % mean / 63.33 % min** against the album's 93.44 / 92.18 — *the product's file mode is worse
+  than its live mode on identical audio*, and that batch number is an **upper bound** (Tier A was
+  handed a perfect local diarization). The decisive half is the second: **batch Tier B moves the score
+  by exactly 0.0000000000 pp on every meeting**, and it still does at the album's 0.35/0.1 and at
+  k=10, because `_tier_b_evidence:726` offers it only **singleton** components — 36 of 71 — and
+  `cannot_link_conflict` refuses **195 of 310** proposals. **Retuning `IdentityResolverConfig` to the
+  album's parameters is measured to buy nothing; step 4 must replace the linking structure.** See the
+  N-batch block.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64, 65, **66** and **68**; F1's two REDs — which are **two different items with
   two different answers**, the RTF one being candidate 64's gate-definition ruling and the latency one
@@ -2027,7 +2039,7 @@ below the table.
 | **2 - tape** | ADR-0003 first (the retention decision in writing before any code), then the appender, the five live call sites, and the three `MOSS_LIVE_RETENTION_*` keys - **opt-in, off by default, and still off on the host** | 18, 19, 20, 21 | `live_tape.py`, `live_transport.py`, `web_cli.py`, `ops/moss-live.env.example` |
 | **3 - sweep** | the engine; its ADR-0002 gate-B score (**99.26 / 98.48 %**, `residual_corrections` **0**, merges **0**); the `LiveIdentitySweeper` ledger + cadence on the live path; `revise_labels` + the label track + the portal render; and the session-end `finalize_identity` with its `identity_finalized` event | 22, 23, 24, 25, 26 | `live_identity_sweep.py`, `live_session.py`, `live_span_bounds.py`, `live_coordinator.py`, `live_service_runtime.py`, `live_portal.py` |
 | **gate** | (a) GREEN at `1e1cf3f` -> (b) merge **`7a4f59c`** -> (c) deployed 4/4 with the host manifest regenerated at 0.35/0.1 -> (d) F1 **5 GREEN / 2 RED**, F2 **6 GREEN / 0 RED** | 27, 28, 29, 30, then it. 1 of this run | see the gates index |
-| **4 - batch unification** | **OPEN** - see N-batch below. Needs no new authorization | - | - |
+| **4 - batch unification** | **OPEN, and now MEASURED** - the engine it would replace scores **80.07 % mean / 63.33 % min** where the live album scores 93.44 / 92.18 on the identical corpus, and its Tier B moves that number by **exactly zero**. See N-batch below. Needs no new authorization | baseline measured 17 | `batch-tierb-baseline-probe.py` |
 
 **N-batch — STEP 4, THE ONLY OPEN PHASE N ITEM, and it needs no new authorization.** Steps 1-3 are
 code-complete, gated, merged (`7a4f59c`), deployed 4/4 and certified by F1 and F2; step 4 is
@@ -2053,6 +2065,60 @@ sweep has never published a **reassignment** — all 49 corrections across four 
 `S00 -> Sxx` — so a convergence measurement on a meeting shaped like candidate 55's would be
 measuring fill-ins, not repairs. Step 4 remains the one item here the loop can start without the
 operator.
+
+***STEP 4 NOW HAS THE BASELINE IT NEVER HAD, AND THE ENGINE IT WOULD REPLACE IS WORSE THAN THE LIVE
+ONE ON THE SAME AUDIO*** `[iteration 17; `scripts/ralph-afk/batch-tierb-baseline-probe.py`, rc=0,
+15/15 checks, offline, 6.5 s. No product source, no host, no session, no authorization.]* The album's
+93.44 % has had **no counterpart on the batch side since ADR-0002 was written**, so "unify" could not
+be told from "rewrite for tidiness". It can now. The probe drives the **production**
+`IdentityResolver.resolve` over the **same eight LibriSpeech meetings** at the shipped batch geometry
+(`plan_windows` 150 s / 120 s), substituting only the encoder by the same cached-real-encoder
+discipline `tests/live_identity_accuracy.py` uses, and scores it with **the album's own
+`speaker_accuracy`**.
+
+| engine, identical corpus and identical scorer | mean | min |
+| --- | --- | --- |
+| live album, label a reader saw at commit | **93.44 %** | 92.18 % |
+| **batch, as `ops/start-web.sh` deploys it** (`--speaker-identity-tier-b`) | **80.07 %** | **63.33 %** |
+| batch, Tier B **off** (the `IdentityResolverConfig` default) | 80.07 % | 63.33 % |
+| batch, Tier B at the album's 0.35 / 0.1 | 80.07 % | 63.33 % |
+| batch, Tier B at the album's k=10 intervals per node | 80.07 % | 63.33 % |
+| batch, both | 80.07 % | 63.33 % |
+
+**Three findings, and the second is the one that decides step 4's shape.**
+1. **The product's file mode is worse than its live mode on the same audio** — −13.38 pp mean,
+   −28.85 pp min — and the batch figure is an **upper bound**, because the probe hands Tier A a
+   *perfect* local diarization identical in both windows of every overlap. The gap is entirely at
+   k >= 3: batch scores **100 %** on both k=2 meetings (beating the album by +7.19 / +5.69) and
+   63.33-84.77 % on the six k>=3 ones.
+2. **Batch Tier B moves the score by exactly zero — `max |delta| = 0.0000000000 pp` on every
+   meeting and every arm — and recalibrating it to the album's parameters does not change that.**
+   It is not inert: it accepted **5** links and merged real canonicals (19 → 16 on `meet_k6_s1`).
+   The cause is **structural, not a threshold**: `_tier_b_evidence:726` offers Tier B only
+   `len(component) == 1` components, so two multi-window chains of the same speaker can **never** be
+   merged, and of the corpus's **71** components only **36** are ever eligible. Among those, the
+   dominant refusal is `cannot_link_conflict` **195 of 310** proposals (a singleton cannot link to a
+   component sharing its window), then `low_similarity` 95, `low_margin` 10, `accepted_similarity` 5.
+   ***So porting the album's thresholds into `IdentityResolverConfig` is measured to buy nothing;
+   step 4 has to replace the linking structure, not retune it.***
+3. **Batch fragments the same way live does, from a different cause.** 6 speakers → **19** Tier-A
+   components → 16-17 canonical labels, against candidate 55's 16 on the live side. Live fragments by
+   *birth without a duration floor*; batch fragments by *a chain Tier B may not touch*. Two defects,
+   one symptom — and one more reason the fix is one engine rather than two calibrations.
+
+**Two engines, proved on tracked source:** `speaker_identity.py` references no live identity module
+and the three live identity modules reference no batch resolver (0 hits each way), and the two
+similarity rules disagree by contract on the same pair — `_cosine` returns −1.000 unclamped where
+`cosine_similarity` returns 0.000. Both build a reference as a mean of per-interval embeddings, so at
+these thresholds the duplicate is a **maintenance hazard, not a measured behavioural difference**;
+decision 5's "the matcher is ONE function" holds on the live path and has never held across the batch
+seam.
+**The three fidelity limits are printed by the probe itself with their directions** — perfect Tier A
+(upper bound for batch), <= 2.5 s evidence units (pessimistic for Tier B, which is why the k=10 arm
+exists and still moves nothing), LibriSpeech read speech (ADR-0002 §7's own caveat). *What the probe
+does NOT measure:* any counterfactual unified engine. It prices the baseline and rules out the cheap
+answer; it does not prove the album engine would score better on the batch path, and the next step
+that would is a step-4 prototype gate in ADR-0002's own shape.
 
 **Decisions that outlive the retired step blocks - recorded here so they are not re-argued, because
 step 4 and any future identity work are constrained by them.**

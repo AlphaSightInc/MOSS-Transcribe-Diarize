@@ -26399,3 +26399,135 @@ rather than on the vanished hard cap, with "Read before any certification run"
 hoping for a different latency verdict: iterations 15 and 16 between them have
 measured exactly what it would take and exactly what it would and would not
 prove, and the change itself is one the loop is not permitted to make.
+
+================================================================================
+RUN 20260729-094359  ITERATION 17
+PHASE N STEP 4 HAS A BASELINE: THE BATCH IDENTITY ENGINE SCORES 80.07% WHERE THE
+LIVE ALBUM SCORES 93.44% ON THE SAME AUDIO, AND ITS TIER B MOVES THAT BY ZERO
+================================================================================
+
+TARGET.  Phase N step 4 (batch Tier-B -> album unification) - the one open
+product item prd.md's "Phase N remains authorized. Take it in ADR-0002's shape"
+already covers and the only one the loop can start without the operator.
+Iteration 16 named it as the next actionable step.  Chosen over the eighth
+compaction because ADR-0002's own method runs a prototype gate BEFORE production
+work, and step 4 had none: the album's 93.44% has had no counterpart on the
+batch side since the ADR was written, so "unify" could not be told from "rewrite
+for tidiness".  This iteration measures the engine unification would replace.
+
+WHAT I BUILT.  scripts/ralph-afk/batch-tierb-baseline-probe.py - drives the
+PRODUCTION IdentityResolver.resolve over the SAME eight LibriSpeech meetings the
+album was scored on, at the shipped batch window geometry (plan_windows 150 s /
+120 s stride), substituting only the ONNX encoder by CachedUnitEncoder, which
+answers with the real pinned WeSpeaker encoder's vector for that interval and
+RAISES otherwise - the same discipline tests/live_identity_accuracy.py uses.
+Scored with the album's own speaker_accuracy(), so the two numbers are the same
+quantity computed the same way over the same denominator.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/batch-tierb-baseline-probe.py   -> rc=0, ALL CHECKS
+    PASSED, 15 checks in 7 sections, 6.5 s.  Full output /tmp/i17-batch-tierb.txt
+
+  ENGINE, IDENTICAL CORPUS AND IDENTICAL SCORER      mean      min
+    live album, label a reader saw at commit        93.44%   92.18%
+    batch as ops/start-web.sh deploys it            80.07%   63.33%
+    batch, Tier B OFF (the config default)          80.07%   63.33%
+    batch, Tier B at the album's 0.35 / 0.1         80.07%   63.33%
+    batch, Tier B at the album's k=10 per node      80.07%   63.33%
+    batch, both                                     80.07%   63.33%
+
+  PER MEETING (batch / album):  k2_s0 100.00/92.81  k2_s1 100.00/94.31
+    k3_s0 78.26/93.29  k3_s1 74.10/92.18  k4_s0 84.77/92.76  k4_s1 73.31/95.44
+    k6_s0 63.33/92.18  k6_s1 66.76/94.59.
+
+  TIER-A STRUCTURE (nodes -> components, singletons offered to Tier B):
+    k2 11->2 (0)   k3 16->6 (2), 16->6 (1)   k4 21->7 (3), 21->10 (5)
+    k6 31->19 (12), 31->19 (13).  Corpus: 71 components, 36 ever eligible.
+  TIER-B PROPOSALS, shipped arm, whole corpus: cannot_link_conflict 195,
+    low_similarity 95, low_margin 10, accepted_similarity 5,
+    tier_b_insufficient_audio 5.
+
+WHAT I LEARNED.
+ 1. THE PRODUCT'S FILE MODE IS WORSE THAN ITS LIVE MODE ON THE SAME AUDIO.
+    -13.38 pp mean, -28.85 pp min - and the batch figure is an UPPER BOUND,
+    because the probe hands Tier A a perfect local diarization, identical in both
+    windows of every overlap, so its dice is 1.0 wherever a speaker is present in
+    both.  A real diarizer's two windows disagree.  The gap is entirely at k>=3:
+    batch scores 100% on both k=2 meetings and BEATS the album there (+7.19,
+    +5.69), then falls to 63-85% from three speakers up.
+ 2. THE CHEAP VERSION OF STEP 4 IS RULED OUT BY MEASUREMENT.  Batch Tier B moves
+    duration-weighted accuracy by max |delta| = 0.0000000000 pp on every meeting,
+    and it STILL does with the album's thresholds and the album's bank size
+    substituted.  It is not inert - it accepted 5 links and merged real canonicals
+    (19 -> 16 on k6_s1) - the merges just never touch a label the scorer counts.
+    So porting ALBUM_MIN_MATCH_SCORE / _MARGIN / k into IdentityResolverConfig
+    would look like unification and buy nothing.
+ 3. THE CAUSE IS STRUCTURAL, NOT A THRESHOLD, AND IT IS ONE LINE.
+    _tier_b_evidence:726 selects `[component for component in components if
+    len(component) == 1]` - Tier B is offered ONLY singletons, so two multi-window
+    chains of the same speaker can never be merged no matter what the threshold
+    is.  36 of 71 components are eligible at all, and among those pairs
+    cannot_link_conflict refuses 195 of 310 proposals because a singleton cannot
+    link to a component that shares its window.  Step 4 must replace the linking
+    structure; retuning is measured to be a no-op.
+ 4. BATCH FRAGMENTS THE SAME WAY LIVE DOES, FROM A DIFFERENT CAUSE.  6 speakers
+    -> 19 Tier-A components -> 16-17 canonical labels, against candidate 55's 16
+    on the live side.  Live fragments by birth without a duration floor; batch
+    fragments by a chain Tier B may not touch.  Two defects, one symptom.
+ 5. TWO ENGINES, PROVED ON TRACKED SOURCE.  git grep: speaker_identity.py
+    references no live identity module and live_identity{,_album,_sweep}.py
+    reference no batch resolver, 0 hits each way.  The two similarity rules
+    disagree by contract on the same pair - _cosine returns -1.000 unclamped where
+    cosine_similarity returns 0.000 - but BOTH build a reference as a mean of
+    per-interval embeddings, so at these thresholds the duplicate is a maintenance
+    hazard, not a measured behavioural difference.  Decision 5's "the matcher is
+    ONE function" holds on the live path and has never held across the batch seam.
+ 6. A CACHED-ENCODER SUBSTITUTION IS ONLY EXACT AT THE GRANULARITY THE VECTORS
+    WERE EMBEDDED AT, AND THE PROBE HAD TO FAIL TWICE TO FIND THE RIGHT ONE.  The
+    corpus's vector describes ALL of one (span, speaker) unit's intervals averaged
+    together; _tier_b_centroid embeds one interval at a time.  Emitting one
+    segment per contiguous PIECE was more faithful to a diarizer and produced 54
+    cache misses (828 of 2194 units hold internal pauses); emitting one segment
+    per unit's WALL EXTENT produced 1, from a unit another speaker interleaves.
+    What is exact is a segment anchored at the unit's true start and given the
+    unit's SPEECH seconds as its length - which also makes Tier B's 2.0 s filter
+    apply to the same quantity production applies it to.  Every one of those
+    misses would have been SILENTLY ABSORBED: _resolve_tier_b catches every
+    encoder exception into a tier_b_embedding_failed proposal and drops that
+    node's centroid, so the arm would have scored lower with no sign of why.  The
+    probe asserts zero of them.
+
+FILES TOUCHED.  scripts/ralph-afk/batch-tierb-baseline-probe.py (new),
+scripts/ralph-afk/context.md (the N-batch block, the step-4 index row, one
+standing-summary bullet, the compaction headroom line), this file.  NO product
+source, NO test, NO ops, NO host, NO session, NO TCC click, no authorization
+spent.  `git diff --name-only HEAD -- ':!scripts/ralph-afk'` is empty, so the
+offline-probe-speaks-for-the-deployed-service invariant is intact.
+
+EVIDENCE PATHS.  scripts/ralph-afk/batch-tierb-baseline-probe.py (tracked,
+offline, re-runnable in 6.5 s), /tmp/i17-batch-tierb.txt (this run's full
+output), tests/fixtures/live_identity_accuracy/*.npz (the eight meetings),
+tests/live_identity_accuracy.py (speaker_accuracy, replay_all, the fixture gate),
+moss_transcribe_diarize/app/speaker_identity.py:20-28 (the shipped Tier-B
+parameters), :272-407 (_resolve_tier_b), :409-420 (_tier_b_centroid), :726 (the
+singleton-only selection), :1166 (_cosine),
+moss_transcribe_diarize/app/live_identity_album.py:45-56,196,233,
+moss_transcribe_diarize/app/windowed_transcription.py:99 (plan_windows),
+ops/start-web.sh:44 (--speaker-identity-tier-b is deployed).
+
+BLOCKERS.  None new.  Nothing this iteration needed an authorization, a host or
+an operator input.  Still open and needing an amendment prd.md does not carry:
+candidates 55, 58, 60, 64, 65, 66, 68.
+
+RECOMMENDED NEXT STEP.  Step 4's prototype gate, in ADR-0002's own shape and on
+this same harness: run the corpus's windows through the ALBUM engine
+non-causally - one album per meeting, every window's local speakers matched
+against it in time order - and score it with the same speaker_accuracy.  That is
+the counterfactual this iteration deliberately did NOT measure, it needs no new
+fixture and no authorization, and it is what turns "the baseline is 80.07%" into
+"unification is worth N pp".  Only after that number exists is writing the
+unified resolver justified - and note it could not be merged today anyway, since
+merge-keeper.sh's expected_main guard refuses a ninth merge, so any product change
+would sit on the branch and break the offline-probe invariant until an
+authorization arrives.  The eighth compaction ("Read before any certification
+run", ~41 KB) remains due on cost-per-iteration grounds; headroom is now ~26 KB.
