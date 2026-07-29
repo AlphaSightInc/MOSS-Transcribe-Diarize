@@ -15,6 +15,7 @@ import packaging
 import pytest
 
 from moss_transcribe_diarize.app import live_provider_bundle
+from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
 from moss_transcribe_diarize.app.live_provider_bundle import (
     BUNDLE_SCHEMA_VERSION,
     LiveProviderBundleAdmissionError,
@@ -610,3 +611,152 @@ def test_wespeaker_live_adapter_scores_evidence_without_mutating_identity_snapsh
     assert len(encoder.calls) == 2
     assert [item.local_speaker for item in evidence] == ["S01", "S01", "S02", "S02"]
     assert [item.score for item in evidence] == [1.0, 0.0, 1.0, 0.0]
+
+
+def _prepared_snapshot(*, span_id, assignments, canonical_speakers, version):
+    return LiveIdentitySnapshot(
+        version=version,
+        canonical_speakers=canonical_speakers,
+        diagnostics=(
+            ("status", "prepared"),
+            ("reason", "ok"),
+            ("span_id", str(span_id)),
+            ("assignments", assignments),
+            ("canonical_speakers", ",".join(canonical_speakers)),
+        ),
+    )
+
+
+class _ScriptedEncoder:
+    """Returns one vector per `embed` call, so each span's voiceprint is chosen by the test."""
+
+    def __init__(self, vectors):
+        self.vectors = list(vectors)
+        self.calls = []
+
+    def embed(self, wav_path, intervals):
+        self.calls.append(intervals)
+        return self.vectors[len(self.calls) - 1]
+
+
+def _score_span(provider, *, span_id, seconds, base_snapshot):
+    samples = int(seconds * 16000)
+    return provider.score(
+        span=FrozenSpan(id=span_id, epoch=0, start_sample=0, end_sample=samples, reason="end_silence"),
+        pcm=b"\0\0" * samples,
+        segments=(SimpleNamespace(start=0.0, end=seconds, speaker="S01", text="words"),),
+        base_snapshot=base_snapshot,
+    )
+
+
+def test_a_short_span_labels_against_the_album_but_never_overwrites_it():
+    """ADR-0002 step 1, at the seam the overwrite policy lived on.
+
+    Under latest-span replacement the 0.5 s fragment in the middle becomes `speaker-0001`'s
+    reference and the third span -- the same voice as the first -- scores 0.0 against it.
+    """
+
+    encoder = _ScriptedEncoder([[1.0, 0.0], [0.0, 1.0], [1.0, 0.0]])
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum())
+
+    # Span 1: 2.0 s of a voice, before any canonical speaker exists.
+    assert _score_span(
+        provider,
+        span_id=1,
+        seconds=2.0,
+        base_snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()),
+    ) == ()
+
+    # Span 2: 0.5 s of something else, admitted as a *label* for the same canonical speaker.
+    after_first = _prepared_snapshot(
+        span_id=1,
+        assignments="S01->speaker-0001",
+        canonical_speakers=("speaker-0001",),
+        version=1,
+    )
+    short_evidence = _score_span(provider, span_id=2, seconds=0.5, base_snapshot=after_first)
+    assert [round(item.score, 6) for item in short_evidence] == [0.0]
+
+    # Span 3: the original voice again. The album still holds it.
+    after_second = _prepared_snapshot(
+        span_id=2,
+        assignments="S01->speaker-0001",
+        canonical_speakers=("speaker-0001",),
+        version=2,
+    )
+    recovered = _score_span(provider, span_id=3, seconds=2.0, base_snapshot=after_second)
+
+    assert [round(item.score, 6) for item in recovered] == [1.0]
+
+
+def test_the_album_accumulates_rather_than_replacing_across_spans():
+    encoder = _ScriptedEncoder([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    album = FingerprintAlbum()
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album)
+
+    _score_span(provider, span_id=1, seconds=2.0, base_snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()))
+    _score_span(
+        provider,
+        span_id=2,
+        seconds=2.0,
+        base_snapshot=_prepared_snapshot(
+            span_id=1,
+            assignments="S01->speaker-0001",
+            canonical_speakers=("speaker-0001",),
+            version=1,
+        ),
+    )
+    _score_span(
+        provider,
+        span_id=3,
+        seconds=2.0,
+        base_snapshot=_prepared_snapshot(
+            span_id=2,
+            assignments="S01->speaker-0001",
+            canonical_speakers=("speaker-0001",),
+            version=2,
+        ),
+    )
+
+    assert album.exemplar_count("speaker-0001") == 2
+    assert album.reference("speaker-0001") == pytest.approx((0.5**0.5, 0.5**0.5))
+
+
+def test_unreconciled_spans_do_not_grow_the_pending_map_for_the_length_of_a_meeting():
+    """An abstain never reconciles, and an abstain is a designed outcome, not an anomaly."""
+
+    encoder = _ScriptedEncoder([[1.0, 0.0]] * 40)
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum())
+    empty = LiveIdentitySnapshot(version=0, canonical_speakers=())
+
+    for span_id in range(1, 41):
+        _score_span(provider, span_id=span_id, seconds=1.0, base_snapshot=empty)
+
+    assert len(provider._pending_vectors) == live_provider_bundle._PENDING_SPAN_LIMIT
+    assert max(provider._pending_vectors) == 40
+
+
+def test_the_album_takes_adr_0002_defaults_and_lets_the_manifest_override_them():
+    default = live_provider_bundle._fingerprint_album({})
+    assert (default.admission_seconds, default.exemplars_per_speaker) == (1.0, 10)
+
+    tuned = live_provider_bundle._fingerprint_album(
+        {"album_admission_seconds": 1.5, "album_exemplars_per_speaker": 4}
+    )
+    assert (tuned.admission_seconds, tuned.exemplars_per_speaker) == (1.5, 4)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"album_admission_seconds": 0},
+        {"album_admission_seconds": -1.0},
+        {"album_admission_seconds": "2"},
+        {"album_admission_seconds": True},
+        {"album_exemplars_per_speaker": 0},
+        {"album_exemplars_per_speaker": 2.5},
+    ],
+)
+def test_the_album_refuses_a_manifest_that_names_a_nonsensical_parameter(payload):
+    with pytest.raises(LiveProviderBundleAdmissionError):
+        live_provider_bundle._fingerprint_album(payload)

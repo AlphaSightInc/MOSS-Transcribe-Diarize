@@ -18791,3 +18791,157 @@ If prd.md gains an eighth amendment, take the item it names. If it does not, the
 honest options are a further evidence-repair pass (the next cheapest cut is the
 "Gates, merges and redeploys" index) or recording the blocker again - NOT
 starting product work on 55/58/60 without an authorization.
+
+
+================================================================================
+RUN 20260729-025318-86584  ITERATION 15  -  PHASE N STEP 1: THE FINGERPRINT
+ALBUM (ADR-0002), and matching stops being enrollment
+================================================================================
+TARGET: Phase N step 1 - replace the live path's latest-span reference-vector
+overwrite with ADR-0002's quality-gated fingerprint album.
+
+WHY THIS, AND THE NEAR-MISS THAT ALMOST STOPPED IT. Iterations 13 and 14 both
+recorded "every remaining item needs the operator; prd.md is unchanged at seven
+amendments". THAT SENTENCE WAS FALSE THREE MINUTES AFTER IT WAS WRITTEN. The
+operator committed `0456177` "ralph: supersede Phase N with ADR-0002" at
+01:36:54, 2.5 minutes after iteration 14's own commit at 01:34:23, adding +44
+lines to prd.md and +26 to context.md. It says plainly: "Phase N remains
+authorized. Take it in ADR-0002's shape, not the sixth amendment's." This
+iteration found it only because it re-ran `git log -- scripts/ralph-afk/prd.md`
+instead of trusting its predecessor's report.
+  THE DURABLE RULE, now recorded in context.md: re-read prd.md's tail and
+  `git log --oneline -3 -- scripts/ralph-afk/prd.md` at the START of every
+  iteration. This is the THIRD operator commit to land mid-iteration in this
+  run (00620ab and 128eae4 were docs-only; this one carries an authorization),
+  so a moving branch tip is a standing condition here, not an anecdote.
+
+WHAT THE AUTHORIZATION CHANGES. Mechanism unchanged from the sixth amendment
+(replacement is the defect, album is the fix, injected at `canonical_embedding`,
+re-embedding 0..t rejected on O(T^2)). Parameters and scope change, ADR-0002
+winning on evidence: min_score 0.35, margin 0.1-0.2, admission 1.0-2.0 s, k=10,
+sweep 60 s, merge 0.70; the album is STEP 1 OF 4 and "a terminal-state failure if
+shipped alone"; acceptance is >=90-95% live accuracy AND live->file convergence.
+Measured there: album 98.5% mean (96.4-99.5) vs production's overwrite 66.4% mean
+(51.7-87.4), on 8 LibriSpeech meetings through production live semantics.
+
+FILES TOUCHED (4; all in moss_transcribe_diarize/ + tests/, NONE under macos/ or
+ops/, which is exactly Phase N's scope):
+  moss_transcribe_diarize/app/live_identity_album.py   NEW  (FingerprintAlbum)
+  moss_transcribe_diarize/app/live_provider_bundle.py  +92/-4
+  tests/test_live_identity_album.py                    NEW  (17 nodes)
+  tests/test_live_provider_bundle.py                   +150 (10 nodes)
+plus context.md and this journal. No host touched, nothing deployed, no device
+paired, no manifest regenerated.
+
+THE FOUR DECISIONS, TAKEN BEFORE THE PATCH AND WITH THE REASONING.
+1. ADMISSION IS 1.0 s, AND `min_segment_samples` DOES NOT MOVE. The sixth
+   amendment's flat ">= 2.0 s enrollment floor" is superseded - the eighth says
+   the top-k admission gate does the work that floor was compensating for.
+   `identity_provider.min_segment_samples` is the EVIDENCE floor: it decides
+   which local speakers get embedded and scored AT ALL, so raising it would make
+   short spans unlabelable - the exact opposite of the asymmetry being bought.
+   1.0 s over 2.0 s because ADR-0002's gate A passed at 1.0 s UNDER PRODUCTION
+   LIVE SEMANTICS (2.5 s span cap, 0.6 s silence split); a 2.0 s admission under
+   a 2.5 s cap would starve the album of the exemplars it exists to hold.
+2. THE MARGIN HALF OF ADMISSION IS ALREADY ENFORCED UPSTREAM - recorded, not
+   re-implemented. ADR-0002 admits on ">=2 s clean speech AND sufficient match
+   margin". The album only ever observes assignments out of a `prepared`
+   preparation, and BoundedCausalIdentityPreparer._match_rejection_reason
+   abstains for the WHOLE SPAN when a match fails min_match_score or
+   min_match_margin. So an assignment reaching the album carries the margin by
+   construction. A second margin knob would have had no independent evidence
+   behind it, and this loop has paid for tuned-not-measured constants before.
+3. A PROVISIONAL STAND-IN, BECAUSE ADR-0002 REQUIRES BIRTH SEMANTICS UNCHANGED.
+   Under a pure admission gate, a canonical speaker born from a 0.6 s span would
+   have NO reference at all, would never be matchable, and every recurrence of
+   that voice would birth another id - strictly WORSE capacity exhaustion than
+   candidate 55 measures today. ADR-0002's "identity provisional until ~5-10 s
+   accumulated" implies the state exists. So: exactly one sub-admission
+   observation per speaker, used only while the bank is empty, DISCARDED - never
+   averaged - by the first admitted exemplar, or the very fragment the gate
+   refused re-enters the centroid through the side door.
+4. TIE RULES DIFFER BY TIER, ON PURPOSE. The bank replaces the oldest equally
+   long exemplar (an exemplar is a SAMPLE of a voice and benefits from recency,
+   so an album filled in minute one still tracks the meeting); the stand-in keeps
+   the incumbent on a tie (a placeholder benefits from not churning, and churn is
+   the defect being removed). Neither tier is latest-wins, so "one noisy short
+   utterance destroys a good reference" is dead in BOTH.
+
+ALSO FIXED IN THE SAME FUNCTION, because leaving it would have been worse than
+touching it: `_pending_vectors` was popped only on a PREPARED reconcile, so every
+abstain leaked a span's vectors for the length of the meeting - and an abstain is
+a DESIGNED outcome (J2), not an anomaly. F3's 443-span soak would have retained
+hundreds of dead entries. Now bounded at _PENDING_SPAN_LIMIT = 8 (one entry would
+do; the slack absorbs a reordering).
+
+RED-BEFORE, ON THE REAL SEAM, WITH NO REVERT NEEDED - the pre-album policy is
+still reachable as `album=None`, so the defect can be reproduced beside its fix
+in ONE command:
+  three spans, one voice:  2.0 s enroll -> 0.5 s fragment of a DIFFERENT voice
+                           (labelled, as it must be) -> the original voice again
+  PRE-ALBUM  (album=None, latest-span overwrite): score [0.0]
+  WITH ALBUM (ADR-0002 step 1):                   score [1.0]
+That pair of numbers IS the 66.4%-vs-98.5% defect, offline and deterministic.
+Red-before for the pending bound is by ABSENCE:
+  git show HEAD:...live_provider_bundle.py | grep -c _forget_stale_pending -> 0
+
+VALIDATION (smallest commands that produce real evidence, all on MacStudio):
+  python3 -m pytest tests/test_live_identity_album.py -q      17 passed
+  python3 -m pytest tests/test_live_provider_bundle.py -q     28 passed (was 18)
+  python3 -m pytest tests -q -p no:cacheprovider
+      635 passed, 2 skipped, 368 subtests in 60.83 s   (was 608/2/368)
+  the red-before probe above (inline, /tmp-free)
+Swift was NOT run: this payload touches no Swift and no macos/ file. The full
+Swift/Python gate belongs to Phase N's merge gate, not to step 1.
+
+WHAT THIS DOES NOT DO - stated so a green suite is not mistaken for a finished
+job, which is precisely what ADR-0002 warns about:
+  * THE ALBUM ALONE IS A TERMINAL-STATE FAILURE per ADR-0002: without the
+    retrospective sweep, live accuracy diverges from whole-file exactly as the
+    sibling project's did at <80%. Steps 2-4 (tape recorder, sweep, batch
+    unification) are the rest of the job.
+  * IT DOES NOT FIX CANDIDATE 55. Births are unchanged BY DESIGN, so the `Hi.`
+    fragments that minted 9 of 16 canonical speakers in F1 still mint them and
+    still exhaust the bound. The album stops those fragments DESTROYING a good
+    prototype; it does not stop them CREATING a phantom one.
+  * ITS ACCEPTANCE BAR IS NOT MEASURABLE BY ANYTHING IN THIS REPO. >=90-95% live
+    accuracy and live->file convergence need labelled multi-speaker material and
+    an accuracy harness; ADR-0002's numbers come from
+    prototypes/streaming-diarization/, which is git-excluded. THE HARNESS IS THE
+    NEXT STEP'S REAL CONTENT.
+  * THE BRANCH NOW CARRIES UNMERGED TRACKED PRODUCT SOURCE AGAIN, so every
+    offline probe (live-lane-refusal-probe.py above all) has STOPPED speaking for
+    the deployed 42abc5a. They are local regressions until Phase N's gate, merge
+    and redeploy. This flipped false->true->false and the rule is in context.md.
+
+WHAT I LEARNED:
+  * A predecessor's "everything is blocked" is a report, not a fact, and its
+    shelf life here is minutes. The one command that would have caught it costs
+    nothing: git log --oneline -3 -- scripts/ralph-afk/prd.md.
+  * The cheapest red-before is one the code already affords. `album=None` is the
+    old policy verbatim, so the regression needed no semantic revert, no stash
+    and no temporary edit - and the proof stays runnable forever instead of
+    living in a journal entry.
+  * "Sufficient match margin" was already true by construction three call frames
+    up. Reading the collaborator before adding the knob turned a parameter into a
+    recorded fact, which is one fewer thing to calibrate and one fewer thing to
+    get wrong.
+  * The provisional tier is not a softening of the gate - it is what makes
+    "birth semantics unchanged" literally true. Without it the gate would have
+    made candidate 55 worse while claiming to improve identity.
+
+RECOMMENDED NEXT STEP. Phase N step 2 in ADR-0002's order is the tape recorder,
+but the honest next iteration is THE ACCURACY HARNESS, because nothing about
+step 1 can be certified without it and every later step's gate needs it too:
+labelled multi-speaker fixtures + a causal replay that scores album vs overwrite
+on cumulative live speaker accuracy, reproducing ADR-0002's gate A shape inside
+this repo (its prototypes are git-excluded, so the numbers are currently
+unreproducible here). That is tracked test material under tests/, inside Phase
+N's authorized scope, and needs no host and no operator.
+  Then, in order: N-tape (and FIRST the recorded decision about the PRD's
+  "no raw audio is persisted" clause vs ADR-0002's retention posture - the
+  amendment says re-read it against the ADR, which is a decision to record
+  BEFORE any code, not a licence to start writing audio), N-sweep, N-batch,
+  then N-gate -> merge -> redeploy -> F1/F2.
+  Still needing the operator and unchanged by this iteration: candidates 55, 58,
+  60, the F2 denied-lane variant, F1/F2's second-voice half, F4b.

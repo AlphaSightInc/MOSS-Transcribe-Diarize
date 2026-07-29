@@ -18,6 +18,11 @@ from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 from .live_adapters import RunnerBoundedWavInference
 from .live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from .live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig, LiveSpeakerEvidence
+from .live_identity_album import (
+    ALBUM_ADMISSION_SECONDS,
+    ALBUM_EXEMPLARS_PER_SPEAKER,
+    FingerprintAlbum,
+)
 from .live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -509,6 +514,11 @@ class WebRtcSpeechProvider:
         return cursor + piece_samples
 
 
+# A span's vectors are reconciled against the very next preparation, so one entry would do;
+# the slack absorbs a reordering without ever letting the map track the meeting's length.
+_PENDING_SPAN_LIMIT = 8
+
+
 class WeSpeakerLiveEvidenceProvider:
     """Live evidence adapter over the pinned file-mode WeSpeaker encoder seam."""
 
@@ -518,6 +528,7 @@ class WeSpeakerLiveEvidenceProvider:
         encoder: Any,
         canonical_embedding: Callable[[LiveIdentitySnapshot, str], Sequence[float] | None] | None = None,
         min_segment_samples: int = 1,
+        album: FingerprintAlbum | None = None,
     ):
         if min_segment_samples <= 0:
             raise LiveProviderBundleAdmissionError("wespeaker min_segment_samples must be positive.")
@@ -526,7 +537,13 @@ class WeSpeakerLiveEvidenceProvider:
         self.encoder = encoder
         self._canonical_embedding = canonical_embedding
         self.min_segment_samples = int(min_segment_samples)
-        self._pending_vectors: dict[int, dict[str, tuple[float, ...]]] = {}
+        # ADR-0002's reference-vector policy. The ADR names `canonical_embedding` as the
+        # injection point; the album is passed as its own collaborator because it owns the
+        # *write* side too -- replacing latest-span overwrite is an admission decision, and
+        # splitting reading from writing across two objects is what let a 0.5 s fragment
+        # overwrite a good prototype in the first place.
+        self._album = album
+        self._pending_vectors: dict[int, dict[str, tuple[tuple[float, ...], float]]] = {}
         self._canonical_vectors: dict[str, tuple[float, ...]] = {}
 
     def score(
@@ -548,7 +565,13 @@ class WeSpeakerLiveEvidenceProvider:
                 speaker: _vector_values(self.encoder.embed(wav_path, intervals))
                 for speaker, intervals in intervals_by_speaker.items()
             }
-        self._pending_vectors[span.id] = local_vectors
+        # The album's admission gate is a duration, so the seconds of speech that produced each
+        # vector travel with it: the encoder sees the intervals, nothing downstream does.
+        self._pending_vectors[span.id] = {
+            speaker: (vector, _intervals_duration(intervals_by_speaker[speaker]))
+            for speaker, vector in local_vectors.items()
+        }
+        self._forget_stale_pending()
         if not base_snapshot.canonical_speakers:
             return ()
         evidence: list[LiveSpeakerEvidence] = []
@@ -575,7 +598,20 @@ class WeSpeakerLiveEvidenceProvider:
     ) -> Sequence[float] | None:
         if self._canonical_embedding is not None:
             return self._canonical_embedding(snapshot, speaker)
+        if self._album is not None:
+            return self._album.reference(speaker)
         return self._canonical_vectors.get(speaker)
+
+    def _forget_stale_pending(self) -> None:
+        """Bound the pending map; only the newest span is ever reconciled against.
+
+        A span whose preparation abstains or fails is never popped, so without this the map
+        grows for the length of the meeting -- and abstains are the *designed* outcome for an
+        ambiguous identity, so a long meeting produces plenty of them.
+        """
+
+        while len(self._pending_vectors) > _PENDING_SPAN_LIMIT:
+            del self._pending_vectors[min(self._pending_vectors)]
 
     def _reconcile_committed_vectors(self, snapshot: LiveIdentitySnapshot) -> None:
         diagnostics = dict(snapshot.diagnostics)
@@ -592,9 +628,19 @@ class WeSpeakerLiveEvidenceProvider:
             if "->" not in assignment:
                 continue
             local_speaker, canonical_speaker = assignment.split("->", 1)
-            vector = pending.get(local_speaker)
-            if vector is not None:
+            observation = pending.get(local_speaker)
+            if observation is None:
+                continue
+            vector, duration_sec = observation
+            if self._album is None:
                 self._canonical_vectors[canonical_speaker] = vector
+                continue
+            self._album.observe(
+                canonical_speaker=canonical_speaker,
+                vector=vector,
+                duration_sec=duration_sec,
+                span_id=span_id,
+            )
 
 
 def _speech_provider(config: LiveProviderBundleConfig):
@@ -696,6 +742,32 @@ def _identity_evidence_provider(
             config.identity_provider.get("min_segment_samples"),
             "identity_provider.min_segment_samples",
         ),
+        album=_fingerprint_album(config.identity_provider),
+    )
+
+
+def _fingerprint_album(payload: Mapping[str, Any]) -> FingerprintAlbum:
+    """ADR-0002's parameters as code defaults, overridable by a manifest that names them.
+
+    The deployed manifest is generated and hash-covered, so requiring new keys would refuse the
+    document that is running today. Absent keys mean ADR-0002 §7's measured starting values, and
+    the ADR's recalibration against album centroid statistics stays a manifest edit rather than a
+    code change.
+    """
+
+    admission = payload.get("album_admission_seconds")
+    exemplars = payload.get("album_exemplars_per_speaker")
+    return FingerprintAlbum(
+        admission_seconds=(
+            ALBUM_ADMISSION_SECONDS
+            if admission is None
+            else _positive_float(admission, "identity_provider.album_admission_seconds")
+        ),
+        exemplars_per_speaker=(
+            ALBUM_EXEMPLARS_PER_SPEAKER
+            if exemplars is None
+            else _positive_int(exemplars, "identity_provider.album_exemplars_per_speaker")
+        ),
     )
 
 
@@ -732,6 +804,10 @@ def _speaker_intervals_by_label(
             continue
         intervals.setdefault(segment.speaker, []).append((start, end))
     return intervals
+
+
+def _intervals_duration(intervals: list[tuple[float, float]]) -> float:
+    return sum(end - start for start, end in intervals)
 
 
 def _write_pcm_wav(path: Path, pcm: bytes) -> None:
@@ -1096,6 +1172,14 @@ def _positive_int(value: Any, name: str) -> int:
     if not isinstance(value, int) or value <= 0:
         raise LiveProviderBundleAdmissionError(f"{name} must be a positive integer.")
     return value
+
+
+def _positive_float(value: Any, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise LiveProviderBundleAdmissionError(f"{name} must be a positive number.")
+    if not math.isfinite(value) or value <= 0.0:
+        raise LiveProviderBundleAdmissionError(f"{name} must be a positive number.")
+    return float(value)
 
 
 def _non_negative_int(value: Any, name: str) -> int:
