@@ -1466,7 +1466,31 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     "THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS" in progress.txt. Loop tooling; it made
     F2 ungreenable for candidate 60, a defect outside F2's clause list.
 
-### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)
+### Phase N - live speaker identity - FOLLOW ADR-0002, NOT THE SIXTH AMENDMENT
+
+**Read `docs/adr/0002-two-tier-diarization-fingerprint-album.md` and
+`docs/design-streaming-diarization.md` first.** They are the operator's own accepted design, with
+prototype gates A/B/C passed on **LibriSpeech** meetings using the production embedder and
+production live semantics (2.5 s span cap, 0.6 s silence split, one-to-one score/margin matching,
+abstain, birth, 16-speaker cap). The supervisor's TTS-based numbers below are superseded wherever
+they disagree; they agree on the mechanism and the injection point.
+
+Measured there, not here: album **98.5% mean** live accuracy (96.4-99.5%) against production's
+latest-span overwrite at **66.4% mean** (51.7-87.4%), which reproduces the sibling project's <80%
+failure. Starting parameters: `min_score` 0.35, margin 0.1-0.2, admission 1.0-2.0 s, k=10, sweep
+every 60 s, merge threshold 0.70. Sweep cost ~0.1 ms at 600 s, <10 ms extrapolated to 3 h.
+
+**The album alone is step 1 of 4 and is a terminal-state failure if shipped alone** - without the
+retrospective sweep, live accuracy diverges from whole-file. Order: album -> tape recorder -> sweep
+-> batch unification. Acceptance is >= 90-95% live accuracy AND demonstrated live->file convergence.
+
+Note for the PRD: ADR-0002 deliberately changes the retention posture (the server keeps meeting
+audio, ~0.3 GB/hr) as the substrate for sweeps, so "no raw audio is persisted" must be re-read
+against the ADR rather than enforced blindly. Also open per the ADR's own §7: the prototypes used
+clean read speech, so a real conversational recording is required before production sign-off - which
+compounds with the measured fact that m4mbp's built-in mic cannot hear a second voice across the room.
+
+### (superseded) Phase N as first written (2026-07-28, sixth amendment; AFTER Phase M)
 
 Authorized by the sixth prd.md amendment, which **overrides** the out-of-scope entry for
 intermittent-speaker identity calibration. **Do not start until Phase M's gate is green** - identity

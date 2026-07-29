@@ -371,6 +371,50 @@ supervisor scoped it as optional in the fifth amendment and it has now cost four
 knowing why a frame was refused; it remains the right fix and needs its own authorization. Do not
 widen this cycle to include it.
 
+## Phase N is SUPERSEDED by ADR-0002 - read this before starting it
+
+`docs/adr/0002-two-tier-diarization-fingerprint-album.md` (Accepted 2026-07-29) and
+`docs/design-streaming-diarization.md` are the **authoritative design** for live speaker identity.
+They are the operator's own work, committed to this repo, with prototype gates A/B/C passed against
+**LibriSpeech** meetings using the production embedder and production live semantics. The sixth
+amendment's Phase N was written from a supervisor prototype using four synthetic TTS voices; where
+the two disagree, **ADR-0002 wins on evidence**.
+
+What the sixth amendment got right and keeps: replacement at
+`live_provider_bundle.py` `_reconcile_committed_vectors` is the defect; the fix is injected through
+the existing `canonical_embedding` hook so matcher, abstain and birth semantics are unchanged;
+re-embedding 0..t is rejected on O(T^2) cost.
+
+What it got **wrong or incomplete**, corrected here:
+
+- **Parameters.** Use ADR-0002's measured starting values - `min_score` **0.35**, margin
+  **0.1-0.2**, admission **1.0-2.0 s**, **k=10** exemplars, sweep every 60 s, merge threshold 0.70.
+  The amendment's flat ">= 2.0 s enrollment floor" came from TTS voices; the album's top-k
+  admission gate does the work that floor was compensating for.
+- **Scope.** Phase N as written is the **album only**, which ADR-0002 explicitly classifies as
+  implementation step 1 of 4 and as a **terminal-state failure if shipped alone**: without
+  retrospective rewrites, live accuracy diverges from whole-file exactly as the sibling project's
+  did at <80%. Do not treat a green album as the finished job.
+- **Acceptance bar.** Not "the centroid stops drifting" but ADR-0002's: **>= 90-95% live speaker
+  accuracy and demonstrated live->file convergence.** Production's latest-span overwrite measures
+  66.4% mean against the album's 98.5%.
+- **Implementation order** is ADR-0002's: album -> tape recorder -> sweep -> batch unification, each
+  step independently shippable.
+
+**Consequences the operator has accepted and the loop must honour:** the server will retain meeting
+audio (~0.3 GB/hr, TTL configurable) - a deliberate change from prune-after-commit, so the PRD's
+"no raw audio is persisted" clause must be re-read against ADR-0002 rather than enforced blindly;
+the transcript becomes a living document with versioned label rewrites; matcher thresholds need
+recalibration against album centroid statistics; sweeps must yield GPU to live spans (ONNX embedding
+is CPU-capable, measured 332-343 ms/unit, ~7x headroom under the 2.5 s cadence).
+
+**Open caveat carried from the ADR's own §7:** the prototypes used clean read speech with no overlap
+or noise, and assumed in-span local diarization is correct. A real conversational recording is
+required before production sign-off. This compounds with the measured hardware limit that m4mbp's
+built-in microphone cannot hear a second voice across the room.
+
+Phase N remains authorized. Take it in ADR-0002's shape, not the sixth amendment's.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:
