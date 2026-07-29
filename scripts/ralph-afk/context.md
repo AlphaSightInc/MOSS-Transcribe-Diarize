@@ -201,11 +201,17 @@ carry is in the retired-evidence index below).**
   is persisted"* clause must be re-read against the ADR rather than enforced blindly; and the
   prototypes used **clean read speech**, so a real conversational recording is needed before
   production sign-off — which compounds with candidate 51's measured limit.
-- **PHASE N STEP 1 (THE ALBUM) IS LANDED IN SOURCE (iteration 15).** `live_identity_album.py` +
-  wiring, 27 new nodes, Python **635 / 2 / 368**. Not gated, not merged, not deployed. See the
-  Phase-N block below. **The branch therefore carries unmerged tracked product source again**, so
+- **PHASE N STEP 1 (THE ALBUM) IS LANDED IN SOURCE (iteration 15) AND MEASURED (iteration 16).**
+  `live_identity_album.py` + wiring, 27 nodes; then N-gate's accuracy harness, 21 nodes, Python
+  **656 / 2 / 368**. Not gated as a phase, not merged, not deployed. **The album clears ADR-0002's
+  bar on production code: 93.4 % mean live speaker accuracy against overwrite's 72.0 %, ≥ 90 % on
+  every meeting.** Three things the measurement changed: candidate 55 costs **4.5 pp** and is *not*
+  subsumed by the album; the **deployed matcher thresholds** (0.5/0.2) put the album at **75.0 %**,
+  so recalibration is a shipping requirement; and the enrollment-floor instruction from the
+  superseded sixth amendment is refuted — **k**, not the duration gate, is what beats overwrite.
+  See the Phase-N block below. **The branch carries unmerged tracked product source**, so
   every offline probe has stopped speaking for the deployed service until a merge and redeploy —
-  see the rule under "What survives those blocks".
+  see the rule under "What survives those blocks". (The harness itself is `tests/` only.)
 - **F2 RAN AND IS GREEN (iteration 11).** That was the loop's one unblocked PRD acceptance clause
   and it is now spent. **Nothing measurable is left that the loop can do alone.** What remains:
   (1) candidate 60 — F3's one RED — is tracked product source under the post-merge freeze and needs
@@ -218,9 +224,11 @@ carry is in the retired-evidence index below).**
   and F3 a lane-separation verdict at all, and candidate 59 made that verdict *correct* — F1 and F2
   now name their system marker instead of calling it absent. *That conclusion held for exactly one
   iteration.* `0456177` re-opened Phase N and iteration 15 spent it on step 1. **Still needing the
-  operator: 55, 58, 60, the F2 denied-lane variant, F1/F2's second-voice half, F4b. NOT needing
-  one: Phase N steps 2–4 and its gate** — whose first real content is an accuracy harness this repo
-  does not have and whose step 2 collides with the PRD's no-raw-audio clause by design.
+  operator: 55, 58, 60, **the new 63**, the F2 denied-lane variant, F1/F2's second-voice half, F4b.
+  NOT needing
+  one: Phase N steps 2–4 and its gate** — whose accuracy half iteration 16 built and measured, and
+  whose step 2 collides with the PRD's no-raw-audio clause by design (a decision to record before
+  any code).
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -242,11 +250,14 @@ recorded and survive a bundle replacement. **Never ask the operator for those cl
 
 **Test totals on the branch.** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **635 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
-→ 635 with Phase N step 1's 27, run `20260729-025318` iteration 15) — the two skips are the pre-existing
+→ 158); Python **656 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
+→ 635 with Phase N step 1's 27, **→ 656 with N-gate's 21 accuracy nodes, iteration 16**) — the two
+skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Per-file: `test_live_pipeline_seams.py` **60**, `test_live_identity.py` **8**,
-`test_live_identity_album.py` **17** (new), `test_live_provider_bundle.py` **28**,
+Suite wall clock **71.25 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
+evidence in the repo). Per-file: `test_live_pipeline_seams.py` **60**, `test_live_identity.py` **8**,
+`test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **21** (new),
+`test_live_provider_bundle.py` **28**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
 `test_live_manifest_finalizer.py` **17**, `test_live_deployment_credentials.py` **14**,
 `test_live_service_deployment.py` **30**.
@@ -923,6 +934,19 @@ python3 -m pytest tests/test_live_service_runtime.py tests/test_live_provider_bu
 python3 -m pytest tests/test_live_auth.py tests/test_live_api.py -q \
   -k 'view_authority or view_revocation or revokes_the_view'
 
+# --- N-gate: live speaker accuracy on production code, 21 nodes, ~11 s (iteration 16) ---------
+#     Fixture integrity + the two silence splits (16 parametrised) then five measured claims.
+python3 -m pytest tests/test_live_identity_accuracy.py -q
+# The numbers themselves, any configuration, without pytest -- this is how a future run
+# re-measures rather than re-derives. Configs are lru_cached, so each costs ~1.2 s once.
+python3 -c "
+import sys; sys.path.insert(0,'tests'); sys.path.insert(0,'.')
+import live_identity_accuracy as H
+for p in ('album','overwrite'):
+    r = H.replay_all(policy=p)
+    print(p, round(H.mean_accuracy(r)*100,1), round(H.min_accuracy(r)*100,1))
+"
+
 # --- K3 terminal record (8 nodes: the terminal heartbeat's codes into expiry/journal/log, the
 #     lease expiry's `lanes=none`, the record's bounded shape, the default sink's level, three
 #     expiry-stamp nodes, and the real coordinator+v2 registry+runtime seam plus its
@@ -1429,8 +1453,13 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
 55. **Identity capacity saturates in the first minute** (iteration 12). The 16-speaker bound is
     reached at t+45.5 s (t+51.8 s in F1), so a voice arriving later can never be labelled. Degrades
     quality without ending a session, so no gate sees it. Tracked product source; **needs its own
-    authorization** — and Phase N's `N1`/`N3` may subsume it, since a 0.5 s fragment that becomes a
-    prototype is a plausible source of the phantom speakers that exhaust the bound.
+    authorization**. **PRICED IN ITERATION 16 and NOT subsumed by the album**: the accuracy harness
+    reproduces it offline and deterministically — all eight fixture meetings exhaust 16 canonicals
+    for 2–6 real voices *with the album on*, and lifting the bound to 32/64 moves the album from
+    **93.4 % → 97.9 % / 98.7 %**. So it costs **4.5 pp of live speaker accuracy** and is the whole
+    of the gap between production and ADR-0002's 98.5 %. The album was the hypothesis for its cause
+    and the hypothesis is now measured wrong: births are unchanged by design, so the fragmentation
+    survives the fix. It needs its own authorization and its own mechanism.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1495,6 +1524,19 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     `live-canary-clauses.py` already applies to a layout it cannot read. It cost this iteration
     nothing (the markers were extracted by hand in five lines) but it means the lane-separation
     verdict is unavailable for F2 and F3 as shipped.
+63. **The album would deploy at matcher thresholds tuned for the policy it replaced.** `[open, new
+    — iteration 16]`. `identity_config.min_match_score` **0.5** / `min_match_margin` **0.2** are what
+    the live runtime ships; ADR-0002 §7's measured starting values are **0.35 / 0.1–0.2**. Measured
+    on production code over the eight-meeting fixture: the album scores **93.4 %** at 0.35/0.1,
+    **91.0 %** at 0.35/0.2 and **75.0 % (min 40.0 %)** at the deployed 0.5/0.2 — i.e. *below
+    ADR-0002's ≥ 90 % bar at the only configuration that would actually run*. Phase N's own
+    acceptance bar is therefore unreachable without this, which makes it a shipping requirement
+    rather than a refinement; the ADR says as much (*"matcher thresholds need recalibration against
+    album centroid statistics"*). The change is a **generated, hash-covered manifest** field, so it
+    is tracked product source under the post-merge freeze and **needs its own authorization** — and
+    the eighth amendment already warns that changing these *"is a decision to record, not a knob to
+    tune until green"*. Reproduce with `tests/live_identity_accuracy.replay_all`; see the N-gate
+    block.
 62. **The reducer asked a certification run the soak's questions.** `[done — iteration 11]`. See
     "THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS" in progress.txt. Loop tooling; it made
     F2 ungreenable for candidate 60, a defect outside F2's clause list.
@@ -1568,10 +1610,10 @@ keys mean ADR-0002 §7's values, and the ADR's recalibration stays a manifest ed
 classes the album alone as a **terminal-state failure**: without the retrospective sweep, live
 accuracy diverges from whole-file. It also does **not** fix candidate 55 — births are unchanged by
 design, so `Hi.` fragments still mint canonical speakers and still exhaust the 16-speaker bound.
-And its acceptance bar (**≥ 90–95 % live accuracy, live→file convergence**) is **not measurable by
-anything in this repo today**: there is no labelled multi-speaker fixture and no accuracy harness
-here — ADR-0002's numbers come from `prototypes/streaming-diarization/`, which is git-excluded.
-**That harness is the next step's real content, and it is what N-gate needs.**
+And its acceptance bar's accuracy half was **not measurable by anything in this repo** until
+iteration 16 built the harness below; the convergence half still is not, because it needs step 3.
+*Superseded by measurement:* this block's guess that the album might explain candidate 55 is wrong —
+see candidate 55 and finding 2 under N-gate.
 
 **N-tape / N-sweep / N-batch — steps 2, 3 and 4, open.** Tape recorder (per-lane + mixed durable
 assembly with a gap manifest and a retention TTL), retrospective sweep (re-VAD/re-embed/re-cluster
@@ -1580,10 +1622,45 @@ unified onto the same album engine. Step 2 is where the PRD's *"no raw audio is 
 and the ADR's retention posture collide; the PRD amendment says to re-read the clause against the
 ADR, which is a decision to record before any code, not a licence to start writing audio.
 
-**N-gate — open.** ADR-0002's bar, not the sixth amendment's: an accuracy harness with labelled
-multi-speaker material, album **≥ 90–95 %** and materially above overwrite, demonstrated
-live→file convergence, then F1/F2 with the label clause meaningfully verified, then one merge,
-push, redeploy. Nothing in this bar is reachable until the harness exists.
+**N-gate — THE HARNESS EXISTS AND THE ALBUM IS MEASURED ON PRODUCTION CODE** `[iteration 16]`.
+`tests/live_identity_accuracy.py` + `tests/test_live_identity_accuracy.py` +
+`tests/fixtures/live_identity_accuracy/` (8 meetings, 1.85 MB). It drives the **real**
+`BoundedCausalIdentityPreparer` + `WeSpeakerLiveEvidenceProvider` + `FingerprintAlbum`, span by
+span, snapshot carried forward exactly as the coordinator does; only the ONNX forward pass is
+substituted, by replaying the **real** encoder's cached vectors. 21 nodes, Python **656 / 2 / 368**
+(+21, +11 s). Full table in progress.txt under `THE LIVE IDENTITY ACCURACY HARNESS`.
+*Numbers, at production defaults + ADR-0002 §7 thresholds (`min_score` 0.35, margin 0.1,
+admission 1.0 s, k=10, cap 16):*
+
+| | mean | min | ADR-0002's own figure |
+| --- | --- | --- | --- |
+| **album** | **93.4 %** | 92.2 % | 98.5 % (96.4–99.5) |
+| **overwrite** (`album=None`, still reachable) | **72.0 %** | 55.7 % | 66.4 % (51.7–87.4) |
+
+***Four findings the unit suite could not have produced.***
+1. **The gap is +21.4 pp and the album clears ADR-0002's ≥ 90 % bar on every meeting** — so
+   step 1 is measured, not asserted. The **red-before needs no revert**: the same assertions run
+   against `policy="overwrite"` give 72.0 % mean / 55.7 % min.
+2. **The 16-speaker bound is what holds production 5 pp under the ADR.** At cap 32 the album is
+   **97.9 %**, at cap 64 **98.7 %** — and overwrite at cap 64 is **66.4 %**, *the ADR's own number
+   to one decimal*. That coincidence is the strongest available check that this harness measures
+   what ADR-0002 measured, and it prices **candidate 55**: 4.5 pp of live accuracy, deterministic,
+   offline, every meeting saturating 16 canonicals for 2–6 real voices.
+3. **Accumulation does the work; the admission floor is nearly free of effect.** adm 0.01 → 93.5 %,
+   adm 1.0 → 93.4 %, adm 2.0 → 93.4 %; but k=1 → **79.2 %** and k=3 → 89.7 %. A full bank *is* a
+   duration gate (`_admit` evicts the shortest), so the floor's real job is the birth path. **The
+   superseded sixth amendment's central instruction — "raise the enrollment minimum to ≥ 2.0 s" —
+   is refuted as the load-bearing change**, and ADR-0002's "the top-k admission gate does the work
+   that floor was compensating for" is right about the *k*, not the *duration*.
+4. **The deployed matcher thresholds cost the album its bar.** At the shipping `min_match_score`
+   0.5 / margin 0.2 the album measures **75.0 % mean, 40.0 % min** — below the bar entirely; at
+   0.35/0.2 it is 91.0 %. ADR-0002's "matcher thresholds need recalibration" is therefore a
+   **shipping requirement**, not a refinement, and it is a tracked-source change needing its own
+   decision. (Overwrite at the deployed thresholds is 35.2 %.)
+
+**N-gate — what is still open.** Live→file convergence (needs the sweep, step 3); F1/F2 with the
+label clause meaningfully verified — still blocked by candidate 51's measured hardware limit; then
+one merge, push, redeploy. The accuracy half of the bar is now instrumented and green for step 1.
 
 ### (superseded) Phase N as first written (2026-07-28, sixth amendment; AFTER Phase M)
 

@@ -18945,3 +18945,156 @@ N's authorized scope, and needs no host and no operator.
   then N-gate -> merge -> redeploy -> F1/F2.
   Still needing the operator and unchanged by this iteration: candidates 55, 58,
   60, the F2 denied-lane variant, F1/F2's second-voice half, F4b.
+
+================================================================================
+RUN 20260729-025318 ITERATION 16 - THE LIVE IDENTITY ACCURACY HARNESS (N-gate)
+================================================================================
+
+Target: the candidate context.md named as the only thing standing in front of
+N-gate - "there is no labelled multi-speaker fixture and no accuracy harness
+here ... that harness is the next step's real content, and it is what N-gate
+needs."  Phase N is authorized (prd.md, sixth amendment as re-shaped by the
+eighth, `0456177`).  Step 1 (the album) landed in iteration 15 with a green unit
+suite and ZERO evidence that it labels a meeting correctly: ADR-0002's
+98.5 %-vs-66.4 % came from a prototype that RE-IMPLEMENTED the matcher.
+
+Files touched (all new, tests/ only - no product source, no ops/, no macos/):
+  tests/live_identity_accuracy.py                       the replay harness
+  tests/test_live_identity_accuracy.py                  21 nodes
+  tests/fixtures/live_identity_accuracy/README.md       provenance + limits
+  tests/fixtures/live_identity_accuracy/meet_k{2,3,4,6}_s{0,1}.npz   1.85 MB
+
+WHAT IT DRIVES.  The real BoundedCausalIdentityPreparer + the real
+WeSpeakerLiveEvidenceProvider + the real FingerprintAlbum, one prepare() per
+span, the prepared snapshot carried forward, the album reconciled from the
+PREVIOUS span's diagnostics on the next score() call - i.e. the coordinator's
+own sequence, including its one-span reconcile lag.  The ONLY substitution is
+the ONNX forward pass: CachedEncoder replays the vector the REAL pinned
+WeSpeaker encoder produced for that same evidence unit, so the geometry under
+test is the real encoder's and the suite needs no GPU-class asset.
+`policy="overwrite"` is the SAME production objects with album=None, which falls
+back to _canonical_vectors - the latest-span replacement.  The before state is
+still reachable, so the comparison needs no revert and no forked implementation.
+
+THE SUBSTITUTION IS PROVEN EXACT, not asserted.  assert_fixture_matches_production
+makes three separate claims per meeting: (1) replanning `truth` reproduces the
+stored evidence units unit for unit; (2) production's OWN interval filter
+(_speaker_intervals_by_label at the deployed min_segment_samples 8000) selects,
+for every unit, the seconds of speech the stored vector was embedded from; (3)
+every eligible unit has a vector.  Tolerance on (2) is ONE sample period - a span
+holds an integer number of samples so production clamps a piece ending exactly at
+the span end onto that grid; measured worst case across the whole corpus is
+0.504 samples, and the smallest interval either side could gain or lose is the
+0.5 s evidence floor, four orders of magnitude above the tolerance.
+Red-before, non-vacuous: planning at a 2.0 s span cap instead of the contractual
+40000 samples makes it refuse - "meet_k2_s0: replanned 334 units, fixture holds
+279".
+
+A CAVEAT THAT DISSOLVED UNDER MEASUREMENT.  The corpus was embedded under a 0.6 s
+silence split; the deployed endpointer splits at min_silence_samples 8000
+(0.5 s).  Rather than record that as a fidelity gap, it was measured: the corpus
+holds 0 of 1530 inter-utterance gaps in [0.5, 0.6), and the two constants produce
+byte-identical unit counts on all eight meetings.  So the harness runs the
+DEPLOYED value and a parametrised node keeps that true if the corpus is ever
+regenerated.
+
+VALIDATION
+  python3 -m pytest tests/test_live_identity_accuracy.py -q  -> 21 passed, 13.6 s
+  python3 -m pytest tests/ -q -> 656 passed, 2 skipped, 368 subtests, 71.25 s
+                                 (was 635/2/368 in ~60 s; +21 nodes, +11 s)
+  Red-before for the accuracy bar needs NO revert: the identical assertions run
+  against policy="overwrite" give 72.0 % mean / 55.7 % min against >=90/>=92.
+
+MEASURED - production defaults + ADR-0002 §7 thresholds
+(min_score 0.35, margin 0.1, admission 1.0 s, k=10, max_speakers 16):
+
+  meeting      album   overwrite    album spans (prep/abstain/fail), units, canonicals
+  meet_k2_s0   92.8 %    55.7 %     209/23/0, 230/252, 16
+  meet_k2_s1   94.3 %    83.6 %     215/16/0, 232/246, 16
+  meet_k3_s0   93.3 %    65.3 %     212/18/0, 233/250, 16
+  meet_k3_s1   92.2 %    66.5 %     207/25/0, 222/241, 16
+  meet_k4_s0   92.8 %    58.9 %     210/22/0, 224/244, 16
+  meet_k4_s1   95.4 %    80.0 %     216/16/0, 236/246, 16
+  meet_k6_s0   92.2 %    82.6 %     206/25/0, 225/245, 16
+  meet_k6_s1   94.6 %    83.6 %     210/18/0, 232/246, 16
+  MEAN         93.4 %    72.0 %     min 92.2 % / 55.7 %
+  ADR-0002     98.5 %    66.4 %     (96.4-99.5) / (51.7-87.4)
+
+  what moves the number                    mean     min
+  album adm=0.01 (admission floor off)     93.5 %   92.2 %
+  album adm=1.0  (ADR-0002, shipping)      93.4 %   92.2 %
+  album adm=2.0  (6th amendment's floor)   93.4 %   92.2 %
+  album k=3                                89.7 %   70.8 %
+  album k=1  (bank collapsed)              79.2 %   59.6 %
+  overwrite                                72.0 %   55.7 %
+
+  matcher thresholds                       mean     min
+  album at ADR      s=0.35 m=0.1           93.4 %   92.2 %
+  album at ADR      s=0.35 m=0.2           91.0 %   84.0 %
+  album at DEPLOYED s=0.50 m=0.2           75.0 %   40.0 %
+  overwrite at DEPLOYED s=0.50 m=0.2       35.2 %   16.3 %
+
+  the 16-speaker bound (candidate 55)      mean     min    canonicals
+  album cap=16 (deployed)                  93.4 %   92.2 %  16 every meeting
+  album cap=32                             97.9 %   96.3 %  30-32
+  album cap=64                             98.7 %   96.3 %  30-41
+  overwrite cap=64                         66.4 %   51.3 %  32-43
+
+WHAT WAS LEARNED - four things the unit suite could not have produced.
+
+1. ADR-0002 STEP 1 IS MEASURED, NOT ASSERTED.  The album clears the ADR's >=90 %
+   bar on every meeting and beats the policy it replaced by +21.4 pp mean.  That
+   is the first accuracy number this project has ever computed about itself.
+
+2. THE 16-SPEAKER BOUND IS THE WHOLE GAP TO ADR-0002 - candidate 55, priced.
+   Every fixture meeting exhausts 16 canonicals for 2-6 real voices WITH THE
+   ALBUM ON.  Lift the bound and the album goes 93.4 -> 97.9 -> 98.7 %.  And at
+   cap 64 OVERWRITE measures 66.4 % - ADR-0002's own reported figure to one
+   decimal.  That coincidence is the strongest available check that this harness
+   measures what the ADR measured, and it settles the open question of whether
+   the album subsumes candidate 55: it does NOT.  Births are unchanged by design,
+   so the fragmentation survives the fix and costs 4.5 pp.  Candidate 55 needs
+   its own authorization and its own mechanism.
+
+3. ACCUMULATION DOES THE WORK; THE ADMISSION FLOOR IS NEARLY FREE OF EFFECT.
+   Turning admission off entirely costs 0.1 pp; raising it to the superseded
+   sixth amendment's 2.0 s costs 0.0 pp; collapsing the bank to k=1 costs
+   14.2 pp.  Mechanism: a FULL bank is itself a duration gate, because _admit
+   evicts the shortest exemplar.  So the sixth amendment's central instruction -
+   "raise the enrollment minimum to >= 2.0 s" - is refuted as the load-bearing
+   change, and ADR-0002's "the top-k admission gate does the work that floor was
+   compensating for" is right about the k and not about the duration.  The floor
+   keeps its place on the BIRTH path (it decides what is provisional), which is
+   why iteration 15's decision 1 stands; it is simply not what moves this number.
+
+4. THE DEPLOYED MATCHER THRESHOLDS COST THE ALBUM ITS BAR.  The album landed
+   without touching min_match_score 0.5 / min_match_margin 0.2, so the deployed
+   runtime would run the album at thresholds tuned for the policy it replaced -
+   and there it measures 75.0 % mean, 40.0 % min, below the bar entirely.
+   ADR-0002's "matcher thresholds need recalibration against album centroid
+   statistics" is therefore a SHIPPING REQUIREMENT, not a refinement.  It is
+   tracked product source (the manifest's identity_config) and a decision to
+   record, not a knob to tune until green - so it is a new candidate, 63, and it
+   needs its own authorization.
+
+FIXTURE COST, stated because it is the one debatable part.  1.85 MB of npz
+against a 3.24 MB pack.  Kept at full float32 and all eight meetings: the mean
+over K in {2,3,4,6} x 2 seeds is the claim ADR-0002 makes, half of it would trade
+the seed-robustness half of that claim for 0.9 MB, and float16 would introduce a
+quantisation question into the project's only accuracy number.  Provenance,
+per-file source-cache sha256 and the corpus limits are tracked in the fixture
+README.
+
+BLOCKERS: none for this iteration.  Standing: Phase N steps 2-4 need no
+authorization but step 2 collides with the PRD's "no raw audio is persisted"
+clause by design, which the eighth amendment says to re-read against ADR-0002 -
+a decision to record BEFORE any code.  Candidates 55, 58, 60 and the new 63 are
+tracked product source under the post-merge freeze.
+
+RECOMMENDED NEXT STEP.  Either (a) record the retention decision that step 2
+(the tape recorder) is gated on - it is the cheapest remaining unblocked item and
+ADR-0002 requires the decision in writing first; or (b) put finding 4 in front of
+the operator as candidate 63, because it means the album as it would deploy TODAY
+scores 75.0 % and the recalibration is one manifest field.  (b) is the higher
+leverage of the two: shipping Phase N without it ships a measured regression
+against its own acceptance bar.
