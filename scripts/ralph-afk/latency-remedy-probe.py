@@ -3,13 +3,25 @@
 interval) against the three real certification runs, and prove the two
 constants it lives in are not tied to each other by anything.
 
+Iteration 16 adds section 5: WHOSE request rate each of those two constants
+actually changes. Iteration 15's honest limit named the wrong request stream,
+and the answer sharpens candidate 68 rather than softening it.
+
 No product change, no host, no session. Reads one real evidence directory and
-two tracked source files."""
+three tracked source files."""
 import json, re, subprocess, sys, pathlib
 
 REPO = pathlib.Path("/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize")
-F3 = pathlib.Path("/tmp/i12-f3-evidence/ralph-soak/latency-final.json")
+F3DIR = pathlib.Path("/tmp/i12-f3-evidence/ralph-soak")
+F3 = F3DIR / "latency-final.json"
 fail = []
+
+for needed in (F3, F3DIR / "times.env", F3DIR / "snapshot.tsv", F3DIR / "events.tsv"):
+    if not needed.exists():
+        print(f"REFUSED: this probe reads run 20260729-094359 iteration 12's F3 evidence and "
+              f"{needed} is absent. That directory is under /tmp and does not survive a reboot; "
+              f"re-run F3 or point F3DIR at another soak directory. Not a failure - unmeasured.")
+        sys.exit(6)
 
 def check(name, ok, detail=""):
     print(f"  [{'OK ' if ok else 'FAIL'}] {name}{(' - ' + detail) if detail else ''}")
@@ -55,7 +67,11 @@ check("the two agree TODAY", m and m2 and float(m.group(1))/1000.0 == float(m2.g
       f"{m.group(1)} ms vs {float(m2.group(1))*1000:.0f} ms")
 
 def rg(pattern, *paths):
-    r = subprocess.run(["grep","-rn",pattern,*paths], cwd=REPO,
+    """Tracked source only. A plain `grep -rn` here also reads `macos/.build`
+    and `__pycache__`, so `portalCycleSeconds` scored 37 sites (34 of them the
+    string baked into a test binary) and every 'nothing references this' check
+    was one stale build artifact away from a false RED."""
+    r = subprocess.run(["git","grep","-n","--",pattern,*paths], cwd=REPO,
                        capture_output=True, text=True)
     return [l for l in r.stdout.splitlines() if l.strip()]
 
@@ -79,6 +95,52 @@ for term, expect in [("hard_cap_samples", True), ("pump interval", True),
     present = term in block
     check(f"contract list {'names' if expect else 'does NOT name'} {term!r}",
           present == expect, f"present={present}")
+
+print("\n5. WHOSE REQUEST RATE DOES EACH CONSTANT CHANGE? (iteration 16)")
+main_swift = (REPO/"macos/MOSSCapture/Sources/MOSSCaptureApp/main.swift").read_text()
+m3 = re.search(r"pollInterval: TimeInterval = ([0-9.]+)", swift)
+probe_hz = float(m3.group(1)) if m3 else None
+check("the app probe has its OWN fetch cadence constant", bool(m3),
+      f"CaptureLatencyContract.pollInterval = {m3.group(1) if m3 else '?'} s")
+check("and THAT is what schedules its fetches",
+      "interval: CaptureLatencyContract.pollInterval" in main_swift,
+      "main.swift builds RepeatingCaptureSchedulerAdapter(interval: pollInterval)")
+
+# Every site of each constant, and whether any of them is a scheduling site.
+SCHEDULING = ("scheduler", "schedule", "sleep", "timer", "interval:")
+cycle_sites = rg("portalCycleSeconds", "macos")
+cycle_sched = [l for l in cycle_sites if any(k in l.lower() for k in SCHEDULING)]
+check("portalCycleSeconds reaches NO scheduling site - it is arithmetic only",
+      cycle_sites and not cycle_sched,
+      f"{len(cycle_sites)} sites (decl, report default, renderBound sum), {len(cycle_sched)} scheduling")
+poll_sites = rg("pollDelayMs", "moss_transcribe_diarize")
+check("pollDelayMs schedules the BROWSER's next cycle and nothing else",
+      any("schedulePoll(pollDelayMs)" in l for l in poll_sites)
+      and all("live_portal.py" in l for l in poll_sites),
+      f"{len(poll_sites)} sites, all in live_portal.py's served script")
+check("pollDelayMs appears NOWHERE in the measurement path",
+      not rg("pollDelayMs", "macos"), "0 hits under macos/")
+
+# The real report says which stream the gated p95s come from.
+times = dict(l.split("=", 1) for l in (F3DIR/"times.env").read_text().splitlines() if "=" in l)
+wall = float(times["T_SOAK_END"]) - float(times["T_SOAK_START"])
+n_probe = d["snapshotFetch"]["count"]
+driver_polls = len((F3DIR/"snapshot.tsv").read_text().splitlines())
+implied = wall / n_probe
+print(f"     F3 soak wall {wall:.3f} s; probe fetches {n_probe}; driver polls {driver_polls}")
+print(f"     implied probe interval {implied:.4f} s   driver interval {wall/driver_polls:.4f} s")
+check("the gated p95s are measured at the PROBE's cadence, not the portal's",
+      probe_hz and abs(implied - probe_hz) / probe_hz < 0.05,
+      f"{implied:.4f} s vs pollInterval {probe_hz} s ({100*(implied-probe_hz)/probe_hz:+.1f} %)")
+check("snapshot and events are fetched serially in the same cycle",
+      d["snapshotFetch"]["count"] == d["eventsFetch"]["count"], f"{n_probe} == {n_probe}")
+check("the driver's poll stream is a DIFFERENT stream from the gated one",
+      driver_polls != n_probe and abs(wall/driver_polls - 1.0) > 0.5,
+      f"{driver_polls} driver polls at {wall/driver_polls:.2f} s is neither the probe's "
+      f"{n_probe} nor a 1.0 s portal cadence")
+
+print("     => moving pollDelayMs alone: gated number moves 0.0 ms, a browser waits 500 ms less")
+print("     => moving portalCycleSeconds alone: gated number moves -500.0 ms, nobody waits less")
 
 print(f"\n{'FAILED: ' + ', '.join(fail) if fail else 'ALL CHECKS PASSED'}")
 sys.exit(1 if fail else 0)

@@ -26260,3 +26260,142 @@ certification run" - now ~39 KB and holding three overlapping sweep blocks - as
 its named target.  Do NOT re-run F1 hoping for a different latency verdict: this
 iteration measured exactly what it would take, and it is a change the loop is not
 permitted to make.
+
+================================================================================
+RUN 20260729-094359 ITERATION 16 - THE PRICED REMEDY'S HONEST LIMIT NAMED THE
+WRONG REQUEST STREAM, AND MEASURING THE RIGHT ONE MAKES CANDIDATE 68 STRONGER
+================================================================================
+
+TARGET.  Close the one unmeasured term in iteration 15's pricing of F1's latency
+RED - "it does not model a fetch p95 rising under twice the request rate" - and
+carry whatever it says into the outgoing authorization request.
+
+Chosen after re-reading prd.md's tail FIRST per the standing rule: last commit
+touching it is still 0456177 (seven amendments + the ADR-0002 supersession),
+git log -8 shows no operator commit since iteration 15.  So every open product
+item still needs an authorization that does not exist.  Of the two things
+actionable without the operator - Phase N step 4 and the eighth compaction pass -
+neither was chosen, because item (d) of the request document carried an
+UNMEASURED risk statement about a change the operator is being asked to approve,
+and iteration 15's own lesson one ranks a wrong claim in an OUTGOING artefact
+above every other place staleness hides.  The measurement is offline and ~1 s.
+
+WHAT WAS MEASURED.  scripts/ralph-afk/latency-remedy-probe.py section 5 (new),
+rc=0, now 22/22 checks in 5 groups.  Offline: two tracked Swift/Python sources
+plus iteration 12's real F3 evidence directory.  No host, no session, no product
+change.  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty
+before and after.
+
+ 1. THE GATED FETCH p95s ARE NOT MEASURED AT THE PORTAL'S CADENCE.  They are the
+    APP PROBE'S OWN fetches, scheduled from CaptureLatencyContract.pollInterval
+    = 0.25 s (main.swift:83 builds RepeatingCaptureSchedulerAdapter(interval:)
+    from that constant, its only consumer).  Proven on real data: F3's report
+    carries 4001 snapshotFetch and 4001 eventsFetch samples over a soak wall of
+    1019.724 s -> implied interval 0.2549 s, +1.9 % of 0.25.
+
+ 2. SO ITERATION 15's HONEST LIMIT NAMED THE WRONG STREAM.  "F3: 381 polls ->
+    ~760" is the SOAK DRIVER's view-poll stream - 381 rows in snapshot.tsv and
+    events.tsv at 2.68 s, set by live-soak.sh - and the gated number never
+    measures it.  Neither 381 nor a 1.0 s portal cadence can produce 4001.
+
+ 3. THE TWO CONSTANTS ARE CAUSALLY DISCONNECTED IN BOTH DIRECTIONS, which is a
+    stronger statement than iteration 15's "nothing ties them":
+      portalCycleSeconds - 3 tracked sites (declaration, report default, the
+        renderBound sum), ZERO scheduling sites -> moving it moves the NUMBER and
+        no request rate.
+      pollDelayMs - 2 tracked sites (the constant, schedulePoll(pollDelayMs)),
+        ZERO hits under macos/ -> moving it moves what a BROWSER waits and the
+        gated number by 0.0 ms.
+    Moving the Swift one alone relaxes the gate while looking like a remedy.
+    Moving the server one alone hands a human the whole 500 ms and the PRD number
+    never records it.  EITHER HALF ALONE IS WRONG, IN A DIFFERENT DIRECTION.
+
+ 4. WHAT REPLACES THE LIMIT, and it points the other way.  The -500 ms has no
+    offsetting term in the runs that measure it.  What IS unpriced is a REAL
+    BROWSER polling at 2 Hz - and F1/F2/F3 open no browser at all, so a
+    certification re-run records the full -500 ms while never measuring the
+    viewer load.  The gate UNDER-COUNTS THE COST; it does not over-count the
+    benefit.  Re-run F1 to confirm the -500 ms, never as proof about a viewer.
+
+A SECOND DEFECT, FOUND IN THE INSTRUMENT WHILE MEASURING WITH IT.  The probe's rg
+helper ran `grep -rn`, which reads the WORKING TREE: portalCycleSeconds scored 37
+sites (34 of them the string baked into macos/MOSSCapture/.build test binaries
+and the idea044 lab bundle) and pollDelayMs scored 3 in moss_transcribe_diarize/
+(one a __pycache__ .pyc).  That produced one FAIL on a correct claim - the
+harmless direction.  The dangerous direction is the other one: every "nothing
+references this" check in a probe is one stale build artifact away from a FALSE
+RED.  Fixed by switching the helper to `git grep -n --` (tracked source only);
+sections 3 and 4's verdicts are unchanged by the switch, only their counts.
+
+FILES TOUCHED.  scripts/ralph-afk/latency-remedy-probe.py (section 5, the
+git-grep fix, and a named rc=6 refusal when the /tmp F3 evidence is absent
+instead of a traceback), scripts/ralph-afk/authorization-request-55-60-65.md
+(Sec.4(d)'s trap and cost paragraphs, Sec.4's gate line, Sec.6(5), and a new
+"what has changed" row), scripts/ralph-afk/context.md, this file.  NO product
+source, NO test, NO ops, NO host, NO session, NO TCC click, no authorization
+spent.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/latency-remedy-probe.py  -> rc=0, ALL CHECKS PASSED
+    22 checks in 5 groups; section 5's 6 are new.
+  RED-BEFORE for the git-grep fix is recorded rather than reconstructed: the
+    same section 5 under the old `grep -rn` helper printed
+    "[FAIL] pollDelayMs schedules the BROWSER's next cycle and nothing else -
+     3 sites" and "37 sites" for portalCycleSeconds, rc=1.  Full output of both
+    runs in /tmp/i16-probe-out.txt (green) and quoted above (red).
+  Fence re-parsed after the context.md edits: 1 bash block, 490 lines, bash -n
+    rc=0.
+  context.md 224818 -> 229098 B (+4280); headroom line updated ~36 -> ~32 KB.
+
+WHAT I LEARNED.
+ 1. AN "HONEST LIMIT" IS A CLAIM AND IT CAN BE FALSE.  A stated limitation reads
+    as epistemic humility, so nobody audits it - it is the one sentence in a
+    finding that is exempt from the finding's own standard of evidence.  This one
+    was wrong in its mechanism AND its arithmetic, and it sat in the outgoing
+    request as the reason the operator should hesitate.  A limit deserves the
+    same measurement as a result; write it with a number or write it as a
+    question.
+ 2. "NOTHING TIES THEM" AND "THEY ARE CAUSALLY DISCONNECTED" ARE DIFFERENT
+    FINDINGS, AND THE SECOND IS ACTIONABLE.  Iteration 15 proved the absence of a
+    link (no test, no cross-language reference).  This iteration proved the shape
+    of the two constants' effects - one moves the number and nothing else, one
+    moves reality and nothing else - which is what turns "add a node" from
+    hygiene into the load-bearing half of the ask.  An absence tells you nobody
+    checked; a mechanism tells you what breaks.
+ 3. A PROBE THAT GREPS THE WORKING TREE IS NOT ASKING ABOUT THE SOURCE.  37 vs 3.
+    Build output and __pycache__ answer questions about what was COMPILED, and
+    every one of this loop's "nothing references X" checks is one stale artifact
+    away from a false RED.  `git grep` is the surface that carries the field -
+    the same rule candidate 67 paid for one layer down.
+ 4. THE FILE-SIZE TRIGGER MOVED UNDER THE LOOP.  The `Read` tool now PAGES
+    context.md (lines 1-537 of 2293, "cap 25000 tokens", with an offset pointer)
+    where the fourth compaction met a hard "exceeds maximum allowed size"
+    refusal.  The compaction rationale is still sound but its stated trigger is
+    stale, and a pass argued from a wall that no longer exists is a pass argued
+    from the wrong reason.  Recorded in the compaction log so the eighth is
+    weighed on cost-per-iteration, not on a blocked start.
+
+BLOCKERS.  None new.  Nothing this iteration needed an authorization, a host or
+an operator input.  Open and needing an amendment prd.md does not carry:
+candidates 55, 58, 60, 64, 65, 66, 68.  Phase N step 4 (batch Tier-B
+unification) remains the one open product item needing no new authorization.
+
+EVIDENCE PATHS.  scripts/ralph-afk/latency-remedy-probe.py (tracked;
+re-runnable, offline, ~1 s), /tmp/i16-probe-out.txt (this run's full green
+output), /tmp/i12-f3-evidence/ralph-soak/{latency-final.json,times.env,
+snapshot.tsv,events.tsv} (the real report and the driver stream it is contrasted
+with), macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureLatencyProbe.swift:13,18,
+328 and macos/MOSSCapture/Sources/MOSSCaptureApp/main.swift:83,
+moss_transcribe_diarize/app/live_portal.py:146,552.
+
+RECOMMENDED NEXT STEP.  The request document is current and now carries a cost
+statement that is measured rather than guessed; the loop has nothing further it
+can do on 55/58/60/64/65/66/68 without the operator.  Two items remain actionable
+without one: Phase N step 4 (batch Tier-B unification - ADR-0002's own fourth of
+four, covered by "Phase N remains authorized"), which is the only open product
+work, and the eighth compaction pass, now due on cost-per-iteration grounds
+rather than on the vanished hard cap, with "Read before any certification run"
+(~41 KB, three overlapping sweep blocks) as its named target.  Do NOT re-run F1
+hoping for a different latency verdict: iterations 15 and 16 between them have
+measured exactly what it would take and exactly what it would and would not
+prove, and the change itself is one the loop is not permitted to make.

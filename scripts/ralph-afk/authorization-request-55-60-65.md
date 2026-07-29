@@ -18,6 +18,7 @@ freeze, so none of it can start without you.
 > | it. 9 | §3 predicted the sweep would *consider and refuse* candidate 55's minted labels (`kept_ambiguous`). It does not — **it never sees them.** §3b carries the corrected mechanism. |
 > | it. 12 | §1's headline — *"neither half of Phase N step 3 publishes a correction"* — is **FALSIFIED**. The **cadence** sweep published three mid-meeting revisions during the 17-minute F3 soak on the deployed `7a4f59c`. Both halves publish. §1 and §4(b) are rewritten; the ask is *narrower and better founded*, not weaker. |
 > | it. 15 | Counts brought current (**49** corrections across **four** deployed swept meetings, not 46 across three). **§4(d) is new** and prices F1's latency RED, which §5 previously deferred to you with no number attached. **§4(e) is new** — candidate 66, the cheapest item on the list. |
+> | it. 16 | §4(d)'s cost paragraph said the change makes the portal issue *"twice as many snapshot+events pairs (F3: 381 polls → ~760)"*. **Wrong stream.** The gated fetch p95s are measured by the **app's own probe** at a fixed **0.25 s** cadence (4001 samples over F3's 1019.7 s); the 381 was the *soak driver's* view polls. Halving the portal's poll adds load only from a **real browser**, and no certification run opens one — so the risk is that the gate **under-counts** the cost, not that the benefit shrinks. The §4(d) trap and §6(5) are rewritten; the ask itself is unchanged. |
 
 ---
 
@@ -251,22 +252,38 @@ reading. Remedy 2's portal poll appears **nowhere** in that list (checked term b
 cheaper remedy is also the only one that does not require you to move the contract.
 
 ***The trap, and it is why this needs your word and not the loop's judgement — filed as candidate
-68.*** That 1000 ms lives in **two constants in two languages** — `live_portal.py:146`
+68. Sharpened in iteration 16: the two constants are causally disconnected in BOTH directions.***
+That 1000 ms lives in **two constants in two languages** — `live_portal.py:146`
 `const pollDelayMs = 1000` and `CaptureLatencyProbe.swift:18` `portalCycleSeconds = 1.0` — and
 **nothing ties them**. No Python test asserts the portal's cadence; nothing crosses the language
 boundary; and the single assertion that exists (`CaptureControllerTests.swift:5699`) compares the
-Swift constant **to itself**. Editing the Swift constant alone would take 500 ms off a PRD
-acceptance number **with no change whatever to what a human sees** — relaxing the gate while looking
-like a remedy, and the gate would never notice. **Any authorization here must require both constants
-to move together and a test that fails when they disagree.** That test is the durable part of this
-ask and is worth having whatever you decide about the cadence: today the user-visible latency clause
-is measured through an unenforced duplicate.
+Swift constant **to itself**. Measured this iteration on tracked source: `portalCycleSeconds` reaches
+**no scheduling site at all** — its three sites are the declaration, a report default and the
+`renderBound` sum — while `pollDelayMs`'s two sites are the constant and `schedulePoll(pollDelayMs)`
+in the served script, with **0 hits anywhere under `macos/`**. So:
 
-**What it costs, stated rather than buried:** the portal issues twice as many snapshot+events pairs
-(F3: 381 polls → ~760 over 17 minutes). F2's 4766 requests all answered 200, which is headroom
-evidence, not proof at double the rate. The honest gate is to re-run F1 and check the fetch p95s,
-which the render bound would immediately expose if they rose — that is the number this change puts
-at risk, and it is measured in the same report.
+- editing the **Swift** constant alone takes 500 ms off a PRD acceptance number **with no change
+  whatever to what a human sees** — relaxing the gate while looking like a remedy;
+- editing the **server** constant alone gives a human the entire 500 ms improvement and moves the
+  gated number by **0.0 ms** — the remedy would look like it did nothing.
+
+Either half alone is wrong, in a different direction. **Any authorization here must require both
+constants to move together and a test that fails when they disagree.** That test is the durable part
+of this ask and is worth having whatever you decide about the cadence: today the user-visible latency
+clause is measured through an unenforced duplicate.
+
+**What it costs — measured in iteration 16, and iteration 15's draft named the wrong request
+stream.** The gated `snapshotFetchP95` / `eventsFetchP95` are measured by the **app's own probe**,
+which polls on `CaptureLatencyContract.pollInterval` = **0.25 s** (`main.swift` builds its scheduler
+from that constant) and never on the portal's cadence: F3's report carries **4001** snapshot fetches
+and 4001 events fetches over a **1019.7 s** meeting — an implied **0.2549 s** interval, +1.9 % of
+0.25. The "381 polls → ~760" this paragraph used to carry was the **soak driver's** view-poll stream
+(381 rows at 2.68 s), a stream the gated number never measures. So halving `pollDelayMs` doubles
+**a real browser's** request rate and nothing else — and F1/F2/F3 run with **no browser open at
+all**. The honest statement of the risk is therefore *smaller and different*: a certification re-run
+would record the full −500 ms while **not** measuring the added server load a real viewer would
+create. F2's 4766 requests all answered 200, which is headroom evidence, not proof at double the
+browser rate.
 
 **What it does not buy:** F1's *other* RED. Candidate 64 — decoder p95 RTF **2.365** carried
 entirely by three spans of 0.03 / 0.06 / 0.07 s — is untouched by this and stays a gate-definition
@@ -291,8 +308,10 @@ embedded evidence.
 
 **Gate.** Full Swift/Python; `birth-floor-probe.py` re-run against a fresh F2, requiring
 references per real voice at or below the fixture's 1.40 and a non-zero count of published
-corrections; for (d), a node that fails when the two poll constants disagree, plus `F1` re-run with
-the fetch p95s reported; then one further reviewed no-ff merge through `merge-keeper.sh` (advance
+corrections; for (d), a node that fails when the two poll constants disagree — the durable half, and
+the only thing that makes moving either constant honest — plus `F1` re-run, which confirms the
+−500 ms and (see §6(5)) deliberately does **not** price a real viewer's load; then one further
+reviewed no-ff merge through `merge-keeper.sh` (advance
 `expected_main` **in-script**, never by CLI override), push, redeploy, and re-run F1 and F2.
 
 **If you want to grant only part of this, the order by cost is (e), (d), (b), (c), (a).** (e) and
@@ -335,9 +354,13 @@ that needs three decisions from you before any patch.
    labels healthy while fragmenting only the album; a real meeting fragments both together.
 5. **§4(d)'s 500.0 ms is arithmetic on a contract term, not a re-run.** It is exact for the
    *analytic* half by construction — the term is additive and the identity was verified to nine
-   decimal places on real data — but it does **not** model a fetch p95 that rises under twice the
-   request rate. The remedy is only real once F1 is re-run and the two fetch p95s hold; if they rise,
-   the same report says so immediately, which is why the re-run is in the gate.
+   decimal places on real data. *Corrected in iteration 16:* this limit used to read "it does not
+   model a fetch p95 rising under twice the request rate", which named a stream the gated number does
+   not measure. The gated fetch p95s come from the **app probe's** fixed 0.25 s poll (4001 samples
+   over F3's 1019.7 s), which neither constant touches. What is genuinely unmeasured is the opposite
+   direction: the added load of a **real browser** polling at 2 Hz, which no certification run
+   creates because none of them opens a browser. A re-run of F1 therefore confirms the −500 ms and
+   still does **not** price the viewer load — say so rather than reading a green re-run as proof.
 6. **§4(d) deliberately leaves the larger term alone.** Committed latency is **2674 / 2680 ms** of
    the ~4.1 s, and that is what remedy 1 (the span cap) attacks. This ask does not touch it, so it
    buys the 4000 ms gate back and no more — a future latency regression in the committed half would

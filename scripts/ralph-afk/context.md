@@ -58,10 +58,16 @@
 > paragraph per open item plus the Phase N decisions list, which is load-bearing by construction,
 > while "Read before…" holds **three overlapping sweep blocks** (session-end, at-F2's-fragmentation,
 > cadence) that each supersede part of the one before and could be one block with three tables.
-> **Headroom: ~36 KB below the 256 KB cap, four to seven iterations at the measured drift** — updated
-> in iteration 15, which added 6.1 KB (the latency-remedy block into "Read before…", now ~39 KB and
-> still the eighth pass's target, plus candidate 68). *The per-section numbers above are the
-> seventh pass's; re-measure them at the eighth rather than trusting this line.*
+> **Headroom: ~32 KB below the 256 KB cap, three to six iterations at the measured drift** — updated
+> in iteration 16, which added 4.3 KB (the request-stream correction into the latency-remedy block,
+> now ~41 KB and still the eighth pass's target, plus candidate 68's sharpening and one instrument
+> rule). Iteration 15 added 6.1 KB before it. *The per-section numbers above are the seventh pass's;
+> re-measure them at the eighth rather than trusting this line.*
+> **One new fact about the trigger, from iteration 16:** the `Read` tool now **pages** this file
+> instead of refusing it — it returned lines 1-537 of 2293 with `showing … cap 25000 tokens` and a
+> pointer to `offset=538`. So the 256 KB cap is no longer a wall that stops work; the **token** cap
+> is what binds, and the cost of drift is now *more pages per iteration*, not a blocked start.
+> Weigh the eighth pass on that basis rather than on the fourth pass's hard-failure story.
 
 ## Ground
 
@@ -251,6 +257,15 @@ carry is in the retired-evidence index below).**
   so moving the Swift one alone would improve a PRD number by 500 ms with no change to what a human
   sees. See the latency-remedy block below. **The authorization request is now current** and carries
   this as item (d), candidate 66 as (e), and the cost order to grant partially.
+  **ITERATION 16 MEASURED THE ONE TERM THE PRICING LEFT UNMEASURED, AND THE HONEST LIMIT TURNED OUT
+  TO BE WRONG RATHER THAN INCOMPLETE.** The stated cost — *"a fetch p95 rising under twice the request
+  rate (F3: 381 polls → ~760)"* — named the **soak driver's** stream. The gated fetch p95s come from
+  the **app probe's own** fetches at a fixed **0.25 s** (4001 samples over F3's 1019.724 s), a cadence
+  neither constant touches, so the −500 ms has **no offsetting term** in the runs that measure it.
+  What replaces the limit is narrower and points the other way: halving the portal's poll doubles a
+  **real browser's** rate, and F1/F2/F3 open no browser, so a re-run **under-counts the cost** rather
+  than over-counting the benefit. Candidate 68 gets *stronger*: the two constants are causally
+  disconnected **in both directions**, so either one moved alone is wrong in its own direction.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64, 65, **66** and **68**; F1's two REDs — which are **two different items with
   two different answers**, the RTF one being candidate 64's gate-definition ruling and the latency one
@@ -405,6 +420,13 @@ it had died at t+31.5 s on `77e0014`.
   `snapshot.terminal_failure` non-null, `v2_session.status != "active"`, or three consecutive refused
   polls. A **lane fault is recorded and never aborts**: it is the evidence 53/48/49/D-a exist to
   produce. And `jq -r '.x // empty'` **swallows `false`** — use `try (if .x == false then …)`.
+- **A probe that greps the working tree is not asking about the source — use `git grep`**
+  `[iteration 16]`. `grep -rn portalCycleSeconds macos` returns **37** hits where `git grep` returns
+  **3**: 34 of them are the string baked into `macos/MOSSCapture/.build` test binaries and the lab
+  bundle, and the same shape adds a `__pycache__/*.pyc` hit under `moss_transcribe_diarize/`. It cost
+  one FAIL on a correct claim, and the dangerous direction is the other one — every *"nothing
+  references this"* check in a probe is one stale build artifact away from a **false RED**, and a
+  probe that has never been wrong is exactly the one nobody re-checks.
 - **macOS host procedure.** There is no `timeout(1)`: use
   `perl -e "alarm shift; exec @ARGV" <sec> <cmd>…`. `pair` **reuses** the stored
   `capture-device-id`, so it mints no new device row. **Do not read an empty `log show` as an absent
@@ -467,9 +489,22 @@ F1 missed by 150.8 ms; the remedy is worth **3.3×** the miss.
    (`pollDelayMs`) *and* `CaptureLatencyProbe.swift:18` (`portalCycleSeconds`), and nothing ties them,
    so moving the Swift one alone would take 500 ms off a PRD number with no change to what a human
    sees. **Both move together or neither moves.**
-3. *The honest limit:* this is arithmetic on the **analytic** half, exact by construction, and it
-   does **not** model a fetch p95 rising under twice the request rate (F3: 381 polls → ~760). The
-   same report exposes that immediately, so a re-run of F1 is the gate, not the arithmetic.
+3. **WHOSE REQUEST RATE EACH CONSTANT CHANGES — measured in iteration 16 (probe section 5), and it
+   CORRECTS the honest limit this line used to carry.** The two constants are causally disconnected
+   **in both directions**: `portalCycleSeconds` has three tracked sites (declaration, report default,
+   the `renderBound` sum) and reaches **no scheduling site**, so moving it moves the *number* and no
+   request rate; `pollDelayMs` has two (the constant and `schedulePoll(pollDelayMs)`) and **0 hits
+   under `macos/`**, so moving it moves what a *browser* waits and the gated number by **0.0 ms**.
+   The gated fetch p95s are the **app probe's own** fetches at `CaptureLatencyContract.pollInterval`
+   **0.25 s** — `main.swift` builds `RepeatingCaptureSchedulerAdapter(interval:)` from that constant
+   — proven on F3's real report: **4001** snapshot and 4001 events fetches over **1019.724 s**, an
+   implied **0.2549 s**, +1.9 %.
+   ***The old limit named the wrong stream:*** *"a fetch p95 rising under twice the request rate
+   (F3: 381 polls → ~760)"* was the **soak driver's** view-poll stream (381 rows at 2.68 s), which
+   the gated number never measures. **The real limit is the opposite one:** halving `pollDelayMs`
+   doubles a **real browser's** rate, F1/F2/F3 open **no browser at all**, so a re-run records the
+   full −500 ms and leaves the viewer load unpriced — the gate **under-counts the cost**, it does not
+   over-count the benefit. Re-run F1 to confirm the −500 ms; never read it as proof about a viewer.
 4. *Deliberately untouched:* the committed half is **2674 / 2680 ms** of the ~4.1 s and is what
    remedy 1 attacks. This buys the 4000 ms gate back and no more.
 
@@ -1910,6 +1945,18 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     to what a human sees**. *Shape of the fix, not a decision:* a node that fails when the two
     disagree — worth having whatever is decided about the cadence itself, because today the clause is
     measured through a duplicate nothing enforces.
+    **ITERATION 16 SHARPENED IT, AND "CAUSALLY DISCONNECTED IN BOTH DIRECTIONS" IS A STRONGER
+    STATEMENT THAN "NOTHING TIES THEM".** Measured on **tracked** source (probe section 5):
+    `portalCycleSeconds` has **three** sites — declaration, report default, the `renderBound` sum —
+    and reaches **no scheduling site**, so moving it moves the *number* and no request rate;
+    `pollDelayMs` has **two** — the constant and `schedulePoll(pollDelayMs)` — and **0 hits under
+    `macos/`**, so moving it moves what a *browser* waits and the gated number by **0.0 ms**. Moving
+    the Swift one alone relaxes the gate while looking like a remedy; moving the server one alone
+    hands a human the whole 500 ms and the PRD number never records it. **Either half alone is wrong,
+    in a different direction** — which is why the enforcing node is the durable part of the ask
+    whatever is decided about the cadence. And the gated fetch p95s are untouched by either: they are
+    the app probe's own fetches at `CaptureLatencyContract.pollInterval` **0.25 s** (F3: **4001**
+    samples over **1019.724 s** = 0.2549 s implied), a cadence neither constant reaches.
 66. **The portal's browser-storage hygiene has evidence but no regression.** `[open, new — run
     `20260729-094359` iteration 10; the **evidence** half is DONE, see the portal-storage block
     above]`. `tests/test_live_portal.py` builds a recording `localStorage`/`sessionStorage` Proxy,
