@@ -62,9 +62,15 @@ from moss_transcribe_diarize.app.live_identity import (
     LiveIdentityConfig,
     unattributed_transcript,
 )
+from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
+from moss_transcribe_diarize.app.live_identity_sweep import (
+    SWEEP_INTERVAL_SECONDS,
+    LiveIdentitySweeper,
+)
 from moss_transcribe_diarize.app.live_provider_bundle import (
     LiveProviderBundleAdmissionError,
     WebRtcSpeechProvider,
+    WeSpeakerLiveEvidenceProvider,
 )
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
@@ -80,6 +86,7 @@ from moss_transcribe_diarize.app.live_session import (
     CanonicalResult,
     CanonicalSubmission,
     FrozenSpan,
+    LabelRevision,
     LiveIdentitySnapshot,
     LiveSession,
 )
@@ -1910,3 +1917,223 @@ def test_a_degraded_lane_keeps_publishing_and_never_reaches_the_lane_failure_pat
         )
     )
     assert (ack.lane, ack.sequence, ack.accepted_samples) == (LiveLane.SYSTEM, 0, 8000)
+
+
+# --------------------------------------------------------------------------------------
+# ADR-0002 step 3, end to end: a sweep's correction reaching the transcript a reader holds.
+#
+# Nothing else in the suite puts the real album, the real sweeper, the real matcher and the
+# real session in one process. Each half has been measured alone -- the album at 93.4 %
+# against overwrite's 72.0 %, the swept transcript at 99.26 % -- and neither measurement can
+# see whether a correction ever reaches a reader, which is the whole of what step 3 promises.
+# --------------------------------------------------------------------------------------
+
+
+class _ScriptedSpanEncoder:
+    """One vector per `embed` call, so each span's voiceprint is the test's choice."""
+
+    def __init__(self, vectors):
+        self.vectors = list(vectors)
+        self.calls = 0
+
+    def embed(self, wav_path, intervals):
+        del wav_path, intervals
+        self.calls += 1
+        return self.vectors[self.calls - 1]
+
+
+class _ScriptedSpanDecoder:
+    max_samples = DEPLOYED_DECODER_MAX_SAMPLES
+
+    def __init__(self, transcripts):
+        self.transcripts = list(transcripts)
+        self.calls = 0
+
+    def transcribe_pcm(self, *, span, pcm):
+        del span, pcm
+        self.calls += 1
+        return InferenceTranscript(self.transcripts[self.calls - 1], elapsed_sec=0.1)
+
+
+def _drive_span(coordinator: LiveCoordinator, *, first_sequence: int, frames: int = 4):
+    for offset in range(frames):
+        coordinator.accept_frame(_frame(first_sequence + offset, DEPLOYED_MIXED_FRAME_SAMPLES))
+    queued = coordinator.flush_endpoint()
+    assert len(queued) == 1
+    return coordinator.process_work_item(coordinator.arbiter.next_work())
+
+
+def test_a_sweep_relabels_an_abstained_span_in_the_transcript_a_reader_is_holding():
+    """The living document, assembled from production parts only.
+
+    Span 2 is genuinely ambiguous when it is decoded -- two canonical speakers sit at the
+    same distance from it -- so J2 publishes its words under `S00` and drops the claim. Two
+    spans later the album has heard more of the first speaker, the retained evidence
+    re-matches decisively, and the words the reader has already read acquire the speaker
+    they always had. The live path never revisits a published span, so without this seam
+    that recovery is a number in an offline harness and nothing else.
+    """
+
+    config = LiveIdentityConfig(max_speakers=16, min_match_score=0.35, min_match_margin=0.1)
+    album = FingerprintAlbum()
+    provider = WeSpeakerLiveEvidenceProvider(
+        encoder=_ScriptedSpanEncoder(
+            [
+                [1.0, 0.0],  # span 0 -- births speaker-0001
+                [0.0, 1.0],  # span 1 -- births speaker-0002
+                [0.7071, 0.7071],  # span 2 -- equidistant, so identity abstains
+                [0.9, 0.4359],  # span 3 -- the first speaker again, off-centre
+                [1.0, 0.0],  # span 4 -- the sweep that sees span 3's contribution
+            ]
+        ),
+        album=album,
+        # Meeting-time cadence: five two-second spans, so a one-second interval is what puts
+        # more than one sweep inside a test rather than a change to the shipped default.
+        sweeper=LiveIdentitySweeper(album=album, config=config, interval_seconds=1.0),
+    )
+    coordinator = LiveCoordinator(
+        session_key="seam",
+        session=LiveSession(max_retained_samples=960000),
+        endpoint_policy=EndpointPolicy(
+            EndpointPolicyConfig(min_speech_samples=1600, min_silence_samples=8000, hard_cap_samples=None)
+        ),
+        speech_provider=ScriptedSpeech((True,) * 20),
+        decoder=_ScriptedSpanDecoder(
+            [
+                "[0][S01]first voice[2]",
+                "[0][S01]second voice[2]",
+                "[0][S01]who is this[2]",
+                "[0][S01]first voice again[2]",
+                "[0][S01]more of the first[2]",
+            ]
+        ),
+        identity_preparer=BoundedCausalIdentityPreparer(config=config, evidence_provider=provider),
+        arbiter=InferenceArbiter(),
+    )
+
+    results = [_drive_span(coordinator, first_sequence=index * 4) for index in range(5)]
+
+    assert [item.submitted for item in results] == [True] * 5
+    assert results[2].identity_status == "abstain"
+    assert results[2].identity_reason == "ambiguous_identity"
+    # Nothing is corrected until the album has heard enough to disagree with the live path.
+    assert [item.identity_revision_units for item in results] == [0, 0, 0, 0, 1]
+    assert results[4].identity_revision_spans == 1
+    assert results[4].identity_revision_version == 1
+    assert results[4].identity_revision_merges == 0
+
+    committed = coordinator.session.snapshot().committed
+    # What was published, and is still published: the words, unattributed, hash-chained.
+    assert committed[2].transcript == f"[0][{UNATTRIBUTED_SPEAKER}]who is this[2]"
+    # What the reader is shown now.
+    assert committed[2].revised_transcript == "[0][S01]who is this[2]"
+    assert coordinator.session.snapshot().label_revision_version == 1
+    # And no other span moved: a sweep that churned labels would show up here first.
+    assert [item.revised_transcript for item in committed] == [
+        None,
+        None,
+        "[0][S01]who is this[2]",
+        None,
+        None,
+    ]
+
+    # A span identity *did* answer is addressable too. The sweep had no reason to move span 0
+    # here, so the claim is made directly: the coordinator carries every published span's
+    # local speakers, not only the ones an abstention left without a label.
+    outcome = coordinator.session.revise_labels(
+        (LabelRevision(span_id=0, local_speaker="S01", canonical_speaker="speaker-0002"),)
+    )
+    assert (outcome.revised_spans, outcome.revised_units) == (1, 1)
+    assert coordinator.session.snapshot().committed[0].revised_transcript == "[0][S02]first voice[2]"
+
+
+def test_the_session_end_sweep_corrects_the_span_a_paced_sweep_never_reaches():
+    """ADR-0002's final sweep, on the real parts, at the shipped cadence.
+
+    The cadence is paced by the *next* span's start, so a meeting shorter than one interval
+    is never swept at all -- and iteration 23 measured essentially all of the sweep's
+    accuracy at session end. This is that meeting: four two-second spans, the shipped 60 s
+    interval, span 2 genuinely ambiguous when it is decoded and therefore published under
+    `S00` by J2. Nothing corrects it while the meeting runs. The evidence that settles it
+    arrives in the very last span, which is exactly the span the live path never reconciles,
+    because a span's vectors are labelled when the *following* preparation arrives and there
+    is no following one.
+    """
+
+    config = LiveIdentityConfig(max_speakers=16, min_match_score=0.35, min_match_margin=0.1)
+    album = FingerprintAlbum()
+    sweeper = LiveIdentitySweeper(album=album, config=config)
+    provider = WeSpeakerLiveEvidenceProvider(
+        encoder=_ScriptedSpanEncoder(
+            [
+                [1.0, 0.0],  # span 0 -- births speaker-0001
+                [0.0, 1.0],  # span 1 -- births speaker-0002
+                [0.7071, 0.7071],  # span 2 -- equidistant, so identity abstains
+                [0.9, 0.4359],  # span 3 -- the first speaker again, and the meeting's last
+            ]
+        ),
+        album=album,
+        sweeper=sweeper,
+    )
+    coordinator = LiveCoordinator(
+        session_key="seam",
+        session=LiveSession(max_retained_samples=960000),
+        endpoint_policy=EndpointPolicy(
+            EndpointPolicyConfig(min_speech_samples=1600, min_silence_samples=8000, hard_cap_samples=None)
+        ),
+        speech_provider=ScriptedSpeech((True,) * 20),
+        decoder=_ScriptedSpanDecoder(
+            [
+                "[0][S01]first voice[2]",
+                "[0][S01]second voice[2]",
+                "[0][S01]who is this[2]",
+                "[0][S01]first voice again[2]",
+            ]
+        ),
+        identity_preparer=BoundedCausalIdentityPreparer(config=config, evidence_provider=provider),
+        arbiter=InferenceArbiter(),
+    )
+
+    results = [_drive_span(coordinator, first_sequence=index * 4) for index in range(4)]
+
+    assert [item.submitted for item in results] == [True] * 4
+    assert results[2].identity_status == "abstain"
+    # The meeting is 8 seconds long against a 60 s cadence, so the paced sweep never fires.
+    assert 4 * 2.0 < SWEEP_INTERVAL_SECONDS
+    assert sweeper.sweeps == 0
+    assert [item.identity_revision_units for item in results] == [0, 0, 0, 0]
+    committed = coordinator.session.snapshot().committed
+    assert committed[2].revised_transcript is None
+    # The last span's evidence is retained, and it is retained *unlabelled*: this is the gap
+    # the final reconcile closes, and the reason the reconcile has to come first.
+    assert sweeper.ledger.canonical_speaker(3, "S01") is None
+
+    outcome = coordinator.finalize_identity()
+
+    assert sweeper.sweeps == 1
+    assert sweeper.ledger.canonical_speaker(3, "S01") == "speaker-0001"
+    # One span moved, not two. A sweep that ran before the reconcile would also "correct"
+    # span 3 -- to the speaker the live path had already given it -- and report a rewrite
+    # that changed nothing as if it had changed something.
+    assert (outcome.identity_revision_spans, outcome.identity_revision_units) == (1, 1)
+    assert outcome.identity_revision_version == 1
+    assert outcome.identity_revision_merges == 0
+    assert outcome.identity_revision_refusals == ()
+
+    committed = coordinator.session.snapshot().committed
+    assert committed[2].transcript == f"[0][{UNATTRIBUTED_SPEAKER}]who is this[2]"
+    assert committed[2].revised_transcript == "[0][S01]who is this[2]"
+    assert [item.revised_transcript for item in committed] == [
+        None,
+        None,
+        "[0][S01]who is this[2]",
+        None,
+    ]
+
+    # And it converges: settling an already-settled meeting proposes nothing, so a second
+    # call cannot churn the version of a transcript a reader is holding.
+    again = coordinator.finalize_identity()
+    assert sweeper.sweeps == 2
+    assert (again.identity_revision_spans, again.identity_revision_units) == (0, 0)
+    assert again.identity_revision_version == 1
+    assert coordinator.session.snapshot().label_revision_version == 1

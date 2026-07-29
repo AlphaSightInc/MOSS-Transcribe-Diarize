@@ -15,6 +15,13 @@ import packaging
 import pytest
 
 from moss_transcribe_diarize.app import live_provider_bundle
+from moss_transcribe_diarize.app.live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig
+from moss_transcribe_diarize.app.live_identity_album import (
+    ALBUM_MIN_MATCH_MARGIN,
+    ALBUM_MIN_MATCH_SCORE,
+    FingerprintAlbum,
+)
+from moss_transcribe_diarize.app.live_identity_sweep import LABELLED, LiveIdentitySweeper
 from moss_transcribe_diarize.app.live_provider_bundle import (
     BUNDLE_SCHEMA_VERSION,
     LiveProviderBundleAdmissionError,
@@ -610,3 +617,425 @@ def test_wespeaker_live_adapter_scores_evidence_without_mutating_identity_snapsh
     assert len(encoder.calls) == 2
     assert [item.local_speaker for item in evidence] == ["S01", "S01", "S02", "S02"]
     assert [item.score for item in evidence] == [1.0, 0.0, 1.0, 0.0]
+
+
+def _prepared_snapshot(*, span_id, assignments, canonical_speakers, version):
+    return LiveIdentitySnapshot(
+        version=version,
+        canonical_speakers=canonical_speakers,
+        diagnostics=(
+            ("status", "prepared"),
+            ("reason", "ok"),
+            ("span_id", str(span_id)),
+            ("assignments", assignments),
+            ("canonical_speakers", ",".join(canonical_speakers)),
+        ),
+    )
+
+
+class _ScriptedEncoder:
+    """Returns one vector per `embed` call, so each span's voiceprint is chosen by the test."""
+
+    def __init__(self, vectors):
+        self.vectors = list(vectors)
+        self.calls = []
+
+    def embed(self, wav_path, intervals):
+        self.calls.append(intervals)
+        return self.vectors[len(self.calls) - 1]
+
+
+def _score_span(provider, *, span_id, seconds, base_snapshot):
+    samples = int(seconds * 16000)
+    return provider.score(
+        span=FrozenSpan(id=span_id, epoch=0, start_sample=0, end_sample=samples, reason="end_silence"),
+        pcm=b"\0\0" * samples,
+        segments=(SimpleNamespace(start=0.0, end=seconds, speaker="S01", text="words"),),
+        base_snapshot=base_snapshot,
+    )
+
+
+def test_a_short_span_labels_against_the_album_but_never_overwrites_it():
+    """ADR-0002 step 1, at the seam the overwrite policy lived on.
+
+    Under latest-span replacement the 0.5 s fragment in the middle becomes `speaker-0001`'s
+    reference and the third span -- the same voice as the first -- scores 0.0 against it.
+    """
+
+    encoder = _ScriptedEncoder([[1.0, 0.0], [0.0, 1.0], [1.0, 0.0]])
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum())
+
+    # Span 1: 2.0 s of a voice, before any canonical speaker exists.
+    assert _score_span(
+        provider,
+        span_id=1,
+        seconds=2.0,
+        base_snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()),
+    ) == ()
+
+    # Span 2: 0.5 s of something else, admitted as a *label* for the same canonical speaker.
+    after_first = _prepared_snapshot(
+        span_id=1,
+        assignments="S01->speaker-0001",
+        canonical_speakers=("speaker-0001",),
+        version=1,
+    )
+    short_evidence = _score_span(provider, span_id=2, seconds=0.5, base_snapshot=after_first)
+    assert [round(item.score, 6) for item in short_evidence] == [0.0]
+
+    # Span 3: the original voice again. The album still holds it.
+    after_second = _prepared_snapshot(
+        span_id=2,
+        assignments="S01->speaker-0001",
+        canonical_speakers=("speaker-0001",),
+        version=2,
+    )
+    recovered = _score_span(provider, span_id=3, seconds=2.0, base_snapshot=after_second)
+
+    assert [round(item.score, 6) for item in recovered] == [1.0]
+
+
+def test_the_album_accumulates_rather_than_replacing_across_spans():
+    encoder = _ScriptedEncoder([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    album = FingerprintAlbum()
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album)
+
+    _score_span(provider, span_id=1, seconds=2.0, base_snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()))
+    _score_span(
+        provider,
+        span_id=2,
+        seconds=2.0,
+        base_snapshot=_prepared_snapshot(
+            span_id=1,
+            assignments="S01->speaker-0001",
+            canonical_speakers=("speaker-0001",),
+            version=1,
+        ),
+    )
+    _score_span(
+        provider,
+        span_id=3,
+        seconds=2.0,
+        base_snapshot=_prepared_snapshot(
+            span_id=2,
+            assignments="S01->speaker-0001",
+            canonical_speakers=("speaker-0001",),
+            version=2,
+        ),
+    )
+
+    assert album.exemplar_count("speaker-0001") == 2
+    assert album.reference("speaker-0001") == pytest.approx((0.5**0.5, 0.5**0.5))
+
+
+def test_unreconciled_spans_do_not_grow_the_pending_map_for_the_length_of_a_meeting():
+    """An abstain never reconciles, and an abstain is a designed outcome, not an anomaly."""
+
+    encoder = _ScriptedEncoder([[1.0, 0.0]] * 40)
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum())
+    empty = LiveIdentitySnapshot(version=0, canonical_speakers=())
+
+    for span_id in range(1, 41):
+        _score_span(provider, span_id=span_id, seconds=1.0, base_snapshot=empty)
+
+    assert len(provider._pending_vectors) == live_provider_bundle._PENDING_SPAN_LIMIT
+    assert max(provider._pending_vectors) == 40
+
+
+def test_the_album_takes_adr_0002_defaults_and_lets_the_manifest_override_them():
+    default = live_provider_bundle._fingerprint_album({})
+    assert (default.admission_seconds, default.exemplars_per_speaker) == (1.0, 10)
+
+    tuned = live_provider_bundle._fingerprint_album(
+        {"album_admission_seconds": 1.5, "album_exemplars_per_speaker": 4}
+    )
+    assert (tuned.admission_seconds, tuned.exemplars_per_speaker) == (1.5, 4)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"album_admission_seconds": 0},
+        {"album_admission_seconds": -1.0},
+        {"album_admission_seconds": "2"},
+        {"album_admission_seconds": True},
+        {"album_exemplars_per_speaker": 0},
+        {"album_exemplars_per_speaker": 2.5},
+    ],
+)
+def test_the_album_refuses_a_manifest_that_names_a_nonsensical_parameter(payload):
+    with pytest.raises(LiveProviderBundleAdmissionError):
+        live_provider_bundle._fingerprint_album(payload)
+
+
+# --------------------------------------------------------------------------------------
+# ADR-0002 step 3 on the live seam: what the sweeper retains, and when it re-matches it
+# --------------------------------------------------------------------------------------
+
+
+def _voice(angle_degrees: float) -> list[float]:
+    """A voiceprint on the unit circle, so every cosine in these nodes is readable by eye."""
+
+    import math
+
+    radians = math.radians(angle_degrees)
+    return [math.cos(radians), math.sin(radians)]
+
+
+def _sweep_seam(*, interval_seconds: float = 1.0):
+    """The real preparer over the real provider, with the real album and the real sweeper.
+
+    Nothing here is a stand-in except the encoder's forward pass, exactly as the accuracy
+    harness substitutes it: the matcher, the admission rule, the reconcile seam and the
+    cadence are all production code.
+    """
+
+    encoder = _ScriptedEncoder(
+        [
+            _voice(0),  # span 1, S01 -- the first voice, born as speaker-0001
+            _voice(90),  # span 1, S02 -- the second voice, born as speaker-0002
+            _voice(45),  # span 2 -- exactly between them, so the live path must abstain
+            _voice(30),  # span 3 -- the first voice again, and 4 s of it
+            _voice(30),  # span 4 -- whatever; this span exists to reconcile span 3
+        ]
+    )
+    album = FingerprintAlbum()
+    config = LiveIdentityConfig(
+        max_speakers=16,
+        min_match_score=ALBUM_MIN_MATCH_SCORE,
+        min_match_margin=ALBUM_MIN_MATCH_MARGIN,
+    )
+    sweeper = LiveIdentitySweeper(album=album, config=config, interval_seconds=interval_seconds)
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album, sweeper=sweeper)
+    return BoundedCausalIdentityPreparer(config=config, evidence_provider=provider), sweeper
+
+
+def _prepare(preparer, *, span_id, start_sec, segments, snapshot):
+    end_sec = max(end for _, end, _ in segments)
+    start_sample = int(start_sec * 16000)
+    sample_count = int(end_sec * 16000)
+    return preparer.prepare(
+        span=FrozenSpan(
+            id=span_id,
+            epoch=0,
+            start_sample=start_sample,
+            end_sample=start_sample + sample_count,
+            reason="end_silence",
+        ),
+        pcm=b"\0\0" * sample_count,
+        transcript="".join(f"[{start:g}][{label}]w[{end:g}]" for start, end, label in segments),
+        base_snapshot=snapshot,
+    )
+
+
+def _drive_sweep_seam(preparer):
+    """Four spans of a meeting the live path cannot label correctly on its own."""
+
+    return _drive_sweep_seam_to_snapshot(preparer)[0]
+
+
+def _drive_sweep_seam_to_snapshot(preparer):
+    """The same meeting, plus the identity state a session would be holding at its end."""
+
+    snapshot = LiveIdentitySnapshot(version=0, canonical_speakers=())
+    statuses = []
+    for span_id, start_sec, segments in (
+        (1, 0.0, [(0.0, 1.0, "S01"), (1.0, 2.0, "S02")]),
+        (2, 2.0, [(0.0, 2.0, "S01")]),
+        (3, 4.0, [(0.0, 4.0, "S01")]),
+        (4, 8.0, [(0.0, 2.0, "S01")]),
+    ):
+        preparation = _prepare(
+            preparer,
+            span_id=span_id,
+            start_sec=start_sec,
+            segments=segments,
+            snapshot=snapshot,
+        )
+        statuses.append(preparation.status)
+        if preparation.status == "prepared":
+            snapshot = preparation.proposed_snapshot
+    return statuses, snapshot
+
+
+def test_the_live_path_retains_the_evidence_a_sweep_rescues_an_abstained_span_with():
+    """ADR-0002 step 3, end to end on the seam the live path actually runs.
+
+    Span 2 sits exactly between the two voices born in span 1, so the matcher abstains -- the
+    designed outcome (J2), and the reason a reader sees that span unattributed. Span 3 then
+    gives `speaker-0001` four more seconds of speech, the album's centroid moves, and the
+    sweep at span 4 re-matches span 2's *retained* vector and labels it. None of that is
+    possible unless the unlabelled unit was retained when it was embedded, which is the
+    decision this wiring took.
+    """
+
+    preparer, sweeper = _sweep_seam()
+
+    statuses = _drive_sweep_seam(preparer)
+
+    assert statuses == ["prepared", "abstain", "prepared", "prepared"]
+    assert [
+        (item.span_id, item.local_speaker, item.previous_speaker, item.canonical_speaker, item.reason)
+        for item in sweeper.latest_revision.corrections
+    ] == [(2, "S01", None, "speaker-0001", LABELLED)]
+    assert sweeper.corrections == 1
+
+
+def test_the_cadence_never_sees_the_span_being_prepared():
+    """A sweep that could label the span in flight would correct a transcript nobody has read.
+
+    Span 4's own evidence is retained *after* its cadence sweep runs, so the revision that
+    rescues span 2 says nothing about span 4 -- whose label the live path is in the middle of
+    deciding. The ledger holds it; the revision does not touch it.
+    """
+
+    preparer, sweeper = _sweep_seam()
+
+    _drive_sweep_seam(preparer)
+
+    assert sweeper.ledger.canonical_speaker(4, "S01") is None
+    assert [item.span_id for item in sweeper.latest_revision.corrections] == [2]
+    assert sweeper.sweeps == 3
+
+
+def test_a_reconciled_assignment_reaches_the_ledger_as_well_as_the_album():
+    """The album hears assignments; the ledger hears every embedded unit, labelled or not.
+
+    Both are fed from the one place that holds a vector and an assignment together, so a unit
+    the album admitted and a unit the ledger retained can never disagree about who spoke. The
+    cadence is switched off for the length of this meeting on purpose: a sweep also writes
+    labels into the ledger, so with one running this node would pass whether or not the
+    reconcile seam fed it at all.
+    """
+
+    preparer, sweeper = _sweep_seam(interval_seconds=3600.0)
+
+    _drive_sweep_seam(preparer)
+
+    assert sweeper.sweeps == 0
+
+    assert sweeper.ledger.canonical_speaker(1, "S01") == "speaker-0001"
+    assert sweeper.ledger.canonical_speaker(1, "S02") == "speaker-0002"
+    assert sweeper.ledger.canonical_speaker(3, "S01") == "speaker-0001"
+    assert sweeper.ledger.unit_count == 5
+    assert sweeper.ledger.refused_units == 0
+    assert album_speakers(sweeper.album) == ["speaker-0001", "speaker-0002"]
+
+
+def album_speakers(album):
+    return sorted(album.speakers())
+
+
+def test_an_abstained_span_is_the_one_unit_the_album_never_hears():
+    """An abstention publishes words with no speaker, so there is no assignment to enrol -- and
+    that is exactly the span whose vector a later sweep has the most to say about."""
+
+    preparer, sweeper = _sweep_seam()
+
+    _drive_sweep_seam(preparer)
+
+    assert sweeper.album.exemplar_count("speaker-0001") == 2
+    assert sweeper.album.exemplar_count("speaker-0002") == 1
+    assert sweeper.ledger.span_count == 4
+
+
+def test_a_cadence_that_has_not_come_round_leaves_the_meeting_untouched():
+    preparer, sweeper = _sweep_seam(interval_seconds=3600.0)
+
+    statuses = _drive_sweep_seam(preparer)
+
+    assert statuses == ["prepared", "abstain", "prepared", "prepared"]
+    assert (sweeper.sweeps, sweeper.corrections) == (0, 0)
+    assert sweeper.latest_revision is None
+    assert sweeper.ledger.unit_count == 5
+
+
+def test_the_bundle_builds_one_album_and_one_sweeper_that_share_the_matcher_calibration(tmp_path):
+    """ADR-0002 calls the album shipped without the sweep a terminal-state failure, so the
+    factory that can produce one must produce the other, against the same album and the same
+    calibration. A sweeper holding its own `LiveIdentityConfig` would be candidate 63 again:
+    labels measured at one pair of thresholds and revised at another.
+    """
+
+    config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
+
+    preparer = build_live_runtime_factory(config, FakeRunner())()._identity_preparer_factory()
+
+    provider = preparer.evidence_provider
+    assert isinstance(provider, WeSpeakerLiveEvidenceProvider)
+    assert provider._sweeper is not None
+    assert provider._sweeper.album is provider._album
+    assert provider._sweeper.config is preparer.config
+    assert provider._sweeper.interval_seconds == live_provider_bundle_sweep_interval()
+
+
+def live_provider_bundle_sweep_interval() -> float:
+    from moss_transcribe_diarize.app.live_identity_sweep import SWEEP_INTERVAL_SECONDS
+
+    return SWEEP_INTERVAL_SECONDS
+
+
+def test_the_session_end_finalize_labels_the_last_spans_evidence_before_it_sweeps():
+    """ADR-0002's final sweep, and the order inside it, on the seam the live path runs.
+
+    The cadence is off for the whole of this meeting, so this is the *only* sweep it gets --
+    which is the ordinary case for any meeting shorter than one interval, and the tail of
+    every meeting longer than one. Span 4's evidence is retained unlabelled while the meeting
+    runs, because a span is labelled when the *following* preparation reconciles it and
+    nothing follows the last one; the finalize settles that first and only then re-matches,
+    so the sweep sees a ledger that agrees with the transcript rather than proposing a
+    correction for a span the live path had already labelled.
+    """
+
+    preparer, sweeper = _sweep_seam(interval_seconds=3600.0)
+
+    statuses, final_snapshot = _drive_sweep_seam_to_snapshot(preparer)
+
+    assert statuses == ["prepared", "abstain", "prepared", "prepared"]
+    assert sweeper.sweeps == 0
+    assert sweeper.ledger.canonical_speaker(4, "S01") is None
+
+    preparer.finalize_identity(base_snapshot=final_snapshot)
+
+    assert sweeper.ledger.canonical_speaker(4, "S01") == "speaker-0001"
+    assert sweeper.sweeps == 1
+    # The abstained span is rescued, and the last span -- now settled -- is left alone.
+    assert [
+        (item.span_id, item.local_speaker, item.canonical_speaker, item.reason)
+        for item in sweeper.latest_revision.corrections
+    ] == [(2, "S01", "speaker-0001", LABELLED)]
+
+
+def test_a_provider_that_cannot_sweep_still_settles_its_last_span():
+    """The reconcile is not the sweep's errand; it is how the meeting's evidence ends up true.
+
+    A stack with no sweeper has nothing to re-match, but the album it does have must still
+    hear the last span's assignment -- and the pre-ADR-0002 stack, which keeps its reference
+    vectors itself, must still record it. Neither has anything to say at session end, and
+    saying nothing must not mean raising.
+    """
+
+    encoder = _ScriptedEncoder([_voice(0), _voice(0)])
+    config = LiveIdentityConfig(
+        max_speakers=16,
+        min_match_score=ALBUM_MIN_MATCH_SCORE,
+        min_match_margin=ALBUM_MIN_MATCH_MARGIN,
+    )
+    album = FingerprintAlbum()
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album)
+    preparer = BoundedCausalIdentityPreparer(config=config, evidence_provider=provider)
+
+    first = _prepare(
+        preparer,
+        span_id=1,
+        start_sec=0.0,
+        segments=[(0.0, 2.0, "S01")],
+        snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()),
+    )
+    assert first.status == "prepared"
+    assert album.exemplar_count("speaker-0001") == 0
+
+    preparer.finalize_identity(base_snapshot=first.proposed_snapshot)
+
+    assert album.exemplar_count("speaker-0001") == 1
+    assert provider.take_identity_revision() is None

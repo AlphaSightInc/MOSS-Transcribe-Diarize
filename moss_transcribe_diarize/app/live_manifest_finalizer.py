@@ -1,10 +1,19 @@
 """Generate the deployed live provider manifest bounds from the live wire contract.
 
 The deployed manifest is host-owned and provisional until a reviewed revision exists.
-Finalizing it means three things, and all three are mechanical: stamp the deployed
-source revision, retune the bounds the Mac client's wire contract needs, and regenerate
-the bundle config hashes. A hand-edited ``bounds_config`` fails the runtime's declared
-hash comparison at preflight, so the generated hashes are the only ones that admit.
+Finalizing it means four things, and all four are mechanical: stamp the deployed source
+revision, retune the bounds the Mac client's wire contract needs, state the matcher
+thresholds the shipped identity policy is calibrated for, and regenerate the bundle config
+hashes. A hand-edited ``bounds_config`` fails the runtime's declared hash comparison at
+preflight, so the generated hashes are the only ones that admit.
+
+The matcher thresholds are the fourth step because of what happened without it: the
+fingerprint album (ADR-0002) shipped into a manifest still carrying the thresholds tuned for
+the latest-span overwrite policy it replaced, where it measures 75.0 % mean live speaker
+accuracy against 93.4 % at its own calibration -- below the ADR's acceptance bar entirely.
+Those values reached the host by hand-editing an untracked provisional file, so no review
+ever saw them. Every other deployed value the runtime's behaviour turns on is an explicit
+flag here; these are now too.
 """
 
 from __future__ import annotations
@@ -32,6 +41,7 @@ from .live_provider_bundle import (
 # the mapping here would prove only that this module agrees with itself.
 from .live_provider_bundle import _bounds as read_service_bounds
 from .live_provider_bundle import _endpoint_config as read_endpoint_policy_config
+from .live_provider_bundle import _identity_config as read_identity_config
 from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
 from .live_session import LIVE_SAMPLE_RATE
 
@@ -77,17 +87,40 @@ class LiveManifestRetune:
                 raise LiveManifestFinalizeError(f"{name} must be a positive integer.")
 
 
+@dataclass(frozen=True, slots=True)
+class LiveIdentityRecalibration:
+    """The matcher thresholds a deployment states explicitly.
+
+    These are not wire-contract values: no client behaviour and no span plan depends on them,
+    and unlike the bounds there is no relation that makes one pair right. What makes a pair
+    right is the reference-vector policy it is measured against, which is why ADR-0002 calls
+    for recalibrating them against the fingerprint album's centroid statistics and why they
+    are stated rather than derived. `tests/live_identity_accuracy.py` is where a candidate
+    pair is measured; this is where the measured pair reaches the deployment.
+    """
+
+    min_match_score: float
+    min_match_margin: float
+
+    def __post_init__(self) -> None:
+        for name in ("min_match_score", "min_match_margin"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise LiveManifestFinalizeError(f"identity_config.{name} must be a number.")
+
+
 def finalize_payload(
     payload: Mapping[str, Any],
     *,
     source_revision: str,
     retune: LiveManifestRetune,
+    identity: LiveIdentityRecalibration,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return the finalized manifest payload and the contract evidence behind it."""
 
     _require_source_revision(source_revision)
     final = deepcopy(dict(payload))
-    for key in ("endpoint_config", "bounds_config", "decoder_config"):
+    for key in ("endpoint_config", "identity_config", "bounds_config", "decoder_config"):
         section = final.get(key)
         if not isinstance(section, Mapping):
             raise LiveManifestFinalizeError(f"{key} is required in the input manifest.")
@@ -95,6 +128,8 @@ def finalize_payload(
 
     final["source_revision"] = source_revision
     final["endpoint_config"]["hard_cap_samples"] = retune.hard_cap_samples
+    final["identity_config"]["min_match_score"] = float(identity.min_match_score)
+    final["identity_config"]["min_match_margin"] = float(identity.min_match_margin)
     final["bounds_config"]["hard_cap_samples"] = retune.hard_cap_samples
     final["bounds_config"]["max_retained_samples"] = retune.max_retained_samples
     final["bounds_config"]["frame_samples"] = retune.frame_samples
@@ -178,6 +213,8 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
             f"{replay_frames} frames, beyond the {LIVE_V2_REPLAY_ACK_WINDOW}-ack replay window."
         )
 
+    identity = _identity_evidence(payload)
+
     return {
         "frame_samples": frame_samples,
         "frame_seconds": frame_samples / LIVE_SAMPLE_RATE,
@@ -189,6 +226,31 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         "retention_headroom_seconds": (max_retained - required_retention) / LIVE_SAMPLE_RATE,
         "decoder_headroom_samples": decoder_max - hard_cap,
         "replay_ack_headroom_frames": LIVE_V2_REPLAY_ACK_WINDOW - replay_frames,
+        **identity,
+    }
+
+
+def _identity_evidence(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Read the finalized identity_config back with the reader the live runtime uses.
+
+    There is no relation here to check the thresholds against -- they are free parameters,
+    calibrated by measurement rather than derived from the wire contract -- so the only thing
+    this can honestly prove is that the runtime admits them, and the only honest place to
+    prove it is the runtime's own reader. Printing them as evidence is the other half: a
+    recalibration that no plan line names is a hand edit with extra steps.
+    """
+
+    section = _section(payload, "identity_config")
+    try:
+        config = read_identity_config(section)
+    except (LiveProviderBundleAdmissionError, ValueError) as exc:
+        raise LiveManifestFinalizeError(
+            f"identity_config is not one the live runtime admits: {exc}"
+        ) from exc
+    return {
+        "identity_max_speakers": config.max_speakers,
+        "identity_min_match_score": config.min_match_score,
+        "identity_min_match_margin": config.min_match_margin,
     }
 
 
@@ -236,6 +298,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--hard-cap-samples", required=True, type=int)
     parser.add_argument("--max-retained-samples", required=True, type=int)
     parser.add_argument("--frame-samples", required=True, type=int)
+    parser.add_argument(
+        "--min-match-score",
+        required=True,
+        type=float,
+        help="identity_config.min_match_score, calibrated for the shipped identity policy.",
+    )
+    parser.add_argument(
+        "--min-match-margin",
+        required=True,
+        type=float,
+        help="identity_config.min_match_margin, calibrated for the shipped identity policy.",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Print the plan and rollback; write nothing.")
     args = parser.parse_args(argv)
 
@@ -268,7 +342,16 @@ def _run(args: argparse.Namespace) -> int:
         max_retained_samples=args.max_retained_samples,
         frame_samples=args.frame_samples,
     )
-    final, contract = finalize_payload(payload, source_revision=args.source_revision, retune=retune)
+    identity = LiveIdentityRecalibration(
+        min_match_score=args.min_match_score,
+        min_match_margin=args.min_match_margin,
+    )
+    final, contract = finalize_payload(
+        payload,
+        source_revision=args.source_revision,
+        retune=retune,
+        identity=identity,
+    )
     text = json.dumps(final, sort_keys=True, indent=2) + "\n"
     admission = verify_admission(final, base_dir=output_path.parent)
 
@@ -280,6 +363,8 @@ def _run(args: argparse.Namespace) -> int:
         f"read {input_path}",
         f"set source_revision={args.source_revision}",
         f"set endpoint_config.hard_cap_samples={retune.hard_cap_samples}",
+        f"set identity_config.min_match_score={identity.min_match_score}",
+        f"set identity_config.min_match_margin={identity.min_match_margin}",
         f"set bounds_config.hard_cap_samples={retune.hard_cap_samples}",
         f"set bounds_config.max_retained_samples={retune.max_retained_samples}",
         f"set bounds_config.frame_samples={retune.frame_samples}",
@@ -355,6 +440,7 @@ __all__ = [
     "LIVE_RECONNECT_BURST_FRAMES",
     "LIVE_RECONNECT_BURST_SAMPLES",
     "LIVE_WIRE_FRAME_SAMPLES",
+    "LiveIdentityRecalibration",
     "LiveManifestFinalizeError",
     "LiveManifestRetune",
     "finalize_payload",

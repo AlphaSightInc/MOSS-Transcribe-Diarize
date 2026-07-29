@@ -18,6 +18,13 @@ from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 from .live_adapters import RunnerBoundedWavInference
 from .live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from .live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig, LiveSpeakerEvidence
+from .live_identity_album import (
+    ALBUM_ADMISSION_SECONDS,
+    ALBUM_EXEMPLARS_PER_SPEAKER,
+    FingerprintAlbum,
+    cosine_similarity,
+)
+from .live_identity_sweep import LiveIdentitySweeper, SweepRevision
 from .live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -286,10 +293,7 @@ def build_live_runtime_factory(
                 runner,
                 max_samples=_positive_int(config.decoder_config.get("max_samples"), "decoder_config.max_samples"),
             ),
-            identity_preparer_factory=lambda: BoundedCausalIdentityPreparer(
-                config=_identity_config(config.identity_config),
-                evidence_provider=_identity_evidence_provider(config, encoder=identity_encoder),
-            ),
+            identity_preparer_factory=lambda: _identity_preparer(config, encoder=identity_encoder),
         )
 
     return factory
@@ -509,6 +513,11 @@ class WebRtcSpeechProvider:
         return cursor + piece_samples
 
 
+# A span's vectors are reconciled against the very next preparation, so one entry would do;
+# the slack absorbs a reordering without ever letting the map track the meeting's length.
+_PENDING_SPAN_LIMIT = 8
+
+
 class WeSpeakerLiveEvidenceProvider:
     """Live evidence adapter over the pinned file-mode WeSpeaker encoder seam."""
 
@@ -518,6 +527,8 @@ class WeSpeakerLiveEvidenceProvider:
         encoder: Any,
         canonical_embedding: Callable[[LiveIdentitySnapshot, str], Sequence[float] | None] | None = None,
         min_segment_samples: int = 1,
+        album: FingerprintAlbum | None = None,
+        sweeper: LiveIdentitySweeper | None = None,
     ):
         if min_segment_samples <= 0:
             raise LiveProviderBundleAdmissionError("wespeaker min_segment_samples must be positive.")
@@ -526,7 +537,19 @@ class WeSpeakerLiveEvidenceProvider:
         self.encoder = encoder
         self._canonical_embedding = canonical_embedding
         self.min_segment_samples = int(min_segment_samples)
-        self._pending_vectors: dict[int, dict[str, tuple[float, ...]]] = {}
+        # ADR-0002's reference-vector policy. The ADR names `canonical_embedding` as the
+        # injection point; the album is passed as its own collaborator because it owns the
+        # *write* side too -- replacing latest-span overwrite is an admission decision, and
+        # splitting reading from writing across two objects is what let a 0.5 s fragment
+        # overwrite a good prototype in the first place.
+        self._album = album
+        # ADR-0002 step 3. The sweeper retains the *same* vectors the album is offered, because
+        # this is the only object in the live path that ever holds one -- but it retains them on
+        # a wider rule: the album hears assignments, the sweeper hears every embedded unit,
+        # including the ones an abstention left unlabelled. A sweeper with no album has nothing
+        # to re-match against, so the two are constructed together or not at all.
+        self._sweeper = sweeper
+        self._pending_vectors: dict[int, dict[str, tuple[tuple[float, ...], float]]] = {}
         self._canonical_vectors: dict[str, tuple[float, ...]] = {}
 
     def score(
@@ -538,6 +561,13 @@ class WeSpeakerLiveEvidenceProvider:
         base_snapshot: LiveIdentitySnapshot,
     ) -> tuple[LiveSpeakerEvidence, ...]:
         self._reconcile_committed_vectors(base_snapshot)
+        if self._sweeper is not None:
+            # The cadence fires *before* this span's own evidence is retained, and the meeting
+            # time is the span's start. Both halves of that matter: a sweep that could see the
+            # span currently being prepared would propose a label for it before the live path
+            # had assigned one, and every one of those would be a correction to a transcript
+            # nobody had read yet.
+            self._sweeper.maybe_sweep(meeting_seconds=span.start_sample / LIVE_SAMPLE_RATE)
         intervals_by_speaker = _speaker_intervals_by_label(span, segments, self.min_segment_samples)
         if not intervals_by_speaker:
             return ()
@@ -548,7 +578,27 @@ class WeSpeakerLiveEvidenceProvider:
                 speaker: _vector_values(self.encoder.embed(wav_path, intervals))
                 for speaker, intervals in intervals_by_speaker.items()
             }
-        self._pending_vectors[span.id] = local_vectors
+        # The album's admission gate is a duration, so the seconds of speech that produced each
+        # vector travel with it: the encoder sees the intervals, nothing downstream does.
+        self._pending_vectors[span.id] = {
+            speaker: (vector, _intervals_duration(intervals_by_speaker[speaker]))
+            for speaker, vector in local_vectors.items()
+        }
+        if self._sweeper is not None:
+            # Retained unlabelled, now, rather than only when a preparation reconciles it. An
+            # abstained span never reconciles -- that is what `_forget_stale_pending` is for --
+            # and an abstained span is precisely the one a later sweep has something to say
+            # about, so retaining only what was already labelled would make the sweep unable to
+            # improve the spans the live path found hardest.
+            for speaker, (vector, duration_sec) in self._pending_vectors[span.id].items():
+                self._sweeper.record(
+                    span_id=span.id,
+                    local_speaker=speaker,
+                    canonical_speaker=None,
+                    vector=vector,
+                    duration_sec=duration_sec,
+                )
+        self._forget_stale_pending()
         if not base_snapshot.canonical_speakers:
             return ()
         evidence: list[LiveSpeakerEvidence] = []
@@ -568,6 +618,39 @@ class WeSpeakerLiveEvidenceProvider:
                 )
         return tuple(evidence)
 
+    def finalize_identity(self, *, base_snapshot: LiveIdentitySnapshot) -> None:
+        """Settle the meeting's last preparation, then sweep once more, in that order.
+
+        ADR-0002's final sweep. Both halves are here rather than in the caller because both
+        are facts about retained evidence, and the order between them is load-bearing: a
+        span's vectors acquire their canonical speaker when the *next* span's preparation
+        reconciles them, so at session end the last span is still retained unlabelled. A
+        sweep run before that reconcile would re-match the last span against the album and
+        propose a `labelled` correction for a span the live path had already labelled --
+        a rewrite that changes nothing, reported as if it had.
+
+        Sweeping unconditionally is the point of the call: `maybe_sweep` is paced by the
+        following span's start, so the meeting's last interval has nothing to trigger it, and
+        that interval is where the accuracy harness (`tests/live_identity_accuracy.py`)
+        measures essentially all of the sweep's gain.
+        What it produces is left for `take_identity_revision` exactly as a cadence sweep
+        leaves it -- this makes a correction available and never publishes one.
+        """
+
+        self._reconcile_committed_vectors(base_snapshot)
+        if self._sweeper is not None:
+            self._sweeper.sweep_now()
+
+    def take_identity_revision(self) -> SweepRevision | None:
+        """The newest unpublished sweep result, or `None` when this stack cannot sweep.
+
+        The provider is where a vector lives, so it is where the sweeper lives; publishing a
+        correction is somebody else's job entirely. This exists so that the object holding the
+        evidence never has to know what a transcript is.
+        """
+
+        return None if self._sweeper is None else self._sweeper.take_revision()
+
     def _canonical_vector(
         self,
         snapshot: LiveIdentitySnapshot,
@@ -575,7 +658,20 @@ class WeSpeakerLiveEvidenceProvider:
     ) -> Sequence[float] | None:
         if self._canonical_embedding is not None:
             return self._canonical_embedding(snapshot, speaker)
+        if self._album is not None:
+            return self._album.reference(speaker)
         return self._canonical_vectors.get(speaker)
+
+    def _forget_stale_pending(self) -> None:
+        """Bound the pending map; only the newest span is ever reconciled against.
+
+        A span whose preparation abstains or fails is never popped, so without this the map
+        grows for the length of the meeting -- and abstains are the *designed* outcome for an
+        ambiguous identity, so a long meeting produces plenty of them.
+        """
+
+        while len(self._pending_vectors) > _PENDING_SPAN_LIMIT:
+            del self._pending_vectors[min(self._pending_vectors)]
 
     def _reconcile_committed_vectors(self, snapshot: LiveIdentitySnapshot) -> None:
         diagnostics = dict(snapshot.diagnostics)
@@ -592,9 +688,31 @@ class WeSpeakerLiveEvidenceProvider:
             if "->" not in assignment:
                 continue
             local_speaker, canonical_speaker = assignment.split("->", 1)
-            vector = pending.get(local_speaker)
-            if vector is not None:
+            observation = pending.get(local_speaker)
+            if observation is None:
+                continue
+            vector, duration_sec = observation
+            if self._sweeper is not None:
+                # The same unit again, now carrying the label the live path gave it. The ledger
+                # answers `replaced`, the unit count does not move, and the retained evidence
+                # now says what a reader was shown -- which is what a correction is measured
+                # against.
+                self._sweeper.record(
+                    span_id=span_id,
+                    local_speaker=local_speaker,
+                    canonical_speaker=canonical_speaker,
+                    vector=vector,
+                    duration_sec=duration_sec,
+                )
+            if self._album is None:
                 self._canonical_vectors[canonical_speaker] = vector
+                continue
+            self._album.observe(
+                canonical_speaker=canonical_speaker,
+                vector=vector,
+                duration_sec=duration_sec,
+                span_id=span_id,
+            )
 
 
 def _speech_provider(config: LiveProviderBundleConfig):
@@ -685,16 +803,78 @@ def _identity_encoder(config: LiveProviderBundleConfig):
     return WeSpeakerResNet152LmAdapter(state_asset.path, spec=spec, device=config.runtime.device)
 
 
+def _identity_preparer(
+    config: LiveProviderBundleConfig,
+    *,
+    encoder: Any,
+) -> BoundedCausalIdentityPreparer:
+    """One session's identity stack: the matcher's config, the album, and the sweeper.
+
+    The config is built once and handed to both halves deliberately. A sweep re-matches with
+    `assign_speakers`, the very function the live path assigns with (N-sweep decision 2), so a
+    sweeper holding a second `LiveIdentityConfig` would be a second calibration -- the exact
+    thing candidate 63 removed one layer up, where the album could be measured at one pair of
+    thresholds and deployed at another.
+    """
+
+    identity_config = _identity_config(config.identity_config)
+    return BoundedCausalIdentityPreparer(
+        config=identity_config,
+        evidence_provider=_identity_evidence_provider(
+            config,
+            encoder=encoder,
+            identity_config=identity_config,
+        ),
+    )
+
+
 def _identity_evidence_provider(
     config: LiveProviderBundleConfig,
     *,
     encoder: Any,
+    identity_config: LiveIdentityConfig,
 ) -> WeSpeakerLiveEvidenceProvider:
+    """The album and the sweeper are built here together, and the config is not optional.
+
+    ADR-0002 classes the album shipped without the retrospective sweep as a terminal-state
+    failure, so a code path that could produce one without the other would be a way to ship the
+    documented failure by omission. Requiring the config rather than defaulting it is what makes
+    that unwritable: there is no argument list that yields an album and no sweeper.
+    """
+
+    album = _fingerprint_album(config.identity_provider)
     return WeSpeakerLiveEvidenceProvider(
         encoder=encoder,
         min_segment_samples=_positive_int(
             config.identity_provider.get("min_segment_samples"),
             "identity_provider.min_segment_samples",
+        ),
+        album=album,
+        sweeper=LiveIdentitySweeper(album=album, config=identity_config),
+    )
+
+
+def _fingerprint_album(payload: Mapping[str, Any]) -> FingerprintAlbum:
+    """ADR-0002's parameters as code defaults, overridable by a manifest that names them.
+
+    The deployed manifest is generated and hash-covered, so requiring new keys would refuse the
+    document that is running today. Absent keys mean ADR-0002 §7's measured starting values, and
+    the ADR's recalibration against album centroid statistics stays a manifest edit rather than a
+    code change.
+    """
+
+    admission = payload.get("album_admission_seconds")
+    exemplars = payload.get("album_exemplars_per_speaker")
+    return FingerprintAlbum(
+        admission_seconds=(
+            ALBUM_ADMISSION_SECONDS
+            if admission is None
+            else _positive_float(admission, "identity_provider.album_admission_seconds")
+        ),
+        exemplars_per_speaker=(
+            ALBUM_EXEMPLARS_PER_SPEAKER
+            if exemplars is None
+            else _positive_int(exemplars, "identity_provider.album_exemplars_per_speaker")
         ),
     )
 
@@ -734,6 +914,10 @@ def _speaker_intervals_by_label(
     return intervals
 
 
+def _intervals_duration(intervals: list[tuple[float, float]]) -> float:
+    return sum(end - start for start, end in intervals)
+
+
 def _write_pcm_wav(path: Path, pcm: bytes) -> None:
     with wave.open(str(path), "wb") as wav:
         wav.setnchannels(1)
@@ -750,14 +934,20 @@ def _vector_values(vector: Sequence[float]) -> tuple[float, ...]:
 
 
 def _cosine_similarity(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    """The album's similarity rule, wrapped back into this module's typed refusals.
+
+    The arithmetic lives beside the album because a retrospective sweep has to score voices the
+    same way the live matcher does, and two implementations of "how alike are these voices" is
+    exactly the hazard `tests/live_identity_accuracy.py` was built to rule out. The two
+    admission errors are kept distinct here: they are this provider's older contract.
+    """
+
     if len(left) != len(right):
         raise LiveProviderBundleAdmissionError("wespeaker evidence vector dimensions must match.")
-    left_norm = math.sqrt(sum(item * item for item in left))
-    right_norm = math.sqrt(sum(item * item for item in right))
-    if left_norm <= 0.0 or right_norm <= 0.0:
+    score = cosine_similarity(left, right)
+    if score is None:
         raise LiveProviderBundleAdmissionError("wespeaker evidence vectors must be non-zero.")
-    score = sum(a * b for a, b in zip(left, right, strict=True)) / (left_norm * right_norm)
-    return max(0.0, min(1.0, score))
+    return score
 
 
 def _collect_preflight_failures(config: LiveProviderBundleConfig) -> list[str]:
@@ -1096,6 +1286,14 @@ def _positive_int(value: Any, name: str) -> int:
     if not isinstance(value, int) or value <= 0:
         raise LiveProviderBundleAdmissionError(f"{name} must be a positive integer.")
     return value
+
+
+def _positive_float(value: Any, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise LiveProviderBundleAdmissionError(f"{name} must be a positive number.")
+    if not math.isfinite(value) or value <= 0.0:
+        raise LiveProviderBundleAdmissionError(f"{name} must be a positive number.")
+    return float(value)
 
 
 def _non_negative_int(value: Any, name: str) -> int:

@@ -31,6 +31,24 @@
 > hosts, so the blocks that diagnosed those defects are history. **Measured: 257 135 → 183 529 bytes
 > (2977 → 2081 lines), −28.6 %**, i.e. five `Read`s down to four. Reaching two would still mean cutting
 > the Validation fence, which is unchanged and still load-bearing.
+>
+> **Third compaction, run `20260729-025318` iteration 14 (candidate 52 a third time).** The file had
+> drifted back to **245 562 bytes / 2693 lines** — five `Read`s again. **26** superseded blocks went
+> to progress.txt **verbatim** under `ARCHIVE OF context.md SUPERSEDED BLOCKS - RUN 20260729-025318
+> ITERATION 14`, and this time the cut reached the two places the earlier passes declared off-limits:
+> **eleven ranges of the Validation fence** (every closed phase's per-node `--filter` recipe and every
+> spent one-time host recipe — E1/E2b/E3, D1/K5c/J5c/H4c/E2a/D3, the superseded F1 driver) and the
+> **Phase L/M/P candidate lists**. What was kept is what a *future* run needs: the full gate, the
+> probes, the three drivers, the reducers, the two redeploy templates, and the live F1/F2/F3
+> evidence. **Measured: 245 562 → 148 157 bytes (2693 → 1540 lines), −39.7 %** — five `Read`s to
+> three (the Read tool reported this file at **101 131 tokens** before the cut, ≈ 2.43 bytes/token,
+> so 148 KB ≈ 61 k tokens against the 25 k cap). *Verified, not assumed:* all 26 archived bodies were
+> checked to appear byte-for-byte in the pre-compaction file **and to be absent from the new one**,
+> and the surviving fence still passes `bash -n` (414 lines).
+> *The retirement trigger for the NEXT pass, recorded now so it is not re-argued:* the F1/F2/F3 green
+> blocks and the candidate-60 block are the only large live evidence left, and they retire when their
+> PRD clauses are closed by a later run — not before. After that, the next cheapest cut is the
+> "Gates, merges and redeploys" index, whose closed-phase rows are already summarised elsewhere.
 
 ## Ground
 
@@ -45,6 +63,9 @@
     — current controlling revision, the design rationale and decisions D1-D14. Authoritative.
   - `CONTEXT.md` (repo glossary — lane, mixer, v2 contract, portal, helper terms)
   - `docs/adr/0001-live-v2-json-http-contract.md`
+  - `docs/adr/0002-two-tier-diarization-fingerprint-album.md` + `docs/design-streaming-diarization.md`
+    — the authoritative live-identity design (Phase N); `docs/adr/0003-live-session-audio-retention.md`
+    — the retention bound step 2 must implement
   - `LOCAL_DEPLOYMENT.md` (server layout; Phase C updates it)
 - **Ignore `scripts/aisight-coding-loop/`** — an inert older loop bundle with identically named
   `prd.md`/`context.md`/`prompt.md`/`progress.txt`. This loop lives only in `scripts/ralph-afk/`.
@@ -63,15 +84,45 @@
 ## Where the loop stands
 
 **Branch and freeze.** Branch `ralph/live-meeting-mvp`, cut from `main af3ac36`. Fourteen phases have
-landed on it (A-E client/server/deploy/install, then five operator-authorized post-merge fix cycles
-G, H, J, K, M). **Six keeper merges have been made and all six are spent** — `f9285d6` (C4),
-`317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b), **`77e0014` (M6, iteration 19)** —
-and `merge-keeper.sh`'s `expected_main` guard now refuses a **seventh** (rehearsed non-vacuously:
-`main moved from expected pre-merge SHA fc7097d…`, rc=1). **Phase M's product work is merged**, so
-`git diff main HEAD -- ':!scripts/ralph-afk'` is **empty again** and the branch carries no
-unmerged tracked source. Every tracked product change since `f9285d6` was made under a named
+landed on it (A-E client/server/deploy/install, then six operator-authorized post-merge fix cycles
+G, H, J, K, M, P). **Seven keeper merges have been made and all seven are spent** — `f9285d6` (C4),
+`317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b), `77e0014` (M6, iteration 19),
+**`42abc5a` (P7, run `20260729-025318` iteration 4)** — and `merge-keeper.sh`'s `expected_main`
+guard now refuses an **eighth** (rehearsed non-vacuously: `main moved from expected pre-merge SHA
+77e0014…`, rc=1). **Phase P's product work is merged, published and DEPLOYED to all four checkouts
+at `42abc5a`** (run `20260729-025318` iteration 5), so the branch carries no unmerged tracked
+product source. Every tracked product change since `f9285d6` was made under a named
 amendment. Per-phase detail is in the closed-phase index below and in full in the progress.txt
 archive.
+**One non-Ralph commit is on the branch.** `00620ab` *"docs: streaming diarization design +
+ADR-0002 (two-tier, fingerprint album)"* was authored by **AlphaSightInc** at 03:23:50Z on
+2026-07-29 — i.e. the operator committed to the feature branch **while iteration 5 was running**, and
+the branch tip moved under the loop. It adds two files under `docs/` and **no product source, no
+test and no `ops/`**, so it changes nothing this loop has measured and nothing the service reads. It
+is why `git diff --name-only 42abc5a HEAD -- ':!scripts/ralph-afk'` now lists
+`docs/adr/0002-two-tier-diarization-fingerprint-album.md` and `docs/design-streaming-diarization.md`
+instead of being empty. **Do not revert it** and do not treat it as loop drift; do re-check the tip
+before any future merge, because the freeze's "only Ralph evidence changes on this branch" premise no
+longer holds by itself.
+**IT HAPPENED AGAIN IN ITERATION 6, and it is now a standing hazard, not an anecdote.** `128eae4`
+*"docs: prototype gates A/B/C passed - ADR-0002 accepted"* was committed by the operator at 23:48:25,
+**35 seconds before** this loop's own iteration-6 commit — the second concurrent operator commit in
+two iterations, both `docs/`-only. Nothing was lost this time (`git show <my sha> -- docs/` is empty,
+because the operator committed their own work first), but the near-miss is the point: **`git add -A`
+on this branch can stage an operator's uncommitted work-in-progress and publish it under a `ralph:`
+commit message.** *The durable rule:* stage this loop's evidence **explicitly** —
+`git add scripts/ralph-afk/` — or, when a product change is in play, stage the reviewed payload by
+path. Never `git add -A` here again. And check `git log --format='%h %an %ad %s' --date=iso -5`
+before any merge: the tip may have moved twice since the iteration began.
+**A THIRD TIME, AND THIS ONE CARRIED AN AUTHORIZATION.** `0456177` *"ralph: supersede Phase N with
+ADR-0002"* was committed by the operator at 01:36:54 — **2.5 minutes after** iteration 14's own
+commit — and it edits **prd.md and context.md**, i.e. the loop's own working memory and its
+contract. *The durable consequence, which cost this iteration a near-miss:* iteration 14 recorded
+"prd.md is unchanged at seven amendments, so everything is frozen", and that sentence was **false
+within three minutes of being written**. **Re-read prd.md's tail and `git log --oneline -3 --
+scripts/ralph-afk/prd.md` at the START of every iteration, and never trust a previous iteration's
+report that no authorization exists.** An iteration that had believed its predecessor here would
+have compacted context.md a fourth time while an authorized phase sat open.
 
 **PRD acceptance scoreboard (rows unchanged since iteration 9 except where noted; Phase M's local
 gate is green at `21a73ea`, the sixth merge landed as `77e0014` in iteration 19, and **it is now
@@ -83,16 +134,16 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | IDEA-044 compatibility checkpoint | GREEN, frozen at `1ede498` (10/10 and 16/16, 11 commands, 0 Darwin skips) |
 | Production client gate | GREEN (B6 `3fb5567`, re-gated G4 `23dc163`, K5a `cd7faf9`) |
 | Server meeting-reliability gate | GREEN at `f400d426`, clause→node map recorded |
-| One reviewed keeper merge (+ 5 authorized follow-ups) | GREEN, six merges, each reviewed against its amendment's scope |
-| One exact SHA everywhere | **GREEN — 4/4 at `77e0014`** (iteration 20): local `main`, `origin/main`, the server checkout and the m4mbp checkout. |
+| One reviewed keeper merge (+ 6 authorized follow-ups) | GREEN, seven merges, each reviewed against its amendment's scope |
+| One exact SHA everywhere | **GREEN — 4/4 at `42abc5a`** (run `20260729-025318` iteration 5). Local `main`, `origin/main`, the server checkout and the m4mbp checkout all print `42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870`. |
 | Live service answering | GREEN — `/live` and `/api/live/descriptor` 200 over the pinned leaf from MacStudio **and from m4mbp** |
 | Batch service unharmed | GREEN — `http://192.168.68.38:7860/` and `/api/jobs` 200; batch MainPIDs never restarted |
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **RED — re-run TWICE against `77e0014` in iteration 26 and cut off at t+18.1 s / t+32.1 s by a NEW blocker (candidate 56).** Phase M's fixes are confirmed working (165 × 200 heartbeats through a permanently failing publish; no lane fault at all), and the committed p95 fell 8343–9148 ms → **2567/2592 ms** — but both runs are too short to qualify (`sufficientSamples` false). See the F1-re-run block. |
-| 300 s certification (F2) | not run; the harness is ready (candidate 51, iteration 12) and 53/48/49/D-a/D-c have all landed, so the next F1/F3 run is the gate rather than another diagnosis |
-| 16-minute soak (F3) | **RED** — "F3 — the 16-minute soak" is RETIRED to progress.txt |
+| 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). See the F1-green block. |
+| 300 s certification (F2) | **GREEN on `42abc5a`** (iteration 11, `live-canary-clauses.py --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **3859.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.670** < 1, **1257 published == 1257 POST /frames, and every one of the session's 4748 HTTP requests answered 200**, a **5.050 s** interruption seen by the client and survived, outbox 0 → **10** → 0. **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the F2-green block |
+| 16-minute soak (F3) | **RAN AGAINST `42abc5a` AND FINISHED ITS WHOLE PLAN (iteration 9) — 5 clauses GREEN, 1 RED.** Candidate 53's minute-14.6 death is gone: 17/17 full minutes, every poll 200, view authority live at age 1024 s. The RED is **new candidate 60** — a clean stop does not revoke view authority, because no client code path calls the server's `POST …/stop`. `live-canary-clauses.py` rc=3. See the F3 block. |
 | Secret hygiene | static half green; run-time half green in F1 and F3 as far as those runs went |
 | Final close (F4b) | open |
 
@@ -104,37 +155,195 @@ carry is in the retired-evidence index below).**
   is **fixed in source**: P1 (the decode measures itself monotonically), P2 (untrustworthy timing
   metadata degrades to null and is logged, stated once as a conversion), P3 (four real-seam nodes,
   red-before proved per half) and P4 (the class swept: three sites fixed, one ruled deliberate).
-  Python 608/2/368 green. See the Phase P block.
-- **WHAT NOW BLOCKS EVERYTHING IS P5, and it is ordinary work: gate → merge #7 → push → redeploy →
-  Mac needs no rebuild (no `macos/` file changed) → THEN F1 and F3.** **Step (a), the gate, is DONE
-  and GREEN at `5bc4f7f` (iteration 2)** — see the Phase P gate row in the index below; the payload
-  is 7 files / +285/−38, every path inside `moss_transcribe_diarize/` or `tests/`, **0 under
-  `macos/`**, so the redeploy is server-only and the Mac needs only a `git checkout`. Next is the
-  merge. `merge-keeper.sh`'s
-  `expected_main` must be advanced in-script to `77e0014` citing the seventh amendment, exactly as
-  the six previous merges did, and a **history join is required first** — `git merge-base
-  --is-ancestor main HEAD` is FALSE at `5bc4f7f`. Until the redeploy, the deployed service still carries the defect, so
-  **no certification run may be used as evidence** and no offline probe speaks for the host — the
-  standing rule below now reads FALSE for the first time since iteration 20:
-  `git diff --name-only 77e0014 HEAD -- ':!scripts/ralph-afk'` is **non-empty**.
-- **Phase M gate steps (a), (b) and (c) are DONE** — local gate green at `21a73ea`, sixth merge
-  `77e0014`, and all four checkouts deployed at it. **Only (d) remains: F1 and F3, both green**, and
-  (d) is what candidate 56 blocks. Both halves are fully instrumented and waiting — `live-canary.sh`,
-  `live-soak.sh`, `live-canary-clauses.py`, `soak-abort-probe.py`, all in the repo.
+  Python 608/2/368 green. See the Duration-vs-timestamp row in Shipped contracts, the Phase P gate
+  and P7 merge rows in the gates index, and the retired Phase P list in progress.txt.
+- **PHASE P IS FULLY LANDED and its gate step (d) IS RUN, both halves.** (a) gate green at `5bc4f7f`,
+  (b) seventh merge `42abc5a`, (c) published and deployed 4/4, **(d) F1 GREEN (iteration 6)** and
+  **F3 RUN TO COMPLETION (iteration 9) — 5 GREEN, 1 RED**. The same is true of Phase M's gate steps
+  (a) `21a73ea` / (b) `77e0014` / (c) deployed / (d). **What Phase M and P set out to fix is proven
+  fixed:** candidate 53's minute-14.6 death did not recur, candidate 56 did not fire in 17 minutes,
+  D-c capped 67 of 443 spans and RTF p95 was 0.546. **What now stands in front of Phase N is one new
+  defect, candidate 60**, and the decision of whether the F3 clause it fails is worth an eighth
+  authorization before identity work. See the F3 block and candidate 60.
+- **ITERATION 8 OF THIS RUN LEFT NO RECORD AND NO COMMIT.** It launched the F3 soak at 03:52:58Z
+  (label `ralph-i7-f3-…`, so it reused iteration 7's pre-recorded rollback block) and then died —
+  context, timeout or crash, nothing says which. Iteration 9 found the driver still running at
+  minute 6 and let it finish; this is why the F3 evidence exists at all. *The durable lesson:* the
+  soak driver is `nohup`'d on m4mbp by design, so **it survives the iteration that started it** —
+  before concluding a host is idle, `ps -eo pid,etime,command | grep live-soak`. Killing it would
+  have thrown away 17 minutes of the loop's last uncertified gate.
 - **Phase M's product work is PROVEN on the real hosts** (iteration 26, two F1 re-runs against the
   deployed `77e0014`): 53/48 kept the heartbeat alive through **165 × 200** ticks with a permanently
   failing publish, D-a/49 produced **no lane fault at all**, and D-c took the committed p95 from
   8343–9148 ms to **2567/2592 ms**. Neither run is a qualified latency measurement — both were cut
   short by candidate 56 and `sufficientSamples` is false in both.
-- **Candidate 55 — identity capacity saturates in the first minute** (iteration 12). The 16-speaker
-  bound is reached at t+45.5 s (t+51.8 s in F1), so a voice arriving later can never be labelled.
-  Degrades quality without ending a session, so no gate sees it. Tracked product source; needs its
-  own authorization, and Phase N's `N1`/`N3` may subsume it.
-- **Phase N (live speaker identity) is authorized but gated** behind Phase M's green, so it is
-  blocked by candidate 56 too.
+- **Candidate 55 — identity capacity saturates in the first minute** (iteration 12; **reproduced in
+  iteration 6's GREEN F1**). The 16-speaker bound is reached at t+45.5 s / t+51.8 s / **t+65.6 s**,
+  so a voice arriving later can never be labelled. Iteration 6 named its consumer exactly: **9 of the
+  16 slots were minted by one-word `Hi.` fragments** of microphone ambient noise. Degrades quality
+  without ending a session, so no gate sees it — and now demonstrably not even a passing one.
+  Tracked product source; needs its own authorization, and Phase N's `N1`/`N3` may subsume it.
+- **Phase N's sequencing question is CLOSED by the operator, not by the loop** (`0456177`,
+  iteration 15): *"Phase N remains authorized. Take it in ADR-0002's shape, not the sixth
+  amendment's."* The evidence had already emptied the gate's reason — the sixth amendment sequenced
+  N after M because "identity quality cannot be certified on a meeting that dies at minute 14.6",
+  and F3 ran 17 minutes with a degraded lane — but the call was the operator's and they made it.
+  Candidate 60 is a **stop-time** authority-revocation defect and cannot touch an identity
+  measurement taken during a meeting.
+- **THE EIGHTH AUTHORIZATION LANDED, AND PHASE N IS OPEN — read `docs/adr/0002-…` first.** prd.md
+  gained *"Phase N is SUPERSEDED by ADR-0002"* in operator commit `0456177`. It does **not** create a
+  new fix cycle; it **re-shapes the already-authorized Phase N** and ends its "after Phase M's gate"
+  sequencing question by saying plainly *"Phase N remains authorized. Take it in ADR-0002's shape."*
+  The mechanism is unchanged from the sixth amendment (replacement is the defect, the album is the
+  fix, injected at `canonical_embedding`, re-embedding 0..t rejected on O(T²)); the **parameters and
+  the scope** change — `min_score` 0.35, margin 0.1–0.2, admission **1.0–2.0 s**, k=10, sweep every
+  60 s, merge 0.70, and the album is **step 1 of 4** and *"a terminal-state failure if shipped
+  alone"*. Acceptance is ADR-0002's **≥ 90–95 % live accuracy and live→file convergence**, not
+  centroid stability. Two consequences the loop must carry: the ADR deliberately **changes the
+  retention posture** (the server will keep meeting audio, ~0.3 GB/hr), so the PRD's *"no raw audio
+  is persisted"* clause must be re-read against the ADR rather than enforced blindly; and the
+  prototypes used **clean read speech**, so a real conversational recording is needed before
+  production sign-off — which compounds with candidate 51's measured limit.
+- **PHASE N STEP 1 (THE ALBUM) IS LANDED IN SOURCE (iteration 15) AND MEASURED (iteration 16).**
+  `live_identity_album.py` + wiring, 27 nodes; then N-gate's accuracy harness, 21 nodes, Python
+  **656 / 2 / 368**. Not gated as a phase, not merged, not deployed. **The album clears ADR-0002's
+  bar on production code: 93.4 % mean live speaker accuracy against overwrite's 72.0 %, ≥ 90 % on
+  every meeting.** Three things the measurement changed: candidate 55 costs **4.5 pp** and is *not*
+  subsumed by the album; the **deployed matcher thresholds** (0.5/0.2) put the album at **75.0 %**,
+  so recalibration is a shipping requirement; and the enrollment-floor instruction from the
+  superseded sixth amendment is refuted — **k**, not the duration gate, is what beats overwrite.
+  **ITERATION 17 CLOSED THE SECOND OF THOSE (candidate 63) IN SOURCE:** the calibrated pair is
+  named once beside the album, the accuracy harness imports it instead of holding a copy, and the
+  manifest finalizer now **requires** the deployment to state `--min-match-score` /
+  `--min-match-margin` and hash-covers them — so the album can no longer be measured at 0.35/0.1
+  and deployed at 0.5/0.2. **The host manifest still carries the old pair** until Phase N's
+  redeploy regenerates it; see the N-recal block.
+  See the Phase-N block below. **The branch carries unmerged tracked product source**, so
+  every offline probe has stopped speaking for the deployed service until a merge and redeploy —
+  see the rule under "What survives those blocks". (The harness itself is `tests/` only.)
+- **F2 RAN AND IS GREEN (iteration 11).** That was the loop's one unblocked PRD acceptance clause
+  and it is now spent. **Nothing measurable is left that the loop can do alone.** What remains:
+  (1) candidate 60 — F3's one RED — is tracked product source under the post-merge freeze and needs
+  an eighth authorization; (2) candidates 55 and 58 likewise; (3) **Phase N is OPEN and step 1 is
+  landed** — this sentence's "nothing is left" reading expired at `0456177`; (4) the PRD's F2
+  **system-audio-denied variant** and F1's
+  "two speakers" half are both blocked on inputs the loop is forbidden to spend or has measured it
+  cannot produce (see those two blocks); (5) F4b closes only when everything else has evidence.
+  **Iterations 12 and 13 spent the loop-tooling half of that list entirely:** candidate 61 gave F2
+  and F3 a lane-separation verdict at all, and candidate 59 made that verdict *correct* — F1 and F2
+  now name their system marker instead of calling it absent. *That conclusion held for exactly one
+  iteration.* `0456177` re-opened Phase N and iteration 15 spent it on step 1. **Still needing the
+  operator: 55, 58, 60, the F2 denied-lane variant, F1/F2's second-voice half, F4b.
+  NOT needing
+  one: Phase N steps 2–4, its gate, and — read out of prd.md rather than assumed — the matcher
+  recalibration (candidate 63), which the ADR-0002 supersession names in its own words and the
+  sixth amendment already ruled a *free* parameter. Iteration 16 filed it as needing an
+  authorization; iteration 17 re-read the contract and landed it.** The accuracy half of the gate
+  was built in iteration 16. **Step 2's collision with the PRD's no-raw-audio clause is SETTLED
+  (iteration 18): `docs/adr/0003-live-session-audio-retention.md` re-reads the clause as a
+  *horizon* — measured at **one span** today, moved to **one meeting** — opt-in, zero TTL after
+  session end, one mode-enforcing root off the batch filesystem, and a cap whose pressure degrades
+  the tape rather than the meeting. Step 2 is unblocked for code; read the ADR before writing any.**
+  **STEP 2's WRITER IS LANDED IN SOURCE (iteration 19): `live_tape.py` + 32 nodes, Python 694/2/368,
+  15 of the 32 red-proved by three semantic reverts.**
+  **AND IT IS WIRED (iteration 20): `LiveSessionTapeRecorder` + five call sites through the real
+  routes, +9 nodes, Python 703/2/368, four semantic reverts.**
+  **AND A DEPLOYMENT CAN NOW DECLARE IT (iteration 21): three `MOSS_LIVE_RETENTION_*` keys →
+  adapter flags → `LiveSessionTapeStore.declared` → `create_app`, +15 nodes, Python 718/2/368, five
+  semantic reverts. STEP 2 IS CODE-COMPLETE.** **The deployed service still cannot write a byte** —
+  `ops/moss-live.env` is host-local and untracked and the tracked template ships the three keys
+  **commented out**, so retention stays off until an operator edits that host file. See the N-tape,
+  N-tape-wiring and N-tape-declaration blocks.
+- **PHASE N STEP 3's ENGINE IS LANDED IN SOURCE (iteration 22): `live_identity_sweep.py`, +40
+  nodes, Python 758/2/368, ten semantic reverts reddening 20 of the 40.** The sweep re-matches the
+  album against retained evidence and proposes corrections and merges; it is **pure and unwired** —
+  nothing schedules it and no transcript is rewritten yet. Three things it settled that outlive it:
+  the sweep **does not re-hear audio** (ADR-0002's prose says re-embed the tape, its *measured*
+  gate B says 0.1 ms per sweep against 332-343 ms per embedding, so the run that passed the gate
+  re-matched retained vectors — take the measured one); the production matcher is now a **free
+  function** `live_identity.assign_speakers` that both the live path and the sweep call, so the
+  repo cannot grow the second matcher ADR-0002's own prototype had; and a merge above 0.70 is the
+  first mechanism here that can **reduce** the canonical speaker count, i.e. it can heal candidate
+  55's fragmentation retrospectively without touching births. See the N-sweep block.
+- **AND STEP 3's ENGINE IS NOW MEASURED — ADR-0002's GATE B IS ANSWERED ON PRODUCTION CODE
+  (iteration 23): the swept transcript reaches 99.26 % mean / 98.48 % min against the album's
+  93.44 / 92.18, above the ADR's own 98.5 % whole-file figure.** `tests/` only, +6 nodes, Python
+  **764/2/368**, three semantic reverts reddening 4/3/1. Two things it settled that the engine's
+  unit suite could not: **the merge fires zero times on eight real meetings** (iteration 22 expected
+  it to be the mechanism — it is not; the gain is entirely **re-matching**), and **the sweep erases
+  candidate 55's 4.5 pp from the final transcript completely** — capped-and-swept equals
+  uncapped-and-swept to two decimals, while the 16-bound still costs the *live* transcript 5.30 pp.
+  See the N-convergence block.
+- **AND STEP 3 IS NOW ON THE LIVE PATH (iteration 24): `LiveIdentitySweeper` — a ledger fed where
+  the album is fed, plus a meeting-time cadence — +20 nodes, Python 784/2/368, nine semantic
+  reverts.** The engine had been pure and unwired since iteration 22; the live path now *retains*
+  the evidence it re-matches and *paces* it. **Nothing consumes a revision yet**: `sweep_now`
+  applies it to the ledger (which is what makes the next sweep converge) and returns it, and no
+  transcript is rewritten — that is the next step, and it is the last one before Phase N's gate.
+  Two things it settled that outlive it: **the ledger retains every embedded unit, labelled or
+  not**, because an abstained span never reconciles and is exactly the span a later album has the
+  most to say about; and **ADR-0002's gate-B sweep cost is off by ~300×** — measured on F3's own
+  shape a pair-by-pair sweep costs 295 ms at 17 min and **3098 ms at three hours, longer than the
+  2.5 s span cap**, on the serial pump. Batch scoring took that to 39/366 ms with the accuracy
+  harness's 99.26/98.48 unchanged. See the N-sweep-wiring block.
+- **AND A REVISION NOW REACHES THE READER (iteration 25): `revise_labels` + the label track + the
+  portal, +9 nodes, Python 793/2/368, ten semantic reverts.** Step 3's user-visible half, and the
+  last piece before Phase N's gate. The three questions iteration 24 left open are answered:
+  **(a)** the correction is published **beside** the transcript (`CanonicalCommit.revised_transcript`),
+  because `prefix_hash` chains what was *said* and a living document's corrections are a different
+  fact — `transcript` and the chain never move; **(b)** a correction is addressed by
+  `(span, local speaker)`, so the session retains a **label track** per committed span — addressing
+  by displayed label is impossible for exactly the span that matters, since an abstained span shows
+  `S00` for every one of its speakers; **(c)** the reader sees the corrected speaker in place plus a
+  `label revisions: N` line that appears only once there is one. Four enforced rules make it safe:
+  a span is revised only if it **re-renders to itself byte for byte** (so a relabelling cannot cost
+  a word — which is why the grammar's writer moved beside its reader in `live_span_bounds`), a span
+  never puts two of its own locals on one identity, every refusal is one of six **named** counts on
+  `canonical_processed`, and a **closed** session is still revisable because the session-end sweep
+  is where iteration 23 measured the value. Parity proved rather than asserted: the harness still
+  measures 93.44/92.18, 72.02/55.68 and 99.26/98.48 unchanged. See the N-revision block.
+- **AND THE MEETING'S LAST SWEEP NOW HAPPENS (iteration 26): `finalize_identity` at three layers,
+  called from `stop`, plus the `identity_finalized` event — +8 nodes, Python 801/2/368, twelve
+  semantic reverts. PHASE N STEP 3 IS CODE-COMPLETE.** The cadence is paced by the *next* span's
+  start, so before this a meeting shorter than one 60 s interval was **never swept at all** (every
+  canary-length run), every longer meeting's final interval was never swept, and the last span's
+  evidence stayed retained **unlabelled** for good — while `tests/live_identity_accuracy.py:430` has
+  been running a session-end sweep unconditionally the whole time, *inside* the 99.26 % figure. **The
+  product could not reach its own gate's number.** Four decisions outlive it: the order is
+  **reconcile then sweep**, and reversing it makes the final sweep "correct" the last span to the
+  label it already had (revert 1 moves `identity_revision_spans` 1 → 2); the **abort path
+  deliberately does not sweep**, because a terminal session is not viewable and the correction would
+  reach no reader; a stack that raises on the way out is **named**
+  (`identity_finalize_failed`) rather than terminal; and the event is recorded **whether or not
+  anything changed**, because "found nothing" and "never ran" are opposite facts. See the
+  N-sweep-end block.
+- **AND PHASE N'S GATE STEP (a) IS GREEN (iteration 27): the whole of steps 1–3 is now merge-ready
+  at `1e1cf3f`.** Full transcript and payload review in the gates index; the short form is Swift
+  **158/0** with 0 warnings, Python **801/2/368**, tracer 4/0, discriminator 10/10, leak-scan clean,
+  lane-refusal probe rc=0, guard rc=1, tree clean — and the accuracy bar **re-measured on the tip**
+  rather than quoted: album 93.44/92.18, swept **99.26/98.48** with **residual 0**, so ADR-0002's two
+  acceptance halves (≥ 90 % live, live→file convergence) both hold on the code about to merge.
+  ***The two things iteration 28 does not have to rediscover, checked read-only this iteration.***
+  (1) **The join is required and is already proven content-free:** `main` is **not** an ancestor of
+  `HEAD`, and `git merge-tree --write-tree main HEAD` returns HEAD's own tree
+  **`556c9101…`** — so fence 1 is satisfiable by `git merge --no-ff main` and the join will carry no
+  content. (2) `merge-keeper.sh:50`'s `expected_main` still names **`77e0014`** and must be advanced
+  **in-script to `42abc5a`** with a comment citing the ADR-0002 supersession, then **committed**
+  before the script runs (the real run refuses a dirty tree, and that commit becomes the captured
+  feature tip). Payload is **server-only** — 0 files under `macos/` — so step (c) is the **J5c**
+  shape: server restart plus an m4mbp checkout with **no rebuild and no reinstall**, and therefore no
+  TCC exposure. Re-read `git log --format='%h %an %ad %s' -5` first: the operator has committed to
+  this branch three times mid-iteration.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
-  reducer stopped calling a passing number RED" below.
+  reducer stopped calling a passing number RED" in progress.txt.
+- **Candidate 52 — the third compaction** `[done — iteration 14]`. With the loop-tooling queue empty
+  and every product item needing an authorization prd.md does not yet carry, iteration 14 spent the
+  one remaining thing the loop owns: its own working memory. **245 562 → 148 157 bytes, −39.7 %**,
+  five sequential `Read`s down to three, 26 blocks archived verbatim and verified. *The measured
+  reason it is worth an iteration:* loading context.md was costing every iteration five `Read` calls
+  before any work began, and iterations 12–14 each paid it. Repair-from-evidence is an explicitly
+  valid iteration in prompt.md, and this is the only one available while the freeze holds.
 Candidates 55 and 56 are tracked product source under the post-merge freeze. **Candidate 54 is ANSWERED**
 (iteration 11) and **candidate 51 is DONE** (iteration 12), neither spending an authorization: the
 409 is `LiveV2SessionTerminalError` — `"v2 system lane is failed."` — armed by the client's *own*
@@ -144,15 +353,37 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch.** Swift **158 passed**
+**Test totals on the branch (Python +8 in iteration 26; the Swift number is unchanged because
+nothing under `macos/` was touched — and **both suites were re-run whole at iteration 27's gate**,
+so these are measured on the tip, not carried forward).** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **608 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
-run `20260729-025318` iteration 1) — the two skips are the pre-existing
+→ 158); Python **784 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
+→ 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, → 662 with N-recal's 6,
+→ 694 with N-tape's 32, → 703 with N-tape-wiring's 9,
+→ 718 with N-tape-declaration's 15,
+→ 758 with N-sweep's 40,
+→ 764 with N-convergence's 6,
+→ 784 with N-sweep-wiring's 20,
+→ 793 with N-revision's 9,
+**→ 801 with N-sweep-end's 8, iteration 26**) — the two
+skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Per-file: `test_live_pipeline_seams.py` **60**, `test_live_identity.py` **8**,
+Suite wall clock **75.89 s** (75.74 s before the +8). The accuracy harness is still the dominant
+term and the only accuracy evidence in the repo (measured alone in iteration 24: **17.49 s**); the
+tape suite costs 3.6 s, the sweep suite's own nodes still total 0.1 s of `call` time. Per-file:
+`test_live_pipeline_seams.py` **62** (61 → 62 with N-sweep-end's seam node),
+`test_live_coordinator.py` **8** (5 → 8 with N-sweep-end),
+`test_live_service_runtime.py` **28** (26 → 28 with N-sweep-end),
+`test_live_identity.py` **8**,
+`test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **27** (21 → 27 with
+N-convergence),
+`test_live_identity_sweep.py` **55** (40 → 54 with N-sweep-wiring, → 55 with N-revision),
+`test_live_session.py` **15** (9 → 15 with N-revision), `test_live_portal.py` **14** (13 → 14),
+`test_live_tape.py` **37**, `test_live_api.py` **33**, `test_live_helper_failure.py` **12**,
+`test_live_provider_bundle.py` **36** (28 → 34 with N-sweep-wiring, → 36 with N-sweep-end),
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
-`test_live_manifest_finalizer.py` **17**, `test_live_deployment_credentials.py` **14**,
-`test_live_service_deployment.py` **30**.
+`test_live_manifest_finalizer.py` **23** (17 → 23 with N-recal), `test_live_deployment_credentials.py` **14**,
+`test_live_service_deployment.py` **45** (30 → 45 with N-tape-declaration).
 
 ## Read before any certification run or client fix
 
@@ -190,14 +421,18 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
 | **Candidate 49's mechanism was wrong in the record** (it. 13) | the watermark, not the projection | candidate 49 |
 | **The lanes are separated** (it. 12) | muting separates the lanes, and the echo was **not** what made 16 canonical speakers | candidates 51 and 55 |
 | **The 409 is NAMED, and the meeting was survivable** (it. 11) | `LiveV2SessionTerminalError` → `"v2 system lane is failed."`; the peer lane and a later heartbeat both 200 | candidate 54; `live-lane-refusal-probe.py` |
+| **F1 RAN TWICE AGAINST `77e0014`** (run `20260729-025318` it. 6 archive banner) | both runs cut at one instant with three simultaneous symptoms; the eliminations that ruled out lanes, heartbeat, host load and decode | candidate 56, which Phase P fixed; **superseded by the F1-green block** |
 
 **What survives those blocks, because nothing else in this file says it.**
 - ***An offline probe speaks for the deployed service only while
   `git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty*** — compare against
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
-  **FALSE since run `20260729-025318` iteration 1:** all four checkouts still hold `77e0014` while
-  the branch carries Phase P's six product/test files. Until P5 redeploys, no probe and no
-  certification run against the host measures the code in this branch.
+  **FALSE AGAIN SINCE run `20260729-025318` iteration 15**: Phase N step 1 put four files of tracked
+  product source and tests on the branch, so `live-lane-refusal-probe.py` and every other offline
+  probe are **SPENT as evidence about the deployed `42abc5a`** until Phase N's gate, merge and
+  redeploy. They remain valid as *local* regressions. (It was true from iteration 5 to iteration 14,
+  when the only diffs were the operator's two `docs/` files from `00620ab`, which no runtime reads —
+  read the rule as *no product source, no test, no `ops/`*; it was never about docs.)
 - **The certification order, decided once and binding:** gate → merge → publish + redeploy
   (+ Mac rebuild) → F1 and F3. An amendment that lists the runs *before* the merge is physically
   unreachable — the runs exercise the **deployed** server and the **installed** bundle — and H4, J5
@@ -215,228 +450,278 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
   `capture-device-id`, so it mints no new device row. **Do not read an empty `log show` as an absent
   log line** — widen the window and drop `--style` before concluding anything.
 
-**F1 RAN TWICE AGAINST `77e0014` AND BOTH RUNS DIED THE SAME WAY — a NEW blocker, and it is NOT
-the one Phase M fixed (new, iteration 26). READ THIS BEFORE F3 OR ANY FURTHER CERTIFICATION RUN.**
-m4mbp answered at 23:51:39Z after five iterations, so gate step (d) finally ran. Two canaries on
-the deployed `77e0014` with candidate 51's muted harness, on the real hosts.
+**Retired in the THIRD compaction — index (run `20260729-025318` iteration 14).** Twenty-six blocks
+that diagnosed or recorded Phases K/L/M/P, the spent host recipes, and the four loop-tooling fixes
+were moved to progress.txt **verbatim** under the banner `ARCHIVE OF context.md SUPERSEDED BLOCKS —
+RUN 20260729-025318 ITERATION 14`. Grep a title to read it in full. Nothing was deleted.
 
-| | run A `1fd0a901…` | run B `ed9f91ea…` |
+| retired block (grep this title) | what it settled | still carried by |
 | --- | --- | --- |
-| host state | woke 3 min earlier, **load 31.83** | settled, **load 3.24**, tailnet **0 % loss / 27 ms** |
-| frames 200 → then 409 | 71 → **259** | 124 → **203** |
-| cut at | **t+18.1 s** | **t+32.1 s** |
-| heartbeats | **165 × 200, zero non-200** | **165 × 200, zero non-200** |
+| **PHASE P IS DEPLOYED AND CANDIDATE 56 IS DEAD ON THE REAL SERVER - P5(c)** | the deployed `42abc5a` ran the identical probe that died at t+31.5 s on `77e0014` — 300/300 ticks, 0 non-200s — and gave the project its first trustworthy RTF (p95 **0.18**) | candidate 56 `[CLOSED]`; the F1/F2/F3 green blocks; Deployed reality |
+| **CANDIDATE 56 IS ANSWERED, AND THE CAUSE IS THE HOST'S WALL CLOCK** | the failure record, the mechanism (`vllm_runner.py:111` wall clock → negative `elapsed_sec` → non-retryable `LiveProviderError`), and the host clock stepping −1.5 s every 32.3 s | candidate 56; the Duration-vs-timestamp contract row; Deployed reality's clock paragraph |
+| **Candidate 56 did NOT reproduce under continuous two-lane audio** | the eliminations: heartbeat/lease, drift, span density, identity — none of them | the four durable readings below |
+| **The reducer stopped calling a passing number RED - candidate 57** | `live-canary-clauses.py` splits *missed the gate* from *cannot answer it* | the reducer-verdict rules below |
+| **THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS - candidate 62** | a soak is a directory that declares `VIEW_CLAUSE_AGE` in `times.env`, not one that has `view-checks.tsv` | candidate 62 `[done]`; the F2-green rc=0 |
+| **TCC-verification contract / E3 command surface / Prompt order is fixed by the source** | how the grants are read read-only and how the operator's two clicks were spent | the condensed TCC + CLI block under Deployed reality |
+| **Rollback rehearsal - the PRD clause is GREEN (F4a)** | disable → revert → prove batch → restore, and the four facts that make it safe | the condensed rollback block under Deployed reality; the F4a recipe in the fence |
+| **Validation fence — G1/G2/G3, B1-B4/C3c/C2/C3a/C3b/B5, E1/E2b/E3, H3/H1/J1-J4, H blocker 4, token accounting, decode-cap, D1/K5c/J5c/H4c/E2a/D3, the superseded F1 driver** (11 archived ranges) | the narrow per-node and one-time host recipes of the closed phases | the full gate, the probes, the drivers and the two redeploy templates that remain in the fence |
+| **Phase L and Phase M candidate lists (48-55, D-a/D-b/D-c)** | the diagnosis and the landed record of the fifth amendment's cycle | the Phase M row in the gates index; candidate 55, still open, in the numbered list |
+| **Phase P candidate list (P1-P5, the sweep table, the per-half red-before table)** | the seventh amendment's cycle, landed and merged at `42abc5a` | the Duration-vs-timestamp contract row; the Phase P gate/merge rows in the gates index; candidate 58 |
 
-***The cut is ONE instant with THREE simultaneous symptoms*** (run B: last frame 200 and first frame
-409 both 19:59:56; last snapshot 200 19:59:56, first 401 19:59:57):
-1. every view route answers **401 `{"detail":"invalid bearer authority."}`** — both readers at once,
-   the portal poller *and* the app's own probe (`fetchFailures` 202/258, and the server's snapshot
-   tally splits exactly into the two readers);
-2. **`POST /frames` answers 409 permanently** on both lanes, so `publishedFrameCount` freezes and
-   the client's outbox fills to its **60**-frame bound (`outboxDegradation overflowedLaneRetention`);
-3. the client reports `pumpFailure: transportUnavailable` — G3/K's deliberate mapping of any
-   `CaptureHTTPTransportError`, which is why a *permanently closed session* reads as a *transient
-   network problem*.
+***Four readings out of the retired candidate-56 blocks that nothing else in this file states.***
+1. **`165 × 200` heartbeats is NOT evidence a session is alive.** `LiveHelperFailureCoordinator.
+   observe` returns early on `session_id in self._terminal_sessions` and the route still answers
+   **200**. Never use heartbeat status as a liveness signal.
+2. **The answer to "why was this frame refused" is on the wire and the app throws it away.** A
+   terminal `LiveServiceError` on `POST /frames` returns 409 with `failure.to_dict()` **and** the
+   snapshot's `terminal_failure` (`live_transport.py:267-272`). The probe keeps that body; the client
+   does not — the fix is scoped out of every amendment so far and needs its own.
+3. **An events poller is structurally blind at the instant that matters:** `_fail` appends the
+   `terminal_failure` event under the same lock that makes the next view request 401.
+4. **`ops/live-pair.sh` prints `payload: <PAYLOAD>`** — extract with `sed -n 's/^payload: //p'`;
+   `tail -1` hands the probe a 122-byte string and the server answers 401 `pairing payload is
+   invalid.`. And `live-pipeline-probe.py --lane-audio continuous` tiles each lane so no frame is
+   silent (`alternating` stays the default so earlier runs stay comparable).
 
-***What this is NOT, and the eliminations are measured, not assumed.***
-- **Not the K5d/F1/F3 chain, and not a lane fault at all.** No lane ever failed: both lanes
-  `capturing` throughout, server-side `health=active` / `failure_code=None` / `failed_samples=0` on
-  **both**, a clean stop with both `stopped`, and `sessionRefusal: null`. D-a and 49 are not in it.
-- **Not a stopped heartbeat.** 165 × 200 in both runs with zero non-200 — ***53's fix demonstrably
-  works***: a publish that fails on every tick for 50+ seconds no longer stops the heartbeat. The
-  only `live helper terminal:` line in either run is `helper_lease_expired` **after** the run's own
-  stop (19:56:52 for a run that stopped ~19:56:25).
-- **Not the host waking up.** Run B reproduced it with load 3.24 and a clean tailnet; it lasted
-  longer (32 s vs 18 s), which is the only thing that moved.
-- **Not the decode.** `capped 0 of 10` in run A; the last events before the cut are ordinary —
-  `frame_accepted` seq 96, `canonical_processed` with `identity_status: prepared`,
-  `empty_reason: null`.
-***The mechanism, read out of the source.*** `invalid bearer authority` is raised at exactly one
-place, `live_auth.py:282`, when `_view_for_digest` returns None; for a token that is neither expired
-nor revoked that means `_session_is_viewable` (`:382-385`) went false — `_session_status(session_id)`
-left `VIEWABLE_SESSION_STATUSES`. **The session stopped being viewable at that instant**, which is
-also exactly what makes `POST /frames` answer the *closed-session* 409 (the overload iteration 11
-named beside the lane-failed one). One cause, both symptoms, no lane involved.
-***And the reason is recorded NOWHERE — the same defect that forced a probe to be built twice.***
-Zero journal tracebacks, no terminal line at the cut, an event stream that ends mid-sentence, and
-every route that could report it answers 401 or 409. The 409 body *does* carry
-`live_v2_terminal_failure_response(…terminal_reason)`, and the client discards it by G3's contract.
-*Iteration 23's 120 s `live-pipeline-probe.py` against this same SHA was healthy end to end
-(240 ticks, `non_200_count` 0)* — so the trigger is something the Mac's real capture does that the
-probe's synthetic audio does not. **That probe is the cheapest next instrument: it already keeps the
-refusal body, and it costs no Mac.**
+***How to read any `live-canary-clauses.py` verdict, out of the retired candidate-57 block.***
+Three disqualifiers make the latency clause **UNDECIDED** rather than RED — `userVisibleMS` null,
+`mixerOriginResolved` false, `sufficientSamples` false — and only a qualified report is compared to
+the gate. `timelineIntact` false is deliberately **not** a disqualifier; the caveat is appended to
+the verdict string instead, because the surviving samples are real but cover a **prefix**. A missing
+`latency-final.json` is UNDECIDED, never silence. *The rule behind all of it, now paid for four
+times:* **a verdict word must name the thing it decides.**
 
-*The green sub-clauses, recorded because they are real and because they must not be over-read.*
-**Committed p95 2567.4 ms (run A) and 2592.2 ms (run B)**, where four prior runs measured
-**8343–9148 ms** — the first time the committed half has been near the gate, and user-visible
-**3921.8 / 3970.7 ms** are *both under the 4000 ms canary gate*. **Neither is a qualified
-measurement:** `sufficientSamples` is **false** in both (n=8 and n=12 against the plan's 20), and
-both runs were cut off at 18 s and 32 s. It is evidence that D-c's cap plus a short clean window
-looks nothing like F1's 9 s tail; it is not the latency verdict. Also green in both: the served leaf
-hashed to the D2 pin before any request, portal 200/21282 bytes, pasteboard cleared to 0, no raw
-audio persisted, no new device row (`10 devices / 1 unrevoked`, m4mbp's), all three server MainPIDs
-and `NRestarts=0` unmoved, and batch `/` 200.
-*Hosts left clean:* app killed, `/tmp` scratch removed, output unmuted at volume 31 (the pre-run
-state), both TCC grants still `auth_value=2`; server `HEAD` `77e0014`, worktree clean.
-*Reusable:* evidence `/tmp/i26-f1-evidence/` and `/tmp/i26b-f1-evidence/` here, clause reductions
-`/tmp/i26-f1-clauses.txt` and `/tmp/i26b-f1-clauses.txt`.
+**F1 IS GREEN — the 60 s canary passed on the real hosts, run `20260729-025318` iteration 6.
+READ THIS BEFORE F3.** First green certification run in this loop's history, on the deployed
+`42abc5a` with candidate 51's muted lane-separating harness. `live-canary-clauses.py` **rc=0**.
+Session `3386547d…`, evidence `/tmp/i6-f1-evidence/ralph-canary`, reductions `/tmp/i6-clauses.txt`
+and `/tmp/i6-analyze.txt`.
 
-**CANDIDATE 56 IS ANSWERED, AND THE CAUSE IS THE HOST'S WALL CLOCK (new, iteration 28).
-READ THIS BEFORE ANY FURTHER CERTIFICATION RUN OR LATENCY CLAIM.** One probe run with iteration
-27's recorded next step — two concurrent view readers — reproduced the Mac's death
-symptom-for-symptom on the deployed `77e0014`, and the probe kept the body the app discards.
+| PRD clause | measured |
+| --- | --- |
+| continuously updating transcript with labels | version **0 → 308**, **47** committed spans (38 non-empty), speakers `S01`–`S16`, status `active` throughout |
+| view authority for the whole run | **370/370** view requests 200 — and the number decomposes: **52** portal-poller polls + **318** app-latency-probe polls, the two readers whose *simultaneous* 401 was candidate 56's signature |
+| **user-visible p95 ≤ 4000 ms** | **3909.3 ms — GREEN, and QUALIFIED for the first time**: `sufficientSamples` **true** (n=44), `mixerOriginResolved` true, `timelineIntact` true, `fetchFailures` 0, rejected 0/0/0. Components separately: committed p95 **2402.4 ms** + render bound **1506.8 ms** (cycle 1000 + snapshot p95 285.9 + events p95 220.9) |
+| **decoder p95 RTF < 1** | **0.911** over 47 spans (p50 0.160, max 3.908 on a 0.36 s span). Second trustworthy RTF this project has recorded — Phase P's monotonic measurement |
+| zero loss, zero double count | client `publishedFrameCount` **329** at stop == server's **329 POST /frames, all 200**. Stop drain `retained=0`, both lanes `stopped`, `sessionRefusal` null. Both v2 lanes `health=active`, `failure_code=None`, `failed_samples=0` |
+| no lane fault, no terminal | **165** heartbeats all 200, `terminal_failure` null, 0 journal tracebacks; the only terminal line is `helper_lease_expired lanes=none` **29 s after the run's own stop** |
+| secret hygiene, run-time half | `handoff` returns `viewAuthority: copied-to-pasteboard` (never the token), the unauthenticated portal HTML carries only the *header name*, pasteboard cleared to **0**, no audio artifact anywhere, `live-runs` 0, no `/tmp/mtd-live-*` |
 
-***The failure record, which no host has ever recorded:***
-```json
-{"kind": "integrity", "code": "canonical_decode_failed", "retryable": false,
- "message": "runner result elapsed_sec must be finite and non-negative.",
- "detail": {"error_type": "LiveProviderError"}}
-```
-`POST /frames` 409 at tick 63 (**t+31.5 s**); **both** readers 401 `invalid bearer authority.` at
-**31.287 / 31.289 s** — the same instant, both readers, exactly the Mac's three-symptom cut. The
-session was healthy to that instant: 11 spans, all submitted, RTF p95 **0.162**, `capped 0`,
-`terminal_failure` null in the last readable snapshot, no lane fault, no heartbeat involved.
+***The system marker LANDED, and the reducer said it did not.*** `cardamom` was delivered isolated
+and repeated at −r 130 (the fix written in iteration 12 and never exercised until now) and comes back
+as span 15, **`[0.11][S03]Cockamom, cockamom, cockamom.[1.75]`**, at t+30.6 s — inside `program-a`,
+the phase whose marker it is, three times, on the system lane, in a **muted** run. That is the
+cross-check passing: the tap is upstream of the output mute and the marker survived to the
+transcript. `live-canary-analyze.py` scored it **absent** because it matched the word exactly, so it
+printed `rc=5` on a run whose marker clause holds. That was **candidate 59** — same shape as 57 — and
+it is **FIXED in iteration 13**: this directory now reduces to `rc=4`, naming
+`REWRITTEN as 'cockamom' x3 (similarity 0.60) span 15 at t+30.6s`.
+***The room marker did not land, and that is the harness's recorded limit, not a defect.*** MacStudio
+spoke `obsidian` isolated and repeated into the room window; m4mbp's microphone (default input was
+the **built-in** `MacBook Pro Microphone` this run, not iteration 12's AirPods) returned only
+one-word fragments. **So "two speakers" is still two voices on the SYSTEM lane**, program A vs
+program B, with the microphone lane carrying room noise. Candidate 51's limit stands and the PRD's
+"two speakers plus identifiable system audio" half is *not* fully certified by this run.
+***And candidate 55 is now measured inside a GREEN run, which is exactly why no gate sees it.***
+Identity **saturated at t+65.6 s of an 85 s meeting**: 16 canonical speakers for 2 real voices, and
+**9 of them (`S07`–`S15`) were minted by one-word `Hi.` fragments** of microphone-lane ambient noise
+during the room window. Span 44 then abstained `speaker_capacity_exceeded` (J2 held — it published
+under `S00` rather than ending the meeting). One decode hallucinated on that noise
+(span 34, *"I'm sorry, I can't assist with that request."*). The meeting was perfect; the identity
+was not.
+*Hosts left clean:* server `HEAD 42abc5a` worktree clean, live MainPID **355607** / batch **301112**
+and **322117**, all `NRestarts=0`, batch `/` 200, `live-runs` 0, device store **13 / 1 unrevoked**
+(m4mbp's — never revoked, and `pair` minted no new row). m4mbp: app killed, `/tmp` scratch removed,
+volume back to 31 unmuted, pasteboard 0, both TCC grants still `auth_value=2`, app inode
+`212080356` and CLI sha `450c20bf…` unchanged (no rebuild, so no TCC exposure).
 
-***The mechanism, one line, and the product already contains its own fix.***
-`vllm_runner.py:111` returns `elapsed_sec=time.time() - started` — the **wall** clock.
-`RunnerBoundedWavInference.transcribe_pcm` takes `started = time.monotonic()` at
-`live_adapters.py:305` and uses it on the **empty-transcript** path (`:317`), then **throws that
-measurement away on the success path** and takes the runner's wall-clock number
-(`:344 _runner_elapsed_sec`). `_finite_non_negative_float` rejects a negative one as a
-**non-retryable** `LiveProviderError`, which `_process_in_flight_item` turns into
-`_fail` → terminal → every view 401 and every frame 409. The right measurement is sitting unused
-in the same function, on the branch next door.
+**F3 RAN ITS WHOLE PLAN AND FOUND ONE REAL DEFECT — the 16-minute soak, run `20260729-025318`
+iteration 9. READ THIS BEFORE PHASE N OR ANY EIGHTH-AMENDMENT DECISION.** 17 minutes on the
+deployed `42abc5a` with the muted lane-separating harness, session `331d8c57…`, label
+`ralph-i7-f3-20260729T035258Z`. `live-canary-clauses.py --user-visible-gate-ms 6000` **rc=3**:
+**five clauses GREEN, one RED**. Evidence `/tmp/i9-f3-evidence/ralph-soak`, reduction
+`/tmp/i9-clauses.txt`.
 
-***And the wall clock on `ga0-alienware-rtx4070ti` is not monotone — measured, not inferred.***
-90 s of paired `time.time()` / `time.monotonic()` sampling at 20 ms on the host: **3 backward steps
-of −1.523 / −1.504 / −1.503 s**, at monotonic 1731399.207 / 1731431.460 / 1731463.740 — a
-**~1.5 s step backwards every ~32.3 s**, on a host whose `timedatectl` says *"System clock
-synchronized: yes, NTP service: active"*. Evidence `/tmp/i28-clock.txt`. This is the WSL2 clock
-being resynchronised, and it is a *host* fact, not a code fact — but a meeting must not end because
-NTP corrected a clock.
-***Which is why the death time looked random and why two probe runs survived.*** A decode brackets
-~0.33 s of wall time and spans freeze every 2.5 s, so a decode is in flight ~13 % of the time; one
-step every 32.3 s therefore kills a session with ~13 % probability per step. F1 run A died at
-**t+18.1 s**, run B at **t+32.1 s**, this run at **t+31.5 s**; iteration 23's 120 s run and
-iteration 27's 150 s run survived. That distribution is exactly what a periodic external event
-sampled by a 13 % duty cycle produces, and nothing about the audio explains it — which is why five
-audio hypotheses all came back clean.
-***The class is the same one the third amendment settled, for the fifth time.*** A decoder whose
-*timing metadata* is untrustworthy still returned a transcript. The span is fine; only the number
-used for RTF is not. `LiveProviderTransientError` (J3) already exists for "the decoder blinked" and
-degrades one span; this condition is strictly less serious and is terminal.
-***A second consequence, and it touches a PRD clause.*** `elapsed_sec` is the numerator of
-**`decoder p95 RTF < 1`**. Every RTF this project has recorded was measured on a clock that steps
-1.5 s backwards every 32 s, so any decode bracketing a step is wrong by ~1.5 s in either direction.
-Surviving spans are unaffected only because a *negative* one kills the run before it is reported.
-F1's two 8.5 s runaways are **not** clock artifacts — 1.5 s is far too small and both were
-corroborated by 2024/2019 generated tokens.
-*Reusable:* `scripts/ralph-afk/live-pipeline-probe.py --concurrent-readers N --reader-interval S`
-(default 0, so every earlier run stays comparable) and `scripts/ralph-afk/view-reader-probe.py`,
-which exercises the reader against a local pinned-TLS stub. Report `/tmp/i28-probe.json`, host
-baselines `/tmp/i28-host-baseline.txt` / `/tmp/i28-host-after.txt`. Device
-`ralph-i28-c56-readers-20260729T003541Z` **revoked** (12 devices / 1 unrevoked); all three MainPIDs
-and `NRestarts=0` unmoved, `live-runs` 0, 0 tracebacks, batch 200.
-*Whether the concurrent readers were load-bearing is UNSETTLED and probably no:* a reader takes the
-runtime lock and mutates nothing, and a 13 %-per-step hazard reproduces on its own eventually. They
-are still worth keeping — they are what dated the cut to the millisecond and proved both readers
-fail together.
+| PRD soak clause | measured |
+| --- | --- |
+| capture remains active for the whole soak | **17/17 full wall-clock minutes** each carried ≥ 57.8 s of accepted audio and 24-29 new committed spans; version 0 → 3646, **443 spans**, status `active` throughout, `terminal_failure` null, **0** journal tracebacks |
+| `/live` polling holds | **355/355** portal polls 200 across t+2.2 s .. t+1029.1 s |
+| **the same view authority works after minute 15** | **GREEN** — `post900` 200/200/200 at age 904.7 s and `post15` 200/200/200 at age **1024.1 s**, the same token minted at t+1.2 s |
+| **then clean stop immediately revokes it** | **RED — see candidate 60.** 0.2 s after `stop` returned `ok:true running:false`, snapshot and events both still **200** |
+| user-visible p95 ≤ 6000 ms | **4557.2 ms GREEN and QUALIFIED** (`sufficientSamples` true n=199, `mixerOriginResolved` true, `fetchFailures` 0): committed p95 **3009.4 ms** + render bound **1547.7 ms**. Caveat travels with it — `timelineIntact` **false**, 234 advances rejected after the break, so the number covers a **prefix** |
+| decoder p95 RTF < 1 | **0.546** over 443 spans (p50 0.123, max 1.402). D-c capped **67 of 443**; slowest decode 1.47 s |
+| lane fault | system lane **degraded** `macos_buffer_overrun` at t+474.2 s and **kept capturing to the end** — D-a working, not a clause failure. Both v2 lanes finished `health=active`, `failure_code=None`, `failed_samples=0` |
+| clean stop drain | `retained=0`, both lanes `stopped`, `sessionRefusal` null, 4099 frames published |
 
-**The reducer stopped calling a passing number RED — candidate 57 (new, iteration 29; `[done]`).
-READ THIS BEFORE TRUSTING ANY `live-canary-clauses.py` VERDICT LINE.** Iteration 26's two canaries
-printed `USER-VISIBLE p95 = 3970.7 ms vs gate 4000 ms  RED` — a threshold comparison that **passed**,
-wearing the word for failing it — because `ok = uv <= gate and sufficientSamples` folded *the run is
-too short to answer* into *the run missed the gate*. Both landed in the `red` bucket, so the verdict
-line asserted the opposite of the truth and the operator-facing summary would have read "latency is
-red" when the honest reading is "latency is unproven".
-- **The split, and where the rule comes from.** The app-owned probe already publishes its own
-  validity flags (`CaptureLatencyProbe.report`, `CaptureLatencyProbe.swift:335-338`), so the reducer
-  **reads** them instead of re-deriving the probe's minimum — a second copy of that constant would
-  drift. Three disqualifiers → **UNDECIDED**, and the threshold comparison is not asserted at all:
-  `userVisibleMS` null, `mixerOriginResolved` false, `sufficientSamples` false. Only a qualified
-  report is compared to the gate.
-- **`timelineIntact` false is deliberately NOT a disqualifier.** The probe latches it and rejects
-  every later advance (`rejectedAfterTimelineBreak`), so the surviving samples are real and
-  `sufficientSamples` already decides whether enough remain — but they cover a **prefix** of the
-  meeting, so the caveat is appended to the verdict string and travels with it.
-- **A missing `latency-final.json` is now UNDECIDED too**, not silence. It used to print one line
-  and add nothing to any bucket, so a directory with no latency report could reduce to **rc=0** on
-  the strength of the clauses it did carry — the exact omission this reducer exists to prevent, and
-  the same shape as iteration 22's finding.
-*Red-before/green-after on four REAL evidence directories, plus four synthetic ones for the branches
-no real run has produced.* Before: `/tmp/i26-f1-evidence` and `/tmp/i26b-f1-evidence` both
-`RED user-visible p95 3922/3971 ms vs gate 4000 ms`; F3 `RED … 10446 vs 6000`; `/tmp/ralph-f1-evidence`
-(no latency report) **silent**. After: the two cut-short canaries are
-`UNDECIDED … UNPROVEN, not failed (the run's own number, 3971 ms, is not admissible):
-sufficientSamples=false - 12 committed advances …`, **F3 is still RED** (the negative control that
-matters — a qualified miss must not become "undecided"), and F1's directory is UNDECIDED. Synthetic
-patches over F3's report exercised the rest: qualified-pass → **GREEN**; qualified-pass with
-`timelineIntact=false` → **GREEN + the prefix caveat**; `mixerOriginResolved=false` and null
-`userVisibleMS` → **UNDECIDED**. Evidence `/tmp/i29-before-*.txt` and `/tmp/i29-after-*.txt`.
-*Nothing else moved:* the only changed file is `scripts/ralph-afk/live-canary-clauses.py`; no
-product source, no host touched, and rc on all four real directories stays **3** because other
-clauses in those runs are genuinely red.
-*The general lesson, third time this loop has paid for it:* **a verdict word must name the thing it
-decides.** "Missed the gate", "cannot answer the gate" and "no data" are three states; two of them
-were sharing one word here, exactly as F1's lane failure once shared a word with "printed".
+***What this run PROVES about the last three phases, which is the point of running it.*** Candidate
+53 killed the previous F3 at **minute 14.6**; this one ran 17 minutes with a *permanently degraded*
+lane and never lost the heartbeat. Candidate 56 killed three runs inside 32 s; this one survived
+~31 clock steps. D-c's cap fired on 67 spans and the RTF tail stayed at 0.546 where F1's was 0.911.
 
-**Candidate 56 did NOT reproduce under continuous two-lane audio, and two of its likeliest causes
-were ELIMINATED (iteration 27; superseded by the block above — kept for the eliminations, which
-still hold).** The recorded next step was "drive `live-pipeline-probe.py` with a program that
-resembles the Mac's real capture more closely than iteration 23's did". The measured difference was
-found first, then run.
-- **What the probe could not produce, and now can.** `build_lane_track` lays a few utterances on a
-  silent timeline, so between turns a lane sends frames whose every sample is zero and whose wire
-  `silent` flag is **true**. A real capture never does that — the microphone hears the room and the
-  tap carries the program — so on the Mac **both lanes are non-silent continuously**. Measured, not
-  assumed: F1 run B committed **13 spans in 30 s, every one `hard_cap`**, while iteration 23's 120 s
-  probe run committed **36 of 59 spans empty**. `--lane-audio continuous` tiles each lane's lines
-  back to back so no frame is silent; `alternating` stays the default so every earlier run stays
-  comparable. Verified offline before the host run: **300/300 voiced frames on both lanes** at
-  `--lead-seconds 0`, against 250/300 for the old schedule.
-- ***And it did not reproduce.*** 150 s on the deployed `77e0014`, `--lane-offset-ms system=137`,
-  device `ralph-i27-c56-probe-20260729T001817Z` (**revoked**): 300 ticks, 600 frames,
-  `non_200_count` **0**, `accepted == accounted == committed == 2 400 000` (exactly 150 s),
-  **60 committed spans, all submitted, 0 empty**, `terminal_failure` null, `status` `closed`, and
-  view authority correctly 401 after the stop. **Span density matched the real run** — 0.40
-  spans/s here against run B's 0.43 — so "the Mac freezes spans faster" is not the trigger either.
-  Report `/tmp/i27-probe.json`.
-- **The identity path was exercised hard and stayed non-terminal:** 43 `prepared` + **17 `abstain`**
-  (15 `ambiguous_identity`, 2 `same_span_cannot_link_conflict`), **all 60 submitted**, 0 refusals —
-  J2's ruling holding at volume on real audio. **7** canonical speakers in 150 s, so dense synthetic
-  speech does *not* saturate candidate 55's 16-speaker bound the way the real microphone lane does.
-- ***The heartbeat/lease family is eliminated too, from data already in hand.*** Run A was cut at
-  **t+18.1 s**; the helper lease is **30 s** and is armed by the first heartbeat, so the earliest
-  possible expiry is t+30 s. And `_terminal_reason` fires only on `helper_failed` or all lanes
-  failed, which both runs' healthy lanes contradict. **The reading correction that matters:**
-  `LiveHelperFailureCoordinator.observe` returns early on `session_id in self._terminal_sessions`
-  and the route still answers **200** — so *"165 × 200 heartbeats" is NOT evidence the session was
-  alive*, and adding a heartbeat to the probe would be the wrong experiment.
-- **Drift is eliminated as well.** F1 run B's mixed mono frame sizes are **periodic with period 9**
-  (5305, 2460, 7764, 5774, 1990, 7765, 6243, 1521, 9172 — sum 47 994 ≈ 3 s, repeating), i.e. the two
-  lanes ran in **fixed-offset lockstep**, which is exactly what `--lane-offset-ms` already models.
-- ***Why the recorded evidence can never hold the answer, stated so nobody re-reads it hoping.***
-  `_fail` appends the `terminal_failure` event **under the same lock** that makes the very next view
-  request 401 (`live_transport.py:87-101` → `live_auth.py:377`), so an events poller is structurally
-  blind at the one instant that matters. Run B's merged event stream confirms it: 150 events, the
-  last is `frame_accepted` seq 149 with **all 13 spans submitted and `submission_refusal` null**, and
-  every later poll 401s.
-- **Where the answer does live:** a terminal `LiveServiceError` on `POST /frames` returns
-  `_failure_status(exc)` = **409** with a body carrying `failure.to_dict()` **and** the snapshot's
-  `terminal_failure` (`live_transport.py:267-272`). The probe keeps that body; the app discards it.
-- ***The strongest remaining un-mirrored property, and the next experiment.*** `live_snapshot` and
-  `live_events` are **sync `def`** handlers (`live_transport.py:285,307`) so Starlette runs them in
-  its threadpool, while `accept_live_frame` is **`async def`** and runs on the event loop. On the Mac
-  **two** view readers poll concurrently (the app's own latency probe *and* the portal poller) while
-  frames are posted; this probe is single-threaded and strictly serial, so it **structurally cannot**
-  overlap a read with a write. Give the probe a background reader thread before concluding anything
-  else.
-*Host untouched, checked after:* `HEAD` `77e0014`, worktree clean; `moss-live-web` **350731**,
-`moss-web` **301112**, `moss-vllm` **322117**, all `NRestarts=0`; `live-runs` 0, no `/tmp/mtd-live-*`,
-**0** tracebacks, batch `/` 200, device store **11 devices / 1 unrevoked** (m4mbp's `AB600574…`).
-*Reusable, and it cost one pairing code to learn:* `ops/live-pair.sh` prints **`payload: <PAYLOAD>`**,
-so the payload must be extracted with `sed -n 's/^payload: //p'` — `tail -1` alone hands the probe a
-122-byte string and the server answers **401 `pairing payload is invalid.`**.
+***The honest quality reading, which no clause captures and which is the argument for Phase N.***
+**262 of the 325 non-empty spans (81 %) transcribe to nothing but `Hi.`** — the decoder hallucinating
+on a lane carrying near-silence between the soak's one utterance per 60 s. Identity saturated at
+**t+117 s** (16 canonical speakers for 2 voices), so **1100 of 1371** label tags are `S00`; J2 held
+throughout (`speaker_capacity_exceeded` abstains published under `S00` rather than ending the
+meeting). *This is candidate 55's mechanism at 17-minute scale*: `Hi.` fragments are what mint the
+phantom speakers, and they are also what fills the transcript. **The system marker LANDED verbatim
+this time** — span 5 at t+9.5 s reads `[0.08][S03]Cardamom, Cardamom.` — so candidate 59's phonetic
+question does not arise here; the room marker `obsidian` again did not reach the microphone, the
+third measurement of candidate 51's recorded harness limit.
+*Hosts left clean, measured after:* server `HEAD 42abc5a` worktree clean, live MainPID **355607** /
+batch **301112** and **322117**, all `NRestarts=0`, batch `/` 200, `live-runs` 0, no `/tmp/mtd-live-*`,
+0 tracebacks, device store **13 / 1 unrevoked**. m4mbp: app killed, all `/tmp` scratch removed,
+volume back to 31 unmuted, pasteboard 0, both TCC grants `auth_value=2`, app inode `212080356` and
+CLI sha `450c20bf…` unchanged (no rebuild).
+
+**CANDIDATE 60 — A CLEAN STOP NEVER REACHES THE SERVER (new, iteration 9). This is F3's one RED and
+it is a product defect, not a harness artifact.** The PRD clause is *"then clean stop immediately
+revokes it"*; measured, the view authority outlived the stop by **29.4 s**.
+***Three independent confirmations, so nobody re-derives it.***
+1. **The wire.** `grep` of the live service journal for `…/331d8c57…/stop` returns **0**. The
+   session's only terminal line is `live helper terminal: … reason=helper_lease_expired lanes=none`
+   at epoch 1785298234.27 — **29.4 s after** `t_stop` 1785298204.83, i.e. the 30 s helper lease, not
+   the stop.
+2. **The snapshot.** The portal poller kept answering 200 with `status=active` for 4 s past the stop
+   (last poll t+1026.6 s, version 3646).
+3. **The source.** The Swift client builds live URLs in exactly one place, `liveURL(base:sessionID:
+   action:)` (`CaptureHTTPTransport.swift:450`), and it has **three** callers: `frames` (`:239`),
+   `heartbeat` (`:292`) and the latency probe's snapshot/events (`CaptureLatencyProbe.swift:576`).
+   There are only **two** `URLRequest(url:)` sites in the whole client. `CaptureController.stop`
+   (`CaptureController.swift:473-496`) stops the source, drains the outbox and returns — it never
+   tells the server anything.
+***And the server half is already built and already tested.*** `POST /api/live/sessions/{id}/stop`
+exists at `live_transport.py:325` and takes a `deadline`; `tests/test_live_api.py:502` is literally
+`test_clean_stop_immediately_revokes_view_authority` and passes. **So this is the loop's familiar
+class one turn further out:** the behaviour is implemented, contracted and covered on one side of the
+seam, and *nothing calls it from the other*. The C1 node proves the route revokes; the Swift suite
+proves the controller stops; **no test puts a real client's `stop` in front of a real server**, which
+is exactly the gap H1/K1/53 each occupied.
+***It was visible in F1 and was not named.*** The F1-green block records "the only terminal line is
+`helper_lease_expired lanes=none` **29 s after the run's own stop**" as a curiosity. It was this
+defect, in a run whose reducer had no soak clause to test it with.
+***Severity, stated so the authorization decision is a decision.*** The exposure is **bounded at
+30 s** and self-heals — the lease expires, the session goes terminal and view authority 401s — and no
+audio is lost, because the client drains before returning. What fails is the PRD's word *immediately*
+and the promise that closing a laptop's meeting closes the browser's access to it. It also costs the
+accounting clause its clean read: F3's `accepted − accounted = 14484 samples` is INCONCLUSIVE only
+because the session was still active when the last snapshot was taken.
+*Tracked product source under `macos/` (and a test under `tests/`), so it is frozen: **needs its own
+authorization**. Shape of the fix, not a decision: `CaptureController.stop` gains a transport call
+after the final drain, with the same "a publish failure must not stop the meeting ending" rule — a
+stop that cannot reach the server must still stop locally, and the lease then does what it does
+today.*
+
+**THE F2 INSTRUMENT — READ THIS BEFORE RE-RUNNING F2 (built iteration 10, corrected by the green run
+in iteration 11; full block retired to progress.txt).** Three files, one logical instrument:
+`live-cert.sh` (m4mbp, the 300 s locked program), `live-cert-interrupt.sh` (the server, in WSL, the
+interruption) and `live-canary-clauses.py --interrupt-report` (section 10). No product source.
+- **The mechanism, chosen against three rejected alternatives** (dropping the tailnet strands the
+  ssh path; restarting `moss-live-web` destroys the session; `kill -STOP/-CONT` makes "dropped" and
+  "delivered late" indistinguishable): `iptables -I INPUT ! -i lo -p tcp --dport 7861 -j DROP` for
+  5 s. `! -i lo` keeps `ops/live-pair.sh` working; `--dport 7861` cannot reach batch 7860. It
+  self-deletes from a detached `setsid` child in a loop. **Rollback if it ever survives:**
+  `sudo iptables -D INPUT ! -i lo -p tcp --dport 7861 -j DROP`, then `-S INPUT` must print exactly
+  `-P INPUT ACCEPT`.
+- **Arm the server job BEFORE launching the driver, and use `--delay 240`, not 215.** The window must
+  land inside the driver's `[T_START+200, T_START+260]` phase; with `Δ = T_ARM → T_START` that needs
+  `Δ ∈ [D-255, D-200]`, so `D=215` tolerates only 15 s of setup and `D=240` tolerates 40 s. Measured
+  `Δ` on the green run was 2.0 s and the drop landed at `T_START+226.7 s`.
+- **The instrument measures itself on CLOCK_MONOTONIC on purpose** — this host's wall clock steps
+  ~1.5 s backwards every ~32.3 s, so `t_drop_begin_wall` in the report is **not** trustworthy for
+  locating the window (it read 10.8 s off on the green run). *The client-side signal is the reliable
+  one:* `publishedFrameCount` freezes and `outboxRetainedFrames` rises.
+- **The reducer's positive control:** section 10 credits survival **only** if the client itself
+  refused at least one poll inside the window; otherwise **UNDECIDED**. And section 1 excludes those
+  self-inflicted refusals *by printing them*, never by subtracting them silently.
+- *Host access facts this cost a probe each to learn:* `$OUT` on the server is root-owned;
+  `wsl.exe -d Ubuntu -- bash -lc "echo <base64>|base64 -d|bash"` fails with "The command line is too
+  long" for a 6 KB script — pipe the file on **stdin**; and the WSL user is **`devcontainers`**,
+  reached as `ssh gyauo@ga0-alienware-rtx4070ti.local` then `wsl.exe -d Ubuntu`.
+**F2 IS GREEN — the 300 s locked certification passed on the real hosts, run `20260729-025318`
+iteration 11. READ THIS BEFORE ANY EIGHTH-AMENDMENT DECISION.** Second green certification run in
+this loop's history, on the deployed `42abc5a` with the muted lane-separating harness.
+`live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` **rc=0** — six GREEN, **no
+RED and no UNDECIDED**. Session `0047a5ad…`, label `ralph-i11-f2-20260729T044456Z`, evidence
+`/tmp/i11-f2-evidence/ralph-cert`, reduction `/tmp/i11-clauses.txt`.
+
+| PRD F2 clause | measured |
+| --- | --- |
+| simultaneous lanes | both `capturing` from t+2.2 s; server-side both v2 lanes finished `health=active`, `failure_code=None`, `failed_samples=0`; system 4 990 123 samples, microphone 5 059 200 |
+| silence/mute window | 30 s at t+70..100 s; version kept advancing (365 → 371 across it), spans kept committing, session `active` throughout |
+| **a 5-second network interruption** | **5.050 s measured on CLOCK_MONOTONIC** at the server, `deletes=1`, `rule_still_present=no`, chain back to `-P INPUT ACCEPT`. **The client saw it** — 1 refused poll (`000`) — and resumed (first 200 at t+239.3 s) |
+| ambiguous retry / duplicate retry | the mechanism, sampled at 1 Hz: `publishedFrameCount` **froze at 902** for 5.2 s, `outboxRetainedFrames` rose 2 → **10**, `pumpFailure transportUnavailable`, then published replayed 902 → 909 → 923 → 928 → 933 and retention drained to **0**. The server accepted the replay **exactly once** — see the accounting row |
+| two speakers | 16 canonical speakers for 2 voices (candidate 55 again); the two program voices are both on the **system** lane — candidate 51's limit, fourth measurement |
+| clean stop/drain | `retained=0`, both lanes `stopped`, `sessionRefusal` null, `outboxRetainedFrames` 0 |
+| **user-visible p95 ≤ 6000 ms** | **3859.6 ms — GREEN and QUALIFIED**: `sufficientSamples` **true** (n=113), `mixerOriginResolved` true, `fetchFailures` 0, rejected 0/0/39. Components separately: committed p95 **2459.0 ms** + render bound **1400.6 ms** (cycle 1000 + snapshot p95 223.9 + events p95 176.7). Caveat travels with it — `timelineIntact` **false**, so the number covers a **prefix** |
+| decoder p95 RTF < 1 | **0.670** over 161 spans (p50 0.131, max 20.577 on a 0.069 s span; total decode 50.0 s, max 1.42 s). D-c capped **4 of 161** |
+| **zero accepted-audio loss, zero double count** | client `publishedFrameCount` **1257** at stop == the server journal's **1257 × `POST …/frames` all 200**. And the stronger statement the journal supports: **4748 of the session's 4749 log lines are HTTP `200`** — the 4749th is the terminal line. **Zero non-200 on the server for the entire run**, interruption included |
+| outbox and memory bounded | outbox run-wide peak **10** frames against its 15 s/lane bound, back to 0 within 3 s; retained samples 23 996 of the 960 000 bound (2.5 %) |
+
+***What this run proves that F1 could not.*** F1 was 85 s of undisturbed meeting. This is 300 s with a
+**deliberate 5 s outage**, and the three fixes the last three phases bought are visible in the same
+ten seconds of evidence: 53 kept the heartbeat alive (**622 heartbeats, all 200**), D-a turned the
+resulting `macos_buffer_overrun` at t+233.0 s into a **degradation** that kept capturing to the end,
+and the outbox retained-until-ACK contract replayed every frame without the server double-counting
+one. *The outage is also what caused the overrun* — backpressure from a blocked uplink — which is
+the exact sequence D-a was authorized for and had never been observed end to end.
+
+***The system marker landed and was rewritten PHONETICALLY — candidate 59's fourth measurement, and
+the clearest one yet.*** `cardamom`, delivered isolated and repeated at `-r 130` at the end of phase
+A, comes back as span 29 at t+67.5 s: **`[0.06][S01]Pardon me, pardon me, pardon me.[1.68]`** —
+three repetitions, right phase, right lane, right instant, in a **muted** run. The in-sentence
+delivery is span 138, `The cold word cardigan is recorded once more for` (the driver said "The
+codeword cardamom is recorded once more for the system lane"). So the tap is upstream of the output
+mute and the marker survives to the transcript; **the decoder's language model is what the exact
+string match loses to**, not the capture path. Any future marker check must be phonetic.
+***The room marker did not land — candidate 51's limit, fourth measurement.*** MacStudio spoke
+`obsidian` isolated and repeated 10 times into the room window; m4mbp's default input was again the
+**built-in** microphone, and spans 90–107 hold nothing but hallucinated near-silence
+(`I'm sorry, I can't assist with that request.` × 9, `Hi.`, `Okay.`, `Mm-hmm.`). So "two speakers"
+is again two voices on the SYSTEM lane.
+***And candidate 55 saturated inside a second GREEN run*** — 16 canonical speakers by t+93.9 s of a
+300 s meeting for 2 real voices, then `speaker_capacity_exceeded` abstains published under `S00`
+(J2 holding). 24 of 151 spans committed empty (H1). No refusal, no terminal.
+*Hosts left clean, measured after:* server `HEAD 42abc5a` worktree clean, live MainPID **355607** /
+batch **301112** and **322117**, all `NRestarts=0`, batch `/` and `/api/jobs` 200, `live-runs` **0
+entries** (no raw audio persisted), no `/tmp/mtd-live-*`, **0** journal tracebacks, device store
+**13 / 1 unrevoked** (`pair` minted no new row), `iptables -S INPUT` = `-P INPUT ACCEPT`, server
+scratch removed. m4mbp: app killed, all `/tmp` scratch removed, volume back to 31 unmuted,
+pasteboard **0**, both TCC grants still `auth_value=2`, app inode `212080356` and CLI sha
+`450c20bf…` unchanged (no rebuild, so no TCC exposure).
+*The one known defect this run re-recorded rather than rediscovered:* **candidate 60** — the only
+terminal line is `helper_lease_expired lanes=none` at 00:50:44, **29 s after** the run's own stop,
+and the journal contains **0** calls to `…/stop`. Printed under section 9 as OBSERVED; it is not an
+F2 clause. See candidate 60.
+
+**THE MARKER IS MATCHED PHONETICALLY — candidate 59 `[done — iteration 13]`. READ THIS BEFORE
+READING ANY `live-canary-analyze.py` MARKER LINE** (full block, with the six-directory measurement
+that chose the design, retired to progress.txt). The decoder rewrites a rare noun, so
+`marker.lower() in transcript.lower()` scored `cardamom` **absent** in three runs whose marker
+demonstrably landed — `Cockamom, cockamom, cockamom.` (F1 span 15), `Pardon me, pardon me, pardon
+me.` (F2 span 29), `Cardinal.` (F3 span 4).
+- **Three tiers, and every marker line names which one answered:** **VERBATIM** (proof by itself) →
+  **REWRITTEN** (a fragment inside a phase that *declares* this marker, whose whole text is one token
+  n-gram repeated — the driver's isolated-and-repeated delivery — within **0.60** consonant-skeleton
+  similarity; decisive) → **CORROBORATING** (any near-match ≥ **0.80** in a declared phase; printed,
+  never decisive).
+- ***Score alone cannot work in either direction, and that is measured over 637 spans:*** at 0.60 the
+  score also admits `we return` and `continuous` inside F1's own marker phase; at 0.80 the room
+  marker `obsidian` sits two hundredths above the program's own word `system`. The **delivery shape**
+  is the discriminator — a pure repetition occurs exactly four times in the corpus, at 0.29, 0.60,
+  0.80 and 1.00 — so the rule is **score ∧ shape ∧ position**.
+- **Any future marker check must be phonetic**, and coverage is reported whether or not the marker
+  was found (a verdict that turns positive must not stop saying what it did not measure).
+
+**WHERE `live-canary-analyze.py` READS SPANS — candidate 61 `[done — iteration 12]`** (full block
+retired to progress.txt). `live-cert.sh`/`live-soak.sh` prune `snapshot.tsv` rows to `span_id`, so
+the analyzer takes three sources in order and always names which one answered: the last 200
+`snapshot.tsv` row is authoritative for the run's **end** (final version and span count); the span
+**bodies** come from the newest readable `snap-full-*.json`; and `descriptor.bounds` is resolved with
+them, because pruning nulls it. A full snapshot every 30 polls means the bodies are a **prefix**, so
+an absence is judged against **coverage** — undecided only when **no** delivery phase of that marker
+is covered (the strict "any uncovered phase" reading fires on every pruned run and decides nothing).
+An unreadable layout is a named **rc=6** refusal, never a traceback.
 
 **Feasibility — settled, do not re-litigate.**
 - Warm 12-run decode p95: 7.5 s span → **0.241 s**; 2.5 s → **0.162 s**. One pre-warm
@@ -448,32 +733,43 @@ so the payload must be extracted with `sed -n 's/^payload: //p'` — `tail -1` a
   and tailnet latency as variable; no fixed request-rate assumption is valid.
 - Uplink: 48 kHz lanes = 2.05 Mbit/s of base64 JSON; 16 kHz lanes = 0.68 Mbit/s.
 
-**Open risk — system-tap prompt on a GUI host (M36).** `AudioHardwareCreateProcessTap` is the
-documented System Audio Recording prompt trigger and is still called on the control thread. On
-MacStudio it returns promptly (iteration-1 `sample` proved the hang was in the microphone path,
-not the tap), but nothing yet proves it returns promptly on m4mbp while its prompt is on screen.
-If E3 shows it blocking, move system admission onto the coordinator's own thread in Phase B; do
-not add a Screen Recording preflight in its place (M31 forbids it).
-*Its consequence, made concrete in iteration 23:* `UnixDomainControlServer.serve()` is a **serial**
-accept loop (`CaptureSecurity.swift:897-902`) and `UnixDomainControlClient` sets no `SO_RCVTIMEO`.
-So if the tap call does block, `mtd-capture start` blocks with **no timeout** and every other
-`mtd-capture` command — `status` included — queues behind it. An apparently hung `start` at E3 is
-the expected appearance of an unanswered prompt, not a defect, and a hung `status` is not evidence
-that the app died. Diagnose it with `pgrep -x MOSSCaptureApp` and `sample`, never by killing the app.
+**A hung `mtd-capture` is not a dead app (M36's surviving half).** `UnixDomainControlServer.serve()`
+is a **serial** accept loop (`CaptureSecurity.swift:897-902`) and `UnixDomainControlClient` sets no
+`SO_RCVTIMEO`, so anything blocking inside `start` blocks every other command — `status` included —
+with no timeout. Diagnose with `pgrep -x MOSSCaptureApp` and `sample`, never by killing the app.
+(The system-tap prompt itself is spent: `AudioHardwareCreateProcessTap` has returned promptly on
+m4mbp in every run since E3 closed.)
 
-## Deployed reality — all four checkouts at `77e0014`
+## Deployed reality — all four checkouts at `42abc5a`
 
 **Server (`ga0-alienware-rtx4070ti`, WSL Ubuntu, checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize`).**
-Detached at **`77e0014`** since M6c (run `20260728-181020` iteration 20); it was `fc7097d` (K5c),
+Detached at **`42abc5a`** since P5(c) (run `20260729-025318` iteration 5), **MainPID 355607**,
+`NRestarts=0`; before that `77e0014` (M6c), `fc7097d` (K5c),
 `6a540fe` (J5c), `b817871` (H4c), `317df4d` (G5), `f9285d6` (D1). The checkout's own `main` ref is
 still **`163e969`**, so `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete
 one-command rollback that moves nothing but `HEAD` — rehearsed for real and undone in F4a.
+- **THE THREE MOSS UNITS ARE `systemctl --user` UNITS, and a bare `systemctl` LIES ABOUT THEM
+  (found iteration 11, cost four probes).** `systemctl show moss-live-web -p MainPID` prints
+  `MainPID=0 / LoadState=not-found / ActiveState=inactive` — which reads exactly like *the live
+  service is dead* — and `sudo systemctl` is wrong for the same reason. The unit files are at
+  `/home/devcontainers/.config/systemd/user/{moss-live-web,moss-web,moss-vllm}.service`, all three
+  `enabled`. **The only correct probe is `systemctl --user show …`.** Cross-check with
+  `ps -eo pid,etime,args | grep mtd-subtitle-web`, which shows the real MainPIDs regardless.
 - **The venv is an editable install pointing at the checkout** (measured in M6c:
   `live_adapters.__file__` is under `/mnt/d/Coding/…`), which is why a restart picks up a checkout
   and why `git checkout` + `systemctl restart` is the whole redeploy.
 - `moss-live-web.service`: installed (byte-identical to `ops/systemd/`), enabled, active, TLS on
-  `0.0.0.0:7861`, **MainPID 350731**, `NRestarts=0`. `/live` answers 200 ~8-11 s after a restart —
-  **poll for 200, never sample once**; a single early probe returns `000` and reads like a failure.
+  `0.0.0.0:7861`, **MainPID 355607** (was 350731 before P5(c)), `NRestarts=0`. `/live` answers 200
+  ~8-11 s after a restart — **poll for 200, never sample once**; a single early probe returns `000`
+  and reads like a failure.
+- **The host's wall clock steps ~1.5 s BACKWARDS every ~32.3 s and this is a permanent host fact.**
+  Re-measured after the P5(c) restart, 100 s at 20 ms, 4768 samples: **−1.464 / −1.437 / −1.466 s at
+  t 14.076 / 46.370 / 78.661 s**, i.e. intervals of 32.29 s and 32.29 s — the same shape iteration 28
+  measured (−1.523/−1.504/−1.503 at 32.25/32.28 s) on a host whose `timedatectl` still says
+  synchronized. It is WSL2 resynchronising, nothing in this repo fixes it, and **nothing needs to**:
+  Phase P made the live decode measure itself monotonically, so the step can no longer reach any
+  duration. Treat any future `time.time()`-derived duration on this host as a live defect, not a
+  theoretical one — this is the one host where that bug is guaranteed to fire.
 - Batch, never restarted by any step of this loop: `moss-web` **MainPID 301112**, `moss-vllm`
   **MainPID 322117**, both `NRestarts=0`. Those two values are what every later probe must still show.
   The running batch process is still the `163e969` *image* (`INDEX_HTML`/`FAVICON_SVG` are
@@ -490,8 +786,16 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
   the deployed-SHA check. Use the four-way `git rev-parse` plus venv introspection.
 - `live-auth.json` holds one **unrevoked** device, m4mbp's
   `AB600574-FD93-4321-967E-652AB064A70B`, plus several revoked probe devices from F0/H2/J5d. Device
-  *count* is not a signal; count unrevoked devices. Baseline copy:
-  `live-auth.json.ralph-f0-backup-20260728T091927Z`, sha256 `9d306766…`.
+  *count* is not a signal; count unrevoked devices — **13 devices / 1 unrevoked** after P5(c).
+  Baseline copy: `live-auth.json.ralph-f0-backup-20260728T091927Z`, sha256 `9d306766…`.
+  **Two traps, both of which cost iteration 5 a wrong answer before they were read out of the
+  source.** (1) The revoke route is **`DELETE /api/live/devices/{device_id}`**
+  (`live_transport.py:460`) — a `POST …/revoke` returns **404 for route-not-found**, which reads
+  exactly like "device already gone" and would leave a probe device live. Assert the 200 **and** its
+  `{"device_id": …}` body. (2) The persisted device record's keys are
+  `paired_at / revoked / revoked_at / token_digest` — **the device id is the dict KEY, not a field**,
+  so `x.get("device_id")` prints `None` for every row and a filter written on it silently matches
+  nothing.
 - Windows host: portproxy `0.0.0.0:7861 → 172.30.115.123:7861` beside the untouched 7860 and 5100
   rows; firewall rule `MOSS-Transcribe-Diarize-Live` (Inbound/Allow/**Private** only); the sign-in
   scheduled task argument list ends `-RefreshOnly -IncludeLive`. `webrtcvad-wheels 2.0.14` and
@@ -501,7 +805,7 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
 
 **m4mbp (the capture Mac).** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. Checkout
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`, reachable as `ga0@m4mbp`
-with `BatchMode=yes`, **detached at `77e0014`** (tree `d2094369…`), clean.
+with `BatchMode=yes`, **detached at `42abc5a`** (tree `06d78525…`, the merge's own tree), clean.
 - **`origin` is not the same repository on every host.** Here `origin` is the AlphaSight fork;
   **on m4mbp `origin` is OpenMOSS and the fork is `alphasight`**. `git fetch origin main` there
   fetches upstream and the checkout then fails `fatal: unable to read tree`, which reads like
@@ -513,7 +817,11 @@ with `BatchMode=yes`, **detached at `77e0014`** (tree `d2094369…`), clean.
   path the PRD's live clause names. The batch clause is measured from MacStudio.
 - `/Applications/MOSSCapture.app` + `~/.local/bin/mtd-capture` installed from **`77e0014`** (M6c,
   iteration 20): bundle digest `c7c12ce2…`, CLI sha256 `450c20bf…`, inode `212080356`,
-  mtime `2026-07-28T18:22:32Z`. (K5c's `fc7097d` install was digest `267ada93…`, CLI `c11e89ff…`,
+  mtime `2026-07-28T18:22:32Z`. **The checkout is `42abc5a` but the INSTALL is still the `77e0014`
+  product, and that is correct, not drift:** P7's payload touched **0** files under `macos/`, so the
+  two SHAs build a byte-identical client. Re-measured after P5(c)'s checkout — inode `212080356` and
+  CLI sha256 `450c20bf…` **unchanged**, which is the positive proof no rebuild happened and therefore
+  that the TCC grants were never at risk. (K5c's `fc7097d` install was digest `267ada93…`, CLI `c11e89ff…`,
   inode `211995344`.) Both verify
   `codesign --verify --strict`; the bundle satisfies its DR. The **designated requirement is
   `identifier "com.alphasight.moss.capture" and certificate leaf =
@@ -550,91 +858,34 @@ with `BatchMode=yes`, **detached at `77e0014`** (tree `d2094369…`), clean.
 Never `/usr/bin/python3` (3.9.6). It carries **no** `MOSSCapture` install, no signing keychain and no
 `~/Library/Application Support/MOSSCapture` — B6 left it clean and later gates re-proved it.
 
-**TCC-verification contract (new, iteration 23).** The PRD's "Permissions granted" clause has a
-**read-only, scriptable** check, so the loop never needs to go near a TCC write.
-`~/Library/Application Support/com.apple.TCC/TCC.db` on m4mbp is `-rw-r--r-- ga0:staff` and opens
-over plain SSH **without** Full Disk Access — measured: 320 rows across 20 services. The two service
-names are read off that live table, not guessed: Microphone = `kTCCServiceMicrophone` (21 rows),
-**System Audio Recording = `kTCCServiceAudioCapture`** (3 rows). `auth_value` 2 = allowed, 0 = denied
-(both appear on this host, e.g. `com.openai.chat|2` vs `com.google.antigravity|0`); `client_type`
-0 = bundle identifier, 1 = absolute path, so an app bundle is keyed by its identifier.
-*Baseline recorded this iteration:* **zero** rows match `%moss%` in either service — both lanes are
-undetermined, consistent with the app never having been launched.
-*The csreq is the DR.* Each row carries a `FADE0C00` code-requirement blob that
-`sqlite3 … writefile()` plus `csreq -r <file> -t` decodes. Decoded on the `com.livetranscribe.app`
-precedent (a locally-signed app on this same host that already holds **both** grants):
-`identifier "com.livetranscribe.app" and certificate leaf = H"51e289ba70a36bcdd063f1efa660d56aebd83da7"`
-— byte-for-byte the *form* of the E1 designated requirement. So after E3 the two moss rows must
-decode to `identifier "com.alphasight.moss.capture" and certificate leaf =
-H"e118d874377746c4bd25beb8252bb84302b73e72"`, and that decode is the **direct observation** that the
-grants key on the DR rather than the cdhash — the reason a byte-different SwiftPM rebuild keeps them.
-Until E3 that link was argued from the DR's stability alone, never seen in TCC's own storage.
+**TCC is verified read-only, and the grants are DONE.** `~/Library/Application Support/com.apple.TCC/
+TCC.db` on m4mbp is `-rw-r--r-- ga0:staff` and opens over plain SSH **without** Full Disk Access.
+Microphone = `kTCCServiceMicrophone`, System Audio Recording = `kTCCServiceAudioCapture`;
+`auth_value` 2 = allowed. Both hold **2** for `com.alphasight.moss.capture` and have survived four
+bundle replacements, because each row's `FADE0C00` blob decodes (via `sqlite3 … writefile()` +
+`csreq -r <file> -t`) to the app's **designated requirement**, not its cdhash. **Never ask the
+operator for those clicks again, and never write TCC.**
 
-**E3 command surface (new, iteration 23; read out of the reviewed source at `f9285d6`).** Three
-facts decide whether the human step succeeds on the first try:
-1. **The pairing payload goes on stdin, never on argv.** `CaptureCommandLine.swift:121` is
-   `input.readAll()`; empty stdin is `rc=65`. So the operator runs
-   `mtd-capture pair --server <https-url>`, pastes the payload, presses **Ctrl-D** — that keeps it
-   out of argv *and* out of shell history, which is what the PRD's secret-hygiene clause needs.
-   Since G2 (run 20260728-072601 iteration 2) a Return pressed before Ctrl-D is harmless; before it
-   that keystroke failed the pair with `invalidPinnedHash`. That fix reaches the host only when
-   E2b is re-run there after the G4 merge.
-   Full surface: `pair --server <https-url> | start [--label <name>] | stop | status | handoff |
-   latency`; anything else is the usage line and `rc=64`.
-2. **The CLI cannot launch the app by itself here.** `NSWorkspaceLaunchServicesCaptureAppLauncher`
-   launches only when the control socket is absent **and** `MOSS_CAPTURE_APP_URL` is set
-   (`CaptureCommandLine.swift:69`); nothing in the product, the install tool or a shell profile sets
-   it, so a bare CLI call answers `{"ok":false}` `rc=70` and starts nothing. The app must be started
-   from the GUI session (Finder double-click or `open -a`), or the operator exports
-   `MOSS_CAPTURE_APP_URL=/Applications/MOSSCapture.app`. Never run
-   `…/Contents/MacOS/MOSSCaptureApp` from a shell: TCC would attribute the grant to the terminal
-   instead of the bundle, and the DR-keyed grant would not apply to the app.
-   Socket path is `/tmp/moss-capture-$(id -u)/control.sock` = `/tmp/moss-capture-501/control.sock`.
-3. **`LSUIElement` is `true`** (`macos/MOSSCapture/Resources/Info.plist`), so a launched app shows no
-   window, no Dock icon and no menu-bar item. "Running" is observed by `pgrep -x MOSSCaptureApp` and
-   by the socket existing — never by a visible UI. Nothing appearing on screen is the correct result.
+**The `mtd-capture` surface, and the three facts that make it work over SSH.** Full surface:
+`pair --server <https-url> | start [--label <name>] | stop | status | handoff | latency`; anything
+else is `rc=64`. (1) **The pairing payload goes on stdin, never argv** (`input.readAll()`; empty
+stdin is `rc=65`); a Return before Ctrl-D has been harmless since G2. (2) **The CLI cannot launch the
+app** unless `MOSS_CAPTURE_APP_URL` is set and the control socket is absent — start it from the GUI
+session (`open -a`), never `…/Contents/MacOS/MOSSCaptureApp` from a shell, which would attribute TCC
+to the terminal. Socket is `/tmp/moss-capture-501/control.sock`. (3) **`LSUIElement` is true**, so a
+running app shows nothing; observe it with `pgrep -x MOSSCaptureApp`.
 
-**Prompt order is fixed by the source, and the TCC clicks are NOT bound to D4's 300 s window
-(new, iteration 23).** `NativeDualCaptureSource.start` admits **system audio first**
-(`NativeDualCaptureSource.swift:191`) and the microphone second (`:192`). System audio has no request
-API — `AudioHardwareCreateProcessTap` inside `SystemAudioTap.start` *is* the request, called inline
-on the control thread — while the microphone request is the asynchronous
-`AVCaptureDevice.requestAccess(for: .audio)` that leaves the lane `pending`. So the operator sees
-**System Audio Recording first, Microphone second**, and only the first one can block.
-*The decoupling:* `CaptureController.start` (`CaptureController.swift:230-246`) requires only
-`loadControlSecret() != nil` — which the app writes for itself at launch — and calls
-`source.start` at `:242`, **before** the first publish at `:250`. Pairing is needed only by that
-publish. An **unpaired** `start` therefore still raises both prompts; the publish then fails
-`missingCaptureBearer`, which `CaptureFrameRetryPolicy` classes as not retryable, so the controller
-unwinds the source and throws — but the user's two decisions are already durable in TCC.db, because
-TCC records the click, not the capture outcome. That converts E3 from "clicks inside a five-minute
-window" into two independent steps: grants first, verified read-only, then D4's mint and pairing with
-
-**Rollback rehearsal — the PRD clause is GREEN (new, iteration 8 / F4a).** Disabled → reverted →
-proved batch → restored, all on the real server, batch never restarted. Four durable facts came out
-of it, and they are the reasons to read this block rather than re-derive it:
-1. **Order is forced by `ExecStart`.** The live unit runs `ops/start-web.sh` *from the checkout*, and
-   at `163e969` that script predates `MOSS_WEB_PORT`/`MOSS_RUNS_DIR` — a live unit started while the
-   checkout is rolled back would ignore the live profile and try to bring up a **batch** server.
-   So: `disable --now` **before** the checkout moves back, restore the checkout **before**
-   `enable --now`. Use `disable`, not `stop`, so `default.target` cannot pull it back in.
-2. **A correct restore reads as a broken one for ~10 s.** `enable --now` at 05:06:05 →
-   `Uvicorn running on https://0.0.0.0:7861` at 05:06:15; a probe at 6 s returned **000**. Poll for
-   200, never sample once.
-3. **A rolled-back tree is not a clean tree.** `163e969`'s `.gitignore` predates the
-   `ops/moss-live.env` entry, so while rolled back `git status --porcelain` reports
-   `?? ops/moss-live.env`. The checkout does not delete the profile; only `git clean` would, and an
-   operator tidying the "unclean" tree would destroy the one file the restore depends on.
-4. **Nothing that a paired Mac hashes can move.** The TLS pair, the manifest and `live-auth.json`
-   live under `~/.local/share/…/live` on ext4, outside the repo: after the whole cycle all four kept
-   inode *and* sha256, the served leaf was byte-identical, and the descriptor still reported
-   `provider_manifest_hash 61d97ffe…` / `source_revision f9285d69…`. That is why this rollback is
-   safe to run against already-paired devices — and the stop condition for any future run is the pin
-   changing.
-`163e969` is "before the MVP", not "before anything named live": `live_transport.py` exists there,
-`live_auth.py` does not. The Windows portproxy/firewall half was deliberately **not** torn down —
-it is outside the PRD clause, and the client probes showed a forward with no listener behind it
-answers `000` anyway.
+**Rollback rehearsal — the PRD clause is GREEN (F4a, iteration 8; full block retired to
+progress.txt).** Disabled → reverted to `163e969` → batch proved 200 → restored, on the real server,
+batch never restarted. Four facts make it repeatable: (1) **order is forced by `ExecStart`** — the
+live unit runs `ops/start-web.sh` *from the checkout*, and at `163e969` that script would bring up a
+**batch** server, so `disable --now` before the checkout moves and restore the checkout before
+`enable --now`; use `disable`, not `stop`. (2) **A correct restore reads as broken for ~10 s** — poll
+for 200, never sample once. (3) **A rolled-back tree reports `?? ops/moss-live.env`** because
+`163e969`'s `.gitignore` predates it; only `git clean` would destroy the profile the restore depends
+on. (4) **Nothing a paired Mac hashes moves** — the TLS pair, manifest and device store live outside
+the repo on ext4 and kept inode and sha256 across the whole cycle, which is why this is safe against
+already-paired devices. The stop condition for any future run is the **pin changing**.
 
 **Gotcha — file modes are unenforceable inside the host checkout (found by D3).** `/mnt/d` is a 9p
 `drvfs` mount **without** the `metadata` option, so every file under
@@ -700,6 +951,13 @@ evidence, is in the progress.txt archive under the same title.
 | **Lane-failure log** (K2) | The app records a **typed** lane failure alongside G3's unclassified one, through `LaneFailureLoggingHealthAdapter`, with one `CaptureLaneStates` vocabulary. *Extended by D-a (it. 15):* a **degradation** is recorded the same way, once per lane per generation, and the line's verb comes from the state — so grep `capture lane ` , not `failed`. |
 | **Terminal record** (K3) | The heartbeat that ends a session carries the failed lanes' typed codes into `LiveV2Session.expire`, `runtime.abort`, the `session_aborted` event and one host-journal line. |
 | **Session refusal** (K4) | 401/403/404/410 → `CaptureStatus.sessionRefusal` / `ControlChannelResponse.sessionRefusal`, recorded from the tick **and** the stop drain, so `running: true` never stands alone while every request refuses. A new session id is a new question. |
+| **Fingerprint album** (N-album, it. 15 of run `20260729-025318`; **in source only, not deployed**) | **Matching is not enrollment.** The evidence floor (`identity_provider.min_segment_samples`) does not move, so a short span is still *labelled*; enrollment needs ADR-0002's **1.0 s**. Per canonical speaker: up to **k=10** exemplars, matched against their **duration-weighted centroid**; plus **one** sub-admission stand-in used only while the bank is empty, discarded — never averaged — by the first real exemplar. Neither tier is recency-driven. Every refusal is a named disposition and nothing here raises. |
+| **Manifest calibration** (N-recal, it. 17 of run `20260729-025318`; **in source only, not deployed**) | A **free** deployed parameter is stated by the deployment, never inherited. `finalize-live-provider-manifest.py` requires `--min-match-score` / `--min-match-margin`, writes them into `identity_config`, hash-covers them, names them in the plan and the evidence, and refuses a pair `live_provider_bundle._identity_config` rejects. The calibrated pair is named once, in `live_identity_album.py`, and the accuracy harness imports it — so the measured pair and the deployable pair cannot diverge. |
+| **Session tape** (N-tape, it. 19 of run `20260729-025318`; **in source only, unwired, not deployed**) | **A tape is placed by capture timestamp and bounded by a declaration.** Three PCM16 tracks + an atomically republished `index.json`; the **gap manifest is the complement of coverage**, so a dropped frame is silence *and* a named gap and a late frame fills it. Retention is opt-in — no root, no tape, no behaviour change. `declared()` refuses a root inside the checkout, sharing a filesystem with a runs tree, or on a filesystem where `chmod` is a no-op. No frame ever raises: cap, write failure and inadmissible frame each stop taping with a typed degradation. The reaper is driven by session state + TTL, runs at startup, and skips what it cannot read as a tape. |
+| **Taped live path** (N-tape-wiring, it. 20 of run `20260729-025318`; **in source only, not deployed**) | **The recorder is the boundary, and `None` is a whole configuration.** The transport holds one `LiveSessionTapeRecorder`, constructed always and inert when no root is declared — so the untaped service is a state of the wiring, asserted by a route node, not an absence of it. Lane frames tee **after the ingress ack**; the mixed track tees at `admit_available`'s sealed commit, placed by the commit's own start timestamp. The tape is released wherever the **mixer** is, including the coordinator's lease-expiry teardown. Nothing in the recorder raises: a store failure is one WARNING naming the action, never a 500 on `POST /frames`. |
+| **Retrospective sweep** (N-sweep, it. 22 of run `20260729-025318`; **in source only, PURE and UNWIRED**) | **A sweep re-matches retained evidence against the album; it never re-hears audio, and it proposes — it does not apply.** One matcher for both paths (`live_identity.assign_speakers`), so a correction can never be a second implementation's second opinion. It may not invent a speaker, may not remove a label it cannot replace (unrepresentable: the correction's speaker is non-optional), and may not move a unit that fails the deployed margin. A merge at ≥ 0.70 needs an admitted bank on **both** sides, matches on the **union** of the exemplars, and leaves the id with the most admitted speech standing. Deterministic, and applying a revision leaves nothing for the next sweep to correct. The ledger is bounded at 20 000 units ≈ 22 MB and refuses new units rather than evicting old ones. |
+| **Session end** (N-sweep-end, it. 26 of run `20260729-025318`; **in source only, not deployed**) | **The meeting's last sweep is not a cadence, and it reconciles before it re-matches.** The cadence is paced by the *next* span's start, so the last interval of every meeting — and the whole of any meeting shorter than one interval — has nothing to trigger it, and the last span's evidence is retained unlabelled until something settles it. `finalize_identity` settles that span **then** sweeps once, unconditionally; reversed, the sweep "corrects" the last span to the label it already had. Asked for by name at all three layers, so a stack that cannot sweep is not an error. **`stop` calls it after the drain and before the close; `abort` deliberately does not** — a terminal session is not viewable and the correction would reach no reader. Nothing is terminal: a stack that raises is one named refusal (`identity_finalize_failed`) in the same map the session's own refusals use, and `identity_finalized` is recorded whether or not anything changed. |
+| **Living document** (N-revision, it. 25 of run `20260729-025318`; **in source only, not deployed**) | **A correction is published beside the words, never onto them.** `transcript` and `prefix_hash` record what was *said*; `revised_transcript` is who is believed to have said it now, and a reader is shown `revised_transcript \|\| transcript`. A correction is addressed by `(span, local speaker)` — the session retains a label track, because an abstained span shows `S00` for every one of its speakers. A span is revised **only if it re-renders to itself byte for byte**, so a relabelling cannot cost a word; the span grammar therefore has exactly one writer (`live_span_bounds.render_segments`) beside its one reader. A span never puts two of its own locals on one identity (`UNATTRIBUTED_SPEAKER` exempt). Nothing raises: six named refusals reach `canonical_processed`. A **closed** session is still revisable — the session-end sweep arrives after the last span. |
 | **Duration vs timestamp** (P1/P2, it. 1 of run `20260729-025318`) | A **duration** is measured on `time.monotonic()`; `time.time()` is a **timestamp** and may step. The live decode measures itself and never reads the runner's `elapsed_sec`. Timing metadata that cannot be trusted converts to `None` (`live_adapters.trustworthy_duration_sec`) — elapsed and RTF null on `canonical_processed`, span committed, one WARNING on `moss_transcribe_diarize.live.decode` — never terminal. |
 
 **The one class all of Phase J, L1 and candidates 50/53/56 belong to:** *a condition the design
@@ -729,11 +987,17 @@ progress.txt archive under each title.
 | **J5d gate** | **GREEN at `6a540fe`** — the first run in the loop's history to finish: 40/40 ticks, `non_200_count` 0, nine committed spans tiling the meeting end to end, `accepted == accounted == committed == 320000`, speakers S01-S04, and **both degrade-not-die paths fired inside the same green run** (H1's empty span, J2's `S00`). Decoder RTF 0.055-0.431. |
 | **F4a rollback rehearsal** | GREEN — see the rollback block above. |
 | **K5d re-read** | Named the lane failure `macos_buffer_overrun` and traced it to Phase L. Phase K closed; the fourth amendment spent. |
-| **F1 canary / F3 soak** | **RED** — see the two blocks above. One defect, candidate 53. |
+| **F1 canary (it. 8) / F3 soak (it. 9)** | **RED** — one defect, candidate 53, since fixed. Both blocks retired to progress.txt. |
+| **F1 canary, run `20260729-025318` it. 6** | **GREEN, rc=0** — the first green certification run. user-visible p95 **3909.3 ms** ≤ 4000 **and qualified** (`sufficientSamples` true, n=44), decoder p95 RTF **0.911** < 1, **329 published == 329 accepted**, 370/370 view polls 200 across both readers, 165/165 heartbeats 200, no lane fault, `terminal_failure` null, 0 tracebacks, hosts left clean. Not certified by it: the "two speakers" half (both voices were on the system lane). See the F1-green block. |
+| **F3 soak, run `20260729-025318` it. 9** | **rc=3 — 5 GREEN, 1 RED.** 17/17 full minutes, 443 spans, 355/355 portal polls 200, view authority 200 at age 1024.1 s, user-visible p95 **4557.2 ms** ≤ 6000 qualified, decoder p95 RTF **0.546**, one lane degraded at t+474 s and kept capturing, clean drain `retained=0`, hosts clean. RED: the clean stop did not revoke view authority — **candidate 60**. |
+| **F2 certification, run `20260729-025318` it. 11** | **GREEN, rc=0** — six GREEN, no RED, no UNDECIDED. user-visible p95 **3859.6 ms** ≤ 6000 qualified (`sufficientSamples` true, n=113), decoder p95 RTF **0.670**, a **5.050 s** CLOCK_MONOTONIC interruption seen by the client and survived, outbox 0 → **10** → 0, **1257 published == 1257 `POST /frames`**, **4748/4748 HTTP responses 200**, 622/622 heartbeats 200, one lane degraded by the outage and kept capturing, clean drain, hosts left clean. Not certified by it: the system-audio-denied variant (deliberately not attempted — it would spend a TCC grant) and the "two speakers" half (both voices on the system lane). See the F2-green block. |
 | **Phase M gate step (a)** | GREEN at **`21a73ea`** — Swift 158/0 (0 warnings, fresh scratch), Python 604+2/368, tracer 4/0 skips, 10/10, lane-refusal probe rc=0, 7/7 hard-cap cases, leak-scan clean, tree clean; payload 10 files / +983/-51 all in scope. |
 | **M6 gate + merge #6** | Merge **`77e0014`**, parents `fc7097d` + feature tip `4ac5d95`; join `1b6a9f4` proven content-free first. In-worktree gate on the merged tree: Swift 158/0, Python 604+2/368 in 64.4 s. Merge tree == feature tree `d2094369…`. **Not server-only** (4 files under `macos/`), so step (c) is the K5c shape: restart **and** Mac rebuild+reinstall. Guard rehearsed: a seventh merge refuses. |
 | **Phase P gate step (a)** | GREEN at **`5bc4f7f`** (run `20260729-025318` it. 2) — Swift **158/0** with **0 warnings** on a fresh scratch, Python **608 passed / 2 skipped / 368 subtests** in 59.95 s, tracer **4/0 skips**, discriminator **10/10**, lane-refusal probe rc=0 (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `77e0014`), seven hard-cap cases rc=0, `soak-abort-probe` 90/90, `view-reader-probe` pass, leak-scan clean, tree clean. Payload **7 files / +285/−38**, all in `moss_transcribe_diarize/` + `tests/`, **none under `macos/`**. *Payload review added one thing the four-site sweep table could not:* `grep -rnE '(time\.time\(\)\s*-\|-\s*time\.time\(\))' moss_transcribe_diarize/` returns **nothing** — the class is empty by search, not merely by enumeration; every surviving `time.time()` is a persisted or expiry **timestamp** (`live_transport._request_now`, `jobs` `created_at`/`updated_at`, `windowed_transcription:367`), which is P4's recorded ruling. |
+| **P7 merge #7** | Merge **`42abc5a`** (run `20260729-025318` it. 4), parents `77e0014` + feature tip `96137b1`; join `cfa3a96` proven content-free first (`merge-tree --write-tree` returned HEAD's own tree). In-worktree gate on the merged tree: Swift **158/0**, Python **608 passed / 2 skipped / 368 subtests** in 61.83 s. **Merge tree == feature tree `06d78525…`** — the merge added nothing and dropped nothing. **Server-only** (0 files under `macos/`), so step (c) is the J5c shape: restart, and on m4mbp a checkout with **no rebuild and no reinstall**. Guard rehearsed non-vacuously: an **eighth** merge prints `main moved from expected pre-merge SHA 77e0014…`, rc=1. Temp worktree removed by the EXIT trap; `git worktree list` back to one. |
+| **P5(c) redeploy** | GREEN — four-way SHA **4/4 at `42abc5a`**. Push fast-forwarded `77e0014..42abc5a`; server MainPID 350731 → 355607 with `/live` 200 at 8 s and the descriptor 200; manifest admission re-checked **after** the checkout under the service venv (`available=True`, `failures=[]`, hash `61d97ffe…` unchanged); content parity by hashing all **five** changed product files against `git show` at **both** SHAs (each matches the new and differs from the old); the deployed fix **exercised**, not hasattr'd; m4mbp checked out with the app inode and CLI hash unchanged (no rebuild, no TCC exposure); both grants still `auth_value=2`; batch MainPIDs unmoved and `/` 200. Then the 150 s probe above. |
 | **M6c redeploy** | GREEN — four-way SHA **4/4 at `77e0014`**. Server MainPID 346453 → 350731, `/live` 200 in 9 s, batch untouched; D-c exercised on the host (cap 286/112) and the venv proven editable-from-the-checkout; Mac rebuilt + reinstalled (inode 211995344 → 212080356), DR byte-identical a fourth time, both TCC grants still `auth_value=2`, and the install proven to carry D-a by a strings witness **with a control word**. |
+| **Phase N gate step (a)** | **GREEN at `1e1cf3f`** (run `20260729-025318` it. 27) — Swift **158/0** with **0 warnings and 0 errors** on a fresh scratch, Python **801 passed / 2 skipped / 368 subtests** in 75.67 s (skips named: `test_large_upload.py:155,175`, the 3.10 contract), tracer **4/0 skips**, discriminator **10/10 true**, leak-scan clean, lane-refusal probe **rc=0** (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `42abc5a`), guard rehearsed non-vacuously (rc=1, `main moved from expected pre-merge SHA 77e0014…`), tree clean. **The accuracy half re-measured on production code, which is what ADR-0002 asks for rather than a suite result:** album **93.44/92.18**, overwrite **72.02/55.68**, swept **99.26/98.48** (live 93.44, **116** corrections, **0** merges, **residual 0**), swept cap64 99.26/98.48 (live **98.74**). Both halves of ADR-0002's bar are met on the code about to merge — ≥ 90 % live and **live→file convergence proved by `residual_corrections` 0**. Payload **44 files / +8172/−126**: 15 product, 23 tests+fixtures, 2 `ops/`, 4 docs, **0 under `macos/`** → the merge is **server-only** (J5c redeploy shape). *Payload review, the parts a diffstat does not answer:* the product diff removes **112** lines and **not one** matches `16000\|8000\|40000\|960000\|7860\|7861\|43200\|lease\|min_silence\|hard_cap\|frame_samples` — no domain-contract value moves; `live_identity.py`'s 83 removals are a **move**, not a deletion (`assign_speakers`/`_match_rejection_reason` to module level, the span grammar to `live_span_bounds.py`, verified one writer / three readers); and **two of the four doc files are the operator's own** (`00620ab`, `128eae4` — ADR-0002 and the design), which the merge carries to `main` for the first time. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -800,6 +1064,83 @@ python3 -m pytest tests/test_live_service_runtime.py tests/test_live_provider_bu
 python3 -m pytest tests/test_live_auth.py tests/test_live_api.py -q \
   -k 'view_authority or view_revocation or revokes_the_view'
 
+# --- N-gate: live speaker accuracy on production code, 27 nodes, ~20 s (iterations 16 + 23) ----
+#     Fixture integrity + the two silence splits (16 parametrised), five measured live claims,
+#     then N-convergence's six (ADR-0002 gate B: the sweep cadence, applied and scored).
+python3 -m pytest tests/test_live_identity_accuracy.py -q
+# The numbers themselves, any configuration, without pytest -- this is how a future run
+# re-measures rather than re-derives. Configs are lru_cached, so each costs ~1.2 s once
+# (~3 s once a sweep_interval is passed: the sweep re-scores every retained unit in Python).
+# `sweep_interval` is meeting seconds and is only defined for policy='album'; passing it with
+# 'overwrite' RAISES on purpose, so "the sweep did not help" can never mean "there was no album".
+python3 -c "
+import sys; sys.path.insert(0,'tests'); sys.path.insert(0,'.')
+import live_identity_accuracy as H
+for tag, kw in (('album',{}), ('overwrite',{'policy':'overwrite'}),
+                ('swept',{'sweep_interval':60.0}), ('swept cap64',{'sweep_interval':60.0,'max_speakers':64})):
+    r = H.replay_all(**{'policy':'album', **kw})
+    print('%-12s final %.2f/%.2f  live %.2f  corr %d merges %d resid %d' % (
+        tag, H.mean_accuracy(r)*100, H.min_accuracy(r)*100, H.mean_live_accuracy(r)*100,
+        sum(x.corrections for x in r.values()), sum(x.merges for x in r.values()),
+        sum(x.residual_corrections for x in r.values())))
+"
+# Expect: album 93.44/92.18 · overwrite 72.0/55.7 · swept 99.26/98.48 · swept cap64 99.26/98.48,
+# merges 0 and residual 0 everywhere. `accuracy` is the transcript a reader ENDS with and
+# `live_accuracy` the one they read DURING the meeting; without a sweep the two are equal.
+
+# --- N-sweep: the retrospective sweep engine, 40 nodes, ~0.1 s (iteration 22). Pure; no host,
+#     no server, no fixture. The matcher extraction is proved behaviour-preserving by the
+#     accuracy numbers above staying at 93.4 / 72.0, not by these nodes. -------------------------
+python3 -m pytest tests/test_live_identity_sweep.py -q
+# Its ten red-before reverts, re-runnable against a COPY of the module (restore after). Each
+# names DIFFERENT nodes; the third is over-broad and only evidences the union node:
+#   1. `_union(parent, left, right)` -> `pass`                                   -> 6 red
+#   2. leader `min(members, key=(-duration, id))` -> `min(members)`              -> 2 red
+#   3. `union.extend(banks[speaker])` -> `pass`                                  -> 13 red
+#   4. `ambiguous = True` -> count + `continue`                                  -> 1 red
+#   5. `if unit.local_speaker in unscored:` -> `if False:`                       -> 1 red
+#   6. the ledger cap check -> `if False:`                                       -> 1 red
+#   7. `entry.canonical_speaker = correction.canonical_speaker` -> `pass`        -> 2 red
+#   8. `duration_weighted_centroid(bank)` -> `... or album.reference(speaker)`   -> 1 red
+#   9. `_finite_float32`'s `if not values:` -> `if False:`                       -> 1 red
+#  10. `reference = album.reference(speaker)` -> `reference = None`              -> 1 red
+
+# --- N-revision: a sweep's correction reaching the reader, 9 nodes (iteration 25). The seam node
+#     is the one that matters -- real coordinator + session + preparer + provider + album + sweeper,
+#     five 2 s spans, only the ONNX forward pass and the GPU decode scripted. ~4 s for all four. ---
+python3 -m pytest tests/test_live_session.py tests/test_live_pipeline_seams.py \
+  tests/test_live_portal.py tests/test_live_identity_sweep.py -q          # expect 145 passed
+# Its ten red-before reverts, against COPIES of the four sources (restore after). Nine name
+# DIFFERENT nodes; 3 and 4 both name the seam node:
+#   1. portal `item.revised_transcript || item.transcript` -> `item.transcript`      -> 1 red
+#   2. `_revised_span`'s `if not track:` -> `if True:`                               -> 7 red
+#   3. the coordinator's `getattr(..., "take_identity_revision", None)` -> `None`    -> 1 red
+#   4. drop `local_speakers=` on `submit_unlabeled_canonical`                        -> 1 red
+#   5. the re-render guard -> `if False:`                                            -> 1 red
+#   6. the label-collision guard -> `if False:`                                      -> 1 red
+#   7. `if canonical_speaker in canonical_speakers:` -> `if True:`                   -> 1 red
+#   8. `take_revision` returns without clearing `_unconsumed`                        -> 1 red
+#   9. `published = commit.revised_transcript ... else transcript` -> `transcript`   -> 1 red
+#  10. drop `local_speakers=` on the PREPARED path's `CanonicalResult`               -> 1 red
+# The portal node needs `node` on PATH (it drives the real page's JS); it is skipped without it.
+
+# --- N-tape: the session tape recorder, 37 nodes, ~3.6 s (iterations 19 + 20). ADR-0002 gate C's
+#     assembly cases + ADR-0003 D2-D6, then the recorder. Offline, no host, no server, tmp_path. ---
+python3 -m pytest tests/test_live_tape.py -q
+# Its three red-before reverts, re-runnable by hand against a COPY of the module (restore after):
+#   1. `offset_samples` -> `return self.sample_count`          (arrival-order placement)  -> 8 red
+#   2. cap check + TTL comparison -> `if False:`                                          -> 3 red
+#   3. D4's four admission rules -> `if False:`                                           -> 4 red
+# --- N-tape-wiring: the tape teed onto the REAL routes, 4 nodes inside test_live_api.py (33) ------
+python3 -m pytest tests/test_live_api.py tests/test_live_tape.py tests/test_live_helper_failure.py -q
+# Its four reverts (copy the three sources to /tmp first; each names a DIFFERENT node):
+#   1. drop `tapes.append_lane_frame` + `_tape_mixed` in the frames route            -> 1 red
+#   2. the recorder's six `except Exception` guards -> a class never raised          -> 2 red
+#   3. `LiveHelperFailureCoordinator._release_registries`'s tape release -> `if False:` -> 1 red
+#   4. drop `tapes.release` on the stop path                                         -> 2 red
+# A stop in these nodes needs `{"deadline": 5.0}`: with a queued span, deadline 0.0 answers 409
+# `stop deadline expired with unresolved work` and reads exactly like a tape defect.
+
 # --- K3 terminal record (8 nodes: the terminal heartbeat's codes into expiry/journal/log, the
 #     lease expiry's `lanes=none`, the record's bounded shape, the default sink's level, three
 #     expiry-stamp nodes, and the real coordinator+v2 registry+runtime seam plus its
@@ -823,25 +1164,8 @@ swift build --package-path macos/MOSSCapture --show-bin-path   # resolve real pr
 # needs a 100.64.0.0/10 address on this host and FAILS (never skips) without one.
 python3 -m pytest tests/test_macos_uds_tracer.py -q
 
-# --- G1 ATS declaration: the three shape gates. There is no behavioral gate and there cannot be
-#     one on a single host - see the ATS contract block. ------------------------------------------
-swift test --package-path macos/MOSSCapture --filter 'BundleDeclaresTheTransport'
-python3 -m pytest tests/test_macos_packaging_tools.py -q -k entitlement_the_identity
-python3 -m pytest tests/test_macos_uds_tracer.py -q -k 'immutable_first_install or unpinned_leaf'
-# --- G2 pairing-payload trim + canonical wire form (2 Swift nodes; the tracer's second real
-#     pairing now feeds `payload + b"\n"`, so the whole stdin -> UDS -> app -> HTTPS path is
-#     covered at no extra runtime). ---------------------------------------------------------------
-swift test --package-path macos/MOSSCapture --filter 'PairingPayloadTrims|PairingPayloadWhitespace'
-python3 -m pytest tests/test_macos_uds_tracer.py -q -k cross_real_uds
-# --- G3 control-channel classification + logging (5 Swift nodes: the three unclassified NSError
-#     shapes with no message/URL on the wire, the four typed families keeping their names with no
-#     detail and no log line, one log record per unclassified failure with its command, the log
-#     line's fixed vocabulary, and the app-wires-it/CLI-does-not entrypoint scan). The real-process
-#     half is the tracer's pin refusal, strengthened in place to assert -999 with no underlying. ---
-swift test --package-path macos/MOSSCapture \
-  --filter 'UnclassifiedTransportFailure|AlreadyNamedControlFailures|UnclassifiedControlFailureIsLogged|AppFailureLogWritesOnly|WiresTheControlChannelFailureLog'
-python3 -m pytest tests/test_macos_uds_tracer.py -q -k unpinned_leaf
-
+# --- G1/G2/G3 narrow recipes (ATS shape gates, pairing-payload trim, control-channel
+#     classification + logging) are RETIRED to progress.txt; `swift test` covers all of them. ------
 # Reproducing the failure itself needs a REMOTE non-exempt peer, i.e. m4mbp -> 100.64.0.8. The
 # ad-hoc probe that measured the matrix is disposable; rebuild it in /tmp when needed, never in
 # the repo. Bare binary vs the same binary inside an ad-hoc `.app` is the whole experiment.
@@ -857,169 +1181,14 @@ PYTHONDONTWRITEBYTECODE=1 python3 \
 # The 16-check sibling is historical after B1 and reads 14/16 on the tip (09 and 15 assert the
 # superseded Keychain default). Its frozen green is commit 1ede498, not the tip.
 
-# --- B1 secret-store behavioral nodes (the replacement for discriminator 09/15) ------------
-swift test --package-path macos/MOSSCapture --filter 'SecretStore|ProductEntrypoints|DormantKeychain'
-
-# --- B2 outbox behavioral nodes (8 nodes: outage, ambiguous/duplicate, 429/5xx/401, overflow,
-#     stalled lane, wire-sequence authority, per-session numbering, start unwind) --------------
-swift test --package-path macos/MOSSCapture \
-  --filter 'Outbox|Ambiguous|RetryPolicy|Stalled|NumbersItsLane|Unwinds'
-
-# --- B3 wire-format behavioral nodes (11: timebase, steady frames, 48/44.1 kHz duration,
-#     cross-lane domain, refused instant, terminal flush, gap splice, source+controller tail, and
-#     two realtime-callback source gates) --------------------------------------------------------
-swift test --package-path macos/MOSSCapture \
-  --filter 'HostTicks|CanonicalFrames|ConserveDuration|HostTimeDomain|CaptureInstant|TerminalFlush|TimelineGap|RealtimeCallbacks|FlushedTail'
-
-# --- B4 bounded-transport behavioral nodes (5: lane rendezvous + per-lane in-flight bound, late
-#     tick skips, stop waits, one session per pin, shipped cadence/provider) --------------------
-swift test --package-path macos/MOSSCapture \
-  --filter 'LanesPublishConcurrently|ATickArrivingDuringADrain|StopWaitsForTheRunningPass|PinnedProviderKeepsOneSession|ProductionPumpTicksOnce'
-
-# --- C3c app-owned latency probe (10 nodes: origin/mapping math, three disqualifier classes,
-#     trailing-partial vs mid-stream short frame, waits-then-freezes origin, separate committed and
-#     render components, one poll's requests + header-only token + advancing cursors, default-off
-#     and idempotent measure + typed unavailable, stops with the session, acknowledged-frame
-#     observer sees accepted audio only and cannot reach PCM, plus the CLI relay). ---------------
-swift test --package-path macos/MOSSCapture --filter 'Latency|AcknowledgedFrameObserver'
-
-# --- C2 manifest bounds (17 nodes: retune + regenerated hashes, descriptor admission, reconnect-
-#     burst capacity headroom on both lanes with replayable acks, 9 refusals, dry-run, unchanged
-#     re-run, backup + working rollback, tracked ops tool end to end). Scratch paths only. -------
-python3 -m pytest tests/test_live_manifest_finalizer.py -q
-
-# --- C3a live-credential tools (14 nodes: pin identity across three independent readers plus a
-#     real handshake, four-SAN deployment invocation, no-rotate re-run, refusal + reversible
-#     rotation, half-installed pair, dry runs, address parity with live_auth, 15 malformed-input
-#     refusals, failed-generation cleanup, one-payload secrecy, served-vs-on-disk mismatch,
-#     pre-send refusals via a curl stub, library vocabulary parity). Scratch paths only; the one
-#     server it starts is loopback-only on an ephemeral port. -----------------------------------
-python3 -m pytest tests/test_live_deployment_credentials.py -q
-
-# --- C3a tools by hand (scratch paths; never the deployed live dir) --------------------------
-ops/generate-live-tls.sh --dry-run --dns moss-live.fixture.invalid --ip 10.11.12.13 \
-  --cert /tmp/moss-tls/live.crt --key /tmp/moss-tls/live.key
-# The D2 invocation - SPENT in iteration 18, and it needed `--rotate` because the staged pair had
-# no tailnet SAN. Re-running it WITHOUT --rotate now prints `unchanged:` and rotates nothing, which
-# is the safe way to re-assert the pin; never add --rotate again unless a name really changes,
-# because rotation invalidates every pairing payload and every pin a Mac has stored.
-#   ops/generate-live-tls.sh --dns ga0-alienware-rtx4070ti.tailnet.aisight.us \
-#     --dns ga0-alienware-rtx4070ti.local --ip 100.64.0.8 --ip 192.168.68.38 \
-#     --common-name ga0-alienware-rtx4070ti.tailnet.aisight.us \
-#     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt" \
-#     --key "$HOME/.local/share/moss-transcribe-diarize/live/live.key"
-# Rollback for that rotation, still valid until the backups are removed:
-#   L="$HOME/.local/share/moss-transcribe-diarize/live"
-#   rm -f "$L/live.crt" "$L/live.key" \
-#     && mv "$L/live.crt.backup-20260728T044132Z" "$L/live.crt" \
-#     && mv "$L/live.key.backup-20260728T044132Z" "$L/live.key"
-# D4 mints exactly once, on the host, and the payload line is never redirected to a file:
-#   ops/live-pair.sh --url https://127.0.0.1:7861 \
-#     --cert "$HOME/.local/share/moss-transcribe-diarize/live/live.crt"
-
-# --- C3b two-service deployment bundle (30 nodes: recorded batch argv, complete live argv from
-#     the tracked template, every live variable required, live-off leaks no live flag, batch-port
-#     and batch-runs-dir refusals, 8 malformed ports, 4 non-binary enablements, template/adapter
-#     variable parity, gitignored host profile, unit layout + one deployment root, installer
-#     default/refusal/explicit-live/backup-rollback/dry-run, doc coverage, Windows two-port guard).
-#     Scratch paths only; `systemctl` and `getent` are stubbed, no unit is installed for real. ----
-python3 -m pytest tests/test_live_service_deployment.py -q
-
-# --- C3b tools by hand ------------------------------------------------------------------------
-# `install-services.sh` is Linux-only and stops on MacStudio at
-# `error: required tool not found on PATH: systemctl`. Exercise it through the test file, which
-# stubs systemctl/getent; the real invocation belongs to D3 on the host.
-
-# --- B5 packaging tools (9 nodes: entitlement drop, reproducible bundle, install-location
-#     refusal, untouched idempotent install, backup + working rollback, tampered-bundle refusal,
-#     three dry-run plans, keychain refusals). Scratch paths only; no keychain/app is mutated. ---
-python3 -m pytest tests/test_macos_packaging_tools.py -q
-
-# --- B5 tools by hand (build output is gitignored; ad-hoc signing needs no identity) --------
-macos/scripts/build-app.sh --configuration debug --no-build \
-  --output /tmp/moss-build --sign-identity -
-macos/scripts/install-app.sh --bundle /tmp/moss-build/MOSSCapture.app \
-  --cli /tmp/moss-build/mtd-capture --applications /tmp/moss-apps --bin-dir /tmp/moss-bin
-macos/scripts/bootstrap-signing-identity.sh --dry-run   # never run for real on MacStudio
-# Real signing identity + install belong to E1/E2 on m4mbp, not to this host.
-
-# --- E1: the signing identity on m4mbp (SPENT in iteration 21) --------------------------------
-# Run from the m4mbp checkout; re-running is safe and prints `unchanged:` without touching the
-# keychain, the password file or the search list.
-#   ssh -o BatchMode=yes ga0@m4mbp 'bash -s' <<< 'cd <checkout> && \
-#     macos/scripts/bootstrap-signing-identity.sh'
-# Rollback (rehearsed for real this iteration; `delete-keychain` also removes the search-list entry):
-#   security delete-keychain "$HOME/Library/Keychains/moss-signing.keychain-db" \
-#     && rm -f "$HOME/.config/moss-capture/signing-keychain.password"
-# DO NOT apply it after E2b/E3: the re-created identity has a different leaf, so the DR changes and
-# the human's TCC grants die with it.
-# Verify the identity by codesign, NEVER by `security find-identity -v -p codesigning` (0 valid for
-# a self-signed leaf). A fresh SSH session must unlock first or codesign says errSecInternalComponent:
-#   security unlock-keychain -p "$(cat "$HOME/.config/moss-capture/signing-keychain.password")" \
-#     "$HOME/Library/Keychains/moss-signing.keychain-db"
-#   codesign --force --identifier com.alphasight.moss.capture --sign 'MOSS Capture Local Signing' <bin>
-#   codesign -d -r- <bin> | tail -1   # must be the DR recorded in the signing-identity block
-
-# --- E2b: build, sign and install on m4mbp (SPENT in iteration 22; RE-RUN as G6 in iteration 7 of
-#     run 20260728-072601, which is what put G1+G2+G3 into the product) -------------------------
-# The G6 re-run's own rollback, still valid while these backups exist (they are the ONLY copy of the
-# pre-G6 bytes - SwiftPM is not byte-reproducible here):
-#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-20260728T085551Z' '/Applications/MOSSCapture.app'
-#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-20260728T085551Z' '/Users/ga0/.local/bin/mtd-capture'
-# A redundant pre-copy also exists at /tmp/moss-g6-prebackup (volatile; `rm -rf` it any time).
-# DR satisfaction, positively and negatively - note the requirement has NO `designated => ` prefix:
-#   codesign --verify -R='identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"' /Applications/MOSSCapture.app
-# The one-line proof the ATS fix is in the PRODUCT (errors before G6, prints the G1 shape after):
-#   plutil -extract NSAppTransportSecurity xml1 -o - /Applications/MOSSCapture.app/Contents/Info.plist
-# Run from the m4mbp checkout. build-app.sh writes only under .build/product (it refuses an install
-# location) and unlocks the signing keychain itself, so no manual unlock is needed.
-#   macos/scripts/build-app.sh --dry-run  &&  macos/scripts/build-app.sh --configuration release
-#   macos/scripts/install-app.sh --dry-run  &&  macos/scripts/install-app.sh
-# Re-running either prints `unchanged:` — but only while the binary is unrebuilt. A rebuild changes
-# the bytes (SwiftPM is not reproducible here) and therefore always takes the replacement path.
-# Rollback for a FIRST install (what iteration 22 recorded and rehearsed):
-#   rm -rf '/Applications/MOSSCapture.app' && rm -f '/Users/ga0/.local/bin/mtd-capture'
-# Rollback for a REPLACEMENT, printed by the tool with its own <utc> stamp — note it backs up the
-# CLI too, and that backup file is left behind for you to remove:
-#   rm -rf '/Applications/MOSSCapture.app' && mv '/Applications/MOSSCapture.app.backup-<utc>' '/Applications/MOSSCapture.app'
-#   rm -f  '/Users/ga0/.local/bin/mtd-capture' && mv '/Users/ga0/.local/bin/mtd-capture.backup-<utc>' '/Users/ga0/.local/bin/mtd-capture'
-# DO NOT apply the install rollback after E3 without a reason: re-installing is safe (the DR is
-# stable) but each replacement resets the bundle's inode, and only the DR keeps the grants.
-# The PRD's "Signed app installed" clause, re-assertable read-only at any time:
-ssh -o BatchMode=yes ga0@m4mbp 'ls -ld /Applications/MOSSCapture.app; \
-  codesign -dv /Applications/MOSSCapture.app 2>&1 | sed -n "2p"; \
-  codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1; \
-  codesign --verify --strict /Applications/MOSSCapture.app && echo bundle_ok'
-# The CLI is on the human's interactive PATH but NOT on the non-interactive SSH PATH — over SSH
-# always call it as /Users/ga0/.local/bin/mtd-capture.
-
-# --- E3: verify the TCC grants READ-ONLY (never write TCC; see the TCC-verification contract) ----
-# The user TCC.db opens over plain SSH without Full Disk Access. Before E3 both queries print
-# nothing; the PRD's "Permissions granted" clause is green when the first prints exactly two rows
-# with auth_value 2 and the second decodes to the E1 designated requirement.
-ssh -o BatchMode=yes ga0@m4mbp 'DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"; \
-  sqlite3 "$DB" "select service,client,client_type,auth_value from access \
-    where client=\"com.alphasight.moss.capture\" order by service;"'
-#   expect: kTCCServiceAudioCapture|com.alphasight.moss.capture|0|2
-#           kTCCServiceMicrophone|com.alphasight.moss.capture|0|2
-#   auth_value 2 = allowed, 0 = denied. System Audio Recording IS kTCCServiceAudioCapture.
-ssh -o BatchMode=yes ga0@m4mbp 'DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"; \
-  T=$(mktemp -d /tmp/moss-csreq.XXXXXX); \
-  sqlite3 "$DB" "select writefile(\"$T/req.bin\", csreq) from access \
-    where client=\"com.alphasight.moss.capture\" and service=\"kTCCServiceMicrophone\";" >/dev/null; \
-  csreq -r "$T/req.bin" -t; rm -rf "$T"'
-#   expect: identifier "com.alphasight.moss.capture" and certificate leaf = H"e118d874377746c4bd25beb8252bb84302b73e72"
-#   That decode is the proof the grant keys on the DR, so a byte-different rebuild keeps it.
-# Sanity-check the reader itself before trusting an empty result — a 0-row answer and a broken
-# query look identical: `sqlite3 "$DB" "select count(*) from access;"` must print a few hundred.
-
-# --- E3: the operator's own checks (run in the GUI session, not over SSH) ---------------------
-#   pgrep -x MOSSCaptureApp                 # the app is LSUIElement: no window, no Dock icon
-#   ls -l /tmp/moss-capture-$(id -u)/control.sock
-#   /Users/ga0/.local/bin/mtd-capture status
-# A hung `status` while a prompt is on screen is expected: serve() is a serial accept loop and the
-# client has no timeout. Never kill the app to "fix" it.
-
+# --- B1/B2/B3/B4/C3c Swift --filter recipes and the C2/C3a/C3b/B5 pytest slices and by-hand tool
+#     invocations are RETIRED to progress.txt (closed phases; the full gate below runs them all).
+#     The one warning worth keeping: NEVER pass `--rotate` to ops/generate-live-tls.sh again — it
+#     invalidates every pairing payload and every pin a Mac has stored. -----------------------------
+# --- E1 (signing identity), E2b (build/sign/install on m4mbp) and E3 (the TCC read-only checks and
+#     the operator's GUI steps) are SPENT and RETIRED to progress.txt. E3 is closed forever; the
+#     read-only TCC check that remains live is in the Deployed-reality TCC block. The m4mbp
+#     rebuild+reinstall recipe, which is the only one of these still re-runnable, is kept below. ----
 # --- Phase A locality is historical from iteration 6: check the frozen checkpoint, not the tip
 git diff --name-only af3ac3667393a0411616f52f76339eff01dc13e2 1ede498 --   # == the 13 allowed paths
 
@@ -1049,57 +1218,32 @@ curl -sk https://100.64.0.8:7861/api/live/descriptor | head -c 200
 ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOSSCapture.app; \
   codesign -dv /Applications/MOSSCapture.app 2>&1 | head -5; codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1'
 
-# --- host manifest finalization (SPENT in iteration 18/D2; re-run only to re-prove idempotence) --
-# MUST use the deployment venv python, not `python3` - see the open defect above. Re-running is
-# safe: it prints `unchanged:` and does not touch the inode.
+# --- host manifest finalization. MUST use the deployment venv python, not `python3` - see the
+#     open defect above. SINCE ITERATION 17 the two matcher thresholds are REQUIRED flags
+#     (candidate 63): omitting them is an argparse rc=2 refusal, not silent inheritance of
+#     whatever the untracked host provisional holds. Re-running with the SAME values prints
+#     `unchanged:` and does not touch the inode; re-running with the ALBUM values on the
+#     current host will REWRITE (the host carries the pre-album 0.5/0.2), print a
+#     `rollback: mv <backup> <output>` line first, and change identity_config_hash,
+#     combined_config_hash and the provider manifest hash. That change is the signature of
+#     the recalibration - a redeploy expecting 61d97ffe… is checking it did NOT happen.
 printf '%s\n' \
   'set -euo pipefail' \
   'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
-  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000' |
+  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 --min-match-score 0.35 --min-match-margin 0.1' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
     "wsl.exe -d Ubuntu -- bash -s"
+# Run it --dry-run FIRST and read the two `plan: set identity_config.…` lines and the
+# `evidence: identity_min_match_*` lines; they are what makes the calibration reviewable.
 
 # --- host manifest admission by the runtime's own readers (read-only; re-run any time) ----------
 #   from_manifest -> _endpoint_config(payload["endpoint_config"]) and _bounds(payload["bounds_config"])
 #   (they take their own sub-mappings, NOT the whole payload), then _preflight_payload(path)
 #   Expect available=True, failures=[], manifest_hash 61d97ffef1bbdc0d4278c0fd719d5d31b0ac5f69e1654573ada5091653fecb95
 
-# --- H3 + H1 regression nodes, one file, 10 passed (~3.5 s). H3 (5): the real WebRtcSpeechProvider
-#     under the real coordinator - unaligned mixed frames incl. the host's 5808, the carried tail
-#     decided for real on completion, a 1-sample accepted range, the shipped 8000-sample control,
-#     admission refusal. H1 (5): the real vLLM response validation under the real runtime - F0's
-#     leading_silence span committed empty, a pure-silence meeting stopping with exact accounting,
-#     all three no-speech answers, a decoder that returns garbage without raising, and a decoder
-#     that failed staying terminal. The aligned control passes before AND after H3's fix. ----------
+# --- the H3/H1/J1-J4 per-node counts and their semantic-revert red-prove recipes are RETIRED to
+#     progress.txt. The file itself is still the live seam suite (60 nodes): ------------------------
 python3 -m pytest tests/test_live_pipeline_seams.py -q
-# Red-prove either half without touching git history (restore is sha256-verified). H3 is one file
-# (live_provider_bundle.py -> 4 failed / 1 passed); H1 is five (vllm_runner, live_adapters,
-# live_coordinator, live_session, live_service_runtime -> its 5 nodes fail, H3's 5 still pass):
-#   for f in $FILES; do cp "$f" "$TMP/$(basename $f)"; git show HEAD:"$f" > "$f"; done
-#   python3 -m pytest tests/test_live_pipeline_seams.py -q
-#   for f in $FILES; do cp "$TMP/$(basename $f)" "$f"; done   # then compare sha256 both ways
-# J1 (iteration 9) adds 11 nodes to the same file -> 24 passed (~3.6 s). Red-prove it the same way
-# with FILES = live_session.py live_identity.py live_adapters.py; the new leaf live_span_bounds.py
-# is untracked at HEAD, so it survives the restore and the three seam nodes fail for the real
-# reason (3 failed / 21 passed), rather than the file failing to import.
-# J2 (iteration 10) adds 8 more -> 32 passed (~3.6 s). Red-prove it by restoring ONLY
-# live_coordinator.py: UNATTRIBUTED_SPEAKER and unattributed_transcript live in live_session.py and
-# live_identity.py, so restoring those too would break the import instead of the behaviour. The
-# blast radius is five nodes across three files, so run them together:
-#   python3 -m pytest tests/test_live_pipeline_seams.py tests/test_live_coordinator.py \
-#           tests/test_live_replay.py -q            # 5 failed / 36 passed before, 41 passed after
-# J3 (iteration 11) adds 12 more -> 44 passed (~3.6 s). Red-prove it by restoring ONLY
-# vllm_runner.py: TransientTranscriptionError, LiveProviderTransientError and the coordinator's three
-# policy constants are all imported by the test module, so restoring their files breaks collection
-# instead of behaviour. With no transient classification at the source the whole chain reverts, so
-# this one restore reds all seven transient nodes (7 failed / 37 passed) while the four permanent
-# status rows stay green - which is also the proof that the 400/401/404 path was never touched.
-# J4 (iteration 12) adds 6 more -> 50 passed (~3.7 s), plus 1 node in tests/test_live_identity.py
-# (8 passed). Red-prove it by restoring ONLY live_service_runtime.py: the test module imports
-# CanonicalSubmission from live_session, so restoring that one is a collection error rather than a
-# red. The runtime holds both halves of J4 that the nodes read - the canonical_processed payload and
-# _failure_from_exception - so this single restore reds exactly the six (6 failed / 44 passed).
-
 # --- H blockers 2 and 3, offline and deterministic (no server, no GPU, no network, ~0.4 s each).
 #     Defaults are the deployed manifest values; rc=3 means reproduced, rc=0 means survived.
 #     Every case below is rc=0 from H2 (iteration 3) on; `--session-hard-cap` is retired and only
@@ -1124,50 +1268,8 @@ python3 scripts/ralph-afk/view-reader-probe.py     # live-pipeline-probe.py's Co
 # view-reader-probe.py caught `self._stop = threading.Event()` shadowing threading.Thread._stop,
 # which threading.Thread.join() calls internally: every run would have died at reader.join().
 
-# --- H blocker 4: the decode -> identity seam, ON THE HOST (iteration 7) ------------------------
-#     Reads the deployed manifest, sends ONE inference request to the same vLLM endpoint the
-#     service uses, and loads a second copy of the ONNX identity encoder (CPU). It mutates nothing:
-#     no session, no auth state, no service. rc=0 means the span would publish, rc=4 means it
-#     would make the session terminal. Ship it to the host on stdin (see the remote-quoting gotcha)
-#     and run it with the SERVICE'S venv from the deployed checkout:
-#       V="$HOME/.local/share/moss-transcribe-diarize/venv"
-#       L="$HOME/.local/share/moss-transcribe-diarize/live"
-#       cd /mnt/d/Coding/MOSS-Transcribe-Diarize
-#       "$V/bin/python" /tmp/live-identity-seam-probe.py \
-#         --manifest "$L/live-provider-manifest.json" --wav <one span of 16 kHz mono audio> \
-#         --vllm-base-url http://127.0.0.1:8000/v1 \
-#         --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-timeout 300
-#     It runs the preparation twice — with the manifest's real evidence provider and with none —
-#     so the verdict names which side of the evidence call the defect is on. Measured 2026-07-28:
-#       span 1 rebuilt from the pipeline probe's own schedule (2.5 s, speech to the end)
-#         -> "[0.11][S01] Good morning everyone. This is the microphone.[2.51]"
-#         -> failed/timestamp_outside_span, rc=4, both with and without evidence
-#       the same audio + 0.5 s trailing silence (3.0 s span) -> "[0.00 ... 2.54]" -> prepared, rc=0
-#       golden.wav (2.1 s) -> generated_tokens 0, transcript "" -> H1's empty path, handled
-#     Rebuild that span-1 audio on MacStudio by importing live-pipeline-probe.py's own
-#     build_schedule/build_lane_track, shifting the system lane by the --lane-offset-ms you used,
-#     mixing with live_mixer's own _HEADROOM_GAIN/_LIMITER_* constants, and slicing [12208:52208].
-#     Delete the WAV from the host afterwards; audio does not belong in /tmp on the server.
-
-# --- H blocker 4, the BOUNDARY SWEEP (iteration 8). The single-span probe says *that* a timestamp
-#     can land past its span; it cannot say how far or how often, and those two numbers are what
-#     the fix has to be chosen against. `build-span-sweep.py` cuts N spans out of the pipeline
-#     probe's OWN mixed timeline - same schedule, voices, lane offset and mixer arithmetic, all
-#     imported rather than restated - so a cut is the audio the service would have mixed, by
-#     construction. Cuts are START:COUNT[:PAD] in samples; PAD appends silence, the control that
-#     moves speech off the span end. The build is deterministic: two independent runs of the same
-#     arguments produced the same `mixed_sha256` and the same per-cut sha256.
-python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/moss-span-sweep \
-  --report /tmp/moss-span-sweep/index.json --seconds 20 --lead-seconds 1.0 \
-  --lane-offset-ms system=137 --cut 12208:40000 --cut 12208:40000:8000   # repeat --cut per span
-# A stride sweep is one bash line: for k in $(seq 0 32); do CUTS+=(--cut $((12208+k*8000)):40000); done
-# (zsh does NOT word-split an unquoted "$CUTS" string - build an array and run it under `bash -c`.)
-# Then ship the wavs and live-identity-seam-probe.py to the host in ONE stdin script (a base64
-# heredoc per file), run the probe per wav under the service venv, `rm -f "$D"/*.wav` in the SAME
-# invocation, and print the reports. ~5-25 s per span (ONNX encoder load dominates the short ones).
-# GOTCHA: `sha256sum "$D"/*.wav | head -3` under `set -o pipefail` aborts the whole script with
-# rc=141 - SIGPIPE. Write the digests to a file and count lines instead.
-
+# --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
+#     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
 # --- J5d: the third amendment's gate, GREEN in iteration 16. Re-runnable end to end; each run
 #     costs one pairing code, one device (REVOKE IT) and one session, and no service restart. ------
 # 1. offline half first, because it mutates nothing (all seven cases above -> rc=0).
@@ -1223,51 +1325,9 @@ python3 scripts/ralph-afk/live-lane-refusal-probe.py --json /tmp/ralph-lane-refu
 # `import tests.test_live_api` fails with ModuleNotFoundError) to reuse the tracked payload
 # builders - restating them here would let the probe drift from the shapes the suite asserts.
 
-# --- token accounting for a live transcript, on the host (iteration 16; read-only, no GPU work,
-#     no state touched, ~2 s for 78 spans). This is how candidate 50's cap was derived, and how any
-#     later claim about tokens per second of audio must be re-derived - characters are a different
-#     quantity and would be a guess. The resident vLLM answers `/tokenize` on its ROOT, not /v1. ---
-#   POST http://127.0.0.1:8000/tokenize
-#     {"model": "OpenMOSS-Team/MOSS-Transcribe-Diarize", "prompt": <text>, "add_special_tokens": false}
-#     -> {"count": n, "tokens": [...]}
-#   Calibrate first: the empty string must answer 0 with AND without special tokens, or the counts
-#   carry a chat template nobody asked for. Ship the transcripts to the host base64'd on stdin (the
-#   remote-quoting gotcha applies) and print one JSON line back; the committed spans come out of any
-#   run's snapshot.tsv at `snapshot.session.committed[*].{transcript,start_sample,end_sample}`.
-#   Note what is being counted: the COMMITTED (relabeled) transcript, not the decoder's raw output.
-#   They differ only in the speaker tag, which is why it is a sound proxy for a token budget.
-
-# --- the decode-cap latency probe (iteration 24). Answers what D-c's token cap COSTS a runaway,
-#     which no live run can answer until a span happens to run away. Induces the runaway instead.
-#     Read-only on deployed state: no session, no device, no auth write, no restart - it sends
-#     inference requests to the resident vLLM, like live-identity-seam-probe.py. ~35 s.
-#     rc 0 runaway reproduced AND capped AND faster / 3 no runaway (INCONCLUSIVE, not a pass) /
-#     4 the cap did not stop generation / 2 could not run.
-# 1. BUILD THE AUDIO FIRST, and do NOT reach for golden.wav: it decodes to ZERO tokens (the fence
-#    already recorded that under H blocker 4) so every condition comes back empty and the run is
-#    wasted. Use a real-speech span, byte-deterministically:
-python3 scripts/ralph-afk/build-span-sweep.py --out-dir /tmp/i24-sweep \
-  --report /tmp/i24-sweep/index.json --seconds 20 --lead-seconds 1.0 \
-  --lane-offset-ms system=137 --cut 92208:40000 --cut 268208:40000
-#    sha256 must still be 844e6eff… / 038cf855… (re-verified in iteration 24, two runs apart).
-# 2. Ship probe + wav base64'd on ONE stdin script, run under the SERVICE venv from the deployed
-#    checkout, and `rm -f "$D"/*.wav` in the SAME invocation - audio does not belong in /tmp there.
-#      "$V" probe.py --wav span.wav --checkout /mnt/d/Coding/MOSS-Transcribe-Diarize \
-#        --span-samples 40000 --repeats 3 --extra-field temperature=2.0 --extra-field seed=20260728
-#    The seed makes the capped run a true PREFIX of the uncapped one, so the pair is comparable.
-# 3. THE TRIGGER IS MEASURED, NEVER ASSUMED. There is no `ignore_eos` and no `min_tokens` on this
-#    endpoint (read off its own /openapi.json). Surveyed in iteration 24 against control 49 tokens:
-#      temperature=2.0                      -> 2048  RUNS AWAY  <- the only one that works
-#      repetition_penalty=0.5               -> 0     SUPPRESSES generation entirely
-#      frequency_penalty -2.0/-1.0, presence_penalty -2.0, both, repetition_penalty 0.9 -> 27
-#      repetition_penalty=1.05              -> 49    unchanged
-#    Re-answer it with `--survey --candidate 'label:field=value[,field=value]'` if the engine moves.
-# 4. COUNT TOKENS AT THE ENGINE SEAM, NOT THE PRODUCT'S. `RunnerBoundedWavInference` maps an
-#    unparseable answer onto H1's empty path and reports **0** generated tokens however long the
-#    engine ran, so a genuine 8.2 s runaway scores as "0 tokens, no runaway". The probe reads
-#    `usage.completion_tokens` off the response itself and flags `product_lost_the_count`.
-#    Measured iteration 24 on 77e0014: 2048 tok / 8.129 s uncapped vs 286 tok / 1.074 s capped.
-
+# --- the /tokenize accounting recipe and the decode-cap latency probe are RETIRED to progress.txt.
+#     D-c is landed, deployed and measured (7.571x on the deployed engine); the cap derivation is
+#     re-checked on every run by `cap_derivation_holds` in live-pipeline-probe.py's report. --------
 # --- secret-hygiene scan (lives with the tracer spike, not in scripts/ralph-afk) ----------
 bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-044-real-uds-tracer/leak-scan.sh"
 
@@ -1321,12 +1381,6 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # skips its EXIT trap and strands a worktree holding `main`, which then blocks the retry. Recover
 # with: git -C <wt> merge --abort && git worktree remove --force <wt>
 
-# --- D1: publish the reviewed merge --------------------------------------
-# SPENT in iteration 17. `git push origin main` fast-forwarded 163e969..f9285d6 on the AlphaSight
-# fork (118 commits) and the host is detached at f9285d6. The push is one-way - the PRD forbids
-# force-push - so do not re-run any of this. `upstream` is OpenMOSS: never push there.
-# Standing rollback for the host checkout, still valid until D3 changes the host:
-#   git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969
 # --- M6c: publish + redeploy the SIXTH merge (SPENT in iteration 20 of run 20260728-181020) ------
 # The push fast-forwarded fc7097d..77e0014; never re-run it and never force-push. The K5c shape
 # again (server restart AND a Mac rebuild+reinstall). Everything K5c's block below says still holds;
@@ -1353,26 +1407,6 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 #     pipeline fails, `set -e` aborts, and every later check silently never runs.
 #   * `live-runs/` is /mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs (the unit's --runs-dir), NOT
 #     under ~/.local/share. A "0 entries" answer from a nonexistent path is not evidence.
-# --- K5c: publish + redeploy the FIFTH merge (SPENT in iteration 6 of run 20260728-181020) -------
-# The push fast-forwarded 6a540fe..fc7097d; never re-run it and never force-push. This was the first
-# NOT-server-only redeploy: server restart AND a Mac rebuild+reinstall. Server side, J5c's order:
-#   cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git fetch origin main --quiet
-#   git checkout fc7097d0c729ee9a96b8bf95878582e07b5b1145   # rollback: checkout 6a540fe… + restart
-#   <manifest admission check, under the venv python, AFTER the checkout>
-#   systemctl --user restart moss-live-web.service
-#   for i in $(seq 1 40); do curl -sk … https://127.0.0.1:7861/live …; done   # POLL; 200 at 8 s
-# PARITY WITNESS WHEN THE MERGE ADDS NO NEW FILE (J5c's rule does not apply): hash each CHANGED file
-# on the host and compare against BOTH `git show <new>:<f>` and `git show <old>:<f>`. Matching the new
-# hash while differing from the old is the same discriminator a new file gives you. Hashing an
-# unchanged file proves nothing. Here: live_helper_failure.py 728f26ce… (old df9a1428…),
-# live_service_runtime.py 832b1878… (old fba8c4c1…), live_v2_session.py 9b145d2e… (old c961f2d6…).
-# Prove the DEPLOYED code carries K3 under the service's own venv (read-only, re-runnable):
-#   LiveHelperTerminalRecord(session_id=…, reason=…, lane_failures={…}).to_dict()["lane_failures"]
-#   "lane_failure_codes" in inspect.signature(LiveV2SessionRegistry.expire).parameters
-#   "detail" in inspect.signature(LiveServiceRuntime.abort).parameters
-#   and the journal line under the DEPLOYED logging config (the K3 one-liner above), which must print
-#   `live helper terminal: session=… reason=… lane.<lane>=<code>` — that exact string is what K5d
-#   greps the host journal for.
 # --- m4mbp rebuild + reinstall (the half J5c did NOT need). Stop any running app FIRST or the
 #     re-read interrogates the old product: pkill -f '/Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp'
 #   git fetch alphasight main --quiet && git checkout fc7097d…   # rollback: checkout 6a540fe…
@@ -1389,32 +1423,8 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # witness — a vocabulary absent from the backup binary and present in the new one:
 #   strings /Users/ga0/.local/bin/mtd-capture | grep -c '^sessionRefusal$'          # 3 (K4)
 #   strings /Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z | grep -c '^sessionRefusal$'  # 0
-# --- J5c: publish + redeploy the fourth merge (SPENT in iteration 15 of run 20260728-112922) -----
-# The push fast-forwarded b817871..6a540fe; never re-run it and never force-push. The host side, in
-# THIS order (the admission check AFTER the checkout, so it exercises the code about to start):
-#   cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git fetch origin main --quiet
-#   git checkout 6a540fe086cf819ba0e07a948da9fec0766202c3   # rollback: checkout b817871…
-#   <the pre-redeploy manifest admission check below, under the venv python>
-#   systemctl --user restart moss-live-web.service          # rollback: restart after the checkout
-#   for i in $(seq 1 40); do curl -sk … https://127.0.0.1:7861/live …; done   # POLL; 200 at 9 s
-# Parity witness: hash a file that DID NOT EXIST at the previous SHA (here
-# moss_transcribe_diarize/app/live_span_bounds.py, sha256 1b299fd1…) alongside a pre-existing one —
-# only the new file distinguishes "the new tree landed" from "a stale checkout that agrees".
-# Prove the DEPLOYED code carries J1-J4 under the service's own venv, and exercise J1 with H4d's
-# input rather than a hasattr (read-only, no server needed, re-runnable any time):
-#   J1: from moss_transcribe_diarize.app.live_span_bounds import span_segments
-#       span_segments("[0.11][S01] Good morning everyone. This is the microphone.[2.51]",
-#                     sample_count=40000) -> [(0.11, 2.5)]        # clamped, not refused
-#   J2: live_session.UNATTRIBUTED_SPEAKER == "S00"; hasattr(LiveSession,"submit_unlabeled_canonical")
-#       live_identity.unattributed_transcript("[0.11][S01] hello[2.51]", sample_count=40000)
-#         -> '[0.11][S00]hello[2.5]'
-#   J3: issubclass(TransientTranscriptionError, RuntimeError);
-#       issubclass(LiveProviderTransientError, LiveProviderError);
-#       live_coordinator.DECODE_ATTEMPTS_PER_SPAN == 2; MAX_CONSECUTIVE_UNANSWERED_SPANS == 3
-#   J4: CanonicalSubmission(submitted=False, refusal=None) raises ValueError;
-#       LiveProviderError("x", detail={"span_id": 1}).detail == {"span_id": 1}
-# NOTE `_preflight_payload` returns a **dict**, not an object: use r["available"], r["failures"],
-# r["manifest_hash"] — `r.available` is an AttributeError, not a failed check.
+# --- the J5c and K5c and D1 publish/redeploy recipes are RETIRED to progress.txt; M6c above is the
+#     kept template (it is the strictly larger one: restart AND Mac rebuild). ----------------------
 # --- m4mbp: `origin` IS NOT THE ALPHASIGHT FORK THERE. The names are INVERTED relative to this
 #     host: on m4mbp `origin` = OpenMOSS upstream and the fork is `alphasight`. `git fetch origin`
 #     there fetches the wrong repo and the checkout then fails `fatal: unable to read tree (<sha>)`,
@@ -1429,71 +1439,8 @@ ssh -o BatchMode=yes ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Project
 # --- m4mbp cannot reach the batch service and that is TOPOLOGY, not a regression: m4mbp is
 #     192.168.1.240, the batch address is 192.168.68.38 (different LAN, 100% loss). The hosts meet
 #     only on the tailnet 100.64.0.4 -> 100.64.0.8. Measure the batch clause from MacStudio.
-# --- H4c: publish + redeploy the third merge (SPENT in iteration 6 of run 20260728-112922) -------
-# The push fast-forwarded 317df4d..b817871; do not re-run it and never force-push. The host side,
-# in this exact order (pipe as a script on stdin per the remote-quoting gotcha):
-#   <the pre-redeploy manifest admission check below>          # BEFORE the restart, not after
-#   cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git fetch origin main --quiet
-#   git checkout b817871414fcc8f609c6f5eb2898ec2957c7768c      # rollback: checkout 317df4d…
-#   systemctl --user restart moss-live-web.service             # rollback: restart after the checkout
-#   for i in $(seq 1 30); do ... curl -sk https://127.0.0.1:7861/live ... done   # POLL, ~11 s
-# Prove the DEPLOYED code carries the fixes rather than trusting the SHA — run under the service's
-# own venv, from the deployed checkout (read-only, no server needed, re-runnable any time):
-#   "$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" -c '...'
-#     H2: "hard_cap_samples" not in inspect.signature(LiveSession.__init__).parameters,
-#         not hasattr(LiveSession, "_freeze_hard_cap_spans"),
-#         hasattr(LiveServiceRuntime, "_require_one_span_cap")
-#     H1: issubclass(EmptyTranscriptionError, RuntimeError), hasattr(LiveSession, "submit_empty_canonical")
-#     H3: WebRtcSpeechProvider(vad=lambda pcm, rate: False, frame_samples=5808) raises
-#         LiveProviderBundleAdmissionError, while frame_samples=160 constructs.
-#         The constructor is keyword-only and `vad=` is REQUIRED — omitting it raises TypeError,
-#         which looks like a refusal and is not one. Assert the exception TYPE, never just "raised".
-# Four-way SHA check — the PRD clause in full. **GREEN 4/4 at
-# 77e0014ac2a1eee1edb29b109024807e9489daa5 since iteration 20 of run 20260728-181020 (M6c)**, all
-# four checkouts. It was 4/4 at fc7097d from K5c, 4/4 at 6a540fe from J5c, 3/4 at b817871 (m4mbp
-# offline through H4c), and green at 317df4d / f9285d6 before that. The row goes RED by construction
-# between a merge and its redeploy — say so rather than carrying the old green. Re-run it read-only
-# any time — all four lines must print the same 40 hex characters:
-git rev-parse main; git ls-remote origin refs/heads/main | cut -f1
-printf '%s\n' 'cd /mnt/d/Coding/MOSS-Transcribe-Diarize && git rev-parse HEAD' |
-  ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local "wsl.exe -d Ubuntu -- bash -s"
-ssh -o BatchMode=yes ga0@m4mbp 'cd /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize && git rev-parse HEAD'
-ssh -o BatchMode=yes ga0@m4mbp \
-  'git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize rev-parse HEAD'
-
-# --- E2a: the m4mbp checkout (SPENT in iteration 20) -----------------------------------------
-# Fences first (HEAD == 40cf854, branch main, clean), then remote + fetch + detached checkout.
-# `main` and `origin` (OpenMOSS) are never touched, so the rollback moves only HEAD:
-#   git -C /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize checkout main
-#   git -C … remote remove alphasight        # optional cleanup of the added remote
-# Re-running the checkout is a no-op; re-adding the remote prints `unchanged:`. Verify with
-# HEAD/tree/clean/159-files plus independent `shasum -a 256` of the reviewed tools against this
-# host — do not treat `git status` alone as content proof of a cross-host copy.
-
-# --- D3: install and start the live service (SPENT in iteration 19) --------------------------
-# The profile is host-local and untracked. It was written with `$HOME` expanded AT WRITE TIME, so
-# the file itself holds literal absolute paths (systemd expands nothing). Re-creating it is safe
-# only if the live unit is stopped first; `install-services.sh` refuses --with-live without it.
-#   /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env  ->  MOSS_LIVE_ENABLED=1,
-#   MOSS_WEB_PORT=7861, MOSS_RUNS_DIR=<checkout>/live-runs, and four absolute paths under
-#   /home/devcontainers/.local/share/moss-transcribe-diarize/live/ plus
-#   MOSS_LIVE_HELPER_LEASE_SECONDS=30 (key set identical to the tracked example).
-# Spent invocations, in order:
-#   ops/install-services.sh --with-live --dry-run     # plan/rollback/evidence, mutates nothing
-#   ops/install-services.sh --with-live               # installs + enables + starts the live unit
-#   powershell: & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1' -IncludeLive
-# Re-running either is safe and is the idempotence proof: the installer prints three `unchanged:`
-# lines and `evidence: restart_required=none`; the PowerShell script re-asserts both portproxy rows.
-# Standing rollback (still valid; apply in this order):
-#   netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=7861
-#   Remove-NetFirewallRule -Name 'MOSS-Transcribe-Diarize-Live'
-#   & 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1'   # task back to batch-only
-#   systemctl --user disable --now moss-live-web.service
-#   rm -f "$HOME/.config/systemd/user/moss-live-web.service" && systemctl --user daemon-reload
-#   rm -rf /mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs
-#   rm -f "$HOME/.local/share/moss-transcribe-diarize/live/live-auth.json"
-#   rm -f /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env
-
+# --- H4c's redeploy, E2a's m4mbp checkout and D3's live-service install are SPENT and RETIRED to
+#     progress.txt. All three are one-time steps whose result is in Deployed reality. --------------
 # --- F4a: the rollback rehearsal (SPENT in iteration 8; re-runnable, and re-run it exactly in this
 #     order — see the rollback-rehearsal block for why ExecStart forces it). Everything below is on
 #     the server; pipe each as a script on stdin per the remote-quoting gotcha. -------------------
@@ -1533,30 +1480,8 @@ systemctl --user enable --now moss-live-web.service
 # Expect exactly tests/test_live_service_deployment.py:52-62 with {state} and DEPLOYMENT_ROOT
 # expanded, and no --live flag. Re-run it after D3 edits any env file.
 
-# --- F1 canary on the real hosts (RUN in iteration 8 of run 20260728-181020; re-runnable, ~2 min,
-#     costs no operator input). Order matters: a stale in-process lane failure is sticky (K5d), so
-#     always launch a FRESH app, and always `stop` before `pair`. -------------------------------
-ssh ga0@m4mbp 'osascript -e "set volume output volume 45"; open -a /Applications/MOSSCapture.app'
-#   ... wait ~4 s, then `pgrep -x MOSSCaptureApp` and `mtd-capture status` -> running:false, both
-#   lanes "stopped". A stale /tmp/moss-capture-501/control.sock from a killed process is harmless:
-#   the freshly launched app replaces it.
-# Mint on the server loopback, pipe to the CLI as its OWN ssh invocation - never share that stdin
-# with a remote `bash -s` script (the K5d hygiene incident):
-#   PAYLOAD="$(printf '%s\n' "$MINT" | ssh … "wsl.exe -d Ubuntu -- bash -s" 2>/dev/null)"
-#   printf '%s\n' "$PAYLOAD" | ssh ga0@m4mbp '~/.local/bin/mtd-capture pair --server https://100.64.0.8:7861'
-# Then the driver (transfer it first; it re-execs itself for its two pollers):
-#   scp /tmp/ralph-f1-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp "bash /tmp/ralph-f1-canary.sh ralph-f1-$(date -u +%Y%m%dT%H%M%SZ)"
-# It pins the served leaf before trusting it, arms the app-owned probe with an early
-# `mtd-capture latency` (measure() only schedules the poll on the FIRST call while running - call it
-# right after `start` or the report has no samples), takes view authority through `handoff` +
-# `pbpaste` into `curl -K -` on stdin, speaks the program, then reads status/latency, stops, clears
-# the pasteboard. Reduce with /tmp/ralph-f1-analyze.py after pulling *.tsv + times.env.
-# ALWAYS afterwards: `osascript -e "set volume output volume 31"`, `pkill -x MOSSCaptureApp`,
-# re-check both TCC grants (auth_value=2) and `pbpaste | wc -c` == 0.
-# Server-side tally for one session (query strings must be stripped or the count is wrong):
-#   grep "$SID" journal | grep -oE '(POST|GET) /api/live/sessions/[a-z0-9]+/[a-z_]+[^ ]* HTTP/1.1" [0-9]{3}' \
-#     | sed -E 's#/api/live/sessions/[a-z0-9]+/##; s#\?[^ ]*##' | sort | uniq -c
-
+# --- the pre-iteration-12 /tmp F1 canary driver is RETIRED to progress.txt; it put the SAME audio
+#     on both lanes (candidate 51) and is superseded by the lane-separating canary below. ----------
 # --- the LANE-SEPARATING canary (iteration 12). This supersedes the /tmp F1 driver above for any
 #     NEW run: it is in the repo, it keeps the program out of the room, and it phases its evidence.
 #     Same launch/mint/pair prelude as F1. ~3 min, no operator input. -------------------------
@@ -1580,6 +1505,16 @@ scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
 #   ssh ga0@m4mbp "rm -rf /tmp/ralph-canary; nohup env MARKER_SYSTEM=cardamom MARKER_ROOM=obsidian \
 #     OUTPUT_MODE=muted bash /tmp/live-canary.sh <label> > /tmp/ralph-canary-run.log 2>&1 &"
 #   then poll: ssh ga0@m4mbp 'tail -5 /tmp/ralph-canary-run.log'
+# live-canary-analyze.py READS PRUNED DIRECTORIES since iteration 12: a cert/soak snapshot.tsv keeps
+# only span_id, so the span bodies come from the newest readable snap-full-*.json and cover a PREFIX
+# - the header names the source and the coverage instant. rc: 0 both markers, 3/4/5 one/other/neither
+# missing, 7 UNDECIDED (no delivery phase of that marker is covered - a run that died early reads
+# this way too), 6 a named refusal (no readable spans anywhere), 2 nothing to read.
+# AND IT MATCHES THE MARKER PHONETICALLY since iteration 13 (candidate 59) - VERBATIM, then
+# REWRITTEN (a fragment inside a phase that DECLARES the marker, whose whole text is one n-gram
+# repeated - the driver's isolated-and-repeated delivery - within 0.60 skeleton similarity), then
+# printed-only CORROBORATING near-matches at >= 0.80. Every marker line names which tier answered,
+# so "present" never hides "as a different word". Do NOT read a bare rc: the tier is the evidence.
 # The CERTIFICATION-CLAUSE reduction is a SECOND reducer - live-canary-analyze.py answers lane
 # separation, this one answers the PRD clauses (poll health + first non-200, growth, per-lane v2
 # health, the accounting equality, decoder RTF + D-c's token cap and capped count, per-span commit
@@ -1590,9 +1525,11 @@ scp scripts/ralph-afk/live-canary.sh ga0@m4mbp:/tmp/ && ssh ga0@m4mbp \
 # Validated in iteration 21 against iteration 12's canary (reproduces committed p95 8342.697 ms and
 # user-visible 9702.2 ms), against /tmp/ralph-f1-evidence (reproduces decoder p95 RTF 0.706 and
 # prints the t+86.0 s system-lane failure), and it REFUSES the F3 soak layout by name.
-# rc 0 both markers landed / 3 no system marker / 4 no room marker / 5 neither. rc is NOT the whole
-# answer: read section 1's prose, which separates "the mute killed the tap" from "the decoder
-# rewrote the marker word" - those look identical in a marker-only check and mean opposite things.
+# rc 0 both codewords reached the transcript / 3 not the system one / 4 not the room one / 5 neither.
+# rc is NOT the whole answer: read section 1's prose, which separates "the mute killed the tap" from
+# "the decoder rewrote the marker word" - those look identical in a marker-only check and mean
+# opposite things. Since iteration 13 the rewrite is matched rather than left to the reader, and
+# 3/4/5 deliberately carry no cause in the docstring any more.
 # ALWAYS afterwards, exactly as F1: `pkill -x MOSSCaptureApp`, `rm -rf /tmp/ralph-canary
 # /tmp/live-canary.sh`, both TCC grants re-checked (auth_value=2), mute and volume back.
 # The operator uses m4mbp while the loop runs: volume moved 50 -> 64 -> 50 during iteration 12 and
@@ -1654,7 +1591,9 @@ and the **server**, which behaves correctly at every step of the client-side fai
     `--lane-offset-ms system=137 --lead-seconds 0` spent F0's open caveat and found blocker 3. The
     device was revoked, both batch units and the live unit kept their MainPIDs/NRestarts/timestamps,
     `live-runs/` is still 0 entries and no `/tmp/mtd-live-*` survives. See the H-diagnosis block.
-24. **F1 — 60 s canary** per prd.md. `[RUN — RED — run 20260728-181020 iteration 8]`. See the F1
+24. **F1 — 60 s canary** per prd.md. `[GREEN — run 20260729-025318 iteration 6, rc=0; see the
+    F1-green block. The RED history below is iteration 8's run and is kept only for what it
+    diagnosed.]` See the F1
     block above. Green: continuously updating labelled transcript (42 spans, version 0 → 283),
     decoder p95 RTF **0.706**, zero double count (340 published == 340 accepted), run-time secret
     hygiene, no raw audio persisted. Red: **user-visible p95 10426 ms vs ≤ 4000 ms**, and **0.5 s of
@@ -1663,11 +1602,22 @@ and the **server**, which behaves correctly at every step of the client-side fai
     must be re-run, not re-argued. F1 is re-runnable end to end from
     `/tmp/ralph-f1-canary.sh` and costs no operator input.
 25. **F2 — 300 s locked run** with 5 s interruption and the system-audio-denied variant.
-    `[open — do NOT run before candidate 51; F1 proved the harness confounds the label clause, and a
-    300 s run would spend five times the wall clock on the same confound]`
+    `[GREEN — iteration 11, rc=0, six GREEN / no RED / no UNDECIDED; see the F2-green block]`.
+    user-visible p95 **3859.6 ms** ≤ 6000 qualified, decoder p95 RTF **0.670**, a **5.050 s**
+    interruption seen and survived, **1257 published == 1257 accepted, every one of the session's
+    4748 HTTP requests 200**, outbox 0 → 10 → 0, clean drain. **The denied-lane half is still open
+    and is NOT a scripting problem** — it is a separate
+    run by the PRD's own wording and producing it means taking a TCC grant away from
+    `com.alphasight.moss.capture`, i.e. spending the one input this loop is forbidden to ask for
+    again. It needs its own recorded plan before anyone writes code for it.
 26. **F3 — 16-minute active-view soak**: capture and `/live` polling stay active with periodic
     two-lane audio; same authority works after minute 15; clean stop immediately revokes it.
-    `[RUN — RED — run 20260728-181020 iteration 9]`. See "F3 — the 16-minute soak" (RETIRED, grep progress.txt). Green for 14 minutes:
+    `[RE-RUN against `42abc5a` — 5 GREEN, 1 RED — run 20260729-025318 iteration 9. See the F3 block
+    above; the RED is candidate 60, and the two soak halves this entry called "unproven" are now
+    PROVEN: the same authority answered 200 at age 1024.1 s. Only "clean stop immediately revokes
+    it" fails, and it fails for a reason nothing to do with the soak.]*
+    *The RED history below is the run 20260728-181020 iteration-9 attempt, kept only for what it
+    diagnosed.* See "F3 — the 16-minute soak" (RETIRED, grep progress.txt). Green for 14 minutes:
     56–62 s of accepted audio every wall-clock minute, 412 committed spans, version 0 → 2647
     monotone, retained ≤ 25.8 % of its bound, 3430 published == 3430 accepted. Then at minute 14.1
     one `macos_buffer_overrun` wedged the publish path, the heartbeat stopped **because a throwing
@@ -1689,358 +1639,745 @@ than after (nothing in flight to disturb). Its close half still waits on everyth
 32b. **F4b — close the loop** only when every other PRD acceptance item has evidence.
     `[blocked on E3 → F1–F3]`
 
-### Phase L - the start-path wedge (2026-07-28, found by K5d; CLOSED - both authorized by the fifth
-### amendment and both fixed, 49 in iteration 13 and 48 in iteration 14)
+### Phases L and M — CLOSED; the candidate lists are retired to progress.txt
 
-The fourth amendment said the cause "may need its own authorization" once `status` named the codes;
-the fifth amendment gave it. The two entries below are kept because they carry the *diagnosis* — the
-fix records are in the Phase M list and in the two blocks above. Note 49's stated mechanism was
-**wrong** and is corrected there.
-
-48. **L1 - `start` leaks a hot capture when the start-time heartbeat fails** `[done - iteration 14;
-    fixed as one shape with 53]`. `CaptureController.swift:403` `let status = try emitHealth(…)` sits
-    **outside** the `do/catch` at `:387-402` that unwinds a non-retryable publish failure, and
-    **before** `scheduler.schedule` at `:404`. A 403/401 on that first heartbeat therefore throws
-    past `source.stop` + `state.rollbackStart()` and past the pump, leaving exactly the state the
-    code's own comment forbids: both lanes hot, `running: true`, nothing draining them, and no
-    `sessionRefusal` because only the tick and the stop drain record one. `alreadyRunning` then
-    blocks recovery, so a re-`pair` cannot fix it. *Shape of the fix, not a decision:* the health
-    emission belongs under the same guard as the publish, and the start path is a third caller that
-    must record a refusal. Note this is the **same shape** as J's four blockers - a condition the
-    design contemplates is handled everywhere except the one path that ends the meeting.
-49. **L2 - a starved source overruns, and the failure survives `stop`** `[done - iteration 13;
-    the mechanism below is WRONG, see the Phase M list and "Candidate 49's mechanism was wrong in the record" (RETIRED, grep progress.txt)]`. With no pump, the lanes overrun (`macos_buffer_overrun`,
-    14005 / 1379 dropped) and `NativeLaneHealth` keeps `projection.failure` across a stop/start
-    **inside the same process**, so the next `start` publishes a first heartbeat that says both lanes
-    are dead and the server correctly ends a meeting that never began. Two questions the operator's
-    authorization would have to settle: whether a new `start` resets lane failure state (K4 already
-    ruled that "a new session id is a new question" for `sessionRefusal` - the same argument applies
-    here), and whether an overrun is even a lane *failure* rather than a lane *degradation* with a
-    dropped-frame count. Do not fix L2 alone: without L1 the starvation just happens again.
-    *Iteration 11 raised the stakes on the second question:* an overrun classed as a **failure** is
-    carried by the next heartbeat into `LiveV2Session.fail_lane`, which closes that lane on the
-    **server** for the rest of the meeting with no way back. So the classification is not a reporting
-    detail - it is what makes candidate 53's wedge permanent. See "The 409 is NAMED" (RETIRED, grep progress.txt).
-
-### Phase M - what F1 and F3 found. 50/53 AUTHORIZED by the fifth amendment; 51/52/54 done; 55 open
-
-**55 is NOT in the fifth amendment's scope.** Do not fold it into that cycle; it needs its own
-authorization, and the cycle's gate (F1 and F3 both green) does not depend on it.
-
-50. **A decode that runs away is unbounded, and it is what fails the latency gate** `[open - needs
-    authorization; tracked server source under the post-merge freeze]`. Measured in F1: two of 42
-    spans decoded at RTF **3.398** and **3.318** (8.49 s and 8.29 s for a 2.5 s span), both
-    degenerate repeat loops, and because the decode queue is serial each one delayed every span
-    behind it by up to 8.3 s. Committed p95 **9053 ms**; median lag ≈ 0 s. K5d's unrelated quiet
-    meeting measured **9089 ms**, so this is not content-specific. *Shape of the fix, not a
-    decision:* bound the decode - max new tokens derived from the span's own duration, a repetition
-    guard, or a wall-clock deadline after which the span degrades (commits empty, or without labels)
-    instead of holding the queue. **This is the same class prd.md's third amendment settled**: a
-    condition the design contemplates must degrade rather than damage the meeting - here it damages
-    latency instead of ending the session, which is why no existing gate sees it. Note two things
-    before acting: (a) the two ordered remedies in the plan (2.0 s span cap, then 0.5 s poll
-    interval) do **not** attack this term, so following them would burn a cycle for nothing; (b) a
-    per-span deadline needs a decision about what a timed-out span publishes, exactly as H1 needed
-    one for an unparseable span - decide it once and record it, as H1 did.
-51. **The canary harness puts the SAME audio on both lanes, which confounds the label clause**
-    `[done - run 20260728-181020 iteration 12; see "The lanes are separated" — RETIRED, grep progress.txt]`. Fixed by
-    **muting the system output for the program**, which a run proved the process tap is upstream
-    of. Echo gone (0 of 46 spans with a repeated fragment, vs F1's 3 of 42; 49 fragments vs 304)
-    and the label clause verified for the first time (`S04`/`S06` stable for the two voices across
-    the whole meeting). The harness is now **in the repo**, not `/tmp`:
-    `scripts/ralph-afk/live-canary.sh` + `live-canary-analyze.py`. **Two things it did not buy,
-    both now measured:** the microphone lane still has no content of its own (MacStudio's speaker
-    at volume 60 never reached it — the mic is AirPods Pro over Bluetooth), so a run is *program vs
-    room*, not two speakers; and the marker cross-check failed a second time (`umbrella` after
-    `pineapple`), so the driver now says the marker alone and repeated — **written, not yet
-    exercised**. Original text kept below because F2 still has to honour it.
-    `[superseded]` `say` through the MacBook
-    speakers reaches the system tap directly *and* the microphone acoustically, so the mixer sums the
-    program with its own echo: 16 canonical speakers for 2 voices, duplicated sentences in the
-    transcript, and a marker word ("pineapple" → "Hi Apple") that could not be cross-checked. Fix the
-    harness before F2, not after: the lanes must carry **different** content, which is what a real
-    meeting is. *Shape:* pre-render voice A to a file and play it through a process whose output the
-    tap captures while the speakers stay muted, and give the microphone lane voice B from the room -
-    or, if only one output device exists, accept that one lane is the program and the other is the
-    room and say so in the record. Also worth pinning down while there: `AudioHardwareCreateProcessTap`
-    with the default `CATapDescription()` (`isExclusive = true`, empty process list) captured `say`
-    output as expected, so an arbitrary application's audio will be captured too.
-52. **`context.md` no longer fits in one sitting** `[done - run 20260728-181020 iteration 10]`.
-    It had reached **339 018 bytes / 3985 lines** and the Read tool refuses anything over 256 KB, so
-    every iteration paid for a header scan plus targeted `sed` ranges before it could choose work.
-    Compacted to **~129 KB / ~1500 lines** (2.6×) by *moving*, never deleting: the entire
-    pre-compaction file is appended to progress.txt under
-    `ARCHIVE OF context.md AS OF RUN 20260728-181020 ITERATION 10`, and what stayed behind is a
-    two-table index (shipped contracts; gates/merges/redeploys) that carries each block's **rule and
-    anchor** with its transcript one `grep` away. Live evidence — K5d, F1, F3, the rollback
-    rehearsal, the TCC/E3 surface, the standing pre-merge procedure, the whole Validation fence and
-    the open candidate lists — was carried forward **verbatim**. One real contradiction was repaired
-    on the way: the "Server state" block still said the deployed SHA was `317df4d` while the K5c
-    block said `fc7097d`; the new "Deployed reality" section states `fc7097d` once.
-    *The standing rule that keeps it compact:* new evidence goes in as the conclusion plus the
-    numbers that justify it, and the transcript goes to progress.txt **when it is written**.
-    *What is NOT achieved, stated rather than implied:* the Read tool's binding limit is **tokens**,
-    not the 256 KB byte cap — 25 000 tokens is ≈ **51 KB** of this file's prose (measured: an
-    800-line / 70 013-byte slice of the old file cost 28 217 tokens, i.e. 2.48 bytes per token). So
-    the file is now **three sequential `Read`s and no searching**, where it was "refuses to open,
-    then grep + `sed` ranges". Reaching a single `Read` needs another 2.5× cut, and the only blocks
-    big enough to supply it are the **Validation fence** (669 lines, ~54 KB — the whole recipe book
-    for every gate, probe, canary, soak and rollback) and the **F1/F3 evidence** (165 lines — the
-    live diagnosis candidates 50/53/54 rest on). Both are load-bearing today. Revisit after
-    candidate 53 lands, when F1/F3 become history and the fence's client-side half can be pruned
-    against a passing run.
-    ***Second pass, iteration 30*** `[done]`. The revisit condition above was reached in substance
-    (53/48/49/D-a/D-c merged at `77e0014`, deployed, and proven on the real hosts by iteration 26 —
-    though F1 itself did not pass, being cut short by candidate 56). **Twenty** superseded blocks —
-    K5d, the F1 and F3 diagnoses, the whole Phase L/M mechanism narrative, the three D-c measurement
-    blocks, and the merge/redeploy records — moved to progress.txt verbatim under
-    `ARCHIVE OF context.md SUPERSEDED BLOCKS — RUN 20260728-181020 ITERATION 30`, replaced by the
-    "Retired evidence — index" table with each block's title, what it settled, and where its
-    conclusion still lives. **257 135 → 183 529 bytes, 2977 → 2081 lines (−28.6 %)**: five sequential
-    `Read`s down to four. *What was NOT cut, and why:* the **Validation fence** (~830 lines, ~66 KB)
-    is the recipe book for every gate, probe, canary, soak and rollback, and nothing in it is
-    superseded — the two `/tmp` driver recipes it still carries are the only candidates, and F1's
-    prelude is shared by the in-repo drivers. Reaching two `Read`s means cutting it, which is a
-    trade, not a free win. *The reusable half of this pass:* the retirement was **mechanical** — one
-    splice script, both ranges asserted byte-identical in progress.txt afterwards
-    (`R1 in prog` / `R2 in prog` both True against `git show HEAD:…`) — and the twelve dangling
-    `See "<title>" above/below` cross-references were repointed at the archive rather than deleted,
-    because a reference that silently stops resolving is the same defect class this loop keeps
-    paying for.
-
-53. **A throwing publish stops the heartbeat, so one dropped audio buffer ends the meeting**
-    `[done - iteration 14; the diagnosis below is kept, the fix record is in the Phase M list and
-    "The heartbeat is uncoupled from the publish" — RETIRED, grep progress.txt; ROOT CAUSE of both red certification runs]`. Measured in F3 and re-read in F1's journal: an overrun on one
-    lane makes the next `POST /frames` answer 409, `publishPendingFrames` throws at
-    `CaptureController.swift:413`, `emitHealth` at `:417` is skipped, the same frame is refused on
-    every retry so the heartbeat never resumes, and the 30 s helper lease ends the session. F3 died
-    at minute 14.6; F1 died 30 s after its own overrun, inside the window its `stop` hid.
-    *Shape of the fix, not a decision:* the tick's health emission must survive a failed publish the
-    same way it already survives contention (the comment at `:410-412` states the rule the code only
-    half implements) - and, separately, a lane whose frames are permanently refused must degrade
-    (stop publishing that lane and report it) rather than block the pump forever. **Iteration 11
-    named the refusal and it changes this list** (see "The 409 is NAMED" — RETIRED, grep progress.txt): the 409 is
-    `"v2 <lane> lane is failed."`, armed by the client's own heartbeat, and it is **permanent** -
-    so *"the client resynchronises the lane sequence" is a dead remedy* and is struck from the
-    decisions. What is left for whoever authorizes this: (a) whether a heartbeat may be sent while a
-    publish is failing - **it must**, and iteration 11 measured that a heartbeat sent after the
-    refusal still returns 200, so this alone would have kept F3 alive; (b) what the client does with
-    a lane the server has permanently closed (it must stop publishing it - the peer lane still
-    returns 200, so the meeting continues one-laned); and (c), one level up and cheapest of the
-    three, whether `macos_buffer_overrun` should be a lane **failure** at all rather than a
-    degradation with a dropped-buffer count - fixing (c) stops the chain before the server ever
-    closes the lane. **Same class as Phase J and L1** - a condition the design contemplates ends the
-    meeting.
-54. **Nothing on either host records *why* a frame was refused** `[ANSWERED - run 20260728-181020
-    iteration 11; no authorization was needed and none was spent]`. The question was which of the
-    seven distinct 409 conditions on `POST /frames` F3 took.
-    `scripts/ralph-afk/live-lane-refusal-probe.py` settled it against the real `create_app`:
-    **`LiveV2SessionTerminalError` → `{"detail": "v2 system lane is failed."}`**, not the
-    `LiveV2OutOfOrderFrameError` that was on record as likeliest - which the outbox's
-    burns-no-sequence-on-refusal invariant (`CaptureOutbox.swift:116-120`) rules out by construction,
-    and which the probe shows would have looked completely different on the wire (a machine-readable
-    `failure.code`, and **recoverable**). *What remains, and it is now an ordinary durability
-    candidate rather than a blocker:* the lane-failed 409 carries a bare `detail` and no
-    `failure.code`, and the client discards the body by G3's contract - so a future authorization may
-    log the refusal server-side, give it a typed code, or stop discarding it client-side. Pick one
-    when 53 is authorized; nothing is blocked on it now.
-56. **A live session stops being viewable mid-meeting, and nothing records why** `[open - needs
-    authorization; found in iteration 26, reproduced twice]`. Both F1 re-runs against `77e0014`
-    died at one instant (t+18.1 s and t+32.1 s) with three simultaneous symptoms: view routes
-    **401 `invalid bearer authority`**, `POST /frames` **409 permanently on both lanes**, and the
-    client's `pumpFailure: transportUnavailable`. No lane ever failed, the heartbeat returned
-    **165 × 200** in both runs, and the only terminal record is the post-stop `helper_lease_expired`.
-    `live_auth.py:282` raises that message only when `_view_for_digest` returns None, so for an
-    unexpired unrevoked token `_session_is_viewable` (`:382-385`) went false - the **session left
-    `VIEWABLE_SESSION_STATUSES`**, which is also what makes `POST /frames` answer the *closed-session*
-    409. One cause, both symptoms. **This is the same class the third amendment settled and the
-    fourth found again: a condition ends the meeting and the one word naming it is discarded** -
-    no journal line, 0 tracebacks, an event stream that stops mid-sentence, and the 409 body (which
-    *does* carry `terminal_reason`) thrown away by G3's client contract. *Shape of the next step,
-    not a decision:* `live-pipeline-probe.py` already keeps the refusal body and needs no Mac -
-    iteration 23's 120 s run on this same SHA was healthy, so the trigger is something real capture
-    does that synthetic audio does not (variable frame sizes, real speech, the identity path).
-    Reproduce it there before designing anything.
-    **Iteration 27 tried and FAILED to reproduce, eliminating four hypotheses** (all still valid,
-    and all about the audio): not continuously-voiced two-lane audio, not span density, not the
-    identity path, not the helper lease or any heartbeat-driven terminal, not lane clock drift.
-    ***ANSWERED IN ITERATION 28*** - see the candidate-56 answer block above. One probe run with
-    `--concurrent-readers 2` reproduced it at t+31.5 s and kept the 409 body:
-    `canonical_decode_failed` / *"runner result elapsed_sec must be finite and non-negative."* /
-    `LiveProviderError`, non-retryable. `vllm_runner.py:111` measures `elapsed_sec` on the **wall**
-    clock (`time.time() - started`) and the deployed host's wall clock steps **~1.5 s backwards
-    every ~32.3 s** (measured: 3 steps in 90 s). `live_adapters.py:344` then rejects the negative
-    number as a non-retryable provider error and `_process_in_flight_item` ends the meeting.
-    *Shape of the fix, not a decision, and it needs authorization:* `transcribe_pcm` **already**
-    takes `started = time.monotonic()` (`live_adapters.py:305`) and uses it on the empty-transcript
-    branch (`:317`); the success branch discards it. Either use it, or degrade the timing metadata
-    (elapsed/RTF null) instead of raising - a decoder that returned a transcript on an untrustworthy
-    clock has not made the meeting impossible to continue. **Also fix the metric, not only the
-    crash:** `elapsed_sec` is the numerator of the PRD's `decoder p95 RTF < 1` clause, so every RTF
-    recorded so far came off that stepping clock.
-57. **The clause reducer calls a passing latency number RED** `[open - loop tooling, no
-    authorization needed; found in iteration 26]`. `live-canary-clauses.py` printed
-    `USER-VISIBLE p95 = 3921.8 ms vs gate 4000 ms  RED`. The number is *under* the gate; it is red
-    because `sufficientSamples=False`, which the line above it states. The message asserts a
-    threshold comparison that passed, so a reader who trusts the verdict line learns the opposite
-    of the truth. Same shape as iteration 22's finding that the reducer *printed* F1's lane failure
-    and *decided* nothing - separate "the gate was missed" from "the run cannot answer the gate".
-55. **Identity capacity saturates in the first minute, so no later voice can ever be labelled**
-    `[open - needs authorization; tracked server source under the post-merge freeze; found in
-    iteration 12]`. `max_identity_speakers` is **16** (a domain-contract bound). Two independent
-    runs reach it mid-meeting: the echo-free canary at **t+45.5 s** of 89 s, and F1 - re-reduced -
-    at **t+51.8 s** of 89 s. The consumer is low-content fragments, mostly the microphone lane's
-    ambient noise, each minting a fresh canonical speaker. After saturation `live_identity.py:121`
-    (exhausted speaker capacity) is the designed outcome, so a participant who first speaks at
-    minute 5 of a real meeting can **never** receive a label. This is what actually produces F1's
-    "16 canonical speakers for 2 voices"; the echo was the wrong explanation. *Shape of the fix,
-    not a decision:* the capacity is a contract value and must **not** be raised to hide this - the
-    question is what may **consume** a slot (a minimum span energy or duration before a fragment
-    may mint a speaker; reuse or eviction of slots that never recur). Same class the third
-    amendment settled for terminal failures: a condition the design contemplates quietly degrades
-    the meeting. It does **not** end a session - J's cycle already made `abstain` non-terminal - so
-    no existing gate sees it, exactly like candidate 50.
-
-### Phase M - survive a lane fault (2026-07-28, fifth amendment: 48, 49, 50, 53 AUTHORIZED)
-
-The operator authorized candidates **48, 49, 50 and 53** together on 2026-07-28. Candidate 54 is
-**closed** - answered by `scripts/ralph-afk/live-lane-refusal-probe.py` with no product change.
-Read the "The 409 is NAMED, and the meeting was survivable" block before designing anything: the
-peer lane survives a lane fault, a heartbeat after the refusal returns 200, and **the only thing
-that killed F3 was the skipped `emitHealth`**.
-
-Governing rule from the amendment: **a fault on one lane must not end the meeting.** No publish
-failure may stop the heartbeat; a transient resource condition must not permanently disable a lane.
-
-**D-a, D-b and D-c are TAKEN (iteration 13)** - see "The three Phase M decisions, taken and binding" — RETIRED, grep progress.txt
-above for the rulings and progress.txt for the full reasoning. In one line each: an overrun is a
-**degradation**, not a failure (so the server needs no change and the chain breaks at step 1); a
-failed lane does **not** recover inside a generation but **always** does across a `stop`/`start`
-(K4's rule), and `LiveV2Session` gains no un-fail path; a runaway decode is bounded by a
-**duration-derived token cap** whose span still commits.
-
-**D-a is IMPLEMENTED (iteration 15)** - `[done]`, see "D-a is landed" — RETIRED, grep progress.txt. D-b needed no code (its
-ruling was that `LiveV2Session` gains no un-fail path, and it has none). **D-c is IMPLEMENTED
-(iteration 16)** - `[done]`, see "The decode is bounded" — RETIRED, grep progress.txt. **All four authorized candidates,
-all three decisions and the coverage gap have landed; what remains in Phase M is the gate alone.**
-
-53. **[done - iteration 14]** The tick's `emitHealth` now has its own `do/catch` after the publish's,
-    so a throwing publish cannot skip it; the publish's `pumpFailure` is left standing and only a
-    successful publish clears it. See "The heartbeat is uncoupled from the publish" (RETIRED, grep progress.txt).
-48. **[done - iteration 14, with 53 as one shape]** The start's `emitHealth` came under the same
-    guard the publish above it already used: retryable -> degraded start with the pump scheduled,
-    non-retryable -> `source.stop` + `rollbackStart()` + rethrow, and the refusal recorded either
-    way. `rollbackStart()` now keeps `sessionRefusal` (cleared by `beginStart`), so a refused start
-    is visible in `status` instead of silent.
-49. **[done - iteration 13]** Not `NativeLaneHealth`'s projection, which `beginGeneration()` resets
-    correctly. `NativeDualCaptureSource.start` zeroed the `reportedDroppedBuffers` watermark while
-    the queue's per-lane drop counter is cumulative for the whole process, so the new generation's
-    first drain replayed every historical drop as fresh loss and failed the lane on its first
-    heartbeat. Now re-baselined against the queue; red-before/green-after. See "Candidate 49's mechanism was wrong in the record"
-    (RETIRED, grep progress.txt). **D-a still has to land** - this fix stops a *previous* generation's drops failing a
-    lane; it does nothing about the current one's.
-50. **[done - iteration 16]** Bounded per D-c: `canonical_decode_token_cap` =
-    `68 + ceil(87 × duration_sec)`, each term an observed maximum times an explicit margin of 4,
-    derived by tokenising F1's and the canary's committed spans with the deployed decoder's own
-    tokenizer. The bound in force before this was `VllmRunner`'s 2048 default, which is exactly
-    where both runaways stopped (2024 / 2019 tokens). A capped span commits its words and the
-    `canonical_processed` event carries `canonical_decode_token_cap` / `canonical_decode_capped`.
-    See "The decode is bounded" — RETIRED, grep progress.txt. **DEPLOYED in iteration 20** — the host's own interpreter
-    reproduces the cap as 286 (2.5 s) / 112 (0.5 s), so the offline probes speak for the service
-    again. **MEASURED ON THE WIRE in iteration 23**: 58/58 spans of a real 120 s pipeline-probe run
-    carry a per-span cap matching the product's own function (21 distinct values 89…286), and the
-    cap's **safety** is confirmed on an independent third dataset (min headroom **7.64×**, vs 4.88×
-    on the derivation dataset). `capped_count` was 0 there, so the cap was deployed and
-    *unexercised*. **ITS LATENCY EFFECT IS NOW MEASURED (iteration 24)**, by inducing the runaway
-    rather than waiting for one: on the deployed engine, over the same 2.5 s span and the same
-    trigger, a decode costs **8.129 s at the pre-D-c 2048 bound** and **1.074 s at the deployed cap
-    of 286** — **7.571×**, 7.056 s off the head of the serial queue, RTF 3.277 → **0.431**. It
-    reproduces F1's own runaways within 4 % (2048 tok / 8.13 s vs F1's 2024 / 8.49 s), which
-    confirms iteration 16's 238 tok/s prediction at a measured **251.9 tok/s**. Since F1's mean span
-    arrival was 1.745 s, a capped decode sits *below* the arrival interval and cannot build backlog
-    where the uncapped one is 4.66× it and must. **ITS "COMMITS ITS WORDS" HALF IS MEASURED TOO
-    (iteration 25)**, offline against the deployed tokenizer and the real live coordinator: the
-    capped decode's transcript is the greedy token *prefix* of the uncapped one, re-tokenising F1's
-    two runaways returns exactly the **2024 / 2019** tokens their own decode reported, and at the
-    286-token cap each still commits **18 segments** with `empty_reason` None — while an
-    exhaustive sweep of **9062 cut points** finds **0** terminal and **0** unclassified outcomes.
-    The same run found that F1's two runaways carry **zero word characters** (127 segments of
-    `...`), so the spans that set F1's whole latency tail bought no transcript content at all.
-    **Still open and only F1 can close it:** the *rate* of runaways and the end-to-end p95 on the
-    Mac. See "D-c's OTHER half is settled" — RETIRED, grep progress.txt.
-D-a. **[done - iteration 15]** `macos_buffer_overrun` is a lane degradation. Two code enums, a
-    `degraded` state the server's contract already had, the mailbox's overrun fence removed (it
-    would have silenced a still-producing lane), the mailbox overflow given its own code, and K2's
-    log following the condition. Server unchanged. See "D-a is landed" — RETIRED, grep progress.txt.
-54. **[CLOSED - answered, not fixed]** The refusal reason is known. 53's fix **may** stop discarding
-    the server's refusal detail where it must tell a permanent lane-failed 409 from a recoverable
-    one; that is the only part of 54 in scope.
-
-**Coverage gap - CLOSED in iteration 17.** `tests/test_live_api.py` now posts a frame on the lane
-that **failed** (409, permanent, peer + lease survive) and on the lane that **degraded** (200,
-health stays active), both red-proved by semantic revert of the two guards that decide them. See
-"The failed lane is in the suite" above. **Nothing remains in Phase M except the gate.**
-
-**Gate, in four steps. The order is decided — see "The Phase M gate is green" — RETIRED, grep progress.txt — for why the
-amendment's literal order is unreachable and why this one drops nothing.**
-- **(a) full local gate + payload review** `[done - iteration 18]`. GREEN at `21a73ea`:
-  Swift 158/0 with 0 warnings on a fresh scratch, Python 604+2/368 in 62.7 s, tracer 4/0 skips,
-  discriminator 10/10, lane-refusal probe rc=0, seven hard-cap cases rc=0, leak-scan clean, tree
-  clean. Payload 10 files / +983/-51, all in `macos/`, `moss_transcribe_diarize/`, `tests/`.
-- **(b) the sixth merge** `[done - iteration 19]`. `main` = **`77e0014`**, feature tip `4ac5d95`,
-  join `1b6a9f4`, in-worktree gate Swift 158/0 + Python 604+2/368 on the merged tree, payload
-  exactly the reviewed 10 files / +983/-51, guard rehearsed non-vacuously. See "The sixth merge is
-  made" above.
-- **(c) push + redeploy** `[done - iteration 20]`. Four-way SHA back to **4/4 at `77e0014`**; server
-  MainPID 346453 → 350731 with `/live` 200 in 9 s and batch untouched; Mac rebuilt + reinstalled with
-  the DR byte-identical and both TCC grants intact. D-c exercised on the host (cap 286/112) and D-a
-  found in the installed binaries by a strings witness with a control word. See "M6c is deployed" — RETIRED, grep progress.txt
-  above.
-- **(d) F1 and F3, both required green** `[BLOCKED in iteration 21 - m4mbp is asleep/off the
-  tailnet; setup completed, the meeting never ran. See "F1's re-run is blocked on a sleeping Mac" — RETIRED, grep progress.txt.
-  Retry the moment `ssh ga0@m4mbp` answers: pkill the app left running, relaunch fresh, re-pair
-  (the iteration-21 pairing code is spent), then the nohup'd driver]**, with candidate 51's harness
-  — `live-canary.sh` for F1 and, since iteration 22, `live-soak.sh` for F3, both `OUTPUT_MODE=muted`
-  — so the label clause is meaningfully verified, and the marker-alone-×3 change
-  that is written but never yet exercised. Reduce both with `live-canary-clauses.py` (the soak with
-  `--user-visible-gate-ms 6000`); it now decides the lane-health and view-authority clauses instead
-  of printing them. **Run F1 first** — 60 s against F3's 17 minutes, so if
-  the latency prediction is wrong it says so seventeen times cheaper. This is the first run that can
-  see whether 53/48/49/D-a keep a meeting alive through a lane fault. **What it still has to decide
-  about candidate 50 narrowed in iteration 24:** the per-span decode bound is no longer a prediction
-  — 8.13 s → 1.07 s is measured on the deployed engine, and iteration 25 measured that a capped
-  span still commits rather than going empty — so F1 is now measuring the *rate* of runaways and the
-  end-to-end p95 on the Mac, not whether the cap works or what it costs the transcript. If F1's
-  committed p95 is still ~9 s with `capped_count` 0, the cause is **not** the decode and the plan's
-  ordered remedies become live for the first time. Both runs need their
-  own pre-recorded rollbacks (volume, app, session, `/tmp` evidence) per iteration 12's list.
+The fifth amendment's cycle (48, 49, 50, 53, plus decisions D-a/D-b/D-c and the coverage-gap fix)
+landed at `21a73ea`, merged as `77e0014`, deployed, and is **proven on the real hosts**: F2's green
+run shows 53 keeping 622 heartbeats alive through the outage, D-a turning a `macos_buffer_overrun`
+into a degradation that kept capturing, and D-c capping 4 of 161 spans with RTF p95 0.670. The two
+lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in progress.txt under
+**"Phase L and Phase M candidate lists (48-55, D-a/D-b/D-c)"**. Every cross-reference of the form
+"see the Phase M list" resolves there.
+**Only candidate 55 is still open**, and it has its own entry in the numbered list below.
 
 ### Open diagnostic candidates — the numbered ones, in one place
 
 55. **Identity capacity saturates in the first minute** (iteration 12). The 16-speaker bound is
     reached at t+45.5 s (t+51.8 s in F1), so a voice arriving later can never be labelled. Degrades
     quality without ending a session, so no gate sees it. Tracked product source; **needs its own
-    authorization** — and Phase N's `N1`/`N3` may subsume it, since a 0.5 s fragment that becomes a
-    prototype is a plausible source of the phantom speakers that exhaust the bound.
-56. **A live session stops being viewable mid-meeting.** `[FIXED IN SOURCE — run 20260729
-    iteration 1; UNMERGED and UNDEPLOYED]`. Cause: the server host's wall clock steps ~1.5 s
+    authorization**. **PRICED IN ITERATION 16 and NOT subsumed by the album**: the accuracy harness
+    reproduces it offline and deterministically — all eight fixture meetings exhaust 16 canonicals
+    for 2–6 real voices *with the album on*, and lifting the bound to 32/64 moves the album from
+    **93.4 % → 97.9 % / 98.7 %**. So it costs **4.5 pp of live speaker accuracy** and is the whole
+    of the gap between production and ADR-0002's 98.5 %. The album was the hypothesis for its cause
+    and the hypothesis is now measured wrong: births are unchanged by design, so the fragmentation
+    survives the fix. It needs its own authorization and its own mechanism.
+    **Iteration 22 changed what that mechanism has to cover, though not the authorization.**
+    N-sweep's merge — two album centroids at ≥ 0.70 are one voice born twice — is the first thing in
+    this repo that can *reduce* the canonical count, so the fragmentation can be **healed
+    retrospectively** while the births stay untouched. What a merge cannot buy back is the capacity
+    itself: the 16-slot bound is still reached mid-meeting, so a voice arriving after saturation is
+    still never labelled live. Measure the merge's share of the 4.5 pp before deciding what is left.
+    **ITERATION 23 MEASURED IT, AND RE-PRICED THE CANDIDATE.** The merge's share is **zero** — it
+    fires on none of the eight meetings, because a saturated capacity mints speakers from
+    sub-admission fragments that never earn the admitted bank a merge requires on both sides. The
+    **sweep's** share is **all of it**: capped-and-swept 99.26 % equals uncapped-and-swept 99.26 %,
+    so the 4.5 pp is gone from the *final* transcript entirely. What survives is the **live** cost,
+    now measured at **5.30 pp** (93.44 vs 98.74). So 55 is a **latency of labelling**, not a
+    permanent loss — an authorization for it is now a decision about what a reader sees *during* a
+    meeting, and should be weighed against wiring the sweep, which costs nothing more to authorize.
+    See the N-convergence block.
+56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
+    merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
     `live_adapters.py:344` turned a negative one into a non-retryable `LiveProviderError` that ended
-    the meeting. Authorized as **Phase P** by the seventh amendment and implemented as P1-P4; see
-    the candidate-56 answer block for the failure record and the clock measurement, and the Phase P
-    block for what landed. **It still blocks the acceptance bar until P5 lands it on the host:** the
-    deployed `77e0014` has none of this, so F1 and F3 would still die at the ~13 %-per-32 s hazard.
+    the meeting. Authorized as **Phase P** by the seventh amendment and implemented as P1-P4; the
+    failure record, the clock measurement and what landed are in progress.txt under
+    `CANDIDATE 56 IS ANSWERED…` and `Phase P candidate list…`.
+    **It blocks nothing now:** the same probe invocation that reproduced it at
+    t+31.5 s ran its full 150 s plan on the deployed `42abc5a` with zero non-200s, while the host
+    clock was measured still stepping every 32.29 s. The hazard is permanent; the defect is gone.
 57. **The reducer called a passing latency number RED.** `[done — iteration 29]`. See "The reducer
-    stopped calling a passing number RED" below. Loop tooling; no authorization was needed.
+    stopped calling a passing number RED" in progress.txt, and the reducer-verdict rules in the
+    third-compaction index. Loop tooling; no authorization was needed.
+59. **The marker check calls a landed marker absent, because it matches the word exactly.**
+    `[done — iteration 13; see "THE MARKER IS MATCHED PHONETICALLY" above. Three tiers,
+    the middle one corroborated by the driver's own delivery shape; F1 and F2 both move rc 5 → 4
+    with the system marker named, F3 stays rc=4 on its verbatim hit.]`
+    *Originally:* `[open, new — run `20260729-025318` iteration 6; loop tooling, no authorization needed]`.
+    `live-canary-analyze.py` scored `cardamom` **NOT FOUND** in a run whose transcript contains
+    `Cockamom, cockamom, cockamom.` — isolated, repeated, three times, in the correct phase, on the
+    correct lane. The decoder rewrites a rare noun **phonetically**, which is precisely why the
+    driver was changed in iteration 12 to say the marker alone and slowly; the reducer never learned
+    the same lesson, so `rc=5` was printed over a marker clause that holds. **Iteration 12 made this
+    the cheapest remaining item and gave it a fifth measurement:** with candidate 61 fixed, F2's
+    directory reduces to `rc=5` while carrying 121 labelled system-phase fragments and a marker that
+    landed as *"Pardon me, pardon me, pardon me"* — i.e. the only thing between F2's evidence and a
+    system-marker verdict is this exact-match comparison. *Shape of the fix, not a
+    decision:* compare on a phonetic/edit-distance key rather than equality, and — the part that
+    matters more — make the **verdict word name what it decides**, as candidate 57 had to: "the
+    marker word was not transcribed verbatim" is not "nothing from this lane reached the transcript".
+    Third instance of that class in this loop. Note the cheap negative control that already exists:
+    the room marker was absent **and** its phase produced only one-word fragments, so absence of
+    content and rewriting of a word look nothing alike in the evidence — only in the verdict.
+60. **A clean stop never reaches the server, so it does not revoke view authority.** `[open, new —
+    run `20260729-025318` iteration 9; **F3's one RED**]`. `CaptureController.stop` drains and
+    returns; no client code path calls `POST /api/live/sessions/{id}/stop`, which exists at
+    `live_transport.py:325` and is covered by `tests/test_live_api.py:502`. Measured: view authority
+    answered 200 for **29.4 s** after a clean stop, until the 30 s helper lease expired. Bounded and
+    self-healing, but it is the PRD clause's word *immediately*, and it was already visible in F1's
+    "29 s after the run's own stop" line without being named. Tracked product source under `macos/`;
+    **needs its own authorization**. Full detail in the candidate-60 block above.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
     *degraded* measurement is indistinguishable from a *corrupt* one — iteration 29's lesson one
     layer down. Pre-existing (J3 has emitted nulls since Phase J) but now reachable by design.
     Tracked product source; needs its own authorization and a recorded decision about what a run
-    with degraded spans should be allowed to certify. Detail in the Phase P block.
+    with degraded spans should be allowed to certify. The exact site is
+    `live_service_replay._canonical_decode_rtf_evaluation:660-694`, which runs every payload through
+    `_required_finite_non_negative_float`; detail in progress.txt under `Phase P candidate list…`.
+61. **`live-canary-analyze.py` crashes on any pruned evidence directory.** `[done — iteration 12;
+    see "WHERE `live-canary-analyze.py` READS SPANS" above. Spans now come from the
+    newest readable `snap-full-*.json`, an absence is judged against coverage, and an unreadable
+    layout is a named `rc=6` refusal. F3 rc=4 with the system marker at span 5; F2 rc=5 on
+    candidate 59.]` It raised
+    `KeyError: 'transcript'` at `live-canary-analyze.py:142` on an F2 directory, because it reads
+    spans out of `snapshot.tsv`, whose rows every current driver **prunes to `span_id` only**
+    (`SNAP_PRUNE` in `live-cert.sh`/`live-soak.sh`). The transcript survives in the periodic
+    `snap-full-*.json` files, which the analyzer never opens. *Shape of the fix, not a decision:*
+    read spans from `snap-full-*.json` when the TSV projection has no `transcript`, and — the part
+    that matters — **fail with a named refusal instead of a traceback**, the same rule
+    `live-canary-clauses.py` already applies to a layout it cannot read. It cost this iteration
+    nothing (the markers were extracted by hand in five lines) but it means the lane-separation
+    verdict is unavailable for F2 and F3 as shipped.
+63. **The album would deploy at matcher thresholds tuned for the policy it replaced.**
+    `[the tracked path is DONE — iteration 17; the host manifest is NOT yet regenerated, which
+    happens at Phase N's redeploy]`. **It needed no ninth authorization:** prd.md's ADR-0002
+    supersession names the values itself (*"Use ADR-0002's measured starting values - `min_score`
+    0.35, margin 0.1-0.2…"*) and the sixth amendment already ruled `min_match_score` /
+    `min_match_margin` **free** parameters whose change is *"a decision to record"*. Iteration 16's
+    "needs its own authorization" was over-cautious and is corrected here. What landed:
+    `ALBUM_MIN_MATCH_SCORE` / `ALBUM_MIN_MATCH_MARGIN` beside the policy they calibrate, the
+    accuracy harness pointed at them instead of a copy, and the finalizer given required
+    `--min-match-score` / `--min-match-margin` flags that write `identity_config`, hash-cover it,
+    print it in the plan and the evidence, and refuse a pair the runtime's own reader rejects.
+    See the candidate-63 block below. *Originally:* `[open, new
+    — iteration 16]`. `identity_config.min_match_score` **0.5** / `min_match_margin` **0.2** are what
+    the live runtime ships; ADR-0002 §7's measured starting values are **0.35 / 0.1–0.2**. Measured
+    on production code over the eight-meeting fixture: the album scores **93.4 %** at 0.35/0.1,
+    **91.0 %** at 0.35/0.2 and **75.0 % (min 40.0 %)** at the deployed 0.5/0.2 — i.e. *below
+    ADR-0002's ≥ 90 % bar at the only configuration that would actually run*. Phase N's own
+    acceptance bar is therefore unreachable without this, which makes it a shipping requirement
+    rather than a refinement; the ADR says as much (*"matcher thresholds need recalibration against
+    album centroid statistics"*). The change is a **generated, hash-covered manifest** field, so it
+    is tracked product source under the post-merge freeze and **needs its own authorization** — and
+    the eighth amendment already warns that changing these *"is a decision to record, not a knob to
+    tune until green"*. Reproduce with `tests/live_identity_accuracy.replay_all`; see the N-gate
+    block.
+62. **The reducer asked a certification run the soak's questions.** `[done — iteration 11]`. See
+    "THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS" in progress.txt. Loop tooling; it made
+    F2 ungreenable for candidate 60, a defect outside F2's clause list.
 
-### Phase N - live speaker identity (2026-07-28, sixth amendment; AFTER Phase M)
+### Phase N - live speaker identity - FOLLOW ADR-0002, NOT THE SIXTH AMENDMENT
+
+**Read `docs/adr/0002-two-tier-diarization-fingerprint-album.md` and
+`docs/design-streaming-diarization.md` first.** They are the operator's own accepted design, with
+prototype gates A/B/C passed on **LibriSpeech** meetings using the production embedder and
+production live semantics (2.5 s span cap, 0.6 s silence split, one-to-one score/margin matching,
+abstain, birth, 16-speaker cap). The supervisor's TTS-based numbers below are superseded wherever
+they disagree; they agree on the mechanism and the injection point.
+
+Measured there, not here: album **98.5% mean** live accuracy (96.4-99.5%) against production's
+latest-span overwrite at **66.4% mean** (51.7-87.4%), which reproduces the sibling project's <80%
+failure. Starting parameters: `min_score` 0.35, margin 0.1-0.2, admission 1.0-2.0 s, k=10, sweep
+every 60 s, merge threshold 0.70. Sweep cost ~0.1 ms at 600 s, <10 ms extrapolated to 3 h.
+
+**The album alone is step 1 of 4 and is a terminal-state failure if shipped alone** - without the
+retrospective sweep, live accuracy diverges from whole-file. Order: album -> tape recorder -> sweep
+-> batch unification. Acceptance is >= 90-95% live accuracy AND demonstrated live->file convergence.
+
+Note for the PRD: ADR-0002 deliberately changes the retention posture (the server keeps meeting
+audio, ~0.3 GB/hr) as the substrate for sweeps, so "no raw audio is persisted" must be re-read
+against the ADR rather than enforced blindly. Also open per the ADR's own §7: the prototypes used
+clean read speech, so a real conversational recording is required before production sign-off - which
+compounds with the measured fact that m4mbp's built-in mic cannot hear a second voice across the room.
+
+**N-album — STEP 1 IS LANDED IN SOURCE** `[done — iteration 15; NOT gated, NOT merged, NOT
+deployed]`. New `moss_transcribe_diarize/app/live_identity_album.py` (`FingerprintAlbum`), wired
+into `WeSpeakerLiveEvidenceProvider` and `_identity_evidence_provider`. Payload **4 files**, all
+under `moss_transcribe_diarize/` + `tests/`; **none under `macos/` or `ops/`**. Python
+**635 / 2 / 368** (+27). ***The red-before is on the real seam and needs no revert to reproduce,
+because the old policy is still reachable as `album=None`:*** same voice, three spans (2.0 s enroll
+→ 0.5 s fragment of a different voice → the original voice again) scores **0.0 pre-album and 1.0
+with the album**. That single pair of numbers *is* ADR-0002's 66.4 %-vs-98.5 % defect, reproduced
+offline in one command.
+***The four decisions this step took, with the reasoning, so they are not re-argued.***
+1. **Admission is 1.0 s, and `min_segment_samples` does NOT move.** The sixth amendment's flat
+   "≥ 2.0 s enrollment floor" is superseded; the eighth says the top-k admission gate does the work
+   that floor was compensating for. `min_segment_samples` is the **evidence** floor — it decides
+   which local speakers get embedded and scored *at all*, so raising it would make short spans
+   unlabelable, the exact opposite of the asymmetry. 1.0 s over 2.0 s because ADR-0002's gate A
+   passed at 1.0 s **under production live semantics**, and a 2.0 s admission under a 2.5 s span cap
+   with 0.6 s silence splits would starve the album.
+2. **The margin half of admission is already enforced upstream, so it is recorded, not
+   re-implemented.** ADR-0002 admits on "≥2 s clean speech **and** sufficient match margin". The
+   album only ever observes assignments out of a **`prepared`** preparation, and
+   `BoundedCausalIdentityPreparer._match_rejection_reason` abstains for the whole span when a match
+   fails `min_match_score` or `min_match_margin` — so an assignment that reaches the album carries
+   the margin by construction. A second margin knob would have had no independent evidence behind it.
+3. **A provisional stand-in, because ADR-0002 requires birth semantics to be unchanged.** Under a
+   pure admission gate a speaker born from a 0.6 s span would have **no reference at all**, would
+   never be matchable, and every recurrence of that voice would birth another id — strictly worse
+   than candidate 55 measures today. One sub-admission observation per speaker is kept while the
+   bank is empty and **discarded, never averaged**, by the first admitted exemplar.
+4. **Tie rules differ by tier, on purpose.** The bank replaces the oldest equally-long exemplar (an
+   exemplar is a *sample* of a voice and benefits from recency, so an album filled in minute one
+   still tracks the meeting); the stand-in keeps the incumbent on a tie (a placeholder benefits from
+   not churning, and churn is the defect being removed).
+*Also fixed in the same function, because leaving it would have been worse than touching it:*
+`_pending_vectors` was popped only on a **prepared** reconcile, so every abstain leaked a span's
+vectors for the length of the meeting — and an abstain is a *designed* outcome (J2). Now bounded at
+`_PENDING_SPAN_LIMIT = 8`. Red-before by absence: `git show HEAD:…live_provider_bundle.py |
+grep -c _forget_stale_pending` → **0**.
+*Manifest surface, deliberately optional:* `identity_provider.album_admission_seconds` and
+`album_exemplars_per_speaker` override the ADR defaults **when present**. The deployed manifest is
+generated and hash-covered, so requiring the keys would refuse the document running today; absent
+keys mean ADR-0002 §7's values, and the ADR's recalibration stays a manifest edit.
+**What N-album does NOT do, stated so a green suite is not mistaken for a finished job.** ADR-0002
+classes the album alone as a **terminal-state failure**: without the retrospective sweep, live
+accuracy diverges from whole-file. It also does **not** fix candidate 55 — births are unchanged by
+design, so `Hi.` fragments still mint canonical speakers and still exhaust the 16-speaker bound.
+And its acceptance bar's accuracy half was **not measurable by anything in this repo** until
+iteration 16 built the harness below; the convergence half still is not, because it needs step 3.
+*Superseded by measurement:* this block's guess that the album might explain candidate 55 is wrong —
+see candidate 55 and finding 2 under N-gate.
+
+**N-batch — step 4, open; STEP 3 IS CODE-COMPLETE.** The sweep's engine is landed
+(N-sweep), scored (N-convergence), **wired to the live path** (N-sweep-wiring), **published
+to the reader** (N-revision) and now **run once more when the meeting ends** (N-sweep-end). What is
+left of Phase N is its **gate** and then step 4, batch Tier-B unified onto the same album engine.
+*Re-VAD from the tape is
+explicitly not part of step 3:* N-sweep decision 1 ruled that a sweep re-matches retained vectors
+and never re-hears audio, so a sweep repairs an assignment and never a segmentation.
+
+**N-sweep-end — THE MEETING'S LAST SWEEP, AND THE END OF STEP 3** `[iteration 26; NOT gated, NOT
+merged, NOT deployed]`. Payload **8 files** — `live_provider_bundle.py`, `live_identity.py`,
+`live_coordinator.py`, `live_service_runtime.py` and four under `tests/`; **none under `macos/`**,
+none under `ops/`. Python **801 / 2 / 368** (+8: 3 coordinator, 2 bundle, 2 runtime, 1 seam),
++495/−4.
+***Why it was a gap and not a refinement.*** `maybe_sweep` is paced by the **next** span's start,
+so (a) a meeting shorter than one interval is never swept — at the shipped
+`SWEEP_INTERVAL_SECONDS` of 60 s that is **every F1-length canary**; (b) every longer meeting's
+final interval is never swept; and (c) the last span's evidence is retained **unlabelled
+permanently**, because a span's vectors acquire their canonical speaker when the *following*
+preparation reconciles them. Meanwhile the accuracy harness has been running a session-end sweep
+unconditionally at `tests/live_identity_accuracy.py:430`, **inside** the 99.26 % / 98.48 % figure —
+so the product could not reach the number its own gate measures.
+***The shape.*** One optional capability asked for **by name** at three layers, exactly as
+`take_identity_revision` already is: the provider reconciles the final snapshot **then**
+`sweep_now()`s and publishes nothing (the revision is left in the sweeper's unconsumed slot, as a
+cadence sweep leaves it); the preparer relays; `LiveCoordinator.finalize_identity()` hands the stack
+`session.snapshot().identity_snapshot` and then calls the **same** `_publish_identity_revision()`
+every span uses; `LiveServiceRuntime.stop` calls it after `_wait_for_drain` and **before**
+`session.stop`, and records `identity_finalized` with the five keys `canonical_processed` already
+carries.
+***Four decisions, recorded so they are not re-argued.***
+1. **Reconcile then sweep, and the order is load-bearing.** Reversed, the final sweep re-matches the
+   last span while the ledger still has it unlabelled and proposes a `labelled` correction for a
+   span the live path had already labelled correctly — a rewrite that changes nothing, reported as
+   if it had (`revise_labels` counts the span and bumps the version even when `applied` is 0).
+2. **The abort path deliberately does not sweep.** A terminal session is not in
+   `VIEWABLE_SESSION_STATUSES`, so a correction published to one reaches no reader; the only thing a
+   final sweep could add there is work on the one path that must do as little as possible.
+3. **Nothing here is terminal, and the failure is NAMED.** `identity_finalize_failed` merges into
+   the same `identity_revision_refusals` map the session's own refusals use, because reporting zero
+   corrections is indistinguishable from a meeting nobody needed to correct.
+4. **The event is recorded whether or not anything changed** — "found nothing" and "never ran" are
+   opposite facts about a meeting.
+***Red-before: twelve semantic reverts*** (`/tmp/i26-redbefore/run.py`), all red, every one of the 8
+new nodes named by at least one: sweep-before-reconcile → 2; no final sweep → 2; no final reconcile
+→ 3; the preparer does not relay → 3; the coordinator settles but never publishes → 1; a raising
+stack ends the meeting → 1; `stop` never settles → 1; `abort` settles too → 1; the event is
+conditional → 1; settled after the close → 1; settled against the wrong snapshot → 2; the capability
+is required rather than asked for → **8**.
+***Two of them were GREEN on the first pass, and the NODES were wrong — the third consecutive
+iteration to hit that hazard.*** The abort revert was a no-op because `abort` calls `_fail` first
+and the finalize early-returns on a terminal session; the honest revert inserts the call ahead of
+`_fail`. The ordering revert was a no-op because **`session_closed` is recorded after the `try`
+block**, so "immediately precedes `session_closed`" holds wherever inside `stop` the finalize sits —
+the node now asserts the thing that actually separates the placements: `LiveSession.stop` bumps the
+version twice on its way through, so a finalize that ran before it carries a strictly **lower
+`snapshot_version`** than the close does. *Event order was the wrong instrument; the version each
+event was stamped with is the right one.*
+***What it does NOT do.*** **The accuracy number is not re-measured** — the harness already swept at
+session end, so 99.26/98.48 is unchanged by this patch; what changed is that the *product* can now
+reach it. The remaining harness/product discrepancy, stated honestly: the harness records each unit
+already carrying its final canonical speaker, so it never models the one-span reconcile lag at all —
+this closes the **permanent** part of that lag (the last span), and the transient part (the span in
+flight is unlabelled at cadence time) stays by iteration 24's decision 3. **The album is still never
+itself merged.** **The sweep's cost now lands inside `stop`** — 39 ms at 17 min, 125 ms at 1 h,
+366 ms at 3 h by iteration 24's measurement — under the runtime lock and spent out of the caller's
+stop deadline. The deployed service is unaffected.
+
+**N-tape — STEP 2's WRITER IS LANDED IN SOURCE** `[iteration 19; NOT wired, NOT gated, NOT merged,
+NOT deployed]`. New `moss_transcribe_diarize/app/live_tape.py` + `tests/test_live_tape.py`. Payload
+**2 files**, both new, under `moss_transcribe_diarize/` + `tests/`; **none under `macos/` or
+`ops/`**. Python **694 / 2 / 368** (+32, +3.6 s).
+***The red-before is three semantic reverts, 15 of the 32 nodes***, run and restored in-iteration:
+place frames in arrival order instead of by capture timestamp → **8 red** (duplicates, reorder, the
+dropped-frame gap, burst loss, the late fill, resume's manifest, silence-vs-drop, the mixer skip);
+drop the cap check and the TTL comparison → **3 red**; drop D4's four admission rules → **4 red**.
+***The shape, in one paragraph.*** Three tracks per session — `system.pcm`, `microphone.pcm`,
+`mixed.pcm`, raw PCM16 mono at 16 kHz — plus `index.json`, republished atomically (staged +
+`os.replace`) on **every** append, which is what makes checkpoint/resume exact at any frame. Every
+placement is computed from the frame's `capture_timestamp_ns`, never from arrival order; coverage is
+a merged interval list and **the gap manifest is its complement**, so a late frame *removes* a gap
+rather than appending a correction. A frame that precedes everything seen rebases the track forward
+in 1 MiB chunks (impossible downstream of the v2 ingress, which refuses a non-next sequence — it
+exists for the appender's own contract, and gate C's reorder case fires it twice).
+***Four decisions taken here, recorded so they are not re-argued.***
+1. **The tape never raises because of a frame.** Cap reached, write failed, or a frame it cannot
+   place → one typed degradation (`tape_capacity_exhausted` / `tape_write_failed` /
+   `tape_frame_not_admissible`) carrying the byte counts, taping stops, the call returns. D5, and
+   the third amendment's rule applied to a disk.
+2. **`declared()` refuses a root, loudly, at construction** — that one *is* an exception, because a
+   root that cannot hold audio safely must stop the service starting with retention enabled rather
+   than silently disabling it. The checkout is derived from `Path(__file__).parents[2]`, never named.
+3. **The reaper never deletes what it cannot read as a tape.** An unreadable or torn `index.json` is
+   logged and skipped. A crashed meeting's tape has no `ended_at`, so it ages from `updated_at` —
+   which is what makes D6's startup reap able to reach it at all.
+4. **The TTL subtracts two `time.time()` readings, deliberately.** A retention deadline must survive
+   a process restart and `time.monotonic()` does not; this is P4's recorded exception. Noted in the
+   module because the *Duration vs timestamp* contract otherwise reads as a blanket prohibition —
+   and the host's known backward steps can only **delay** a reap, never make one premature.
+***What it does NOT do, so a green suite is not mistaken for step 2.*** **Nothing calls it.** No
+transport, mixer or ingress line changed, no manifest/env/unit key exists, and no deployment declares
+a root — so the deployed service is byte-for-byte unchanged and every recorded hygiene result keeps
+its meaning (which is D2 working, not an omission). *That sentence expired in iteration 20 — see
+N-tape-wiring below. What survives it: no deployment declares a root, so the deployed service is
+still byte-for-byte unchanged.* Gate C's *byte-exact under real outbox replay* is proved against the
+appender here, not against the wired path.
+
+**N-tape-wiring — THE TAPE IS ON THE LIVE PATH, AND STILL OFF BY DEFAULT** `[iteration 20; NOT
+gated, NOT merged, NOT deployed]`. Payload **6 files** — `live_tape.py` (+`LiveSessionTapeRecorder`),
+`live_transport.py`, `live_helper_failure.py`, `server.py`, and two under `tests/`; **none under
+`macos/` or `ops/`**. Python **703 / 2 / 368** (+9: 4 route nodes, 5 recorder nodes).
+***The red-before is four semantic reverts, each naming a different node***, run and restored
+in-iteration: drop the two tees in the frames route → **1 red** (the taped route); make the
+recorder's six guards re-raise → **2 red** (the route's full-disk node and the recorder's own); drop
+the coordinator's tape release → **1 red** (lease expiry); drop the stop path's tape release →
+**2 red**.
+***The shape.*** `LiveSessionTapeRecorder(store_or_None)` is the only thing the transport holds —
+constructed always, a no-op in every method when the store is `None`, and **nothing in it raises**.
+Five call sites: `create` at session create, `append_lane_frame` **after the ingress ack** in the
+frames route, `append_mixed` at `admit_available`'s sealed commit (both the mid-meeting and the
+`final=True` stop call), `release` beside **every** `v2_mixers.release` — the six in `live_transport`
+plus `LiveHelperFailureCoordinator._release_registries` — and `reap()` once at `attach_live_routes`.
+`create_app` gained `live_tape_store=None`; **`web_cli.py` does not pass it**, so the deployed
+service builds `LiveSessionTapeRecorder(None)` and behaves exactly as every gate measured it.
+***Three decisions, recorded so they are not re-argued.***
+1. **The tee is after the ack, not before it.** The tape records what the session *accepted*: a
+   refused frame is in neither the meeting nor the tape, and a replay the ingress re-acks lands as
+   the appender's `duplicate`, because placement is by capture timestamp.
+2. **The tape's lifecycle is the MIXED TRACK's lifecycle**, which is why `release` is paired with
+   `v2_mixers.release` rather than with `access.release_session`: once the mixer is gone no further
+   mixed audio can exist for that session, so a tape kept open past it could only accumulate lanes.
+   *The site that makes this load-bearing is the coordinator's* — a lease expiry is the **usual**
+   terminal path on the real hosts (F1 and F3 both ended on one), and a tape left open there stays in
+   the store's active set, is skipped by every reap, and outlives its TTL for the life of the process.
+3. **The never-raises rule is enforced at the recorder, not at eight call sites.** `LiveSessionTape`
+   already promises no *frame* raises; the store's create/release/reap touch a filesystem and can, and
+   an `OSError` escaping `POST /frames` is a 500 — a meeting ended by the substrate ADR-0003 D5 was
+   written to protect. Each swallow logs one WARNING naming the action, so a tape that vanishes is
+   never mistaken for one that was never enabled.
+***What it still does NOT do.*** **No deployment declares a root**, so the wired path is unreachable
+in production and the *"no raw audio is persisted"* clause holds unchanged — the inertness is
+asserted, not assumed (a route node runs a full mixed meeting and greps the tree for `.pcm` and
+`index.json`). The declaration surface — an `ops/moss-live.env` key, its finalizer/manifest
+treatment, and the TTL and cap, which are two more *free deployed parameters* under candidate 63's
+rule — is the next separable change and was deliberately not bundled. *Landed in iteration 21; see
+N-tape-declaration.* Step 3, the retrospective sweep, is what makes any of this pay.
+
+**N-tape-declaration — STEP 2 IS CODE-COMPLETE; A DEPLOYMENT CAN NOW TURN THE TAPE ON, AND THE
+TRACKED TEMPLATE DOES NOT** `[iteration 21; NOT gated, NOT merged, NOT deployed]`. Payload **5
+files** — `web_cli.py`, `ops/start-web.sh`, `ops/moss-live.env.example`, `LOCAL_DEPLOYMENT.md`, and
+`tests/test_live_service_deployment.py`; **none under `macos/`**, and the only product source is
+`web_cli.py`. Python **718 / 2 / 368** (+15: 8 adapter, 7 CLI). Deployment suite 30 → 45.
+***The red-before is five semantic reverts naming 14 of the 15 nodes***, run and restored
+in-iteration: drop `create_app(live_tape_store=…)` → **1 red**; make `_live_tape_store` return
+`None` always → **6 red**; drop `runs_directories=(args.runs_dir,)` → **1 red**; delete the
+adapter's retention block → **7 red**; strip the template's commented block → **1 red**. The one
+node no revert reddens is `test_the_cli_builds_no_store_when_no_root_is_declared`, which is the
+off-by-default invariant and is green by construction.
+***The shape.*** Three keys, `MOSS_LIVE_RETENTION_ROOT` / `_MAX_BYTES` / `_TTL_SECONDS`, translated
+by the adapter into `--live-retention-root` / `--live-retention-max-bytes` /
+`--live-retention-ttl-seconds`, which `web_cli._live_tape_store` turns into
+`LiveSessionTapeStore.declared(...)` or `None`, handed to `create_app(live_tape_store=…)`.
+***Four decisions, recorded so they are not re-argued.***
+1. **The tracked template ships the keys COMMENTED OUT, not as `REPLACE_WITH_` paths.** Every other
+   live key is required, so the template is a form to fill in; retention is D2's opt-in, and a
+   template whose verbatim use turns audio retention on would make a privacy posture a side effect
+   of copying a file. A node asserts the template used verbatim emits no `--live-retention` flag,
+   and a second node asserts the *commented* keys are nonetheless read by the adapter — because
+   `test_live_profile_sets_only_variables_the_adapter_reads` cannot see a comment, so a typo in a
+   commented key would otherwise be invisible.
+2. **A cap or a TTL with no root is REFUSED, at both layers.** The safe direction is only the
+   direction it fails in; the unsafe half is an operator who believes meeting audio is being kept.
+   The empty-string case is refused separately, by the adapter's own `${VAR+set}` discipline — *"a
+   variable a profile sets to nothing is a typo, not a request for the default."*
+3. **The TTL is optional and unstated means 0; the cap is required.** Straight from ADR-0003 D3 and
+   `declared()`'s own docstring — zero is the only value a tool may choose, because at zero the
+   PRD's audio clause still holds literally at every boundary observable after a meeting. Neither
+   end of the cap has a safe default (0 = never tape, unbounded = the D4(3) runaway), so it is
+   required. *Candidate 63's rule reaches the env layer unchanged.*
+4. **`runs_directories=(args.runs_dir,)` is what makes D4(3) reachable at all.** The runs tree is
+   the one filesystem this process is told about, and on the deployment host the live runs tree
+   shares its filesystem with the batch one — so passing it is what refuses a root whose runaway
+   tape would answer 507 to a batch upload without ever touching the batch service. The typed
+   `LiveTapeRootError` is deliberately **not** caught: that is why it is an exception (N-tape
+   decision 2), and `_live_runtime_factory` already sets the precedent of letting a manifest's own
+   error surface unaltered.
+***What it still does NOT do.*** **The deployed host still declares no root** — `ops/moss-live.env`
+is host-local and untracked, and nothing on the server was touched — so the service remains
+byte-for-byte the one every gate measured and the *"no raw audio is persisted"* clause holds
+unchanged. Retention becomes real only when an operator adds the keys to that host file; ADR-0003's
+"what the clause becomes for a future hygiene check" is the two-form test to run at that moment. No
+manifest/finalizer treatment: the root is a **host** fact like the TLS key path, not a provider
+config the manifest hash covers.
+
+**N-sweep — STEP 3's ENGINE IS LANDED IN SOURCE** `[iteration 22; PURE and UNWIRED — nothing
+schedules it, no transcript is rewritten, not gated, not merged, not deployed]`. ADR-0002 calls the
+album alone *"a terminal-state failure if shipped alone"*: without retrospective rewrites, live
+accuracy repeats the sibling project's divergence at <80 %. `live_identity_sweep.py` is the rewrite
+half. **Payload 5 files** — new `moss_transcribe_diarize/app/live_identity_sweep.py` and
+`tests/test_live_identity_sweep.py`, plus three surgical edits (`live_identity.py`,
+`live_identity_album.py`, `live_provider_bundle.py`); **none under `macos/`**, none under `ops/`.
+Python **758 / 2 / 368** (+40). Sweep suite 0.1 s.
+***Four decisions, each recorded before the patch because each could have gone the other way.***
+1. **A sweep re-matches retained evidence; it NEVER re-hears audio.** ADR-0002's prose says
+   "re-embed/re-cluster the assembled tape"; its **measured** gate B says a sweep costs ~0.1 ms at
+   600 s, and the same document measures embedding at **332-343 ms per unit**. Those two numbers
+   cannot both describe re-embedding, so the run that passed the gate re-matched vectors the live
+   path had already computed. *Take the measured one.* The honest cost, stated so no convergence
+   number is over-read: a sweep repairs an **assignment**, never a **segmentation** — ADR-0002 §7
+   carries the identical caveat ("in-span local diarization assumed correct"). **This means the tape
+   is not yet paid for by step 3**; re-VAD from the tape is a later, separately-measured refinement,
+   and the tape's nearer value is crash/resume and being the substrate for it.
+2. **The matcher is now ONE function, called by both paths.** `live_identity.assign_speakers` was
+   extracted from `BoundedCausalIdentityPreparer._assign` (behaviour-preserving; the accuracy
+   harness re-measures **93.4 / 72.0**, unchanged to the tenth). A sweep that re-implemented the
+   matcher would issue "corrections" that are a second opinion from a second implementation — the
+   exact hazard `tests/live_identity_accuracy.py` was built to rule out, and the one ADR-0002's own
+   prototype fell into. Likewise `cosine_similarity` and `duration_weighted_centroid` now live once,
+   in `live_identity_album.py`; `_cosine_similarity` in the bundle is a four-line wrapper that keeps
+   its two older typed admission errors verbatim.
+3. **Three rules bound what a sweep may change**: it never invents a canonical speaker (birth is a
+   live decision under the 16-cap); it never removes a label it cannot replace (J2 — and this one is
+   enforced by the **type**, `SweepCorrection.canonical_speaker` being non-optional, so an erasure is
+   unrepresentable rather than merely unimplemented); and a move must beat the incumbent by
+   `min_match_margin`. **The third is measurably redundant at the deployed 0.35 / 0.1** — the matcher
+   already refuses to assign unless the winner beats every rival, incumbent included, by the margin —
+   so `KEPT_BELOW_MARGIN` never fires there and the node asserts the *property* over real corrections
+   instead of a contrived tie. Kept for a deployment whose margin exceeds its own match floor.
+4. **A merge is a stronger claim than a match, so it needs an admitted bank on BOTH sides.** Two
+   album centroids at or above **0.70** are one voice born twice; the group's reference is the
+   duration-weighted centroid over the **union** of the exemplars (not the mean of two centroids —
+   the exemplars carry the seconds that weight them) and the id that survives is the one with the
+   most admitted speech, so birth order never decides identity. *This is the first mechanism in the
+   repo that can reduce the canonical speaker count* — it cannot stop candidate 55's births, but it
+   can heal them retrospectively. A provisional stand-in is matchable and **not** mergeable.
+***Two properties the suite states rather than hopes for.*** The sweep is **deterministic** (same
+ledger + album → identical revision), and **applying a revision leaves nothing for the next sweep to
+correct** — convergence, not oscillation. Merges *do* repeat on a second sweep, honestly: the album
+still holds both speakers until something merges the **album**, which is the wiring step's job.
+***The ledger's bound is measured, not estimated.*** One 256-dim float32 vector costs **1104 bytes**
+(`array("f")`); the same values as a Python tuple cost **8232**. At `SWEEP_LEDGER_MAX_UNITS` 20 000
+the ledger is **~22 MB**, against 165 MB for the tuple form. F3's real soak committed **443 spans in
+1029 s** = 0.43 spans/s, so three hours is ~4650 spans and well under 10 000 units — the cap is ~2×.
+A full ledger **refuses new units rather than evicting old ones** (the opposite of a cache, and the
+tape's own rule): a sweep's value is in correcting the *early* decisions against a *later* album.
+***Red-before: ten semantic reverts naming 20 of the 40 nodes***, run and restored in-iteration
+(`/tmp/i22-redbefore`, `git diff --stat` shows additions only): no merge at all → **6 red**; leader
+= lowest id → **2**; group matches on the leader's own bank → **13** (over-broad — that revert
+empties every reference, so read it only as evidence for the union node); an ambiguous span skipped
+entirely → **1**; an unscorable vector silently unmatched → **1**; the cap does not bind → **1**;
+`apply()` does not move the incumbent → **2**; a provisional-only speaker mergeable → **1**; an empty
+vector accepted → **1**; a provisional-only speaker given no reference → **1**. The 20 nodes no
+revert reddens are the ledger's record/replace/refuse parametrisation and the constructive
+invariants (never-invents, never-removes, determinism, the empty revision) — recorded rather than
+manufactured.
+***What it does NOT do, so the next iteration starts from the truth.*** Nothing calls `sweep()`:
+there is no cadence, no ledger on the live path, no transcript revision, no versioned rewrite, and
+the album is never itself merged. The accuracy harness cannot yet answer ADR-0002's **convergence**
+half (gate B) because it has no sweep and no file oracle. Those are the next two steps, in that
+order — **measure the engine in the harness, then wire it** — because a sweep wired before it is
+measured is a transcript rewriter nobody has scored. *Both of those are DONE: iteration 23 scored the engine
+(**99.26 % / 98.48 %**, `residual_corrections` 0, merges 0 — see N-convergence) and iteration 24
+wired it (see N-sweep-wiring). What is still true of this block: the album is never itself merged,
+and no transcript is rewritten.*
+
+**N-convergence — ADR-0002's GATE B IS ANSWERED ON PRODUCTION CODE, AND TWO EXPECTATIONS ARE
+REFUTED** `[iteration 23; `tests/` only — no product source, nothing wired, not gated, not merged,
+not deployed]`. Payload **2 files**, both under `tests/`: `live_identity_accuracy.py` gains a sweep
+cadence and `test_live_identity_accuracy.py` gains 6 nodes (21 → 27). Python **764 / 2 / 368** (+6,
++9 s). Iteration 22's own recommended next step — *"measure the engine before wiring it; a
+transcript rewriter nobody has scored is worse than no rewriter."*
+
+| configuration (8 LibriSpeech meetings, production code, ADR-0002 §7 thresholds) | mean | min |
+| --- | --- | --- |
+| **album + sweep, cap 16** (the transcript a reader ends with) | **99.26 %** | **98.48 %** |
+| album, cap 16 (the transcript a reader reads *during* the meeting) | 93.44 % | 92.18 % |
+| album + sweep, cap 64 | 99.26 % | 98.48 % |
+| album, cap 64 | 98.74 % | 96.34 % |
+| overwrite, cap 16 (the policy ADR-0002 replaced) | 72.0 % | 55.7 % |
+
+***What "whole-file" honestly means here, stated rather than dressed up.*** The file answer this
+converges *to* is **the same album engine run non-causally**, which is what the session-end sweep
+computes — and that is ADR-0002 step 4's own end state, not a stand-in for it. So the convergence
+half is true **by construction** and says nothing alone. What carries the weight is that both
+numbers are scored against **ground truth**: a rewriter that churned labels without improving them
+would show a large `rewritten_share` and a flat accuracy, and fails the node.
+***Four measured findings, two of which refute what iteration 22 expected.***
+1. **The sweep is worth +5.82 pp** and lands **above ADR-0002's own gate-A whole-file figure**
+   (98.5 %). It rewrites **4.2–7.7 %** of eligible speech, 10–19 corrections per 600 s meeting.
+2. **THE MERGE FIRES ZERO TIMES on all eight meetings — the gain is entirely re-matching.**
+   Iteration 22 landed the merge as candidate 55's retrospective cure and the expectation is wrong,
+   for a **structural** reason: a merge needs an *admitted* bank on both sides (N-sweep decision 4),
+   and the canonical speakers a saturated capacity mints are born from sub-admission fragments that
+   never earn one. Measured directly: the album ends a meeting holding **3–6** speakers of the 16
+   minted, only **2–3** of them banked, and the banked centroids sit at **0.19–0.43** against the
+   0.70 threshold — i.e. they are genuinely different voices. The node asserts `merges == 0` in
+   falsifiable form so a future parameter change re-opens the question instead of inheriting it.
+3. **THE SWEEP ERASES CANDIDATE 55's 4.5 pp FROM THE FINAL TRANSCRIPT ENTIRELY.** Capped-and-swept
+   **99.26** equals uncapped-and-swept **99.26** (|Δ| < 0.005), and capped-and-swept already beats
+   uncapped-**un**swept 98.74. The bound still costs the *live* transcript **5.30 pp**. So candidate
+   55 is re-priced, not closed: it is a **latency** of labelling, not a permanent loss of it — a
+   materially different thing to authorize a fix for, and it is what a reader watching live still
+   pays.
+4. **The cadence is nearly free of effect: 600 s gives 99.22 % against 60 s's 99.26 %.** The value
+   is in the *session-end* sweep, not in the pacing. `SWEEP_INTERVAL_SECONDS` 60 buys a reader
+   earlier corrections, not a better ending — worth knowing before the wiring step argues about it.
+***And the convergence property is asserted on real meetings, not just a built ledger:***
+`residual_corrections` — one extra sweep run *after* the applied session-end one — is **0 on every
+meeting**. The unit suite proves determinism over constructed evidence; this rules out the cadence
+failure it cannot see, two near-equal references trading a unit back and forth, each trade a
+visible transcript revision.
+***Red-before: three semantic reverts, each naming different nodes***, run and restored
+in-iteration (`/tmp/i23-redbefore`): never apply a sweep → **4 red**; run the sweep but never write
+the revision into the transcript → **3 red**; drop `ledger.apply` so the ledger keeps stale
+incumbents → **1 red** (the residual node alone, which is exactly what it is for).
+***What it does NOT do.*** Nothing is wired: the live path still has no ledger, no cadence and no
+transcript revision. The harness's ledger is the replay loop's own bookkeeping, and its durations
+are production's — taken from the intervals the encoder was asked to embed, the identical quantity
+`_intervals_duration` hands the album. The corpus limit is unchanged and now binds harder: clean
+read speech, no overlap, and `min_segment_samples` skips the sub-floor fragments a real room
+produces, so **99.26 % is the identity layer's ceiling on easy audio**, not a production forecast.
+*The "nothing is wired" sentence expired in iteration 24 — see N-sweep-wiring. The corpus limit and
+the ceiling reading do not.*
+
+**N-sweep-wiring — THE SWEEP IS ON THE LIVE PATH, AND NOTHING CONSUMES A REVISION YET**
+`[iteration 24; NOT gated, NOT merged, NOT deployed]`. Payload **5 files** — `live_identity_sweep.py`
+(+`LiveIdentitySweeper`, + batch scoring), `live_provider_bundle.py`, the loop's own
+`live-identity-seam-probe.py` following the factory's new signature, and two under `tests/`;
+**none under `macos/`**, none under `ops/`. Python **784 / 2 / 368** (+20: 14 sweep, 6 bundle).
+***The shape.*** `LiveIdentitySweeper(album, config)` owns the ledger, the cadence and the merge
+threshold, and lives in `WeSpeakerLiveEvidenceProvider` beside the album. Two feeding points, both
+inside `score()`: every embedded unit is recorded **unlabelled** when its vector is computed, and
+re-recorded **carrying its canonical speaker** when the next span's preparation reconciles it —
+`SweepLedger.record` answers `replaced` and the unit count does not move. The cadence runs after the
+reconcile and **before** this span's evidence is retained, paced by `span.start_sample /
+LIVE_SAMPLE_RATE`.
+***Five decisions, recorded so they are not re-argued.***
+1. **The ledger lives with the album** (iteration 23's open question (a)): the provider is the only
+   object that ever holds a vector, and two feeding paths could disagree about who spoke. The
+   *sweeper* is its own object so scheduling stays separable from retention.
+2. **A unit is retained twice, on purpose.** The album hears assignments; the ledger hears every
+   embedded unit, because an **abstained** span never reconciles and is exactly the span a later
+   album has the most to say about. Retaining only what was labelled would make the sweep unable to
+   improve the spans the live path found hardest.
+3. **The cadence never sees the span being prepared.** A sweep that could would propose a label for
+   a transcript nobody had read yet. Because the reconcile runs first, every span but the one in
+   flight is settled at cadence time.
+4. **Meeting time, never wall time**, and the next deadline is computed *from the time reached* — so
+   a burst after an outage schedules one sweep, not a catch-up burst over time in which nothing was
+   retained. A non-finite meeting time returns `None` and never raises (the *Duration vs timestamp*
+   contract, one layer out).
+5. **The bundle cannot build an album without a sweeper.** ADR-0002 calls the album shipped alone a
+   terminal-state failure, so `_identity_evidence_provider`'s `identity_config` is **required**, not
+   defaulted, and the new `_identity_preparer` builds it once for both halves — a sweeper with its
+   own calibration is candidate 63 one layer down, and it is now unwritable.
+***THE MEASUREMENT THAT CHANGED THE PATCH — ADR-0002's gate-B sweep cost is off by ~300×.*** The ADR
+reports ~0.1 ms at 600 s and "<10 ms extrapolated to 3 h". Measured on production code at F3's own
+shape (443 spans / 886 units / 16 speakers / 256 dims), scoring pair by pair: **295 ms at 17 min,
+1032 ms at 1 h, 3098 ms at 3 h** — and the sweep runs **inline on the serial canonical pump**, so a
+3.1 s stall is *longer than the 2.5 s span cap*, on ~4 % of spans, right at the PRD's p95 boundary.
+Same shape as candidate 50's runaway decode, which D-c exists to bound. So `_score_span` now scores
+a whole span against a reference matrix built **once per sweep**: **39 / 125 / 366 ms**, 7.5–8.5×.
+The batch path refuses exactly what `cosine_similarity` refuses (dimension mismatch, no length,
+non-finite), decides it for the **whole span**, and falls back to the untouched scalar rule
+otherwise. *The parity proof is not an assertion:* the eight-meeting harness still measures
+**99.26 / 98.48** swept and **93.44 / 72.0** unswept, unchanged, with `residual_corrections` 0 — and
+reverting the batch path to a constant reddens **14** nodes including all three convergence ones.
+***Red-before: nine semantic reverts*** (`/tmp/i24-redbefore`): no unlabelled retention → **5 red**;
+cadence moved after retention → **2**; no reconcile record → **3**; no `ledger.apply` → **2**; no
+sweeper in the bundle → **1**; meeting time unguarded → **1**; deadline added rather than computed →
+**1**; batch answers something else → **14**; batch does not refuse a zero-length vector → **1**.
+*Revert 3 was run twice and that is the durable lesson:* the first run left
+`test_a_reconciled_assignment_reaches_the_ledger…` **green**, because a cadence sweep also writes
+labels through `ledger.apply`, so the node passed whether or not the reconcile seam fed it. It now
+runs with the cadence off (`sweeps == 0`). **A green node can be measuring the wrong cause, and only
+a revert finds out.**
+***What it does NOT do.*** **Nothing consumes a revision** — `sweep_now` applies it to the *ledger*
+(which is what makes the next sweep converge instead of re-proposing forever) and returns it; no
+transcript is rewritten and no reader sees a correction. **There is no session-end sweep**, which is
+where iteration 23 measured essentially all the value (600 s cadence → 99.22 % vs 60 s's 99.26 %);
+it needs a per-session teardown hook the provider does not have, and it belongs with "who applies a
+revision" because both are the same ownership question. **The final span of a meeting stays
+unlabelled in the ledger** — a span is labelled when the *next* one reconciles it — which is
+harmless today and must be closed by that same hook feeding the final snapshot through
+`_reconcile_committed_vectors` **before** the final sweep, or that sweep issues a spurious
+`labelled` correction for a span the live path already labelled. The album is still never itself
+merged. The deployed service's labels are untouched, which is what the harness's unchanged
+93.44 / 72.0 proves.
+
+**N-revision — A SWEEP'S CORRECTION REACHES THE TRANSCRIPT A READER IS HOLDING** `[iteration 25;
+NOT gated, NOT merged, NOT deployed]`. Payload **12 files** — `live_span_bounds.py`,
+`live_session.py`, `live_identity.py`, `live_identity_sweep.py`, `live_provider_bundle.py`,
+`live_coordinator.py`, `live_service_runtime.py`, `live_portal.py` and four under `tests/`;
+**none under `macos/`**, none under `ops/`. Python **793 / 2 / 368** (+9: 6 session, 1 seam,
+1 portal, 1 sweep).
+***The shape.*** `LiveSession.revise_labels(LabelRevision…)` relabels already-published speech into
+`CanonicalCommit.revised_transcript`, leaving `transcript` and `prefix_hash` untouched; the
+coordinator takes a revision from the identity stack (`take_identity_revision` → provider →
+`LiveIdentitySweeper.take_revision`, optional at every layer and **emptying**) after each span
+publishes, and the portal renders `revised_transcript || transcript`. Counts and the six **named**
+refusals ride on `canonical_processed`.
+***Three answers and four rules are in the progress.txt block; the two that change how other code
+must be written are here.*** **The span grammar now has one writer** — `live_span_bounds
+.render_segments`, beside `span_segments`, called by both `live_identity` and the revision — and a
+span is revised **only if it re-renders to itself byte for byte**, so a relabelling provably cannot
+cost a word. **A correction is addressed by `(span, local speaker)`**, which is why the session
+retains a label track: the abstained span, the one the sweep most wants, displays `S00` for every
+local speaker and is unaddressable by label.
+***Red-before: ten semantic reverts*** (`/tmp/i25-redbefore`), nine naming different nodes: portal
+renders only `transcript` → 1; the track ignored → **7**; the coordinator never asks → 1; an
+abstained span published without its locals → 1; the round-trip guard dropped → 1; the collision
+guard dropped → 1; an unknown canonical labelled anyway → 1 (it *raises*); `take_revision` never
+empties → 1; a second revision applied to the published text → 1; a **prepared** span published
+without its locals → 1. That last one exists because the seam's own sweep corrects only the
+abstained span — the same "a green node can measure the wrong cause" hazard iteration 24 recorded.
+***What it does NOT do.*** ~~There is still no session-end sweep~~ **landed in iteration 26 — see
+N-sweep-end**, which also gave the meeting's last correction its own `identity_finalized` event
+(the per-span counts still ride on `canonical_processed`). The album is still never
+itself merged. The deployed service is unaffected.
+
+**N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
+`docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the
+PRD both require the *"no raw audio is persisted"* re-reading **in writing before any code**; step 2
+was the only Phase N item needing neither an operator nor a host, so it was the cheapest unblocked
+thing left. Read the ADR before writing a byte of the tape — it is the shape step 2 must implement,
+not a permission it may interpret.
+***The framing that made it decidable, and it is measured, not argued.*** The clause is **not** a
+prohibition on audio reaching a disk — live audio touches disk on **every span today**:
+`live_adapters.py:298` writes the span's PCM into a `TemporaryDirectory(prefix="mtd-live-")` for the
+decoder and `live_provider_bundle.py:561` does the same for the identity encoder. The clause is a
+statement about a **horizon**, today **one span**, and the loop's own hygiene evidence (`live-runs/`
+0 entries, no surviving `/tmp/mtd-live-*`) is exactly that horizon holding. So the decision is *how
+far the horizon may move*, and the answer is **one meeting**.
+***The seven rules, in one line each.*** D1 the horizon becomes the session and *persisted* keeps
+its force against anything longer-lived. D2 retention is **opt-in and off by default** — every gate
+recorded so far was measured against a no-tape service and a privacy posture must not arrive as a
+side effect of an upgrade. D3 **default TTL after session end is zero**: ADR-0002's final sweep runs
+at session end and the album is what is handed forward, so at the default the PRD clause still holds
+literally at every post-meeting boundary; a positive TTL is **stated by the deployment**, never
+defaulted by a tool (candidate 63's rule). D4 one declared root: 0600/0700, outside the checkout,
+**not on the batch runs filesystem**, on a filesystem that enforces modes — which disqualifies
+`/mnt/d` twice over and leaves ext4 `~/.local/share/moss-transcribe-diarize/live/`. D5 the cap is
+declared and **storage pressure degrades the tape, never the meeting** (the third amendment's rule
+applied to a disk). D6 the **service** reaps, at startup too, so a crashed session's tape is not
+immortal. D7 what stays absolutely forbidden — no audio on the Mac, in a log, in an evidence
+directory, or under batch `runs/`; the token half of the clause is untouched.
+***The one measured argument that is easy to miss:*** a runaway tape breaks the PRD's *"batch
+service unharmed"* clause **without touching the batch service** — `server.py:447` answers **507**
+when free space drops below `2 × content_length + 512 MB`, and at ~0.3 GB/hr that headroom is under
+two hours of one meeting. That is why D4(3) is a rule and not a preference.
+***What the clause becomes for a future hygiene check:*** two forms selected by whether a root is
+declared. Undeclared (today's server) it is **unchanged**, so every recorded certification run keeps
+its meaning. Declared: audio only under that root, every tape mapping to a session active or within
+TTL, modes 0600/0700, total bytes ≤ cap, nothing under the checkout or batch `runs/`.
+*Deliberately not decided:* the on-disk format and gap-manifest schema (already fixed by ADR-0002
+§Decision 1 / design §3.2), whether the **album** may outlive a meeting (derived data, not raw
+audio — but cross-meeting albums are ADR-0002 §8 fog and stay closed), the numeric TTL and cap for
+any deployment, and re-ASR of the tape (forbidden by ADR-0002 and not softened).
+
+**N-gate — THE HARNESS EXISTS AND THE ALBUM IS MEASURED ON PRODUCTION CODE** `[iteration 16]`.
+`tests/live_identity_accuracy.py` + `tests/test_live_identity_accuracy.py` +
+`tests/fixtures/live_identity_accuracy/` (8 meetings, 1.85 MB). It drives the **real**
+`BoundedCausalIdentityPreparer` + `WeSpeakerLiveEvidenceProvider` + `FingerprintAlbum`, span by
+span, snapshot carried forward exactly as the coordinator does; only the ONNX forward pass is
+substituted, by replaying the **real** encoder's cached vectors. 21 nodes, Python **656 / 2 / 368**
+(+21, +11 s). Full table in progress.txt under `THE LIVE IDENTITY ACCURACY HARNESS`.
+*Numbers, at production defaults + ADR-0002 §7 thresholds (`min_score` 0.35, margin 0.1,
+admission 1.0 s, k=10, cap 16):*
+
+| | mean | min | ADR-0002's own figure |
+| --- | --- | --- | --- |
+| **album** | **93.4 %** | 92.2 % | 98.5 % (96.4–99.5) |
+| **overwrite** (`album=None`, still reachable) | **72.0 %** | 55.7 % | 66.4 % (51.7–87.4) |
+
+***Four findings the unit suite could not have produced.***
+1. **The gap is +21.4 pp and the album clears ADR-0002's ≥ 90 % bar on every meeting** — so
+   step 1 is measured, not asserted. The **red-before needs no revert**: the same assertions run
+   against `policy="overwrite"` give 72.0 % mean / 55.7 % min.
+2. **The 16-speaker bound is what holds production 5 pp under the ADR.** At cap 32 the album is
+   **97.9 %**, at cap 64 **98.7 %** — and overwrite at cap 64 is **66.4 %**, *the ADR's own number
+   to one decimal*. That coincidence is the strongest available check that this harness measures
+   what ADR-0002 measured, and it prices **candidate 55**: 4.5 pp of live accuracy, deterministic,
+   offline, every meeting saturating 16 canonicals for 2–6 real voices.
+3. **Accumulation does the work; the admission floor is nearly free of effect.** adm 0.01 → 93.5 %,
+   adm 1.0 → 93.4 %, adm 2.0 → 93.4 %; but k=1 → **79.2 %** and k=3 → 89.7 %. A full bank *is* a
+   duration gate (`_admit` evicts the shortest), so the floor's real job is the birth path. **The
+   superseded sixth amendment's central instruction — "raise the enrollment minimum to ≥ 2.0 s" —
+   is refuted as the load-bearing change**, and ADR-0002's "the top-k admission gate does the work
+   that floor was compensating for" is right about the *k*, not the *duration*.
+4. **The deployed matcher thresholds cost the album its bar.** At the shipping `min_match_score`
+   0.5 / margin 0.2 the album measures **75.0 % mean, 40.0 % min** — below the bar entirely; at
+   0.35/0.2 it is 91.0 %. ADR-0002's "matcher thresholds need recalibration" is therefore a
+   **shipping requirement**, not a refinement, and it is a tracked-source change needing its own
+   decision. (Overwrite at the deployed thresholds is 35.2 %.)
+
+**N-gate — what is still open.** ~~Live→file convergence (needs the sweep, step 3)~~ **answered in
+iteration 23: 99.26 % mean / 98.48 % min swept, `residual_corrections` 0** — see N-convergence.
+~~The versioned transcript revision a reader can see~~ **landed in iteration 25 — see N-revision.**
+~~The session-end sweep~~ **landed in iteration 26 — see N-sweep-end; step 3 is code-complete.**
+~~Gate step (a)~~ **GREEN at `1e1cf3f` in iteration 27 — see the gates index row for the full
+transcript and the payload review.** What remains: **(b) the eighth merge**, (c) push + redeploy —
+which is also what regenerates the host manifest at the calibrated 0.35/0.1 (N-recal) — and (d) F1/F2
+with the label clause meaningfully verified, whose second-voice half is still blocked by candidate
+51's measured hardware limit. The accuracy half of the bar is instrumented and green for the album
+and for the sweep, and step (a) re-measured it on the tip rather than trusting the recorded number.
+
+**N-recal — THE CALIBRATION THE ALBUM IS MEASURED AT IS NOW THE ONE A DEPLOYMENT CAN STATE**
+`[candidate 63, iteration 17; source only — the host manifest is regenerated at Phase N's redeploy]`.
+Payload **6 files**: `live_identity_album.py`, `live_manifest_finalizer.py`, `LOCAL_DEPLOYMENT.md`,
+and three under `tests/`. Python **662 / 2 / 368** (+6). ***The red-before is the whole existing
+finalizer suite:*** with the flags made required, all 17 pre-existing nodes fail until the helper
+states a calibration — which is exactly the defect, since until now `identity_config` was *carried
+through untouched* from an untracked host file that no review has ever seen.
+***The three decisions, recorded so they are not re-argued.***
+1. **The values are ADR-0002 §7's — 0.35 / 0.1 — and they needed no ninth authorization.** prd.md's
+   supersession section names them; the sixth amendment already ruled the pair *free*. Measured on
+   production code over the eight-meeting fixture: **93.4 % mean / 92.2 % min** at 0.35/0.1 against
+   **75.0 % / 40.0 %** at the deployed 0.5/0.2 — the difference between clearing ADR-0002's ≥ 90 %
+   bar and missing it entirely.
+2. **The tool states them; it does not default them.** A free parameter has no derivation a tool
+   could verify, so a built-in default would be a guess wearing a contract's clothes. Required flags
+   put the pair in the plan (`plan: set identity_config.min_match_score=0.35`), in the evidence
+   (`evidence: identity_min_match_score=0.35`) and in the regenerated `identity_config_hash`. The
+   *named* pair lives in `live_identity_album.py` beside the policy it calibrates, and
+   `tests/live_identity_accuracy.py` now imports it rather than holding a second copy — so
+   "measured at one pair, deployed at another" is no longer expressible.
+3. **The check is the runtime's own reader, not a second copy of its rules.** `_identity_config`
+   from `live_provider_bundle` validates the finalized section; a refusal reads
+   `refused: identity_config is not one the live runtime admits: min_match_score must be between
+   0 and 1.` Three parametrised nodes prove it.
+***What this does NOT do.*** The deployed host manifest still carries 0.5 / 0.2 — nothing on the
+server was touched. Until Phase N's redeploy regenerates it, **the live service would run the album
+at 75.0 %**. And the regeneration *will* change `identity_config_hash`, `combined_config_hash` and
+the provider manifest hash away from `61d97ffe…`; that is the recalibration's signature, not drift.
+
+### (superseded) Phase N as first written (2026-07-28, sixth amendment; AFTER Phase M)
 
 Authorized by the sixth prd.md amendment, which **overrides** the out-of-scope entry for
 intermittent-speaker identity calibration. **Do not start until Phase M's gate is green** - identity
@@ -2083,105 +2420,17 @@ costs nothing and the three diagnostic numbers are now unambiguous.
 Keep the abstain path throughout: an ambiguous span stays unlabelled rather than guessing, and J2
 already ruled that an abstain must not end the meeting.
 
-### Phase P - the wall-clock duration (2026-07-28, seventh amendment) - DO THIS FIRST
+### Phase P — CLOSED; the candidate list is retired to progress.txt
 
-Authorized after iteration 28 root-caused candidate 56. **Phase P precedes Phase N, and F1/F3 must
-NOT be re-run as a gate until it is deployed** - every certification run dies at ~13 % per 32 s
-until then, so a red run measures this bug and nothing else.
-
-60. **P1 - use the monotonic reading that is already taken.** `[done - run 20260729 it. 1]` The
-    success branch no longer reads the runner's `elapsed_sec` **at all**; it takes
-    `time.monotonic() - started` from the reading the function already had, so both branches now
-    measure the same bracket on the same clock. A runner reports whatever clock it holds, so the
-    durable rule is *the live decode measures itself*, not *the runner must be trusted*.
-61. **P2 - untrustworthy timing metadata degrades, it does not end the meeting.** `[done - it. 1]`
-    Stated once as `live_adapters.trustworthy_duration_sec(value) -> float | None`, a **conversion**
-    rather than a guard, and applied at both layers that used to raise: `InferenceTranscript.
-    __post_init__` and `live_coordinator._canonical_decode_measurement`. Elapsed and RTF are both
-    recorded null on `canonical_processed`, the span still commits, and the degradation is
-    **logged** (`moss_transcribe_diarize.live.decode`, WARNING, naming span id / field / value) -
-    because a measurement that silently disappears is the "known but not shown" shape again.
-62. **P3 - real-seam regression** `[done - it. 1]` Four nodes in `tests/test_live_pipeline_seams.py`
-    under "The timing seam: a wall clock is not a duration". Red-before proved by semantic revert,
-    one half at a time - see the Phase P block below for which revert reddens which node.
-63. **P4 - sweep the class.** `[done - it. 1]` Four sites enumerated, three fixed, one ruled
-    deliberate. See the sweep table in the Phase P block below.
-64. **P5 - gate, merge, redeploy, THEN re-run F1 and F3.**
-    - **(a) full local gate + payload review** `[done - it. 2]`. GREEN at `5bc4f7f`; the numbers are
-      in the Phase P gate row of the gates index. Nothing regressed and nothing was weakened: the
-      six `test_live_vad.py` nodes that asserted the *superseded* rule were **restated** with a
-      docstring naming what they supersede, and the replacement assertion (a real monotonic
-      measurement is present) is strictly stronger than the one it replaced.
-    - **(b) the seventh merge** `[open - NEXT]`. **A history join is required**:
-      `git merge-base --is-ancestor main HEAD` is FALSE at `5bc4f7f`, so run the standing two-fence
-      procedure — prove `git merge-tree --write-tree main HEAD` returns HEAD's own tree, join with
-      `git merge --no-ff main`, advance `expected_main` to `77e0014` **in the script** citing the
-      seventh amendment, commit that (it becomes the captured feature tip), then run
-      `merge-keeper.sh` **in the background**.
-    - **(c) push + redeploy** `[open]`. **Server-only** — 0 files under `macos/`, so this is the
-      J5c shape, not K5c's: `git checkout <merge sha>` + `systemctl --user restart
-      moss-live-web.service` + poll `/live` for 200 (8-11 s), and on m4mbp a `git fetch <fork URL>
-      && git checkout <sha>` for the four-way SHA clause with **no rebuild and no reinstall**.
-    - **(d) F1 then F3** `[open]` — the Phase M gate step (d) that candidate 56 blocked.
-    Note in the journal that this also repairs the PRD's decoder p95 RTF clause, measured from this
-    same number and therefore unreliable in every prior run. `[recorded - it. 1]`
-
-Explicitly out of scope: mandatory client retention of the 409 refusal body. Right fix, wrong cycle;
-it needs its own authorization.
-
-**P1-P4 ARE LANDED, LOCALLY GREEN AND UNMERGED (run `20260729-025318` iteration 1).** Six files:
-`live_adapters.py`, `live_coordinator.py`, `vllm_runner.py`, `model_runner.py`, `jobs.py`,
-`tests/test_live_pipeline_seams.py`, plus the two superseded nodes in `tests/test_live_vad.py`.
-Python **608 passed / 2 skipped / 368 subtests** in 59 s (604 → 608: four new seam nodes).
-No Swift file was touched.
-
-***The red-before is per-half, by semantic revert, and each half has its own named node.*** Reverting
-one edit at a time and re-running the four nodes:
-
-| revert | node that goes red |
-| --- | --- |
-| `vllm_runner` reads `time.time()` again | `…the_real_runner_reports_a_duration_a_stepping_wall_clock_cannot_make_negative` |
-| the adapter takes the runner's number again | `…a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span` |
-| the coordinator raises on an untrusted duration | `…a_decode_whose_timing_cannot_be_trusted_commits_the_span_with_no_rtf` |
-| `InferenceTranscript` raises again | the same negative-elapsed node (it asserts the type-level rule too) |
-| **both wall-clock halves together = the true pre-fix state** | `…a_wall_clock_step_backwards_mid_decode_does_not_end_the_meeting` |
-
-That last revert reproduces **iteration 28's probe record field for field** —
-`kind=integrity, code='canonical_decode_failed', retryable=False,
-detail={'error_type': 'LiveProviderError'}`, message *"runner result elapsed_sec must be finite and
-non-negative."* — from a test, with no host. That is the seam whose absence let this ship: nothing
-in the repo had ever put a runner's **own duration measurement** under the live coordinator.
-*Note what round B proved:* with only the adapter reverted the full-stack node still **passes**,
-because the fixed runner hands it a positive number. Defense in depth is real here, and it is also
-why the per-half nodes exist — the production node alone would not catch either half being undone.
-
-**P4's sweep, all four sites, with the ruling for each.**
-
-| site | ruling |
-| --- | --- |
-| `vllm_runner.py:71,111` (the named defect) | **fixed** → `time.monotonic()`. The live path no longer reads the field, but the **batch** path computes its own RTF from it, so a wrong number was still wrong. |
-| `model_runner.py:129,151` | **fixed** → `time.monotonic()`. Identical shape in the local-GPU runner; same `TranscriptionResult.elapsed_sec` field, same consumers. |
-| `jobs.py:700` `_should_save_live_progress` | **fixed** → `time.monotonic()`. `now - last_saved < 0.5` is an interval, and the dict is in-process only. A backward step silently suppressed progress saves for up to the step. |
-| `live_transport.py:621` `_request_now()` | **deliberate, unchanged.** It is a *timestamp*, not a duration: it feeds view-authority expiry, the 12 h absolute cap and the 30 s helper lease, all of which must survive a restart and therefore must be wall-clock. A 1.5 s step shifts an expiry by 1.5 s; it cannot make a duration negative. Same for `jobs.py`'s persisted `created_at`/`updated_at`. |
-
-**Known and NOT fixed this cycle — the replay evaluator calls a declared absence an invalid
-measurement.** `live_service_replay._canonical_decode_rtf_evaluation` (`:660-694`) runs every
-`canonical_processed` payload through `_required_finite_non_negative_float`, so a **null**
-`canonical_decode_elapsed_sec` lands in `canonical_decode_rtf_invalid_measurements` and forces
-`canonical_decode_rtf_passed` false. This is **pre-existing, not introduced here**: J3's
-`_unanswered_span` has emitted a null elapsed since Phase J. But P2 makes the null a *designed*
-outcome rather than only a decoder-outage one, so the evaluator now conflates *degraded* with
-*invalid* — iteration 29's lesson, one layer down, in a verifier instead of a reducer. Logged as
-**candidate 58**; it is a gate-reporting question, not a meeting-reliability one, and widening this
-cycle to change a verifier's pass rule is exactly what "never weaken a gate to look better" forbids
-without a decision recorded first.
-
-**What F1's two runs already established, and must not be re-derived:** Phase M works - a publish
-that failed on every tick for 50 s kept 165 consecutive heartbeats alive and left both lanes
-healthy, which is exactly the condition that ended F3 at minute 14.6. Committed p95 fell from
-8343-9148 ms across four prior runs to 2567/2592 ms, and user-visible to 3922/3971 ms against the
-4000 ms gate - **both unqualified** (`sufficientSamples` false, n=8 and n=12 against 20, runs cut at
-18 s and 32 s by this very bug). Do not quote those as a pass.
+The seventh amendment's cycle (P1 monotonic measurement, P2 untrustworthy timing degrades, P3 four
+real-seam nodes, P4 the class swept) landed at `5bc4f7f`, merged as `42abc5a`, deployed 4/4, and is
+proven dead on the server. The rule it shipped is the **Duration vs timestamp** row in Shipped
+contracts; the numbers are in the Phase P gate and P7 merge rows of the gates index. The full list —
+including P4's four-site sweep table and P3's per-half red-before table — is in progress.txt under
+**"Phase P candidate list (P1-P5, the sweep table, the per-half red-before table)"**.
+**Its one open leftover is candidate 58**, in the numbered list above: the replay evaluator calls a
+declared absence an invalid measurement. Explicitly out of scope then and now: mandatory client
+retention of the 409 refusal body — the right fix, needing its own authorization.
 
 ## Non-candidates
 

@@ -15,6 +15,10 @@ from moss_transcribe_diarize.app.live_lane_contract import (
     LiveLane,
     LiveV2Frame,
 )
+from moss_transcribe_diarize.app.live_identity_album import (
+    ALBUM_MIN_MATCH_MARGIN,
+    ALBUM_MIN_MATCH_SCORE,
+)
 from moss_transcribe_diarize.app.live_manifest_finalizer import (
     LIVE_RECONNECT_BURST_FRAMES,
     LIVE_RECONNECT_BURST_SAMPLES,
@@ -25,6 +29,7 @@ from moss_transcribe_diarize.app.live_provider_bundle import (
     LiveProviderBundleConfig,
     _bounds,
     _endpoint_config,
+    _identity_config,
     compute_live_provider_bundle_hashes,
 )
 from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE
@@ -37,6 +42,12 @@ HARD_CAP_SAMPLES = 40000
 MAX_RETAINED_SAMPLES = 960000
 FRAME_SAMPLES = 8000
 DEPLOYED_REVISION = "4445a49b1c3d5e7f9012345678901234567890ab"
+
+# The matcher thresholds the host manifest carried before the fingerprint album: calibrated
+# for the latest-span overwrite policy the album replaced, and measured at 75.0 % mean live
+# speaker accuracy under the album -- below ADR-0002's bar. See tests/live_identity_accuracy.
+PRE_ALBUM_MIN_MATCH_SCORE = 0.5
+PRE_ALBUM_MIN_MATCH_MARGIN = 0.2
 
 STALE_HASH = "b" * 64
 
@@ -93,7 +104,11 @@ def _provisional_payload() -> dict:
             "post_speech_padding_samples": 1600,
             "hard_cap_samples": 120000,
         },
-        "identity_config": {"max_speakers": 16, "min_match_score": 0.5, "min_match_margin": 0.1},
+        "identity_config": {
+            "max_speakers": 16,
+            "min_match_score": PRE_ALBUM_MIN_MATCH_SCORE,
+            "min_match_margin": PRE_ALBUM_MIN_MATCH_MARGIN,
+        },
         "decoder_config": {"max_samples": 120000},
         "bounds_config": {
             "max_frame_samples": LIVE_SAMPLE_RATE,
@@ -148,6 +163,8 @@ def _finalize(
     hard_cap_samples: int = HARD_CAP_SAMPLES,
     max_retained_samples: int = MAX_RETAINED_SAMPLES,
     frame_samples: int = FRAME_SAMPLES,
+    min_match_score: float = ALBUM_MIN_MATCH_SCORE,
+    min_match_margin: float = ALBUM_MIN_MATCH_MARGIN,
     input_path: Path | None = None,
     output_path: Path | None = None,
     dry_run: bool = False,
@@ -167,6 +184,10 @@ def _finalize(
         str(max_retained_samples),
         "--frame-samples",
         str(frame_samples),
+        "--min-match-score",
+        str(min_match_score),
+        "--min-match-margin",
+        str(min_match_margin),
     ]
     if dry_run:
         argv.append("--dry-run")
@@ -230,6 +251,118 @@ def test_finalized_manifest_admits_as_a_live_service_descriptor(tmp_path):
     # The span cap is what the ≤6 s user-visible gate rests on.
     assert bounds.hard_cap_samples / LIVE_SAMPLE_RATE == 2.5
     assert config.bounds_config["frame_samples"] * 2 == LIVE_SAMPLE_RATE
+
+
+def test_finalize_states_the_matcher_thresholds_the_shipped_policy_is_calibrated_for(tmp_path, capsys):
+    """Candidate 63: a recalibration is a reviewed flag, not a hand edit of the host file.
+
+    The provisional manifest carries the pre-album pair, because that is how the deployed one
+    got them -- typed into an untracked file on the host. Finalizing has to replace them with
+    the pair the deployment states, carry that pair into the regenerated `identity_config_hash`
+    (a hand-edited section fails preflight, so an unhashed recalibration would not run at all),
+    and leave every identity key the flags do not name alone.
+    """
+
+    source = _write_provisional(tmp_path)
+    output = tmp_path / "live-provider-manifest.json"
+    assert _finalize(tmp_path, input_path=source, output_path=output) == 0
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    identity = _identity_config(payload["identity_config"])
+    assert (identity.min_match_score, identity.min_match_margin) == (
+        ALBUM_MIN_MATCH_SCORE,
+        ALBUM_MIN_MATCH_MARGIN,
+    )
+    assert identity.max_speakers == 16  # untouched: the flags name two thresholds, not a bound
+    assert json.loads(source.read_text(encoding="utf-8"))["identity_config"]["min_match_score"] == (
+        PRE_ALBUM_MIN_MATCH_SCORE
+    )
+
+    config = LiveProviderBundleConfig.from_mapping(payload, base_dir=output.parent)
+    assert payload["config_hashes"] == compute_live_provider_bundle_hashes(config)
+    printed = capsys.readouterr().out
+    assert f"evidence: identity_min_match_score={ALBUM_MIN_MATCH_SCORE}" in printed
+    assert f"evidence: identity_min_match_margin={ALBUM_MIN_MATCH_MARGIN}" in printed
+
+
+def test_a_different_calibration_is_a_different_manifest_hash(tmp_path):
+    """The thresholds are hash-covered, so which pair shipped is answerable after the fact."""
+
+    album = tmp_path / "album.json"
+    pre_album = tmp_path / "pre-album.json"
+    assert _finalize(tmp_path, output_path=album) == 0
+    assert (
+        _finalize(
+            tmp_path,
+            output_path=pre_album,
+            min_match_score=PRE_ALBUM_MIN_MATCH_SCORE,
+            min_match_margin=PRE_ALBUM_MIN_MATCH_MARGIN,
+        )
+        == 0
+    )
+
+    left = json.loads(album.read_text(encoding="utf-8"))["config_hashes"]
+    right = json.loads(pre_album.read_text(encoding="utf-8"))["config_hashes"]
+    assert left["identity_config_hash"] != right["identity_config_hash"]
+    assert left["combined_config_hash"] != right["combined_config_hash"]
+    assert left["bounds_config_hash"] == right["bounds_config_hash"]
+
+
+def test_a_finalize_that_does_not_state_its_calibration_is_refused(tmp_path):
+    """The flags are required for the same reason the bounds are: nothing else states them.
+
+    Before this, `identity_config` was carried through from the provisional file untouched, so
+    the thresholds the live matcher runs on were whatever the host happened to hold and no
+    review saw them. Omitting a flag is an argparse refusal, not a silent inheritance.
+    """
+
+    source = _write_provisional(tmp_path)
+    output = tmp_path / "live-provider-manifest.json"
+    with pytest.raises(SystemExit) as refusal:
+        main(
+            [
+                "--input",
+                str(source),
+                "--output",
+                str(output),
+                "--source-revision",
+                DEPLOYED_REVISION,
+                "--hard-cap-samples",
+                str(HARD_CAP_SAMPLES),
+                "--max-retained-samples",
+                str(MAX_RETAINED_SAMPLES),
+                "--frame-samples",
+                str(FRAME_SAMPLES),
+            ]
+        )
+
+    assert refusal.value.code == 2
+    assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    "kwargs, reason",
+    [
+        ({"min_match_score": 1.5}, "min_match_score must be between 0 and 1"),
+        ({"min_match_score": -0.1}, "min_match_score must be between 0 and 1"),
+        ({"min_match_margin": -0.2}, "min_match_margin must be non-negative"),
+    ],
+)
+def test_refuses_a_calibration_the_live_runtime_would_not_admit(tmp_path, capsys, kwargs, reason):
+    """There is no relation to check a threshold against, so the runtime's reader is the check.
+
+    A free parameter has no derivation the tool could verify. What it can verify is that the
+    live runtime admits the value, and it verifies that with the runtime's own reader rather
+    than a second copy of its rules.
+    """
+
+    output = tmp_path / "live-provider-manifest.json"
+    assert _finalize(tmp_path, output_path=output, **kwargs) == 2
+    assert not output.exists()
+    captured = capsys.readouterr()
+    assert captured.err.startswith("refused:")
+    assert "identity_config is not one the live runtime admits" in captured.err
+    assert reason in captured.err
 
 
 def test_retention_holds_a_reconnect_burst_on_both_lanes_and_keeps_acks_replayable(tmp_path):
@@ -320,6 +453,8 @@ def test_dry_run_prints_the_plan_and_rollback_and_writes_nothing(tmp_path, capsy
 
     lines = capsys.readouterr().out.splitlines()
     assert f"plan: set bounds_config.max_retained_samples={MAX_RETAINED_SAMPLES}" in lines
+    assert f"plan: set identity_config.min_match_score={ALBUM_MIN_MATCH_SCORE}" in lines
+    assert f"plan: set identity_config.min_match_margin={ALBUM_MIN_MATCH_MARGIN}" in lines
     assert "plan: regenerate config_hashes" in lines
     assert f"rollback: rm -f {output}" in lines
     assert f"dry-run: {output} not written" in lines
@@ -381,6 +516,10 @@ def test_tracked_ops_tool_finalizes_from_the_checkout(tmp_path):
             str(MAX_RETAINED_SAMPLES),
             "--frame-samples",
             str(FRAME_SAMPLES),
+            "--min-match-score",
+            str(ALBUM_MIN_MATCH_SCORE),
+            "--min-match-margin",
+            str(ALBUM_MIN_MATCH_MARGIN),
         ],
         cwd=tmp_path,
         capture_output=True,
@@ -393,4 +532,5 @@ def test_tracked_ops_tool_finalizes_from_the_checkout(tmp_path):
     assert payload["bounds_config"]["frame_samples"] == LIVE_WIRE_FRAME_SAMPLES
     assert payload["bounds_config"]["max_retained_samples"] == MAX_RETAINED_SAMPLES
     assert payload["source_revision"] == DEPLOYED_REVISION
+    assert payload["identity_config"]["min_match_score"] == ALBUM_MIN_MATCH_SCORE
     assert f"wrote: {output}" in result.stdout

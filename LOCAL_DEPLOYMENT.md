@@ -616,6 +616,31 @@ certificate private keys are operator-owned secret files and must not be
 committed. Rollback is setting `MOSS_LIVE_ENABLED=0` — in practice, stopping the
 live unit; see "Live service" below.
 
+### Live session audio retention (ADR-0003)
+
+Retention is **opt-in and off**. With no root declared the live service keeps
+audio for the span it is decoding and nothing longer, which is the posture every
+recorded certification run was measured against. Three keys, all commented out in
+`ops/moss-live.env.example`, turn it on:
+
+| key | meaning |
+| --- | --- |
+| `MOSS_LIVE_RETENTION_ROOT` | absolute directory holding one tape per session. Declaring it is what enables retention. |
+| `MOSS_LIVE_RETENTION_MAX_BYTES` | per-session cap in bytes. **Required** whenever a root is declared. |
+| `MOSS_LIVE_RETENTION_TTL_SECONDS` | seconds a tape outlives its meeting. Absent means `0` — reaped once the session ends. |
+
+The adapter translates them into `--live-retention-root`,
+`--live-retention-max-bytes` and `--live-retention-ttl-seconds`, and refuses a cap
+or a TTL stated without a root rather than ignoring it. The service refuses the
+root itself at startup — before any session exists — when it is relative, inside
+the checkout, on a filesystem that does not enforce `0700`, or on the filesystem
+the runs tree lives on: a runaway tape would answer `507` to the **batch**
+service's uploads without ever touching the batch service. On this deployment
+that rules out `/mnt/d` and leaves the WSL ext4 home. Rollback is removing the
+three keys and restarting the live unit. Note what that does **not** do: with no
+root declared there is no reaper either, so any tape a positive TTL was still
+holding stays on disk until the operator deletes the root directory.
+
 ## Live service
 
 The live service is a **second** systemd user unit, not a mode of the batch one.
@@ -661,14 +686,26 @@ ops/generate-live-tls.sh \
 
 # Provider manifest. The three bounds are required flags because the latency
 # remedy tunes the span cap; every other bound is a checked relation, so a wrong
-# flag is refused rather than deployed. --source-revision must be the reviewed
-# 40-character merge SHA.
+# flag is refused rather than deployed. The two matcher thresholds are required
+# for a different reason: they are free parameters with no relation to check, so
+# what makes a pair right is the identity policy it was measured against, and a
+# pair nobody states is a pair nobody reviewed. The values below are ADR-0002 §7's,
+# calibrated for the fingerprint album and measured by
+# tests/live_identity_accuracy.py; the album at the pre-album 0.5 / 0.2 measures
+# 75.0 % mean live speaker accuracy against 93.4 % here. --source-revision must be
+# the reviewed 40-character merge SHA.
 python3 ops/finalize-live-provider-manifest.py \
   --input  "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" \
   --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
   --source-revision "$(git rev-parse HEAD)" \
-  --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000
+  --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 \
+  --min-match-score 0.35 --min-match-margin 0.1
 ```
+
+Recalibrating the matcher changes `identity_config_hash` and therefore
+`combined_config_hash` and the provider manifest hash. That is the intended
+signature of the change, not drift: a redeploy that expects the previous manifest
+hash is checking for the recalibration having *not* happened.
 
 Then install and start the unit, and forward the port from Windows:
 

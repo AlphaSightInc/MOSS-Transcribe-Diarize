@@ -38,6 +38,7 @@ from .live_helper_failure import LiveHelperFailureCoordinator
 from .live_mixer import (
     LiveCompatibilityMixerRegistry,
     LiveMixIntegrityError,
+    LiveMixResult,
     LiveMixSourceMissingError,
 )
 from .live_service_runtime import (
@@ -53,6 +54,7 @@ from .live_session import (
     LiveSessionClosed,
     LiveSessionFailed,
 )
+from .live_tape import LiveSessionTapeRecorder, LiveSessionTapeStore
 from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
 
 
@@ -62,6 +64,7 @@ def attach_live_routes(
     access: LiveAccessRegistry,
     *,
     live_helper_lease_seconds: float,
+    tape_store: LiveSessionTapeStore | None = None,
 ) -> None:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
@@ -70,19 +73,29 @@ def attach_live_routes(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
     )
     v2_mixers = LiveCompatibilityMixerRegistry()
+    # The tape's lifecycle is the mixed track's lifecycle, so it is released wherever the
+    # mixer is: once the mixer is gone no further mixed audio can exist for that session,
+    # and a tape kept open past it could only accumulate lanes with no mixed track.
+    tapes = LiveSessionTapeRecorder(tape_store)
     helper_presence = HelperPresenceRegistry()
     helper_failures = LiveHelperFailureCoordinator(
         live_helper_lease_seconds=live_helper_lease_seconds,
         v2_sessions=v2_sessions,
         v2_mixers=v2_mixers,
+        tapes=tapes,
         helper_presence=helper_presence,
         access=access,
         abort_mono=runtime.abort,
     )
     app.state.live_v2_sessions = v2_sessions
     app.state.live_v2_mixers = v2_mixers
+    app.state.live_tapes = tapes
     app.state.live_helper_presence = helper_presence
     app.state.live_helper_failures = helper_failures
+    # ADR-0003 D6: the service reaps, at startup too. No session exists yet, so anything
+    # under the declared root belongs to a process that is gone -- which is the only moment
+    # a tape left by a crash can be reached at all.
+    tapes.reap()
 
     def _session_status(session_id: str) -> str | None:
         try:
@@ -179,6 +192,7 @@ def attach_live_routes(
             view = access.bind_session(decision.principal, created.session_id, now=_request_now())
             v2_sessions.create(created.session_id)
             v2_mixers.create(created.session_id)
+            tapes.create(created.session_id)
         except Exception:
             access.release_session(created.session_id)
             raise
@@ -218,12 +232,14 @@ def attach_live_routes(
                     raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
                 v2_session = v2_sessions.get(session_id)
                 ack = v2_session.accept(frame.v2_frame)
+                tapes.append_lane_frame(session_id, frame.v2_frame)
                 mixed = v2_mixers.get(session_id).admit_available(
                     session_id,
                     v2_session,
                     runtime,
                     final=False,
                 )
+                _tape_mixed(tapes, session_id, mixed)
                 snapshot = runtime.snapshot(session_id)
                 if snapshot is None:
                     raise KeyError(session_id)
@@ -345,11 +361,15 @@ def attach_live_routes(
             if v2_session is not None:
                 v2_snapshot = await v2_session.stop(0.0)
                 if v2_snapshot.status == "closing":
-                    v2_mixers.get(session_id).admit_available(
+                    _tape_mixed(
+                        tapes,
                         session_id,
-                        v2_session,
-                        runtime,
-                        final=True,
+                        v2_mixers.get(session_id).admit_available(
+                            session_id,
+                            v2_session,
+                            runtime,
+                            final=True,
+                        ),
                     )
                     v2_snapshot = await v2_session.stop(max(0.0, end_time - loop.time()))
                 if v2_snapshot.status == "closing":
@@ -360,6 +380,7 @@ def attach_live_routes(
                 if v2_snapshot.status == "failed":
                     v2_sessions.release(session_id)
                     v2_mixers.release(session_id)
+                    tapes.release(session_id)
                     helper_failures.release(session_id)
                     helper_presence.release(session_id)
                     access.release_session(session_id)
@@ -372,6 +393,7 @@ def attach_live_routes(
             stopped = await runtime.stop(session_id, deadline)
             v2_sessions.release(session_id)
             v2_mixers.release(session_id)
+            tapes.release(session_id)
             helper_failures.release(session_id)
             helper_presence.release(session_id)
             access.release_session(session_id)
@@ -399,6 +421,7 @@ def attach_live_routes(
             failure["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
             if isinstance(exc, LiveMixSourceMissingError):
                 v2_mixers.release(session_id)
+                tapes.release(session_id)
             return JSONResponse(failure, status_code=status)
         except LiveServiceError as exc:
             return JSONResponse(
@@ -411,6 +434,7 @@ def attach_live_routes(
             if release_v2_on_error:
                 v2_sessions.release(session_id)
                 v2_mixers.release(session_id)
+                tapes.release(session_id)
                 helper_failures.release(session_id)
                 helper_presence.release(session_id)
 
@@ -438,6 +462,7 @@ def attach_live_routes(
                     pass
                 v2_sessions.release(session_id)
                 v2_mixers.release(session_id)
+                tapes.release(session_id)
             helper_failures.release(session_id)
             helper_presence.release(session_id)
             access.release_session(session_id)
@@ -474,6 +499,7 @@ def attach_live_routes(
                 pass
             v2_sessions.release(session_id)
             v2_mixers.release(session_id)
+            tapes.release(session_id)
             helper_failures.release(session_id)
             helper_presence.release(session_id)
             access.release_session(session_id)
@@ -492,6 +518,29 @@ class _TransportAcceptResult:
     ack: FrameAck | LiveV2Ack
     queued_item_ids: tuple[int, ...]
     snapshot_version: int
+
+
+def _tape_mixed(
+    tapes: LiveSessionTapeRecorder,
+    session_id: str,
+    mixed: LiveMixResult | None,
+) -> None:
+    """Tee one sealed mixer commit, from the two places that produce one.
+
+    The start timestamp comes from the mixer's own diagnostics, not from the frame: the
+    frame carries a runtime *sequence*, and only the diagnostics say where in wall-clock
+    time this interval begins -- which is the whole basis on which the tape places it.
+    """
+
+    if mixed is None:
+        return
+    tapes.append_mixed(
+        session_id,
+        pcm=mixed.frame.pcm,
+        start_timestamp_ns=mixed.diagnostics.start_timestamp_ns,
+        sample_count=mixed.frame.sample_count,
+        sample_rate=mixed.frame.sample_rate,
+    )
 
 
 async def _optional_json(request) -> dict[str, Any]:

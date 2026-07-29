@@ -59,6 +59,28 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Strictly positive helper lease required when --live is enabled.",
     )
+    parser.add_argument(
+        "--live-retention-root",
+        help=(
+            "Absolute directory this deployment declares for live session audio retention "
+            "(ADR-0003). Absent is the default and means no meeting audio is retained."
+        ),
+    )
+    parser.add_argument(
+        "--live-retention-max-bytes",
+        type=int,
+        default=None,
+        help="Per-session tape cap in bytes, required when --live-retention-root is declared.",
+    )
+    parser.add_argument(
+        "--live-retention-ttl-seconds",
+        type=float,
+        default=None,
+        help=(
+            "Seconds a tape outlives its own session. Absent means 0 -- deleted at the next "
+            "reap after the meeting -- and a positive value is this deployment's statement."
+        ),
+    )
     parser.add_argument("--runs-dir", default="runs")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7860)
@@ -150,6 +172,61 @@ def _live_startup_config(args: argparse.Namespace) -> dict[str, object]:
     }
 
 
+def _live_tape_store(args: argparse.Namespace):
+    """Build the retention store this deployment declared, or None (ADR-0003 D2).
+
+    Retention is opt-in: with no root the service is byte-for-byte the one every gate was
+    measured on, and the PRD's audio clause keeps its one-span horizon. The two dependent
+    values are refused rather than absorbed -- a cap or a TTL with no root is an operator
+    who believes meeting audio is being kept when none is, and a declaration nobody reads
+    is the failure class this project has paid for repeatedly.
+
+    The typed refusal from `LiveSessionTapeStore.declared` is deliberately not caught, for
+    the reason it is an exception at all: a root that cannot hold audio safely must stop the
+    service starting with retention enabled rather than silently disabling it. That also
+    matches `_live_runtime_factory`, which lets the manifest's own error surface unaltered.
+    """
+
+    stated = [
+        flag
+        for flag, value in (
+            ("--live-retention-max-bytes", args.live_retention_max_bytes),
+            ("--live-retention-ttl-seconds", args.live_retention_ttl_seconds),
+        )
+        if value is not None
+    ]
+    if not args.live_retention_root:
+        if stated:
+            raise SystemExit(
+                f"{', '.join(stated)} requires --live-retention-root: with no declared root "
+                "no live audio is retained."
+            )
+        return None
+    if not args.live:
+        raise SystemExit("--live-retention-root requires --live.")
+    if args.live_retention_max_bytes is None:
+        raise SystemExit(
+            "--live-retention-max-bytes is required when --live-retention-root is declared."
+        )
+    from .live_tape import LiveSessionTapeStore
+
+    return LiveSessionTapeStore.declared(
+        root=args.live_retention_root,
+        max_bytes_per_session=args.live_retention_max_bytes,
+        # ADR-0003 D3: zero is the only value a tool may choose, because at zero the PRD's
+        # audio clause still holds literally at every boundary observable after a meeting.
+        # A positive TTL is stated by the deployment, never defaulted by a tool.
+        retention_ttl_seconds=(
+            0.0 if args.live_retention_ttl_seconds is None else args.live_retention_ttl_seconds
+        ),
+        # D4(3): the runs directory is the one filesystem this process is told about, and on
+        # the deployment host the live runs tree shares its filesystem with the batch one --
+        # so handing it to the admission check is what refuses a root whose runaway tape
+        # would answer 507 to a batch upload without ever touching the batch service.
+        runs_directories=(args.runs_dir,),
+    )
+
+
 def _certificate_sha256(certfile: Path) -> str:
     data = certfile.read_bytes()
     try:
@@ -170,6 +247,7 @@ def main() -> None:
     args = parse_args()
     live_runtime_factory = _live_runtime_factory(args)
     live_startup = _live_startup_config(args)
+    live_tape_store = _live_tape_store(args)
     app = create_app(
         model_path=Path(args.model).expanduser(),
         runs_dir=Path(args.runs_dir).expanduser(),
@@ -193,6 +271,7 @@ def main() -> None:
         live_auth_state_path=live_startup["live_auth_state_path"],
         live_server_cert_sha256=live_startup["live_server_cert_sha256"],
         live_helper_lease_seconds=live_startup["live_helper_lease_seconds"],
+        live_tape_store=live_tape_store,
     )
     uvicorn.run(
         app,

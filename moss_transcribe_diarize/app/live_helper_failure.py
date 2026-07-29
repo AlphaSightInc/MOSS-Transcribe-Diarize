@@ -158,6 +158,7 @@ class LiveHelperFailureCoordinator:
         on_expire: Callable[[str, int], None] | None = None,
         v2_sessions: _V2SessionRegistry | None = None,
         v2_mixers: _SessionReleaseRegistry | None = None,
+        tapes: _SessionReleaseRegistry | None = None,
         helper_presence: _SessionReleaseRegistry | None = None,
         access: _AccessRegistry | None = None,
         abort_mono: _MonoAbort | None = None,
@@ -168,6 +169,7 @@ class LiveHelperFailureCoordinator:
         self._on_expire = on_expire or (lambda _session_id, _sequence: None)
         self._v2_sessions = v2_sessions
         self._v2_mixers = v2_mixers
+        self._tapes = tapes
         self._helper_presence = helper_presence
         self._access = access
         self._abort_mono = abort_mono
@@ -338,6 +340,11 @@ class LiveHelperFailureCoordinator:
     def _release_registries(self, session_id: str) -> None:
         if self._v2_mixers is not None:
             self._v2_mixers.release(session_id)
+        # The tape ends here too. This is the *usual* terminal path on the real hosts -- a
+        # lease expiry, not a clean stop -- and a tape left open on it would stay in the
+        # store's active set and be skipped by every reap for the life of the process.
+        if self._tapes is not None:
+            self._tapes.release(session_id)
         if self._helper_presence is not None:
             self._helper_presence.release(session_id)
         if self._access is not None:

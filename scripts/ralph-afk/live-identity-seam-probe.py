@@ -156,7 +156,11 @@ def main() -> int:
     report["preparation_with_evidence"] = prepare_once(
         BoundedCausalIdentityPreparer(
             config=identity_config,
-            evidence_provider=_identity_evidence_provider(config, encoder=_identity_encoder(config)),
+            evidence_provider=_identity_evidence_provider(
+                config,
+                encoder=_identity_encoder(config),
+                identity_config=identity_config,
+            ),
         ),
         span=span,
         pcm=pcm,

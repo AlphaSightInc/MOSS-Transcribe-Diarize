@@ -4,6 +4,7 @@ import base64
 import contextlib
 import importlib.util
 import io
+import json
 import tempfile
 import threading
 import time
@@ -1417,3 +1418,217 @@ class LiveApiTest(unittest.TestCase):
                 "pruned_through_sequence": 4,
             },
         )
+
+    # -- ADR-0002 step 2: the tape, wired ------------------------------------------------
+
+    def _tape_pcm(self, seed: int, samples: int = 4000) -> bytes:
+        """Distinguishable, non-zero PCM, so silence can never pass for content."""
+
+        import struct
+
+        values = [((seed * 977 + index * 13) % 20000) - 10000 or 1 for index in range(samples)]
+        return struct.pack("<" + "h" * samples, *values)
+
+    def _post_two_sealed_lane_frames(self, client, session_id: str, pcm_by_sequence):
+        frames_url = f"/api/live/sessions/{session_id}/frames"
+        accepted = None
+        for sequence, pcm in enumerate(pcm_by_sequence):
+            for lane in ("system", "microphone"):
+                accepted = client.post(
+                    frames_url,
+                    json=v2_frame_payload(
+                        sequence,
+                        len(pcm) // 2,
+                        lane=lane,
+                        capture_timestamp_ns=sequence * 250_000_000,
+                    )
+                    | {"pcm_base64": base64.b64encode(pcm).decode("ascii")},
+                )
+                self.assertEqual(accepted.status_code, 200, accepted.text)
+        return accepted
+
+    def test_an_undeclared_retention_root_leaves_the_live_path_untaped(self):
+        """ADR-0003 D2 at the route: no declared root, no audio on any disk.
+
+        This is the configuration every certification run in this loop was measured on, so
+        it is asserted rather than assumed -- the wiring must be inert, not merely quiet.
+        """
+
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=9000,
+                    speech=(True,),
+                ),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            self._post_two_sealed_lane_frames(
+                client, session_id, (self._tape_pcm(1), self._tape_pcm(2))
+            )
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 5.0})
+
+            self.assertEqual(stopped.status_code, 200)
+            self.assertFalse(app.state.live_tapes.enabled)
+            written = sorted(path.name for path in Path(tmpdir).rglob("*") if path.is_file())
+            self.assertEqual([name for name in written if name.endswith(".pcm")], [])
+            self.assertEqual([name for name in written if name == "index.json"], [])
+
+    def test_the_live_path_tapes_both_lanes_and_the_mixed_track_and_ends_at_stop(self):
+        """The tee points ADR-0002 names, driven by the real routes rather than the appender.
+
+        Lane frames are teed after the ingress ack -- what the session accepted is what the
+        tape holds -- and the mixed track is teed at the mixer's sealed commit, placed by the
+        commit's own start timestamp rather than by arrival.
+        """
+
+        from moss_transcribe_diarize.app.live_lane_contract import LiveLane
+        from moss_transcribe_diarize.app.live_tape import MIXED_TRACK, LiveSessionTapeStore
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LiveSessionTapeStore.declared(
+                root=Path(tmpdir) / "tape-root",
+                max_bytes_per_session=8 * 1024 * 1024,
+            )
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=9000,
+                    speech=(True,),
+                ),
+                live_tape_store=store,
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            first, second = self._tape_pcm(1), self._tape_pcm(2)
+
+            accepted = self._post_two_sealed_lane_frames(client, session_id, (first, second))
+
+            self.assertEqual(accepted.json()["queued_item_ids"], [0])
+            tape = store.get(session_id)
+            self.assertIsNotNone(tape)
+            self.assertEqual(tape.read_track(LiveLane.SYSTEM.value), first + second)
+            self.assertEqual(tape.read_track(LiveLane.MICROPHONE.value), first + second)
+            mixed = tape.read_track(MIXED_TRACK)
+            self.assertEqual(len(mixed), 8000)
+            self.assertNotEqual(set(mixed), {0})
+            self.assertEqual(tape.gaps(LiveLane.SYSTEM.value), ())
+            self.assertEqual(tape.gaps(MIXED_TRACK), ())
+
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 5.0})
+
+            self.assertEqual(stopped.status_code, 200)
+            self.assertIsNone(store.get(session_id))
+            index = json.loads((store.root / session_id / "index.json").read_text())
+            self.assertIsNotNone(index["ended_at"])
+            self.assertIsNone(index["degradation"])
+            self.assertEqual(index["tracks"][MIXED_TRACK]["gaps"], [])
+
+    def test_a_failing_tape_never_refuses_a_frame_or_ends_a_meeting(self):
+        """ADR-0003 D5 at the route. A full disk degrades the tape; the meeting continues.
+
+        Without the recorder's guard this store's OSError leaves the frame route as a 500,
+        and a five-hundred on `POST /frames` is how a meeting dies.
+        """
+
+        from moss_transcribe_diarize.app.server import create_app
+
+        class _FullDisk:
+            def __init__(self) -> None:
+                self.calls: list[str] = []
+
+            def _fail(self, action: str):
+                self.calls.append(action)
+                raise OSError(28, "No space left on device")
+
+            def create(self, session_id):
+                self._fail("create")
+
+            def get(self, session_id):
+                self._fail("get")
+
+            def release(self, session_id):
+                self._fail("release")
+
+            def reap(self, *, active_session_ids=()):
+                self._fail("reap")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = _FullDisk()
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=9000,
+                    speech=(True,),
+                ),
+                live_tape_store=store,
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            accepted = self._post_two_sealed_lane_frames(
+                client, session_id, (self._tape_pcm(1), self._tape_pcm(2))
+            )
+            stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 5.0})
+
+            self.assertEqual(accepted.status_code, 200)
+            self.assertEqual(accepted.json()["queued_item_ids"], [0])
+            self.assertEqual(stopped.status_code, 200)
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "closed")
+            self.assertIn("reap", store.calls)
+            self.assertIn("create", store.calls)
+            self.assertIn("release", store.calls)
+
+    def test_a_helper_lease_expiry_ends_the_tape_it_would_otherwise_strand(self):
+        """The terminal path the real hosts actually take, and the one D6 cannot reach.
+
+        A tape left open on lease expiry stays in the store's active set, so every reap
+        skips it and it outlives its TTL for the life of the process.
+        """
+
+        from moss_transcribe_diarize.app.live_tape import LiveSessionTapeStore
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LiveSessionTapeStore.declared(
+                root=Path(tmpdir) / "tape-root",
+                max_bytes_per_session=8 * 1024 * 1024,
+            )
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                live_tape_store=store,
+                **self._live_auth_kwargs(tmpdir),
+            )
+            timer = _FakeTimer()
+            app.state.live_helper_failures._timer = timer
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(),
+            )
+            self.assertIsNotNone(store.get(session_id))
+
+            timer.scheduled[0][1].fire()
+
+            self.assertIsNone(store.get(session_id))
+            index = json.loads((store.root / session_id / "index.json").read_text())
+            self.assertIsNotNone(index["ended_at"])
+            self.assertEqual(store.reap(now=index["ended_at"] + 1.0), (session_id,))

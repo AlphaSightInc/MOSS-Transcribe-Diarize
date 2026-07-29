@@ -4,10 +4,10 @@ import asyncio
 import hashlib
 import json
 from collections import deque
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, replace
+from typing import Any, Sequence
 
-from .live_span_bounds import LIVE_SAMPLE_RATE, span_segments
+from .live_span_bounds import LIVE_SAMPLE_RATE, render_segments, span_segments
 
 
 PCM16_BYTES_PER_SAMPLE = 2
@@ -19,6 +19,22 @@ PCM16_BYTES_PER_SAMPLE = 2
 # is publishing the decoder's *local* labels as if they were canonical -- `S01` in one span
 # and `S01` in the next are not the same person until identity says so.
 UNATTRIBUTED_SPEAKER = "S00"
+
+
+def display_speaker_label(canonical_speaker: str, canonical_speakers: Sequence[str]) -> str:
+    """The `Sxx` token a canonical speaker is published as.
+
+    One rule, in one place, because two readers now depend on it: the identity preparer
+    writes the label when a span is first published, and `revise_labels` rewrites it when a
+    retrospective sweep moves that speech onto a different speaker. The mapping is positional
+    and the canonical list only ever grows by appending, which is what makes a label written
+    in minute one still name the same speaker in minute seventeen.
+
+    Raises `ValueError` for a speaker the session has never established; the caller decides
+    what that means, and both callers refuse rather than invent a label.
+    """
+
+    return f"S{tuple(canonical_speakers).index(canonical_speaker) + 1:02d}"
 
 
 class LiveSessionError(RuntimeError):
@@ -97,6 +113,10 @@ class CanonicalResult:
     transcript: str
     identity_confirmed: bool = True
     identity_preparation: LiveIdentityPreparation | None = None
+    # The decoder's local speaker per published segment, in segment order -- the address a
+    # later correction is written to. Empty means "this span is not revisable", which is the
+    # honest state for every caller that does not carry the decoder's own transcript.
+    local_speakers: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +163,39 @@ class CanonicalCommit:
     transcript: str
     prefix_hash: str
     identity_snapshot_version: int
+    # What this span's words are labelled with *now*, when a retrospective sweep has moved
+    # any of them onto a different speaker; `None` while the span still reads as committed.
+    # It is a second field rather than an edit to `transcript` because `prefix_hash` chains
+    # the committed transcripts: the chain records what was **said**, and a living document's
+    # corrections are a different fact about the same words. A reader is shown this when it
+    # is present, and the hash a client verifies is unaffected by every correction.
+    revised_transcript: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LabelRevision:
+    """One unit's corrected speaker: a span, a local speaker inside it, and who it now is.
+
+    The unit of a correction is `(span, local speaker)` and not `(span, displayed label)`
+    because an unattributed span displays `S00` for every one of its local speakers -- and an
+    abstained span is precisely the one a later album has the most to say about. The session
+    is deliberately told nothing about *why*: a sweep's reasoning belongs to the sweep, and
+    what arrives here is only the claim it is willing to publish.
+    """
+
+    span_id: int
+    local_speaker: str
+    canonical_speaker: str
+
+
+@dataclass(frozen=True, slots=True)
+class LabelRevisionOutcome:
+    """What one `revise_labels` call changed, and -- by name -- what it declined to change."""
+
+    version: int
+    revised_spans: int
+    revised_units: int
+    refusals: tuple[tuple[str, int], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +223,10 @@ class LiveSnapshot:
     frozen_until_sample: int
     pending_span_ids: tuple[int, ...]
     failure_reason: str | None = None
+    # How many revisions have changed a label a reader had already been shown. Zero for the
+    # whole of a meeting whose live labels were never corrected, so a client can tell "this
+    # transcript is settled" from "this transcript is still being repaired" without diffing.
+    label_revision_version: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -217,6 +274,14 @@ class LiveSession:
         self._span_order: list[int] = []
         self._pending_results: dict[int, CanonicalResult] = {}
         self._committed: list[CanonicalCommit] = []
+        # Per committed span, the decoder's own local speaker for each published segment, in
+        # segment order. It is the only thing that survives publication which a correction can
+        # be addressed to: the words carry a *canonical* label (or `S00`), and the local
+        # speaker that produced them is otherwise gone by the time a sweep has an opinion.
+        # One short tuple per span, so a three-hour meeting costs a few thousand small
+        # strings against a committed list that is already O(meeting).
+        self._label_tracks: dict[int, tuple[str, ...]] = {}
+        self._label_revision_version = 0
         self._prefix_hash = _hash_payload({"schema_version": 1, "prefix": []})
         self._identity_snapshot = LiveIdentitySnapshot()
         self._provisional_generation = 0
@@ -341,6 +406,7 @@ class LiveSession:
         start_sample: int,
         end_sample: int,
         transcript: str,
+        local_speakers: tuple[str, ...] = (),
     ) -> CanonicalSubmission:
         """Publish a frozen span's words without asserting who spoke them.
 
@@ -357,6 +423,11 @@ class LiveSession:
         name `UNATTRIBUTED_SPEAKER`. A transcript that still carries the decoder's local
         labels is refused, because publishing those as canonical would assert an identity
         the session declined to establish.
+
+        `local_speakers` is how the dropped claim stays *addressable*: the labels are gone
+        from the words, but a later sweep still has something to say about this span, and it
+        says it about the decoder's local speakers. Passing nothing keeps today's behaviour
+        exactly -- the span publishes unattributed and stays that way.
         """
 
         if epoch != self._epoch:
@@ -383,6 +454,7 @@ class LiveSession:
                 start_sample=span.start_sample,
                 end_sample=span.end_sample,
                 transcript=transcript,
+                local_speakers=local_speakers,
             ),
             identity_snapshot=self._identity_snapshot,
         )
@@ -433,6 +505,126 @@ class LiveSession:
         self._notify_waiters()
         return _PUBLISHED
 
+    def revise_labels(self, revisions: Sequence[LabelRevision]) -> LabelRevisionOutcome:
+        """Relabel already-published speech, leaving every published word exactly as it was.
+
+        This is ADR-0002's living document, and it is the only place a committed span changes
+        after it is committed. Three rules make that safe rather than alarming:
+
+        * **The words are never rewritten.** A span is revised only if re-rendering its own
+          committed segments with their own committed labels reproduces the committed string
+          byte for byte. A transcript that does not round-trip keeps everything it has, and
+          says so by name -- a correction is worth having only if it cannot cost a word.
+        * **`transcript` and `prefix_hash` never move.** The corrected labelling is published
+          beside them, so the chain a client verifies still records what was said and a reader
+          is still shown who is now believed to have said it.
+        * **Nothing here raises and nothing here is terminal.** Every way a correction can fail
+          to land -- a span that never committed, a local speaker that span never had, a
+          canonical speaker this session never established, a rewrite that would put two of one
+          span's own speakers on one identity -- is counted by name and returned. A meeting does
+          not end because its identity layer changed its mind about an earlier minute.
+
+        Revising a *closed* session is deliberately allowed: the session-end sweep is where
+        ADR-0002 measured essentially all of the accuracy, and it necessarily arrives after the
+        last span. The version bump is what tells a still-polling reader to come back for it.
+        """
+
+        refusals: dict[str, int] = {}
+        by_span: dict[int, dict[str, str]] = {}
+        for revision in revisions:
+            by_span.setdefault(int(revision.span_id), {})[revision.local_speaker] = (
+                revision.canonical_speaker
+            )
+        if not by_span:
+            return LabelRevisionOutcome(version=self._label_revision_version, revised_spans=0, revised_units=0)
+
+        index_of = {commit.span_id: index for index, commit in enumerate(self._committed)}
+        revised_spans = 0
+        revised_units = 0
+        for span_id in sorted(by_span):
+            corrections = by_span[span_id]
+            index = index_of.get(span_id)
+            if index is None:
+                _count_refusal(refusals, "span_not_committed", len(corrections))
+                continue
+            revised = self._revised_span(self._committed[index], corrections, refusals)
+            if revised is None:
+                continue
+            transcript, applied = revised
+            self._committed[index] = replace(self._committed[index], revised_transcript=transcript)
+            revised_spans += 1
+            revised_units += applied
+
+        if revised_spans:
+            self._label_revision_version += 1
+            self._bump()
+            self._notify_waiters()
+        return LabelRevisionOutcome(
+            version=self._label_revision_version,
+            revised_spans=revised_spans,
+            revised_units=revised_units,
+            refusals=tuple(sorted(refusals.items())),
+        )
+
+    def _revised_span(
+        self,
+        commit: CanonicalCommit,
+        corrections: dict[str, str],
+        refusals: dict[str, int],
+    ) -> tuple[str, int] | None:
+        """This span's corrected transcript and how many of its units moved, or `None`."""
+
+        track = self._label_tracks.get(commit.span_id)
+        if not track:
+            _count_refusal(refusals, "span_has_no_label_track", len(corrections))
+            return None
+        published = commit.revised_transcript if commit.revised_transcript is not None else commit.transcript
+        segments = span_segments(published, sample_count=commit.end_sample - commit.start_sample)
+        if len(segments) != len(track):
+            _count_refusal(refusals, "span_has_no_label_track", len(corrections))
+            return None
+        if render_segments(segments, lambda segment: segment.speaker) != published:
+            _count_refusal(refusals, "span_does_not_re_render", len(corrections))
+            return None
+
+        canonical_speakers = self._identity_snapshot.canonical_speakers
+        labels: list[str] = []
+        label_of_local: dict[str, str] = {}
+        applied = 0
+        for position, segment in enumerate(segments):
+            local_speaker = track[position]
+            canonical_speaker = corrections.get(local_speaker)
+            label = segment.speaker
+            if canonical_speaker is not None:
+                if canonical_speaker in canonical_speakers:
+                    label = display_speaker_label(canonical_speaker, canonical_speakers)
+                    if label != segment.speaker:
+                        applied += 1
+                else:
+                    _count_refusal(refusals, "canonical_speaker_unknown", 1)
+            labels.append(label)
+            label_of_local.setdefault(local_speaker, label)
+
+        for local_speaker in corrections:
+            if local_speaker not in track:
+                _count_refusal(refusals, "local_speaker_not_in_span", 1)
+        # The live matcher assigns a span's local speakers one to one, so two of them sharing
+        # an identity would be a claim no live span could have made. A sweep re-matches unit
+        # by unit and can reach that state across dispositions, so the span keeps what it has
+        # rather than publishing it. `UNATTRIBUTED_SPEAKER` is exempt: several of one span's
+        # speakers being nobody in particular is the honest state an abstention publishes.
+        attributed = [label for label in label_of_local.values() if label != UNATTRIBUTED_SPEAKER]
+        if len(set(attributed)) != len(attributed):
+            _count_refusal(refusals, "span_labels_would_collide", len(corrections))
+            return None
+        if not applied:
+            _count_refusal(refusals, "label_unchanged", len(corrections))
+            return None
+        relabelled = tuple(
+            replace(segment, speaker=label) for segment, label in zip(segments, labels, strict=True)
+        )
+        return render_segments(relabelled, lambda segment: segment.speaker), applied
+
     def snapshot(self) -> LiveSnapshot:
         return LiveSnapshot(
             status=self._status,
@@ -450,6 +642,7 @@ class LiveSession:
             frozen_until_sample=self._frozen_until_sample,
             pending_span_ids=tuple(self._span_order),
             failure_reason=self._failure_reason,
+            label_revision_version=self._label_revision_version,
         )
 
     async def stop(self, deadline: float) -> LiveSnapshot:
@@ -621,12 +814,32 @@ class LiveSession:
             identity_snapshot_version=identity_snapshot.version,
         )
         self._committed.append(commit)
+        self._retain_label_track(span, result)
         self._committed_samples = span.end_sample
         self._prefix_hash = prefix_hash
         self._identity_snapshot = identity_snapshot
         if self._provisional is not None and self._provisional.start_sample < self._committed_samples:
             self._provisional = None
         self._prune_committed_frames()
+
+    def _retain_label_track(self, span: FrozenSpan, result: CanonicalResult) -> None:
+        """Remember which local speaker produced each published segment, when that is known.
+
+        Retained only when it matches the words that were actually published: a track of a
+        different length than the committed segments is a caller defect, and a span whose
+        address cannot be trusted must be unrevisable rather than revisable at the wrong
+        position. Refusing here -- silently, and leaving the span published -- is deliberate:
+        publishing is the meeting and an address book is not, so a broken track costs a later
+        correction and nothing else.
+        """
+
+        track = tuple(result.local_speakers)
+        if not track:
+            return
+        segments = span_segments(result.transcript, sample_count=span.sample_count)
+        if len(segments) != len(track):
+            return
+        self._label_tracks[span.id] = track
 
     def _prune_committed_frames(self, *, force: bool = False) -> None:
         while self._frames and self._frames[0].end_sample <= self._committed_samples:
@@ -647,6 +860,10 @@ class LiveSession:
     def _notify_waiters(self) -> None:
         for waiter in list(self._waiters):
             waiter.set()
+
+
+def _count_refusal(refusals: dict[str, int], reason: str, amount: int) -> None:
+    refusals[reason] = refusals.get(reason, 0) + amount
 
 
 def _validate_frame(frame: AudioFrame) -> None:

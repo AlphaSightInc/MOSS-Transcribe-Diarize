@@ -6,7 +6,11 @@ import pytest
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
-from moss_transcribe_diarize.app.live_coordinator import LiveCoordinator
+from moss_transcribe_diarize.app.live_coordinator import (
+    IDENTITY_FINALIZE_FAILED,
+    CoordinatorFinalizeResult,
+    LiveCoordinator,
+)
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
@@ -237,3 +241,90 @@ def test_coordinator_identity_abstention_publishes_the_span_without_a_speaker():
     assert snapshot.identity_snapshot == before.identity_snapshot
     assert snapshot.committed[-1].transcript == "[0][S00]decoded[0.0625]"
     assert decoder.transcript == "[0][S01]decoded[0.0625]"
+
+
+# --------------------------------------------------------------------------------------
+# ADR-0002's final sweep, from the coordinator's side. The identity stack's half is
+# measured in `test_live_provider_bundle` and the whole of it in `test_live_pipeline_seams`;
+# what these three nodes pin is the seam's *shape* -- which snapshot the stack is settled
+# against, and the two ways a stack can decline to settle without ending a clean stop.
+# --------------------------------------------------------------------------------------
+
+
+@dataclass
+class FinalizingIdentity(PreparingIdentity):
+    """A stack that records what it was asked to settle against, or refuses to settle."""
+
+    raises: bool = False
+
+    def __post_init__(self) -> None:
+        self.finalized: list[LiveIdentitySnapshot] = []
+
+    def finalize_identity(self, *, base_snapshot: LiveIdentitySnapshot) -> None:
+        self.finalized.append(base_snapshot)
+        if self.raises:
+            raise RuntimeError("the album could not be settled")
+
+
+def test_a_session_end_finalize_settles_the_stack_against_the_meetings_final_snapshot():
+    """The last span's own preparation is what the stack has to reconcile.
+
+    A span's vectors acquire their canonical speaker when the *next* span's preparation
+    arrives, so the meeting's last span is the one nothing follows. Handing the stack the
+    session's snapshot as it stands at stop time is what closes that gap, and it is the
+    snapshot rather than the preparation because the session is the thing that decided
+    which preparation was published.
+    """
+
+    identity = FinalizingIdentity()
+    live, _decoder, arbiter, session = coordinator(speech=(True, False), identity=identity)
+    live.accept_frame(frame(0, 1000))
+    live.accept_frame(frame(1, 1000))
+    live.process_work_item(arbiter.next_work())
+
+    result = live.finalize_identity()
+
+    assert [dict(snapshot.diagnostics) for snapshot in identity.finalized] == [{"span_id": "0"}]
+    assert identity.finalized[0] == session.snapshot().identity_snapshot
+    # Nothing to correct, and the version is the session's own rather than a zero standing
+    # in for it -- the same rule `_publish_identity_revision` follows on every span.
+    assert result.identity_revision_spans == 0
+    assert result.identity_revision_units == 0
+    assert result.identity_revision_refusals == ()
+
+
+def test_a_session_end_finalize_is_harmless_for_a_stack_that_cannot_sweep():
+    """Every identity stack that predates ADR-0002 step 3, and every test double.
+
+    The capability is asked for by name, so a stack without it is not an error condition:
+    it has retained nothing and has nothing to say about a span it has already answered.
+    """
+
+    live, _decoder, arbiter, _session = coordinator(speech=(True, False))
+    live.accept_frame(frame(0, 1000))
+    live.accept_frame(frame(1, 1000))
+    live.process_work_item(arbiter.next_work())
+
+    result = live.finalize_identity()
+
+    assert result == CoordinatorFinalizeResult()
+
+
+def test_a_session_end_finalize_that_raises_is_named_rather_than_terminal():
+    """A meeting that reached a clean stop has already succeeded.
+
+    An identity layer that breaks on the way out costs the transcript its last correction
+    and nothing else. It is counted by name because the alternative -- reporting zero
+    corrections -- is indistinguishable from a meeting nobody needed to correct.
+    """
+
+    identity = FinalizingIdentity(raises=True)
+    live, _decoder, arbiter, session = coordinator(speech=(True, False), identity=identity)
+    live.accept_frame(frame(0, 1000))
+    live.accept_frame(frame(1, 1000))
+    live.process_work_item(arbiter.next_work())
+
+    result = live.finalize_identity()
+
+    assert result.identity_revision_refusals == ((IDENTITY_FINALIZE_FAILED, 1),)
+    assert session.snapshot().status == "active"
