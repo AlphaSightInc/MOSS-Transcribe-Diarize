@@ -301,6 +301,22 @@ carry is in the retired-evidence index below).**
   *So the ordering (55 before 60/65) is now recommended on measurement rather than on inference,*
   and iterations 3 and 4 are reconciled rather than one being discarded: the stand-in was
   load-bearing, just not for the reason iteration 3 gave. See Phase N decision 19.
+- **ITERATION 6 FOUND WHERE THE UNBANKABLE REFERENCES COME FROM, AND IT IS ONE SITE WITH NO
+  DURATION CONDITION ON IT — so the loop's diagnostic queue on this question is CLOSED and the
+  request is written.** `birth-floor-probe.py`, rc=0, offline, both real meetings' own published
+  transcripts through production's span grammar. **14 of F2's 16 canonical speakers and 13 of F3's
+  16 were born from audio that never cleared the 0.5 s evidence floor** — they hold **no
+  reference at all**, not even a stand-in; 1 (F2) and 2 (F3) were banked at birth. One span of
+  pure `'........................'` minted **two** of them; the rest are `Hi.` / `Mm-hmm.` / one
+  `"I'm sorry, I can't assist with that request."`. `live_identity.py:129` births a canonical
+  speaker for every unmatched local speaker **unconditionally**, and the evidence floor is applied
+  **per segment** one layer down, so F3's `S04` — 1.08 s in nine 0.12 s fragments — also produced
+  no vector. *The counterfactual, bounding not simulating:* a birth floor at the evidence floor
+  takes F2 16 → **2** and F3 16 → **3** (8.0 → **1.0 / 1.5** refs per real voice); at the album's
+  1.0 s admission every survivor is banked **by construction**, so an unmergeable reference stops
+  being representable. 1.0–1.5 is the fixture's own 1.40 regime, where iteration 5 measured 1.1 %
+  ambiguity and 99.26 %. **The whole 55/65/60 argument is now one measured chain, and it is
+  written up for the operator in `scripts/ralph-afk/authorization-request-55-60-65.md`.**
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64 and 65; F1's two REDs; the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
@@ -1295,6 +1311,18 @@ python3 scripts/ralph-afk/sweep-multiplicity-probe.py                    # rc=0
 # MERGES THEM BACK to 42 (51 merges, ambiguity and accuracy unmoved); the identical split held
 # sub-admission cannot merge (decision 7 needs a bank on both sides), and the sweep goes 74.4 %
 # ambiguous. Neither factor alone does it. See Phase N decision 19.
+# --- iteration 6: WHERE an unbankable reference comes from. Reads the two real meetings' own
+#     published transcripts through production's span grammar and interval filter; no host, no
+#     product change, no fixture, <2 s. Classifies every canonical speaker by its BIRTH span. -------
+python3 scripts/ralph-afk/birth-floor-probe.py /tmp/i1-f2-evidence/ralph-cert \
+    /tmp/i9-f3-evidence/ralph-soak --json /tmp/i6-birth-floor.json      # rc=0
+# Expect F2: 16 canonical for 2 voices (8.0 refs/voice); born no_reference 14 / provisional 1 /
+#            banked 1; a birth floor at 0.5 s leaves 2 (1.0 refs/voice), at 1.0 s leaves 1.
+#        F3: 16; no_reference 13 / provisional 1 / banked 2; floors leave 3 (1.5) and 2 (1.0).
+# rc=6 is a named refusal for an unreadable layout. `--real-voices` defaults to 2 (F1/F2/F3's
+# harness limit, candidate 51); pass the truth for any future run. The floor columns are a
+# COUNTERFACTUAL - suppressing a birth changes later matching - so they bound, never simulate.
+# See Phase N decision 20 and scripts/ralph-afk/authorization-request-55-60-65.md.
 
 # --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
 #     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
@@ -1763,6 +1791,18 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     operator is: candidate 55 mints *many* ids per voice **and** mints them from fragments too
     short to bank, and the sweep's own defence against the first is disabled by the second. See
     Phase N decision 19.
+    **ITERATION 6 LOCATED THE SITE AND MEASURED THE REMEDY, so 55 now has a cause, a mechanism and
+    a predicted fix, and the loop should stop diagnosing it.** `birth-floor-probe.py`:
+    `live_identity.py:129` births a canonical speaker for **every** unmatched local speaker with
+    no duration condition at all, while the evidence floor sits a layer down in
+    `_speaker_intervals_by_label` and is applied **per segment**. Result on the two real meetings:
+    **14 of F2's 16 and 13 of F3's 16 canonical speakers hold no reference whatever** (born from
+    `'...'`, `Hi.`, `Mm-hmm.`), 1 and 2 were banked at birth. A birth floor on *embedded* seconds
+    would leave 2 / 3 speakers (1.0 / 1.5 refs per voice, the fixture's regime), and at the
+    album's 1.0 s admission every survivor is banked by construction. **This is the request that
+    is now on the table**: `scripts/ralph-afk/authorization-request-55-60-65.md`, with the three
+    decisions it must make explicitly, the two measured-wrong alternatives (raising `max_speakers`,
+    lowering `min_segment_samples`) and the honest limits. See Phase N decision 20.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1920,6 +1960,11 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     diagnosability half is unchanged and still the part that is cheap to authorize**, and it is
     now *more* clearly worth it: "swept and proposed nothing" is exactly what is happening, five
     times per 300 s meeting, and no surface says so.
+    ***ITERATION 6 CLOSES THE DIAGNOSTIC CHAIN.*** The unbankable references decision 19 blames
+    come from one unconditioned site (`live_identity.py:129`) and 14 of F2's 16 canonical speakers
+    hold **no** reference at all — see Phase N decision 20. 65's diagnosability half is unchanged
+    and is item (b) of `scripts/ralph-afk/authorization-request-55-60-65.md`; **no further probe
+    of 65's cause is worth an iteration.**
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
@@ -2262,6 +2307,36 @@ step 4 and any future identity work are constrained by them.**
     holds the live labels healthy (93.44 %) while the album is fragmented, and a real meeting
     fragments both together, so read it as "the corrections stop tracking truth", **not** as a
     forecast of what a real swept meeting would score.
+20. **A canonical speaker is minted from audio the system refused to embed, and that one site
+    produces BOTH halves of decision 19's product** (filed iteration 6 of run `20260729-094359`,
+    `birth-floor-probe.py`, rc=0, offline, no product change). `BoundedCausalIdentityPreparer.
+    prepare` (`live_identity.py:129`) births a canonical speaker for every local speaker that did
+    not match, with **no duration condition of any kind**. The evidence floor
+    (`_speaker_intervals_by_label`, `min_segment_samples` 8000) and the album's admission gate
+    (`ALBUM_ADMISSION_SECONDS` 1.0) both sit *below* it, so a birth lands in one of three states
+    and only the third is a reference the sweep can merge: **no_reference** (no segment cleared
+    0.5 s, so the encoder was never asked — not even a stand-in), **provisional** (one
+    sub-admission fragment, unmergeable by decision 7), **banked**.
+    *Measured on the two real meetings whose span bodies survive:*
+    | run | canonical | refs/voice | no_reference | provisional | banked |
+    | --- | --- | --- | --- | --- | --- |
+    | **F2** (300 s, `7a4f59c`, album live) | 16 | **8.0** | **14** | 1 | 1 |
+    | **F3** (17 min, `42abc5a`) | 16 | **8.0** | **13** | 1 | 2 |
+    F2's span 16 is `'........................'` — the decoder emitting no words on the silence
+    window — and it minted **two** canonical speakers. The floor is **per segment**, so F3's `S04`
+    (1.08 s in nine 0.12 s fragments) produced no vector either.
+    *The counterfactual, which BOUNDS and does not simulate* (suppressing a birth changes the
+    matcher's later inputs, so these are a lower bound on the count under a floor): a floor on
+    embedded seconds at 0.5 s leaves **2 / 3** speakers (**1.0 / 1.5** refs per real voice), at
+    1.0 s leaves **1 / 2** — and at 1.0 s every survivor is banked **at birth by construction**,
+    so "a canonical speaker with no admitted bank" stops being representable and decision 19's
+    product cannot form. 1.0-1.5 is the fixture's own 1.40 regime (1.1 % ambiguous, 99.26 %).
+    *Recorded so they are not re-proposed:* raising `max_speakers` 16 → 32/64 buys +4.5 pp of live
+    accuracy on the fixture but raises refs/voice, so by decision 19's mechanism it should make
+    the sweep **more** inert on a real meeting (an inference, not a measurement); lowering
+    `min_segment_samples` is refuted by the 0.5 s overlap (same-speaker 0.378, cross-speaker
+    0.360). **This changes birth semantics, which Phase N decision 3 records ADR-0002 as requiring
+    unchanged — hence an amendment, not "Phase N remains authorized".**
 
 ### (superseded) Phase N as first written - retired to progress.txt
 

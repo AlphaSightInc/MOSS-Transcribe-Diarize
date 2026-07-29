@@ -23331,3 +23331,152 @@ it can start today, Phase N step 4 is the only one that needs no operator - and
 its own sequencing caveat (unifying batch onto an engine whose live half is inert)
 should be restated with this iteration's measurement, which explains WHY it is
 inert rather than merely that it is.
+
+================================================================================
+ITERATION 6 (run 20260729-094359) - A CANONICAL SPEAKER IS MINTED FROM AUDIO THE
+SYSTEM REFUSED TO EMBED, AND THE 55/60/65 AUTHORIZATION REQUEST IS WRITTEN
+================================================================================
+
+TARGET.  Iteration 5's recommended next step, both halves: "write the
+authorization request from the 2x2" and "do NOT spend another iteration
+re-deriving a mechanism".  Iteration 5 measured what multiplicity x stand-ins is
+SUFFICIENT to cause; it could not say where either quantity comes from, and an
+authorization request that cannot name the site is a request the operator has to
+finish.  So: one probe to locate the site and price the remedy, then the request.
+Diagnosis and loop-owned evidence only - no product source, no test source, no
+fixture, no host, no session, no TCC.
+
+WHAT I DID.
+  1. scripts/ralph-afk/birth-floor-probe.py.  Reads the two real meetings whose
+     span BODIES survive (F2's snap-full-0180.json, F3's snap-full-0330.json)
+     through production's own span grammar and interval filter - span_segments,
+     _speaker_intervals_by_label, _intervals_duration, ALBUM_ADMISSION_SECONDS -
+     rather than re-deriving any of them (Phase N decision 5's rule applied to a
+     measurement).  It classifies every canonical speaker by what its BIRTH span
+     gave it, reading each span twice: once with the floor off (min_segment_
+     samples=1, every segment the transcript carries) and once at the deployed
+     8000, so the gap between them is exactly the audio a birth can be minted
+     from while producing no vector.
+  2. scripts/ralph-afk/authorization-request-55-60-65.md - the request, in the
+     shape of the previous amendments so it can be adapted rather than rewritten.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/birth-floor-probe.py /tmp/i1-f2-evidence/ralph-cert \
+      /tmp/i9-f3-evidence/ralph-soak --json /tmp/i6-birth-floor.json   -> rc=0
+      (evidence /tmp/i6-birth-floor.txt, /tmp/i6-birth-floor.json, <2 s)
+  re-run, diffed against the first    -> byte-identical (deterministic)
+  python3 scripts/ralph-afk/birth-floor-probe.py /tmp   -> rc=6, one named line
+      "UNREADABLE: no snapshot with span bodies under /tmp", no traceback
+  python3 -m py_compile scripts/ralph-afk/birth-floor-probe.py -> ok
+  git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk' -> EMPTY, so the
+      probe speaks for the deployed service.
+
+  CROSS-CHECK against the tracked identity-evidence-probe on the same directory,
+  because a new probe agreeing with a recorded number is worth more than a new
+  number: it reports "2 of 16 canonical speakers ever hold an admitted exemplar,
+  {S01: 74, S06: 1}".  This probe says S01 was BANKED AT BIRTH and S06 was
+  PROVISIONAL at birth (0.68 s) - i.e. S06 earned its single exemplar later.
+  The two agree, and the birth view explains the other one's 14.
+
+THE FINDING.  14 of F2's 16 canonical speakers and 13 of F3's 16 were born from
+audio that never cleared the 0.5 s evidence floor.  They hold NO REFERENCE AT
+ALL - not a bank, not even a provisional stand-in.
+
+  run   canonical  refs/voice  no_reference  provisional  banked
+  F2       16         8.0          14             1          1
+  F3       16         8.0          13             1          2
+
+  The words the slots were spent on, verbatim from the published transcript:
+    S02 span 16  0.600 s spoken / 0.000 embedded  '........................'
+    S03 span 16  0.600 s spoken / 0.000 embedded  '........................'
+    S04 span 19  0.260 / 0.000  '...'
+    S09 span 36  0.400 / 0.000  "I'm sorry, I can't assist with that request."
+    S10 span 39  0.120 / 0.000  'Hi.'      (and eight more of the same shape)
+  ONE span of pure ellipsis - the decoder emitting no words at all on the silence
+  window - minted TWO canonical speakers.
+
+  THE SITE, and it has no duration condition on it.  BoundedCausalIdentityPreparer
+  .prepare (live_identity.py:129) births a canonical speaker for every local
+  speaker that did not match, unconditionally.  The evidence floor sits a layer
+  DOWN in _speaker_intervals_by_label and is applied PER SEGMENT, so F3's S04 -
+  1.08 s of speech in nine 0.12 s fragments - also produced no vector.  The
+  album's admission gate is a layer below that again.  Three gates, and the one
+  that spends a canonical slot is above all of them.
+
+  THE REMEDY, PRICED (counterfactual, see limits):
+    birth floor on embedded seconds   F2 speakers  refs/voice   F3   refs/voice
+      none (deployed)                     16          8.0       16      8.0
+      >= 0.5 s (the evidence floor)        2          1.0        3      1.5
+      >= 1.0 s (the album's admission)     1          0.5        2      1.0
+  1.0-1.5 refs per real voice is the FIXTURE's own regime (1.40), where iteration
+  5 measured 1.1 % kept_ambiguous and 99.26 % final accuracy.  And at a floor
+  equal to the album's admission every survivor is banked AT BIRTH BY
+  CONSTRUCTION, so "a canonical speaker with no admitted bank" stops being
+  representable and decision 19's product cannot form at all.
+
+WHAT THIS RE-PRICES.
+  * Candidate 55 now has a site, a mechanism and a predicted remedy, and its two
+    symptoms are one unconditioned birth.  The loop's diagnostic queue on this
+    question is CLOSED; further probing of it is not worth an iteration.
+  * Candidate 65's cause half stays settled (iteration 5) and its diagnosability
+    half stays the cheap, independent item.
+  * Candidate 60's ordering is unchanged - behind 55 - on the same measurement.
+  * Two alternatives are now recorded as measured-wrong so they are not
+    re-proposed: raising max_speakers 16 -> 32/64 (+4.5 pp live on the fixture,
+    but it RAISES refs/voice, so by decision 19's mechanism it should make the
+    sweep more inert on a real meeting - an inference, flagged as one), and
+    lowering min_segment_samples (refuted by the 0.5 s overlap: same-speaker
+    0.378 against cross-speaker 0.360).
+
+LIMITS, recorded because the floor table is the number that will be quoted.
+  1. It is a COUNTERFACTUAL, not a simulation.  Suppressing a birth changes the
+     matcher's later inputs, so a voice refused at its first short turn may birth
+     at a later long one.  The survivor counts are a LOWER bound on the canonical
+     count under a floor and an UPPER bound on births suppressed.
+  2. Both meetings carried two voices, both on the system lane (candidate 51).  A
+     real multi-person meeting is where a birth floor's deferred-labelling cost
+     would be felt, and this loop cannot produce one.
+  3. The bodies are a prefix - 154/171 spans for F2, 414/443 for F3 (candidate
+     61).  Every birth in both runs falls inside the prefix, so the
+     classification is complete even though the coverage is not.
+  4. F3 ran on 42abc5a, before the album.  That is fine for this question -
+     births are unchanged by the album by design - but it is not a Phase N
+     measurement.
+
+FILES TOUCHED.  scripts/ralph-afk/birth-floor-probe.py (new),
+scripts/ralph-afk/authorization-request-55-60-65.md (new),
+scripts/ralph-afk/context.md (the standing summary, candidate 55, candidate 65,
+the Validation fence, and Phase N decision 20).  No product source, no tests.
+
+WHAT I LEARNED.
+  1. **When several gates guard a resource, check whether the one that SPENDS it
+     is above or below the others.**  Three thresholds guard identity - birth,
+     the evidence floor, the admission gate - and the loop spent five iterations
+     inside the bottom two arguing about reference quality.  The slot is spent at
+     the top, where there is no threshold at all.  "Which layer allocates?" would
+     have found this before "which layer is confused?" did.
+  2. **The cheapest instrument is often the output the system already published.**
+     Iterations 3-5 invented vectors, wrapped the album and sharded reference
+     sets to reason about F2's shape.  The birth state of every one of F2's
+     sixteen speakers was sitting in its own transcript the whole time, legible
+     with production's own parser in under two seconds.
+
+BLOCKERS.  Nothing blocked this iteration.  Re-verified at the start AND at the
+commit: the last prd.md commit is still 0456177 (the ADR-0002 supersession), no
+ninth authorization exists, and merge-keeper.sh's expected_main guard refuses a
+ninth merge.  Candidates 55, 58, 60, 64, 65 and F1's two REDs remain tracked
+product source or gate definitions under the post-merge freeze.  Phase N step 4
+remains the one open product item needing no operator.
+
+RECOMMENDED NEXT STEP.  The request is written and the loop should not write it
+again.  Until an amendment lands, the two things worth an iteration are, in
+order: (1) Phase N step 4 (batch Tier-B unification onto live_identity.
+assign_speakers) - the only product work that needs no operator, with its
+sequencing caveat now explained rather than merely stated, and accepting that it
+cannot deploy without a ninth merge; (2) the fifth compaction of context.md -
+234 825 bytes against the Read tool's 256 KB hard cap at a measured ~7 KB per
+iteration, so it is due in roughly three iterations, and the cheapest cut is
+still the three retired-evidence index tables (~11 KB of pure navigation,
+mergeable into one).  Do NOT spend another iteration measuring candidate 55, 60
+or 65: the chain is site -> mechanism -> priced remedy, and the next move on it
+is the operator's.
