@@ -20310,3 +20310,192 @@ decided before the patch, all three visible from the code now:
   (c) WHAT A READER SEES when 4-8 % of the speech they have already read changes
       speaker.  ADR-0002 promises a "living document"; nothing in the portal
       shows a version of a label yet.
+
+
+================================================================================
+ITERATION 25 (run 20260729-025318) - A REVISION REACHES THE READER
+Phase N step 3, the user-visible half.  ADR-0002 order: album -> tape -> SWEEP ->
+batch.  This is the last piece of step 3 before Phase N's gate.
+================================================================================
+
+TARGET.  Iteration 24's own recommended next step, taken verbatim: "APPLY A
+REVISION TO THE TRANSCRIPT - the user-visible half of step 3".  Since iteration
+22 the sweep has been an engine (pure), since 23 a measured one (99.26 % / 98.48 %
+in the accuracy harness), since 24 a wired one (a ledger and a cadence on the live
+path) - and NOTHING CONSUMED A REVISION.  `sweep_now` applied it to the ledger and
+returned it; the caller dropped it.  A reader saw the live labels and nothing else.
+This iteration makes a correction reach the words a reader is holding.
+
+FILES TOUCHED (12; product source 8; NONE under macos/ or ops/):
+  moss_transcribe_diarize/app/live_span_bounds.py     +render_segments (the grammar's
+                                                       write side, moved beside its read side)
+  moss_transcribe_diarize/app/live_session.py         +display_speaker_label, +LabelRevision,
+                                                       +LabelRevisionOutcome, +label tracks,
+                                                       +revise_labels, CanonicalCommit
+                                                       .revised_transcript, LiveSnapshot
+                                                       .label_revision_version
+  moss_transcribe_diarize/app/live_identity.py        uses the shared renderer + label rule;
+                                                       +take_identity_revision
+  moss_transcribe_diarize/app/live_identity_sweep.py  +take_revision (the consumption half)
+  moss_transcribe_diarize/app/live_provider_bundle.py +take_identity_revision
+  moss_transcribe_diarize/app/live_coordinator.py     +_local_speakers, +_publish_identity_
+                                                       revision, +5 result fields
+  moss_transcribe_diarize/app/live_service_runtime.py  the 5 fields onto canonical_processed
+  moss_transcribe_diarize/app/live_portal.py          renders the corrected labelling; shows
+                                                       the revision count once there is one
+  tests/test_live_session.py                          +6 nodes  (9 -> 15)
+  tests/test_live_pipeline_seams.py                   +1 node   (60 -> 61)
+  tests/test_live_portal.py                           +1 node   (13 -> 14) + a node scenario
+  tests/test_live_identity_sweep.py                   +1 node   (54 -> 55)
+
+VALIDATION.  `python3 -m pytest tests/ -q` -> 793 passed / 2 skipped / 368
+subtests in 75.74 s (was 784 / 2 / 368 in 74.81 s; +9 nodes).  The two skips are
+the pre-existing Python-3.10 contract at tests/test_large_upload.py:155,175.
+Swift untouched (0 files under macos/), so 158 stands.
+PARITY, because this iteration moved two functions out of the identity path: the
+eight-meeting accuracy harness still measures album 93.44 / 92.18, overwrite
+72.02 / 55.68, swept 99.26 / 98.48, merges 0, residual 0 - unchanged to the
+hundredth.  The renderer and the display-label rule were extracted, not rewritten.
+
+THE THREE DECISIONS ITERATION 24 LEFT OPEN, ANSWERED.
+
+(a) WHERE THE REWRITE LIVES - BESIDE THE TRANSCRIPT, NOT IN IT.  `CanonicalCommit`
+    gains `revised_transcript`, `None` until something corrects that span.
+    `transcript` and `prefix_hash` never move.  The argument is the chain: the
+    committed transcripts are hashed into `prefix_hash`, so the chain records what
+    was SAID, and a living document's corrections are a different fact about the
+    same words.  Editing `transcript` would rewrite the meeting under every client
+    that verifies the chain.  A reader is shown `revised_transcript || transcript`.
+
+(b) HOW A CORRECTION IS ADDRESSED - BY (SPAN, LOCAL SPEAKER), WHICH MEANT THE
+    SESSION HAD TO RETAIN A LABEL TRACK.  A sweep's unit is `(span, local
+    speaker)`; a committed span carries canonical DISPLAY labels (or `S00`), and
+    the local speaker is gone by then.  Addressing by displayed label cannot work,
+    and the reason is exactly the case that matters most: an ABSTAINED span
+    displays `S00` for every one of its local speakers, and N-sweep-wiring
+    decision 2 retains those units precisely because they are the ones a later
+    album has the most to say about.  So `LiveSession` now retains, per committed
+    span, the decoder's local speaker per published segment (`CanonicalResult
+    .local_speakers`, and a new `local_speakers=` on `submit_unlabeled_canonical`).
+    The coordinator reads it from the DECODER's transcript - the only place a local
+    speaker still exists - and both published renderings walk `span_segments` of
+    that same string, so position i here is position i there by construction.  The
+    session refuses a track whose length disagrees rather than trusting that
+    sentence.  Cost: one short tuple per span against a committed list that is
+    already O(meeting).
+
+(c) WHAT A READER SEES - the corrected speaker in place, and a "label revisions: N"
+    line that appears only once something has been corrected.  A meeting whose live
+    labels stood has nothing to say about revisions; printing "0" invites a reader
+    to wonder what went wrong.  The portal change is two lines, because the
+    correction is applied server-side into a field the page already renders.
+
+FOUR RULES THAT MAKE A SELF-REWRITING TRANSCRIPT SAFE, each enforced rather than
+promised:
+  1. THE WORDS CANNOT MOVE.  A span is revised only if re-rendering its own
+     committed segments with their own committed labels reproduces the committed
+     string BYTE FOR BYTE.  A transcript that does not round-trip keeps everything
+     it has and says so by name (`span_does_not_re_render`).  This is why the
+     renderer moved into `live_span_bounds` beside `span_segments`: one grammar,
+     read and written by one implementation, proved per span instead of assumed.
+  2. A SPAN NEVER PUTS TWO OF ITS OWN LOCAL SPEAKERS ON ONE IDENTITY.  The live
+     matcher assigns one-to-one; a sweep re-matches unit by unit and can reach that
+     state across dispositions.  Publishing it would claim the span's own local
+     diarization was wrong - a claim a sweep is explicitly not allowed to make
+     (N-sweep decision 1: it re-matches evidence, it never re-hears audio).
+     `UNATTRIBUTED_SPEAKER` is exempt: several speakers being nobody in particular
+     is the honest state an abstention publishes.
+  3. NOTHING RAISES AND NOTHING IS TERMINAL.  Six refusal words, counted and
+     returned: span_not_committed, span_has_no_label_track, local_speaker_not_in_
+     span, canonical_speaker_unknown, span_does_not_re_render,
+     span_labels_would_collide (plus label_unchanged).  They travel to
+     `canonical_processed` as `identity_revision_refusals`, because a rewriter
+     nobody can audit is worse than no rewriter - and a correction that silently
+     evaporates is this project's own "known but not shown" defect in new clothes.
+  4. A CLOSED SESSION IS STILL REVISABLE.  Iteration 23 measured that essentially
+     all of the accuracy is in the SESSION-END sweep (600 s cadence gives 99.22 %
+     against 60 s's 99.26 %), and that sweep necessarily arrives after the last
+     span.  A session that stopped accepting corrections when it stopped accepting
+     audio would refuse the most valuable one of the meeting.  The version bump is
+     what tells a still-polling reader to come back for it.
+
+OWNERSHIP, stated because it is the question 24 could not answer.  The COORDINATOR
+applies a revision, because it is the only object holding both halves: the identity
+stack, which knows a past minute was labelled wrong, and the session, which owns the
+published words.  It asks by name - `take_identity_revision` on the preparer ->
+the provider -> `LiveIdentitySweeper.take_revision` - and the capability is OPTIONAL
+at every layer for one reason: a stack with no album has no sweeper, has retained
+nothing, and has nothing to say about a span it already answered.  That is every
+stack this project shipped before ADR-0002 step 3 and every test double.
+`take_revision` is separate from `latest_revision` and it EMPTIES: a caller polling
+it on every span would otherwise re-publish one correction for the rest of the
+meeting.  Only the newest is kept - a sweep re-matches the whole ledger against the
+album as it stands, so its revision supersedes every earlier one.
+
+RED-BEFORE - TEN SEMANTIC REVERTS, run and restored in-iteration (originals in
+/tmp/i25-redbefore; `git diff` after restoring shows additions only).  Nine of the
+ten name a DIFFERENT node; reverts 3 and 4 both name the seam node, honestly:
+   1  the portal renders only `item.transcript`                     -> 1 red (portal)
+   2  a span is never revisable (the label track is ignored)        -> 7 red (6 session
+                                                                       + the seam)
+   3  the coordinator never asks for a revision                     -> 1 red (seam)
+   4  an abstained span publishes without its local speakers        -> 1 red (seam)
+   5  the round-trip guard is dropped                               -> 1 red (the
+                                                                       spaced-out node)
+   6  two of one span's speakers may become one identity            -> 1 red (collision)
+   7  an unknown canonical speaker is labelled anyway               -> 1 red (raises
+                                                                       instead of counting)
+   8  `take_revision` hands the same revision over forever          -> 1 red (sweep)
+   9  a second revision is applied to the published text            -> 1 red (compose)
+  10  a PREPARED span publishes without its local speakers          -> 1 red (seam)
+Revert 10 exists because the seam's own sweep only corrects the ABSTAINED span, so
+the prepared path's track was uncovered until the node asserted it directly.  Same
+hazard iteration 24 recorded: a green node can be measuring the wrong cause.
+
+THE SEAM NODE, which is the one that matters.  `test_a_sweep_relabels_an_abstained_
+span_in_the_transcript_a_reader_is_holding` drives the real `LiveCoordinator`, real
+`LiveSession`, real `BoundedCausalIdentityPreparer`, real `WeSpeakerLiveEvidence
+Provider`, real `FingerprintAlbum` and real `LiveIdentitySweeper` through five
+two-second spans; only the ONNX forward pass and the GPU decode are scripted.
+Span 0 births speaker-0001, span 1 births speaker-0002, span 2 sits equidistant
+between them so `ambiguous_identity` abstains and J2 publishes its words under S00,
+span 3 is the first speaker again off-centre, and at span 4 the album has heard
+enough that the retained evidence re-matches span 2 decisively (0.847 vs 0.707,
+margin 0.140 against the deployed 0.1).  The correction lands, and the assertion is
+on the transcript a reader holds: committed[2].transcript is still
+`[0][S00]who is this[2]` and `revised_transcript` is `[0][S01]who is this[2]`.
+Nothing else moved.  No other node in this repository puts the album, the sweeper,
+the matcher and the session in one process; each half had been measured alone, and
+neither measurement can see whether a correction ever reaches a reader.
+
+WHAT THIS DOES NOT DO - so a green suite is not mistaken for step 3 being finished.
+  * THERE IS STILL NO SESSION-END SWEEP.  The cadence is the only trigger, so the
+    meeting's last interval is never swept and the final span is never labelled in
+    the ledger (a span is labelled when the NEXT one reconciles it).  That is where
+    iteration 23 measured essentially all of the value.  It needs a per-session
+    teardown hook the provider does not have, and it must feed the final identity
+    snapshot through `_reconcile_committed_vectors` BEFORE the final sweep or that
+    sweep issues a spurious `labelled` correction for a span the live path already
+    labelled.  `revise_labels` is ready for it: a closed session accepts one.
+  * THE ALBUM IS NEVER ITSELF MERGED, unchanged from iterations 22 and 24.  A merge
+    correction moves the units; the two album speakers stay separate, so a merge
+    repeats on every sweep.  Measured irrelevant so far - the merge fires zero times
+    on all eight harness meetings (iteration 23 finding 2).
+  * NO EVENT IS EMITTED FOR A REVISION.  The counts ride on `canonical_processed`,
+    so a revision is only visible where a span was processed.  A session-end sweep
+    will need its own event or the last correction of a meeting is unrecorded.
+  * THE DEPLOYED SERVICE IS UNAFFECTED, and the branch's unmerged-source condition
+    is what it was: offline probes have not spoken for the deployed 42abc5a since
+    iteration 15 and still do not.
+
+BLOCKERS: none for this iteration.
+
+RECOMMENDED NEXT STEP.  THE SESSION-END SWEEP - the last piece of step 3, and the
+one iteration 23 measured to be worth almost all of the accuracy.  Three things are
+already decided for it: the hook is per-session teardown (the provider is built per
+session by `_identity_preparer_factory`, and the runtime's `stop`/`abort` are the
+two places a session ends); the final reconcile must precede the final sweep; and
+the transcript half is done, so the hook has somewhere to deliver to.  After that,
+Phase N's gate: the accuracy harness plus F1/F2 with the label clause meaningfully
+verified, then a merge, push and redeploy - and the redeploy is the one that
+regenerates the host manifest at the calibrated 0.35/0.1 (see N-recal).

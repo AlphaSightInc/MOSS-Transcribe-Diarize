@@ -489,6 +489,7 @@ class LiveIdentitySweeper:
         self._corrections = 0
         self._merges = 0
         self._latest: SweepRevision | None = None
+        self._unconsumed: SweepRevision | None = None
 
     @property
     def sweeps(self) -> int:
@@ -513,6 +514,23 @@ class LiveIdentitySweeper:
     @property
     def latest_revision(self) -> SweepRevision | None:
         return self._latest
+
+    def take_revision(self) -> SweepRevision | None:
+        """Hand the newest unconsumed revision to whoever publishes it, once.
+
+        Separate from `latest_revision`, which is diagnosis and never empties: this is the
+        *consumption* half, so a caller that reads it in a loop cannot re-publish a correction
+        it has already published. `None` means there is nothing outstanding -- either no sweep
+        has run, or the last one proposed nothing, or its proposal has already been taken.
+
+        Only the newest is kept. A sweep re-matches the whole ledger against the album as it
+        stands, so a revision it produces supersedes every earlier one rather than adding to
+        it; queueing them would replay the meeting's corrections in order for no gain.
+        """
+
+        revision = self._unconsumed
+        self._unconsumed = None
+        return revision
 
     def record(
         self,
@@ -569,6 +587,7 @@ class LiveIdentitySweeper:
         self.ledger.apply(revision)
         self._latest = revision
         if not revision.is_empty:
+            self._unconsumed = revision
             # Counts and speaker ids only. A revision names which spans changed speaker, and a
             # span's words are the meeting -- they do not belong in a log line any more than a
             # token does.

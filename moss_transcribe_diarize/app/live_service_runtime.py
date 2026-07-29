@@ -759,6 +759,15 @@ class LiveServiceRuntime:
                         "canonical_decode_rtf": result.canonical_decode_rtf,
                         "canonical_decode_token_cap": result.canonical_decode_token_cap,
                         "canonical_decode_capped": result.canonical_decode_capped,
+                        # The living document's own record: what a retrospective sweep changed
+                        # about earlier spans while this one published, and by name what it
+                        # declined to change. A transcript that rewrites itself silently is
+                        # the "known but not shown" defect this project keeps paying for.
+                        "identity_revision_version": result.identity_revision_version,
+                        "identity_revision_spans": result.identity_revision_spans,
+                        "identity_revision_units": result.identity_revision_units,
+                        "identity_revision_merges": result.identity_revision_merges,
+                        "identity_revision_refusals": dict(result.identity_revision_refusals),
                     },
                 )
                 if not result.submitted:

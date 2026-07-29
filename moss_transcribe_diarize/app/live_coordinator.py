@@ -17,17 +17,21 @@ from .live_adapters import (
 from .live_arbiter import ArbiterWorkItem, InferenceArbiter
 from .live_endpoint import EndpointPolicy, EndpointPolicyError, EndpointSpan, SpeechObservation
 from .live_identity import unattributed_transcript
+from .live_identity_sweep import SweepRevision
 from .live_session import (
     AudioFrame,
     CanonicalResult,
     CanonicalSubmission,
     FrozenSpan,
     LIVE_SAMPLE_RATE,
+    LabelRevision,
+    LabelRevisionOutcome,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
     LiveSession,
     PCM16_BYTES_PER_SAMPLE,
 )
+from .live_span_bounds import span_segments
 
 
 class LiveCoordinatorError(RuntimeError):
@@ -81,6 +85,18 @@ class LiveIdentityPreparer(Protocol):
         ...
 
 
+class LiveIdentityReviser(Protocol):
+    """The half of an identity stack that can change its mind about a published span.
+
+    Optional, and asked for by name rather than required: an identity stack with no album
+    has no retained evidence and therefore nothing to revise, which is every stack this
+    project shipped before ADR-0002 step 3 and every stack a test builds by hand.
+    """
+
+    def take_identity_revision(self) -> SweepRevision | None:
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class CanonicalWork:
     session_key: str
@@ -119,6 +135,15 @@ class CoordinatorWorkResult:
     # -- and `submission_refusal` is the session's. Both used to die inside the process.
     identity_reason: str | None = None
     submission_refusal: str | None = None
+    # What a retrospective sweep changed about *earlier* spans while this one was being
+    # published. Zero on every span of a meeting the identity layer never corrected, and
+    # `identity_revision_refusals` names -- rather than swallows -- every correction that did
+    # not land, because a rewriter nobody can audit is worse than no rewriter.
+    identity_revision_version: int = 0
+    identity_revision_spans: int = 0
+    identity_revision_units: int = 0
+    identity_revision_merges: int = 0
+    identity_revision_refusals: tuple[tuple[str, int], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +151,12 @@ class CoordinatorWorkInput:
     span: FrozenSpan
     pcm: bytes
     base_snapshot: LiveIdentitySnapshot
+
+
+@dataclass(frozen=True, slots=True)
+class _AppliedRevision:
+    outcome: LabelRevisionOutcome
+    merges: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -259,6 +290,7 @@ class LiveCoordinator:
                 end_sample=span.end_sample,
                 transcript=preparation.relabeled_transcript,
                 identity_preparation=preparation,
+                local_speakers=self._local_speakers(span, work.transcript),
             )
             submission = self.session.submit_prepared_canonical(result)
             identity_status = preparation.status
@@ -282,10 +314,12 @@ class LiveCoordinator:
                     start_sample=span.start_sample,
                     end_sample=span.end_sample,
                     transcript=unattributed,
+                    local_speakers=self._local_speakers(span, work.transcript),
                 )
         snapshot = self.session.snapshot()
         if submission.submitted:
             self._pcm.prune_before(snapshot.committed_samples)
+        revision = self._publish_identity_revision()
         measurement = _canonical_decode_measurement(span, work.decode_elapsed_sec)
         return CoordinatorWorkResult(
             span_id=span.id,
@@ -301,7 +335,56 @@ class LiveCoordinator:
             empty_reason=empty_reason,
             identity_reason=None if preparation is None else preparation.reason,
             submission_refusal=submission.refusal,
+            identity_revision_version=revision.outcome.version,
+            identity_revision_spans=revision.outcome.revised_spans,
+            identity_revision_units=revision.outcome.revised_units,
+            identity_revision_merges=revision.merges,
+            identity_revision_refusals=revision.outcome.refusals,
         )
+
+    def _local_speakers(self, span: FrozenSpan, transcript: str) -> tuple[str, ...]:
+        """The decoder's own speaker for each segment this span publishes, in order.
+
+        Read from the decoder's transcript rather than from the published one because that is
+        the only place a *local* speaker still exists: a prepared span publishes canonical
+        labels and an abstained span publishes none at all. Every published rendering --
+        `_render_transcript` and `unattributed_transcript` alike -- walks `span_segments` of
+        this same string, so position `i` here is position `i` there by construction, and the
+        session refuses a track whose length disagrees rather than trusting that sentence.
+        """
+
+        return tuple(
+            segment.speaker for segment in span_segments(transcript, sample_count=span.sample_count)
+        )
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+
+        take = getattr(self.identity_preparer, "take_identity_revision", None)
+        revision = None if take is None else take()
+        corrections = () if revision is None else revision.corrections
+        # An empty revision is passed through rather than skipped: `revise_labels` answers a
+        # meeting that has nothing to correct with the version it already has, so the reported
+        # number is the session's own state on every span, not a zero standing in for it.
+        outcome = self.session.revise_labels(
+            tuple(
+                LabelRevision(
+                    span_id=correction.span_id,
+                    local_speaker=correction.local_speaker,
+                    canonical_speaker=correction.canonical_speaker,
+                )
+                for correction in corrections
+            )
+        )
+        return _AppliedRevision(outcome=outcome, merges=0 if revision is None else len(revision.merges))
 
     def _decode(self, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
         attempt = 1

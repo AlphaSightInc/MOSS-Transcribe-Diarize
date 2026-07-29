@@ -24,7 +24,7 @@ from .live_identity_album import (
     FingerprintAlbum,
     cosine_similarity,
 )
-from .live_identity_sweep import LiveIdentitySweeper
+from .live_identity_sweep import LiveIdentitySweeper, SweepRevision
 from .live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -617,6 +617,16 @@ class WeSpeakerLiveEvidenceProvider:
                     )
                 )
         return tuple(evidence)
+
+    def take_identity_revision(self) -> SweepRevision | None:
+        """The newest unpublished sweep result, or `None` when this stack cannot sweep.
+
+        The provider is where a vector lives, so it is where the sweeper lives; publishing a
+        correction is somebody else's job entirely. This exists so that the object holding the
+        evidence never has to know what a transcript is.
+        """
+
+        return None if self._sweeper is None else self._sweeper.take_revision()
 
     def _canonical_vector(
         self,

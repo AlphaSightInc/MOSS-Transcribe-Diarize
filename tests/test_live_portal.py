@@ -346,6 +346,30 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["requestsAfterTerminalTimer"], 3)
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_shows_a_corrected_speaker_without_changing_the_words(self):
+        """ADR-0002's living document, at the only place a reader ever sees one.
+
+        A span published under one speaker and corrected by a retrospective sweep must read
+        as the corrected speaker -- and must read as *the same words*, because a rewriter
+        that could alter speech would be a worse defect than the mislabelling it fixes. The
+        revision count appears only once something has actually been corrected: a meeting
+        whose live labels stood has nothing to say about revisions, and saying "0" invites a
+        reader to wonder what went wrong.
+        """
+
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        probe = _run_label_revision_contract_probe(html)
+
+        self.assertEqual(probe["transcriptBefore"], "[0][S01]who said this[1]")
+        self.assertEqual(probe["transcriptAfter"], "[0][S03]who said this[1]")
+        self.assertNotIn("label revisions", probe["statusBefore"])
+        self.assertIn("label revisions: 1", probe["statusAfter"].splitlines())
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
     def test_live_portal_connect_and_control_failure_banners_do_not_echo_authority(self):
         from fastapi.testclient import TestClient
 
@@ -819,6 +843,39 @@ async function runRetry() {{
   console.log(JSON.stringify(result));
 }}
 
+async function runLabelRevision() {{
+  // One span, published under S01 and later corrected to S03 by a retrospective sweep. The
+  // words are byte-identical in both fields; only the label differs, which is the whole
+  // claim a living document makes.
+  const committedFirst = [
+    {{ transcript: "[0][S01]who said this[1]", revised_transcript: null }},
+    {{ transcript: "", revised_transcript: null }},
+  ];
+  const committedRevised = [
+    {{ transcript: "[0][S01]who said this[1]", revised_transcript: "[0][S03]who said this[1]" }},
+    {{ transcript: "", revised_transcript: null }},
+  ];
+  const env = installPortal([
+    {{ payload: {{ snapshot: {{ session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: committedFirst, provisional: null, label_revision_version: 0 }}, pending_work_items: 0 }} }} }},
+    {{ payload: {{ events: [] }} }},
+    {{ payload: {{ snapshot: {{ session: {{ status: "active", version: 3, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: committedRevised, provisional: null, label_revision_version: 1 }}, pending_work_items: 0 }} }} }},
+    {{ payload: {{ events: [] }} }},
+  ]);
+  env.nodes.sessionId.value = "revision-session";
+  env.nodes.viewToken.value = "revision-token";
+  env.nodes.connectButton.listeners.click();
+  await env.runNextTimer();
+  const transcriptBefore = env.nodes.transcript.textContent;
+  const statusBefore = env.nodes.statusDetail.textContent;
+  await env.runNextTimer();
+  console.log(JSON.stringify({{
+    transcriptBefore,
+    statusBefore,
+    transcriptAfter: env.nodes.transcript.textContent,
+    statusAfter: env.nodes.statusDetail.textContent,
+  }}));
+}}
+
 async function runControlFailure() {{
   const env = installPortal([
     {{ ok: false, status: 409, payload: {{ failure: {{ code: "closing" }} }} }},
@@ -954,6 +1011,7 @@ async function runEventRetention() {{
 const scenarios = {{
   happy: runHappy,
   retry: runRetry,
+  labelRevision: runLabelRevision,
   controlFailure: runControlFailure,
   overlap: runOverlap,
   disconnectOverlap: runDisconnectOverlap,
@@ -985,6 +1043,10 @@ def _run_browser_contract_probe(html: str) -> dict:
 
 def _run_retry_contract_probe(html: str) -> dict:
     return _run_node_probe(html, "retry")
+
+
+def _run_label_revision_contract_probe(html: str) -> dict:
+    return _run_node_probe(html, "labelRevision")
 
 
 def _run_control_failure_contract_probe(html: str) -> dict:

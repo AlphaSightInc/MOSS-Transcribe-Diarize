@@ -286,6 +286,22 @@ carry is in the retired-evidence index below).**
   shape a pair-by-pair sweep costs 295 ms at 17 min and **3098 ms at three hours, longer than the
   2.5 s span cap**, on the serial pump. Batch scoring took that to 39/366 ms with the accuracy
   harness's 99.26/98.48 unchanged. See the N-sweep-wiring block.
+- **AND A REVISION NOW REACHES THE READER (iteration 25): `revise_labels` + the label track + the
+  portal, +9 nodes, Python 793/2/368, ten semantic reverts.** Step 3's user-visible half, and the
+  last piece before Phase N's gate. The three questions iteration 24 left open are answered:
+  **(a)** the correction is published **beside** the transcript (`CanonicalCommit.revised_transcript`),
+  because `prefix_hash` chains what was *said* and a living document's corrections are a different
+  fact — `transcript` and the chain never move; **(b)** a correction is addressed by
+  `(span, local speaker)`, so the session retains a **label track** per committed span — addressing
+  by displayed label is impossible for exactly the span that matters, since an abstained span shows
+  `S00` for every one of its speakers; **(c)** the reader sees the corrected speaker in place plus a
+  `label revisions: N` line that appears only once there is one. Four enforced rules make it safe:
+  a span is revised only if it **re-renders to itself byte for byte** (so a relabelling cannot cost
+  a word — which is why the grammar's writer moved beside its reader in `live_span_bounds`), a span
+  never puts two of its own locals on one identity, every refusal is one of six **named** counts on
+  `canonical_processed`, and a **closed** session is still revisable because the session-end sweep
+  is where iteration 23 measured the value. Parity proved rather than asserted: the harness still
+  measures 93.44/92.18, 72.02/55.68 and 99.26/98.48 unchanged. See the N-revision block.
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -305,7 +321,7 @@ now carry different content, which took no product change at all. See those two 
 **E3 was the blocker for four runs; the clicks were necessary and not sufficient.** Both grants are
 recorded and survive a bundle replacement. **Never ask the operator for those clicks again.**
 
-**Test totals on the branch (Python +20 in iteration 24; the Swift number is unchanged because
+**Test totals on the branch (Python +9 in iteration 25; the Swift number is unchanged because
 nothing under `macos/` was touched).** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
 → 158); Python **784 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
@@ -314,18 +330,19 @@ nothing under `macos/` was touched).** Swift **158 passed**
 → 718 with N-tape-declaration's 15,
 → 758 with N-sweep's 40,
 → 764 with N-convergence's 6,
-**→ 784 with N-sweep-wiring's 20, iteration 24**) — the two
+→ 784 with N-sweep-wiring's 20,
+**→ 793 with N-revision's 9, iteration 25**) — the two
 skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
-Suite wall clock **74.81 s** — it went *down* 3.5 s while gaining 20 nodes, because the accuracy
-harness runs 8 × 11 sweeps through iteration 24's batch scorer (measured alone: **17.49 s**, was
-20.2 s, and it is the only accuracy evidence in the repo; the tape suite costs 3.6 s, the sweep
-suite's own nodes still total 0.1 s of `call` time). Per-file:
-`test_live_pipeline_seams.py` **60**,
+Suite wall clock **75.74 s** (74.81 s before the +9). The accuracy harness is still the dominant
+term and the only accuracy evidence in the repo (measured alone in iteration 24: **17.49 s**); the
+tape suite costs 3.6 s, the sweep suite's own nodes still total 0.1 s of `call` time. Per-file:
+`test_live_pipeline_seams.py` **61** (60 → 61 with N-revision's seam node),
 `test_live_identity.py` **8**,
 `test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **27** (21 → 27 with
 N-convergence),
-`test_live_identity_sweep.py` **54** (40 → 54 with N-sweep-wiring),
+`test_live_identity_sweep.py` **55** (40 → 54 with N-sweep-wiring, → 55 with N-revision),
+`test_live_session.py` **15** (9 → 15 with N-revision), `test_live_portal.py` **14** (13 → 14),
 `test_live_tape.py` **37**, `test_live_api.py` **33**, `test_live_helper_failure.py` **12**,
 `test_live_provider_bundle.py` **34** (28 → 34 with N-sweep-wiring),
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
@@ -903,6 +920,7 @@ evidence, is in the progress.txt archive under the same title.
 | **Session tape** (N-tape, it. 19 of run `20260729-025318`; **in source only, unwired, not deployed**) | **A tape is placed by capture timestamp and bounded by a declaration.** Three PCM16 tracks + an atomically republished `index.json`; the **gap manifest is the complement of coverage**, so a dropped frame is silence *and* a named gap and a late frame fills it. Retention is opt-in — no root, no tape, no behaviour change. `declared()` refuses a root inside the checkout, sharing a filesystem with a runs tree, or on a filesystem where `chmod` is a no-op. No frame ever raises: cap, write failure and inadmissible frame each stop taping with a typed degradation. The reaper is driven by session state + TTL, runs at startup, and skips what it cannot read as a tape. |
 | **Taped live path** (N-tape-wiring, it. 20 of run `20260729-025318`; **in source only, not deployed**) | **The recorder is the boundary, and `None` is a whole configuration.** The transport holds one `LiveSessionTapeRecorder`, constructed always and inert when no root is declared — so the untaped service is a state of the wiring, asserted by a route node, not an absence of it. Lane frames tee **after the ingress ack**; the mixed track tees at `admit_available`'s sealed commit, placed by the commit's own start timestamp. The tape is released wherever the **mixer** is, including the coordinator's lease-expiry teardown. Nothing in the recorder raises: a store failure is one WARNING naming the action, never a 500 on `POST /frames`. |
 | **Retrospective sweep** (N-sweep, it. 22 of run `20260729-025318`; **in source only, PURE and UNWIRED**) | **A sweep re-matches retained evidence against the album; it never re-hears audio, and it proposes — it does not apply.** One matcher for both paths (`live_identity.assign_speakers`), so a correction can never be a second implementation's second opinion. It may not invent a speaker, may not remove a label it cannot replace (unrepresentable: the correction's speaker is non-optional), and may not move a unit that fails the deployed margin. A merge at ≥ 0.70 needs an admitted bank on **both** sides, matches on the **union** of the exemplars, and leaves the id with the most admitted speech standing. Deterministic, and applying a revision leaves nothing for the next sweep to correct. The ledger is bounded at 20 000 units ≈ 22 MB and refuses new units rather than evicting old ones. |
+| **Living document** (N-revision, it. 25 of run `20260729-025318`; **in source only, not deployed**) | **A correction is published beside the words, never onto them.** `transcript` and `prefix_hash` record what was *said*; `revised_transcript` is who is believed to have said it now, and a reader is shown `revised_transcript \|\| transcript`. A correction is addressed by `(span, local speaker)` — the session retains a label track, because an abstained span shows `S00` for every one of its speakers. A span is revised **only if it re-renders to itself byte for byte**, so a relabelling cannot cost a word; the span grammar therefore has exactly one writer (`live_span_bounds.render_segments`) beside its one reader. A span never puts two of its own locals on one identity (`UNATTRIBUTED_SPEAKER` exempt). Nothing raises: six named refusals reach `canonical_processed`. A **closed** session is still revisable — the session-end sweep arrives after the last span. |
 | **Duration vs timestamp** (P1/P2, it. 1 of run `20260729-025318`) | A **duration** is measured on `time.monotonic()`; `time.time()` is a **timestamp** and may step. The live decode measures itself and never reads the runner's `elapsed_sec`. Timing metadata that cannot be trusted converts to `None` (`live_adapters.trustworthy_duration_sec`) — elapsed and RTF null on `canonical_processed`, span committed, one WARNING on `moss_transcribe_diarize.live.decode` — never terminal. |
 
 **The one class all of Phase J, L1 and candidates 50/53/56 belong to:** *a condition the design
@@ -1048,6 +1066,25 @@ python3 -m pytest tests/test_live_identity_sweep.py -q
 #   8. `duration_weighted_centroid(bank)` -> `... or album.reference(speaker)`   -> 1 red
 #   9. `_finite_float32`'s `if not values:` -> `if False:`                       -> 1 red
 #  10. `reference = album.reference(speaker)` -> `reference = None`              -> 1 red
+
+# --- N-revision: a sweep's correction reaching the reader, 9 nodes (iteration 25). The seam node
+#     is the one that matters -- real coordinator + session + preparer + provider + album + sweeper,
+#     five 2 s spans, only the ONNX forward pass and the GPU decode scripted. ~4 s for all four. ---
+python3 -m pytest tests/test_live_session.py tests/test_live_pipeline_seams.py \
+  tests/test_live_portal.py tests/test_live_identity_sweep.py -q          # expect 145 passed
+# Its ten red-before reverts, against COPIES of the four sources (restore after). Nine name
+# DIFFERENT nodes; 3 and 4 both name the seam node:
+#   1. portal `item.revised_transcript || item.transcript` -> `item.transcript`      -> 1 red
+#   2. `_revised_span`'s `if not track:` -> `if True:`                               -> 7 red
+#   3. the coordinator's `getattr(..., "take_identity_revision", None)` -> `None`    -> 1 red
+#   4. drop `local_speakers=` on `submit_unlabeled_canonical`                        -> 1 red
+#   5. the re-render guard -> `if False:`                                            -> 1 red
+#   6. the label-collision guard -> `if False:`                                      -> 1 red
+#   7. `if canonical_speaker in canonical_speakers:` -> `if True:`                   -> 1 red
+#   8. `take_revision` returns without clearing `_unconsumed`                        -> 1 red
+#   9. `published = commit.revised_transcript ... else transcript` -> `transcript`   -> 1 red
+#  10. drop `local_speakers=` on the PREPARED path's `CanonicalResult`               -> 1 red
+# The portal node needs `node` on PATH (it drives the real page's JS); it is skipped without it.
 
 # --- N-tape: the session tape recorder, 37 nodes, ~3.6 s (iterations 19 + 20). ADR-0002 gate C's
 #     assembly cases + ADR-0003 D2-D6, then the recorder. Offline, no host, no server, tmp_path. ---
@@ -1769,9 +1806,10 @@ iteration 16 built the harness below; the convergence half still is not, because
 see candidate 55 and finding 2 under N-gate.
 
 **N-sweep / N-batch — step 3's remaining half and step 4, open.** The sweep's engine is landed
-(N-sweep), scored (N-convergence) and now **wired to the live path** (N-sweep-wiring); what is left
-of step 3 is the half a reader can see — a session-end sweep and a **versioned transcript revision**
-— and then step 4, batch Tier-B unified onto the same album engine. *Re-VAD from the tape is
+(N-sweep), scored (N-convergence), **wired to the live path** (N-sweep-wiring) and now **published
+to the reader** (N-revision); what is left of step 3 is the **session-end sweep** — the one
+iteration 23 measured to be worth almost all of the accuracy — and then step 4, batch Tier-B
+unified onto the same album engine. *Re-VAD from the tape is
 explicitly not part of step 3:* N-sweep decision 1 ruled that a sweep re-matches retained vectors
 and never re-hears audio, so a sweep repairs an assignment and never a segmentation.
 
@@ -2096,6 +2134,39 @@ harmless today and must be closed by that same hook feeding the final snapshot t
 merged. The deployed service's labels are untouched, which is what the harness's unchanged
 93.44 / 72.0 proves.
 
+**N-revision — A SWEEP'S CORRECTION REACHES THE TRANSCRIPT A READER IS HOLDING** `[iteration 25;
+NOT gated, NOT merged, NOT deployed]`. Payload **12 files** — `live_span_bounds.py`,
+`live_session.py`, `live_identity.py`, `live_identity_sweep.py`, `live_provider_bundle.py`,
+`live_coordinator.py`, `live_service_runtime.py`, `live_portal.py` and four under `tests/`;
+**none under `macos/`**, none under `ops/`. Python **793 / 2 / 368** (+9: 6 session, 1 seam,
+1 portal, 1 sweep).
+***The shape.*** `LiveSession.revise_labels(LabelRevision…)` relabels already-published speech into
+`CanonicalCommit.revised_transcript`, leaving `transcript` and `prefix_hash` untouched; the
+coordinator takes a revision from the identity stack (`take_identity_revision` → provider →
+`LiveIdentitySweeper.take_revision`, optional at every layer and **emptying**) after each span
+publishes, and the portal renders `revised_transcript || transcript`. Counts and the six **named**
+refusals ride on `canonical_processed`.
+***Three answers and four rules are in the progress.txt block; the two that change how other code
+must be written are here.*** **The span grammar now has one writer** — `live_span_bounds
+.render_segments`, beside `span_segments`, called by both `live_identity` and the revision — and a
+span is revised **only if it re-renders to itself byte for byte**, so a relabelling provably cannot
+cost a word. **A correction is addressed by `(span, local speaker)`**, which is why the session
+retains a label track: the abstained span, the one the sweep most wants, displays `S00` for every
+local speaker and is unaddressable by label.
+***Red-before: ten semantic reverts*** (`/tmp/i25-redbefore`), nine naming different nodes: portal
+renders only `transcript` → 1; the track ignored → **7**; the coordinator never asks → 1; an
+abstained span published without its locals → 1; the round-trip guard dropped → 1; the collision
+guard dropped → 1; an unknown canonical labelled anyway → 1 (it *raises*); `take_revision` never
+empties → 1; a second revision applied to the published text → 1; a **prepared** span published
+without its locals → 1. That last one exists because the seam's own sweep corrects only the
+abstained span — the same "a green node can measure the wrong cause" hazard iteration 24 recorded.
+***What it does NOT do.*** **There is still no session-end sweep**, so the meeting's last interval
+is never swept and the final span is never labelled in the ledger — that is where iteration 23
+measured essentially all of the value, and it needs a per-session teardown hook that must run the
+final reconcile **before** the final sweep. **No event is emitted for a revision** (the counts ride
+on `canonical_processed`, so a session-end sweep will need its own). The album is still never
+itself merged. The deployed service is unaffected.
+
 **N-tape's PRECONDITION IS MET — the retention decision is recorded** `[iteration 18;
 `docs/adr/0003-live-session-audio-retention.md`, one new tracked doc, no code]`. ADR-0002 and the
 PRD both require the *"no raw audio is persisted"* re-reading **in writing before any code**; step 2
@@ -2173,7 +2244,9 @@ admission 1.0 s, k=10, cap 16):*
 
 **N-gate — what is still open.** ~~Live→file convergence (needs the sweep, step 3)~~ **answered in
 iteration 23: 99.26 % mean / 98.48 % min swept, `residual_corrections` 0** — see N-convergence.
-What remains: the versioned transcript revision a reader can see (step 3's other half); F1/F2 with
+~~The versioned transcript revision a reader can see~~ **landed in iteration 25 — see N-revision;
+what is left of step 3 is the session-end sweep.**
+What remains: F1/F2 with
 the label clause meaningfully verified — still blocked by candidate 51's measured hardware limit;
 then one merge, push, redeploy. The accuracy half of the bar is instrumented and green for the album
 and for the sweep.

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import replace
+from typing import Callable, Iterable
 
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_transcript
 
@@ -53,10 +54,40 @@ def span_segments(transcript: str, *, sample_count: int) -> tuple[TranscriptSegm
     return tuple(segments)
 
 
+def render_segments(
+    segments: Iterable[TranscriptSegment],
+    speaker_of: Callable[[TranscriptSegment], str],
+) -> str:
+    """Write segments back in the span grammar ``[start][speaker]text[end]``.
+
+    The inverse of ``span_segments``, and it lives beside it for the reason the clamp does:
+    the grammar is read in one place, so it is written in one place too. A retrospective
+    relabelling re-renders a transcript that ``live_identity`` first rendered -- if the two
+    used different renderers, the labels a sweep corrects would travel with words a second
+    implementation had quietly reformatted, which is the one thing a label rewrite must never
+    do. ``live_session.revise_labels`` proves the agreement per span rather than assuming it:
+    a transcript that does not re-render to itself is left exactly as it was committed.
+    """
+
+    return "".join(
+        f"[{_fmt_time(segment.start)}][{speaker_of(segment)}]{segment.text}[{_fmt_time(segment.end)}]"
+        for segment in segments
+    )
+
+
+def _fmt_time(value: float) -> str:
+    return f"{value:g}"
+
+
 def _clamped(value: float, duration: float) -> float:
     if not math.isfinite(value):
         return 0.0
     return min(max(value, 0.0), duration)
 
 
-__all__ = ["LIVE_SAMPLE_RATE", "span_duration_seconds", "span_segments"]
+__all__ = [
+    "LIVE_SAMPLE_RATE",
+    "render_segments",
+    "span_duration_seconds",
+    "span_segments",
+]

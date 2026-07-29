@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Callable, Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from scipy.optimize import linear_sum_assignment
 
@@ -14,8 +14,12 @@ from .live_session import (
     LiveIdentitySnapshot,
     PCM16_BYTES_PER_SAMPLE,
     UNATTRIBUTED_SPEAKER,
+    display_speaker_label,
 )
-from .live_span_bounds import span_segments
+from .live_span_bounds import render_segments, span_segments
+
+if TYPE_CHECKING:  # pragma: no cover - typing only, and importing it for real would cycle
+    from .live_identity_sweep import SweepRevision
 
 
 class LiveIdentityError(RuntimeError):
@@ -154,6 +158,19 @@ class BoundedCausalIdentityPreparer:
             proposed_snapshot=snapshot,
             relabeled_transcript=relabeled,
         )
+
+    def take_identity_revision(self) -> "SweepRevision | None":
+        """Any retrospective correction the evidence provider has ready, or `None`.
+
+        The capability is optional at every layer for one reason: an identity stack with no
+        album has no sweeper, has retained nothing, and therefore has nothing to say about a
+        span it has already answered. `NoLiveSpeakerEvidence` is that stack, and so is every
+        test double -- so this asks rather than requires, exactly as the album and the sweeper
+        are collaborators the provider may not have.
+        """
+
+        take = getattr(self.evidence_provider, "take_identity_revision", None)
+        return None if take is None else take()
 
     def _assign(
         self,
@@ -358,10 +375,6 @@ def _next_speaker_ids(existing: tuple[str, ...], count: int) -> tuple[str, ...]:
     return tuple(ids)
 
 
-def _display_label(canonical: str, canonical_speakers: tuple[str, ...]) -> str:
-    return f"S{canonical_speakers.index(canonical) + 1:02d}"
-
-
 def unattributed_transcript(transcript: str, *, sample_count: int) -> str:
     """Render a span's words with no speaker attributed to any of them.
 
@@ -376,7 +389,7 @@ def unattributed_transcript(transcript: str, *, sample_count: int) -> str:
     with no words publishes, exactly as `span_segments` leaves that question open.
     """
 
-    return _render_segments(
+    return render_segments(
         span_segments(transcript, sample_count=sample_count),
         lambda segment: UNATTRIBUTED_SPEAKER,
     )
@@ -387,24 +400,10 @@ def _render_transcript(
     assignments: dict[str, str],
     canonical_speakers: tuple[str, ...],
 ) -> str:
-    return _render_segments(
+    return render_segments(
         segments,
-        lambda segment: _display_label(assignments[segment.speaker], canonical_speakers),
+        lambda segment: display_speaker_label(assignments[segment.speaker], canonical_speakers),
     )
-
-
-def _render_segments(
-    segments: tuple[TranscriptSegment, ...],
-    speaker_of: Callable[[TranscriptSegment], str],
-) -> str:
-    return "".join(
-        f"[{_fmt_time(segment.start)}][{speaker_of(segment)}]{segment.text}[{_fmt_time(segment.end)}]"
-        for segment in segments
-    )
-
-
-def _fmt_time(value: float) -> str:
-    return f"{value:g}"
 
 
 def _diagnostics(

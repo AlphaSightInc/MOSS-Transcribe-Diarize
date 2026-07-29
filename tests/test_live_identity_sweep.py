@@ -975,3 +975,38 @@ def test_a_unit_with_no_length_sends_its_span_down_the_scalar_path_and_is_named(
     assert dict(revision.dispositions) == {KEPT_UNSCORED: 1}
     assert revision.corrections == ()
     assert [str(item.message) for item in recwarn.list] == []
+
+
+def test_a_revision_is_handed_over_once_and_an_empty_sweep_hands_over_nothing():
+    """The consumption half, kept apart from the diagnosis half.
+
+    `latest_revision` never empties -- it answers "what did the last sweep think" for as long
+    as the meeting runs. `take_revision` is what the transcript's owner calls, so it must
+    empty: a caller that polled it on every span would otherwise re-publish the same
+    correction for the rest of the meeting, and a correction re-applied is a version bump a
+    reader is told to go and fetch for nothing.
+    """
+
+    album = album_with(("speaker-0001", unit_vector(0), 4.0))
+    sweeper = sweeper_with(album)
+    assert sweeper.take_revision() is None
+
+    sweeper.record(
+        span_id=1,
+        local_speaker="S01",
+        canonical_speaker=None,
+        vector=unit_vector(0),
+        duration_sec=2.0,
+    )
+    revision = sweeper.sweep_now()
+
+    assert revision.corrections != ()
+    assert sweeper.take_revision() is revision
+    assert sweeper.take_revision() is None
+    # Diagnosis still answers after consumption; only the claim was handed over.
+    assert sweeper.latest_revision is revision
+
+    # The applied revision converged, so the next sweep proposes nothing -- and a sweep with
+    # nothing to say hands over nothing rather than an empty revision the caller must test.
+    assert sweeper.sweep_now().corrections == ()
+    assert sweeper.take_revision() is None

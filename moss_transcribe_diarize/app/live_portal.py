@@ -385,10 +385,15 @@ LIVE_PORTAL_HTML = """<!doctype html>
         const session = snapshot.session;
         const rows = [];
         for (const item of session.committed || []) {
+          // A span whose speaker was corrected after it was published carries the
+          // corrected labelling beside the words it was committed with; the words are
+          // identical either way, and the reader is shown who is believed to have said
+          // them now rather than who was believed at the time.
+          const text = item.revised_transcript || item.transcript;
           // A span with no speech commits an empty transcript so its audio stays
           // accounted for; it must not open a blank gap in the meeting.
-          if (item.transcript) {
-            rows.push(item.transcript);
+          if (text) {
+            rows.push(text);
           }
         }
         if (session.provisional && session.provisional.transcript) {
@@ -418,6 +423,10 @@ LIVE_PORTAL_HTML = """<!doctype html>
           line("accounted samples", session.accounted_samples),
           line("retained samples", session.retained_samples),
           line("pending work", snapshot.pending_work_items),
+          // Shown only once a label has actually been corrected: a meeting whose live
+          // labels stood is not a meeting with "0 revisions", it is one with nothing to
+          // say about revisions at all.
+          session.label_revision_version ? line("label revisions", session.label_revision_version) : "",
           line("failure", session.failure_reason),
           line("failure kind", failure.kind),
           line("failure code", failure.code),
