@@ -45,6 +45,16 @@ from typing import Sequence
 ALBUM_ADMISSION_SECONDS = 1.0
 ALBUM_EXEMPLARS_PER_SPEAKER = 10
 
+# The matcher thresholds ADR-0002 §7 measured *against album centroid statistics*. Nothing in
+# this module reads them: they belong to `identity_config` in the deployed manifest, which a
+# deployment states explicitly. They are named here because they are calibrated to this
+# policy and are wrong for the one it replaces -- at the pre-album 0.5 / 0.2 the album
+# measures 75.0 % mean live speaker accuracy, below ADR-0002's >= 90 % bar, against 93.4 %
+# at these values (`tests/live_identity_accuracy.py`). Recording them beside the policy they
+# calibrate is what keeps the measured pair and the deployed pair the same pair.
+ALBUM_MIN_MATCH_SCORE = 0.35
+ALBUM_MIN_MATCH_MARGIN = 0.1
+
 # Dispositions. `observe` returns one of these rather than a bool, because a verdict word has
 # to name the thing it decides -- "rejected" alone cannot tell a fragment that was too short
 # from one that lost to a better exemplar.
@@ -208,6 +218,8 @@ __all__ = [
     "ADMITTED",
     "ALBUM_ADMISSION_SECONDS",
     "ALBUM_EXEMPLARS_PER_SPEAKER",
+    "ALBUM_MIN_MATCH_MARGIN",
+    "ALBUM_MIN_MATCH_SCORE",
     "AlbumExemplar",
     "FingerprintAlbum",
     "PROVISIONAL",

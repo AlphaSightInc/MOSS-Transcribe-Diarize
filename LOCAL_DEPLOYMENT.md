@@ -661,14 +661,26 @@ ops/generate-live-tls.sh \
 
 # Provider manifest. The three bounds are required flags because the latency
 # remedy tunes the span cap; every other bound is a checked relation, so a wrong
-# flag is refused rather than deployed. --source-revision must be the reviewed
-# 40-character merge SHA.
+# flag is refused rather than deployed. The two matcher thresholds are required
+# for a different reason: they are free parameters with no relation to check, so
+# what makes a pair right is the identity policy it was measured against, and a
+# pair nobody states is a pair nobody reviewed. The values below are ADR-0002 §7's,
+# calibrated for the fingerprint album and measured by
+# tests/live_identity_accuracy.py; the album at the pre-album 0.5 / 0.2 measures
+# 75.0 % mean live speaker accuracy against 93.4 % here. --source-revision must be
+# the reviewed 40-character merge SHA.
 python3 ops/finalize-live-provider-manifest.py \
   --input  "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" \
   --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
   --source-revision "$(git rev-parse HEAD)" \
-  --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000
+  --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 \
+  --min-match-score 0.35 --min-match-margin 0.1
 ```
+
+Recalibrating the matcher changes `identity_config_hash` and therefore
+`combined_config_hash` and the provider manifest hash. That is the intended
+signature of the change, not drift: a redeploy that expects the previous manifest
+hash is checking for the recalibration having *not* happened.
 
 Then install and start the unit, and forward the port from Windows:
 

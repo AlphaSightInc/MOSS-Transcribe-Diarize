@@ -209,6 +209,12 @@ carry is in the retired-evidence index below).**
   subsumed by the album; the **deployed matcher thresholds** (0.5/0.2) put the album at **75.0 %**,
   so recalibration is a shipping requirement; and the enrollment-floor instruction from the
   superseded sixth amendment is refuted — **k**, not the duration gate, is what beats overwrite.
+  **ITERATION 17 CLOSED THE SECOND OF THOSE (candidate 63) IN SOURCE:** the calibrated pair is
+  named once beside the album, the accuracy harness imports it instead of holding a copy, and the
+  manifest finalizer now **requires** the deployment to state `--min-match-score` /
+  `--min-match-margin` and hash-covers them — so the album can no longer be measured at 0.35/0.1
+  and deployed at 0.5/0.2. **The host manifest still carries the old pair** until Phase N's
+  redeploy regenerates it; see the N-recal block.
   See the Phase-N block below. **The branch carries unmerged tracked product source**, so
   every offline probe has stopped speaking for the deployed service until a merge and redeploy —
   see the rule under "What survives those blocks". (The harness itself is `tests/` only.)
@@ -224,11 +230,14 @@ carry is in the retired-evidence index below).**
   and F3 a lane-separation verdict at all, and candidate 59 made that verdict *correct* — F1 and F2
   now name their system marker instead of calling it absent. *That conclusion held for exactly one
   iteration.* `0456177` re-opened Phase N and iteration 15 spent it on step 1. **Still needing the
-  operator: 55, 58, 60, **the new 63**, the F2 denied-lane variant, F1/F2's second-voice half, F4b.
+  operator: 55, 58, 60, the F2 denied-lane variant, F1/F2's second-voice half, F4b.
   NOT needing
-  one: Phase N steps 2–4 and its gate** — whose accuracy half iteration 16 built and measured, and
-  whose step 2 collides with the PRD's no-raw-audio clause by design (a decision to record before
-  any code).
+  one: Phase N steps 2–4, its gate, and — read out of prd.md rather than assumed — the matcher
+  recalibration (candidate 63), which the ADR-0002 supersession names in its own words and the
+  sixth amendment already ruled a *free* parameter. Iteration 16 filed it as needing an
+  authorization; iteration 17 re-read the contract and landed it.** The accuracy half of the gate
+  was built in iteration 16; step 2 collides with the PRD's no-raw-audio clause by design (a
+  decision to record before any code).
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -250,16 +259,17 @@ recorded and survive a bundle replacement. **Never ask the operator for those cl
 
 **Test totals on the branch.** Swift **158 passed**
 (67 → 81 → 92 → 95 → 98 → 106 → 116 → 121 → 131 → 132 → 134 → 139 → 142 → 146 → 150 → 151 → 154
-→ 158); Python **656 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
-→ 635 with Phase N step 1's 27, **→ 656 with N-gate's 21 accuracy nodes, iteration 16**) — the two
+→ 158); Python **662 passed / 2 skipped / 368 subtests** (604 → 608 with Phase P's four seam nodes,
+→ 635 with Phase N step 1's 27, → 656 with N-gate's 21 accuracy nodes, **→ 662 with N-recal's 6,
+iteration 17**) — the two
 skips are the pre-existing
 `tests/test_large_upload.py:155,175` Python-3.10 compatibility contract, **never** Darwin skips.
 Suite wall clock **71.25 s** (was ~60 s; the accuracy harness costs ~11 s and is the only accuracy
 evidence in the repo). Per-file: `test_live_pipeline_seams.py` **60**, `test_live_identity.py` **8**,
-`test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **21** (new),
+`test_live_identity_album.py` **17**, `test_live_identity_accuracy.py` **21**,
 `test_live_provider_bundle.py` **28**,
 `test_macos_uds_tracer.py` **4 / 0 skips**, `test_macos_packaging_tools.py` **9**,
-`test_live_manifest_finalizer.py` **17**, `test_live_deployment_credentials.py` **14**,
+`test_live_manifest_finalizer.py` **23** (17 → 23 with N-recal), `test_live_deployment_credentials.py` **14**,
 `test_live_service_deployment.py` **30**.
 
 ## Read before any certification run or client fix
@@ -829,6 +839,7 @@ evidence, is in the progress.txt archive under the same title.
 | **Terminal record** (K3) | The heartbeat that ends a session carries the failed lanes' typed codes into `LiveV2Session.expire`, `runtime.abort`, the `session_aborted` event and one host-journal line. |
 | **Session refusal** (K4) | 401/403/404/410 → `CaptureStatus.sessionRefusal` / `ControlChannelResponse.sessionRefusal`, recorded from the tick **and** the stop drain, so `running: true` never stands alone while every request refuses. A new session id is a new question. |
 | **Fingerprint album** (N-album, it. 15 of run `20260729-025318`; **in source only, not deployed**) | **Matching is not enrollment.** The evidence floor (`identity_provider.min_segment_samples`) does not move, so a short span is still *labelled*; enrollment needs ADR-0002's **1.0 s**. Per canonical speaker: up to **k=10** exemplars, matched against their **duration-weighted centroid**; plus **one** sub-admission stand-in used only while the bank is empty, discarded — never averaged — by the first real exemplar. Neither tier is recency-driven. Every refusal is a named disposition and nothing here raises. |
+| **Manifest calibration** (N-recal, it. 17 of run `20260729-025318`; **in source only, not deployed**) | A **free** deployed parameter is stated by the deployment, never inherited. `finalize-live-provider-manifest.py` requires `--min-match-score` / `--min-match-margin`, writes them into `identity_config`, hash-covers them, names them in the plan and the evidence, and refuses a pair `live_provider_bundle._identity_config` rejects. The calibrated pair is named once, in `live_identity_album.py`, and the accuracy harness imports it — so the measured pair and the deployable pair cannot diverge. |
 | **Duration vs timestamp** (P1/P2, it. 1 of run `20260729-025318`) | A **duration** is measured on `time.monotonic()`; `time.time()` is a **timestamp** and may step. The live decode measures itself and never reads the runner's `elapsed_sec`. Timing metadata that cannot be trusted converts to `None` (`live_adapters.trustworthy_duration_sec`) — elapsed and RTF null on `canonical_processed`, span committed, one WARNING on `moss_transcribe_diarize.live.decode` — never terminal. |
 
 **The one class all of Phase J, L1 and candidates 50/53/56 belong to:** *a condition the design
@@ -1024,15 +1035,23 @@ curl -sk https://100.64.0.8:7861/api/live/descriptor | head -c 200
 ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOSSCapture.app; \
   codesign -dv /Applications/MOSSCapture.app 2>&1 | head -5; codesign -d -r- /Applications/MOSSCapture.app 2>&1 | tail -1'
 
-# --- host manifest finalization (SPENT in iteration 18/D2; re-run only to re-prove idempotence) --
-# MUST use the deployment venv python, not `python3` - see the open defect above. Re-running is
-# safe: it prints `unchanged:` and does not touch the inode.
+# --- host manifest finalization. MUST use the deployment venv python, not `python3` - see the
+#     open defect above. SINCE ITERATION 17 the two matcher thresholds are REQUIRED flags
+#     (candidate 63): omitting them is an argparse rc=2 refusal, not silent inheritance of
+#     whatever the untracked host provisional holds. Re-running with the SAME values prints
+#     `unchanged:` and does not touch the inode; re-running with the ALBUM values on the
+#     current host will REWRITE (the host carries the pre-album 0.5/0.2), print a
+#     `rollback: mv <backup> <output>` line first, and change identity_config_hash,
+#     combined_config_hash and the provider manifest hash. That change is the signature of
+#     the recalibration - a redeploy expecting 61d97ffe… is checking it did NOT happen.
 printf '%s\n' \
   'set -euo pipefail' \
   'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
-  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000' |
+  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 --min-match-score 0.35 --min-match-margin 0.1' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
     "wsl.exe -d Ubuntu -- bash -s"
+# Run it --dry-run FIRST and read the two `plan: set identity_config.…` lines and the
+# `evidence: identity_min_match_*` lines; they are what makes the calibration reviewable.
 
 # --- host manifest admission by the runtime's own readers (read-only; re-run any time) ----------
 #   from_manifest -> _endpoint_config(payload["endpoint_config"]) and _bounds(payload["bounds_config"])
@@ -1524,7 +1543,18 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     `live-canary-clauses.py` already applies to a layout it cannot read. It cost this iteration
     nothing (the markers were extracted by hand in five lines) but it means the lane-separation
     verdict is unavailable for F2 and F3 as shipped.
-63. **The album would deploy at matcher thresholds tuned for the policy it replaced.** `[open, new
+63. **The album would deploy at matcher thresholds tuned for the policy it replaced.**
+    `[the tracked path is DONE — iteration 17; the host manifest is NOT yet regenerated, which
+    happens at Phase N's redeploy]`. **It needed no ninth authorization:** prd.md's ADR-0002
+    supersession names the values itself (*"Use ADR-0002's measured starting values - `min_score`
+    0.35, margin 0.1-0.2…"*) and the sixth amendment already ruled `min_match_score` /
+    `min_match_margin` **free** parameters whose change is *"a decision to record"*. Iteration 16's
+    "needs its own authorization" was over-cautious and is corrected here. What landed:
+    `ALBUM_MIN_MATCH_SCORE` / `ALBUM_MIN_MATCH_MARGIN` beside the policy they calibrate, the
+    accuracy harness pointed at them instead of a copy, and the finalizer given required
+    `--min-match-score` / `--min-match-margin` flags that write `identity_config`, hash-cover it,
+    print it in the plan and the evidence, and refuse a pair the runtime's own reader rejects.
+    See the candidate-63 block below. *Originally:* `[open, new
     — iteration 16]`. `identity_config.min_match_score` **0.5** / `min_match_margin` **0.2** are what
     the live runtime ships; ADR-0002 §7's measured starting values are **0.35 / 0.1–0.2**. Measured
     on production code over the eight-meeting fixture: the album scores **93.4 %** at 0.35/0.1,
@@ -1661,6 +1691,35 @@ admission 1.0 s, k=10, cap 16):*
 **N-gate — what is still open.** Live→file convergence (needs the sweep, step 3); F1/F2 with the
 label clause meaningfully verified — still blocked by candidate 51's measured hardware limit; then
 one merge, push, redeploy. The accuracy half of the bar is now instrumented and green for step 1.
+
+**N-recal — THE CALIBRATION THE ALBUM IS MEASURED AT IS NOW THE ONE A DEPLOYMENT CAN STATE**
+`[candidate 63, iteration 17; source only — the host manifest is regenerated at Phase N's redeploy]`.
+Payload **6 files**: `live_identity_album.py`, `live_manifest_finalizer.py`, `LOCAL_DEPLOYMENT.md`,
+and three under `tests/`. Python **662 / 2 / 368** (+6). ***The red-before is the whole existing
+finalizer suite:*** with the flags made required, all 17 pre-existing nodes fail until the helper
+states a calibration — which is exactly the defect, since until now `identity_config` was *carried
+through untouched* from an untracked host file that no review has ever seen.
+***The three decisions, recorded so they are not re-argued.***
+1. **The values are ADR-0002 §7's — 0.35 / 0.1 — and they needed no ninth authorization.** prd.md's
+   supersession section names them; the sixth amendment already ruled the pair *free*. Measured on
+   production code over the eight-meeting fixture: **93.4 % mean / 92.2 % min** at 0.35/0.1 against
+   **75.0 % / 40.0 %** at the deployed 0.5/0.2 — the difference between clearing ADR-0002's ≥ 90 %
+   bar and missing it entirely.
+2. **The tool states them; it does not default them.** A free parameter has no derivation a tool
+   could verify, so a built-in default would be a guess wearing a contract's clothes. Required flags
+   put the pair in the plan (`plan: set identity_config.min_match_score=0.35`), in the evidence
+   (`evidence: identity_min_match_score=0.35`) and in the regenerated `identity_config_hash`. The
+   *named* pair lives in `live_identity_album.py` beside the policy it calibrates, and
+   `tests/live_identity_accuracy.py` now imports it rather than holding a second copy — so
+   "measured at one pair, deployed at another" is no longer expressible.
+3. **The check is the runtime's own reader, not a second copy of its rules.** `_identity_config`
+   from `live_provider_bundle` validates the finalized section; a refusal reads
+   `refused: identity_config is not one the live runtime admits: min_match_score must be between
+   0 and 1.` Three parametrised nodes prove it.
+***What this does NOT do.*** The deployed host manifest still carries 0.5 / 0.2 — nothing on the
+server was touched. Until Phase N's redeploy regenerates it, **the live service would run the album
+at 75.0 %**. And the regeneration *will* change `identity_config_hash`, `combined_config_hash` and
+the provider manifest hash away from `61d97ffe…`; that is the recalibration's signature, not drift.
 
 ### (superseded) Phase N as first written (2026-07-28, sixth amendment; AFTER Phase M)
 

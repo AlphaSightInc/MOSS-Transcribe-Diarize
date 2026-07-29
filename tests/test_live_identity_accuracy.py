@@ -116,6 +116,11 @@ def test_the_deployed_matcher_thresholds_cost_the_album_its_bar():
     deployed live runtime runs the album at thresholds tuned for the policy it replaced.
     Measured, that configuration does not reach the ADR's bar at all -- the recalibration is
     a shipping requirement, not a refinement.
+
+    The pair proved against the bar above is `live_identity_album.ALBUM_MIN_MATCH_*`, which is
+    also what a deployment states through the finalizer's `--min-match-score` /
+    `--min-match-margin` flags. That is deliberate: measuring one pair and deploying another
+    is the whole of the defect this node prices.
     """
 
     adr = replay_all(policy="album")

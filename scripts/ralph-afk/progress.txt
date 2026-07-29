@@ -19098,3 +19098,140 @@ the operator as candidate 63, because it means the album as it would deploy TODA
 scores 75.0 % and the recalibration is one manifest field.  (b) is the higher
 leverage of the two: shipping Phase N without it ships a measured regression
 against its own acceptance bar.
+
+================================================================================
+RUN 20260729-025318  ITERATION 17  -  THE CALIBRATION THE ALBUM IS MEASURED AT IS
+NOW THE ONE A DEPLOYMENT CAN STATE (candidate 63)
+================================================================================
+
+TARGET.  Candidate 63, filed by iteration 16 as "needs its own authorization":
+the fingerprint album would deploy into a manifest still carrying
+`identity_config.min_match_score` 0.5 / `min_match_margin` 0.2 - the pair
+calibrated for the latest-span overwrite policy the album replaced - where it
+measures 75.0 % mean / 40.0 % min live speaker accuracy against ADR-0002's
+>= 90 % bar, and 93.4 % / 92.2 % at ADR-0002 §7's own 0.35 / 0.1.
+
+WHY NO NINTH AUTHORIZATION WAS NEEDED, since iteration 16 said otherwise.  Read
+out of prd.md rather than assumed:
+
+  * the ADR-0002 supersession section names the values itself - "Parameters. Use
+    ADR-0002's measured starting values - min_score 0.35, margin 0.1-0.2,
+    admission 1.0-2.0 s, k=10 exemplars, sweep every 60 s, merge threshold 0.70";
+  * the sixth amendment, which Phase N still runs under, already ruled the pair
+    free: "identity_config.min_match_score / min_match_margin are likewise free,
+    but changing them is a decision to record, not a knob to tune until green";
+  * Phase N is open ("Phase N remains authorized. Take it in ADR-0002's shape"),
+    and its step 1 already changed tracked product source in iteration 15.
+
+So the freeze is not what stood in the way; the missing thing was the decision in
+writing and a tracked path to apply it.  Both are below.  `git log --oneline -3
+-- scripts/ralph-afk/prd.md` was re-checked first, per the standing hazard: the
+tail is unchanged at `0456177`, no ninth amendment exists, and no operator commit
+has landed since iteration 16.
+
+FILES TOUCHED (6; none under macos/ or ops/ except the tracked deployment doc)
+  moss_transcribe_diarize/app/live_identity_album.py    +ALBUM_MIN_MATCH_SCORE/MARGIN
+  moss_transcribe_diarize/app/live_manifest_finalizer.py  LiveIdentityRecalibration
+  LOCAL_DEPLOYMENT.md                                    the finalize command
+  tests/live_identity_accuracy.py                        imports the shipped pair
+  tests/test_live_identity_accuracy.py                   docstring records the link
+  tests/test_live_manifest_finalizer.py                  +6 nodes, 17 -> 23
+
+THE THREE DECISIONS, RECORDED BEFORE THE PATCH AS THE AMENDMENT REQUIRES.
+
+1. THE VALUES ARE ADR-0002 §7's - 0.35 / 0.1.  Measured on production code over
+   the eight-meeting fixture, re-run this iteration against the constants as
+   shipped:
+
+     album @ 0.35 / 0.1  (shipped pair)      93.4 % mean   92.2 % min
+     album @ 0.5  / 0.2  (host manifest)     75.0 % mean   40.0 % min
+
+   The margin is 0.1 rather than the ADR's 0.1-0.2 range: 0.2 measures 91.0 % /
+   84.0 %, still over the bar but 2.4 pp worse and with a min 8 pp lower, and
+   nothing argues for the tighter one.  Recorded, not tuned - the pair was chosen
+   from the ADR and then measured, and the measurement did not select it.
+
+2. THE TOOL STATES THE PAIR; IT DOES NOT DEFAULT IT.  A free parameter has no
+   derivation a tool can verify, so a built-in default would be a guess wearing a
+   contract's clothes - and the deployed 0.5 got there exactly that way, typed
+   into an untracked host provisional file that no review has ever seen.  So
+   `--min-match-score` and `--min-match-margin` are REQUIRED flags, on the same
+   footing as the three bounds: the pair appears in the plan
+   (`plan: set identity_config.min_match_score=0.35`), in the evidence
+   (`evidence: identity_min_match_score=0.35`), and inside the regenerated
+   `identity_config_hash`, which the runtime compares at preflight - so an
+   unhashed hand edit would not start the service at all.
+   The NAMED pair lives in `live_identity_album.py` beside the policy it
+   calibrates, and `tests/live_identity_accuracy.py` now imports it instead of
+   holding a second copy.  "Measured at one pair, deployed at another" - the
+   whole of candidate 63 - is no longer expressible in the repo.
+
+3. THE CHECK IS THE RUNTIME'S OWN READER, NOT A SECOND COPY OF ITS RULES.  The
+   finalizer already proves bounds admission with `_bounds` / `_endpoint_config`
+   from `live_provider_bundle` for exactly this reason; identity now goes through
+   `_identity_config` the same way.  A refused pair reads
+     refused: identity_config is not one the live runtime admits: min_match_score
+     must be between 0 and 1.
+   There is no range check written in the finalizer, so the tool cannot drift
+   from the runtime by construction.
+
+VALIDATION
+  python3 -m pytest tests/test_live_manifest_finalizer.py -q   -> 23 passed (was 17)
+  python3 -m pytest tests -q -p no:cacheprovider
+      -> 662 passed, 2 skipped, 368 subtests, 69.47 s   (was 656/2/368, 71.25 s)
+  re-measured through the harness at the constants as shipped:
+      album @ shipped 0.35/0.1  93.4 / 92.2
+      album @ pre-album 0.5/0.2 75.0 / 40.0
+  git status --porcelain -> only the six files above
+
+RED-BEFORE, AND IT IS THE STRONGEST ONE THIS PHASE HAS HAD.  Making the flags
+required turned ALL 17 pre-existing finalizer nodes red in one command
+(`17 failed`), because none of them stated a calibration - which is precisely the
+defect: `identity_config` was carried through from the provisional file untouched,
+so the thresholds the live matcher runs on were whatever the host happened to
+hold.  The six new nodes then prove the green half: the tool writes the stated
+pair while leaving `max_speakers` alone, a different pair is a different
+`identity_config_hash` AND `combined_config_hash` with `bounds_config_hash`
+unchanged, an omitted flag is an argparse rc=2 refusal rather than silent
+inheritance, and three parametrised cases prove the runtime-reader refusal.
+
+WHAT WAS LEARNED.
+
+1. A FREEZE READING CAN BE STRICTER THAN THE CONTRACT, AND THAT COSTS ITERATIONS
+   TOO.  Iteration 16 filed candidate 63 as needing an authorization the PRD had
+   already granted twice over - once naming the values, once ruling the parameter
+   free.  The loop has repeatedly paid for reading a stale predecessor's summary
+   instead of the contract; this is the same failure with the sign flipped, and
+   the same fix applies: re-read prd.md, not the last iteration's note about it.
+
+2. THE DEFECT'S SHAPE IS THE FAMILIAR ONE, ONE LAYER OUT.  "Known on one side of
+   a seam and never carried across" is the class that produced candidates 53, 60
+   and the four Phase H/J blockers.  Here the two sides were a measurement
+   (93.4 % at 0.35/0.1) and a deployment (0.5/0.2), and nothing in the repo made
+   them the same number.  The fix is the same shape as J4's: name the thing once,
+   and make the path that ships it carry the name.
+
+3. WHAT A HASH CHANGE MEANS DEPENDS ON WHICH CHANGE IT IS.  Every redeploy in
+   this loop's history has checked `provider_manifest_hash 61d97ffe…` UNCHANGED as
+   evidence of a clean deployment.  After the recalibration that check inverts:
+   an unchanged identity hash proves the recalibration did NOT happen.  Recorded
+   in LOCAL_DEPLOYMENT.md, in the Validation fence's finalize recipe and in the
+   N-recal block so a future redeploy does not read the intended change as drift.
+
+BLOCKERS: none for this iteration.
+
+WHAT IS EXPLICITLY NOT DONE.  The host manifest was NOT regenerated and no host
+was touched: the deployed service still carries 0.5 / 0.2 and would still run the
+album at 75.0 %.  Regenerating it is a step of Phase N's redeploy (gate -> merge
+-> push -> redeploy), which the certification-order rule puts after the merge and
+which this iteration is not authorized to run on its own.  The recipe, with the
+--dry-run first and the hash-change warning, is in the Validation fence.
+
+RECOMMENDED NEXT STEP.  Phase N step 2's retention decision - the tape recorder
+is the next implementation step in ADR-0002's order, it is unblocked, and the ADR
+and the PRD amendment both require the decision about the "no raw audio is
+persisted" clause to be recorded IN WRITING before any code.  It is now the only
+Phase N item that needs neither an operator input nor a host.  The alternative,
+gating and merging steps 1 + this recalibration on their own, is contraindicated
+by the amendment's own words: the album alone is "a terminal-state failure if
+shipped alone", and a merge is the loop's scarcest resource.

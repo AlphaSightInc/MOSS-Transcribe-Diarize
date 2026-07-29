@@ -51,6 +51,8 @@ from moss_transcribe_diarize.app.live_identity import (
 from moss_transcribe_diarize.app.live_identity_album import (
     ALBUM_ADMISSION_SECONDS,
     ALBUM_EXEMPLARS_PER_SPEAKER,
+    ALBUM_MIN_MATCH_MARGIN,
+    ALBUM_MIN_MATCH_SCORE,
     FingerprintAlbum,
 )
 from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
@@ -84,9 +86,11 @@ MIN_SEGMENT_SAMPLES = 8000
 # The deployed identity bound, `max_identity_speakers`.
 MAX_SPEAKERS = 16
 
-# ADR-0002 §7's measured starting thresholds for the matcher.
-ADR_MIN_MATCH_SCORE = 0.35
-ADR_MIN_MATCH_MARGIN = 0.1
+# ADR-0002 §7's measured starting thresholds for the matcher, taken from the module that
+# names them rather than copied: what this harness measures has to be what a deployment can
+# state, or the bar below is proved about a number nothing ships.
+ADR_MIN_MATCH_SCORE = ALBUM_MIN_MATCH_SCORE
+ADR_MIN_MATCH_MARGIN = ALBUM_MIN_MATCH_MARGIN
 # What the live runtime ships today. The album was landed without recalibrating these; the
 # ADR says they need it, and `test_live_identity_accuracy` measures how much.
 DEPLOYED_MIN_MATCH_SCORE = 0.5
