@@ -93,6 +93,30 @@ decisecond boundaries, 2.4 s of sub-floor micro-turns. Results:
   consistent with the Q1 finding.
 - Kept OUT of the 9-clip binding aggregate (95.2%) deliberately; reported standalone.
 
+### Library extension: 5 m + 30 m tiers (`proto_corpus_5m30m.py`, 2026-07-29)
+8×5-min + 2×30-min real cases from the full benchmark corpus (goldens aligned from the
+shows' own timestamped transcripts; m4mbp source of truth). Standalone — binding 9-clip
+aggregate unchanged.
+
+- **30 m (the production-shaped horizon): album+sweep 94.7-96.4% at deployed-margin
+  (mean 95.5), 92.9-94.7 at grid-best.** Overwrite collapses to 37-62% at 30 m —
+  duration amplifies the overwrite disease, exactly as the 600 s synthetic predicted.
+  Total sweep compute for a 30-min session: 2.4-6.4 ms (≈30 sweeps). Trajectories are
+  stable/recovering, no divergence; gap to a strong offline oracle ≈2.5 pp.
+- **New hard class found: same-gender co-host pairs (Acquired's Ben+David).** On
+  acquired_alphabet 5 m even the whole-file oracle scores 59.4% — an
+  embedding-separability ceiling, not a policy failure; album+sweep beats the oracle by
+  +29 pp (88.6) there. 5 m aggregate: swp 91.4 mean / 86.3 min (grid-best).
+- **Margin tradeoff is duration-dependent**: margin 0.2 wins at 30 m (95.5 vs 93.8) but
+  pre-sweep album craters to 10.8% on the similar-voice clip (abstain starvation;
+  sweep rescues to 60.3). Grid-best margin 0.1 is the safer worst-case. Threshold
+  decisions should stay measured-per-change; consider duration-adaptive margin (fog).
+- **Production mitigations for the hard class, in priority order**: (1) lane provenance
+  — in real usage the "similar pair" is usually local-mic vs remote-system, which the
+  two-lane design separates structurally before embeddings are even consulted
+  (dual_lane_diarization corpus exists on m4mbp for validating this); (2) larger
+  embedder A/B (resnet293-LM sits in the local HF cache) — fog.
+
 ## Fidelity notes
 - Embedder: PRODUCTION class `_OnnxWeSpeakerEmbedder` via `WeSpeakerResNet152LmAdapter`,
   loaded from the repo file, with the pinned ONNX (sha verified = spec.state_sha256).
