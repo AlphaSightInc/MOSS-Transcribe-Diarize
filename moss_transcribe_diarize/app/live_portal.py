@@ -143,7 +143,12 @@ LIVE_PORTAL_HTML = """<!doctype html>
       const localStates = new Set(["disconnected", "reconnecting"]);
       const terminalStates = new Set(["closed", "failed", "aborted"]);
       const retryDelaysMs = [500, 1000, 2000, 5000];
-      const pollDelayMs = 1000;
+      // The reader's own cadence, and the only thing that decides how long committed
+      // text waits before a browser asks for it. The app's latency gate reports an
+      // analytic render bound built from the SAME cadence
+      // (CaptureLatencyContract.portalCycleSeconds), so the two must move together or
+      // the reported bound stops describing this page; a test asserts they agree.
+      const pollDelayMs = 500;
       const pollRequestTimeoutMs = 10000;
       const controlRequestTimeoutMs = 10000;
       const stopDrainDeadlineSeconds = 5.0;

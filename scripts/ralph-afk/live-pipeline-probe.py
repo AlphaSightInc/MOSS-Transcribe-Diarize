@@ -419,6 +419,98 @@ def build_schedule(
     return tuple(mic), tuple(system)
 
 
+# Candidate 55's regime, in audio. A real meeting's microphone lane carries the room, and the
+# decoder answers with one-word interjections and `'...'` -- fragments too short for the evidence
+# floor (`min_segment_samples` 8000 = 0.5 s) to embed. `birth-floor-probe.py` measured 14 of F2's
+# 16 and 13 of F3's 16 canonical speakers born from exactly that, holding no reference at all.
+# These lines are chosen only for their LENGTH: each must render shorter than the evidence floor,
+# which the builder asserts rather than assumes.
+# Measured with `say` on both default voices, seconds rendered: Yeah. 0.457/0.443 · No. 0.414/0.443
+# · Ah. 0.354/0.396 · Oh. 0.353/0.373 · Hey. 0.386/0.436 · Huh. 0.412/0.390 -- every one under the
+# 0.5 s floor on both. Rejected for being over it on at least one voice: Okay. (0.574/0.570),
+# Mm hmm. (0.507/0.745), Right. (0.402/0.535), Hm. (0.203/0.721). The builder re-measures rather
+# than trusting this comment.
+FRAGMENT_LINES = (
+    "Yeah.",
+    "No.",
+    "Ah.",
+    "Oh.",
+    "Hey.",
+    "Huh.",
+)
+
+
+def build_fragment_track(
+    voice: str,
+    lines: tuple[str, ...],
+    total_seconds: float,
+    workdir: Path,
+    lead_seconds: float,
+    interval_seconds: float,
+) -> tuple[array.array, dict]:
+    """Short isolated utterances on an otherwise silent lane, one per `interval_seconds`.
+
+    This is the one input property no earlier mode produces: audio that mints a canonical
+    speaker the system then has nothing to say about. `continuous` gives a lane the album can
+    bank (iteration 7 measured 2 canonical speakers for 2 real voices, the healthy regime);
+    `alternating` gives it long turns separated by silence. Neither reaches F2's measured
+    **8.0 references per real voice**, which is the shape iteration 5's `sweep-multiplicity-probe`
+    predicts the sweep cannot repair.
+
+    The mechanism being reproduced, from Phase N decision 20: a local speaker whose segments
+    never total the evidence floor is never embedded, so it cannot match, so
+    `live_identity.py:129` births a canonical speaker for it -- with no reference and therefore
+    no bank, which decision 7 makes unmergeable. Pair this with a voiced peer lane and every span
+    closes on the hard cap carrying one bankable voice plus one unbankable fragment, which is
+    exactly what F2 and F3 recorded.
+
+    Returns the track and the measured facts that make the mode falsifiable: if a rendered
+    fragment ever reaches the evidence floor it would be embedded, the births would stop, and
+    the run would silently be testing something else.
+    """
+
+    floor_seconds = FRAME_SAMPLES / SAMPLE_RATE
+    total_samples = int(total_seconds * SAMPLE_RATE)
+    track = array.array("h", bytes(max(0, total_samples) * 2))
+    rendered = [synthesize(voice, line, workdir) for line in lines]
+    durations = [len(samples) / SAMPLE_RATE for samples in rendered]
+    too_long = [
+        (line, round(duration, 3))
+        for line, duration in zip(lines, durations)
+        if duration >= floor_seconds
+    ]
+    if too_long:
+        raise ProbeError(
+            "fragment lines must render shorter than the evidence floor "
+            f"({floor_seconds:.2f} s) or they are embeddable and the mode tests nothing: {too_long}"
+        )
+    step = max(interval_seconds, 0.0)
+    if step <= 0:
+        raise ProbeError("--fragment-interval must be greater than zero")
+    placed = 0
+    index = 0
+    start = max(0.0, lead_seconds)
+    while True:
+        offset = int(start * SAMPLE_RATE)
+        if offset >= total_samples:
+            break
+        samples = rendered[index % len(rendered)]
+        index += 1
+        end = min(offset + len(samples), total_samples)
+        track[offset:end] = samples[: end - offset]
+        placed += 1
+        start += step
+    facts = {
+        "fragments_placed": placed,
+        "interval_seconds": step,
+        "evidence_floor_seconds": floor_seconds,
+        "rendered_seconds": {
+            line: round(duration, 3) for line, duration in zip(lines, durations)
+        },
+    }
+    return track, facts
+
+
 def build_continuous_track(
     voice: str,
     lines: tuple[str, ...],
@@ -500,6 +592,166 @@ def speakers_in(transcript: str) -> list[str]:
     return seen
 
 
+def words_of(transcript: str) -> str:
+    """A committed transcript with its speaker tags removed.
+
+    Phase N decision 10 is that a revision moves labels and never words. Reading that off a
+    run needs the words isolated from the tags, and the tag grammar has exactly one shape.
+    """
+    return SPEAKER_TOKEN.sub("", transcript or "").strip()
+
+
+def _unseen_events(batch, seen: set[int]) -> tuple[list[dict], int]:
+    """The events in this poll that no earlier poll already delivered, and how many repeated.
+
+    `since_seq` is inclusive server-side, so the highest event of every poll comes back in the
+    next one. The portal drops the repeat by seq rather than asking for a different range
+    (`live_portal.py:474`), and this probe mirrors the portal, so the dedupe belongs here and
+    the request stays exactly what a browser sends. The repeat count is RETURNED rather than
+    silently dropped: the fence's own rule is that a run never subtracts a sample without
+    printing it, and "the probe read 687 events" and "the meeting produced 590" are different
+    facts about the same run.
+    """
+    fresh: list[dict] = []
+    repeats = 0
+    for event in batch:
+        if not isinstance(event, dict):
+            continue
+        seq = event.get("seq")
+        if isinstance(seq, int) and not isinstance(seq, bool):
+            if seq in seen:
+                repeats += 1
+                continue
+            seen.add(seq)
+        fresh.append(event)
+    return fresh, repeats
+
+
+def _sweep_summary(items: list[dict], canonical_events: list[dict]) -> dict:
+    """What a sweep published, reduced to the numbers that decide it -- one half at a time.
+
+    Iteration 7 read these by hand out of 31 items and that does not scale to a 150 s run.
+    More to the point, the loop's own rule -- a verdict word must name the thing it decides --
+    applies here: "the sweep ran" and "the sweep changed a label" and "the sweep rewrote a
+    span to itself" are three different findings, and only counting them apart tells a
+    fragmented meeting from a healthy one.
+
+    **The two halves are read off two different surfaces and this reduction says which**
+    (candidate 67). The CADENCE half's version is on
+    `canonical_processed.identity_revision_version` (`live_service_runtime.py:615,800`); a
+    committed item carries `identity_snapshot_version` (`live_session.py:165,814`), a different
+    quantity written by a different writer. Reading the version off the item -- which is what
+    this reduction did until now -- returns `None` on every span of every run, and an
+    `isinstance(..., int)` filter turned that into a silent **0**: it would have reported "no
+    revision" on the very soak that measured three. An absent field is `null` here and never 0,
+    because this is the third time in this loop that a missing field was read as a negative
+    measurement (`identity_finalized`, then `storageWrites`, now this).
+
+    The SESSION-END half's version reaches no live reader at all -- it rides
+    `identity_finalized`, which `_record_event` appends to an in-memory list -- so it is filled
+    in from the post-stop capture-authority drain, by `_session_end_sweep`, and stays `null`
+    with its reason when that drain is refused.
+
+    `revised_items` and the three counts beside it are read off the FINAL snapshot, so they are
+    BOTH halves together and cannot separate them. Only a snapshot taken mid-meeting can
+    attribute a revision to the cadence, which is what the version histogram is for.
+    """
+    revised = [item for item in items if item.get("revised_transcript")]
+    label_changing = 0
+    byte_identical = 0
+    words_moved = 0
+    for item in revised:
+        original = str(item.get("transcript") or "")
+        revision = str(item.get("revised_transcript") or "")
+        if revision == original:
+            byte_identical += 1
+            continue
+        if words_of(revision) != words_of(original):
+            words_moved += 1
+        if speakers_in(revision) != speakers_in(original):
+            label_changing += 1
+    versions: list[int] = []
+    histogram: dict[int, int] = {}
+    without_version = 0
+    spans_revised = 0
+    merges = 0
+    first_nonzero: dict | None = None
+    for event in canonical_events:
+        version = event.get("identity_revision_version")
+        if not isinstance(version, int) or isinstance(version, bool):
+            without_version += 1
+            continue
+        histogram[version] = histogram.get(version, 0) + 1
+        if version not in versions:
+            versions.append(version)
+        if version and first_nonzero is None:
+            first_nonzero = {"span_id": event.get("span_id"), "version": version}
+        spans_revised += _as_count(event.get("identity_revision_spans"))
+        merges += _as_count(event.get("identity_revision_merges"))
+    measured = bool(histogram)
+    return {
+        "committed_items": len(items),
+        "revised_items": len(revised),
+        "label_changing": label_changing,
+        "byte_identical_rewrites": byte_identical,
+        "words_moved": words_moved,
+        "cadence": {
+            "version_surface": "canonical_processed.identity_revision_version",
+            "spans_reporting": len(canonical_events),
+            "spans_without_version": without_version,
+            # `null` and not `[]`/0: a run whose events never carried the field did not measure
+            # zero revisions, it measured nothing. Only `measured` distinguishes them.
+            "versions": sorted(versions) if measured else None,
+            "version_histogram": (
+                {str(key): histogram[key] for key in sorted(histogram)} if measured else None
+            ),
+            "max_version": max(versions) if measured else None,
+            "first_nonzero": first_nonzero,
+            "spans_revised": spans_revised if measured else None,
+            "merges": merges if measured else None,
+        },
+    }
+
+
+def _as_count(value) -> int:
+    """A count the server reported, or 0 -- never a TypeError on a null."""
+    return int(value) if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
+def _session_end_sweep(post_stop: dict) -> dict:
+    """The final sweep's own numbers, or the named reason they are unreadable.
+
+    ADR-0002's final sweep records `identity_finalized` whether or not it changed anything, so
+    its payload is the only surface that tells "the last sweep ran and found nothing" from "the
+    last sweep never ran". It is also the surface no live reader can reach. When the post-stop
+    drain is refused -- iteration 7 measured 403 for capture authority on a closed session --
+    every number here is `null` and the refusal is named, rather than reading as a sweep that
+    published nothing.
+    """
+    finalized = list(post_stop.get("identity_finalized") or ())
+    if not finalized:
+        return {
+            "version": None,
+            "spans_revised": None,
+            "units_revised": None,
+            "merges": None,
+            "refusals": None,
+            "unreadable": (
+                "identity_finalized not read: post-stop events drain returned "
+                f"{post_stop.get('status')}"
+            ),
+        }
+    payload = finalized[-1]
+    return {
+        "version": payload.get("identity_revision_version"),
+        "spans_revised": payload.get("identity_revision_spans"),
+        "units_revised": payload.get("identity_revision_units"),
+        "merges": payload.get("identity_revision_merges"),
+        "refusals": payload.get("identity_revision_refusals"),
+        "unreadable": None,
+    }
+
+
 def transcript_of(snapshot: dict) -> list[dict]:
     session = snapshot.get("session") or {}
     items = []
@@ -510,6 +762,11 @@ def transcript_of(snapshot: dict) -> list[dict]:
 
 
 def main() -> int:
+    # Checked before the parser because a run needs --host/--pin/--device-id and a self-test
+    # needs none of them; the instrument must be checkable on a host with no server, which is
+    # the whole point of a regression that costs no session.
+    if "--self-test" in sys.argv[1:]:
+        return _self_test()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", required=True)
     parser.add_argument("--port", type=int, default=7861)
@@ -526,13 +783,31 @@ def main() -> int:
     parser.add_argument("--system-voice", default="Fred")
     parser.add_argument(
         "--lane-audio",
-        choices=("alternating", "continuous"),
+        choices=("alternating", "continuous", "fragmented"),
         default="alternating",
         help="alternating: one lane speaks while the other sends silent frames (the "
         "original schedule). continuous: both lanes are voiced for the whole run, which "
         "is what a real Mac capture does -- the microphone hears the room and the tap "
         "carries the program, so no lane is ever silent and every span closes on the hard "
-        "cap with content on both lanes.",
+        "cap with content on both lanes. fragmented: the peer lane stays continuous while "
+        "--fragment-lane carries isolated sub-floor interjections, which is candidate 55's "
+        "measured regime -- a canonical speaker minted per span from audio the system "
+        "refuses to embed.",
+    )
+    parser.add_argument(
+        "--fragment-lane",
+        choices=LANES,
+        default="microphone",
+        help="which lane carries the fragments under --lane-audio fragmented; the "
+        "microphone is the lane a real room fragments, so it is the default",
+    )
+    parser.add_argument(
+        "--fragment-interval",
+        type=float,
+        default=3.0,
+        help="seconds between fragments under --lane-audio fragmented. At the deployed "
+        "2.5 s hard cap a value at or below it puts a fragment in nearly every span, which "
+        "is what drives the canonical count up; larger values fragment more slowly.",
     )
     parser.add_argument(
         "--lane-offset-ms",
@@ -597,6 +872,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="moss-probe-say-") as tmp:
         workdir = Path(tmp)
         mic_schedule, system_schedule = build_schedule(args.seconds, args.lead_seconds)
+        fragment_facts: dict | None = None
         if args.lane_audio == "continuous":
             tracks = {
                 "microphone": build_continuous_track(
@@ -604,6 +880,29 @@ def main() -> int:
                 ),
                 "system": build_continuous_track(
                     args.system_voice, SYSTEM_LINES, args.seconds, workdir, args.lead_seconds
+                ),
+            }
+        elif args.lane_audio == "fragmented":
+            voices = {"microphone": args.mic_voice, "system": args.system_voice}
+            peer_lines = {"microphone": MIC_LINES, "system": SYSTEM_LINES}
+            peer_lane = next(lane for lane in LANES if lane != args.fragment_lane)
+            fragment_track, fragment_facts = build_fragment_track(
+                voices[args.fragment_lane],
+                FRAGMENT_LINES,
+                args.seconds,
+                workdir,
+                args.lead_seconds,
+                args.fragment_interval,
+            )
+            fragment_facts["lane"] = args.fragment_lane
+            tracks = {
+                args.fragment_lane: fragment_track,
+                peer_lane: build_continuous_track(
+                    voices[peer_lane],
+                    peer_lines[peer_lane],
+                    args.seconds,
+                    workdir,
+                    args.lead_seconds,
                 ),
             }
         else:
@@ -627,6 +926,8 @@ def main() -> int:
             for lane, frames in lane_frames.items()
         },
     }
+    if fragment_facts is not None:
+        report["audio"]["fragments"] = fragment_facts
 
     client = PinnedClient(args.host, args.port, args.pin)
 
@@ -696,6 +997,21 @@ def main() -> int:
     last_version = None
     last_seq = 0
     events_seen = 0
+    # Which kinds, not merely how many. `events_seen` was a bare count for six runs, and a
+    # count cannot answer "did the session-end sweep run", which is the question ADR-0002's
+    # second acceptance half turns on. Counting by kind costs nothing and makes the absence
+    # of a kind a measurement rather than an inference.
+    event_kinds: dict[str, int] = {}
+    # `since_seq` is INCLUSIVE server-side (`live_service_runtime.events`: `event.seq >=
+    # since_seq`), so every poll re-delivers the highest event of the previous one. The portal
+    # this probe mirrors keeps the same request and drops the repeat on the reader side
+    # (`live_portal.py:474` -- `event.seq <= state.eventSequence || renderedEvents.has(seq)`),
+    # so the faithful mirror is to keep the wire behaviour and dedupe here. Without it a
+    # re-read is a second measurement: every report before this one counted `session_created`
+    # TWICE, and `_decode_summary`'s `spans_total` and RTF percentiles were computed over a
+    # span list with the boundary span repeated once per poll.
+    seen_event_seqs: set[int] = set()
+    duplicate_event_reads = 0
     # J4 makes every refusal on the live path carry the word that names it. Keeping the
     # canonical_processed payloads is what turns "the run survived" into "and here is why
     # each span published the way it did" without a host-side probe.
@@ -784,8 +1100,12 @@ def main() -> int:
             )
             events_ms.append(elapsed * 1000.0)
             if status == 200 and isinstance(body, dict):
-                for event in body.get("events") or ():
+                fresh, repeats = _unseen_events(body.get("events") or (), seen_event_seqs)
+                duplicate_event_reads += repeats
+                for event in fresh:
                     events_seen += 1
+                    kind = str(event.get("kind") or "")
+                    event_kinds[kind] = event_kinds.get(kind, 0) + 1
                     last_seq = max(last_seq, int(event.get("seq", last_seq)))
                     if event.get("kind") == "canonical_processed":
                         payload = event.get("payload") or {}
@@ -808,6 +1128,25 @@ def main() -> int:
                                     "canonical_decode_token_cap",
                                     "canonical_decode_capped",
                                     "frozen_span_duration_sec",
+                                    # The ONE sweep-refusal surface a client can read
+                                    # (`live_service_runtime.py:804`). A session-end sweep's
+                                    # refusals ride `identity_finalized`, which no client can
+                                    # reach, so this covers the CADENCE half only -- and an
+                                    # empty map here with a revision published is the
+                                    # difference between "the sweep proposed nothing" and
+                                    # "it proposed something the session would not apply".
+                                    "identity_revision_refusals",
+                                    # The cadence sweep's own product, on the only surface that
+                                    # carries it (`live_service_runtime.py:615,800`). `version`
+                                    # is the session's CURRENT label revision, written on every
+                                    # span, so its histogram over a meeting is the record of
+                                    # when each correction became visible; `spans`/`merges` are
+                                    # what that one revision changed. A committed item does not
+                                    # carry any of this -- it carries `identity_snapshot_
+                                    # version`, a different quantity (candidate 67).
+                                    "identity_revision_version",
+                                    "identity_revision_spans",
+                                    "identity_revision_merges",
                                 )
                             }
                         )
@@ -871,12 +1210,52 @@ def main() -> int:
                 "span_id": item.get("span_id"),
                 "start_sample": item.get("start_sample"),
                 "end_sample": item.get("end_sample"),
+                # The version a committed item DOES carry, and the only one it carries: the
+                # identity snapshot the span was labelled against. The revision version is not
+                # here and never was -- projecting it off this item is candidate 67, and the
+                # `sweep.cadence` reduction reads it off `canonical_processed` instead.
                 "identity_snapshot_version": item.get("identity_snapshot_version"),
                 "speakers": speakers_in(str(item.get("transcript") or "")),
                 "transcript": item.get("transcript"),
+                # Phase N decision 10 publishes a correction BESIDE the transcript: `transcript`
+                # and `prefix_hash` never move, and the revision lands in `revised_transcript`.
+                # Projecting only `transcript` made every prior run of this probe report an
+                # unswept and a swept span identically.
+                "revised_transcript": item.get("revised_transcript"),
+                "revised_speakers": speakers_in(str(item.get("revised_transcript") or "")),
             }
             for item in items
         ],
+    }
+    report["sweep"] = _sweep_summary(report["transcript"]["items"], canonical_events)
+    cadence_refusals: dict[str, int] = {}
+    for event in canonical_events:
+        for reason, count in (event.get("identity_revision_refusals") or {}).items():
+            cadence_refusals[str(reason)] = cadence_refusals.get(str(reason), 0) + int(count)
+    report["sweep"]["cadence_refusals"] = dict(sorted(cadence_refusals.items()))
+    # The fragmentation the run set out to produce, measured on the wire rather than assumed.
+    # `canonical_speakers` counts what the session minted; the denominator is the number of
+    # distinct synthesized voices, which this probe knows exactly -- that ratio is the axis
+    # iteration 5's multiplicity model is defined on (F2 measured 8.0).
+    canonical = list(
+        ((report.get("stop") or {}).get("snapshot") or {}).get(
+            "identity_canonical_speakers"
+        )
+        or ()
+    )
+    real_voices = len({args.mic_voice, args.system_voice})
+    report["fragmentation"] = {
+        "canonical_speakers": len(canonical),
+        "real_voices": real_voices,
+        "references_per_real_voice": (
+            round(len(canonical) / real_voices, 2) if real_voices else None
+        ),
+        "labels_seen_in_transcript": report["transcript"]["speakers"],
+        "capacity_abstains": sum(
+            1
+            for event in canonical_events
+            if event.get("identity_reason") == "speaker_capacity_exceeded"
+        ),
     }
 
     report["latency"] = {
@@ -896,7 +1275,21 @@ def main() -> int:
         report["latency"]["render_bound_ms"] = round(render_bound, 1)
         report["latency"]["user_visible_ms"] = round(committed_p95 + render_bound, 1)
 
+    # The events a stop EMITS are the ones no run has ever read. `canonical_queued`,
+    # `identity_finalized` and `session_closed` are all recorded inside `stop`, i.e. after the
+    # last view poll, and the same stop revokes view authority -- so a view-token reader is
+    # structurally blind to exactly the events that say how the meeting ended. Capture
+    # authority is not: `CAPTURE_ACTIONS` carries `events`, and the capture path authorizes on
+    # session OWNERSHIP, never on `VIEWABLE_SESSION_STATUSES`. So the owning device can still
+    # read them once the session is closed.
+    post_stop = _drain_events_after_stop(client, session_id, device_token, last_seq, seen_event_seqs)
+    for kind, count in (post_stop.get("kinds") or {}).items():
+        event_kinds[kind] = event_kinds.get(kind, 0) + count
+    report["post_stop_events"] = post_stop
+    report["sweep"]["session_end"] = _session_end_sweep(post_stop)
     report["events_seen"] = events_seen
+    report["duplicate_event_reads"] = duplicate_event_reads
+    report["event_kinds"] = dict(sorted(event_kinds.items()))
     report["canonical_events"] = canonical_events
     report["decode"] = _decode_summary(canonical_events)
     report["view_authority_after_stop"] = _probe_view_after_stop(client, session_id, view_token)
@@ -945,6 +1338,11 @@ def _decode_summary(canonical_events: list[dict]) -> dict:
     record, and did any span actually hit it. A run where nothing is capped still answers the
     first two -- an absent cap and an unexercised cap are different results and must not
     reduce to the same silence.
+
+    `spans_total` counts spans, not event reads: the caller dedupes by `seq` before this sees
+    them. Reports written before that fix counted the re-delivered boundary event as another
+    span -- iteration 9's fragmented run reported `spans_total` 62 for a 61-span meeting, and
+    its RTF p95 0.190 is 0.212 once the repeats are removed.
     """
     measured = [
         event
@@ -1020,12 +1418,163 @@ def _p95(values: list[float]) -> float | None:
     return round(ordered[rank - 1], 1)
 
 
+def _drain_events_after_stop(
+    client: PinnedClient,
+    session_id: str,
+    device_token: str,
+    since_seq: int,
+    seen: set[int] | None = None,
+) -> dict:
+    """Read the events a clean stop emitted, with the authority that still may.
+
+    Reports the kinds and, for `identity_finalized`, its whole payload -- that event is
+    recorded whether or not the final sweep changed anything (ADR-0002's final sweep;
+    `live_service_runtime._finalize_identity_locked`), so its payload is the only surface in
+    the system that tells "the last sweep ran and found nothing" from "the last sweep never
+    ran". It is recorded through `_record_event`, which appends to the session's in-memory
+    event list and writes NOTHING to the journal -- so a journal grep for it is 0 either way
+    and is not evidence. Read the events.
+
+    A non-200 is reported by status rather than raised: this runs after the run's own verdict
+    is already decided, and losing the report to an exception here would be the worse trade.
+    """
+
+    status, body, _ = client.request(
+        "GET",
+        f"/api/live/sessions/{session_id}/events?since_seq={since_seq}",
+        bearer=device_token,
+    )
+    result: dict = {"status": status, "since_seq": since_seq, "authority": "capture"}
+    if status != 200 or not isinstance(body, dict):
+        result["body"] = body
+        return result
+    # `since_seq` is inclusive here too, so the drain re-delivers events the run already
+    # counted; merging its kinds into the run's histogram without this would double-count them.
+    events, repeats = _unseen_events(body.get("events") or (), set() if seen is None else seen)
+    kinds: dict[str, int] = {}
+    finalized: list[dict] = []
+    for event in events:
+        kind = str(event.get("kind") or "")
+        kinds[kind] = kinds.get(kind, 0) + 1
+        if kind == "identity_finalized":
+            finalized.append(dict(event.get("payload") or {}))
+    result["count"] = len(events)
+    result["already_seen"] = repeats
+    result["kinds"] = dict(sorted(kinds.items()))
+    result["identity_finalized"] = finalized
+    result["session_end_sweep_ran"] = bool(finalized)
+    return result
+
+
 def _probe_view_after_stop(client: PinnedClient, session_id: str, view_token: str) -> dict:
     """A clean stop must immediately revoke view authority (C1's contract)."""
     status, _body, _ = client.request(
         "GET", f"/api/live/sessions/{session_id}/snapshot", bearer=view_token
     )
     return {"snapshot_status": status, "revoked": status in (401, 403, 404)}
+
+
+def _self_test() -> int:
+    """Check the two reductions that read a field off a surface, without a server.
+
+    `--self-test` exists because the defect it guards was invisible for two runs: the probe
+    reported `revision_versions: []` on meetings that had published revisions, and nothing in
+    the loop could tell that from a meeting that published none. Every case below is written so
+    that the code as it stood before candidate 67 fails it.
+    """
+    failures: list[str] = []
+
+    def check(name: str, got, want) -> None:
+        if got != want:
+            failures.append(f"{name}: got {got!r}, want {want!r}")
+
+    # 1. The version comes off `canonical_processed`, and a committed item's own version is
+    #    NEVER read. The items here carry a deliberately wrong `identity_revision_version` so a
+    #    reduction that reads the item -- the pre-candidate-67 code -- reports 7 and fails.
+    items = [
+        {"span_id": f"s{i}", "identity_snapshot_version": 4, "identity_revision_version": 7}
+        for i in range(3)
+    ]
+    events = [
+        {"span_id": "s0", "identity_revision_version": 0, "identity_revision_spans": 0},
+        {"span_id": "s1", "identity_revision_version": 0, "identity_revision_spans": 0},
+        {"span_id": "s2", "identity_revision_version": 1, "identity_revision_spans": 2,
+         "identity_revision_merges": 1},
+    ]
+    cadence = _sweep_summary(items, events)["cadence"]
+    check("versions", cadence["versions"], [0, 1])
+    check("histogram", cadence["version_histogram"], {"0": 2, "1": 1})
+    check("max_version", cadence["max_version"], 1)
+    check("first_nonzero", cadence["first_nonzero"], {"span_id": "s2", "version": 1})
+    check("spans_revised", cadence["spans_revised"], 2)
+    check("merges", cadence["merges"], 1)
+    check("spans_reporting", cadence["spans_reporting"], 3)
+
+    # 2. An ABSENT field is null, never 0. This is the case the old `isinstance(..., int)`
+    #    filter collapsed into an empty list, which reads as "swept nothing".
+    blind = _sweep_summary(items, [{"span_id": "s0"}, {"span_id": "s1"}])["cadence"]
+    check("blind versions", blind["versions"], None)
+    check("blind histogram", blind["version_histogram"], None)
+    check("blind max_version", blind["max_version"], None)
+    check("blind spans_revised", blind["spans_revised"], None)
+    check("blind without_version", blind["spans_without_version"], 2)
+
+    # 3. No events at all is the same answer, not a zero.
+    empty = _sweep_summary([], [])["cadence"]
+    check("empty versions", empty["versions"], None)
+    check("empty max_version", empty["max_version"], None)
+    check("empty spans_reporting", empty["spans_reporting"], 0)
+
+    # 4. The shape the F3 soak actually measured (run 20260729-094359 iteration 12): the
+    #    histogram {0:130, 1:122, 2:173, 3:223} over 648 spans, three revisions published
+    #    mid-meeting. A reduction that cannot report this cannot answer candidate 65.
+    f3: list[dict] = []
+    for version, count in ((0, 130), (1, 122), (2, 173), (3, 223)):
+        for index in range(count):
+            f3.append(
+                {
+                    "span_id": f"v{version}-{index}",
+                    "identity_revision_version": version,
+                    "identity_revision_spans": 1 if index == 0 and version else 0,
+                }
+            )
+    soak = _sweep_summary([], f3)["cadence"]
+    check("f3 histogram", soak["version_histogram"], {"0": 130, "1": 122, "2": 173, "3": 223})
+    check("f3 max_version", soak["max_version"], 3)
+    check("f3 first_nonzero", soak["first_nonzero"], {"span_id": "v1-0", "version": 1})
+    check("f3 spans_revised", soak["spans_revised"], 3)
+    check("f3 spans_reporting", soak["spans_reporting"], 648)
+
+    # 5. A re-delivered event is one measurement, and the repeat is counted rather than
+    #    dropped in silence. `since_seq` is inclusive, so this is every poll, not an edge case.
+    seen: set[int] = set()
+    first, repeat_a = _unseen_events([{"seq": 0, "kind": "session_created"}, {"seq": 1}], seen)
+    second, repeat_b = _unseen_events([{"seq": 1}, {"seq": 2}], seen)
+    check("first poll", [event["seq"] for event in first], [0, 1])
+    check("first repeats", repeat_a, 0)
+    check("second poll", [event["seq"] for event in second], [2])
+    check("second repeats", repeat_b, 1)
+
+    # 6. The session-end half names its refusal instead of reporting a silent zero.
+    refused = _session_end_sweep({"status": 403})
+    check("session_end version", refused["version"], None)
+    check(
+        "session_end unreadable",
+        refused["unreadable"],
+        "identity_finalized not read: post-stop events drain returned 403",
+    )
+    read = _session_end_sweep(
+        {"status": 200, "identity_finalized": [{"identity_revision_version": 4,
+                                               "identity_revision_spans": 19}]}
+    )
+    check("session_end read version", read["version"], 4)
+    check("session_end read spans", read["spans_revised"], 19)
+    check("session_end read unreadable", read["unreadable"], None)
+
+    for failure in failures:
+        print(f"FAIL {failure}")
+    print(f"self-test: {'FAIL' if failures else 'PASS'} ({len(failures)} failures)")
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":

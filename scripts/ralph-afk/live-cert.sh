@@ -405,9 +405,10 @@ T_STOP=$(now)
 jq -c '{ok, running, lanes, publishedFrameCount, outboxRetainedFrames, sessionRefusal}' < "$OUT/stop.json"
 "$CLI" latency > "$OUT/latency-after-stop.json" 2>&1
 jq -c '.latency' < "$OUT/latency-after-stop.json"
-# Candidate 60 is OPEN and this check is how this run records it rather than rediscovering it:
-# the client never calls the server's stop route, so view authority is expected to survive here
-# until the 30 s helper lease expires. A 200 is the KNOWN defect, not a new finding.
+# Candidate 60 (Q4) is FIXED ON THE BRANCH as of iteration 24: the client now calls the server's
+# stop route after its final drain, so a 200 here is the defect and a 401/403 is the fix. Until
+# the installed app on this Mac is REBUILT from a build carrying Q4, this still reads 200 - the
+# app that answers `stop` is the one in /Applications, not the one in this checkout.
 check_view post-stop
 
 sleep 3

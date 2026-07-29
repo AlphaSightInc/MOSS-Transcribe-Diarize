@@ -386,6 +386,127 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(stopped.publishedFrameCount, 0)
     }
 
+    func testCleanStopTellsTheServerTheMeetingIsOverAfterTheFinalDrain() throws {
+        // The route has always worked and the portal's Stop button has always called it; this client
+        // never did, so a `mtd-capture stop` left the server holding the session — and the view
+        // authority with it — until the 30 s helper lease expired.
+        let tail = laneFrame(.microphone, sampleCount: 8_000, captureTimestampNS: 1_500_000_000)
+        let transport = FakeCaptureTransportAdapter()
+        let sessionStop = OrderObservingSessionStopAdapter()
+        // Read off the transport rather than the controller: the question is whether the meeting's
+        // last audio had already been published when the server was told to stop, and a server told
+        // to stop with frames still unconsumed spends its whole drain deadline waiting for them.
+        var publishedWhenStopWasSent: Int?
+        sessionStop.observe = { publishedWhenStopWasSent = transport.publishedFrames.count }
+        let controller = CaptureController(
+            source: TerminalTailCaptureSource(tail: [tail]),
+            transport: transport,
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter(),
+            sessionStop: sessionStop
+        )
+        try controller.start(
+            configuration: CaptureConfiguration(
+                sessionID: "session-stop",
+                serverURL: URL(string: "https://127.0.0.1/live")!
+            )
+        )
+
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(sessionStop.recordedStops.count, 1, "a clean stop reaches the server exactly once")
+        XCTAssertEqual(sessionStop.recordedStops.first?.sessionID, "session-stop")
+        XCTAssertEqual(
+            sessionStop.recordedStops.first?.drainDeadlineSeconds,
+            CaptureStopContract.drainDeadlineSeconds
+        )
+        XCTAssertEqual(
+            publishedWhenStopWasSent,
+            1,
+            "the server is told to stop after the final drain, not before it"
+        )
+        XCTAssertEqual(stopped.publishedFrameCount, 1)
+        XCTAssertEqual(stopped.outbox.retainedFrames, 0)
+        XCTAssertNil(stopped.sessionRefusal)
+        XCTAssertFalse(stopped.running)
+    }
+
+    func testAStopTheServerCannotBeToldAboutStillStopsLocallyAndNamesTheRefusal() throws {
+        // The fifth amendment's rule: the capture is already off and the audio already drained, so
+        // rethrowing here would report a failed stop for a meeting that has ended either way — and
+        // leave `alreadyRunning` refusing the next one.
+        let sessionStop = OrderObservingSessionStopAdapter()
+        sessionStop.failure = CaptureHTTPTransportError.nonSuccessStatus(403)
+        let source = FakeCaptureSourceAdapter(frames: [])
+        let controller = CaptureController(
+            source: source,
+            transport: FakeCaptureTransportAdapter(),
+            keyStore: FakeCaptureKeyStoreAdapter(),
+            clock: FakeCaptureClockAdapter(ticks: [100, 200, 300, 400]),
+            scheduler: FakeCaptureSchedulerAdapter(),
+            health: FakeCaptureHealthAdapter(),
+            sessionStop: sessionStop
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-refused",
+            serverURL: URL(string: "https://127.0.0.1/live")!
+        )
+        try controller.start(configuration: configuration)
+
+        let stopped = try controller.stop(deadline: Date(timeIntervalSince1970: 1))
+
+        XCTAssertFalse(stopped.running)
+        XCTAssertEqual(
+            stopped.sessionRefusal,
+            .sessionDisowned,
+            "a refusal is a report about the session, and the one thing the failure may change"
+        )
+        XCTAssertEqual(source.status().map(\.state), ["system", "microphone"].map { _ in "stopped" })
+        // The operator-visible half of the rule: the next meeting can start.
+        XCTAssertNoThrow(try controller.start(configuration: configuration))
+    }
+
+    func testStopContractMatchesTheServedPortalControlTimings() throws {
+        // `/stop` has two clients. The portal's numbers are documented in ADR-0001 and pinned on the
+        // Python side by tests/test_live_portal.py, so this is the side a drift can enter from.
+        let portal = try String(
+            contentsOf: repositoryRoot().appendingPathComponent(
+                "moss_transcribe_diarize/app/live_portal.py"
+            ),
+            encoding: .utf8
+        )
+        let drain = try matches(pattern: #"const stopDrainDeadlineSeconds = ([0-9.]+);"#, in: portal)
+        XCTAssertEqual(drain.count, 1, "the portal must declare the stop drain deadline exactly once")
+        XCTAssertEqual(
+            CaptureStopContract.drainDeadlineSeconds,
+            try XCTUnwrap(Double(try XCTUnwrap(drain.first))),
+            "the two callers of /stop must agree on how long a drain may take"
+        )
+        XCTAssertTrue(
+            portal.contains("{ deadline: stopDrainDeadlineSeconds }"),
+            "the declared deadline must be what the portal actually sends"
+        )
+
+        let controlTimeout = try matches(
+            pattern: #"const controlRequestTimeoutMs = (\d+);"#,
+            in: portal
+        )
+        XCTAssertEqual(controlTimeout.count, 1)
+        XCTAssertEqual(
+            CaptureStopContract.requestTimeoutSeconds * 1000,
+            try XCTUnwrap(Double(try XCTUnwrap(controlTimeout.first))),
+            accuracy: 1e-9,
+            "a control request is bounded the same way whoever sends it"
+        )
+        XCTAssertGreaterThan(
+            CaptureStopContract.requestTimeoutSeconds,
+            CaptureStopContract.drainDeadlineSeconds,
+            "a request that times out before the drain it asked for would report every clean stop failed"
+        )
+    }
+
     func testSessionRefusalNamesOnlyTheAnswersThatMeanTheSessionIsGone() throws {
         XCTAssertEqual(CaptureSessionRefusal(statusCode: 401), .credentialRejected)
         XCTAssertEqual(CaptureSessionRefusal(statusCode: 403), .sessionDisowned)
@@ -1313,7 +1434,11 @@ final class CaptureControllerTests: XCTestCase {
             1,
             "frames, heartbeats and pairing share one provider, so the process holds one session per pin"
         )
-        for dependent in ["CaptureV2HTTPTransportAdapter", "CaptureHTTPHealthAdapter"] {
+        for dependent in [
+            "CaptureV2HTTPTransportAdapter",
+            "CaptureHTTPHealthAdapter",
+            "CaptureHTTPSessionStopAdapter",
+        ] {
             // The invariant is the argument, not the indentation: a dependent may be nested inside
             // a decorator, and it still has to be handed the one shared provider.
             XCTAssertEqual(
@@ -1322,6 +1447,18 @@ final class CaptureControllerTests: XCTestCase {
                 "\(dependent) has to be given the shared provider rather than defaulting to its own"
             )
         }
+        // The controller takes its stop adapter optionally, so that every existing stack keeps
+        // compiling — which means the shipped stack not being handed one is a wiring mistake nothing
+        // else can see. An app that publishes frames and cannot end a session leaves the server
+        // holding the meeting until the helper lease expires.
+        XCTAssertEqual(
+            try matches(
+                pattern: #"(sessionStop: CaptureHTTPSessionStopAdapter\()"#,
+                in: source
+            ).count,
+            1,
+            "the shipped controller has to be given the session-stop adapter"
+        )
     }
 
     private func laneFrame(
@@ -3191,6 +3328,62 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(body["sample_count"] as? Int, 2)
         XCTAssertEqual(body["pcm_base64"] as? String, Data([1, 0, 2, 0]).base64EncodedString())
         XCTAssertFalse(String(data: request.httpBody ?? Data(), encoding: .utf8)?.contains("capture-token") ?? true)
+    }
+
+    func testHTTPSessionStopPostsTheDrainDeadlineOnItsOwnBoundedRequest() throws {
+        let client = RecordingCaptureHTTPClient()
+        let sessionStop = CaptureHTTPSessionStopAdapter(
+            client: client,
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token")
+        )
+        let configuration = CaptureConfiguration(
+            sessionID: "session-a",
+            serverURL: URL(string: "https://moss.example")!
+        )
+
+        try sessionStop.stopSession(
+            configuration: configuration,
+            drainDeadlineSeconds: CaptureStopContract.drainDeadlineSeconds
+        )
+
+        let request = try XCTUnwrap(client.requests.first)
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(
+            request.url?.absoluteString,
+            "https://moss.example/api/live/sessions/session-a/stop"
+        )
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer capture-token")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        // `deadline` is the only key that route reads, and the portal sends nothing else either.
+        let body = try jsonBody(request)
+        XCTAssertEqual(Set(body.keys), ["deadline"])
+        XCTAssertEqual(body["deadline"] as? Double, 5.0)
+        XCTAssertEqual(request.timeoutInterval, CaptureStopContract.requestTimeoutSeconds)
+        XCTAssertFalse(
+            String(data: request.httpBody ?? Data(), encoding: .utf8)?.contains("capture-token") ?? true
+        )
+    }
+
+    func testHTTPSessionStopSurfacesTheServersRefusalRatherThanReportingACleanStop() throws {
+        let client = RecordingCaptureHTTPClient()
+        client.response = CaptureHTTPResponse(statusCode: 403)
+        let sessionStop = CaptureHTTPSessionStopAdapter(
+            client: client,
+            bearerToken: StaticCaptureBearerTokenAdapter(token: "capture-token")
+        )
+
+        XCTAssertThrowsError(
+            try sessionStop.stopSession(
+                configuration: CaptureConfiguration(
+                    sessionID: "session-a",
+                    serverURL: URL(string: "https://moss.example")!
+                ),
+                drainDeadlineSeconds: CaptureStopContract.drainDeadlineSeconds
+            )
+        ) { error in
+            XCTAssertEqual(error as? CaptureHTTPTransportError, .nonSuccessStatus(403))
+            XCTAssertEqual(CaptureSessionRefusal(error: error), .sessionDisowned)
+        }
     }
 
     func testHTTPHealthPostsVersionedHeartbeatWithoutBearerLeakage() throws {
@@ -5181,6 +5374,12 @@ final class CaptureControllerTests: XCTestCase {
         return url
     }
 
+    /// `macos/MOSSCapture` is two levels below the checkout, and the checkout is where the server
+    /// source this package has to agree with lives.
+    private func repositoryRoot() -> URL {
+        packageRoot().deletingLastPathComponent().deletingLastPathComponent()
+    }
+
     private func swiftSources(under root: URL) throws -> String {
         try textSources(under: root, pathExtension: "swift")
     }
@@ -5696,16 +5895,48 @@ final class CaptureControllerTests: XCTestCase {
         }
 
         let report = sampler.report(polling: true)
-        XCTAssertEqual(report.portalCycleMS, 1_000)
+        XCTAssertEqual(report.portalCycleMS, 500)
         XCTAssertEqual(report.snapshotFetch.p95MS, 90)
         XCTAssertEqual(report.eventsFetch.p95MS, 70)
-        XCTAssertEqual(report.renderBoundMS, 1_160)
+        XCTAssertEqual(report.renderBoundMS, 660)
         XCTAssertEqual(report.committedLatency.p95MS, 1_500)
-        XCTAssertEqual(report.userVisibleMS, 2_660)
+        XCTAssertEqual(report.userVisibleMS, 2_160)
         XCTAssertEqual(
             report.userVisibleMS,
             try XCTUnwrap(report.committedLatency.p95MS) + (try XCTUnwrap(report.renderBoundMS)),
             "the gated number must stay the sum of the two recorded components"
+        )
+    }
+
+    /// The gated latency number contains a term that asserts what the *server's* portal does, and
+    /// the app schedules nothing from it. So the two values can drift apart in either direction and
+    /// every existing assertion would still pass: moving this constant alone would take 500 ms off a
+    /// reported number with no change to what a reader waits, and moving the portal's alone would
+    /// hand a reader 500 ms the report never records. This node fails on either.
+    func testPortalCycleContractMatchesTheServedPortalCadence() throws {
+        let portal = try String(
+            contentsOf: repositoryRoot().appendingPathComponent(
+                "moss_transcribe_diarize/app/live_portal.py"
+            ),
+            encoding: .utf8
+        )
+        let declared = try matches(pattern: #"const pollDelayMs = (\d+);"#, in: portal)
+        XCTAssertEqual(declared.count, 1, "the portal must declare its poll cadence exactly once")
+        let servedMS = try XCTUnwrap(Double(try XCTUnwrap(declared.first)))
+
+        // The declaration is only the cadence if it is also what schedules the next cycle; a
+        // constant nothing reads would satisfy an equality check while the page polled at any rate.
+        XCTAssertTrue(
+            portal.contains("schedulePoll(pollDelayMs)"),
+            "pollDelayMs must be what schedules the portal's next cycle"
+        )
+
+        // Compare against the number the report actually carries, not against the constant, so a
+        // literal substituted into the report is caught as well as a moved constant.
+        XCTAssertEqual(
+            CaptureLatencySampler().report(polling: true).portalCycleMS,
+            servedMS,
+            "the reported render bound and the portal's actual poll schedule have drifted apart"
         )
     }
 
@@ -6198,6 +6429,24 @@ private final class TerminalTailCaptureSource: CaptureSourceAdapter {
 
     func stop(deadline: Date) throws {
         stopped = true
+    }
+}
+
+/// Records the stop the controller sends, and lets a test see what had already happened when it was
+/// sent — which is the whole of the ordering question a final drain raises.
+private final class OrderObservingSessionStopAdapter: CaptureSessionStopAdapter {
+    private(set) var recordedStops: [(sessionID: String, drainDeadlineSeconds: Double)] = []
+    var observe: (() -> Void)?
+    var failure: Error?
+
+    func stopSession(configuration: CaptureConfiguration, drainDeadlineSeconds: Double) throws {
+        observe?()
+        recordedStops.append(
+            (sessionID: configuration.sessionID, drainDeadlineSeconds: drainDeadlineSeconds)
+        )
+        if let failure {
+            throw failure
+        }
     }
 }
 

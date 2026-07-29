@@ -471,6 +471,17 @@ def _label_array(canonicals: Sequence[str | None]) -> tuple[np.ndarray, dict[str
     return labels, index
 
 
+def true_speaker_count(meeting: Meeting) -> int:
+    """How many voices the corpus says this meeting holds.
+
+    Read from the ground truth rather than from the fixture's name, so a node about how many
+    canonical speakers production mints is comparing against the meeting and not against a
+    filename convention.
+    """
+
+    return len({int(value) for value in meeting.rows[:, _TRUE_SPEAKER]})
+
+
 def speaker_accuracy(meeting: Meeting, labels: np.ndarray) -> float:
     """Duration-weighted causal live speaker accuracy under the optimal canonical->true map.
 

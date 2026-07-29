@@ -15,7 +15,13 @@ public enum CaptureLatencyContract {
     /// The portal fetches snapshot then events serially and schedules the next cycle this long
     /// after both complete, so committed text waits at most one cycle plus both fetches before it
     /// is on screen. That is the analytic half of the gated number.
-    public static let portalCycleSeconds: Double = 1.0
+    ///
+    /// This is a **restatement** of the server's `pollDelayMs` in `live_portal.py`, not an
+    /// independent knob: the app never schedules anything from it, so moving it alone would move a
+    /// gated number without changing what any reader waits. The two are asserted equal from both
+    /// sides — `testPortalCycleContractMatchesTheServedPortalCadence` here and
+    /// `test_live_portal_poll_cadence_and_the_app_render_bound_are_one_number` in the Python suite.
+    public static let portalCycleSeconds: Double = 0.5
 
     /// Fewer advances than this is a sample, not a distribution. The report says so instead of
     /// quoting a p95 nobody should trust.

@@ -275,6 +275,33 @@ public protocol CaptureHealthAdapter {
     ) throws
 }
 
+/// What a clean stop tells the server, and how long this client waits to be told it happened.
+///
+/// Both numbers are the portal's, not this client's. `/stop` has two clients — the page's Stop
+/// button and this app — and a route whose two callers disagree about how long a drain may take
+/// would make the meeting's ending depend on which one ended it. The portal's values are documented
+/// in ADR-0001 and pinned by tracked tests on both sides, so a Swift-side drift is the only drift
+/// that can be introduced; `testStopContractMatchesTheServedPortalControlTimings` is what catches
+/// it.
+public enum CaptureStopContract {
+    /// How long the server may spend draining unconsumed frames before it answers. A stop with
+    /// queued work and a 0-second deadline answers 409 rather than stopping.
+    public static let drainDeadlineSeconds: Double = 5.0
+    /// The whole request's bound. A network that has gone away must not hold a stop open for
+    /// URLSession's default minute: the local stop has already happened by the time this is sent,
+    /// and the operator is waiting on the answer.
+    public static let requestTimeoutSeconds: TimeInterval = 10.0
+}
+
+/// Ends the server's session when this client stops capturing.
+///
+/// Separate from `CaptureTransportAdapter` and `CaptureHealthAdapter` for the reason those two are
+/// separate from each other: one endpoint, one seam, so a stack that publishes frames but cannot
+/// end a session is a wiring fact a test can read rather than a behaviour that has to be inferred.
+public protocol CaptureSessionStopAdapter {
+    func stopSession(configuration: CaptureConfiguration, drainDeadlineSeconds: Double) throws
+}
+
 /// Records every lane failure the app sees, on its way to the server.
 ///
 /// It sits on the health path rather than the control channel because the heartbeat is the only
@@ -353,6 +380,7 @@ public final class CaptureController {
     private let outbox: CaptureFrameOutbox
     private let pump: CaptureFramePublishPump
     private let frameObserver: CaptureAcknowledgedFrameObserving?
+    private let sessionStop: CaptureSessionStopAdapter?
     private let state = CaptureControllerState()
 
     public init(
@@ -364,7 +392,8 @@ public final class CaptureController {
         health: CaptureHealthAdapter,
         outbox: CaptureFrameOutbox = CaptureFrameOutbox(),
         pump: CaptureFramePublishPump = CaptureFramePublishPump(),
-        frameObserver: CaptureAcknowledgedFrameObserving? = nil
+        frameObserver: CaptureAcknowledgedFrameObserving? = nil,
+        sessionStop: CaptureSessionStopAdapter? = nil
     ) {
         self.source = source
         self.transport = transport
@@ -375,6 +404,7 @@ public final class CaptureController {
         self.outbox = outbox
         self.pump = pump
         self.frameObserver = frameObserver
+        self.sessionStop = sessionStop
     }
 
     @discardableResult
@@ -488,6 +518,15 @@ public final class CaptureController {
                 // that is exactly what the returned status has to say instead of a clean stop.
                 state.recordSessionRefusal(from: error)
             }
+            // After the drain, because the audio the meeting ends on is only in the outbox once the
+            // source has flushed, and a server told to stop while frames are still unconsumed spends
+            // its whole drain deadline waiting for them.
+            //
+            // Without this the meeting only ended on this Mac: the server kept the session, and with
+            // it the view authority, until the 30 s helper lease expired — measured at 29.4 s and
+            // 29 s, with the session's final sweep never running. A stop the server is never told
+            // about is not a clean stop, it is a client that stopped talking.
+            stopServerSession(configuration: configuration)
         }
         let lanes = source.status()
         let (task, stopped) = state.finishStop(lanes: lanes, outbox: outbox.snapshot())
@@ -536,6 +575,32 @@ public final class CaptureController {
             throw failure
         }
         return pass.ran
+    }
+
+    /// Tells the server the meeting is over, and swallows every way that can fail.
+    ///
+    /// A stop that cannot reach the server must still stop locally: the capture is already off, the
+    /// audio is already drained, and rethrowing here would report a failed stop for a meeting that
+    /// has ended on this machine either way — leaving `mtd-capture` unable to start the next one.
+    /// What the failure is allowed to change is the *report*: a refusal names the server's verdict on
+    /// this session id, so `status` says the session was already gone rather than implying this stop
+    /// ended it.
+    ///
+    /// It is attempted even when a refusal is already on record. A client cannot know what the
+    /// server holds — assuming it could is the whole of the defect this closes — and the cost of
+    /// being wrong is one request that answers 403.
+    private func stopServerSession(configuration: CaptureConfiguration) {
+        guard let sessionStop else {
+            return
+        }
+        do {
+            try sessionStop.stopSession(
+                configuration: configuration,
+                drainDeadlineSeconds: CaptureStopContract.drainDeadlineSeconds
+            )
+        } catch {
+            state.recordSessionRefusal(from: error)
+        }
     }
 
     /// Records what one failed request to the server says, on every path that talks to it — the

@@ -415,6 +415,110 @@ built-in microphone cannot hear a second voice across the room.
 
 Phase N remains authorized. Take it in ADR-0002's shape, not the sixth amendment's.
 
+## Ninth authorized amendment - 2026-07-29, the birth floor, the stop, the RTF gate, the cadence
+
+The operator authorized **candidates 55, 60, 64 and the cadence fix** together. Read
+`scripts/ralph-afk/authorization-request-55-60-65.md` **including its iteration-7 correction banner**
+before starting: candidate 65 is **withdrawn entirely** - both the session-end sweep (19 corrections
+on 31 spans) and the cadence sweep publish on the deployed service, and the two "it never runs"
+readings were the loop's own blind instruments.
+
+### (a) Candidate 55 - a birth must not be minted from audio the system refused to embed
+
+Measured: **14 of F2's 16 and 13 of F3's 16 canonical speakers** were born from spans where no
+segment cleared the 0.5 s evidence floor, so the encoder was never asked for a vector. F3 on the
+deployed Phase N still shows **16 canonicals for 2 voices, saturated at t+138.1 s, 397 empty spans**.
+
+**Decision taken by the operator on the supervisor's recommendation: option 1 - the birth floor sits
+at the album's admission (1.0 s of embedded speech).** Predicted 16 -> 1-2 canonical speakers on
+these two meetings. Record the reasoning before the patch as the fifth amendment's shape requires,
+and state the two consequences explicitly:
+
+- A genuinely new speaker whose first turn is short is **deferred, not lost**: the span publishes
+  unattributed under `S00` (J2), the ledger retains it, and a sweep relabels it retrospectively.
+  That is only acceptable because a sweep **demonstrably publishes** - which is now measured, and is
+  the reason this option was chosen over the weaker "any embedded speech at all" floor.
+- **ADR-0002's "birth semantics unchanged" is read as constraining the album, not as asserting that
+  birth was correct as written.** The operator authorized 55 knowing it changes birth. If the loop
+  finds evidence that reading is wrong, stop and say so rather than proceeding.
+
+**Measured wrong, recorded so neither is re-proposed:** raising `max_speakers` (raises references per
+voice and should make the sweep *more* inert), and lowering `min_segment_samples` so short turns
+produce vectors (at 0.5 s same-speaker agreement is 0.378 against different-speaker 0.360 - the
+distributions overlap). The second was the supervisor's own original recommendation and is wrong.
+
+### (b) Candidate 64 - the decoder-RTF gate needs a definition, not a filter
+
+F1 measured p95 RTF **2.365** carried entirely by **3 spans shorter than 0.1 s**, while the same
+build measured **0.568 over 648 spans** on F3 and aggregate RTF **0.20**. Rule once, with the
+derivation recorded: **state a minimum span duration below which RTF is not a meaningful ratio**
+(fixed per-request overhead dominates), derive that bound from measurement rather than choosing it
+to pass, and **always report the excluded count** alongside the p95 so an exclusion can never be
+silent. A run whose exclusions are unreported does not answer the clause. Do **not** answer this by
+filtering the reducer without stating the rule.
+
+### (c) The cadence fix - both halves together, and the enforcing node is the durable part
+
+Measured: `portalCycleSeconds` has three sites and **reaches no scheduling site**, so moving it moves
+the reported number and no request rate. `pollDelayMs` has two sites and **0 hits under `macos/`**,
+so moving it changes what a browser waits and the gated number by **0.0 ms**. They are causally
+disconnected in both directions.
+
+- Moving the Swift constant alone **relaxes the gate while looking like a remedy** - forbidden.
+- Moving the server constant alone hands a human 500 ms the PRD number never records.
+- **Move both, or neither.** Whatever is decided about the cadence value, ship the **enforcing node**
+  that fails if the reported render bound and the actual poll schedule drift apart again. That node
+  is the durable part of this item and is required regardless.
+
+The gated fetch p95s are untouched by either constant: they are the app probe's own fetches at
+`CaptureLatencyContract.pollInterval` 0.25 s (F3: 4001 samples over 1019.724 s = 0.2549 s implied).
+
+### (d) Candidate 60 - a clean stop must reach the server
+
+Correctly priced at last: the route works, the portal's Stop button calls it, and a stop through it
+revoked view authority in 0 s. **The Mac client simply does not call it**, so `mtd-capture stop`
+leaves view authority alive for up to the 30 s helper lease (measured 29.4 s / 29 s) and skips the
+final sweep. A transport call after the final drain, with the fifth amendment's rule that a stop
+which cannot reach the server must still stop locally. It buys neither convergence nor the
+`identity_finalized` event - fix it on its own merits.
+
+### (e) Real-audio evidence, operator-supplied 2026-07-29 (bench `b6b6c5c`) - binding
+
+The operator's benchmark harness is now in the repo at `prototypes/streaming-diarization/`, closing
+ADR-0002 §7's own caveat. **Real conversational audio outranks the LibriSpeech fixtures wherever the
+two disagree.** Measured: album+sweep **95.2 % mean / 87.4 % worst clip** over 9 golden interview
+clips, every 3-minute clip **>= 97.4 %**; the terminal sweep is **load-bearing**; merge threshold
+**0.70 is safe** (max real cross-speaker centroid similarity **0.259**); and `min_match_score` **0.5
+caps real accuracy at 90.7 %** where **0.35 reaches 95.2 %**.
+
+**Phase N decision, recorded per the operator's instruction:** the calibrated matcher is
+`min_match_score` **0.35** / `min_match_margin` **0.1**, justified by real-audio measurement rather
+than by fixture. **This confirms the deployed value rather than changing it** - the supervisor
+verified on 2026-07-29 that the live manifest already reads `0.35 / 0.1`, shipped as candidate 63
+with the Phase N merge. Verify and record; do not recalibrate again.
+
+**Adopt the real corpora in the F-certification distinct-voice harness alongside TTS**, per the
+operator. `data/real/` provisioning is in that README. This does **not** retire candidate 51's
+hardware limit - the built-in microphone still cannot hear a second voice across the room, measured
+six times - so play the corpora into the lanes rather than into the room.
+
+### Coverage this cycle must close
+
+Nothing in the suite asserts **what a canonical speaker was born from**. Add a red-before /
+green-after node per decision above, and one that fails if a birth can be minted from a span with no
+embedded evidence. That gap is what let all of this ship green.
+
+### Gate
+
+Full Swift/Python; the accuracy harness showing the birth floor's effect on canonical count; then
+**F1 and F3 re-run** - F1 is where the latency and RTF rulings are proven and F3 is where the
+canonical count and the stop revoke are. Then one further reviewed no-ff merge through
+`merge-keeper.sh` (advance `expected_main` in-script), push, redeploy. Exactly one merge; the freeze
+resumes after it.
+
+Out of scope: ADR-0002 step 4 (batch unification), now measured at **100 % for the album engine
+against the shipped resolver's 80 %**, and worth its own authorization later.
+
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:

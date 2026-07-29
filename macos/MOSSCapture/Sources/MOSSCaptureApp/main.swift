@@ -58,7 +58,14 @@ final class ProductionCaptureRuntime {
                 ),
                 log: failureLog
             ),
-            frameObserver: latencySampler
+            frameObserver: latencySampler,
+            // Without this the meeting ends only on this Mac and the server holds the session — and
+            // the view authority — until the helper lease expires.
+            sessionStop: CaptureHTTPSessionStopAdapter(
+                clientProvider: httpClients,
+                certificatePin: keyStore,
+                bearerToken: keyStore
+            )
         )
         let dispatcher = ControlCommandDispatcher(
             controller: controller,

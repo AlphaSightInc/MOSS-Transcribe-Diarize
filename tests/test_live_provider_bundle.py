@@ -257,6 +257,12 @@ def _manifest(
             "revision": "test-revision",
             "frontend_version": "synthetic-test",
             "min_segment_samples": 1,
+            # Candidate 55's birth floor is the album's admission gate, so a manifest whose
+            # spans are shorter than `album_admission_seconds` can never birth a speaker.
+            # This bundle's `hard_cap_samples` is 160 -- 0.01 s -- so it has to state an
+            # admission its own spans can clear, or every node below would be asserting that
+            # identity is disabled rather than that the seams are wired.
+            "album_admission_seconds": 0.005,
         },
         "config_hashes": {},
     }
@@ -693,6 +699,63 @@ def test_a_short_span_labels_against_the_album_but_never_overwrites_it():
     recovered = _score_span(provider, span_id=3, seconds=2.0, base_snapshot=after_second)
 
     assert [round(item.score, 6) for item in recovered] == [1.0]
+
+
+def test_the_birth_floor_is_the_albums_own_admission_gate_and_not_a_second_constant():
+    """Candidate 55's floor, read from the album rather than restated beside it.
+
+    The rule is *a birth must be enrollable*: evidence too short to become a reference is too
+    short to create the speaker that would hold one. Reading `admission_seconds` off the album
+    is what makes the two one number -- a manifest that states `album_admission_seconds` moves
+    both, and there is no second value that can agree today and drift later.
+    """
+
+    strict = WeSpeakerLiveEvidenceProvider(encoder=_ScriptedEncoder([[1.0, 0.0]]), album=FingerprintAlbum(admission_seconds=1.5))
+    lenient = WeSpeakerLiveEvidenceProvider(encoder=_ScriptedEncoder([[1.0, 0.0]]), album=FingerprintAlbum(admission_seconds=0.5))
+    empty = LiveIdentitySnapshot(version=0, canonical_speakers=())
+
+    _score_span(strict, span_id=1, seconds=1.0, base_snapshot=empty)
+    _score_span(lenient, span_id=1, seconds=1.0, base_snapshot=empty)
+
+    assert strict.birth_deferrals(span_id=1, candidates=("S01",)) == (("S01", 1.0),)
+    assert lenient.birth_deferrals(span_id=1, candidates=("S01",)) == ()
+
+
+def test_a_speaker_the_evidence_floor_skipped_reports_no_embedded_speech_at_all():
+    """The fragment case, which is where 14 of one run's 16 canonical speakers came from.
+
+    At the deployed `min_segment_samples` 8000 a 0.5 s turn produces no interval, so the
+    encoder is never called and the album is never offered anything. Reporting **0.0 s**
+    rather than "unknown" is the point: the preparer must be able to tell a voice the system
+    refused to embed from one it embedded and found short.
+    """
+
+    encoder = _ScriptedEncoder([[1.0, 0.0]])
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, min_segment_samples=8000, album=FingerprintAlbum())
+
+    assert _score_span(
+        provider,
+        span_id=1,
+        seconds=0.4,
+        base_snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()),
+    ) == ()
+
+    assert encoder.calls == []
+    assert provider.birth_deferrals(span_id=1, candidates=("S01",)) == (("S01", 0.0),)
+
+
+def test_a_stack_with_no_album_has_no_admission_gate_and_defers_no_birth():
+    """The pre-ADR-0002 overwrite policy is a measurement baseline, not a deployment.
+
+    `tests/live_identity_accuracy.py` reaches it with `album=None` to price what the album
+    replaced. A floor applied there would move that baseline, so the comparison would stop
+    measuring the album and start measuring the floor.
+    """
+
+    provider = WeSpeakerLiveEvidenceProvider(encoder=_ScriptedEncoder([[1.0, 0.0]]), album=None)
+    _score_span(provider, span_id=1, seconds=0.1, base_snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()))
+
+    assert provider.birth_deferrals(span_id=1, candidates=("S01",)) == ()
 
 
 def test_the_album_accumulates_rather_than_replacing_across_spans():

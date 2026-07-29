@@ -163,6 +163,35 @@ public final class FakeCaptureHealthAdapter: CaptureHealthAdapter {
     }
 }
 
+/// Records the stop the controller sends the server, and can be told to refuse it.
+public final class FakeCaptureSessionStopAdapter: CaptureSessionStopAdapter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stops: [(sessionID: String, drainDeadlineSeconds: Double)] = []
+    private let failure: Error?
+
+    public init(failure: Error? = nil) {
+        self.failure = failure
+    }
+
+    public var recordedStops: [(sessionID: String, drainDeadlineSeconds: Double)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return stops
+    }
+
+    public func stopSession(
+        configuration: CaptureConfiguration,
+        drainDeadlineSeconds: Double
+    ) throws {
+        lock.lock()
+        stops.append((sessionID: configuration.sessionID, drainDeadlineSeconds: drainDeadlineSeconds))
+        lock.unlock()
+        if let failure {
+            throw failure
+        }
+    }
+}
+
 public extension CaptureController {
     static func fakeForLocalDevelopment() -> CaptureController {
         CaptureController(
