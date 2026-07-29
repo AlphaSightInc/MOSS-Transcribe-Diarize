@@ -27967,3 +27967,21 @@ reinstall.  If context.md's paging cost bites first, the ninth compaction
 is the cheaper iteration and its target is named in the compaction log
 (Phase N's two N-batch probe narratives, then "Open diagnostic
 candidates"); context.md is now ~275 KB.
+
+=========================================================================
+iteration 25 (run 20260729-094359-88967) - Phase Q's gate, and the ninth
+keeper merge
+=========================================================================
+
+ROLLBACK, PRE-RECORDED BEFORE THE MERGE IS MADE (this block is committed
+first, exactly as N8c's recipe requires).  The merge is LOCAL only in this
+iteration - nothing is pushed and no host is touched - so it is undoable
+with one ref write:
+
+    git update-ref refs/heads/main 7a4f59c3ca023b5ac7b9df814b92645c10d204dd
+
+That remains a complete undo until `git push origin main` publishes it.
+After the push the only undo is a revert commit, which is a NEW merge and
+would need its own authorization.  The feature branch itself is not moved
+by merge-keeper.sh (it merges in a temporary worktree), so this iteration's
+join commit 73bbe42 stays where it is either way.

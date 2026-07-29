@@ -58,11 +58,34 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # published labels beside the transcript (live_identity_sweep.py). Its gate is ADR-0002's measured
 # acceptance, green at 1e1cf3f: >= 90-95 % live speaker accuracy (93.44 % mean / 92.18 % min against
 # overwrite's 72.02/55.68) and demonstrated live->file convergence (swept 99.26/98.48 with
-# residual_corrections 0). It authorizes exactly one further merge, whose pre-merge main is
-# therefore 42abc5a. Advancing this default is a reviewable diff on purpose: a NINTH merge still
-# fails here, and a command-line RALPH_MERGE_MAIN_BEFORE override would leave no record of why the
-# guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870}"
+# residual_corrections 0). It authorizes exactly one further merge, whose pre-merge main was
+# therefore 42abc5a and which landed as 7a4f59c.
+# The NINTH prd.md amendment of 2026-07-29 ("the birth floor, the stop, the RTF gate, the
+# cadence", operator commits 6e3e4fe and bb8daad) is what advances this line now. Phase Q is
+# four items and every one of them is on this branch: Q1 / candidate 55, a would-be birth
+# deferred unless the evidence layer would enrol it, asked of the album by name so the birth
+# floor and the album's admission gate are ONE number rather than two that agree today
+# (live_identity.py, live_provider_bundle.py); Q2 / candidate 64, the decoder-RTF clause given
+# a derived minimum span duration below which the ratio measures the decoder's fixed
+# per-request cost, with the excluded count inside the verdict sentence — loop tooling only, no
+# product source, so it is not in this payload at all; Q3 / candidate 71, the portal's poll
+# cadence and the app's reported render bound moved together 1.0 s -> 0.5 s (the plan's own
+# second ordered latency remedy) with an enforcing node in EACH language, because either
+# constant moved alone changes a gated number or a reader's wait but never both; Q4 /
+# candidate 60, the Mac client's clean stop reaching POST .../stop after its final drain, so
+# view authority dies with the meeting instead of outliving it by the 30 s helper lease.
+# Its gate is the amendment's own: full Swift/Python green at 73bbe42 (Swift 164 / 0 failures /
+# 0 warnings on a fresh scratch, Python 810 passed / 2 skipped / 368 subtests, Darwin tracer 4
+# with 0 skips), plus the accuracy harness showing the birth floor's effect on canonical count
+# — 16 canonical speakers on all eight fixture meetings without it against 2,2,4,3,4,4,7,6 with
+# it, for true k of 2,2,3,3,4,4,6,6, and live accuracy 93.44 % -> 99.13 %. F1 and F3 are the
+# amendment's remaining gate half and they measure the DEPLOYED service and the INSTALLED app,
+# so they follow this merge and its redeploy exactly as they did for Phases M, P and N; the
+# PRD's "never deploy from a feature branch" constraint permits no other order. It authorizes
+# exactly one further merge, whose pre-merge main is therefore 7a4f59c. Advancing this default
+# is a reviewable diff on purpose: a TENTH merge still fails here, and a command-line
+# RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-7a4f59c3ca023b5ac7b9df814b92645c10d204dd}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
