@@ -20958,3 +20958,172 @@ WHAT IS DELIBERATELY NOT DONE.  No Mac rebuild (0 files under `macos/`), no
 `ops/moss-live.env` edit (the three MOSS_LIVE_RETENTION_* keys ship COMMENTED OUT,
 so this redeploy retains no audio and the PRD's raw-audio clause holds unchanged),
 no pin rotation, no device revocation, no batch unit touched.
+
+
+================================================================================
+ITERATION 29 (run 20260729-025318) - PHASE N GATE STEP (c): PUBLISHED AND
+DEPLOYED.  Four checkouts, one exact SHA, and the album is running at 0.35/0.1
+================================================================================
+
+TARGET.  Phase N gate step (c) - push the eighth merge and redeploy.  Chosen
+because iteration 28 left it as the single recommended next step, it is the only
+thing that makes eight iterations of ADR-0002 work reachable by a real meeting,
+and it is the only open item that restores the PRD's "one exact SHA everywhere"
+clause (1/4 before this iteration).  Authorized by prd.md's "Phase N is
+SUPERSEDED by ADR-0002" section: "...then one further reviewed no-ff merge
+(advance `expected_main` in-script), push, redeploy."
+
+FILES TOUCHED (this repo).  scripts/ralph-afk/progress.txt and context.md only.
+Everything else this iteration is host state: one push, two checkouts, one
+manifest regeneration, one service restart.
+
+VALIDATION, in the order run, all rc=0 unless stated.
+  git push origin main                       -> 42abc5a..7a4f59c  (fast-forward)
+  server: git fetch + checkout 7a4f59c       -> tree 16de7f6264deca... , clean
+  finalize-live-provider-manifest --dry-run  -> the 9 plan: lines, read first
+  finalize-live-provider-manifest (real)     -> wrote:, rollback: named
+  _preflight_payload + the runtime readers   -> available=True, failures=[]
+  systemctl --user restart moss-live-web     -> MainPID 355607 -> 365632
+  pinned /live from MacStudio                -> 200 on the FIRST poll
+  m4mbp: git fetch alphasight + checkout     -> same tree, clean, NO rebuild
+  four-way git rev-parse                     -> 1 distinct SHA
+  live-pipeline-probe.py (20 s, 2 lanes)     -> rc=0
+Evidence: /tmp/i29-probe.json, /tmp/i29-desc.json, /tmp/i29-leaf.pem.
+
+ONE EXACT SHA EVERYWHERE - THE PRD CLAUSE IS GREEN AGAIN, 4/4:
+  7a4f59c3ca023b5ac7b9df814b92645c10d204dd
+  local `main` == `origin/main` == server /mnt/d/Coding/MOSS-Transcribe-Diarize
+              == m4mbp /Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize
+Both host checkouts report tree 16de7f6264decafda86b41c50bd6bacb7afbfc74, which
+is the merge tree iteration 28 recorded - so the deployed content is proven
+identical to the reviewed one by hash, not by SHA alone.
+
+THE MANIFEST REGENERATION, which is the half no gate can see.
+  before: identity_config {max_speakers 16, min_match_score 0.5, min_match_margin 0.05}
+          source_revision f9285d69... (a D2-era stamp, three merges stale)
+  after:  identity_config {max_speakers 16, min_match_score 0.35, min_match_margin 0.1}
+          source_revision 7a4f59c...
+  hashes moved, and that movement IS the recalibration's signature:
+    provider_manifest_hash  61d97ffe... -> 0cb775da005a7698124b66c7e4432d83c4491ad0080088174c644f796599ca1f
+    identity_config_hash               -> 4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89
+    combined_config_hash               -> 431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265
+    bounds_config_hash                 -> bb7e098d370e94a25fca10a7c56d3bca8a38e9b768a89633acedf54ff40d1c11
+  NO DOMAIN-CONTRACT VALUE MOVED, read back through the runtime's OWN readers
+  rather than out of the file: endpoint hard_cap 40000 == bounds hard_cap 40000,
+  min_silence_samples 8000, max_retained_samples 960000, frame_samples 8000,
+  sample_rate 16000, max_identity_speakers 16, no `session_hard_cap_samples`.
+
+A NUMBER THIS PROJECT HAS CARRIED WRONG SINCE ITERATION 16, CORRECTED BY
+MEASUREMENT.  Every block since N-gate says the deployed pair is "0.5/0.2, which
+measures 75.0 %".  The pair actually on the host was **0.5/0.05**, which nothing
+had ever measured.  Measured here on the eight-meeting fixture through
+`tests/live_identity_accuracy.replay_all`:
+    calibrated  0.35/0.1   album 93.44 / 92.18   <- what is now deployed
+    deployed-was 0.5/0.05  album 83.72 / 69.20   <- what was ACTUALLY running
+    assumed-was  0.5/0.2   album 75.00 / 39.97   <- what the record claimed
+So the regeneration bought **+9.72 pp mean and +22.98 pp min**, not the +18.4 pp
+the recorded figure implied - and the conclusion is unchanged and now honest:
+the pair that was running is **below ADR-0002's >= 90 % bar** and the redeploy
+without the regeneration would have shipped a 93 % album into an 84 % matcher.
+*The durable rule:* a threshold recorded from a document is a claim about the
+document; read the value off the HOST before pricing what changing it buys.
+
+THE DEPLOYED CODE IS EXERCISED, NOT hasattr-ed (M6c's rule).  Under the SERVICE's
+own interpreter, against the checkout it actually imports from:
+    live_adapters.__file__ -> /mnt/d/Coding/MOSS-Transcribe-Diarize/... (editable)
+    calibration 0.35 / 0.1, admission 1.0 s, k 10
+    observe(2.0 s, voice A)             -> "admitted"
+    observe(0.5 s, voice B - a DIFFERENT voice) -> "rejected_below_admission"
+    reference("S01") vs A = 1.0,  vs B = 0.0
+That last line is ADR-0002's whole thesis running in production: under the
+overwrite policy the reference would now BE voice B.  Matching is not enrollment,
+on the deployed service.  `assign_speakers` is a module-level function (one
+matcher for the live path and the sweep), and `LiveIdentitySweeper` and
+`LiveSessionTapeStore` import - three symbols that do not exist at 42abc5a.
+
+THE PIPELINE PROBE, rc=0, against the redeployed service (20 s, both lanes,
+continuous audio, lane offset system=137 ms).
+  publish   40/40 ticks, 40 system + 40 microphone frames, **non_200_count 0**,
+            1 TLS handshake, aborted_at null
+  stop      accepted == accounted == committed == **320000 samples**, retained 0,
+            pending 0, 9 committed items, status closed, terminal_failure null
+  identity  2 canonical speakers, transcript attributed_speakers [S01, S02]
+  authority view snapshot after stop -> **401, revoked true** (a clean stop DOES
+            revoke here - candidate 60 is about the CLIENT never calling stop,
+            and this probe calls it, which is the distinction)
+  decode    cap_expectation_source **product-function**, cap_derivation_holds
+            true, caps_observed [135, 286], capped_count 0 (deployed and
+            unexercised at this span length), rtf p50 0.139 / p95 3.019 - and the
+            p95 is span 0, the warm-up decode (0.763 s span, empty transcript,
+            2.303 s), exactly the discount rule the fence records.  Spans 1-8 run
+            0.106-0.161 RTF.
+  journal   128 x 200, 1 x 401 (the post-stop check above), **0 tracebacks**
+
+ONE NEW OBSERVATION, recorded because it is the first look at the album on a real
+service and it is NOT a certification.  Seven of the nine spans came back
+`identity_status abstain / identity_reason ambiguous_identity`; only span 1 was
+`prepared` and one span was an empty decode.  The probe's two lanes carry
+similar synthetic speech tiled continuously, so a matcher that abstains rather
+than guessing is behaving as designed - J2 held, the meeting ran to a clean stop,
+and the transcript still published under S00.  It is *not* evidence about a real
+meeting, and the F1 canary is where the label clause is decided.  What it does
+establish: on the deployed build the abstain path, the 16-cap, the decode cap and
+the stop drain all work together for a full meeting.
+
+HYGIENE AFTER THE RUN.
+  server   HEAD 7a4f59c, worktree clean; live MainPID 365632 NRestarts=0; batch
+           moss-web 301112 and moss-vllm 322117 UNCHANGED, NRestarts=0; live-runs
+           0 entries; no /tmp/mtd-live-*; no .pcm and no index.json anywhere under
+           the checkout; **0 MOSS_LIVE_RETENTION_* keys in the host env**, so the
+           tape is off and the PRD's raw-audio clause holds unchanged
+  devices  14 total, **1 unrevoked** - m4mbp's AB600574-FD93-4321-967E-652AB064A70B.
+           The probe device was revoked and the route ANSWERED WITH ITS BODY
+           (`{"device_id": "ralph-i29-probe-...", "session_ids": []}`, http 200),
+           which is the trap-aware assertion, not a bare 200.
+  m4mbp    checkout 7a4f59c clean; **the install was not touched** - bundle inode
+           212080356 and mtime 2026-07-28T18:22:32Z unchanged, CLI sha256
+           450c20bf... unchanged, identifier com.alphasight.moss.capture, and
+           BOTH TCC grants still auth_value=2.  No rebuild means no TCC exposure.
+  network  pin still a35ca9fc... (matched before any request was trusted),
+           /live 200, /api/live/descriptor 200, plaintext http://100.64.0.8:7861
+           -> 000, batch http://192.168.68.38:7860/ and /api/jobs both 200.
+  NOTED, NOT MINE, NOT DELETED: four `/tmp/mtd_span_*.wav` on the server dated
+  **2026-07-27**, from a pre-loop J1/F0-era span probe.  They are synthetic probe
+  fixtures, not meeting audio, but a future hygiene check that greps /tmp for
+  audio will find them - so they are named here rather than read later as a
+  live-path leak.
+
+WHAT I LEARNED (two things, one of which cost a pairing code).
+  1. **`payload:` is 113 characters, not 122.**  The retired note says "`tail -1`
+     hands the probe a 122-byte string" and the natural reading - that a good
+     payload is ~122 bytes - is wrong: 122 is the WHOLE LINE including the 9-char
+     `payload: ` prefix.  A sanity guard written from that number rejects a
+     CORRECT payload, which is what happened here and cost one mint.  The correct
+     extraction `sed -n 's/^payload: //p'` yields exactly **113**.
+  2. **`grep` with no match still kills a remote `set -euo pipefail` script**, and
+     every check after it silently never runs - the same shape M6c recorded for
+     `ls` + pipefail.  On a probe script whose job is to REPORT, drop `set -e` or
+     tail every grep with `|| true`; a script that exits early looks exactly like
+     a script whose later checks passed.
+
+BLOCKERS: none for this iteration.
+
+WHAT THE PUSH SPENT.  `git update-ref refs/heads/main 42abc5a` is no longer a
+rollback: `origin/main` is published at 7a4f59c and force-push is forbidden.  The
+remaining reverts are host-local (checkout + restart, manifest copy-back) and are
+recorded in this iteration's pre-record block above; undoing the MERGE itself now
+means a revert commit, which is a new merge and needs its own authorization.
+
+RECOMMENDED NEXT STEP.  **Phase N gate step (d): re-run F1** with candidate 51's
+muted lane-separating harness against the deployed 7a4f59c, and read the speaker
+labels as the clause rather than as a number - the album, the sweep, the session-
+end finalize and the calibrated matcher are all live for the first time, and F1's
+own iteration-6 evidence (16 canonical speakers for 2 real voices, 9 of them
+minted by one-word `Hi.` fragments) is the exact failure the album exists to
+change.  Two things to carry into it: candidate 55 is NOT fixed by the album
+(births are unchanged by design, and the harness prices it at 4.5 pp live /
+0 pp final), and this iteration's probe shows the deployed matcher abstaining
+freely, so a run whose spans come back S00 is the abstain path working, not a
+dead session.  F1's "two speakers" half remains limited by candidate 51's
+measured hardware ceiling - m4mbp's built-in microphone cannot hear a second
+voice across the room - and that limit needs the operator, not another iteration.

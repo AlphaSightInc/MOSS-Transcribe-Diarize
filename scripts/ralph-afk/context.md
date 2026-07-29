@@ -89,19 +89,24 @@ G, H, J, K, M, P, and Phase N). **Eight keeper merges have been made and all eig
 `f9285d6` (C4), `317df4d` (G5), `b817871` (H4), `6a540fe` (J5b), `fc7097d` (K5b), `77e0014` (M6),
 `42abc5a` (P7), **`7a4f59c` (N8, run `20260729-025318` iteration 28)** — and `merge-keeper.sh`'s
 `expected_main` guard now refuses a **ninth** (rehearsed non-vacuously immediately after the eighth:
-`main moved from expected pre-merge SHA 42abc5a…`, rc=1). **Phase N steps 1-3 are MERGED but NOT YET
-PUBLISHED OR DEPLOYED** — `origin/main`, the server and m4mbp are all still at `42abc5a`, so the
-four-way SHA is **1/4** until gate step (c). Every tracked product change since `f9285d6` was made
+`main moved from expected pre-merge SHA 42abc5a…`, rc=1). **Phase N steps 1-3 are MERGED, PUBLISHED
+AND DEPLOYED (iteration 29, gate step (c)): four checkouts at `7a4f59c`, the album running at the
+calibrated 0.35/0.1.** Every tracked product change since `f9285d6` was made
 under a named amendment. Per-phase detail is in the closed-phase index below and in full in the progress.txt
 archive.
+**The push spent the merge's own rollback.** `git update-ref refs/heads/main 42abc5a` was a complete
+undo until iteration 29; `origin/main` is now published at `7a4f59c` and force-push is forbidden, so
+undoing the eighth merge means a **revert commit**, which is a new merge and needs its own
+authorization. What remains available is host-local: checkout + restart, and the manifest copy-back.
 **One non-Ralph commit is on the branch.** `00620ab` *"docs: streaming diarization design +
 ADR-0002 (two-tier, fingerprint album)"* was authored by **AlphaSightInc** at 03:23:50Z on
 2026-07-29 — i.e. the operator committed to the feature branch **while iteration 5 was running**, and
 the branch tip moved under the loop. It adds two files under `docs/` and **no product source, no
 test and no `ops/`**, so it changes nothing this loop has measured and nothing the service reads. It
-is why `git diff --name-only 42abc5a HEAD -- ':!scripts/ralph-afk'` now lists
-`docs/adr/0002-two-tier-diarization-fingerprint-album.md` and `docs/design-streaming-diarization.md`
-instead of being empty. **Do not revert it** and do not treat it as loop drift; do re-check the tip
+is why, between iterations 5 and 14, `git diff --name-only 42abc5a HEAD -- ':!scripts/ralph-afk'`
+listed `docs/adr/0002-two-tier-diarization-fingerprint-album.md` and
+`docs/design-streaming-diarization.md` instead of being empty. (Both files reached `main` with the
+eighth merge, so that diff is empty again against the deployed `7a4f59c`.) **Do not revert it** and do not treat it as loop drift; do re-check the tip
 before any future merge, because the freeze's "only Ralph evidence changes on this branch" premise no
 longer holds by itself.
 **IT HAPPENED AGAIN IN ITERATION 6, and it is now a standing hazard, not an anecdote.** `128eae4`
@@ -135,7 +140,7 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Production client gate | GREEN (B6 `3fb5567`, re-gated G4 `23dc163`, K5a `cd7faf9`) |
 | Server meeting-reliability gate | GREEN at `f400d426`, clause→node map recorded |
 | One reviewed keeper merge (+ 7 authorized follow-ups) | GREEN, eight merges, each reviewed against its amendment's scope |
-| One exact SHA everywhere | **RED-and-transient — 1/4 at `7a4f59c`** (iteration 28's merge). Local `main` is `7a4f59c3ca023b5ac7b9df814b92645c10d204dd`; `origin/main`, the server checkout and the m4mbp checkout are all still `42abc5a…`. It was 4/4 at `42abc5a` from iteration 5 until this merge and returns to 4/4 at Phase N gate step (c) — push + redeploy, the J5c shape (0 files under `macos/`). |
+| One exact SHA everywhere | **GREEN — 4/4 at `7a4f59c3ca023b5ac7b9df814b92645c10d204dd`** (iteration 29, gate step (c)). Local `main` == `origin/main` == server == m4mbp, and **both host checkouts report tree `16de7f6264deca…`**, the merge's own tree — so the deployed *content* is proven identical to the reviewed one by hash, not by SHA alone. |
 | Live service answering | GREEN — `/live` and `/api/live/descriptor` 200 over the pinned leaf from MacStudio **and from m4mbp** |
 | Batch service unharmed | GREEN — `http://192.168.68.38:7860/` and `/api/jobs` 200; batch MainPIDs never restarted |
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
@@ -218,9 +223,11 @@ carry is in the retired-evidence index below).**
   `--min-match-margin` and hash-covers them — so the album can no longer be measured at 0.35/0.1
   and deployed at 0.5/0.2. **The host manifest still carries the old pair** until Phase N's
   redeploy regenerates it; see the N-recal block.
-  See the Phase-N block below. **The branch carries unmerged tracked product source**, so
-  every offline probe has stopped speaking for the deployed service until a merge and redeploy —
-  see the rule under "What survives those blocks". (The harness itself is `tests/` only.)
+  See the Phase-N block below. *(From iteration 15 to 28 the branch carried unmerged tracked product
+  source, so every offline probe had stopped speaking for the deployed service; **iteration 29's
+  redeploy restored that** — the diff against the deployed SHA is empty again. See the rule under
+  "What survives those blocks".)* **The host manifest now carries the calibrated pair** — regenerated
+  at gate step (c).
 - **F2 RAN AND IS GREEN (iteration 11).** That was the loop's one unblocked PRD acceptance clause
   and it is now spent. **Nothing measurable is left that the loop can do alone.** What remains:
   (1) candidate 60 — F3's one RED — is tracked product source under the post-merge freeze and needs
@@ -332,13 +339,29 @@ carry is in the retired-evidence index below).**
   27's reviewed 44 files / +8172/−126, **0 under `macos/`** → step (c) is the **J5c** shape (server
   restart, m4mbp checkout with **no rebuild, no reinstall, no TCC exposure**). Guard rehearsed
   non-vacuously right after: a **ninth** merge prints `main moved from expected pre-merge SHA
-  42abc5a…`, rc=1. *Nothing is published and no host was touched*, so the rollback is still two
-  `update-ref`s — see the iteration-28 block in progress.txt. **What remains of Phase N's gate is
-  (c) push + redeploy and (d) F1/F2**, and the redeploy must regenerate the host manifest with
-  `--min-match-score 0.35 --min-match-margin 0.1` under the **deployment venv's** python (N-recal +
-  the finalizer defect) or the live service runs the album at **75.0 %**. Re-read
+  42abc5a…`, rc=1. *At the time nothing was published and no host had been touched, so the rollback
+  was two `update-ref`s; **iteration 29's push spent the first of them***
+  — see the iteration-28 block in progress.txt. Re-read
   `git log --format='%h %an %ad %s' -5` before touching the branch: the operator has committed to it
   three times mid-iteration.
+- **AND PHASE N'S GATE STEP (c) IS DONE — PUBLISHED AND DEPLOYED, 4/4 AT `7a4f59c` (iteration 29).**
+  Push `42abc5a..7a4f59c` fast-forward (33 commits); server + m4mbp checkouts, **both reporting tree
+  `16de7f62…`**, the merge's own tree; m4mbp with **no rebuild and no reinstall** (bundle inode
+  `212080356`, CLI sha256 `450c20bf…`, both TCC grants still `auth_value=2`); live unit restarted
+  **355607 → 365632**, batch `301112`/`322117` untouched at `NRestarts=0`. `/live` 200 on the **first**
+  poll behind the unchanged pin `a35ca9fc…`, descriptor 200, plaintext 7861 → 000, batch `/` and
+  `/api/jobs` 200. **The host manifest was regenerated at the calibrated 0.35/0.1** — see the N-recal
+  row — and the deployed change was *exercised* rather than hasattr-ed: under the service's own
+  interpreter a 2.0 s enrolment is `admitted`, a 0.5 s fragment of a **different** voice is
+  `rejected_below_admission`, and the reference stays 1.0 against the first voice and 0.0 against the
+  second. That is ADR-0002's thesis running in production. End-to-end, `live-pipeline-probe.py`
+  returned **rc=0**: 40/40 ticks, **0 non-200s**, accepted == accounted == committed == 320000,
+  retained 0, 9 items, 2 canonical speakers, view authority **401/revoked** after a clean stop,
+  0 tracebacks, decode cap derivation holding from the **product function**. *One new observation,
+  not a certification:* 7 of the 9 spans came back `abstain / ambiguous_identity` on the probe's two
+  tiled synthetic lanes — the abstain path working as designed (J2), and the reason an F1 run whose
+  spans read `S00` is a matcher declining to guess, not a dead session.
+  **What remains of Phase N's gate is (d) F1/F2 only.**
 - **Candidate 57 — the clause reducer called a passing latency number RED** `[done — iteration 29]`.
   Loop tooling, no authorization; fixed and proved on four real evidence directories. See "The
   reducer stopped calling a passing number RED" in progress.txt.
@@ -432,12 +455,12 @@ a permanently failing publish, and a committed p95 of **2567/2592 ms** where the
 - ***An offline probe speaks for the deployed service only while
   `git diff --name-only <deployed sha> HEAD -- ':!scripts/ralph-afk'` is empty*** — compare against
   the **deployed** SHA, never against `main`, because between a merge and its redeploy those differ.
-  **FALSE AGAIN SINCE run `20260729-025318` iteration 15**: Phase N steps 1-3 put tracked product
-  source and tests on the branch, so `live-lane-refusal-probe.py` and every other offline probe are
-  **SPENT as evidence about the deployed `42abc5a`**. They remain valid as *local* regressions.
-  **The eighth merge (iteration 28) did NOT restore this** — merging moves `main`, and the rule
-  compares against the **deployed** SHA, which is still `42abc5a`. It becomes true again only at
-  Phase N gate step (c), when the server and m4mbp check out `7a4f59c`. (It was true from iteration 5 to iteration 14,
+  **TRUE AGAIN SINCE run `20260729-025318` iteration 29**, measured rather than assumed:
+  `git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` is **empty**, so every offline probe
+  speaks for the deployed service once more. It was false from iteration 15 (when Phase N steps 1-3
+  put tracked product source on the branch) to iteration 28 — and note that **the merge alone did
+  not restore it**: merging moves `main`, while the rule compares against the **deployed** SHA, which
+  only moved at gate step (c). (It was true from iteration 5 to iteration 14,
   when the only diffs were the operator's two `docs/` files from `00620ab`, which no runtime reads —
   read the rule as *no product source, no test, no `ops/`*; it was never about docs.)
 - **The certification order, decided once and binding:** gate → merge → publish + redeploy
@@ -487,8 +510,15 @@ RUN 20260729-025318 ITERATION 14`. Grep a title to read it in full. Nothing was 
    `terminal_failure` event under the same lock that makes the next view request 401.
 4. **`ops/live-pair.sh` prints `payload: <PAYLOAD>`** — extract with `sed -n 's/^payload: //p'`;
    `tail -1` hands the probe a 122-byte string and the server answers 401 `pairing payload is
-   invalid.`. And `live-pipeline-probe.py --lane-audio continuous` tiles each lane so no frame is
+   invalid.`. **The payload itself is 113 characters — 122 is the whole LINE, prefix included**, and
+   iteration 29 lost a pairing code to a sanity guard written from the 122 (it rejected a *correct*
+   payload). Guard on `>= 110`, or on the 401, never on 122.
+   And `live-pipeline-probe.py --lane-audio continuous` tiles each lane so no frame is
    silent (`alternating` stays the default so earlier runs stay comparable).
+5. **A `grep` that matches nothing kills a remote `set -euo pipefail` script**, and every check after
+   it silently never runs — the same shape M6c recorded for `ls`. On a script whose job is to
+   *report*, drop `set -e` or tail every grep with `|| true`: a script that exited early looks
+   exactly like one whose later checks all passed.
 
 ***How to read any `live-canary-clauses.py` verdict, out of the retired candidate-57 block.***
 Three disqualifiers make the latency clause **UNDECIDED** rather than RED — `userVisibleMS` null,
@@ -747,15 +777,16 @@ with no timeout. Diagnose with `pgrep -x MOSSCaptureApp` and `sample`, never by 
 (The system-tap prompt itself is spent: `AudioHardwareCreateProcessTap` has returned promptly on
 m4mbp in every run since E3 closed.)
 
-## Deployed reality — three checkouts at `42abc5a`; local `main` is ahead at `7a4f59c`
+## Deployed reality — all four checkouts at `7a4f59c`
 
-> **Iteration 28 moved local `main` only.** The eighth merge `7a4f59c` is unpushed and undeployed:
-> `origin/main`, the server checkout and the m4mbp checkout are all still `42abc5a`, and everything
-> in this section describes that SHA. Phase N gate step (c) is what makes them one again.
+> **Iteration 29 published and deployed the eighth merge.** `origin/main`, the server checkout and
+> the m4mbp checkout all moved `42abc5a` → **`7a4f59c`**, both host trees `16de7f62…`. The one
+> host-state fact that moved with them is the **live provider manifest**, regenerated at the
+> calibrated 0.35/0.1 — every hash below that starts `61d97ffe` is superseded by `0cb775da`.
 
 **Server (`ga0-alienware-rtx4070ti`, WSL Ubuntu, checkout `/mnt/d/Coding/MOSS-Transcribe-Diarize`).**
-Detached at **`42abc5a`** since P5(c) (run `20260729-025318` iteration 5), **MainPID 355607**,
-`NRestarts=0`; before that `77e0014` (M6c), `fc7097d` (K5c),
+Detached at **`7a4f59c`** since N8c (run `20260729-025318` iteration 29), **MainPID 365632**,
+`NRestarts=0`; before that `42abc5a` (P5c, MainPID 355607), `77e0014` (M6c), `fc7097d` (K5c),
 `6a540fe` (J5c), `b817871` (H4c), `317df4d` (G5), `f9285d6` (D1). The checkout's own `main` ref is
 still **`163e969`**, so `git -C /mnt/d/Coding/MOSS-Transcribe-Diarize checkout 163e969` is a complete
 one-command rollback that moves nothing but `HEAD` — rehearsed for real and undone in F4a.
@@ -770,7 +801,7 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
   `live_adapters.__file__` is under `/mnt/d/Coding/…`), which is why a restart picks up a checkout
   and why `git checkout` + `systemctl restart` is the whole redeploy.
 - `moss-live-web.service`: installed (byte-identical to `ops/systemd/`), enabled, active, TLS on
-  `0.0.0.0:7861`, **MainPID 355607** (was 350731 before P5(c)), `NRestarts=0`. `/live` answers 200
+  `0.0.0.0:7861`, **MainPID 365632** (was 355607 before N8c), `NRestarts=0`. `/live` answers 200
   ~8-11 s after a restart — **poll for 200, never sample once**; a single early probe returns `000`
   and reads like a failure.
 - **The host's wall clock steps ~1.5 s BACKWARDS every ~32.3 s and this is a permanent host fact.**
@@ -792,12 +823,22 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
 - **The live pin is `a35ca9fc4a0f5b32bf7da6dc2e03c1fa5b4ac60992f0ee49b6d5677d22b680ff`** (was
   `2c88836b…` before D2's rotation). That is what every pairing payload carries and every Mac stores.
   Rotating it invalidates every stored pin — never pass `--rotate` again without a name change.
-- `provider_manifest_hash 61d97ffe…`. `/api/live/descriptor` reports `source_revision f9285d69…`,
-  which is a **manifest field stamped at D2 time, not the running code's revision** — never use it as
-  the deployed-SHA check. Use the four-way `git rev-parse` plus venv introspection.
+- **`provider_manifest_hash 0cb775da…`** since iteration 29 (was `61d97ffe…`), with
+  `identity_config_hash 4b7c94ed…`, `combined_config_hash 431efb3f…`, `bounds_config_hash
+  bb7e098d…`. That movement **is** the recalibration's signature: the manifest now carries
+  `identity_config {max_speakers 16, min_match_score 0.35, min_match_margin 0.1}` where it carried
+  `0.5 / 0.05`. Read back through the runtime's own readers, no domain-contract value moved
+  (endpoint == bounds hard cap 40000, min_silence 8000, max_retained 960000, frame 8000, rate 16000,
+  16 speakers, no `session_hard_cap_samples`).
+  `/api/live/descriptor` now reports `source_revision 7a4f59c…` — it was stale at `f9285d69…` for six
+  merges, because it is a **manifest field stamped when the finalizer last ran, not the running
+  code's revision**. It is honest for *this* deploy and goes stale again the moment a redeploy skips
+  the regeneration, so it is still never the deployed-SHA check. Use the four-way `git rev-parse`
+  plus venv introspection.
 - `live-auth.json` holds one **unrevoked** device, m4mbp's
   `AB600574-FD93-4321-967E-652AB064A70B`, plus several revoked probe devices from F0/H2/J5d. Device
-  *count* is not a signal; count unrevoked devices — **13 devices / 1 unrevoked** after P5(c).
+  *count* is not a signal; count unrevoked devices — **14 devices / 1 unrevoked** after N8c
+  (13/1 after P5(c); iteration 29's probe device was minted and revoked in the same iteration).
   Baseline copy: `live-auth.json.ralph-f0-backup-20260728T091927Z`, sha256 `9d306766…`.
   **Two traps, both of which cost iteration 5 a wrong answer before they were read out of the
   source.** (1) The revoke route is **`DELETE /api/live/devices/{device_id}`**
@@ -816,7 +857,7 @@ one-command rollback that moves nothing but `HEAD` — rehearsed for real and un
 
 **m4mbp (the capture Mac).** macOS 26.5.2, Xcode 26.5, Swift 6.3.3. Checkout
 `/Users/ga0/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`, reachable as `ga0@m4mbp`
-with `BatchMode=yes`, **detached at `42abc5a`** (tree `06d78525…`, the merge's own tree), clean.
+with `BatchMode=yes`, **detached at `7a4f59c`** (tree `16de7f62…`, the merge's own tree), clean.
 - **`origin` is not the same repository on every host.** Here `origin` is the AlphaSight fork;
   **on m4mbp `origin` is OpenMOSS and the fork is `alphasight`**. `git fetch origin main` there
   fetches upstream and the checkout then fails `fatal: unable to read tree`, which reads like
@@ -828,11 +869,14 @@ with `BatchMode=yes`, **detached at `42abc5a`** (tree `06d78525…`, the merge's
   path the PRD's live clause names. The batch clause is measured from MacStudio.
 - `/Applications/MOSSCapture.app` + `~/.local/bin/mtd-capture` installed from **`77e0014`** (M6c,
   iteration 20): bundle digest `c7c12ce2…`, CLI sha256 `450c20bf…`, inode `212080356`,
-  mtime `2026-07-28T18:22:32Z`. **The checkout is `42abc5a` but the INSTALL is still the `77e0014`
-  product, and that is correct, not drift:** P7's payload touched **0** files under `macos/`, so the
-  two SHAs build a byte-identical client. Re-measured after P5(c)'s checkout — inode `212080356` and
+  mtime `2026-07-28T18:22:32Z`. **The checkout is `7a4f59c` but the INSTALL is still the `77e0014`
+  product, and that is correct, not drift:** P7's **and** N8's payloads touched **0** files under
+  `macos/`, so all three SHAs build a byte-identical client. Re-measured after both P5(c)'s and
+  N8c's checkouts — inode `212080356`, mtime unchanged, and
   CLI sha256 `450c20bf…` **unchanged**, which is the positive proof no rebuild happened and therefore
-  that the TCC grants were never at risk. (K5c's `fc7097d` install was digest `267ada93…`, CLI `c11e89ff…`,
+  that the TCC grants were never at risk. *One measurement trap:* `212080356` is the **bundle
+  directory's** inode; the Mach-O at `Contents/MacOS/MOSSCaptureApp` is `212080361` and the CLI is
+  `212080364`. Compare like with like or a healthy install reads as replaced. (K5c's `fc7097d` install was digest `267ada93…`, CLI `c11e89ff…`,
   inode `211995344`.) Both verify
   `codesign --verify --strict`; the bundle satisfies its DR. The **designated requirement is
   `identifier "com.alphasight.moss.capture" and certificate leaf =
@@ -1011,6 +1055,7 @@ progress.txt archive under each title.
 | **Phase N gate step (a)** | **GREEN at `1e1cf3f`** (run `20260729-025318` it. 27) — Swift **158/0** with **0 warnings and 0 errors** on a fresh scratch, Python **801 passed / 2 skipped / 368 subtests** in 75.67 s (skips named: `test_large_upload.py:155,175`, the 3.10 contract), tracer **4/0 skips**, discriminator **10/10 true**, leak-scan clean, lane-refusal probe **rc=0** (a **local** regression only — the branch carries unmerged product source, so it does **not** speak for the deployed `42abc5a`), guard rehearsed non-vacuously (rc=1, `main moved from expected pre-merge SHA 77e0014…`), tree clean. **The accuracy half re-measured on production code, which is what ADR-0002 asks for rather than a suite result:** album **93.44/92.18**, overwrite **72.02/55.68**, swept **99.26/98.48** (live 93.44, **116** corrections, **0** merges, **residual 0**), swept cap64 99.26/98.48 (live **98.74**). Both halves of ADR-0002's bar are met on the code about to merge — ≥ 90 % live and **live→file convergence proved by `residual_corrections` 0**. Payload **44 files / +8172/−126**: 15 product, 23 tests+fixtures, 2 `ops/`, 4 docs, **0 under `macos/`** → the merge is **server-only** (J5c redeploy shape). *Payload review, the parts a diffstat does not answer:* the product diff removes **112** lines and **not one** matches `16000\|8000\|40000\|960000\|7860\|7861\|43200\|lease\|min_silence\|hard_cap\|frame_samples` — no domain-contract value moves; `live_identity.py`'s 83 removals are a **move**, not a deletion (`assign_speakers`/`_match_rejection_reason` to module level, the span grammar to `live_span_bounds.py`, verified one writer / three readers); and **two of the four doc files are the operator's own** (`00620ab`, `128eae4` — ADR-0002 and the design), which the merge carries to `main` for the first time. |
 
 | **N8 merge #8** | Merge **`7a4f59c`** (run `20260729-025318` it. 28), parents `42abc5a` + feature tip `732e1f6`; join `96ba30e` proven content-free first (`merge-tree --write-tree` returned HEAD's own tree **`89a3c321…`**, post-join diff empty, `main` genuinely not an ancestor before it). In-worktree gate on the merged tree: Swift **158**, Python **801 passed / 2 skipped / 368 subtests** in 77.59 s — identical to gate (a)'s numbers, which is the check that the join carried nothing. **Merge tree == feature tree `16de7f62…`.** Payload **53 files / +16234/−1474** total, which splits into **44 files / +8172/−126** outside `scripts/ralph-afk` — digit-for-digit iteration 27's reviewed payload — and 9 files of this loop's own evidence. **Server-only** (0 files under `macos/`) → step (c) is the J5c shape. Guard rehearsed non-vacuously immediately after: a **ninth** merge prints `main moved from expected pre-merge SHA 42abc5a…`, rc=1. EXIT trap ran (`git worktree list` back to one), primary worktree clean on the feature branch. *Two facts named in the record:* `main` now carries **four** operator-authored/loop doc files, three for the first time (ADR-0002, the streaming design, ADR-0003); and `ops/moss-live.env.example` ships all three `MOSS_LIVE_RETENTION_*` keys **commented out**, so redeploying this SHA retains **no audio** until an operator edits the host-local env. Evidence `/tmp/i28-merge.log`. |
+| **N8c redeploy** | GREEN — four-way SHA **4/4 at `7a4f59c`** (run `20260729-025318` it. 29), both host trees `16de7f62…`. Push `42abc5a..7a4f59c` fast-forward, 33 commits. Server MainPID **355607 → 365632**, `NRestarts=0`, `/live` 200 on the **first** poll behind the unchanged pin; batch `301112`/`322117` untouched. **The host manifest was regenerated at the calibrated 0.35/0.1** — `provider_manifest_hash 61d97ffe… → 0cb775da…`, no domain-contract value moved, admission green through the runtime's own readers before the restart. m4mbp: checkout only — **no rebuild, no reinstall, no TCC exposure** (bundle inode `212080356`, CLI sha256 `450c20bf…`, both grants `auth_value=2`). The deployed change **exercised, not hasattr-ed**: 2.0 s enrol `admitted`, 0.5 s foreign fragment `rejected_below_admission`, reference 1.0 vs A / 0.0 vs B. End to end `live-pipeline-probe.py` **rc=0** — 40/40 ticks, 0 non-200s, accepted == accounted == committed == 320000, retained 0, view **401/revoked** after a clean stop, 0 tracebacks. Probe device revoked (200 **with its body**); devices 14 / **1 unrevoked**. Evidence `/tmp/i29-probe.json`. |
 
 **How the two fences are satisfied — the standing pre-merge procedure.** Established for the second
 merge (run `20260728-072601` iteration 5) and re-run unchanged for the third (run `20260728-112922`
@@ -1236,10 +1281,11 @@ ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOS
 #     (candidate 63): omitting them is an argparse rc=2 refusal, not silent inheritance of
 #     whatever the untracked host provisional holds. Re-running with the SAME values prints
 #     `unchanged:` and does not touch the inode; re-running with the ALBUM values on the
-#     current host will REWRITE (the host carries the pre-album 0.5/0.2), print a
-#     `rollback: mv <backup> <output>` line first, and change identity_config_hash,
-#     combined_config_hash and the provider manifest hash. That change is the signature of
-#     the recalibration - a redeploy expecting 61d97ffe… is checking it did NOT happen.
+#     current host will REWRITE, print a `rollback: mv <backup> <output>` line first, and change
+#     identity_config_hash, combined_config_hash and the provider manifest hash.
+#     RUN FOR REAL IN ITERATION 29: the host carried the pre-album 0.5/**0.05** (not the 0.5/0.2 on
+#     record) and now carries 0.35/0.1; provider_manifest_hash 61d97ffe… -> 0cb775da…. Re-running it
+#     with the SAME values now prints `unchanged:`, so a rewrite from here is drift, not calibration.
 printf '%s\n' \
   'set -euo pipefail' \
   'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
@@ -1353,7 +1399,12 @@ bash "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spik
 # --- the pre-redeploy manifest admission check (read-only; run before ANY live restart from H2 on).
 #     Both new refusals fail the service closed, so check them before bouncing the unit, not after.
 #     Expect endpoint == bounds == 40000, speech_provider.frame_samples in {160,320,480}, and no
-#     `session_hard_cap_samples` anywhere in the document. -----------------------------------------
+#     `session_hard_cap_samples` anywhere in the document. SINCE ITERATION 29 also expect
+#     identity_config {max_speakers 16, min_match_score 0.35, min_match_margin 0.1} and
+#     manifest_hash 0cb775da005a7698124b66c7e4432d83c4491ad0080088174c644f796599ca1f. Read it
+#     through the RUNTIME'S OWN readers, not out of the JSON - `_preflight_payload(path)` returns a
+#     DICT (`available`/`failures`/`manifest_hash`/`config_hashes`/`descriptor`), NOT an object, and
+#     `_identity_config` / `_endpoint_config` / `_bounds` each take their own sub-mapping. ---------
 printf '%s\n' 'python3 - <<PY
 import json,pathlib
 d=json.loads((pathlib.Path.home()/".local/share/moss-transcribe-diarize/live/live-provider-manifest.json").read_text())
@@ -1436,6 +1487,22 @@ RALPH_MERGE_DRY_RUN=1 bash scripts/ralph-afk/merge-keeper.sh   # expect rc=1, "m
 # witness — a vocabulary absent from the backup binary and present in the new one:
 #   strings /Users/ga0/.local/bin/mtd-capture | grep -c '^sessionRefusal$'          # 3 (K4)
 #   strings /Users/ga0/.local/bin/mtd-capture.backup-20260728T191937Z | grep -c '^sessionRefusal$'  # 0
+# --- N8c: publish + redeploy the EIGHTH merge (SPENT in iteration 29). The J5c shape - server
+#     restart plus an m4mbp checkout with NO rebuild - plus ONE step no prior redeploy had. Order
+#     matters and this is the order that worked:
+#   1. pre-record the rollbacks in progress.txt and COMMIT, before any host is touched
+#   2. git push origin main                       # 42abc5a..7a4f59c, verify --is-ancestor FIRST;
+#                                                 # after this the merge has no rollback but a revert
+#   3. server: cp -p the manifest to a DETERMINISTIC name (the finalizer's own backup name is minted
+#      at run time, so it cannot be pre-recorded), then git fetch + checkout, then the finalizer
+#      --dry-run, then for real, then the admission check - ALL BEFORE the restart
+#   4. systemctl --user restart moss-live-web, then POLL /live for 200 (never sample once)
+#   5. m4mbp: git fetch <fork URL> main && git checkout <sha>   # no build, no install
+#   6. four-way `git rev-parse`, then `git diff --name-only <deployed sha> HEAD -- ':!scripts/
+#      ralph-afk'` empty -> the offline probes speak for the deployed service again
+#   THE ORDERING TRAP: the finalizer's REQUIRED --min-match-score/--min-match-margin flags only
+#   exist at the NEW revision, so the checkout must precede the finalizer. Running it against the
+#   old checkout is an argparse rc=2, which reads like a broken command rather than a wrong order.
 # --- the J5c and K5c and D1 publish/redeploy recipes are RETIRED to progress.txt; M6c above is the
 #     kept template (it is the strictly larger one: restart AND Mac rebuild). ----------------------
 # --- m4mbp: `origin` IS NOT THE ALPHASIGHT FORK THERE. The names are INVERTED relative to this
@@ -1783,6 +1850,13 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     F2 ungreenable for candidate 60, a defect outside F2's clause list.
 
 ### Phase N - live speaker identity - FOLLOW ADR-0002, NOT THE SIXTH AMENDMENT
+
+> **STEPS 1-3 ARE MERGED, PUBLISHED AND DEPLOYED as of iteration 29 (`7a4f59c`, four checkouts, host
+> manifest at 0.35/0.1).** Every `[NOT gated, NOT merged, NOT deployed]` tag on the per-step blocks
+> below is **historical as of that iteration** — each records the state at the moment that step
+> landed, and they are kept unedited because each block's red-before evidence is only meaningful
+> against the tree it was written for. What is still open in Phase N: **gate step (d), F1/F2**, and
+> **step 4** (batch Tier-B unification).
 
 **Read `docs/adr/0002-two-tier-diarization-fingerprint-album.md` and
 `docs/design-streaming-diarization.md` first.** They are the operator's own accepted design, with
@@ -2356,9 +2430,10 @@ iteration 23: 99.26 % mean / 98.48 % min swept, `residual_corrections` 0** — s
 ~~The session-end sweep~~ **landed in iteration 26 — see N-sweep-end; step 3 is code-complete.**
 ~~Gate step (a)~~ **GREEN at `1e1cf3f` in iteration 27 — see the gates index row for the full
 transcript and the payload review.** ~~(b) the eighth merge~~ **MADE in iteration 28 — `7a4f59c`,
-merge tree == feature tree, guard now refuses a ninth; see the N8 row.** What remains: **(c) push +
-redeploy** — which is also what regenerates the host manifest at the calibrated 0.35/0.1 (N-recal)
-and what makes every offline probe speak for the deployed service again — and (d) F1/F2
+merge tree == feature tree, guard now refuses a ninth; see the N8 row.** ~~(c) push + redeploy~~
+**DONE in iteration 29 — 4/4 at `7a4f59c`, the host manifest regenerated at 0.35/0.1, the album's
+asymmetry exercised on the service's own interpreter, and `live-pipeline-probe.py` rc=0 end to end.
+Every offline probe speaks for the deployed service again.** What remains: **(d) F1/F2 only**,
 with the label clause meaningfully verified, whose second-voice half is still blocked by candidate
 51's measured hardware limit. The accuracy half of the bar is instrumented and green for the album
 and for the sweep, and step (a) re-measured it on the tip rather than trusting the recorded number.
@@ -2387,10 +2462,16 @@ through untouched* from an untracked host file that no review has ever seen.
    from `live_provider_bundle` validates the finalized section; a refusal reads
    `refused: identity_config is not one the live runtime admits: min_match_score must be between
    0 and 1.` Three parametrised nodes prove it.
-***What this does NOT do.*** The deployed host manifest still carries 0.5 / 0.2 — nothing on the
-server was touched. Until Phase N's redeploy regenerates it, **the live service would run the album
-at 75.0 %**. And the regeneration *will* change `identity_config_hash`, `combined_config_hash` and
-the provider manifest hash away from `61d97ffe…`; that is the recalibration's signature, not drift.
+***DONE ON THE HOST IN ITERATION 29, and the number this row used to quote was wrong.*** The
+manifest was regenerated at 0.35 / 0.1 and the hashes moved off `61d97ffe…` to `0cb775da…` exactly as
+predicted. **But the pair actually deployed was `0.5 / 0.05`, not the `0.5 / 0.2` every block since
+iteration 16 recorded** — a pair nothing had measured. Measured on the eight-meeting fixture at gate
+step (c): **0.5/0.05 → 83.72 % mean / 69.20 % min**, against 75.00/39.97 at 0.5/0.2 and 93.44/92.18
+calibrated. So the regeneration bought **+9.72 pp mean / +22.98 pp min**, not +18.4 pp — and the
+conclusion is unchanged and now honest: what was running sat **below ADR-0002's ≥ 90 % bar**, so a
+redeploy that skipped the regeneration would have shipped a 93 % album into an 84 % matcher.
+***The durable rule:*** a threshold recorded out of a document is a claim about the document — read
+the value **off the host** before pricing what changing it buys.
 
 ### (superseded) Phase N as first written (2026-07-28, sixth amendment; AFTER Phase M)
 
