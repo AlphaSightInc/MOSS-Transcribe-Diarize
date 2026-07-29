@@ -15160,3 +15160,5 @@ both OUTPUT_MODE=muted, both reduced by live-canary-clauses.py (the soak with
 Separately and cheaply, the host's wall clock stepping ~1.5 s backwards every
 ~32.3 s is a WSL2 fact worth fixing on the host as well as in the code - it
 corrupts the RTF metric even on spans that survive.
+
+[loop 20260728-181020-14512] blocked at iteration 30
