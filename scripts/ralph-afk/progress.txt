@@ -23046,3 +23046,141 @@ If the loop must act alone first, the cheapest remaining evidence is to re-run
 the accuracy harness with a fragment-born-speaker corpus (fixture change only,
 no product source) and measure what the sweep recovers there - that would price
 55's fix before anyone writes it.
+
+================================================================================
+RUN 20260729-094359-88967  ITERATION 4
+ITERATION 3's PREMISE AND MECHANISM ARE BOTH FALSIFIED ON THE REAL FIXTURE
+================================================================================
+
+TARGET.  Not a candidate from the list: an audit of the loop's OWN freshest
+conclusion, taken because two recorded facts in context.md contradicted each
+other and the newer one is what the next authorization request would have been
+built on.
+
+  * Phase N decision 7 (it. 23 of run 20260729-025318): "the album ends a meeting
+    holding 3-6 of the 16 minted speakers, only 2-3 banked."
+  * Phase N decision 19 (it. 3 of THIS run): "every fixture speaker earns an
+    admitted bank; on F1 and F2 only 2 of 12 and 2 of 16 do" - and therefore
+    ADR-0002's +5.82 pp is a fixture artefact, candidate 55 is the ordering
+    constraint, and candidate 60 alone would publish nothing.
+
+They cannot both be true, and decision 19 was measured on sweep-fixpoint-probe's
+INVENTED vectors.  prompt.md makes repairing context.md from evidence a valid
+iteration; this is that, and it is also the cheapest way to keep a wrong argument
+from reaching the operator.  Diagnosis only - no product source, no test, no
+fixture, no host, no session, no TCC.
+
+WHAT I DID.  One probe, scripts/ralph-afk/album-bank-shape-probe.py.  It drives
+the tracked accuracy harness (tests/live_identity_accuracy.py) over all eight
+LibriSpeech meetings with real encoder geometry, and OBSERVES rather than
+replaces: `FingerprintAlbum` is subclassed so the instance the harness built can
+be read afterwards, and `sweep` is wrapped call-through so each sweep's own
+`dispositions` and `_album_view` reference set are recorded.  What is measured is
+therefore what runs.  Three configurations, identical but for the album's
+admission gate - the one knob that decides bank exemplar vs provisional stand-in:
+
+  banked    admission 0.001 s   nothing is ever a stand-in
+  deployed  admission 1.0 s     ALBUM_ADMISSION_SECONDS, what 7a4f59c runs
+  standin   admission 1e6 s     nothing is ever admitted; every reference is a
+                                sub-admission stand-in  <- THE CONTROL
+
+`standin` is the falsification control for iteration 3's mechanism.  If the
+mechanism is about STAND-INS, an all-stand-in album must go inert here too.
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/album-bank-shape-probe.py                 -> rc=0
+      (evidence /tmp/i4-bankshape.txt, ~9 s)
+
+  config     album  banked  stand  refs/voice  kept_ambiguous  corr  live%  final%
+  banked      42      42      0       1.40      162/14638 1.1%  115   93.50  99.26
+  deployed    42      31     11       1.40      158/14637 1.1%  116   93.44  99.26
+  standin     53       0     53       1.77     1665/14613 11.4% 140   82.89  88.54
+
+  merges 0 and residual_corrections 0 in every configuration, unchanged.
+  The `deployed` row reproduces the tracked numbers exactly (93.44 / 99.26), which
+  is the probe's own positive control that the observation changed nothing.
+
+  python3 -m pytest tests/test_live_identity_accuracy.py -q      -> 27 passed
+  python3 -m py_compile scripts/ralph-afk/album-bank-shape-probe.py -> ok
+  git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'      -> EMPTY
+
+THE FINDING - BOTH HALVES OF ITERATION 3's EXPLANATION ARE WRONG.
+
+1. "Every fixture speaker earns an admitted bank" is FALSE.  At the deployed
+   admission 31 of 42 album speakers are banked (73.8 %), and on the CANONICAL
+   SPEAKER denominator F1 and F2 were actually measured on it is 31/128 = 24.2 %
+   against F2's 2/16 = 12.5 % and F1's 2/12 = 16.7 %.  Same order of magnitude,
+   not a categorical difference.  **The contrast was an artefact of comparing an
+   album-membership ratio against a canonical-speaker ratio.**
+
+   A third category neither decision named: of the 16 canonical labels a reader
+   sees per fixture meeting, only ~5.25 ever reach the album AT ALL (decision 2 -
+   it observes only `prepared` assignments), so ~11 hold nothing, not even a
+   stand-in, and are not references.  Decision 7's "3-6 held / 2-3 banked" is also
+   stale - measured 3-9 held, 2-7 banked.
+
+2. "A stand-in reference set makes the sweep inert" is FALSE on real geometry.
+   With EVERY reference a provisional stand-in the sweep still produced 140
+   corrections - MORE than the deployed 116 - `kept_ambiguous` was 11.4 % of
+   units rather than 100 %, and final accuracy still rose 82.89 -> 88.54 %
+   (+5.65 pp).  So `_album_view`'s deliberate admission of stand-ins is NOT the
+   defect, and ADR-0002's +5.82 pp is NOT shown to be a fixture artefact.
+
+3. What the probe CAN say about the real cause, stated as the correlation it is
+   and not as a mechanism: ambiguity tracks REFERENCES PER REAL VOICE - 1.40 gives
+   1.1 %, 1.77 gives 11.4 %, and F2's shape is 16 canonical speakers for 2 real
+   voices = 8.0.  Iteration 3's own sensitivity sweep already agreed and nobody
+   read it that way: its result was driven entirely by the invented noise spread
+   (0.10-0.35 -> all ambiguous, 0.80 -> 12 re-matched), i.e. by how similar the
+   references were to each other.  Three points is a correlation; the decisive
+   experiment is a fixture configuration reaching F2's multiplicity, and no
+   current knob produces that without also moving the matcher.
+
+WHAT THIS RE-PRICES.
+  * Candidate 55 KEEPS its promotion and gets a new reason.  It is still the
+    ordering constraint and still the load-bearing member of a 55/60/65
+    authorization - but the claim to put to the operator is MULTIPLICITY, not
+    unbanked references.
+  * Candidate 60's downward re-pricing SURVIVES but on weaker evidence, and this
+    is now the second time the loop has moved 60 on an argument rather than a
+    measurement.  "60 alone would publish nothing" rests on invented vectors
+    modelling a shape iteration 3 misnamed.  Say "probably" to the operator.
+  * Candidate 65's DIAGNOSABILITY half is untouched by all of this and is now the
+    only settled part of 65 - which makes it, not the cause half, what belongs in
+    an authorization.
+  * ADR-0002's +5.82 pp is restored as a number about the identity layer rather
+    than about LibriSpeech's speaker banks.
+
+WHAT I LEARNED (two things, and the first is the one that generalises).
+  1. **A ratio is only a comparison if both sides share a denominator.**  Decision
+     19 put "every fixture speaker is banked" beside "2 of 16 on F2" and read a
+     categorical gap.  One side counted album members, the other counted canonical
+     speakers.  On one denominator the gap is 24.2 % vs 12.5 % - real, but a
+     factor of two, not a difference in kind.  Every re-pricing built on it
+     inherited the error within one iteration.
+  2. **The control that falsifies a mechanism is usually a knob the harness
+     already has.**  Iteration 3 needed invented vectors because F2's were never
+     retained; the claim it derived was about stand-ins, and `admission_seconds`
+     turns stand-ins on and off over REAL vectors for free.  The falsifying run
+     cost 9 seconds and existed the whole time.
+
+BLOCKERS.  Nothing blocked this iteration.  Unchanged and re-verified against
+prd.md's tail (last prd.md commit is still 0456177, the ADR-0002 supersession; no
+ninth authorization exists):
+  * Candidates 55, 58, 60, 64, 65 and F1's two REDs are tracked product source or
+    gate definitions under the post-merge freeze, and merge-keeper.sh's
+    expected_main guard refuses a ninth merge.
+  * The F2 system-audio-denied variant would spend a TCC grant; F1/F2's second
+    voice is bounded by m4mbp's built-in microphone (five runs).
+  * Phase N step 4 remains the one open product item needing no authorization.
+
+RECOMMENDED NEXT STEP.  The authorization request should now be written from what
+is measured rather than from what was inferred: 55 first on the multiplicity
+argument, 65's diagnosability half beside it, 60 as the bounded view-authority
+exposure it was first filed as.  Before that, the cheapest remaining measurement
+is the one this iteration could not make - drive the accuracy harness to F2's
+references-per-voice ratio and see whether ambiguity follows the curve.  A fixture
+knob for it does not exist yet, so the honest options are (a) build one in the
+probe by forcing births without moving the matcher, or (b) state the correlation
+to the operator as a correlation.  Do NOT spend another iteration re-deriving a
+mechanism from invented vectors.

@@ -267,9 +267,26 @@ carry is in the retired-evidence index below).**
   Run at that shape, the production `sweep()` answers **`kept_ambiguous` on every unit**: its
   matcher abstains for exactly the reason the live matcher did, because 16 mutually-confusable
   references built from 2 voices cannot clear the 0.1 margin. **Zero re-matched corrections**; the
-  same harness with those speakers banked yields **16**. So ADR-0002's +5.82 pp is a property of the
-  LibriSpeech fixture, **fixing 60 alone would publish nothing**, and the ordering is 55 first. See
-  candidate 65's cause block, and candidates 55 and 60, all re-priced.
+  same harness with those speakers banked yields **16**. See candidate 65's cause block.
+- **ITERATION 4 AUDITED THAT ANSWER AGAINST THE REAL FIXTURE AND FALSIFIED ITS EXPLANATION — read
+  this before writing the authorization request, because iteration 3's headline is wrong in two
+  ways.** `album-bank-shape-probe.py`, production code and real encoder geometry over the eight
+  fixture meetings, three admission gates. (1) *"Every fixture speaker earns an admitted bank"* is
+  **false**: **31 of 42** album speakers are banked at the deployed admission, and on the
+  **canonical-speaker denominator F1/F2 were measured on** it is **31/128 = 24.2 %** against F2's
+  **12.5 %** and F1's **16.7 %** — the same order of magnitude, not a categorical difference. The
+  contrast was an artefact of comparing an album-membership ratio to a canonical-speaker one.
+  (2) *"A stand-in reference set makes the sweep inert"* is **false on real geometry**: with **every**
+  reference a provisional stand-in the sweep still produced **140 corrections** (more than the
+  deployed 116), `kept_ambiguous` was **11.4 %** of units and not 100 %, and final accuracy still
+  rose **82.89 → 88.54 %**. So `_album_view`'s admission of stand-ins is **not** the defect.
+  *What the probe can say about the real cause, and it is a correlation over three points rather
+  than a proof:* ambiguity tracks **references per real voice** — 1.40 → 1.1 %, 1.77 → 11.4 %, while
+  F2's shape is **8.0**. Iteration 3's own sensitivity sweep agrees: its result was driven entirely
+  by the invented noise spread, i.e. by how similar the references were. **The ordering conclusion
+  survives on this weaker footing** (55's fragmentation is what puts many references on one voice)
+  but ADR-0002's +5.82 pp is **not** shown to be a fixture artefact. See Phase N decision 19,
+  rewritten.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
   candidates 55, 58, 60, 64 and 65; F1's two REDs; the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
@@ -1230,6 +1247,17 @@ python3 scripts/ralph-afk/identity-evidence-probe.py /tmp/i1-f2-evidence/ralph-c
 # and carries its own falsification control plus a sensitivity sweep over the one quantity it
 # invents (the per-unit noise spread; F2's vectors were never retained).
 python3 scripts/ralph-afk/sweep-fixpoint-probe.py                        # rc=0
+# --- iteration 4's AUDIT of those two, on the real fixture instead of invented vectors. Wraps the
+#     production album (subclass) and the production sweep (call-through) inside the tracked
+#     accuracy harness, and moves ONLY the admission gate, so the bank/stand-in split is the one
+#     thing that differs between its three configurations. ~9 s, no host, no product change.
+python3 scripts/ralph-afk/album-bank-shape-probe.py                      # rc=0
+# Expect: banked 42/42 refs, 1.1 % kept_ambiguous, 115 corrections, 93.50 -> 99.26
+#         deployed 31/42, 1.1 %, 116 corrections, 93.44 -> 99.26   (the deployed shape)
+#         standin  0/53,  11.4 %, 140 corrections, 82.89 -> 88.54  (the falsification control)
+# The last row is the finding: an all-stand-in reference set STILL sweeps, so stand-ins are not
+# what makes the deployed sweep inert. rc=2 is a named refusal if the harness or fixture will not
+# load. See Phase N decision 19.
 
 # --- H blocker 4's host probe and its boundary sweep are RETIRED to progress.txt (J1's clamp
 #     superseded them; the surviving rule is the Span-bounds row in Shipped contracts). ------------
@@ -1680,6 +1708,14 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     **true on the fixture and false on a real meeting**, and the two are no longer separable items:
     an authorization for 60 or 65 that leaves 55 open buys an `identity_finalized` event and no
     correction. See candidate 65's cause block.
+    **ITERATION 4 KEPT THE PROMOTION AND REPLACED ITS REASON.** The stand-in explanation is
+    falsified on real encoder geometry (see Phase N decision 19): an all-stand-in fixture still
+    sweeps. What 55 does that matters is put **many references on one voice** — F2's 16 canonical
+    for 2 real voices is **8.0** references per voice against the fixture's 1.40-1.77, and ambiguity
+    tracks that ratio across the three configurations measured (1.1 %, 1.1 %, 11.4 %). So 55 is
+    still the ordering constraint and still the load-bearing member of any 55/60/65 authorization,
+    but the claim to put to the operator is *multiplicity*, not *unbanked references* — and it is a
+    three-point correlation, which should be stated as such rather than as a proven mechanism.
 56. **A live session stops being viewable mid-meeting.** `[CLOSED — fixed run 20260729 it. 1,
     merged as 42abc5a it. 4, deployed and PROVEN ON THE SERVER it. 5]`. Cause: the server host's wall clock steps ~1.5 s
     backwards every ~32.3 s, `vllm_runner.py:111` measured `elapsed_sec` on it, and
@@ -1747,6 +1783,13 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     word *immediately*, plus the event that would make candidate 65 readable. Still worth an
     authorization; no longer the one that buys convergence. **Sequence it with or behind candidate
     55.**
+    **ITERATION 4 WEAKENS THE EVIDENCE FOR THAT DOWNWARD RE-PRICING WITHOUT REVERSING IT.** The
+    "60 alone would publish nothing" conclusion rests on `sweep-fixpoint-probe.py`'s **invented**
+    vectors, and iteration 4 showed the shape they modelled was not the one iteration 3 named: on
+    the real fixture an all-stand-in reference set sweeps normally. The invented spread was
+    modelling reference *similarity*, which is a plausible model of F2's 8.0 references per voice —
+    so 60 is still probably not the item that buys convergence, but the loop has never measured that
+    on real geometry. Say "probably" to the operator, not "measured".
 65. **Neither half of Phase N step 3 produces a correction on a real meeting, and an empty cadence
     sweep leaves no record to tell "found nothing" from "never ran".** `[open, new — run
     `20260729-094359` iteration 1; found by F2 on the deployed `7a4f59c`]`. Measured over a **319 s**
@@ -1798,6 +1841,15 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     would fire, record `identity_finalized`, and return `kept_ambiguous` on every unit. 65's
     diagnosability half stands unchanged and is now worth *more*, because "swept and proposed
     nothing" is precisely what is happening and no surface says so.
+    ***CORRECTED IN ITERATION 4 — the sentence above about the corpus is false, and the probe that
+    proves it is `album-bank-shape-probe.py`.*** The fixture does **not** bank every speaker
+    (31/42 album speakers, 24.2 % of canonical ones against F2's 12.5 %), and an all-stand-in
+    reference set does **not** make the sweep inert (140 corrections, 11.4 % `kept_ambiguous`,
+    82.89 → 88.54 %). So `_album_view`'s stand-in admission is exonerated and +5.82 pp is not shown
+    to be a fixture artefact. What remains, as a **three-point correlation** rather than a mechanism:
+    ambiguity tracks references per real voice (1.40 → 1.1 %, 1.77 → 11.4 %; F2 is 8.0). The
+    diagnosability half is untouched by all of this and is now the **only** part of 65 that is
+    settled — which makes it, not the cause half, the part worth putting in an authorization.
 58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
     20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
     summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
@@ -1990,7 +2042,9 @@ step 4 and any future identity work are constrained by them.**
    the sweep's entire +5.82 pp is **re-matching**. The album ends a meeting holding 3-6 of the 16
    minted speakers, only 2-3 banked, and those centroids sit at **0.19-0.43** against the 0.70
    threshold - genuinely different voices. The node asserts `merges == 0` in falsifiable form so a
-   parameter change re-opens the question instead of inheriting it.
+   parameter change re-opens the question instead of inheriting it. **The "3-6 held / 2-3 banked"
+   range is stale — re-measured in iteration 4 of run `20260729-094359` it is 3-9 held and 2-7
+   banked (42 held, 31 banked over the eight meetings). The `merges == 0` finding is unaffected.**
 8. **The ledger retains every embedded unit, labelled or not**, because an **abstained** span never
    reconciles and is exactly the span a later album has the most to say about. Bound measured, not
    estimated: one 256-dim `array("f")` vector costs **1104 bytes** against **8232** as a tuple, so
@@ -2086,17 +2140,30 @@ step 4 and any future identity work are constrained by them.**
     carrying its final canonical speaker, so it never models the transient one-span reconcile lag. And
     on the deployed system **neither half of step 3 publishes a correction** (candidates 60 and 65),
     so the convergence half of the acceptance bar is unmet in production however green the harness is.
-19. **The corpus gap in 18 is not a caveat any more - it is measured, and it is the whole of why the
-    sweep is inert** (iteration 3 of run `20260729-094359`). Every fixture speaker earns an admitted
-    bank; on F1 and F2 only **2 of 12** and **2 of 16** do. A speaker with no bank keeps its minting
-    fragment as its reference (`FingerprintAlbum.reference`, the `_hold_provisional` path) and
-    `_album_view` puts that stand-in into the sweep's reference set anyway - deliberately, so the
-    sweep answers the question the meeting is asking. The consequence was not foreseen: 16 references
-    drawn from 2 voices are mutually confusable, `assign_speakers` abstains for the whole span, and
-    the sweep returns `kept_ambiguous` on **every** unit. **The sweep therefore inherits, rather than
-    repairs, the live matcher's ambiguity — on exactly the meetings that need repair most.** Any
-    future identity work must treat "the harness measures the sweep at +5.82 pp" as a statement about
-    LibriSpeech until it is re-measured on a corpus with fragment-born speakers.
+19. **The sweep is inert on a real meeting, and the cause is reference MULTIPLICITY, not the
+    bank/stand-in distinction** (filed iteration 3 of run `20260729-094359`, **premise and mechanism
+    both corrected in iteration 4** by `album-bank-shape-probe.py` on real encoder geometry).
+    *What was claimed and is now measured false:* "every fixture speaker earns an admitted bank" —
+    at the deployed admission **31 of 42** album speakers are banked, and on the canonical-speaker
+    denominator F1/F2 used it is **31/128 = 24.2 %** against F2's 12.5 % and F1's 16.7 %. The
+    "fixture vs real corpus" contrast was two different denominators, and **there is a third
+    category neither this decision nor decision 7 named:** of the 16 canonical labels a reader sees
+    per fixture meeting only **~5.25** ever reach the album at all (decision 2 — it observes only
+    `prepared` assignments), so ~11 hold nothing, not even a stand-in, and are not references.
+    *What was claimed as the mechanism and is now measured false:* a stand-in reference set does not
+    disable the sweep. With **every** reference a stand-in the fixture still yielded **140
+    corrections**, `kept_ambiguous` **11.4 %** and **82.89 → 88.54 %**. `_album_view`'s deliberate
+    admission of stand-ins is therefore **not** the defect, and ADR-0002's +5.82 pp is **not** shown
+    to be a fixture artefact.
+    *What survives, and it is what a future run should test:* the F1/F2 observations are direct
+    measurements and stand (2/16 and 2/12 banked, zero corrections published, `identity_finalized`
+    0), and ambiguity tracks **references per real voice** — 1.40 → 1.1 %, 1.77 → 11.4 % here,
+    against F2's **8.0**. Three points is a correlation, not a proof; the decisive experiment is a
+    fixture configuration that reaches F2's multiplicity, which no current knob produces without
+    also moving the matcher. **The ordering conclusion (55 before 60) survives on that weaker
+    footing.** *The durable lesson:* iteration 3 measured the right numbers on invented vectors and
+    attributed them to the one difference it could see; the sensitivity sweep it recorded was
+    already saying the result came from reference *similarity*, and nothing read it that way.
 
 ### (superseded) Phase N as first written - retired to progress.txt
 
