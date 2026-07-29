@@ -21127,3 +21127,72 @@ freely, so a run whose spans come back S00 is the abstain path working, not a
 dead session.  F1's "two speakers" half remains limited by candidate 51's
 measured hardware ceiling - m4mbp's built-in microphone cannot hear a second
 voice across the room - and that limit needs the operator, not another iteration.
+
+================================================================================
+PRE-RECORD - iteration 30 rollbacks, written BEFORE any host is touched
+run 20260729-025318 - Phase N gate step (d), the F1 re-run against 7a4f59c
+================================================================================
+
+WHY THIS BLOCK EXISTS.  prd.md's Reversibility constraint: every server or Mac
+mutation must have its rollback command recorded in progress.txt BEFORE it is
+applied.  This iteration runs the 60 s canary (F1) against the DEPLOYED 7a4f59c
+with the album, the sweep, the session-end finalize and the calibrated 0.35/0.1
+matcher live for the first time.  It changes NO tracked source, restarts NO
+service, and rebuilds NOTHING.
+
+PRE-STATE, MEASURED (not assumed) IMMEDIATELY BEFORE:
+  server  : HEAD 7a4f59c, worktree clean, moss-vllm/moss-web/moss-live-web all
+            active, live MainPID 365632 NRestarts=0, batch MainPID 301112
+            NRestarts=0
+  m4mbp   : HEAD 7a4f59c, MOSSCaptureApp NOT running, /Applications/MOSSCapture.app
+            present, output volume 31, output muted false, pasteboard 0 bytes
+
+THE MUTATIONS AND THEIR ROLLBACKS, one per line, in the order they are applied:
+
+ 1. m4mbp: launch the app
+      apply    : ssh ga0@m4mbp 'open -a /Applications/MOSSCapture.app'
+      ROLLBACK : ssh ga0@m4mbp 'pkill -x MOSSCaptureApp'
+      (pre-state is "not running", so the rollback is exact)
+
+ 2. server: mint ONE pairing code on the loopback
+      apply    : ops/live-pair.sh --url https://127.0.0.1:7861 --cert <live.crt>
+      ROLLBACK : none needed - a minted code is single-use and expires; it is
+                 consumed by step 3 in the same minute.  If step 3 fails, the
+                 code simply expires unused.  Do NOT revoke m4mbp's device row.
+
+ 3. m4mbp: mtd-capture pair (REUSES the stored capture-device-id, so it mints no
+    new device row - measured in K5d and again in iteration 29)
+      apply    : printf '%s\n' "$PAYLOAD" | ssh ga0@m4mbp '~/.local/bin/mtd-capture pair --server https://100.64.0.8:7861'
+      ROLLBACK : re-pair with a fresh loopback code.  The Keychain items
+                 (capture-bearer / capture-session-id / capture-view-token) are
+                 overwritten by any later pair, and the device row is reused, so
+                 the operation is idempotent for this device.  There is no
+                 "restore the previous bearer" step and none is needed.
+
+ 4. m4mbp: mute the output (this is how the two lanes are separated - candidate 51)
+      apply    : the driver's own step 3, OUTPUT_MODE=muted
+      ROLLBACK : ssh ga0@m4mbp 'osascript -e "set volume without output muted"; osascript -e "set volume output volume 31"'
+                 The driver's EXIT/INT/TERM trap restores whatever it found, but
+                 a dropped ssh link kills the driver mid-meeting and leaves the
+                 mute in place (recorded in iteration 21), so the explicit
+                 command above is the rollback and is run unconditionally after.
+
+ 5. m4mbp: /tmp scratch
+      apply    : scp live-canary.sh -> /tmp, driver writes /tmp/ralph-canary/
+      ROLLBACK : ssh ga0@m4mbp 'rm -rf /tmp/ralph-canary /tmp/live-canary.sh /tmp/ralph-canary-run.log'
+
+ 6. server: one live session is created and stopped by the driver
+      ROLLBACK : none available and none needed - a stopped session drains and
+                 the 30 s helper lease closes it (candidate 60 means the stop
+                 does not reach the server; the lease does).  No state persists
+                 beyond the journal.
+
+ 7. m4mbp: the pasteboard receives view authority (app-owned handoff)
+      ROLLBACK : the driver clears it at the end; verified after with
+                 ssh ga0@m4mbp 'pbpaste | wc -c'  -> must be 0
+
+NOT TOUCHED BY THIS ITERATION, stated so a later reader does not look for it:
+no git checkout on either host, no service restart, no manifest regeneration, no
+Swift build, no install, no TCC interaction of any kind.  Both grants stay
+auth_value=2 and are re-checked read-only afterwards.
+
