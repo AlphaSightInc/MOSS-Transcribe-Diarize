@@ -15,8 +15,8 @@ Covered:
     a missing profile, and every unit agrees on one deployment root.
   * `ops/install-services.sh` installs the tracked units with dry-run/rollback/unchanged
     discipline and never enables the live unit implicitly.
-  * `ops/configure-windows-network.ps1` forwards the batch port unconditionally and the live
-    port only under `-IncludeLive`.
+  * `ops/configure-windows-network.ps1` uses portproxy under WSL NAT, removes stale proxies under
+    mirrored networking, and includes the live port only under `-IncludeLive`.
 
 Everything runs against scratch paths. No unit is installed outside `tmp_path`, no service is
 started, and `systemctl`/`getent` are stubbed on PATH — the real ones are Linux-side and this
@@ -846,3 +846,16 @@ def test_windows_forwarding_keeps_the_batch_port_unconditional_and_gates_the_liv
     # A refresh after sign-in must forward the same ports as the run that registered it.
     assert "$argumentList += ' -IncludeLive'" in text
     assert text.index("$argumentList += ' -IncludeLive'") > text.index("-RefreshOnly\"")
+
+
+def test_windows_forwarding_does_not_reserve_mirrored_wsl_ports_with_portproxy() -> None:
+    text = (OPS / "configure-windows-network.ps1").read_text()
+
+    assert "wslinfo --networking-mode" in text
+    assert "$usesPortProxy = $networkingMode -ne 'mirrored'" in text
+    assert "ip -4 -o addr show dev eth0 scope global" in text
+    delete = text.index("portproxy delete")
+    guarded_add = text.index("if ($usesPortProxy)", delete)
+    add = text.index("portproxy add", guarded_add)
+    assert delete < guarded_add < add
+    assert "Mirrored networking ready" in text
