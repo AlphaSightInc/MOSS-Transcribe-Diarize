@@ -1,40 +1,39 @@
-# Authorization request — candidates 55, 65 and 60, in that order
+# Authorization request — candidates 55, 65, 60, the latency remedy, and 66
 
-> **CORRECTION, added in iteration 7 before you read this — one claim in §4(c) below was wrong, and
-> it was the loop's own instrument that was at fault rather than the product.** Three
-> `live-pipeline-probe.py` runs against the deployed `7a4f59c` measured that **the session-end sweep
-> runs and publishes on a real meeting**: `POST …/stop` is reachable by *both* capture and view
-> authority, the **`/live` portal's Stop button already calls it**, a stop through it **revokes view
-> authority immediately (401)**, and the stop response carried **19 label-changing corrections on 31
-> spans** (18 × `S00 → S01`, words byte-identical in every one). The loop had inferred the opposite
-> from `identity_finalized` firing 0 times — but that event is written to an **in-memory** list,
-> never to the journal, **inside** the same `stop` that revokes view authority and releases the
-> session, so **no client can read it** (measured: 401 with the view token, 403 `session is not owned
-> by this device.` with the capture token). Zero sightings was the expected reading whether it ran or
-> not.
-> **What this changes in the ask:** §4(c)'s last sentence — *"step 3's session-end sweep has never
-> run in a real meeting"* — is **withdrawn**; candidate 60 is a client defect worth fixing on its own
-> merits and buys neither convergence nor the event. §4(b) is **unchanged and now larger**: it should
-> cover the session-end half's *payload* too, since a reader can see that labels moved but never what
-> the sweep decided. **§§1–3, the whole candidate-55 case, and the ordering are untouched** — the
-> probe's meeting held 2 canonical speakers for 2 real voices, so it says nothing against iteration
-> 5's measurement that at F2's 8.4 references per voice the sweep is 84.1 % `kept_ambiguous`.
-
-
-*Written by the loop for the operator, run `20260729-094359` iteration 6. Nothing here has been
-implemented; every number below is measured, and every proposal is a proposal.*
+*Written by the loop for the operator, run `20260729-094359` iteration 6, and **kept current in
+place** — corrections are applied to the body, not stacked on top of it, so what you read below is
+what the loop currently believes. Nothing here has been implemented; every number is measured, and
+every proposal is a proposal.*
 
 This is the loop's request for a **ninth** amendment. `merge-keeper.sh`'s `expected_main` guard
-refuses a ninth merge, and candidates 55, 60 and 65 are tracked product source under the
-post-merge freeze, so none of it can start without you.
+refuses a ninth merge, and every item below is tracked product or test source under the post-merge
+freeze, so none of it can start without you.
+
+> **What has changed since this was written, so you can see which of your own earlier readings are
+> stale.** Each correction is already applied in the body.
+>
+> | when | what the loop had wrong, and what it measured instead |
+> | --- | --- |
+> | it. 7 | §4(c) said *"step 3's session-end sweep has never run in a real meeting."* **Withdrawn.** The session-end sweep runs and publishes on the deployed service — `POST …/stop` is reachable by *both* authorities, the `/live` portal's Stop button already calls it, a stop through it revokes view authority **immediately (401)**, and it carried **19 label-changing corrections on 31 spans**. The loop had inferred the opposite from `identity_finalized` firing 0 times; that event is written to an **in-memory** list no client can read, so zero sightings was the expected reading whether it ran or not. |
+> | it. 9 | §3 predicted the sweep would *consider and refuse* candidate 55's minted labels (`kept_ambiguous`). It does not — **it never sees them.** §3b carries the corrected mechanism. |
+> | it. 12 | §1's headline — *"neither half of Phase N step 3 publishes a correction"* — is **FALSIFIED**. The **cadence** sweep published three mid-meeting revisions during the 17-minute F3 soak on the deployed `7a4f59c`. Both halves publish. §1 and §4(b) are rewritten; the ask is *narrower and better founded*, not weaker. |
+> | it. 15 | Counts brought current (**49** corrections across **four** deployed swept meetings, not 46 across three). **§4(d) is new** and prices F1's latency RED, which §5 previously deferred to you with no number attached. **§4(e) is new** — candidate 66, the cheapest item on the list. |
 
 ---
 
 ## 1. The one-sentence finding
 
 **Fourteen of the sixteen canonical speakers a real 300-second meeting produced were minted from
-audio the system had already refused to embed** — and that, not the album and not the sweep's
-logic, is why neither half of Phase N step 3 publishes a correction on the deployed system.
+audio the system had already refused to embed** — and because a sweep can only re-match evidence
+that exists, those fourteen labels are unreachable by any sweep at any cadence: **all 49 corrections
+the deployed sweep has published across four real meetings are `S00 → Sxx` fill-ins of a *missing*
+label, and not one is a reassignment.**
+
+*The earlier form of this sentence — "…which is why neither half of Phase N step 3 publishes a
+correction on the deployed system" — was falsified by direct measurement in iterations 7 and 12.
+Both halves publish. The defect is not that the sweep is silent; it is that the sweep has never been
+observed to move a label that was already set, which is exactly what repairing candidate 55 would
+require.*
 
 ## 2. What is measured
 
@@ -132,12 +131,19 @@ embedded unit, so it has no ledger entry, so it is not in the sweep's input at a
 fragmentation destroys is the **supply** of repairable spans, by converting a span that would have
 abstained into one carrying a confident junk label.
 
-**The confound-free fact, and it is the strongest one here.** Across all three deployed meetings
-this loop has swept — iteration 7's 19 corrections, and this iteration's 7 and 20 — **every one of
-the 46 published corrections is `S00 → Sxx`, and not one is a reassignment.** The deployed
-session-end sweep's only observed product is filling in a label that was missing. It has never been
+**The confound-free fact, and it is the strongest one here.** Across all **four** deployed meetings
+this loop has swept — iteration 7's 19 corrections, iteration 9's 7 and 20, and iteration 12's 3 —
+**every one of the 49 published corrections is `S00 → Sxx`, and not one is a reassignment.** The
+deployed sweep's only observed product is filling in a label that was missing. It has never been
 observed to move a label that was already set, which is precisely what repairing candidate 55's
 fragmentation would require.
+
+*Updated in iteration 12, and it strengthens the case rather than weakening it:* the fourth meeting
+is the **16-minute F3 soak on the deployed `7a4f59c`**, which minted **16 canonical speakers for 2
+real voices** and saturated the cap at **t+138.1 s of a 1029 s meeting** — so ~87 % of a real
+17-minute meeting ran with no slot left for an arriving voice. Its **cadence** sweep crossed ~17
+deadlines, repaired **3** of 122 abstained spans, and all three were `S00 → Sxx`. Candidate 55's
+cost therefore survives the first cadence sweep this loop has ever observed to publish.
 
 *Honest limit:* the two runs differ in two variables, not one — fragmentation **and** the number of
 embeddable voices (the fragmented run's peer lane carries one voice, the control two), so
@@ -187,12 +193,22 @@ patch** (the fifth amendment's shape):
    written — but that is your document and your call, and it is the reason this needs an
    amendment rather than being covered by *"Phase N remains authorized."*
 
-**(b) Candidate 65's diagnosability half** — the cheap half, and it should ship in the same cycle
-because it is how the next run measures whether (a) worked. `sweep_now` sets `_unconsumed` and
-logs **only when the revision is non-empty**, so an empty cadence sweep is indistinguishable from
-one that never ran. F2 crossed five 60 s deadlines and left no record of any of them. Phase N
-decision 11 already records `identity_finalized` unconditionally for exactly this reason; grant
-the cadence half the same ruling.
+**(b) Candidate 65 — *an empty cadence sweep leaves no record to tell "found nothing" from "never
+ran."*** The cheap half, and it should ship in the same cycle because it is how the next run
+measures whether (a) worked. `sweep_now` sets `_unconsumed` and logs **only when the revision is
+non-empty**, so a cadence deadline that produced nothing is indistinguishable on every surface from
+a deadline that never arrived. Phase N decision 11 already records `identity_finalized`
+unconditionally for exactly this reason; grant the cadence half the same ruling, and extend it to
+the session-end half's **payload** — a reader can see *that* labels moved but never *what the sweep
+decided*.
+
+*This entry was re-titled in iteration 14 and its premise corrected in iteration 12.* It used to
+read *"neither half of Phase N step 3 produces a correction on a real meeting"*, and that is
+measured false: F2 crossed **five** deadlines and published **0**, F3 crossed **~17** and published
+**3**. What separates them is meeting **length**, not a broken sweep — and **neither run's silent
+deadlines said so anywhere**, which is the whole of what is still wrong. The ask shrinks from "make
+the sweep work" to "make it say what it did"; it did not go away, because ~14 of F3's own deadlines
+are still unaccounted for on every surface a reader has.
 
 **(c) Candidate 60 — a clean stop must reach the server**, sequenced with or behind (a). A
 transport call after the final drain, with the fifth amendment's rule that a stop which cannot
@@ -206,6 +222,68 @@ left is exactly what 60 was first filed as: **the Mac client does not call a rou
 `mtd-capture stop` leaves view authority alive for up to 30 s and skips the final sweep the portal's
 Stop would have run. Worth fixing; not the item that buys convergence.
 
+**(d) F1's latency RED — your own plan's SECOND ordered remedy is now measured, and it is the cheap
+one.** *New in iteration 15. `scripts/ralph-afk/latency-remedy-probe.py`, rc=0, 14/14 checks,
+offline, no host and no product change; it reads F3's real `latency-final.json` and two tracked
+source constants.*
+
+The PRD answers a latency miss with *"the plan's ordered remedies (2.0 s span cap, then 0.5 s poll
+interval), never by relaxing the gate."* Until now the loop had no number for either, so §5 handed
+the whole latency RED back to you unpriced. Here is the second one.
+
+The gated number is exactly `committedP95 + portalCycle + snapshotFetchP95 + eventsFetchP95` —
+verified to **0.000000000 ms residual** on F3's own report. The **portal cycle term alone is a whole
+1000.0 ms, 24.4 %** of the 4106.5 ms F3 measured. Halving the poll subtracts **exactly 500.0 ms**,
+because that term is additive and independent of the two measured fetch p95s:
+
+| certification run | measured | at a 0.5 s poll | gate | verdict now → then |
+| --- | --- | --- | --- | --- |
+| **F1** on `7a4f59c` | **4150.8 ms** | **3650.8 ms** | 4000 | **RED → GREEN**, +349.2 ms margin |
+| F2 on `7a4f59c` | 4078.6 ms | 3578.6 ms | 6000 | GREEN → GREEN |
+| F3 on `7a4f59c` | 4106.5 ms | 3606.5 ms | 6000 | GREEN → GREEN |
+
+F1 missed by **150.8 ms**; the remedy is worth **3.3×** that.
+
+**Your plan lists the two remedies contract-expensive first.** Remedy 1, the 2.0 s span cap, changes
+`hard_cap_samples` 40000 — which **this PRD's own Constraints declare a domain-contract value** to
+be "implemented exactly rather than generalized away", so the loop cannot touch it under any
+reading. Remedy 2's portal poll appears **nowhere** in that list (checked term by term). So the
+cheaper remedy is also the only one that does not require you to move the contract.
+
+***The trap, and it is why this needs your word and not the loop's judgement — filed as candidate
+68.*** That 1000 ms lives in **two constants in two languages** — `live_portal.py:146`
+`const pollDelayMs = 1000` and `CaptureLatencyProbe.swift:18` `portalCycleSeconds = 1.0` — and
+**nothing ties them**. No Python test asserts the portal's cadence; nothing crosses the language
+boundary; and the single assertion that exists (`CaptureControllerTests.swift:5699`) compares the
+Swift constant **to itself**. Editing the Swift constant alone would take 500 ms off a PRD
+acceptance number **with no change whatever to what a human sees** — relaxing the gate while looking
+like a remedy, and the gate would never notice. **Any authorization here must require both constants
+to move together and a test that fails when they disagree.** That test is the durable part of this
+ask and is worth having whatever you decide about the cadence: today the user-visible latency clause
+is measured through an unenforced duplicate.
+
+**What it costs, stated rather than buried:** the portal issues twice as many snapshot+events pairs
+(F3: 381 polls → ~760 over 17 minutes). F2's 4766 requests all answered 200, which is headroom
+evidence, not proof at double the rate. The honest gate is to re-run F1 and check the fetch p95s,
+which the render bound would immediately expose if they rose — that is the number this change puts
+at risk, and it is measured in the same report.
+
+**What it does not buy:** F1's *other* RED. Candidate 64 — decoder p95 RTF **2.365** carried
+entirely by three spans of 0.03 / 0.06 / 0.07 s — is untouched by this and stays a gate-definition
+ruling in §5.
+
+**(e) Candidate 66 — the portal's browser-storage hygiene has evidence but no regression.** The
+cheapest item on this list by a wide margin, included because it is two asserts and one accessor and
+it protects a PRD clause that is currently green *by probe only*. `tests/test_live_portal.py` builds
+a recording `localStorage`/`sessionStorage` Proxy and threads `storageWrites` back to Python through
+two scenarios — and **no node asserts it** (measured: `grep -n storageWrites tests/test_live_portal.py
+| grep -ci assert` → **0**, while the file's 14 nodes pass). Iteration 10 measured the deployed page
+green on all five secret-hygiene clauses with six negative controls detected, so the PRD row is
+answered **today**; nothing keeps it answered tomorrow, and nothing runs the probe automatically.
+*Shape of the fix, not a decision:* assert `storageWrites == []` in the two nodes that already
+receive it, and give the harness's fake `document` a recording `cookie` accessor so the surface the
+static check names is the surface the runtime check can see.
+
 **Coverage the cycle must close, because it is what let all of this ship green.** Nothing in the
 suite asserts anything about *what a canonical speaker was born from*. Add a red-before /
 green-after node per decision, and one that fails if a birth can be minted from a span with no
@@ -213,18 +291,33 @@ embedded evidence.
 
 **Gate.** Full Swift/Python; `birth-floor-probe.py` re-run against a fresh F2, requiring
 references per real voice at or below the fixture's 1.40 and a non-zero count of published
-corrections; then one further reviewed no-ff merge through `merge-keeper.sh` (advance
+corrections; for (d), a node that fails when the two poll constants disagree, plus `F1` re-run with
+the fetch p95s reported; then one further reviewed no-ff merge through `merge-keeper.sh` (advance
 `expected_main` **in-script**, never by CLI override), push, redeploy, and re-run F1 and F2.
+
+**If you want to grant only part of this, the order by cost is (e), (d), (b), (c), (a).** (e) and
+(d) are each a handful of lines and each closes or protects a PRD acceptance clause; (a) is the one
+that needs three decisions from you before any patch.
 
 ## 5. Not in this ask, and why
 
-- **Candidate 64** (the decoder-RTF clause measures per-call overhead on a sub-100-ms span) and
-  **F1's latency RED** are *gate definitions*. They need a ruling from you, not a fix from the
-  loop, and they are independent of everything above.
+- **Candidate 64** — the decoder-RTF clause measures per-call overhead on a sub-100-ms span — is a
+  *gate definition* and needs a ruling from you, not a fix from the loop. Three honest answers exist
+  and the loop must not pick: **(a)** rule the clause per-span as written and accept that a meeting
+  with micro-endpoints fails it; **(b)** rule it on decode *throughput* — total decode wall over
+  meeting wall, which is what "the decoder keeps up" means; **(c)** keep per-span with a stated floor
+  duration. Measured on the **same deployed code the same day**: F1 gave p95 **2.365** over 52 spans
+  while F2 gave **0.577** over 171, with the same micro-spans present in both — at n=171 they fall
+  below p95, at n=52 one of them *was* p95. F1's aggregate was **17.09 s of decode over an 86 s
+  meeting (0.20, 5× headroom)**. So today the clause's verdict is a function of the meeting's span
+  count rather than of whether the decoder kept up, which is (b)'s argument made by measurement.
+  **Do not read that as the loop choosing (b)** — it is the operator's ruling, and the reasoning must
+  be recorded before any reducer change.
 - **Candidate 58** (the replay evaluator calls a declared absence an invalid measurement) is real
   but costs nothing today.
 - **The F2 system-audio-denied variant** would spend a TCC grant. The loop will not attempt it.
-- **F1/F2's "two speakers" half** is bounded by m4mbp's built-in microphone, measured five times.
+- **F1/F2's "two speakers" half** is bounded by m4mbp's built-in microphone, measured **six** times
+  now (the sixth in F3, against two MacStudio deliveries at volume 70).
 
 ## 6. Honest limits of the evidence above
 
@@ -240,3 +333,12 @@ corrections; then one further reviewed no-ff merge through `merge-keeper.sh` (ad
    though the coverage is not.
 4. **Iteration 5's accuracy column is a model collapsing, not a forecast.** It holds the live
    labels healthy while fragmenting only the album; a real meeting fragments both together.
+5. **§4(d)'s 500.0 ms is arithmetic on a contract term, not a re-run.** It is exact for the
+   *analytic* half by construction — the term is additive and the identity was verified to nine
+   decimal places on real data — but it does **not** model a fetch p95 that rises under twice the
+   request rate. The remedy is only real once F1 is re-run and the two fetch p95s hold; if they rise,
+   the same report says so immediately, which is why the re-run is in the gate.
+6. **§4(d) deliberately leaves the larger term alone.** Committed latency is **2674 / 2680 ms** of
+   the ~4.1 s, and that is what remedy 1 (the span cap) attacks. This ask does not touch it, so it
+   buys the 4000 ms gate back and no more — a future latency regression in the committed half would
+   consume the +349.2 ms margin.

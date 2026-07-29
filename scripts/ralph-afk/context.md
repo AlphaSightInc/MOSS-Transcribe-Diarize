@@ -58,7 +58,10 @@
 > paragraph per open item plus the Phase N decisions list, which is load-bearing by construction,
 > while "Read before…" holds **three overlapping sweep blocks** (session-end, at-F2's-fragmentation,
 > cadence) that each supersede part of the one before and could be one block with three tables.
-> **Headroom: ~43 KB below the 256 KB cap, five to nine iterations at the measured drift.**
+> **Headroom: ~36 KB below the 256 KB cap, four to seven iterations at the measured drift** — updated
+> in iteration 15, which added 6.1 KB (the latency-remedy block into "Read before…", now ~39 KB and
+> still the eighth pass's target, plus candidate 68). *The per-section numbers above are the
+> seventh pass's; re-measure them at the eighth rather than trusting this line.*
 
 ## Ground
 
@@ -156,7 +159,7 @@ rather than RED-and-current: F1 and F3 have never run against Phase M.)**
 | Signed app installed | GREEN — and "DR unchanged across a rebuild" proven *across an actual rebuild* in K5c |
 | Permissions granted | **GREEN** — both TCC grants `auth_value=2`; `mtd-capture status` reported both lanes `capturing` through a 672-frame meeting (K5d) |
 | Rollback rehearsed and recorded | GREEN (F4a) |
-| 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). Full block retired to progress.txt with the fourth compaction. **RE-RUN ON THE DEPLOYED `7a4f59c` (iteration 30, Phase N gate step (d) first half): rc=3, five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). |
+| 60 s canary (F1) | **GREEN on `42abc5a`** (iteration 6, `live-canary-clauses.py` rc=0): user-visible p95 **3909.3 ms** ≤ 4000 **and qualified**, decoder p95 RTF **0.911** < 1, 329 published == 329 accepted all 200, 370/370 view polls 200, no lane fault. **One half is NOT certified:** "two speakers" were both on the *system* lane — the microphone carried room noise only (candidate 51's recorded harness limit). Full block retired to progress.txt with the fourth compaction. **RE-RUN ON THE DEPLOYED `7a4f59c` (iteration 30, Phase N gate step (d) first half): rc=3, five clauses GREEN and TWO RED** — user-visible p95 **4150.8 ms** (miss by 150.8 ms, 3.8 %) and decoder p95 RTF **2.365**, the latter carried entirely by **3 spans shorter than 0.1 s**. See the **F1 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction). **ITERATION 15 PRICED THE LATENCY RED: the plan's own second ordered remedy (0.5 s poll) subtracts exactly 500.0 ms, taking it to 3650.8 ms — GREEN with +349.2 ms margin — and touches no domain-contract value.** The RTF RED (candidate 64) is untouched by it. Both need the operator; see the latency-remedy block and candidate 68. |
 | 300 s certification (F2) | **GREEN ON THE DEPLOYED `7a4f59c`** (run `20260729-094359` iteration 1, `live-canary-clauses.py --user-visible-gate-ms 6000 --interrupt-report` rc=0): six GREEN, no RED, no UNDECIDED. user-visible p95 **4078.6 ms** ≤ 6000 **and qualified**, decoder p95 RTF **0.577** < 1, **1261 published == 1261 POST /frames, and every one of the session's 4766 logged requests answered 200**, a **5.090 s** interruption seen by the client and survived, outbox 0 → **5** → 0. (Was GREEN on `42abc5a` in iteration 11 of the previous run: 3859.6 ms, RTF 0.670, 1257 == 1257 — that block is archived in progress.txt.) **One half is NOT certified and was deliberately not attempted:** the separate mic-granted / system-audio-denied run, which would spend a TCC grant. See the **F2 on Phase N** row in the gates index (the narrative block is retired to progress.txt with the fifth compaction) |
 | 16-minute soak (F3) | **RE-RUN ON THE DEPLOYED `7a4f59c` (run `20260729-094359` iteration 12) — 5 GREEN, 1 RED, rc=3, and it is now the current F3 evidence.** 17/17 full minutes, 648 spans, 381/381 portal polls 200, view authority 200 at age **903.6 s and 1023.0 s**, user-visible p95 **4106.5 ms** ≤ 6000 **qualified and `timelineIntact` true**, decoder p95 RTF **0.568**, **no lane fault at all**, clean drain `retained=0`. The RED is **candidate 60**, unchanged and expected — the Mac client never calls `POST …/stop`, so the post-stop view check answered 200. **The run also falsified candidate 65's headline: the CADENCE sweep published three corrections mid-meeting.** See the **F3 on Phase N** row in the gates index and the cadence-sweep block below. (The prior `42abc5a` run — iteration 9 of run `20260729-025318`, same 5/1 shape — is superseded as evidence; its row is kept in the gates index for the before/after deltas.) |
 | Secret hygiene | static half green; run-time half green in F1, F2 and F3 as far as those runs went. **The *browser storage* half is now MEASURED ON THE DEPLOYED PAGE — iteration 10, `portal-storage-probe.py` rc=0, five clauses GREEN, six negative controls all detected.** It had never been measured at all: `leak-scan.sh` never scans the portal (iteration 7), the tracked static assertion (`tests/test_live_portal.py:217-219`) reads a **locally rendered** page, and the harness's `storageWrites` recorder (`:618,657,737,812,841`) has **no assertion anywhere in the suite** — dead instrumentation a runtime write would pass. See the portal-storage block below. **What is still open is the tracked *regression*, not the evidence — candidate 66** |
@@ -238,8 +241,20 @@ carry is in the retired-evidence index below).**
   the record was wrong twice and is now corrected.* **The surviving conclusions live in exactly two
   places and nowhere else** - the numbered entries for candidates 55, 60 and 65, and Phase N decisions
   19 and 20. Read those, never a summary of them.
+- **F1's LATENCY RED IS PRICED, AND THE PLAN'S OWN SECOND REMEDY CLOSES IT** `[iteration 15]`. The
+  gated number is `committedP95 + portalCycleMS + snapshotP95 + eventsP95`, verified to **0.000000000
+  ms residual** on F3's real report, so the **portal poll is a whole 1000.0 ms (24.4 %)** of it and
+  halving it subtracts **exactly 500.0 ms** — F1 **4150.8 → 3650.8** against the 4000 gate, **3.3×**
+  the 150.8 ms miss. Remedy 1 (2.0 s span cap) moves a **domain-contract** value and remedy 2 does
+  not, so the plan lists them contract-expensive first. The remedy carries its own defect, filed as
+  **candidate 68**: the 1000 ms lives in two constants in two languages with **nothing tying them**,
+  so moving the Swift one alone would improve a PRD number by 500 ms with no change to what a human
+  sees. See the latency-remedy block below. **The authorization request is now current** and carries
+  this as item (d), candidate 66 as (e), and the cost order to grant partially.
 - **THE ROUTING RULE - what needs the operator and what does not.** **Needs an authorization:**
-  candidates 55, 58, 60, 64, 65 and **66**; F1's two REDs; the F2 system-audio-denied variant (producing it
+  candidates 55, 58, 60, 64, 65, **66** and **68**; F1's two REDs — which are **two different items with
+  two different answers**, the RTF one being candidate 64's gate-definition ruling and the latency one
+  being the priced remedy above; the F2 system-audio-denied variant (producing it
   means taking a TCC grant away from `com.alphasight.moss.capture`, i.e. spending the one input this
   loop is forbidden to ask for again); F1/F2's "two speakers" half (blocked by candidate 51's
   **measured** hardware limit - m4mbp's built-in microphone cannot hear a second voice across the
@@ -424,6 +439,39 @@ the gate. `timelineIntact` false is deliberately **not** a disqualifier; the cav
 the verdict string instead, because the surviving samples are real but cover a **prefix**. A missing
 `latency-final.json` is UNDECIDED, never silence. *The rule behind all of it, now paid for four
 times:* **a verdict word must name the thing it decides.**
+
+**WHAT THE GATED LATENCY NUMBER IS MADE OF, AND WHAT THE PLAN'S SECOND ORDERED REMEDY IS WORTH —
+run `20260729-094359` iteration 15. READ THIS BEFORE RE-RUNNING F1 OR ARGUING ABOUT ITS LATENCY
+RED.** `scripts/ralph-afk/latency-remedy-probe.py`, rc=0, **14/14** checks, offline: one real
+`latency-final.json` (iteration 12's F3) plus two tracked source constants. No host, no session, no
+product change.
+
+`userVisibleMS = committedP95 + portalCycleMS + snapshotFetchP95 + eventsFetchP95` — **residual
+0.000000000 ms** on F3's real report (2674.0095 + 1000 + 241.501792 + 191.003041 = 4106.514333).
+So the **portal cycle is a whole 1000.0 ms, 24.4 %** of the gated number, additive, and independent
+of the two measured fetch p95s. Halving the poll subtracts **exactly 500.0 ms**:
+
+| run | measured | at a 0.5 s poll | gate | now → then |
+| --- | --- | --- | --- | --- |
+| **F1** on `7a4f59c` | **4150.8** | **3650.8** | 4000 | **RED → GREEN**, margin **+349.2 ms** |
+| F2 on `7a4f59c` | 4078.6 | 3578.6 | 6000 | GREEN → GREEN (+2421.4) |
+| F3 on `7a4f59c` | 4106.5 | 3606.5 | 6000 | GREEN → GREEN (+2393.5) |
+
+F1 missed by 150.8 ms; the remedy is worth **3.3×** the miss.
+1. **The plan lists its two remedies contract-expensive first.** Remedy 1 (2.0 s span cap) moves
+   `hard_cap_samples` 40000, which **prd.md's own Constraints declare a domain-contract value**, so
+   the loop cannot touch it under any reading. Remedy 2's portal poll appears **nowhere** in that
+   list — checked term by term, and note *"pump interval 0.5 s"* in that list is the **client's frame
+   tick** (`frameQuantisationMS` 500), a different quantity that happens to share the number.
+2. **The remedy's own trap is candidate 68:** the 1000 ms lives in `live_portal.py:146`
+   (`pollDelayMs`) *and* `CaptureLatencyProbe.swift:18` (`portalCycleSeconds`), and nothing ties them,
+   so moving the Swift one alone would take 500 ms off a PRD number with no change to what a human
+   sees. **Both move together or neither moves.**
+3. *The honest limit:* this is arithmetic on the **analytic** half, exact by construction, and it
+   does **not** model a fetch p95 rising under twice the request rate (F3: 381 polls → ~760). The
+   same report exposes that immediately, so a re-run of F1 is the gate, not the arithmetic.
+4. *Deliberately untouched:* the committed half is **2674 / 2680 ms** of the ~4.1 s and is what
+   remedy 1 attacks. This buys the 4000 ms gate back and no more.
 
 **F1 was GREEN on `42abc5a` as well (run `20260729-025318` iteration 6, rc=0)** - user-visible p95
 **3909.3 ms** <= 4000 and qualified (`sufficientSamples` true, n=44), decoder p95 RTF **0.911**,
@@ -1836,9 +1884,32 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     at n=171 they sit below p95, at F1's n=52 one of them *was* p95. So the clause's verdict is a
     function of the meeting's span count, not of whether the decoder kept up — which is (b)'s
     argument, made by measurement rather than by preference. The decision is still the operator's.
+    **ITERATION 15: 64 IS F1's RTF RED AND IS NOT ITS LATENCY RED.** The two were carried as one line
+    in the routing rule and they have different answers — F1's *user-visible latency* RED is now
+    **priced** and is answerable by the plan's own second ordered remedy (see the latency-remedy block
+    above and candidate 68), while 64 is untouched by that remedy and stays a gate-definition ruling.
 62. **The reducer asked a certification run the soak's questions.** `[done — iteration 11]`. See
     "THE REDUCER STOPPED ASKING A CERTIFICATION THE SOAK'S QUESTIONS" in progress.txt. Loop tooling; it made
     F2 ungreenable for candidate 60, a defect outside F2's clause list.
+68. **The user-visible latency gate's analytic half is an unenforced duplicate of the portal's poll
+    cadence — so the gate can be moved 500 ms without changing what a human sees.** `[open, new —
+    run `20260729-094359` iteration 15; found while pricing F1's latency RED. Tracked product source
+    in **two** languages; **needs its own authorization**, and it is item (d) of the authorization
+    request.]` `CaptureLatencyProbe.swift:328` computes
+    `renderBoundMS = portalCycleSeconds*1000 + snapshotP95 + eventsP95`, and
+    `userVisibleMS = committedP95 + renderBoundMS` — **verified to 0.000000000 ms residual** on F3's
+    real `latency-final.json` (`portalCycleMS` 1000, snapshot p95 241.501792, events p95 191.003041,
+    render 1432.504833, committed 2674.0095, user-visible 4106.514333). The 1000 ms term asserts what
+    the **server's** portal does, and the server's own value is `live_portal.py:146`
+    `const pollDelayMs = 1000`. **Nothing ties the two:** 0 hits for `pollDelayMs` in `tests/`, 0
+    cross-language references either way, and the only assertion on the term
+    (`CaptureControllerTests.swift:5699` `XCTAssertEqual(report.portalCycleMS, 1_000)`) compares the
+    Swift constant **to itself**. Two consequences, and the second is the one that matters: if the
+    portal's cadence ever moves alone the gate silently mismeasures by the difference; and a PRD
+    acceptance number can be improved by **500 ms** by editing one Swift constant, with **no change
+    to what a human sees**. *Shape of the fix, not a decision:* a node that fails when the two
+    disagree — worth having whatever is decided about the cadence itself, because today the clause is
+    measured through a duplicate nothing enforces.
 66. **The portal's browser-storage hygiene has evidence but no regression.** `[open, new — run
     `20260729-094359` iteration 10; the **evidence** half is DONE, see the portal-storage block
     above]`. `tests/test_live_portal.py` builds a recording `localStorage`/`sessionStorage` Proxy,

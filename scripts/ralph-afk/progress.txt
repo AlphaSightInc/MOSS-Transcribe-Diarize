@@ -26095,3 +26095,168 @@ LIVE sweep, not an inert one, which is what this pass corrected) and re-running 
 certification run.  Do NOT re-run F1 hoping for a different latency verdict; its
 two REDs are candidate 64 and the plan's ordered remedies, both the operator's
 decision.
+
+================================================================================
+RUN 20260729-094359 ITERATION 15 - F1's LATENCY RED IS PRICED, AND THE PLAN'S
+OWN SECOND REMEDY CLOSES IT WITH 3.3x THE MARGIN - BUT THE GATE IT MOVES IS
+MEASURED THROUGH A DUPLICATE NOTHING ENFORCES
+================================================================================
+
+TARGET.  Repair and complete the operator-facing authorization request
+(scripts/ralph-afk/authorization-request-55-60-65.md), and price the one open
+PRD-clause RED that had never been given a number.
+
+Chosen after re-reading prd.md's tail FIRST per the standing rule: last commit
+touching it is still 0456177, seven amendments plus the ADR-0002 supersession,
+nothing new, and no operator commit since iteration 14 (git log -8 checked).  So
+every open product item still needs an authorization that does not exist, and the
+loop's ONLY lever on six of them is that request document - which iteration 14's
+own compaction had just proved was carrying a claim the loop measured wrong
+twice.  Its Sec.1 ONE-SENTENCE FINDING - the sentence an operator acts on - still
+read "...which is why neither half of Phase N step 3 publishes a correction on
+the deployed system", falsified by iteration 7 (session-end, 19 of 31 spans) and
+again by iteration 12 (cadence, 3 revisions mid-meeting).  The seventh
+compaction found that claim in a "do not re-argue" decision and in a sequencing
+premise; this iteration found it in the OUTGOING artefact, which is worse,
+because working memory is re-read by the loop and this document is read once, by
+someone who cannot check it.
+
+WHAT WAS MEASURED (the new half, and it was not the plan going in).
+
+  scripts/ralph-afk/latency-remedy-probe.py - rc=0, 14/14 checks, offline, no
+  host, no session, no product change.  Reads iteration 12's REAL
+  /tmp/i12-f3-evidence/ralph-soak/latency-final.json plus two tracked constants.
+
+  1. THE IDENTITY, verified to 0.000000000 ms residual on real data:
+       userVisibleMS = committedP95 + portalCycleMS + snapshotP95 + eventsP95
+       4106.514333  = 2674.0095   + 1000          + 241.501792 + 191.003041
+     So the portal poll is a WHOLE 1000.0 ms - 24.4 % - of the PRD's
+     user-visible latency number, additive and independent of the two measured
+     fetch p95s.
+
+  2. THE COUNTERFACTUAL.  Halving the poll subtracts EXACTLY 500.0 ms:
+       F1 on 7a4f59c   4150.8 -> 3650.8  vs gate 4000   RED -> GREEN (+349.2)
+       F2 on 7a4f59c   4078.6 -> 3578.6  vs gate 6000   GREEN -> GREEN
+       F3 on 7a4f59c   4106.5 -> 3606.5  vs gate 6000   GREEN -> GREEN
+     F1 missed by 150.8 ms.  The remedy is worth 3.3x the miss.
+
+  3. THE PLAN LISTS ITS TWO REMEDIES CONTRACT-EXPENSIVE FIRST.  prd.md answers a
+     latency miss with "the plan's ordered remedies (2.0 s span cap, then 0.5 s
+     poll interval), never by relaxing the gate."  Remedy 1 moves
+     hard_cap_samples 40000, which prd.md's OWN Constraints declare a
+     domain-contract value to be "implemented exactly" - so the loop cannot touch
+     it under any reading.  Remedy 2's portal poll appears NOWHERE in that list,
+     checked term by term.  Note the near-miss the check exists to catch: the
+     list DOES name "pump interval 0.5 s", which is the CLIENT'S FRAME TICK
+     (frameQuantisationMS 500), a different quantity that happens to share the
+     number.  Reading those two as the same value would have made the cheap
+     remedy look contractual and left the loop with nothing to offer.
+
+  4. THE TRAP, FILED AS CANDIDATE 68.  That 1000 ms lives in TWO constants in TWO
+     languages - live_portal.py:146 `const pollDelayMs = 1000` and
+     CaptureLatencyProbe.swift:18 `portalCycleSeconds = 1.0` - and NOTHING TIES
+     THEM.  Measured: 0 hits for pollDelayMs in tests/, 0 cross-language
+     references either way, and the ONLY assertion on the term
+     (CaptureControllerTests.swift:5699, XCTAssertEqual(report.portalCycleMS,
+     1_000)) compares the Swift constant TO ITSELF.  Two consequences, and the
+     second is the one that matters: if the portal's cadence ever moves alone the
+     gate silently mismeasures by the difference; and a PRD acceptance number can
+     be improved by 500 ms by editing ONE Swift constant with NO change to what a
+     human sees.  That is relaxing the gate while looking like a remedy, and
+     nothing in either suite would notice.
+
+FILES TOUCHED.  scripts/ralph-afk/latency-remedy-probe.py (new, tracked loop
+tooling), scripts/ralph-afk/authorization-request-55-60-65.md,
+scripts/ralph-afk/context.md, scripts/ralph-afk/progress.txt.  NO product source,
+NO test, NO ops, NO host, NO session, NO TCC click, no authorization spent.
+`git diff --name-only 7a4f59c HEAD -- ':!scripts/ralph-afk'` empty before and
+after, so every offline probe still speaks for the deployed service.
+
+THE REQUEST DOCUMENT, REPAIRED IN PLACE RATHER THAN CORRECTED ON TOP.
+Iteration 7's correction had been STACKED as a banner above a Sec.1 that still
+asserted the thing being withdrawn - which is exactly how a reader ends up acting
+on the headline.  This pass applies every correction to the body and keeps ONE
+four-row "what has changed since this was written" table for the operator.
+ - Sec.1 rewritten.  The finding that survives is stronger and narrower: all 49
+   corrections across FOUR deployed swept meetings are S00 -> Sxx fill-ins and NOT
+   ONE is a reassignment, so the fourteen labels minted below the evidence floor
+   are unreachable by any sweep at any cadence.
+ - Sec.3b counts brought current (46/three meetings -> 49/four), with iteration
+   12's F3 soak added: 16 canonicals for 2 voices, saturated t+138.1 s of 1029 s,
+   3 of 122 abstained spans repaired.
+ - Sec.4(b) re-titled to candidate 65's corrected title and its premise fixed:
+   the ask shrinks from "make the sweep work" to "make it say what it did",
+   because F2 published 0 over five deadlines and F3 published 3 over ~17 and
+   NEITHER RUN'S SILENT DEADLINES SAID SO ANYWHERE.
+ - Sec.4(d) NEW - the latency remedy above, priced, with its trap and its cost
+   (381 polls -> ~760) stated rather than buried.
+ - Sec.4(e) NEW - candidate 66, two asserts and one accessor, the cheapest item.
+ - Sec.5 keeps candidate 64 as a gate-definition ruling and now names its three
+   options with the F1-vs-F2 same-day contrast, so it can be ruled without
+   reading context.md.  "Two speakers" limit updated to six measurements.
+ - Sec.6 gains two honest limits: the 500 ms is arithmetic on the ANALYTIC half
+   and does not model a fetch p95 rising at double the request rate; and the
+   committed half (2674/2680 ms) is deliberately untouched, so this buys the
+   4000 ms gate back and no more.
+ - A partial-grant order by cost: (e), (d), (b), (c), (a).
+
+VALIDATION COMMAND AND RESULT.
+  python3 scripts/ralph-afk/latency-remedy-probe.py   -> rc=0, ALL CHECKS PASSED
+    14 checks in 4 groups: the identity on real data (3), the counterfactual (1),
+    the two constants and the four ways nothing ties them (6), and the
+    domain-contract membership of each term (5, including the two negative
+    controls 'poll' and 'portal' and the pump-interval near-miss).
+  Fence re-parsed after the context.md edits: 1 bash block, 490 lines, bash -n
+    rc=0.
+  context.md 218689 -> 224818 B (+6129); headroom line updated from ~43 KB to
+    ~36 KB so the eighth pass's trigger stays honest.
+
+WHAT I LEARNED.
+ 1. A STALE CLAIM IS WORST IN THE ARTEFACT THAT LEAVES THE LOOP.  The seventh
+    compaction ranked the places staleness hides - prose, then commands, then a
+    "do not re-argue" decision, then a sequencing premise.  There is one rung
+    above all of them: a document written FOR SOMEONE ELSE.  Working memory is
+    re-read every iteration and self-corrects; an outgoing request is read once,
+    by a reader who has no way to check it, and its Sec.1 is the sentence they
+    act on.  Corrections must be applied to the body - a banner above a falsified
+    headline leaves the headline doing the work.
+ 2. "NEEDS THE OPERATOR" IS NOT ONE STATE, AND CARRYING IT AS ONE COST THIS LOOP
+    A PRICE IT COULD HAVE COMPUTED FIVE ITERATIONS AGO.  "F1's two REDs" sat in
+    the routing rule as a single line since iteration 30 of the previous run.
+    They are two different items: the RTF one genuinely needs a gate-definition
+    ruling, while the latency one had a remedy NAMED IN THE PRD ITSELF and merely
+    unpriced.  A batched blocker hides the members that were only one measurement
+    from being actionable.  Split them in the routing rule when they are filed.
+ 3. THE CHEAPEST REMEDY WAS LISTED SECOND, AND ONLY CHECKING THE CONTRACT SHOWED
+    IT.  The plan's ordering runs contract-expensive first.  Nothing was wrong
+    with the plan - it ordered by expected effect - but "which remedy may the loop
+    even touch" is a different question from "which works best", and it is
+    answered by the Constraints list, not by the plan.
+ 4. AN ANALYTIC GATE TERM IS A CLAIM ABOUT ANOTHER PROCESS, AND IT NEEDS A TEST
+    ACROSS THE BOUNDARY.  The one assertion guarding this term compares the
+    constant to itself and has always passed.  This is decision 16's rule
+    ("a threshold recorded out of a document is a claim about the document") one
+    layer up: a constant recorded out of ANOTHER LANGUAGE'S SOURCE is a claim
+    about that source, and only a cross-boundary node makes it a fact.
+
+BLOCKERS.  None new.  Nothing this iteration needed an authorization, a host or
+an operator input.  What remains open is unchanged in shape and one item longer:
+candidates 55, 58, 60, 64, 65, 66 and now 68 all need an amendment prd.md does not
+carry.  Phase N step 4 (batch Tier-B unification) remains the one open product
+item needing no new authorization.
+
+EVIDENCE PATHS.  scripts/ralph-afk/latency-remedy-probe.py (tracked; re-runnable,
+offline, ~1 s), /tmp/i15-probe-out.txt (this run's full output),
+/tmp/i12-f3-evidence/ralph-soak/latency-final.json (the real report it reads),
+and the repaired scripts/ralph-afk/authorization-request-55-60-65.md.
+
+RECOMMENDED NEXT STEP.  The request is current and the loop has nothing further
+it can do on 55/58/60/64/65/66/68 without you.  Two things remain actionable
+without an operator: Phase N step 4 (batch Tier-B unification - ADR-0002's own
+fourth of four, covered by "Phase N remains authorized"), which is the larger and
+now the ONLY open product work, and the eighth compaction pass, due by roughly
+iteration 21 at the measured drift (~36 KB headroom) with "Read before any
+certification run" - now ~39 KB and holding three overlapping sweep blocks - as
+its named target.  Do NOT re-run F1 hoping for a different latency verdict: this
+iteration measured exactly what it would take, and it is a change the loop is not
+permitted to make.
