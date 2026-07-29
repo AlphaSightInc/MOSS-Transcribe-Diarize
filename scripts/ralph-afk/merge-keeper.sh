@@ -44,10 +44,25 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # null elapsed/RTF on canonical_processed rather than ending the meeting, P3 the real-seam
 # regressions driving the coordinator with a negative elapsed_sec, and P4 the sweep of every other
 # site that subtracted two time.time() readings and called the result a duration) authorizes
-# exactly one further merge, whose pre-merge main is therefore 77e0014. Advancing this default is a
-# reviewable diff on purpose: an EIGHTH merge still fails here, and a command-line
-# RALPH_MERGE_MAIN_BEFORE override would leave no record of why the guard was passed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-77e0014ac2a1eee1edb29b109024807e9489daa5}"
+# exactly one further merge, whose pre-merge main was therefore 77e0014 and which landed as 42abc5a.
+# The prd.md section "Phase N is SUPERSEDED by ADR-0002" (operator commit 0456177, 2026-07-29) is
+# what advances this line now. It does not create a new fix cycle: it re-shapes the ALREADY
+# AUTHORIZED Phase N of the sixth amendment into docs/adr/0002-two-tier-diarization-fingerprint-
+# album.md's form ("Phase N remains authorized. Take it in ADR-0002's shape, not the sixth
+# amendment's") and ends its "after Phase M's gate" sequencing, which Phase M's landed gate spent.
+# The Phase N source now on this branch is ADR-0002 steps 1-3 — the fingerprint album replacing
+# latest-span overwrite through the existing canonical_embedding hook (live_identity_album.py), the
+# calibrated matcher pair the album is measured at carried into the deployment manifest, the
+# retained-audio tape of ADR-0003 (live_tape.py, OFF unless a host declares a root), and the
+# retrospective sweep that re-matches the album against retained evidence and rewrites already-
+# published labels beside the transcript (live_identity_sweep.py). Its gate is ADR-0002's measured
+# acceptance, green at 1e1cf3f: >= 90-95 % live speaker accuracy (93.44 % mean / 92.18 % min against
+# overwrite's 72.02/55.68) and demonstrated live->file convergence (swept 99.26/98.48 with
+# residual_corrections 0). It authorizes exactly one further merge, whose pre-merge main is
+# therefore 42abc5a. Advancing this default is a reviewable diff on purpose: a NINTH merge still
+# fails here, and a command-line RALPH_MERGE_MAIN_BEFORE override would leave no record of why the
+# guard was passed.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-42abc5aec2d2ec6b8f72aa9af307a4e8ff4ef870}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
