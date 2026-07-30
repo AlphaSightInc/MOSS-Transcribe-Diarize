@@ -1,0 +1,247 @@
+"""Evidence-only live speaker scoring for the formal F-certification harness."""
+
+from __future__ import annotations
+
+import json
+import hashlib
+import math
+from pathlib import Path
+from typing import Any
+
+from .app.live_span_bounds import LIVE_SAMPLE_RATE, span_segments
+from .evaluation import Segment, calculate_speaker_accuracy
+
+CORPUS_ENV = "corpus.env"
+REFERENCE_JSONL = "speaker-reference.jsonl"
+FINAL_SNAPSHOT_JSON = "speaker-final.json"
+
+
+def load_reference_jsonl(path: str | Path) -> tuple[Segment, ...]:
+    source = Path(path)
+    try:
+        lines = source.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"reference is unreadable: {source}") from exc
+    segments = []
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"reference record {line_number} is not valid JSONL") from exc
+        segments.append(_reference_segment(record, line_number))
+    if not segments:
+        raise ValueError("reference must contain at least one segment")
+    return tuple(segments)
+
+
+def hypothesis_from_live_snapshot(
+    payload: Any,
+    *,
+    corpus_start_sample: int,
+    corpus_duration_sec: float,
+) -> tuple[Segment, ...]:
+    if (
+        not isinstance(payload, dict)
+        or not isinstance(payload.get("snapshot"), dict)
+        or not isinstance(payload["snapshot"].get("session"), dict)
+    ):
+        raise ValueError("live snapshot must contain snapshot.session")
+    committed = payload["snapshot"]["session"].get("committed")
+    if not isinstance(committed, list):
+        raise ValueError("live snapshot session committed must be a list")
+    if isinstance(corpus_start_sample, bool) or not isinstance(corpus_start_sample, int):
+        raise ValueError("corpus_start_sample must be an integer")
+    if not isinstance(corpus_duration_sec, (int, float)) or not math.isfinite(corpus_duration_sec):
+        raise ValueError("corpus_duration_sec must be finite")
+    if corpus_duration_sec <= 0:
+        raise ValueError("corpus_duration_sec must be positive")
+
+    hypothesis = []
+    for index, item in enumerate(committed):
+        if not isinstance(item, dict):
+            raise ValueError(f"committed item {index} must be an object")
+        start_sample = _required_sample(item, "start_sample", index)
+        end_sample = _required_sample(item, "end_sample", index)
+        if end_sample <= start_sample:
+            raise ValueError(f"committed item {index} has an invalid sample interval")
+        transcript = (
+            item.get("revised_transcript")
+            if item.get("revised_transcript") is not None
+            else item.get("transcript")
+        )
+        if not isinstance(transcript, str):
+            raise ValueError(f"committed item {index} transcript must be a string")
+        if not transcript:
+            continue
+        base = (start_sample - corpus_start_sample) / float(LIVE_SAMPLE_RATE)
+        for parsed in span_segments(transcript, sample_count=end_sample - start_sample):
+            start = max(0.0, base + parsed.start)
+            end = min(float(corpus_duration_sec), base + parsed.end)
+            if end > start:
+                hypothesis.append(
+                    Segment(start=start, end=end, speaker=parsed.speaker, text=parsed.text)
+                )
+    return tuple(hypothesis)
+
+
+def score_live_speaker_accuracy(
+    reference: tuple[Segment, ...] | list[Segment],
+    hypothesis: tuple[Segment, ...] | list[Segment],
+) -> dict[str, Any]:
+    if not reference:
+        raise ValueError("reference must contain at least one segment")
+    return calculate_speaker_accuracy(reference, hypothesis)
+
+
+def evaluate_live_speaker_evidence(evidence_dir: str | Path) -> dict[str, Any]:
+    directory = Path(evidence_dir)
+    metadata = _read_env(directory / CORPUS_ENV)
+    required = (
+        "CORPUS_AUDIO_SHA256",
+        "CORPUS_EXPECTED_AUDIO_SHA256",
+        "CORPUS_START_SAMPLE",
+        "CORPUS_DURATION_SEC",
+        "CORPUS_REFERENCE_SHA256",
+        "CORPUS_REFERENCE_SEGMENTS",
+    )
+    missing = [key for key in required if not metadata.get(key)]
+    if missing:
+        raise ValueError(f"corpus.env missing required fields: {', '.join(missing)}")
+    actual_audio_hash = metadata["CORPUS_AUDIO_SHA256"]
+    expected_audio_hash = metadata["CORPUS_EXPECTED_AUDIO_SHA256"]
+    if actual_audio_hash != expected_audio_hash:
+        raise ValueError(
+            f"corpus audio sha256 mismatch: actual {actual_audio_hash}, expected {expected_audio_hash}"
+        )
+
+    reference_path = directory / REFERENCE_JSONL
+    snapshot_path = directory / FINAL_SNAPSHOT_JSON
+    reference_hash = _sha256(reference_path, "reference")
+    if reference_hash != metadata["CORPUS_REFERENCE_SHA256"]:
+        raise ValueError(
+            "corpus reference sha256 mismatch: "
+            f"actual {reference_hash}, expected {metadata['CORPUS_REFERENCE_SHA256']}"
+        )
+    reference = load_reference_jsonl(reference_path)
+    expected_segments = _positive_int(metadata["CORPUS_REFERENCE_SEGMENTS"], "reference segments")
+    if len(reference) != expected_segments:
+        raise ValueError(
+            f"corpus reference segment count mismatch: actual {len(reference)}, "
+            f"expected {expected_segments}"
+        )
+    try:
+        snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ValueError(f"final live snapshot is unreadable: {snapshot_path}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError("final live snapshot is not valid JSON") from exc
+    start_sample = _non_negative_int(metadata["CORPUS_START_SAMPLE"], "corpus start sample")
+    duration = _positive_float(metadata["CORPUS_DURATION_SEC"], "corpus duration")
+    hypothesis = hypothesis_from_live_snapshot(
+        snapshot,
+        corpus_start_sample=start_sample,
+        corpus_duration_sec=duration,
+    )
+    result = score_live_speaker_accuracy(reference, hypothesis)
+    return {
+        **result,
+        "audio_sha256": actual_audio_hash,
+        "reference_sha256": reference_hash,
+        "reference_segments": len(reference),
+        "hypothesis_segments": len(hypothesis),
+        "corpus_start_sample": start_sample,
+        "corpus_duration_sec": duration,
+    }
+
+
+def _reference_segment(record: Any, line_number: int) -> Segment:
+    if not isinstance(record, dict):
+        raise ValueError(f"reference record {line_number} must be an object")
+    start = _required_number(record, "start", line_number)
+    end = _required_number(record, "end", line_number)
+    if end <= start:
+        raise ValueError(f"reference record {line_number} end must be greater than start")
+    speaker = _required_text(record, "speaker", line_number)
+    text = _required_text(record, "text", line_number)
+    return Segment(start=start, end=end, speaker=speaker, text=text)
+
+
+def _required_number(record: dict[str, Any], key: str, line_number: int) -> float:
+    value = record.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"reference record {line_number} field {key} must be a number")
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError(f"reference record {line_number} field {key} must be finite")
+    return number
+
+
+def _required_text(record: dict[str, Any], key: str, line_number: int) -> str:
+    value = record.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"reference record {line_number} field {key} must be non-empty")
+    return value
+
+
+def _required_sample(record: dict[str, Any], key: str, index: int) -> int:
+    value = record.get(key)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"committed item {index} {key} must be a non-negative integer")
+    return value
+
+
+def _read_env(path: Path) -> dict[str, str]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"corpus.env is unreadable: {path}") from exc
+    values = {}
+    for line in lines:
+        key, separator, value = line.partition("=")
+        if separator and key:
+            values[key] = value
+    return values
+
+
+def _sha256(path: Path, label: str) -> str:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError as exc:
+        raise ValueError(f"{label} is unreadable: {path}") from exc
+
+
+def _non_negative_int(value: str, label: str) -> int:
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise ValueError(f"{label} must be an integer") from exc
+    if number < 0:
+        raise ValueError(f"{label} must be non-negative")
+    return number
+
+
+def _positive_int(value: str, label: str) -> int:
+    number = _non_negative_int(value, label)
+    if number <= 0:
+        raise ValueError(f"{label} must be positive")
+    return number
+
+
+def _positive_float(value: str, label: str) -> float:
+    try:
+        number = float(value)
+    except ValueError as exc:
+        raise ValueError(f"{label} must be a number") from exc
+    if not math.isfinite(number) or number <= 0:
+        raise ValueError(f"{label} must be finite and positive")
+    return number
+
+
+__all__ = [
+    "evaluate_live_speaker_evidence",
+    "hypothesis_from_live_snapshot",
+    "load_reference_jsonl",
+    "score_live_speaker_accuracy",
+]

@@ -119,7 +119,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 1fcfea2 for the operator-directed declared-null RTF evaluator closeout. Candidate 58
 # is the same seam: coherent null timing is counted as declared unknown, while malformed timing
 # remains corrupt and fail-closed.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-1fcfea2a4f139dc1c0b6397fe41a70e3f37c8de0}"
+# Advanced to 99243ec for the operator-directed formal F-certification corpus cycle. This payload
+# binds the exact acquired_alphabet audio/reference provenance, captures the final live labels, and
+# makes duration-weighted speaker accuracy a visible reducer gate alongside the unchanged TTS run.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-99243ecb5dc21dd9ccc5e7a0afdf179f8cfbddf2}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
