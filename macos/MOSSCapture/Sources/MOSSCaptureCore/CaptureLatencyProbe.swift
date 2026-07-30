@@ -401,6 +401,7 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
     private let scheduler: CaptureSchedulerAdapter
     private let lock = NSLock()
     private var task: CaptureCancellation?
+    private var cursorSessionID: String?
     private var sinceVersion: Int?
     private var sinceSeq = 0
 
@@ -427,6 +428,7 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
     public func measure() throws -> CaptureLatencyReport {
         let current = status()
         lock.lock()
+        resetCursorsLocked(ifNeededFor: current.sessionID)
         if current.running, task == nil {
             task = scheduler.schedule(label: "moss.capture.latency") { [weak self] in
                 self?.poll()
@@ -465,6 +467,7 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
         }
 
         lock.lock()
+        resetCursorsLocked(ifNeededFor: current.sessionID)
         let requestedVersion = sinceVersion
         let requestedSeq = sinceSeq
         lock.unlock()
@@ -491,6 +494,15 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
             sinceSeq = max(sinceSeq, highestSeq)
             lock.unlock()
         }
+    }
+
+    private func resetCursorsLocked(ifNeededFor sessionID: String?) {
+        guard cursorSessionID != sessionID else {
+            return
+        }
+        cursorSessionID = sessionID
+        sinceVersion = nil
+        sinceSeq = 0
     }
 
     private struct ViewSession {
