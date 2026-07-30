@@ -87,7 +87,14 @@ class _StagedMix:
 class LiveCompatibilityMixer:
     """Transactional retained-v2-lane to mono-runtime compatibility mixer."""
 
-    def __init__(self):
+    def __init__(self, *, max_output_samples: int = LIVE_SAMPLE_RATE):
+        if (
+            not isinstance(max_output_samples, int)
+            or isinstance(max_output_samples, bool)
+            or max_output_samples <= 0
+        ):
+            raise ValueError("max_output_samples must be a positive integer.")
+        self._max_output_samples = max_output_samples
         self._cursor_ns: int | None = None
         self._lock = threading.RLock()
 
@@ -140,38 +147,56 @@ class LiveCompatibilityMixer:
         observed_active_lanes = tuple(
             lane for lane in active_lanes if retained_by_lane[lane]
         )
-        missing_active_lanes = tuple(
-            lane for lane in active_lanes if lane not in observed_active_lanes
-        )
-        if final and missing_active_lanes:
-            missing = sorted(
-                lane.value for lane in missing_active_lanes
-            )
-            raise LiveMixSourceMissingError(
-                "missing active source lane: " + ", ".join(missing)
-            )
-        if missing_active_lanes:
-            return None
-        if not active_lanes:
+        if not active_lanes or not observed_active_lanes:
             return None
 
+        # A last frame normally waits for its successor so capture timestamps, rather than
+        # nominal sample-rate arithmetic, seal its end. Once a peer has advanced beyond the
+        # bounded grace below, waiting is no longer safe: seal that tail nominally and make
+        # the missing interval an explicit zero-filled gap. This keeps one stalled lane from
+        # pinning the other forever while preserving ordinary one-frame arrival skew.
         intervals_by_lane = {
-            lane: self._sealed_intervals(retained, final=final)
+            lane: self._sealed_intervals(retained, final=True)
             for lane, retained in retained_by_lane.items()
-            if lane in active_lanes
+            if lane in observed_active_lanes
         }
-        if any(not intervals for intervals in intervals_by_lane.values()):
-            return None
 
         origin_ns = max(
             retained_by_lane[lane][0].frame.capture_timestamp_ns
-            for lane in active_lanes
+            for lane in observed_active_lanes
         )
         cursor_ns = origin_ns if self._cursor_ns is None else self._cursor_ns
-        safe_end_ns = (
-            max(intervals[-1].end_ns for intervals in intervals_by_lane.values())
-            if final
-            else min(intervals[-1].end_ns for intervals in intervals_by_lane.values())
+        if final:
+            safe_end_ns = max(
+                intervals[-1].end_ns for intervals in intervals_by_lane.values()
+            )
+        else:
+            sealed_frontiers = {
+                lane: self._sealed_frontier_ns(retained_by_lane[lane])
+                for lane in observed_active_lanes
+            }
+            leading_frontier_ns = max(sealed_frontiers.values())
+            all_lanes_observed = len(observed_active_lanes) == len(active_lanes)
+            strict_frontier_ns = (
+                min(sealed_frontiers.values()) if all_lanes_observed else cursor_ns
+            )
+            grace_ns = math.ceil(
+                self._max_output_samples
+                * _NANOSECONDS_PER_SECOND
+                / LIVE_SAMPLE_RATE
+            )
+            safe_end_ns = max(
+                strict_frontier_ns,
+                leading_frontier_ns - grace_ns,
+            )
+        safe_end_ns = min(
+            safe_end_ns,
+            cursor_ns
+            + math.ceil(
+                self._max_output_samples
+                * _NANOSECONDS_PER_SECOND
+                / LIVE_SAMPLE_RATE
+            ),
         )
         if safe_end_ns <= cursor_ns:
             return None
@@ -195,7 +220,7 @@ class LiveCompatibilityMixer:
                 lane_gaps[lane] = 0
                 lane_silent[lane] = sample_count
                 continue
-            intervals = intervals_by_lane[lane]
+            intervals = intervals_by_lane.get(lane, ())
             values, gaps, silent = self._render_lane(
                 intervals,
                 cursor_ns=cursor_ns,
@@ -284,16 +309,30 @@ class LiveCompatibilityMixer:
         sample_count: int,
     ) -> tuple[list[float], int, int]:
         values = [0.0] * sample_count
-        covered = [False] * sample_count
+        covered = bytearray(sample_count)
         silent_count = 0
         for interval in intervals:
             frame = interval.retained.frame
             decoded = () if frame.silent else self._decode_pcm16(frame.pcm)
-            for index in range(sample_count):
+            start_index = max(
+                0,
+                math.ceil(
+                    (interval.start_ns - cursor_ns)
+                    * LIVE_SAMPLE_RATE
+                    / _NANOSECONDS_PER_SECOND
+                ),
+            )
+            end_index = min(
+                sample_count,
+                math.ceil(
+                    (interval.end_ns - cursor_ns)
+                    * LIVE_SAMPLE_RATE
+                    / _NANOSECONDS_PER_SECOND
+                ),
+            )
+            for index in range(start_index, end_index):
                 timestamp_ns = self._grid_timestamp_ns(cursor_ns, index)
-                if timestamp_ns < interval.start_ns or timestamp_ns >= interval.end_ns:
-                    continue
-                covered[index] = True
+                covered[index] = 1
                 if frame.silent:
                     silent_count += 1
                     continue
@@ -305,6 +344,15 @@ class LiveCompatibilityMixer:
                 values[index] = self._interpolate(decoded, source_index)
         gap_count = sum(1 for seen in covered if not seen)
         return values, gap_count, silent_count
+
+    def _sealed_frontier_ns(
+        self,
+        retained: tuple[RetainedLiveV2Frame, ...],
+    ) -> int:
+        if len(retained) == 1:
+            return retained[0].frame.capture_timestamp_ns
+        sealed = self._sealed_intervals(retained, final=False)
+        return sealed[-1].end_ns
 
     @staticmethod
     def _decode_pcm16(pcm: bytes) -> tuple[float, ...]:
@@ -353,7 +401,14 @@ class LiveCompatibilityMixer:
 
 
 class LiveCompatibilityMixerRegistry:
-    def __init__(self):
+    def __init__(self, *, max_output_samples: int = LIVE_SAMPLE_RATE):
+        if (
+            not isinstance(max_output_samples, int)
+            or isinstance(max_output_samples, bool)
+            or max_output_samples <= 0
+        ):
+            raise ValueError("max_output_samples must be a positive integer.")
+        self._max_output_samples = max_output_samples
         self._mixers: dict[str, LiveCompatibilityMixer] = {}
         self._lock = threading.RLock()
 
@@ -362,7 +417,9 @@ class LiveCompatibilityMixerRegistry:
         with self._lock:
             if session_id in self._mixers:
                 raise ValueError(f"compatibility mixer {session_id} already exists.")
-            mixer = LiveCompatibilityMixer()
+            mixer = LiveCompatibilityMixer(
+                max_output_samples=self._max_output_samples
+            )
             self._mixers[session_id] = mixer
             return mixer
 

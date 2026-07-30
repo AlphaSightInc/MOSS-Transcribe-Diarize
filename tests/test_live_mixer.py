@@ -12,7 +12,6 @@ from moss_transcribe_diarize.app.live_mixer import (
     LiveCompatibilityMixer,
     LiveCompatibilityMixerRegistry,
     LiveMixIntegrityError,
-    LiveMixSourceMissingError,
 )
 from moss_transcribe_diarize.app.live_v2_session import LiveV2Session
 
@@ -383,10 +382,121 @@ def test_final_flush_zero_fills_bounded_tail_to_latest_sealed_frontier():
     assert max(abs(value) for value in _pcm_values(result.frame.pcm)[160:]) == 0
 
 
-def test_final_missing_source_fails_typed_without_mutating_source():
+def test_stalled_active_lane_is_gap_sealed_in_bounded_chunks_and_can_resume():
+    source = LiveV2Session(max_retained_samples=20_000)
+    mixer = LiveCompatibilityMixer(max_output_samples=160)
+    runtime = _Runtime()
+    for sequence in range(2):
+        timestamp_ns = sequence * 10_000_000
+        source.accept(
+            _frame(LiveLane.SYSTEM, sequence, timestamp_ns, 16_000, 160, 8_192)
+        )
+        source.accept(
+            _frame(LiveLane.MICROPHONE, sequence, timestamp_ns, 16_000, 160, 4_096)
+        )
+
+    first = mixer.admit_available("session-1", source, runtime, final=False)
+    assert first is not None
+    assert first.frame.sample_count == 160
+
+    stalled_results = []
+    for sequence in range(2, 8):
+        source.accept(
+            _frame(
+                LiveLane.SYSTEM,
+                sequence,
+                sequence * 10_000_000,
+                16_000,
+                160,
+                8_192,
+            )
+        )
+        result = mixer.admit_available("session-1", source, runtime, final=False)
+        if result is not None:
+            stalled_results.append(result)
+
+    assert stalled_results
+    assert all(result.frame.sample_count <= 160 for result in stalled_results)
+    assert any(
+        result.diagnostics.gap_samples[LiveLane.MICROPHONE] > 0
+        for result in stalled_results
+    )
+    stalled_snapshot = source.snapshot().to_dict()["lanes"]
+    assert stalled_snapshot["system"]["retained_samples"] < 20_000
+
+    source.accept(
+        _frame(
+            LiveLane.MICROPHONE,
+            2,
+            80_000_000,
+            16_000,
+            160,
+            4_096,
+            discontinuity=True,
+        )
+    )
+    mixer.admit_available("session-1", source, runtime, final=False)
+    source.accept(
+        _frame(
+            LiveLane.MICROPHONE,
+            3,
+            90_000_000,
+            16_000,
+            160,
+            4_096,
+        )
+    )
+    mixer.admit_available("session-1", source, runtime, final=False)
+    source.accept(
+        _frame(LiveLane.SYSTEM, 8, 80_000_000, 16_000, 160, 8_192)
+    )
+    mixer.admit_available("session-1", source, runtime, final=False)
+    source.accept(
+        _frame(LiveLane.SYSTEM, 9, 90_000_000, 16_000, 160, 8_192)
+    )
+    recovered = mixer.admit_available("session-1", source, runtime, final=False)
+
+    assert recovered is not None
+    assert recovered.frame.sample_count <= 160
+    assert recovered.diagnostics.silent_samples[LiveLane.MICROPHONE] == 0
+    assert recovered.diagnostics.gap_samples[LiveLane.MICROPHONE] == 0
+
+
+def test_final_flush_drains_a_one_lane_backlog_in_bounded_chunks():
+    source = LiveV2Session(max_retained_samples=20_000)
+    source.accept(_frame(LiveLane.MICROPHONE, 0, 0, 16_000, 160, 0, silent=True))
+    for sequence in range(8):
+        source.accept(
+            _frame(
+                LiveLane.SYSTEM,
+                sequence,
+                sequence * 10_000_000,
+                16_000,
+                160,
+                8_192,
+            )
+        )
+    mixer = LiveCompatibilityMixer(max_output_samples=160)
+    runtime = _Runtime()
+    chunks = []
+
+    while source.snapshot().to_dict()["lanes"]["system"]["retained_samples"]:
+        result = mixer.admit_available("session-1", source, runtime, final=True)
+        assert result is not None
+        chunks.append(result)
+
+    assert len(chunks) == 8
+    assert all(result.frame.sample_count == 160 for result in chunks)
+    assert sum(
+        result.diagnostics.gap_samples[LiveLane.MICROPHONE]
+        for result in chunks
+    ) == 7 * 160
+    assert source.snapshot().to_dict()["lanes"]["system"]["accounted_samples"] == 8 * 160
+
+
+def test_final_missing_source_is_gap_sealed_without_mutating_absent_lane():
     source = LiveV2Session(max_retained_samples=20_000)
     source.accept(_frame(LiveLane.SYSTEM, 0, 0, 48_000, 480, 8_192))
-    before = source.snapshot().to_dict()
 
     assert LiveCompatibilityMixer().admit_available(
         "session-1",
@@ -395,10 +505,14 @@ def test_final_missing_source_fails_typed_without_mutating_source():
         final=False,
     ) is None
 
-    with pytest.raises(LiveMixSourceMissingError):
-        LiveCompatibilityMixer().admit_available("session-1", source, _Runtime(), final=True)
+    result = LiveCompatibilityMixer().admit_available(
+        "session-1", source, _Runtime(), final=True
+    )
 
-    assert source.snapshot().to_dict() == before
+    assert result is not None
+    assert result.frame.sample_count == 160
+    assert result.diagnostics.gap_samples[LiveLane.MICROPHONE] == 160
+    assert source.snapshot().to_dict()["lanes"]["microphone"]["accounted_samples"] == 0
 
 
 def test_non_advancing_continuous_clock_fails_before_downstream_admission():

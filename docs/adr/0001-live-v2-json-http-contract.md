@@ -67,13 +67,27 @@ onto a shared 16 kHz mono grid, applies exact per-lane headroom and the
 registered soft limiter, then calls `LiveServiceRuntime.accept_frame`. Source
 lane prefixes are accounted only after successful mono admission.
 
-An explicitly failed active lane is distinct from a never-observed active lane.
-The mixer treats the failed lane as zero-valued input only for admission, so a
-sealed healthy peer can continue to the existing mono runtime. Failed-lane PCM
-is not mixed, failed samples remain failed rather than clean, and source-lane
-accounting still happens only after successful mono admission. A never-observed
-active lane continues to wait before final mixing and to fail closed at final
-mixing.
+An explicitly failed active lane remains distinct from a stalled or
+never-observed active lane. The mixer treats a failed lane as zero-valued input
+only for admission, so a sealed healthy peer can continue to the existing mono
+runtime. Failed-lane PCM is not mixed, failed samples remain failed rather than
+clean, and source-lane accounting still happens only after successful mono
+admission.
+
+For an active lane, ordinary cross-lane arrival skew waits for one bounded grace
+equal to `max_frame_samples / 16000`. Once the leading lane's sealed frontier
+exceeds that grace, the mixer nominally seals the lagging lane's last observed
+frame and represents the remaining interval as an explicit zero-filled gap.
+The healthy lane therefore keeps advancing without changing either lane's
+health, and a stalled lane can rejoin at its current timestamp using the
+existing discontinuity contract. Every staged mono frame is capped at
+`max_frame_samples`; `hard_cap_samples` remains unchanged.
+
+Final v2 drain repeats those bounded mixer stages under the caller's one stop
+deadline and yields to the event loop between chunks. It closes only after
+exact lane accounting. An exhausted deadline remains a typed unconsumed-frame
+409, and mono backpressure is a typed `v2_stop_backpressure` 429 rather than an
+uncaught 500.
 
 The OS-neutral capture-adapter seam remains the existing v2 frame/lifecycle
 boundary: lane, sequence, sample rate, first-sample timestamp, device epoch,
@@ -377,6 +391,10 @@ single-obligation mutation; they do not claim mutation review has run.
   future mixer. Clean stop requires exact accepted/accounted equality with zero
   failed, retained, or pending work. Abort and explicit expiry may discard a
   session with terminal accounting.
+- A stalled or never-observed active lane becomes zero-filled only after one
+  declared mixer-frame grace. This preserves wall-clock offsets and survivor
+  continuity; it does not relabel the lane as failed or hide the interval as
+  captured silence.
 - Clients can discover the v2 contract through the default-off descriptor and
   can fail with a stable machine-readable obsolete-client response.
 - JSON plus base64 is less efficient than binary transport, but keeps the MVP
