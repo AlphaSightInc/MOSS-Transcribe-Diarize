@@ -38,6 +38,15 @@ bounded admission rule restored its expected typed start failure.
 The throwaway `/tmp/moss-dual-tap-permission-probe.swift` was absorbed into
 `SystemAudioPermissionProbe.swift` and the app executable's child mode.
 
+## Probe-signal handshake hardening — 2026-07-30
+
+The original child waited 1.2 seconds before playing. Five M4MBP measurements put mute-tap first
+callback at 135–149 ms, leaving about 1.05 seconds of margin, but a fixed delay was still a race.
+The child now blocks on stdin after starting its audio engine. The parent writes one go byte only
+after the process-specific muted tap's `AudioDeviceStart` succeeds; mute-tap failure and
+cancellation close the helper without playing. The existing five-second helper timeout remains.
+Driver-seam tests pin both the successful ordering and the no-go failure path.
+
 ## App lifecycle finding
 
 The M4 operator also exposed a separate permission-workflow failure: System Settings correctly

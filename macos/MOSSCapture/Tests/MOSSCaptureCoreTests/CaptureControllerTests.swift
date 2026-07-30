@@ -2540,6 +2540,58 @@ final class CaptureControllerTests: XCTestCase {
         )
     }
 
+    func testSystemAudioPermissionProbeDriverSignalsHelperOnlyAfterMuteTapStarts() throws {
+        let trace = SystemAudioPermissionProbeDriverTrace()
+        let helper = RecordingSystemAudioPermissionProbeHelper(trace: trace)
+        let platform = RecordingSystemAudioPermissionProbePlatform(
+            trace: trace,
+            helper: helper
+        )
+        let driver = CoreAudioSystemAudioPermissionProbeDriver(platform: platform)
+
+        XCTAssertFalse(try driver.measure(cancelled: { false }))
+        XCTAssertEqual(
+            trace.values,
+            [
+                "global-tap-started",
+                "helper-started",
+                "process-object-ready",
+                "mute-tap-started",
+                "helper-go",
+                "observation-settled",
+            ]
+        )
+    }
+
+    func testSystemAudioPermissionProbeDriverDoesNotSignalHelperWhenMuteTapFails() throws {
+        let trace = SystemAudioPermissionProbeDriverTrace()
+        let helper = RecordingSystemAudioPermissionProbeHelper(trace: trace)
+        let platform = RecordingSystemAudioPermissionProbePlatform(
+            trace: trace,
+            helper: helper,
+            muteTapError: .deviceUnavailable("mute tap")
+        )
+        let driver = CoreAudioSystemAudioPermissionProbeDriver(platform: platform)
+
+        XCTAssertThrowsError(try driver.measure(cancelled: { false })) { error in
+            XCTAssertEqual(
+                error as? NativeCaptureError,
+                .deviceUnavailable("mute tap")
+            )
+        }
+        XCTAssertEqual(
+            trace.values,
+            [
+                "global-tap-started",
+                "helper-started",
+                "process-object-ready",
+                "mute-tap-started",
+                "helper-terminated",
+                "helper-waited",
+            ]
+        )
+    }
+
     func testLanePermissionCoordinatorKeepsLaneStateAndFencesRetiredAnswers() throws {
         let coordinator = NativeLanePermissionCoordinator()
         let gate = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
@@ -7256,6 +7308,104 @@ private final class RecordingSystemAudioPermissionProbeDriver:
 
     func release() {
         released.signal()
+    }
+}
+
+private final class SystemAudioPermissionProbeDriverTrace: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [String] = []
+
+    var values: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recorded
+    }
+
+    func append(_ value: String) {
+        lock.lock()
+        recorded.append(value)
+        lock.unlock()
+    }
+}
+
+private final class RecordingSystemAudioPermissionProbeHelper:
+    SystemAudioPermissionProbeHelperDriving
+{
+    private let trace: SystemAudioPermissionProbeDriverTrace
+    private(set) var isRunning = false
+    private(set) var terminationStatus: Int32 = 0
+    let processIdentifier: pid_t = 42
+
+    init(trace: SystemAudioPermissionProbeDriverTrace) {
+        self.trace = trace
+    }
+
+    func run() throws {
+        isRunning = true
+        trace.append("helper-started")
+    }
+
+    func sendGo() throws {
+        trace.append("helper-go")
+        isRunning = false
+    }
+
+    func terminate() {
+        trace.append("helper-terminated")
+        isRunning = false
+    }
+
+    func waitUntilExit() {
+        trace.append("helper-waited")
+    }
+}
+
+private final class RecordingSystemAudioPermissionProbePlatform:
+    SystemAudioPermissionProbePlatformDriving
+{
+    private let trace: SystemAudioPermissionProbeDriverTrace
+    private let helper: SystemAudioPermissionProbeHelperDriving
+    private let muteTapError: NativeCaptureError?
+
+    init(
+        trace: SystemAudioPermissionProbeDriverTrace,
+        helper: SystemAudioPermissionProbeHelperDriving,
+        muteTapError: NativeCaptureError? = nil
+    ) {
+        self.trace = trace
+        self.helper = helper
+        self.muteTapError = muteTapError
+    }
+
+    func installGlobalTap(
+        observation _: SystemAudioPermissionProbeObservation
+    ) throws -> AnyObject {
+        trace.append("global-tap-started")
+        return NSObject()
+    }
+
+    func makeHelper() throws -> SystemAudioPermissionProbeHelperDriving {
+        helper
+    }
+
+    func waitForProcessAudioObject(
+        pid _: pid_t,
+        cancelled _: @escaping @Sendable () -> Bool
+    ) throws -> AudioObjectID {
+        trace.append("process-object-ready")
+        return 84
+    }
+
+    func installMuteTap(processObject _: AudioObjectID) throws -> AnyObject {
+        trace.append("mute-tap-started")
+        if let muteTapError {
+            throw muteTapError
+        }
+        return NSObject()
+    }
+
+    func settleSignalObservation() {
+        trace.append("observation-settled")
     }
 }
 
