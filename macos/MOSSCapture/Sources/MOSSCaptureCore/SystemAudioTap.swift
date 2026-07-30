@@ -9,14 +9,10 @@ public struct SystemAudioTapSourceVector: Equatable, Sendable {
     public var realtimeCallbackWork: [String]
 }
 
-/// How System Audio Recording permission is resolved for the system lane.
+/// Fallback permission mapping for a system component without the production audio probe.
 ///
-/// macOS publishes neither a preflight nor a request API for it, and Screen Recording preflight
-/// is a different permission for a different lane. The user-initiated recording start that
-/// `SystemAudioTap.start(queue:)` performs — `AudioHardwareCreateProcessTap` followed by
-/// `AudioDeviceStart` on the transient aggregate — *is* the request. The lane therefore asks
-/// nothing at launch, prompts only from a user `start`, and learns its decision from that one
-/// attempt.
+/// `SystemAudioTap` uses `SystemAudioPermissionProbe`; this fallback remains for injected capture
+/// components that can report a typed start denial directly.
 enum SystemAudioPermission {
     /// Maps the outcome of one user-initiated recording start onto the lane's decision.
     /// A failure that is not permission-shaped leaves the decision unresolved (`nil`): the lane's
@@ -35,7 +31,7 @@ enum SystemAudioPermission {
     }
 }
 
-public enum NativeCaptureError: Error, Equatable {
+public enum NativeCaptureError: Error, Equatable, Sendable {
     case unavailable(String)
     case osStatus(String, Int32)
     case permissionDenied(String)
@@ -83,6 +79,7 @@ public final class SystemAudioTap {
     private let sampleRate: Int
     private let deviceEpoch: UInt64
     private let driver: SystemAudioTapDriver
+    private let permissionProbe: SystemAudioPermissionProbing
     private weak var healthSink: NativeLaneHealthFactSink?
     private var healthLane = CaptureLane.system
     private var healthGeneration: UInt64 = 0
@@ -97,16 +94,19 @@ public final class SystemAudioTap {
         self.sampleRate = sampleRate
         self.deviceEpoch = deviceEpoch
         self.driver = CoreAudioSystemTapDriver()
+        self.permissionProbe = SystemAudioPermissionProbe()
     }
 
     init(
         sampleRate: Int = 48_000,
         deviceEpoch: UInt64 = 0,
-        driver: SystemAudioTapDriver
+        driver: SystemAudioTapDriver,
+        permissionProbe: SystemAudioPermissionProbing = SystemAudioPermissionProbe()
     ) {
         self.sampleRate = sampleRate
         self.deviceEpoch = deviceEpoch
         self.driver = driver
+        self.permissionProbe = permissionProbe
     }
 
     public func makeTapDescription(name: String = "MOSS System Audio Tap") -> CATapDescription {
@@ -155,7 +155,20 @@ public final class SystemAudioTap {
         }
     }
 
+    func requestPermissionProbe(
+        _ completion: @escaping @Sendable (
+            Result<NativeLanePermissionFact, NativeCaptureError>
+        ) -> Void
+    ) {
+        permissionProbe.request(completion)
+    }
+
+    func cancelPermissionProbe() {
+        permissionProbe.cancel()
+    }
+
     public func stop() {
+        cancelPermissionProbe()
         setStopping(true)
         if isIOStarted() {
             driver.stopDevice(aggregateDeviceID)

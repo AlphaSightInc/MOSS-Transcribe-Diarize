@@ -31,7 +31,7 @@ enum NativeLaneDegradationCode: String, CaseIterable, Equatable {
     case healthFactsDropped = "macos_health_facts_dropped"
 }
 
-enum NativeLanePermissionFact: Equatable {
+enum NativeLanePermissionFact: Equatable, Sendable {
     case undetermined
     case granted
     case denied
