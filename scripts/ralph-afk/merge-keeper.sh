@@ -122,7 +122,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 99243ec for the operator-directed formal F-certification corpus cycle. This payload
 # binds the exact acquired_alphabet audio/reference provenance, captures the final live labels, and
 # makes duration-weighted speaker accuracy a visible reducer gate alongside the unchanged TTS run.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-99243ecb5dc21dd9ccc5e7a0afdf179f8cfbddf2}"
+# Advanced to 04e361b after the first real-corpus deployment exposed that the capture Mac's
+# dependency-free Python 3.9 reducer could not import the model package. The closeout keeps scoring
+# standard-library-only and records the measured RED without installing a model stack on the Mac.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-04e361b9bc55ccdca8a604f57f44a885061d7458}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

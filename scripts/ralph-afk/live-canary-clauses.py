@@ -47,6 +47,7 @@ Exit:   0 every clause it can decide is green   3 at least one is red
         2 nothing to read, or a clause could not be decided
 """
 import argparse
+import importlib.util
 import json
 import os
 import statistics
@@ -54,18 +55,26 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-# Running a tracked script by path puts its own directory, not the repository root, on sys.path.
-# Prefer the nearest enclosing source tree; a copied script uses the installed package.
-for parent in Path(__file__).resolve().parents:
-    if (parent / "moss_transcribe_diarize").is_dir():
-        sys.path.insert(0, str(parent))
-        break
-from moss_transcribe_diarize.live_speaker_accuracy import (
-    CORPUS_ENV,
-    FINAL_SNAPSHOT_JSON,
-    REFERENCE_JSONL,
-    evaluate_live_speaker_evidence,
-)
+def _load_live_speaker_module():
+    for parent in Path(__file__).resolve().parents:
+        source = parent / "moss_transcribe_diarize" / "live_speaker_accuracy.py"
+        if not source.is_file():
+            continue
+        spec = importlib.util.spec_from_file_location("_moss_fcert_live_speaker_accuracy", source)
+        if spec is None or spec.loader is None:
+            break
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        return module
+    raise ImportError("live speaker scorer requires its repository source checkout")
+
+
+_live_speaker = _load_live_speaker_module()
+CORPUS_ENV = _live_speaker.CORPUS_ENV
+FINAL_SNAPSHOT_JSON = _live_speaker.FINAL_SNAPSHOT_JSON
+REFERENCE_JSONL = _live_speaker.REFERENCE_JSONL
+evaluate_live_speaker_evidence = _live_speaker.evaluate_live_speaker_evidence
 
 SAMPLE_RATE = 16000        # canonical live sample rate  (domain contract)
 FRAME_SAMPLES = 8000       # live frame size, 0.5 s      (domain contract)

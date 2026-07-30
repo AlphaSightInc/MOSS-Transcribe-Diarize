@@ -135,37 +135,6 @@ def calculate_diarization(
     }
 
 
-def calculate_speaker_accuracy(
-    reference: tuple[Segment, ...] | list[Segment],
-    hypothesis: tuple[Segment, ...] | list[Segment],
-) -> dict[str, Any]:
-    """Duration-weighted speaker accuracy under the best label permutation.
-
-    The denominator is all reference speech, so missed or unlabelled speech cannot disappear
-    from the score. This is the interval form of the live identity acceptance scorer: canonical
-    label names are arbitrary, and the maximum-weight one-to-one mapping gives them credit only
-    for reference speech they overlap.
-    """
-
-    ref_speakers = _ordered_speakers(reference)
-    hyp_speakers = _ordered_speakers(hypothesis)
-    weights = _duration_speaker_weights(reference, hypothesis, ref_speakers, hyp_speakers)
-    mapping, matched_weight = _maximum_weight_assignment(ref_speakers, hyp_speakers, weights)
-    reference_duration = sum(segment.duration for segment in reference)
-    covered_duration = sum(_reference_overlap_seconds(segment, hypothesis) for segment in reference)
-    return {
-        "speaker_accuracy": _round_metric(_ratio(matched_weight, reference_duration)),
-        "reference_coverage": _round_metric(_ratio(covered_duration, reference_duration)),
-        "matched_speaker_seconds": _round_seconds(matched_weight),
-        "covered_reference_seconds": _round_seconds(covered_duration),
-        "reference_seconds": _round_seconds(reference_duration),
-        "hypothesis_seconds": _round_seconds(sum(segment.duration for segment in hypothesis)),
-        "reference_speaker_count": len(ref_speakers),
-        "hypothesis_speaker_count": len(hyp_speakers),
-        "speaker_mapping": mapping,
-    }
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Score a fine MOSS speaker fixture.")
     parser.add_argument("--manifest", required=True)
@@ -401,27 +370,6 @@ def _overlap_seconds(left: Segment, right: Segment) -> float:
     return max(0.0, min(left.end, right.end) - max(left.start, right.start))
 
 
-def _reference_overlap_seconds(reference: Segment, hypothesis: tuple[Segment, ...] | list[Segment]) -> float:
-    intervals = []
-    for segment in hypothesis:
-        start = max(reference.start, segment.start)
-        end = min(reference.end, segment.end)
-        if end > start:
-            intervals.append((start, end))
-    if not intervals:
-        return 0.0
-    intervals.sort()
-    covered = 0.0
-    current_start, current_end = intervals[0]
-    for start, end in intervals[1:]:
-        if start <= current_end:
-            current_end = max(current_end, end)
-        else:
-            covered += current_end - current_start
-            current_start, current_end = start, end
-    return covered + current_end - current_start
-
-
 def _text_coverage(
     reference: tuple[Segment, ...] | list[Segment],
     hypothesis: tuple[Segment, ...] | list[Segment],
@@ -497,10 +445,6 @@ def _round_metric(value: float) -> float:
     if math.isclose(value, 1.0, rel_tol=0.0, abs_tol=1e-12):
         return 1.0
     return round(value, 6)
-
-
-def _round_seconds(value: float) -> float:
-    return round(max(value, 0.0), 6)
 
 
 if __name__ == "__main__":

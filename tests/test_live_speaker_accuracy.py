@@ -93,6 +93,29 @@ def test_final_revised_transcript_is_scored_instead_of_stale_live_label() -> Non
     assert result["speaker_accuracy"] == 1.0
 
 
+def test_live_snapshot_parser_keeps_adjacent_segments_and_numeric_brackets_in_text() -> None:
+    snapshot = live_snapshot(
+        [
+            commit(
+                0,
+                32000,
+                "[0][S01]cost [42] dollars[1][1][S02]answer[2]",
+            )
+        ]
+    )
+
+    hypothesis = hypothesis_from_live_snapshot(
+        snapshot,
+        corpus_start_sample=0,
+        corpus_duration_sec=2.0,
+    )
+
+    assert [(item.start, item.end, item.speaker, item.text) for item in hypothesis] == [
+        (0.0, 1.0, "S01", "cost [42] dollars"),
+        (1.0, 2.0, "S02", "answer"),
+    ]
+
+
 def test_unlabelled_reference_duration_counts_against_live_accuracy() -> None:
     reference = (
         Segment(0.0, 2.0, "Alice", "alpha"),
@@ -240,7 +263,7 @@ def test_clause_reducer_makes_real_speaker_accuracy_a_visible_red_gate(tmp_path:
     reducer = Path(__file__).resolve().parents[1] / "scripts" / "ralph-afk" / "live-canary-clauses.py"
 
     completed = subprocess.run(
-        [sys.executable, str(reducer), str(tmp_path)],
+        [sys.executable, "-S", str(reducer), str(tmp_path)],
         cwd=reducer.parents[2],
         text=True,
         capture_output=True,
