@@ -660,19 +660,37 @@ def _summary_from_trace(trace: list[dict[str, Any]], seed: dict[str, Any]) -> di
 def _canonical_decode_rtf_evaluation(events: tuple[LiveServiceEvent, ...]) -> dict[str, Any]:
     measurements: list[dict[str, Any]] = []
     invalid_measurements: list[dict[str, Any]] = []
+    declared_unknown_measurements: list[dict[str, Any]] = []
     for event in events:
         if event.kind != "canonical_processed":
             continue
         payload = dict(event.payload)
         try:
-            measurement = {
+            common = {
                 "event_seq": event.seq,
                 "span_id": _required_int(payload, "span_id"),
+                "frozen_span_sample_count": _required_positive_int(payload, "frozen_span_sample_count"),
+                "frozen_span_duration_sec": _required_positive_finite_float(payload, "frozen_span_duration_sec"),
+            }
+            if (
+                "canonical_decode_elapsed_sec" in payload
+                and "canonical_decode_rtf" in payload
+                and payload["canonical_decode_elapsed_sec"] is None
+                and payload["canonical_decode_rtf"] is None
+            ):
+                declared_unknown_measurements.append(
+                    {
+                        **common,
+                        "canonical_decode_elapsed_sec": None,
+                        "canonical_decode_rtf": None,
+                    }
+                )
+                continue
+            measurement = {
+                **common,
                 "canonical_decode_elapsed_sec": _required_finite_non_negative_float(
                     payload, "canonical_decode_elapsed_sec"
                 ),
-                "frozen_span_sample_count": _required_positive_int(payload, "frozen_span_sample_count"),
-                "frozen_span_duration_sec": _required_positive_finite_float(payload, "frozen_span_duration_sec"),
                 "canonical_decode_rtf": _required_finite_non_negative_float(payload, "canonical_decode_rtf"),
             }
         except ServiceReplayRtfFailure as exc:
@@ -690,6 +708,8 @@ def _canonical_decode_rtf_evaluation(events: tuple[LiveServiceEvent, ...]) -> di
         "canonical_decode_rtf_bound": CANONICAL_DECODE_RTF_BOUND,
         "canonical_decode_rtf_invalid_measurements": invalid_measurements,
         "canonical_decode_rtf_invalid_count": len(invalid_measurements),
+        "canonical_decode_rtf_declared_unknown_measurements": declared_unknown_measurements,
+        "canonical_decode_rtf_declared_unknown_count": len(declared_unknown_measurements),
         "canonical_decode_rtf_passed": not invalid_measurements and (p95 is None or p95 < CANONICAL_DECODE_RTF_BOUND),
     }
 
@@ -786,6 +806,10 @@ def _evaluator_records_from_summary(summary: dict[str, Any]) -> list[dict[str, A
             "passed": summary.get("canonical_decode_rtf_passed"),
             "invalid_measurements": summary.get("canonical_decode_rtf_invalid_measurements", []),
             "invalid_count": summary.get("canonical_decode_rtf_invalid_count", 0),
+            "declared_unknown_measurements": summary.get(
+                "canonical_decode_rtf_declared_unknown_measurements", []
+            ),
+            "declared_unknown_count": summary.get("canonical_decode_rtf_declared_unknown_count", 0),
         },
     ]
 
