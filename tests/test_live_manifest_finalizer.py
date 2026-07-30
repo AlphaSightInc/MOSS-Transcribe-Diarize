@@ -16,6 +16,8 @@ from moss_transcribe_diarize.app.live_lane_contract import (
     LiveV2Frame,
 )
 from moss_transcribe_diarize.app.live_identity_album import (
+    ALBUM_ADMISSION_SECONDS,
+    ALBUM_BIRTH_MIN_SECONDS,
     ALBUM_MIN_MATCH_MARGIN,
     ALBUM_MIN_MATCH_SCORE,
 )
@@ -31,6 +33,7 @@ from moss_transcribe_diarize.app.live_provider_bundle import (
     _endpoint_config,
     _identity_config,
     compute_live_provider_bundle_hashes,
+    compute_live_provider_manifest_hash,
 )
 from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE
 
@@ -133,6 +136,8 @@ def _provisional_payload() -> dict:
             "revision": "host-staged",
             "frontend_version": "v1",
             "min_segment_samples": 8000,
+            "album_admission_seconds": 1.0,
+            "birth_min_seconds": 0.5,
         },
         # Deliberately stale: a finalized manifest must never inherit declared hashes.
         "config_hashes": {
@@ -165,6 +170,8 @@ def _finalize(
     frame_samples: int = FRAME_SAMPLES,
     min_match_score: float = ALBUM_MIN_MATCH_SCORE,
     min_match_margin: float = ALBUM_MIN_MATCH_MARGIN,
+    album_admission_seconds: float = ALBUM_ADMISSION_SECONDS,
+    birth_min_seconds: float = ALBUM_BIRTH_MIN_SECONDS,
     input_path: Path | None = None,
     output_path: Path | None = None,
     dry_run: bool = False,
@@ -188,6 +195,10 @@ def _finalize(
         str(min_match_score),
         "--min-match-margin",
         str(min_match_margin),
+        "--album-admission-seconds",
+        str(album_admission_seconds),
+        "--birth-min-seconds",
+        str(birth_min_seconds),
     ]
     if dry_run:
         argv.append("--dry-run")
@@ -221,6 +232,9 @@ def test_finalize_writes_the_retuned_bounds_and_regenerated_hashes(tmp_path, cap
     assert payload["bounds_config"]["hard_cap_samples"] == HARD_CAP_SAMPLES
     assert payload["bounds_config"]["max_retained_samples"] == MAX_RETAINED_SAMPLES
     assert payload["bounds_config"]["frame_samples"] == FRAME_SAMPLES
+    assert payload["identity_provider"]["min_segment_samples"] == 8000
+    assert payload["identity_provider"]["album_admission_seconds"] == ALBUM_ADMISSION_SECONDS
+    assert payload["identity_provider"]["birth_min_seconds"] == ALBUM_BIRTH_MIN_SECONDS
     # Everything the retune does not name survives untouched.
     assert payload["endpoint_config"]["min_silence_samples"] == 8000
     assert payload["decoder_config"] == {"max_samples": 120000}
@@ -283,6 +297,8 @@ def test_finalize_states_the_matcher_thresholds_the_shipped_policy_is_calibrated
     printed = capsys.readouterr().out
     assert f"evidence: identity_min_match_score={ALBUM_MIN_MATCH_SCORE}" in printed
     assert f"evidence: identity_min_match_margin={ALBUM_MIN_MATCH_MARGIN}" in printed
+    assert f"evidence: identity_album_admission_seconds={ALBUM_ADMISSION_SECONDS}" in printed
+    assert f"evidence: identity_birth_min_seconds={ALBUM_BIRTH_MIN_SECONDS}" in printed
 
 
 def test_a_different_calibration_is_a_different_manifest_hash(tmp_path):
@@ -306,6 +322,30 @@ def test_a_different_calibration_is_a_different_manifest_hash(tmp_path):
     assert left["identity_config_hash"] != right["identity_config_hash"]
     assert left["combined_config_hash"] != right["combined_config_hash"]
     assert left["bounds_config_hash"] == right["bounds_config_hash"]
+
+
+def test_a_different_enrollment_floor_is_a_different_manifest_hash(tmp_path):
+    enrolled_at_two = tmp_path / "enrolled-at-two.json"
+    enrolled_at_one = tmp_path / "enrolled-at-one.json"
+    assert _finalize(tmp_path, output_path=enrolled_at_two) == 0
+    assert (
+        _finalize(
+            tmp_path,
+            output_path=enrolled_at_one,
+            album_admission_seconds=1.0,
+        )
+        == 0
+    )
+
+    left = json.loads(enrolled_at_two.read_text(encoding="utf-8"))["config_hashes"]
+    right = json.loads(enrolled_at_one.read_text(encoding="utf-8"))["config_hashes"]
+    assert left["component_config_hash"] != right["component_config_hash"]
+    assert compute_live_provider_manifest_hash(
+        LiveProviderBundleConfig.from_manifest(enrolled_at_two)
+    ) != compute_live_provider_manifest_hash(
+        LiveProviderBundleConfig.from_manifest(enrolled_at_one)
+    )
+    assert left["identity_config_hash"] == right["identity_config_hash"]
 
 
 def test_a_finalize_that_does_not_state_its_calibration_is_refused(tmp_path):
@@ -346,6 +386,8 @@ def test_a_finalize_that_does_not_state_its_calibration_is_refused(tmp_path):
         ({"min_match_score": 1.5}, "min_match_score must be between 0 and 1"),
         ({"min_match_score": -0.1}, "min_match_score must be between 0 and 1"),
         ({"min_match_margin": -0.2}, "min_match_margin must be non-negative"),
+        ({"album_admission_seconds": 0.0}, "album_admission_seconds must be a positive number"),
+        ({"birth_min_seconds": 0.0}, "birth_min_seconds must be a positive number"),
     ],
 )
 def test_refuses_a_calibration_the_live_runtime_would_not_admit(tmp_path, capsys, kwargs, reason):
@@ -455,6 +497,11 @@ def test_dry_run_prints_the_plan_and_rollback_and_writes_nothing(tmp_path, capsy
     assert f"plan: set bounds_config.max_retained_samples={MAX_RETAINED_SAMPLES}" in lines
     assert f"plan: set identity_config.min_match_score={ALBUM_MIN_MATCH_SCORE}" in lines
     assert f"plan: set identity_config.min_match_margin={ALBUM_MIN_MATCH_MARGIN}" in lines
+    assert (
+        f"plan: set identity_provider.album_admission_seconds={ALBUM_ADMISSION_SECONDS}"
+        in lines
+    )
+    assert f"plan: set identity_provider.birth_min_seconds={ALBUM_BIRTH_MIN_SECONDS}" in lines
     assert "plan: regenerate config_hashes" in lines
     assert f"rollback: rm -f {output}" in lines
     assert f"dry-run: {output} not written" in lines
@@ -520,6 +567,10 @@ def test_tracked_ops_tool_finalizes_from_the_checkout(tmp_path):
             str(ALBUM_MIN_MATCH_SCORE),
             "--min-match-margin",
             str(ALBUM_MIN_MATCH_MARGIN),
+            "--album-admission-seconds",
+            str(ALBUM_ADMISSION_SECONDS),
+            "--birth-min-seconds",
+            str(ALBUM_BIRTH_MIN_SECONDS),
         ],
         cwd=tmp_path,
         capture_output=True,
@@ -533,4 +584,6 @@ def test_tracked_ops_tool_finalizes_from_the_checkout(tmp_path):
     assert payload["bounds_config"]["max_retained_samples"] == MAX_RETAINED_SAMPLES
     assert payload["source_revision"] == DEPLOYED_REVISION
     assert payload["identity_config"]["min_match_score"] == ALBUM_MIN_MATCH_SCORE
+    assert payload["identity_provider"]["album_admission_seconds"] == ALBUM_ADMISSION_SECONDS
+    assert payload["identity_provider"]["birth_min_seconds"] == ALBUM_BIRTH_MIN_SECONDS
     assert f"wrote: {output}" in result.stdout

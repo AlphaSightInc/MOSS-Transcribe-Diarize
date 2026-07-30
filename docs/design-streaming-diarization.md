@@ -134,10 +134,12 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   0.70 is safe (max true cross-speaker centroid sim 0.259 across all clips); the
   terminal end-of-session sweep is load-bearing, not optional.
 
-Recommended starting parameters: min_score 0.35, margin 0.1-0.2, admission 1.0-2.0 s,
-k=10 exemplars, sweep every 60 s + merge threshold 0.70 + terminal sweep at session
-end. Remaining caveat: in-span local diarization assumed correct (isolates the
-identity layer; F1/F2's distinct-voice clauses cover it end-to-end).
+Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
+0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge
+threshold 0.70 + terminal sweep at session end. The hash-pinned production-plan replay
+scores **93.50% mean / 82.14% minimum**, with all 3-minute clips **>=96.11%** and
+zero residual corrections. Remaining caveat: in-span local diarization assumed correct
+(isolates the identity layer; F1/F2's distinct-voice clauses cover it end-to-end).
 
 ## 8. Open questions (fog)
 

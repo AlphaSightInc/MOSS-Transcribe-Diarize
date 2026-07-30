@@ -1,6 +1,6 @@
 """ADR-0002's quality-gated fingerprint album: the live path's reference-vector policy.
 
-The live path stores the **latest** span's embedding per canonical speaker, so one noisy
+The replaced live policy stored the **latest** span's embedding per canonical speaker, so one noisy
 0.5 s fragment overwrites a good voice reference. ADR-0002 measured that policy at
 **66.4 % mean** live speaker accuracy against **98.5 %** for a quality-gated album, over
 eight LibriSpeech meetings driven through production live semantics (2.5 s span cap,
@@ -38,11 +38,12 @@ from dataclasses import dataclass
 from typing import Sequence
 
 
-# ADR-0002 §7's measured starting parameters. Admission is 1.0 s rather than the 2.0 s the
-# superseded sixth amendment named: gate A passed at 1.0 s under production live semantics,
-# and a 2.0 s floor under a 2.5 s span cap with 0.6 s silence splits would starve the album
-# of the exemplars it exists to hold.
-ALBUM_ADMISSION_SECONDS = 1.0
+# Phase N's real-encoder duration curve separates matching from enrollment: the deployed
+# 8,000-sample (0.5 s) evidence floor remains matchable, but only 32,000 samples (2.0 s)
+# may enter the canonical album. Birth has its own, lower floor because the real 9-clip
+# corpus shows that coupling birth to 2.0 s collapses one cold-start clip to 49.4 %.
+ALBUM_ADMISSION_SECONDS = 2.0
+ALBUM_BIRTH_MIN_SECONDS = 1.0
 ALBUM_EXEMPLARS_PER_SPEAKER = 10
 
 # The matcher thresholds ADR-0002 §7 measured *against album centroid statistics*. Nothing in
@@ -259,6 +260,7 @@ def duration_weighted_centroid(bank: Sequence[AlbumExemplar]) -> tuple[float, ..
 __all__ = [
     "ADMITTED",
     "ALBUM_ADMISSION_SECONDS",
+    "ALBUM_BIRTH_MIN_SECONDS",
     "ALBUM_EXEMPLARS_PER_SPEAKER",
     "ALBUM_MIN_MATCH_MARGIN",
     "ALBUM_MIN_MATCH_SCORE",

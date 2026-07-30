@@ -257,12 +257,10 @@ def _manifest(
             "revision": "test-revision",
             "frontend_version": "synthetic-test",
             "min_segment_samples": 1,
-            # Candidate 55's birth floor is the album's admission gate, so a manifest whose
-            # spans are shorter than `album_admission_seconds` can never birth a speaker.
-            # This bundle's `hard_cap_samples` is 160 -- 0.01 s -- so it has to state an
-            # admission its own spans can clear, or every node below would be asserting that
-            # identity is disabled rather than that the seams are wired.
+            # This synthetic bundle's 0.01 s spans need correspondingly tiny, explicit test
+            # floors. Production keeps these separate at 1.0 s birth / 2.0 s enrollment.
             "album_admission_seconds": 0.005,
+            "birth_min_seconds": 0.005,
         },
         "config_hashes": {},
     }
@@ -701,24 +699,50 @@ def test_a_short_span_labels_against_the_album_but_never_overwrites_it():
     assert [round(item.score, 6) for item in recovered] == [1.0]
 
 
-def test_the_birth_floor_is_the_albums_own_admission_gate_and_not_a_second_constant():
-    """Candidate 55's floor, read from the album rather than restated beside it.
+def test_birth_and_enrollment_have_separate_floors():
+    """A short unit can birth and match, while only 2 s evidence can enter the album."""
 
-    The rule is *a birth must be enrollable*: evidence too short to become a reference is too
-    short to create the speaker that would hold one. Reading `admission_seconds` off the album
-    is what makes the two one number -- a manifest that states `album_admission_seconds` moves
-    both, and there is no second value that can agree today and drift later.
-    """
-
-    strict = WeSpeakerLiveEvidenceProvider(encoder=_ScriptedEncoder([[1.0, 0.0]]), album=FingerprintAlbum(admission_seconds=1.5))
-    lenient = WeSpeakerLiveEvidenceProvider(encoder=_ScriptedEncoder([[1.0, 0.0]]), album=FingerprintAlbum(admission_seconds=0.5))
+    album = FingerprintAlbum(admission_seconds=2.0)
+    provider = WeSpeakerLiveEvidenceProvider(
+        encoder=_ScriptedEncoder([[1.0, 0.0]] * 4),
+        album=album,
+        birth_min_seconds=1.0,
+    )
     empty = LiveIdentitySnapshot(version=0, canonical_speakers=())
 
-    _score_span(strict, span_id=1, seconds=1.0, base_snapshot=empty)
-    _score_span(lenient, span_id=1, seconds=1.0, base_snapshot=empty)
+    _score_span(provider, span_id=1, seconds=1.0, base_snapshot=empty)
+    assert provider.birth_deferrals(span_id=1, candidates=("S01",)) == ()
 
-    assert strict.birth_deferrals(span_id=1, candidates=("S01",)) == (("S01", 1.0),)
-    assert lenient.birth_deferrals(span_id=1, candidates=("S01",)) == ()
+    after_first = _prepared_snapshot(
+        span_id=1,
+        assignments="S01->speaker-0001",
+        canonical_speakers=("speaker-0001",),
+        version=1,
+    )
+    short_match = _score_span(provider, span_id=2, seconds=0.5, base_snapshot=after_first)
+    assert [item.score for item in short_match] == pytest.approx([1.0])
+    assert album.exemplar_count("speaker-0001") == 0
+    assert album.has_provisional("speaker-0001")
+
+    after_second = _prepared_snapshot(
+        span_id=2,
+        assignments="S01->speaker-0001",
+        canonical_speakers=("speaker-0001",),
+        version=2,
+    )
+    _score_span(provider, span_id=3, seconds=2.0, base_snapshot=after_second)
+    assert album.exemplar_count("speaker-0001") == 0
+
+    after_third = _prepared_snapshot(
+        span_id=3,
+        assignments="S01->speaker-0001",
+        canonical_speakers=("speaker-0001",),
+        version=3,
+    )
+    admitted_match = _score_span(provider, span_id=4, seconds=0.5, base_snapshot=after_third)
+    assert [item.score for item in admitted_match] == pytest.approx([1.0])
+    assert album.exemplar_count("speaker-0001") == 1
+    assert not album.has_provisional("speaker-0001")
 
 
 def test_a_speaker_the_evidence_floor_skipped_reports_no_embedded_speech_at_all():
@@ -760,7 +784,8 @@ def test_a_stack_with_no_album_has_no_admission_gate_and_defers_no_birth():
 
 def test_the_album_accumulates_rather_than_replacing_across_spans():
     encoder = _ScriptedEncoder([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
-    album = FingerprintAlbum()
+    # This seam isolates sweep behaviour; retain its historical 1 s admission explicitly.
+    album = FingerprintAlbum(admission_seconds=1.0)
     provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album)
 
     _score_span(provider, span_id=1, seconds=2.0, base_snapshot=LiveIdentitySnapshot(version=0, canonical_speakers=()))
@@ -807,7 +832,7 @@ def test_unreconciled_spans_do_not_grow_the_pending_map_for_the_length_of_a_meet
 
 def test_the_album_takes_adr_0002_defaults_and_lets_the_manifest_override_them():
     default = live_provider_bundle._fingerprint_album({})
-    assert (default.admission_seconds, default.exemplars_per_speaker) == (1.0, 10)
+    assert (default.admission_seconds, default.exemplars_per_speaker) == (2.0, 10)
 
     tuned = live_provider_bundle._fingerprint_album(
         {"album_admission_seconds": 1.5, "album_exemplars_per_speaker": 4}
@@ -829,6 +854,12 @@ def test_the_album_takes_adr_0002_defaults_and_lets_the_manifest_override_them()
 def test_the_album_refuses_a_manifest_that_names_a_nonsensical_parameter(payload):
     with pytest.raises(LiveProviderBundleAdmissionError):
         live_provider_bundle._fingerprint_album(payload)
+
+
+@pytest.mark.parametrize("value", [0, -1.0, "1", True, float("inf")])
+def test_the_birth_floor_refuses_a_nonsensical_manifest_value(value):
+    with pytest.raises(LiveProviderBundleAdmissionError):
+        live_provider_bundle._birth_min_seconds({"birth_min_seconds": value})
 
 
 # --------------------------------------------------------------------------------------
@@ -862,7 +893,8 @@ def _sweep_seam(*, interval_seconds: float = 1.0):
             _voice(30),  # span 4 -- whatever; this span exists to reconcile span 3
         ]
     )
-    album = FingerprintAlbum()
+    # This seam isolates sweep behaviour; retain its historical 1 s admission explicitly.
+    album = FingerprintAlbum(admission_seconds=1.0)
     config = LiveIdentityConfig(
         max_speakers=16,
         min_match_score=ALBUM_MIN_MATCH_SCORE,
@@ -1030,6 +1062,8 @@ def test_the_bundle_builds_one_album_and_one_sweeper_that_share_the_matcher_cali
     assert provider._sweeper.album is provider._album
     assert provider._sweeper.config is preparer.config
     assert provider._sweeper.interval_seconds == live_provider_bundle_sweep_interval()
+    assert provider.birth_min_seconds == 0.005
+    assert provider._album.admission_seconds == 0.005
 
 
 def live_provider_bundle_sweep_interval() -> float:

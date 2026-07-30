@@ -1,0 +1,68 @@
+{
+  "identity_asset_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+  "cases": [
+    {
+      "name": "acquired_jamie_dimon",
+      "tier": "1min",
+      "path": "benchmark_diarization_1min/samples/acquired_jamie_dimon",
+      "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+      "reference_sha256": "325c83712849262ebe7c6e513a9be495d6d6bf5230e70f174243f66ee691e01d"
+    },
+    {
+      "name": "acquired_nfl",
+      "tier": "1min",
+      "path": "benchmark_diarization_1min/samples/acquired_nfl",
+      "audio_sha256": "d2505e3bb048bd7645fffdd8b5afc4b34d1511990ce6771366243e02869f3be3",
+      "reference_sha256": "7c5deb4941e674d9b86a59698f03b30533444c81717eddb429f9297f420d95cd"
+    },
+    {
+      "name": "acquired_rolex",
+      "tier": "1min",
+      "path": "benchmark_diarization_1min/samples/acquired_rolex",
+      "audio_sha256": "f2d20b3b08a58c902f68c5882ef9b2a4349b515f1d7abaa7f0f0e44b7cdb203a",
+      "reference_sha256": "95871988a18bf5caf9ecddd119ace40f16cec1a44c010b3a6e5e8390d5710ea9"
+    },
+    {
+      "name": "lex_bill_ackman",
+      "tier": "1min",
+      "path": "benchmark_diarization_1min/samples/lex_bill_ackman",
+      "audio_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+      "reference_sha256": "9e50d6d3c9006337d1d357af5593f669ef0e3014b734fb6ddcc9a119bf49d71c"
+    },
+    {
+      "name": "lex_javier_milei",
+      "tier": "1min",
+      "path": "benchmark_diarization_1min/samples/lex_javier_milei",
+      "audio_sha256": "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd",
+      "reference_sha256": "89fcc6958bf5d6d10ec59680b97065dff0d12debed4e9000f536d0e0fc32baa8"
+    },
+    {
+      "name": "lex_keyu_jin",
+      "tier": "1min",
+      "path": "benchmark_diarization_1min/samples/lex_keyu_jin",
+      "audio_sha256": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120",
+      "reference_sha256": "0c7cb619df47707a2e4ea9ce29441047cf58b01f65a52952e7833aa03bb5a1d0"
+    },
+    {
+      "name": "acquired_jamie_dimon_3min",
+      "tier": "3min",
+      "path": "calibration_diarization_3min/samples/acquired_jamie_dimon_3min",
+      "audio_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+      "reference_sha256": "72a6173d92323d5c7ff5e6ba084063970966d4bd4e146c23e24d57949ad1a01b"
+    },
+    {
+      "name": "lex_adam_frank",
+      "tier": "3min",
+      "path": "calibration_diarization_3min/samples/lex_adam_frank",
+      "audio_sha256": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
+      "reference_sha256": "650450979435c9f4389959465f87dbf37c78109bc925c24d67878cc9574bc9cc"
+    },
+    {
+      "name": "lex_shapiro_destiny",
+      "tier": "3min",
+      "path": "calibration_diarization_3min/samples/lex_shapiro_destiny",
+      "audio_sha256": "9d18487ac522db1119e2633a87816466b6b85e166d0dcd7e8e6fc89e6e11a895",
+      "reference_sha256": "aa250575e849f517d69dd6182ce617e705d86cdadb88c170ec0d97fc7ac35792"
+    }
+  ]
+}

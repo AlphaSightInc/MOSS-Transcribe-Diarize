@@ -31,8 +31,8 @@ def _cosine(left, right):
 def test_adr_0002_starting_parameters_are_the_defaults():
     album = FingerprintAlbum()
 
-    assert (album.admission_seconds, album.exemplars_per_speaker) == (1.0, 10)
-    assert (ALBUM_ADMISSION_SECONDS, ALBUM_EXEMPLARS_PER_SPEAKER) == (1.0, 10)
+    assert (album.admission_seconds, album.exemplars_per_speaker) == (2.0, 10)
+    assert (ALBUM_ADMISSION_SECONDS, ALBUM_EXEMPLARS_PER_SPEAKER) == (2.0, 10)
 
 
 def test_a_short_fragment_cannot_overwrite_an_admitted_reference():
@@ -60,8 +60,8 @@ def test_a_short_fragment_cannot_overwrite_an_admitted_reference():
 
 def test_the_reference_is_a_duration_weighted_centroid_not_the_latest_exemplar():
     album = FingerprintAlbum()
-    album.observe(canonical_speaker="speaker-0001", vector=[1.0, 0.0], duration_sec=2.0, span_id=1)
-    album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=1.0, span_id=2)
+    album.observe(canonical_speaker="speaker-0001", vector=[1.0, 0.0], duration_sec=4.0, span_id=1)
+    album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=2.0, span_id=2)
 
     reference = album.reference("speaker-0001")
 
@@ -97,7 +97,7 @@ def test_the_provisional_stand_in_keeps_the_longest_and_is_retired_by_the_first_
     assert album.reference("speaker-0001") == (1.0, 0.0)
 
     assert (
-        album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=1.5, span_id=3)
+        album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=2.0, span_id=3)
         == ADMITTED
     )
     # Retired, not averaged: the refused 0.8 s fragment must not reach the centroid sideways.
@@ -118,7 +118,7 @@ def test_an_equal_length_stand_in_does_not_churn():
 
 def test_the_bank_is_bounded_at_k_and_keeps_the_longest_exemplars():
     album = FingerprintAlbum(exemplars_per_speaker=3)
-    for index, duration in enumerate((2.5, 2.0, 1.5), start=1):
+    for index, duration in enumerate((3.0, 2.5, 2.5), start=1):
         assert (
             album.observe(
                 canonical_speaker="speaker-0001",
@@ -130,15 +130,15 @@ def test_the_bank_is_bounded_at_k_and_keeps_the_longest_exemplars():
         )
 
     assert (
-        album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=1.2, span_id=4)
+        album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=2.2, span_id=4)
         == REJECTED_WEAKER_THAN_BANK
     )
     assert album.exemplar_count("speaker-0001") == 3
     assert album.reference("speaker-0001") == pytest.approx((1.0, 0.0))
 
-    # Longer than the weakest held exemplar: it evicts the 1.5 s one and enters.
+    # Longer than the weakest held exemplar: it evicts a 2.5 s one and enters.
     assert (
-        album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=2.2, span_id=5)
+        album.observe(canonical_speaker="speaker-0001", vector=[0.0, 1.0], duration_sec=2.7, span_id=5)
         == ADMITTED
     )
     assert album.exemplar_count("speaker-0001") == 3

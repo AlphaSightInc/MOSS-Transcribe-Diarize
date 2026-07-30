@@ -2,6 +2,7 @@
 
 - Status: **Accepted** (2026-07-29) — design accepted by product owner 2026-07-28;
   prototype gates A/B/C passed, evidence in `docs/design-streaming-diarization.md` §7.
+  Enrollment-floor amendment accepted 2026-07-30.
 - Deciders: product owner (Gao) with Claude (architecture session, 2026-07-28);
   peer audit input from Codex (`AAgent/260728-moss-audio-flow-explain/`).
 
@@ -77,3 +78,15 @@ output, and add three components that exploit the 35-40x GPU headroom:
   CPU-capable via ONNX).
 - Implementation order: album → tape recorder → sweep → batch unification; each step
   independently shippable and validated by prototypes A/B/C before production work.
+
+## 2026-07-30 enrollment-floor amendment
+
+Matching, birth, and enrollment are separate decisions. The matching evidence floor
+remains 8,000 samples (0.5 s), birth remains 16,000 samples (1.0 s), and only album
+enrollment rises to 32,000 samples (2.0 s). Matching uses the duration-weighted centroid
+of the quality-gated bounded bank.
+
+The hash-pinned nine-clip gate re-embedded every clip under the deployed 0.5 s span plan
+and drove the production identity objects: **93.50% mean / 82.14% minimum**, all three
+3-minute clips **>=96.11%**, zero residual sweep corrections. Coupling birth to the new
+2.0 s enrollment floor was rejected: one cold-start clip fell to **49.4%**.

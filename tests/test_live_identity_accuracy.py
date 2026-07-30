@@ -17,10 +17,10 @@ import pytest
 from live_identity_accuracy import (
     ADR_MIN_MATCH_MARGIN,
     ADR_MIN_MATCH_SCORE,
-    DEPLOYED_MIN_MATCH_MARGIN,
-    DEPLOYED_MIN_MATCH_SCORE,
     FIXTURE_EMBEDDING_SILENCE_SPLIT_SECONDS,
     MEETINGS,
+    PRE_ALBUM_MIN_MATCH_MARGIN,
+    PRE_ALBUM_MIN_MATCH_SCORE,
     SILENCE_SPLIT_SECONDS,
     SWEEP_INTERVAL_SECONDS,
     assert_fixture_matches_production,
@@ -102,7 +102,8 @@ def test_the_admission_gate_does_two_separable_jobs_and_this_measures_both():
     * **matching** -- collapse the bank to one exemplar and most of the overwrite defect comes
       back (0.892 against 0.991 banked, over 0.720 for overwrite). Admission does not rescue
       that; accumulation does.
-    * **birth** -- drop admission to 0.01 s, which is the weaker "any embedded speech at all"
+    * **birth** -- drop the independent birth floor to 0.01 s, the weaker
+      "any embedded speech at all"
       floor the ninth amendment records as *measured wrong*, and the mean canonical speaker
       count rises 4.00 -> 6.25 for meetings holding 2-6 voices, costing 0.3 pp of accuracy.
       The bank cannot rescue that either: a speaker that should never have existed has its
@@ -116,7 +117,7 @@ def test_the_admission_gate_does_two_separable_jobs_and_this_measures_both():
     """
 
     banked = replay_all(policy="album")
-    weak_floor = replay_all(policy="album", admission_seconds=0.01)
+    weak_floor = replay_all(policy="album", birth_min_seconds=0.01)
     single = replay_all(policy="album", exemplars_per_speaker=1)
     overwrite = replay_all(policy="overwrite")
 
@@ -128,13 +129,12 @@ def test_the_admission_gate_does_two_separable_jobs_and_this_measures_both():
     assert mean_accuracy(weak_floor) < mean_accuracy(banked)
 
 
-def test_the_deployed_matcher_thresholds_cost_the_album_its_bar():
+def test_the_historical_pre_album_thresholds_cost_the_album_its_bar():
     """ADR-0002 says the matcher needs recalibrating against album statistics. By how much.
 
-    The album landed without touching `min_match_score` / `min_match_margin`, so the
-    deployed live runtime runs the album at thresholds tuned for the policy it replaced.
-    Measured, that configuration does not reach the ADR's bar at all -- the recalibration is
-    a shipping requirement, not a refinement.
+    The album initially landed without touching `min_match_score` / `min_match_margin`.
+    Measured, that historical configuration does not reach the ADR's bar. Phase N subsequently
+    shipped the calibrated pair; this counterfactual prevents that decision being erased.
 
     The pair proved against the bar above is `live_identity_album.ALBUM_MIN_MATCH_*`, which is
     also what a deployment states through the finalizer's `--min-match-score` /
@@ -143,18 +143,18 @@ def test_the_deployed_matcher_thresholds_cost_the_album_its_bar():
     """
 
     adr = replay_all(policy="album")
-    deployed = replay_all(
+    historical = replay_all(
         policy="album",
-        min_match_score=DEPLOYED_MIN_MATCH_SCORE,
-        min_match_margin=DEPLOYED_MIN_MATCH_MARGIN,
+        min_match_score=PRE_ALBUM_MIN_MATCH_SCORE,
+        min_match_margin=PRE_ALBUM_MIN_MATCH_MARGIN,
     )
 
-    assert (DEPLOYED_MIN_MATCH_SCORE, DEPLOYED_MIN_MATCH_MARGIN) != (
+    assert (PRE_ALBUM_MIN_MATCH_SCORE, PRE_ALBUM_MIN_MATCH_MARGIN) != (
         ADR_MIN_MATCH_SCORE,
         ADR_MIN_MATCH_MARGIN,
     )
-    assert mean_accuracy(deployed) < 0.90
-    assert mean_accuracy(adr) - mean_accuracy(deployed) >= 0.10
+    assert mean_accuracy(historical) < 0.90
+    assert mean_accuracy(adr) - mean_accuracy(historical) >= 0.10
 
 
 def test_the_birth_floor_ends_the_capacity_saturation_candidate_55_priced():

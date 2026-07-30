@@ -128,7 +128,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 0658c59 for the operator-directed probe-handshake hardening. The parent now signals
 # the child only after the process-specific mute tap starts, replacing the measured-but-racy fixed
 # sleep while retaining the five-second helper bound and pinning both ordering paths at the driver.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-0658c5944875dbf9215f21c84632627d7ed332af}"
+# Advanced to b20be61 for the operator-directed speaker-identity closeout. Matching remains at
+# 8,000 samples, birth at 16,000, and enrollment alone moves to 32,000; the exact production-plan
+# nine-clip gate is hash-pinned and the deployment finalizer states both duration floors.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-b20be613a4d6302ed4f27f08d34e042f60a6782e}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

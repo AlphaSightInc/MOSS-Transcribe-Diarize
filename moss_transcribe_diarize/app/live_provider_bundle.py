@@ -20,6 +20,7 @@ from .live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservati
 from .live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig, LiveSpeakerEvidence
 from .live_identity_album import (
     ALBUM_ADMISSION_SECONDS,
+    ALBUM_BIRTH_MIN_SECONDS,
     ALBUM_EXEMPLARS_PER_SPEAKER,
     FingerprintAlbum,
     cosine_similarity,
@@ -527,6 +528,7 @@ class WeSpeakerLiveEvidenceProvider:
         encoder: Any,
         canonical_embedding: Callable[[LiveIdentitySnapshot, str], Sequence[float] | None] | None = None,
         min_segment_samples: int = 1,
+        birth_min_seconds: float = ALBUM_BIRTH_MIN_SECONDS,
         album: FingerprintAlbum | None = None,
         sweeper: LiveIdentitySweeper | None = None,
     ):
@@ -534,9 +536,19 @@ class WeSpeakerLiveEvidenceProvider:
             raise LiveProviderBundleAdmissionError("wespeaker min_segment_samples must be positive.")
         if not callable(getattr(encoder, "embed", None)):
             raise LiveProviderBundleAdmissionError("wespeaker encoder must expose embed().")
+        if (
+            isinstance(birth_min_seconds, bool)
+            or not isinstance(birth_min_seconds, (int, float))
+            or not math.isfinite(birth_min_seconds)
+            or birth_min_seconds <= 0.0
+        ):
+            raise LiveProviderBundleAdmissionError(
+                "wespeaker birth_min_seconds must be positive and finite."
+            )
         self.encoder = encoder
         self._canonical_embedding = canonical_embedding
         self.min_segment_samples = int(min_segment_samples)
+        self.birth_min_seconds = float(birth_min_seconds)
         # ADR-0002's reference-vector policy. The ADR names `canonical_embedding` as the
         # injection point; the album is passed as its own collaborator because it owns the
         # *write* side too -- replacing latest-span overwrite is an admission decision, and
@@ -626,11 +638,11 @@ class WeSpeakerLiveEvidenceProvider:
     ) -> tuple[tuple[str, float], ...]:
         """Which of a span's would-be births this stack will not enrol, and the seconds behind each.
 
-        Candidate 55's fix, answered where the admission gate lives. `BoundedCausalIdentity
-        Preparer` owns what a deferral means; the *threshold* is the album's own
-        `admission_seconds`, so it is read from the album rather than restated -- the birth
-        floor and the enrollment floor are then one number by construction, and a manifest
-        that moves `album_admission_seconds` moves both.
+        `BoundedCausalIdentityPreparer` owns what a deferral means. The birth floor is
+        deliberately separate from the album's enrollment floor: real 9-clip replay showed
+        that making a 2.0 s enrollment floor gate cold-start births collapses one clip, while
+        1.0 s births preserve the accepted corpus result. A sub-enrollment birth therefore
+        gets only the album's provisional stand-in until 2.0 s evidence retires it.
 
         A speaker whose evidence the encoder was never asked for reports **0.0 s**, not
         absence: `_speaker_intervals_by_label` drops every segment below
@@ -646,7 +658,7 @@ class WeSpeakerLiveEvidenceProvider:
 
         if self._album is None:
             return ()
-        floor = self._album.admission_seconds
+        floor = self.birth_min_seconds
         pending = self._pending_vectors.get(span_id, {})
         deferred: list[tuple[str, float]] = []
         for local_speaker in candidates:
@@ -887,6 +899,7 @@ def _identity_evidence_provider(
             config.identity_provider.get("min_segment_samples"),
             "identity_provider.min_segment_samples",
         ),
+        birth_min_seconds=_birth_min_seconds(config.identity_provider),
         album=album,
         sweeper=LiveIdentitySweeper(album=album, config=identity_config),
     )
@@ -914,6 +927,15 @@ def _fingerprint_album(payload: Mapping[str, Any]) -> FingerprintAlbum:
             if exemplars is None
             else _positive_int(exemplars, "identity_provider.album_exemplars_per_speaker")
         ),
+    )
+
+
+def _birth_min_seconds(payload: Mapping[str, Any]) -> float:
+    value = payload.get("birth_min_seconds")
+    return (
+        ALBUM_BIRTH_MIN_SECONDS
+        if value is None
+        else _positive_float(value, "identity_provider.birth_min_seconds")
     )
 
 
@@ -1154,6 +1176,7 @@ def _validate_provider_references(config: LiveProviderBundleConfig) -> None:
             code="bundle_asset_coverage",
         )
     _positive_int(config.identity_provider.get("min_segment_samples"), "identity_provider.min_segment_samples")
+    _birth_min_seconds(config.identity_provider)
 
 
 def _read_golden_frame(path: Path) -> AudioFrame:
