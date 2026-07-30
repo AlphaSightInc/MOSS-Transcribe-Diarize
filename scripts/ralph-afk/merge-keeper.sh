@@ -116,7 +116,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to ddaf95a for the operator-directed system-audio permission and Launch Services
 # lifecycle closeout. Its feature branch is cut from that keeper merge so one exact committed SHA
 # can replace the dirty m4mbp deployment on both hosts.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-ddaf95a41c59cd9e02559b51d5df9ee3a76797be}"
+# Advanced to 1fcfea2 for the operator-directed declared-null RTF evaluator closeout. Candidate 58
+# is the same seam: coherent null timing is counted as declared unknown, while malformed timing
+# remains corrupt and fail-closed.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-1fcfea2a4f139dc1c0b6397fe41a70e3f37c8de0}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

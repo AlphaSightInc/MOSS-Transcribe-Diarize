@@ -2004,15 +2004,13 @@ lists — Phase L's diagnosis of 48/49 and Phase M's entries 50-55 — are in pr
     **Fixed in iteration 13, and it carried a second defect out with it** — the probe counted a
     re-delivered event as a second measurement. See the deployed-sweep block above (§5) for both, the red-before proof
     and the numbers the second one moves.
-58. **The replay evaluator calls a declared absence an invalid measurement.** `[open, new — run
-    20260729 iteration 1]`. `live_service_replay._canonical_decode_rtf_evaluation` fails the RTF
-    summary for a `canonical_processed` event whose `canonical_decode_elapsed_sec` is null, so a
-    *degraded* measurement is indistinguishable from a *corrupt* one — iteration 29's lesson one
-    layer down. Pre-existing (J3 has emitted nulls since Phase J) but now reachable by design.
-    Tracked product source; needs its own authorization and a recorded decision about what a run
-    with degraded spans should be allowed to certify. The exact site is
-    `live_service_replay._canonical_decode_rtf_evaluation:660-694`, which runs every payload through
-    `_required_finite_non_negative_float`; detail in progress.txt under `Phase P candidate list…`.
+58. **The replay evaluator calls a declared absence an invalid measurement.** `[done — operator-
+    directed P1 cycle, 2026-07-30]`. This was the same evaluator seam as the declared-null F4b
+    blocker: a coherent pair with both timing keys present and null is now a visible
+    `declared_unknown` measurement, excluded from p95 without being silently omitted. Half-null,
+    missing, negative, and non-finite payloads remain corrupt and fail closed. The count and records
+    travel through the summary, trace, and evaluator artifacts; adversarial coverage lives in
+    `tests/test_live_service_replay.py`.
 61. **`live-canary-analyze.py` crashes on any pruned evidence directory.** `[done — iteration 12;
     see "WHERE `live-canary-analyze.py` READS SPANS" above. Spans now come from the
     newest readable `snap-full-*.json`, an absence is judged against coverage, and an unreadable
@@ -2637,9 +2635,9 @@ proven dead on the server. The rule it shipped is the **Duration vs timestamp** 
 contracts; the Phase P gate and P7 merge rows are retired to progress.txt. The full list —
 including P4's four-site sweep table and P3's per-half red-before table — is in progress.txt under
 **"Phase P candidate list (P1-P5, the sweep table, the per-half red-before table)"**.
-**Its one open leftover is candidate 58**, in the numbered list above: the replay evaluator calls a
-declared absence an invalid measurement. Explicitly out of scope then and now: mandatory client
-retention of the 409 refusal body — the right fix, needing its own authorization.
+**Its candidate 58 leftover is closed**, in the numbered list above: coherent declared-null timing
+is visible but not corrupt, while malformed timing still fails closed. Explicitly out of scope:
+mandatory client retention of the 409 refusal body — the right fix, needing its own authorization.
 
 ### Real-audio evidence, operator-supplied 2026-07-29 (bench `b6b6c5c`) - BINDING
 

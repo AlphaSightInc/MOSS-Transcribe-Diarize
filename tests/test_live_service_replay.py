@@ -453,10 +453,131 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertLess(evaluation["canonical_decode_rtf_p95"], max(values))
         self.assertNotEqual(evaluation["canonical_decode_rtf_p95"], sum(values) / len(values))
 
+    def test_declared_unknown_canonical_decode_rtf_is_visible_and_excluded_from_p95(self):
+        numeric = _canonical_processed_event(seq=1, span_id=7, rtf=0.4)
+        unknown = _canonical_processed_event(seq=2, span_id=8, rtf=0.9)
+        unknown_payload = dict(unknown.payload)
+        unknown_payload.update(
+            {
+                "canonical_decode_elapsed_sec": None,
+                "canonical_decode_rtf": None,
+            }
+        )
+
+        evaluation = live_service_replay._canonical_decode_rtf_evaluation(
+            (numeric, _event_with_payload(unknown, unknown_payload))
+        )
+
+        self.assertEqual(evaluation["canonical_decode_rtf_values"], [0.4])
+        self.assertEqual(evaluation["canonical_decode_rtf_span_ids"], [7])
+        self.assertEqual(evaluation["canonical_decode_rtf_p95"], 0.4)
+        self.assertEqual(evaluation["canonical_decode_rtf_invalid_count"], 0)
+        self.assertEqual(evaluation["canonical_decode_rtf_declared_unknown_count"], 1)
+        self.assertEqual(
+            evaluation["canonical_decode_rtf_declared_unknown_measurements"],
+            [
+                {
+                    "event_seq": 2,
+                    "span_id": 8,
+                    "canonical_decode_elapsed_sec": None,
+                    "frozen_span_sample_count": LIVE_SAMPLE_RATE,
+                    "frozen_span_duration_sec": 1.0,
+                    "canonical_decode_rtf": None,
+                }
+            ],
+        )
+        self.assertTrue(evaluation["canonical_decode_rtf_passed"])
+
+    def test_declared_unknown_canonical_decode_rtf_survives_summary_trace_and_evaluator(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = CorruptingEventsService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(True, False),
+                session_ids=("session-1",),
+                decoder=RecordingDecoder(elapsed_sec=0.01),
+            ),
+            lambda payload: (
+                payload.update(
+                    {
+                        "canonical_decode_elapsed_sec": None,
+                        "canonical_decode_rtf": None,
+                    }
+                )
+                if payload["span_id"] == 1
+                else None
+            ),
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=800)
+            outputs = live_service_replay.run_service_replay(
+                service=service,
+                audio_path=audio,
+                out_dir=root / "out",
+                pace=1.0,
+                max_pacing_lag=0.5,
+                runs=1,
+                expect_revision=descriptor.source_revision,
+                expect_provider_hash=descriptor.provider_manifest_hash,
+                expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                monotonic=ScriptedClock().monotonic,
+                sleep=ScriptedClock().sleep,
+            )
+
+            trace = _jsonl(outputs.trace_path)
+            summary = json.loads(outputs.summary_path.read_text(encoding="utf-8"))
+            evaluator = _jsonl(outputs.evaluator_path)
+
+        rtf_evaluation = [item for item in trace if item["kind"] == "canonical_decode_rtf_evaluation"][0]
+        self.assertEqual(summary["status"], "succeeded")
+        self.assertEqual(len(summary["canonical_decode_rtf_values"]), 1)
+        self.assertAlmostEqual(summary["canonical_decode_rtf_values"][0], 0.4)
+        self.assertEqual(summary["canonical_decode_rtf_declared_unknown_count"], 1)
+        self.assertEqual(
+            summary["canonical_decode_rtf_declared_unknown_measurements"][0]["span_id"],
+            1,
+        )
+        self.assertEqual(rtf_evaluation["canonical_decode_rtf_declared_unknown_count"], 1)
+        self.assertEqual(evaluator[-1]["kind"], "canonical_decode_rtf")
+        self.assertEqual(evaluator[-1]["declared_unknown_count"], 1)
+        self.assertEqual(evaluator[-1]["declared_unknown_measurements"][0]["span_id"], 1)
+        self.assertTrue(evaluator[-1]["passed"])
+
+    def test_half_null_canonical_decode_rtf_event_payloads_fail_closed(self):
+        cases = {
+            "elapsed_only_null": {
+                "canonical_decode_elapsed_sec": None,
+                "canonical_decode_rtf": 0.5,
+            },
+            "rtf_only_null": {
+                "canonical_decode_elapsed_sec": 0.5,
+                "canonical_decode_rtf": None,
+            },
+        }
+
+        for name, updates in cases.items():
+            with self.subTest(name=name):
+                event = _canonical_processed_event(seq=1, span_id=7, rtf=0.5)
+                payload = dict(event.payload)
+                payload.update(updates)
+                evaluation = live_service_replay._canonical_decode_rtf_evaluation(
+                    (_event_with_payload(event, payload),)
+                )
+
+                self.assertFalse(evaluation["canonical_decode_rtf_passed"])
+                self.assertEqual(evaluation["canonical_decode_rtf_invalid_count"], 1)
+                self.assertEqual(evaluation["canonical_decode_rtf_declared_unknown_count"], 0)
+
     def test_invalid_canonical_decode_rtf_event_payloads_fail_closed(self):
         cases = {
             "missing_elapsed": lambda payload: payload.pop("canonical_decode_elapsed_sec"),
+            "missing_rtf": lambda payload: payload.pop("canonical_decode_rtf"),
             "negative_elapsed": lambda payload: payload.update({"canonical_decode_elapsed_sec": -0.1}),
+            "negative_rtf": lambda payload: payload.update({"canonical_decode_rtf": -0.1}),
+            "non_finite_elapsed": lambda payload: payload.update({"canonical_decode_elapsed_sec": float("nan")}),
             "non_finite_rtf": lambda payload: payload.update({"canonical_decode_rtf": float("inf")}),
             "zero_duration": lambda payload: payload.update({"frozen_span_duration_sec": 0.0}),
         }
@@ -476,6 +597,7 @@ class LiveServiceReplayContractTest(unittest.TestCase):
                 self.assertEqual(evaluation["canonical_decode_rtf_bound"], 1.0)
                 self.assertFalse(evaluation["canonical_decode_rtf_passed"])
                 self.assertEqual(evaluation["canonical_decode_rtf_invalid_count"], 1)
+                self.assertEqual(evaluation["canonical_decode_rtf_declared_unknown_count"], 0)
                 self.assertEqual(evaluation["canonical_decode_rtf_invalid_measurements"][0]["span_id"], 7)
 
     def test_invalid_canonical_decode_rtf_event_retains_failure_artifacts(self):
