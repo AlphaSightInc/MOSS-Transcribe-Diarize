@@ -126,6 +126,31 @@ prove signing, notarization, TCC continuity, Keychain runtime, deployed
 device/tap behavior, deployment, 60/300 evidence, canary, or live enablement;
 those remain Missing.
 
+System Audio Recording permission is resolved by measured audio, not Core
+Audio setup status. On macOS 26.5.2 a denied process tap still creates, starts,
+and schedules normal callbacks containing only Float32 zeros. The app therefore
+runs an asynchronous private global probe, starts a delayed child signal behind
+a process-specific muted tap, and keeps that signal out of the production
+capture queue. A nonzero observation admits the lane; an all-zero observation
+emits `macos_permission_denied`; probe infrastructure errors retain their typed
+device/OSStatus cause. The system lane is `pending` while macOS owns the prompt,
+the microphone lane continues independently, and stop generation-fences a late
+answer. When no other lane is recording, `start` waits for the machine-bounded
+probe before answering; it cannot acknowledge a capture that becomes zero-lane
+immediately afterward. M4MBP measurement at normal output volume saw 96,098
+matching nonzero samples on the mute and global taps at peak 0.030001; the
+operator heard nothing. The full measurement is recorded in
+`prototypes/system-audio-permission/NOTES.md`.
+
+The capture bundle remains an `LSUIElement` agent, but it is still an AppKit
+application: its main thread services Launch Services while the blocking UDS
+server runs off-main. This is required for System Settings' quit-before-TCC-
+change workflow. A process that captures correctly but never completes AppKit
+launch is not acceptable: Finder labels it unresponsive and a normal terminate
+request never exits. The real-bundle lifecycle tracer therefore requires
+`NSRunningApplication.isFinishedLaunching`, accepted application termination,
+and process exit within three seconds.
+
 IDEA-035 adds an observation-only helper heartbeat side channel at the same
 default-off live HTTP seam. The owning capture authority may post strict
 `moss-live-helper-health.v1` JSON to

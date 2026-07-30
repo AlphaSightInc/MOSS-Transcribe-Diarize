@@ -2374,6 +2374,172 @@ final class CaptureControllerTests: XCTestCase {
         }
     }
 
+    func testSystemAudioPermissionProbeKeepsMicrophoneCapturingThenAdmitsSystem() throws {
+        let system = PermissionProbedNativeCaptureComponent()
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .granted)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 4)
+        )
+
+        try source.start(configuration: laneConfiguration())
+
+        XCTAssertEqual(source.status().map(\.state), ["pending", "capturing"])
+        XCTAssertEqual(system.startCount, 0)
+        XCTAssertEqual(microphone.startCount, 1)
+
+        system.answerPermissionProbe(.success(.granted))
+
+        XCTAssertEqual(source.status().map(\.state), ["capturing", "capturing"])
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(microphone.startCount, 1)
+        try source.stop(deadline: Date())
+    }
+
+    func testSystemAudioPermissionProbeDenialFailsOnlySystemLane() throws {
+        let system = PermissionProbedNativeCaptureComponent()
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .granted)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 4)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        system.answerPermissionProbe(.success(.denied))
+
+        let status = source.status()
+        XCTAssertEqual(status.map(\.state), ["failed", "capturing"])
+        XCTAssertEqual(status.map(\.failureCode), ["macos_permission_denied", nil])
+        XCTAssertEqual(system.startCount, 0)
+        XCTAssertEqual(microphone.startCount, 1)
+        try source.stop(deadline: Date())
+    }
+
+    func testSystemAudioPermissionProbeResolvesBeforeStartWhenMicrophoneDenied() throws {
+        let system = PermissionProbedNativeCaptureComponent(
+            automaticPermissionAnswer: .success(.granted)
+        )
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .denied)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 4)
+        )
+
+        try source.start(configuration: laneConfiguration())
+
+        XCTAssertEqual(source.status().map(\.state), ["capturing", "failed"])
+        XCTAssertEqual(system.startCount, 1)
+        XCTAssertEqual(microphone.startCount, 0)
+        try source.stop(deadline: Date())
+    }
+
+    func testSystemAudioPermissionProbeInfrastructureFailureKeepsTypedCause() throws {
+        let system = PermissionProbedNativeCaptureComponent()
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .granted)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 4)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        system.answerPermissionProbe(.failure(.deviceUnavailable("permission probe helper")))
+
+        let status = source.status()
+        XCTAssertEqual(status.map(\.state), ["failed", "capturing"])
+        XCTAssertEqual(status.map(\.failureCode), ["macos_device_unavailable", nil])
+        XCTAssertEqual(system.startCount, 0)
+        try source.stop(deadline: Date())
+    }
+
+    func testSystemAudioPermissionProbeAnswerAfterStopCannotStartLane() throws {
+        let system = PermissionProbedNativeCaptureComponent()
+        let microphone = PermissionGatedNativeCaptureComponent(authorization: .granted)
+        let source = NativeDualCaptureSource(
+            system: system,
+            microphone: microphone,
+            queue: RealTimeNativeAudioBufferQueue(capacity: 4)
+        )
+
+        try source.start(configuration: laneConfiguration())
+        try source.stop(deadline: Date())
+        system.answerPermissionProbe(.success(.granted))
+
+        XCTAssertEqual(system.cancelPermissionProbeCount, 1)
+        XCTAssertEqual(system.startCount, 0)
+        XCTAssertEqual(source.status().map(\.state), ["stopped", "stopped"])
+    }
+
+    func testSystemAudioPermissionProbeMapsMeasuredSignalAndAllZeroDecisions() throws {
+        for (signalObserved, expected) in [
+            (true, NativeLanePermissionFact.granted),
+            (false, NativeLanePermissionFact.denied),
+        ] {
+            let driver = RecordingSystemAudioPermissionProbeDriver(
+                result: .success(signalObserved)
+            )
+            let probe = SystemAudioPermissionProbe(
+                driver: driver,
+                queue: DispatchQueue(label: "test.system-audio-probe.\(signalObserved)")
+            )
+            let answered = expectation(description: "probe answered \(signalObserved)")
+            let answers = RecordedPermissionProbeOutcomes()
+
+            probe.request {
+                answers.append($0)
+                answered.fulfill()
+            }
+            wait(for: [answered], timeout: 1)
+
+            XCTAssertEqual(answers.values, [.success(expected)])
+        }
+    }
+
+    func testSystemAudioPermissionProbeCancellationFencesLateDriverAnswer() throws {
+        let driver = RecordingSystemAudioPermissionProbeDriver(
+            result: .success(true),
+            blocked: true
+        )
+        let probe = SystemAudioPermissionProbe(
+            driver: driver,
+            queue: DispatchQueue(label: "test.system-audio-probe.cancel")
+        )
+        let answered = expectation(description: "stale probe answer")
+        answered.isInverted = true
+
+        probe.request { _ in answered.fulfill() }
+        XCTAssertEqual(driver.waitUntilStarted(timeout: 1), .success)
+        probe.cancel()
+        driver.release()
+        wait(for: [answered], timeout: 0.1)
+    }
+
+    func testSystemAudioPermissionProbePreservesTypedDriverFailure() throws {
+        let driver = RecordingSystemAudioPermissionProbeDriver(
+            result: .failure(.deviceUnavailable("probe tap"))
+        )
+        let probe = SystemAudioPermissionProbe(
+            driver: driver,
+            queue: DispatchQueue(label: "test.system-audio-probe.failure")
+        )
+        let answered = expectation(description: "probe failure answered")
+        let answers = RecordedPermissionProbeOutcomes()
+
+        probe.request {
+            answers.append($0)
+            answered.fulfill()
+        }
+        wait(for: [answered], timeout: 1)
+
+        XCTAssertEqual(
+            answers.values,
+            [.failure(.deviceUnavailable("probe tap"))]
+        )
+    }
+
     func testLanePermissionCoordinatorKeepsLaneStateAndFencesRetiredAnswers() throws {
         let coordinator = NativeLanePermissionCoordinator()
         let gate = PermissionGatedNativeCaptureComponent(authorization: .undetermined)
@@ -7039,6 +7205,60 @@ private final class RecordedPermissionAnswers: @unchecked Sendable {
     }
 }
 
+private final class RecordedPermissionProbeOutcomes: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [
+        Result<NativeLanePermissionFact, NativeCaptureError>
+    ] = []
+
+    var values: [Result<NativeLanePermissionFact, NativeCaptureError>] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recorded
+    }
+
+    func append(
+        _ outcome: Result<NativeLanePermissionFact, NativeCaptureError>
+    ) {
+        lock.lock()
+        recorded.append(outcome)
+        lock.unlock()
+    }
+}
+
+private final class RecordingSystemAudioPermissionProbeDriver:
+    SystemAudioPermissionProbeDriving
+{
+    private let result: Result<Bool, NativeCaptureError>
+    private let blocked: Bool
+    private let started = DispatchSemaphore(value: 0)
+    private let released = DispatchSemaphore(value: 0)
+
+    init(
+        result: Result<Bool, NativeCaptureError>,
+        blocked: Bool = false
+    ) {
+        self.result = result
+        self.blocked = blocked
+    }
+
+    func measure(cancelled: @escaping @Sendable () -> Bool) throws -> Bool {
+        started.signal()
+        if blocked {
+            released.wait()
+        }
+        return try result.get()
+    }
+
+    func waitUntilStarted(timeout: TimeInterval) -> DispatchTimeoutResult {
+        started.wait(timeout: .now() + timeout)
+    }
+
+    func release() {
+        released.signal()
+    }
+}
+
 /// A lane that owns an explicit permission request, like the real microphone. The answer is
 /// delivered only when the test calls `answerPermissionRequest`, which is how macOS behaves: the
 /// request returns immediately and the user replies whenever they reply.
@@ -7182,6 +7402,65 @@ private final class RecordingSystemAudioTapDriver: SystemAudioTapDriver {
 
     func emitAfterRemoval(_ observation: SystemAudioTapDeviceObservation) {
         removedLifecycleHandler?(observation)
+    }
+}
+
+private final class PermissionProbedNativeCaptureComponent:
+    NativeAudioCaptureComponent,
+    NativeLanePermissionProbingComponent
+{
+    private let automaticPermissionAnswer:
+        Result<NativeLanePermissionFact, NativeCaptureError>?
+    private(set) var startCount = 0
+    private(set) var stopCount = 0
+    private(set) var cancelPermissionProbeCount = 0
+    private var permissionAnswers: [
+        @Sendable (Result<NativeLanePermissionFact, NativeCaptureError>) -> Void
+    ] = []
+
+    init(
+        automaticPermissionAnswer:
+            Result<NativeLanePermissionFact, NativeCaptureError>? = nil
+    ) {
+        self.automaticPermissionAnswer = automaticPermissionAnswer
+    }
+
+    func requestPermissionProbe(
+        _ completion: @escaping @Sendable (
+            Result<NativeLanePermissionFact, NativeCaptureError>
+        ) -> Void
+    ) {
+        if let automaticPermissionAnswer {
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
+                completion(automaticPermissionAnswer)
+            }
+            return
+        }
+        permissionAnswers.append(completion)
+    }
+
+    func cancelPermissionProbe() {
+        cancelPermissionProbeCount += 1
+        permissionAnswers.removeAll()
+    }
+
+    func answerPermissionProbe(
+        _ answer: Result<NativeLanePermissionFact, NativeCaptureError>
+    ) {
+        let answers = permissionAnswers
+        permissionAnswers.removeAll()
+        for completion in answers {
+            completion(answer)
+        }
+    }
+
+    func start(queue: RealTimeNativeAudioBufferQueue) throws {
+        startCount += 1
+    }
+
+    func stop() {
+        stopCount += 1
+        cancelPermissionProbe()
     }
 }
 

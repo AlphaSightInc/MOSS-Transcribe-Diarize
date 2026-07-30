@@ -9,6 +9,7 @@ import os
 import platform
 import plistlib
 import re
+import signal
 import shutil
 import socket
 import ssl
@@ -136,6 +137,137 @@ def test_lab_app_bundle_is_one_immutable_first_install_reused_across_nodes():
 
     # And the same recorded hashes still describe the bundle on disk.
     _assert_lab_bundle_unchanged(lab)
+
+
+def test_built_macos_app_finishes_launch_and_honors_application_terminate():
+    if platform.system() != "Darwin":
+        pytest.skip("macOS Launch Services lifecycle is Darwin-only.")
+    if shutil.which("open") is None or shutil.which("swift") is None:
+        pytest.fail("open and swift are required for the Launch Services lifecycle tracer.")
+
+    lab = _lab_bundle()
+    pid: int | None = None
+    with tempfile.TemporaryDirectory(prefix="mtd5-lifecycle-", dir="/tmp") as tmp:
+        tmp_path = Path(tmp)
+        socket_path = tmp_path / "control.sock"
+        store_path = tmp_path / "secrets.json"
+        launched = subprocess.run(
+            [
+                "open",
+                "-n",
+                "-g",
+                "--env",
+                f"MOSS_CAPTURE_CONTROL_SOCKET={socket_path}",
+                "--env",
+                f"MOSS_CAPTURE_SECRET_STORE_PATH={store_path}",
+                "--env",
+                "MOSS_CAPTURE_SKIP_LAUNCH=1",
+                str(lab.bundle),
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            timeout=TIMEOUT,
+        )
+        assert launched.returncode == 0, (
+            f"Launch Services could not open the lab app: "
+            f"stdout={launched.stdout!r} stderr={launched.stderr!r}"
+        )
+        try:
+            deadline = time.monotonic() + TIMEOUT
+            while time.monotonic() < deadline and not socket_path.exists():
+                time.sleep(0.05)
+            assert socket_path.exists(), "Launch Services app did not bind its control socket"
+
+            control_secret = _read_store(store_path)["local-control-secret"]
+            request_body = json.dumps(
+                {"secret": control_secret, "request": {"command": "status"}},
+                separators=(",", ":"),
+            ).encode("utf-8")
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+                client.settimeout(2.0)
+                client.connect(str(socket_path))
+                pid = struct.unpack("i", client.getsockopt(0, 0x002, 4))[0]
+                client.sendall(struct.pack(">I", len(request_body)) + request_body)
+                response_length = struct.unpack(">I", _recv_exact(client, 4))[0]
+                response = json.loads(_recv_exact(client, response_length).decode("utf-8"))
+            assert response["ok"] is True
+            assert response["running"] is False
+
+            program = """
+import AppKit
+import Foundation
+
+let pid = pid_t(CommandLine.arguments[1])!
+guard let app = NSRunningApplication(processIdentifier: pid) else {
+    Foundation.exit(2)
+}
+let finished = app.isFinishedLaunching
+let terminateAccepted = app.terminate()
+print("finishedLaunching=\\(finished)")
+print("terminateAccepted=\\(terminateAccepted)")
+guard finished else {
+    Foundation.exit(3)
+}
+guard terminateAccepted else {
+    Foundation.exit(4)
+}
+""".strip()
+            lifecycle = subprocess.run(
+                ["swift", "-e", program, str(pid)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                timeout=BUILD_TIMEOUT,
+            )
+            assert lifecycle.returncode == 0, (
+                f"app did not finish Launch Services launch or accept termination: "
+                f"stdout={lifecycle.stdout!r} stderr={lifecycle.stderr!r}"
+            )
+            assert lifecycle.stdout.splitlines() == [
+                "finishedLaunching=true",
+                "terminateAccepted=true",
+            ]
+
+            deadline = time.monotonic() + 3.0
+            while time.monotonic() < deadline and _pid_alive(pid):
+                time.sleep(0.05)
+            assert not _pid_alive(pid), "app accepted terminate but did not exit"
+        finally:
+            if pid is not None and _pid_alive(pid):
+                os.kill(pid, signal.SIGTERM)
+            _remove_socket(socket_path)
+
+    _assert_lab_bundle_unchanged(lab)
+
+
+def test_built_macos_app_serve_failure_exits_software_error():
+    if platform.system() != "Darwin":
+        pytest.skip("macOS Launch Services lifecycle is Darwin-only.")
+
+    app_exe = _swift_bin_dir() / LAB_EXECUTABLE_NAME
+    with tempfile.TemporaryDirectory(prefix="mtd5-serve-failure-", dir="/tmp") as tmp:
+        tmp_path = Path(tmp)
+        env = os.environ.copy()
+        env.update(
+            {
+                # sockaddr_un.sun_path cannot hold this path, so serve() must fail.
+                "MOSS_CAPTURE_CONTROL_SOCKET": f"/tmp/{'x' * 104}",
+                "MOSS_CAPTURE_SECRET_STORE_PATH": str(tmp_path / "secrets.json"),
+                "MOSS_CAPTURE_SKIP_LAUNCH": "1",
+            }
+        )
+        completed = subprocess.run(
+            [str(app_exe)],
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            timeout=TIMEOUT,
+        )
+
+    assert completed.returncode == 70, (
+        f"serve failure reported success: "
+        f"stdout={completed.stdout!r} stderr={completed.stderr!r}"
+    )
 
 
 def test_built_macos_app_cli_cross_real_uds_and_private_tls_server():

@@ -113,7 +113,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 7b8f58b after final-SHA F2 proved the new queue clean, then a third sequential
 # meeting in the same app process exposed the latency probe carrying the prior meeting's
 # since_version/since_seq into the new session. This closeout scopes both cursors to session ID.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-7b8f58b4eb514d9c5a7dce16d4983b1daf38828a}"
+# Advanced to ddaf95a for the operator-directed system-audio permission and Launch Services
+# lifecycle closeout. Its feature branch is cut from that keeper merge so one exact committed SHA
+# can replace the dirty m4mbp deployment on both hosts.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-ddaf95a41c59cd9e02559b51d5df9ee3a76797be}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

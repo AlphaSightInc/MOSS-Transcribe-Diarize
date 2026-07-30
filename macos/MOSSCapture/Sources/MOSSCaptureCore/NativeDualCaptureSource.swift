@@ -13,15 +13,29 @@ protocol NativeLaneHealthReportingComponent: AnyObject {
 ///
 /// Both members must return immediately: `authorization()` is a status read that never touches
 /// capture hardware, and `requestAuthorization` starts the single user-facing transition and
-/// delivers the answer later, on an arbitrary thread. A lane without such an API resolves its
-/// permission through its recording start instead — see `SystemAudioPermission`.
+/// delivers the answer later, on an arbitrary thread.
 protocol NativeLanePermissionRequesting: AnyObject {
     func authorization() -> NativeLanePermissionFact
     func requestAuthorization(_ completion: @escaping @Sendable (NativeLanePermissionFact) -> Void)
 }
 
+/// A lane whose permission can only be proven by a real capture measurement.
+///
+/// Core Audio exposes no System Audio Recording preflight API. The system lane therefore runs a
+/// private probe after the user's start action and reports either the measured decision or the
+/// typed infrastructure error that prevented a decision.
+protocol NativeLanePermissionProbingComponent: AnyObject {
+    func requestPermissionProbe(
+        _ completion: @escaping @Sendable (
+            Result<NativeLanePermissionFact, NativeCaptureError>
+        ) -> Void
+    )
+    func cancelPermissionProbe()
+}
+
 extension SystemAudioTap: NativeAudioCaptureComponent {}
 extension SystemAudioTap: NativeLaneHealthReportingComponent {}
+extension SystemAudioTap: NativeLanePermissionProbingComponent {}
 extension MicrophoneCapture: NativeAudioCaptureComponent {}
 extension MicrophoneCapture: NativeLaneHealthReportingComponent {}
 extension MicrophoneCapture: NativeLanePermissionRequesting {}
@@ -50,11 +64,10 @@ enum NativeLaneAdmission {
 /// Owns the per-lane recording permission of the running capture generation.
 ///
 /// The two lanes resolve permission through different macOS mechanisms — the microphone through
-/// an explicit `AVCaptureDevice.requestAccess` transition, system audio through the user-initiated
-/// recording start described by `SystemAudioPermission` — so state is kept per lane and never
-/// collapsed into one process-wide answer. Every asynchronous answer carries the generation that
-/// asked for it: an answer from a retired generation is dropped, so a grant that lands after
-/// `stop`, or behind a `start` that admitted nothing, can neither begin capture nor change
+/// an explicit `AVCaptureDevice.requestAccess` transition, system audio through a measured muted
+/// probe — so state is kept per lane and never collapsed into one process-wide answer. Every
+/// asynchronous answer carries the generation that asked for it: an answer from a retired
+/// generation is dropped, so a grant that lands after `stop` can neither begin capture nor change
 /// reported status.
 final class NativeLanePermissionCoordinator: @unchecked Sendable {
     private let lock = NSLock()
@@ -88,6 +101,30 @@ final class NativeLanePermissionCoordinator: @unchecked Sendable {
             states[lane] = state
         }
         lock.unlock()
+    }
+
+    func beginRequest(lane: CaptureLane, generation: UInt64) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard generation == self.generation, states[lane] == nil else {
+            return false
+        }
+        states[lane] = .pending
+        return true
+    }
+
+    func resolveRequest(
+        lane: CaptureLane,
+        generation: UInt64,
+        state: NativeLanePermissionState
+    ) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard generation == self.generation, states[lane] == .pending else {
+            return false
+        }
+        states[lane] = state
+        return true
     }
 
     /// Issues the single user-initiated request for `lane`. A duplicate `start` inside the same
@@ -196,11 +233,26 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
         attachHealthSink(to: system, lane: .system, generation: generation)
         attachHealthSink(to: microphone, lane: .microphone, generation: generation)
 
-        let systemAdmission = admitSystemAudio(generation: generation)
+        let systemProbeResolution = DispatchSemaphore(value: 0)
+        var systemAdmission = admitSystemAudio(
+            generation: generation,
+            resolutionSignal: systemProbeResolution
+        )
         let microphoneAdmission = admitMicrophone(generation: generation)
-        let capturing = [systemAdmission, microphoneAdmission].contains {
+        var capturing = [systemAdmission, microphoneAdmission].contains {
             if case .capturing = $0 { return true }
             return false
+        }
+
+        if !capturing, case .awaitingPermission = systemAdmission {
+            // The driver itself is bounded by one second for Core Audio registration plus five
+            // seconds for helper completion. One extra second lets teardown/classification finish
+            // while remaining inside the control CLI's eight-second request bound.
+            _ = systemProbeResolution.wait(timeout: .now() + 7)
+            systemAdmission = recordedAdmission(for: .system) ?? .awaitingPermission
+            if case .capturing = systemAdmission {
+                capturing = true
+            }
         }
 
         guard capturing else {
@@ -286,9 +338,23 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
         lock.unlock()
     }
 
-    /// System Audio Recording has no request API of its own, so the user-initiated recording start
-    /// performed here is both the request and the admission; this lane never sits pending.
-    private func admitSystemAudio(generation: UInt64) -> NativeLaneAdmission {
+    /// System Audio Recording has no public preflight API. The production tap therefore stays
+    /// pending while its private muted probe obtains measured grant or denial evidence.
+    private func admitSystemAudio(
+        generation: UInt64,
+        resolutionSignal: DispatchSemaphore
+    ) -> NativeLaneAdmission {
+        if let probe = system as? NativeLanePermissionProbingComponent {
+            guard permissions.beginRequest(lane: .system, generation: generation) else {
+                return recordedAdmission(for: .system) ?? .awaitingPermission
+            }
+            probe.requestPermissionProbe { [weak self] outcome in
+                defer { resolutionSignal.signal() }
+                self?.resolveSystemAudioPermission(outcome, generation: generation)
+            }
+            return recordedAdmission(for: .system) ?? .awaitingPermission
+        }
+
         let admission = admit(system, lane: .system, generation: generation)
         var startError: Error?
         if case .failed(let error) = admission {
@@ -298,6 +364,44 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
             permissions.record(state, for: .system, generation: generation)
         }
         return admission
+    }
+
+    private func resolveSystemAudioPermission(
+        _ outcome: Result<NativeLanePermissionFact, NativeCaptureError>,
+        generation: UInt64
+    ) {
+        switch outcome {
+        case .success(let decision):
+            let state: NativeLanePermissionState = decision == .granted ? .granted : .denied
+            guard permissions.resolveRequest(
+                lane: .system,
+                generation: generation,
+                state: state
+            ) else {
+                return
+            }
+            health.enqueue(.permission(decision), lane: .system, generation: generation)
+            guard decision == .granted, isLive(generation: generation) else {
+                if decision != .granted {
+                    _ = fail(
+                        NativeCaptureError.permissionDenied("system audio"),
+                        lane: .system,
+                        generation: generation
+                    )
+                }
+                return
+            }
+            _ = admit(system, lane: .system, generation: generation)
+        case .failure(let error):
+            guard permissions.resolveRequest(
+                lane: .system,
+                generation: generation,
+                state: .denied
+            ) else {
+                return
+            }
+            _ = fail(error, lane: .system, generation: generation)
+        }
     }
 
     /// The microphone publishes an explicit request, so an undetermined lane is asked — never

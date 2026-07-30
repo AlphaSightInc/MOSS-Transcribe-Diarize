@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Darwin
 import MOSSCaptureCore
@@ -6,11 +7,54 @@ import Security
 @main
 struct MOSSCaptureAppMain {
     static func main() {
+        if CommandLine.arguments.dropFirst() == [SystemAudioPermissionSignal.commandArgument] {
+            do {
+                try SystemAudioPermissionSignal.run()
+            } catch {
+                Foundation.exit(71)
+            }
+            return
+        }
         do {
-            try ProductionCaptureRuntime.makeDefault().serve()
+            let application = NSApplication.shared
+            let delegate = MOSSCaptureApplicationDelegate(
+                runtime: try ProductionCaptureRuntime.makeDefault()
+            )
+            application.delegate = delegate
+            application.run()
+            withExtendedLifetime(delegate) {}
         } catch {
             Foundation.exit(70)
         }
+    }
+}
+
+/// Keeps Launch Services responsive while the blocking local control server runs off-main.
+///
+/// `LSUIElement` hides the agent from the Dock and Force Quit, so AppKit is also the only path by
+/// which Finder can observe a completed launch and deliver a normal terminate or reopen event.
+final class MOSSCaptureApplicationDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
+    private let runtime: ProductionCaptureRuntime
+
+    init(runtime: ProductionCaptureRuntime) {
+        self.runtime = runtime
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            do {
+                try runtime.serve()
+            } catch {
+                Foundation.exit(70)
+            }
+        }
+    }
+
+    func applicationShouldHandleReopen(
+        _ sender: NSApplication,
+        hasVisibleWindows flag: Bool
+    ) -> Bool {
+        true
     }
 }
 
