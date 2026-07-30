@@ -168,6 +168,14 @@ lanes. Stop and browser control requests keep their separate
 10-second bound because they wait on the explicit 5-second server drain and do
 not gate native audio collection.
 
+The app-owned latency probe's `since_version` and `since_seq` cursors are scoped
+to one session ID. A final-SHA sequential run on 2026-07-29 completed F2 and F3,
+then started F1 in the same app process; the new session advanced from version
+0 to 292, but the probe kept F3's version 3,760 cursor and therefore observed
+zero committed advances. The sampler already resets at controller start; the
+probe now independently resets only its incremental HTTP cursors when the
+reported session ID changes.
+
 IDEA-043 adds source-owned native lane failure ownership inside the native dual
 capture source without changing the public controller, helper health JSON,
 parser, routes, server lifecycle, or mixer. `NativeLaneHealth` owns

@@ -6341,6 +6341,67 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertFalse(encoded.contains("session-latency"))
     }
 
+    func testLatencyProbeResetsIncrementalCursorsForEachSession() throws {
+        let sessionStore = InMemoryCaptureSessionStore()
+        try sessionStore.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try sessionStore.saveCaptureSessionID("session-first")
+        try sessionStore.saveCaptureViewToken("view-token-secret")
+        let client = RecordingLatencyHTTPClient()
+        client.snapshotBody = try latencySnapshotBody(version: 7, committedSamples: 40_000)
+        client.eventsBody = try latencyEventsBody(sequences: [11])
+        let scheduler = FakeCaptureSchedulerAdapter()
+        var statusSessionID = "session-first"
+        let probe = CaptureLatencyProbe(
+            sampler: CaptureLatencySampler(),
+            status: {
+                CaptureStatus(
+                    running: true,
+                    sessionID: statusSessionID,
+                    lanes: [],
+                    publishedFrameCount: 0,
+                    lastHealthSequence: nil
+                )
+            },
+            sessionStore: sessionStore,
+            clientProvider: RecordingCaptureHTTPClientProvider(client: client),
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            clock: FakeCaptureClockAdapter(ticks: (0..<12).map(UInt64.init)),
+            hostTime: StaticCaptureHostTimeReader(
+                nanoseconds: [30_000_000_000, 31_000_000_000, 32_000_000_000]
+            ),
+            scheduler: scheduler
+        )
+
+        _ = try probe.measure()
+        scheduler.runScheduledOperation()
+        scheduler.runScheduledOperation()
+        XCTAssertEqual(client.requests[2].url?.query, "since_version=7")
+        XCTAssertEqual(client.requests[3].url?.query, "since_seq=11")
+        probe.stop()
+
+        statusSessionID = "session-second"
+        try sessionStore.saveCaptureSessionID(statusSessionID)
+        client.snapshotBody = try latencySnapshotBody(version: 1, committedSamples: 8_000)
+        client.eventsBody = try latencyEventsBody(sequences: [1])
+
+        _ = try probe.measure()
+        scheduler.runScheduledOperation(at: 1)
+
+        XCTAssertEqual(
+            client.requests[4].url?.path,
+            "/api/live/sessions/session-second/snapshot"
+        )
+        XCTAssertNil(
+            client.requests[4].url?.query,
+            "a new session must not inherit the previous session's version cursor"
+        )
+        XCTAssertEqual(
+            client.requests[5].url?.query,
+            "since_seq=0",
+            "a new session must not inherit the previous session's event cursor"
+        )
+    }
+
     func testLatencyProbeIsDefaultOffAndAsksNothingUntilAFigureIsRequested() throws {
         let sessionStore = InMemoryCaptureSessionStore()
         try sessionStore.saveCaptureServerURL(URL(string: "https://moss.example")!)

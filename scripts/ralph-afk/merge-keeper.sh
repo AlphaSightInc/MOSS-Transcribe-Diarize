@@ -110,7 +110,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # too shallow: one 5.460-second F2 turn held all 128 system buffers and dropped 146 more. This
 # closeout pairs the one-second request bounds with 1,024 buffers per lane, 3.7x the measured
 # 274-buffer demand.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-b56ad393fd18a5d19fe294252e704d6d8c043d2f}"
+# Advanced to 7b8f58b after final-SHA F2 proved the new queue clean, then a third sequential
+# meeting in the same app process exposed the latency probe carrying the prior meeting's
+# since_version/since_seq into the new session. This closeout scopes both cursors to session ID.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-7b8f58b4eb514d9c5a7dce16d4983b1daf38828a}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
