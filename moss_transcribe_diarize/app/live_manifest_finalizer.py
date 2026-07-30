@@ -1,10 +1,10 @@
 """Generate the deployed live provider manifest bounds from the live wire contract.
 
 The deployed manifest is host-owned and provisional until a reviewed revision exists.
-Finalizing it means four things, and all four are mechanical: stamp the deployed source
+Finalizing it means five things, and all five are mechanical: stamp the deployed source
 revision, retune the bounds the Mac client's wire contract needs, state the matcher
-thresholds the shipped identity policy is calibrated for, and regenerate the bundle config
-hashes. A hand-edited ``bounds_config`` fails the runtime's declared hash comparison at
+thresholds the shipped identity policy is calibrated for, state its separate birth and
+enrollment floors, and regenerate the bundle config hashes. A hand-edited ``bounds_config`` fails the runtime's declared hash comparison at
 preflight, so the generated hashes are the only ones that admit.
 
 The matcher thresholds are the fourth step because of what happened without it: the
@@ -40,7 +40,9 @@ from .live_provider_bundle import (
 # Admission must be proven with the readers the live runtime itself uses; rebuilding
 # the mapping here would prove only that this module agrees with itself.
 from .live_provider_bundle import _bounds as read_service_bounds
+from .live_provider_bundle import _birth_min_seconds as read_birth_min_seconds
 from .live_provider_bundle import _endpoint_config as read_endpoint_policy_config
+from .live_provider_bundle import _fingerprint_album as read_fingerprint_album
 from .live_provider_bundle import _identity_config as read_identity_config
 from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
 from .live_session import LIVE_SAMPLE_RATE
@@ -89,7 +91,7 @@ class LiveManifestRetune:
 
 @dataclass(frozen=True, slots=True)
 class LiveIdentityRecalibration:
-    """The matcher thresholds a deployment states explicitly.
+    """The matcher thresholds and duration floors a deployment states explicitly.
 
     These are not wire-contract values: no client behaviour and no span plan depends on them,
     and unlike the bounds there is no relation that makes one pair right. What makes a pair
@@ -101,12 +103,19 @@ class LiveIdentityRecalibration:
 
     min_match_score: float
     min_match_margin: float
+    album_admission_seconds: float
+    birth_min_seconds: float
 
     def __post_init__(self) -> None:
-        for name in ("min_match_score", "min_match_margin"):
+        for name in (
+            "min_match_score",
+            "min_match_margin",
+            "album_admission_seconds",
+            "birth_min_seconds",
+        ):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)):
-                raise LiveManifestFinalizeError(f"identity_config.{name} must be a number.")
+                raise LiveManifestFinalizeError(f"{name} must be a number.")
 
 
 def finalize_payload(
@@ -120,7 +129,13 @@ def finalize_payload(
 
     _require_source_revision(source_revision)
     final = deepcopy(dict(payload))
-    for key in ("endpoint_config", "identity_config", "bounds_config", "decoder_config"):
+    for key in (
+        "endpoint_config",
+        "identity_config",
+        "identity_provider",
+        "bounds_config",
+        "decoder_config",
+    ):
         section = final.get(key)
         if not isinstance(section, Mapping):
             raise LiveManifestFinalizeError(f"{key} is required in the input manifest.")
@@ -130,6 +145,10 @@ def finalize_payload(
     final["endpoint_config"]["hard_cap_samples"] = retune.hard_cap_samples
     final["identity_config"]["min_match_score"] = float(identity.min_match_score)
     final["identity_config"]["min_match_margin"] = float(identity.min_match_margin)
+    final["identity_provider"]["album_admission_seconds"] = float(
+        identity.album_admission_seconds
+    )
+    final["identity_provider"]["birth_min_seconds"] = float(identity.birth_min_seconds)
     final["bounds_config"]["hard_cap_samples"] = retune.hard_cap_samples
     final["bounds_config"]["max_retained_samples"] = retune.max_retained_samples
     final["bounds_config"]["frame_samples"] = retune.frame_samples
@@ -241,8 +260,11 @@ def _identity_evidence(payload: Mapping[str, Any]) -> dict[str, Any]:
     """
 
     section = _section(payload, "identity_config")
+    provider = _section(payload, "identity_provider")
     try:
         config = read_identity_config(section)
+        album = read_fingerprint_album(provider)
+        birth_min_seconds = read_birth_min_seconds(provider)
     except (LiveProviderBundleAdmissionError, ValueError) as exc:
         raise LiveManifestFinalizeError(
             f"identity_config is not one the live runtime admits: {exc}"
@@ -251,6 +273,8 @@ def _identity_evidence(payload: Mapping[str, Any]) -> dict[str, Any]:
         "identity_max_speakers": config.max_speakers,
         "identity_min_match_score": config.min_match_score,
         "identity_min_match_margin": config.min_match_margin,
+        "identity_album_admission_seconds": album.admission_seconds,
+        "identity_birth_min_seconds": birth_min_seconds,
     }
 
 
@@ -310,6 +334,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=float,
         help="identity_config.min_match_margin, calibrated for the shipped identity policy.",
     )
+    parser.add_argument(
+        "--album-admission-seconds",
+        required=True,
+        type=float,
+        help="identity_provider.album_admission_seconds; enrollment only.",
+    )
+    parser.add_argument(
+        "--birth-min-seconds",
+        required=True,
+        type=float,
+        help="identity_provider.birth_min_seconds; independent of enrollment.",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Print the plan and rollback; write nothing.")
     args = parser.parse_args(argv)
 
@@ -345,6 +381,8 @@ def _run(args: argparse.Namespace) -> int:
     identity = LiveIdentityRecalibration(
         min_match_score=args.min_match_score,
         min_match_margin=args.min_match_margin,
+        album_admission_seconds=args.album_admission_seconds,
+        birth_min_seconds=args.birth_min_seconds,
     )
     final, contract = finalize_payload(
         payload,
@@ -365,6 +403,9 @@ def _run(args: argparse.Namespace) -> int:
         f"set endpoint_config.hard_cap_samples={retune.hard_cap_samples}",
         f"set identity_config.min_match_score={identity.min_match_score}",
         f"set identity_config.min_match_margin={identity.min_match_margin}",
+        "set identity_provider.album_admission_seconds="
+        f"{identity.album_admission_seconds}",
+        f"set identity_provider.birth_min_seconds={identity.birth_min_seconds}",
         f"set bounds_config.hard_cap_samples={retune.hard_cap_samples}",
         f"set bounds_config.max_retained_samples={retune.max_retained_samples}",
         f"set bounds_config.frame_samples={retune.frame_samples}",

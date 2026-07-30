@@ -1087,8 +1087,8 @@ evidence, is in the progress.txt archive under the same title.
 | **Lane-failure log** (K2) | The app records a **typed** lane failure alongside G3's unclassified one, through `LaneFailureLoggingHealthAdapter`, with one `CaptureLaneStates` vocabulary. *Extended by D-a (it. 15):* a **degradation** is recorded the same way, once per lane per generation, and the line's verb comes from the state — so grep `capture lane ` , not `failed`. |
 | **Terminal record** (K3) | The heartbeat that ends a session carries the failed lanes' typed codes into `LiveV2Session.expire`, `runtime.abort`, the `session_aborted` event and one host-journal line. |
 | **Session refusal** (K4) | 401/403/404/410 → `CaptureStatus.sessionRefusal` / `ControlChannelResponse.sessionRefusal`, recorded from the tick **and** the stop drain, so `running: true` never stands alone while every request refuses. A new session id is a new question. |
-| **Fingerprint album** (Phase N step 1, it. 15 of run `20260729-025318`; **DEPLOYED at `7a4f59c`**) | **Matching is not enrollment.** The evidence floor (`identity_provider.min_segment_samples`) does not move, so a short span is still *labelled*; enrollment needs ADR-0002's **1.0 s**. Per canonical speaker: up to **k=10** exemplars, matched against their **duration-weighted centroid**; plus **one** sub-admission stand-in used only while the bank is empty, discarded — never averaged — by the first real exemplar. Neither tier is recency-driven. Every refusal is a named disposition and nothing here raises. |
-| **Manifest calibration** (Phase N step 1b, it. 17 of run `20260729-025318`; **DEPLOYED at `7a4f59c`, host manifest regenerated at 0.35/0.1**) | A **free** deployed parameter is stated by the deployment, never inherited. `finalize-live-provider-manifest.py` requires `--min-match-score` / `--min-match-margin`, writes them into `identity_config`, hash-covers them, names them in the plan and the evidence, and refuses a pair `live_provider_bundle._identity_config` rejects. The calibrated pair is named once, in `live_identity_album.py`, and the accuracy harness imports it — so the measured pair and the deployable pair cannot diverge. |
+| **Fingerprint album** (Phase N step 1, amended 2026-07-30) | **Matching is not enrollment.** Evidence remains matchable at **0.5 s**, birth requires **1.0 s**, enrollment requires **2.0 s**. Per canonical speaker: up to **k=10** quality-gated exemplars, matched against their **duration-weighted centroid**; plus one sub-enrollment stand-in while the bank is empty, discarded — never averaged — by the first real exemplar. |
+| **Manifest calibration** (Phase N step 1b, amended 2026-07-30) | `finalize-live-provider-manifest.py` requires and hash-covers `--min-match-score 0.35`, `--min-match-margin 0.1`, `--album-admission-seconds 2.0`, and `--birth-min-seconds 1.0`; runtime readers validate every value. |
 | **Session tape** (Phase N step 2, it. 19 of run `20260729-025318`; **DEPLOYED at `7a4f59c` but OFF - no host declares a root**) | **A tape is placed by capture timestamp and bounded by a declaration.** Three PCM16 tracks + an atomically republished `index.json`; the **gap manifest is the complement of coverage**, so a dropped frame is silence *and* a named gap and a late frame fills it. Retention is opt-in — no root, no tape, no behaviour change. `declared()` refuses a root inside the checkout, sharing a filesystem with a runs tree, or on a filesystem where `chmod` is a no-op. No frame ever raises: cap, write failure and inadmissible frame each stop taping with a typed degradation. The reaper is driven by session state + TTL, runs at startup, and skips what it cannot read as a tape. |
 | **Taped live path** (Phase N step 2, it. 20 of run `20260729-025318`; **DEPLOYED at `7a4f59c` but inert - no host declares a root**) | **The recorder is the boundary, and `None` is a whole configuration.** The transport holds one `LiveSessionTapeRecorder`, constructed always and inert when no root is declared — so the untaped service is a state of the wiring, asserted by a route node, not an absence of it. Lane frames tee **after the ingress ack**; the mixed track tees at `admit_available`'s sealed commit, placed by the commit's own start timestamp. The tape is released wherever the **mixer** is, including the coordinator's lease-expiry teardown. Nothing in the recorder raises: a store failure is one WARNING naming the action, never a 500 on `POST /frames`. |
 | **Retrospective sweep** (Phase N step 3, it. 22 of run `20260729-025318`; **DEPLOYED at `7a4f59c`; wired in it. 24, but candidate 65 says no cadence sweep has ever published a correction in production**) | **A sweep re-matches retained evidence against the album; it never re-hears audio, and it proposes — it does not apply.** One matcher for both paths (`live_identity.assign_speakers`), so a correction can never be a second implementation's second opinion. It may not invent a speaker, may not remove a label it cannot replace (unrepresentable: the correction's speaker is non-optional), and may not move a unit that fails the deployed margin. A merge at ≥ 0.70 needs an admitted bank on **both** sides, matches on the **union** of the exemplars, and leaves the id with the most admitted speech standing. Deterministic, and applying a revision leaves nothing for the next sweep to correct. The ledger is bounded at 20 000 units ≈ 22 MB and refuses new units rather than evicting old ones. |
@@ -1328,7 +1328,7 @@ ssh -o BatchMode=yes ga0@m4mbp 'sw_vers -productVersion; ls -d /Applications/MOS
 printf '%s\n' \
   'set -euo pipefail' \
   'cd /mnt/d/Coding/MOSS-Transcribe-Diarize' \
-  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 --min-match-score 0.35 --min-match-margin 0.1' |
+  '"$HOME/.local/share/moss-transcribe-diarize/venv/bin/python3" ops/finalize-live-provider-manifest.py --input "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" --source-revision "$(git rev-parse HEAD)" --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 --min-match-score 0.35 --min-match-margin 0.1 --album-admission-seconds 2.0 --birth-min-seconds 1.0' |
   ssh -o BatchMode=yes gyauo@ga0-alienware-rtx4070ti.local \
     "wsl.exe -d Ubuntu -- bash -s"
 # Run it --dry-run FIRST and read the two `plan: set identity_config.…` lines and the
@@ -2376,14 +2376,14 @@ own authorization later"* — so neither the work nor the merge is open. §6(6),
 **Decisions that outlive the retired step blocks - recorded here so they are not re-argued, because
 step 4 and any future identity work are constrained by them.**
 
-1. **Admission is 1.0 s and `min_segment_samples` does NOT move.** The superseded sixth amendment's
-   flat ">= 2.0 s enrollment floor" is refuted by measurement: admission 0.01 / 1.0 / 2.0 gives
-   93.5 / 93.4 / 93.4 %, while **k=1 gives 79.2 %** and k=3 gives 89.7 %. ***k*, not the duration
-   gate, is what beats overwrite** - a full bank *is* a duration gate, since `_admit` evicts the
-   shortest. `min_segment_samples` is the **evidence** floor: raising it makes short spans
-   unlabelable, the exact opposite of the asymmetry this phase exists for. 1.0 s over 2.0 s because
-   ADR-0002's gate A passed at 1.0 s under production live semantics, and a 2.0 s admission under a
-   2.5 s span cap with 0.6 s silence splits would starve the album.
+1. **Matching, birth, and enrollment have separate floors (supersedes the 1.0 s coupling).**
+   `min_segment_samples` remains **8,000 (0.5 s)**, so short evidence stays matchable. Birth remains
+   **16,000 samples (1.0 s)**. Only album enrollment rises to **32,000 samples (2.0 s)**, protecting
+   the duration-weighted centroid from the real encoder's 0.5-1.0 s noise floor. The hash-pinned
+   nine-clip production-plan replay is **93.50% mean / 82.14% minimum**, with all 3-minute clips
+   **>=96.11%** and zero residual corrections. Coupling birth to 2.0 s was measured and rejected:
+   one 60-second cold-start clip fell to **49.4%**. The finalizer requires and hash-covers both
+   `album_admission_seconds=2.0` and `birth_min_seconds=1.0`.
 2. **The margin half of admission is enforced upstream, so it is recorded rather than
    re-implemented.** The album only ever observes assignments out of a **`prepared`** preparation,
    and the preparer abstains for the whole span below `min_match_score` / `min_match_margin`, so an
@@ -2663,6 +2663,12 @@ deployed value rather than changing it; the 90.7 % figure prices the pre-recalib
 and is the strongest evidence yet that candidate 63 was necessary. **Do not "recalibrate" again -
 verify the manifest reads 0.35/0.1 and record that it does.**
 
+**Phase N enrollment decision (2026-07-30):** keep the confirmed matcher at **0.35 / 0.1**;
+keep matching evidence at **0.5 s** and births at **1.0 s**; raise **enrollment only** to **2.0 s**.
+The formal hash-pinned nine-clip runner is
+`scripts/ralph-afk/live-identity-real-corpus.py`; it regenerates embeddings under the deployed
+0.5 s span plan and refuses corpus or encoder hash drift.
+
 **Adopt the real corpora in the F-certification distinct-voice harness, alongside TTS** (operator
 instruction). Provisioning is in `prototypes/streaming-diarization/README.md`: `data/real/` holds
 `benchmark_diarization_1min` and `calibration_diarization_3min`, fetched from
@@ -2679,7 +2685,8 @@ Read `scripts/ralph-afk/authorization-request-55-60-65.md` **with its iteration-
 before starting, and do NOT re-argue 55's mechanism from the record: it was corrected twice and is
 now measured on the deployed service.
 
-69. **Q1 - the birth floor, at the album's admission (1.0 s of embedded speech).** `[LANDED ON THE
+69. **Q1 - historical: the birth floor was coupled to 1.0 s admission. Superseded 2026-07-30 by
+    Phase N decision 1: birth stays 1.0 s while enrollment moves to 2.0 s.** `[LANDED ON THE
     BRANCH - iteration 21. NOT merged, NOT deployed.]` The operator took option 1 on the
     supervisor's recommendation.
     **The rule, as implemented: a birth must be enrollable.** Evidence too short to become a

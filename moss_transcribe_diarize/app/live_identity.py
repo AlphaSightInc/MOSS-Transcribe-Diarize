@@ -207,12 +207,11 @@ class BoundedCausalIdentityPreparer:
         a capacity slot that no later span can match against. Sixteen canonical speakers for
         two voices is what that costs, reached inside the first minute.
 
-        The floor is asked of the provider rather than held here, because the threshold that
-        answers "may this become a reference" is the album's admission gate and the album
-        lives in the provider. Asking makes the birth floor and the admission gate the *same*
-        number by construction; a constant restated in this module would be a second
-        calibration that agrees today and drifts later. What this class keeps is what a
-        deferral *means*, which is the half that belongs to birth.
+        The floor is asked of the provider rather than held here because the evidence duration
+        lives there. Phase N deliberately separates its 1.0 s birth floor from the album's
+        2.0 s enrollment floor: 9-clip real replay showed that coupling both at 2.0 s collapses
+        a cold-start clip. What this class keeps is what a deferral *means*, which is the half
+        that belongs to birth.
 
         Asked by name, exactly as `take_identity_revision` and `finalize_identity` are: a
         stack with no album -- `NoLiveSpeakerEvidence`, the pre-ADR-0002 overwrite policy,

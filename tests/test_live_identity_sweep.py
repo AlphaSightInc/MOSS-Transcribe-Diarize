@@ -455,7 +455,7 @@ def test_the_best_established_voice_keeps_its_id():
     """Most admitted speech wins, not the lowest id -- otherwise birth order decides identity."""
 
     album = FingerprintAlbum()
-    album.observe(canonical_speaker="speaker-0001", vector=unit_vector(0), duration_sec=1.2, span_id=1)
+    album.observe(canonical_speaker="speaker-0001", vector=unit_vector(0), duration_sec=2.0, span_id=1)
     album.observe(canonical_speaker="speaker-0009", vector=unit_vector(20), duration_sec=9.0, span_id=2)
 
     revision = sweep(ledger=SweepLedger(), album=album, config=CONFIG)
@@ -515,7 +515,7 @@ def test_a_merged_group_matches_on_the_union_of_its_exemplars():
 
     album = FingerprintAlbum()
     album.observe(canonical_speaker="speaker-0001", vector=unit_vector(0), duration_sec=9.0, span_id=1)
-    album.observe(canonical_speaker="speaker-0002", vector=unit_vector(30), duration_sec=1.0, span_id=2)
+    album.observe(canonical_speaker="speaker-0002", vector=unit_vector(30), duration_sec=2.0, span_id=2)
     ledger = SweepLedger()
     # A voice at 24 degrees is closer to speaker-0002's own centroid than to the merged one, so a
     # sweep that matched against the absorbed speaker's vector would answer differently here.
@@ -523,8 +523,8 @@ def test_a_merged_group_matches_on_the_union_of_its_exemplars():
 
     revision = sweep(ledger=ledger, album=album, config=CONFIG)
     merged_reference = (
-        9.0 * unit_vector(0)[0] + 1.0 * unit_vector(30)[0],
-        9.0 * unit_vector(0)[1] + 1.0 * unit_vector(30)[1],
+        9.0 * unit_vector(0)[0] + 2.0 * unit_vector(30)[0],
+        9.0 * unit_vector(0)[1] + 2.0 * unit_vector(30)[1],
     )
 
     assert [item.canonical_speaker for item in revision.corrections] == ["speaker-0001"]

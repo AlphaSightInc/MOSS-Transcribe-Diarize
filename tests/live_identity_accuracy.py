@@ -71,6 +71,7 @@ from moss_transcribe_diarize.app.live_identity import (
 )
 from moss_transcribe_diarize.app.live_identity_album import (
     ALBUM_ADMISSION_SECONDS,
+    ALBUM_BIRTH_MIN_SECONDS,
     ALBUM_EXEMPLARS_PER_SPEAKER,
     ALBUM_MIN_MATCH_MARGIN,
     ALBUM_MIN_MATCH_SCORE,
@@ -118,10 +119,10 @@ MAX_SPEAKERS = 16
 # state, or the bar below is proved about a number nothing ships.
 ADR_MIN_MATCH_SCORE = ALBUM_MIN_MATCH_SCORE
 ADR_MIN_MATCH_MARGIN = ALBUM_MIN_MATCH_MARGIN
-# What the live runtime ships today. The album was landed without recalibrating these; the
-# ADR says they need it, and `test_live_identity_accuracy` measures how much.
-DEPLOYED_MIN_MATCH_SCORE = 0.5
-DEPLOYED_MIN_MATCH_MARGIN = 0.2
+# The historical pre-album deployment pair. Phase N already ships the calibrated pair above;
+# this counterfactual remains useful because it prices why the 0.35 / 0.1 decision matters.
+PRE_ALBUM_MIN_MATCH_SCORE = 0.5
+PRE_ALBUM_MIN_MATCH_MARGIN = 0.2
 
 # Column order of the fixture's `rows` array: one row per evidence unit -- one canonical
 # speaker's speech inside one span, which is the granularity production embeds at.
@@ -264,6 +265,7 @@ def replay(
     min_match_score: float = ADR_MIN_MATCH_SCORE,
     min_match_margin: float = ADR_MIN_MATCH_MARGIN,
     admission_seconds: float = ALBUM_ADMISSION_SECONDS,
+    birth_min_seconds: float = ALBUM_BIRTH_MIN_SECONDS,
     exemplars_per_speaker: int = ALBUM_EXEMPLARS_PER_SPEAKER,
     max_speakers: int = MAX_SPEAKERS,
     encoder: CachedEncoder | None = None,
@@ -302,6 +304,7 @@ def replay(
     provider = WeSpeakerLiveEvidenceProvider(
         encoder=encoder,
         min_segment_samples=MIN_SEGMENT_SAMPLES,
+        birth_min_seconds=birth_min_seconds,
         album=album,
     )
     config = LiveIdentityConfig(
@@ -560,6 +563,7 @@ def replay_all(
     min_match_score: float = ADR_MIN_MATCH_SCORE,
     min_match_margin: float = ADR_MIN_MATCH_MARGIN,
     admission_seconds: float = ALBUM_ADMISSION_SECONDS,
+    birth_min_seconds: float = ALBUM_BIRTH_MIN_SECONDS,
     exemplars_per_speaker: int = ALBUM_EXEMPLARS_PER_SPEAKER,
     max_speakers: int = MAX_SPEAKERS,
     sweep_interval: float | None = None,
@@ -574,6 +578,7 @@ def replay_all(
             min_match_score=min_match_score,
             min_match_margin=min_match_margin,
             admission_seconds=admission_seconds,
+            birth_min_seconds=birth_min_seconds,
             exemplars_per_speaker=exemplars_per_speaker,
             max_speakers=max_speakers,
             sweep_interval=sweep_interval,

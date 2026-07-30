@@ -434,6 +434,10 @@ at the album's admission (1.0 s of embedded speech).** Predicted 16 -> 1-2 canon
 these two meetings. Record the reasoning before the patch as the fifth amendment's shape requires,
 and state the two consequences explicitly:
 
+> **Superseded 2026-07-30 by the operator-directed speaker-identity cycle:** birth remains
+> 1.0 s, but enrollment alone moves to 2.0 s. The two floors are now explicit, separately
+> hash-covered deployment values.
+
 - A genuinely new speaker whose first turn is short is **deferred, not lost**: the span publishes
   unattributed under `S00` (J2), the ledger retains it, and a sweep relabels it retrospectively.
   That is only acceptable because a sweep **demonstrably publishes** - which is now measured, and is
