@@ -131,7 +131,9 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to b20be61 for the operator-directed speaker-identity closeout. Matching remains at
 # 8,000 samples, birth at 16,000, and enrollment alone moves to 32,000; the exact production-plan
 # nine-clip gate is hash-pinned and the deployment finalizer states both duration floors.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-b20be613a4d6302ed4f27f08d34e042f60a6782e}"
+# Advanced to 3de21c2 for the isolated lane-stall closeout. The mixer gap-seals after one bounded
+# frame, stages no more than max_frame_samples, and drains stop in yielded bounded chunks.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-3de21c25d19a4a11564d7a65abae25e51da77141}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

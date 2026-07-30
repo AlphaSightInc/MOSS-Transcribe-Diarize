@@ -72,7 +72,9 @@ def attach_live_routes(
     v2_sessions = LiveV2SessionRegistry(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
     )
-    v2_mixers = LiveCompatibilityMixerRegistry()
+    v2_mixers = LiveCompatibilityMixerRegistry(
+        max_output_samples=runtime.descriptor.bounds.max_frame_samples
+    )
     # The tape's lifecycle is the mixed track's lifecycle, so it is released wherever the
     # mixer is: once the mixer is gone no further mixed audio can exist for that session,
     # and a tape kept open past it could only accumulate lanes with no mixed track.
@@ -360,18 +362,22 @@ def attach_live_routes(
             v2_snapshot = None
             if v2_session is not None:
                 v2_snapshot = await v2_session.stop(0.0)
-                if v2_snapshot.status == "closing":
-                    _tape_mixed(
-                        tapes,
+                while v2_snapshot.status == "closing":
+                    mixed = v2_mixers.get(session_id).admit_available(
                         session_id,
-                        v2_mixers.get(session_id).admit_available(
-                            session_id,
-                            v2_session,
-                            runtime,
-                            final=True,
-                        ),
+                        v2_session,
+                        runtime,
+                        final=True,
                     )
-                    v2_snapshot = await v2_session.stop(max(0.0, end_time - loop.time()))
+                    _tape_mixed(tapes, session_id, mixed)
+                    v2_snapshot = await v2_session.stop(0.0)
+                    if v2_snapshot.status != "closing" or mixed is None:
+                        break
+                    if loop.time() >= end_time:
+                        break
+                    # Each mixer call is capped at max_frame_samples. Yield between chunks
+                    # so a stop cannot monopolize the service while draining a stale backlog.
+                    await asyncio.sleep(0)
                 if v2_snapshot.status == "closing":
                     status, failure = live_v2_unconsumed_frames_response()
                     failure["snapshot"] = _snapshot_payload(runtime, session_id)
@@ -410,6 +416,16 @@ def attach_live_routes(
             return JSONResponse(
                 {"detail": str(exc), "snapshot": _snapshot_payload(runtime, session_id)},
                 status_code=409,
+            )
+        except LiveSessionBackpressure as exc:
+            return JSONResponse(
+                {
+                    "detail": str(exc),
+                    "failure": {"code": "v2_stop_backpressure"},
+                    "snapshot": _snapshot_payload(runtime, session_id),
+                    "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
+                },
+                status_code=429,
             )
         except (LiveSessionClosed, LiveSessionFailed) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
