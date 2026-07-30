@@ -52,6 +52,20 @@ import os
 import statistics
 import sys
 from collections import Counter
+from pathlib import Path
+
+# Running a tracked script by path puts its own directory, not the repository root, on sys.path.
+# Prefer the nearest enclosing source tree; a copied script uses the installed package.
+for parent in Path(__file__).resolve().parents:
+    if (parent / "moss_transcribe_diarize").is_dir():
+        sys.path.insert(0, str(parent))
+        break
+from moss_transcribe_diarize.live_speaker_accuracy import (
+    CORPUS_ENV,
+    FINAL_SNAPSHOT_JSON,
+    REFERENCE_JSONL,
+    evaluate_live_speaker_evidence,
+)
 
 SAMPLE_RATE = 16000        # canonical live sample rate  (domain contract)
 FRAME_SAMPLES = 8000       # live frame size, 0.5 s      (domain contract)
@@ -176,6 +190,9 @@ def main():
                          "for 'periodic accepted audio'. Not a PRD constant - F3's healthy "
                          "minutes measured 56-62 s, so 30 s is half of what a live meeting "
                          "produced.")
+    ap.add_argument("--speaker-accuracy-gate", type=float, default=0.90,
+                    help="real-corpus run only: duration-weighted optimal-mapping live speaker "
+                         "accuracy floor. The default is ADR-0002's lower acceptance bound.")
     args = ap.parse_args()
     d = args.evidence_dir
     red = []
@@ -895,6 +912,42 @@ def main():
                 print("   retention never observed above 0 inside the window - reported, not a "
                       "clause failure: at 1 Hz a 5 s outage can pass between samples. Zero loss "
                       "is decided by section 1's accounting, not here.")
+
+    # ----------------------------------------------- 11. real-corpus speaker accuracy
+    speaker_evidence_files = (CORPUS_ENV, REFERENCE_JSONL, FINAL_SNAPSHOT_JSON)
+    speaker_evidence_present = [
+        name for name in speaker_evidence_files if os.path.exists(os.path.join(d, name))
+    ]
+    print("\n-- 11. real-corpus live speaker accuracy --")
+    if not speaker_evidence_present:
+        print("   NOT ASSERTED: this is a TTS-only run; no corpus.env, reference, or final "
+              "speaker snapshot is present")
+    else:
+        print(f"   evidence files present: {', '.join(speaker_evidence_present)}")
+        try:
+            speaker = evaluate_live_speaker_evidence(d)
+        except ValueError as exc:
+            print(f"   UNDECIDED: corpus evidence refused: {exc}")
+            undecided.append(f"live speaker accuracy UNPROVEN: corpus evidence refused: {exc}")
+        else:
+            accuracy = speaker["speaker_accuracy"]
+            coverage = speaker["reference_coverage"]
+            ok = accuracy >= args.speaker_accuracy_gate
+            verdict = (
+                f"live speaker accuracy {100.0 * accuracy:.2f}% >= "
+                f"{100.0 * args.speaker_accuracy_gate:.2f}% over "
+                f"{speaker['reference_seconds']:.2f}s reference speech "
+                f"(coverage {100.0 * coverage:.2f}%, "
+                f"{speaker['hypothesis_segments']} hypothesis segments, "
+                f"{speaker['hypothesis_speaker_count']} labels)"
+            )
+            (green if ok else red).append(verdict)
+            print(f"   {verdict}  {'GREEN' if ok else 'RED'}")
+            print(f"   mapping={speaker['speaker_mapping']}")
+            print(f"   corpus audio sha256={speaker['audio_sha256']} "
+                  f"reference sha256={speaker['reference_sha256']} "
+                  f"segments={speaker['reference_segments']} "
+                  f"start_sample={speaker['corpus_start_sample']}")
 
     # ------------------------------------------------------------- the verdict
     print("\n-- verdict --")

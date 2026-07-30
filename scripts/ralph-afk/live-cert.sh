@@ -15,6 +15,11 @@
 #         (and therefore the ambiguous-retry and duplicate-retry paths, which are DOWNSTREAM of
 #         it: a frame the client cannot confirm is retried, and the retry arrives as a
 #         duplicate), clean stop/drain, and the same evidence layout every other driver writes.
+#   IN  - an OPTIONAL `PROGRAM_MODE=real-corpus` companion run. It replaces only the spoken
+#         program with the exact 300 s acquired_alphabet asset, records the sample where playback
+#         begins, binds the audio/reference hashes, and saves a final full snapshot for the
+#         reducer's duration-weighted speaker score. It does NOT replace the default TTS F2 run:
+#         by itself it does not exercise F2's silence or room windows.
 #   OUT - the "system-audio-denied" variant. It is a SEPARATE RUN by the PRD's own wording, and
 #         producing it means taking a TCC grant away from com.alphasight.moss.capture. The
 #         grants are `auth_value=2` today and the PRD forbids ever asking the operator for those
@@ -55,7 +60,8 @@
 # Knobs (env): OUTPUT_MODE=muted|audible  CERT_SECONDS  POLL_INTERVAL  STATUS_INTERVAL
 #              SILENCE_SECONDS  ROOM_WINDOW_SECONDS  MARKER_SYSTEM  MARKER_ROOM  VOICE_A  VOICE_B
 #              CERT_OUT  SETTLE_SECONDS  MTD_CLI  LIVE_SAN  LIVE_IP  LIVE_PIN  LIVE_PORT
-#              FULL_SNAPSHOT_EVERY
+#              FULL_SNAPSHOT_EVERY  PROGRAM_MODE
+#              CORPUS_AUDIO  CORPUS_REFERENCE  CORPUS_EXPECTED_AUDIO_SHA256
 set -uo pipefail
 
 CLI="${MTD_CLI:-$HOME/.local/bin/mtd-capture}"
@@ -80,6 +86,10 @@ POLL_INTERVAL="${POLL_INTERVAL:-1}"
 STATUS_INTERVAL="${STATUS_INTERVAL:-1}"
 SETTLE_SECONDS="${SETTLE_SECONDS:-15}"
 FULL_SNAPSHOT_EVERY="${FULL_SNAPSHOT_EVERY:-30}"
+PROGRAM_MODE="${PROGRAM_MODE:-tts}"
+CORPUS_AUDIO="${CORPUS_AUDIO:-}"
+CORPUS_REFERENCE="${CORPUS_REFERENCE:-}"
+CORPUS_EXPECTED_AUDIO_SHA256="${CORPUS_EXPECTED_AUDIO_SHA256:-333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb}"
 
 now() { perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()'; }
 
@@ -151,7 +161,35 @@ for f in snapshot.tsv events.tsv status.tsv phases.tsv view-checks.tsv; do
   : > "$OUT/$f"
 done
 rm -f "$OUT"/snap-full-*.json "$OUT"/interrupt.json
+rm -f "$OUT"/speaker-final.json "$OUT"/speaker-reference.jsonl "$OUT"/corpus.env
 SNAPSHOT_TSV="$OUT/snapshot.tsv"
+
+case "$PROGRAM_MODE" in
+  tts) ;;
+  real-corpus)
+    [ -f "$CORPUS_AUDIO" ] || { echo "FATAL: CORPUS_AUDIO is not a file"; exit 2; }
+    [ -f "$CORPUS_REFERENCE" ] || { echo "FATAL: CORPUS_REFERENCE is not a file"; exit 2; }
+    CORPUS_AUDIO_SHA256=$(shasum -a 256 "$CORPUS_AUDIO" | awk '{print $1}')
+    if [ "$CORPUS_AUDIO_SHA256" != "$CORPUS_EXPECTED_AUDIO_SHA256" ]; then
+      echo "FATAL: corpus audio sha256=$CORPUS_AUDIO_SHA256 expected=$CORPUS_EXPECTED_AUDIO_SHA256"
+      exit 2
+    fi
+    CORPUS_DURATION_SEC=$(afinfo -r "$CORPUS_AUDIO" 2>/dev/null \
+      | awk '/estimated duration:/{print $3; exit}')
+    if [ -z "$CORPUS_DURATION_SEC" ] \
+      || [ "$(perl -e "print(abs($CORPUS_DURATION_SEC - 300.0) <= 0.05 ? 1 : 0)")" != 1 ]; then
+      echo "FATAL: corpus duration must be 300 s, got ${CORPUS_DURATION_SEC:-unreadable}"
+      exit 2
+    fi
+    CORPUS_REFERENCE_SEGMENTS=$(awk 'NF{n++} END{print n+0}' "$CORPUS_REFERENCE")
+    [ "$CORPUS_REFERENCE_SEGMENTS" -eq 45 ] \
+      || { echo "FATAL: corpus reference must hold 45 segments, got $CORPUS_REFERENCE_SEGMENTS"; exit 2; }
+    CORPUS_REFERENCE_SHA256=$(shasum -a 256 "$CORPUS_REFERENCE" | awk '{print $1}')
+    cp "$CORPUS_REFERENCE" "$OUT/speaker-reference.jsonl"
+    echo "real_corpus_audio_sha256=$CORPUS_AUDIO_SHA256 duration_s=$CORPUS_DURATION_SEC reference_segments=$CORPUS_REFERENCE_SEGMENTS"
+    ;;
+  *) echo "FATAL: PROGRAM_MODE must be tts or real-corpus"; exit 2 ;;
+esac
 
 phase_begin() { PH_NAME="$1"; PH_LANE="$2"; PH_MARKER="${3:-}"; PH_T0=$(now); }
 phase_end() {
@@ -185,7 +223,7 @@ restore_audio() {
 }
 cleanup() {
   restore_audio
-  kill "${POLLER:-}" "${SPOLLER:-}" 2>/dev/null
+  kill "${POLLER:-}" "${SPOLLER:-}" "${CORPUS_PID:-}" 2>/dev/null
 }
 trap cleanup EXIT INT TERM
 
@@ -326,68 +364,97 @@ speak_until() {
   done
 }
 
-# The locked timeline, as offsets from T_START. Scaled from CERT_SECONDS so a shorter smoke run
-# keeps the same shape.
-S=$CERT_SECONDS
-OFF_A_END=$((S * 70 / 300))
-OFF_SIL_END=$((OFF_A_END + SILENCE_SECONDS))
-OFF_B_END=$((S * 170 / 300))
-OFF_ROOM_END=$((OFF_B_END + ROOM_WINDOW_SECONDS))
-OFF_INT_END=$((S * 260 / 300))
-OFF_END=$S
-echo "timeline offsets: program-a<=${OFF_A_END}s silence<=${OFF_SIL_END}s program-b<=${OFF_B_END}s room<=${OFF_ROOM_END}s program-interrupt<=${OFF_INT_END}s program-d<=${OFF_END}s"
+if [ "$PROGRAM_MODE" = "real-corpus" ]; then
+  echo "== step 9 REAL CORPUS: acquired_alphabet, 300 s, system lane"
+  corpus_code=$(cfg | curl -K - -m 8 -o "$OUT/corpus-start-snapshot.json" -w '%{http_code}' \
+    "$BASE/api/live/sessions/$SID/snapshot" 2>/dev/null)
+  [ "$corpus_code" = 200 ] \
+    || { echo "FATAL: pre-corpus snapshot http=$corpus_code"; exit 7; }
+  CORPUS_START_SAMPLE=$(jq -er '.snapshot.session.accepted_samples' \
+    < "$OUT/corpus-start-snapshot.json") \
+    || { echo "FATAL: pre-corpus snapshot has no accepted_samples"; exit 7; }
+  phase_begin real-corpus system "acquired_alphabet"
+  echo "CORPUS_WINDOW_OPEN t=$(now) start_sample=$CORPUS_START_SAMPLE"
+  afplay "$CORPUS_AUDIO" > "$OUT/afplay.log" 2>&1 &
+  CORPUS_PID=$!
+  wait "$CORPUS_PID"; corpus_rc=$?
+  CORPUS_PID=
+  [ "$corpus_rc" -eq 0 ] || { echo "FATAL: afplay rc=$corpus_rc"; exit 7; }
+  echo "CORPUS_WINDOW_CLOSED t=$(now) t_offset=$(elapsed)"
+  phase_end
+  T_SPEECH_END=$(now)
+  cat > "$OUT/corpus.env" <<EOT
+CORPUS_AUDIO_SHA256=$CORPUS_AUDIO_SHA256
+CORPUS_EXPECTED_AUDIO_SHA256=$CORPUS_EXPECTED_AUDIO_SHA256
+CORPUS_START_SAMPLE=$CORPUS_START_SAMPLE
+CORPUS_DURATION_SEC=$CORPUS_DURATION_SEC
+CORPUS_REFERENCE_SHA256=$CORPUS_REFERENCE_SHA256
+CORPUS_REFERENCE_SEGMENTS=$CORPUS_REFERENCE_SEGMENTS
+EOT
+else
+  # The locked TTS timeline, as offsets from T_START. Scaled from CERT_SECONDS so a shorter
+  # smoke run keeps the same shape.
+  S=$CERT_SECONDS
+  OFF_A_END=$((S * 70 / 300))
+  OFF_SIL_END=$((OFF_A_END + SILENCE_SECONDS))
+  OFF_B_END=$((S * 170 / 300))
+  OFF_ROOM_END=$((OFF_B_END + ROOM_WINDOW_SECONDS))
+  OFF_INT_END=$((S * 260 / 300))
+  OFF_END=$S
+  echo "timeline offsets: program-a<=${OFF_A_END}s silence<=${OFF_SIL_END}s program-b<=${OFF_B_END}s room<=${OFF_ROOM_END}s program-interrupt<=${OFF_INT_END}s program-d<=${OFF_END}s"
 
-echo "== step 9 phase A: two voices on the SYSTEM lane"
-phase_begin program-a system "$MARKER_SYSTEM"
-speak_until "$OFF_A_END" "${LINES_A[@]}"
-# The marker alone, repeated, slowly. Measured twice: a rare noun buried in a fluent sentence is
-# reliably rewritten by the decoder's language model (F1's "pineapple" -> "Hi Apple"). An
-# isolated, repeated, slow-rate token is the only delivery that gives the cross-check a chance,
-# and even then the decoder may rewrite it PHONETICALLY - candidate 59.
-say -v "$VOICE_A" -r 130 "$MARKER_SYSTEM. $MARKER_SYSTEM. $MARKER_SYSTEM."
-until_offset "$OFF_A_END"
-phase_end
-echo "phase_a_done t_offset=$(elapsed)"
+  echo "== step 9 phase A: two voices on the SYSTEM lane"
+  phase_begin program-a system "$MARKER_SYSTEM"
+  speak_until "$OFF_A_END" "${LINES_A[@]}"
+  # The marker alone, repeated, slowly. Measured twice: a rare noun buried in a fluent sentence is
+  # reliably rewritten by the decoder's language model (F1's "pineapple" -> "Hi Apple"). An
+  # isolated, repeated, slow-rate token is the only delivery that gives the cross-check a chance,
+  # and even then the decoder may rewrite it PHONETICALLY - candidate 59.
+  say -v "$VOICE_A" -r 130 "$MARKER_SYSTEM. $MARKER_SYSTEM. $MARKER_SYSTEM."
+  until_offset "$OFF_A_END"
+  phase_end
+  echo "phase_a_done t_offset=$(elapsed)"
 
-echo "== step 10 phase SILENCE: the PRD's silence/mute window - NEITHER lane is given content"
-phase_begin silence none ""
-echo "SILENCE_WINDOW_OPEN t=$(now) seconds=$SILENCE_SECONDS"
-until_offset "$OFF_SIL_END"
-echo "SILENCE_WINDOW_CLOSED t=$(now) t_offset=$(elapsed)"
-phase_end
+  echo "== step 10 phase SILENCE: the PRD's silence/mute window - NEITHER lane is given content"
+  phase_begin silence none ""
+  echo "SILENCE_WINDOW_OPEN t=$(now) seconds=$SILENCE_SECONDS"
+  until_offset "$OFF_SIL_END"
+  echo "SILENCE_WINDOW_CLOSED t=$(now) t_offset=$(elapsed)"
+  phase_end
 
-echo "== step 11 phase B: back to two voices, so the silence window has a boundary on both sides"
-phase_begin program-b system "$MARKER_SYSTEM"
-speak_until "$OFF_B_END" "${LINES_B[@]}"
-until_offset "$OFF_B_END"
-phase_end
-check_view mid
+  echo "== step 11 phase B: back to two voices, so the silence window has a boundary on both sides"
+  phase_begin program-b system "$MARKER_SYSTEM"
+  speak_until "$OFF_B_END" "${LINES_B[@]}"
+  until_offset "$OFF_B_END"
+  phase_end
+  check_view mid
 
-echo "== step 12 phase ROOM: this host stays silent so the microphone lane can carry its own content"
-phase_begin room-window microphone "$MARKER_ROOM"
-touch "$OUT/room-open"
-echo "ROOM_WINDOW_OPEN t=$(now) seconds=$ROOM_WINDOW_SECONDS expect_marker=$MARKER_ROOM"
-until_offset "$OFF_ROOM_END"
-echo "ROOM_WINDOW_CLOSED t=$(now) t_offset=$(elapsed)"
-rm -f "$OUT/room-open"
-phase_end
+  echo "== step 12 phase ROOM: this host stays silent so the microphone lane can carry its own content"
+  phase_begin room-window microphone "$MARKER_ROOM"
+  touch "$OUT/room-open"
+  echo "ROOM_WINDOW_OPEN t=$(now) seconds=$ROOM_WINDOW_SECONDS expect_marker=$MARKER_ROOM"
+  until_offset "$OFF_ROOM_END"
+  echo "ROOM_WINDOW_CLOSED t=$(now) t_offset=$(elapsed)"
+  rm -f "$OUT/room-open"
+  phase_end
 
-echo "== step 13 phase INTERRUPT: sixty seconds of CONTINUOUS speech - the armed 5 s network"
-echo "   window is expected to land inside this phase. Continuous, because a silent frame is"
-echo "   not audio the client has to retain, so a drop over silence would prove nothing."
-phase_begin program-interrupt system "$MARKER_SYSTEM"
-echo "INTERRUPT_PHASE_OPEN t=$(now) t_offset=$(elapsed)"
-speak_until "$OFF_INT_END" "${LINES_INT[@]}"
-until_offset "$OFF_INT_END"
-echo "INTERRUPT_PHASE_CLOSED t=$(now) t_offset=$(elapsed)"
-phase_end
+  echo "== step 13 phase INTERRUPT: sixty seconds of CONTINUOUS speech - the armed 5 s network"
+  echo "   window is expected to land inside this phase. Continuous, because a silent frame is"
+  echo "   not audio the client has to retain, so a drop over silence would prove nothing."
+  phase_begin program-interrupt system "$MARKER_SYSTEM"
+  echo "INTERRUPT_PHASE_OPEN t=$(now) t_offset=$(elapsed)"
+  speak_until "$OFF_INT_END" "${LINES_INT[@]}"
+  until_offset "$OFF_INT_END"
+  echo "INTERRUPT_PHASE_CLOSED t=$(now) t_offset=$(elapsed)"
+  phase_end
 
-echo "== step 14 phase D: wind-down, and the recovery has room to be visible"
-phase_begin program-d system "$MARKER_SYSTEM"
-speak_until "$OFF_END" "${LINES_D[@]}"
-until_offset "$OFF_END"
-phase_end
-T_SPEECH_END=$(now)
+  echo "== step 14 phase D: wind-down, and the recovery has room to be visible"
+  phase_begin program-d system "$MARKER_SYSTEM"
+  speak_until "$OFF_END" "${LINES_D[@]}"
+  until_offset "$OFF_END"
+  phase_end
+  T_SPEECH_END=$(now)
+fi
 
 echo "== step 15: let the trailing span commit and the portal catch up"
 sleep "$SETTLE_SECONDS"
@@ -398,6 +465,13 @@ echo "== step 16: status and latency while still running"
 jq -c '{ok, running, lanes, publishedFrameCount, outboxRetainedFrames, outboxDegradation, pumpFailure, sessionRefusal}' < "$OUT/status-final.json"
 "$CLI" latency > "$OUT/latency-final.json" 2>&1
 jq -c '.latency' < "$OUT/latency-final.json"
+if [ "$PROGRAM_MODE" = "real-corpus" ]; then
+  speaker_code=$(cfg | curl -K - -m 8 -o "$OUT/speaker-final.json" -w '%{http_code}' \
+    "$BASE/api/live/sessions/$SID/snapshot" 2>/dev/null)
+  [ "$speaker_code" = 200 ] \
+    || { echo "FATAL: final speaker snapshot http=$speaker_code"; exit 8; }
+  echo "speaker_final_snapshot_http=$speaker_code committed=$(jq -r '.snapshot.session.committed | length' "$OUT/speaker-final.json")"
+fi
 
 echo "== step 17: stop and drain"
 T_STOP=$(now)
@@ -434,6 +508,7 @@ MARKER_SYSTEM=$MARKER_SYSTEM
 MARKER_ROOM=$MARKER_ROOM
 OUTPUT_MODE=$OUTPUT_MODE
 CERT_SECONDS=$CERT_SECONDS
+PROGRAM_MODE=$PROGRAM_MODE
 SID=$SID
 LABEL=$LABEL
 EOT
