@@ -2,14 +2,31 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+from functools import lru_cache
+import json
 import math
 from pathlib import Path
-from typing import Any
+import re
+from typing import Any, NamedTuple
 
-from .app.live_span_bounds import LIVE_SAMPLE_RATE, span_segments
-from .evaluation import Segment, calculate_speaker_accuracy
+LIVE_SAMPLE_RATE = 16000
+TRANSCRIPT_SEGMENT = re.compile(
+    r"\[([0-9]+(?:\.[0-9]+)?)\]\[(S[0-9]+)\](.*?)\[([0-9]+(?:\.[0-9]+)?)\]"
+    r"(?=\s*(?:\[|$))",
+    re.DOTALL,
+)
+
+
+class Segment(NamedTuple):
+    start: float
+    end: float
+    speaker: str
+    text: str
+
+    @property
+    def duration(self) -> float:
+        return self.end - self.start
 
 CORPUS_ENV = "corpus.env"
 REFERENCE_JSONL = "speaker-reference.jsonl"
@@ -76,7 +93,7 @@ def hypothesis_from_live_snapshot(
         if not transcript:
             continue
         base = (start_sample - corpus_start_sample) / float(LIVE_SAMPLE_RATE)
-        for parsed in span_segments(transcript, sample_count=end_sample - start_sample):
+        for parsed in _span_segments(transcript, sample_count=end_sample - start_sample):
             start = max(0.0, base + parsed.start)
             end = min(float(corpus_duration_sec), base + parsed.end)
             if end > start:
@@ -92,7 +109,28 @@ def score_live_speaker_accuracy(
 ) -> dict[str, Any]:
     if not reference:
         raise ValueError("reference must contain at least one segment")
-    return calculate_speaker_accuracy(reference, hypothesis)
+    ref_speakers = sorted({segment.speaker for segment in reference})
+    hyp_speakers = sorted({segment.speaker for segment in hypothesis})
+    weights = {(ref, hyp): 0.0 for ref in ref_speakers for hyp in hyp_speakers}
+    for ref in reference:
+        for hyp in hypothesis:
+            overlap = _overlap_seconds(ref, hyp)
+            if overlap > 0.0:
+                weights[(ref.speaker, hyp.speaker)] += overlap
+    mapping, matched_weight = _maximum_weight_assignment(ref_speakers, hyp_speakers, weights)
+    reference_duration = sum(segment.duration for segment in reference)
+    covered_duration = sum(_reference_overlap_seconds(segment, hypothesis) for segment in reference)
+    return {
+        "speaker_accuracy": _round_metric(_ratio(matched_weight, reference_duration)),
+        "reference_coverage": _round_metric(_ratio(covered_duration, reference_duration)),
+        "matched_speaker_seconds": _round_seconds(matched_weight),
+        "covered_reference_seconds": _round_seconds(covered_duration),
+        "reference_seconds": _round_seconds(reference_duration),
+        "hypothesis_seconds": _round_seconds(sum(segment.duration for segment in hypothesis)),
+        "reference_speaker_count": len(ref_speakers),
+        "hypothesis_speaker_count": len(hyp_speakers),
+        "speaker_mapping": mapping,
+    }
 
 
 def evaluate_live_speaker_evidence(evidence_dir: str | Path) -> dict[str, Any]:
@@ -166,6 +204,100 @@ def _reference_segment(record: Any, line_number: int) -> Segment:
     speaker = _required_text(record, "speaker", line_number)
     text = _required_text(record, "text", line_number)
     return Segment(start=start, end=end, speaker=speaker, text=text)
+
+
+def _span_segments(transcript: str, *, sample_count: int):
+    duration = sample_count / float(LIVE_SAMPLE_RATE)
+    for match in TRANSCRIPT_SEGMENT.finditer(transcript):
+        start = min(max(float(match.group(1)), 0.0), duration)
+        end = max(min(max(float(match.group(4)), 0.0), duration), start)
+        yield Segment(start=start, end=end, speaker=match.group(2), text=match.group(3).strip())
+
+
+def _maximum_weight_assignment(row_labels, column_labels, weights):
+    rows = list(row_labels)
+    columns = list(column_labels)
+    if len(columns) < len(rows):
+        columns.extend(
+            f"<HYP_PAD_{index:03d}>" for index in range(1, len(rows) - len(columns) + 1)
+        )
+    rank = {column: index for index, column in enumerate(columns)}
+
+    @lru_cache(maxsize=None)
+    def solve(row_index, used_mask):
+        if row_index == len(rows):
+            return 0.0, ()
+        best_score = -math.inf
+        best_assignment = None
+        row = rows[row_index]
+        for column_index, column in enumerate(columns):
+            if used_mask & (1 << column_index):
+                continue
+            rest_score, rest_assignment = solve(row_index + 1, used_mask | (1 << column_index))
+            score = weights.get((row, column), 0.0) + rest_score
+            assignment = (rank[column],) + rest_assignment
+            if (
+                score > best_score + 1e-12
+                or (
+                    math.isclose(score, best_score, rel_tol=0.0, abs_tol=1e-12)
+                    and (best_assignment is None or assignment < best_assignment)
+                )
+            ):
+                best_score = score
+                best_assignment = assignment
+        if best_assignment is None:
+            return 0.0, ()
+        return best_score, best_assignment
+
+    matched_weight, assignment_ranks = solve(0, 0)
+    inverse_rank = {value: key for key, value in rank.items()}
+    mapping = {
+        row: inverse_rank[assignment_ranks[index]]
+        for index, row in enumerate(rows)
+    }
+    return mapping, matched_weight
+
+
+def _overlap_seconds(left, right):
+    return max(0.0, min(left.end, right.end) - max(left.start, right.start))
+
+
+def _reference_overlap_seconds(reference, hypothesis):
+    intervals = []
+    for segment in hypothesis:
+        start = max(reference.start, segment.start)
+        end = min(reference.end, segment.end)
+        if end > start:
+            intervals.append((start, end))
+    if not intervals:
+        return 0.0
+    intervals.sort()
+    covered = 0.0
+    current_start, current_end = intervals[0]
+    for start, end in intervals[1:]:
+        if start <= current_end:
+            current_end = max(current_end, end)
+        else:
+            covered += current_end - current_start
+            current_start, current_end = start, end
+    return covered + current_end - current_start
+
+
+def _ratio(numerator, denominator):
+    return numerator / denominator if denominator > 0.0 else 0.0
+
+
+def _round_metric(value):
+    value = max(value, 0.0)
+    if math.isclose(value, 0.0, rel_tol=0.0, abs_tol=1e-12):
+        return 0.0
+    if math.isclose(value, 1.0, rel_tol=0.0, abs_tol=1e-12):
+        return 1.0
+    return round(value, 6)
+
+
+def _round_seconds(value):
+    return round(max(value, 0.0), 6)
 
 
 def _required_number(record: dict[str, Any], key: str, line_number: int) -> float:
