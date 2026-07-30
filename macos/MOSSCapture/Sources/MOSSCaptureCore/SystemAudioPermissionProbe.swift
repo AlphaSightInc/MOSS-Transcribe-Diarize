@@ -15,6 +15,30 @@ protocol SystemAudioPermissionProbeDriving: AnyObject {
     func measure(cancelled: @escaping @Sendable () -> Bool) throws -> Bool
 }
 
+protocol SystemAudioPermissionProbeHelperDriving: AnyObject {
+    var processIdentifier: pid_t { get }
+    var isRunning: Bool { get }
+    var terminationStatus: Int32 { get }
+
+    func run() throws
+    func sendGo() throws
+    func terminate()
+    func waitUntilExit()
+}
+
+protocol SystemAudioPermissionProbePlatformDriving: AnyObject {
+    func installGlobalTap(
+        observation: SystemAudioPermissionProbeObservation
+    ) throws -> AnyObject
+    func makeHelper() throws -> SystemAudioPermissionProbeHelperDriving
+    func waitForProcessAudioObject(
+        pid: pid_t,
+        cancelled: @escaping @Sendable () -> Bool
+    ) throws -> AudioObjectID
+    func installMuteTap(processObject: AudioObjectID) throws -> AnyObject
+    func settleSignalObservation()
+}
+
 /// Runs the blocking Core Audio permission transition away from the app's control loop.
 ///
 /// A generation ticket suppresses a result that arrives after stop. The driver still unwinds its
@@ -94,6 +118,7 @@ final class SystemAudioPermissionProbe: SystemAudioPermissionProbing, @unchecked
 /// then emits a deterministic tone. The tone never enters the production capture queue.
 public enum SystemAudioPermissionSignal {
     public static let commandArgument = "--moss-system-audio-permission-probe"
+    static let goByte: UInt8 = 0x67
 
     public static func run() throws {
         let engine = AVAudioEngine()
@@ -133,7 +158,13 @@ public enum SystemAudioPermissionSignal {
             }
         }
 
-        Thread.sleep(forTimeInterval: 1.2)
+        let go = FileHandle.standardInput.readData(ofLength: 1)
+        guard go == Data([goByte]) else {
+            engine.stop()
+            throw NativeCaptureError.deviceUnavailable(
+                "system audio permission probe go signal missing"
+            )
+        }
         player.scheduleBuffer(buffer)
         player.play()
         Thread.sleep(forTimeInterval: 1.3)
@@ -142,22 +173,16 @@ public enum SystemAudioPermissionSignal {
     }
 }
 
-private final class CoreAudioSystemAudioPermissionProbeDriver:
+final class CoreAudioSystemAudioPermissionProbeDriver:
     SystemAudioPermissionProbeDriving
 {
-    private let helperExecutable: () throws -> URL
+    private let platform: SystemAudioPermissionProbePlatformDriving
 
     init(
-        helperExecutable: @escaping () throws -> URL = {
-            guard let executable = Bundle.main.executableURL else {
-                throw NativeCaptureError.deviceUnavailable(
-                    "system audio permission probe helper is missing"
-                )
-            }
-            return executable
-        }
+        platform: SystemAudioPermissionProbePlatformDriving =
+            CoreAudioSystemAudioPermissionProbePlatform()
     ) {
-        self.helperExecutable = helperExecutable
+        self.platform = platform
     }
 
     func measure(cancelled: @escaping @Sendable () -> Bool) throws -> Bool {
@@ -166,23 +191,10 @@ private final class CoreAudioSystemAudioPermissionProbeDriver:
         }
 
         let observation = SystemAudioPermissionProbeObservation()
-        let globalDescription = CATapDescription()
-        globalDescription.name = "MOSS System Audio Permission Probe"
-        globalDescription.uuid = UUID()
-        globalDescription.isPrivate = true
-        globalDescription.isMixdown = true
-        globalDescription.isMono = false
-        globalDescription.isExclusive = true
-        globalDescription.muteBehavior = .unmuted
-        let globalTap = try SystemAudioPermissionProbeTap(
-            description: globalDescription,
-            observation: observation
-        )
+        let globalTap = try platform.installGlobalTap(observation: observation)
         guard !cancelled() else { return false }
 
-        let helper = Process()
-        helper.executableURL = try helperExecutable()
-        helper.arguments = [SystemAudioPermissionSignal.commandArgument]
+        let helper = try platform.makeHelper()
         do {
             try helper.run()
         } catch {
@@ -197,21 +209,19 @@ private final class CoreAudioSystemAudioPermissionProbeDriver:
             }
         }
 
-        let processObject = try waitForProcessAudioObject(
+        let processObject = try platform.waitForProcessAudioObject(
             pid: helper.processIdentifier,
             cancelled: cancelled
         )
-        let muteDescription = CATapDescription(
-            stereoMixdownOfProcesses: [processObject]
-        )
-        muteDescription.name = "MOSS System Audio Permission Probe Mute"
-        muteDescription.uuid = UUID()
-        muteDescription.isPrivate = true
-        muteDescription.muteBehavior = .muted
-        let muteTap = try SystemAudioPermissionProbeTap(
-            description: muteDescription,
-            observation: nil
-        )
+        let muteTap = try platform.installMuteTap(processObject: processObject)
+        guard !cancelled() else { return false }
+        do {
+            try helper.sendGo()
+        } catch {
+            throw NativeCaptureError.deviceUnavailable(
+                "system audio permission probe helper go signal failed"
+            )
+        }
 
         let exitDeadline = Date().addingTimeInterval(5)
         while helper.isRunning, !cancelled(), Date() < exitDeadline {
@@ -230,13 +240,126 @@ private final class CoreAudioSystemAudioPermissionProbeDriver:
                 "system audio permission probe helper failed"
             )
         }
-        Thread.sleep(forTimeInterval: 0.2)
+        platform.settleSignalObservation()
         return withExtendedLifetime((globalTap, muteTap)) {
             observation.signalObserved()
         }
     }
+}
 
-    private func waitForProcessAudioObject(
+private final class ProcessSystemAudioPermissionProbeHelper:
+    SystemAudioPermissionProbeHelperDriving
+{
+    private let process = Process()
+    private let goPipe = Pipe()
+    private var goSent = false
+
+    init(executableURL: URL) {
+        process.executableURL = executableURL
+        process.arguments = [SystemAudioPermissionSignal.commandArgument]
+        process.standardInput = goPipe.fileHandleForReading
+    }
+
+    var processIdentifier: pid_t {
+        process.processIdentifier
+    }
+
+    var isRunning: Bool {
+        process.isRunning
+    }
+
+    var terminationStatus: Int32 {
+        process.terminationStatus
+    }
+
+    func run() throws {
+        try process.run()
+        try? goPipe.fileHandleForReading.close()
+    }
+
+    func sendGo() throws {
+        guard !goSent else { return }
+        try goPipe.fileHandleForWriting.write(
+            contentsOf: Data([SystemAudioPermissionSignal.goByte])
+        )
+        try goPipe.fileHandleForWriting.close()
+        goSent = true
+    }
+
+    func terminate() {
+        process.terminate()
+    }
+
+    func waitUntilExit() {
+        process.waitUntilExit()
+    }
+
+    deinit {
+        try? goPipe.fileHandleForReading.close()
+        try? goPipe.fileHandleForWriting.close()
+    }
+}
+
+private final class CoreAudioSystemAudioPermissionProbePlatform:
+    SystemAudioPermissionProbePlatformDriving
+{
+    private let helperExecutable: () throws -> URL
+
+    init(
+        helperExecutable: @escaping () throws -> URL = {
+            guard let executable = Bundle.main.executableURL else {
+                throw NativeCaptureError.deviceUnavailable(
+                    "system audio permission probe helper is missing"
+                )
+            }
+            return executable
+        }
+    ) {
+        self.helperExecutable = helperExecutable
+    }
+
+    func installGlobalTap(
+        observation: SystemAudioPermissionProbeObservation
+    ) throws -> AnyObject {
+        let description = CATapDescription()
+        description.name = "MOSS System Audio Permission Probe"
+        description.uuid = UUID()
+        description.isPrivate = true
+        description.isMixdown = true
+        description.isMono = false
+        description.isExclusive = true
+        description.muteBehavior = .unmuted
+        return try SystemAudioPermissionProbeTap(
+            description: description,
+            observation: observation
+        )
+    }
+
+    func makeHelper() throws -> SystemAudioPermissionProbeHelperDriving {
+        ProcessSystemAudioPermissionProbeHelper(
+            executableURL: try helperExecutable()
+        )
+    }
+
+    func installMuteTap(processObject: AudioObjectID) throws -> AnyObject {
+        let description = CATapDescription(
+            stereoMixdownOfProcesses: [processObject]
+        )
+        description.name = "MOSS System Audio Permission Probe Mute"
+        description.uuid = UUID()
+        description.isPrivate = true
+        description.muteBehavior = .muted
+        return try SystemAudioPermissionProbeTap(
+            description: description,
+            observation: nil
+        )
+    }
+
+    func settleSignalObservation() {
+        Thread.sleep(forTimeInterval: 0.2)
+    }
+
+    func waitForProcessAudioObject(
         pid: pid_t,
         cancelled: @escaping @Sendable () -> Bool
     ) throws -> AudioObjectID {
@@ -282,7 +405,7 @@ private final class CoreAudioSystemAudioPermissionProbeDriver:
     }
 }
 
-private final class SystemAudioPermissionProbeObservation: @unchecked Sendable {
+final class SystemAudioPermissionProbeObservation: @unchecked Sendable {
     private let lock = NSLock()
     private var observed = false
 

@@ -125,7 +125,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 04e361b after the first real-corpus deployment exposed that the capture Mac's
 # dependency-free Python 3.9 reducer could not import the model package. The closeout keeps scoring
 # standard-library-only and records the measured RED without installing a model stack on the Mac.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-04e361b9bc55ccdca8a604f57f44a885061d7458}"
+# Advanced to 0658c59 for the operator-directed probe-handshake hardening. The parent now signals
+# the child only after the process-specific mute tap starts, replacing the measured-but-racy fixed
+# sleep while retaining the five-second helper bound and pinning both ordering paths at the driver.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-0658c5944875dbf9215f21c84632627d7ed332af}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2
