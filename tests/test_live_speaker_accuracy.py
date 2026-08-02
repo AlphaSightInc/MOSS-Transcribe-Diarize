@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,11 +19,16 @@ from moss_transcribe_diarize.live_speaker_accuracy import (
 
 
 REAL_CORPUS = (
-    Path(__file__).resolve().parents[1]
-    / "prototypes"
-    / "streaming-diarization"
-    / "data"
-    / "real"
+    Path(
+        os.environ.get(
+            "MOSS_REAL_CORPUS_ROOT",
+            Path(__file__).resolve().parents[1]
+            / "prototypes"
+            / "streaming-diarization"
+            / "data"
+            / "real",
+        )
+    )
     / "benchmark_5m"
     / "acquired_alphabet"
 )

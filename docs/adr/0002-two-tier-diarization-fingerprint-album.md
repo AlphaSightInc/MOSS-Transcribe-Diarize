@@ -90,3 +90,19 @@ The hash-pinned nine-clip gate re-embedded every clip under the deployed 0.5 s s
 and drove the production identity objects: **93.50% mean / 82.14% minimum**, all three
 3-minute clips **>=96.11%**, zero residual sweep corrections. Coupling birth to the new
 2.0 s enrollment floor was rejected: one cold-start clip fell to **49.4%**.
+
+## 2026-08-01 retrospective leave-one-out amendment
+
+A sweep must not use the observation it is judging as evidence for that observation. Before
+this amendment, an early birth's album reference was the exact retained vector that created it;
+its self-cosine was therefore 1.0 and later context could never repair the birth unless the
+stronger two-bank merge rule also fired. That rule correctly excludes provisional evidence, so
+short-lived duplicate canonicals remained permanent.
+
+Sweep matching now recomputes a candidate reference with the judged observation removed. Live
+matching, the 0.35 score, 0.1 margin, 0.5 s matching floor, 1.0 s birth floor, and 2.0 s enrollment
+floor are unchanged. On the hash-pinned five-minute `acquired_alphabet` fixture, the production
+path moved from **86.94%** final accuracy and six canonicals to **91.35%**, four final canonicals,
+four corrections, and zero residual corrections. David/Ben recalls were **94.60% / 89.28%**.
+The nine-clip production gate did not regress: **93.50% mean / 82.14% minimum**, all three
+3-minute clips **>=96.11%**, zero residual corrections.

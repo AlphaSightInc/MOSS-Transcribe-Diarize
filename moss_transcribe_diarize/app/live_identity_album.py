@@ -154,6 +154,21 @@ class FingerprintAlbum:
 
         return tuple(self._exemplars.get(canonical_speaker, ()))
 
+    def reference_support(self, canonical_speaker: str) -> tuple[AlbumExemplar, ...]:
+        """Observations behind `reference()`, including a provisional stand-in.
+
+        A retrospective scorer needs provenance as well as the reduced vector: otherwise an
+        early birth is compared to the exact observation that created it and wins with a
+        meaningless cosine of 1.0 forever. Merge policy must keep using `exemplars()` because
+        provisional evidence is still too weak to collapse two canonical speakers.
+        """
+
+        bank = self._exemplars.get(canonical_speaker)
+        if bank:
+            return tuple(bank)
+        held = self._provisional.get(canonical_speaker)
+        return () if held is None else (held,)
+
     def exemplar_count(self, canonical_speaker: str) -> int:
         return len(self._exemplars.get(canonical_speaker, ()))
 

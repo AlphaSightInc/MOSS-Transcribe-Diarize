@@ -133,7 +133,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # nine-clip gate is hash-pinned and the deployment finalizer states both duration floors.
 # Advanced to 3de21c2 for the isolated lane-stall closeout. The mixer gap-seals after one bounded
 # frame, stages no more than max_frame_samples, and drains stop in yielded bounded chunks.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-3de21c25d19a4a11564d7a65abae25e51da77141}"
+# Advanced to ca9f0fb for the operator-authorized clause-11 matching closeout. The retrospective
+# sweep now scores each retained unit against independent album context, excluding the exact
+# observation being judged, so an early birth cannot validate itself forever at cosine 1.0.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-ca9f0fb54cd064502c13f171885bea40fcffced0}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

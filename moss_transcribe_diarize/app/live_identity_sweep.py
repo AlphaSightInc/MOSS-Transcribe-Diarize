@@ -345,6 +345,7 @@ def sweep(
     """
 
     references, leader_of, merges = _album_view(album, merge_threshold)
+    reference_support = _reference_support(album, leader_of)
     dispositions: dict[str, int] = {}
     corrections: list[SweepCorrection] = []
     merge_score = {item.absorbed: item.score for item in merges}
@@ -367,7 +368,11 @@ def sweep(
 
         local_speakers = tuple(unit.local_speaker for unit in units)
         evidence, score_by_pair, unscored = _score_span(
-            units, references, reference_speakers, reference_matrix
+            units,
+            references,
+            reference_speakers,
+            reference_matrix,
+            reference_support=reference_support,
         )
         ambiguous = False
         mapping: dict[str, str] = {}
@@ -698,6 +703,19 @@ def _reference_matrix(
     return _unit_rows(matrix)
 
 
+def _reference_support(
+    album: FingerprintAlbum,
+    leader_of: Mapping[str, str],
+) -> dict[str, tuple[AlbumExemplar, ...]]:
+    """Evidence behind each sweep reference, grouped under its surviving speaker."""
+
+    grouped: dict[str, list[AlbumExemplar]] = {}
+    for speaker in album.speakers():
+        leader = leader_of.get(speaker, speaker)
+        grouped.setdefault(leader, []).extend(album.reference_support(speaker))
+    return {speaker: tuple(items) for speaker, items in grouped.items()}
+
+
 def _unit_rows(matrix):
     """Rows scaled to unit length, or `None` if any row has no usable length.
 
@@ -719,6 +737,8 @@ def _score_span(
     references: Mapping[str, tuple[float, ...]],
     reference_speakers: Sequence[str],
     reference_matrix=None,
+    *,
+    reference_support: Mapping[str, Sequence[AlbumExemplar]] | None = None,
 ) -> tuple[tuple[LiveSpeakerEvidence, ...], dict[tuple[str, str], float], set[str]]:
     scores = _batch_scores(units, reference_matrix)
     evidence: list[LiveSpeakerEvidence] = []
@@ -727,11 +747,20 @@ def _score_span(
     for row, unit in enumerate(units):
         scored = False
         for column, canonical in enumerate(reference_speakers):
-            score = (
-                cosine_similarity(unit.vector, references[canonical])
-                if scores is None
-                else float(scores[row, column])
+            reference = references[canonical]
+            support = () if reference_support is None else reference_support.get(canonical, ())
+            without_self = tuple(
+                item for item in support if not _is_same_observation(unit, item)
             )
+            if len(without_self) != len(support):
+                reference = duration_weighted_centroid(without_self)
+                score = None if reference is None else cosine_similarity(unit.vector, reference)
+            else:
+                score = (
+                    cosine_similarity(unit.vector, reference)
+                    if scores is None
+                    else float(scores[row, column])
+                )
             if score is None:
                 continue
             scored = True
@@ -750,6 +779,19 @@ def _score_span(
             # nothing", which is a statement about voices rather than about arithmetic.
             unscored.add(unit.local_speaker)
     return tuple(evidence), score_by_pair, unscored
+
+
+def _is_same_observation(unit: SweepUnit, exemplar: AlbumExemplar) -> bool:
+    """Whether an album item is this ledger unit, allowing its float32 storage rounding."""
+
+    if exemplar.span_id != unit.span_id or len(exemplar.vector) != len(unit.vector):
+        return False
+    if not math.isclose(exemplar.duration_sec, unit.duration_sec, abs_tol=1e-6):
+        return False
+    return all(
+        math.isclose(float(left), float(right), abs_tol=1e-6)
+        for left, right in zip(exemplar.vector, unit.vector, strict=True)
+    )
 
 
 def _batch_scores(units: Sequence[SweepUnit], reference_matrix):
