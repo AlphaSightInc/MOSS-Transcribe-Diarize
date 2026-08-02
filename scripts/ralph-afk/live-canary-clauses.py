@@ -941,22 +941,37 @@ def main():
         else:
             accuracy = speaker["speaker_accuracy"]
             coverage = speaker["reference_coverage"]
-            ok = accuracy >= args.speaker_accuracy_gate
+            two_sided = bool(speaker["two_sided_mapping"])
+            ok = accuracy >= args.speaker_accuracy_gate and two_sided
+            per_speaker = ", ".join(
+                f"{name}={100.0 * value:.2f}%"
+                for name, value in sorted(speaker["speaker_correctness"].items())
+            )
             verdict = (
                 f"live speaker accuracy {100.0 * accuracy:.2f}% >= "
                 f"{100.0 * args.speaker_accuracy_gate:.2f}% over "
                 f"{speaker['reference_seconds']:.2f}s reference speech "
                 f"(coverage {100.0 * coverage:.2f}%, "
                 f"{speaker['hypothesis_segments']} hypothesis segments, "
-                f"{speaker['hypothesis_speaker_count']} labels)"
+                f"{speaker['hypothesis_speaker_count']} labels); "
+                f"two-sided mapping={two_sided}"
             )
             (green if ok else red).append(verdict)
             print(f"   {verdict}  {'GREEN' if ok else 'RED'}")
             print(f"   mapping={speaker['speaker_mapping']}")
+            print(f"   speaker correctness={per_speaker}")
+            print(
+                f"   label-blind alignment={speaker['corpus_alignment_adjustment_sec']:+.2f}s "
+                f"within +/-{speaker['corpus_alignment_max_sec']:.2f}s at "
+                f"{speaker['corpus_alignment_step_sec']:.2f}s steps; "
+                f"unaligned accuracy={100.0 * speaker['unaligned_speaker_accuracy']:.2f}% "
+                f"coverage={100.0 * speaker['unaligned_reference_coverage']:.2f}%"
+            )
             print(f"   corpus audio sha256={speaker['audio_sha256']} "
                   f"reference sha256={speaker['reference_sha256']} "
                   f"segments={speaker['reference_segments']} "
-                  f"start_sample={speaker['corpus_start_sample']}")
+                  f"declared_start_sample={speaker['corpus_start_sample']} "
+                  f"aligned_start_sample={speaker['aligned_corpus_start_sample']}")
 
     # ------------------------------------------------------------- the verdict
     print("\n-- verdict --")

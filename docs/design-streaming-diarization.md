@@ -134,6 +134,18 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   as the primary cause. Fix the capture-boundary layout normalization, then rerun F4b;
   F4b remains OPEN until the fixed live path itself passes.
 
+- **Formal live-corpus alignment decision (2026-08-02).** The certification driver
+  recorded `CORPUS_START_SAMPLE` before launching `afplay`, which has no render-start
+  handshake. Two consecutive captures placed identical decoded phrases 2.02-2.15 s
+  apart; the first scored 75.15% at its declared origin but 91.33% after a label-blind
+  reference-coverage alignment, while the second moved from 91.68% to 90.96%. The
+  formal evaluator now chooses one deterministic global shift by reference speech
+  coverage only, bounded to ±3.0 s in 0.05 s steps. Declared/aligned origins and
+  unaligned metrics remain visible. Speaker labels do not participate in alignment;
+  the gate separately requires a distinct mapped label for every reference speaker and
+  reports each speaker's correctness. Canonical counts are diagnostic only. Identity
+  thresholds and the 40,000-sample span cap remain unchanged.
+
 - **Real-audio gate — PASS (2026-07-29).** 9 real interview clips (Lex Fridman /
   Acquired golden corpora from m4mbp, `proto_real_replay.py`): album+sweep **95.2%
   mean / 87.4% worst-clip**, beating the whole-file oracle (94.5%/72.7%); all 3-min
