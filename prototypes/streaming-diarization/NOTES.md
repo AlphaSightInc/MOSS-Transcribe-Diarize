@@ -117,6 +117,28 @@ aggregate unchanged.
   (dual_lane_diarization corpus exists on m4mbp for validating this); (2) larger
   embedder A/B (resnet293-LM sits in the local HF cache) — fog.
 
+### Retained live-tape differential (`proto_tape_differential.py`, 2026-08-02)
+
+Question: why does exact `c2e6248` score 91.35% on the clean 5-minute Acquired
+corpus but 55.07% through the live Mac→server path?
+
+**VERDICT: ROOT CAUSE PROVED.** The retained system lane itself scores 61.61% with
+truth-derived intervals; the mixed lane scores 54.66%, so the failure precedes live
+ASR/span policy. Clean speaker-centroid cosine is 0.261; after system capture it
+collapses to 0.911. `NativeLaneWireStream.downmix` assumes channel-major samples,
+but `copyFromAudioBufferList` flattens a multi-channel `AudioBuffer` without
+deinterleaving it. A 512-frame interleaved-stereo simulation matches the retained
+spectrum at 0.941 correlation (centroid 401 Hz vs 396 Hz observed). Holding corpus,
+truth intervals, pinned encoder, and thresholds fixed, only correcting channel indexing
+produced **62.36% RED → 91.35% GREEN → 62.36% RED**. Mic bleed is negligible;
+system→mixed waveform correlation is 0.979.
+
+Smallest fix: normalize every `AudioBuffer` to channel-major samples while its
+`mNumberChannels` layout is still known, before constructing
+`NativeCapturedAudioBuffer`; preserve the existing downstream downmix contract. Add
+interleaved-stereo, planar-stereo, and resample-through-frame-assembler regressions.
+F4b remains **OPEN** until a new retained live run on the fixed app clears its gate.
+
 ## Fidelity notes
 - Embedder: PRODUCTION class `_OnnxWeSpeakerEmbedder` via `WeSpeakerResNet152LmAdapter`,
   loaded from the repo file, with the pinned ONNX (sha verified = spec.state_sha256).

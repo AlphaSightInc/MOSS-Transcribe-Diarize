@@ -438,25 +438,38 @@ extension NativeCapturedAudioBuffer {
             )
         }
 
-        var samples: [Float] = []
+        var eligibleBuffers: [(buffer: AudioBuffer, channels: Int, frames: Int)] = []
         var channelCount = 0
         var frameCount = 0
-        withUnsafePointer(to: inputData.pointee.mBuffers) { firstBuffer in
-            let buffers = UnsafeBufferPointer(
-                start: firstBuffer,
-                count: Int(inputData.pointee.mNumberBuffers)
-            )
-            for buffer in buffers {
-                let count = Int(buffer.mDataByteSize) / MemoryLayout<Float>.stride
-                guard count > 0, let data = buffer.mData else {
-                    continue
-                }
-                let channels = Swift.max(1, Int(buffer.mNumberChannels))
-                channelCount += channels
-                frameCount = Swift.max(frameCount, count / channels)
-                let floats = data.assumingMemoryBound(to: Float.self)
-                samples.append(contentsOf: UnsafeBufferPointer(start: floats, count: count))
+        let buffers = UnsafeMutableAudioBufferListPointer(
+            UnsafeMutablePointer(mutating: inputData)
+        )
+        for buffer in buffers {
+            let count = Int(buffer.mDataByteSize) / MemoryLayout<Float>.stride
+            guard count > 0, buffer.mData != nil else {
+                continue
             }
+            let channels = Swift.max(1, Int(buffer.mNumberChannels))
+            let frames = count / channels
+            channelCount += channels
+            frameCount = Swift.max(frameCount, frames)
+            eligibleBuffers.append((buffer, channels, frames))
+        }
+
+        // Normalize every HAL shape to the producer contract before leaving the callback: one
+        // exact rectangular channel-major array. Short buffers retain real zero-filled channel
+        // tails, and a partial final interleaved frame is deliberately discarded.
+        var samples = [Float](repeating: 0, count: channelCount * frameCount)
+        var channelOffset = 0
+        for eligible in eligibleBuffers {
+            let floats = eligible.buffer.mData!.assumingMemoryBound(to: Float.self)
+            for frame in 0..<eligible.frames {
+                for channel in 0..<eligible.channels {
+                    samples[(channelOffset + channel) * frameCount + frame] =
+                        floats[frame * eligible.channels + channel]
+                }
+            }
+            channelOffset += eligible.channels
         }
 
         // Raw Mach ticks, converted to nanoseconds off this thread. A timestamp the HAL did not

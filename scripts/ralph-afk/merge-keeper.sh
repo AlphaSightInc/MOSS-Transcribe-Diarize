@@ -136,7 +136,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to ca9f0fb for the operator-authorized clause-11 matching closeout. The retrospective
 # sweep now scores each retained unit against independent album context, excluding the exact
 # observation being judged, so an early birth cannot validate itself forever at cosine 1.0.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-ca9f0fb54cd064502c13f171885bea40fcffced0}"
+# Advanced to c2e6248 for the operator-directed capture channel-layout closeout. The Mac HAL and
+# microphone boundaries now emit the exact rectangular channel-major shape their shared downmix
+# contract consumes, with real interleaved/planar producer regressions guarding the causal seam.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-c2e6248fcf16ce21e170e1e299c3b53c08ba2438}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

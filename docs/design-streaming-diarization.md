@@ -124,6 +124,16 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   burst loss; gap manifests exactly account for dropped frames; checkpoint/resume at
   40%+70% reproduced the uninterrupted mixed tape byte-identically.
 
+- **Live retained-tape diagnostic — upstream capture bug proved (2026-08-02).** Exact
+  `c2e6248` clean truth replay scored 91.35%; the retained system lane scored 61.61%
+  and mixed scored 54.66%. The Mac boundary flattened an interleaved multi-channel
+  `AudioBuffer`, while downstream downmix interpreted the flat array as channel-major.
+  A 512-frame reproduction matched the retained spectrum at 0.941 correlation, and a
+  one-variable downmix intervention scored 62.36% RED → 91.35% GREEN → 62.36% RED.
+  This refutes album thresholds, sweep ordering, mixer contamination, and config drift
+  as the primary cause. Fix the capture-boundary layout normalization, then rerun F4b;
+  F4b remains OPEN until the fixed live path itself passes.
+
 - **Real-audio gate — PASS (2026-07-29).** 9 real interview clips (Lex Fridman /
   Acquired golden corpora from m4mbp, `proto_real_replay.py`): album+sweep **95.2%
   mean / 87.4% worst-clip**, beating the whole-file oracle (94.5%/72.7%); all 3-min

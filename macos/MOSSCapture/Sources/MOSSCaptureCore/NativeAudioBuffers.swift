@@ -13,8 +13,12 @@ public struct NativeCapturedAudioBuffer: Equatable {
     public var firstSampleMonotonicNS: UInt64
     public var deviceEpoch: UInt64
     public var discontinuity: Bool
+    /// ALWAYS exact rectangular channel-major: channel `c` occupies
+    /// `[c * frameCount, (c + 1) * frameCount)`.
     public var samples: [Float]
 
+    /// Production constructors emit exact rectangular channel-major `samples`. Caller-built values
+    /// may still be malformed; downstream downmix retains defensive bounds behavior for them.
     public init(
         lane: CaptureLane,
         sampleRate: Int,
