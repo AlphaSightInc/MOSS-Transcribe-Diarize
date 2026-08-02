@@ -320,6 +320,41 @@ def test_a_near_tie_between_the_incumbent_and_a_rival_leaves_the_label_alone():
     assert dict(revision.dispositions) == {KEPT_AMBIGUOUS: 1}
 
 
+def test_a_sweep_can_repair_a_birth_without_matching_the_unit_to_itself():
+    """A provisional born from this unit is not independent evidence for this unit."""
+
+    album = FingerprintAlbum()
+    album.observe(
+        canonical_speaker="speaker-0001",
+        vector=unit_vector(0),
+        duration_sec=1.2,
+        span_id=7,
+    )
+    album.observe(
+        canonical_speaker="speaker-0002",
+        vector=unit_vector(20),
+        duration_sec=4.0,
+        span_id=2,
+    )
+    ledger = SweepLedger()
+    ledger.record(
+        span_id=7,
+        local_speaker="S01",
+        canonical_speaker="speaker-0001",
+        vector=unit_vector(0),
+        duration_sec=1.2,
+    )
+
+    revision = sweep(ledger=ledger, album=album, config=CONFIG)
+
+    assert [
+        (item.reason, item.previous_speaker, item.canonical_speaker)
+        for item in revision.corrections
+    ] == [(REASSIGNED, "speaker-0001", "speaker-0002")]
+    ledger.apply(revision)
+    assert sweep(ledger=ledger, album=album, config=CONFIG).corrections == ()
+
+
 def test_every_correction_beats_the_incumbent_by_the_deployed_margin():
     """The stability property itself, asserted over corrections rather than over one contrived tie.
 

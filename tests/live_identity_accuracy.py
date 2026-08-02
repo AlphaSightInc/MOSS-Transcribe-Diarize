@@ -178,6 +178,7 @@ class ReplayResult:
     merges: int = 0
     residual_corrections: int = 0
     rewritten_share: float = 0.0
+    speaker_recalls: tuple[float, ...] = ()
 
 
 @functools.lru_cache(maxsize=None)
@@ -441,8 +442,9 @@ def replay(
     )
     live_labels, live_index = _label_array(live_canonical)
     final_labels, final_index = _label_array(final_canonical)
+    accuracy, speaker_recalls = speaker_metrics(meeting, final_labels)
     return ReplayResult(
-        accuracy=speaker_accuracy(meeting, final_labels),
+        accuracy=accuracy,
         live_accuracy=speaker_accuracy(meeting, live_labels),
         canonical_speaker_count=len(live_index),
         final_speaker_count=len(final_index),
@@ -456,6 +458,7 @@ def replay(
         merges=len(merged_pairs),
         residual_corrections=residual,
         rewritten_share=float(durations[rewritten].sum() / durations.sum()) if durations.size else 0.0,
+        speaker_recalls=speaker_recalls,
     )
 
 
@@ -494,20 +497,39 @@ def speaker_accuracy(meeting: Meeting, labels: np.ndarray) -> float:
     meeting's reader sees an unlabelled span as a span whose speaker it does not know.
     """
 
+    return speaker_metrics(meeting, labels)[0]
+
+
+def speaker_metrics(
+    meeting: Meeting,
+    labels: np.ndarray,
+) -> tuple[float, tuple[float, ...]]:
+    """Overall accuracy and per-true-speaker recall under one optimal mapping."""
+
     eligible = meeting.rows[:, _ELIGIBLE] > 0
     truth = meeting.rows[eligible, _TRUE_SPEAKER].astype(int)
     assigned = labels[eligible]
     durations = meeting.rows[eligible, _DURATION]
     canonicals = sorted({int(value) for value in assigned if value >= 0})
     if not canonicals:
-        return 0.0
+        return 0.0, tuple(0.0 for _ in sorted({int(value) for value in truth}))
     speakers = sorted({int(value) for value in truth})
     overlap = np.zeros((len(canonicals), len(speakers)))
     for canonical, speaker, duration in zip(assigned, truth, durations, strict=True):
         if canonical >= 0:
             overlap[canonicals.index(int(canonical)), speakers.index(int(speaker))] += duration
     rows, columns = linear_sum_assignment(-overlap)
-    return float(overlap[rows, columns].sum() / durations.sum())
+    recalls = np.zeros(len(speakers), dtype=np.float64)
+    speaker_durations = np.asarray(
+        [durations[truth == speaker].sum() for speaker in speakers],
+        dtype=np.float64,
+    )
+    for row, column in zip(rows, columns, strict=True):
+        recalls[column] = overlap[row, column] / speaker_durations[column]
+    return (
+        float(overlap[rows, columns].sum() / durations.sum()),
+        tuple(float(value) for value in recalls),
+    )
 
 
 def assert_fixture_matches_production(meeting: Meeting) -> None:
