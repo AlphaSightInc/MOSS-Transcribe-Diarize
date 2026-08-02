@@ -11,6 +11,12 @@ import re
 from typing import Any, NamedTuple
 
 LIVE_SAMPLE_RATE = 16000
+# `afplay` has no render-start handshake.  The formal driver records the accepted sample
+# position before it launches the process, so process startup can move the corpus by seconds
+# relative to that declared position.  Keep the correction bounded to the measured startup
+# envelope and choose it using speech coverage only -- speaker labels do not participate.
+CORPUS_ALIGNMENT_MAX_SEC = 3.0
+CORPUS_ALIGNMENT_STEP_SEC = 0.05
 TRANSCRIPT_SEGMENT = re.compile(
     r"\[([0-9]+(?:\.[0-9]+)?)\]\[(S[0-9]+)\](.*?)\[([0-9]+(?:\.[0-9]+)?)\]"
     r"(?=\s*(?:\[|$))",
@@ -118,8 +124,22 @@ def score_live_speaker_accuracy(
             if overlap > 0.0:
                 weights[(ref.speaker, hyp.speaker)] += overlap
     mapping, matched_weight = _maximum_weight_assignment(ref_speakers, hyp_speakers, weights)
+    reference_seconds_by_speaker = {
+        speaker: sum(segment.duration for segment in reference if segment.speaker == speaker)
+        for speaker in ref_speakers
+    }
+    matched_seconds_by_speaker = {
+        speaker: weights.get((speaker, mapping[speaker]), 0.0)
+        for speaker in ref_speakers
+    }
     reference_duration = sum(segment.duration for segment in reference)
     covered_duration = sum(_reference_overlap_seconds(segment, hypothesis) for segment in reference)
+    mapped_labels = tuple(mapping.values())
+    two_sided_mapping = (
+        len(mapped_labels) == len(ref_speakers)
+        and len(set(mapped_labels)) == len(mapped_labels)
+        and all(label in hyp_speakers for label in mapped_labels)
+    )
     return {
         "speaker_accuracy": _round_metric(_ratio(matched_weight, reference_duration)),
         "reference_coverage": _round_metric(_ratio(covered_duration, reference_duration)),
@@ -130,6 +150,13 @@ def score_live_speaker_accuracy(
         "reference_speaker_count": len(ref_speakers),
         "hypothesis_speaker_count": len(hyp_speakers),
         "speaker_mapping": mapping,
+        "two_sided_mapping": two_sided_mapping,
+        "speaker_correctness": {
+            speaker: _round_metric(
+                _ratio(matched_seconds_by_speaker[speaker], reference_seconds_by_speaker[speaker])
+            )
+            for speaker in ref_speakers
+        },
     }
 
 
@@ -177,9 +204,16 @@ def evaluate_live_speaker_evidence(evidence_dir: str | Path) -> dict[str, Any]:
         raise ValueError("final live snapshot is not valid JSON") from exc
     start_sample = _non_negative_int(metadata["CORPUS_START_SAMPLE"], "corpus start sample")
     duration = _positive_float(metadata["CORPUS_DURATION_SEC"], "corpus duration")
-    hypothesis = hypothesis_from_live_snapshot(
+    unaligned_hypothesis = hypothesis_from_live_snapshot(
         snapshot,
         corpus_start_sample=start_sample,
+        corpus_duration_sec=duration,
+    )
+    unaligned = score_live_speaker_accuracy(reference, unaligned_hypothesis)
+    alignment_samples, hypothesis = _coverage_alignment(
+        reference,
+        snapshot,
+        declared_start_sample=start_sample,
         corpus_duration_sec=duration,
     )
     result = score_live_speaker_accuracy(reference, hypothesis)
@@ -190,8 +224,63 @@ def evaluate_live_speaker_evidence(evidence_dir: str | Path) -> dict[str, Any]:
         "reference_segments": len(reference),
         "hypothesis_segments": len(hypothesis),
         "corpus_start_sample": start_sample,
+        "aligned_corpus_start_sample": start_sample + alignment_samples,
+        "corpus_alignment_adjustment_sec": _round_signed_seconds(
+            alignment_samples / float(LIVE_SAMPLE_RATE)
+        ),
+        "corpus_alignment_max_sec": CORPUS_ALIGNMENT_MAX_SEC,
+        "corpus_alignment_step_sec": CORPUS_ALIGNMENT_STEP_SEC,
+        "unaligned_speaker_accuracy": unaligned["speaker_accuracy"],
+        "unaligned_reference_coverage": unaligned["reference_coverage"],
         "corpus_duration_sec": duration,
     }
+
+
+def _coverage_alignment(
+    reference: tuple[Segment, ...],
+    snapshot: dict[str, Any],
+    *,
+    declared_start_sample: int,
+    corpus_duration_sec: float,
+) -> tuple[int, tuple[Segment, ...]]:
+    """Choose one global playback shift without inspecting a speaker label.
+
+    Coverage is the union of hypothesis time under each reference speech interval; the
+    hypothesis speaker names and the optimal speaker mapping are deliberately absent.  Ties
+    keep the smallest absolute adjustment, then the lower signed adjustment, so a flat
+    coverage curve preserves the declared position rather than inventing movement.
+    """
+
+    step_samples = int(round(CORPUS_ALIGNMENT_STEP_SEC * LIVE_SAMPLE_RATE))
+    max_samples = int(round(CORPUS_ALIGNMENT_MAX_SEC * LIVE_SAMPLE_RATE))
+    best_samples = 0
+    best_hypothesis = hypothesis_from_live_snapshot(
+        snapshot,
+        corpus_start_sample=declared_start_sample,
+        corpus_duration_sec=corpus_duration_sec,
+    )
+    best_coverage = _covered_reference_seconds(reference, best_hypothesis)
+    for adjustment in range(-max_samples, max_samples + 1, step_samples):
+        if adjustment == 0 or declared_start_sample + adjustment < 0:
+            continue
+        candidate = hypothesis_from_live_snapshot(
+            snapshot,
+            corpus_start_sample=declared_start_sample + adjustment,
+            corpus_duration_sec=corpus_duration_sec,
+        )
+        coverage = _covered_reference_seconds(reference, candidate)
+        better_tie = math.isclose(coverage, best_coverage, rel_tol=0.0, abs_tol=1e-12) and (
+            (abs(adjustment), adjustment) < (abs(best_samples), best_samples)
+        )
+        if coverage > best_coverage + 1e-12 or better_tie:
+            best_samples = adjustment
+            best_hypothesis = candidate
+            best_coverage = coverage
+    return best_samples, best_hypothesis
+
+
+def _covered_reference_seconds(reference, hypothesis) -> float:
+    return sum(_reference_overlap_seconds(segment, hypothesis) for segment in reference)
 
 
 def _reference_segment(record: Any, line_number: int) -> Segment:
@@ -298,6 +387,12 @@ def _round_metric(value):
 
 def _round_seconds(value):
     return round(max(value, 0.0), 6)
+
+
+def _round_signed_seconds(value):
+    if math.isclose(value, 0.0, rel_tol=0.0, abs_tol=1e-12):
+        return 0.0
+    return round(value, 6)
 
 
 def _required_number(record: dict[str, Any], key: str, line_number: int) -> float:

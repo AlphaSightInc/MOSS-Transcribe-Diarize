@@ -139,7 +139,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to c2e6248 for the operator-directed capture channel-layout closeout. The Mac HAL and
 # microphone boundaries now emit the exact rectangular channel-major shape their shared downmix
 # contract consumes, with real interleaved/planar producer regressions guarding the causal seam.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-c2e6248fcf16ce21e170e1e299c3b53c08ba2438}"
+# Advanced to 59bbbac after the fixed capture layout exposed variance in the formal corpus scorer:
+# its pre-afplay sample marker was not a render-start handshake. This closeout aligns by bounded,
+# label-blind speech coverage and makes distinct mapping plus per-speaker correctness explicit.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-59bbbac7bb0c9bc276cc964de80a2a8254a42bad}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

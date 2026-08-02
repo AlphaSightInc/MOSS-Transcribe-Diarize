@@ -135,6 +135,8 @@ def test_unlabelled_reference_duration_counts_against_live_accuracy() -> None:
     assert result["reference_coverage"] == 0.5
     assert result["matched_speaker_seconds"] == 2.0
     assert result["reference_seconds"] == 4.0
+    assert result["two_sided_mapping"] is False
+    assert result["speaker_correctness"] == {"Alice": 1.0, "Bob": 0.0}
 
 
 @pytest.mark.parametrize(
@@ -198,6 +200,65 @@ def test_formal_evidence_binds_audio_reference_and_final_snapshot(tmp_path: Path
     assert result["reference_segments"] == 1
     assert result["hypothesis_segments"] == 1
     assert result["corpus_start_sample"] == 16000
+
+
+def test_formal_evidence_uses_label_blind_coverage_to_align_playback(tmp_path: Path) -> None:
+    write_formal_evidence(
+        tmp_path,
+        reference_rows=two_speaker_reference(),
+        committed=[
+            commit(48000, 64000, "[0][S01]alpha[1]"),
+            commit(96000, 112000, "[0][S02]beta[1]"),
+        ],
+        duration_sec=8,
+    )
+
+    result = evaluate_live_speaker_evidence(tmp_path)
+
+    assert result["unaligned_speaker_accuracy"] == 0.0
+    assert result["corpus_alignment_adjustment_sec"] == 1.0
+    assert result["aligned_corpus_start_sample"] == 16000
+    assert result["speaker_accuracy"] == 1.0
+    assert result["two_sided_mapping"] is True
+    assert result["speaker_correctness"] == {"Alice": 1.0, "Bob": 1.0}
+
+
+def test_alignment_cannot_turn_one_live_label_into_two_sided_mapping(tmp_path: Path) -> None:
+    write_formal_evidence(
+        tmp_path,
+        reference_rows=two_speaker_reference(),
+        committed=[
+            commit(48000, 64000, "[0][S01]alpha[1]"),
+            commit(96000, 112000, "[0][S01]beta[1]"),
+        ],
+        duration_sec=8,
+    )
+
+    result = evaluate_live_speaker_evidence(tmp_path)
+
+    assert result["corpus_alignment_adjustment_sec"] == 1.0
+    assert result["speaker_accuracy"] == 0.5
+    assert result["two_sided_mapping"] is False
+    assert sorted(result["speaker_correctness"].values()) == [0.0, 1.0]
+
+
+def test_formal_alignment_reports_a_negative_adjustment_without_clamping(tmp_path: Path) -> None:
+    write_formal_evidence(
+        tmp_path,
+        reference_rows=two_speaker_reference(),
+        committed=[
+            commit(48000, 64000, "[0][S01]alpha[1]"),
+            commit(96000, 112000, "[0][S02]beta[1]"),
+        ],
+        duration_sec=8,
+        start_sample=32000,
+    )
+
+    result = evaluate_live_speaker_evidence(tmp_path)
+
+    assert result["corpus_alignment_adjustment_sec"] == -1.0
+    assert result["aligned_corpus_start_sample"] == 16000
+    assert result["speaker_accuracy"] == 1.0
 
 
 @pytest.mark.parametrize(
@@ -281,8 +342,69 @@ def test_clause_reducer_makes_real_speaker_accuracy_a_visible_red_gate(tmp_path:
     assert "RED" in completed.stdout
 
 
+def test_clause_reducer_requires_two_sided_mapping_even_above_accuracy_gate(tmp_path: Path) -> None:
+    write_formal_evidence(
+        tmp_path,
+        reference_rows=[
+            {"start": 0.0, "end": 95.0, "speaker": "Alice", "text": "alpha"},
+            {"start": 95.0, "end": 100.0, "speaker": "Bob", "text": "beta"},
+        ],
+        committed=[commit(0, 1600000, "[0][S01]one label[100]")],
+        duration_sec=100,
+    )
+    reducer = Path(__file__).resolve().parents[1] / "scripts" / "ralph-afk" / "live-canary-clauses.py"
+
+    completed = subprocess.run(
+        [sys.executable, "-S", str(reducer), str(tmp_path)],
+        cwd=reducer.parents[2],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 3
+    assert "live speaker accuracy 95.00% >= 90.00%" in completed.stdout
+    assert "two-sided mapping=False" in completed.stdout
+    assert "speaker correctness=" in completed.stdout
+    assert "RED" in completed.stdout
+
+
 def live_snapshot(committed: list[dict]) -> dict:
     return {"snapshot": {"session": {"committed": committed}}}
+
+
+def two_speaker_reference() -> list[dict]:
+    return [
+        {"start": 2.0, "end": 3.0, "speaker": "Alice", "text": "alpha"},
+        {"start": 5.0, "end": 6.0, "speaker": "Bob", "text": "beta"},
+    ]
+
+
+def write_formal_evidence(
+    directory: Path,
+    *,
+    reference_rows: list[dict],
+    committed: list[dict],
+    duration_sec: int,
+    start_sample: int = 0,
+) -> None:
+    reference = directory / "speaker-reference.jsonl"
+    reference.write_text("\n".join(json.dumps(row) for row in reference_rows) + "\n")
+    reference_hash = hashlib.sha256(reference.read_bytes()).hexdigest()
+    (directory / "speaker-final.json").write_text(json.dumps(live_snapshot(committed)))
+    (directory / "corpus.env").write_text(
+        "\n".join(
+            [
+                "CORPUS_AUDIO_SHA256=abc123",
+                "CORPUS_EXPECTED_AUDIO_SHA256=abc123",
+                f"CORPUS_START_SAMPLE={start_sample}",
+                f"CORPUS_DURATION_SEC={duration_sec}",
+                f"CORPUS_REFERENCE_SHA256={reference_hash}",
+                f"CORPUS_REFERENCE_SEGMENTS={len(reference_rows)}",
+            ]
+        )
+        + "\n"
+    )
 
 
 def commit(
