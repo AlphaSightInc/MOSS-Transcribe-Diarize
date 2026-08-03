@@ -14,13 +14,25 @@ import unittest
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from run_l1_control import production_bindings, replay_case, semantic_sha256  # noqa: E402
+from run_l1_control import (  # noqa: E402
+    REPO,
+    production_bindings,
+    replay_case,
+    resolve_output_path,
+    semantic_sha256,
+)
 
 
 RUNNER = HERE / "run_l1_control.py"
 
 
 class L1ControlTest(unittest.TestCase):
+    def test_relative_evidence_path_is_resolved_under_worktree(self) -> None:
+        self.assertEqual(
+            resolve_output_path(Path("prototypes/evidence/run.json")),
+            REPO / "prototypes/evidence/run.json",
+        )
+
     def test_holdout_case_is_refused_before_freeze_without_reading_case_files(self) -> None:
         with tempfile.TemporaryDirectory(prefix="moss-l2-a2-holdout-") as temp:
             root = Path(temp)

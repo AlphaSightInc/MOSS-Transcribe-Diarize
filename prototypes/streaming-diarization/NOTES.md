@@ -332,3 +332,17 @@ Raw evidence:
   — SHA-256 `10b95e7bca08a0aa37b276ffd91fe9aa5b5ccde4e3439eb3c0afd39cc306ef7a`.
 - `prototypes/streaming-diarization/l2-stage0/evidence/A12_EVIDENCE.sha256`
   — SHA-256 `40ec1acf8d49146c10d4c4d2f6ee897bbc7d42a6b57edc3df2caf6dd4ab9bce4`.
+
+### L2 Stage 0 renewed-A2 runner-path correction (`l2-stage0`, 2026-08-03)
+
+The first renewed-A2 invocation wrote the first `1m-acquired-nfl` run JSON, then
+raised before recording any metric or gate verdict because a relative evidence path was
+passed to `Path.relative_to()` against the absolute worktree. The partial JSON and
+launcher-PTY traceback are preserved under `evidence/a2-l1-renewed-runs/` and
+`evidence/a2-renewed-path-crash*`; this attempt is `NO_VERDICT`.
+
+Correction: resolve all relative output paths beneath the asserted worktree before the
+measurement loop. No input, production policy, cache, threshold, score, or holdout state
+changed. Renewed A2 will use new `a2-l1-renewed-fixed*` paths; no evidence is overwritten.
+`evidence/A2_PATH_FIX_EVIDENCE.sha256` seals 7/7 files and has SHA-256
+`0135dc06705ee3c66a1bbe48844cd4c0ffbf482fc13b0126ea8f31021e00c476`.

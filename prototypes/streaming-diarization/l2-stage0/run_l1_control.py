@@ -120,6 +120,10 @@ def _resolve(root: Path, value: object) -> Path:
     return path if path.is_absolute() else root / path
 
 
+def resolve_output_path(path: Path) -> Path:
+    return path if path.is_absolute() else REPO / path
+
+
 def _truth(
     reference_path: Path,
 ) -> tuple[list[tuple[float, float, str, str]], tuple[SpeakerActivityInterval, ...]]:
@@ -753,14 +757,16 @@ def main() -> int:
             spec,
             cases,
             provenance,
-            evidence_dir=args.evidence_dir,
+            evidence_dir=resolve_output_path(args.evidence_dir),
         )
     except ControlError as exc:
         summary = {"detail": exc.detail, "error": exc.code, "overall": "FAIL"}
         transcript = f"FAIL {exc.code}: {exc.detail}\n"
-    _write_json(args.json_output, summary)
-    args.transcript_output.parent.mkdir(parents=True, exist_ok=True)
-    args.transcript_output.write_text(transcript, encoding="utf-8")
+    json_output = resolve_output_path(args.json_output)
+    transcript_output = resolve_output_path(args.transcript_output)
+    _write_json(json_output, summary)
+    transcript_output.parent.mkdir(parents=True, exist_ok=True)
+    transcript_output.write_text(transcript, encoding="utf-8")
     print(transcript, end="")
     return 0 if summary["overall"] == "PASS" else 2
 

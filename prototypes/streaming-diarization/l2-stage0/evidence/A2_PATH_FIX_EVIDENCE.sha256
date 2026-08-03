@@ -1,0 +1,7 @@
+8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5  prototypes/streaming-diarization/l2-stage0/run_l1_control.py
+2a97111c4bdf3ee3b3e84100b88600f1737bb5273dcef579f4812fe5cae5f2b4  prototypes/streaming-diarization/l2-stage0/test_l1_control.py
+2c4c62f96e8c81e753f53e21f4fa02d59acf0b3f0b6f6d0db28d9e2921e089c0  prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-runs/a2-l1-1m-acquired-nfl-run1.json
+aa523f5b62f78e522dfff9a8663b8e0b730d4fc83c762aa838a30f44af24df32  prototypes/streaming-diarization/l2-stage0/evidence/a2-renewed-path-crash.json
+5e207cfa857d0ffd19548a678316edc4a57f6235b595069d925d3c4edc87f47e  prototypes/streaming-diarization/l2-stage0/evidence/a2-renewed-path-crash-transcript.txt
+87a09226e0fea4f140155f1656418be890ee592422ce89e76df7dc424de2679a  prototypes/streaming-diarization/l2-stage0/evidence/a2-path-fix-tests.json
+1c77c84f0291e74fc7464d7c386b67aac7143bb2cb61a7a64115793a03abcf18  prototypes/streaming-diarization/l2-stage0/evidence/a2-path-fix-tests-transcript.txt
