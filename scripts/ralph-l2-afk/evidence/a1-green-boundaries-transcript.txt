@@ -1,0 +1,10 @@
+test_golden_path_in_runtime_config_fails (test_validate_inputs.InputBoundaryTest) ... ok
+test_one_byte_audio_reference_and_model_mutations_fail (test_validate_inputs.InputBoundaryTest) ... ok
+test_pre_freeze_holdout_open_fails (test_validate_inputs.InputBoundaryTest) ... ok
+test_reference_import_in_runtime_source_fails (test_validate_inputs.InputBoundaryTest) ... ok
+test_transcript_only_line_fails_acoustic_validation (test_validate_inputs.InputBoundaryTest) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.003s
+
+OK

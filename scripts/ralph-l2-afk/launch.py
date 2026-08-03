@@ -56,11 +56,13 @@ def _expects(code: str, action: Callable[[], None]) -> None:
     raise AssertionError(f"expected {code}, action passed")
 
 
-def _write_evidence(evidence_dir: Path, payload: dict[str, Any], transcript: str) -> None:
+def _write_evidence(
+    evidence_dir: Path, payload: dict[str, Any], transcript: str, label: str
+) -> None:
     evidence_dir.mkdir(parents=True, exist_ok=True)
-    json_path = evidence_dir / "a0-dry-run.json"
-    transcript_path = evidence_dir / "a0-dry-run-transcript.txt"
-    manifest_path = evidence_dir / "A0_EVIDENCE.sha256"
+    json_path = evidence_dir / f"{label}.json"
+    transcript_path = evidence_dir / f"{label}-transcript.txt"
+    manifest_path = evidence_dir / f"{label.upper().replace('-', '_')}_EVIDENCE.sha256"
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     transcript_path.write_text(transcript, encoding="utf-8")
     manifest_lines = [
@@ -70,8 +72,10 @@ def _write_evidence(evidence_dir: Path, payload: dict[str, Any], transcript: str
     manifest_path.write_text("\n".join(manifest_lines) + "\n", encoding="utf-8")
 
 
-def dry_run(evidence_dir: Path | None) -> int:
+def dry_run(evidence_dir: Path | None, evidence_label: str) -> int:
     contract = load_contract(CONTRACT_PATH)
+    unfrozen_contract = copy.deepcopy(contract)
+    unfrozen_contract["corpus_manifest_hash"] = "UNFROZEN"
     cases: list[dict[str, str]] = []
 
     cases.append(
@@ -82,10 +86,19 @@ def dry_run(evidence_dir: Path | None) -> int:
                 == "9089b33210401111865da7abc160ab0bcb4aa266"
                 and contract["branch"] == "ralph/l2-retained-identity-v1"
                 and contract["contract_id"] == "moss-l2-retained-identity-v1"
-                and contract["corpus_manifest_hash"] == "UNFROZEN"
+                and (
+                    contract["corpus_manifest_hash"] == "UNFROZEN"
+                    or (
+                        len(contract["corpus_manifest_hash"]) == 64
+                        and all(
+                            char in "0123456789abcdef"
+                            for char in contract["corpus_manifest_hash"]
+                        )
+                    )
+                )
             )
             or (_ for _ in ()).throw(AssertionError("pin mismatch")),
-            "ancestor, branch, contract, and UNFROZEN corpus sentinel pinned",
+            "ancestor, branch, contract, and corpus state pinned",
         )
     )
     cases.append(
@@ -149,38 +162,41 @@ def dry_run(evidence_dir: Path | None) -> int:
         _case(
             "corpus_manifest_unfrozen",
             lambda: _expects(
-                "corpus_manifest_unfrozen", lambda: validate_corpus_pin(contract, REPO)
+                "corpus_manifest_unfrozen",
+                lambda: validate_corpus_pin(unfrozen_contract, REPO),
             ),
             f"gated iteration refused with corpus_manifest_unfrozen and {BLOCKED_PROMISE}",
         )
     )
-    gated_refusal = subprocess.run(
-        [
-            sys.executable,
-            str(Path(__file__)),
-            "--iterations",
-            "1",
-            "--",
-            "/usr/bin/true",
-        ],
-        cwd=REPO,
-        check=False,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    try:
+        validate_iteration_budget(1, unfrozen_contract["max_campaign_a_iterations"])
+        validate_corpus_pin(unfrozen_contract, REPO)
+    except GuardrailError as exc:
+        gated_refusal_status = 2
+        gated_refusal_output = blocked_text(exc) + "\n"
+    else:
+        gated_refusal_status = 0
+        gated_refusal_output = "unexpected pass\n"
     cases.append(
         _case(
             "gated_unfrozen_run_refused",
             lambda: (
-                gated_refusal.returncode == 2
-                and "corpus_manifest_unfrozen" in gated_refusal.stdout
-                and classify_promise(gated_refusal.stdout) == "BLOCKED"
+                gated_refusal_status == 2
+                and "corpus_manifest_unfrozen" in gated_refusal_output
+                and classify_promise(gated_refusal_output) == "BLOCKED"
             )
-            or (_ for _ in ()).throw(AssertionError(gated_refusal.stdout.strip())),
-            "exit=2 output=" + " | ".join(gated_refusal.stdout.strip().splitlines()),
+            or (_ for _ in ()).throw(AssertionError(gated_refusal_output.strip())),
+            "exit=2 output=" + " | ".join(gated_refusal_output.strip().splitlines()),
         )
     )
+    if contract["corpus_manifest_hash"] != "UNFROZEN":
+        cases.append(
+            _case(
+                "active_corpus_pin_matches",
+                lambda: validate_corpus_pin(contract, REPO),
+                "active launcher pin equals corpus-manifest.json SHA-256",
+            )
+        )
     with tempfile.TemporaryDirectory(prefix="ralph-l2-a0-") as temp:
         temp_root = Path(temp)
         manifest = temp_root / contract["corpus_manifest_path"]
@@ -343,7 +359,7 @@ def dry_run(evidence_dir: Path | None) -> int:
         "results": cases,
     }
     if evidence_dir is not None:
-        _write_evidence(evidence_dir, payload, transcript)
+        _write_evidence(evidence_dir, payload, transcript, evidence_label)
     sys.stdout.write(transcript)
     return 0 if overall == "PASS" else 1
 
@@ -428,6 +444,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--evidence-dir", type=Path)
+    parser.add_argument("--evidence-label", default="a0-dry-run")
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     return parser.parse_args()
@@ -439,7 +456,7 @@ def main() -> int:
     if command and command[0] == "--":
         command = command[1:]
     if args.dry_run:
-        return dry_run(args.evidence_dir)
+        return dry_run(args.evidence_dir, args.evidence_label)
     return gated_run(args.iterations, command)
 
 

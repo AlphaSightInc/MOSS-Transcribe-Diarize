@@ -1,0 +1,9 @@
+{
+  "case_count": 19,
+  "corpus_manifest_sha256": "b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3",
+  "holdout_case_count": 3,
+  "holdout_manifest_sha256": "45412c90672015ece660b09cfbb4e8eeeba3e6603d671656a6ea26c3695f505d",
+  "model_manifest_sha256": "a04db6c33fdb425cf2b1b940ca2a2ff3950d9aabc269385f6c4a579e419c7184",
+  "reference_rebuild_sha256": "50590a9c9863776e9900908c6abae68cc3a314b237afead379a668711a507ceb",
+  "status": "FROZEN"
+}

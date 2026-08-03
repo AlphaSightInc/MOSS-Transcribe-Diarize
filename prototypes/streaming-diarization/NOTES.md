@@ -196,3 +196,50 @@ the newly added plan file was deleted. The main checkout's prior HEAD and comple
 dirty status were then rechecked and matched the preflight exactly. The cherry-pick
 was rerun correctly in the isolated worktree as `42a992a`. No main-checkout change
 from A0 survives.
+
+### L2 Stage 0 A1 frozen-input boundary (`l2-stage0`, 2026-08-03)
+
+Question: can Campaign A freeze a leakage-resistant bench corpus and model boundary,
+with deletion-capable long-case validation, an unopened blind holdout, and an exact
+launcher corpus pin, without changing any unapproved reference truth?
+
+Command: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/validate_inputs.py --json-output prototypes/streaming-diarization/l2-stage0/evidence/a1-validation.json`
+
+**VERDICT: PASS.** The accepted corpus contains 2 development, 4 validation, and
+3 blind-holdout cases; 10 cases remain explicitly exploratory. The only accepted
+long case is `5m-acquired-alphabet`, using post-audit reference SHA-256
+`28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759`
+and deletion-capable acoustic evidence. No other reference was edited. The launcher
+pin and corpus-manifest SHA-256 are both
+`b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3`.
+The candidate config exposes only the holdout-manifest hash and refuses an early
+open with `holdout_open_before_candidate_freeze` and `<promise>BLOCKED</promise>`.
+
+Red-first proof: 5 tests produced 7 expected failures before implementation,
+covering audio/reference/model byte mutation, transcript-only acoustic evidence,
+runtime golden-path leakage, and pre-freeze holdout access. Green boundary proof:
+5/5 passed. The alphabet reference/cache rebuild pair is recorded in
+`evidence/vector-rebuild.json`.
+
+Raw evidence:
+
+- `prototypes/streaming-diarization/l2-stage0/evidence/a1-validation.json` — SHA-256
+  `9068c875702a3b524fc5dd5bd549ab38c44361d3f65d2bb0748a78fb669d24a5`.
+- `scripts/ralph-l2-afk/evidence/a1-red-first-transcript.txt` — SHA-256
+  `09c16a81b2c131125a5062df431cd9e36704489a12e1fc0d01dc34d58c4c622b`.
+- `scripts/ralph-l2-afk/evidence/a1-green-boundaries-transcript.txt` — SHA-256
+  `90e29b7380b60eeb2e3a9736df18f579ccf8e68e8ceff84aa1877c7ce8f3116e`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/vector-rebuild.json` — SHA-256
+  `50590a9c9863776e9900908c6abae68cc3a314b237afead379a668711a507ceb`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/a1-holdout-refusal-transcript.txt`
+  — SHA-256 `a40a44dcc9ca289c46bebfe8d15d0ef1a2bef0d438c8f520a12a3d23bc8b3c21`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/A1_EVIDENCE.sha256` — SHA-256
+  `5112f4ab5a9ec4f07f0408d53f3313fecbd8fc52484cec651f631224c7b644fe`.
+
+Reference-truth questions for later operator authorization are consolidated in
+`prototypes/streaming-diarization/l2-stage0/operator-questions-A1.md`; none blocks
+A1 because every affected case is excluded from acceptance.
+
+Commit-granularity deviation: the supervisor authorized A1 as its own atomic commit
+before A2, refining plan §5 commit 2 so the long-running L1 reproduction consumes a
+clean, hash-pinned manifest commit; A2 will land separately.

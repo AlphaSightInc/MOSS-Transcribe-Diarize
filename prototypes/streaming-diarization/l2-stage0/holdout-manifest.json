@@ -1,0 +1,19 @@
+{
+  "cases": [
+    {
+      "case_fingerprint_sha256": "ad955dccca7fac05622fbbe1c6dc80f311cd0c012c5f2235356430d0a1a6f6ac",
+      "case_id": "1m-lex-javier-milei"
+    },
+    {
+      "case_fingerprint_sha256": "a2bf5e976396f8d25ee2f6376b55063a06f3c5aae87b3a420f344074ff768992",
+      "case_id": "1m-lex-keyu-jin"
+    },
+    {
+      "case_fingerprint_sha256": "7b8bdbf54bf439949029d8fe2a1919b5441869cb3f59727550b89d278069daee",
+      "case_id": "3m-lex-shapiro-destiny"
+    }
+  ],
+  "opened_at": null,
+  "schema": "moss-l2-stage0-holdout.v1",
+  "sealed": true
+}

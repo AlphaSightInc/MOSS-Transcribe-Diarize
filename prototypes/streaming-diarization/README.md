@@ -47,6 +47,7 @@ long-form WAVs (5/10/30 min, lex_fridman_karpathy_30m60m).
 
 ## Runs
 
+- `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/validate_inputs.py --json-output prototypes/streaming-diarization/l2-stage0/evidence/a1-validation.json` — L2 Stage-0 A1 frozen corpus/model/runtime/holdout boundary
 - `python3 proto_c_assembly.py` — gate C: frame assembly / gap manifest / resume (stdlib only)
 - `.venv/bin/python proto_ab_identity.py all` — gates A+B: album vs overwrite, convergence,
   threshold grid, on synthetic meetings via the PRODUCTION embedder code path

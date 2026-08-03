@@ -1,0 +1,6 @@
+{
+  "candidate_frozen": false,
+  "candidate_spec_sha256": "UNFROZEN",
+  "holdout_manifest_sha256": "45412c90672015ece660b09cfbb4e8eeeba3e6603d671656a6ea26c3695f505d",
+  "schema": "moss-l2-stage0-candidate-config.v1"
+}
