@@ -243,3 +243,44 @@ A1 because every affected case is excluded from acceptance.
 Commit-granularity deviation: the supervisor authorized A1 as its own atomic commit
 before A2, refining plan §5 commit 2 so the long-running L1 reproduction consumes a
 clean, hash-pinned manifest commit; A2 will land separately.
+
+### L2 Stage 0 A2 predeclaration (`l2-stage0`, 2026-08-03)
+
+Before any L1 measurement, A2 is restricted to the six accepted development/validation
+cases in `l1-control-spec.json`, with two runs per case and exact semantic repeatability
+(zero metric tolerance). The corrected-alphabet speaker-accuracy target is 0.9135 with
+an absolute 0.001 band, predeclared from the two accepted unchanged-path results.
+
+The supervisor intentionally overrode A2's literal “every accepted case” wording to keep
+all three blind-holdout cases sealed. `a5-holdout-procedure.json` predeclares that the
+single A5 opening occurs only after candidate freeze and runs all three arms—L1 control,
+ledger-only control, and the frozen L2 candidate—in the same opening session. L1 runs
+twice per holdout case; no tuning follows the opening.
+
+### L2 Stage 0 A2 L1 reproduction verdict (`l2-stage0`, 2026-08-03)
+
+Command: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_l1_control.py --evidence-dir prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-runs --json-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-summary.json --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-transcript.txt`
+
+**VERDICT: BLOCKED.** The first gated case, `1m-acquired-nfl`, failed the
+predeclared production-fixture fidelity gate: the frozen reference replans to 26
+evidence units while the frozen vector cache contains 29. The runner exited 2 with
+`l1_fixture_unit_count_mismatch`. No alternate span constant, threshold, cache, arm,
+or case was tried; no determinism or accepted-alphabet score is claimed.
+
+The A2 red check proves `run_l1_control.py` refuses a blind-holdout case before
+reading its case files with `l1_holdout_before_candidate_freeze` and
+`<promise>BLOCKED</promise>`. All three holdout cases remain sealed for the single A5
+opening predeclared above.
+
+Raw evidence:
+
+- `prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-summary.json` — SHA-256
+  `c637fffa161548ad8fbe5c426e06d3578ffe6e2952b44ca96114bffb68566cac`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-transcript.txt` — SHA-256
+  `e0fd362bc1a1d4f30022f390d4896258f8a9b15e38b9400b8dc701a6c17d44a4`.
+- `scripts/ralph-l2-afk/evidence/a2-red-holdout-transcript.txt` — SHA-256
+  `e4303438fa4c6f7bba07e4935f03bcfd037fa5804413812a7d83fcdd75c854a1`.
+- `scripts/ralph-l2-afk/evidence/a2-green-tests-transcript.txt` — SHA-256
+  `93d4c64ebd44675a5ea172b2e6da5cb4b89fe6f869321ec3b179209cf28bb6cf`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/A2_EVIDENCE.sha256` — SHA-256
+  `e0747b97ec5750ed5b78f13114668c3a8668685c732f4cdb5448b5768543da14`.

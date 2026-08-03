@@ -1,0 +1,15 @@
+{
+  "arms": [
+    "l1_control",
+    "ledger_only_control",
+    "l2_candidate"
+  ],
+  "candidate_must_be_frozen": true,
+  "holdout_case_scope": "all_cases_in_sealed_holdout_manifest",
+  "l1_runs_per_case": 2,
+  "no_tuning_after_open": true,
+  "opening_count": 1,
+  "opening_stage": "A5",
+  "run_all_arms_in_same_opening_session": true,
+  "schema": "moss-l2-stage0-a5-holdout-procedure.v1"
+}

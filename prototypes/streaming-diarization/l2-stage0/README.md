@@ -27,3 +27,13 @@ acoustic evidence. No other reference was edited.
 holdout path, cases, results, reference, or golden data. Until A5 freezes the
 candidate family and spec hash, `holdout_gate.py` refuses before reading the sealed
 manifest.
+
+A2 production L1 control (six development/validation cases; holdout refused):
+
+```bash
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_l1_control.py --evidence-dir prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-runs --json-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-summary.json --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-transcript.txt
+```
+
+Current A2 verdict is `BLOCKED`: the first gated case replans to 26 production
+evidence units while its frozen cache contains 29. No alternate configuration or
+holdout case ran.

@@ -1,0 +1,10 @@
+{
+  "errors": [],
+  "failures": [
+    "test_l1_control.L1ControlTest.test_holdout_case_is_refused_before_freeze_without_reading_case_files"
+  ],
+  "generated_at": "2026-08-03T22:29:01.026936+00:00",
+  "label": "red-holdout",
+  "successful": false,
+  "tests_run": 1
+}

@@ -1,0 +1,48 @@
+{
+  "accepted_alphabet_gate": {
+    "absolute_tolerance": 0.001,
+    "case_id": "5m-acquired-alphabet",
+    "speaker_accuracy": 0.9135
+  },
+  "a5_holdout_procedure_path": "prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json",
+  "a5_holdout_procedure_sha256": "f25d3df9376f68a4fb454dc3190a0c68e72518d09a85983a71b1ae182696ddeb",
+  "case_ids": [
+    "1m-acquired-nfl",
+    "1m-acquired-rolex",
+    "1m-lex-bill-ackman",
+    "3m-acquired-jamie-dimon",
+    "3m-lex-adam-frank",
+    "5m-acquired-alphabet"
+  ],
+  "corpus_manifest_sha256": "b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3",
+  "eligible_splits": [
+    "development",
+    "validation"
+  ],
+  "expected_case_count": 6,
+  "production_config": {
+    "album_admission_seconds": 2.0,
+    "album_birth_min_seconds": 1.0,
+    "album_exemplars_per_speaker": 10,
+    "hard_cap_samples": 40000,
+    "max_speakers": 16,
+    "merge_threshold": 0.7,
+    "min_evidence_samples": 8000,
+    "min_match_margin": 0.1,
+    "min_match_score": 0.35,
+    "sample_rate": 16000,
+    "silence_split_samples": 8000,
+    "sweep_interval_seconds": 60.0
+  },
+  "production_imports": {
+    "ledger": "moss_transcribe_diarize.app.live_identity_sweep.SweepLedger",
+    "sweep": "moss_transcribe_diarize.app.live_identity_sweep.sweep"
+  },
+  "repeatability": {
+    "metric_absolute_tolerance": 0.0,
+    "runs_per_case": 2,
+    "semantic_sha256_must_match": true
+  },
+  "schema": "moss-l2-stage0-l1-control-spec.v1",
+  "source_commit": "5be0455745629c6410d48285d5d90a55c9d7bd95"
+}
