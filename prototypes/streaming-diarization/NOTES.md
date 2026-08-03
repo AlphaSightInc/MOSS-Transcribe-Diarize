@@ -164,3 +164,35 @@ F4b remains **OPEN** until a new retained live run on the fixed app clears its g
   in-span quality is a separate, already-shipped component).
 - Sweep here reassigns evidence units + merges close canonicals; production sweep adds
   re-VAD of the tape (more evidence, should only help).
+
+### L2 Stage 0 A0 guardrail boundary (`scripts/ralph-l2-afk`, 2026-08-03)
+
+Question: can Campaign A start from an isolated keeper worktree with a fail-closed
+corpus gate, strict path/iteration fences, single-writer ownership, and terminal
+promise handling before any A1 corpus work?
+
+Command: `scripts/ralph-l2-afk/launch.sh --dry-run --evidence-dir scripts/ralph-l2-afk/evidence`
+
+**VERDICT: PASS (21/21).** Campaign-A paths are accepted; product Python, macOS,
+ops, product tests, and unlisted paths are refused. Iteration 10 is accepted and 11
+is refused. Dirty trees, unexpected HEAD, corpus-hash drift, and a second writer are
+refused. With the literal `UNFROZEN` pin, an actual gated iteration exits 2 with
+`corpus_manifest_unfrozen` and `<promise>BLOCKED</promise>`.
+
+Raw evidence:
+
+- `scripts/ralph-l2-afk/evidence/a0-dry-run.json` — SHA-256
+  `cf5a3401fbd5f8ee83a60889e7eafae8ee50cc62fcbba692003c2ea7a3991bc6`.
+- `scripts/ralph-l2-afk/evidence/a0-dry-run-transcript.txt` — SHA-256
+  `b8224da1e840eabc039e1d2a5767624dd4583ded62346c70612cbf2bec9e870e`.
+- `scripts/ralph-l2-afk/evidence/A0_EVIDENCE.sha256` — SHA-256
+  `ab5b196d14c55bb4c93e087143eae81f06b9d876018ba8212cff049f8580487c`.
+
+Execution note: immediately after creating the isolated worktree, the first plan
+cherry-pick mistakenly ran in the dirty main checkout because the command retained
+that checkout as its working directory. It created commit `4c0d8ca`, touching only
+the plan file. The branch was restored with `git reset --mixed ce6154cb...`; only
+the newly added plan file was deleted. The main checkout's prior HEAD and complete
+dirty status were then rechecked and matched the preflight exactly. The cherry-pick
+was rerun correctly in the isolated worktree as `42a992a`. No main-checkout change
+from A0 survives.
