@@ -33,6 +33,22 @@ retrospectively updated).
 
 ## 3. Architecture
 
+The numbered architecture below is the 2026-07-28 target. This matrix is the controlling
+2026-08-03 as-built status; “new” labels in the original prose are historical.
+
+| Capability | As built | Target | Gate/status |
+| --- | --- | --- | --- |
+| Fingerprint album | **Shipped:** quality-gated bank, duration-weighted centroid, 2.0 s enrollment | keep bounded/quality-gated | 9-clip floor 93.50% mean; long clips >=96.11% |
+| Retained tape | **Shipped, opt-in/off by default:** per-lane/mixed working substrate | source for L2 diarization | ADR-0003 governs root/TTL/cap/reaping |
+| L1 sweep | **Shipped:** embedding-ledger leave-one-out rematch/merge and label revision | retain as cheap first pass | acquired fixture 91.35%, 6→4 canonicals |
+| L2 sweep | **Not built:** L1 does not re-hear tape | tape resegmentation/re-VAD/re-embed; never re-ASR | future measured cycle required |
+| Crash behavior | **Partial:** startup reaps abandoned tapes; no full live-session/checkpoint resume | explicit resumable session state if authorized | startup-reap tests only; do not claim crash/resume |
+| Batch identity | **Not unified:** batch and live remain separate engines | one identity engine, two entry points | future compatibility + quality gate |
+| Retention policy | **Decided:** ADR-0003, opt-in root, zero default post-session TTL, declared cap | deployment-specific positive TTL/cap optional | policy tests + deployment declaration |
+
+Sweep vocabulary is fixed by ADR-0002's 2026-08-03 amendment: L1 is shipped and consumes only the
+embedding ledger; L2 is future and may re-hear retained audio for diarization, never ASR.
+
 Five components; 1 and 3 already exist.
 
 1. **Mac client (unchanged)** — 0.5 s sequenced, acknowledged packets per lane.
@@ -146,6 +162,22 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   reports each speaker's correctness. Canonical counts are diagnostic only. Identity
   thresholds and the 40,000-sample span cap remain unchanged.
 
+- **Corpus-truth correction (2026-08-03).** Forced alignment alone was rejected as an
+  existence proof: adding a fabricated but schema-valid transcript line still passed. The
+  replacement validator binds a deletion-capable local-token score to a transcript-independent
+  ASR pass and to the corpus audio hash. On the authoritative 90-second control, a present line
+  scored 1.000 while the two known absent lines scored 0.200 and 0.000; the measured gate is 0.65.
+  The first candidate v2 and every score built on it remain superseded. The accepted audit froze
+  post-audit v2 SHA-256 `28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759`:
+  R1/R2/R3/R5/R6 are present; R4 keeps David activity at 161.8–163.411, represents its leading
+  burst as uncertain nonlexical activity, and retains only the acoustically supported lexical text.
+  Two fresh unchanged-`3232375` live runs scored 91.35% and 91.44%, both two-sided.
+
+- **Capture-layout malformed-input policy (2026-08-03).** A production-seam prototype compared
+  fail-closed, truncate, and zero-fill. Valid rectangular audio was byte-identical; unequal member
+  lengths made truncation lose a valid frame and zero-fill change a truthful 1.000 tail to 0.500.
+  Producers therefore emit an empty typed discontinuity for every malformed layout.
+
 - **Real-audio gate — PASS (2026-07-29).** 9 real interview clips (Lex Fridman /
   Acquired golden corpora from m4mbp, `proto_real_replay.py`): album+sweep **95.2%
   mean / 87.4% worst-clip**, beating the whole-file oracle (94.5%/72.7%); all 3-min
@@ -170,4 +202,7 @@ zero residual corrections. Remaining caveat: in-span local diarization assumed c
 - Boundary re-ASR for words cut at 2.5 s seams (text quality; orthogonal).
 - Enrollment-prefix lineup inside MOSS as hard-case verifier.
 - Speaker cap (16) and span cap (2.5 s) tuning once identity is stable.
-- Retention TTL / privacy posture for stored session audio.
+- L2 tape resegmentation/re-VAD/re-embedding design and measured acceptance.
+
+Retention TTL/privacy posture is no longer fog: ADR-0003 decided it. Full crash/resume and batch
+identity unification remain targets, not shipped behavior.

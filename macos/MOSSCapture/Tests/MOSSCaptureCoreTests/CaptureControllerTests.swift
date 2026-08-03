@@ -6442,9 +6442,9 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(report.portalCycleMS, 500)
         XCTAssertEqual(report.snapshotFetch.p95MS, 90)
         XCTAssertEqual(report.eventsFetch.p95MS, 70)
-        XCTAssertEqual(report.renderBoundMS, 660)
+        XCTAssertEqual(report.renderBoundMS, 590)
         XCTAssertEqual(report.committedLatency.p95MS, 1_500)
-        XCTAssertEqual(report.userVisibleMS, 2_160)
+        XCTAssertEqual(report.userVisibleMS, 2_090)
         XCTAssertEqual(
             report.userVisibleMS,
             try XCTUnwrap(report.committedLatency.p95MS) + (try XCTUnwrap(report.renderBoundMS)),

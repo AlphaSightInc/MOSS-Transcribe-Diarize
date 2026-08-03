@@ -370,6 +370,17 @@ single-obligation mutation; they do not claim mutation review has run.
 
 ## Consequences
 
+### 2026-08-03 capture-boundary malformed-input lineage
+
+The native producers fail closed on a malformed HAL layout or unsupported microphone
+buffer by emitting one empty, typed discontinuity. A production-seam prototype using
+real `AudioBufferList`/`AVAudioPCMBuffer` values compared that rule with truncation and
+zero-fill. Valid rectangular audio was byte-for-byte equivalent under all policies;
+on unequal member lengths, truncation silently lost one valid frame and zero-fill
+changed a truthful 1.000 downmix tail to 0.500. Fail-closed therefore preserves the
+only honest fact: the callback has no rectangular audio value. Measured command and
+full state are recorded in `prototypes/capture-layout-policy/NOTES.md`.
+
 - The current mono decoder, coordinator, scheduler, transcript grammar,
   accounting, finality, provider selection, and batch behavior remain unchanged.
 - Lane-labelled v2 data now terminates at an in-process source-lane session

@@ -1,0 +1,28 @@
+{
+  "acoustic_evidence_sha256": "367b474cf8c6f9da3f8dd28dbd47961f9c34f2d9060497e9cdd7051205531896",
+  "audio_sha256": "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb",
+  "blind_to_live_output": true,
+  "edit_policy": "proven-absent lexical text is removed, never retimed; speaker activity remains separate",
+  "edited_line_indices": [
+    23
+  ],
+  "freeze_date": "2026-08-03",
+  "human_audit_primary_basis": {
+    "method": "direct human listen",
+    "operator": "corpus operator",
+    "range_end": 163.4,
+    "range_start": 162.0,
+    "verdict": "Audible lexical transcript is exactly: Oh, you're giving away the end. There is no Woo hoo hoo."
+  },
+  "human_audit_sha256": "ef73021be3049a27a872b6e069ee361f3db9eb4c870897bbba7679ba3b351dce",
+  "post_audit_reference_sha256": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+  "provenance_chain": "v1 -> rejected-candidate -> operator-audited-v2",
+  "reference_version": 2,
+  "rejected_candidate_provenance_sha256": "5c2e97767a3d7d2828be6a163c48927e47339c41968b0d7f943af8c19c399d32",
+  "rejected_candidate_reference_sha256": "7c3020b89326a933dd011cbbd8c8b398b6a5e0aea51a42458d716cd2867565f8",
+  "removed_line_indices": [],
+  "schema": "moss-speaker-reference-provenance.v2",
+  "segment_count": 45,
+  "status": "post-audit-frozen",
+  "v1_reference_sha256": "27c9b96e86cce3be86a3ce06dd64c1710e2c94e72a01c30339e953db94b8ebbe"
+}

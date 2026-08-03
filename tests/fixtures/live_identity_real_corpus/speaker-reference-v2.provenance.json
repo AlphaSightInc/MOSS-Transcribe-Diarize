@@ -1,0 +1,28 @@
+{
+  "alignment_date": "2026-08-03",
+  "audio": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/audio.wav",
+  "audio_sha256": "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb",
+  "blind_to_live_output": true,
+  "coarse_gap_split_sec": 10.0,
+  "method": "torchaudio MMS_FA CTC forced alignment with wildcard gaps",
+  "model": "MMS_FA wav2vec2_model (with_star=True)",
+  "reference_version": 2,
+  "schema": "moss-speaker-reference-provenance.v1",
+  "status": "rejected-candidate",
+  "rejection_reason": "forced alignment cannot prove transcript existence; superseded pending independent-ASR gate and operator audit",
+  "segment_count": 45,
+  "suspect_count": 0,
+  "suspect_threshold_mean_token_score": 0.35,
+  "v1_fields_used": [
+    "speaker",
+    "text",
+    "line_index",
+    "start",
+    "end"
+  ],
+  "v1_reference": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl",
+  "v1_reference_sha256": "27c9b96e86cce3be86a3ce06dd64c1710e2c94e72a01c30339e953db94b8ebbe",
+  "v1_timing_use": "coarse partitioning only at gaps >=10s; never copied to v2",
+  "v2_reference": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-f4b-closure-0803/tests/fixtures/live_identity_real_corpus/speaker-reference-v2.jsonl",
+  "v2_reference_sha256": "7c3020b89326a933dd011cbbd8c8b398b6a5e0aea51a42458d716cd2867565f8"
+}

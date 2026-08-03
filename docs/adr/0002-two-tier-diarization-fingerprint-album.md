@@ -106,3 +106,23 @@ path moved from **86.94%** final accuracy and six canonicals to **91.35%**, four
 four corrections, and zero residual corrections. David/Ben recalls were **94.60% / 89.28%**.
 The nine-clip production gate did not regress: **93.50% mean / 82.14% minimum**, all three
 3-minute clips **>=96.11%**, zero residual corrections.
+
+## 2026-08-03 as-built sweep-level amendment
+
+This amendment resolves a contradiction in the original Decision prose without rewriting it.
+Component 2 said the album was compressed context and “later processing never re-hears earlier
+audio”; component 3 said a sweep would re-VAD and re-embed the tape. Both cannot describe one
+sweep. They describe two different levels:
+
+- **L1 sweep — shipped:** rematch the retained embedding ledger against the current quality-gated
+  album, using leave-one-out references for the observation under judgment; merge compatible
+  canonicals and revise historical speaker labels. It never reads tape audio, never re-runs VAD,
+  never re-embeds PCM, and never re-runs ASR. The measured 6→4-canonical, 91.35% result in the
+  preceding amendment is L1 evidence.
+- **L2 sweep — future:** read the opt-in retained tape, resegment/re-VAD/re-embed it, then revise
+  speaker assignments. It may re-hear audio only for diarization evidence and must **never re-run
+  ASR**. No production L2 path or acceptance evidence exists yet.
+
+The “never re-hears earlier audio” statement governs live matching and shipped L1. The original
+re-VAD/re-embed language remains the L2 target. Claims of tape-driven convergence therefore remain
+future until L2 is built and measured; shipped L1 claims stay bounded to embedding-ledger rematch.
