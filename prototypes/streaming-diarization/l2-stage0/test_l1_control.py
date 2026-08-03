@@ -111,11 +111,16 @@ class L1ControlTest(unittest.TestCase):
             np.savez(
                 cache,
                 rows=np.asarray(
-                    [(0, 0, 0.0, 1.2, 1.2, 1), (1, 0, 1.8, 3.0, 1.2, 1)],
+                    [(0, 0, 0.0, 1.2, 1.2, 1), (2, 0, 1.8, 3.0, 1.2, 1)],
                     dtype=np.float64,
                 ),
                 vec_idx=np.asarray([0, 1], dtype=np.int64),
                 vecs=np.asarray([(1.0, 0.0), (1.0, 0.0)], dtype=np.float32),
+                span_bounds=np.asarray(
+                    [(0, 0, 19200), (1, 19200, 28800), (2, 28800, 48000)],
+                    dtype=np.int64,
+                ),
+                span_reasons=np.asarray(["end_silence", "leading_silence", "flush"]),
             )
             case = {
                 "audio_path": str(audio),

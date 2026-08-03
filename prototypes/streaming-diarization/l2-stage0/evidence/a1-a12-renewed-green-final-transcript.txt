@@ -1,0 +1,16 @@
+test_golden_path_in_runtime_config_fails (test_validate_inputs.InputBoundaryTest.test_golden_path_in_runtime_config_fails) ... ok
+test_non_holdout_validation_scope_skips_sealed_case_paths (test_validate_inputs.InputBoundaryTest.test_non_holdout_validation_scope_skips_sealed_case_paths) ... ok
+test_one_byte_audio_reference_and_model_mutations_fail (test_validate_inputs.InputBoundaryTest.test_one_byte_audio_reference_and_model_mutations_fail) ... ok
+test_pre_freeze_holdout_open_fails (test_validate_inputs.InputBoundaryTest.test_pre_freeze_holdout_open_fails) ... ok
+test_reference_import_in_runtime_source_fails (test_validate_inputs.InputBoundaryTest.test_reference_import_in_runtime_source_fails) ... ok
+test_transcript_only_line_fails_acoustic_validation (test_validate_inputs.InputBoundaryTest.test_transcript_only_line_fails_acoustic_validation) ... ok
+test_built_cache_matches_its_own_production_replan (test_production_cache.ProductionCacheTest.test_built_cache_matches_its_own_production_replan) ... ok
+test_exact_endpoint_plan_preserves_silence_span_ids_and_hard_caps (test_production_cache.ProductionCacheTest.test_exact_endpoint_plan_preserves_silence_span_ids_and_hard_caps) ... ok
+test_holdout_rebuild_refuses_before_a5_opening (test_production_cache.ProductionCacheTest.test_holdout_rebuild_refuses_before_a5_opening) ... ok
+test_non_holdout_scope_never_resolves_holdout_paths (test_production_cache.ProductionCacheTest.test_non_holdout_scope_never_resolves_holdout_paths) ... ok
+test_planner_is_bound_to_production_endpoint_policy (test_production_cache.ProductionCacheTest.test_planner_is_bound_to_production_endpoint_policy) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.006s
+
+OK

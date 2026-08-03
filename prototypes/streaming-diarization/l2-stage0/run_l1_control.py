@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import hashlib
 import inspect
 import json
@@ -43,6 +42,13 @@ from moss_transcribe_diarize.live_speaker_accuracy import (
     SpeakerActivityInterval,
     load_reference_speaker_activity_jsonl,
     score_live_speaker_accuracy,
+)
+from production_cache import (
+    Piece,
+    PlannerConfig,
+    plan_reference,
+    production_planner_bindings,
+    validate_cache,
 )
 
 
@@ -92,18 +98,6 @@ def production_bindings() -> dict[str, str]:
     }
 
 
-@dataclass(frozen=True, slots=True)
-class Piece:
-    span: int
-    start: float
-    end: float
-    true_speaker: int
-
-    @property
-    def duration(self) -> float:
-        return self.end - self.start
-
-
 class CachedEncoder:
     """Return only the frozen production vectors for the exact requested intervals."""
 
@@ -126,58 +120,24 @@ def _resolve(root: Path, value: object) -> Path:
     return path if path.is_absolute() else root / path
 
 
-def _truth(reference_path: Path) -> tuple[np.ndarray, tuple[SpeakerActivityInterval, ...]]:
+def _truth(
+    reference_path: Path,
+) -> tuple[list[tuple[float, float, str, str]], tuple[SpeakerActivityInterval, ...]]:
     reference = load_reference_speaker_activity_jsonl(reference_path)
-    speaker_index: dict[str, int] = {}
-    truth = np.asarray(
-        [
-            (
-                interval.start,
-                interval.end,
-                speaker_index.setdefault(interval.speaker, len(speaker_index)),
-            )
-            for interval in reference
-        ],
-        dtype=np.float64,
-    )
+    truth = [
+        (interval.start, interval.end, interval.speaker, "")
+        for interval in reference
+    ]
     return truth, reference
 
 
-def _plan_spans(
-    truth: np.ndarray,
-    *,
-    sample_rate: int,
-    hard_cap_samples: int,
-    silence_split_samples: int,
-) -> list[Piece]:
-    cap = hard_cap_samples / sample_rate
-    silence_split = silence_split_samples / sample_rate
-    pieces: list[Piece] = []
-    span = 0
-    accumulated = 0.0
-    previous_end: float | None = None
-    for start, end, speaker in truth:
-        if previous_end is not None and start - previous_end >= silence_split:
-            span += 1
-            accumulated = 0.0
-        cursor = float(start)
-        while cursor < end:
-            cut = min(float(end), cursor + (cap - accumulated))
-            pieces.append(Piece(span, cursor, cut, int(speaker)))
-            accumulated += cut - cursor
-            cursor = cut
-            if accumulated >= cap - 1e-9:
-                span += 1
-                accumulated = 0.0
-        previous_end = float(end)
-    return pieces
-
-
-def _group_units(pieces: list[Piece]) -> list[list[Piece]]:
-    grouped: dict[tuple[int, int], list[Piece]] = {}
-    for piece in pieces:
-        grouped.setdefault((piece.span, piece.true_speaker), []).append(piece)
-    return [grouped[key] for key in sorted(grouped)]
+def _planner_config(production_config: dict[str, object]) -> PlannerConfig:
+    return PlannerConfig.from_mapping(
+        {
+            name: production_config[name]
+            for name in PlannerConfig.__dataclass_fields__
+        }
+    )
 
 
 def _load_cache(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -200,6 +160,7 @@ def _assert_fixture_fidelity(
     rows: np.ndarray,
     *,
     sample_rate: int,
+    min_evidence_samples: int,
 ) -> dict[str, object]:
     if len(units) != len(rows):
         raise ControlError(
@@ -215,7 +176,10 @@ def _assert_fixture_fidelity(
                 "l1_fixture_unit_key_mismatch",
                 f"{case_id}:{index}:planned={planned_key} cached={cached_key}",
             )
-        selected = [piece for piece in pieces if piece.duration >= 0.5]
+        selected = [
+            piece for piece in pieces
+            if piece.sample_count >= min_evidence_samples
+        ]
         duration = sum(piece.duration for piece in selected or pieces)
         delta = abs(duration - float(row[4]))
         max_duration_delta = max(max_duration_delta, delta)
@@ -256,17 +220,25 @@ def replay_case(
     truth, reference = _truth(reference_path)
     rows, vectors, vector_index = _load_cache(cache_path)
     sample_rate = int(production_config["sample_rate"])
-    units = _group_units(
-        _plan_spans(
-            truth,
-            sample_rate=sample_rate,
-            hard_cap_samples=int(production_config["hard_cap_samples"]),
-            silence_split_samples=int(production_config["silence_split_samples"]),
-        )
+    planner_config = _planner_config(production_config)
+    plan = plan_reference(
+        truth,
+        total_samples=int(round(float(case["duration_seconds"]) * sample_rate)),
+        config=planner_config,
     )
+    try:
+        cache_self_replan = validate_cache(cache_path, plan, config=planner_config)
+    except RuntimeError as exc:
+        raise ControlError("l1_cache_self_replan_mismatch", f"{case_id}:{exc}") from exc
+    units = [list(unit.pieces) for unit in plan.units]
     fidelity = _assert_fixture_fidelity(
-        case_id, units, rows, sample_rate=sample_rate
+        case_id,
+        units,
+        rows,
+        sample_rate=sample_rate,
+        min_evidence_samples=planner_config.min_evidence_samples,
     )
+    fidelity["cache_self_replan"] = cache_self_replan
     encoder = CachedEncoder()
     album = FingerprintAlbum(
         admission_seconds=float(production_config["album_admission_seconds"]),
@@ -338,11 +310,31 @@ def replay_case(
         )
         return len(revision.corrections)
 
-    for span_id in sorted(spans):
-        members = sorted(spans[span_id], key=lambda index: units[index][0].start)
-        span_start = min(piece.start for index in members for piece in units[index])
-        span_end = max(piece.end for index in members for piece in units[index])
-        sample_count = int(round((span_end - span_start) * sample_rate))
+    for planned_span in plan.spans:
+        span_id = planned_span.span_id
+        members = sorted(spans.get(span_id, []), key=lambda index: units[index][0].start)
+        span_start = planned_span.start_sample / sample_rate
+        span_end = planned_span.end_sample / sample_rate
+        sample_count = planned_span.end_sample - planned_span.start_sample
+        if not members:
+            counts["no_speaker_activity"] = counts.get("no_speaker_activity", 0) + 1
+            span_trace.append(
+                {
+                    "assignments": {},
+                    "canonical_speakers": list(snapshot.canonical_speakers),
+                    "diagnostics": {},
+                    "end_seconds": round(span_end, 6),
+                    "ledger_records": [],
+                    "reason": planned_span.reason,
+                    "span_id": span_id,
+                    "start_seconds": round(span_start, 6),
+                    "status": "no_speaker_activity",
+                }
+            )
+            if span_end >= next_sweep_at:
+                run_sweep("cadence", span_end, apply=True)
+                next_sweep_at = (int(span_end // sweep_interval) + 1) * sweep_interval
+            continue
         label_of = {
             index: f"S{position + 1:02d}"
             for position, index in enumerate(members)
@@ -362,14 +354,13 @@ def replay_case(
                     float(value) for value in vectors[vector_index[index]]
                 ]
         segments.sort()
-        start_sample = int(round(span_start * sample_rate))
         preparation = preparer.prepare(
             span=FrozenSpan(
                 id=span_id,
                 epoch=0,
-                start_sample=start_sample,
-                end_sample=start_sample + sample_count,
-                reason="end_silence",
+                start_sample=planned_span.start_sample,
+                end_sample=planned_span.end_sample,
+                reason=planned_span.reason,
             ),
             pcm=b"\0\0" * sample_count,
             transcript="".join(
@@ -421,6 +412,7 @@ def replay_case(
                 "diagnostics": diagnostics,
                 "end_seconds": round(span_end, 6),
                 "ledger_records": records,
+                "reason": planned_span.reason,
                 "span_id": span_id,
                 "start_seconds": round(span_start, 6),
                 "status": preparation.status,
@@ -430,7 +422,7 @@ def replay_case(
             run_sweep("cadence", span_end, apply=True)
             next_sweep_at = (int(span_end // sweep_interval) + 1) * sweep_interval
 
-    end_seconds = max((piece.end for pieces in units for piece in pieces), default=0.0)
+    end_seconds = plan.total_samples / sample_rate
     run_sweep("final", end_seconds, apply=True)
     residual_corrections = run_sweep("residual_check", end_seconds, apply=False)
     live_hypothesis = _hypothesis(units, live_labels)
@@ -465,6 +457,7 @@ def replay_case(
         "live_unit_labels": live_labels,
         "metrics": metrics,
         "production_bindings": production_bindings(),
+        "production_planner": production_planner_bindings(),
         "production_config": production_config,
         "revision_trace": revision_trace,
         "span_trace": span_trace,
@@ -542,6 +535,10 @@ def validate_control_inputs(
     procedure_path = _resolve(REPO, spec["a5_holdout_procedure_path"])
     if _sha256(procedure_path) != spec["a5_holdout_procedure_sha256"]:
         raise ControlError("l1_a5_holdout_procedure_hash_mismatch", str(procedure_path))
+    cache_spec_path = _resolve(REPO, spec["cache_rebuild_spec_path"])
+    if _sha256(cache_spec_path) != spec["cache_rebuild_spec_sha256"]:
+        raise ControlError("l1_cache_rebuild_spec_hash_mismatch", str(cache_spec_path))
+    cache_spec = json.loads(cache_spec_path.read_text(encoding="utf-8"))
     selected_ids = [case["case_id"] for case in selected]
     if selected_ids != spec["case_ids"] or len(selected) != int(spec["expected_case_count"]):
         raise ControlError("l1_case_scope_mismatch", json.dumps(selected_ids))
@@ -585,9 +582,20 @@ def validate_control_inputs(
             )
     if int(config["hard_cap_samples"]) != 40000:
         raise ControlError("l1_hard_cap_changed", str(config["hard_cap_samples"]))
+    planner_values = {
+        name: config[name] for name in PlannerConfig.__dataclass_fields__
+    }
+    if planner_values != cache_spec["config"]:
+        raise ControlError(
+            "l1_cache_planner_config_drift",
+            json.dumps({"cache": cache_spec["config"], "l1": planner_values}, sort_keys=True),
+        )
+    if production_planner_bindings() != cache_spec["production_planner"]:
+        raise ControlError("l1_cache_planner_binding_drift", str(cache_spec_path))
     return {
         "a5_holdout_procedure_sha256": spec["a5_holdout_procedure_sha256"],
         "corpus_manifest_sha256": actual_corpus_hash,
+        "cache_rebuild_spec_sha256": spec["cache_rebuild_spec_sha256"],
         "model_manifest_sha256": _sha256(HERE / "model-manifest.json"),
         "production_bindings": production_bindings(),
         "source_commit": spec["source_commit"],

@@ -1,0 +1,7 @@
+{
+  "error": "cache_holdout_before_a5_opening",
+  "error_type": "RuntimeError",
+  "generated_at": "2026-08-03T22:55:13.785485+00:00",
+  "overall": "BLOCKED",
+  "scope": "holdout"
+}

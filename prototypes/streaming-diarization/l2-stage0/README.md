@@ -15,7 +15,7 @@ v2, rebuilds its vectors, writes manifests, and updates the launcher pin):
 Run:
 
 ```bash
-/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/validate_inputs.py --json-output prototypes/streaming-diarization/l2-stage0/evidence/a1-validation.json
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/validate_inputs.py --case-scope non-holdout --json-output prototypes/streaming-diarization/l2-stage0/evidence/a12-renewed-a1-validation-final.json
 ```
 
 Accepted set: 2 development, 4 validation, 3 blind holdout. Ten other cases are
@@ -34,6 +34,7 @@ A2 production L1 control (six development/validation cases; holdout refused):
 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_l1_control.py --evidence-dir prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-runs --json-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-summary.json --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-transcript.txt
 ```
 
-Current A2 verdict is `BLOCKED`: the first gated case replans to 26 production
-evidence units while its frozen cache contains 29. No alternate configuration or
-holdout case ran.
+The initial A2 attempt remains a superseded `BLOCKED` result. A1.2 then version-rebuilt
+all 16 non-holdout derived caches through production `EndpointPolicy` and
+`WeSpeakerResNet152LmAdapter`; all caches matched their own replan. Holdout caches remain
+untouched and are pinned for rebuild inside the single A5 opening.

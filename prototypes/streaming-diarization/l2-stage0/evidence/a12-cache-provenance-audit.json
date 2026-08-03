@@ -1,0 +1,547 @@
+{
+  "cache_version": "cache-v2-production-endpoint",
+  "cases": [
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+      "case_id": "1m-acquired-jamie-dimon",
+      "eligible_unit_count": 9,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-jamie-dimon/harness_cache.npz",
+      "new_cache_sha256": "164ed35f3b8c5d3e8093c3de0e6348f442bcc3ce18de89868585d57904fd8bdc",
+      "new_unit_count": 13,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/harness_cache.npz",
+      "old_cache_sha256": "795608883f693af1f1d90835b88e132c274a9617ef7e8d407b6dcf6908266169",
+      "old_unit_count": 10,
+      "planned_minus_cached_units": 3,
+      "reference_sha256": "325c83712849262ebe7c6e513a9be495d6d6bf5230e70f174243f66ee691e01d",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 9,
+        "self_replan": "PASS",
+        "span_count": 41,
+        "unit_count": 13,
+        "vector_count": 9
+      },
+      "span_count": 41,
+      "split": "exploratory",
+      "unit_count": 13,
+      "vector_count": 9
+    },
+    {
+      "acceptance_eligible": true,
+      "audio_sha256": "d2505e3bb048bd7645fffdd8b5afc4b34d1511990ce6771366243e02869f3be3",
+      "case_id": "1m-acquired-nfl",
+      "eligible_unit_count": 27,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-nfl/harness_cache.npz",
+      "new_cache_sha256": "0ac28f9340a255d8fdafb2d589b2f7939381ed9025f219185ba5446a1283b3c7",
+      "new_unit_count": 31,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_nfl/harness_cache.npz",
+      "old_cache_sha256": "034ac2a421c6d1e22624e660877a6f09e3b537ddf873c09be08fbf151be20b1b",
+      "old_unit_count": 29,
+      "planned_minus_cached_units": 2,
+      "reference_sha256": "7c5deb4941e674d9b86a59698f03b30533444c81717eddb429f9297f420d95cd",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 27,
+        "self_replan": "PASS",
+        "span_count": 31,
+        "unit_count": 31,
+        "vector_count": 27
+      },
+      "span_count": 31,
+      "split": "development",
+      "unit_count": 31,
+      "vector_count": 27
+    },
+    {
+      "acceptance_eligible": true,
+      "audio_sha256": "f2d20b3b08a58c902f68c5882ef9b2a4349b515f1d7abaa7f0f0e44b7cdb203a",
+      "case_id": "1m-acquired-rolex",
+      "eligible_unit_count": 27,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-rolex/harness_cache.npz",
+      "new_cache_sha256": "85e2d573d6c768b659d67e831985302ce5a0dd1d8169af72b5235d6dd5cada68",
+      "new_unit_count": 30,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_rolex/harness_cache.npz",
+      "old_cache_sha256": "935f1f986340d724836e692f208f71d14fcc66b5212ba2298068a4dbeb450b3f",
+      "old_unit_count": 28,
+      "planned_minus_cached_units": 2,
+      "reference_sha256": "95871988a18bf5caf9ecddd119ace40f16cec1a44c010b3a6e5e8390d5710ea9",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 27,
+        "self_replan": "PASS",
+        "span_count": 36,
+        "unit_count": 30,
+        "vector_count": 27
+      },
+      "span_count": 36,
+      "split": "validation",
+      "unit_count": 30,
+      "vector_count": 27
+    },
+    {
+      "acceptance_eligible": true,
+      "audio_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+      "case_id": "1m-lex-bill-ackman",
+      "eligible_unit_count": 27,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-lex-bill-ackman/harness_cache.npz",
+      "new_cache_sha256": "78338559bd9975ff610c921194c3ce01e50c127f02ce0fbf13139713a4752305",
+      "new_unit_count": 27,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/harness_cache.npz",
+      "old_cache_sha256": "5fdd74f0df6d826efd00d89a090573fff5abfffd8b3fb8bb5e4926ea28a7b772",
+      "old_unit_count": 27,
+      "planned_minus_cached_units": 0,
+      "reference_sha256": "9e50d6d3c9006337d1d357af5593f669ef0e3014b734fb6ddcc9a119bf49d71c",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 27,
+        "self_replan": "PASS",
+        "span_count": 24,
+        "unit_count": 27,
+        "vector_count": 27
+      },
+      "span_count": 24,
+      "split": "validation",
+      "unit_count": 27,
+      "vector_count": 27
+    },
+    {
+      "acceptance_eligible": true,
+      "audio_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+      "case_id": "3m-acquired-jamie-dimon",
+      "eligible_unit_count": 73,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-acquired-jamie-dimon/harness_cache.npz",
+      "new_cache_sha256": "2b463a00143460ecc86b2218a308736b0cbbe57722e420f0b40800580f363dcc",
+      "new_unit_count": 79,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/acquired_jamie_dimon_3min/harness_cache.npz",
+      "old_cache_sha256": "5db11992d6fda2340301efae9cce0b6a60e195e0f1ccbd87f9e2389c80eb8f0f",
+      "old_unit_count": 79,
+      "planned_minus_cached_units": 0,
+      "reference_sha256": "72a6173d92323d5c7ff5e6ba084063970966d4bd4e146c23e24d57949ad1a01b",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 73,
+        "self_replan": "PASS",
+        "span_count": 74,
+        "unit_count": 79,
+        "vector_count": 73
+      },
+      "span_count": 74,
+      "split": "development",
+      "unit_count": 79,
+      "vector_count": 73
+    },
+    {
+      "acceptance_eligible": true,
+      "audio_sha256": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
+      "case_id": "3m-lex-adam-frank",
+      "eligible_unit_count": 76,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-lex-adam-frank/harness_cache.npz",
+      "new_cache_sha256": "9b78e22d9137b9d4003e44206b94528ad05ee402eac2d9fc0d62e5108d7e442c",
+      "new_unit_count": 76,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank/harness_cache.npz",
+      "old_cache_sha256": "292c866fe5ce6d7ad3eaa63d4c6b1af88cf9f8b6ce36850d383f88cb5de3bb79",
+      "old_unit_count": 76,
+      "planned_minus_cached_units": 0,
+      "reference_sha256": "650450979435c9f4389959465f87dbf37c78109bc925c24d67878cc9574bc9cc",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 76,
+        "self_replan": "PASS",
+        "span_count": 72,
+        "unit_count": 76,
+        "vector_count": 76
+      },
+      "span_count": 72,
+      "split": "validation",
+      "unit_count": 76,
+      "vector_count": 76
+    },
+    {
+      "acceptance_eligible": true,
+      "audio_sha256": "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb",
+      "case_id": "5m-acquired-alphabet",
+      "eligible_unit_count": 91,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-alphabet/harness_cache.npz",
+      "new_cache_sha256": "6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef",
+      "new_unit_count": 101,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz",
+      "old_cache_sha256": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+      "old_unit_count": 92,
+      "planned_minus_cached_units": 9,
+      "reference_sha256": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 91,
+        "self_replan": "PASS",
+        "span_count": 160,
+        "unit_count": 101,
+        "vector_count": 91
+      },
+      "span_count": 160,
+      "split": "validation",
+      "unit_count": 101,
+      "vector_count": 91
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "693317c142945d6e1918e36e1dbcb2e4f0e4d8d142ef15bd4a68ef90217d058f",
+      "case_id": "5m-acquired-coca-cola",
+      "eligible_unit_count": 56,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-coca-cola/harness_cache.npz",
+      "new_cache_sha256": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9",
+      "new_unit_count": 68,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/harness_cache.npz",
+      "old_cache_sha256": "77f97785de1d0aa9da23debb034c85ae4d463c620eed3a8b86f2aef796b2e188",
+      "old_unit_count": 54,
+      "planned_minus_cached_units": 14,
+      "reference_sha256": "41146f40c372a928607219df34b78b4cb68c10ca5cf1cbcb4bba1c33b8135809",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 56,
+        "self_replan": "PASS",
+        "span_count": 187,
+        "unit_count": 68,
+        "vector_count": 56
+      },
+      "span_count": 187,
+      "split": "exploratory",
+      "unit_count": 68,
+      "vector_count": 56
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "c18830aad32d08afdd92965c673c3a3bf5cdc150c611ddad71a8df2e156f6c83",
+      "case_id": "5m-acquired-jamie-dimon",
+      "eligible_unit_count": 28,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-jamie-dimon/harness_cache.npz",
+      "new_cache_sha256": "f558664d04ebb43914b5e147e08f5338f36c07817ab61838253bbabd9975202e",
+      "new_unit_count": 37,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_jamie_dimon/harness_cache.npz",
+      "old_cache_sha256": "1780f3a6b6e9f068e54a6c6ba497f86ae4d170fa76a9532306257afc35130a64",
+      "old_unit_count": 27,
+      "planned_minus_cached_units": 10,
+      "reference_sha256": "1f8c981f3a238409a25415d5abb87681a4f0c88e9633afffd94b0fefc0746e1e",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 28,
+        "self_replan": "PASS",
+        "span_count": 162,
+        "unit_count": 37,
+        "vector_count": 28
+      },
+      "span_count": 162,
+      "split": "exploratory",
+      "unit_count": 37,
+      "vector_count": 28
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "636e42c9e10f488b739dda8b6973aaead66ca89329b4ee61f08870bbec8ac3a5",
+      "case_id": "5m-acquired-nfl",
+      "eligible_unit_count": 44,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-nfl/harness_cache.npz",
+      "new_cache_sha256": "9bfecb8c105e1aea8a3911bd0ce2dbb3271607e938aecc909f75206f32fc5402",
+      "new_unit_count": 52,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_nfl/harness_cache.npz",
+      "old_cache_sha256": "db18b9f7d140ce81677862264693c55858c082c4f7e86ab81d0cc1b1228bd8ac",
+      "old_unit_count": 43,
+      "planned_minus_cached_units": 9,
+      "reference_sha256": "f285f265a81798330a2cac1c95ec005ea39af492a259f439de3a473b0ff33667",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 44,
+        "self_replan": "PASS",
+        "span_count": 168,
+        "unit_count": 52,
+        "vector_count": 44
+      },
+      "span_count": 168,
+      "split": "exploratory",
+      "unit_count": 52,
+      "vector_count": 44
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "300df751d1157a090a08007d4f81a9c878516da87ac1b684231b70f4401f04e5",
+      "case_id": "5m-acquired-rolex",
+      "eligible_unit_count": 60,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-rolex/harness_cache.npz",
+      "new_cache_sha256": "f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee",
+      "new_unit_count": 71,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/harness_cache.npz",
+      "old_cache_sha256": "2c45bd57b680f8ca924a34200b60d0946440aaf910efc0e03fbba2a0698f330e",
+      "old_unit_count": 58,
+      "planned_minus_cached_units": 13,
+      "reference_sha256": "88f84c94b0f184939906249747ae489c58563ac81483eb1447ef2d00e4f58b1c",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 60,
+        "self_replan": "PASS",
+        "span_count": 182,
+        "unit_count": 71,
+        "vector_count": 60
+      },
+      "span_count": 182,
+      "split": "exploratory",
+      "unit_count": 71,
+      "vector_count": 60
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "f1c178d12d960d793cb66c90929e9963db51c248ede3b9c1e738eb1b93b3b497",
+      "case_id": "5m-lex-bill-ackman",
+      "eligible_unit_count": 125,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-bill-ackman/harness_cache.npz",
+      "new_cache_sha256": "3b73d7e4eae1aed818d78452c47fd1dd3e74bc3c09ea001a9b1deef7db89f491",
+      "new_unit_count": 125,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_bill_ackman/harness_cache.npz",
+      "old_cache_sha256": "b891caba20a072c1d01d9579d7e8d916341162093d17004b8439d927fad6a622",
+      "old_unit_count": 125,
+      "planned_minus_cached_units": 0,
+      "reference_sha256": "46e6288ede6937a41ae3727264f14c001c30bc3131b5135d7391506bffa51069",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 125,
+        "self_replan": "PASS",
+        "span_count": 120,
+        "unit_count": 125,
+        "vector_count": 125
+      },
+      "span_count": 120,
+      "split": "exploratory",
+      "unit_count": 125,
+      "vector_count": 125
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "a81c26388c604ef02452a22525381f501d0da7c0a52b2de9b0fd9bd3590c36a1",
+      "case_id": "5m-lex-javier-milei",
+      "eligible_unit_count": 121,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-javier-milei/harness_cache.npz",
+      "new_cache_sha256": "26fbca84f5cfc528d55a8af67e32e87d6432776b324095c52aa376f88215380c",
+      "new_unit_count": 121,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_javier_milei/harness_cache.npz",
+      "old_cache_sha256": "ac8fb980fab83a9d4d6b875de286d65d38a7e38bf2f2885e3638da03b1e2ebbb",
+      "old_unit_count": 121,
+      "planned_minus_cached_units": 0,
+      "reference_sha256": "bcad1a474a53c47474df37d0b6f40ac5c9b61ed17abd7d07b6f6ff8c5b63849d",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 121,
+        "self_replan": "PASS",
+        "span_count": 120,
+        "unit_count": 121,
+        "vector_count": 121
+      },
+      "span_count": 120,
+      "split": "exploratory",
+      "unit_count": 121,
+      "vector_count": 121
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "85176388cf783fb1b75beeaaefba745bb315202ab4d74e40052f0d3fc2b5c7d9",
+      "case_id": "5m-lex-keyu-jin",
+      "eligible_unit_count": 125,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-keyu-jin/harness_cache.npz",
+      "new_cache_sha256": "c545173e82e2ad045b7c84c2751b3ec265104eb46867e77c07ecae1b3363e4fa",
+      "new_unit_count": 125,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/harness_cache.npz",
+      "old_cache_sha256": "413a174904c824a9c5a1bbb1c6e78a08324f0f12063f342e0d8be41840c564ed",
+      "old_unit_count": 125,
+      "planned_minus_cached_units": 0,
+      "reference_sha256": "f479c10d4762980639d8514c9e0faffc2c97b0ae8b76e2ec60cf43253c003812",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 125,
+        "self_replan": "PASS",
+        "span_count": 120,
+        "unit_count": 125,
+        "vector_count": 125
+      },
+      "span_count": 120,
+      "split": "exploratory",
+      "unit_count": 125,
+      "vector_count": 125
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "842c9609ac4473bee0c29275fa2f38d73b00484acc603673f2317039005f8996",
+      "case_id": "30m-acquired-jamie-dimon",
+      "eligible_unit_count": 257,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/30m-acquired-jamie-dimon/harness_cache.npz",
+      "new_cache_sha256": "0f436684063b7c44aec64096864c2ac60b24a7002487fcc25cf88881abdeac88",
+      "new_unit_count": 347,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_30m/acquired_jamie_dimon/harness_cache.npz",
+      "old_cache_sha256": "24412387a763bfe47d5630517f1e78373e69071cce71f5dbdabea60219525b36",
+      "old_unit_count": 242,
+      "planned_minus_cached_units": 105,
+      "reference_sha256": "98d0acbee1ccc1f67b971050243797214d7ddbb621788887d25936cabc9e3c71",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 257,
+        "self_replan": "PASS",
+        "span_count": 1051,
+        "unit_count": 347,
+        "vector_count": 257
+      },
+      "span_count": 1051,
+      "split": "exploratory",
+      "unit_count": 347,
+      "vector_count": 257
+    },
+    {
+      "acceptance_eligible": false,
+      "audio_sha256": "911889b4899b3e2d82699238e4277817da8ef82b9cf3e6d18e272d65f0035474",
+      "case_id": "30m-lex-bill-ackman",
+      "eligible_unit_count": 763,
+      "new_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/30m-lex-bill-ackman/harness_cache.npz",
+      "new_cache_sha256": "6d0861e58c6ef2c5005972992279ceb9372aa5124dcf8379b57c028752358240",
+      "new_unit_count": 765,
+      "old_cache_path": "prototypes/streaming-diarization/data/real/benchmark_30m/lex_bill_ackman/harness_cache.npz",
+      "old_cache_sha256": "604f4ecbcd85bc7b787d3107b5e8d93a0739905335f5d933556a653e119c86b8",
+      "old_unit_count": 765,
+      "planned_minus_cached_units": 0,
+      "reference_sha256": "fac005f5a91651877bed78e18727ebce9dc93ed76c64042fa4a86af2447ecb96",
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 763,
+        "self_replan": "PASS",
+        "span_count": 720,
+        "unit_count": 765,
+        "vector_count": 763
+      },
+      "span_count": 720,
+      "split": "exploratory",
+      "unit_count": 765,
+      "vector_count": 763
+    }
+  ],
+  "excluded_case_ids": [
+    "1m-lex-javier-milei",
+    "1m-lex-keyu-jin",
+    "3m-lex-shapiro-destiny"
+  ],
+  "generated_at": "2026-08-03T23:07:25.827616+00:00",
+  "input_corpus_manifest_sha256": "b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3",
+  "model_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+  "overall": "PASS",
+  "production_embedder": {
+    "binding": "moss_transcribe_diarize.app.speaker_identity.WeSpeakerResNet152LmAdapter",
+    "frontend_source_sha256": "b710a06c4c31582f2c84aabf10286795e2f7a988d8769085728a5735ef65a2b4",
+    "preflight": {
+      "device": "cpu",
+      "embedding_dimension": 256,
+      "frontend_version": "wespeaker-onnx-fbank-v1",
+      "provider": "wespeaker_resnet152_lm",
+      "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+      "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+    }
+  },
+  "production_planner": {
+    "policy": "moss_transcribe_diarize.app.live_endpoint.EndpointPolicy",
+    "source_path": "moss_transcribe_diarize/app/live_endpoint.py",
+    "source_sha256": "0d91f0607b139cbeed6a44b60f62984b2178e0482d6844722290856fa5e770b8"
+  },
+  "schema": "moss-l2-stage0-cache-provenance-audit.v1",
+  "scope": "non-holdout",
+  "selected_case_count": 16,
+  "spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061"
+}

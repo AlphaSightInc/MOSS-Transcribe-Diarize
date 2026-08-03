@@ -1,0 +1,8 @@
+test_holdout_case_is_refused_before_freeze_without_reading_case_files (test_l1_control.L1ControlTest.test_holdout_case_is_refused_before_freeze_without_reading_case_files) ... ok
+test_replay_surfaces_production_revision_and_accuracy_metrics (test_l1_control.L1ControlTest.test_replay_surfaces_production_revision_and_accuracy_metrics) ... ok
+test_runner_is_bound_to_production_sweep_imports (test_l1_control.L1ControlTest.test_runner_is_bound_to_production_sweep_imports) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.947s
+
+OK

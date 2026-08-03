@@ -13,6 +13,7 @@ from validate_inputs import (
     ValidationError,
     audit_runtime_surface,
     authorize_holdout_open,
+    select_case_scope,
     validate_acoustic_support,
     validate_declared_hash,
 )
@@ -98,6 +99,19 @@ class InputBoundaryTest(unittest.TestCase):
             "holdout_open_before_candidate_freeze",
             lambda: authorize_holdout_open(config, Path("sealed-holdout.json")),
         )
+
+    def test_non_holdout_validation_scope_skips_sealed_case_paths(self) -> None:
+        cases = [
+            {"case_id": "dev", "split": "development"},
+            {
+                "case_id": "sealed",
+                "split": "blind_holdout",
+                "reference_path": "must-not-open.jsonl",
+            },
+        ]
+        selected, skipped = select_case_scope(cases, "non-holdout")
+        self.assertEqual([case["case_id"] for case in selected], ["dev"])
+        self.assertEqual(skipped, ["sealed"])
 
 
 if __name__ == "__main__":

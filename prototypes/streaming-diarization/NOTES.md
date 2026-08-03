@@ -284,3 +284,51 @@ Raw evidence:
   `93d4c64ebd44675a5ea172b2e6da5cb4b89fe6f869321ec3b179209cf28bb6cf`.
 - `prototypes/streaming-diarization/l2-stage0/evidence/A2_EVIDENCE.sha256` — SHA-256
   `e0747b97ec5750ed5b78f13114668c3a8668685c732f4cdb5448b5768543da14`.
+
+### L2 Stage 0 A1.2 derived-cache remediation authorization (`l2-stage0`, 2026-08-03)
+
+The supervisor classified the A2 `l1_fixture_unit_count_mismatch` as an A1.2
+input-fidelity failure: stale derived caches against frozen reference hashes and the
+current production span planner. It is not a candidate-arm gate failure and does not
+authorize threshold or reference-truth changes. The blocked A2 evidence above remains
+the immutable superseded attempt.
+
+Authorized remediation is derived-data-only and versioned: audit/rebuild development,
+validation, and exploratory caches through production `EndpointPolicy` and
+`WeSpeakerResNet152LmAdapter`; never overwrite source bench caches. Audio/reference truth
+remains byte-identical. Blind-holdout references/caches remain unopened. Their identical
+rebuild path is pinned into `a5-holdout-procedure.json` and may run only inside the single
+A5 opening, after candidate freeze and before all three arms.
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/rebuild_caches.py --scope non-holdout --apply-manifest --audit-output prototypes/streaming-diarization/l2-stage0/evidence/a12-cache-provenance-audit.json --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/a12-cache-rebuild-transcript.txt`
+
+**VERDICT: PASS.** All 16 non-holdout cases rebuilt under
+`cache-v2-production-endpoint`; all 16 caches match their own exact production
+`EndpointPolicy` replan. Unit-count deltas range from 0 to +105 and are fully recorded
+per case with old/new hashes. Frozen audio/reference hashes did not change. The scoped
+A1 validator passed 16/16, explicitly reporting `holdout_case_files_opened=false` and
+the three sealed case ids. The A5 procedure is re-pinned at SHA-256
+`3d745f92d941985d95c7351caf3c430b2f43209cbb4bb7c20f716bc73d1b3464`;
+it requires the same hash-pinned rebuild script/module before all three arms inside the
+single opening.
+
+One green-suite attempt correctly failed its source-path audit because the editable
+environment resolved production `live_endpoint.py` from the main checkout. That raw
+failure is preserved under label `a12-renewed-green`. Repo-root import precedence was
+then asserted; labels `a12-renewed-green-fixed` and `a12-renewed-green-final` passed
+11/11. This changed no production, input, cache, or threshold behavior.
+
+Raw evidence:
+
+- `prototypes/streaming-diarization/l2-stage0/evidence/a12-cache-provenance-audit.json`
+  — SHA-256 `05f3249e1d8b5472f73a2e1158884032c425a44223a503bf61bc4bb938054ab3`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/a12-cache-rebuild-transcript.txt`
+  — SHA-256 `b73217d3d1b7d8594138d57065ebb4d639a93212b3b9e1b11956287f97e0911e`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/a12-renewed-a1-validation-final.json`
+  — SHA-256 `edf75b145f015e7fd490d5ef2d7dcec162e6f34ed25f211e8a1db99d35d62472`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/a1-a12-renewed-green-final-transcript.txt`
+  — SHA-256 `9b86b5ce72d94b289a548a3955206178820070b1752ad457f96bfebf5db857fd`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/a12-red-holdout-cache-rebuild-transcript.txt`
+  — SHA-256 `10b95e7bca08a0aa37b276ffd91fe9aa5b5ccde4e3439eb3c0afd39cc306ef7a`.
+- `prototypes/streaming-diarization/l2-stage0/evidence/A12_EVIDENCE.sha256`
+  — SHA-256 `40ec1acf8d49146c10d4c4d2f6ee897bbc7d42a6b57edc3df2caf6dd4ab9bce4`.

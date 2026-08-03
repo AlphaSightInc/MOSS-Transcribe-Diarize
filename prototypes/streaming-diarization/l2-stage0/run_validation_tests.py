@@ -23,8 +23,9 @@ def main() -> int:
     parser.add_argument("--evidence-dir", type=Path, required=True)
     args = parser.parse_args()
 
-    suite = unittest.defaultTestLoader.discover(
-        str(HERE), pattern="test_validate_inputs.py"
+    suite = unittest.TestSuite(
+        unittest.defaultTestLoader.discover(str(HERE), pattern=pattern)
+        for pattern in ("test_validate_inputs.py", "test_production_cache.py")
     )
     stream = io.StringIO()
     with redirect_stdout(stream), redirect_stderr(stream):

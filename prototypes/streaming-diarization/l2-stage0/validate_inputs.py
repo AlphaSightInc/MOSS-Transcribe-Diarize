@@ -259,6 +259,19 @@ def _validate_case(case: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def select_case_scope(
+    cases: list[dict[str, Any]], scope: str
+) -> tuple[list[dict[str, Any]], list[str]]:
+    if scope == "all":
+        return cases, []
+    if scope != "non-holdout":
+        raise ValidationError("case_scope_invalid", scope)
+    return (
+        [case for case in cases if case["split"] != "blind_holdout"],
+        [str(case["case_id"]) for case in cases if case["split"] == "blind_holdout"],
+    )
+
+
 def validate_repository(args: argparse.Namespace) -> dict[str, Any]:
     corpus = json.loads(args.corpus_manifest.read_text(encoding="utf-8"))
     model = json.loads(args.model_manifest.read_text(encoding="utf-8"))
@@ -283,6 +296,27 @@ def validate_repository(args: argparse.Namespace) -> dict[str, Any]:
             "launcher_corpus_pin_mismatch",
             f"pin={contract['corpus_manifest_hash']} actual={actual_corpus_hash}",
         )
+    cache_spec_hash = corpus.get("cache_rebuild_spec_sha256")
+    if cache_spec_hash is not None:
+        cache_spec_path = REPO / corpus["cache_rebuild_spec_path"]
+        validate_declared_hash(cache_spec_path, cache_spec_hash, "cache_rebuild_spec")
+        cache_spec = json.loads(cache_spec_path.read_text(encoding="utf-8"))
+        if cache_spec.get("model_manifest_sha256") != sha256_file(args.model_manifest):
+            raise ValidationError("cache_model_manifest_pin_mismatch", str(cache_spec_path))
+        planner = cache_spec.get("production_planner", {})
+        validate_declared_hash(
+            REPO / planner["source_path"], planner["source_sha256"], "cache_planner_source"
+        )
+        embedder = cache_spec.get("production_embedder", {})
+        validate_declared_hash(
+            REPO / embedder["frontend_source_path"],
+            embedder["frontend_source_sha256"],
+            "cache_frontend_source",
+        )
+        if embedder.get("model_sha256") != model["asset"]["sha256"]:
+            raise ValidationError("cache_model_pin_mismatch", str(cache_spec_path))
+        if int(cache_spec["config"]["hard_cap_samples"]) != 40000:
+            raise ValidationError("cache_hard_cap_changed", str(cache_spec_path))
     holdout = REPO / corpus["holdout_manifest_path"]
     validate_declared_hash(
         holdout, candidate["holdout_manifest_sha256"], "holdout_manifest"
@@ -293,18 +327,26 @@ def validate_repository(args: argparse.Namespace) -> dict[str, Any]:
     audit_runtime_surface(
         candidate, args.candidate_source.read_text(encoding="utf-8")
     )
-    cases = [_validate_case(case) for case in corpus["cases"]]
-    accepted = [case for case in cases if case["acceptance_eligible"]]
-    splits = {case["split"] for case in accepted}
+    selected, skipped = select_case_scope(corpus["cases"], args.case_scope)
+    cases = [_validate_case(case) for case in selected]
+    accepted_metadata = [
+        case for case in corpus["cases"] if case["acceptance_eligible"]
+    ]
+    splits = {case["split"] for case in accepted_metadata}
     if splits != {"development", "validation", "blind_holdout"}:
         raise ValidationError("acceptance_splits_incomplete", ",".join(sorted(splits)))
     return {
-        "accepted_case_count": len(accepted),
+        "accepted_case_count": len(accepted_metadata),
+        "case_scope": args.case_scope,
+        "cache_rebuild_spec_sha256": cache_spec_hash,
         "cases": cases,
         "corpus_manifest_sha256": actual_corpus_hash,
         "holdout_manifest_sha256": candidate["holdout_manifest_sha256"],
+        "holdout_case_files_opened": args.case_scope == "all",
         "model_sha256": model["asset"]["sha256"],
         "overall": "PASS",
+        "sealed_skipped_case_ids": skipped,
+        "validated_case_count": len(cases),
     }
 
 
@@ -314,6 +356,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-manifest", type=Path, default=HERE / "model-manifest.json")
     parser.add_argument("--candidate-config", type=Path, default=HERE / "candidate-config.json")
     parser.add_argument("--candidate-source", type=Path, default=HERE / "runtime_candidate_stub.py")
+    parser.add_argument("--case-scope", choices=("all", "non-holdout"), default="all")
     parser.add_argument(
         "--contract", type=Path, default=REPO / "scripts/ralph-l2-afk/contract.json"
     )

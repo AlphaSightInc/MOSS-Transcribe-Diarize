@@ -1,0 +1,33 @@
+REBUILD 1/16 1m-acquired-jamie-dimon old_units=10 planned_units=13
+PASS 1m-acquired-jamie-dimon new_sha256=164ed35f3b8c5d3e8093c3de0e6348f442bcc3ce18de89868585d57904fd8bdc self_replan=PASS
+REBUILD 2/16 1m-acquired-nfl old_units=29 planned_units=31
+PASS 1m-acquired-nfl new_sha256=0ac28f9340a255d8fdafb2d589b2f7939381ed9025f219185ba5446a1283b3c7 self_replan=PASS
+REBUILD 3/16 1m-acquired-rolex old_units=28 planned_units=30
+PASS 1m-acquired-rolex new_sha256=85e2d573d6c768b659d67e831985302ce5a0dd1d8169af72b5235d6dd5cada68 self_replan=PASS
+REBUILD 4/16 1m-lex-bill-ackman old_units=27 planned_units=27
+PASS 1m-lex-bill-ackman new_sha256=78338559bd9975ff610c921194c3ce01e50c127f02ce0fbf13139713a4752305 self_replan=PASS
+REBUILD 5/16 3m-acquired-jamie-dimon old_units=79 planned_units=79
+PASS 3m-acquired-jamie-dimon new_sha256=2b463a00143460ecc86b2218a308736b0cbbe57722e420f0b40800580f363dcc self_replan=PASS
+REBUILD 6/16 3m-lex-adam-frank old_units=76 planned_units=76
+PASS 3m-lex-adam-frank new_sha256=9b78e22d9137b9d4003e44206b94528ad05ee402eac2d9fc0d62e5108d7e442c self_replan=PASS
+REBUILD 7/16 5m-acquired-alphabet old_units=92 planned_units=101
+PASS 5m-acquired-alphabet new_sha256=6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef self_replan=PASS
+REBUILD 8/16 5m-acquired-coca-cola old_units=54 planned_units=68
+PASS 5m-acquired-coca-cola new_sha256=f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9 self_replan=PASS
+REBUILD 9/16 5m-acquired-jamie-dimon old_units=27 planned_units=37
+PASS 5m-acquired-jamie-dimon new_sha256=f558664d04ebb43914b5e147e08f5338f36c07817ab61838253bbabd9975202e self_replan=PASS
+REBUILD 10/16 5m-acquired-nfl old_units=43 planned_units=52
+PASS 5m-acquired-nfl new_sha256=9bfecb8c105e1aea8a3911bd0ce2dbb3271607e938aecc909f75206f32fc5402 self_replan=PASS
+REBUILD 11/16 5m-acquired-rolex old_units=58 planned_units=71
+PASS 5m-acquired-rolex new_sha256=f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee self_replan=PASS
+REBUILD 12/16 5m-lex-bill-ackman old_units=125 planned_units=125
+PASS 5m-lex-bill-ackman new_sha256=3b73d7e4eae1aed818d78452c47fd1dd3e74bc3c09ea001a9b1deef7db89f491 self_replan=PASS
+REBUILD 13/16 5m-lex-javier-milei old_units=121 planned_units=121
+PASS 5m-lex-javier-milei new_sha256=26fbca84f5cfc528d55a8af67e32e87d6432776b324095c52aa376f88215380c self_replan=PASS
+REBUILD 14/16 5m-lex-keyu-jin old_units=125 planned_units=125
+PASS 5m-lex-keyu-jin new_sha256=c545173e82e2ad045b7c84c2751b3ec265104eb46867e77c07ecae1b3363e4fa self_replan=PASS
+REBUILD 15/16 30m-acquired-jamie-dimon old_units=242 planned_units=347
+PASS 30m-acquired-jamie-dimon new_sha256=0f436684063b7c44aec64096864c2ac60b24a7002487fcc25cf88881abdeac88 self_replan=PASS
+REBUILD 16/16 30m-lex-bill-ackman old_units=765 planned_units=765
+PASS 30m-lex-bill-ackman new_sha256=6d0861e58c6ef2c5005972992279ceb9372aa5124dcf8379b57c028752358240 self_replan=PASS
+{"case_count": 16, "overall": "PASS"}

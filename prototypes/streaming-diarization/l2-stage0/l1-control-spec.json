@@ -5,7 +5,9 @@
     "speaker_accuracy": 0.9135
   },
   "a5_holdout_procedure_path": "prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json",
-  "a5_holdout_procedure_sha256": "f25d3df9376f68a4fb454dc3190a0c68e72518d09a85983a71b1ae182696ddeb",
+  "a5_holdout_procedure_sha256": "3d745f92d941985d95c7351caf3c430b2f43209cbb4bb7c20f716bc73d1b3464",
+  "cache_rebuild_spec_path": "prototypes/streaming-diarization/l2-stage0/cache-rebuild-spec.json",
+  "cache_rebuild_spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061",
   "case_ids": [
     "1m-acquired-nfl",
     "1m-acquired-rolex",
@@ -14,7 +16,7 @@
     "3m-lex-adam-frank",
     "5m-acquired-alphabet"
   ],
-  "corpus_manifest_sha256": "b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3",
+  "corpus_manifest_sha256": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
   "eligible_splits": [
     "development",
     "validation"
@@ -28,10 +30,13 @@
     "max_speakers": 16,
     "merge_threshold": 0.7,
     "min_evidence_samples": 8000,
+    "min_silence_samples": 8000,
+    "min_speech_samples": 1600,
     "min_match_margin": 0.1,
     "min_match_score": 0.35,
+    "post_speech_padding_samples": 0,
+    "pre_speech_padding_samples": 0,
     "sample_rate": 16000,
-    "silence_split_samples": 8000,
     "sweep_interval_seconds": 60.0
   },
   "production_imports": {
