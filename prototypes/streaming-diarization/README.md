@@ -51,6 +51,7 @@ long-form WAVs (5/10/30 min, lex_fridman_karpathy_30m60m).
 - `.venv/bin/python proto_ab_identity.py all` — gates A+B: album vs overwrite, convergence,
   threshold grid, on synthetic meetings via the PRODUCTION embedder code path
 - `.venv/bin/python proto_real_replay.py` — same policies on the real golden corpora
+- `.venv/bin/python proto_tape_differential.py --tape-index /path/to/retained-session/index.json --source-wav data/real/benchmark_5m/acquired_alphabet/audio.wav --reference data/real/benchmark_5m/acquired_alphabet/reference.jsonl --identity-asset data/voxceleb_resnet152_LM.onnx --corpus-start-sample <accepted-sample-before-playback> --work-dir /path/to/retained-session/derived --json-output /path/to/retained-session/derived/tape-differential.json` — retained live tape vs clean corpus through the production identity path
 
 The harness imports `moss_transcribe_diarize/app/speaker_identity.py` directly
 (`load_production_embedder`) so measurements run the exact production frontend and

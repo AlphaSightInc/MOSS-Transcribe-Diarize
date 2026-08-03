@@ -142,7 +142,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 59bbbac after the fixed capture layout exposed variance in the formal corpus scorer:
 # its pre-afplay sample marker was not a render-start handshake. This closeout aligns by bounded,
 # label-blind speech coverage and makes distinct mapping plus per-speaker correctness explicit.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-59bbbac7bb0c9bc276cc964de80a2a8254a42bad}"
+# Advanced to 3e0edc1 for the operator-directed capture-layout hardening closeout. Malformed HAL
+# lists and unsupported microphone buffers now fail closed as typed discontinuities instead of
+# losing declared layout or fabricating valid silence; valid rectangular audio is unchanged.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-3e0edc14ab772adb6bcd96484971a2343916aed9}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

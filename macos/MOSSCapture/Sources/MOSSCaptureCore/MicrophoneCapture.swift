@@ -346,13 +346,31 @@ extension NativeCapturedAudioBuffer {
     ) -> NativeCapturedAudioBuffer {
         let frameCount = Int(buffer.frameLength)
         let channelCount = Int(buffer.format.channelCount)
+        let failClosed = {
+            NativeCapturedAudioBuffer(
+                lane: lane,
+                sampleRate: Int(buffer.format.sampleRate),
+                channelCount: 1,
+                frameCount: 0,
+                firstSampleMonotonicNS: 0,
+                deviceEpoch: deviceEpoch,
+                discontinuity: true,
+                samples: []
+            )
+        }
+        guard channelCount > 0,
+              frameCount > 0,
+              frameCount <= Int(buffer.frameCapacity),
+              buffer.stride > 0,
+              buffer.format.commonFormat == .pcmFormatFloat32,
+              let channelData = buffer.floatChannelData else {
+            return failClosed()
+        }
         var samples = [Float](repeating: 0, count: channelCount * frameCount)
-        if let channelData = buffer.floatChannelData {
-            for channel in 0..<channelCount {
-                for frame in 0..<frameCount {
-                    samples[channel * frameCount + frame] =
-                        channelData[channel][frame * buffer.stride]
-                }
+        for channel in 0..<channelCount {
+            for frame in 0..<frameCount {
+                samples[channel * frameCount + frame] =
+                    channelData[channel][frame * buffer.stride]
             }
         }
         return NativeCapturedAudioBuffer(
