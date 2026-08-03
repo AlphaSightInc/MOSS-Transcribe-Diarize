@@ -20,6 +20,101 @@ final class NativeAudioBufferLayoutTests: XCTestCase {
         XCTAssertEqual(captured.samples, [])
     }
 
+    func testEmptyHALBufferListFailsClosedAsDiscontinuity() {
+        let captured = withAudioBufferList([]) { inputData in
+            NativeCapturedAudioBuffer.copyFromAudioBufferList(
+                lane: .system,
+                sampleRate: 48_000,
+                deviceEpoch: 7,
+                inputData: inputData,
+                inputTime: nil
+            )
+        }
+
+        assertEmptyDiscontinuity(captured)
+    }
+
+    func testHALListWithNilDataBufferFailsClosedAsDiscontinuity() {
+        let captured = withAudioBufferList([
+            BufferSpec(channels: 1, samples: [0.25, 0.5]),
+            BufferSpec(channels: 1, samples: [0.75, 1], dataPresent: false),
+        ]) { inputData in
+            NativeCapturedAudioBuffer.copyFromAudioBufferList(
+                lane: .system,
+                sampleRate: 48_000,
+                deviceEpoch: 7,
+                inputData: inputData,
+                inputTime: nil
+            )
+        }
+
+        assertEmptyDiscontinuity(captured)
+    }
+
+    func testHALBufferWithZeroChannelsFailsClosedAsDiscontinuity() {
+        let captured = withAudioBufferList([
+            BufferSpec(channels: 0, samples: [0.25, 0.5]),
+        ]) { inputData in
+            NativeCapturedAudioBuffer.copyFromAudioBufferList(
+                lane: .system,
+                sampleRate: 48_000,
+                deviceEpoch: 7,
+                inputData: inputData,
+                inputTime: nil
+            )
+        }
+
+        assertEmptyDiscontinuity(captured)
+    }
+
+    func testHALBufferWithNonFloatAlignedByteSizeFailsClosedAsDiscontinuity() {
+        let captured = withAudioBufferList([
+            BufferSpec(channels: 1, samples: [0.25, 0.5], dataByteSize: 5),
+        ]) { inputData in
+            NativeCapturedAudioBuffer.copyFromAudioBufferList(
+                lane: .system,
+                sampleRate: 48_000,
+                deviceEpoch: 7,
+                inputData: inputData,
+                inputTime: nil
+            )
+        }
+
+        assertEmptyDiscontinuity(captured)
+    }
+
+    func testEmptyHALBufferFailsClosedAsDiscontinuity() {
+        let captured = withAudioBufferList([
+            BufferSpec(channels: 1, samples: []),
+        ]) { inputData in
+            NativeCapturedAudioBuffer.copyFromAudioBufferList(
+                lane: .system,
+                sampleRate: 48_000,
+                deviceEpoch: 7,
+                inputData: inputData,
+                inputTime: nil
+            )
+        }
+
+        assertEmptyDiscontinuity(captured)
+    }
+
+    func testHALBufferWithPartialTrailingFrameFailsClosedAsDiscontinuity() {
+        let captured = withAudioBufferList([
+            BufferSpec(channels: 2, samples: [0.25, 0.75, 0.5]),
+        ]) { inputData in
+            NativeCapturedAudioBuffer.copyFromAudioBufferList(
+                lane: .system,
+                sampleRate: 48_000,
+                deviceEpoch: 7,
+                inputData: inputData,
+                inputTime: nil
+            )
+        }
+
+        assertEmptyDiscontinuity(captured)
+    }
+
     func testInterleavedStereoHALBufferDownmixesPerFrame() {
         let captured = withAudioBufferList([
             BufferSpec(
@@ -85,11 +180,11 @@ final class NativeAudioBufferLayoutTests: XCTestCase {
         XCTAssertEqual(NativeLaneWireStream.downmix(captured), [0.5, 0.5, 0.5])
     }
 
-    func testUnequalHALBufferLengthsZeroFillWithoutTrailingFrameBleed() {
+    func testUnequalHALBufferFrameCountsFailClosedAsDiscontinuity() {
         let captured = withAudioBufferList([
             BufferSpec(
                 channels: 2,
-                samples: [0.125, 0.875, 0.25, 0.75, 0.5, 0.625, 0.9375]
+                samples: [0.125, 0.875, 0.25, 0.75, 0.5, 0.625]
             ),
             BufferSpec(channels: 1, samples: [0.5, 0.25]),
         ]) { inputData in
@@ -102,17 +197,7 @@ final class NativeAudioBufferLayoutTests: XCTestCase {
             )
         }
 
-        XCTAssertEqual(captured.channelCount, 3)
-        XCTAssertEqual(captured.frameCount, 3)
-        XCTAssertEqual(
-            captured.samples,
-            [0.125, 0.25, 0.5, 0.875, 0.75, 0.625, 0.5, 0.25, 0]
-        )
-        XCTAssertFalse(captured.samples.contains(0.9375))
-        let downmixed = NativeLaneWireStream.downmix(captured)
-        XCTAssertEqual(downmixed[0], 0.5)
-        XCTAssertEqual(downmixed[1], 1.25 / 3, accuracy: 0.000_001)
-        XCTAssertEqual(downmixed[2], 0.375)
+        assertEmptyDiscontinuity(captured)
     }
 
     func testMicrophoneInterleavedAndDeinterleavedBuffersCopyIdentically() throws {
@@ -140,6 +225,57 @@ final class NativeAudioBufferLayoutTests: XCTestCase {
         XCTAssertEqual(interleavedCopy, deinterleavedCopy)
         XCTAssertEqual(interleavedCopy.samples, channels.flatMap { $0 })
         XCTAssertEqual(NativeLaneWireStream.downmix(interleavedCopy), [0.5, 0.5, 0.5625])
+    }
+
+    func testMicrophoneNonFloatBufferFailsClosedWithoutFabricatingSilence() throws {
+        guard
+            let format = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: 48_000,
+                channels: 2,
+                interleaved: false
+            ),
+            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 3),
+            let channelData = buffer.int16ChannelData
+        else {
+            throw NativeAudioBufferLayoutTestError.allocationFailed
+        }
+        buffer.frameLength = 3
+        channelData[0][0] = 1_000
+        channelData[1][0] = -1_000
+
+        let captured = NativeCapturedAudioBuffer.copyFromAVAudioPCMBuffer(
+            lane: .microphone,
+            buffer: buffer,
+            time: AVAudioTime(hostTime: 17),
+            deviceEpoch: 9
+        )
+
+        assertEmptyDiscontinuity(captured)
+    }
+
+    func testMicrophoneZeroFrameBufferFailsClosedAsDiscontinuity() throws {
+        guard
+            let format = AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: 48_000,
+                channels: 2,
+                interleaved: false
+            ),
+            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1)
+        else {
+            throw NativeAudioBufferLayoutTestError.allocationFailed
+        }
+        buffer.frameLength = 0
+
+        let captured = NativeCapturedAudioBuffer.copyFromAVAudioPCMBuffer(
+            lane: .microphone,
+            buffer: buffer,
+            time: AVAudioTime(hostTime: 17),
+            deviceEpoch: 9
+        )
+
+        assertEmptyDiscontinuity(captured)
     }
 
     func testSeededHALLayoutMatrixDownmixesOriginalPerFrameMeans() {
@@ -209,13 +345,15 @@ final class NativeAudioBufferLayoutTests: XCTestCase {
 private struct BufferSpec {
     var channels: Int
     var samples: [Float]
+    var dataByteSize: Int? = nil
+    var dataPresent = true
 }
 
 private func withAudioBufferList<Result>(
     _ specs: [BufferSpec],
     body: (UnsafePointer<AudioBufferList>) throws -> Result
 ) rethrows -> Result {
-    let list = AudioBufferList.allocate(maximumBuffers: specs.count)
+    let list = AudioBufferList.allocate(maximumBuffers: Swift.max(specs.count, 1))
     list.count = specs.count
     var storage: [(UnsafeMutablePointer<Float>, Int)] = []
     defer {
@@ -236,11 +374,25 @@ private func withAudioBufferList<Result>(
         storage.append((pointer, spec.samples.count))
         list[index] = AudioBuffer(
             mNumberChannels: UInt32(spec.channels),
-            mDataByteSize: UInt32(spec.samples.count * MemoryLayout<Float>.stride),
-            mData: UnsafeMutableRawPointer(pointer)
+            mDataByteSize: UInt32(
+                spec.dataByteSize ?? spec.samples.count * MemoryLayout<Float>.stride
+            ),
+            mData: spec.dataPresent ? UnsafeMutableRawPointer(pointer) : nil
         )
     }
     return try body(list.unsafePointer)
+}
+
+private func assertEmptyDiscontinuity(
+    _ captured: NativeCapturedAudioBuffer,
+    file: StaticString = #filePath,
+    line: UInt = #line
+) {
+    XCTAssertEqual(captured.channelCount, 1, file: file, line: line)
+    XCTAssertEqual(captured.frameCount, 0, file: file, line: line)
+    XCTAssertEqual(captured.firstSampleMonotonicNS, 0, file: file, line: line)
+    XCTAssertTrue(captured.discontinuity, file: file, line: line)
+    XCTAssertEqual(captured.samples, [], file: file, line: line)
 }
 
 private func makePCMBuffer(

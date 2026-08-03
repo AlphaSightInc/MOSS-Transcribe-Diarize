@@ -425,8 +425,8 @@ extension NativeCapturedAudioBuffer {
         inputData: UnsafePointer<AudioBufferList>?,
         inputTime: UnsafePointer<AudioTimeStamp>?
     ) -> NativeCapturedAudioBuffer {
-        guard let inputData else {
-            return NativeCapturedAudioBuffer(
+        let failClosed = {
+            NativeCapturedAudioBuffer(
                 lane: lane,
                 sampleRate: sampleRate,
                 channelCount: 1,
@@ -437,6 +437,9 @@ extension NativeCapturedAudioBuffer {
                 samples: []
             )
         }
+        guard let inputData else {
+            return failClosed()
+        }
 
         var eligibleBuffers: [(buffer: AudioBuffer, channels: Int, frames: Int)] = []
         var channelCount = 0
@@ -444,21 +447,40 @@ extension NativeCapturedAudioBuffer {
         let buffers = UnsafeMutableAudioBufferListPointer(
             UnsafeMutablePointer(mutating: inputData)
         )
+        guard !buffers.isEmpty else {
+            return failClosed()
+        }
         for buffer in buffers {
-            let count = Int(buffer.mDataByteSize) / MemoryLayout<Float>.stride
-            guard count > 0, buffer.mData != nil else {
-                continue
+            guard buffer.mData != nil else {
+                return failClosed()
             }
-            let channels = Swift.max(1, Int(buffer.mNumberChannels))
+            let byteCount = Int(buffer.mDataByteSize)
+            guard byteCount.isMultiple(of: MemoryLayout<Float>.stride) else {
+                return failClosed()
+            }
+            let count = byteCount / MemoryLayout<Float>.stride
+            guard count > 0 else {
+                return failClosed()
+            }
+            let channels = Int(buffer.mNumberChannels)
+            guard channels > 0 else {
+                return failClosed()
+            }
+            guard count.isMultiple(of: channels) else {
+                return failClosed()
+            }
             let frames = count / channels
+            if eligibleBuffers.isEmpty {
+                frameCount = frames
+            } else if frames != frameCount {
+                return failClosed()
+            }
             channelCount += channels
-            frameCount = Swift.max(frameCount, frames)
             eligibleBuffers.append((buffer, channels, frames))
         }
 
-        // Normalize every HAL shape to the producer contract before leaving the callback: one
-        // exact rectangular channel-major array. Short buffers retain real zero-filled channel
-        // tails, and a partial final interleaved frame is deliberately discarded.
+        // Normalize every validated HAL shape to the producer contract before leaving the
+        // callback: one exact rectangular channel-major array.
         var samples = [Float](repeating: 0, count: channelCount * frameCount)
         var channelOffset = 0
         for eligible in eligibleBuffers {
