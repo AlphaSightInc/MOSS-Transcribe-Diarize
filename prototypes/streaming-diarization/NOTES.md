@@ -346,3 +346,20 @@ measurement loop. No input, production policy, cache, threshold, score, or holdo
 changed. Renewed A2 will use new `a2-l1-renewed-fixed*` paths; no evidence is overwritten.
 `evidence/A2_PATH_FIX_EVIDENCE.sha256` seals 7/7 files and has SHA-256
 `0135dc06705ee3c66a1bbe48844cd4c0ffbf482fc13b0126ea8f31021e00c476`.
+
+### L2 Stage 0 renewed A2 L1 reproduction verdict (`l2-stage0`, 2026-08-03)
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_l1_control.py --evidence-dir prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-fixed-runs --json-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-fixed-summary.json --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-fixed-transcript.txt`
+
+**VERDICT: BLOCKED.** All six development/validation cases ran twice and matched
+semantic SHA-256 exactly. The corrected acquired-alphabet score was 0.916765 versus
+the frozen 0.913500 target: absolute delta 0.003265 exceeded the predeclared 0.001000
+band, failing `l1_accepted_alphabet_band_failed`. The campaign stops here under plan
+§6. No retry, tuning, threshold change, alternate arm, or holdout opening occurred.
+
+Raw summary SHA-256:
+`fa10723978db7828622f5ef2c590a4a9ea1616fa74ce1d55c730387007733dee`.
+Raw transcript SHA-256:
+`9f7828a2886efd3447c9c04806298397f0871c181c358749ca7c03f70d6237b3`.
+`evidence/A2_RENEWED_EVIDENCE.sha256` seals 30/30 files and has SHA-256
+`9839f3fb65d9f0642e9e31ddd050c9cd100b7bdb58251ea4d66146e241b7a5e4`.

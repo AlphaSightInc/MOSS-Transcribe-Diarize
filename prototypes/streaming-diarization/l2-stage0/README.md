@@ -38,3 +38,7 @@ The initial A2 attempt remains a superseded `BLOCKED` result. A1.2 then version-
 all 16 non-holdout derived caches through production `EndpointPolicy` and
 `WeSpeakerResNet152LmAdapter`; all caches matched their own replan. Holdout caches remain
 untouched and are pinned for rebuild inside the single A5 opening.
+
+Renewed A2 is `BLOCKED`: all six cases were deterministic across two runs, but the
+corrected-alphabet score 0.916765 fell outside the predeclared 0.913500 ± 0.001000
+repeatability band. Campaign A stopped without tuning or holdout access.
