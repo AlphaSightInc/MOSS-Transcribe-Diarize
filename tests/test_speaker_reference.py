@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from moss_transcribe_diarize.speaker_reference import (
+    AcousticReferenceValidation,
     normalize_reference_text,
     validate_speaker_reference,
 )
@@ -117,11 +118,13 @@ def test_validator_rejects_non_monotonic_and_text_misaligned_v2(tmp_path: Path) 
 def test_acoustic_existence_accepts_genuinely_present_90s_line() -> None:
     result = validate_speaker_reference(
         EXISTENCE_FIXTURES / "youtube_rtfl_first_90s-present.jsonl",
-        acoustic_evidence_path=(
-            EXISTENCE_FIXTURES / "youtube_rtfl_first_90s-independent-asr.json"
+        acoustic=AcousticReferenceValidation(
+            evidence_path=(
+                EXISTENCE_FIXTURES / "youtube_rtfl_first_90s-independent-asr.json"
+            ),
+            expected_audio_sha256=AUTHORITATIVE_90S_AUDIO_SHA256,
+            required=True,
         ),
-        expected_audio_sha256=AUTHORITATIVE_90S_AUDIO_SHA256,
-        require_acoustic_existence=True,
     )
 
     assert result["verdict"] == "PASS"
@@ -143,11 +146,13 @@ def test_acoustic_existence_rejects_absent_line_despite_valid_claimed_metadata(
     result = validate_speaker_reference(
         absent,
         lineage_path=absent,
-        acoustic_evidence_path=(
-            EXISTENCE_FIXTURES / "youtube_rtfl_first_90s-independent-asr.json"
+        acoustic=AcousticReferenceValidation(
+            evidence_path=(
+                EXISTENCE_FIXTURES / "youtube_rtfl_first_90s-independent-asr.json"
+            ),
+            expected_audio_sha256=AUTHORITATIVE_90S_AUDIO_SHA256,
+            required=True,
         ),
-        expected_audio_sha256=AUTHORITATIVE_90S_AUDIO_SHA256,
-        require_acoustic_existence=True,
     )
 
     assert result["verdict"] == "FAIL"

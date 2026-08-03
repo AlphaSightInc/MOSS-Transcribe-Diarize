@@ -1266,14 +1266,8 @@ def main() -> int:
         "snapshot_p95_ms": _p95(snapshot_ms),
         "events_p95_ms": _p95(events_ms),
         "publish_p95_ms": _p95(publish_ms),
+        "route_sampling": "serial diagnostic only; not the portal user-visible latency contract",
     }
-    committed_p95 = report["latency"]["committed_p95_ms"]
-    if committed_p95 is not None:
-        render_bound = 1000.0 + (report["latency"]["snapshot_p95_ms"] or 0.0) + (
-            report["latency"]["events_p95_ms"] or 0.0
-        )
-        report["latency"]["render_bound_ms"] = round(render_bound, 1)
-        report["latency"]["user_visible_ms"] = round(committed_p95 + render_bound, 1)
 
     # The events a stop EMITS are the ones no run has ever read. `canonical_queued`,
     # `identity_finalized` and `session_closed` are all recorded inside `stop`, i.e. after the

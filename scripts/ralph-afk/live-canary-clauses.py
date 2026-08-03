@@ -52,6 +52,7 @@ import json
 import os
 import statistics
 import sys
+import types
 from collections import Counter
 from pathlib import Path
 
@@ -60,7 +61,13 @@ def _load_live_speaker_module():
         source = parent / "moss_transcribe_diarize" / "live_speaker_accuracy.py"
         if not source.is_file():
             continue
-        spec = importlib.util.spec_from_file_location("_moss_fcert_live_speaker_accuracy", source)
+        package_name = "_moss_fcert"
+        package = types.ModuleType(package_name)
+        package.__path__ = [str(source.parent)]
+        sys.modules[package_name] = package
+        spec = importlib.util.spec_from_file_location(
+            f"{package_name}.live_speaker_accuracy", source
+        )
         if spec is None or spec.loader is None:
             break
         module = importlib.util.module_from_spec(spec)
@@ -540,10 +547,16 @@ def main():
         uv = rep.get("userVisibleMS")
         print(f"   committed p50={com.get('p50MS')} p95={com.get('p95MS')} max={com.get('maxMS')} "
               f"n={com.get('count')}")
-        print(f"   render bound={rep.get('renderBoundMS')} "
-              f"(portal cycle {rep.get('portalCycleMS')} + snapshot p95 "
-              f"{(rep.get('snapshotFetch') or {}).get('p95MS')} + events p95 "
-              f"{(rep.get('eventsFetch') or {}).get('p95MS')})")
+        paired_fetch = rep.get("portalFetchCycle") or {}
+        if paired_fetch.get("count"):
+            print(f"   render bound={rep.get('renderBoundMS')} "
+                  f"(portal cycle {rep.get('portalCycleMS')} + p95 of paired fetch maxima "
+                  f"{paired_fetch.get('p95MS')}, n={paired_fetch.get('count')})")
+        else:
+            print(f"   render bound={rep.get('renderBoundMS')} "
+                  f"(legacy unpaired report: snapshot p95 "
+                  f"{(rep.get('snapshotFetch') or {}).get('p95MS')}, events p95 "
+                  f"{(rep.get('eventsFetch') or {}).get('p95MS')})")
         print(f"   sufficientSamples={rep.get('sufficientSamples')} "
               f"mixerOriginResolved={rep.get('mixerOriginResolved')} "
               f"timelineIntact={rep.get('timelineIntact')} "
@@ -566,13 +579,18 @@ def main():
         #   sufficientSamples   false -> fewer committed advances than the probe's own minimum;
         #                                its docstring says this is "a sample, not a distribution".
         #   userVisibleMS       null  -> one of the two components was never measured.
-        # Any of those three: UNDECIDED, and the threshold comparison is NOT asserted at all.
+        # Any of those states, or no paired fetch-cycle distribution: UNDECIDED, and the threshold
+        # comparison is NOT asserted at all.
         #   timelineIntact      false -> NOT a disqualifier. The probe latches it and rejects every
         #                                later advance (rejectedAfterTimelineBreak), so the samples
         #                                that survive are real and sufficientSamples already decides
         #                                whether enough of them remain - but they cover a PREFIX of
         #                                the run, so the caveat travels with the verdict.
         disqualifiers = []
+        if not paired_fetch.get("count"):
+            disqualifiers.append(
+                "portalFetchCycle is empty - paired concurrent-cycle maxima were not measured"
+            )
         if uv is None:
             disqualifiers.append("userVisibleMS is null - committed p95 or the render bound was "
                                  "never measured")

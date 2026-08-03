@@ -6,6 +6,13 @@ see it).
 
 ## Questions and verdicts
 
+### Speaker-reference v2 correction packet (`speaker-reference-v2/`)
+
+The former top-level packet now lives under this standing bench. Its independent-ASR acoustic
+existence verdict is implemented by production `acoustic_existence_evaluation` and protected by
+negative controls; the duplicate one-off scorer was deleted. The retained scripts, notes, and
+human-audit record are audit/reproduction material, not a second matcher implementation.
+
 ### Gate C — assembly correctness (`proto_c_assembly.py`)
 Question: can an append-only per-lane assembler under outbox-retry semantics
 (duplicates, reorder, drops, bursts) reconstruct session audio byte-exactly with

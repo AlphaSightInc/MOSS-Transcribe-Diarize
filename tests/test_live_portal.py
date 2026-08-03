@@ -521,9 +521,9 @@ class LivePortalRouteTest(unittest.TestCase):
         # And the term must still reach the sum: a literal substituted for the constant would keep
         # the two declarations equal while the reported bound stopped describing this page.
         self.assertIn(
-            "max(snapshotP95, eventsP95)",
+            "portalFetchCycle.p95MS",
             swift,
-            "the concurrent browser pays the slower p95 fetch once, not the serial sum",
+            "the render bound must take p95 after pairing each cycle's slower fetch",
         )
 
     def test_idea_038_context_and_adr_keep_portal_constants_and_evidence_tier_missing(self):

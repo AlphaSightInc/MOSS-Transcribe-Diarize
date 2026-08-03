@@ -116,7 +116,7 @@ public struct CaptureLatencyDistribution: Codable, Equatable, Sendable {
 /// identifier and above all no token, so the report cannot leak view authority by construction
 /// rather than by review.
 public struct CaptureLatencyReport: Codable, Equatable, Sendable {
-    public static let schemaName = "moss-capture-latency.v1"
+    public static let schemaName = "moss-capture-latency.v2"
 
     public var schema: String
     public var polling: Bool
@@ -126,9 +126,10 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
     public var committedLatency: CaptureLatencyDistribution
     public var snapshotFetch: CaptureLatencyDistribution
     public var eventsFetch: CaptureLatencyDistribution
+    public var portalFetchCycle: CaptureLatencyDistribution
     public var frameQuantisationMS: Double
     public var portalCycleMS: Double
-    /// `portal cycle + max(snapshot p95, events p95)` — nil until both routes are measured.
+    /// `portal cycle + p95(max(snapshot, events) per fetch pair)` — nil until a pair is measured.
     public var renderBoundMS: Double?
     /// The gated number: committed p95 plus the render bound. Both components stay in the report.
     public var userVisibleMS: Double?
@@ -146,6 +147,7 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
         committedLatency: CaptureLatencyDistribution = CaptureLatencyDistribution(),
         snapshotFetch: CaptureLatencyDistribution = CaptureLatencyDistribution(),
         eventsFetch: CaptureLatencyDistribution = CaptureLatencyDistribution(),
+        portalFetchCycle: CaptureLatencyDistribution = CaptureLatencyDistribution(),
         frameQuantisationMS: Double = CaptureLatencyContract.frameQuantisationMS,
         portalCycleMS: Double = CaptureLatencyContract.portalCycleSeconds * 1_000,
         renderBoundMS: Double? = nil,
@@ -163,6 +165,7 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
         self.committedLatency = committedLatency
         self.snapshotFetch = snapshotFetch
         self.eventsFetch = eventsFetch
+        self.portalFetchCycle = portalFetchCycle
         self.frameQuantisationMS = frameQuantisationMS
         self.portalCycleMS = portalCycleMS
         self.renderBoundMS = renderBoundMS
@@ -190,6 +193,7 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
     private var committedLatencyNS: [UInt64] = []
     private var snapshotFetchNS: [UInt64] = []
     private var eventsFetchNS: [UInt64] = []
+    private var portalFetchCycleNS: [UInt64] = []
     private var rejectedNegative = 0
     private var rejectedClockRegression = 0
     private var rejectedAfterTimelineBreak = 0
@@ -211,6 +215,7 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
         committedLatencyNS = []
         snapshotFetchNS = []
         eventsFetchNS = []
+        portalFetchCycleNS = []
         rejectedNegative = 0
         rejectedClockRegression = 0
         rejectedAfterTimelineBreak = 0
@@ -303,15 +308,16 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
         committedLatencyNS.append(now - committedEndCaptureNS)
     }
 
-    public func recordSnapshotFetch(nanoseconds: UInt64) {
+    /// Records one production-shaped portal cycle atomically. Completion order cannot cross-pair
+    /// samples from adjacent cycles because callers supply both members together.
+    public func recordPortalFetchCycle(
+        snapshotNanoseconds: UInt64,
+        eventsNanoseconds: UInt64
+    ) {
         lock.lock()
-        snapshotFetchNS.append(nanoseconds)
-        lock.unlock()
-    }
-
-    public func recordEventsFetch(nanoseconds: UInt64) {
-        lock.lock()
-        eventsFetchNS.append(nanoseconds)
+        snapshotFetchNS.append(snapshotNanoseconds)
+        eventsFetchNS.append(eventsNanoseconds)
+        portalFetchCycleNS.append(max(snapshotNanoseconds, eventsNanoseconds))
         lock.unlock()
     }
 
@@ -329,10 +335,11 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
         let committed = CaptureLatencyDistribution.over(committedLatencyNS)
         let snapshot = CaptureLatencyDistribution.over(snapshotFetchNS)
         let events = CaptureLatencyDistribution.over(eventsFetchNS)
+        let portalFetchCycle = CaptureLatencyDistribution.over(portalFetchCycleNS)
         var renderBoundMS: Double?
-        if let snapshotP95 = snapshot.p95MS, let eventsP95 = events.p95MS {
+        if let portalFetchP95 = portalFetchCycle.p95MS {
             renderBoundMS = CaptureLatencyContract.portalCycleSeconds * 1_000
-                + max(snapshotP95, eventsP95)
+                + portalFetchP95
         }
         var userVisibleMS: Double?
         if let renderBoundMS, let committedP95 = committed.p95MS {
@@ -346,6 +353,7 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
             committedLatency: committed,
             snapshotFetch: snapshot,
             eventsFetch: events,
+            portalFetchCycle: portalFetchCycle,
             renderBoundMS: renderBoundMS,
             userVisibleMS: userVisibleMS,
             rejectedNegative: rejectedNegative,
@@ -401,6 +409,7 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
     private let hostTime: CaptureHostTimeReading
     private let scheduler: CaptureSchedulerAdapter
     private let lock = NSLock()
+    private let clockLock = NSLock()
     private var task: CaptureCancellation?
     private var cursorSessionID: String?
     private var sinceVersion: Int?
@@ -473,13 +482,19 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
         let requestedSeq = sinceSeq
         lock.unlock()
 
-        guard let snapshot = fetchSnapshot(
+        guard let cycle = fetchPortalCycle(
             client: client,
             session: session,
-            sinceVersion: requestedVersion
+            sinceVersion: requestedVersion,
+            sinceSeq: requestedSeq
         ) else {
             return
         }
+        sampler.recordPortalFetchCycle(
+            snapshotNanoseconds: cycle.snapshot.nanoseconds,
+            eventsNanoseconds: cycle.events.nanoseconds
+        )
+        let snapshot = decodeSnapshot(cycle.snapshot.response)
         if let observed = snapshot.session {
             lock.lock()
             sinceVersion = observed.version
@@ -488,9 +503,7 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
                 sampler.observe(committedSamples: observed.committedSamples, atHostNanoseconds: now)
             }
         }
-        // The portal starts both routes together. This diagnostic probe can read them serially:
-        // each duration is still measured independently, and the render bound charges their max.
-        if let highestSeq = fetchEvents(client: client, session: session, sinceSeq: requestedSeq) {
+        if let highestSeq = decodeHighestEventSequence(cycle.events.response) {
             lock.lock()
             sinceSeq = max(sinceSeq, highestSeq)
             lock.unlock()
@@ -533,24 +546,92 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
         return ViewSession(serverURL: serverURL, sessionID: sessionID, viewToken: viewToken)
     }
 
-    private func fetchSnapshot(
+    private struct TimedResponse: Sendable {
+        var response: CaptureHTTPResponse
+        var nanoseconds: UInt64
+    }
+
+    private struct PortalFetchCycle: Sendable {
+        var snapshot: TimedResponse
+        var events: TimedResponse
+    }
+
+    private final class PortalFetchResultBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var snapshot: TimedResponse?
+        private var events: TimedResponse?
+
+        func storeSnapshot(_ result: TimedResponse?) {
+            lock.lock()
+            snapshot = result
+            lock.unlock()
+        }
+
+        func storeEvents(_ result: TimedResponse?) {
+            lock.lock()
+            events = result
+            lock.unlock()
+        }
+
+        func load() -> PortalFetchCycle? {
+            lock.lock()
+            defer { lock.unlock() }
+            guard let snapshot, let events else {
+                return nil
+            }
+            return PortalFetchCycle(snapshot: snapshot, events: events)
+        }
+    }
+
+    private final class SendableHTTPClient: @unchecked Sendable {
+        let value: CaptureHTTPClient
+
+        init(_ value: CaptureHTTPClient) {
+            self.value = value
+        }
+    }
+
+    private func fetchPortalCycle(
         client: CaptureHTTPClient,
         session: ViewSession,
-        sinceVersion: Int?
-    ) -> SnapshotObservation? {
-        var query: [URLQueryItem] = []
-        if let sinceVersion {
-            query.append(URLQueryItem(name: "since_version", value: String(sinceVersion)))
+        sinceVersion: Int?,
+        sinceSeq: Int
+    ) -> PortalFetchCycle? {
+        let snapshotQuery = sinceVersion.map {
+            [URLQueryItem(name: "since_version", value: String($0))]
+        } ?? []
+        let sendableClient = SendableHTTPClient(client)
+        let results = PortalFetchResultBox()
+        let group = DispatchGroup()
+        group.enter()
+        DispatchQueue.global(qos: .utility).async { [self] in
+            results.storeSnapshot(
+                timedFetch(
+                    client: sendableClient.value,
+                    session: session,
+                    action: "snapshot",
+                    query: snapshotQuery
+                )
+            )
+            group.leave()
         }
-        guard let response = timedFetch(
-            client: client,
-            session: session,
-            action: "snapshot",
-            query: query,
-            record: sampler.recordSnapshotFetch(nanoseconds:)
-        ) else {
-            return nil
+        group.enter()
+        DispatchQueue.global(qos: .utility).async { [self] in
+            results.storeEvents(
+                timedFetch(
+                    client: sendableClient.value,
+                    session: session,
+                    action: "events",
+                    query: [URLQueryItem(name: "since_seq", value: String(sinceSeq))]
+                )
+            )
+            group.leave()
         }
+        group.wait()
+        return results.load()
+    }
+
+    private func decodeSnapshot(_ response: CaptureHTTPResponse) -> SnapshotObservation {
         guard let payload = try? JSONDecoder().decode(SnapshotEnvelope.self, from: response.body) else {
             return SnapshotObservation(session: nil)
         }
@@ -564,20 +645,7 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
         )
     }
 
-    private func fetchEvents(
-        client: CaptureHTTPClient,
-        session: ViewSession,
-        sinceSeq: Int
-    ) -> Int? {
-        guard let response = timedFetch(
-            client: client,
-            session: session,
-            action: "events",
-            query: [URLQueryItem(name: "since_seq", value: String(sinceSeq))],
-            record: sampler.recordEventsFetch(nanoseconds:)
-        ) else {
-            return nil
-        }
+    private func decodeHighestEventSequence(_ response: CaptureHTTPResponse) -> Int? {
         guard let payload = try? JSONDecoder().decode(EventsEnvelope.self, from: response.body) else {
             return nil
         }
@@ -588,9 +656,8 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
         client: CaptureHTTPClient,
         session: ViewSession,
         action: String,
-        query: [URLQueryItem],
-        record: (UInt64) -> Void
-    ) -> CaptureHTTPResponse? {
+        query: [URLQueryItem]
+    ) -> TimedResponse? {
         var components = URLComponents(
             url: liveURL(base: session.serverURL, sessionID: session.sessionID, action: action),
             resolvingAgainstBaseURL: false
@@ -608,18 +675,26 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
         request.setValue("Bearer \(session.viewToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let started = clock.monotonicNanoseconds()
+        let started = readMonotonicNanoseconds()
         guard let response = try? client.send(request) else {
             sampler.recordFetchFailure()
             return nil
         }
-        let finished = clock.monotonicNanoseconds()
+        let finished = readMonotonicNanoseconds()
         guard (200..<300).contains(response.statusCode) else {
             sampler.recordFetchFailure()
             return nil
         }
-        record(finished >= started ? finished - started : 0)
-        return response
+        return TimedResponse(
+            response: response,
+            nanoseconds: finished >= started ? finished - started : 0
+        )
+    }
+
+    private func readMonotonicNanoseconds() -> UInt64 {
+        clockLock.lock()
+        defer { clockLock.unlock() }
+        return clock.monotonicNanoseconds()
     }
 }
 

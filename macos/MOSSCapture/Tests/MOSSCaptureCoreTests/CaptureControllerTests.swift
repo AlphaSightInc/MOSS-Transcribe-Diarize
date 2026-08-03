@@ -6427,21 +6427,22 @@ final class CaptureControllerTests: XCTestCase {
             )
         }
 
-        for milliseconds in [40, 60, 55, 90] {
-            sampler.recordSnapshotFetch(nanoseconds: UInt64(milliseconds) * 1_000_000)
-        }
         XCTAssertNil(
             sampler.report(polling: true).renderBoundMS,
-            "the bound needs both routes; one of them is not a portal cycle"
+            "the bound needs a complete portal fetch cycle"
         )
-        for milliseconds in [30, 45, 35, 70] {
-            sampler.recordEventsFetch(nanoseconds: UInt64(milliseconds) * 1_000_000)
+        for (snapshotMS, eventsMS) in [(40, 30), (60, 45), (55, 35), (90, 70)] {
+            sampler.recordPortalFetchCycle(
+                snapshotNanoseconds: UInt64(snapshotMS) * 1_000_000,
+                eventsNanoseconds: UInt64(eventsMS) * 1_000_000
+            )
         }
 
         let report = sampler.report(polling: true)
         XCTAssertEqual(report.portalCycleMS, 500)
         XCTAssertEqual(report.snapshotFetch.p95MS, 90)
         XCTAssertEqual(report.eventsFetch.p95MS, 70)
+        XCTAssertEqual(report.portalFetchCycle.p95MS, 90)
         XCTAssertEqual(report.renderBoundMS, 590)
         XCTAssertEqual(report.committedLatency.p95MS, 1_500)
         XCTAssertEqual(report.userVisibleMS, 2_090)
@@ -6449,6 +6450,29 @@ final class CaptureControllerTests: XCTestCase {
             report.userVisibleMS,
             try XCTUnwrap(report.committedLatency.p95MS) + (try XCTUnwrap(report.renderBoundMS)),
             "the gated number must stay the sum of the two recorded components"
+        )
+    }
+
+    func testLatencyRenderBoundUsesTheP95OfEachPairedFetchMaximum() throws {
+        let sampler = CaptureLatencySampler()
+        let pairedMilliseconds =
+            [(100, 1), (1, 100)] + Array(repeating: (1, 1), count: 18)
+        for (snapshotMS, eventsMS) in pairedMilliseconds {
+            sampler.recordPortalFetchCycle(
+                snapshotNanoseconds: UInt64(snapshotMS) * 1_000_000,
+                eventsNanoseconds: UInt64(eventsMS) * 1_000_000
+            )
+        }
+
+        let report = sampler.report(polling: true)
+
+        XCTAssertEqual(report.snapshotFetch.p95MS, 1)
+        XCTAssertEqual(report.eventsFetch.p95MS, 1)
+        XCTAssertEqual(
+            report.renderBoundMS,
+            600,
+            "two anti-correlated slow members make two slow portal cycles; "
+                + "max(p95(snapshot), p95(events)) incorrectly reports both away"
         )
     }
 
@@ -6509,8 +6533,13 @@ final class CaptureControllerTests: XCTestCase {
         scheduler.runScheduledOperation()
 
         XCTAssertEqual(client.requests.count, 2)
-        let snapshotRequest = client.requests[0]
-        let eventsRequest = client.requests[1]
+        let firstRequests = client.requests
+        let snapshotRequest = try XCTUnwrap(
+            firstRequests.first { $0.url?.path.hasSuffix("/snapshot") ?? false }
+        )
+        let eventsRequest = try XCTUnwrap(
+            firstRequests.first { $0.url?.path.hasSuffix("/events") ?? false }
+        )
         XCTAssertEqual(snapshotRequest.url?.path, "/api/live/sessions/session-latency/snapshot")
         XCTAssertNil(snapshotRequest.url?.query, "the first poll asks for the whole snapshot")
         XCTAssertEqual(eventsRequest.url?.path, "/api/live/sessions/session-latency/events")
@@ -6540,8 +6569,15 @@ final class CaptureControllerTests: XCTestCase {
         // The cursors advance, so the second poll costs what the portal's steady state costs.
         scheduler.runScheduledOperation()
         XCTAssertEqual(client.requests.count, 4)
-        XCTAssertEqual(client.requests[2].url?.query, "since_version=7")
-        XCTAssertEqual(client.requests[3].url?.query, "since_seq=11")
+        let secondRequests = Array(client.requests.dropFirst(2))
+        XCTAssertEqual(
+            secondRequests.first { $0.url?.path.hasSuffix("/snapshot") ?? false }?.url?.query,
+            "since_version=7"
+        )
+        XCTAssertEqual(
+            secondRequests.first { $0.url?.path.hasSuffix("/events") ?? false }?.url?.query,
+            "since_seq=11"
+        )
 
         let dispatcher = ControlCommandDispatcher(
             controller: CaptureController.fakeForLocalDevelopment(),
@@ -6551,12 +6587,45 @@ final class CaptureControllerTests: XCTestCase {
         let response = try dispatcher.dispatch(ControlChannelRequest(command: "latency"))
         let encoded = String(decoding: try JSONEncoder().encode(response), as: UTF8.self)
         XCTAssertTrue(response.ok)
-        XCTAssertEqual(response.latency?.schema, "moss-capture-latency.v1")
+        XCTAssertEqual(response.latency?.schema, "moss-capture-latency.v2")
         XCTAssertEqual(response.latency?.snapshotFetch.count, 2)
         XCTAssertEqual(response.latency?.eventsFetch.count, 2)
         XCTAssertFalse(encoded.contains("view-token-secret"))
         XCTAssertFalse(encoded.contains("moss.example"))
         XCTAssertFalse(encoded.contains("session-latency"))
+    }
+
+    func testLatencyProbeStartsBothRoutesTogetherAndRecordsOneOwnedPair() throws {
+        let sessionStore = InMemoryCaptureSessionStore()
+        try sessionStore.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try sessionStore.saveCaptureSessionID("session-concurrent")
+        try sessionStore.saveCaptureViewToken("view-token-secret")
+        let client = BarrierLatencyHTTPClient(
+            snapshotBody: try latencySnapshotBody(version: 2, committedSamples: 8_000),
+            eventsBody: try latencyEventsBody(sequences: [1])
+        )
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let sampler = CaptureLatencySampler()
+        let probe = CaptureLatencyProbe(
+            sampler: sampler,
+            status: { CaptureStatus(running: true, sessionID: "session-concurrent", lanes: [], publishedFrameCount: 0, lastHealthSequence: nil) },
+            sessionStore: sessionStore,
+            clientProvider: RecordingCaptureHTTPClientProvider(client: client),
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            clock: FakeCaptureClockAdapter(ticks: [0, 1_000_000, 2_000_000, 3_000_000]),
+            hostTime: StaticCaptureHostTimeReader(nanoseconds: [20_000_000_000]),
+            scheduler: scheduler
+        )
+
+        _ = try probe.measure()
+        scheduler.runScheduledOperation()
+
+        XCTAssertEqual(client.maxConcurrentRequests, 2)
+        XCTAssertFalse(client.barrierTimedOut)
+        let report = sampler.report(polling: true)
+        XCTAssertEqual(report.snapshotFetch.count, 1)
+        XCTAssertEqual(report.eventsFetch.count, 1)
+        XCTAssertEqual(report.portalFetchCycle.count, 1)
     }
 
     func testLatencyProbeResetsIncrementalCursorsForEachSession() throws {
@@ -6593,8 +6662,19 @@ final class CaptureControllerTests: XCTestCase {
         _ = try probe.measure()
         scheduler.runScheduledOperation()
         scheduler.runScheduledOperation()
-        XCTAssertEqual(client.requests[2].url?.query, "since_version=7")
-        XCTAssertEqual(client.requests[3].url?.query, "since_seq=11")
+        let secondFirstSessionRequests = Array(client.requests[2..<4])
+        XCTAssertEqual(
+            secondFirstSessionRequests.first {
+                $0.url?.path.hasSuffix("/snapshot") ?? false
+            }?.url?.query,
+            "since_version=7"
+        )
+        XCTAssertEqual(
+            secondFirstSessionRequests.first {
+                $0.url?.path.hasSuffix("/events") ?? false
+            }?.url?.query,
+            "since_seq=11"
+        )
         probe.stop()
 
         statusSessionID = "session-second"
@@ -6605,16 +6685,20 @@ final class CaptureControllerTests: XCTestCase {
         _ = try probe.measure()
         scheduler.runScheduledOperation(at: 1)
 
-        XCTAssertEqual(
-            client.requests[4].url?.path,
-            "/api/live/sessions/session-second/snapshot"
+        let secondSessionRequests = Array(client.requests.dropFirst(4))
+        let secondSessionSnapshot = try XCTUnwrap(
+            secondSessionRequests.first { $0.url?.path.hasSuffix("/snapshot") ?? false }
         )
+        let secondSessionEvents = try XCTUnwrap(
+            secondSessionRequests.first { $0.url?.path.hasSuffix("/events") ?? false }
+        )
+        XCTAssertEqual(secondSessionSnapshot.url?.path, "/api/live/sessions/session-second/snapshot")
         XCTAssertNil(
-            client.requests[4].url?.query,
+            secondSessionSnapshot.url?.query,
             "a new session must not inherit the previous session's version cursor"
         )
         XCTAssertEqual(
-            client.requests[5].url?.query,
+            secondSessionEvents.url?.query,
             "since_seq=0",
             "a new session must not inherit the previous session's event cursor"
         )
@@ -6707,7 +6791,7 @@ final class CaptureControllerTests: XCTestCase {
 
         let afterStop = try probe.measure()
         XCTAssertFalse(afterStop.polling)
-        XCTAssertEqual(afterStop.snapshotFetch.maxMS, 7, "what was measured stays readable")
+        XCTAssertEqual(afterStop.portalFetchCycle.count, 1, "what was measured stays readable")
         XCTAssertEqual(client.requests.count, 2, "reading the result must not restart the poll")
 
         let stopping = RecordingLatencyProbe()
@@ -6878,16 +6962,80 @@ private final class InMemoryCaptureSessionStore: CaptureSessionStoreAdapter {
 }
 
 private final class RecordingLatencyHTTPClient: CaptureHTTPClient {
-    private(set) var requests: [URLRequest] = []
+    private let lock = NSLock()
+    private var storedRequests: [URLRequest] = []
     var snapshotBody = Data()
     var eventsBody = Data()
     var statusCode = 200
 
+    var requests: [URLRequest] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedRequests
+    }
+
     func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
-        requests.append(request)
+        lock.lock()
+        storedRequests.append(request)
         let isSnapshot = request.url?.path.hasSuffix("/snapshot") ?? false
-        return CaptureHTTPResponse(
+        let response = CaptureHTTPResponse(
             statusCode: statusCode,
+            body: isSnapshot ? snapshotBody : eventsBody
+        )
+        lock.unlock()
+        return response
+    }
+}
+
+private final class BarrierLatencyHTTPClient: CaptureHTTPClient {
+    private let snapshotBody: Data
+    private let eventsBody: Data
+    private let lock = NSLock()
+    private let bothStarted = DispatchSemaphore(value: 0)
+    private var activeRequests = 0
+    private var storedMaximum = 0
+    private var storedBarrierTimedOut = false
+
+    init(snapshotBody: Data, eventsBody: Data) {
+        self.snapshotBody = snapshotBody
+        self.eventsBody = eventsBody
+    }
+
+    var maxConcurrentRequests: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedMaximum
+    }
+
+    var barrierTimedOut: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedBarrierTimedOut
+    }
+
+    func send(_ request: URLRequest) throws -> CaptureHTTPResponse {
+        lock.lock()
+        activeRequests += 1
+        storedMaximum = max(storedMaximum, activeRequests)
+        if activeRequests == 2 {
+            bothStarted.signal()
+            bothStarted.signal()
+        }
+        lock.unlock()
+
+        if bothStarted.wait(timeout: .now() + 1) == .timedOut {
+            lock.lock()
+            storedBarrierTimedOut = true
+            lock.unlock()
+        }
+        let isSnapshot = request.url?.path.hasSuffix("/snapshot") ?? false
+        Thread.sleep(forTimeInterval: isSnapshot ? 0.02 : 0.001)
+
+        lock.lock()
+        activeRequests -= 1
+        lock.unlock()
+        return CaptureHTTPResponse(
+            statusCode: 200,
             body: isSnapshot ? snapshotBody : eventsBody
         )
     }

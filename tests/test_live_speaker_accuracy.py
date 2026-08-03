@@ -404,6 +404,40 @@ def test_clause_reducer_makes_real_speaker_accuracy_a_visible_red_gate(tmp_path:
     assert "RED" in completed.stdout
 
 
+def test_clause_reducer_refuses_legacy_unpaired_latency_arithmetic(tmp_path: Path) -> None:
+    (tmp_path / "latency-final.json").write_text(
+        json.dumps(
+            {
+                "latency": {
+                    "schema": "moss-capture-latency.v1",
+                    "committedLatency": {"count": 20, "p95MS": 1000},
+                    "snapshotFetch": {"count": 20, "p95MS": 100},
+                    "eventsFetch": {"count": 20, "p95MS": 100},
+                    "portalCycleMS": 500,
+                    "renderBoundMS": 600,
+                    "userVisibleMS": 1600,
+                    "sufficientSamples": True,
+                    "mixerOriginResolved": True,
+                    "timelineIntact": True,
+                }
+            }
+        )
+    )
+    reducer = Path(__file__).resolve().parents[1] / "scripts" / "ralph-afk" / "live-canary-clauses.py"
+
+    completed = subprocess.run(
+        [sys.executable, "-S", str(reducer), str(tmp_path)],
+        cwd=reducer.parents[2],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 2
+    assert "portalFetchCycle is empty" in completed.stdout
+    assert "legacy unpaired report" in completed.stdout
+
+
 def test_clause_reducer_requires_two_sided_mapping_even_above_accuracy_gate(tmp_path: Path) -> None:
     write_formal_evidence(
         tmp_path,

@@ -11,7 +11,7 @@ import shutil
 import sys
 import tempfile
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
 from moss_transcribe_diarize.live_speaker_accuracy import evaluate_live_speaker_evidence  # noqa: E402
