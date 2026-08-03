@@ -16,6 +16,10 @@ omit up to four proposed reference tokens. The threshold is below the minimum Ac
 candidate score (0.714) and above the negative-control maximum (0.200). It is recomputed from a
 hash-bound independent-ASR evidence file; claimed per-row metadata cannot override it.
 
+The one-off acoustic scorer was deleted after the verdict. Production
+`acoustic_existence_evaluation` and its negative-control tests now own this rule; this packet is
+retained under the standing streaming-diarization bench only for audit and reproduction.
+
 All 45 Acquired candidate rows passed the acoustic gate. The operator audit disposition is frozen:
 R1/R2/R3/R5/R6 are present; R4 removes the unproven lexical prefix and keeps David activity from
 161.8–163.411, with 161.8–162.4 recorded as uncertain nonlexical vocalization. The candidate,

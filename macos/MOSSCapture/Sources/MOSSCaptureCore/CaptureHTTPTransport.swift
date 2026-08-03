@@ -42,9 +42,10 @@ public final class URLSessionCaptureHTTPClient: CaptureHTTPClient {
     public init(certificatePinSHA256Hex: String) throws {
         let delegate = try PinnedCertificateURLSessionDelegate(expectedSHA256Hex: certificatePinSHA256Hex)
         let configuration = URLSessionConfiguration.ephemeral
-        // One connection per lane plus one for the heartbeat. Concurrency above that would only
-        // reorder a lane's own frames, which the server rejects.
-        configuration.httpMaximumConnectionsPerHost = CaptureLane.allCases.count + 1
+        // One connection per lane, one heartbeat, and the latency probe's paired snapshot/events
+        // reads. Each lane still has only one request in flight, so this capacity does not reorder
+        // a lane's own frames.
+        configuration.httpMaximumConnectionsPerHost = CaptureLane.allCases.count + 3
         session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
         ownsSession = true
     }

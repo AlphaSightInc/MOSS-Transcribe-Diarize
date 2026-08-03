@@ -10,6 +10,8 @@ from pathlib import Path
 import re
 from typing import Any, NamedTuple
 
+from .reference_jsonl import load_reference_records
+
 LIVE_SAMPLE_RATE = 16000
 # `afplay` has no render-start handshake.  The formal driver records the accepted sample
 # position before it launches the process, so process startup can move the corpus by seconds
@@ -58,7 +60,7 @@ FINAL_SNAPSHOT_JSON = "speaker-final.json"
 def load_reference_jsonl(path: str | Path) -> tuple[Segment, ...]:
     """Load transcript segments, using independent v2 transcript timing when present."""
 
-    records = _load_reference_records(path)
+    records = load_reference_records(path, empty_description="segment")
     return tuple(
         _reference_segment(record, line_number)
         for line_number, record in enumerate(records, start=1)
@@ -70,33 +72,11 @@ def load_reference_speaker_activity_jsonl(
 ) -> tuple[SpeakerActivityInterval, ...]:
     """Load speaker activity without collapsing it to lexical transcript timing."""
 
-    records = _load_reference_records(path)
+    records = load_reference_records(path, empty_description="segment")
     return tuple(
         _reference_activity(record, line_number)
         for line_number, record in enumerate(records, start=1)
     )
-
-
-def _load_reference_records(path: str | Path) -> list[dict[str, Any]]:
-    source = Path(path)
-    try:
-        lines = source.read_text(encoding="utf-8").splitlines()
-    except OSError as exc:
-        raise ValueError(f"reference is unreadable: {source}") from exc
-    records = []
-    for line_number, line in enumerate(lines, start=1):
-        if not line.strip():
-            continue
-        try:
-            record = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"reference record {line_number} is not valid JSONL") from exc
-        if not isinstance(record, dict):
-            raise ValueError(f"reference record {line_number} must be an object")
-        records.append(record)
-    if not records:
-        raise ValueError("reference must contain at least one segment")
-    return records
 
 
 def hypothesis_from_live_snapshot(

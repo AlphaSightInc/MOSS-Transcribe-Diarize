@@ -11,7 +11,10 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from moss_transcribe_diarize.speaker_reference import validate_speaker_reference  # noqa: E402
+from moss_transcribe_diarize.speaker_reference import (  # noqa: E402
+    AcousticReferenceValidation,
+    validate_speaker_reference,
+)
 
 
 def main() -> int:
@@ -27,10 +30,12 @@ def main() -> int:
     result = validate_speaker_reference(
         args.reference,
         lineage_path=args.lineage,
-        audio_path=args.audio,
-        expected_audio_sha256=args.expected_audio_sha256,
-        acoustic_evidence_path=args.acoustic_evidence,
-        require_acoustic_existence=args.require_acoustic_existence,
+        acoustic=AcousticReferenceValidation(
+            evidence_path=args.acoustic_evidence,
+            audio_path=args.audio,
+            expected_audio_sha256=args.expected_audio_sha256,
+            required=args.require_acoustic_existence,
+        ),
         audit_path=args.audit,
     )
     print(json.dumps(result, sort_keys=True))

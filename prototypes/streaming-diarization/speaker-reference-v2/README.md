@@ -5,7 +5,7 @@ reads live-run output. V1 timestamps only split independent alignment windows at
 10 seconds; no v1 timestamp is copied into v2.
 
 ```bash
-PYTHON=.venv/bin/python bash prototypes/speaker-reference-v2/run.sh \
+PYTHON=.venv/bin/python bash prototypes/streaming-diarization/speaker-reference-v2/run.sh \
   --audio prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/audio.wav \
   --v1 prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl \
   --output tests/fixtures/live_identity_real_corpus/speaker-reference-v2.jsonl \
@@ -19,7 +19,7 @@ for fixed model, audio, transcript, and PyTorch runtime.
 Padding-gaming check (expected verdict `FAIL`, rc 3):
 
 ```bash
-.venv/bin/python prototypes/speaker-reference-v2/proto_padding_gaming.py \
+.venv/bin/python prototypes/streaming-diarization/speaker-reference-v2/proto_padding_gaming.py \
   --evidence-dir /tmp/moss-final-3e0edc1-evidence/real-run1-3e0edc1 \
   --reference-v2 tests/fixtures/live_identity_real_corpus/speaker-reference-v2.jsonl
 ```
@@ -27,7 +27,7 @@ Padding-gaming check (expected verdict `FAIL`, rc 3):
 Historical side-by-side rescore:
 
 ```bash
-.venv/bin/python prototypes/speaker-reference-v2/rescore_evidence.py \
+.venv/bin/python prototypes/streaming-diarization/speaker-reference-v2/rescore_evidence.py \
   --reference-v2 tests/fixtures/live_identity_real_corpus/speaker-reference-v2-post-audit.jsonl \
   --evidence /tmp/moss-final-3e0edc1-evidence/real-run1-3e0edc1 \
   --evidence /tmp/moss-final-3e0edc1-evidence/real-run2-3e0edc1
@@ -36,7 +36,7 @@ Historical side-by-side rescore:
 Freeze the accepted post-audit reference without overwriting the rejected candidate:
 
 ```bash
-.venv/bin/python prototypes/speaker-reference-v2/finalize_post_audit.py \
+.venv/bin/python prototypes/streaming-diarization/speaker-reference-v2/finalize_post_audit.py \
   --v1 prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl \
   --candidate tests/fixtures/live_identity_real_corpus/speaker-reference-v2.jsonl \
   --candidate-provenance tests/fixtures/live_identity_real_corpus/speaker-reference-v2.provenance.json \
@@ -50,7 +50,7 @@ Transcript-independent acoustic evidence, after five blind 60-second ASR respons
 saved as `/tmp/moss-c2-acquired-asr-chunks/audio-00.json` through `audio-04.json`:
 
 ```bash
-.venv/bin/python prototypes/speaker-reference-v2/build_acoustic_evidence.py \
+.venv/bin/python prototypes/streaming-diarization/speaker-reference-v2/build_acoustic_evidence.py \
   --audio prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/audio.wav \
   --response 0:/tmp/moss-c2-acquired-asr-chunks/audio-00.json \
   --response 60:/tmp/moss-c2-acquired-asr-chunks/audio-01.json \

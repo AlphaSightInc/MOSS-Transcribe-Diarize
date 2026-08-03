@@ -148,7 +148,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 3232375 for the operator-directed F4b measurement closure: production-seam policy
 # evidence, transcript-independent corpus truth with direct human audit, activity-aware evaluation,
 # and measured concurrent portal fetches. Its feature branch was cut from this exact keeper main.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-32323755f59374ff38c9c9126b274882d81029a9}"
+# Advanced to efc3dab for the operator-directed F4b audit correction: the final reference and
+# provenance hashes are committed, the reviewer-confirmed evaluator semantics are pinned, and this
+# remediation branch was cut from that exact keeper main.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-efc3dab973cebd6880e75c3425a4212a53d062f3}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

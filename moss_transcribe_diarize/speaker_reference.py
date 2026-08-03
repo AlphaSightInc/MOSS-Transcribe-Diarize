@@ -7,9 +7,11 @@ import json
 import math
 from pathlib import Path
 import re
+from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any
 
+from moss_transcribe_diarize.reference_jsonl import load_reference_records
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
 DEFAULT_MAX_SPEECH_RATE = 8.0
@@ -28,6 +30,26 @@ _SPOKEN_NUMBERS = {
     "2025": ("twenty", "twenty", "five"),
 }
 _SPELLED_ACRONYMS = {"AI", "HBO", "IPO", "JP"}
+
+
+@dataclass(frozen=True)
+class AcousticReferenceValidation:
+    """The evidence binding and policy used to validate acoustic existence."""
+
+    evidence_path: str | Path | None = None
+    audio_path: str | Path | None = None
+    expected_audio_sha256: str | None = None
+    required: bool = False
+    min_score: float = DEFAULT_MIN_ACOUSTIC_EXISTENCE_SCORE
+    slack_sec: float = DEFAULT_ACOUSTIC_SLACK_SEC
+
+
+@dataclass(frozen=True)
+class AcousticMatch:
+    score: float
+    reference_recall: float
+    asr_precision: float
+    asr_text: str
 
 
 def normalize_reference_text(text: str) -> str:
@@ -53,19 +75,14 @@ def validate_speaker_reference(
     *,
     lineage_path: str | Path | None = None,
     max_speech_rate: float = DEFAULT_MAX_SPEECH_RATE,
-    acoustic_evidence_path: str | Path | None = None,
-    audio_path: str | Path | None = None,
-    expected_audio_sha256: str | None = None,
-    require_acoustic_existence: bool = False,
-    min_acoustic_existence_score: float = DEFAULT_MIN_ACOUSTIC_EXISTENCE_SCORE,
-    acoustic_slack_sec: float = DEFAULT_ACOUSTIC_SLACK_SEC,
+    acoustic: AcousticReferenceValidation | None = None,
     audit_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Validate timing, transcript provenance, and optional immutable-v1 lineage."""
 
     source = Path(path)
-    rows = _load_jsonl(source)
-    lineage = _load_jsonl(Path(lineage_path)) if lineage_path is not None else None
+    rows = load_reference_records(source)
+    lineage = load_reference_records(Path(lineage_path)) if lineage_path is not None else None
     issues: list[dict[str, Any]] = []
     previous_end = -math.inf
     rates: list[float] = []
@@ -133,17 +150,17 @@ def validate_speaker_reference(
         )
         _validate_lineage(rows, lineage, audit=audit, issues=issues)
 
-    if acoustic_evidence_path is not None:
+    if acoustic is not None and acoustic.evidence_path is not None:
         acoustic_summary = _validate_acoustic_existence(
             rows,
-            evidence_path=Path(acoustic_evidence_path),
-            audio_path=Path(audio_path) if audio_path is not None else None,
-            expected_audio_sha256=expected_audio_sha256,
-            threshold=min_acoustic_existence_score,
-            slack_sec=acoustic_slack_sec,
+            evidence_path=Path(acoustic.evidence_path),
+            audio_path=Path(acoustic.audio_path) if acoustic.audio_path is not None else None,
+            expected_audio_sha256=acoustic.expected_audio_sha256,
+            threshold=acoustic.min_score,
+            slack_sec=acoustic.slack_sec,
             issues=issues,
         )
-    elif require_acoustic_existence:
+    elif acoustic is not None and acoustic.required:
         issues.append({"code": "acoustic_evidence_missing"})
 
     result = {
@@ -430,7 +447,7 @@ def acoustic_existence_evaluation(
             "asr_text": "",
         }
 
-    best = (0.0, 0.0, 0.0, "")
+    best = AcousticMatch(0.0, 0.0, 0.0, "")
     minimum_width = max(1, len(reference_tokens) - 4)
     maximum_width = min(len(asr_tokens), len(reference_tokens) + 4)
     for width in range(minimum_width, maximum_width + 1):
@@ -445,13 +462,13 @@ def acoustic_existence_evaluation(
             recall = matches / len(reference_tokens)
             precision = matches / len(window)
             score = 0.0 if not matches else 2.0 * recall * precision / (recall + precision)
-            if score > best[0]:
-                best = (score, recall, precision, " ".join(window))
+            if score > best.score:
+                best = AcousticMatch(score, recall, precision, " ".join(window))
     return {
-        "score": round(best[0], 6),
-        "reference_recall": round(best[1], 6),
-        "asr_precision": round(best[2], 6),
-        "asr_text": best[3],
+        "score": round(best.score, 6),
+        "reference_recall": round(best.reference_recall, 6),
+        "asr_precision": round(best.asr_precision, 6),
+        "asr_text": best.asr_text,
     }
 
 
@@ -487,27 +504,6 @@ def _acoustic_segments(
     return segments
 
 
-def _load_jsonl(path: Path) -> list[dict[str, Any]]:
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError as exc:
-        raise ValueError(f"reference is unreadable: {path}") from exc
-    rows: list[dict[str, Any]] = []
-    for line_number, line in enumerate(lines, start=1):
-        if not line.strip():
-            continue
-        try:
-            row = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"reference record {line_number} is not valid JSONL") from exc
-        if not isinstance(row, dict):
-            raise ValueError(f"reference record {line_number} must be an object")
-        rows.append(row)
-    if not rows:
-        raise ValueError("reference must contain at least one record")
-    return rows
-
-
 def _finite_number(value: Any) -> bool:
     return (
         not isinstance(value, bool)
@@ -541,6 +537,7 @@ def _reference_fields(row: dict[str, Any]) -> tuple[Any, Any, Any, Any, Any]:
 
 __all__ = [
     "ACOUSTIC_EVIDENCE_SCHEMA",
+    "AcousticReferenceValidation",
     "DEFAULT_ACOUSTIC_SLACK_SEC",
     "DEFAULT_MIN_ACOUSTIC_EXISTENCE_SCORE",
     "DEFAULT_MAX_SPEECH_RATE",
