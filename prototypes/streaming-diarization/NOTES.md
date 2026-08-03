@@ -363,3 +363,22 @@ Raw transcript SHA-256:
 `9f7828a2886efd3447c9c04806298397f0871c181c358749ca7c03f70d6237b3`.
 `evidence/A2_RENEWED_EVIDENCE.sha256` seals 30/30 files and has SHA-256
 `9839f3fb65d9f0642e9e31ddd050c9cd100b7bdb58251ea4d66146e241b7a5e4`.
+
+### L2 Stage 0 accepted-anchor fidelity diagnosis (`l2-stage0`, 2026-08-03)
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_anchor_fidelity.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity`
+
+**VERDICT: BLOCKED — no anchor score produced.** The probe hash-asserted the exact
+c650-era runner (`8719c18…`) and exact archived 92-unit alphabet cache
+(`fd13bacb…`), while leaving official corpus/spec/launcher pins unchanged. The runner
+exited 1 before run 1: the archived NPZ contains `rows`, `vec_idx`, and `vecs`, but
+current `validate_cache()` requires `span_bounds` and `span_reasons`; NumPy raised
+`KeyError: 'span_bounds is not a file in the archive'`. No summary, score, or run JSON
+was created.
+
+This is instrument incompatibility, not evidence for the partition-effect hypothesis.
+Per supervisor instruction: no second run, causal decomposition, dual-anchor record,
+gate clarification, tolerance change, cache modification, planner variation, or re-pin.
+Holdout remains sealed; A3 remains unstarted.
+`evidence/ANCHOR_FIDELITY_EVIDENCE.sha256` seals 12/12 files and has SHA-256
+`ff76c726bd9642bdd14e253932ab13c1416ecb5dd6803d5ad40ce0888436d3c6`.
