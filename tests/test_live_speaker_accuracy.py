@@ -11,9 +11,12 @@ import pytest
 
 from moss_transcribe_diarize.evaluation import Segment
 from moss_transcribe_diarize.live_speaker_accuracy import (
+    SpeakerActivityInterval,
+    TranscriptSegment,
     evaluate_live_speaker_evidence,
     hypothesis_from_live_snapshot,
     load_reference_jsonl,
+    load_reference_speaker_activity_jsonl,
     score_live_speaker_accuracy,
 )
 
@@ -44,6 +47,33 @@ def test_f_cert_real_corpus_contract_is_exact() -> None:
         "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb"
     )
     assert len(load_reference_jsonl(reference)) == 45
+
+
+def test_v2_keeps_transcript_timing_separate_from_speaker_activity(tmp_path: Path) -> None:
+    reference = tmp_path / "reference-v2.jsonl"
+    reference.write_text(
+        json.dumps(
+            {
+                "schema": "moss-speaker-reference.v2",
+                "speaker_activity": {"start": 1.0, "end": 3.0, "speaker": "David"},
+                "transcript": {
+                    "start": 1.6,
+                    "end": 3.0,
+                    "text": "Oh, you're giving away the end.",
+                    "line_index": 23,
+                },
+            }
+        )
+        + "\n"
+    )
+
+    transcript = load_reference_jsonl(reference)
+    activity = load_reference_speaker_activity_jsonl(reference)
+
+    assert transcript == (
+        TranscriptSegment(1.6, 3.0, "David", "Oh, you're giving away the end."),
+    )
+    assert activity == (SpeakerActivityInterval(1.0, 3.0, "David"),)
 
 
 def test_live_snapshot_scores_duration_weighted_optimal_mapping() -> None:
@@ -137,6 +167,38 @@ def test_unlabelled_reference_duration_counts_against_live_accuracy() -> None:
     assert result["reference_seconds"] == 4.0
     assert result["two_sided_mapping"] is False
     assert result["speaker_correctness"] == {"Alice": 1.0, "Bob": 0.0}
+
+
+def test_activity_metrics_penalize_false_positive_label_time() -> None:
+    reference = (SpeakerActivityInterval(1.0, 2.0, "Alice"),)
+    hypothesis = (SpeakerActivityInterval(0.0, 3.0, "S01"),)
+
+    result = score_live_speaker_accuracy(reference, hypothesis)
+
+    assert result["speaker_accuracy"] == 1.0
+    assert result["speaker_activity_recall"] == 1.0
+    assert result["speaker_activity_precision"] == pytest.approx(1.0 / 3.0, abs=1e-6)
+    assert result["false_positive_speaker_seconds"] == 2.0
+    assert result["missed_speaker_seconds"] == 0.0
+    assert result["confused_speaker_seconds"] == 0.0
+    assert result["diarization_error_rate"] == 2.0
+
+
+def test_der_counts_mapped_speaker_confusion_separately_from_activity_recall() -> None:
+    reference = (
+        SpeakerActivityInterval(0.0, 1.0, "Alice"),
+        SpeakerActivityInterval(1.0, 2.0, "Bob"),
+    )
+    hypothesis = (SpeakerActivityInterval(0.0, 2.0, "S01"),)
+
+    result = score_live_speaker_accuracy(reference, hypothesis)
+
+    assert result["speaker_activity_precision"] == 1.0
+    assert result["speaker_activity_recall"] == 1.0
+    assert result["false_positive_speaker_seconds"] == 0.0
+    assert result["missed_speaker_seconds"] == 0.0
+    assert result["confused_speaker_seconds"] == 1.0
+    assert result["diarization_error_rate"] == 0.5
 
 
 @pytest.mark.parametrize(
@@ -366,6 +428,8 @@ def test_clause_reducer_requires_two_sided_mapping_even_above_accuracy_gate(tmp_
     assert "live speaker accuracy 95.00% >= 90.00%" in completed.stdout
     assert "two-sided mapping=False" in completed.stdout
     assert "speaker correctness=" in completed.stdout
+    assert "speaker activity precision=" in completed.stdout
+    assert "false-positive=" in completed.stdout
     assert "RED" in completed.stdout
 
 

@@ -12,9 +12,9 @@ public enum CaptureLatencyContract {
     /// frame period, so an advance is attributed to within one poll rather than to within one frame.
     public static let pollInterval: TimeInterval = 0.25
 
-    /// The portal fetches snapshot then events serially and schedules the next cycle this long
-    /// after both complete, so committed text waits at most one cycle plus both fetches before it
-    /// is on screen. That is the analytic half of the gated number.
+    /// The portal fetches snapshot and events concurrently and schedules the next cycle this long
+    /// after both complete, so committed text waits at most one cycle plus the slower fetch before
+    /// it is on screen. That is the analytic half of the gated number.
     ///
     /// This is a **restatement** of the server's `pollDelayMs` in `live_portal.py`, not an
     /// independent knob: the app never schedules anything from it, so moving it alone would move a
@@ -128,7 +128,7 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
     public var eventsFetch: CaptureLatencyDistribution
     public var frameQuantisationMS: Double
     public var portalCycleMS: Double
-    /// `portal cycle + snapshot p95 + events p95` — nil until both routes have been measured.
+    /// `portal cycle + max(snapshot p95, events p95)` — nil until both routes are measured.
     public var renderBoundMS: Double?
     /// The gated number: committed p95 plus the render bound. Both components stay in the report.
     public var userVisibleMS: Double?
@@ -331,7 +331,8 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
         let events = CaptureLatencyDistribution.over(eventsFetchNS)
         var renderBoundMS: Double?
         if let snapshotP95 = snapshot.p95MS, let eventsP95 = events.p95MS {
-            renderBoundMS = CaptureLatencyContract.portalCycleSeconds * 1_000 + snapshotP95 + eventsP95
+            renderBoundMS = CaptureLatencyContract.portalCycleSeconds * 1_000
+                + max(snapshotP95, eventsP95)
         }
         var userVisibleMS: Double?
         if let renderBoundMS, let committedP95 = committed.p95MS {
@@ -487,8 +488,8 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
                 sampler.observe(committedSamples: observed.committedSamples, atHostNanoseconds: now)
             }
         }
-        // The portal fetches events straight after the snapshot, so the render bound is only honest
-        // if both fetches are measured the same way.
+        // The portal starts both routes together. This diagnostic probe can read them serially:
+        // each duration is still measured independently, and the render bound charges their max.
         if let highestSeq = fetchEvents(client: client, session: session, sinceSeq: requestedSeq) {
             lock.lock()
             sinceSeq = max(sinceSeq, highestSeq)

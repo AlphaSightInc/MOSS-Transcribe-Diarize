@@ -336,15 +336,20 @@ class LivePortalRouteTest(unittest.TestCase):
 
         probe = _run_retry_contract_probe(html)
 
-        self.assertEqual(len(probe["requests"]), 3)
+        self.assertEqual(len(probe["requests"]), 4)
         self.assertIn("since_version=0", probe["requests"][0]["url"])
-        self.assertIn("since_version=0", probe["requests"][1]["url"])
-        self.assertIn("since_seq=0", probe["requests"][2]["url"])
+        self.assertIn("since_seq=0", probe["requests"][1]["url"])
+        self.assertIn("since_version=0", probe["requests"][2]["url"])
+        self.assertIn("since_seq=0", probe["requests"][3]["url"])
         self.assertEqual(probe["retryDelays"], [0, 500])
-        self.assertEqual(probe["maxPendingTimers"], 1)
+        self.assertEqual(
+            probe["maxPendingTimers"],
+            2,
+            "the concurrent snapshot/events pair has one bounded timeout per request",
+        )
         self.assertEqual(probe["statusAfterFailure"], "Reconnecting: malformed snapshot session")
         self.assertEqual(probe["connectionAfterClosed"], "disconnected")
-        self.assertEqual(probe["requestsAfterTerminalTimer"], 3)
+        self.assertEqual(probe["requestsAfterTerminalTimer"], 4)
         self.assertEqual(probe["storageWrites"], [])
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
@@ -400,6 +405,7 @@ class LivePortalRouteTest(unittest.TestCase):
 
         disconnected = _run_disconnect_overlap_contract_probe(html)
         self.assertTrue(disconnected["pollAborted"])
+        self.assertTrue(disconnected["eventsAborted"])
         self.assertTrue(disconnected["controlAborted"])
         self.assertEqual(disconnected["connectionState"], "disconnected")
 
@@ -415,8 +421,21 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertTrue(probe["hungRequestAborted"])
         self.assertEqual(probe["statusAfterTimeout"], "Reconnecting: request timed out")
         self.assertIn(500, probe["timerDelays"])
-        self.assertEqual(probe["requestCount"], 3)
+        self.assertEqual(probe["requestCount"], 4)
         self.assertEqual(probe["connectionState"], "disconnected")
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_failed_concurrent_fetch_aborts_its_sibling_before_retry(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        probe = _run_concurrent_failure_contract_probe(html)
+
+        self.assertTrue(probe["eventsSiblingAborted"])
+        self.assertEqual(probe["status"], "Reconnecting: snapshot unavailable")
+        self.assertEqual(probe["retryDelays"], [0, 500])
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
     def test_live_portal_control_timeout_uses_independent_10_second_abort(self):
@@ -476,6 +495,16 @@ class LivePortalRouteTest(unittest.TestCase):
         # A constant nothing reads would satisfy the equality below while the page polled at any
         # rate at all, so the cadence has to be what actually schedules the next cycle.
         self.assertIn("schedulePoll(pollDelayMs)", script)
+        self.assertIn(
+            "await Promise.all([",
+            script,
+            "snapshot and events must start together so the browser pays the slower fetch, not both",
+        )
+        self.assertNotIn(
+            "const snapshotPayload = await fetchPollJson",
+            script,
+            "the old serial first fetch would delay every events request behind snapshot latency",
+        )
 
         swift = (
             REPO_ROOT / "macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureLatencyProbe.swift"
@@ -492,9 +521,9 @@ class LivePortalRouteTest(unittest.TestCase):
         # And the term must still reach the sum: a literal substituted for the constant would keep
         # the two declarations equal while the reported bound stopped describing this page.
         self.assertIn(
-            "renderBoundMS = CaptureLatencyContract.portalCycleSeconds * 1_000",
+            "max(snapshotP95, eventsP95)",
             swift,
-            "the render bound must be built from the declared cycle, not from a literal",
+            "the concurrent browser pays the slower p95 fetch once, not the serial sum",
         )
 
     def test_idea_038_context_and_adr_keep_portal_constants_and_evidence_tier_missing(self):
@@ -869,9 +898,9 @@ async function runHappy() {{
 async function runRetry() {{
   const env = installPortal([
     {{ payload: {{ snapshot: {{ session: {{ status: "nonsense", version: 5, committed: [], provisional: null }} }} }} }},
-    {{ payload: snapshots.closed7 }},
     {{ payload: {{ events: [] }} }},
     {{ payload: snapshots.closed7 }},
+    {{ payload: {{ events: [] }} }},
   ]);
   env.nodes.sessionId.value = "retry-session";
   env.nodes.viewToken.value = "retry-token";
@@ -948,6 +977,7 @@ async function runControlFailure() {{
 async function runOverlap() {{
   const env = installPortal([
     {{ hang: true }},
+    {{ payload: {{ events: [] }} }},
     {{ payload: snapshots.closing5 }},
   ]);
   env.nodes.sessionId.value = "overlap-session";
@@ -970,6 +1000,7 @@ async function runDisconnectOverlap() {{
   const env = installPortal([
     {{ hang: true }},
     {{ hang: true }},
+    {{ hang: true }},
   ]);
   env.nodes.sessionId.value = "disconnect-session";
   env.nodes.viewToken.value = "disconnect-token";
@@ -981,7 +1012,8 @@ async function runDisconnectOverlap() {{
   await env.flush();
   console.log(JSON.stringify({{
     pollAborted: env.requests[0].aborted,
-    controlAborted: env.requests[1].aborted,
+    eventsAborted: env.requests[1].aborted,
+    controlAborted: env.requests[2].aborted,
     connectionState: env.nodes.connectionState.textContent,
   }}));
 }}
@@ -989,6 +1021,7 @@ async function runDisconnectOverlap() {{
 async function runTimeout() {{
   const env = installPortal([
     {{ hang: true }},
+    {{ payload: {{ events: [] }} }},
     {{ payload: snapshots.closed7 }},
     {{ payload: {{ events: [] }} }},
   ]);
@@ -1005,6 +1038,23 @@ async function runTimeout() {{
     timerDelays: env.timerDelays,
     requestCount: env.requests.length,
     connectionState: env.nodes.connectionState.textContent,
+  }}));
+}}
+
+async function runConcurrentFailure() {{
+  const env = installPortal([
+    {{ throwMessage: "snapshot unavailable" }},
+    {{ hang: true }},
+  ]);
+  env.nodes.sessionId.value = "concurrent-failure-session";
+  env.nodes.viewToken.value = "concurrent-failure-token";
+  env.nodes.connectButton.listeners.click();
+  await env.runNextTimer();
+  await env.flush();
+  console.log(JSON.stringify({{
+    eventsSiblingAborted: env.requests[1].aborted,
+    status: env.nodes.statusDetail.textContent,
+    retryDelays: env.timerDelays.filter((delay) => delay < 10000),
   }}));
 }}
 
@@ -1068,6 +1118,7 @@ const scenarios = {{
   overlap: runOverlap,
   disconnectOverlap: runDisconnectOverlap,
   timeout: runTimeout,
+  concurrentFailure: runConcurrentFailure,
   controlTimeout: runControlTimeout,
   eventRetention: runEventRetention,
 }};
@@ -1115,6 +1166,10 @@ def _run_disconnect_overlap_contract_probe(html: str) -> dict:
 
 def _run_timeout_contract_probe(html: str) -> dict:
     return _run_node_probe(html, "timeout")
+
+
+def _run_concurrent_failure_contract_probe(html: str) -> dict:
+    return _run_node_probe(html, "concurrentFailure")
 
 
 def _run_control_timeout_contract_probe(html: str) -> dict:

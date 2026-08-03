@@ -1,0 +1,548 @@
+{
+  "audio_sha256": "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb",
+  "blind_to_reference_transcript": true,
+  "generation_date": "2026-08-03",
+  "method": "independent MOSS-Transcribe-Diarize ASR pass; 60-second chunks",
+  "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+  "responses": [
+    {
+      "offset_sec": 0.0,
+      "response_sha256": "4d376323460cd97b79abe9a91891f4ec2ff1be96d6425cdfec58171aed3c28f1",
+      "segment_count": 14
+    },
+    {
+      "offset_sec": 60.0,
+      "response_sha256": "a45eb79de69887f5d7f7ff3a5f2b91cd55f2247583fa2db06b30a1d5508bb52a",
+      "segment_count": 13
+    },
+    {
+      "offset_sec": 120.0,
+      "response_sha256": "684adbfc0ce16bc8568153ca3042a5951d7e60b5d82feb842c7ca4ed68795498",
+      "segment_count": 20
+    },
+    {
+      "offset_sec": 180.0,
+      "response_sha256": "7d0bf270c3e40a34d4e9b7e3735bcb8e1ef15f890e773b5346936ef9aada0bf0",
+      "segment_count": 14
+    },
+    {
+      "offset_sec": 240.0,
+      "response_sha256": "1977b5b540854781a0ae07e6293ae2e3852dce520e3151fce6172c71be7c600c",
+      "segment_count": 24
+    }
+  ],
+  "schema": "moss-speaker-reference-acoustic-existence.v1",
+  "segments": [
+    {
+      "end": 3.03,
+      "speaker": "S01",
+      "start": 0.54,
+      "text": "Are you intentionally wearing a black turtleneck for this one?"
+    },
+    {
+      "end": 5.73,
+      "speaker": "S02",
+      "start": 3.11,
+      "text": "No, it is actually going to be one of my carve-outs, though."
+    },
+    {
+      "end": 7.14,
+      "speaker": "S01",
+      "start": 5.99,
+      "text": "Yeah, amazing."
+    },
+    {
+      "end": 11.13,
+      "speaker": "S02",
+      "start": 7.56,
+      "text": "What, you think I dress up like Steve Jobs for a Google episode?"
+    },
+    {
+      "end": 14.73,
+      "speaker": "S01",
+      "start": 11.52,
+      "text": "Well, I thought because of the, you know, war between Android and..."
+    },
+    {
+      "end": 17.55,
+      "speaker": "S02",
+      "start": 15.06,
+      "text": "I walk in and there's this like smirk on your face."
+    },
+    {
+      "end": 20.76,
+      "speaker": "S02",
+      "start": 19.95,
+      "text": "All right, let's do it."
+    },
+    {
+      "end": 43.02,
+      "speaker": "S03",
+      "start": 37.77,
+      "text": "Welcome to the summer 2025 season of Acquired, the podcast about great companies and the stories"
+    },
+    {
+      "end": 45.03,
+      "speaker": "S03",
+      "start": 43.02,
+      "text": "and playbooks behind them. I'm Ben Gilbert."
+    },
+    {
+      "end": 46.26,
+      "speaker": "S01",
+      "start": 45.18,
+      "text": "I'm David Rosenthal."
+    },
+    {
+      "end": 50.82,
+      "speaker": "S03",
+      "start": 46.38,
+      "text": "And we are your hosts. In the late 1990s, Google built the best"
+    },
+    {
+      "end": 54.3,
+      "speaker": "S03",
+      "start": 50.82,
+      "text": "search engine for the rapidly growing internet. With a breakthrough"
+    },
+    {
+      "end": 58.62,
+      "speaker": "S03",
+      "start": 54.3,
+      "text": "search algorithm, low-cost servers based on commodity hardware, and the best"
+    },
+    {
+      "end": 59.97,
+      "speaker": "S03",
+      "start": 58.62,
+      "text": "business model of all time."
+    },
+    {
+      "end": 64.68,
+      "speaker": "S01",
+      "start": 60.12,
+      "text": "Search ads, they turned that search engine into a cash gushing business and took"
+    },
+    {
+      "end": 70.02,
+      "speaker": "S01",
+      "start": 64.68,
+      "text": "it public in 2004. But then, curiously, they started doing some things that weren't"
+    },
+    {
+      "end": 74.28,
+      "speaker": "S01",
+      "start": 70.02,
+      "text": "related to search. They launched a breakthrough email service in your browser with Gmail,"
+    },
+    {
+      "end": 79.17,
+      "speaker": "S01",
+      "start": 74.28,
+      "text": "maps that were far superior to the current state of the art, docs and spreadsheets with"
+    },
+    {
+      "end": 84.33,
+      "speaker": "S01",
+      "start": 79.17,
+      "text": "real-time collaboration for the first time, of course YouTube, then Android, and their"
+    },
+    {
+      "end": 90.48,
+      "speaker": "S01",
+      "start": 84.33,
+      "text": "own web browser with Chrome. Astonishingly, today, Google has 15 products with over"
+    },
+    {
+      "end": 96.42,
+      "speaker": "S01",
+      "start": 90.48,
+      "text": "half a billion users. Seven of those have over 2 billion users. David, that is over"
+    },
+    {
+      "end": 100.98,
+      "speaker": "S01",
+      "start": 96.42,
+      "text": "25% of humans use seven of Google's products."
+    },
+    {
+      "end": 104.52,
+      "speaker": "S02",
+      "start": 101.28,
+      "text": "Just unreal. Can't wait to tell all of these stories today."
+    },
+    {
+      "end": 110.7,
+      "speaker": "S01",
+      "start": 104.76,
+      "text": "Yes. And they've also launched some colossal failures. Google Plus to try to"
+    },
+    {
+      "end": 115.77,
+      "speaker": "S01",
+      "start": 110.7,
+      "text": "compete with Facebook, Google Wave, Buzz, and about half a dozen messaging apps, I"
+    },
+    {
+      "end": 119.49,
+      "speaker": "S01",
+      "start": 115.77,
+      "text": "don't know, maybe a dozen messaging apps over the years, hot air balloons to provide"
+    },
+    {
+      "end": 119.97,
+      "speaker": "S01",
+      "start": 119.49,
+      "text": "wireless"
+    },
+    {
+      "end": 121.05,
+      "speaker": "S01",
+      "start": 120.04,
+      "text": "Internet and of course."
+    },
+    {
+      "end": 123.12,
+      "speaker": "S02",
+      "start": 121.07,
+      "text": "Oh man, I forgot about the hot air balloons."
+    },
+    {
+      "end": 124.65,
+      "speaker": "S01",
+      "start": 123.28,
+      "text": "Google Glass."
+    },
+    {
+      "end": 128.08,
+      "speaker": "S02",
+      "start": 126.36,
+      "text": "Can't forget about that one, unfortunately."
+    },
+    {
+      "end": 129.88,
+      "speaker": "S01",
+      "start": 128.36,
+      "text": "So why did they do all this?"
+    },
+    {
+      "end": 135.24,
+      "speaker": "S01",
+      "start": 129.92,
+      "text": "And as a business, Google was and still is the company that makes the vast majority of their money"
+    },
+    {
+      "end": 137.68,
+      "speaker": "S01",
+      "start": 135.24,
+      "text": "from ads on search results on the web."
+    },
+    {
+      "end": 143.24,
+      "speaker": "S01",
+      "start": 138.16,
+      "text": "So today, we tell the story of Google as the innovation factory of the 2000s,"
+    },
+    {
+      "end": 146.24,
+      "speaker": "S01",
+      "start": 143.52,
+      "text": "their reorganization into the parent company Alphabet,"
+    },
+    {
+      "end": 150.72,
+      "speaker": "S01",
+      "start": 146.48,
+      "text": "and how all of these different products cleverly serve different business purposes."
+    },
+    {
+      "end": 154.68,
+      "speaker": "S01",
+      "start": 151.0,
+      "text": "And also, how it feeds into Google's original core mission,"
+    },
+    {
+      "end": 157.2,
+      "speaker": "S01",
+      "start": 154.92,
+      "text": "to organize the world's information."
+    },
+    {
+      "end": 161.68,
+      "speaker": "S01",
+      "start": 157.64,
+      "text": "And we'll end this episode's story right at the dawn of the AI era."
+    },
+    {
+      "end": 163.4,
+      "speaker": "S02",
+      "start": 162.32,
+      "text": "Yo, you're giving away the end."
+    },
+    {
+      "end": 164.92,
+      "speaker": "S01",
+      "start": 163.44,
+      "text": "Oh, spoilers, sorry."
+    },
+    {
+      "end": 167.2,
+      "speaker": "S01",
+      "start": 165.6,
+      "text": "So is Google a search engine?"
+    },
+    {
+      "end": 170.32,
+      "speaker": "S01",
+      "start": 167.76,
+      "text": "Is it the platform company of the web era?"
+    },
+    {
+      "end": 175.52,
+      "speaker": "S01",
+      "start": 170.76,
+      "text": "Or is it an incubator that just happens to have struck gold with search and perhaps AI?"
+    },
+    {
+      "end": 177.44,
+      "speaker": "S01",
+      "start": 176.04,
+      "text": "Today, we dive in."
+    },
+    {
+      "end": 179.96,
+      "speaker": "S01",
+      "start": 178.52,
+      "text": "Listeners, if you want to know every time"
+    },
+    {
+      "end": 184.08,
+      "speaker": "S01",
+      "start": 180.0,
+      "text": "And episode drops or get early hints at what the next episode will be."
+    },
+    {
+      "end": 188.37,
+      "speaker": "S01",
+      "start": 184.11,
+      "text": "Check out our email list. That's also where we share corrections and updates about previous"
+    },
+    {
+      "end": 194.67,
+      "speaker": "S01",
+      "start": 188.37,
+      "text": "episodes and we are adding a new bonus. You get to help us vote on future episode topics."
+    },
+    {
+      "end": 200.61,
+      "speaker": "S01",
+      "start": 194.82,
+      "text": "So the first poll is going out soon. Sign up now at acquired.fm/ email."
+    },
+    {
+      "end": 204.03,
+      "speaker": "S01",
+      "start": 201.09,
+      "text": "Join the Slack if you want to come talk about this with us and the whole acquired"
+    },
+    {
+      "end": 209.04,
+      "speaker": "S01",
+      "start": 204.03,
+      "text": "community acquired.fm/ Slack. Before we dive in, we want to briefly thank our presenting"
+    },
+    {
+      "end": 210.72,
+      "speaker": "S01",
+      "start": 209.04,
+      "text": "partner JP Morgan Payments."
+    },
+    {
+      "end": 215.25,
+      "speaker": "S02",
+      "start": 210.93,
+      "text": "Yes, just like how we say every company has a story. Every company's story is powered"
+    },
+    {
+      "end": 219.72,
+      "speaker": "S02",
+      "start": 215.25,
+      "text": "by payments and JP Morgan Payments is a part of so many of their journeys from seed to IPO"
+    },
+    {
+      "end": 220.47,
+      "speaker": "S02",
+      "start": 219.72,
+      "text": "and beyond."
+    },
+    {
+      "end": 223.89,
+      "speaker": "S01",
+      "start": 220.56,
+      "text": "So with that, this show is not investment advice. David and I may have investments in"
+    },
+    {
+      "end": 227.73,
+      "speaker": "S01",
+      "start": 223.89,
+      "text": "the companies we discuss and this show is for informational and entertainment purposes"
+    },
+    {
+      "end": 232.68,
+      "speaker": "S01",
+      "start": 228.15,
+      "text": "only. David, where are we starting this alphabet story?"
+    },
+    {
+      "end": 239.97,
+      "speaker": "S02",
+      "start": 232.8,
+      "text": "Oh, I have a very, very fun beginning for you, Ben. I want to start with a quote."
+    },
+    {
+      "end": 242.22,
+      "speaker": "S01",
+      "start": 240.08,
+      "text": "From Russ Haneman."
+    },
+    {
+      "end": 243.88,
+      "speaker": "S02",
+      "start": 242.72,
+      "text": "The fictional character?"
+    },
+    {
+      "end": 246.24,
+      "speaker": "S01",
+      "start": 243.92,
+      "text": "Silicon Valley HBO show."
+    },
+    {
+      "end": 248.96,
+      "speaker": "S01",
+      "start": 247.16,
+      "text": "Oh, yeah, from the TV show."
+    },
+    {
+      "end": 249.52,
+      "speaker": "S02",
+      "start": 248.99,
+      "text": "Awesome."
+    },
+    {
+      "end": 252.48,
+      "speaker": "S01",
+      "start": 249.84,
+      "text": "And the quote is, \"If you show revenue,"
+    },
+    {
+      "end": 256.23,
+      "speaker": "S01",
+      "start": 252.84,
+      "text": "people will ask how much, and it will never be enough."
+    },
+    {
+      "end": 259.23,
+      "speaker": "S01",
+      "start": 256.52,
+      "text": "The company that was the 100xer, the 1,000xer,"
+    },
+    {
+      "end": 260.96,
+      "speaker": "S01",
+      "start": 259.32,
+      "text": "is suddenly the 2x dog."
+    },
+    {
+      "end": 263.84,
+      "speaker": "S01",
+      "start": 261.12,
+      "text": "But if you have no revenue, you can say you're pre-revenue."
+    },
+    {
+      "end": 265.96,
+      "speaker": "S01",
+      "start": 264.04,
+      "text": "You're a potential pure play."
+    },
+    {
+      "end": 267.48,
+      "speaker": "S01",
+      "start": 266.2,
+      "text": "It's not about how much you earn."
+    },
+    {
+      "end": 269.92,
+      "speaker": "S01",
+      "start": 267.52,
+      "text": "It's about what you're worth and who's worth the most."
+    },
+    {
+      "end": 271.72,
+      "speaker": "S01",
+      "start": 270.04,
+      "text": "Companies that lose money.\""
+    },
+    {
+      "end": 275.56,
+      "speaker": "S01",
+      "start": 272.24,
+      "text": "Immortal words of wisdom for the technology world."
+    },
+    {
+      "end": 277.2,
+      "speaker": "S01",
+      "start": 276.04,
+      "text": "God, that show was so good."
+    },
+    {
+      "end": 278.68,
+      "speaker": "S01",
+      "start": 277.68,
+      "text": "Why do I bring this up?"
+    },
+    {
+      "end": 279.44,
+      "speaker": "S01",
+      "start": 278.72,
+      "text": "Why do I start here?"
+    },
+    {
+      "end": 280.52,
+      "speaker": "S02",
+      "start": 279.52,
+      "text": "Why are you talking about this?"
+    },
+    {
+      "end": 283.28,
+      "speaker": "S02",
+      "start": 280.56,
+      "text": "Google is a cash gushing machine."
+    },
+    {
+      "end": 286.96,
+      "speaker": "S01",
+      "start": 283.6,
+      "text": "Revenue is obviously not the problem for Google."
+    },
+    {
+      "end": 292.0,
+      "speaker": "S01",
+      "start": 287.24,
+      "text": "But what was the problem in 2004, 2005, 2006,"
+    },
+    {
+      "end": 296.64,
+      "speaker": "S01",
+      "start": 292.36,
+      "text": "was being viewed as, in Russ's terms, pure play."
+    },
+    {
+      "end": 299.8,
+      "speaker": "S01",
+      "start": 297.32,
+      "text": "When Google went public in fall of 2004,"
+    }
+  ],
+  "source_revision": "32323755f59374ff38c9c9126b274882d81029a9"
+}

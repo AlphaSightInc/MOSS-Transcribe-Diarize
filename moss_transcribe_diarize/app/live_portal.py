@@ -528,23 +528,27 @@ LIVE_PORTAL_HTML = """<!doctype html>
         const controller = new AbortController();
         state.pollController = controller;
         try {
-          const snapshotPayload = await fetchPollJson(
-            endpoints.snapshot(state.sessionId, state.snapshotVersion),
-            { method: "GET" },
-            generation,
-            controller,
-          );
+          // Both responses describe the same cursor generation and neither depends on the
+          // other's body. Starting them together makes the viewer pay the slower fetch once.
+          const [snapshotPayload, eventsPayload] = await Promise.all([
+            fetchPollJson(
+              endpoints.snapshot(state.sessionId, state.snapshotVersion),
+              { method: "GET" },
+              generation,
+              controller,
+            ),
+            fetchPollJson(
+              endpoints.events(state.sessionId, state.eventSequence),
+              { method: "GET" },
+              generation,
+              controller,
+            ),
+          ]);
           const session = renderSnapshot(snapshotPayload);
           assertCurrent(generation);
           if (session) {
             state.snapshotVersion = session.version;
           }
-          const eventsPayload = await fetchPollJson(
-            endpoints.events(state.sessionId, state.eventSequence),
-            { method: "GET" },
-            generation,
-            controller,
-          );
           const highestEvent = renderEvents(eventsPayload);
           assertCurrent(generation);
           if (highestEvent !== null) {
@@ -557,6 +561,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
             schedulePoll(pollDelayMs);
           }
         } catch (error) {
+          // A failed member makes this cursor generation unusable. Abort its sibling before
+          // retrying so the next pair cannot overlap a stale in-flight request.
+          controller.abort();
           if (error.name !== "AbortError" && state.connected && generation === state.generation) {
             scheduleRetry(error.message || "request failed");
           }

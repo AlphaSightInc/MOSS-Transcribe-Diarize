@@ -145,7 +145,10 @@ expected_feature="${RALPH_EXPECTED_BRANCH:-ralph/live-meeting-mvp}"
 # Advanced to 3e0edc1 for the operator-directed capture-layout hardening closeout. Malformed HAL
 # lists and unsupported microphone buffers now fail closed as typed discontinuities instead of
 # losing declared layout or fabricating valid silence; valid rectangular audio is unchanged.
-expected_main="${RALPH_MERGE_MAIN_BEFORE:-3e0edc14ab772adb6bcd96484971a2343916aed9}"
+# Advanced to 3232375 for the operator-directed F4b measurement closure: production-seam policy
+# evidence, transcript-independent corpus truth with direct human audit, activity-aware evaluation,
+# and measured concurrent portal fetches. Its feature branch was cut from this exact keeper main.
+expected_main="${RALPH_MERGE_MAIN_BEFORE:-32323755f59374ff38c9c9126b274882d81029a9}"
 merge_dry_run="${RALPH_MERGE_DRY_RUN:-0}"
 [[ "$(git branch --show-current)" == "$expected_feature" ]] || {
   echo "ERROR: keeper merge must launch from $expected_feature" >&2

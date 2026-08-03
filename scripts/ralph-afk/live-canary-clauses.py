@@ -953,13 +953,23 @@ def main():
                 f"{speaker['reference_seconds']:.2f}s reference speech "
                 f"(coverage {100.0 * coverage:.2f}%, "
                 f"{speaker['hypothesis_segments']} hypothesis segments, "
-                f"{speaker['hypothesis_speaker_count']} labels); "
+                f"{speaker['hypothesis_speaker_count']} labels, "
+                f"{speaker['canonical_speaker_count']} canonicals); "
                 f"two-sided mapping={two_sided}"
             )
             (green if ok else red).append(verdict)
             print(f"   {verdict}  {'GREEN' if ok else 'RED'}")
             print(f"   mapping={speaker['speaker_mapping']}")
             print(f"   speaker correctness={per_speaker}")
+            print(
+                "   speaker activity "
+                f"precision={100.0 * speaker['speaker_activity_precision']:.2f}% "
+                f"recall={100.0 * speaker['speaker_activity_recall']:.2f}%; "
+                f"DER={100.0 * speaker['diarization_error_rate']:.2f}% "
+                f"(miss={speaker['missed_speaker_seconds']:.2f}s, "
+                f"false-positive={speaker['false_positive_speaker_seconds']:.2f}s, "
+                f"confusion={speaker['confused_speaker_seconds']:.2f}s)"
+            )
             print(
                 f"   label-blind alignment={speaker['corpus_alignment_adjustment_sec']:+.2f}s "
                 f"within +/-{speaker['corpus_alignment_max_sec']:.2f}s at "

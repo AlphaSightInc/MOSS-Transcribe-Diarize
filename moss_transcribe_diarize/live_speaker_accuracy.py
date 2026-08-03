@@ -24,7 +24,7 @@ TRANSCRIPT_SEGMENT = re.compile(
 )
 
 
-class Segment(NamedTuple):
+class TranscriptSegment(NamedTuple):
     start: float
     end: float
     speaker: str
@@ -34,18 +34,56 @@ class Segment(NamedTuple):
     def duration(self) -> float:
         return self.end - self.start
 
+
+class SpeakerActivityInterval(NamedTuple):
+    """A speaker-labelled activity interval, independent of transcript text."""
+
+    start: float
+    end: float
+    speaker: str
+
+    @property
+    def duration(self) -> float:
+        return self.end - self.start
+
+
+# Private compatibility name for the original transcript parser.
+Segment = TranscriptSegment
+
 CORPUS_ENV = "corpus.env"
 REFERENCE_JSONL = "speaker-reference.jsonl"
 FINAL_SNAPSHOT_JSON = "speaker-final.json"
 
 
 def load_reference_jsonl(path: str | Path) -> tuple[Segment, ...]:
+    """Load transcript segments, using independent v2 transcript timing when present."""
+
+    records = _load_reference_records(path)
+    return tuple(
+        _reference_segment(record, line_number)
+        for line_number, record in enumerate(records, start=1)
+    )
+
+
+def load_reference_speaker_activity_jsonl(
+    path: str | Path,
+) -> tuple[SpeakerActivityInterval, ...]:
+    """Load speaker activity without collapsing it to lexical transcript timing."""
+
+    records = _load_reference_records(path)
+    return tuple(
+        _reference_activity(record, line_number)
+        for line_number, record in enumerate(records, start=1)
+    )
+
+
+def _load_reference_records(path: str | Path) -> list[dict[str, Any]]:
     source = Path(path)
     try:
         lines = source.read_text(encoding="utf-8").splitlines()
     except OSError as exc:
         raise ValueError(f"reference is unreadable: {source}") from exc
-    segments = []
+    records = []
     for line_number, line in enumerate(lines, start=1):
         if not line.strip():
             continue
@@ -53,10 +91,12 @@ def load_reference_jsonl(path: str | Path) -> tuple[Segment, ...]:
             record = json.loads(line)
         except json.JSONDecodeError as exc:
             raise ValueError(f"reference record {line_number} is not valid JSONL") from exc
-        segments.append(_reference_segment(record, line_number))
-    if not segments:
+        if not isinstance(record, dict):
+            raise ValueError(f"reference record {line_number} must be an object")
+        records.append(record)
+    if not records:
         raise ValueError("reference must contain at least one segment")
-    return tuple(segments)
+    return records
 
 
 def hypothesis_from_live_snapshot(
@@ -109,6 +149,22 @@ def hypothesis_from_live_snapshot(
     return tuple(hypothesis)
 
 
+def speaker_activity_from_live_snapshot(
+    payload: Any,
+    *,
+    corpus_start_sample: int,
+    corpus_duration_sec: float,
+) -> tuple[SpeakerActivityInterval, ...]:
+    transcript = hypothesis_from_live_snapshot(
+        payload,
+        corpus_start_sample=corpus_start_sample,
+        corpus_duration_sec=corpus_duration_sec,
+    )
+    return tuple(
+        SpeakerActivityInterval(item.start, item.end, item.speaker) for item in transcript
+    )
+
+
 def score_live_speaker_accuracy(
     reference: tuple[Segment, ...] | list[Segment],
     hypothesis: tuple[Segment, ...] | list[Segment],
@@ -124,6 +180,7 @@ def score_live_speaker_accuracy(
             if overlap > 0.0:
                 weights[(ref.speaker, hyp.speaker)] += overlap
     mapping, matched_weight = _maximum_weight_assignment(ref_speakers, hyp_speakers, weights)
+    activity = _speaker_activity_metrics(reference, hypothesis, mapping)
     reference_seconds_by_speaker = {
         speaker: sum(segment.duration for segment in reference if segment.speaker == speaker)
         for speaker in ref_speakers
@@ -157,6 +214,7 @@ def score_live_speaker_accuracy(
             )
             for speaker in ref_speakers
         },
+        **activity,
     }
 
 
@@ -189,9 +247,10 @@ def evaluate_live_speaker_evidence(evidence_dir: str | Path) -> dict[str, Any]:
             "corpus reference sha256 mismatch: "
             f"actual {reference_hash}, expected {metadata['CORPUS_REFERENCE_SHA256']}"
         )
-    reference = load_reference_jsonl(reference_path)
+    reference_transcript = load_reference_jsonl(reference_path)
+    reference = load_reference_speaker_activity_jsonl(reference_path)
     expected_segments = _positive_int(metadata["CORPUS_REFERENCE_SEGMENTS"], "reference segments")
-    if len(reference) != expected_segments:
+    if len(reference_transcript) != expected_segments or len(reference) != expected_segments:
         raise ValueError(
             f"corpus reference segment count mismatch: actual {len(reference)}, "
             f"expected {expected_segments}"
@@ -202,9 +261,19 @@ def evaluate_live_speaker_evidence(evidence_dir: str | Path) -> dict[str, Any]:
         raise ValueError(f"final live snapshot is unreadable: {snapshot_path}") from exc
     except json.JSONDecodeError as exc:
         raise ValueError("final live snapshot is not valid JSON") from exc
+    identity_snapshot = snapshot.get("snapshot", {}).get("session", {}).get(
+        "identity_snapshot", {}
+    )
+    canonical_speakers = (
+        identity_snapshot.get("canonical_speakers", [])
+        if isinstance(identity_snapshot, dict)
+        else []
+    )
+    if not isinstance(canonical_speakers, list):
+        canonical_speakers = []
     start_sample = _non_negative_int(metadata["CORPUS_START_SAMPLE"], "corpus start sample")
     duration = _positive_float(metadata["CORPUS_DURATION_SEC"], "corpus duration")
-    unaligned_hypothesis = hypothesis_from_live_snapshot(
+    unaligned_hypothesis = speaker_activity_from_live_snapshot(
         snapshot,
         corpus_start_sample=start_sample,
         corpus_duration_sec=duration,
@@ -223,6 +292,7 @@ def evaluate_live_speaker_evidence(evidence_dir: str | Path) -> dict[str, Any]:
         "reference_sha256": reference_hash,
         "reference_segments": len(reference),
         "hypothesis_segments": len(hypothesis),
+        "canonical_speaker_count": len(canonical_speakers),
         "corpus_start_sample": start_sample,
         "aligned_corpus_start_sample": start_sample + alignment_samples,
         "corpus_alignment_adjustment_sec": _round_signed_seconds(
@@ -254,7 +324,7 @@ def _coverage_alignment(
     step_samples = int(round(CORPUS_ALIGNMENT_STEP_SEC * LIVE_SAMPLE_RATE))
     max_samples = int(round(CORPUS_ALIGNMENT_MAX_SEC * LIVE_SAMPLE_RATE))
     best_samples = 0
-    best_hypothesis = hypothesis_from_live_snapshot(
+    best_hypothesis = speaker_activity_from_live_snapshot(
         snapshot,
         corpus_start_sample=declared_start_sample,
         corpus_duration_sec=corpus_duration_sec,
@@ -263,7 +333,7 @@ def _coverage_alignment(
     for adjustment in range(-max_samples, max_samples + 1, step_samples):
         if adjustment == 0 or declared_start_sample + adjustment < 0:
             continue
-        candidate = hypothesis_from_live_snapshot(
+        candidate = speaker_activity_from_live_snapshot(
             snapshot,
             corpus_start_sample=declared_start_sample + adjustment,
             corpus_duration_sec=corpus_duration_sec,
@@ -286,6 +356,19 @@ def _covered_reference_seconds(reference, hypothesis) -> float:
 def _reference_segment(record: Any, line_number: int) -> Segment:
     if not isinstance(record, dict):
         raise ValueError(f"reference record {line_number} must be an object")
+    if record.get("schema") == "moss-speaker-reference.v2":
+        activity = record.get("speaker_activity")
+        transcript = record.get("transcript")
+        if not isinstance(activity, dict) or not isinstance(transcript, dict):
+            raise ValueError(
+                f"reference record {line_number} v2 activity and transcript must be objects"
+            )
+        record = {
+            "start": transcript.get("start", activity.get("start")),
+            "end": transcript.get("end", activity.get("end")),
+            "speaker": activity.get("speaker"),
+            "text": transcript.get("text"),
+        }
     start = _required_number(record, "start", line_number)
     end = _required_number(record, "end", line_number)
     if end <= start:
@@ -293,6 +376,25 @@ def _reference_segment(record: Any, line_number: int) -> Segment:
     speaker = _required_text(record, "speaker", line_number)
     text = _required_text(record, "text", line_number)
     return Segment(start=start, end=end, speaker=speaker, text=text)
+
+
+def _reference_activity(record: Any, line_number: int) -> SpeakerActivityInterval:
+    if not isinstance(record, dict):
+        raise ValueError(f"reference record {line_number} must be an object")
+    if record.get("schema") == "moss-speaker-reference.v2":
+        activity = record.get("speaker_activity")
+        if not isinstance(activity, dict):
+            raise ValueError(f"reference record {line_number} v2 activity must be an object")
+        record = activity
+    start = _required_number(record, "start", line_number)
+    end = _required_number(record, "end", line_number)
+    if end <= start:
+        raise ValueError(f"reference record {line_number} end must be greater than start")
+    return SpeakerActivityInterval(
+        start=start,
+        end=end,
+        speaker=_required_text(record, "speaker", line_number),
+    )
 
 
 def _span_segments(transcript: str, *, sample_count: int):
@@ -370,6 +472,119 @@ def _reference_overlap_seconds(reference, hypothesis):
             covered += current_end - current_start
             current_start, current_end = start, end
     return covered + current_end - current_start
+
+
+def _speaker_activity_metrics(reference, hypothesis, mapping):
+    reference_union = _union_intervals(reference)
+    hypothesis_union = _union_intervals(hypothesis)
+    reference_activity_seconds = sum(end - start for start, end in reference_union)
+    hypothesis_activity_seconds = sum(end - start for start, end in hypothesis_union)
+    true_positive_activity_seconds = _interval_intersection_seconds(
+        reference_union, hypothesis_union
+    )
+    false_positive_activity_seconds = max(
+        0.0, hypothesis_activity_seconds - true_positive_activity_seconds
+    )
+    missed_activity_seconds = max(
+        0.0, reference_activity_seconds - true_positive_activity_seconds
+    )
+
+    inverse_mapping = {
+        hypothesis_speaker: reference_speaker
+        for reference_speaker, hypothesis_speaker in mapping.items()
+        if not hypothesis_speaker.startswith("<HYP_PAD_")
+    }
+    boundaries = sorted(
+        {
+            point
+            for interval in (*reference, *hypothesis)
+            for point in (interval.start, interval.end)
+        }
+    )
+    missed_speaker_seconds = 0.0
+    false_positive_speaker_seconds = 0.0
+    confused_speaker_seconds = 0.0
+    reference_speaker_seconds = 0.0
+    for start, end in zip(boundaries, boundaries[1:]):
+        if end <= start:
+            continue
+        midpoint = (start + end) / 2.0
+        reference_active = {
+            interval.speaker
+            for interval in reference
+            if interval.start <= midpoint < interval.end
+        }
+        hypothesis_active = {
+            interval.speaker
+            for interval in hypothesis
+            if interval.start <= midpoint < interval.end
+        }
+        width = end - start
+        reference_count = len(reference_active)
+        hypothesis_count = len(hypothesis_active)
+        mapped_active = {
+            inverse_mapping[label] for label in hypothesis_active if label in inverse_mapping
+        }
+        correct_count = len(reference_active & mapped_active)
+        matched_count = min(reference_count, hypothesis_count)
+        reference_speaker_seconds += reference_count * width
+        missed_speaker_seconds += max(0, reference_count - hypothesis_count) * width
+        false_positive_speaker_seconds += max(0, hypothesis_count - reference_count) * width
+        confused_speaker_seconds += max(0, matched_count - correct_count) * width
+    diarization_errors = (
+        missed_speaker_seconds
+        + false_positive_speaker_seconds
+        + confused_speaker_seconds
+    )
+    return {
+        "speaker_activity_precision": _round_metric(
+            _ratio(true_positive_activity_seconds, hypothesis_activity_seconds)
+        ),
+        "speaker_activity_recall": _round_metric(
+            _ratio(true_positive_activity_seconds, reference_activity_seconds)
+        ),
+        "reference_activity_seconds": _round_seconds(reference_activity_seconds),
+        "hypothesis_activity_seconds": _round_seconds(hypothesis_activity_seconds),
+        "true_positive_activity_seconds": _round_seconds(true_positive_activity_seconds),
+        "false_positive_activity_seconds": _round_seconds(false_positive_activity_seconds),
+        "missed_activity_seconds": _round_seconds(missed_activity_seconds),
+        "false_positive_speaker_seconds": _round_seconds(false_positive_speaker_seconds),
+        "missed_speaker_seconds": _round_seconds(missed_speaker_seconds),
+        "confused_speaker_seconds": _round_seconds(confused_speaker_seconds),
+        "diarization_error_rate": _round_metric(
+            _ratio(diarization_errors, reference_speaker_seconds)
+        ),
+    }
+
+
+def _union_intervals(intervals):
+    ordered = sorted(
+        ((interval.start, interval.end) for interval in intervals if interval.end > interval.start)
+    )
+    if not ordered:
+        return []
+    merged = [list(ordered[0])]
+    for start, end in ordered[1:]:
+        if start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return [(start, end) for start, end in merged]
+
+
+def _interval_intersection_seconds(left, right):
+    total = 0.0
+    left_index = 0
+    right_index = 0
+    while left_index < len(left) and right_index < len(right):
+        left_start, left_end = left[left_index]
+        right_start, right_end = right[right_index]
+        total += max(0.0, min(left_end, right_end) - max(left_start, right_start))
+        if left_end <= right_end:
+            left_index += 1
+        else:
+            right_index += 1
+    return total
 
 
 def _ratio(numerator, denominator):
@@ -467,8 +682,11 @@ def _positive_float(value: str, label: str) -> float:
 
 
 __all__ = [
+    "SpeakerActivityInterval",
+    "TranscriptSegment",
     "evaluate_live_speaker_evidence",
     "hypothesis_from_live_snapshot",
     "load_reference_jsonl",
     "score_live_speaker_accuracy",
+    "speaker_activity_from_live_snapshot",
 ]

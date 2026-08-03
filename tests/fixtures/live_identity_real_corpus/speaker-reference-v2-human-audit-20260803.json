@@ -1,0 +1,127 @@
+{
+  "schema": "moss-speaker-reference-human-audit.v1",
+  "status": "accepted",
+  "audit_date": "2026-08-03",
+  "audio_sha256": "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb",
+  "v1_reference_sha256": "27c9b96e86cce3be86a3ce06dd64c1710e2c94e72a01c30339e953db94b8ebbe",
+  "candidate_reference_sha256": "7c3020b89326a933dd011cbbd8c8b398b6a5e0aea51a42458d716cd2867565f8",
+  "acoustic_evidence_sha256": "367b474cf8c6f9da3f8dd28dbd47961f9c34f2d9060497e9cdd7051205531896",
+  "primary_basis": {
+    "method": "direct human listen",
+    "operator": "corpus operator",
+    "range_start": 162.0,
+    "range_end": 163.4,
+    "verdict": "Audible lexical transcript is exactly: Oh, you're giving away the end. There is no Woo hoo hoo."
+  },
+  "evidence_basis": [
+    "direct operator listen at 162.0-163.4 (primary)",
+    "waveform energy audit",
+    "YouTube captions",
+    "independent MOSS ASR",
+    "Whisper base",
+    "Whisper small",
+    "Acquired site transcript"
+  ],
+  "decisions": [
+    {
+      "range_id": "R1",
+      "start": 11.565,
+      "end": 14.587,
+      "disposition": "PRESENT",
+      "record_numbers": [4],
+      "line_indices": [4]
+    },
+    {
+      "range_id": "R2",
+      "start": 101.404,
+      "end": 104.484,
+      "disposition": "PRESENT",
+      "record_numbers": [12],
+      "line_indices": [12]
+    },
+    {
+      "range_id": "R3",
+      "start": 121.546,
+      "end": 124.326,
+      "disposition": "PRESENT",
+      "record_numbers": [15, 16],
+      "line_indices": [15, 16]
+    },
+    {
+      "range_id": "R4",
+      "start": 161.8,
+      "end": 163.410711,
+      "disposition": "EDIT",
+      "record_numbers": [23],
+      "line_indices": [23],
+      "candidate_text": "Woo hoo hoo. Oh, you're giving away the end.",
+      "post_audit_text": "Oh, you're giving away the end.",
+      "speaker": "David",
+      "speaker_activity": {
+        "start": 161.8,
+        "end": 163.410711
+      },
+      "transcript_activity": {
+        "start": 162.4,
+        "end": 163.410711
+      },
+      "nonlexical_activity": {
+        "start": 161.8,
+        "end": 162.4,
+        "kind": "uncertain_prelexical_vocalization",
+        "confirmed_lexical_text": null
+      },
+      "evidence": {
+        "primary": {
+          "method": "direct human listen",
+          "range_start": 162.0,
+          "range_end": 163.4,
+          "confirmed_lexical_text": "Oh, you're giving away the end.",
+          "rejected_lexical_text": "Woo hoo hoo."
+        },
+        "corroborating_only": [
+          "YouTube captions",
+          "independent MOSS ASR",
+          "Whisper base",
+          "Whisper small",
+          "waveform energy profile"
+        ],
+        "transcript_sources_omitting_candidate_prefix": [
+          "YouTube captions",
+          "independent MOSS ASR",
+          "Whisper base",
+          "Whisper small"
+        ],
+        "transcript_source_including_candidate_prefix": "Acquired site transcript",
+        "waveform": {
+          "silence_start": 161.6,
+          "silence_end": 161.8,
+          "silence_rms_approx": 90,
+          "burst_start": 161.8,
+          "burst_end": 162.4,
+          "burst_rms_range_approx": [973, 2785],
+          "confirmed_speech_start": 162.4,
+          "confirmed_speech_rms_min_approx": 4123
+        },
+        "candidate_token_f1": 0.714,
+        "post_audit_token_f1_expected": 0.909
+      }
+    },
+    {
+      "range_id": "R5",
+      "start": 237.637,
+      "end": 248.877,
+      "disposition": "PRESENT",
+      "record_numbers": [33, 34, 35],
+      "line_indices": [34, 35, 36]
+    },
+    {
+      "range_id": "R6",
+      "start": 287.279,
+      "end": 296.48,
+      "disposition": "PRESENT",
+      "record_numbers": [45],
+      "line_indices": [49]
+    }
+  ]
+}
