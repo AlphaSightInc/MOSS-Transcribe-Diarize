@@ -1207,3 +1207,22 @@ granularity is refined accordingly: the already-accepted dev/validation record i
 committed first, so the subsequent atomic candidate-config freeze is an independently
 auditable commit of its own. Candidate, threshold, and implementation bytes remain
 unchanged between acceptance and freeze.
+
+### L2 Stage 0 A5 candidate freeze (`l2-stage0`, 2026-08-04)
+
+**VERDICT: CANDIDATE FROZEN.** Under delegated supervisor authorization, the
+candidate is immutably fixed as
+`energy-vad-overlap-wespeaker-joint-span-rescue-v4`. `candidate-config.json`,
+SHA-256 `0f9fc2b0d23df377e3b04432e50dd8b5f19d53793682f14396270b3d0bf669b9`,
+pins family spec `280041b25865c0ce912ab3d05afdf8636561296723832deadeb6e328ea7b7a0f`,
+candidate implementation `fbed07c2a06efee9f1efab24000ae3e7c7f083761fa21b5ab544a7afce538467`,
+runner `dfc481215e1541def902764b13e199783d7b62738d3e205197ccd52f122aa828`,
+and dev evidence manifest
+`8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34`.
+All four threshold/config sections are semantic-byte-equal to the frozen family
+spec; `hard_cap_samples` remains `40000`.
+
+The freeze source is accepted Phase-1 commit
+`a16c6d811031cac826878200256af0b69224add8`. No threshold, family,
+implementation, or runner change is permitted after this freeze regardless of the
+single holdout outcome. Holdout remained unopened while this commit was prepared.
