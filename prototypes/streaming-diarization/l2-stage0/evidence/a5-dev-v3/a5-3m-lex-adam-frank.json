@@ -1,0 +1,2274 @@
+{
+  "arms": {
+    "l1_control": {
+      "arm": "l1_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0004",
+        "speaker-0003",
+        "speaker-0004",
+        "speaker-0003",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        null,
+        null,
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 4.5,
+        "covered_reference_seconds": 177.5,
+        "diarization_error_rate": 0.038889,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 177.5,
+        "hypothesis_seconds": 177.5,
+        "hypothesis_speaker_count": 4,
+        "matched_speaker_seconds": 173.0,
+        "missed_activity_seconds": 2.5,
+        "missed_speaker_seconds": 2.5,
+        "reference_activity_seconds": 180.0,
+        "reference_coverage": 0.986111,
+        "reference_seconds": 180.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.961111,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 0.986111,
+        "speaker_correctness": {
+          "Adam Frank": 0.973684,
+          "Lex Fridman": 0.925532
+        },
+        "speaker_mapping": {
+          "Adam Frank": "speaker-0001",
+          "Lex Fridman": "speaker-0003"
+        },
+        "true_positive_activity_seconds": 177.5,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 72,
+          "swept_units": 76
+        },
+        "trace": {
+          "arm": "l1",
+          "status": "production_l1_no_additional_revision"
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0004",
+          "speaker-0003",
+          "speaker-0004",
+          "speaker-0003",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          null,
+          null,
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 72,
+          "swept_units": 76
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 2.5,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 0.0,
+        "units": [
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 1.5,
+            "expected_via_immutable_l1_mapping": "speaker-0001",
+            "l1_speaker": null,
+            "local_speaker": "S01",
+            "recovered": false,
+            "span_id": 66,
+            "unit_index": 69
+          },
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 1.0,
+            "expected_via_immutable_l1_mapping": "speaker-0003",
+            "l1_speaker": null,
+            "local_speaker": "S02",
+            "recovered": false,
+            "span_id": 66,
+            "unit_index": 70
+          }
+        ]
+      }
+    },
+    "ledger_only_control": {
+      "arm": "ledger_only_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0004",
+        "speaker-0003",
+        "speaker-0004",
+        "speaker-0003",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0001",
+        "speaker-0003",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 4.5,
+        "covered_reference_seconds": 180.0,
+        "diarization_error_rate": 0.025,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 180.0,
+        "hypothesis_seconds": 180.0,
+        "hypothesis_speaker_count": 4,
+        "matched_speaker_seconds": 175.5,
+        "missed_activity_seconds": 0.0,
+        "missed_speaker_seconds": 0.0,
+        "reference_activity_seconds": 180.0,
+        "reference_coverage": 1.0,
+        "reference_seconds": 180.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.975,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 1.0,
+        "speaker_correctness": {
+          "Adam Frank": 0.984962,
+          "Lex Fridman": 0.946809
+        },
+        "speaker_mapping": {
+          "Adam Frank": "speaker-0001",
+          "Lex Fridman": "speaker-0003"
+        },
+        "true_positive_activity_seconds": 180.0,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.013889,
+        "correction_evidence": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0001",
+              "local_speaker": "S01",
+              "span_id": 66
+            },
+            "changed_duration_fraction": 0.013889,
+            "duration_seconds": 1.5,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.405276,
+            "score_delta": 0.405276
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S02",
+              "span_id": 66
+            },
+            "changed_duration_fraction": 0.013889,
+            "duration_seconds": 1.0,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.554404,
+            "score_delta": 0.554404
+          }
+        ],
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0001",
+              "local_speaker": "S01",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.405276,
+              "span_id": 66
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S02",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.554404,
+              "span_id": 66
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 72,
+          "swept_units": 76
+        },
+        "trace": {
+          "accepted_correction_count": 2,
+          "all_or_nothing_budget_pass": true,
+          "all_or_nothing_proposed_fraction": 0.013889,
+          "arm": "ledger_only",
+          "budget_selected_count": 2,
+          "candidate_proposal_count": 2,
+          "changed_duration_fraction": 0.013889,
+          "changed_duration_seconds": 2.5,
+          "cluster_count": 4,
+          "cluster_evidence": {
+            "1": {
+              "margin": 0.7438913290436329,
+              "score": 0.9562591448591862
+            },
+            "2": {
+              "margin": 0.7899786080407398,
+              "score": 0.9568463720533018
+            },
+            "3": {
+              "margin": 0.5969159186753205,
+              "score": 0.8288267640911121
+            },
+            "4": {
+              "margin": 0.7796242754316103,
+              "score": 1.0
+            }
+          },
+          "cluster_mapping": {
+            "1": "speaker-0003",
+            "2": "speaker-0001",
+            "3": "speaker-0004",
+            "4": "speaker-0002"
+          },
+          "collision_spans_rejected": [],
+          "runtime_visible_canonical_count": 4
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0004",
+          "speaker-0003",
+          "speaker-0004",
+          "speaker-0003",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0001",
+          "speaker-0003",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 1,
+          "revised_units": 2,
+          "version": 1
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0001",
+              "local_speaker": "S01",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.405276,
+              "span_id": 66
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S02",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.554404,
+              "span_id": 66
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 72,
+          "swept_units": 76
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 2.5,
+        "recovered_seconds": 2.5,
+        "recovery_fraction": 1.0,
+        "units": [
+          {
+            "candidate_speaker": "speaker-0001",
+            "category": "weak_vector",
+            "duration_seconds": 1.5,
+            "expected_via_immutable_l1_mapping": "speaker-0001",
+            "l1_speaker": null,
+            "local_speaker": "S01",
+            "recovered": true,
+            "span_id": 66,
+            "unit_index": 69
+          },
+          {
+            "candidate_speaker": "speaker-0003",
+            "category": "weak_vector",
+            "duration_seconds": 1.0,
+            "expected_via_immutable_l1_mapping": "speaker-0003",
+            "l1_speaker": null,
+            "local_speaker": "S02",
+            "recovered": true,
+            "span_id": 66,
+            "unit_index": 70
+          }
+        ]
+      }
+    },
+    "tape_candidate": {
+      "arm": "tape_candidate",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0004",
+        "speaker-0003",
+        "speaker-0004",
+        "speaker-0003",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0001",
+        null,
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 4.5,
+        "covered_reference_seconds": 179.0,
+        "diarization_error_rate": 0.030556,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 179.0,
+        "hypothesis_seconds": 179.0,
+        "hypothesis_speaker_count": 4,
+        "matched_speaker_seconds": 174.5,
+        "missed_activity_seconds": 1.0,
+        "missed_speaker_seconds": 1.0,
+        "reference_activity_seconds": 180.0,
+        "reference_coverage": 0.994444,
+        "reference_seconds": 180.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.969444,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 0.994444,
+        "speaker_correctness": {
+          "Adam Frank": 0.984962,
+          "Lex Fridman": 0.925532
+        },
+        "speaker_mapping": {
+          "Adam Frank": "speaker-0001",
+          "Lex Fridman": "speaker-0003"
+        },
+        "true_positive_activity_seconds": 179.0,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.008333,
+        "correction_evidence": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0001",
+              "local_speaker": "S01",
+              "span_id": 66
+            },
+            "changed_duration_fraction": 0.008333,
+            "duration_seconds": 1.5,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.853458,
+            "score_delta": 0.853458
+          }
+        ],
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0001",
+              "local_speaker": "S01",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.853458,
+              "span_id": 66
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 72,
+          "swept_units": 76
+        },
+        "trace": {
+          "accepted_correction_count": 1,
+          "arm": "tape_span_local_weak_rescue",
+          "budget_selected_count": 1,
+          "candidate_proposal_count": 1,
+          "changed_duration_fraction": 0.008333,
+          "changed_duration_seconds": 1.5,
+          "collision_spans_rejected": [],
+          "unit_trace": [
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 0
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 1
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 2
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 3
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 4
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 5
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 6
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 7
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 8
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 9
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 10
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 11
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 12
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 13
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 14
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 15
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 16
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 17
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 18
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 19
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 20
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 21
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 22
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 23
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 24
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 25
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 26
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 27
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 28
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 29
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 30
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 31
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 32
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 33
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 34
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 35
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 36
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 37
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 38
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 39
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 40
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 41
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 42
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 43
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 44
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 45
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 46
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 47
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 48
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 49
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 50
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 51
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 52
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 53
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 54
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 55
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 56
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 57
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 58
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 59
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 60
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 61
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 62
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 63
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 64
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 65
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 66
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 67
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 68
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "score_delta": 0.853458,
+              "status": "proposed",
+              "unit_index": 69,
+              "vote_fraction": 1.0,
+              "vote_margin": 1.0
+            },
+            {
+              "status": "no_span_local_vote",
+              "unit_index": 70
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 71
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 72
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 73
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 74
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 75
+            }
+          ],
+          "vad_region_count": 78,
+          "vad_regions": [
+            [
+              0.0,
+              0.5
+            ],
+            [
+              0.86,
+              1.68
+            ],
+            [
+              1.96,
+              4.02
+            ],
+            [
+              4.36,
+              7.18
+            ],
+            [
+              7.46,
+              8.62
+            ],
+            [
+              9.08,
+              9.44
+            ],
+            [
+              9.94,
+              10.24
+            ],
+            [
+              10.68,
+              12.46
+            ],
+            [
+              12.74,
+              14.6
+            ],
+            [
+              15.22,
+              17.14
+            ],
+            [
+              17.52,
+              19.48
+            ],
+            [
+              20.02,
+              20.54
+            ],
+            [
+              22.02,
+              24.34
+            ],
+            [
+              24.82,
+              25.94
+            ],
+            [
+              26.36,
+              26.84
+            ],
+            [
+              27.26,
+              28.54
+            ],
+            [
+              29.46,
+              30.2
+            ],
+            [
+              30.6,
+              32.74
+            ],
+            [
+              33.98,
+              35.58
+            ],
+            [
+              36.08,
+              36.56
+            ],
+            [
+              36.82,
+              38.74
+            ],
+            [
+              39.28,
+              39.72
+            ],
+            [
+              40.18,
+              40.58
+            ],
+            [
+              41.28,
+              41.88
+            ],
+            [
+              43.88,
+              44.68
+            ],
+            [
+              44.96,
+              45.86
+            ],
+            [
+              46.56,
+              49.14
+            ],
+            [
+              49.64,
+              50.84
+            ],
+            [
+              51.1,
+              52.12
+            ],
+            [
+              52.66,
+              59.36
+            ],
+            [
+              59.7,
+              60.7
+            ],
+            [
+              61.04,
+              62.64
+            ],
+            [
+              63.48,
+              65.54
+            ],
+            [
+              66.04,
+              67.4
+            ],
+            [
+              67.78,
+              69.12
+            ],
+            [
+              69.48,
+              69.8
+            ],
+            [
+              70.06,
+              70.72
+            ],
+            [
+              70.94,
+              71.42
+            ],
+            [
+              71.96,
+              78.42
+            ],
+            [
+              78.8,
+              81.38
+            ],
+            [
+              81.98,
+              82.62
+            ],
+            [
+              83.2,
+              87.02
+            ],
+            [
+              87.36,
+              88.52
+            ],
+            [
+              89.48,
+              92.02
+            ],
+            [
+              92.24,
+              95.86
+            ],
+            [
+              96.32,
+              101.24
+            ],
+            [
+              101.58,
+              102.8
+            ],
+            [
+              103.06,
+              106.5
+            ],
+            [
+              106.94,
+              108.62
+            ],
+            [
+              109.12,
+              110.34
+            ],
+            [
+              111.56,
+              115.98
+            ],
+            [
+              116.38,
+              117.76
+            ],
+            [
+              118.22,
+              119.38
+            ],
+            [
+              119.66,
+              123.62
+            ],
+            [
+              123.84,
+              124.18
+            ],
+            [
+              124.6,
+              126.46
+            ],
+            [
+              126.68,
+              127.44
+            ],
+            [
+              128.08,
+              129.6
+            ],
+            [
+              129.84,
+              132.24
+            ],
+            [
+              132.66,
+              135.74
+            ],
+            [
+              135.96,
+              136.5
+            ],
+            [
+              137.04,
+              138.5
+            ],
+            [
+              138.96,
+              140.48
+            ],
+            [
+              140.78,
+              142.98
+            ],
+            [
+              143.32,
+              143.78
+            ],
+            [
+              144.28,
+              145.42
+            ],
+            [
+              147.12,
+              148.3
+            ],
+            [
+              148.92,
+              151.6
+            ],
+            [
+              152.24,
+              154.18
+            ],
+            [
+              154.76,
+              157.2
+            ],
+            [
+              157.5,
+              159.64
+            ],
+            [
+              160.06,
+              160.84
+            ],
+            [
+              161.1,
+              162.66
+            ],
+            [
+              163.3,
+              164.1
+            ],
+            [
+              164.4,
+              166.44
+            ],
+            [
+              166.74,
+              171.2
+            ],
+            [
+              171.66,
+              173.16
+            ],
+            [
+              173.62,
+              179.36
+            ]
+          ],
+          "window_count": 72,
+          "window_intervals": [
+            [
+              0.0,
+              0.5
+            ],
+            [
+              0.86,
+              1.68
+            ],
+            [
+              4.36,
+              6.86
+            ],
+            [
+              4.68,
+              7.18
+            ],
+            [
+              7.46,
+              8.62
+            ],
+            [
+              10.68,
+              12.46
+            ],
+            [
+              15.22,
+              17.14
+            ],
+            [
+              17.52,
+              19.48
+            ],
+            [
+              22.02,
+              24.34
+            ],
+            [
+              24.82,
+              25.94
+            ],
+            [
+              29.46,
+              30.2
+            ],
+            [
+              30.6,
+              32.74
+            ],
+            [
+              36.82,
+              38.74
+            ],
+            [
+              41.28,
+              41.88
+            ],
+            [
+              44.96,
+              45.86
+            ],
+            [
+              46.56,
+              49.06
+            ],
+            [
+              48.435,
+              49.14
+            ],
+            [
+              49.64,
+              50.84
+            ],
+            [
+              52.66,
+              55.16
+            ],
+            [
+              54.535,
+              57.035
+            ],
+            [
+              56.86,
+              59.36
+            ],
+            [
+              58.285,
+              59.36
+            ],
+            [
+              61.04,
+              62.64
+            ],
+            [
+              63.48,
+              65.54
+            ],
+            [
+              67.78,
+              69.12
+            ],
+            [
+              70.06,
+              70.72
+            ],
+            [
+              73.835,
+              76.335
+            ],
+            [
+              75.71,
+              78.21
+            ],
+            [
+              77.585,
+              78.42
+            ],
+            [
+              78.8,
+              81.3
+            ],
+            [
+              80.675,
+              81.38
+            ],
+            [
+              81.98,
+              82.62
+            ],
+            [
+              84.52,
+              87.02
+            ],
+            [
+              85.075,
+              87.02
+            ],
+            [
+              89.48,
+              91.98
+            ],
+            [
+              89.52,
+              92.02
+            ],
+            [
+              92.24,
+              94.74
+            ],
+            [
+              93.36,
+              95.86
+            ],
+            [
+              96.32,
+              98.82
+            ],
+            [
+              98.195,
+              100.695
+            ],
+            [
+              100.07,
+              101.24
+            ],
+            [
+              101.58,
+              102.8
+            ],
+            [
+              104.0,
+              106.5
+            ],
+            [
+              104.935,
+              106.5
+            ],
+            [
+              109.12,
+              110.34
+            ],
+            [
+              111.56,
+              114.06
+            ],
+            [
+              113.48,
+              115.98
+            ],
+            [
+              115.31,
+              115.98
+            ],
+            [
+              118.22,
+              119.38
+            ],
+            [
+              119.66,
+              122.16
+            ],
+            [
+              121.535,
+              123.62
+            ],
+            [
+              124.6,
+              126.46
+            ],
+            [
+              128.08,
+              129.6
+            ],
+            [
+              129.84,
+              132.24
+            ],
+            [
+              133.24,
+              135.74
+            ],
+            [
+              134.535,
+              135.74
+            ],
+            [
+              137.04,
+              138.5
+            ],
+            [
+              138.96,
+              140.48
+            ],
+            [
+              144.28,
+              145.42
+            ],
+            [
+              147.12,
+              148.3
+            ],
+            [
+              149.1,
+              151.6
+            ],
+            [
+              150.795,
+              151.6
+            ],
+            [
+              154.76,
+              157.2
+            ],
+            [
+              157.5,
+              159.64
+            ],
+            [
+              161.1,
+              162.66
+            ],
+            [
+              163.3,
+              164.1
+            ],
+            [
+              166.74,
+              169.24
+            ],
+            [
+              168.615,
+              171.115
+            ],
+            [
+              170.49,
+              171.2
+            ],
+            [
+              171.66,
+              173.16
+            ],
+            [
+              175.495,
+              177.995
+            ],
+            [
+              177.37,
+              179.36
+            ]
+          ],
+          "window_matches": [
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.45530791846959245,
+              "score": 0.6155532841738592,
+              "window_index": 0
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5240750019122007,
+              "score": 0.7509680969833183,
+              "window_index": 1
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7340276400980932,
+              "score": 0.8525437115408439,
+              "window_index": 2
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7287561997794065,
+              "score": 0.854111662246931,
+              "window_index": 3
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6514091510457432,
+              "score": 0.819997547345972,
+              "window_index": 4
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7018570467872463,
+              "score": 0.8572698846273085,
+              "window_index": 5
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6750127982985105,
+              "score": 0.8414739131056422,
+              "window_index": 6
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6815543963296623,
+              "score": 0.7992532786578949,
+              "window_index": 7
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6430338104059983,
+              "score": 0.8053861596991696,
+              "window_index": 8
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5437318931173443,
+              "score": 0.698437019792731,
+              "window_index": 9
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5093008088277733,
+              "score": 0.7470906913394078,
+              "window_index": 10
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.548331194921357,
+              "score": 0.8060686970658182,
+              "window_index": 11
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6801642270283936,
+              "score": 0.8462081837907471,
+              "window_index": 12
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.41183230765633017,
+              "score": 0.4703339890994037,
+              "window_index": 13
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.20935082529484136,
+              "score": 0.3877039281625052,
+              "window_index": 14
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5721703034612297,
+              "score": 0.7420811530307618,
+              "window_index": 15
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.4342109448838238,
+              "score": 0.5734323216256816,
+              "window_index": 16
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5498998350505968,
+              "score": 0.732134411174469,
+              "window_index": 17
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6326634715018943,
+              "score": 0.8209793112268318,
+              "window_index": 18
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.730962293211029,
+              "score": 0.7811208422646352,
+              "window_index": 19
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6161541573388837,
+              "score": 0.7424998972968244,
+              "window_index": 20
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.49581371960858667,
+              "score": 0.6852813463920322,
+              "window_index": 21
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5258767867367286,
+              "score": 0.7665728495731625,
+              "window_index": 22
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7031817553853673,
+              "score": 0.8478867658204228,
+              "window_index": 23
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.54327908158927,
+              "score": 0.7818146618855607,
+              "window_index": 24
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5441569229450122,
+              "score": 0.660718419084305,
+              "window_index": 25
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6301043877280064,
+              "score": 0.8122121453662484,
+              "window_index": 26
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6670557977715463,
+              "score": 0.8054350283736188,
+              "window_index": 27
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.4511108445706905,
+              "score": 0.6340413565399788,
+              "window_index": 28
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6775513152505268,
+              "score": 0.860085485332384,
+              "window_index": 29
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.4424490383037669,
+              "score": 0.6037351161012519,
+              "window_index": 30
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.43659537271211063,
+              "score": 0.4776127850901415,
+              "window_index": 31
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6777991841409692,
+              "score": 0.7993340692765328,
+              "window_index": 32
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6430385371157316,
+              "score": 0.7536050195667764,
+              "window_index": 33
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6310433815423968,
+              "score": 0.8167723873181358,
+              "window_index": 34
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6424416631991234,
+              "score": 0.8202472364517943,
+              "window_index": 35
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7381203067482571,
+              "score": 0.8025064985833557,
+              "window_index": 36
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.733306578964011,
+              "score": 0.8263662271303355,
+              "window_index": 37
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6555944316014609,
+              "score": 0.8164526365357843,
+              "window_index": 38
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6541908161574368,
+              "score": 0.8192322263020642,
+              "window_index": 39
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6547302514379753,
+              "score": 0.7740847795527432,
+              "window_index": 40
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6789629559142115,
+              "score": 0.7254502335498147,
+              "window_index": 41
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6584248504651286,
+              "score": 0.7897208338306989,
+              "window_index": 42
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5779648549120916,
+              "score": 0.7265548096140659,
+              "window_index": 43
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5712973324923082,
+              "score": 0.7212563055515147,
+              "window_index": 44
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7051680518886684,
+              "score": 0.793252872744586,
+              "window_index": 45
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.733742686237738,
+              "score": 0.7999928383160652,
+              "window_index": 46
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.4673194477185594,
+              "score": 0.59701404554516,
+              "window_index": 47
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5214338905146025,
+              "score": 0.7169438148501801,
+              "window_index": 48
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6981942952474168,
+              "score": 0.7817781899963216,
+              "window_index": 49
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7353800263229678,
+              "score": 0.7923774748686004,
+              "window_index": 50
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6824743675796741,
+              "score": 0.785300284098349,
+              "window_index": 51
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6268185264314833,
+              "score": 0.7337106427184745,
+              "window_index": 52
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6699119221762053,
+              "score": 0.8408459081986559,
+              "window_index": 53
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7596545155106253,
+              "score": 0.857451081189311,
+              "window_index": 54
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7002273785918891,
+              "score": 0.7887816544478151,
+              "window_index": 55
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.4818417790020395,
+              "score": 0.7198643186338494,
+              "window_index": 56
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6205487320608467,
+              "score": 0.7337836018919657,
+              "window_index": 57
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7037570051377638,
+              "score": 0.7602316419687896,
+              "window_index": 58
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.46579794891038784,
+              "score": 0.5362031484873424,
+              "window_index": 59
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5001982589224692,
+              "score": 0.6635534831240444,
+              "window_index": 60
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5350661478885463,
+              "score": 0.6167599152569272,
+              "window_index": 61
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5338510750376004,
+              "score": 0.7251356771188282,
+              "window_index": 62
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.4645952537900751,
+              "score": 0.6718558767696384,
+              "window_index": 63
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.4937962488648735,
+              "score": 0.6274746460540013,
+              "window_index": 64
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.40777883185368496,
+              "score": 0.4640452067615931,
+              "window_index": 65
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7421857337104966,
+              "score": 0.8534578883203356,
+              "window_index": 66
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6911902811796125,
+              "score": 0.8397587895416577,
+              "window_index": 67
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5459723935885525,
+              "score": 0.6400545840672907,
+              "window_index": 68
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6907606842053614,
+              "score": 0.7813908988680343,
+              "window_index": 69
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7158065545398667,
+              "score": 0.8285795341289008,
+              "window_index": 70
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.686275510771064,
+              "score": 0.8347942278315587,
+              "window_index": 71
+            }
+          ]
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0004",
+          "speaker-0003",
+          "speaker-0004",
+          "speaker-0003",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0001",
+          null,
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 1,
+          "revised_units": 1,
+          "version": 1
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0001",
+              "local_speaker": "S01",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.853458,
+              "span_id": 66
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 72,
+          "swept_units": 76
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 2.5,
+        "recovered_seconds": 1.5,
+        "recovery_fraction": 0.6,
+        "units": [
+          {
+            "candidate_speaker": "speaker-0001",
+            "category": "weak_vector",
+            "duration_seconds": 1.5,
+            "expected_via_immutable_l1_mapping": "speaker-0001",
+            "l1_speaker": null,
+            "local_speaker": "S01",
+            "recovered": true,
+            "span_id": 66,
+            "unit_index": 69
+          },
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 1.0,
+            "expected_via_immutable_l1_mapping": "speaker-0003",
+            "l1_speaker": null,
+            "local_speaker": "S02",
+            "recovered": false,
+            "span_id": 66,
+            "unit_index": 70
+          }
+        ]
+      }
+    }
+  },
+  "case_id": "3m-lex-adam-frank",
+  "frame": {
+    "audio_sha256": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
+    "planner": "production_endpoint_policy",
+    "reference_sha256": "650450979435c9f4389959465f87dbf37c78109bc925c24d67878cc9574bc9cc",
+    "span_count": 72,
+    "unit_count": 76,
+    "vector_cache_sha256": "9b78e22d9137b9d4003e44206b94528ad05ee402eac2d9fc0d62e5108d7e442c"
+  },
+  "l1_a2_semantic_sha256": "cd7cbff311d86f262dafd751b8f8bc3f2ebe35a53762bf89738e62870df38889",
+  "schema": "moss-l2-stage0-a5-case-result.v1",
+  "split": "validation"
+}

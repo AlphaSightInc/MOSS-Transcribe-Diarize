@@ -1,0 +1,7 @@
+test_budget_prioritizes_full_span_before_higher_score_tail (__main__.JointSpanCandidateTests.test_budget_prioritizes_full_span_before_higher_score_tail) ... ok
+test_joint_identity_prior_resolves_same_window_label_collision (__main__.JointSpanCandidateTests.test_joint_identity_prior_resolves_same_window_label_collision) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK

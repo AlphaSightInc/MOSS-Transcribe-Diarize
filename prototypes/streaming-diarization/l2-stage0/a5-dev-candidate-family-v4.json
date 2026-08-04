@@ -1,0 +1,111 @@
+{
+  "candidate_family": {
+    "canonical_prior_rule": "attributed L1 labels are immutable and never pooling keys; passing weak-unit vectors may prioritize identity only after independently confident overlapping tape speech evidence exists",
+    "change_evidence": {
+      "budget_order": [
+        "full_committed_span",
+        "active_at_span_start",
+        "mid_span_birth_or_tail"
+      ],
+      "canonical_min_margin": 0.1,
+      "canonical_min_score": 0.35,
+      "incumbent_improvement_margin": 0.1,
+      "joint_one_to_one_before_budget": true,
+      "max_changed_duration_fraction": 0.05,
+      "minimum_unit_cluster_vote_fraction": 0.5,
+      "minimum_unit_cluster_vote_margin": 0.2,
+      "one_to_one_within_span": true,
+      "weak_vector_unattributed_only": true
+    },
+    "energy_vad": {
+      "bridge_silence_seconds": 0.2,
+      "frame_seconds": 0.02,
+      "minimum_region_seconds": 0.3,
+      "noise_percentile": 20.0,
+      "noise_relative_threshold_db": 12.0,
+      "threshold_ceiling_dbfs": -30.0,
+      "threshold_floor_dbfs": -45.0
+    },
+    "family_id": "energy-vad-overlap-wespeaker-joint-span-rescue-v4",
+    "grouping": {
+      "cluster_distance_threshold": 0.3,
+      "identity_resolution": "per-span linear-sum one-to-one assignment over unused runtime-visible canonicals",
+      "kind": "independently confident windows pooled by committed unit overlap, then joint span assignment",
+      "uses_ahc": false
+    },
+    "iteration": 4,
+    "tape_windows": {
+      "hard_cap_samples": 40000,
+      "hop_seconds": 1.875,
+      "maximum_embedded_audio_ratio": 1.0,
+      "minimum_window_seconds": 0.5,
+      "window_seconds": 2.5
+    }
+  },
+  "comparison": {
+    "arms": [
+      "l1_control",
+      "ahc_rewrite_budget_05_ledger_only",
+      "energy_vad_overlap_wespeaker_joint_span_rescue"
+    ],
+    "ledger_only_control": {
+      "cluster_count": "runtime-visible final L1 canonical count",
+      "distance": "cosine",
+      "linkage": "average",
+      "mapping": "duration-weighted one-to-one conservative mapping at deployed score/margin",
+      "meeting_rewrite_budget_fraction": 0.05
+    },
+    "same_production_planned_frame": true
+  },
+  "development_validation_gates": {
+    "adversarial_padding_rejected": true,
+    "der_not_worse_on_any_case": true,
+    "false_positive_speaker_seconds_not_worse_on_any_case": true,
+    "minimum_recovery_fraction": 0.5,
+    "minimum_target_subset_gain_over_each_control_pp": 1.0,
+    "two_sided_mapping_preserved_where_l1_has_it": true,
+    "validation_case_max_regression_pp": 0.5
+  },
+  "holdout": {
+    "opened": false,
+    "procedure_current_sha256": "6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902",
+    "status": "SEALED"
+  },
+  "iteration_budget": {
+    "campaign_max": 10,
+    "family_iteration": 4,
+    "no_post_result_threshold_change_within_family": true,
+    "stop_after_this_family_if_any_gate_fails": true
+  },
+  "runtime_boundary": {
+    "candidate_accepts_only_runtime_units_ranged_pcm_and_injected_production_embedder": true,
+    "correction_unit": [
+      "span_id",
+      "local_speaker"
+    ],
+    "golden_or_reference_access": false,
+    "words_span_bounds_and_word_timings_mutable": false
+  },
+  "schema": "moss-l2-stage0-a5-dev-candidate-family.v1",
+  "target_error_subset": {
+    "case_ids": [
+      "1m-acquired-nfl",
+      "1m-acquired-rolex",
+      "1m-lex-bill-ackman",
+      "3m-acquired-jamie-dimon",
+      "3m-lex-adam-frank",
+      "5m-acquired-alphabet"
+    ],
+    "l1_unreachable_mislabeled_seconds": {
+      "1m-acquired-nfl": 4.86,
+      "1m-acquired-rolex": 0.685,
+      "1m-lex-bill-ackman": 1.0,
+      "3m-acquired-jamie-dimon": 1.071,
+      "3m-lex-adam-frank": 2.5,
+      "5m-acquired-alphabet": 14.738125,
+      "total": 24.854125
+    },
+    "recovery_denominator": "unchanged immutable v1 denominator and L1 scorer mapping",
+    "score": "duration-weighted speaker accuracy across the complete 700.05925 reference-speaker seconds of the six predeclared cases"
+  }
+}

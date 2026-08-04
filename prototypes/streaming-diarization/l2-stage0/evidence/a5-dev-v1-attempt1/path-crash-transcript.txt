@@ -1,0 +1,13 @@
+^DTraceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/run_candidates.py", line 898, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/run_candidates.py", line 865, in main
+    result = run_dev_validation(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/run_candidates.py", line 770, in run_dev_validation
+    cases.append({**case_result, "raw_path": path.relative_to(REPO).as_posix(), "raw_sha256": sha256(path)})
+                                             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/pathlib.py", line 682, in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+ValueError: 'prototypes/streaming-diarization/l2-stage0/evidence/a5-dev-v1-attempt1/cases/a5-1m-acquired-nfl.json' is not in the subpath of '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0'

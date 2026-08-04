@@ -1005,3 +1005,205 @@ retained-audio change occurred.
 Commit-granularity deviation: operator/supervisor authorized A4 completion as its
 own atomic commit before A5, continuing the independently testable/revertible
 granularity refinement of plan section 5.
+
+### L2 Stage 0 A5 candidate-family v1 preregistration (`l2-stage0`, 2026-08-03)
+
+Question: can tape-derived, runtime-only sliding voice evidence repair production L1's
+sub-floor/weak-vector misses while beating the frozen no-tape control without worsening
+any gated case?
+
+**PREREGISTERED BEFORE ANY CANDIDATE RUN.** Family iteration 1 is
+`energy-vad-overlap-wespeaker-ahc-v1`; the complete machine-readable thresholds and
+rules are `l2-stage0/a5-dev-candidate-family-v1.json`. The tape arm discovers speech
+with 20 ms energy frames, an adaptive `min(-30, max(-45, p20 + 12)) dBFS` threshold, bridges
+at most 0.2 s silence, and keeps regions at least 0.3 s. It embeds 2.5 s windows every
+1.875 s (minimum 0.5 s) using the production WeSpeaker frontend/model, with the
+40,000-sample hard cap unchanged and total embedded audio capped at 1.0x meeting
+duration. This pre-run correction binds the candidate to A4's measured embedding
+envelope; no candidate output existed under the superseded draft cadence.
+Average-linkage cosine clustering uses distance
+`0.30` (production merge similarity `0.70`). Cluster-to-canonical and correction
+gates remain deployed score `0.35`, margin `0.10`; unit overlap vote requires `0.50`
+support and `0.20` lead. Corrections require `0.10` improvement, one-to-one labels
+inside every span, and a meeting-wide changed-duration cap of 5%.
+
+The current canonical label is only a mapping prior; it is never the pooling or
+clustering key. Candidate code receives only committed runtime units, bounded/ranged
+PCM, and an injected production embedder. Reference/golden access is forbidden.
+Corrections contain only `(span_id, local_speaker, canonical_speaker)` plus evidence;
+words, span boundaries, and word timings cannot change.
+
+The frozen ledger-only control is the accepted diagnosis arm: cosine
+average-linkage with the runtime-visible final L1 canonical count, duration-weighted
+one-to-one conservative mapping at deployed score/margin, and all-or-nothing 5%
+meeting rewrite budget. Exactly three required arms run in the identical
+production-planned frame. One-person-per-lane is not part of this family.
+
+The target-error subset was derived only from sealed A2 L1 run1 outputs before any
+candidate result existed: all six dev/validation cases contain at least one L1-wrong
+sub-floor unit (no production vector) or weak-vector unit (vector exists, final L1
+label absent). Their per-case unreachable mislabeled seconds are `4.86`, `0.685`,
+`1.0`, `1.071`, `2.5`, and `14.738125`, total `24.854125`. Target-subset score is
+duration-weighted speaker accuracy over all `700.05925` reference-speaker seconds in
+those six complete cases; the tape arm must beat both controls by at least 1.0 pp.
+Recovery is separately measured only over the `24.854125` unreachable seconds and
+must reach 50%. All other A5 gates remain verbatim.
+
+Holdout is sealed. The current procedure bytes are SHA-256
+`6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902`;
+the earlier `3d745f92...` identifier in the latest ruling names a historical procedure
+revision, not the current A2-completion-pinned same-frame procedure. No holdout file
+will be read or repinned during dev/validation.
+
+### L2 Stage 0 A5 candidate-family v1 verdict and v2 preregistration (`l2-stage0`, 2026-08-03)
+
+**V1 VERDICT: FAIL; NOT FREEZEABLE.** Raw summary
+`evidence/a5-dev-v1/a5-dev-validation.json`, SHA-256
+`920e17183d8be45798e2bce55803d2a6ccd4e3db1ff584a75d4873123e3eb517`;
+transcript SHA-256
+`488718860edf7359e63ff64b4014cb6afd6eeb956a6f948b5c91d07d3c21f061`.
+The tape arm gained only `0.387208 pp` over L1, trailed the ledger control by
+`0.041327 pp`, and recovered `3.460688 / 24.854125 s` (`0.139240`). Lex Bill
+regressed `3.3333 pp`, so both the per-case accuracy and DER gates failed. Two-sided
+mapping and correction-evidence completeness passed. Holdout remained sealed.
+
+Family iteration 2 is preregistered before its run as
+`energy-vad-overlap-wespeaker-continuity-rescue-v2`. This is a policy-family change,
+not threshold tuning: every energy, window, score/margin, embedded-audio, and 5%
+budget value remains byte-for-byte the v1 value. V2 removes global AHC assignment
+from the tape arm. Each window independently matches the existing album references;
+temporally overlapping consecutive windows with the same confident match form
+continuity evidence. Only an L1-unattributed unit may receive a correction. Any
+already-attributed L1 unit is immutable, directly eliminating v1's unsafe Lex Bill
+rewrite mechanism. Unit vote, one-to-one publisher, correction evidence, target
+subset, three arms, and every acceptance gate remain unchanged. Full machine-readable
+spec: `l2-stage0/a5-dev-candidate-family-v2.json`.
+
+Pre-v2 instrumentation audit found that v1's evaluator accumulated every bounded
+40,000-sample PCM chunk in a tuple before VAD. Individual reads obeyed the hard cap,
+but the aggregate violated the no-whole-tape-in-memory rule. V1 was already a failed
+family and remains immutable historical evidence; this defect cannot turn that FAIL
+into a PASS. Before any v2 measurement, a red test reproduced tuple materialization,
+then the evaluator was changed to a lazy iterator whose observed chunk lengths are
+`40,000`, `40,000`, and `1` samples. Candidate policy and all preregistered v2
+thresholds remain unchanged.
+
+### L2 Stage 0 A5 candidate-family v2 verdict and v3 preregistration (`l2-stage0`, 2026-08-03)
+
+**V2 VERDICT: FAIL; NOT FREEZEABLE.** Raw summary
+`evidence/a5-dev-v2/a5-dev-validation.json`, SHA-256
+`ae27d525d101fce094729a1f3936d2cfc5683efb308f69d4fee519339185a569`;
+transcript SHA-256
+`2e9f744bc981749886de50f1d47f383a7d645e8cd22b5589617475485e64fdee`.
+The tape arm improved over L1 by `0.730898 pp` and over ledger-only by
+`0.302363 pp`, below both `1.0 pp` gates. It recovered
+`5.116750 / 24.854125 s` (`0.205871`), below 50%. Validation regression,
+two-sided mapping, and correction-evidence gates passed. FP/DER did not: the
+Alphabet hypothesis added `0.000029 s` false-positive activity, so the strict
+per-case no-worse gate correctly failed. No tolerance was changed. Holdout remained
+sealed.
+
+The v2 red-first evidence includes the intended missing continuity function and the
+whole-tape tuple reproduction. An accidental system-Python invocation stopped before
+the contract because NumPy was absent and is preserved separately as an environment
+mislaunch, not counted as red evidence. Project-venv green proofs cover 3/3 v2 tests,
+7/7 shared contracts, and a clean runtime-source audit.
+
+Family iteration 3 is preregistered before implementation or measurement as
+`energy-vad-overlap-wespeaker-span-local-weak-rescue-v3`. This is a bounded,
+material policy-family change, not threshold tuning. V3 removes v2's requirement
+for a two-window temporal continuity chain. It pools independently confident
+sliding windows only by overlap with the existing committed
+`(span_id, local_speaker)` unit; neither current nor proposed canonical labels form
+a pooling key. Only L1-unattributed units that already have a production weak-vector
+observation are eligible; sub-floor units and all attributed units are immutable.
+The eligible unit must receive the same-canonical overlap vote and pooled acoustic
+score/margin gates already preregistered in v1/v2. This isolates tape evidence to the
+`19.479751 s` weak-vector portion of the immutable target denominator and prevents
+the v2 rounded sub-floor boundary mechanism from adding speaker activity. Energy
+VAD, windows, embedded-audio budget, score/margin, vote, one-to-one, and 5% change
+budget values remain byte-for-byte unchanged. Machine-readable spec:
+`l2-stage0/a5-dev-candidate-family-v3.json`.
+
+### L2 Stage 0 A5 candidate-family v3 verdict and final v4 preregistration (`l2-stage0`, 2026-08-03)
+
+**V3 VERDICT: FAIL; NOT FREEZEABLE.** Raw summary
+`evidence/a5-dev-v3/a5-dev-validation.json`, SHA-256
+`03a6b53bd2eda57c6794e61b9b1b6547975244d3467bce882a230a426a3900f9`;
+transcript SHA-256
+`a2a48a85124acf7265c302f9e3810e5efe7b8af4843af5c4bc2417960f12650c`.
+V3 passed both comparison gates (`+1.534115 pp` over L1 and `+1.105580 pp`
+over ledger-only), validation regression, two-sided mapping, and correction evidence.
+It recovered `10.739750 / 24.854125 s` (`0.432111`), below 50%, and added
+`0.000034 s` Alphabet false-positive activity, so the strict FP/DER gate failed.
+No tolerance or v3 threshold changed; holdout remained sealed.
+
+Family iteration 4 is preregistered as the final bounded development attempt:
+`energy-vad-overlap-wespeaker-joint-span-rescue-v4`. If any dev/validation gate
+fails, A5 records BLOCKED and Campaign A stops; no fifth family will be created.
+V4 is a material constraint-model change, not scalar tuning. Independently matched
+tape windows still supply span-local speech/change evidence. For every span, eligible
+weak-vector unattributed units and currently unused album canonicals are solved
+jointly one-to-one before the meeting budget: a weak unit vector may act as the
+identity prior only when it independently passes the unchanged deployed score/margin;
+otherwise the unchanged pooled-window evidence supplies identity. Current canonical
+labels remain immutable and are never pooling keys.
+
+Budget ordering encodes causal observability before score: a unit covering its full
+committed span ranks before a unit already active at span start, which ranks before a
+mid-span birth/tail fragment. This is a categorical change-evidence ordering with no
+new numeric threshold; within a category the unchanged score ordering applies. It
+prevents rejected one-to-one collisions from consuming the 5% budget and favors
+evidence that does not require an unmodeled mid-span speaker-change inference. Every
+v1-v3 numeric value, correction unit, publisher, three-arm control, target subset,
+and gate remains unchanged. Machine-readable spec:
+`l2-stage0/a5-dev-candidate-family-v4.json`.
+
+### L2 Stage 0 A5 dev/validation freeze proposal (`l2-stage0`, 2026-08-03)
+
+Reproduce the final preregistered family run and verify the sealed record:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python l2-stage0/run_candidates.py --candidate-family l2-stage0/a5-dev-candidate-family-v4.json --evidence-dir l2-stage0/evidence/a5-dev-v4 --json-output l2-stage0/evidence/a5-dev-v4/a5-dev-validation.json --transcript-output l2-stage0/evidence/a5-dev-v4/a5-dev-validation.txt && cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && shasum -a 256 -c prototypes/streaming-diarization/l2-stage0/evidence/A5_DEV_EVIDENCE.sha256
+```
+
+**V4 VERDICT: DEV/VALIDATION PASS; READY TO FREEZE, NOT YET FROZEN.** The
+tape arm beats L1 by `1.860557 pp` and ledger-only by `1.432022 pp`; it recovers
+`13.025000 / 24.854125 s` (`0.524058`). Worst validation change is `0.0 pp`;
+all other validation cases improve. Every case has FP-speaker-seconds and DER delta
+`<= 0`; two-sided mapping, correction evidence, publisher immutability, source audit,
+and adversarial-padding controls pass. The final green set is 14/14 tests.
+
+Raw v4 summary JSON/transcript SHA-256:
+`2842f66eae64843d8aa13c9e65c1f95f20a803489613c355c2a07bb1a40c71d5` /
+`0b9caa3844c226a462c470e8a02dc6d063836455584e23e871bc88cb0a5a1076`.
+The freeze proposal JSON/transcript SHA-256:
+`e72ca49f594e9b4066dc7f453aef66be658a6fdc35b6195d70d8004edf63a269` /
+`e838a01dbd308d8881755e44f83110337e8a5fca08753fe99d4412c1b5675004`;
+its independent consistency verification is SHA-256
+`45a3315fc4e280440b5899984d253697d646c160307fd94552cbc9f00d5fb59a`.
+`evidence/A5_DEV_EVIDENCE.sha256` seals all 79 A5 source/spec/raw/red/green files,
+SHA-256 `8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34`.
+
+Proposed freeze, only after supervisor approval: atomically set
+`candidate_frozen=true` and pin family v4, family spec SHA
+`280041b25865c0ce912ab3d05afdf8636561296723832deadeb6e328ea7b7a0f`,
+candidate implementation SHA
+`fbed07c2a06efee9f1efab24000ae3e7c7f083761fa21b5ab544a7afce538467`,
+runner SHA `dfc481215e1541def902764b13e199783d7b62738d3e205197ccd52f122aa828`,
+and the complete unchanged thresholds into `candidate-config.json`; commit that freeze
+before the single holdout opening. Current config remains unfrozen, SHA-256
+`e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb`.
+Holdout remains sealed; current procedure SHA-256
+`6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902`.
+No holdout cache, reference timing, or score was read during A5 Phase 1.
+
+**STOP:** supervisor verification is required before freeze and before the one A5
+holdout opening. No candidate-config or holdout state change has been made.
+
+Supervisor verification on 2026-08-04 accepted the complete 79-file A5 Phase-1
+record and authorized candidate freeze plus the single holdout opening. Commit
+granularity is refined accordingly: the already-accepted dev/validation record is
+committed first, so the subsequent atomic candidate-config freeze is an independently
+auditable commit of its own. Candidate, threshold, and implementation bytes remain
+unchanged between acceptance and freeze.

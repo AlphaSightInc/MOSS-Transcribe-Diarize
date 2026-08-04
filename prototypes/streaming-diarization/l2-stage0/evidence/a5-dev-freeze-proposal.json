@@ -1,0 +1,119 @@
+{
+  "candidate_config_state": {
+    "candidate_family": null,
+    "candidate_frozen": false,
+    "current_sha256": "e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb",
+    "holdout_opened": false
+  },
+  "candidate_ready_to_freeze": true,
+  "development_validation": {
+    "case_raw_artifacts": [
+      {
+        "case_id": "1m-acquired-nfl",
+        "sha256": "bb955e740bb73b556b580d446633add736c602e0ed7408e1279ba4a8e03aacb9"
+      },
+      {
+        "case_id": "1m-acquired-rolex",
+        "sha256": "8e459548f5244320826d5d170c728de4195625152c70bccab568d8e7f588deb5"
+      },
+      {
+        "case_id": "1m-lex-bill-ackman",
+        "sha256": "75ad9a6df468a76653443fc7de1b8032b1ee7f8291fc7e8935908f0be6f7c738"
+      },
+      {
+        "case_id": "3m-acquired-jamie-dimon",
+        "sha256": "b711ea3005d1cf8fe8c2b8b99808e24d56b99dcae7ea568d016abccdaf50e1d8"
+      },
+      {
+        "case_id": "3m-lex-adam-frank",
+        "sha256": "a89e84ae97dc1934678ba2776ba9252a3e350b5d04a92855614726382dca979e"
+      },
+      {
+        "case_id": "5m-acquired-alphabet",
+        "sha256": "78e287ad31ea80cff1eee4bf07c2066d31451a0527d0607451d65312313deb9d"
+      }
+    ],
+    "gate_table": [
+      {
+        "actual": 1.860557,
+        "gate": "tape_beats_l1_target_subset_pp",
+        "limit": 1.0,
+        "verdict": "PASS"
+      },
+      {
+        "actual": 1.432022,
+        "gate": "tape_beats_ledger_target_subset_pp",
+        "limit": 1.0,
+        "verdict": "PASS"
+      },
+      {
+        "actual": 0.524058,
+        "gate": "unreachable_seconds_recovery_fraction",
+        "limit": 0.5,
+        "recovered_seconds": 13.025,
+        "total_seconds": 24.854125,
+        "verdict": "PASS"
+      },
+      {
+        "actual_validation_regression_pp": {
+          "1m-acquired-rolex": 0.0,
+          "1m-lex-bill-ackman": 0.8333,
+          "3m-lex-adam-frank": 0.8333,
+          "5m-acquired-alphabet": 4.8144
+        },
+        "gate": "validation_case_regression_pp",
+        "limit": -0.5,
+        "verdict": "PASS"
+      },
+      {
+        "actual_max_der_delta": 0.0,
+        "actual_max_false_positive_speaker_seconds_delta": 0.0,
+        "gate": "fp_speaker_seconds_and_der_not_worse",
+        "limit": 0.0,
+        "verdict": "PASS"
+      },
+      {
+        "actual": true,
+        "gate": "two_sided_mapping_preserved",
+        "limit": true,
+        "verdict": "PASS"
+      },
+      {
+        "actual": true,
+        "gate": "correction_evidence_complete",
+        "limit": true,
+        "verdict": "PASS"
+      },
+      {
+        "actual": true,
+        "gate": "adversarial_padding_rejected",
+        "limit": true,
+        "verdict": "PASS"
+      }
+    ],
+    "overall": "PASS",
+    "summary_json_sha256": "2842f66eae64843d8aa13c9e65c1f95f20a803489613c355c2a07bb1a40c71d5",
+    "summary_transcript_sha256": "0b9caa3844c226a462c470e8a02dc6d063836455584e23e871bc88cb0a5a1076"
+  },
+  "freeze_proposal": {
+    "candidate_family_id": "energy-vad-overlap-wespeaker-joint-span-rescue-v4",
+    "candidate_family_path": "prototypes/streaming-diarization/l2-stage0/a5-dev-candidate-family-v4.json",
+    "candidate_family_sha256": "280041b25865c0ce912ab3d05afdf8636561296723832deadeb6e328ea7b7a0f",
+    "candidate_implementation_path": "prototypes/streaming-diarization/l2-stage0/candidate_engine.py",
+    "candidate_implementation_sha256": "fbed07c2a06efee9f1efab24000ae3e7c7f083761fa21b5ab544a7afce538467",
+    "candidate_runner_path": "prototypes/streaming-diarization/l2-stage0/run_candidates.py",
+    "candidate_runner_sha256": "dfc481215e1541def902764b13e199783d7b62738d3e205197ccd52f122aa828",
+    "freeze_action_after_supervisor_go": "atomically set candidate_frozen=true and pin this family, implementation, runner, and complete family thresholds in candidate-config.json; then commit before the one holdout opening",
+    "threshold_source": "candidate_family_path; unchanged numeric values from preregistered v1-v4",
+    "tuning_after_freeze": "FORBIDDEN"
+  },
+  "holdout": {
+    "opened": false,
+    "procedure_path": "prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json",
+    "procedure_sha256": "6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902",
+    "status": "SEALED"
+  },
+  "iteration": 4,
+  "schema": "moss-l2-stage0-a5-dev-freeze-proposal.v1",
+  "verdict": "DEV_VALIDATION_PASS_READY_TO_FREEZE"
+}
