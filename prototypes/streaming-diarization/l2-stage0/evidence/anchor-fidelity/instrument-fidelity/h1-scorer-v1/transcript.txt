@@ -1,0 +1,8 @@
+H1 scorer-definition differential
+sealed_run_sha256=d1076d21735de792111f4ce957e9593ebabf98e10d43eb1ae4b0c967d92536a5
+final_labels_sha256=0372c8575177cb5feb853a846a69dd789ca73b86977e9c54f9a5cbf37c5071c9
+scorer=moss_transcribe_diarize.live_speaker_accuracy.score_live_speaker_accuracy:148
+sealed_metrics_exact_match=True
+rescored_accuracy=0.954974
+anchor=0.913500 tolerance=0.001000 delta=0.041474
+VERDICT H1_REFUTED

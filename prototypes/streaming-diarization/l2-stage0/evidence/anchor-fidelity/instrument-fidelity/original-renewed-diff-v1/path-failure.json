@@ -1,0 +1,9 @@
+{
+  "schema": "moss-l2-stage0-diagnosis-script-failure.v1",
+  "verdict": "DIAGNOSIS_SCRIPT_PATH_FAILURE",
+  "error": "FileNotFoundError",
+  "missing_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz",
+  "cause": "REPO parent index was one level too high",
+  "measurement_started": false,
+  "remediation": "Corrected diagnosis-only path resolution; official files and inputs unchanged."
+}

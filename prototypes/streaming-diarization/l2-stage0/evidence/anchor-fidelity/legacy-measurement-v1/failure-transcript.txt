@@ -1,0 +1,6 @@
+COMMAND PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_legacy_anchor_fidelity.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v1
+EXIT 2
+STDOUT
+BLOCKED ControlError:l1_fixture_duration_mismatch: 5m-acquired-alphabet:77:planned=2.500062500 cached=2.500000000
+<promise>BLOCKED</promise>
+STDERR

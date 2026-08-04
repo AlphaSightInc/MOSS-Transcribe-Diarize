@@ -1,0 +1,21 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment
+EXIT 1
+STDOUT
+STDERR
+test_archived_unit_23_span_19_parses_and_reaches_assignment (test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment) ... FAIL
+
+======================================================================
+FAIL: test_archived_unit_23_span_19_parses_and_reaches_assignment (test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 159, in test_archived_unit_23_span_19_parses_and_reaches_assignment
+    self.assertEqual(span["status"], "prepared")
+AssertionError: 'failed' != 'prepared'
+- failed
++ prepared
+
+
+----------------------------------------------------------------------
+Ran 1 test in 2.234s
+
+FAILED (failures=1)

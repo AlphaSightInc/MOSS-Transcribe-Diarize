@@ -1,0 +1,6 @@
+COMMAND PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/quantify_v2_contamination.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v1
+EXIT 2
+BLOCKED KeyError:'reference_speaker_seconds'
+<promise>BLOCKED</promise>
+CLASSIFICATION diagnosis_report_field_name_mismatch
+NO_V3_RUN

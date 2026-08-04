@@ -1,0 +1,10 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score
+EXIT 0
+STDOUT
+STDERR
+test_span_reason_placeholder_does_not_change_score (test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.104s
+
+OK

@@ -5,6 +5,12 @@
     "l2_candidate"
   ],
   "candidate_must_be_frozen": true,
+  "comparison_frame": {
+    "all_arms_must_share_identical_case_cache": true,
+    "cross_frame_metrics_are_comparable": false,
+    "planner": "production_endpoint_policy",
+    "rule": "For each holdout case, compare l1_control, ledger_only_control, and l2_candidate only on the same production-planned cache rebuilt during the single A5 opening. Never compare arm metrics across planner frames."
+  },
   "holdout_cache_rebuild": {
     "apply_before_arms": true,
     "cache_rebuild_spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061",

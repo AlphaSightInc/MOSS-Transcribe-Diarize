@@ -1,0 +1,101 @@
+{
+  "citations": [
+    {
+      "line": 367,
+      "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py",
+      "statement": "The official replay copies the planner reason into FrozenSpan; it does not branch on it."
+    },
+    {
+      "line": 97,
+      "path": "moss_transcribe_diarize/app/live_identity.py",
+      "statement": "Preparation consumes sample count, PCM, transcript segments, and provider evidence."
+    },
+    {
+      "line": 113,
+      "path": "moss_transcribe_diarize/app/live_identity.py",
+      "statement": "Preparation passes the span to the evidence provider without reading its reason."
+    },
+    {
+      "line": 583,
+      "path": "moss_transcribe_diarize/app/live_provider_bundle.py",
+      "statement": "Evidence scoring derives intervals from span bounds and transcript segments."
+    },
+    {
+      "line": 964,
+      "path": "moss_transcribe_diarize/app/live_provider_bundle.py",
+      "statement": "Interval clipping consumes span duration only."
+    },
+    {
+      "line": 332,
+      "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py",
+      "statement": "The other official runner uses are trace reporting."
+    },
+    {
+      "line": 313,
+      "path": "prototypes/streaming-diarization/l2-stage0/production_cache.py",
+      "statement": "The cache path reads span reasons for validation only."
+    },
+    {
+      "line": 435,
+      "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py",
+      "statement": "Final scoring consumes only reference and hypothesis intervals."
+    }
+  ],
+  "downstream_span_reason_reads": {
+    "moss_transcribe_diarize/app/live_identity.py": [],
+    "moss_transcribe_diarize/app/live_provider_bundle.py": [],
+    "moss_transcribe_diarize/live_speaker_accuracy.py": []
+  },
+  "equivalence_test": {
+    "path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-green-reason-premeasurement.json",
+    "sha256": "f1ed78d2ff06d788d0667f5a088ba51a1a8fd07ce42a2efd76618403d56130ff",
+    "status": "PASS"
+  },
+  "input_files": [
+    {
+      "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py",
+      "sha256": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5"
+    },
+    {
+      "path": "prototypes/streaming-diarization/l2-stage0/production_cache.py",
+      "sha256": "4e623758e2fd79037a53da6678d4a5858ff47ae87ab822b886e10bdce261db3a"
+    },
+    {
+      "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py",
+      "sha256": "b7e0a90438e3d43c4c281cf8d2fd5234809a27154b0e714a8ff7f6643aec78c9"
+    },
+    {
+      "path": "prototypes/streaming-diarization/l2-stage0/run_legacy_anchor_fidelity.py",
+      "sha256": "e1bf9b625a7f2f7f7968fe30b3a1863449c3fb0fd0968ada2b188444da7b56d5"
+    },
+    {
+      "path": "prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py",
+      "sha256": "e6fc32bae0b77bebc139f4be2b10c59dec9b3ddc709f54d317a8739220934652"
+    },
+    {
+      "path": "moss_transcribe_diarize/app/live_identity.py",
+      "sha256": "b42efca21dc33462c1b1fe46e9884b6500701060c38b036eacb0a6a232bef744"
+    },
+    {
+      "path": "moss_transcribe_diarize/app/live_provider_bundle.py",
+      "sha256": "90a99dd756f9ad7c91aeac10942554ae4d4b6b1466cdfd92e0027abceaab4e8b"
+    },
+    {
+      "path": "moss_transcribe_diarize/live_speaker_accuracy.py",
+      "sha256": "10be298132e82148cfca520404ca42b6fb8c7bd5a56a2322000ca0ebe8dec469"
+    }
+  ],
+  "official_runner_planned_span_reason_lines": [
+    332,
+    367,
+    419
+  ],
+  "overall": "PASS",
+  "production_cache_span_reason_lines": [
+    291,
+    313,
+    324
+  ],
+  "schema": "moss-l2-stage0-span-reason-independence-audit.v1",
+  "verdict": "span_reasons_feed_validation_and_reporting_only"
+}

@@ -76,6 +76,26 @@ def semantic_sha256(payload: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def evaluate_alphabet_gate(
+    actual_speaker_accuracy: float,
+    gate: dict[str, object],
+) -> dict[str, object]:
+    """Evaluate the supervisor-authorized production-frame calibration gate."""
+
+    targets = gate.get("immutable_live_speaker_accuracy")
+    if not isinstance(targets, list) or not targets:
+        targets = [gate["speaker_accuracy"]]
+    tolerance = float(gate["absolute_tolerance"])
+    deltas = [round(abs(actual_speaker_accuracy - float(target)), 6) for target in targets]
+    return {
+        **gate,
+        "absolute_deltas": deltas,
+        "actual_speaker_accuracy": actual_speaker_accuracy,
+        "max_absolute_delta": max(deltas),
+        "passed": all(delta <= tolerance for delta in deltas),
+    }
+
+
 def production_bindings() -> dict[str, str]:
     ledger_name = f"{SweepLedger.__module__}.{SweepLedger.__name__}"
     sweep_name = f"{sweep.__module__}.{sweep.__name__}"
@@ -674,27 +694,22 @@ def run_controls(
         )
     alphabet_gate = spec["accepted_alphabet_gate"]
     alphabet = next(item for item in cases if item["case_id"] == alphabet_gate["case_id"])
-    alphabet_delta = abs(
-        alphabet["metrics"]["speaker_accuracy"] - alphabet_gate["speaker_accuracy"]
+    alphabet_result = evaluate_alphabet_gate(
+        alphabet["metrics"]["speaker_accuracy"], alphabet_gate
     )
-    alphabet_pass = alphabet_delta <= alphabet_gate["absolute_tolerance"]
+    alphabet_pass = bool(alphabet_result["passed"])
     if not alphabet_pass:
         failures.append("l1_accepted_alphabet_band_failed")
     transcript.append(
         f"{'PASS' if alphabet_pass else 'FAIL'} accepted_alphabet "
         f"actual={alphabet['metrics']['speaker_accuracy']:.6f} "
-        f"target={alphabet_gate['speaker_accuracy']:.6f} "
+        f"targets={alphabet_result.get('immutable_live_speaker_accuracy', [alphabet_gate.get('speaker_accuracy')])} "
         f"tolerance={alphabet_gate['absolute_tolerance']:.6f}"
     )
     overall = "PASS" if not failures else "FAIL"
     transcript.append(f"RESULT {overall} failures={','.join(failures) if failures else 'none'}")
     summary = {
-        "accepted_alphabet_gate": {
-            **alphabet_gate,
-            "absolute_delta": round(alphabet_delta, 6),
-            "actual_speaker_accuracy": alphabet["metrics"]["speaker_accuracy"],
-            "passed": alphabet_pass,
-        },
+        "accepted_alphabet_gate": alphabet_result,
         "case_count": len(cases),
         "cases": cases,
         "failures": failures,

@@ -1,0 +1,21 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score
+EXIT 1
+STDOUT
+STDERR
+test_legacy_ingest (unittest.loader._FailedTest.test_legacy_ingest) ... ERROR
+
+======================================================================
+ERROR: test_legacy_ingest (unittest.loader._FailedTest.test_legacy_ingest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_legacy_ingest
+Traceback (most recent call last):
+  File "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'test_legacy_ingest'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

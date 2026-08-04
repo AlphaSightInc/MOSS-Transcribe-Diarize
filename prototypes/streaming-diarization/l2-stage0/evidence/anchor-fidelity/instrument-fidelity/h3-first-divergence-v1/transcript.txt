@@ -1,0 +1,8 @@
+H3 first-divergence causal proof
+unit=23 span=19
+planned_span_start_sample=1662458
+minimum_relative_start=-0.000062500
+rendered_transcript=[-0.000062][S01]w[0.580312]
+parsed_segment_count=0
+divergence=PRE_ASSIGNMENT_LEGACY_TRANSCRIPT_INGEST
+VERDICT IDENTIFIED_PRE_ASSIGNMENT_LEGACY_TRANSCRIPT_INGEST

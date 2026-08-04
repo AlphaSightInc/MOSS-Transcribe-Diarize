@@ -16,6 +16,7 @@ sys.path.insert(0, str(HERE))
 
 from run_l1_control import (  # noqa: E402
     REPO,
+    evaluate_alphabet_gate,
     production_bindings,
     replay_case,
     resolve_output_path,
@@ -27,6 +28,15 @@ RUNNER = HERE / "run_l1_control.py"
 
 
 class L1ControlTest(unittest.TestCase):
+    def test_cross_instrument_gate_requires_live_pair_band_on_production_frame(self) -> None:
+        gate = {
+            "absolute_tolerance": 0.005,
+            "immutable_live_speaker_accuracy": [0.9135, 0.9144],
+        }
+        result = evaluate_alphabet_gate(0.916765, gate)
+        self.assertTrue(result["passed"])
+        self.assertEqual(result["absolute_deltas"], [0.003265, 0.002365])
+
     def test_relative_evidence_path_is_resolved_under_worktree(self) -> None:
         self.assertEqual(
             resolve_output_path(Path("prototypes/evidence/run.json")),

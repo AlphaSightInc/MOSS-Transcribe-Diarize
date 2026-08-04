@@ -1,0 +1,45 @@
+{"speaker": "David", "text": "Are you intentionally wearing a black turtleneck for this one?", "line_index": 0, "matched": true, "match_score": 100.0, "start": 2.0, "end": 3.19}
+{"speaker": "Ben", "text": "No. It is actually going to be one of my carve outs, though.", "line_index": 1, "matched": true, "match_score": 94.92, "start": 5.04, "end": 6.71}
+{"speaker": "Ben", "text": "Why, you think I dress up like Steve Jobs for a Google episode?", "line_index": 3, "matched": true, "match_score": 95.08, "start": 10.25, "end": 11.509}
+{"speaker": "David", "text": "Well, I thought because of the war between Android and…", "line_index": 4, "matched": true, "match_score": 85.48, "start": 13.04, "end": 15.135}
+{"speaker": "Ben", "text": "I walk in and there's this smirk on your face.", "line_index": 5, "matched": true, "match_score": 92.47, "start": 17.178181818181816, "end": 18.52}
+{"speaker": "Ben", "text": "All right, let's do it.", "line_index": 6, "matched": true, "match_score": 100.0, "start": 20.1578, "end": 21.109}
+{"speaker": "Ben", "text": "Welcome to the summer 2025 season of Acquired, the podcast about great companies and the stories and playbooks behind them. I'm Ben Gilbert.", "line_index": 7, "matched": true, "match_score": 74.01, "start": 40.239, "end": 42.04}
+{"speaker": "David", "text": "I'm David Rosenthal.", "line_index": 8, "matched": true, "match_score": 100.0, "start": 46.13, "end": 46.47}
+{"speaker": "Ben", "text": "And we are your hosts.", "line_index": 9, "matched": true, "match_score": 100.0, "start": 47.1487, "end": 48.0403}
+{"speaker": "Ben", "text": "In the late 1990s, Google built the best search engine for the rapidly growing internet.", "line_index": 10, "matched": true, "match_score": 92.05, "start": 51.17, "end": 53.51}
+{"speaker": "Ben", "text": "With a breakthrough search algorithm, low cost servers based on commodity hardware, and the best business model of all time—search ads—they turned that search engine into a cash gushing business and took it public in 2004.", "line_index": 11, "matched": true, "match_score": 64.46, "start": 55.36, "end": 60.76384615384615}
+{"speaker": "David", "text": "Just unreal. Can't wait to tell all of these stories today.", "line_index": 12, "matched": true, "match_score": 100.0, "start": 103.759, "end": 104.95}
+{"speaker": "Ben", "text": "And they've also launched some colossal failures—Google+ to try to compete with Facebook, Google Wave, Buzz, and about half a dozen messaging apps, I don't know, maybe a dozen messaging apps over the years.", "line_index": 13, "matched": true, "match_score": 67.8, "start": 113.055, "end": 115.7946153846154}
+{"speaker": "Ben", "text": "Hot air balloons to provide wireless internet. And of course…", "line_index": 14, "matched": true, "match_score": 85.94, "start": 120.464, "end": 121.19}
+{"speaker": "David", "text": "Oh man, I forgot about the hot air balloons.", "line_index": 15, "matched": true, "match_score": 100.0, "start": 122.719, "end": 123.429}
+{"speaker": "Ben", "text": "Google Glass.", "line_index": 16, "matched": true, "match_score": 100.0, "start": 124.91399999999999, "end": 126.389}
+{"speaker": "David", "text": "Can't forget about that one, unfortunately.", "line_index": 17, "matched": true, "match_score": 100.0, "start": 127.52, "end": 128.389}
+{"speaker": "Ben", "text": "Why did they do all this?", "line_index": 18, "matched": true, "match_score": 100.0, "start": 128.8452, "end": 129.9607}
+{"speaker": "Ben", "text": "And as a business, Google was and still is the company that makes the vast majority of their money from ads on search results on the web.", "line_index": 19, "matched": true, "match_score": 76.03, "start": 134.93566666666666, "end": 137.04666666666668}
+{"speaker": "Ben", "text": "Today, we tell the story of Google as the innovation factory of the 2000s, their reorganization into the parent company, Alphabet, and how all these different products cleverly serve different business purposes.", "line_index": 20, "matched": true, "match_score": 65.59, "start": 143.715, "end": 149.32000000000002}
+{"speaker": "Ben", "text": "And also, how it feeds into Google's original core mission to organize the world's information.", "line_index": 21, "matched": true, "match_score": 87.7, "start": 154.39233333333334, "end": 156.55}
+{"speaker": "Ben", "text": "We'll end this episode story right at the dawn of the AI era.", "line_index": 22, "matched": true, "match_score": 100.0, "start": 159.44914285714285, "end": 162.39}
+{"speaker": "David", "text": "Woo hoo hoo. Oh, you're giving away the end.", "line_index": 23, "matched": true, "match_score": 81.93, "start": 163.41914285714284, "end": 163.689}
+{"speaker": "Ben", "text": "Oh spoilers, sorry. Is Google a search engine? Is it the platform company of the web era?", "line_index": 24, "matched": true, "match_score": 93.02, "start": 166.76583333333335, "end": 170.57571428571427}
+{"speaker": "Ben", "text": "Or is it an incubator that just happens to have struck gold with search and perhaps AI?", "line_index": 26, "matched": true, "match_score": 89.5, "start": 172.82999999999998, "end": 176.07}
+{"speaker": "Ben", "text": "Today we dive in.", "line_index": 27, "matched": true, "match_score": 100.0, "start": 177.86499999999998, "end": 178.63}
+{"speaker": "David", "text": "Just like how we say every company has a story, every company story is powered by payments, and J.P.", "line_index": 28, "matched": true, "match_score": 81.44, "start": 214.159, "end": 215.91}
+{"speaker": "David", "text": "Morgan Payments is a part of so many of their journeys, from seed to IPO and beyond.", "line_index": 29, "matched": true, "match_score": 94.41, "start": 218.00875, "end": 219.7642857142857}
+{"speaker": "Ben", "text": "With that, this show is not investment advice.", "line_index": 30, "matched": true, "match_score": 100.0, "start": 222.0207142857143, "end": 222.8157142857143}
+{"speaker": "Ben", "text": "David and I may have investments in the companies we discuss, and this show is for informational and entertainment purposes only.", "line_index": 31, "matched": true, "match_score": 77.06, "start": 224.59, "end": 226.309}
+{"speaker": "Ben", "text": "David, where are we starting this Alphabet story?", "line_index": 32, "matched": true, "match_score": 91.49, "start": 231.004, "end": 232.39}
+{"speaker": "David", "text": "I have a very, very fun beginning for you, Ben.", "line_index": 33, "matched": true, "match_score": 100.0, "start": 236.38843749999998, "end": 238.453375}
+{"speaker": "David", "text": "I want to start with a quote from Russ Hanneman.", "line_index": 34, "matched": true, "match_score": 96.77, "start": 240.5575, "end": 242.71}
+{"speaker": "Ben", "text": "The fictional character?", "line_index": 35, "matched": true, "match_score": 100.0, "start": 243.35333333333332, "end": 243.67}
+{"speaker": "David", "text": "From Silicon Valley, HBO show. Oh yeah, from the TV show.", "line_index": 36, "matched": true, "match_score": 100.0, "start": 248.149, "end": 249.11}
+{"speaker": "David", "text": "And the quote is, \"If you show revenue, people will ask how much?", "line_index": 39, "matched": true, "match_score": 100.0, "start": 252.799, "end": 254.7118}
+{"speaker": "David", "text": "And it will never be enough.", "line_index": 40, "matched": true, "match_score": 100.0, "start": 255.9675, "end": 256.735}
+{"speaker": "David", "text": "The company that was the hundred-Xer, the thousand-Xer is suddenly the 2x dog.", "line_index": 41, "matched": true, "match_score": 86.33, "start": 257.97675, "end": 259.83}
+{"speaker": "David", "text": "But if you have no revenue, you can say you're pre-revenue, you're a potential pure play.", "line_index": 42, "matched": true, "match_score": 87.8, "start": 262.8373125, "end": 264.4185714285714}
+{"speaker": "David", "text": "It's not about how much you earn, it's about what you're worth. And who's worth the most?", "line_index": 43, "matched": true, "match_score": 94.21, "start": 267.21, "end": 270.07}
+{"speaker": "David", "text": "Companies that lose money.\"", "line_index": 45, "matched": true, "match_score": 100.0, "start": 271.84999999999997, "end": 272.73499999999996}
+{"speaker": "Ben", "text": "Why are you talking about this?", "line_index": 46, "matched": true, "match_score": 100.0, "start": 280.41375, "end": 280.86062499999997}
+{"speaker": "Ben", "text": "Google is a cash gushing machine.", "line_index": 47, "matched": true, "match_score": 100.0, "start": 282.6533846153846, "end": 284.06453846153846}
+{"speaker": "David", "text": "Revenue is obviously not the problem for Google.", "line_index": 48, "matched": true, "match_score": 100.0, "start": 285.73525, "end": 287.27}
+{"speaker": "David", "text": "But what was the problem in 2004, 2005, 2006 was being viewed as, in Russ's terms, pure play.", "line_index": 49, "matched": true, "match_score": 86.86, "start": 291.28, "end": 295.06333333333333}

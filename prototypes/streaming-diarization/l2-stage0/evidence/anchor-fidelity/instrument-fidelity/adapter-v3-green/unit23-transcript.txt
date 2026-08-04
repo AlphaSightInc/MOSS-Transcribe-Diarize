@@ -1,0 +1,27 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment
+EXIT 1
+STDOUT
+STDERR
+test_archived_unit_23_span_19_parses_and_reaches_assignment (test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment) ... ERROR
+
+======================================================================
+ERROR: test_archived_unit_23_span_19_parses_and_reaches_assignment (test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 157, in test_archived_unit_23_span_19_parses_and_reaches_assignment
+    result = self._replay_archived_alphabet(Path(temp) / "adapted.npz")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 39, in _replay_archived_alphabet
+    return replay_legacy_case(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/run_legacy_anchor_fidelity.py", line 106, in replay_legacy_case
+    plan = derive_legacy_plan(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/legacy_ingest.py", line 257, in derive_legacy_plan
+    raise LegacyIngestError(
+legacy_ingest.LegacyIngestError: legacy_unit_reference_mismatch: unit=83:fields=end:deltas={'start': 4.999999418942025e-07, 'end': 7.049999999253487e-05, 'duration': 2.4500000021632218e-05}
+
+----------------------------------------------------------------------
+Ran 1 test in 2.075s
+
+FAILED (errors=1)

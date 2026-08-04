@@ -1,0 +1,71 @@
+{
+  "causal_chain": [
+    "legacy duration reconciliation moves the last selected piece start backward by one sample",
+    "the enclosing PlannedSpan start remains the rounded archived row minimum",
+    "run_l1_control renders a negative relative start into the transcript",
+    "parse_transcript accepts no segment from that grammar, so span_segments returns empty",
+    "BoundedCausalIdentityPreparer returns failed/unparseable_transcript before evidence or assignment"
+  ],
+  "divergent_stage": "PRE_ASSIGNMENT_LEGACY_TRANSCRIPT_INGEST",
+  "first_unit": {
+    "duration_seconds": 0.580352,
+    "eligible": true,
+    "end_seconds": 104.483966,
+    "final_match": false,
+    "live_match": false,
+    "mirror_final": 0,
+    "mirror_live": 0,
+    "runner_final": -1,
+    "runner_live": -1,
+    "span_id": 19,
+    "start_seconds": 103.903614,
+    "true_speaker": 0,
+    "unit_index": 23
+  },
+  "input_hashes": {
+    "archive": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+    "h3_result": "f28a1bfb3248210f2502600e3ae5bb4ef0abbc45d430740ed94f52338acaa017",
+    "identity_source": "b42efca21dc33462c1b1fe46e9884b6500701060c38b036eacb0a6a232bef744",
+    "legacy_source": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+    "reference": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+    "runner_source": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+    "span_source": "c9b88404175d8d4ee9ca0c858dd4076a2cd3fb156da89cef2dbe74924e4884f6",
+    "spec": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735"
+  },
+  "mirror_decision": {
+    "abstain": false,
+    "assigned_canonical": 0,
+    "best_score": 0.35338777,
+    "runner_up_score": 0.173633452
+  },
+  "parsed_segment_count": 0,
+  "planned_span": {
+    "end_sample": 1671743,
+    "sample_count": 9285,
+    "span_id": 19,
+    "start_sample": 1662458,
+    "start_seconds": 103.903625
+  },
+  "rendered_segments": [
+    {
+      "absolute_end": 104.4839375,
+      "absolute_start": 103.9035625,
+      "formatted_end": "0.580312",
+      "formatted_start": "-0.000062",
+      "label": "S01",
+      "relative_end": 0.5803124999999909,
+      "relative_start": -6.249999999852207e-05,
+      "unit_index": 23
+    }
+  ],
+  "responsible_sources": {
+    "duration_reconciliation": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py:170-199",
+    "empty_parser_result": "moss_transcribe_diarize/app/live_span_bounds.py:37-54",
+    "pre_assignment_failure": "moss_transcribe_diarize/app/live_identity.py:101-106",
+    "relative_timestamp_and_render": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py:350-373",
+    "span_bounds_not_reconciled": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py:214-223"
+  },
+  "schema": "moss-l2-stage0-instrument-h3-first-divergence.v1",
+  "transcript": "[-0.000062][S01]w[0.580312]",
+  "verdict": "IDENTIFIED_PRE_ASSIGNMENT_LEGACY_TRANSCRIPT_INGEST"
+}

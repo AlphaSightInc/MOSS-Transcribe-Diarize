@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+    "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/audit_span_reason_independence.py",
+    "--json-output",
+    "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/span-reason-audit-red2-unused.json"
+  ],
+  "exit_code": 1,
+  "overall": "FAIL",
+  "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/span-reason-audit-red2-transcript.txt",
+  "transcript_sha256": "321307f7d0513eb4e243ff8ebce8100fddc02f9e7d97cc7de305380275e6e16b"
+}

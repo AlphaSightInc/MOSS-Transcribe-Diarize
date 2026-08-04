@@ -1,0 +1,132 @@
+{
+  "affected_eligible_unit_count": 4,
+  "affected_reference_piece_seconds": 5.382375,
+  "affected_unit_count": 5,
+  "affected_units": [
+    {
+      "assignment_handling": "bypassed_before_evidence_and_assignment",
+      "eligible_for_embedding": true,
+      "evidence_duration_seconds": 0.580352,
+      "final_label": null,
+      "hypothesis_interval_count": 0,
+      "ledger_record_count": 0,
+      "live_label": null,
+      "preparation_reason": "unparseable_transcript",
+      "preparation_status": "failed",
+      "reference_piece_seconds": 0.580375,
+      "score_handling": "no_hypothesis_interval; reference_time_remains_denominator_and_is_missed",
+      "span_id": 19,
+      "true_speaker_index": 0,
+      "unit_index": 23
+    },
+    {
+      "assignment_handling": "bypassed_before_evidence_and_assignment",
+      "eligible_for_embedding": true,
+      "evidence_duration_seconds": 1.261861,
+      "final_label": null,
+      "hypothesis_interval_count": 0,
+      "ledger_record_count": 0,
+      "live_label": null,
+      "preparation_reason": "unparseable_transcript",
+      "preparation_status": "failed",
+      "reference_piece_seconds": 1.261875,
+      "score_handling": "no_hypothesis_interval; reference_time_remains_denominator_and_is_missed",
+      "span_id": 26,
+      "true_speaker_index": 0,
+      "unit_index": 31
+    },
+    {
+      "assignment_handling": "bypassed_before_evidence_and_assignment",
+      "eligible_for_embedding": true,
+      "evidence_duration_seconds": 1.040119,
+      "final_label": null,
+      "hypothesis_interval_count": 0,
+      "ledger_record_count": 0,
+      "live_label": null,
+      "preparation_reason": "unparseable_transcript",
+      "preparation_status": "failed",
+      "reference_piece_seconds": 1.040125,
+      "score_handling": "no_hypothesis_interval; reference_time_remains_denominator_and_is_missed",
+      "span_id": 26,
+      "true_speaker_index": 1,
+      "unit_index": 32
+    },
+    {
+      "assignment_handling": "bypassed_before_evidence_and_assignment",
+      "eligible_for_embedding": true,
+      "evidence_duration_seconds": 2.159716,
+      "final_label": null,
+      "hypothesis_interval_count": 0,
+      "ledger_record_count": 0,
+      "live_label": null,
+      "preparation_reason": "unparseable_transcript",
+      "preparation_status": "failed",
+      "reference_piece_seconds": 2.1596875,
+      "score_handling": "no_hypothesis_interval; reference_time_remains_denominator_and_is_missed",
+      "span_id": 61,
+      "true_speaker_index": 0,
+      "unit_index": 72
+    },
+    {
+      "assignment_handling": "bypassed_before_evidence_and_assignment",
+      "eligible_for_embedding": false,
+      "evidence_duration_seconds": 0.340284,
+      "final_label": null,
+      "hypothesis_interval_count": 0,
+      "ledger_record_count": 0,
+      "live_label": null,
+      "preparation_reason": "unparseable_transcript",
+      "preparation_status": "failed",
+      "reference_piece_seconds": 0.3403125,
+      "score_handling": "no_hypothesis_interval; reference_time_remains_denominator_and_is_missed",
+      "span_id": 61,
+      "true_speaker_index": 1,
+      "unit_index": 73
+    }
+  ],
+  "failed_span_count": 3,
+  "failed_spans": [
+    {
+      "reason": "unparseable_transcript",
+      "span_id": 19,
+      "status": "failed"
+    },
+    {
+      "reason": "unparseable_transcript",
+      "span_id": 26,
+      "status": "failed"
+    },
+    {
+      "reason": "unparseable_transcript",
+      "span_id": 61,
+      "status": "failed"
+    }
+  ],
+  "inflation_mechanism": {
+    "direct_scalar_inflation_from_omission": false,
+    "name": "pre_assignment_censoring_as_null_hypothesis",
+    "statement": "The adapter bypassed policy and emitted null labels, so the scorer saw no confusing hypothesis intervals or mapping evidence for these units. Production speaker_accuracy retains all reference time in its denominator, so omitted seconds are missed and receive zero credit; omission alone cannot arithmetically inflate this scalar. It contaminates the instrument by censoring the decisions whose fidelity was being tested."
+  },
+  "input_hashes": {
+    "adapter_v2": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+    "archive": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+    "reference": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+    "runner": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+    "spec": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+    "v2_run": "d1076d21735de792111f4ce957e9593ebabf98e10d43eb1ae4b0c967d92536a5"
+  },
+  "schema": "moss-l2-stage0-v2-contamination.v1",
+  "score_formula": {
+    "confused_speaker_seconds": 0.0,
+    "matched_speaker_seconds": 169.099457,
+    "missed_speaker_seconds": 7.972793,
+    "reference_seconds": 177.07225,
+    "speaker_accuracy": 0.954974,
+    "speaker_accuracy_recomputed": 0.954974351
+  },
+  "score_path": {
+    "null_filter": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py:202-210",
+    "scorer_call": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py:432-435"
+  },
+  "verdict": "V2_CONTAMINATED_PRE_ASSIGNMENT"
+}

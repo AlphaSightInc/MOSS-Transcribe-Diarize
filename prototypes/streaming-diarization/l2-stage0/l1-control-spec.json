@@ -1,11 +1,28 @@
 {
   "accepted_alphabet_gate": {
-    "absolute_tolerance": 0.001,
+    "absolute_tolerance": 0.005,
+    "anchor_kind": "cross_instrument_production_truth",
     "case_id": "5m-acquired-alphabet",
-    "speaker_accuracy": 0.9135
+    "comparison_frame": {
+      "planner": "production_endpoint_policy",
+      "reference_sha256": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+      "unit_count": 101,
+      "vector_cache_sha256": "6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef"
+    },
+    "immutable_live_speaker_accuracy": [
+      0.9135,
+      0.9144
+    ],
+    "pass_rule": "actual must be within absolute_tolerance of each immutable live value",
+    "retired_cross_frame_gate": {
+      "absolute_tolerance": 0.001,
+      "reason": "category error: same-instrument repeatability band was applied across planner frames and instruments",
+      "speaker_accuracy": 0.9135
+    },
+    "supervisor_authorized_on": "2026-08-03"
   },
   "a5_holdout_procedure_path": "prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json",
-  "a5_holdout_procedure_sha256": "3d745f92d941985d95c7351caf3c430b2f43209cbb4bb7c20f716bc73d1b3464",
+  "a5_holdout_procedure_sha256": "6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902",
   "cache_rebuild_spec_path": "prototypes/streaming-diarization/l2-stage0/cache-rebuild-spec.json",
   "cache_rebuild_spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061",
   "case_ids": [

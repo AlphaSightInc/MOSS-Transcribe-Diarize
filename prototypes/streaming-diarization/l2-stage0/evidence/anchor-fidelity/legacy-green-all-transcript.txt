@@ -1,0 +1,17 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest
+EXIT 0
+STDOUT
+STDERR
+test_corrupt_and_truncated_archives_fail_named (test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named) ... ok
+test_missing_archive_array_fails_named (test_legacy_ingest.LegacyIngestTest.test_missing_archive_array_fails_named) ... ok
+test_missing_row_field_fails_named (test_legacy_ingest.LegacyIngestTest.test_missing_row_field_fails_named) ... ok
+test_non_monotonic_row_bounds_fail_named (test_legacy_ingest.LegacyIngestTest.test_non_monotonic_row_bounds_fail_named) ... /Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/ast.py:90: ResourceWarning: unclosed file <_io.FileIO name='/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-l2-legacy-corrupt-jgtr4wxs/truncated.npz' mode='rb' closefd=True>
+  return tuple(map(_convert, node.elts))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_span_reason_placeholder_does_not_change_score (test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 2.295s
+
+OK

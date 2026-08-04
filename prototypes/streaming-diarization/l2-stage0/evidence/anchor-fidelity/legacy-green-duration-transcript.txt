@@ -1,0 +1,10 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_legacy_duration_is_reconciled_without_tolerance_change
+EXIT 0
+STDOUT
+STDERR
+test_legacy_duration_is_reconciled_without_tolerance_change (test_legacy_ingest.LegacyIngestTest.test_legacy_duration_is_reconciled_without_tolerance_change) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.155s
+
+OK

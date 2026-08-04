@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+    "-m",
+    "unittest",
+    "-v",
+    "test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named",
+    "test_legacy_ingest.LegacyIngestTest.test_missing_archive_array_fails_named",
+    "test_legacy_ingest.LegacyIngestTest.test_missing_row_field_fails_named",
+    "test_legacy_ingest.LegacyIngestTest.test_non_monotonic_row_bounds_fail_named"
+  ],
+  "exit_code": 1,
+  "overall": "FAIL",
+  "schema": "moss-l2-stage0-legacy-ingest-test-run.v1",
+  "tests": [
+    "test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named",
+    "test_legacy_ingest.LegacyIngestTest.test_missing_archive_array_fails_named",
+    "test_legacy_ingest.LegacyIngestTest.test_missing_row_field_fails_named",
+    "test_legacy_ingest.LegacyIngestTest.test_non_monotonic_row_bounds_fail_named"
+  ],
+  "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-red-validation-transcript.txt",
+  "transcript_sha256": "b2cb4a811c45fb16ec0f089025c6dba87abe1b76fc2b06dec1bbfda15d0e2779"
+}

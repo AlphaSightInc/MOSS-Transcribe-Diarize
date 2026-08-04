@@ -1,0 +1,74 @@
+{
+  "bindings": {
+    "production_album_timing": "moss_transcribe_diarize/app/live_provider_bundle.py:575 and 726-765 reconcile the prior committed span before scoring the current span",
+    "production_assignment": "moss_transcribe_diarize/app/live_identity.py:123 and 229-240 call assign_speakers at 297-355",
+    "production_evidence": "moss_transcribe_diarize/app/live_provider_bundle.py:567-631 scores against only base_snapshot canonical speakers",
+    "production_prepare": "moss_transcribe_diarize/app/live_identity.py:89-166",
+    "runner_construction": "run_l1_control.py:246-265 constructs those production objects",
+    "runner_diagnostics_decode_only": "run_l1_control.py:379-388 decodes production assignments; it does not assign",
+    "runner_import": "run_l1_control.py:21-40 imports production BoundedCausalIdentityPreparer, WeSpeakerLiveEvidenceProvider, FingerprintAlbum",
+    "runner_prepare_call": "run_l1_control.py:361-375 calls BoundedCausalIdentityPreparer.prepare with the current snapshot"
+  },
+  "causality": {
+    "explanation": "Both live paths produce the same normalized label/null decision for every row. Neither final sweep changes a label; the renewed runner therefore shows no final-album hindsight on this replay.",
+    "future_information_used_for_assignment": false,
+    "original_live_equals_final": true,
+    "renewed_changed_duration_fraction": 0.0,
+    "renewed_live_equals_final": true,
+    "renewed_sweep_correction_count": 0
+  },
+  "first_joint_album_checkpoint": {
+    "decision": "original canonical 1 birth == renewed speaker-0002 birth",
+    "original_before_assignment": "canonical 0 enrolled from eligible unit 0; no future units visible (proto_ab_identity.py:299-339)",
+    "renewed_before_assignment": "speaker-0001 reconciled from prior span/unit 0 before current scoring (live_provider_bundle.py:575,726-765)",
+    "span_id": 1,
+    "unit_index": 2
+  },
+  "inputs": {
+    "archive_sha256": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+    "original_policy_sha256": "e4e8305ca16fba361e0bd53bdaf0b7e973f3bb45ce6be78b536df2219ffe1791",
+    "original_stdout_sha256": "337ca2c1f912568634fea6a68984d60901acc06567cee435d1106b833c92e519",
+    "renewed_run_sha256": "3af902bf605548f2c3c8e55f1ede875fee87964cff8d990e479c196759950e6d",
+    "renewed_runner_sha256": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5"
+  },
+  "per_unit": {
+    "album_state_at_first_divergence": null,
+    "album_state_reason": "No assignment divergence exists on any of the 92 rows, so there is no divergent moment at which to compare album state.",
+    "eligible_count": 83,
+    "final_canonical_mapping": {
+      "0": "speaker-0001",
+      "1": "speaker-0002"
+    },
+    "final_mismatch_count": 0,
+    "final_mismatches": [],
+    "first_divergent_unit": null,
+    "ineligible_count": 9,
+    "live_canonical_mapping": {
+      "0": "speaker-0001",
+      "1": "speaker-0002"
+    },
+    "live_mismatch_count": 0,
+    "live_mismatches": [],
+    "row_count": 92
+  },
+  "schema": "moss-l2-stage0-original-renewed-differential.v1",
+  "score_bridge": {
+    "accepted_anchor": 0.9135,
+    "anchor_reproduced": false,
+    "conclusion": "Unchanged original policy does not reproduce 0.9135 on fd13; it scores 1.0 on eligible rows. Including null rows moves it to approximately 0.98335, consistent with renewed 0.983449 boundary scoring, not 0.9135.",
+    "original_all_rows": 0.9833507161157806,
+    "original_default_eligible_only": 0.9999999999999999,
+    "original_default_filter": "proto_ab_identity.py:351-355 defaults elig_only=True and excludes all nine ineligible rows from its denominator",
+    "renewed_confused_seconds": 0.0,
+    "renewed_matched_seconds": 174.141506,
+    "renewed_missed_seconds": 2.930806,
+    "renewed_production_scorer": 0.983449
+  },
+  "stop": {
+    "a3_run": false,
+    "fix_implemented": false,
+    "h4_run": false,
+    "reason": "expected_original_anchor_not_reproduced_and_no_policy_divergence_to_name"
+  },
+  "verdict": "WORKING_HYPOTHESIS_REFUTED_NO_PER_UNIT_POLICY_DIVERGENCE"
+}

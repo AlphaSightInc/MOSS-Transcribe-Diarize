@@ -382,3 +382,388 @@ gate clarification, tolerance change, cache modification, planner variation, or 
 Holdout remains sealed; A3 remains unstarted.
 `evidence/ANCHOR_FIDELITY_EVIDENCE.sha256` seals 12/12 files and has SHA-256
 `ff76c726bd9642bdd14e253932ab13c1416ecb5dd6803d5ad40ce0888436d3c6`.
+
+### L2 Stage 0 legacy-ingest anchor diagnosis verdict (`l2-stage0`, 2026-08-03)
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_legacy_anchor_fidelity.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2`
+
+**VERDICT: BLOCKED.** Before measurement, the diagnosis audit proved that
+`planned_span.reason` is used only to populate `FrozenSpan.reason` and traces, while
+the downstream preparation/provider/scorer path has zero `span.reason` reads. A tiny
+synthetic case produced identical scores, labels, and revisions with a real reason and
+`legacy_unavailable`. Red-first tests proved named refusal for corrupt/truncated
+archives, missing archive/row fields, and non-monotonic row bounds.
+
+The first adapter invocation (`legacy-measurement-v1`) produced no score: official
+fixture fidelity caught a one-sample duration reconstruction difference at unit 77.
+That no-score evidence remains preserved. The adapter was corrected to reconcile
+sample-aligned pieces to the archived row duration; no tolerance, planner setting,
+cache, reference, official runner, or pin changed. The dedicated red/green regression
+and the reason-independence audit then passed again.
+
+The corrected adapter ran the archived 92-unit cache twice. Both scoring projections
+were byte-semantically identical (`a6a64040…`) and both scored `0.954974`. The immutable
+accepted anchor is `0.913500 ± 0.001000`; absolute delta `0.041474` fails
+`legacy_anchor_band_failed`. Archived cache SHA-256 was
+`fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5`
+before and after. Therefore partition effect is **not proved**. No causal decomposition,
+dual-anchor record, gate clarification, anchor move, A2-completion commit, or A3 work
+was performed.
+
+Raw evidence:
+
+- `evidence/anchor-fidelity/span-reason-independence-audit-post-duration.json` —
+  SHA-256 `fc0eadfa2585cde9e549bd55c05b79b59018050889f64e7ca76b9a075301016c`.
+- `evidence/anchor-fidelity/legacy-red-validation-transcript.txt` — SHA-256
+  `b2cb4a811c45fb16ec0f089025c6dba87abe1b76fc2b06dec1bbfda15d0e2779`.
+- `evidence/anchor-fidelity/legacy-red-duration-transcript.txt` — SHA-256
+  `f47bcce82d5853df2f37eb51843e96922242bd966d11ffb83594ba010608272d`.
+- `evidence/anchor-fidelity/legacy-green-post-duration-transcript.txt` — SHA-256
+  `839051b6aeb0599c8c80d131a4efa488cecf09c3048cee022b504df3010709d2`.
+- `evidence/anchor-fidelity/legacy-measurement-v1/failure.json` — SHA-256
+  `c5616475bb140f86b3995181d5447141567a4c92fb3b88a6ebdc59952353d644`.
+- `evidence/anchor-fidelity/legacy-measurement-v2/summary.json` — SHA-256
+  `f095bdf3f608a1e5e6dffacd8dbc0dfdf3f08b73d59ff56ed9905af05ff093f0`.
+- `evidence/anchor-fidelity/legacy-measurement-v2/measurement-transcript.txt` —
+  SHA-256 `172d56da70fbc8d51424195bbf3ac1618e4883521e62ba1a77cebb7573e2f2da`.
+- `evidence/anchor-fidelity/legacy-measurement-v2/LEGACY_MEASUREMENT_EVIDENCE.sha256`
+  — SHA-256 `58b12ce154e679bd54280d909a66a75237777e3c9d672747642c9bc935e60e69`.
+- `evidence/anchor-fidelity/a12-owning-commit-verification.txt` — SHA-256
+  `8adaf14810a061f75efaedea11ed1207c30d07ee7ad0d5c8cfa6e5b795d7ea52`.
+
+### L2 Stage 0 instrument fidelity H1 — scorer definition (`l2-stage0`, 2026-08-03)
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h1_rescore_sealed_labels.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h1-scorer-v1`
+
+**VERDICT: H1 REFUTED.** Without replaying identity or sweep policy, the exact 92
+sealed final labels from legacy-measurement-v2 were converted back into their 93
+hypothesis intervals and passed directly to production
+`score_live_speaker_accuracy()` (`live_speaker_accuracy.py:148`). The result exactly
+matched every sealed metric, including speaker accuracy `0.954974`, two-sided mapping,
+and per-speaker correctness. It did not reproduce immutable `0.913500 ± 0.001000`
+(delta `0.041474`), so scorer definition is not the divergent stage. Proceed to H2.
+
+Raw result SHA-256: `a6aadd07f1db4f6d125481fd0e6b6a2518e1496d1cb4783b11b5a6a90cc7c3a5`.
+Raw transcript SHA-256: `502972f0df7735abf30c97386d4797e615eadc3bc8d2eddae088798c72221d88`.
+`H1_SCORER_EVIDENCE.sha256` seals 8/8 files and has SHA-256
+`c024dbb7b43128c7068f58b4bdd95625d6b1a2517c223e64a4d1fc9ad8024e54`.
+
+### L2 Stage 0 instrument fidelity H2 — identity constants (`l2-stage0`, 2026-08-03)
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2_compare_constants.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2-constants-v1`
+
+**VERDICT: H2 REFUTED.** The runner and deployed keeper contract match side by
+side for score `0.35`, margin `0.1`, album admission `2.0`, birth floor `1.0`,
+hard cap `40000`, and max speakers `16`. Production `hash_config()` over the
+runner identity payload reproduced deployed `identity_config_hash`
+`4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89`.
+The deployed source revision also matches keeper `9089b33210401111865da7abc160ab0bcb4aa266`.
+No identity-constant divergence exists; proceed to H3.
+
+Raw result SHA-256: `578db1b03b6c8bf6418132fd538b54eb6b1212f7d28761cb76b90eeac5371940`.
+Raw transcript SHA-256: `bb93e693028098784ad9fee3795f3c33a5d5c09d0dfb7e2f1df49882c1b84a23`.
+`H2_CONSTANTS_EVIDENCE.sha256` seals 8/8 files and has SHA-256
+`99d202f62bc7bc0e53273f5ec5ad014057d1f5acf9d872f7d7094e2e0fd9b663`.
+
+### L2 Stage 0 instrument fidelity H3 — first causal divergence (`l2-stage0`, 2026-08-03)
+
+Commands:
+
+1. `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3_compare_policy.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-policy-v1`
+2. `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3_explain_first_divergence.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-first-divergence-v1`
+
+**VERDICT: DIVERGENT STAGE IDENTIFIED; HARD STOP BEFORE H4.** The raw H3 comparison's
+coarse verdict named the H3 policy bucket, but the sealed causal follow-up narrows the
+first difference to **pre-assignment legacy transcript ingest**, not score/margin,
+abstention, birth, or sweep policy. On exact archived unit 23/span 19, the existing
+live-policy mirror assigns canonical 0 (best `0.353387770`, runner-up `0.173633452`,
+no abstain). The renewed runner instead returns `failed/unparseable_transcript` before
+evidence scoring.
+
+Cause: legacy duration reconciliation moves the piece start back one sample
+(`legacy_ingest.py:170-199`) but leaves the enclosing span start at the archived-row
+rounded bound (`legacy_ingest.py:214-223`). Runner rendering
+(`run_l1_control.py:350-373`) therefore emits
+`[-0.000062][S01]w[0.580312]`. Production parsing returns zero segments
+(`live_span_bounds.py:37-54`), and the preparer fails before assignment
+(`live_identity.py:101-106`). This is the first per-unit divergence. No official
+runner, adapter, cache, pin, tolerance, or anchor changed; H4 was not run.
+
+The existing mirror over the same 92 archived rows returns `1.000000000` live and
+final unit-weighted accuracy with two canonicals, while the sealed renewed runner
+returns `0.954974`; therefore this H3 run also does not reproduce immutable `0.913500`.
+Anchor-fidelity diagnosis remains BLOCKED pending supervisor ruling.
+
+Raw H3 comparison SHA-256: `f28a1bfb3248210f2502600e3ae5bb4ef0abbc45d430740ed94f52338acaa017`.
+Raw H3 comparison transcript SHA-256: `ea0744b6bbfa4173deb26d2adeef4e31e32986aa5bfeb6de8e4bcabaff65ab8b`.
+`H3_POLICY_EVIDENCE.sha256` has SHA-256
+`a4619fcb555e1b5475da7252a2982a76c6a2f83c93ff47356a8e9b55dad19d1f`.
+Raw causal result SHA-256: `8f46fbe9c5fc0e96f7c8d41a24732e890f3a3683843445f327f569d6d71f1920`.
+Raw causal transcript SHA-256: `260c22d4593f6b7e0564a0004881566530a51598cee3c484a5118cb53a008957`.
+`H3_FIRST_DIVERGENCE_EVIDENCE.sha256` has SHA-256
+`d128449f277d2c340ae8390cfa61c9c11f495a21b5b559a09a9b92011a41a866`.
+
+### L2 Stage 0 legacy-ingest adapter v3 verdict (`l2-stage0`, 2026-08-03)
+
+Commands, in order:
+
+1. `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/quantify_v2_contamination.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v2`
+2. `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_legacy_ingest_tests.py --test test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/unit23-transcript.txt --json-output prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/unit23.json`
+3. `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_legacy_ingest_tests.py --test test_legacy_ingest.LegacyIngestTest.test_all_92_archived_units_render_into_parseable_preparations --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/all92-transcript.txt --json-output prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/all92.json`
+4. Repeat commands 2-3 with output directory `adapter-v3-green-v2`, then run the full `test_legacy_ingest.LegacyIngestTest` class and `test_span_reason_placeholder_is_score_independent` through the same test runner.
+5. `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/run_legacy_measurement_v3.py --audit-output prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/span-reason-audit-v3.json --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v3`
+
+The sealed v2 quantification found three failed spans (`19`, `26`, `61`) and five
+affected units: `23` (0.580375 reference seconds), `31` (1.261875), `32`
+(1.040125), `72` (2.1596875), and `73` (0.3403125), total 5.382375 seconds.
+Every unit had null live/final labels, zero hypothesis intervals, and zero ledger
+records; four were otherwise embedding-eligible. Named mechanism:
+`pre_assignment_censoring_as_null_hypothesis`. Reference time remained in the score
+denominator as missed time, so omission itself supplied no direct scalar inflation;
+the contamination was censorship of the policy decisions under test. The first
+quantifier invocation failed on a diagnosis-only report-field typo; its raw failure
+remains sealed before the corrected output.
+
+Red-first reproduced unit 23/span 19 as `failed/unparseable_transcript` and found the
+same property failure on units 23, 31, 32, 72, and 73. The authorized adapter change
+now derives each diagnosis span bound from its reconciled piece minimum/maximum, so
+no rendered piece starts outside `[0, span_duration]`. The first green attempt, which
+reconciled only on the end side, correctly stopped at unit 83 with named
+`legacy_unit_reference_mismatch`; preserved. Final exact-unit, all-92 property,
+reason-independence, and full adapter suite passed (8/8; zero
+`unparseable_transcript`). Official runner, production files, archive, pins,
+tolerances, and anchor remained unchanged.
+
+**VERDICT: BLOCKED.** Legacy-measurement-v3 byte-verified archived cache
+`fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5`
+before and after. Two runs were deterministic: both speaker accuracy `0.983449`,
+both scoring-projection SHA-256
+`26beda58f5e690a6ff3c37d28f5b33e163ba2084e9f1271bbfbb55744f6fee47`.
+Absolute delta from immutable `0.913500` was `0.069949`, outside `±0.001000`;
+`legacy_anchor_band_failed`. Runner-policy divergence is back in play. Per ruling,
+H4/deeper diffing, decomposition, dual anchors, gate clarification, A2 completion,
+and A3 were not run.
+
+Raw evidence:
+
+- `instrument-fidelity/v2-contamination-v1/V2_CONTAMINATION_FAILURE_EVIDENCE.sha256` — SHA-256 `c42eb22652d617ad84b6e3486b19953e7025443371f6fb0e03d9c500bf850a47`.
+- `instrument-fidelity/v2-contamination-v2/V2_CONTAMINATION_EVIDENCE.sha256` — SHA-256 `bcc667941906a847fd2d030fac3bb3416268486c0f5d569438404bc22a1f6ba6`.
+- `instrument-fidelity/adapter-v3-red/ADAPTER_V3_RED_EVIDENCE.sha256` — SHA-256 `74bee1d413b1edcdbf96e52956a29b6b2be93812a206faa8b841c4e41ad14884`.
+- `instrument-fidelity/adapter-v3-green/ADAPTER_V3_GREEN_ATTEMPT1_FAILURE.sha256` — SHA-256 `da7862989131d4106b4d7638b77751b59c593d86e75160abe6992f21e1057a6b`.
+- `instrument-fidelity/adapter-v3-green-v2/ADAPTER_V3_GREEN_EVIDENCE.sha256` — SHA-256 `a52ea7f7d5a71ee0d0bf62a90eb3a9f1e63c2f20420184d53171f873531b914a`.
+- `legacy-measurement-v3/LEGACY_MEASUREMENT_EVIDENCE.sha256` — SHA-256 `cdfc86d75527d998b1225c453a834b2eed4bb45c6a899745c308116f1b04920a`.
+- `legacy-measurement-v3/v3-wrapper-result.json` — SHA-256 `15f149260d0423402c09b9c85fd90d0dfdf7978c356fe9018a398568f2babb77`.
+
+The source hashes referenced by accepted H1-H3 historical manifests now differ only
+because of this supervisor-authorized adapter/test correction. The old-to-new hashes
+and unchanged-boundary assertions are sealed in
+`instrument-fidelity/authorized-source-drift-v3.json`.
+
+Command-record erratum: the exact separately rerun reason-independence method in
+command 4 was
+`test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score`;
+the earlier `test_span_reason_placeholder_is_score_independent` wording was a NOTES
+transcription error only. `adapter-v3-green-v2/reason-transcript.txt` preserves the
+exact successful command.
+
+### L2 Stage 0 original-vs-renewed causal-policy diagnosis (`l2-stage0`, 2026-08-03)
+
+**Production bindings.** `run_l1_control.py` does not reimplement preparation or
+assignment. It imports `BoundedCausalIdentityPreparer`, `FingerprintAlbum`, and
+`WeSpeakerLiveEvidenceProvider` at lines 21-40; constructs them at 246-265; and calls
+`preparer.prepare(..., base_snapshot=snapshot)` at 361-375. Production preparation is
+`moss_transcribe_diarize/app/live_identity.py:89-166`; line 123 calls the production
+matcher through `_assign` at 229-240 and `assign_speakers` at 297-355. The runner's
+379-388 only decodes returned diagnostics into evidence arrays. Provider scoring at
+`live_provider_bundle.py:567-631` reconciles the previously committed span at line 575,
+then scores only the canonical speakers in the current base snapshot. Prior assignments
+reach the album through 726-765. No renewed assignment-policy copy exists.
+
+The first unchanged-source invocation disclosed that the dirty main checkout's local
+alphabet cache is a different 55-row artifact (SHA-256 `327f3328…aa68a`), not the
+authorized 92-row archive. That output is preserved as wrong-input, non-acceptance
+evidence. The unchanged source instrument was then invoked against the exact archived
+cache SHA-256 `fd13bacb…47be5` with policy `album`, sweep enabled, score `0.35`,
+margin `0.1`, admission `2.0`, birth floor `1.0`, merge `0.7`, sweep cadence `60.0s`,
+speaker cap `16`, sticky delta `0.0`, and keep-uncertain false. Source
+`proto_ab_identity.py` remained byte-identical at SHA-256 `e4e8305c…1791`.
+
+**VERDICT: EXPECTED ORIGINAL ANCHOR NOT REPRODUCED; WORKING HINDSIGHT HYPOTHESIS
+REFUTED; STOP.** The unmodified original returned live and final accuracy
+`0.9999999999999999`, not `0.9135`. Per-unit normalization
+`0→speaker-0001`, `1→speaker-0002`, `-1→null` produced zero live mismatches and zero
+final mismatches across all 92 rows (83 eligible, 9 ineligible). There is therefore no
+first divergent unit and no divergent album state to report. At the first joint album
+checkpoint, unit 2/span 1, both see exactly one prior enrolled identity from unit 0 and
+both birth the second identity. Original live equals final; renewed live equals final;
+renewed changed-duration fraction is zero and all sweep correction lists are empty.
+No final-album hindsight affected either result.
+
+The numeric bridge is scoring scope, not policy: original `accuracy()` defaults to
+eligible rows only (`proto_ab_identity.py:351-355`) and scores `1.0`; asking that same
+unchanged scorer to include all rows scores `0.9833507161`. Production reference-time
+scoring gives renewed `0.983449` with `174.141506s` matched, `2.930806s` missed, and
+zero confused seconds. Neither path approaches immutable `0.9135` on these inputs.
+The premise required to name a renewed policy line is absent. No fix, H4, anchor change,
+A2 completion, or A3 work was performed.
+
+Commands:
+
+1. From source bench `prototypes/streaming-diarization`, run Python with
+   `PYTHONDONTWRITEBYTECODE=1`, import unchanged `proto_ab_identity as H`, set
+   `H.SWEEP_EVERY=60.0`, load the exact archived NPZ, and call
+   `H.simulate(cache, policy="album", min_score=0.35, margin=0.1, admission=2.0,
+   sweep=True, merge_thr=0.7, sticky_delta=0.0, keep_uncertain=False,
+   birth_floor=1.0)`; stdout was teed to
+   `instrument-fidelity/original-instrument-v2/stdout.json`.
+2. `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/compare_original_renewed.py --json-output prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/original-renewed-diff-v1/result.json 2>&1 | tee prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/original-renewed-diff-v1/transcript.txt`
+
+Raw evidence:
+
+- `instrument-fidelity/original-instrument-v1/stdout.json` — SHA-256 `8527c3999293a274d696e6f8935d1f1049197ff9edba39c54b6af2d8b5561afe`.
+- `instrument-fidelity/original-instrument-v1/classification.json` — SHA-256 `0035ed66d0ab383ff3742a1be96ad6ecfcc97ff11cb64ba58531df9fea850b79`.
+- `instrument-fidelity/original-instrument-v2/stdout.json` — SHA-256 `337ca2c1f912568634fea6a68984d60901acc06567cee435d1106b833c92e519`.
+- `instrument-fidelity/original-instrument-v2/config.json` — SHA-256 `2b6f6998291c21ff74cb9f551be826e2b83f9d48a39354252cd3d4867348cbcf`.
+- `instrument-fidelity/original-instrument-v2/source-integrity-postflight.txt` — SHA-256 `dfbac9c4c23dc2a0cc9b29332ad4c4fb5cc174de5c618165e8fc9ea51b7cef36`.
+- `instrument-fidelity/original-renewed-diff-v1/result.json` and `transcript.txt` — each SHA-256 `42200525b8626bb0bc8a583217ecb791df92219573a5300402a9e534b03e344e`.
+
+Two diagnosis-only script defects (wrong repository parent, then lowercase JSON literal)
+failed before result serialization, were corrected without touching inputs or official
+files, and remain preserved in the differential evidence directory.
+
+### L2 Stage 0 archived-cache truth-frame gate (`l2-stage0`, 2026-08-03)
+
+Command:
+`PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/prove_archive_truth_frame.py --output-dir prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/frame-diagnosis-v2 2>&1 | tee prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/frame-diagnosis-v2/transcript.txt`
+
+**VERDICT: BLOCKED — supervisor stale-frame synthesis REFUTED; required immediate
+STOP.** The exact cache-row builder (`load_reference` → `plan_spans` →
+`(span, truth-speaker)` grouping) reconstructed 92 rows from corrected reference
+`28dc9a5b…0759`. All six columns of all 92 rows match archive `fd13bacb…7be5`
+exactly: zero mismatched rows, per-column mismatch counts `[0,0,0,0,0,0]`, and
+maximum absolute delta `0.0`. Those columns are span id, truth-speaker index, unit
+start, unit end, eligible duration, and eligibility flag.
+
+The stale reference `27c9b96e…ebbe` reconstructs 55 rows, so it cannot match the
+92-row `fd13` archive. It instead matches the separate source-bench cache
+`327f3328…a68a` exactly across all 55×6 values. The contemporaneous A1 record
+`evidence/vector-rebuild.json` independently says old reference `27c9…` / old cache
+`327f…`, then new corrected reference `28dc…` / new cache `fd13…` with 92 rows.
+Archive bytes were `fd13…` before and after both probes.
+
+The probe hard-refused with named error
+`frame_gate_archive_matches_corrected_reference`, `<promise>BLOCKED</promise>`, and
+exit 2. Per supervisor instruction, no A2.3 gate re-scope, consolidated anchor verdict,
+dual-anchor completion record, A2-completion commit, or A3 work was performed.
+
+The first identical probe produced the same decisive result but its `tee` opened
+before the script-created output directory. Its result and copied inputs remain sealed;
+the unchanged v2 rerun pre-created the directory and preserved full stdout.
+
+Raw evidence:
+
+- `instrument-fidelity/frame-diagnosis-v2/result.json` — SHA-256 `d45a963c2e385d734cfc5003da774ed4804816b05720fc89dd4deb4f3e5358f1`.
+- `instrument-fidelity/frame-diagnosis-v2/transcript.txt` — SHA-256 `b1ab44d128d0b941c1aca7b0c4d4760f1e22b3e1eebf089e9bbf46018274f2b4`.
+- `instrument-fidelity/frame-diagnosis-v2/inputs/stale-reference-27c9b96e.jsonl` — SHA-256 `27c9b96e86cce3be86a3ce06dd64c1710e2c94e72a01c30339e953db94b8ebbe`.
+- `instrument-fidelity/frame-diagnosis-v2/inputs/corrected-reference-28dc9a5b.jsonl` — SHA-256 `28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759`.
+- `instrument-fidelity/frame-diagnosis-v1/result.json` — SHA-256 `6694be3ff6daca3e3d7a1b3378b3a1be232a987583c96f11bcb0393620aeef17`.
+
+### L2 Stage 0 consolidated anchor diagnosis and A2 completion verdict (`l2-stage0`, 2026-08-03)
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/verify_a2_completion.py --json-output prototypes/streaming-diarization/l2-stage0/evidence/a2-completion-verdict.json --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/a2-completion-verdict-transcript.txt`
+
+**VERDICT: A2 COMPLETE; A3 NOT STARTED.** The first A2 run correctly blocked on
+stale derived-cache unit count. The authorized A1.2 versioned rebuild then produced
+six development/validation cases × two runs on frozen inputs; all twelve runs were
+exactly deterministic. The renewed corrected-alphabet baseline is `0.916765` and is
+the instrumental L1 comparison base for A5. The blind holdout remains sealed.
+
+The complete diagnosis chain is retained, not rewritten. The renewed A2's old
+`0.913500 ±0.001000` gate first blocked. Replaying the 92-unit `fd13bacb…` archive
+required a diagnosis-only legacy adapter: v2 scored `0.954974`, but its ingest defect
+censored five units/5.382375 seconds before assignment as null hypothesis, a direct
+score **deflation**, not inflation. The corrected v3 adapter passed the unit-23 and
+all-92 preparation properties and scored deterministic `0.983449`. H1 was refuted
+because production rescoring of sealed labels was identical; H2 was refuted because
+all deployed identity constants and config hash matched; H3's apparent first policy
+divergence was the adapter defect, and post-fix triangulation refuted causal/hindsight
+divergence: the renewed runner calls production preparer/assignment, performs zero
+sweep corrections, and the unchanged original instrument scores `1.000000` on the
+same 92 rows. Thus partition change as the sole explanation, scorer mismatch,
+constant mismatch, renewed-policy overstatement, and retrospective assignment are
+all refuted.
+
+The frame proof corrects the supervisor's premises on the record. Premise
+“`fd13bacb…` is the accepted anchor's own measurement input” was wrong in the
+load-bearing sense: it has corrected truth but proto truth-planned segmentation, not
+the live/production planner frame. Premise “`fd13bacb…` is stale-reference data” was
+also wrong. Exact row comparison proves: source cache `327f3328…` is the 55-unit
+stale-reference/proto frame; `fd13bacb…` is A1's 92-unit corrected-reference/proto
+truth-pure frame; `6fe79ce7…` is the 101-unit corrected-reference/production-planned
+frame. The easy 92-unit frame saturates at `0.983449–1.000000`; only the 101-unit
+production-planned frame mimics live segmentation and yields `0.916765`, near the
+immutable accepted live pair `0.913500/0.914400`. **Established finding: L1 accuracy
+is planner-frame-dependent.** The July-era 55-unit stale-frame `~0.886` observation
+versus today's differing-config `1.000000` saturation is flagged as curiosity for the
+operator packet, not an anchor or acceptance claim. The `fd13bacb…` attribution and
+all three frame identities must also appear in that packet.
+
+Supervisor-authorized calibration clarification, dated 2026-08-03: (a)
+intra-instrument repeatability remains `±0.001` (`±0.1 pp`) and passes with observed
+zero delta/exact semantic hashes; (b) cross-instrument anchoring compares the
+production-planned corrected-frame baseline to both immutable live values using PRD
+Gate H's predeclared `±0.005` (`±0.5 pp`) band. Observed deltas are `0.003265`
+(`0.3265 pp`) and `0.002365` (`0.2365 pp`), so the gate passes. Applying the
+same-instrument `±0.1 pp` repeatability band across instruments and planner frames was
+a category error; that cross-frame use is retired, not the immutable live numbers.
+PRD §10 acceptance gates are untouched. This is an instrument-calibration pin change
+owned by the supervisor, not threshold/tolerance shopping.
+
+A5 rule: all three arms—L1, ledger-only, and frozen L2—must run and compare on the
+same production-planned per-case cache created inside the single sealed-holdout opening.
+Cross-frame arm metrics are never comparable. The procedure is pinned at SHA-256
+`6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902`.
+Dual anchors are explicit and non-overwriting: live `0.913500/0.914400` remains
+immutable production truth; bench `0.916765` is the instrumental A5 comparison base.
+
+Sealed evidence chain (manifest SHA-256): first block
+`e0747b97ec5750ed5b78f13114668c3a8668685c732f4cdb5448b5768543da14`;
+A1.2 rebuild `40ec1acf8d49146c10d4c4d2f6ee897bbc7d42a6b57edc3df2caf6dd4ab9bce4`;
+path-only correction `0135dc06705ee3c66a1bbe48844cd4c0ffbf482fc13b0126ea8f31021e00c476`;
+renewed A2 `9839f3fb65d9f0642e9e31ddd050c9cd100b7bdb58251ea4d66146e241b7a5e4`;
+direct anchor incompatibility `ff76c726bd9642bdd14e253932ab13c1416ecb5dd6803d5ad40ce0888436d3c6`;
+legacy-ingest diagnosis v1/v2
+`ea4abf34f872de651fa261fb8a237a8756b3e4a804c725022459e432972674c5` /
+`70391fd90b088cf679b761b7532781d3c39f9f4f562ec62c6697b13f8c675ad1`;
+contaminated legacy measurement v2
+`58b12ce154e679bd54280d909a66a75237777e3c9d672747642c9bc935e60e69`;
+H1/H2/H3/H3-causal
+`c024dbb7b43128c7068f58b4bdd95625d6b1a2517c223e64a4d1fc9ad8024e54` /
+`99d202f62bc7bc0e53273f5ec5ad014057d1f5acf9d872f7d7094e2e0fd9b663` /
+`a4619fcb555e1b5475da7252a2982a76c6a2f83c93ff47356a8e9b55dad19d1f` /
+`d128449f277d2c340ae8390cfa61c9c11f495a21b5b559a09a9b92011a41a866`;
+v2 contamination failure/correction
+`c42eb22652d617ad84b6e3486b19953e7025443371f6fb0e03d9c500bf850a47` /
+`bcc667941906a847fd2d030fac3bb3416268486c0f5d569438404bc22a1f6ba6`;
+adapter v3 red/attempt-1/final/boundary
+`74bee1d413b1edcdbf96e52956a29b6b2be93812a206faa8b841c4e41ad14884` /
+`da7862989131d4106b4d7638b77751b59c593d86e75160abe6992f21e1057a6b` /
+`a52ea7f7d5a71ee0d0bf62a90eb3a9f1e63c2f20420184d53171f873531b914a` /
+`331584b7b0794ef5cb8abd26f9d56f0d90b905b66338dbaacd19f36c76a7c005`;
+corrected legacy measurement v3
+`cdfc86d75527d998b1225c453a834b2eed4bb45c6a899745c308116f1b04920a`;
+original/renewed triangulation
+`430bc7514d6049387f4120de5fbff4c506a3ed20cf9c7dbe5cc8ba1ecbd682ff`;
+frame proof `63f2b6e0c85cd6f5b87ea58e4e222219202f26f818608bc626fd4856f1253322`;
+and consolidated A2 completion
+`9118d88326e261899f30120aa9a448a91a9bb72936741ac82725b055bca9c387`
+(158 files). Raw completion verdict SHA-256 is
+`7380a3020c44a0fc85b619456b56b5541cba86117efbb79fcde0702d16bfe4df`;
+raw transcript SHA-256 is
+`4ccab8e42fcd3bb02b09a25c12aac5ce01c845a7656e280c5685962b74c47de2`.
+
+Historical A12 manifest provenance was independently preserved by:
+`git -C /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 show 19983e34c75dbe4e9a27b09494ff742db943e5e9:prototypes/streaming-diarization/l2-stage0/evidence/A12_EVIDENCE.sha256 | rg 'run_l1_control.py|test_l1_control.py'`, yielding runner
+`22ee9a8f…5752` and test `ce6c1cbb…e86f`; hashing each file from that commit reproduced
+those values exactly. The sealed command/output record is SHA-256
+`8adaf14810a061f75efaedea11ed1207c30d07ee7ad0d5c8cfa6e5b795d7ea52`.

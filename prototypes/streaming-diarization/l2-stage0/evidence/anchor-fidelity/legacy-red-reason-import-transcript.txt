@@ -1,0 +1,18 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score
+EXIT 1
+STDOUT
+STDERR
+test_span_reason_placeholder_does_not_change_score (test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score) ... ERROR
+
+======================================================================
+ERROR: test_span_reason_placeholder_does_not_change_score (test_legacy_ingest.LegacyIngestTest.test_span_reason_placeholder_does_not_change_score)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 19, in test_span_reason_placeholder_does_not_change_score
+    from run_legacy_anchor_fidelity import replay_legacy_case
+ModuleNotFoundError: No module named 'run_legacy_anchor_fidelity'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
