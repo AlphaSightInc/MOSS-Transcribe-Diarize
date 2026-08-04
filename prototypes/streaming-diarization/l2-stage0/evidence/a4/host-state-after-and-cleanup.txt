@@ -1,0 +1,26 @@
+schema=moss-l2-stage0-a4-host-cleanup.v1
+captured_utc=2026-08-04T02:15:15Z
+unit=moss-live-web.service active=active enabled=enabled
+unit=moss-web.service active=active enabled=enabled
+unit=moss-vllm.service active=active enabled=enabled
+live_session_creates_since_start=0
+live_frames_since_start=0
+live_heartbeats_since_start=0
+nonterminal_batch_jobs=0
+repo_head=9089b33210401111865da7abc160ab0bcb4aa266
+repo_status_count=0
+b710a06c4c31582f2c84aabf10286795e2f7a988d8769085728a5735ef65a2b4  /mnt/d/Coding/MOSS-Transcribe-Diarize/moss_transcribe_diarize/app/speaker_identity.py
+5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8  /home/devcontainers/.local/share/moss-transcribe-diarize/tier-b/hf/voxceleb_resnet152_LM.onnx
+842c9609ac4473bee0c29275fa2f38d73b00484acc603673f2317039005f8996  /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/audio.wav
+f5a06998cddcee91b536750a3c988c1650d2b0601d877fc6c4a92ea1c7c39796  /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/a4-runtime-base.json
+8f7714eaf45504dadbc11cb1afec38fff1503ba8c22ad5112cf374fb0058de1a  /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/a4-runtime-optimized.json
+scratch_files=17
+scratch_bytes=60891052
+thermal_state_begin
+unavailable_in_wsl
+thermal_state_end
+nvidia_state_begin
+NVIDIA GeForce RTX 4070 Ti SUPER, 28, 0, 15641, 2.06
+nvidia_state_end
+cleanup=PASS_exact_remote_scratch_removed
+repo_status_count_after_cleanup=0

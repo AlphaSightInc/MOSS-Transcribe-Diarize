@@ -838,3 +838,129 @@ The authoritative verdict remains `lifecycle-verdict-v3.json` at SHA-256
 `c3f10e9dc5c47c1d5a01a047dd3b444245d375e2e58b5a4766a5d560655d3ffe`.
 Reproduce it with the command above, replacing both `lifecycle-verdict-v2` output
 stems with `lifecycle-verdict-v3`.
+
+### L2 Stage 0 A4 preregistered measurement frame (`l2-stage0`, 2026-08-03)
+
+Question: can one nice'd, one-thread production CPU embedder on the deployed
+i7-14700F satisfy the fixed resource gates while the A3 single-worker lifecycle
+keeps post-drain stop acknowledgement and new-session admission responsive?
+
+Before the first A4 measurement, the frame is frozen as follows. Use the frozen
+`30m-acquired-jamie-dimon` WAV only as resource bench audio; never read its reference.
+Read it sequentially in 40,000-sample/2.5-second chunks, materialize at most one
+scratch WAV at a time, and call production `_OnnxWeSpeakerEmbedder` with the pinned
+model, `CPUExecutionProvider`, and ONNX intra/inter-op threads both one. "Cold" means
+a new production ONNX session with uncontrolled OS page cache; "warm" immediately
+reuses that session. Measure 25, 100, 300, and 1,800 seconds in both states. The RTF
+and 180-second gates use the worse of the measured cold/warm 1,800-second runs;
+shorter-run 30-minute projections are diagnostic. RSS is process peak/current; each
+chunk records logical PCM/decoded/scratch bytes plus `/proc/self/io` read counters.
+
+Lifecycle values are explicitly prototype-frame proxies: post-canonical-drain L2-off
+close versus A3 `acknowledge_stop()`+bounded enqueue; actual production
+`LiveSession`+`LiveV2Session` construction/snapshot/release under no, queued, and
+active single-finalizer states; actual queue wait/finalizing/publication timestamps.
+Campaign B still owns the product-path live-latency gate. Fixed A4 gates remain RTF
+`<=0.10`, 30 minutes `<=180 s`, no whole-tape materialization, maximum one active
+finalizer, contention p95 `<4000 ms`, and stop-ack p95 overhead `<=100 ms`.
+
+No optimization pass is authorized by this base frame. If the RTF gate misses, seal
+the base result first, append one exact bounded interval-selection/caching design
+before executing it, run that design once, and stop if it misses. No second pass,
+tolerance change, or work on the live canonical pump.
+
+### L2 Stage 0 A4 sole optimization preregistration (`l2-stage0`, 2026-08-03)
+
+The sealed base result is `evidence/a4/base/a4-runtime-base.json`, SHA-256
+`f5a06998cddcee91b536750a3c988c1650d2b0601d877fc6c4a92ea1c7c39796`.
+Exactly two cost gates missed: the cold 30-minute run was `180.210634953 s`, RTF
+`0.1001170194`; its warm reuse was already `178.537065659 s`, RTF `0.0991872587`.
+Chunking, concurrency, contention latency, and stop acknowledgement all passed.
+
+The one authorized optimization is now frozen as `eager-prewarmed-session-v1`:
+
+- cache exactly one production `_OnnxWeSpeakerEmbedder` session in the sole CPU
+  finalizer worker, keyed by the pinned model/source hashes, CPU provider, one/one
+  ONNX threads, frontend version, and 40,000-sample cap;
+- at worker startup—not in stop and not on the live canonical pump—load and exercise
+  that exact session once with one 2.5-second scratch chunk, discard the vector, and
+  report warm-up wall/RSS separately;
+- invalidate/refuse on any key/hash/settings mismatch; never cache audio, vectors,
+  candidate results, or more than one model session;
+- run all 720 production-size chunks for the 30-minute tape. No speech interval is
+  removed and no result from the warm-up is reused;
+- repeat the exact 25/100/300/1,800-second matrix with two consecutive finalizers per
+  duration using the eagerly warmed session. The unchanged RTF/180-second gates use
+  the worse of the two measured 1,800-second finalizers.
+
+This is the single preregistered optimization pass allowed by A4. A miss stops the
+campaign; there is no second pass or gate adjustment.
+
+### L2 Stage 0 A4 resource-envelope verdict (`l2-stage0`, 2026-08-03)
+
+Reproduce the sealed verdict from raw evidence:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evaluate_runtime.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/write_a4_evidence_manifest.py && shasum -a 256 -c prototypes/streaming-diarization/l2-stage0/evidence/A4_EVIDENCE.sha256
+```
+
+**VERDICT: BLOCKED; STOP CAMPAIGN A.** On the actual i7-14700F WSL deployment
+CPU, the sealed base 30-minute pair was cold `180.210634953 s` / RTF
+`0.1001170194` and warm `178.537065659 s` / RTF `0.0991872587`. Only the fixed
+RTF/time gates failed. The one preregistered `eager-prewarmed-session-v1` pass then
+ran every chunk unchanged; its two 30-minute finalizers were `180.294477612 s` /
+RTF `0.1001635987` and `179.533264497 s` / RTF `0.0997407025`. The worse run
+still exceeds both RTF `<=0.10` and 30 minutes `<=180 s`. No second pass, gate
+change, or candidate work is permitted. A5/A6 did not start; holdout stayed sealed.
+
+Full base cold/warm wall seconds and RTF: 25 s `4.015644/0.160626`,
+`2.509545/0.100382`; 100 s `10.853254/0.108533`, `10.014125/0.100141`;
+300 s `30.705834/0.102353`, `29.934316/0.099781`; 1,800 s
+`180.210635/0.100117`, `178.537066/0.099187`. Full optimized first/reused
+finalizer values: 25 s `2.520144/0.100806`, `2.516306/0.100652`; 100 s
+`10.014872/0.100149`, `9.955873/0.099559`; 300 s
+`29.998517/0.099995`, `29.816650/0.099389`; 1,800 s
+`180.294478/0.100164`, `179.533264/0.099741`. Shorter-run 30-minute
+projections and the separately reported cache warm-ups remain in raw JSON.
+
+The other four gates passed in the final pass: each of 1,780 reads was exactly
+40,000 samples, with 80,000 source PCM bytes, 160,000 decoded bytes, and an 80,044
+byte scratch WAV; no whole tape was materialized. Cached-run embed `rchar` was
+80,163-80,179 bytes/chunk and physical `read_bytes` was zero from page cache; the
+base first cold chunk separately exposes model loading (up to 97,247,142 `rchar`
+and 225,239,040 physical bytes). Peak worker RSS across both passes was 711,372,800
+bytes. Measured maximum active finalizers was one. Final optimized queue waits were
+`0.010196/2.516813 s`, finalizing times `2.516529/2.503222 s`, and final-visible
+times from enqueue `2.537222/5.020376 s`. New-session proxy p95 was
+`0.010915/0.010575/0.011320 ms` for no/queued/active finalizer; post-drain stop-ack
+p95 overhead over L2-off was `0.001229 ms`. These latency values are A3 prototype
+proxies; the product-path Campaign-B gate was not claimed.
+
+Host safety held before, during, and after both nice-10 runs: all three services
+remained active but idle; zero live creates/frames/heartbeats since the current
+service start; zero nonterminal batch jobs; deployed tree stayed clean at
+`9089b332`; source/model/audio hashes stayed exact. WSL exposed 22 GB memory and
+8 GB swap; cpufreq governor and CPU thermal sensors were unavailable, recorded as
+such; auxiliary GPU temperature was 31 C before and 28 C after. The exact 60,891,052
+byte remote scratch was removed only after all raw results were copied back; the
+deployed tree was never written.
+
+Raw base JSON/transcript SHA-256:
+`f5a06998cddcee91b536750a3c988c1650d2b0601d877fc6c4a92ea1c7c39796` /
+`e6627e21a851fd15610fa683bb503e5864a5ed2c29b03978946c8cd981f366d3`.
+Raw optimized JSON/transcript SHA-256:
+`8f7714eaf45504dadbc11cb1afec38fff1503ba8c22ad5112cf374fb0058de1a` /
+`8b83f6378ee62a37d66ca3f22bd6ebc156c5d8c5afdd6023ecbd7030edc7514b`.
+Host-before and host-after/cleanup SHA-256:
+`91ce7858444106dfd1f2e77951f458a9cbdcd014efef2fa5f0a14de770071201` /
+`051ad016a93ba6a6c85cb4640773aa4f89c9a1c2aa06bdd5dc6a5cf667b91a21`.
+Consolidated verdict JSON/transcript SHA-256:
+`5861323145436792f81cbf3e7ac4011e8be93fe2550d4857fa239a89a082da15` /
+`acc138910ecee2b533b8ecc835cc62da368b5a5f670ab87044271e1e1b039ea5`.
+`evidence/A4_EVIDENCE.sha256` seals 26 files, SHA-256
+`1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d`.
+
+Commit-granularity deviation: supervisor explicitly authorized A4 as its own atomic
+commit, continuing the A1/A2/A3 precedent rather than plan section 5's combined
+lifecycle/resource commit. This keeps the failed gate and its sole optimization
+independently testable and revertible.
