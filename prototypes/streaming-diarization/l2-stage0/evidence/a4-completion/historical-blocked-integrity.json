@@ -1,0 +1,17 @@
+{
+  "artifacts": [
+    {
+      "byte_identical_to_owning_commit": true,
+      "current_sha256": "5861323145436792f81cbf3e7ac4011e8be93fe2550d4857fa239a89a082da15",
+      "owning_commit_sha256": "5861323145436792f81cbf3e7ac4011e8be93fe2550d4857fa239a89a082da15",
+      "path": "prototypes/streaming-diarization/l2-stage0/evidence/a4/a4-verdict.json"
+    },
+    {
+      "byte_identical_to_owning_commit": true,
+      "current_sha256": "1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d",
+      "owning_commit_sha256": "1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d",
+      "path": "prototypes/streaming-diarization/l2-stage0/evidence/A4_EVIDENCE.sha256"
+    }
+  ],
+  "owning_commit": "9b9b3f2209f91dd7e6699bab0add9efb448a1f08"
+}

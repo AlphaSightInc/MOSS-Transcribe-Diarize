@@ -1,3 +1,5 @@
 # Preserve sealed unittest transcripts byte-for-byte while exempting their runner-emitted spaces.
 evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/all92-transcript.txt -whitespace
 evidence/anchor-fidelity/legacy-red-validation-transcript.txt -whitespace
+evidence/a4-completion/red-test-transcript.txt -whitespace
+evidence/a4-completion/green-test-transcript.txt -whitespace

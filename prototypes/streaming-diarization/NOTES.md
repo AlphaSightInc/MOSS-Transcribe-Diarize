@@ -964,3 +964,44 @@ Commit-granularity deviation: supervisor explicitly authorized A4 as its own ato
 commit, continuing the A1/A2/A3 precedent rather than plan section 5's combined
 lifecycle/resource commit. This keeps the failed gate and its sole optimization
 independently testable and revertible.
+
+### L2 Stage 0 A4 operator-authorized completion (`l2-stage0`, 2026-08-03)
+
+Reproduce the completion decision from the immutable A4 evidence:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/test_complete_a4.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/complete_a4.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/write_a4_completion_evidence_manifest.py && shasum -a 256 -c prototypes/streaming-diarization/l2-stage0/evidence/A4_COMPLETION_EVIDENCE.sha256
+```
+
+**VERDICT: A4 COMPLETE; 6/6 REVISED GATES PASS.** Operator Option A, authorized
+2026-08-03, re-scopes Gate F to the warm/reused finalizer steady state: RTF
+`0.09974070249833353 <= 0.10` and measured 30-minute wall
+`179.53326449700035 <= 180 s`. The one-time first-finalizer wall was
+`180.29447761199845 s`, only `0.7612131149980996 s` above steady state and within
+the authorized `<= 5 s` allowance. No whole-tape read (`40,000` samples maximum),
+one active finalizer, contention p95 `0.01132 ms`, and stop-ack overhead p95
+`0.001229 ms` all pass unchanged. Option D, server-GPU embedding, is explicitly
+deferred to post-MVP.
+
+The retired rule requiring the first finalizer itself to satisfy `RTF <= 0.10` and
+`<= 180 s` remains immutable history. Its BLOCKED verdict at commit
+`9b9b3f2209f91dd7e6699bab0add9efb448a1f08` remains SHA-256
+`5861323145436792f81cbf3e7ac4011e8be93fe2550d4857fa239a89a082da15`; its
+26-file seal remains SHA-256
+`1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d`.
+The current bytes equal that owning commit, proved in
+`evidence/a4-completion/historical-blocked-integrity.json`, SHA-256
+`54007b9b642fc0f69e00020e69c2d602305638365bd6ae31e30ade2f328a7ae2`.
+
+Completion verdict JSON/transcript SHA-256:
+`5a716e59b7045c9af0dbdf3f452f26ed0063a047010b93fc112ec88b82c53fdc` /
+`9a94741fa5f412f40a1ed400ddb6c2ffecd63adc783da357631cfba9d40f04ed`.
+Red/green test transcript SHA-256:
+`fa07e615e6e46002d0c3e9003c28943bbc58666b2e2034d045e9791b30feb107` /
+`efff837384645433857e054829dc06b5d44c0b6d8e3804a6b3099a676a273acc`.
+Holdout remained sealed; no product, service, deployment, host, TCC, volume, or
+retained-audio change occurred.
+
+Commit-granularity deviation: operator/supervisor authorized A4 completion as its
+own atomic commit before A5, continuing the independently testable/revertible
+granularity refinement of plan section 5.

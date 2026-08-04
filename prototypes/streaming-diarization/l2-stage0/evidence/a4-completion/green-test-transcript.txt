@@ -1,0 +1,9 @@
+^Dtest_first_finalizer_allowance_is_hard_gate (__main__.CompleteA4Tests.test_first_finalizer_allowance_is_hard_gate) ... ok
+test_operator_decision_is_option_a_and_d_deferred (__main__.CompleteA4Tests.test_operator_decision_is_option_a_and_d_deferred) ... ok
+test_revised_six_gate_contract_passes (__main__.CompleteA4Tests.test_revised_six_gate_contract_passes) ... ok
+test_steady_state_rtf_and_wall_are_hard_gates (__main__.CompleteA4Tests.test_steady_state_rtf_and_wall_are_hard_gates) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.018s
+
+OK
