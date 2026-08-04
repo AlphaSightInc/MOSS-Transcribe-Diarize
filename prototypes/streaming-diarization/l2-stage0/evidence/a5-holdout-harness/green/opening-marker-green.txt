@@ -1,0 +1,7 @@
+test_frozen_candidate_refuses_any_pinned_byte_drift (__main__.HoldoutRunnerTests.test_frozen_candidate_refuses_any_pinned_byte_drift) ... ok
+test_opening_marker_is_exclusive_and_never_overwritten (__main__.HoldoutRunnerTests.test_opening_marker_is_exclusive_and_never_overwritten) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.004s
+
+OK

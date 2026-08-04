@@ -1226,3 +1226,28 @@ The freeze source is accepted Phase-1 commit
 `a16c6d811031cac826878200256af0b69224add8`. No threshold, family,
 implementation, or runner change is permitted after this freeze regardless of the
 single holdout outcome. Holdout remained unopened while this commit was prepared.
+
+### L2 Stage 0 A5 one-opening harness preflight (`l2-stage0`, 2026-08-04)
+
+**VERDICT: PASS; HOLDOUT STILL UNOPENED.** The measurement-only harness
+`l2-stage0/run_a5_holdout.py` enforces the frozen config/source/spec hashes, the
+single exclusive opening marker, two deterministic L1 runs inside the 0.1 pp band,
+the pinned rebuild procedure, identical production-planned caches for all arms, and
+the accepted Phase-1 gate evaluator. Rebuilding the versioned holdout caches also
+advances `scripts/ralph-l2-afk/contract.json` to the new corpus-manifest hash in the
+same owning commit. The three rebuilt NPZ files are explicit members of the holdout
+evidence seal. No frozen candidate/config/spec/runner byte changed.
+
+Red-first proofs name missing frozen-pin validation, opening exclusivity,
+repeatability, and corpus-pin advancement; the final suite passes 4/4. A preflight
+against the deliberately nonexistent path `/definitely/not/read/holdout-manifest.json`
+passes with `holdout_read=false`, proving preflight did not open the blind manifest.
+Reproduce without reading holdout:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/test_a5_holdout_runner.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/run_a5_holdout.py --preflight-only --holdout-manifest /definitely/not/read/holdout-manifest.json
+```
+
+The actual opening remains a separate one-process command run only from the clean
+harness commit. Its first write is `evidence/a5-holdout-opening/opening-start.json`;
+that marker makes every later attempt refuse with `holdout_already_opened`.

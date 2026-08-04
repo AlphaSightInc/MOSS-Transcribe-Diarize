@@ -1,0 +1,8 @@
+test_frozen_candidate_refuses_any_pinned_byte_drift (__main__.HoldoutRunnerTests.test_frozen_candidate_refuses_any_pinned_byte_drift) ... ok
+test_l1_repeatability_enforces_point_one_percentage_point_band (__main__.HoldoutRunnerTests.test_l1_repeatability_enforces_point_one_percentage_point_band) ... ok
+test_opening_marker_is_exclusive_and_never_overwritten (__main__.HoldoutRunnerTests.test_opening_marker_is_exclusive_and_never_overwritten) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+OK
