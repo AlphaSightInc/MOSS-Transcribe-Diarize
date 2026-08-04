@@ -1,0 +1,81 @@
+{
+  "a5_comparison_rule": {
+    "all_arms_must_share_identical_case_cache": true,
+    "cross_frame_metrics_are_comparable": false,
+    "planner": "production_endpoint_policy",
+    "rule": "For each holdout case, compare l1_control, ledger_only_control, and l2_candidate only on the same production-planned cache rebuilt during the single A5 opening. Never compare arm metrics across planner frames."
+  },
+  "baseline": {
+    "case_count": 6,
+    "comparison_base_for_a5": true,
+    "corrected_alphabet_speaker_accuracy": 0.916765,
+    "runs_per_case": 2,
+    "sealed_summary_path": "prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-fixed-summary.json",
+    "sealed_summary_sha256": "fa10723978db7828622f5ef2c590a4a9ea1616fa74ce1d55c730387007733dee"
+  },
+  "cross_instrument_anchor_gate": {
+    "absolute_deltas": [
+      0.003265,
+      0.002365
+    ],
+    "absolute_tolerance": 0.005,
+    "actual_speaker_accuracy": 0.916765,
+    "anchor_kind": "cross_instrument_production_truth",
+    "case_id": "5m-acquired-alphabet",
+    "comparison_frame": {
+      "planner": "production_endpoint_policy",
+      "reference_sha256": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+      "unit_count": 101,
+      "vector_cache_sha256": "6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef"
+    },
+    "immutable_live_speaker_accuracy": [
+      0.9135,
+      0.9144
+    ],
+    "max_absolute_delta": 0.003265,
+    "pass_rule": "actual must be within absolute_tolerance of each immutable live value",
+    "passed": true,
+    "retired_cross_frame_gate": {
+      "absolute_tolerance": 0.001,
+      "reason": "category error: same-instrument repeatability band was applied across planner frames and instruments",
+      "speaker_accuracy": 0.9135
+    },
+    "supervisor_authorized_on": "2026-08-03"
+  },
+  "dual_anchors": {
+    "bench_instrumental": 0.916765,
+    "live_immutable": [
+      0.9135,
+      0.9144
+    ]
+  },
+  "frame_evidence": {
+    "corrected_production": {
+      "cache_sha256": "6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef",
+      "units": 101
+    },
+    "corrected_proto": {
+      "cache_sha256": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+      "units": 92
+    },
+    "result_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/frame-diagnosis-v2/result.json",
+    "result_sha256": "d45a963c2e385d734cfc5003da774ed4804816b05720fc89dd4deb4f3e5358f1",
+    "stale_proto": {
+      "cache_sha256": "327f33283422b0664911585d2a60e7490979e9c71152ec967cf0d042979aa68a",
+      "units": 55
+    }
+  },
+  "holdout_opened": false,
+  "intra_instrument_repeatability": {
+    "allowed_absolute_delta": 0.001,
+    "observed_absolute_delta": 0.0,
+    "passed": true,
+    "semantic_hashes_exact": true
+  },
+  "overall": "PASS",
+  "prd_section_10_gates_changed": false,
+  "schema": "moss-l2-stage0-a2-completion-verdict.v1",
+  "status": "COMPLETE",
+  "superseded_gate_result_preserved": true,
+  "supervisor_authorized_on": "2026-08-03"
+}

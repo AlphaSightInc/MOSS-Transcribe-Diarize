@@ -1,0 +1,11 @@
+COMMAND git -C /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 show 19983e34c75dbe4e9a27b09494ff742db943e5e9:prototypes/streaming-diarization/l2-stage0/evidence/A12_EVIDENCE.sha256 | rg 'run_l1_control.py|test_l1_control.py'
+EXIT 0
+22ee9a8f024a4898ea8636434141853e0880f5bb75cf542c06fdf0587c9d5752  prototypes/streaming-diarization/l2-stage0/run_l1_control.py
+ce6c1cbb335e96f722baea2bc6b78e51654fbf7293a6928cdffcea6e7a29e86f  prototypes/streaming-diarization/l2-stage0/test_l1_control.py
+COMMAND git -C /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 show 19983e34c75dbe4e9a27b09494ff742db943e5e9:prototypes/streaming-diarization/l2-stage0/run_l1_control.py | shasum -a 256
+EXIT 0
+22ee9a8f024a4898ea8636434141853e0880f5bb75cf542c06fdf0587c9d5752  -
+COMMAND git -C /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 show 19983e34c75dbe4e9a27b09494ff742db943e5e9:prototypes/streaming-diarization/l2-stage0/test_l1_control.py | shasum -a 256
+EXIT 0
+ce6c1cbb335e96f722baea2bc6b78e51654fbf7293a6928cdffcea6e7a29e86f  -
+VERDICT PASS owning-commit bytes match the historical A12 manifest entries.

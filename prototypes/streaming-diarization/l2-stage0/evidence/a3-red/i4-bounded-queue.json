@@ -1,0 +1,9 @@
+{
+  "errors": [
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_one_bounded_queue_owns_finalizers_and_one_cpu_runs"
+  ],
+  "failures": [],
+  "successful": false,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_one_bounded_queue_owns_finalizers_and_one_cpu_runs",
+  "tests_run": 1
+}

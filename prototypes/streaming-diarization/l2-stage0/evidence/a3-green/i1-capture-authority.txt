@@ -1,0 +1,6 @@
+test_capture_authority_ends_at_stop_ack (test_lifecycle_prototype.LifecyclePrototypeTest.test_capture_authority_ends_at_stop_ack) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

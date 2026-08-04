@@ -1,0 +1,55 @@
+{
+  "candidate_family": "energy-vad-overlap-wespeaker-joint-span-rescue-v4",
+  "candidate_frozen": true,
+  "candidate_implementation_path": "prototypes/streaming-diarization/l2-stage0/candidate_engine.py",
+  "candidate_implementation_sha256": "fbed07c2a06efee9f1efab24000ae3e7c7f083761fa21b5ab544a7afce538467",
+  "candidate_runner_path": "prototypes/streaming-diarization/l2-stage0/run_candidates.py",
+  "candidate_runner_sha256": "dfc481215e1541def902764b13e199783d7b62738d3e205197ccd52f122aa828",
+  "candidate_spec_path": "prototypes/streaming-diarization/l2-stage0/a5-dev-candidate-family-v4.json",
+  "candidate_spec_sha256": "280041b25865c0ce912ab3d05afdf8636561296723832deadeb6e328ea7b7a0f",
+  "dev_evidence_manifest_sha256": "8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34",
+  "freeze_source_commit": "a16c6d811031cac826878200256af0b69224add8",
+  "frozen_on": "2026-08-04",
+  "holdout_manifest_sha256": "45412c90672015ece660b09cfbb4e8eeeba3e6603d671656a6ea26c3695f505d",
+  "schema": "moss-l2-stage0-candidate-config.v1",
+  "thresholds": {
+    "change_evidence": {
+      "budget_order": [
+        "full_committed_span",
+        "active_at_span_start",
+        "mid_span_birth_or_tail"
+      ],
+      "canonical_min_margin": 0.1,
+      "canonical_min_score": 0.35,
+      "incumbent_improvement_margin": 0.1,
+      "joint_one_to_one_before_budget": true,
+      "max_changed_duration_fraction": 0.05,
+      "minimum_unit_cluster_vote_fraction": 0.5,
+      "minimum_unit_cluster_vote_margin": 0.2,
+      "one_to_one_within_span": true,
+      "weak_vector_unattributed_only": true
+    },
+    "energy_vad": {
+      "bridge_silence_seconds": 0.2,
+      "frame_seconds": 0.02,
+      "minimum_region_seconds": 0.3,
+      "noise_percentile": 20.0,
+      "noise_relative_threshold_db": 12.0,
+      "threshold_ceiling_dbfs": -30.0,
+      "threshold_floor_dbfs": -45.0
+    },
+    "grouping": {
+      "cluster_distance_threshold": 0.3,
+      "identity_resolution": "per-span linear-sum one-to-one assignment over unused runtime-visible canonicals",
+      "kind": "independently confident windows pooled by committed unit overlap, then joint span assignment",
+      "uses_ahc": false
+    },
+    "tape_windows": {
+      "hard_cap_samples": 40000,
+      "hop_seconds": 1.875,
+      "maximum_embedded_audio_ratio": 1.0,
+      "minimum_window_seconds": 0.5,
+      "window_seconds": 2.5
+    }
+  }
+}

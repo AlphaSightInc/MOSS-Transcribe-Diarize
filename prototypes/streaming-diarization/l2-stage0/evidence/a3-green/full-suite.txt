@@ -1,0 +1,16 @@
+test_active_closing_closed_reproduces_invisible_revision (test_lifecycle_prototype.LifecycleNegativeControlTest.test_active_closing_closed_reproduces_invisible_revision) ... ok
+test_early_tape_release_fails_read_lease_invariant (test_lifecycle_prototype.LifecycleNegativeControlTest.test_early_tape_release_fails_read_lease_invariant) ... ok
+test_one_thread_per_session_fails_bounded_concurrency (test_lifecycle_prototype.LifecycleNegativeControlTest.test_one_thread_per_session_fails_bounded_concurrency) ... ok
+test_abort_never_starts_l2 (test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_never_starts_l2) ... ok
+test_capture_authority_ends_at_stop_ack (test_lifecycle_prototype.LifecyclePrototypeTest.test_capture_authority_ends_at_stop_ack) ... ok
+test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) ... ok
+test_new_live_meeting_progresses_while_older_finalizer_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_new_live_meeting_progresses_while_older_finalizer_runs) ... ok
+test_one_bounded_queue_owns_finalizers_and_one_cpu_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_one_bounded_queue_owns_finalizers_and_one_cpu_runs) ... ok
+test_tape_is_sealed_and_read_leased_while_finalizer_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_tape_is_sealed_and_read_leased_while_finalizer_runs) ... ok
+test_ttl_zero_reaps_only_after_lease_release (test_lifecycle_prototype.LifecyclePrototypeTest.test_ttl_zero_reaps_only_after_lease_release) ... ok
+test_view_authority_survives_finalizing_through_terminal_revision (test_lifecycle_prototype.LifecyclePrototypeTest.test_view_authority_survives_finalizing_through_terminal_revision) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.000s
+
+OK

@@ -1,0 +1,123 @@
+{
+  "campaign": "A",
+  "contract_id": "moss-l2-retained-identity-v1",
+  "corpus_manifest_hash": "b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3",
+  "generated_at": "2026-08-03T22:11:40.669538+00:00",
+  "guardrails_sha256": "e0233bfec4f9c70b35e67c0c86cf9e99db374a81ef7b6bcadff8b1ac62fd8701",
+  "launch_sha256": "8073c2d87835e9ea9bc24886fbdc954902bc05aed1b546d328a720cdf664bb93",
+  "overall": "PASS",
+  "plan_sha256": "2bb23820f947d884710cd65f59dbfd95aeaa87957d84b2846751239602ef7407",
+  "reproduce": "scripts/ralph-l2-afk/launch.sh --dry-run --evidence-dir scripts/ralph-l2-afk/evidence",
+  "results": [
+    {
+      "detail": "ancestor, branch, contract, and corpus state pinned",
+      "name": "contract_pins",
+      "status": "PASS"
+    },
+    {
+      "detail": "Campaign-A prototype, shared NOTES, and new bundle accepted",
+      "name": "allowlist_accepts_campaign_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused moss_transcribe_diarize/app/live_tape.py with product_path_denied",
+      "name": "deny_product_python",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused macos/MOSSCapture/Sources/x.swift with product_path_denied",
+      "name": "deny_macos",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused ops/service.json with product_path_denied",
+      "name": "deny_ops",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused tests/test_live_tape.py with product_path_denied",
+      "name": "deny_product_tests",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused non-product path outside allowlist",
+      "name": "deny_unlisted_path",
+      "status": "PASS"
+    },
+    {
+      "detail": "iteration budget 10 accepted",
+      "name": "iteration_10_allowed",
+      "status": "PASS"
+    },
+    {
+      "detail": "iteration budget 11 refused with iteration_cap_exceeded",
+      "name": "iteration_11_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "gated iteration refused with corpus_manifest_unfrozen and <promise>BLOCKED</promise>",
+      "name": "corpus_manifest_unfrozen",
+      "status": "PASS"
+    },
+    {
+      "detail": "exit=2 output=BLOCKED corpus_manifest_unfrozen: Campaign A gated iteration refused until A1 freezes corpus-manifest.json | <promise>BLOCKED</promise>",
+      "name": "gated_unfrozen_run_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "active launcher pin equals corpus-manifest.json SHA-256",
+      "name": "active_corpus_pin_matches",
+      "status": "PASS"
+    },
+    {
+      "detail": "matching frozen manifest hash accepted",
+      "name": "frozen_manifest_hash_accepts",
+      "status": "PASS"
+    },
+    {
+      "detail": "manifest mutation refused with corpus_manifest_hash_mismatch",
+      "name": "manifest_hash_drift_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "second writer refused with single_writer_active",
+      "name": "single_writer_refusal",
+      "status": "PASS"
+    },
+    {
+      "detail": "clean tree at expected previous commit accepted",
+      "name": "clean_expected_head_accepts",
+      "status": "PASS"
+    },
+    {
+      "detail": "unexpected HEAD refused with expected_previous_commit_mismatch",
+      "name": "expected_head_drift_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "dirty tree refused with worktree_dirty",
+      "name": "dirty_tree_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "BLOCKED promise stops with exit 2",
+      "name": "blocked_stop_promise",
+      "status": "PASS"
+    },
+    {
+      "detail": "COMPLETE promise stops with exit 0",
+      "name": "complete_stop_promise",
+      "status": "PASS"
+    },
+    {
+      "detail": "output without terminal promise continues",
+      "name": "missing_promise_continues",
+      "status": "PASS"
+    },
+    {
+      "detail": "UNFROZEN named refusal terminates through BLOCKED promise",
+      "name": "unfrozen_refusal_is_blocked",
+      "status": "PASS"
+    }
+  ]
+}

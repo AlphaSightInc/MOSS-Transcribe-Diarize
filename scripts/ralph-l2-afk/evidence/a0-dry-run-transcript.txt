@@ -1,0 +1,23 @@
+A0 dry-run contract=moss-l2-retained-identity-v1
+PASS contract_pins: ancestor, branch, contract, and UNFROZEN corpus sentinel pinned
+PASS allowlist_accepts_campaign_a: Campaign-A prototype, shared NOTES, and new bundle accepted
+PASS deny_product_python: refused moss_transcribe_diarize/app/live_tape.py with product_path_denied
+PASS deny_macos: refused macos/MOSSCapture/Sources/x.swift with product_path_denied
+PASS deny_ops: refused ops/service.json with product_path_denied
+PASS deny_product_tests: refused tests/test_live_tape.py with product_path_denied
+PASS deny_unlisted_path: refused non-product path outside allowlist
+PASS iteration_10_allowed: iteration budget 10 accepted
+PASS iteration_11_refused: iteration budget 11 refused with iteration_cap_exceeded
+PASS corpus_manifest_unfrozen: gated iteration refused with corpus_manifest_unfrozen and <promise>BLOCKED</promise>
+PASS gated_unfrozen_run_refused: exit=2 output=BLOCKED corpus_manifest_unfrozen: Campaign A gated iteration refused until A1 freezes corpus-manifest.json | <promise>BLOCKED</promise>
+PASS frozen_manifest_hash_accepts: matching frozen manifest hash accepted
+PASS manifest_hash_drift_refused: manifest mutation refused with corpus_manifest_hash_mismatch
+PASS single_writer_refusal: second writer refused with single_writer_active
+PASS clean_expected_head_accepts: clean tree at expected previous commit accepted
+PASS expected_head_drift_refused: unexpected HEAD refused with expected_previous_commit_mismatch
+PASS dirty_tree_refused: dirty tree refused with worktree_dirty
+PASS blocked_stop_promise: BLOCKED promise stops with exit 2
+PASS complete_stop_promise: COMPLETE promise stops with exit 0
+PASS missing_promise_continues: output without terminal promise continues
+PASS unfrozen_refusal_is_blocked: UNFROZEN named refusal terminates through BLOCKED promise
+RESULT PASS 21/21

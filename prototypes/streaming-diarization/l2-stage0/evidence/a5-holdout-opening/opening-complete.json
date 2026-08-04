@@ -1,0 +1,8 @@
+{
+  "completed_at": "2026-08-04T04:20:08.050327+00:00",
+  "holdout_summary_sha256": "43e9ff33e664331aa614bc748f5b6254a545c3252694a5522c90044c220e9966",
+  "holdout_transcript_sha256": "268d649ab6699061afb9ca4563794582f549861bb1649a305ca59d45dfdb11e3",
+  "opening_count": 1,
+  "overall": "FAIL",
+  "schema": "moss-l2-stage0-a5-opening-complete.v1"
+}

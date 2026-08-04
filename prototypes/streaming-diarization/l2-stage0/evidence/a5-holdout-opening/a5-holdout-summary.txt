@@ -1,0 +1,12 @@
+A5 HOLDOUT RESULT: FAIL
+opening_count=1 candidate_frozen=true no_tuning=true
+gate=tape_beats_l1_target_subset_pp actual=0.917431 limit=1.0 verdict=FAIL
+gate=tape_beats_ledger_target_subset_pp actual=0.0 limit=1.0 verdict=FAIL
+gate=unreachable_seconds_recovery_fraction actual=1.0 limit=0.5 verdict=PASS
+gate=holdout_case_regression_pp actual={'1m-lex-javier-milei': 0.0, '1m-lex-keyu-jin': 4.1667, '3m-lex-shapiro-destiny': 0.0} limit=-0.5 verdict=PASS
+gate=fp_speaker_seconds_and_der_not_worse actual={'1m-lex-javier-milei': {'fp_delta_seconds': 0.0, 'der_delta': 0.0}, '1m-lex-keyu-jin': {'fp_delta_seconds': 0.0, 'der_delta': -0.041667}, '3m-lex-shapiro-destiny': {'fp_delta_seconds': 0.0, 'der_delta': 0.0}} limit=0.0 verdict=PASS
+gate=two_sided_mapping_preserved actual=True limit=True verdict=PASS
+gate=correction_evidence_complete actual=True limit=True verdict=PASS
+gate=l1_repeatability actual={'1m-lex-javier-milei': {'delta_pp': 0.0, 'semantic_deterministic': True}, '1m-lex-keyu-jin': {'delta_pp': 0.0, 'semantic_deterministic': True}, '3m-lex-shapiro-destiny': {'delta_pp': 0.0, 'semantic_deterministic': True}} limit=0.1pp and semantic exact verdict=PASS
+gate=adversarial_padding_rejected actual=PASS limit=PASS verdict=PASS
+gate=same_production_planned_frame actual={'1m-lex-javier-milei': 'a6a16a9dc1a378f4355e76343c27c993443d49788f2e9f5844e3ece140d6e306', '1m-lex-keyu-jin': '56ba93f19500c2fe2ad15d9f5234854822d684653e88a2e52f8ad4e2e3be9cd7', '3m-lex-shapiro-destiny': 'eaa759d2b736679ec3cbbdfd06aceff3db4f1c0a3f9bdb4123f06587879ea206'} limit=True verdict=PASS

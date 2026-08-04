@@ -1,0 +1,2 @@
+A3 LIFECYCLE PASS invariants=8/8 controls=3/3 decision=finalizing holdout=SEALED
+<promise>COMPLETE</promise>

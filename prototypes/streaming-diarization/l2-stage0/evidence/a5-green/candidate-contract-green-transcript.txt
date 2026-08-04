@@ -1,0 +1,12 @@
+^Dtest_adversarial_padding_outside_committed_span_is_rejected (__main__.CandidateEngineContractTests.test_adversarial_padding_outside_committed_span_is_rejected) ... ok
+test_grouping_is_independent_of_current_canonical_label (__main__.CandidateEngineContractTests.test_grouping_is_independent_of_current_canonical_label) ... ok
+test_tape_proposal_reports_score_delta_and_changed_fraction (__main__.CandidateEngineContractTests.test_tape_proposal_reports_score_delta_and_changed_fraction) ... ok
+test_blind_holdout_is_refused_before_freeze (__main__.CandidateRunnerContractTests.test_blind_holdout_is_refused_before_freeze) ... ok
+test_candidate_source_has_no_reference_or_golden_path (__main__.CandidateRunnerContractTests.test_candidate_source_has_no_reference_or_golden_path) ... ok
+test_golden_path_source_mutation_is_refused (__main__.CandidateRunnerContractTests.test_golden_path_source_mutation_is_refused) ... ok
+test_production_publisher_changes_only_labels (__main__.CandidateRunnerContractTests.test_production_publisher_changes_only_labels) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.014s
+
+OK

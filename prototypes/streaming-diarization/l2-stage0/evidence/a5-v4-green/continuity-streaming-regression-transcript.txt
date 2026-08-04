@@ -1,0 +1,8 @@
+test_attributed_l1_unit_is_never_rewritten (__main__.ContinuityCandidateTests.test_attributed_l1_unit_is_never_rewritten) ... ok
+test_independent_continuity_evidence_rescues_unattributed_unit (__main__.ContinuityCandidateTests.test_independent_continuity_evidence_rescues_unattributed_unit) ... ok
+test_tape_reader_is_lazy_and_bounded (__main__.ContinuityCandidateTests.test_tape_reader_is_lazy_and_bounded) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+OK

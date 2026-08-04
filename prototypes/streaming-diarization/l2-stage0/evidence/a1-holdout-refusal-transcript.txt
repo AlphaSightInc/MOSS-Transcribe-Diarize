@@ -1,0 +1,2 @@
+BLOCKED holdout_open_before_candidate_freeze: candidate_frozen=false
+<promise>BLOCKED</promise>

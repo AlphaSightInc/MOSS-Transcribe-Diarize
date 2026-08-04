@@ -1,0 +1,10 @@
+A5 DEV/VALIDATION RESULT: FAIL
+holdout=SEALED
+candidate_ready_to_freeze=false
+gate=tape_beats_l1_target_subset_pp actual=1.534115 limit=1.0 verdict=PASS
+gate=tape_beats_ledger_target_subset_pp actual=1.10558 limit=1.0 verdict=PASS
+gate=unreachable_seconds_recovery_fraction actual=0.432111 limit=0.5 verdict=FAIL
+gate=validation_case_regression_pp actual={'1m-acquired-rolex': 0.0, '1m-lex-bill-ackman': 0.8333, '3m-lex-adam-frank': 0.8333, '5m-acquired-alphabet': 3.5238} limit=-0.5 verdict=PASS
+gate=fp_speaker_seconds_and_der_not_worse actual={'1m-acquired-nfl': {'fp_delta_seconds': 0.0, 'der_delta': -0.047276999999999986}, '1m-acquired-rolex': {'fp_delta_seconds': 0.0, 'der_delta': 0.0}, '1m-lex-bill-ackman': {'fp_delta_seconds': 0.0, 'der_delta': -0.008333}, '3m-acquired-jamie-dimon': {'fp_delta_seconds': 0.0, 'der_delta': 0.0}, '3m-lex-adam-frank': {'fp_delta_seconds': 0.0, 'der_delta': -0.008333}, '5m-acquired-alphabet': {'fp_delta_seconds': 3.399999999999996e-05, 'der_delta': -0.035238000000000005}} limit=0.0 verdict=FAIL
+gate=two_sided_mapping_preserved actual=True limit=True verdict=PASS
+gate=correction_evidence_complete actual=True limit=True verdict=PASS

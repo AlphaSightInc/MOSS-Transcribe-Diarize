@@ -1,0 +1,11 @@
+V2 contamination quantification
+failed_spans=3 affected_units=5 eligible_units=4
+unit=23 span=19 eligible=True evidence_seconds=0.580352000 reference_seconds=0.580375000 status=failed/unparseable_transcript labels=null/null hypothesis_intervals=0
+unit=31 span=26 eligible=True evidence_seconds=1.261861000 reference_seconds=1.261875000 status=failed/unparseable_transcript labels=null/null hypothesis_intervals=0
+unit=32 span=26 eligible=True evidence_seconds=1.040119000 reference_seconds=1.040125000 status=failed/unparseable_transcript labels=null/null hypothesis_intervals=0
+unit=72 span=61 eligible=True evidence_seconds=2.159716000 reference_seconds=2.159687500 status=failed/unparseable_transcript labels=null/null hypothesis_intervals=0
+unit=73 span=61 eligible=False evidence_seconds=0.340284000 reference_seconds=0.340312500 status=failed/unparseable_transcript labels=null/null hypothesis_intervals=0
+matched=169.099457000 reference=177.072250000 missed=7.972793000 confused=0.000000000
+MECHANISM pre_assignment_censoring_as_null_hypothesis
+DIRECT_SCALAR_INFLATION_FROM_OMISSION False
+VERDICT V2_CONTAMINATED_PRE_ASSIGNMENT

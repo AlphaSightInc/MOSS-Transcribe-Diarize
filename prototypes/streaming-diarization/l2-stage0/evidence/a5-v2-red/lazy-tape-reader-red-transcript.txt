@@ -1,0 +1,16 @@
+test_attributed_l1_unit_is_never_rewritten (__main__.ContinuityCandidateTests.test_attributed_l1_unit_is_never_rewritten) ... ok
+test_independent_continuity_evidence_rescues_unattributed_unit (__main__.ContinuityCandidateTests.test_independent_continuity_evidence_rescues_unattributed_unit) ... ok
+test_tape_reader_is_lazy_and_bounded (__main__.ContinuityCandidateTests.test_tape_reader_is_lazy_and_bounded) ... FAIL
+
+======================================================================
+FAIL: test_tape_reader_is_lazy_and_bounded (__main__.ContinuityCandidateTests.test_tape_reader_is_lazy_and_bounded)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_continuity_candidate.py", line 77, in test_tape_reader_is_lazy_and_bounded
+    self.assertNotIsInstance(chunks, tuple)
+AssertionError: (PcmChunk(start_sample=0, samples=array([0, 0, 0, ..., 0, 0, 0], shape=(40000,), dtype=int16)), PcmChunk(start_sample=40000, samples=array([0, 0, 0, ..., 0, 0, 0], shape=(40000,), dtype=int16)), PcmChunk(start_sample=80000, samples=array([0], dtype=int16))) is an instance of <class 'tuple'>
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+FAILED (failures=1)

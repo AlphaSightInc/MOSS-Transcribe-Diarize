@@ -1,0 +1,19 @@
+test_lifecycle_prototype (unittest.loader._FailedTest.test_lifecycle_prototype) ... ERROR
+
+======================================================================
+ERROR: test_lifecycle_prototype (unittest.loader._FailedTest.test_lifecycle_prototype)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_lifecycle_prototype
+Traceback (most recent call last):
+  File "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 8, in <module>
+    from lifecycle_prototype import (
+ImportError: cannot import name 'CurrentClosingClosedControl' from 'lifecycle_prototype' (/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

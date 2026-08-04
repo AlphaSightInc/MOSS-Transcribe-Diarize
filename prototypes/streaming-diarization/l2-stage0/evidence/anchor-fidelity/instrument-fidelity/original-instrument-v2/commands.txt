@@ -1,0 +1,55 @@
+COMMAND 1 (cwd: /Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize)
+mkdir -p /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/original-instrument-v2
+set -o pipefail
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python - <<'PY' | tee /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/original-instrument-v2/stdout.json
+import hashlib
+import json
+from pathlib import Path
+import numpy as np
+import proto_ab_identity as H
+
+cache_path = Path("/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz")
+config = {
+    "admission": 2.0,
+    "birth_floor": 1.0,
+    "keep_uncertain": False,
+    "margin": 0.1,
+    "max_speakers": H.MAX_SPK,
+    "merge_threshold": H.MERGE_THR,
+    "min_score": 0.35,
+    "policy": "album",
+    "sticky_delta": 0.0,
+    "sweep": True,
+    "sweep_every_seconds": 60.0,
+}
+H.SWEEP_EVERY = config["sweep_every_seconds"]
+cache = dict(np.load(cache_path))
+live, final, sweep_log, sweep_cost = H.simulate(
+    cache,
+    policy=config["policy"],
+    min_score=config["min_score"],
+    margin=config["margin"],
+    admission=config["admission"],
+    sweep=config["sweep"],
+    merge_thr=config["merge_threshold"],
+    sticky_delta=config["sticky_delta"],
+    keep_uncertain=config["keep_uncertain"],
+    birth_floor=config["birth_floor"],
+)
+print(json.dumps({
+    "cache_sha256": hashlib.sha256(cache_path.read_bytes()).hexdigest(),
+    "config": config,
+    "eligible_unit_count": int((cache["rows"][:, 5] > 0).sum()),
+    "final_accuracy": H.accuracy(cache["rows"], final),
+    "final_labels": final.tolist(),
+    "live_accuracy": H.accuracy(cache["rows"], live),
+    "live_labels": live.tolist(),
+    "row_count": len(cache["rows"]),
+    "sweep_count": len(sweep_log),
+    "sweep_times": [float(item[0]) for item in sweep_log],
+}, sort_keys=True, indent=2))
+PY
+
+COMMAND 2 (cwd: /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0)
+set -o pipefail
+PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/compare_original_renewed.py --json-output prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/original-renewed-diff-v1/result.json 2>&1 | tee prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/original-renewed-diff-v1/transcript.txt

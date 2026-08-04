@@ -1,0 +1,2 @@
+^DBLOCKED candidate_holdout_before_freeze: 1m-lex-javier-milei
+<promise>BLOCKED</promise>

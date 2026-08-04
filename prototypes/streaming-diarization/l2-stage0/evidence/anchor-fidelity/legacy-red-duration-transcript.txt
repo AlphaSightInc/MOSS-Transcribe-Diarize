@@ -1,0 +1,27 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_legacy_duration_is_reconciled_without_tolerance_change
+EXIT 1
+STDOUT
+STDERR
+test_legacy_duration_is_reconciled_without_tolerance_change (test_legacy_ingest.LegacyIngestTest.test_legacy_duration_is_reconciled_without_tolerance_change) ... ERROR
+
+======================================================================
+ERROR: test_legacy_duration_is_reconciled_without_tolerance_change (test_legacy_ingest.LegacyIngestTest.test_legacy_duration_is_reconciled_without_tolerance_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 118, in test_legacy_duration_is_reconciled_without_tolerance_change
+    result = replay_legacy_case(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/run_legacy_anchor_fidelity.py", line 116, in replay_legacy_case
+    result = control.replay_case(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/run_l1_control.py", line 238, in replay_case
+    fidelity = _assert_fixture_fidelity(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/run_l1_control.py", line 191, in _assert_fixture_fidelity
+    raise ControlError(
+run_l1_control.ControlError: l1_fixture_duration_mismatch: tiny-duration-reconciliation:0:planned=2.500062500 cached=2.500000000
+
+----------------------------------------------------------------------
+Ran 1 test in 2.274s
+
+FAILED (errors=1)

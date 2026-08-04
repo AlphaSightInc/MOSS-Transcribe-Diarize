@@ -1,0 +1,88 @@
+{
+  "comparison": [
+    {
+      "deployed": 0.35,
+      "field": "min_match_score",
+      "match": true,
+      "runner": 0.35
+    },
+    {
+      "deployed": 0.1,
+      "field": "min_match_margin",
+      "match": true,
+      "runner": 0.1
+    },
+    {
+      "deployed": 2.0,
+      "field": "album_admission_seconds",
+      "match": true,
+      "runner": 2.0
+    },
+    {
+      "deployed": 1.0,
+      "field": "album_birth_min_seconds",
+      "match": true,
+      "runner": 1.0
+    },
+    {
+      "deployed": 40000,
+      "field": "hard_cap_samples",
+      "match": true,
+      "runner": 40000
+    },
+    {
+      "deployed": 16,
+      "field": "max_speakers",
+      "match": true,
+      "runner": 16
+    },
+    {
+      "deployed": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89",
+      "field": "identity_config_hash",
+      "match": true,
+      "runner": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+    },
+    {
+      "deployed": "9089b33210401111865da7abc160ab0bcb4aa266",
+      "field": "source_revision",
+      "match": true,
+      "runner": "9089b33210401111865da7abc160ab0bcb4aa266"
+    }
+  ],
+  "deployed_evidence": {
+    "path": "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/evidence/f4b-remediation-20260803/deploy/server-finalize.txt",
+    "sha256": "72e8b4d67dc5e74c2b9605cfd063906a7a7d6a72233b404f335265f40e8e379e",
+    "value_lines": "server-finalize.txt:19,27-31,72,83"
+  },
+  "evidence_manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2-constants-v1/H2_CONSTANTS_EVIDENCE.sha256",
+  "evidence_manifest_sha256": "99d202f62bc7bc0e53273f5ec5ad014057d1f5acf9d872f7d7094e2e0fd9b663",
+  "hypothesis": "H2_IDENTITY_CONSTANTS",
+  "identity_hash_call": "moss_transcribe_diarize.app.live_service_runtime.hash_config",
+  "input_hashes": {
+    "album_source": "760f87bb306f06ae0fc26c14c77a97fc24466d70304a09156d92c3be12f06bf9",
+    "deploy_transcript": "72e8b4d67dc5e74c2b9605cfd063906a7a7d6a72233b404f335265f40e8e379e",
+    "hash_source": "225c7298fe4203777421a5d506ab8fada0d56fead4e75435d505cd4cf322eb8c",
+    "runner": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+    "spec": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735"
+  },
+  "mismatch_count": 0,
+  "next_hypothesis": "H3_ASSIGNMENT_ABSTENTION_BIRTH_POLICY",
+  "overall": "PASS",
+  "result_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2-constants-v1/result.json",
+  "result_sha256": "578db1b03b6c8bf6418132fd538b54eb6b1212f7d28761cb76b90eeac5371940",
+  "runner_identity_payload": {
+    "max_speakers": 16,
+    "min_match_margin": 0.1,
+    "min_match_score": 0.35
+  },
+  "runner_sources": {
+    "album_constants": "moss_transcribe_diarize/app/live_identity_album.py:45-57",
+    "config_assertions": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py:563-588",
+    "config_wiring": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py:247-260",
+    "identity_hash": "moss_transcribe_diarize/app/live_service_runtime.py:946-948"
+  },
+  "schema": "moss-l2-stage0-instrument-h2.v1",
+  "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2-constants-v1/transcript.txt",
+  "transcript_sha256": "bb93e693028098784ad9fee3795f3c33a5d5c09d0dfb7e2f1df49882c1b84a23",
+  "verdict": "H2_REFUTED"
+}

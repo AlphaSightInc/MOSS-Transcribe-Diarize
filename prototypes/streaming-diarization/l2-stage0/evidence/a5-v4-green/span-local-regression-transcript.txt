@@ -1,0 +1,7 @@
+test_one_overlapping_window_can_rescue_weak_unattributed_unit (__main__.SpanLocalCandidateTests.test_one_overlapping_window_can_rescue_weak_unattributed_unit) ... ok
+test_sub_floor_and_attributed_units_are_immutable (__main__.SpanLocalCandidateTests.test_sub_floor_and_attributed_units_are_immutable) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK

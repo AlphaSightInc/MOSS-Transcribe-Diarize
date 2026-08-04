@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "failures": [],
+  "successful": true,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_tape_is_sealed_and_read_leased_while_finalizer_runs",
+  "tests_run": 1
+}

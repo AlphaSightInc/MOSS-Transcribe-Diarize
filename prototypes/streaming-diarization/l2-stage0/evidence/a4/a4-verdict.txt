@@ -1,0 +1,13 @@
+A4 VERDICT: BLOCKED; CAMPAIGN A STOP
+base_sha256=f5a06998cddcee91b536750a3c988c1650d2b0601d877fc6c4a92ea1c7c39796
+optimized_sha256=8f7714eaf45504dadbc11cb1afec38fff1503ba8c22ad5112cf374fb0058de1a
+gate=finalizer_rtf_30m_cold_and_warm actual=0.10016359867333247 limit=0.1 verdict=FAIL
+gate=analysis_30m_cold_and_warm_seconds actual=180.29447761199845 limit=180.0 verdict=FAIL
+gate=no_whole_tape_in_memory_read actual=40000 limit=40000 verdict=PASS
+gate=one_active_finalizer_maximum actual=1 limit=1 verdict=PASS
+gate=new_session_contention_p95_ms_prototype_proxy actual=0.01132 limit=4000.0 verdict=PASS
+gate=stop_ack_p95_over_l2_off_ms_prototype_proxy actual=0.001229 limit=100.0 verdict=PASS
+max_peak_rss_bytes=711372800
+optimization_attempts=1
+holdout_opened=false
+next_stage_authorized=false

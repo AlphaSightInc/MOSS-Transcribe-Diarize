@@ -1,0 +1,9 @@
+{
+  "adapter_sha256_at_red": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+  "all_92_expected_failure_units": [23, 31, 32, 72, 73],
+  "archived_cache_sha256": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "exact_expected_failure": "span 19 status failed instead of prepared",
+  "overall": "EXPECTED_RED",
+  "schema": "moss-l2-stage0-adapter-v3-red.v1",
+  "test_source_sha256_at_red": "2df680123ed8d9191615e4e2779c2167700c0af8ccbb3b4f6b7958963f50e5d6"
+}

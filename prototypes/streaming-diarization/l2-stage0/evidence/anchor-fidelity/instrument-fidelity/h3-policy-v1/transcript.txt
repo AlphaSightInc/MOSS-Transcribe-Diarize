@@ -1,0 +1,7 @@
+H3 assignment/abstention/birth policy differential
+mirror_live_accuracy=1.000000000
+runner_live_accuracy=0.954974000
+mirror_final_accuracy=1.000000000
+runner_final_accuracy=0.954974000
+first_live_divergence={"mirror_span": {"abstain": false, "assigned_before": [0, -1, 1, 1, 0, 1, 0, 1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], "candidates": [{"best_index": 0, "canonical_ids": [0, 1], "open_indexes": [0, 1], "scores": [0.35338777, 0.173633452], "unit_index": 23}], "eligible_units": [23], "pending": [{"canonical_id": 0, "unit_index": 23}], "span_id": 19, "unit_ids": [23]}, "runner_span": {"assignments": {}, "canonical_speakers": ["speaker-0001", "speaker-0002"], "diagnostics": {"reason": "unparseable_transcript", "span_id": "19", "status": "failed"}, "end_seconds": 104.483937, "ledger_records": [], "reason": "legacy_unavailable", "span_id": 19, "start_seconds": 103.903625, "status": "failed"}, "unit": {"duration_seconds": 0.580352, "eligible": true, "end_seconds": 104.483966, "final_match": false, "live_match": false, "mirror_final": 0, "mirror_live": 0, "runner_final": -1, "runner_live": -1, "span_id": 19, "start_seconds": 103.903614, "true_speaker": 0, "unit_index": 23}}
+VERDICT IDENTIFIED_ASSIGNMENT_ABSTENTION_BIRTH_POLICY

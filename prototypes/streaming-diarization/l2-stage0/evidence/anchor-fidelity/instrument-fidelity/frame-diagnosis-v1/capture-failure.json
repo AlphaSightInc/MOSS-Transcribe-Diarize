@@ -1,0 +1,10 @@
+{
+  "schema": "moss-l2-stage0-evidence-capture-failure.v1",
+  "verdict": "STDOUT_CAPTURE_PATH_MISSING",
+  "detail": "The probe created its output directory after tee attempted to open transcript.txt. result.json and both copied reference inputs were written successfully; stdout was not captured.",
+  "measurement_result_valid": true,
+  "measurement_result_sha256": "6694be3ff6daca3e3d7a1b3378b3a1be232a987583c96f11bcb0393620aeef17",
+  "remediation": "Repeated the unchanged probe into frame-diagnosis-v2 after pre-creating the directory; v1 remains preserved and v2 carries the full transcript.",
+  "official_files_modified": false,
+  "inputs_modified": false
+}

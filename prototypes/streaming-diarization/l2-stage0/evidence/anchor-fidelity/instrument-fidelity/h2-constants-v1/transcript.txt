@@ -1,0 +1,12 @@
+H2 identity-constants differential
+field | runner | deployed | match
+min_match_score | 0.35 | 0.35 | True
+min_match_margin | 0.1 | 0.1 | True
+album_admission_seconds | 2.0 | 2.0 | True
+album_birth_min_seconds | 1.0 | 1.0 | True
+hard_cap_samples | 40000 | 40000 | True
+max_speakers | 16 | 16 | True
+identity_config_hash | 4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89 | 4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89 | True
+source_revision | 9089b33210401111865da7abc160ab0bcb4aa266 | 9089b33210401111865da7abc160ab0bcb4aa266 | True
+mismatch_count=0
+VERDICT H2_REFUTED

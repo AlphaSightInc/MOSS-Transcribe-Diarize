@@ -1,0 +1,1 @@
+{"overall": "PASS", "path": "prototypes/streaming-diarization/l2-stage0/candidate_engine.py", "schema": "moss-l2-stage0-candidate-source-audit.v1", "sha256": "6c478abcbdaf77c060dc8d26084f98cbf5dccd30d29c4eaec343996f52e635bb", "violations": []}

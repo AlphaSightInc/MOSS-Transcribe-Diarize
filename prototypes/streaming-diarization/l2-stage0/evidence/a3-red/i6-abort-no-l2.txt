@@ -1,0 +1,15 @@
+test_abort_never_starts_l2 (test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_never_starts_l2) ... ERROR
+
+======================================================================
+ERROR: test_abort_never_starts_l2 (test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_never_starts_l2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 115, in test_abort_never_starts_l2
+    aborted = lifecycle.abort("meeting-1")
+              ^^^^^^^^^^^^^^^
+AttributeError: 'LifecyclePrototype' object has no attribute 'abort'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

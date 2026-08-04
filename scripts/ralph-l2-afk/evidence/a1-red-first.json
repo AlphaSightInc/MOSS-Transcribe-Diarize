@@ -1,0 +1,16 @@
+{
+  "errors": [],
+  "failures": [
+    "test_validate_inputs.InputBoundaryTest.test_golden_path_in_runtime_config_fails",
+    "test_validate_inputs.InputBoundaryTest.test_one_byte_audio_reference_and_model_mutations_fail (kind='audio')",
+    "test_validate_inputs.InputBoundaryTest.test_one_byte_audio_reference_and_model_mutations_fail (kind='reference')",
+    "test_validate_inputs.InputBoundaryTest.test_one_byte_audio_reference_and_model_mutations_fail (kind='model')",
+    "test_validate_inputs.InputBoundaryTest.test_pre_freeze_holdout_open_fails",
+    "test_validate_inputs.InputBoundaryTest.test_reference_import_in_runtime_source_fails",
+    "test_validate_inputs.InputBoundaryTest.test_transcript_only_line_fails_acoustic_validation"
+  ],
+  "generated_at": "2026-08-03T22:01:26.756141+00:00",
+  "label": "red-first",
+  "successful": false,
+  "tests_run": 5
+}

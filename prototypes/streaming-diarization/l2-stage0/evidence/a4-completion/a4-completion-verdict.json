@@ -1,0 +1,77 @@
+{
+  "a5_authorized": true,
+  "campaign_stop": false,
+  "first_finalizer_allowance": {
+    "first_finalizer_wall_seconds": 180.29447761199845,
+    "limit_seconds": 5.0,
+    "overhead_seconds": 0.7612131149980996,
+    "pass": true,
+    "steady_state_wall_seconds": 179.53326449700035
+  },
+  "historical_blocked_evidence": {
+    "blocked_manifest_sha256": "1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d",
+    "blocked_verdict_sha256": "5861323145436792f81cbf3e7ac4011e8be93fe2550d4857fa239a89a082da15",
+    "immutable_history": true,
+    "integrity_proof": "prototypes/streaming-diarization/l2-stage0/evidence/a4-completion/historical-blocked-integrity.json",
+    "integrity_proof_sha256": "54007b9b642fc0f69e00020e69c2d602305638365bd6ae31e30ade2f328a7ae2",
+    "optimized_raw_sha256": "8f7714eaf45504dadbc11cb1afec38fff1503ba8c22ad5112cf374fb0058de1a",
+    "owning_commit": "9b9b3f2209f91dd7e6699bab0add9efb448a1f08"
+  },
+  "holdout_opened": false,
+  "operator_decision": {
+    "adopted_option": "A",
+    "authorized_date": "2026-08-03",
+    "gate_f_definition": "steady-state warm/reused finalizer RTF <= 0.10 and 30-minute wall <= 180 s; one-time first-finalizer wall may be <= 5 s over steady state",
+    "option_d_server_gpu_embedding": "post-MVP"
+  },
+  "overall": "PASS",
+  "product_or_deployment_changes": false,
+  "retired_gate": {
+    "authority": "operator Option A ruling",
+    "definition": "both first and reused finalizers must independently meet RTF <= 0.10 and wall <= 180 s",
+    "historical_result": "BLOCKED",
+    "retired_on": "2026-08-03"
+  },
+  "revised_gate_table": [
+    {
+      "actual": 0.09974070249833353,
+      "first_finalizer_allowance_pass": true,
+      "gate": "finalizer_rtf_30m_steady_state_with_first_allowance",
+      "limit": 0.1,
+      "pass": true
+    },
+    {
+      "actual": 179.53326449700035,
+      "first_finalizer_allowance_pass": true,
+      "gate": "analysis_30m_steady_state_seconds_with_first_allowance",
+      "limit": 180.0,
+      "pass": true
+    },
+    {
+      "actual": 40000,
+      "gate": "no_whole_tape_in_memory_read",
+      "limit": 40000,
+      "pass": true
+    },
+    {
+      "actual": 1,
+      "gate": "one_active_finalizer_maximum",
+      "limit": 1,
+      "pass": true
+    },
+    {
+      "actual": 0.01132,
+      "gate": "new_session_contention_p95_ms_prototype_proxy",
+      "limit": 4000.0,
+      "pass": true
+    },
+    {
+      "actual": 0.001229,
+      "gate": "stop_ack_p95_over_l2_off_ms_prototype_proxy",
+      "limit": 100.0,
+      "pass": true
+    }
+  ],
+  "schema": "moss-l2-stage0-a4-completion-verdict.v1",
+  "status": "COMPLETE"
+}

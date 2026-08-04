@@ -1,0 +1,14 @@
+A5 DEV/VALIDATION: PASS
+candidate_ready_to_freeze=true
+candidate_frozen=false
+holdout=SEALED
+family=energy-vad-overlap-wespeaker-joint-span-rescue-v4
+gate=tape_beats_l1_target_subset_pp actual=1.860557 limit=1.0 verdict=PASS
+gate=tape_beats_ledger_target_subset_pp actual=1.432022 limit=1.0 verdict=PASS
+gate=unreachable_seconds_recovery_fraction actual=0.524058 limit=0.5 verdict=PASS
+gate=validation_case_regression_pp worst=0.0 limit=-0.5 verdict=PASS
+gate=fp_speaker_seconds_and_der_not_worse max_fp_delta=0.0 max_der_delta=0.0 verdict=PASS
+gate=two_sided_mapping_preserved verdict=PASS
+gate=correction_evidence_complete verdict=PASS
+gate=adversarial_padding_rejected verdict=PASS
+STOP: supervisor verification required before freeze or holdout opening

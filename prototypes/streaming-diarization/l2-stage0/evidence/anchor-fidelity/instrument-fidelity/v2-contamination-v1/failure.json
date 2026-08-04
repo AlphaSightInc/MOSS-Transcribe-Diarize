@@ -1,0 +1,8 @@
+{
+  "error": "KeyError:'reference_speaker_seconds'",
+  "failure_classification": "diagnosis_report_field_name_mismatch",
+  "input_measurement_modified": false,
+  "overall": "BLOCKED_NO_QUANTIFICATION",
+  "quantifier_sha256_at_failure": "243e6e80598aa2956e17942ee384ce81729b2052746550e60d7c8b3ebdfa6f38",
+  "schema": "moss-l2-stage0-v2-contamination-failure.v1"
+}

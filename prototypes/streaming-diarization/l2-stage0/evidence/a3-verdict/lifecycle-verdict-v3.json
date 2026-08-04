@@ -1,0 +1,534 @@
+{
+  "decision": {
+    "campaign_a_must_stop_for_revised_plan": false,
+    "choice": "finalizing",
+    "quiet_synchronous_l2_inside_stop": false,
+    "rule": "choose finalizing only when all eight invariants and all three negative controls pass"
+  },
+  "failure_outcomes": {
+    "cancelled": {
+      "capture_authority": false,
+      "captured_frames": 0,
+      "fallback_reason": "cancelled",
+      "l2_started": true,
+      "meeting_id": "cancelled",
+      "result_source": "l1",
+      "state": "failed",
+      "tape_lease_acquires": 1,
+      "tape_lease_count": 0,
+      "tape_lease_releases": 1,
+      "tape_reaped": false,
+      "tape_sealed": true,
+      "view_authority": true
+    },
+    "degraded_tape": {
+      "capture_authority": false,
+      "captured_frames": 0,
+      "fallback_reason": "degraded_tape",
+      "l2_started": true,
+      "meeting_id": "degraded_tape",
+      "result_source": "l1",
+      "state": "failed",
+      "tape_lease_acquires": 1,
+      "tape_lease_count": 0,
+      "tape_lease_releases": 1,
+      "tape_reaped": false,
+      "tape_sealed": true,
+      "view_authority": true
+    },
+    "exception": {
+      "capture_authority": false,
+      "captured_frames": 0,
+      "fallback_reason": "exception",
+      "l2_started": true,
+      "meeting_id": "exception",
+      "result_source": "l1",
+      "state": "failed",
+      "tape_lease_acquires": 1,
+      "tape_lease_count": 0,
+      "tape_lease_releases": 1,
+      "tape_reaped": false,
+      "tape_sealed": true,
+      "view_authority": true
+    },
+    "shutdown": {
+      "capture_authority": false,
+      "captured_frames": 0,
+      "fallback_reason": "shutdown",
+      "l2_started": true,
+      "meeting_id": "shutdown",
+      "result_source": "l1",
+      "state": "failed",
+      "tape_lease_acquires": 1,
+      "tape_lease_count": 0,
+      "tape_lease_releases": 1,
+      "tape_reaped": false,
+      "tape_sealed": true,
+      "view_authority": true
+    },
+    "timeout": {
+      "capture_authority": false,
+      "captured_frames": 0,
+      "fallback_reason": "timeout",
+      "l2_started": true,
+      "meeting_id": "timeout",
+      "result_source": "l1",
+      "state": "failed",
+      "tape_lease_acquires": 1,
+      "tape_lease_count": 0,
+      "tape_lease_releases": 1,
+      "tape_reaped": false,
+      "tape_sealed": true,
+      "view_authority": true
+    }
+  },
+  "full_suite": {
+    "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/full-suite-v3.json",
+    "json_sha256": "27f3139362ce79c31e569dd44d5e6012f444c73b04ba6c7e11c72350f86e18f8",
+    "successful": true,
+    "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/full-suite-v3.txt",
+    "transcript_sha256": "1d772587f4fcda1c0a8949f82940dd3a9ed9e0c20de599b393775665f2cf4e8a"
+  },
+  "holdout_opened": false,
+  "invariant_count": 8,
+  "invariant_matrix": [
+    {
+      "description": "capture_authority_ends_at_stop_ack",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i1-capture-authority.json",
+        "json_sha256": "db8389360863df9c82728414e8f1b47d8b151eb4957add89bd92083c09eadf9c",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i1-capture-authority.txt",
+        "transcript_sha256": "3a09b9ce15f79b3c507ce0c2251011f986dc12c9a85518c235275f14198c90b8"
+      },
+      "invariant_id": "i1",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i1-capture-authority.json",
+        "json_sha256": "4a2d7ea473b1ed721c7f338079a695b5228bcf1916bf9a61f8778f22186cefa3",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i1-capture-authority.txt",
+        "transcript_sha256": "d7505caa3b269b21e54fd6023515e0ae2f0094b083af72eb5a591ecd085e09ce"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_capture_authority_ends_at_stop_ack"
+    },
+    {
+      "description": "terminal_revision_visible",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i2-view-terminal.json",
+        "json_sha256": "c23e14e86791800b0ed4b21e679b2a9f3dd6c2f53759272d90dcf959c5bb6ff7",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i2-view-terminal.txt",
+        "transcript_sha256": "9e45df0abaf76af2f062550d9b05e81a7e353081b0078ebbe0da211b54db9880"
+      },
+      "invariant_id": "i2",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i2-view-terminal.json",
+        "json_sha256": "78766dea1d8f723952800ad2e17c03efad9fd7478e8f1b1a171381df9e89e757",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i2-view-terminal.txt",
+        "transcript_sha256": "4ecdc0e09be041109faa3595fd8a14dd41ebba9b1a3a52699c8589a5f0d15aa6"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_view_authority_survives_finalizing_through_terminal_revision"
+    },
+    {
+      "description": "tape_sealed_and_read_leased",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i3-tape-lease.json",
+        "json_sha256": "65ef715f21498e8e0c86f2efe4b35aaf04552ac8ce1bd06a8dc0876bc01addef",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i3-tape-lease.txt",
+        "transcript_sha256": "755b0e4b252ad9b536812e533dd741e5d690cfa67fcd62a428a34261b14fd360"
+      },
+      "invariant_id": "i3",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i3-tape-lease.json",
+        "json_sha256": "89f87a7007fcf06ce3d7ff5d864575327541f3ea2c1e25a799cd08ea5a151cab",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i3-tape-lease.txt",
+        "transcript_sha256": "da3cb15e6088943ff2f02ec818c42f69decec3899a0227b049de0f904aa56aaa"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_tape_is_sealed_and_read_leased_while_finalizer_runs"
+    },
+    {
+      "description": "bounded_single_cpu_finalizer",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i4-bounded-queue.json",
+        "json_sha256": "4f71fe4eedcf0a8d0c5e191870b8db4cf4be39a402a1116a061966bda7552180",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i4-bounded-queue.txt",
+        "transcript_sha256": "9cb4cdf049aeca3305a1aaef6c2ff82c77c1bf6ac5e0c54ac57c99d17e4caa12"
+      },
+      "invariant_id": "i4",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i4-bounded-queue.json",
+        "json_sha256": "095cf9cca2f3f41216e4e083978c008eaf02c9921a011319158ad6684d2b5997",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i4-bounded-queue.txt",
+        "transcript_sha256": "aa33f3027906868d7220677a9e616231dea321c4f85a9a90555d65b9edfe7a85"
+      },
+      "supplemental_proof": {
+        "green_proof": {
+          "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i4b-queue-overflow.json",
+          "json_sha256": "a4a59ae9ae1d9529d5d4935ce7264484aafbdebf94af6bc2b0105cef3bb00605",
+          "successful": true,
+          "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i4b-queue-overflow.txt",
+          "transcript_sha256": "42a475491874e7105f512f97cb3da3dd2c2b6faab5d3c2dac17478bfb96e0b96"
+        },
+        "red_proof": {
+          "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i4b-queue-overflow.json",
+          "json_sha256": "69d0152c6122b88b5cfd589acec854d161089ad24e2c8eb39d3a6fa55e04dc6e",
+          "successful": false,
+          "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i4b-queue-overflow.txt",
+          "transcript_sha256": "007cc3871bcb8da924b9e534f5de287f527c170c9f4a1848b58e37ca69907dc4"
+        },
+        "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_bounded_queue_refuses_overflow_without_partial_transition"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_one_bounded_queue_owns_finalizers_and_one_cpu_runs"
+    },
+    {
+      "description": "failure_release_once_and_l1_fallback",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i5-failure-release-fallback.json",
+        "json_sha256": "92235b49898a569161d01c182c39ad0eaf05d5c4e2cf992de7bc2cb628df0728",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i5-failure-release-fallback.txt",
+        "transcript_sha256": "8e6ae876fcbbd5dc50934da405ff352114e5f416d22d49922470a39d0e11da42"
+      },
+      "invariant_id": "i5",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i5-failure-release-fallback.json",
+        "json_sha256": "2ef457e45481e32b5aca239ac6203742ba323da5d03b44d2d5a70ac46f46ddfb",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i5-failure-release-fallback.txt",
+        "transcript_sha256": "9a97c0111604b07f732e9deaa27813f0fe5d25b99be14fd6af47010508838fc5"
+      },
+      "supplemental_proof": {
+        "green_proof": {
+          "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i5b-raised-exception.json",
+          "json_sha256": "066ce742a1327a40fd243442f384d95e39ee763fe5ba4812893130148b9da214",
+          "successful": true,
+          "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i5b-raised-exception.txt",
+          "transcript_sha256": "834d84d212995cb9413028fe67f524df9bc6b3f51af1f1e2528d1dae8058ef39"
+        },
+        "red_proof": {
+          "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i5b-raised-exception.json",
+          "json_sha256": "2ad3d8d3cf3d00c894725a39aca2f416ba76636b21da71719f30f9d148bd6f49",
+          "successful": false,
+          "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i5b-raised-exception.txt",
+          "transcript_sha256": "a8667858520c127b94ce5a49c7596270576e62dc67e8f13b56c36b1f9909c27e"
+        },
+        "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_raised_finalizer_exception_releases_once_and_falls_back"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1"
+    },
+    {
+      "description": "abort_never_starts_l2",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i6-abort-no-l2-v2.json",
+        "json_sha256": "bddf28c6b44d271fdac8fe789f080f4e78882291b7cc052cfd793a177b030371",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i6-abort-no-l2-v2.txt",
+        "transcript_sha256": "b86c7fb7c7e994d23009158ad2724eaaed2f2a3f4810933d73bcbb30b38ea938"
+      },
+      "invariant_id": "i6",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i6-abort-no-l2.json",
+        "json_sha256": "ee56c3677b9aa5d34b00ef5fef0d1ba19ecd174dd2641579d594c4ed860a2872",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i6-abort-no-l2.txt",
+        "transcript_sha256": "23e842864239aab50d85c91dfa3e6e70da2194268203142f39ca6f9c957a7559"
+      },
+      "supplemental_proof": {
+        "green_proof": {
+          "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i6b-abort-queued.json",
+          "json_sha256": "2938c0895e1175ee988c2a6b80c7f3d95463e6796dbe79a82f8881f0f7af7deb",
+          "successful": true,
+          "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i6b-abort-queued.txt",
+          "transcript_sha256": "018eedc3717d63eae562a39490c6cc970a640356d7f2180c66f6e97fc20bdb81"
+        },
+        "red_proof": {
+          "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i6b-abort-queued.json",
+          "json_sha256": "a58232ae42e5308d1111f363c037dc27c31acfa2789f9c1f2875be0071fba5aa",
+          "successful": false,
+          "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i6b-abort-queued.txt",
+          "transcript_sha256": "723b8684ba036d991ea62171ce8338c93edcc13ca872bd079b3103e8203e28cf"
+        },
+        "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_of_queued_finalization_removes_job_without_l2"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_never_starts_l2"
+    },
+    {
+      "description": "ttl_zero_respects_read_lease",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i7-ttl-zero.json",
+        "json_sha256": "1a9234c714b3f10788fe8794ac165edc97587fb0381b3cfc91fe00c8972c3bc5",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i7-ttl-zero.txt",
+        "transcript_sha256": "6c3f95f2b371e8300a4c6152393318d21ae54cd7be758c41bacbb764da0b3dbd"
+      },
+      "invariant_id": "i7",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i7-ttl-zero.json",
+        "json_sha256": "cf1388dfa8c7e5241b5f6ec8628efb24191cee708b1e3e589a207fcea38bffb0",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i7-ttl-zero.txt",
+        "transcript_sha256": "524fdf4f79413da761b84f6f6353f8f43eecf4a318238f8396d1cf9eb8459157"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_ttl_zero_reaps_only_after_lease_release"
+    },
+    {
+      "description": "new_live_meeting_responsive",
+      "green_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i8-live-responsive.json",
+        "json_sha256": "8f73659eaf05ba718767e4f0a8ac822e15d51eb403a80f2b61c21cd7f6643004",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-green/i8-live-responsive.txt",
+        "transcript_sha256": "ca09390aa4371b550ad189190f750d387c2bd084c0b35424f51d82d34e5ba93b"
+      },
+      "invariant_id": "i8",
+      "passed": true,
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i8-live-responsive.json",
+        "json_sha256": "705919edd4cdb7362437728667317f52e6b1589ba9523f02482ae4d31ea5498d",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-red/i8-live-responsive.txt",
+        "transcript_sha256": "9031bdca2a4754e2b8c2d88f6e30e946d0bd3668e2f53c716e24783a7211e171"
+      },
+      "test_name": "test_lifecycle_prototype.LifecyclePrototypeTest.test_new_live_meeting_progresses_while_older_finalizer_runs"
+    }
+  ],
+  "negative_control_count": 3,
+  "negative_controls": [
+    {
+      "control_id": "n1",
+      "detection_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-controls/n1-invisible-revision.json",
+        "json_sha256": "86d097d3104bce16b11db09e69f4989e504ae1d07a562c0879303b7dc34a6395",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-controls/n1-invisible-revision.txt",
+        "transcript_sha256": "cdec8231e74de6cbe01474945415f5d4d337b9ad66d1491cc2cb80e192acfd90"
+      },
+      "failed_invariant": "terminal_revision_visible",
+      "invariant_passed": false,
+      "name": "active_closing_closed",
+      "passed": true,
+      "raw_result": {
+        "failed_invariant": "terminal_revision_visible",
+        "invariant_passed": false,
+        "revision_published": true,
+        "state_path": [
+          "active",
+          "closing",
+          "closed"
+        ],
+        "view_authority_at_revision": false
+      },
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-red/n1-invisible-revision.json",
+        "json_sha256": "563396d04ca62fe062cce41b93d89ae11d6ba4beb2e0d65fb0febf3c06c3fbeb",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-red/n1-invisible-revision.txt",
+        "transcript_sha256": "ee42c8ad9b53f0dfe912670d60a018522fd56b6655e6fefba3dadedb8642d8a1"
+      },
+      "test_name": "test_lifecycle_prototype.LifecycleNegativeControlTest.test_active_closing_closed_reproduces_invisible_revision"
+    },
+    {
+      "control_id": "n2",
+      "detection_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-controls/n2-unbounded-threads.json",
+        "json_sha256": "d45db77d54f80f7c4c162fa9c33577a0a4b868314a011c0bc47d4fdea82fb831",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-controls/n2-unbounded-threads.txt",
+        "transcript_sha256": "985f031016076f7d4c3c3f351e8d698008bd58f9a2e7dc917b30d6e75284c43e"
+      },
+      "failed_invariant": "bounded_single_cpu_finalizer",
+      "invariant_passed": false,
+      "name": "one_thread_per_session",
+      "passed": true,
+      "raw_result": {
+        "failed_invariant": "bounded_single_cpu_finalizer",
+        "invariant_passed": false,
+        "max_cpu_finalizers": 3,
+        "queue_owner_count": 0
+      },
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-red/n2-unbounded-threads.json",
+        "json_sha256": "36b3ea40b1cdc109beb02ec38af3fe632d6cec07cf57dbdda6fe10334c1959a8",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-red/n2-unbounded-threads.txt",
+        "transcript_sha256": "84e61af0c9b47cd1fad41ce60775b5d619a3177a205e0204c5f30fda2d5d6f3c"
+      },
+      "test_name": "test_lifecycle_prototype.LifecycleNegativeControlTest.test_one_thread_per_session_fails_bounded_concurrency"
+    },
+    {
+      "control_id": "n3",
+      "detection_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-controls/n3-early-release.json",
+        "json_sha256": "c85b0ef7f0d711ab4cf5a5a1f5fcb2bedf2b779f437e4dff7d6b4ecf656990d6",
+        "successful": true,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-controls/n3-early-release.txt",
+        "transcript_sha256": "c53b03e79472213a2ed86ef7981b6114ab29222d9b6dd6fdf8612fd95dd6e53e"
+      },
+      "failed_invariant": "tape_read_lease_held",
+      "invariant_passed": false,
+      "name": "early_tape_release",
+      "passed": true,
+      "raw_result": {
+        "failed_invariant": "tape_read_lease_held",
+        "invariant_passed": false,
+        "lease_count_at_finalizer_start": 0,
+        "ttl_zero_reaped_before_read": true
+      },
+      "red_proof": {
+        "json_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-red/n3-early-release.json",
+        "json_sha256": "6d36a9bacef5991cf0d6403287fc2ba546af0fd33615af228c7077823dd72772",
+        "successful": false,
+        "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a3-negative-red/n3-early-release.txt",
+        "transcript_sha256": "bd7cbbbbdf09b47b59f9f8a7dee07519a62da1d4d9b6ecca5b15b5e377b824f3"
+      },
+      "test_name": "test_lifecycle_prototype.LifecycleNegativeControlTest.test_early_tape_release_fails_read_lease_invariant"
+    }
+  ],
+  "overall": "PASS",
+  "product_code_modified": false,
+  "schema": "moss-l2-stage0-lifecycle-verdict.v1",
+  "state_model": {
+    "abort_branches": [
+      [
+        "active",
+        "closing",
+        "aborted"
+      ],
+      [
+        "active",
+        "closing",
+        "finalizing",
+        "aborted"
+      ]
+    ],
+    "failure_branch": [
+      "active",
+      "closing",
+      "finalizing",
+      "failed"
+    ],
+    "success_path": [
+      "active",
+      "closing",
+      "finalizing",
+      "closed"
+    ]
+  },
+  "state_trace": {
+    "new_live_during_finalizer": {
+      "capture_authority": true,
+      "captured_frames": 1,
+      "fallback_reason": null,
+      "l2_started": false,
+      "meeting_id": "new-live",
+      "result_source": "live_l1",
+      "state": "active",
+      "tape_lease_acquires": 0,
+      "tape_lease_count": 0,
+      "tape_lease_releases": 0,
+      "tape_reaped": false,
+      "tape_sealed": false,
+      "view_authority": true
+    },
+    "responsiveness": {
+      "active_cpu_finalizers": 1,
+      "live_captures_during_finalizer": 1
+    },
+    "states": [
+      "active",
+      "closing",
+      "finalizing",
+      "finalizing",
+      "closed"
+    ],
+    "trace": [
+      {
+        "capture_authority": true,
+        "captured_frames": 0,
+        "fallback_reason": null,
+        "l2_started": false,
+        "meeting_id": "meeting-1",
+        "result_source": "live_l1",
+        "state": "active",
+        "tape_lease_acquires": 0,
+        "tape_lease_count": 0,
+        "tape_lease_releases": 0,
+        "tape_reaped": false,
+        "tape_sealed": false,
+        "view_authority": true
+      },
+      {
+        "capture_authority": true,
+        "captured_frames": 0,
+        "fallback_reason": null,
+        "l2_started": false,
+        "meeting_id": "meeting-1",
+        "result_source": "live_l1",
+        "state": "closing",
+        "tape_lease_acquires": 0,
+        "tape_lease_count": 0,
+        "tape_lease_releases": 0,
+        "tape_reaped": false,
+        "tape_sealed": false,
+        "view_authority": true
+      },
+      {
+        "capture_authority": false,
+        "captured_frames": 0,
+        "fallback_reason": null,
+        "l2_started": false,
+        "meeting_id": "meeting-1",
+        "result_source": "live_l1",
+        "state": "finalizing",
+        "tape_lease_acquires": 1,
+        "tape_lease_count": 1,
+        "tape_lease_releases": 0,
+        "tape_reaped": false,
+        "tape_sealed": true,
+        "view_authority": true
+      },
+      {
+        "capture_authority": false,
+        "captured_frames": 0,
+        "fallback_reason": null,
+        "l2_started": true,
+        "meeting_id": "meeting-1",
+        "result_source": "live_l1",
+        "state": "finalizing",
+        "tape_lease_acquires": 1,
+        "tape_lease_count": 1,
+        "tape_lease_releases": 0,
+        "tape_reaped": false,
+        "tape_sealed": true,
+        "view_authority": true
+      },
+      {
+        "capture_authority": false,
+        "captured_frames": 0,
+        "fallback_reason": null,
+        "l2_started": true,
+        "meeting_id": "meeting-1",
+        "result_source": "l2",
+        "state": "closed",
+        "tape_lease_acquires": 1,
+        "tape_lease_count": 0,
+        "tape_lease_releases": 1,
+        "tape_reaped": false,
+        "tape_sealed": true,
+        "view_authority": true
+      }
+    ]
+  }
+}

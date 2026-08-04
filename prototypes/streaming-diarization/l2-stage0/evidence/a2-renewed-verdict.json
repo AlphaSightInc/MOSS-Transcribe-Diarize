@@ -1,0 +1,23 @@
+{
+  "campaign_status": "BLOCKED",
+  "determinism": {
+    "case_count": 6,
+    "passed": true,
+    "runs_per_case": 2,
+    "semantic_hash_match_required": true
+  },
+  "failed_gate": {
+    "absolute_delta": 0.003265,
+    "absolute_tolerance": 0.001,
+    "actual_speaker_accuracy": 0.916765,
+    "code": "l1_accepted_alphabet_band_failed",
+    "target_speaker_accuracy": 0.9135
+  },
+  "holdout_opened": false,
+  "raw_summary_path": "prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-fixed-summary.json",
+  "raw_summary_sha256": "fa10723978db7828622f5ef2c590a4a9ea1616fa74ce1d55c730387007733dee",
+  "raw_transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-fixed-transcript.txt",
+  "raw_transcript_sha256": "9f7828a2886efd3447c9c04806298397f0871c181c358749ca7c03f70d6237b3",
+  "retry_or_tuning_performed": false,
+  "schema": "moss-l2-stage0-renewed-a2-verdict.v1"
+}

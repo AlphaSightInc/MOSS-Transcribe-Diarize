@@ -1,0 +1,15 @@
+test_tape_is_sealed_and_read_leased_while_finalizer_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_tape_is_sealed_and_read_leased_while_finalizer_runs) ... ERROR
+
+======================================================================
+ERROR: test_tape_is_sealed_and_read_leased_while_finalizer_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_tape_is_sealed_and_read_leased_while_finalizer_runs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 54, in test_tape_is_sealed_and_read_leased_while_finalizer_runs
+    self.assertTrue(queued["tape_sealed"])
+                    ~~~~~~^^^^^^^^^^^^^^^
+KeyError: 'tape_sealed'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

@@ -1,0 +1,2 @@
+A5 FREEZE PROPOSAL VERIFICATION: PASS
+candidate_frozen=false holdout=SEALED gates=8/8

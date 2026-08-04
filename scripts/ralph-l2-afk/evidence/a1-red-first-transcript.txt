@@ -1,0 +1,79 @@
+test_golden_path_in_runtime_config_fails (test_validate_inputs.InputBoundaryTest) ... FAIL
+test_one_byte_audio_reference_and_model_mutations_fail (test_validate_inputs.InputBoundaryTest) ... test_pre_freeze_holdout_open_fails (test_validate_inputs.InputBoundaryTest) ... FAIL
+test_reference_import_in_runtime_source_fails (test_validate_inputs.InputBoundaryTest) ... FAIL
+test_transcript_only_line_fails_acoustic_validation (test_validate_inputs.InputBoundaryTest) ... FAIL
+
+======================================================================
+FAIL: test_golden_path_in_runtime_config_fails (test_validate_inputs.InputBoundaryTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 77, in test_golden_path_in_runtime_config_fails
+    self.assert_code(
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 24, in assert_code
+    action()
+AssertionError: ValidationError not raised
+
+======================================================================
+FAIL: test_one_byte_audio_reference_and_model_mutations_fail (test_validate_inputs.InputBoundaryTest) (kind='audio')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 36, in test_one_byte_audio_reference_and_model_mutations_fail
+    self.assert_code(
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 24, in assert_code
+    action()
+AssertionError: ValidationError not raised
+
+======================================================================
+FAIL: test_one_byte_audio_reference_and_model_mutations_fail (test_validate_inputs.InputBoundaryTest) (kind='reference')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 36, in test_one_byte_audio_reference_and_model_mutations_fail
+    self.assert_code(
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 24, in assert_code
+    action()
+AssertionError: ValidationError not raised
+
+======================================================================
+FAIL: test_one_byte_audio_reference_and_model_mutations_fail (test_validate_inputs.InputBoundaryTest) (kind='model')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 36, in test_one_byte_audio_reference_and_model_mutations_fail
+    self.assert_code(
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 24, in assert_code
+    action()
+AssertionError: ValidationError not raised
+
+======================================================================
+FAIL: test_pre_freeze_holdout_open_fails (test_validate_inputs.InputBoundaryTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 97, in test_pre_freeze_holdout_open_fails
+    self.assert_code(
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 24, in assert_code
+    action()
+AssertionError: ValidationError not raised
+
+======================================================================
+FAIL: test_reference_import_in_runtime_source_fails (test_validate_inputs.InputBoundaryTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 83, in test_reference_import_in_runtime_source_fails
+    self.assert_code(
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 24, in assert_code
+    action()
+AssertionError: ValidationError not raised
+
+======================================================================
+FAIL: test_transcript_only_line_fails_acoustic_validation (test_validate_inputs.InputBoundaryTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 70, in test_transcript_only_line_fails_acoustic_validation
+    self.assert_code(
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py", line 24, in assert_code
+    action()
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+FAILED (failures=7)

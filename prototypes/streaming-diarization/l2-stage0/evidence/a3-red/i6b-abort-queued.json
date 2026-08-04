@@ -1,0 +1,9 @@
+{
+  "errors": [],
+  "failures": [
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_of_queued_finalization_removes_job_without_l2"
+  ],
+  "successful": false,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_of_queued_finalization_removes_job_without_l2",
+  "tests_run": 1
+}

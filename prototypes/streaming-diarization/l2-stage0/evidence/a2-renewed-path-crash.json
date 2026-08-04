@@ -1,0 +1,13 @@
+{
+  "classification": "runner_output_path_reproducibility_failure",
+  "error": "ValueError: relative evidence file is not in the subpath of the absolute worktree",
+  "gate_reached": false,
+  "overall": "NO_VERDICT",
+  "partial_result": {
+    "case_id": "1m-acquired-nfl",
+    "path": "prototypes/streaming-diarization/l2-stage0/evidence/a2-l1-renewed-runs/a2-l1-1m-acquired-nfl-run1.json",
+    "semantic_sha256": "62c368e4a56f44697df54e61eefee558f6ad91f59805028c83ffad9edade5944",
+    "sha256": "2c4c62f96e8c81e753f53e21f4fa02d59acf0b3f0b6f6d0db28d9e2921e089c0"
+  },
+  "threshold_or_input_change": false
+}

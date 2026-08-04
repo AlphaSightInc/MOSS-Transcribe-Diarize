@@ -1,0 +1,51 @@
+{
+  "accepted_anchor": {
+    "absolute_delta": 0.041474,
+    "absolute_tolerance": 0.001,
+    "actual_speaker_accuracy": 0.954974,
+    "passed": false,
+    "speaker_accuracy": 0.9135
+  },
+  "archived_cache_read_only": true,
+  "archived_cache_sha256_after": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "archived_cache_sha256_before": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "case_id": "5m-acquired-alphabet",
+  "corpus_manifest_sha256": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+  "deterministic": true,
+  "failures": [
+    "legacy_anchor_band_failed"
+  ],
+  "generated_at": "2026-08-03T23:45:36.957756+00:00",
+  "official_files_modified": false,
+  "official_l1_spec_sha256": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+  "official_runner_sha256": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+  "overall": "BLOCKED",
+  "reason_precondition": {
+    "audit_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/span-reason-independence-audit-post-duration.json",
+    "audit_sha256": "fc0eadfa2585cde9e549bd55c05b79b59018050889f64e7ca76b9a075301016c",
+    "equivalence_test_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-green-reason-post-duration.json",
+    "equivalence_test_sha256": "d2984ab623b51a74c343cef395c23d38650477d9490f0db19c3172647afd9b38"
+  },
+  "runs": [
+    {
+      "adapted_cache_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/adapted-cache-run1.npz",
+      "adapted_cache_sha256": "43a18c6bfcd287a11961fc0933b490b0926b49cd6d17ffee64757512efce98ad",
+      "path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/legacy-anchor-run1.json",
+      "result_sha256": "d1076d21735de792111f4ce957e9593ebabf98e10d43eb1ae4b0c967d92536a5",
+      "run_index": 1,
+      "scoring_projection_sha256": "a6a6404084a45465907f7e0ac80dc3026e1609c62c0c32a6bf0afe96f2e50ff5",
+      "speaker_accuracy": 0.954974
+    },
+    {
+      "adapted_cache_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/adapted-cache-run2.npz",
+      "adapted_cache_sha256": "43a18c6bfcd287a11961fc0933b490b0926b49cd6d17ffee64757512efce98ad",
+      "path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/legacy-anchor-run2.json",
+      "result_sha256": "1a6fb3a32789d3c09394576c4f3212226dc77a09f1e299cd8ed199191e19505a",
+      "run_index": 2,
+      "scoring_projection_sha256": "a6a6404084a45465907f7e0ac80dc3026e1609c62c0c32a6bf0afe96f2e50ff5",
+      "speaker_accuracy": 0.954974
+    }
+  ],
+  "schema": "moss-l2-stage0-legacy-anchor-fidelity.v1",
+  "span_reason": "legacy_unavailable"
+}

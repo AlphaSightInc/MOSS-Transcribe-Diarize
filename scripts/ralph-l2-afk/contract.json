@@ -1,0 +1,29 @@
+{
+  "allowlist": [
+    "docs/plans/r1-stage0-minimum-seam-0803.md",
+    "prototypes/streaming-diarization/NOTES.md",
+    "prototypes/streaming-diarization/README.md",
+    "prototypes/streaming-diarization/l2-stage0/**",
+    "scripts/ralph-l2-afk/**"
+  ],
+  "branch": "ralph/l2-retained-identity-v1",
+  "contract_id": "moss-l2-retained-identity-v1",
+  "corpus_manifest_hash": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+  "corpus_manifest_path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json",
+  "denylist": [
+    "macos/**",
+    "moss_transcribe_diarize/**",
+    "ops/**",
+    "tests/**"
+  ],
+  "max_campaign_a_iterations": 10,
+  "plan_path": "docs/plans/r1-stage0-minimum-seam-0803.md",
+  "plan_sha256": "2bb23820f947d884710cd65f59dbfd95aeaa87957d84b2846751239602ef7407",
+  "plan_source_commit": "59b1d7cb7f849900b6f727526f291d4cd81f164f",
+  "post_verdict_allowlist": [
+    "docs/adr/0002-two-tier-diarization-fingerprint-album.md",
+    "docs/design-streaming-diarization.md"
+  ],
+  "required_ancestor": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "worktree": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0"
+}

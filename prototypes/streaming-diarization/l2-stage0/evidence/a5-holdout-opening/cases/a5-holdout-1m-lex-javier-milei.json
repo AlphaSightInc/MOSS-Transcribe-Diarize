@@ -1,0 +1,1011 @@
+{
+  "arms": {
+    "l1_control": {
+      "arm": "l1_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 7.5,
+        "covered_reference_seconds": 60.0,
+        "diarization_error_rate": 0.125,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 60.0,
+        "hypothesis_seconds": 60.0,
+        "hypothesis_speaker_count": 3,
+        "matched_speaker_seconds": 52.5,
+        "missed_activity_seconds": 0.0,
+        "missed_speaker_seconds": 0.0,
+        "reference_activity_seconds": 60.0,
+        "reference_coverage": 1.0,
+        "reference_seconds": 60.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.875,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 1.0,
+        "speaker_correctness": {
+          "Javier Milei": 0.5,
+          "Lex Fridman": 0.95
+        },
+        "speaker_mapping": {
+          "Javier Milei": "speaker-0001",
+          "Lex Fridman": "speaker-0003"
+        },
+        "true_positive_activity_seconds": 60.0,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 24
+        },
+        "trace": {
+          "arm": "l1",
+          "status": "production_l1_no_additional_revision"
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 24
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 0.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 1.0,
+        "units": []
+      }
+    },
+    "ledger_only_control": {
+      "arm": "ledger_only_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 7.5,
+        "covered_reference_seconds": 60.0,
+        "diarization_error_rate": 0.125,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 60.0,
+        "hypothesis_seconds": 60.0,
+        "hypothesis_speaker_count": 3,
+        "matched_speaker_seconds": 52.5,
+        "missed_activity_seconds": 0.0,
+        "missed_speaker_seconds": 0.0,
+        "reference_activity_seconds": 60.0,
+        "reference_coverage": 1.0,
+        "reference_seconds": 60.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.875,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 1.0,
+        "speaker_correctness": {
+          "Javier Milei": 0.5,
+          "Lex Fridman": 0.95
+        },
+        "speaker_mapping": {
+          "Javier Milei": "speaker-0001",
+          "Lex Fridman": "speaker-0003"
+        },
+        "true_positive_activity_seconds": 60.0,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 24
+        },
+        "trace": {
+          "accepted_correction_count": 0,
+          "all_or_nothing_budget_pass": true,
+          "all_or_nothing_proposed_fraction": 0.0,
+          "arm": "ledger_only",
+          "budget_selected_count": 0,
+          "candidate_proposal_count": 0,
+          "changed_duration_fraction": 0.0,
+          "changed_duration_seconds": 0,
+          "cluster_count": 3,
+          "cluster_evidence": {
+            "1": {
+              "margin": 0.8914038175808764,
+              "score": 0.9857544597221236
+            },
+            "2": {
+              "margin": 0.8521395234303544,
+              "score": 1.0
+            },
+            "3": {
+              "margin": 0.8521395234303544,
+              "score": 1.0
+            }
+          },
+          "cluster_mapping": {
+            "1": "speaker-0003",
+            "2": "speaker-0002",
+            "3": "speaker-0001"
+          },
+          "collision_spans_rejected": [],
+          "runtime_visible_canonical_count": 3
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 24
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 0.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 1.0,
+        "units": []
+      }
+    },
+    "tape_candidate": {
+      "arm": "tape_candidate",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 7.5,
+        "covered_reference_seconds": 60.0,
+        "diarization_error_rate": 0.125,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 60.0,
+        "hypothesis_seconds": 60.0,
+        "hypothesis_speaker_count": 3,
+        "matched_speaker_seconds": 52.5,
+        "missed_activity_seconds": 0.0,
+        "missed_speaker_seconds": 0.0,
+        "reference_activity_seconds": 60.0,
+        "reference_coverage": 1.0,
+        "reference_seconds": 60.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.875,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 1.0,
+        "speaker_correctness": {
+          "Javier Milei": 0.5,
+          "Lex Fridman": 0.95
+        },
+        "speaker_mapping": {
+          "Javier Milei": "speaker-0001",
+          "Lex Fridman": "speaker-0003"
+        },
+        "true_positive_activity_seconds": 60.0,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 24
+        },
+        "trace": {
+          "accepted_correction_count": 0,
+          "arm": "tape_joint_span_rescue",
+          "budget_priority_order": [
+            "full_committed_span",
+            "active_at_span_start",
+            "mid_span_birth_or_tail"
+          ],
+          "budget_selected_count": 0,
+          "candidate_proposal_count": 0,
+          "changed_duration_fraction": 0.0,
+          "changed_duration_seconds": 0,
+          "collision_spans_rejected": [],
+          "unit_trace": [
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 0
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 1
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 2
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 3
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 4
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 5
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 6
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 7
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 8
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 9
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 10
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 11
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 12
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 13
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 14
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 15
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 16
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 17
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 18
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 19
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 20
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 21
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 22
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 23
+            }
+          ],
+          "vad_region_count": 26,
+          "vad_regions": [
+            [
+              0.14,
+              0.52
+            ],
+            [
+              0.78,
+              2.34
+            ],
+            [
+              2.8,
+              5.0
+            ],
+            [
+              6.88,
+              7.68
+            ],
+            [
+              10.88,
+              13.46
+            ],
+            [
+              13.92,
+              15.64
+            ],
+            [
+              16.4,
+              18.04
+            ],
+            [
+              18.36,
+              19.38
+            ],
+            [
+              19.7,
+              20.76
+            ],
+            [
+              21.34,
+              22.16
+            ],
+            [
+              22.42,
+              23.32
+            ],
+            [
+              23.92,
+              28.14
+            ],
+            [
+              29.34,
+              29.88
+            ],
+            [
+              30.14,
+              32.0
+            ],
+            [
+              32.74,
+              34.7
+            ],
+            [
+              34.98,
+              35.7
+            ],
+            [
+              36.0,
+              36.66
+            ],
+            [
+              37.02,
+              38.92
+            ],
+            [
+              40.06,
+              41.76
+            ],
+            [
+              42.14,
+              45.34
+            ],
+            [
+              45.56,
+              47.82
+            ],
+            [
+              48.78,
+              50.46
+            ],
+            [
+              50.84,
+              55.12
+            ],
+            [
+              55.7,
+              57.44
+            ],
+            [
+              57.7,
+              58.2
+            ],
+            [
+              58.76,
+              60.0
+            ]
+          ],
+          "window_count": 33,
+          "window_intervals": [
+            [
+              0.78,
+              2.34
+            ],
+            [
+              2.8,
+              5.0
+            ],
+            [
+              6.88,
+              7.68
+            ],
+            [
+              10.88,
+              13.38
+            ],
+            [
+              10.96,
+              13.46
+            ],
+            [
+              12.755,
+              13.46
+            ],
+            [
+              13.92,
+              15.64
+            ],
+            [
+              16.4,
+              18.04
+            ],
+            [
+              18.36,
+              19.38
+            ],
+            [
+              19.7,
+              20.76
+            ],
+            [
+              21.34,
+              22.16
+            ],
+            [
+              22.42,
+              23.32
+            ],
+            [
+              23.92,
+              26.42
+            ],
+            [
+              25.64,
+              28.14
+            ],
+            [
+              25.795,
+              28.14
+            ],
+            [
+              29.34,
+              29.88
+            ],
+            [
+              30.14,
+              32.0
+            ],
+            [
+              32.74,
+              34.7
+            ],
+            [
+              34.98,
+              35.7
+            ],
+            [
+              36.0,
+              36.66
+            ],
+            [
+              37.02,
+              38.92
+            ],
+            [
+              40.06,
+              41.76
+            ],
+            [
+              42.14,
+              44.64
+            ],
+            [
+              42.84,
+              45.34
+            ],
+            [
+              44.015,
+              45.34
+            ],
+            [
+              45.56,
+              47.82
+            ],
+            [
+              48.78,
+              50.46
+            ],
+            [
+              50.84,
+              53.34
+            ],
+            [
+              52.62,
+              55.12
+            ],
+            [
+              52.715,
+              55.12
+            ],
+            [
+              55.7,
+              57.44
+            ],
+            [
+              57.7,
+              58.2
+            ],
+            [
+              58.76,
+              60.0
+            ]
+          ],
+          "window_matches": [
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.774382590714937,
+              "score": 0.8420321391608054,
+              "window_index": 0
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.7371808586375275,
+              "score": 0.8587626933470716,
+              "window_index": 1
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.31926683459206656,
+              "score": 0.4860659551110509,
+              "window_index": 2
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.773840319070737,
+              "score": 0.8582261874768902,
+              "window_index": 3
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7613657696853176,
+              "score": 0.8591384482643047,
+              "window_index": 4
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5403389762708463,
+              "score": 0.6151861832064801,
+              "window_index": 5
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7373336705188314,
+              "score": 0.7608296044647902,
+              "window_index": 6
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6756204597276182,
+              "score": 0.6896480926576238,
+              "window_index": 7
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6544831468530591,
+              "score": 0.7289680458785013,
+              "window_index": 8
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5905548417784698,
+              "score": 0.7004372541089399,
+              "window_index": 9
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5358985241377494,
+              "score": 0.6087215874771619,
+              "window_index": 10
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6117014206394586,
+              "score": 0.7036446832268466,
+              "window_index": 11
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7622247811247514,
+              "score": 0.8298407967680475,
+              "window_index": 12
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7255104156904384,
+              "score": 0.7502360060548146,
+              "window_index": 13
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7518414350110874,
+              "score": 0.7687559499086103,
+              "window_index": 14
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.43314436331552175,
+              "score": 0.45974561364333605,
+              "window_index": 15
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7033747195012515,
+              "score": 0.8127425069508902,
+              "window_index": 16
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7390557996744797,
+              "score": 0.8155741766886049,
+              "window_index": 17
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.39094520512027126,
+              "score": 0.4633137016430745,
+              "window_index": 18
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6943202971271769,
+              "score": 0.7124818265291607,
+              "window_index": 19
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7545866784140355,
+              "score": 0.8261225494592465,
+              "window_index": 20
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6810871489890381,
+              "score": 0.7162500890481522,
+              "window_index": 21
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7853298274802712,
+              "score": 0.8438742117463852,
+              "window_index": 22
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7838727765902855,
+              "score": 0.852461493865343,
+              "window_index": 23
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7614095446779557,
+              "score": 0.8024526252771181,
+              "window_index": 24
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6931243356984266,
+              "score": 0.7880392772975893,
+              "window_index": 25
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6433012177143466,
+              "score": 0.7652703108216725,
+              "window_index": 26
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6232193178147732,
+              "score": 0.7488918886531428,
+              "window_index": 27
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6012481076269981,
+              "score": 0.7720182014074399,
+              "window_index": 28
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6338266721770838,
+              "score": 0.7720884883061409,
+              "window_index": 29
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6726280903368002,
+              "score": 0.781502033467002,
+              "window_index": 30
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.42204635432366094,
+              "score": 0.5238230305987657,
+              "window_index": 31
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.7138774137593716,
+              "score": 0.660830442095524,
+              "window_index": 32
+            }
+          ]
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 24
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 0.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 1.0,
+        "units": []
+      }
+    }
+  },
+  "case_id": "1m-lex-javier-milei",
+  "frame": {
+    "audio_sha256": "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd",
+    "planner": "production_endpoint_policy",
+    "reference_sha256": "89fcc6958bf5d6d10ec59680b97065dff0d12debed4e9000f536d0e0fc32baa8",
+    "span_count": 24,
+    "unit_count": 24,
+    "vector_cache_sha256": "a6a16a9dc1a378f4355e76343c27c993443d49788f2e9f5844e3ece140d6e306"
+  },
+  "l1_repeatability": {
+    "delta_pp": 0.0,
+    "first_speaker_accuracy": 0.875,
+    "limit_pp": 0.1,
+    "pass": true,
+    "runs": [
+      {
+        "path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/l1/a5-holdout-l1-1m-lex-javier-milei-run1.json",
+        "result_sha256": "e33017680171fcc8e9d210693791ffa4c5db3584822a870b099a826f874a5d77",
+        "run_index": 1,
+        "semantic_sha256": "55e65a0dddb77d18b11cfc6a24b3d0baeefb18c27a595c5c8c7d66d4bd46235c"
+      },
+      {
+        "path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/l1/a5-holdout-l1-1m-lex-javier-milei-run2.json",
+        "result_sha256": "bb0227c5a3c59bfb0ad8f5e9c5d12bdc4b20c28322915e6f98d1620225e22a9a",
+        "run_index": 2,
+        "semantic_sha256": "55e65a0dddb77d18b11cfc6a24b3d0baeefb18c27a595c5c8c7d66d4bd46235c"
+      }
+    ],
+    "second_speaker_accuracy": 0.875,
+    "semantic_deterministic": true
+  },
+  "schema": "moss-l2-stage0-a5-holdout-case-result.v1",
+  "split": "blind_holdout"
+}

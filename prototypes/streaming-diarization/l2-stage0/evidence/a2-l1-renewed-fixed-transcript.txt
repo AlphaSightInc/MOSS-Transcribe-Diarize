@@ -1,0 +1,10 @@
+A2 L1 control source_commit=5be0455745629c6410d48285d5d90a55c9d7bd95
+scope=6 development/validation cases holdout=SEALED
+PASS 1m-acquired-nfl repeat=62c368e4a56f44697df54e61eefee558f6ad91f59805028c83ffad9edade5944 accuracy=0.813540 der=0.186460
+PASS 1m-acquired-rolex repeat=763d49933feafee746bd533dc8bb585b3c632d7fec678c4e62f301a93d5ca42c accuracy=0.986594 der=0.013406
+PASS 1m-lex-bill-ackman repeat=90e28ec11d015f6ead87117e68052565d1893216d3772e85d16f98153b762c12 accuracy=0.950000 der=0.050000
+PASS 3m-acquired-jamie-dimon repeat=1192430f57b5d36ea0cf2d2ffb93fc05cd8c506a0f25aa5b52a6db3bcba96bc5 accuracy=0.987034 der=0.012966
+PASS 3m-lex-adam-frank repeat=cd7cbff311d86f262dafd751b8f8bc3f2ebe35a53762bf89738e62870df38889 accuracy=0.961111 der=0.038889
+PASS 5m-acquired-alphabet repeat=d8a4b823c8995d21170d508391729fbd76468ecd70733c6169b445424f6896f3 accuracy=0.916765 der=0.083238
+FAIL accepted_alphabet actual=0.916765 target=0.913500 tolerance=0.001000
+RESULT FAIL failures=l1_accepted_alphabet_band_failed

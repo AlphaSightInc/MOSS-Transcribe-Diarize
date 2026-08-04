@@ -1,0 +1,15 @@
+test_holdout_case_is_refused_before_freeze_without_reading_case_files (test_l1_control.L1ControlTest) ... FAIL
+
+======================================================================
+FAIL: test_holdout_case_is_refused_before_freeze_without_reading_case_files (test_l1_control.L1ControlTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_l1_control.py", line 66, in test_holdout_case_is_refused_before_freeze_without_reading_case_files
+    self.assertEqual(completed.returncode, 2, completed.stdout + completed.stderr)
+AssertionError: 0 != 2 : UNIMPLEMENTED A2 runner
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.019s
+
+FAILED (failures=1)

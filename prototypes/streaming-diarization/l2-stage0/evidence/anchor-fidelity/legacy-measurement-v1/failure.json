@@ -1,0 +1,13 @@
+{
+  "adapted_cache_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v1/adapted-cache-run1.npz",
+  "adapted_cache_sha256": "43a18c6bfcd287a11961fc0933b490b0926b49cd6d17ffee64757512efce98ad",
+  "archived_cache_sha256_after": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "archived_cache_sha256_before": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "error": "l1_fixture_duration_mismatch",
+  "error_detail": "5m-acquired-alphabet:77:planned=2.500062500 cached=2.500000000",
+  "failure_classification": "legacy_adapter_sample_rounding_incompatibility",
+  "official_files_modified": false,
+  "overall": "BLOCKED_NO_SCORE",
+  "runs_completed": 0,
+  "schema": "moss-l2-stage0-legacy-anchor-fidelity-failure.v1"
+}

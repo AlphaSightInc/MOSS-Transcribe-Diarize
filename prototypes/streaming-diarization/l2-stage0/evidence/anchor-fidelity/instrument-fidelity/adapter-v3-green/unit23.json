@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+    "-m",
+    "unittest",
+    "-v",
+    "test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment"
+  ],
+  "exit_code": 1,
+  "overall": "FAIL",
+  "schema": "moss-l2-stage0-legacy-ingest-test-run.v1",
+  "tests": [
+    "test_legacy_ingest.LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment"
+  ],
+  "transcript_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green/unit23-transcript.txt",
+  "transcript_sha256": "e0b0d5b21b274ab15089093532cb55cad4c4610af60c13a3f8865754394652fe"
+}

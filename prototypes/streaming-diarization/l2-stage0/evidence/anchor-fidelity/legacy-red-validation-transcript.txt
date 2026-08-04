@@ -1,0 +1,86 @@
+COMMAND /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m unittest -v test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named test_legacy_ingest.LegacyIngestTest.test_missing_archive_array_fails_named test_legacy_ingest.LegacyIngestTest.test_missing_row_field_fails_named test_legacy_ingest.LegacyIngestTest.test_non_monotonic_row_bounds_fail_named
+EXIT 1
+STDOUT
+STDERR
+test_corrupt_and_truncated_archives_fail_named (test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named) ... 
+  test_corrupt_and_truncated_archives_fail_named (test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named) (path='corrupt.npz') ... ERROR
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/traceback.py:241: ResourceWarning: unclosed file <_io.BufferedReader name='/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-l2-legacy-corrupt-inxa0zws/truncated.npz'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+  test_corrupt_and_truncated_archives_fail_named (test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named) (path='truncated.npz') ... ERROR
+test_missing_archive_array_fails_named (test_legacy_ingest.LegacyIngestTest.test_missing_archive_array_fails_named) ... ERROR
+test_missing_row_field_fails_named (test_legacy_ingest.LegacyIngestTest.test_missing_row_field_fails_named) ... FAIL
+test_non_monotonic_row_bounds_fail_named (test_legacy_ingest.LegacyIngestTest.test_non_monotonic_row_bounds_fail_named) ... FAIL
+
+======================================================================
+ERROR: test_corrupt_and_truncated_archives_fail_named (test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named) (path='corrupt.npz')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 43, in test_corrupt_and_truncated_archives_fail_named
+    load_legacy_archive(path)
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/legacy_ingest.py", line 49, in load_legacy_archive
+    with np.load(path, allow_pickle=False) as payload:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py", line 489, in load
+    raise ValueError(
+ValueError: This file contains pickled (object) data. If you trust the file you can load it unsafely using the `allow_pickle=` keyword argument or `pickle.load()`.
+
+======================================================================
+ERROR: test_corrupt_and_truncated_archives_fail_named (test_legacy_ingest.LegacyIngestTest.test_corrupt_and_truncated_archives_fail_named) (path='truncated.npz')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 43, in test_corrupt_and_truncated_archives_fail_named
+    load_legacy_archive(path)
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/legacy_ingest.py", line 49, in load_legacy_archive
+    with np.load(path, allow_pickle=False) as payload:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py", line 471, in load
+    ret = NpzFile(fid, own_fid=own_fid, allow_pickle=allow_pickle,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py", line 197, in __init__
+    _zip = zipfile_factory(fid)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py", line 112, in zipfile_factory
+    return zipfile.ZipFile(file, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/zipfile/__init__.py", line 1370, in __init__
+    self._RealGetContents()
+  File "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/zipfile/__init__.py", line 1437, in _RealGetContents
+    raise BadZipFile("File is not a zip file")
+zipfile.BadZipFile: File is not a zip file
+
+======================================================================
+ERROR: test_missing_archive_array_fails_named (test_legacy_ingest.LegacyIngestTest.test_missing_archive_array_fails_named)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 57, in test_missing_archive_array_fails_named
+    load_legacy_archive(archive)
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/legacy_ingest.py", line 51, in load_legacy_archive
+    vector_indexes = payload["vec_idx"].astype(np.int64)
+                     ~~~~~~~^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py", line 243, in __getitem__
+    raise KeyError(f"{key} is not a file in the archive") from None
+KeyError: 'vec_idx is not a file in the archive'
+
+======================================================================
+FAIL: test_missing_row_field_fails_named (test_legacy_ingest.LegacyIngestTest.test_missing_row_field_fails_named)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 69, in test_missing_row_field_fails_named
+    with self.assertRaises(LegacyIngestError) as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: LegacyIngestError not raised
+
+======================================================================
+FAIL: test_non_monotonic_row_bounds_fail_named (test_legacy_ingest.LegacyIngestTest.test_non_monotonic_row_bounds_fail_named)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py", line 88, in test_non_monotonic_row_bounds_fail_named
+    with self.assertRaises(LegacyIngestError) as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: LegacyIngestError not raised
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.220s
+
+FAILED (failures=2, errors=3)

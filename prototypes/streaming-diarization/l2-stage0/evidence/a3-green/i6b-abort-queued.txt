@@ -1,0 +1,6 @@
+test_abort_of_queued_finalization_removes_job_without_l2 (test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_of_queued_finalization_removes_job_without_l2) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

@@ -1,0 +1,6 @@
+test_one_bounded_queue_owns_finalizers_and_one_cpu_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_one_bounded_queue_owns_finalizers_and_one_cpu_runs) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

@@ -1,0 +1,54 @@
+{
+  "anchor": 0.9135,
+  "anchor_absolute_delta": 0.041474,
+  "anchor_tolerance": 0.001,
+  "final_label_count": 92,
+  "final_labels_semantic_sha256": "0372c8575177cb5feb853a846a69dd789ca73b86977e9c54f9a5cbf37c5071c9",
+  "h1_identifies_divergence": false,
+  "hypothesis": "H1_SCORER_DEFINITION",
+  "hypothesis_interval_count": 93,
+  "input_hashes": {
+    "archive": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+    "reference": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+    "run": "d1076d21735de792111f4ce957e9593ebabf98e10d43eb1ae4b0c967d92536a5",
+    "scorer": "10be298132e82148cfca520404ca42b6fb8c7bd5a56a2322000ca0ebe8dec469"
+  },
+  "next_hypothesis": "H2_IDENTITY_CONSTANTS",
+  "overall": "PASS",
+  "rescored_metrics": {
+    "confused_speaker_seconds": 0.0,
+    "covered_reference_seconds": 169.099457,
+    "diarization_error_rate": 0.04503,
+    "false_positive_activity_seconds": 0.000731,
+    "false_positive_speaker_seconds": 0.000731,
+    "hypothesis_activity_seconds": 169.100188,
+    "hypothesis_seconds": 169.100188,
+    "hypothesis_speaker_count": 2,
+    "matched_speaker_seconds": 169.099457,
+    "missed_activity_seconds": 7.972793,
+    "missed_speaker_seconds": 7.972793,
+    "reference_activity_seconds": 177.07225,
+    "reference_coverage": 0.954974,
+    "reference_seconds": 177.07225,
+    "reference_speaker_count": 2,
+    "speaker_accuracy": 0.954974,
+    "speaker_activity_precision": 0.999996,
+    "speaker_activity_recall": 0.954974,
+    "speaker_correctness": {
+      "Ben": 0.979383,
+      "David": 0.915274
+    },
+    "speaker_mapping": {
+      "Ben": "speaker-0002",
+      "David": "speaker-0001"
+    },
+    "true_positive_activity_seconds": 169.099457,
+    "two_sided_mapping": true
+  },
+  "schema": "moss-l2-stage0-instrument-h1.v1",
+  "scorer_call": "moss_transcribe_diarize.live_speaker_accuracy.score_live_speaker_accuracy",
+  "scorer_source_line": 148,
+  "sealed_metrics_exact_match": true,
+  "sealed_run_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/legacy-anchor-run1.json",
+  "verdict": "H1_REFUTED"
+}

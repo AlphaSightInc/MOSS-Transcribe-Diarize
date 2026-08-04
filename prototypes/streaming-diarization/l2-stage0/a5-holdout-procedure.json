@@ -1,0 +1,33 @@
+{
+  "arms": [
+    "l1_control",
+    "ledger_only_control",
+    "l2_candidate"
+  ],
+  "candidate_must_be_frozen": true,
+  "comparison_frame": {
+    "all_arms_must_share_identical_case_cache": true,
+    "cross_frame_metrics_are_comparable": false,
+    "planner": "production_endpoint_policy",
+    "rule": "For each holdout case, compare l1_control, ledger_only_control, and l2_candidate only on the same production-planned cache rebuilt during the single A5 opening. Never compare arm metrics across planner frames."
+  },
+  "holdout_cache_rebuild": {
+    "apply_before_arms": true,
+    "cache_rebuild_spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061",
+    "code_path": "prototypes/streaming-diarization/l2-stage0/rebuild_caches.py",
+    "code_sha256": "58157d144525b5e5e50bf7bb8404853e85fab4bdf2692af3c639c77b8c8c5a1c",
+    "inside_single_opening_session": true,
+    "same_code_path_as_non_holdout_rebuild": true,
+    "shared_module_path": "prototypes/streaming-diarization/l2-stage0/production_cache.py",
+    "shared_module_sha256": "4e623758e2fd79037a53da6678d4a5858ff47ae87ab822b886e10bdce261db3a",
+    "scope": "all_cases_in_sealed_holdout_manifest",
+    "versioned_not_overwritten": true
+  },
+  "holdout_case_scope": "all_cases_in_sealed_holdout_manifest",
+  "l1_runs_per_case": 2,
+  "no_tuning_after_open": true,
+  "opening_count": 1,
+  "opening_stage": "A5",
+  "run_all_arms_in_same_opening_session": true,
+  "schema": "moss-l2-stage0-a5-holdout-procedure.v1"
+}

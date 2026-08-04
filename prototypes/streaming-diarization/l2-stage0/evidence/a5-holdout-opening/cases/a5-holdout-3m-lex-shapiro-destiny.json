@@ -1,0 +1,1973 @@
+{
+  "arms": {
+    "l1_control": {
+      "arm": "l1_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 0.0,
+        "covered_reference_seconds": 152.5,
+        "diarization_error_rate": 0.0,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 152.5,
+        "hypothesis_seconds": 152.5,
+        "hypothesis_speaker_count": 3,
+        "matched_speaker_seconds": 152.5,
+        "missed_activity_seconds": 0.0,
+        "missed_speaker_seconds": 0.0,
+        "reference_activity_seconds": 152.5,
+        "reference_coverage": 1.0,
+        "reference_seconds": 152.5,
+        "reference_speaker_count": 3,
+        "speaker_accuracy": 1.0,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 1.0,
+        "speaker_correctness": {
+          "Ben": 1.0,
+          "Destiny": 1.0,
+          "Lex": 1.0
+        },
+        "speaker_mapping": {
+          "Ben": "speaker-0003",
+          "Destiny": "speaker-0002",
+          "Lex": "speaker-0001"
+        },
+        "true_positive_activity_seconds": 152.5,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 82,
+          "swept_units": 65
+        },
+        "trace": {
+          "arm": "l1",
+          "status": "production_l1_no_additional_revision"
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 82,
+          "swept_units": 65
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 0.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 1.0,
+        "units": []
+      }
+    },
+    "ledger_only_control": {
+      "arm": "ledger_only_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 0.0,
+        "covered_reference_seconds": 152.5,
+        "diarization_error_rate": 0.0,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 152.5,
+        "hypothesis_seconds": 152.5,
+        "hypothesis_speaker_count": 3,
+        "matched_speaker_seconds": 152.5,
+        "missed_activity_seconds": 0.0,
+        "missed_speaker_seconds": 0.0,
+        "reference_activity_seconds": 152.5,
+        "reference_coverage": 1.0,
+        "reference_seconds": 152.5,
+        "reference_speaker_count": 3,
+        "speaker_accuracy": 1.0,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 1.0,
+        "speaker_correctness": {
+          "Ben": 1.0,
+          "Destiny": 1.0,
+          "Lex": 1.0
+        },
+        "speaker_mapping": {
+          "Ben": "speaker-0003",
+          "Destiny": "speaker-0002",
+          "Lex": "speaker-0001"
+        },
+        "true_positive_activity_seconds": 152.5,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 65,
+          "swept_units": 65
+        },
+        "trace": {
+          "accepted_correction_count": 0,
+          "all_or_nothing_budget_pass": true,
+          "all_or_nothing_proposed_fraction": 0.0,
+          "arm": "ledger_only",
+          "budget_selected_count": 0,
+          "candidate_proposal_count": 0,
+          "changed_duration_fraction": 0.0,
+          "changed_duration_seconds": 0,
+          "cluster_count": 3,
+          "cluster_evidence": {
+            "1": {
+              "margin": 0.725058158428206,
+              "score": 0.9423589189432372
+            },
+            "2": {
+              "margin": 0.702061686082359,
+              "score": 0.9762946971034109
+            },
+            "3": {
+              "margin": 0.7606319363680796,
+              "score": 0.9758319791563237
+            }
+          },
+          "cluster_mapping": {
+            "1": "speaker-0001",
+            "2": "speaker-0003",
+            "3": "speaker-0002"
+          },
+          "collision_spans_rejected": [],
+          "runtime_visible_canonical_count": 3
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 65,
+          "swept_units": 65
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 0.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 1.0,
+        "units": []
+      }
+    },
+    "tape_candidate": {
+      "arm": "tape_candidate",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003",
+        "speaker-0003"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 0.0,
+        "covered_reference_seconds": 152.5,
+        "diarization_error_rate": 0.0,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 152.5,
+        "hypothesis_seconds": 152.5,
+        "hypothesis_speaker_count": 3,
+        "matched_speaker_seconds": 152.5,
+        "missed_activity_seconds": 0.0,
+        "missed_speaker_seconds": 0.0,
+        "reference_activity_seconds": 152.5,
+        "reference_coverage": 1.0,
+        "reference_seconds": 152.5,
+        "reference_speaker_count": 3,
+        "speaker_accuracy": 1.0,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 1.0,
+        "speaker_correctness": {
+          "Ben": 1.0,
+          "Destiny": 1.0,
+          "Lex": 1.0
+        },
+        "speaker_mapping": {
+          "Ben": "speaker-0003",
+          "Destiny": "speaker-0002",
+          "Lex": "speaker-0001"
+        },
+        "true_positive_activity_seconds": 152.5,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 65,
+          "swept_units": 65
+        },
+        "trace": {
+          "accepted_correction_count": 0,
+          "arm": "tape_joint_span_rescue",
+          "budget_priority_order": [
+            "full_committed_span",
+            "active_at_span_start",
+            "mid_span_birth_or_tail"
+          ],
+          "budget_selected_count": 0,
+          "candidate_proposal_count": 0,
+          "changed_duration_fraction": 0.0,
+          "changed_duration_seconds": 0,
+          "collision_spans_rejected": [],
+          "unit_trace": [
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 0
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 1
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 2
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 3
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 4
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 5
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 6
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 7
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 8
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 9
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 10
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 11
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 12
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 13
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 14
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 15
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 16
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 17
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 18
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 19
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 20
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 21
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 22
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 23
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 24
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 25
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 26
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 27
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 28
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 29
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 30
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 31
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 32
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 33
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 34
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 35
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 36
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 37
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 38
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 39
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 40
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 41
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 42
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 43
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 44
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 45
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 46
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 47
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 48
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 49
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 50
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 51
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 52
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 53
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 54
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 55
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 56
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 57
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 58
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 59
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 60
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 61
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 62
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 63
+            },
+            {
+              "status": "attributed_l1_immutable",
+              "unit_index": 64
+            }
+          ],
+          "vad_region_count": 65,
+          "vad_regions": [
+            [
+              0.08,
+              1.38
+            ],
+            [
+              1.76,
+              2.9
+            ],
+            [
+              3.4,
+              4.3
+            ],
+            [
+              4.8,
+              5.46
+            ],
+            [
+              6.66,
+              8.02
+            ],
+            [
+              8.48,
+              14.18
+            ],
+            [
+              14.42,
+              16.92
+            ],
+            [
+              17.42,
+              19.72
+            ],
+            [
+              20.66,
+              21.02
+            ],
+            [
+              21.62,
+              22.8
+            ],
+            [
+              23.12,
+              23.82
+            ],
+            [
+              24.12,
+              27.64
+            ],
+            [
+              28.32,
+              35.44
+            ],
+            [
+              35.96,
+              42.02
+            ],
+            [
+              42.36,
+              46.54
+            ],
+            [
+              46.88,
+              47.9
+            ],
+            [
+              48.3,
+              57.36
+            ],
+            [
+              57.78,
+              61.02
+            ],
+            [
+              62.0,
+              62.76
+            ],
+            [
+              62.98,
+              64.3
+            ],
+            [
+              64.84,
+              65.68
+            ],
+            [
+              66.3,
+              70.68
+            ],
+            [
+              71.06,
+              73.18
+            ],
+            [
+              73.68,
+              76.38
+            ],
+            [
+              76.62,
+              77.36
+            ],
+            [
+              77.82,
+              78.96
+            ],
+            [
+              79.22,
+              82.32
+            ],
+            [
+              82.86,
+              84.2
+            ],
+            [
+              84.46,
+              87.76
+            ],
+            [
+              88.1,
+              92.5
+            ],
+            [
+              93.5,
+              98.96
+            ],
+            [
+              99.4,
+              104.22
+            ],
+            [
+              104.92,
+              106.74
+            ],
+            [
+              108.32,
+              111.6
+            ],
+            [
+              111.9,
+              115.12
+            ],
+            [
+              115.92,
+              120.34
+            ],
+            [
+              120.84,
+              122.94
+            ],
+            [
+              123.48,
+              126.34
+            ],
+            [
+              126.7,
+              130.3
+            ],
+            [
+              130.84,
+              131.3
+            ],
+            [
+              131.98,
+              133.28
+            ],
+            [
+              133.58,
+              135.72
+            ],
+            [
+              135.96,
+              136.62
+            ],
+            [
+              136.9,
+              137.92
+            ],
+            [
+              138.22,
+              139.14
+            ],
+            [
+              139.8,
+              141.16
+            ],
+            [
+              142.24,
+              143.76
+            ],
+            [
+              144.02,
+              145.56
+            ],
+            [
+              145.9,
+              152.96
+            ],
+            [
+              153.74,
+              154.86
+            ],
+            [
+              155.38,
+              156.7
+            ],
+            [
+              156.94,
+              157.38
+            ],
+            [
+              157.76,
+              158.18
+            ],
+            [
+              158.62,
+              160.98
+            ],
+            [
+              161.66,
+              161.96
+            ],
+            [
+              162.2,
+              163.36
+            ],
+            [
+              163.88,
+              165.4
+            ],
+            [
+              165.74,
+              166.7
+            ],
+            [
+              167.16,
+              168.4
+            ],
+            [
+              169.08,
+              170.12
+            ],
+            [
+              171.0,
+              171.98
+            ],
+            [
+              172.46,
+              174.1
+            ],
+            [
+              174.38,
+              177.6
+            ],
+            [
+              178.0,
+              180.02
+            ],
+            [
+              180.32,
+              180.96
+            ]
+          ],
+          "window_count": 72,
+          "window_intervals": [
+            [
+              0.08,
+              1.38
+            ],
+            [
+              1.76,
+              2.9
+            ],
+            [
+              4.8,
+              5.46
+            ],
+            [
+              6.66,
+              8.02
+            ],
+            [
+              10.355,
+              12.855
+            ],
+            [
+              12.23,
+              14.18
+            ],
+            [
+              14.42,
+              16.92
+            ],
+            [
+              21.62,
+              22.8
+            ],
+            [
+              23.12,
+              23.82
+            ],
+            [
+              25.14,
+              27.64
+            ],
+            [
+              28.32,
+              30.82
+            ],
+            [
+              30.195,
+              32.695
+            ],
+            [
+              32.94,
+              35.44
+            ],
+            [
+              35.96,
+              38.46
+            ],
+            [
+              37.835,
+              40.335
+            ],
+            [
+              39.71,
+              42.02
+            ],
+            [
+              42.36,
+              44.86
+            ],
+            [
+              44.235,
+              46.54
+            ],
+            [
+              48.3,
+              50.8
+            ],
+            [
+              50.175,
+              52.675
+            ],
+            [
+              53.925,
+              56.425
+            ],
+            [
+              55.8,
+              57.36
+            ],
+            [
+              57.78,
+              60.28
+            ],
+            [
+              59.655,
+              61.02
+            ],
+            [
+              62.0,
+              62.76
+            ],
+            [
+              64.84,
+              65.68
+            ],
+            [
+              68.175,
+              70.675
+            ],
+            [
+              68.18,
+              70.68
+            ],
+            [
+              71.06,
+              73.18
+            ],
+            [
+              73.68,
+              76.18
+            ],
+            [
+              75.555,
+              76.38
+            ],
+            [
+              77.82,
+              78.96
+            ],
+            [
+              79.22,
+              81.72
+            ],
+            [
+              81.095,
+              82.32
+            ],
+            [
+              84.46,
+              86.96
+            ],
+            [
+              85.26,
+              87.76
+            ],
+            [
+              88.1,
+              90.6
+            ],
+            [
+              89.975,
+              92.475
+            ],
+            [
+              91.85,
+              92.5
+            ],
+            [
+              95.375,
+              97.875
+            ],
+            [
+              96.46,
+              98.96
+            ],
+            [
+              99.4,
+              101.9
+            ],
+            [
+              101.72,
+              104.22
+            ],
+            [
+              103.15,
+              104.22
+            ],
+            [
+              108.32,
+              110.82
+            ],
+            [
+              109.1,
+              111.6
+            ],
+            [
+              111.9,
+              114.4
+            ],
+            [
+              113.775,
+              115.12
+            ],
+            [
+              115.92,
+              118.42
+            ],
+            [
+              117.84,
+              120.34
+            ],
+            [
+              119.67,
+              120.34
+            ],
+            [
+              123.48,
+              125.98
+            ],
+            [
+              125.355,
+              126.34
+            ],
+            [
+              126.7,
+              129.2
+            ],
+            [
+              128.575,
+              130.3
+            ],
+            [
+              133.58,
+              135.72
+            ],
+            [
+              135.96,
+              136.62
+            ],
+            [
+              138.22,
+              139.14
+            ],
+            [
+              139.8,
+              141.16
+            ],
+            [
+              144.02,
+              145.56
+            ],
+            [
+              147.775,
+              150.275
+            ],
+            [
+              149.65,
+              152.15
+            ],
+            [
+              151.525,
+              152.96
+            ],
+            [
+              155.38,
+              156.7
+            ],
+            [
+              158.62,
+              160.98
+            ],
+            [
+              163.88,
+              165.4
+            ],
+            [
+              165.74,
+              166.7
+            ],
+            [
+              169.08,
+              170.12
+            ],
+            [
+              172.46,
+              174.1
+            ],
+            [
+              174.38,
+              176.88
+            ],
+            [
+              176.255,
+              177.6
+            ],
+            [
+              180.32,
+              180.96
+            ]
+          ],
+          "window_matches": [
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.2732504342790614,
+              "score": 0.49377323597718725,
+              "window_index": 0
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.3839470252852454,
+              "score": 0.5070034377335706,
+              "window_index": 1
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.18390571678502243,
+              "score": 0.3768939978442074,
+              "window_index": 2
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.578107054576016,
+              "score": 0.6510451014006788,
+              "window_index": 3
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5915801315787166,
+              "score": 0.8285347645621477,
+              "window_index": 4
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.5873338295777114,
+              "score": 0.7929973770886052,
+              "window_index": 5
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.6637965623814924,
+              "score": 0.8717264657197112,
+              "window_index": 6
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.5415568083060796,
+              "score": 0.7461806988237312,
+              "window_index": 7
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.38785314442255253,
+              "score": 0.5955421553123222,
+              "window_index": 8
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.5383363541732591,
+              "score": 0.8709164035209914,
+              "window_index": 9
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6774851413632659,
+              "score": 0.8954165988213758,
+              "window_index": 10
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7650719055433381,
+              "score": 0.86795634834821,
+              "window_index": 11
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7267556002310583,
+              "score": 0.8447187202894771,
+              "window_index": 12
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6635985930288248,
+              "score": 0.8683879461350805,
+              "window_index": 13
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6055140877347548,
+              "score": 0.8714066893747978,
+              "window_index": 14
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6058093850361562,
+              "score": 0.863760053755457,
+              "window_index": 15
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7011775453935799,
+              "score": 0.8919972503756105,
+              "window_index": 16
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7380572805161744,
+              "score": 0.8660520705401904,
+              "window_index": 17
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7500307143338857,
+              "score": 0.879681335558649,
+              "window_index": 18
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7098777917668937,
+              "score": 0.8326699541402789,
+              "window_index": 19
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6227413114555669,
+              "score": 0.7875649625216814,
+              "window_index": 20
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.5041389405032672,
+              "score": 0.6541356189737993,
+              "window_index": 21
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7067404705411571,
+              "score": 0.8693130399399598,
+              "window_index": 22
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6432755695315899,
+              "score": 0.7566412308466325,
+              "window_index": 23
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.39395145113510144,
+              "score": 0.4337866560089669,
+              "window_index": 24
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.4875585733123765,
+              "score": 0.5928626709614894,
+              "window_index": 25
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.4768597620395812,
+              "score": 0.7031647183122902,
+              "window_index": 26
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.4771000423392314,
+              "score": 0.7081415086529137,
+              "window_index": 27
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.5849187021205162,
+              "score": 0.7301849911166081,
+              "window_index": 28
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6242383434087643,
+              "score": 0.8250871826395614,
+              "window_index": 29
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.46696824738941506,
+              "score": 0.6674479619253895,
+              "window_index": 30
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.4409607940473859,
+              "score": 0.6983422678062148,
+              "window_index": 31
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7643583843769708,
+              "score": 0.8579934497305128,
+              "window_index": 32
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.5362359390428343,
+              "score": 0.678129893866922,
+              "window_index": 33
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.6817518309147476,
+              "score": 0.803205189560717,
+              "window_index": 34
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.5878948347927795,
+              "score": 0.7679231873434832,
+              "window_index": 35
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.5044617149510644,
+              "score": 0.8173261999377357,
+              "window_index": 36
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.7271621628913175,
+              "score": 0.8423495942029313,
+              "window_index": 37
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "margin": 0.42140610546998,
+              "score": 0.47002106609954275,
+              "window_index": 38
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "margin": 0.39764184777367223,
+              "score": 0.6262553486457852,
+              "window_index": 39
+            },
+            {
+              "canonical_speaker": null,
+              "margin": 0.0641075539010596,
+              "score": 0.6081376688305931,
+              "window_index": 40
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6772803185017948,
+              "score": 0.8622766274609908,
+              "window_index": 41
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6296647870206038,
+              "score": 0.8330193393581191,
+              "window_index": 42
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6104995152702852,
+              "score": 0.7755163349197313,
+              "window_index": 43
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.659882475714751,
+              "score": 0.8948509983960811,
+              "window_index": 44
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6640059283460529,
+              "score": 0.8896790857219411,
+              "window_index": 45
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6605068260697198,
+              "score": 0.8892674440783772,
+              "window_index": 46
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.45488676021337415,
+              "score": 0.7316478438607319,
+              "window_index": 47
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6303080938852368,
+              "score": 0.8967697660429582,
+              "window_index": 48
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5573404622920528,
+              "score": 0.8475255034838275,
+              "window_index": 49
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.3915513856233964,
+              "score": 0.6626962772914606,
+              "window_index": 50
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5791245943207658,
+              "score": 0.8531680381495585,
+              "window_index": 51
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5539572805624995,
+              "score": 0.7961340449979939,
+              "window_index": 52
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.694835922657473,
+              "score": 0.8974556856869407,
+              "window_index": 53
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.633282295772907,
+              "score": 0.8497826450059098,
+              "window_index": 54
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.45697444694134104,
+              "score": 0.7881346318455009,
+              "window_index": 55
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.3321094812500299,
+              "score": 0.651321567405667,
+              "window_index": 56
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.46133580801153373,
+              "score": 0.614044321803946,
+              "window_index": 57
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.4943376391996493,
+              "score": 0.7692659149250594,
+              "window_index": 58
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5511838012869582,
+              "score": 0.7931197272491524,
+              "window_index": 59
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6032518743358615,
+              "score": 0.8477019297733824,
+              "window_index": 60
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5773565928782494,
+              "score": 0.868932674080807,
+              "window_index": 61
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5136757723885992,
+              "score": 0.759054831224371,
+              "window_index": 62
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5186173273328322,
+              "score": 0.7117992412865224,
+              "window_index": 63
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6714595870595196,
+              "score": 0.773601218911492,
+              "window_index": 64
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6019599340556971,
+              "score": 0.8036601944672392,
+              "window_index": 65
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.349610175325285,
+              "score": 0.5612612934834379,
+              "window_index": 66
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5025873427522196,
+              "score": 0.6844440130786447,
+              "window_index": 67
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.44957878987416267,
+              "score": 0.6899876386837128,
+              "window_index": 68
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.5687938494604203,
+              "score": 0.8464635752533172,
+              "window_index": 69
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.6268664388902332,
+              "score": 0.79644671691803,
+              "window_index": 70
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "margin": 0.4480806910239843,
+              "score": 0.6340421395726232,
+              "window_index": 71
+            }
+          ]
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003",
+          "speaker-0003"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 65,
+          "swept_units": 65
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 0.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 1.0,
+        "units": []
+      }
+    }
+  },
+  "case_id": "3m-lex-shapiro-destiny",
+  "frame": {
+    "audio_sha256": "9d18487ac522db1119e2633a87816466b6b85e166d0dcd7e8e6fc89e6e11a895",
+    "planner": "production_endpoint_policy",
+    "reference_sha256": "aa250575e849f517d69dd6182ce617e705d86cdadb88c170ec0d97fc7ac35792",
+    "span_count": 82,
+    "unit_count": 65,
+    "vector_cache_sha256": "eaa759d2b736679ec3cbbdfd06aceff3db4f1c0a3f9bdb4123f06587879ea206"
+  },
+  "l1_repeatability": {
+    "delta_pp": 0.0,
+    "first_speaker_accuracy": 1.0,
+    "limit_pp": 0.1,
+    "pass": true,
+    "runs": [
+      {
+        "path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/l1/a5-holdout-l1-3m-lex-shapiro-destiny-run1.json",
+        "result_sha256": "56643589cca369778af22dc2a4e5f29211790548f2cc1416b47809fbe65d046e",
+        "run_index": 1,
+        "semantic_sha256": "f887e2002c7281bf6de7cc4218812ec5acb68bec03d00665d1a524dd59858fe4"
+      },
+      {
+        "path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/l1/a5-holdout-l1-3m-lex-shapiro-destiny-run2.json",
+        "result_sha256": "e5754aa2060ad2f96e3a1ba27d335ead3a1dbf5434e17394466ec195453c2173",
+        "run_index": 2,
+        "semantic_sha256": "f887e2002c7281bf6de7cc4218812ec5acb68bec03d00665d1a524dd59858fe4"
+      }
+    ],
+    "second_speaker_accuracy": 1.0,
+    "semantic_deterministic": true
+  },
+  "schema": "moss-l2-stage0-a5-holdout-case-result.v1",
+  "split": "blind_holdout"
+}

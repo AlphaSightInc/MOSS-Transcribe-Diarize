@@ -1,0 +1,9 @@
+{
+  "errors": [
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_never_starts_l2"
+  ],
+  "failures": [],
+  "successful": false,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_never_starts_l2",
+  "tests_run": 1
+}

@@ -1,0 +1,16 @@
+A4 COMPLETION VERDICT: PASS
+operator_option=A
+operator_authorized_date=2026-08-03
+option_d_server_gpu_embedding=deferred_to_post-MVP
+gate=finalizer_rtf_30m_steady_state_with_first_allowance actual=0.09974070249833353 limit=0.1 verdict=PASS
+gate=analysis_30m_steady_state_seconds_with_first_allowance actual=179.53326449700035 limit=180.0 verdict=PASS
+gate=no_whole_tape_in_memory_read actual=40000 limit=40000 verdict=PASS
+gate=one_active_finalizer_maximum actual=1 limit=1 verdict=PASS
+gate=new_session_contention_p95_ms_prototype_proxy actual=0.01132 limit=4000.0 verdict=PASS
+gate=stop_ack_p95_over_l2_off_ms_prototype_proxy actual=0.001229 limit=100.0 verdict=PASS
+first_finalizer_allowance first=180.29447761199845 steady=179.53326449700035 overhead=0.7612131149980996 limit=5.0 verdict=PASS
+historical_blocked_commit=9b9b3f2209f91dd7e6699bab0add9efb448a1f08
+historical_blocked_verdict_sha256=5861323145436792f81cbf3e7ac4011e8be93fe2550d4857fa239a89a082da15
+historical_blocked_manifest_sha256=1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d
+historical_blocked_evidence_immutable=true
+holdout_opened=false

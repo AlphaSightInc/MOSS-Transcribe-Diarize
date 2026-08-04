@@ -1,0 +1,6 @@
+REBUILD 1/3 1m-lex-javier-milei old_units=24 planned_units=24
+PASS 1m-lex-javier-milei new_sha256=a6a16a9dc1a378f4355e76343c27c993443d49788f2e9f5844e3ece140d6e306 self_replan=PASS
+REBUILD 2/3 1m-lex-keyu-jin old_units=24 planned_units=24
+PASS 1m-lex-keyu-jin new_sha256=56ba93f19500c2fe2ad15d9f5234854822d684653e88a2e52f8ad4e2e3be9cd7 self_replan=PASS
+REBUILD 3/3 3m-lex-shapiro-destiny old_units=64 planned_units=65
+PASS 3m-lex-shapiro-destiny new_sha256=eaa759d2b736679ec3cbbdfd06aceff3db4f1c0a3f9bdb4123f06587879ea206 self_replan=PASS

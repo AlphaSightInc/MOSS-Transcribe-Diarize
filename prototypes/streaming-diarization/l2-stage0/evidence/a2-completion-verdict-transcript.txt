@@ -1,0 +1,4 @@
+A2 COMPLETION PASS cases=6 runs=12 deterministic=true holdout=SEALED
+alphabet=0.916765 live_pair=0.913500,0.914400 deltas=0.003265,0.002365 tolerance=0.005000
+frames=55-stale-proto,92-corrected-proto,101-corrected-production same-frame-only=true
+<promise>COMPLETE</promise>

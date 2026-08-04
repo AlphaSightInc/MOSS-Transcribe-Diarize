@@ -1,0 +1,10 @@
+{
+  "schema": "moss-l2-stage0-original-instrument-probe.v1",
+  "verdict": "WRONG_INPUT_PRESERVED",
+  "reason": "The source-checkout-local harness cache is not the authorized archived 92-row cache.",
+  "source_checkout_cache_sha256": "327f33283422b0664911585d2a60e7490979e9c71152ec967cf0d042979aa68a",
+  "source_checkout_row_count": 55,
+  "authorized_archive_sha256": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "authorized_archive_row_count": 92,
+  "acceptance_evidence": false
+}

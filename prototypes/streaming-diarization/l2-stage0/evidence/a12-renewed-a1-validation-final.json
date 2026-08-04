@@ -1,0 +1,984 @@
+{
+  "accepted_case_count": 9,
+  "cache_rebuild_spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061",
+  "case_scope": "non-holdout",
+  "cases": [
+    {
+      "acceptance_eligible": false,
+      "case_id": "1m-acquired-jamie-dimon",
+      "duration_seconds": 60.0,
+      "finding_count": 5,
+      "findings": [
+        {
+          "index": 1,
+          "kind": "high_word_rate",
+          "words_per_second": 13.47936
+        },
+        {
+          "index": 2,
+          "kind": "high_word_rate",
+          "words_per_second": 14.0
+        },
+        {
+          "index": 3,
+          "kind": "high_word_rate",
+          "words_per_second": 10.279001
+        },
+        {
+          "index": 4,
+          "kind": "high_word_rate",
+          "words_per_second": 26.013772
+        },
+        {
+          "index": 7,
+          "kind": "high_word_rate",
+          "words_per_second": 8.354219
+        }
+      ],
+      "reference_status": "exploratory_reference_audit_required",
+      "speaker_count": 3,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": true,
+      "case_id": "1m-acquired-nfl",
+      "duration_seconds": 60.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "accepted_existing_provenance_zero_flags",
+      "speaker_count": 3,
+      "split": "development"
+    },
+    {
+      "acceptance_eligible": true,
+      "case_id": "1m-acquired-rolex",
+      "duration_seconds": 60.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "accepted_existing_provenance_zero_flags",
+      "speaker_count": 2,
+      "split": "validation"
+    },
+    {
+      "acceptance_eligible": true,
+      "case_id": "1m-lex-bill-ackman",
+      "duration_seconds": 60.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "accepted_existing_provenance_zero_flags",
+      "speaker_count": 2,
+      "split": "validation"
+    },
+    {
+      "acceptance_eligible": true,
+      "case_id": "3m-acquired-jamie-dimon",
+      "duration_seconds": 180.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "accepted_existing_provenance_zero_flags",
+      "speaker_count": 3,
+      "split": "development"
+    },
+    {
+      "acceptance_eligible": true,
+      "case_id": "3m-lex-adam-frank",
+      "duration_seconds": 180.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "accepted_existing_provenance_zero_flags",
+      "speaker_count": 2,
+      "split": "validation"
+    },
+    {
+      "acceptance_eligible": true,
+      "case_id": "5m-acquired-alphabet",
+      "duration_seconds": 300.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "post_audit_frozen",
+      "speaker_count": 2,
+      "split": "validation"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "5m-acquired-coca-cola",
+      "duration_seconds": 300.0,
+      "finding_count": 23,
+      "findings": [
+        {
+          "index": 2,
+          "kind": "high_word_rate",
+          "words_per_second": 8.285576
+        },
+        {
+          "index": 3,
+          "kind": "high_word_rate",
+          "words_per_second": 9.791305
+        },
+        {
+          "index": 5,
+          "kind": "high_word_rate",
+          "words_per_second": 12.777778
+        },
+        {
+          "index": 9,
+          "kind": "high_word_rate",
+          "words_per_second": 9.420689
+        },
+        {
+          "index": 12,
+          "kind": "high_word_rate",
+          "words_per_second": 9.708738
+        },
+        {
+          "index": 13,
+          "kind": "high_word_rate",
+          "words_per_second": 10.0
+        },
+        {
+          "index": 15,
+          "kind": "high_word_rate",
+          "words_per_second": 10.614525
+        },
+        {
+          "index": 16,
+          "kind": "high_word_rate",
+          "words_per_second": 8.157408
+        },
+        {
+          "index": 18,
+          "kind": "high_word_rate",
+          "words_per_second": 12.005336
+        },
+        {
+          "index": 20,
+          "kind": "high_word_rate",
+          "words_per_second": 9.607386
+        },
+        {
+          "index": 22,
+          "kind": "high_word_rate",
+          "words_per_second": 13.386454
+        },
+        {
+          "index": 23,
+          "kind": "high_word_rate",
+          "words_per_second": 10.810811
+        },
+        {
+          "index": 24,
+          "kind": "high_word_rate",
+          "words_per_second": 9.424084
+        },
+        {
+          "index": 25,
+          "kind": "high_word_rate",
+          "words_per_second": 8.677686
+        },
+        {
+          "index": 26,
+          "kind": "high_word_rate",
+          "words_per_second": 13.040077
+        },
+        {
+          "index": 27,
+          "kind": "high_word_rate",
+          "words_per_second": 10.918433
+        },
+        {
+          "index": 28,
+          "kind": "high_word_rate",
+          "words_per_second": 9.259259
+        },
+        {
+          "index": 32,
+          "kind": "high_word_rate",
+          "words_per_second": 20.0
+        },
+        {
+          "index": 35,
+          "kind": "high_word_rate",
+          "words_per_second": 10.040161
+        },
+        {
+          "index": 36,
+          "kind": "high_word_rate",
+          "words_per_second": 9.538003
+        },
+        {
+          "index": 37,
+          "kind": "high_word_rate",
+          "words_per_second": 11.067708
+        },
+        {
+          "index": 38,
+          "kind": "high_word_rate",
+          "words_per_second": 10.401761
+        },
+        {
+          "index": 39,
+          "kind": "high_word_rate",
+          "words_per_second": 12.037693
+        }
+      ],
+      "reference_status": "exploratory_reference_audit_required",
+      "speaker_count": 2,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "5m-acquired-jamie-dimon",
+      "duration_seconds": 300.0,
+      "finding_count": 11,
+      "findings": [
+        {
+          "index": 1,
+          "kind": "high_word_rate",
+          "words_per_second": 9.58231
+        },
+        {
+          "index": 6,
+          "kind": "high_word_rate",
+          "words_per_second": 10.48218
+        },
+        {
+          "index": 8,
+          "kind": "high_word_rate",
+          "words_per_second": 11.79941
+        },
+        {
+          "index": 9,
+          "kind": "high_word_rate",
+          "words_per_second": 13.331055
+        },
+        {
+          "index": 13,
+          "kind": "high_word_rate",
+          "words_per_second": 16.081001
+        },
+        {
+          "index": 16,
+          "kind": "high_word_rate",
+          "words_per_second": 13.476927
+        },
+        {
+          "index": 17,
+          "kind": "high_word_rate",
+          "words_per_second": 14.0
+        },
+        {
+          "index": 18,
+          "kind": "high_word_rate",
+          "words_per_second": 10.272537
+        },
+        {
+          "index": 19,
+          "kind": "high_word_rate",
+          "words_per_second": 26.003824
+        },
+        {
+          "index": 22,
+          "kind": "high_word_rate",
+          "words_per_second": 8.355964
+        },
+        {
+          "index": 24,
+          "kind": "high_word_rate",
+          "words_per_second": 10.0
+        }
+      ],
+      "reference_status": "exploratory_reference_audit_required",
+      "speaker_count": 3,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "5m-acquired-nfl",
+      "duration_seconds": 300.0,
+      "finding_count": 11,
+      "findings": [
+        {
+          "index": 0,
+          "kind": "high_word_rate",
+          "words_per_second": 10.891089
+        },
+        {
+          "index": 3,
+          "kind": "high_word_rate",
+          "words_per_second": 8.87199
+        },
+        {
+          "index": 5,
+          "kind": "high_word_rate",
+          "words_per_second": 8.016477
+        },
+        {
+          "index": 6,
+          "kind": "high_word_rate",
+          "words_per_second": 8.391608
+        },
+        {
+          "index": 8,
+          "kind": "high_word_rate",
+          "words_per_second": 10.144928
+        },
+        {
+          "index": 9,
+          "kind": "high_word_rate",
+          "words_per_second": 11.378003
+        },
+        {
+          "index": 11,
+          "kind": "high_word_rate",
+          "words_per_second": 8.430913
+        },
+        {
+          "index": 13,
+          "kind": "high_word_rate",
+          "words_per_second": 12.57071
+        },
+        {
+          "index": 14,
+          "kind": "high_word_rate",
+          "words_per_second": 8.552774
+        },
+        {
+          "index": 19,
+          "kind": "high_word_rate",
+          "words_per_second": 8.536585
+        },
+        {
+          "index": 27,
+          "kind": "high_word_rate",
+          "words_per_second": 8.263591
+        }
+      ],
+      "reference_status": "exploratory_reference_audit_required",
+      "speaker_count": 2,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "5m-acquired-rolex",
+      "duration_seconds": 300.0,
+      "finding_count": 16,
+      "findings": [
+        {
+          "index": 2,
+          "kind": "high_word_rate",
+          "words_per_second": 9.56964
+        },
+        {
+          "index": 3,
+          "kind": "high_word_rate",
+          "words_per_second": 10.944625
+        },
+        {
+          "index": 4,
+          "kind": "high_word_rate",
+          "words_per_second": 10.0
+        },
+        {
+          "index": 5,
+          "kind": "high_word_rate",
+          "words_per_second": 8.233841
+        },
+        {
+          "index": 6,
+          "kind": "high_word_rate",
+          "words_per_second": 10.824935
+        },
+        {
+          "index": 7,
+          "kind": "high_word_rate",
+          "words_per_second": 13.284133
+        },
+        {
+          "index": 9,
+          "kind": "overlap",
+          "previous_end": 47.792,
+          "start": 47.0
+        },
+        {
+          "index": 13,
+          "kind": "high_word_rate",
+          "words_per_second": 12.997243
+        },
+        {
+          "index": 14,
+          "kind": "high_word_rate",
+          "words_per_second": 8.961039
+        },
+        {
+          "index": 15,
+          "kind": "high_word_rate",
+          "words_per_second": 9.095503
+        },
+        {
+          "index": 21,
+          "kind": "high_word_rate",
+          "words_per_second": 9.086975
+        },
+        {
+          "index": 22,
+          "kind": "high_word_rate",
+          "words_per_second": 9.177118
+        },
+        {
+          "index": 27,
+          "kind": "high_word_rate",
+          "words_per_second": 8.597884
+        },
+        {
+          "index": 30,
+          "kind": "high_word_rate",
+          "words_per_second": 9.163347
+        },
+        {
+          "index": 34,
+          "kind": "high_word_rate",
+          "words_per_second": 9.291023
+        },
+        {
+          "index": 35,
+          "kind": "high_word_rate",
+          "words_per_second": 9.343066
+        }
+      ],
+      "reference_status": "exploratory_reference_audit_required",
+      "speaker_count": 3,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "5m-lex-bill-ackman",
+      "duration_seconds": 300.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "exploratory_acoustic_audit_required",
+      "speaker_count": 2,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "5m-lex-javier-milei",
+      "duration_seconds": 300.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "exploratory_acoustic_audit_required",
+      "speaker_count": 2,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "5m-lex-keyu-jin",
+      "duration_seconds": 300.0,
+      "finding_count": 0,
+      "findings": [],
+      "reference_status": "exploratory_acoustic_audit_required",
+      "speaker_count": 2,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "30m-acquired-jamie-dimon",
+      "duration_seconds": 1800.0,
+      "finding_count": 89,
+      "findings": [
+        {
+          "index": 1,
+          "kind": "high_word_rate",
+          "words_per_second": 9.58231
+        },
+        {
+          "index": 6,
+          "kind": "high_word_rate",
+          "words_per_second": 10.48218
+        },
+        {
+          "index": 8,
+          "kind": "high_word_rate",
+          "words_per_second": 11.79941
+        },
+        {
+          "index": 9,
+          "kind": "high_word_rate",
+          "words_per_second": 13.331055
+        },
+        {
+          "index": 13,
+          "kind": "high_word_rate",
+          "words_per_second": 16.081001
+        },
+        {
+          "index": 16,
+          "kind": "high_word_rate",
+          "words_per_second": 13.476927
+        },
+        {
+          "index": 17,
+          "kind": "high_word_rate",
+          "words_per_second": 14.0
+        },
+        {
+          "index": 18,
+          "kind": "high_word_rate",
+          "words_per_second": 10.272537
+        },
+        {
+          "index": 19,
+          "kind": "high_word_rate",
+          "words_per_second": 26.003824
+        },
+        {
+          "index": 22,
+          "kind": "high_word_rate",
+          "words_per_second": 8.355964
+        },
+        {
+          "index": 24,
+          "kind": "high_word_rate",
+          "words_per_second": 10.0
+        },
+        {
+          "index": 25,
+          "kind": "high_word_rate",
+          "words_per_second": 8.432148
+        },
+        {
+          "index": 27,
+          "kind": "high_word_rate",
+          "words_per_second": 11.422045
+        },
+        {
+          "index": 28,
+          "kind": "high_word_rate",
+          "words_per_second": 8.450704
+        },
+        {
+          "index": 33,
+          "kind": "high_word_rate",
+          "words_per_second": 10.033961
+        },
+        {
+          "index": 34,
+          "kind": "high_word_rate",
+          "words_per_second": 9.88024
+        },
+        {
+          "index": 36,
+          "kind": "high_word_rate",
+          "words_per_second": 8.653846
+        },
+        {
+          "index": 38,
+          "kind": "high_word_rate",
+          "words_per_second": 8.758553
+        },
+        {
+          "index": 41,
+          "kind": "high_word_rate",
+          "words_per_second": 10.827068
+        },
+        {
+          "index": 43,
+          "kind": "high_word_rate",
+          "words_per_second": 9.016393
+        },
+        {
+          "index": 45,
+          "kind": "high_word_rate",
+          "words_per_second": 8.351457
+        },
+        {
+          "index": 48,
+          "kind": "high_word_rate",
+          "words_per_second": 10.321797
+        },
+        {
+          "index": 49,
+          "kind": "high_word_rate",
+          "words_per_second": 9.653789
+        },
+        {
+          "index": 54,
+          "kind": "high_word_rate",
+          "words_per_second": 9.364548
+        },
+        {
+          "index": 55,
+          "kind": "high_word_rate",
+          "words_per_second": 9.553587
+        },
+        {
+          "index": 56,
+          "kind": "high_word_rate",
+          "words_per_second": 11.816692
+        },
+        {
+          "index": 57,
+          "kind": "high_word_rate",
+          "words_per_second": 26.047565
+        },
+        {
+          "index": 62,
+          "kind": "high_word_rate",
+          "words_per_second": 11.049724
+        },
+        {
+          "index": 64,
+          "kind": "high_word_rate",
+          "words_per_second": 12.992126
+        },
+        {
+          "index": 67,
+          "kind": "high_word_rate",
+          "words_per_second": 10.422741
+        },
+        {
+          "index": 68,
+          "kind": "high_word_rate",
+          "words_per_second": 10.471204
+        },
+        {
+          "index": 69,
+          "kind": "high_word_rate",
+          "words_per_second": 12.238325
+        },
+        {
+          "index": 71,
+          "kind": "high_word_rate",
+          "words_per_second": 12.317293
+        },
+        {
+          "index": 72,
+          "kind": "high_word_rate",
+          "words_per_second": 15.463087
+        },
+        {
+          "index": 73,
+          "kind": "high_word_rate",
+          "words_per_second": 8.118393
+        },
+        {
+          "index": 76,
+          "kind": "high_word_rate",
+          "words_per_second": 8.058267
+        },
+        {
+          "index": 77,
+          "kind": "high_word_rate",
+          "words_per_second": 14.321608
+        },
+        {
+          "index": 78,
+          "kind": "high_word_rate",
+          "words_per_second": 20.240964
+        },
+        {
+          "index": 80,
+          "kind": "high_word_rate",
+          "words_per_second": 13.019892
+        },
+        {
+          "index": 91,
+          "kind": "high_word_rate",
+          "words_per_second": 21.011673
+        },
+        {
+          "index": 92,
+          "kind": "high_word_rate",
+          "words_per_second": 11.175497
+        },
+        {
+          "index": 95,
+          "kind": "high_word_rate",
+          "words_per_second": 11.454545
+        },
+        {
+          "index": 97,
+          "kind": "high_word_rate",
+          "words_per_second": 10.022718
+        },
+        {
+          "index": 98,
+          "kind": "high_word_rate",
+          "words_per_second": 10.498688
+        },
+        {
+          "index": 99,
+          "kind": "high_word_rate",
+          "words_per_second": 12.643678
+        },
+        {
+          "index": 102,
+          "kind": "high_word_rate",
+          "words_per_second": 20.0
+        },
+        {
+          "index": 103,
+          "kind": "high_word_rate",
+          "words_per_second": 13.50895
+        },
+        {
+          "index": 104,
+          "kind": "high_word_rate",
+          "words_per_second": 16.542856
+        },
+        {
+          "index": 105,
+          "kind": "high_word_rate",
+          "words_per_second": 8.375209
+        },
+        {
+          "index": 106,
+          "kind": "high_word_rate",
+          "words_per_second": 10.10479
+        },
+        {
+          "index": 107,
+          "kind": "high_word_rate",
+          "words_per_second": 11.133201
+        },
+        {
+          "index": 108,
+          "kind": "high_word_rate",
+          "words_per_second": 8.450704
+        },
+        {
+          "index": 109,
+          "kind": "high_word_rate",
+          "words_per_second": 8.403361
+        },
+        {
+          "index": 110,
+          "kind": "high_word_rate",
+          "words_per_second": 15.203022
+        },
+        {
+          "index": 111,
+          "kind": "high_word_rate",
+          "words_per_second": 9.775355
+        },
+        {
+          "index": 112,
+          "kind": "high_word_rate",
+          "words_per_second": 15.898142
+        },
+        {
+          "index": 113,
+          "kind": "high_word_rate",
+          "words_per_second": 16.18123
+        },
+        {
+          "index": 115,
+          "kind": "high_word_rate",
+          "words_per_second": 10.174594
+        },
+        {
+          "index": 121,
+          "kind": "high_word_rate",
+          "words_per_second": 9.326047
+        },
+        {
+          "index": 123,
+          "kind": "high_word_rate",
+          "words_per_second": 8.283479
+        },
+        {
+          "index": 126,
+          "kind": "high_word_rate",
+          "words_per_second": 14.08046
+        },
+        {
+          "index": 127,
+          "kind": "high_word_rate",
+          "words_per_second": 10.535935
+        },
+        {
+          "index": 132,
+          "kind": "high_word_rate",
+          "words_per_second": 9.298488
+        },
+        {
+          "index": 133,
+          "kind": "high_word_rate",
+          "words_per_second": 11.352886
+        },
+        {
+          "index": 134,
+          "kind": "high_word_rate",
+          "words_per_second": 17.954363
+        },
+        {
+          "index": 136,
+          "kind": "high_word_rate",
+          "words_per_second": 10.609358
+        },
+        {
+          "index": 139,
+          "kind": "high_word_rate",
+          "words_per_second": 9.302326
+        },
+        {
+          "index": 140,
+          "kind": "high_word_rate",
+          "words_per_second": 8.281573
+        },
+        {
+          "index": 142,
+          "kind": "high_word_rate",
+          "words_per_second": 8.022923
+        },
+        {
+          "index": 144,
+          "kind": "high_word_rate",
+          "words_per_second": 8.067233
+        },
+        {
+          "index": 147,
+          "kind": "high_word_rate",
+          "words_per_second": 9.419152
+        },
+        {
+          "index": 148,
+          "kind": "high_word_rate",
+          "words_per_second": 9.341317
+        },
+        {
+          "index": 151,
+          "kind": "high_word_rate",
+          "words_per_second": 13.263158
+        },
+        {
+          "index": 156,
+          "kind": "high_word_rate",
+          "words_per_second": 8.403361
+        },
+        {
+          "index": 162,
+          "kind": "high_word_rate",
+          "words_per_second": 9.142857
+        },
+        {
+          "index": 164,
+          "kind": "high_word_rate",
+          "words_per_second": 9.302326
+        },
+        {
+          "index": 165,
+          "kind": "high_word_rate",
+          "words_per_second": 11.786516
+        },
+        {
+          "index": 167,
+          "kind": "high_word_rate",
+          "words_per_second": 11.111111
+        },
+        {
+          "index": 171,
+          "kind": "high_word_rate",
+          "words_per_second": 10.058309
+        },
+        {
+          "index": 174,
+          "kind": "high_word_rate",
+          "words_per_second": 10.294535
+        },
+        {
+          "index": 177,
+          "kind": "high_word_rate",
+          "words_per_second": 8.694977
+        },
+        {
+          "index": 183,
+          "kind": "high_word_rate",
+          "words_per_second": 8.921933
+        },
+        {
+          "index": 184,
+          "kind": "high_word_rate",
+          "words_per_second": 14.169742
+        },
+        {
+          "index": 185,
+          "kind": "high_word_rate",
+          "words_per_second": 12.547051
+        },
+        {
+          "index": 186,
+          "kind": "high_word_rate",
+          "words_per_second": 10.638298
+        },
+        {
+          "index": 187,
+          "kind": "high_word_rate",
+          "words_per_second": 8.079665
+        },
+        {
+          "index": 188,
+          "kind": "high_word_rate",
+          "words_per_second": 11.08424
+        },
+        {
+          "index": 189,
+          "kind": "high_word_rate",
+          "words_per_second": 10.708549
+        },
+        {
+          "index": 193,
+          "kind": "high_word_rate",
+          "words_per_second": 20.0
+        }
+      ],
+      "reference_status": "exploratory_reference_audit_required",
+      "speaker_count": 3,
+      "split": "exploratory"
+    },
+    {
+      "acceptance_eligible": false,
+      "case_id": "30m-lex-bill-ackman",
+      "duration_seconds": 1800.0,
+      "finding_count": 4,
+      "findings": [
+        {
+          "index": 17,
+          "kind": "overlap",
+          "previous_end": 523.2,
+          "start": 523.0
+        },
+        {
+          "index": 24,
+          "kind": "high_word_rate",
+          "words_per_second": 15.0
+        },
+        {
+          "index": 25,
+          "kind": "overlap",
+          "previous_end": 738.2,
+          "start": 738.0
+        },
+        {
+          "index": 62,
+          "kind": "high_word_rate",
+          "words_per_second": 9.0
+        }
+      ],
+      "reference_status": "exploratory_reference_audit_required",
+      "speaker_count": 2,
+      "split": "exploratory"
+    }
+  ],
+  "corpus_manifest_sha256": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+  "generated_at": "2026-08-03T23:09:57.060998+00:00",
+  "holdout_case_files_opened": false,
+  "holdout_manifest_sha256": "45412c90672015ece660b09cfbb4e8eeeba3e6603d671656a6ea26c3695f505d",
+  "model_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+  "overall": "PASS",
+  "sealed_skipped_case_ids": [
+    "1m-lex-javier-milei",
+    "1m-lex-keyu-jin",
+    "3m-lex-shapiro-destiny"
+  ],
+  "validated_case_count": 16
+}

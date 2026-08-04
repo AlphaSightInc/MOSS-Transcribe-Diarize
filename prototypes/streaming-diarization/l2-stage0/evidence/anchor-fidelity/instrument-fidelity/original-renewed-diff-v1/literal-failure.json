@@ -1,0 +1,9 @@
+{
+  "schema": "moss-l2-stage0-diagnosis-script-failure.v1",
+  "verdict": "DIAGNOSIS_SCRIPT_LITERAL_FAILURE",
+  "error": "NameError: name 'false' is not defined",
+  "cause": "JSON literal used in Python result construction",
+  "measurement_completed_before_serialization": true,
+  "result_written": false,
+  "remediation": "Changed diagnosis-only Python literals to False; official files and inputs unchanged."
+}

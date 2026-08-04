@@ -1,0 +1,25 @@
+{
+  "schema": "moss-l2-stage0-authorized-source-drift.v1",
+  "generated_at": "2026-08-04T00:22:03Z",
+  "authorization": "2026-08-03 supervisor ruling: adapter defect fix plus legacy-measurement-v3",
+  "historical_evidence_ownership": "H1-H3 evidence hashes remain owned by the previously accepted f765a266 boundary; expected source-row drift follows this authorized adapter/test change",
+  "changes": [
+    {
+      "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py",
+      "old_sha256": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+      "new_sha256": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc",
+      "reason": "authorized duration-reconciliation defect correction"
+    },
+    {
+      "path": "prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py",
+      "old_sha256": "5b29d6de191c0f7e516440e243c2c2265ce33a89bf7279bfe3a5b4ab23596f9e",
+      "new_sha256": "2df680123ed8d9191615e4e2779c2167700c0af8ccbb3b4f6b7958963f50e5d6",
+      "reason": "authorized exact-unit and all-92 red-first regressions"
+    }
+  ],
+  "official_runner_modified": false,
+  "cache_modified": false,
+  "pin_modified": false,
+  "tolerance_modified": false,
+  "anchor_modified": false
+}

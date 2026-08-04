@@ -1,0 +1,6 @@
+test_bounded_queue_refuses_overflow_without_partial_transition (test_lifecycle_prototype.LifecyclePrototypeTest.test_bounded_queue_refuses_overflow_without_partial_transition) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

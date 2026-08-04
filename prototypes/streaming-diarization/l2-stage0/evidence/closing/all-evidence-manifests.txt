@@ -1,0 +1,33 @@
+COMMAND: python prototypes/streaming-diarization/l2-stage0/verify_all_evidence_manifests.py
+PASS OWNING_COMMIT=974a1d043374e7cc542e549a660379deb11df6f6 rows=464 current_failures=2 prototypes/streaming-diarization/l2-stage0/L2_STAGE0_EVIDENCE.sha256
+FAIL OWNING_COMMIT=19983e34c75dbe4e9a27b09494ff742db943e5e9 rows=45 current_failures=7 prototypes/streaming-diarization/l2-stage0/evidence/A12_EVIDENCE.sha256
+PASS OWNING_COMMIT=5be0455745629c6410d48285d5d90a55c9d7bd95 rows=18 current_failures=2 prototypes/streaming-diarization/l2-stage0/evidence/A1_EVIDENCE.sha256
+FAIL OWNING_COMMIT=5be0455745629c6410d48285d5d90a55c9d7bd95 rows=2 current_failures=2 prototypes/streaming-diarization/l2-stage0/evidence/A1_GUARDRAIL_REGRESSION_EVIDENCE.sha256
+PASS OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=158 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256
+PASS OWNING_COMMIT=1de6ca2693d2f5bd2fcdb5e36b564df30fac1dd4 rows=13 current_failures=6 prototypes/streaming-diarization/l2-stage0/evidence/A2_EVIDENCE.sha256
+PASS OWNING_COMMIT=df89bb9712366109e8ec7a4362905f340623832e rows=7 current_failures=2 prototypes/streaming-diarization/l2-stage0/evidence/A2_PATH_FIX_EVIDENCE.sha256
+PASS OWNING_COMMIT=c650e07af6e8d37546ae02b2027831bf3c6a59bc rows=30 current_failures=6 prototypes/streaming-diarization/l2-stage0/evidence/A2_RENEWED_EVIDENCE.sha256
+FAIL OWNING_COMMIT=2c2cb580dc2ed2ae79c9f8ea14b4ed88ce0311d3 rows=68 current_failures=4 prototypes/streaming-diarization/l2-stage0/evidence/A3_EVIDENCE.sha256
+PASS OWNING_COMMIT=df8e50d18ac1c60680603628842b6ae1d2b44d45 rows=12 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/A4_COMPLETION_EVIDENCE.sha256
+PASS OWNING_COMMIT=9b9b3f2209f91dd7e6699bab0add9efb448a1f08 rows=26 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/A4_EVIDENCE.sha256
+PASS OWNING_COMMIT=a16c6d811031cac826878200256af0b69224add8 rows=79 current_failures=2 prototypes/streaming-diarization/l2-stage0/evidence/A5_DEV_EVIDENCE.sha256
+FAIL OWNING_COMMIT=f765a26656a872da349f9f0aa7db5e337e546f59 rows=12 current_failures=4 prototypes/streaming-diarization/l2-stage0/evidence/ANCHOR_FIDELITY_EVIDENCE.sha256
+PASS HEAD rows=11 prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/HARNESS_EVIDENCE.sha256
+PASS HEAD rows=36 prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/A5_HOLDOUT_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=44 current_failures=7 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/LEGACY_INGEST_DIAGNOSIS_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=15 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/ADAPTER_V3_BOUNDARY_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=18 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/FRAME_DIAGNOSIS_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=6 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/INSTRUMENT_FIDELITY_DIAGNOSIS_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=23 current_failures=2 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/ORIGINAL_RENEWED_DIFFERENTIAL_EVIDENCE.sha256
+PASS HEAD rows=10 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/ADAPTER_V3_GREEN_EVIDENCE.sha256
+PASS HEAD rows=5 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/ADAPTER_V3_RED_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=8 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h1-scorer-v1/H1_SCORER_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=8 current_failures=2 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2-constants-v1/H2_CONSTANTS_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=11 current_failures=3 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-first-divergence-v1/H3_FIRST_DIVERGENCE_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=9 current_failures=1 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-policy-v1/H3_POLICY_EVIDENCE.sha256
+PASS HEAD rows=2 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v1/V2_CONTAMINATION_FAILURE_EVIDENCE.sha256
+FAIL OWNING_COMMIT=956724a13373cc0b5722274a98733cbde18a2f46 rows=8 current_failures=2 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v2/V2_CONTAMINATION_EVIDENCE.sha256
+PASS HEAD rows=6 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/LEGACY_MEASUREMENT_EVIDENCE.sha256
+PASS HEAD rows=6 prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v3/LEGACY_MEASUREMENT_EVIDENCE.sha256
+FAIL OWNING_COMMIT=8e88c90162c0f21af52100d6614fb9eb81a1e5a2 rows=2 current_failures=2 scripts/ralph-l2-afk/evidence/A0_EVIDENCE.sha256
+OVERALL=FAIL MANIFESTS=31

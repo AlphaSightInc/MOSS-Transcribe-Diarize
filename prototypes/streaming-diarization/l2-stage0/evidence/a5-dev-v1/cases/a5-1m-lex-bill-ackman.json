@@ -1,0 +1,954 @@
+{
+  "arms": {
+    "l1_control": {
+      "arm": "l1_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        null,
+        "speaker-0001",
+        "speaker-0001",
+        null,
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 2.0,
+        "covered_reference_seconds": 59.0,
+        "diarization_error_rate": 0.05,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 59.0,
+        "hypothesis_seconds": 59.0,
+        "hypothesis_speaker_count": 2,
+        "matched_speaker_seconds": 57.0,
+        "missed_activity_seconds": 1.0,
+        "missed_speaker_seconds": 1.0,
+        "reference_activity_seconds": 60.0,
+        "reference_coverage": 0.983333,
+        "reference_seconds": 60.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.95,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 0.983333,
+        "speaker_correctness": {
+          "Bill Ackman": 0.990741,
+          "Lex Fridman": 0.583333
+        },
+        "speaker_mapping": {
+          "Bill Ackman": "speaker-0001",
+          "Lex Fridman": "speaker-0002"
+        },
+        "true_positive_activity_seconds": 59.0,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.0,
+        "correction_evidence": [],
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 27
+        },
+        "trace": {
+          "arm": "l1",
+          "status": "production_l1_no_additional_revision"
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          null,
+          "speaker-0001",
+          "speaker-0001",
+          null,
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 0,
+          "revised_units": 0,
+          "version": 0
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 27
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 1.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 0.0,
+        "units": [
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 0.5,
+            "expected_via_immutable_l1_mapping": "speaker-0002",
+            "l1_speaker": null,
+            "local_speaker": "S02",
+            "recovered": false,
+            "span_id": 13,
+            "unit_index": 15
+          },
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 0.5,
+            "expected_via_immutable_l1_mapping": "speaker-0001",
+            "l1_speaker": null,
+            "local_speaker": "S01",
+            "recovered": false,
+            "span_id": 16,
+            "unit_index": 18
+          }
+        ]
+      }
+    },
+    "ledger_only_control": {
+      "arm": "ledger_only_control",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0001",
+        "speaker-0001",
+        null,
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 2.0,
+        "covered_reference_seconds": 59.5,
+        "diarization_error_rate": 0.041667,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 59.5,
+        "hypothesis_seconds": 59.5,
+        "hypothesis_speaker_count": 2,
+        "matched_speaker_seconds": 57.5,
+        "missed_activity_seconds": 0.5,
+        "missed_speaker_seconds": 0.5,
+        "reference_activity_seconds": 60.0,
+        "reference_coverage": 0.991667,
+        "reference_seconds": 60.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.958333,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 0.991667,
+        "speaker_correctness": {
+          "Bill Ackman": 0.990741,
+          "Lex Fridman": 0.666667
+        },
+        "speaker_mapping": {
+          "Bill Ackman": "speaker-0001",
+          "Lex Fridman": "speaker-0002"
+        },
+        "true_positive_activity_seconds": 59.5,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.008333,
+        "correction_evidence": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 13
+            },
+            "changed_duration_fraction": 0.008333,
+            "duration_seconds": 0.5,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.178665,
+            "score_delta": 0.178665
+          }
+        ],
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.178665,
+              "span_id": 13
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 27
+        },
+        "trace": {
+          "accepted_correction_count": 1,
+          "all_or_nothing_budget_pass": true,
+          "all_or_nothing_proposed_fraction": 0.016667,
+          "arm": "ledger_only",
+          "budget_selected_count": 2,
+          "candidate_proposal_count": 2,
+          "changed_duration_fraction": 0.008333,
+          "changed_duration_seconds": 0.5,
+          "cluster_count": 2,
+          "cluster_evidence": {
+            "1": {
+              "margin": 1.0219542937069543,
+              "score": 0.9808141819870874
+            },
+            "2": {
+              "margin": 0.7633852787952975,
+              "score": 0.7505714228787788
+            }
+          },
+          "cluster_mapping": {
+            "1": "speaker-0001",
+            "2": "speaker-0002"
+          },
+          "collision_spans_rejected": [
+            16
+          ],
+          "runtime_visible_canonical_count": 2
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          null,
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 1,
+          "revised_units": 1,
+          "version": 1
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "previous_speaker": null,
+              "reason": "reassigned",
+              "score": 0.178665,
+              "span_id": 13
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 27
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 1.0,
+        "recovered_seconds": 0.5,
+        "recovery_fraction": 0.5,
+        "units": [
+          {
+            "candidate_speaker": "speaker-0002",
+            "category": "weak_vector",
+            "duration_seconds": 0.5,
+            "expected_via_immutable_l1_mapping": "speaker-0002",
+            "l1_speaker": null,
+            "local_speaker": "S02",
+            "recovered": true,
+            "span_id": 13,
+            "unit_index": 15
+          },
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 0.5,
+            "expected_via_immutable_l1_mapping": "speaker-0001",
+            "l1_speaker": null,
+            "local_speaker": "S01",
+            "recovered": false,
+            "span_id": 16,
+            "unit_index": 18
+          }
+        ]
+      }
+    },
+    "tape_candidate": {
+      "arm": "tape_candidate",
+      "final_unit_labels": [
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0002",
+        "speaker-0002",
+        null,
+        "speaker-0001",
+        "speaker-0001",
+        null,
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001",
+        "speaker-0001"
+      ],
+      "metrics": {
+        "confused_speaker_seconds": 4.0,
+        "covered_reference_seconds": 59.0,
+        "diarization_error_rate": 0.083333,
+        "false_positive_activity_seconds": 0.0,
+        "false_positive_speaker_seconds": 0.0,
+        "hypothesis_activity_seconds": 59.0,
+        "hypothesis_seconds": 59.0,
+        "hypothesis_speaker_count": 2,
+        "matched_speaker_seconds": 55.0,
+        "missed_activity_seconds": 1.0,
+        "missed_speaker_seconds": 1.0,
+        "reference_activity_seconds": 60.0,
+        "reference_coverage": 0.983333,
+        "reference_seconds": 60.0,
+        "reference_speaker_count": 2,
+        "speaker_accuracy": 0.916667,
+        "speaker_activity_precision": 1.0,
+        "speaker_activity_recall": 0.983333,
+        "speaker_correctness": {
+          "Bill Ackman": 0.953704,
+          "Lex Fridman": 0.583333
+        },
+        "speaker_mapping": {
+          "Bill Ackman": "speaker-0001",
+          "Lex Fridman": "speaker-0002"
+        },
+        "true_positive_activity_seconds": 59.0,
+        "two_sided_mapping": true
+      },
+      "proposal": {
+        "changed_duration_fraction": 0.033333,
+        "correction_evidence": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S01",
+              "span_id": 13
+            },
+            "changed_duration_fraction": 0.033333,
+            "duration_seconds": 2.0,
+            "incumbent_score": -0.113246,
+            "previous_speaker": "speaker-0001",
+            "proposed_score": 0.771202,
+            "score_delta": 0.884448
+          }
+        ],
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S01",
+              "previous_speaker": "speaker-0001",
+              "reason": "reassigned",
+              "score": 0.771202,
+              "span_id": 13
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 27
+        },
+        "trace": {
+          "accepted_correction_count": 1,
+          "arm": "tape",
+          "budget_selected_count": 2,
+          "candidate_proposal_count": 3,
+          "changed_duration_fraction": 0.033333,
+          "changed_duration_seconds": 2.0,
+          "cluster_count": 12,
+          "cluster_evidence": {
+            "1": {
+              "margin": 1.058623659018407,
+              "score": 0.9400846367828787
+            },
+            "11": {
+              "margin": 0.8887530909402754,
+              "score": 0.7735450582160569
+            }
+          },
+          "cluster_mapping": {
+            "1": "speaker-0001",
+            "11": "speaker-0002"
+          },
+          "collision_spans_rejected": [
+            11
+          ],
+          "unit_trace": [
+            {
+              "status": "label_unchanged",
+              "unit_index": 0
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 1
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 2
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 3
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 4
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 5
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 6
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 7
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 8
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 9
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 10
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 11
+            },
+            {
+              "canonical_speaker": "speaker-0001",
+              "score_delta": 0.929923,
+              "status": "proposed",
+              "unit_index": 12,
+              "vote_fraction": 1.0,
+              "vote_margin": 1.0
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 13
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "score_delta": 0.884448,
+              "status": "proposed",
+              "unit_index": 14,
+              "vote_fraction": 0.73913,
+              "vote_margin": 0.478261
+            },
+            {
+              "canonical_speaker": "speaker-0002",
+              "score_delta": 0.771202,
+              "status": "proposed",
+              "unit_index": 15,
+              "vote_fraction": 1.0,
+              "vote_margin": 1.0
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 16
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 17
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 18
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 19
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 20
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 21
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 22
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 23
+            },
+            {
+              "status": "no_mapped_window_vote",
+              "unit_index": 24
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 25
+            },
+            {
+              "status": "label_unchanged",
+              "unit_index": 26
+            }
+          ],
+          "vad_region_count": 30,
+          "vad_regions": [
+            [
+              0.58,
+              1.68
+            ],
+            [
+              2.28,
+              3.2
+            ],
+            [
+              4.1,
+              4.74
+            ],
+            [
+              5.42,
+              6.48
+            ],
+            [
+              6.7,
+              9.24
+            ],
+            [
+              9.6,
+              10.38
+            ],
+            [
+              10.96,
+              13.84
+            ],
+            [
+              14.42,
+              15.14
+            ],
+            [
+              15.38,
+              17.64
+            ],
+            [
+              18.34,
+              19.32
+            ],
+            [
+              19.72,
+              21.0
+            ],
+            [
+              21.42,
+              22.18
+            ],
+            [
+              22.7,
+              23.8
+            ],
+            [
+              24.22,
+              26.92
+            ],
+            [
+              27.24,
+              27.78
+            ],
+            [
+              28.08,
+              29.22
+            ],
+            [
+              29.64,
+              33.68
+            ],
+            [
+              34.38,
+              37.02
+            ],
+            [
+              37.56,
+              38.56
+            ],
+            [
+              38.94,
+              39.24
+            ],
+            [
+              39.88,
+              40.4
+            ],
+            [
+              40.8,
+              44.7
+            ],
+            [
+              44.96,
+              46.92
+            ],
+            [
+              47.58,
+              48.1
+            ],
+            [
+              48.4,
+              48.88
+            ],
+            [
+              49.9,
+              51.88
+            ],
+            [
+              52.14,
+              53.1
+            ],
+            [
+              53.36,
+              54.22
+            ],
+            [
+              54.88,
+              56.08
+            ],
+            [
+              56.38,
+              60.0
+            ]
+          ],
+          "window_count": 24,
+          "window_intervals": [
+            [
+              0.58,
+              1.68
+            ],
+            [
+              2.28,
+              3.2
+            ],
+            [
+              5.42,
+              6.48
+            ],
+            [
+              6.74,
+              9.24
+            ],
+            [
+              9.6,
+              10.38
+            ],
+            [
+              10.96,
+              13.46
+            ],
+            [
+              12.835,
+              13.84
+            ],
+            [
+              15.38,
+              17.64
+            ],
+            [
+              19.72,
+              21.0
+            ],
+            [
+              22.7,
+              23.8
+            ],
+            [
+              24.22,
+              26.72
+            ],
+            [
+              26.095,
+              26.92
+            ],
+            [
+              28.08,
+              29.22
+            ],
+            [
+              31.18,
+              33.68
+            ],
+            [
+              31.515,
+              33.68
+            ],
+            [
+              34.52,
+              37.02
+            ],
+            [
+              37.56,
+              38.56
+            ],
+            [
+              40.8,
+              43.3
+            ],
+            [
+              42.675,
+              44.7
+            ],
+            [
+              44.96,
+              46.92
+            ],
+            [
+              49.9,
+              51.88
+            ],
+            [
+              53.36,
+              54.22
+            ],
+            [
+              56.38,
+              58.88
+            ],
+            [
+              58.255,
+              60.0
+            ]
+          ]
+        }
+      },
+      "publisher": {
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          null,
+          "speaker-0001",
+          "speaker-0001",
+          null,
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001"
+        ],
+        "immutability": {
+          "prefix_hashes_unchanged": true,
+          "span_bounds_unchanged": true,
+          "word_timings_unchanged": true,
+          "words_unchanged": true
+        },
+        "outcome": {
+          "refusals": [],
+          "revised_spans": 1,
+          "revised_units": 1,
+          "version": 1
+        },
+        "production_binding": {
+          "coordinator_conversion_lines": "moss_transcribe_diarize/app/live_coordinator.py:448-456",
+          "publisher": "moss_transcribe_diarize.app.live_session.LiveSession.revise_labels",
+          "source_path": "moss_transcribe_diarize/app/live_session.py"
+        },
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S01",
+              "previous_speaker": "speaker-0001",
+              "reason": "reassigned",
+              "score": 0.771202,
+              "span_id": 13
+            }
+          ],
+          "dispositions": {},
+          "merges": [],
+          "swept_spans": 24,
+          "swept_units": 27
+        }
+      },
+      "target_recovery": {
+        "denominator_seconds": 1.0,
+        "recovered_seconds": 0.0,
+        "recovery_fraction": 0.0,
+        "units": [
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 0.5,
+            "expected_via_immutable_l1_mapping": "speaker-0002",
+            "l1_speaker": null,
+            "local_speaker": "S02",
+            "recovered": false,
+            "span_id": 13,
+            "unit_index": 15
+          },
+          {
+            "candidate_speaker": null,
+            "category": "weak_vector",
+            "duration_seconds": 0.5,
+            "expected_via_immutable_l1_mapping": "speaker-0001",
+            "l1_speaker": null,
+            "local_speaker": "S01",
+            "recovered": false,
+            "span_id": 16,
+            "unit_index": 18
+          }
+        ]
+      }
+    }
+  },
+  "case_id": "1m-lex-bill-ackman",
+  "frame": {
+    "audio_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+    "planner": "production_endpoint_policy",
+    "reference_sha256": "9e50d6d3c9006337d1d357af5593f669ef0e3014b734fb6ddcc9a119bf49d71c",
+    "span_count": 24,
+    "unit_count": 27,
+    "vector_cache_sha256": "78338559bd9975ff610c921194c3ce01e50c127f02ce0fbf13139713a4752305"
+  },
+  "l1_a2_semantic_sha256": "90e28ec11d015f6ead87117e68052565d1893216d3772e85d16f98153b762c12",
+  "schema": "moss-l2-stage0-a5-case-result.v1",
+  "split": "validation"
+}

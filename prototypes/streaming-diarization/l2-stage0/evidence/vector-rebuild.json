@@ -1,0 +1,14 @@
+{
+  "audio_sha256": "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb",
+  "frontend_source_sha256": "b710a06c4c31582f2c84aabf10286795e2f7a988d8769085728a5735ef65a2b4",
+  "model_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+  "new_reference_sha256": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+  "new_vector_cache_sha256": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "old_reference_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl",
+  "old_reference_sha256": "27c9b96e86cce3be86a3ce06dd64c1710e2c94e72a01c30339e953db94b8ebbe",
+  "old_vector_cache_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz",
+  "old_vector_cache_sha256": "327f33283422b0664911585d2a60e7490979e9c71152ec967cf0d042979aa68a",
+  "row_count": 92,
+  "speaker_count": 2,
+  "vector_count": 83
+}

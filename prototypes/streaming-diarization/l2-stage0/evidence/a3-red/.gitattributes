@@ -1,0 +1,2 @@
+# Preserve the sealed unittest subtest header byte-for-byte.
+i5-failure-release-fallback.txt -whitespace

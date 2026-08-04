@@ -1,0 +1,15 @@
+test_new_live_meeting_progresses_while_older_finalizer_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_new_live_meeting_progresses_while_older_finalizer_runs) ... ERROR
+
+======================================================================
+ERROR: test_new_live_meeting_progresses_while_older_finalizer_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_new_live_meeting_progresses_while_older_finalizer_runs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 150, in test_new_live_meeting_progresses_while_older_finalizer_runs
+    responsiveness = lifecycle.responsiveness_snapshot()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LifecyclePrototype' object has no attribute 'responsiveness_snapshot'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)

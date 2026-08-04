@@ -1,0 +1,6 @@
+test_raised_finalizer_exception_releases_once_and_falls_back (test_lifecycle_prototype.LifecyclePrototypeTest.test_raised_finalizer_exception_releases_once_and_falls_back) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

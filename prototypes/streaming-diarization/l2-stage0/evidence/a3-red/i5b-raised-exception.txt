@@ -1,0 +1,15 @@
+test_raised_finalizer_exception_releases_once_and_falls_back (test_lifecycle_prototype.LifecyclePrototypeTest.test_raised_finalizer_exception_releases_once_and_falls_back) ... ERROR
+
+======================================================================
+ERROR: test_raised_finalizer_exception_releases_once_and_falls_back (test_lifecycle_prototype.LifecyclePrototypeTest.test_raised_finalizer_exception_releases_once_and_falls_back)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 145, in test_raised_finalizer_exception_releases_once_and_falls_back
+    failed = lifecycle.execute_active_finalizer(raise_finalizer_error)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LifecyclePrototype' object has no attribute 'execute_active_finalizer'. Did you mean: '_active_finalizer'?
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

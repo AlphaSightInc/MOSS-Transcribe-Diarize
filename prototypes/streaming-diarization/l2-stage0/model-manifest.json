@@ -1,0 +1,40 @@
+{
+  "asset": {
+    "path": "prototypes/streaming-diarization/data/voxceleb_resnet152_LM.onnx",
+    "sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+  },
+  "frontend": {
+    "config": {
+      "embedding_dimension": 256,
+      "frontend_version": "wespeaker-onnx-fbank-v1",
+      "hard_cap_samples": 40000,
+      "min_evidence_samples": 8000,
+      "onnx_inter_op_threads": 1,
+      "onnx_intra_op_threads": 1,
+      "provider": "CPUExecutionProvider",
+      "sample_rate": 16000
+    },
+    "config_sha256": "d20232cb57b4fd130e1260ec297f09754c5effd772dd5b3043280966da920f0b",
+    "source_path": "moss_transcribe_diarize/app/speaker_identity.py",
+    "source_sha256": "b710a06c4c31582f2c84aabf10286795e2f7a988d8769085728a5735ef65a2b4"
+  },
+  "provider_revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+  "runtime": {
+    "available_onnx_providers": [
+      "CoreMLExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "packages": {
+      "numpy": "2.4.6",
+      "onnxruntime": "1.23.2",
+      "scipy": "1.18.0",
+      "soundfile": "0.14.0",
+      "torch": "2.13.0",
+      "torchaudio": "2.11.0"
+    },
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "python": "3.12.12"
+  },
+  "schema": "moss-l2-stage0-model.v1"
+}

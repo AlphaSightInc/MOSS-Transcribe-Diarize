@@ -1,0 +1,11 @@
+dbb7f87d7a3e2e7495ae8920ddb4763798a7229017055f35492f32e300ed3301  prototypes/streaming-diarization/l2-stage0/run_a5_holdout.py
+88d4eec6415069ef05226d8a7079f04c1478006c09b44bcd0b9e74e6315aaf91  prototypes/streaming-diarization/l2-stage0/test_a5_holdout_runner.py
+bd16e84fa2b06c62d2b5eb60abdc867b2351b8ab65b0473d2b722e5b7132750d  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/red/frozen-pins-red.txt
+2de7afc684aeef1aab471cf2a52e2bca9ad0684c742378ea0e186daa3e980ae8  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/red/opening-marker-red.txt
+f6f6828ecb37b56f6c195eaee7544175933c2f94670c8ddf472924f4bab11c7c  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/red/l1-repeatability-red.txt
+e9404b5fbb1239501cd5e4c158941b4d80b40357b4607092f6f1c63c6c5290c7  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/red/corpus-pin-red.txt
+d040df839207800f62acc522dc9521ba87e67f90fee6fe41d549b125ae7b0b91  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/green/frozen-pins-green.txt
+b45f1c24ddb450654a65637ecc50e772277763bea42a6ede47fc5cb048e849ab  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/green/opening-marker-green.txt
+df370bc99c9da22bd0c333eb9588c13d77f5a0366e6e495a9d54d1e4f727f8b4  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/green/l1-repeatability-green.txt
+63c3093bc119c9ed9f5f75946209203e21e5d2d987228d13ff55576ed716839c  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/green/full-suite.txt
+daa43de0b2a2b45e83db3216743b94e814f99865f0739435559b47b5c8f52d6e  prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/green/preflight-no-holdout-read.txt

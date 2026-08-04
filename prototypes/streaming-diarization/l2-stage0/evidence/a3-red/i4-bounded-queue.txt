@@ -1,0 +1,15 @@
+test_one_bounded_queue_owns_finalizers_and_one_cpu_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_one_bounded_queue_owns_finalizers_and_one_cpu_runs) ... ERROR
+
+======================================================================
+ERROR: test_one_bounded_queue_owns_finalizers_and_one_cpu_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_one_bounded_queue_owns_finalizers_and_one_cpu_runs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 74, in test_one_bounded_queue_owns_finalizers_and_one_cpu_runs
+    scheduler = lifecycle.scheduler_snapshot()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LifecyclePrototype' object has no attribute 'scheduler_snapshot'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

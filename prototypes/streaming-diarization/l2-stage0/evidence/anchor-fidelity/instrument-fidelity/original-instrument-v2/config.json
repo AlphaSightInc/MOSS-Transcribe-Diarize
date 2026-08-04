@@ -1,0 +1,25 @@
+{
+  "schema": "moss-l2-stage0-original-instrument-config.v1",
+  "source_checkout": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize",
+  "source_checkout_head": "ce6154cb0b8b50abe65f8f1d303b1d60c1ce20db",
+  "source_module": "prototypes/streaming-diarization/proto_ab_identity.py",
+  "source_module_sha256": "e4e8305ca16fba361e0bd53bdaf0b7e973f3bb45ce6be78b536df2219ffe1791",
+  "driver_module": "prototypes/streaming-diarization/proto_corpus_5m30m.py",
+  "driver_module_sha256": "cdb6464029e083df95b30b2c726a9de24db0100e80b2289a0044b16bf28e3733",
+  "cache_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz",
+  "cache_sha256": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+  "row_count": 92,
+  "config": {
+    "policy": "album",
+    "sweep": true,
+    "min_score": 0.35,
+    "margin": 0.1,
+    "admission": 2.0,
+    "birth_floor": 1.0,
+    "merge_threshold": 0.7,
+    "sweep_every_seconds": 60.0,
+    "max_speakers": 16,
+    "sticky_delta": 0.0,
+    "keep_uncertain": false
+  }
+}

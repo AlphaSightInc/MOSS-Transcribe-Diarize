@@ -1,0 +1,12 @@
+{
+  "case_count": 3,
+  "case_ids": [
+    "1m-lex-javier-milei",
+    "1m-lex-keyu-jin",
+    "3m-lex-shapiro-destiny"
+  ],
+  "holdout_manifest_sha256": "45412c90672015ece660b09cfbb4e8eeeba3e6603d671656a6ea26c3695f505d",
+  "opened_at": "2026-08-04T04:18:49.010216+00:00",
+  "overall": "OPENED",
+  "schema": "moss-l2-stage0-a5-holdout-opened.v1"
+}

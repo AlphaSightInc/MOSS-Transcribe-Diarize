@@ -1,0 +1,10 @@
+{
+  "errors": [
+    "test_production_cache.ProductionCacheTest.test_planner_is_bound_to_production_endpoint_policy"
+  ],
+  "failures": [],
+  "generated_at": "2026-08-03T23:08:11.597391+00:00",
+  "label": "a12-renewed-green",
+  "successful": false,
+  "tests_run": 11
+}

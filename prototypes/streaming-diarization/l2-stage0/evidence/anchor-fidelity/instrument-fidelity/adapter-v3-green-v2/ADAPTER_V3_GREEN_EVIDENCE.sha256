@@ -1,0 +1,10 @@
+96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc  prototypes/streaming-diarization/l2-stage0/legacy_ingest.py
+2df680123ed8d9191615e4e2779c2167700c0af8ccbb3b4f6b7958963f50e5d6  prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py
+41a461088ed9de1d4158556af96c409372e48c3f6e70669e98a83c8e673cef21  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/all-tests-transcript.txt
+12225d2d4e32f8fdefb4ba6fec925703032acbbad2d9106411de45ebdbb1c3bf  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/all-tests.json
+9b9394882ed1f94bf5a76998226f38fb945134485179a0f1b3bd4a8d79ef468b  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/all92-transcript.txt
+9adeb7733dcae2283633b702acc007259cf2652815f50c4eb694c1af36d7d8ec  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/all92.json
+c26d38f07a4db7976d359aeb8432cc995715ca6ed0a3ac3b3c3cd6410b5b765e  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/reason-transcript.txt
+4829911310afea421eeff41fd9ad09b6c6a71c125249ab864edc6ba3d9ebc52f  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/reason.json
+cb7e4fedf165d081c66bf8c82776222e4aae7e6da2e1fdbb2c2eba041fc65ebe  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/unit23-transcript.txt
+def4b1a20af3a65b2a95e27d0349e09eecb775fdbe0d45b3faae06f36e6ea85b  prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/unit23.json

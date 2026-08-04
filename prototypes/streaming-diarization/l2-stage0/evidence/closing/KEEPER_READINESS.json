@@ -1,0 +1,46 @@
+{
+  "branch": "ralph/l2-retained-identity-v1",
+  "campaign_a_verdict": "BLOCKED",
+  "campaign_b_authorized": false,
+  "certification_record": "REMEDIATED_AFTER_INDEPENDENT_REVIEW",
+  "commands": {
+    "diff_check": "git -C /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 diff --check",
+    "python": "cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m pytest tests -q -p no:cacheprovider",
+    "swift": "cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && swift test --package-path macos/MOSSCapture"
+  },
+  "evidence_integrity": {
+    "authoritative_or_owning_commit_manifests": 25,
+    "manifest_count": 34,
+    "superseded_history_manifests": 9
+  },
+  "gates": {
+    "diff_check": {
+      "exit": 0,
+      "transcript_sha256": "418a5c17f33c70e99b0cc0a07fce69191489cfedc94164bfa903785777c5bd4b"
+    },
+    "python": {
+      "exit": 0,
+      "passed": 865,
+      "skipped": 2,
+      "subtests_passed": 373,
+      "transcript_sha256": "9ee7e0eab7089f9801b4f2149c262dca830aa01434590e6fbb6a1d91554f64fc"
+    },
+    "swift": {
+      "exit": 0,
+      "failed": 0,
+      "passed": 200,
+      "transcript_sha256": "1e5ffa860fc861a20ec13704048929ba5cff66c40eecd533ef81ca5b9fc22947"
+    }
+  },
+  "keeper_commit": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "merge_authorized": false,
+  "product_tree_changed": false,
+  "push_performed": false,
+  "schema": "moss-l2-stage0-keeper-readiness.v1",
+  "sealed_verdict_modified": false,
+  "stage0_evidence_manifest_sha256": "0591924533c4f4ec243c9f53dbe7db67572fb07408c4d1bc0d263c1376fa0130",
+  "stage0_verdict_addendum_manifest_sha256": "ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3",
+  "stage0_verdict_sha256": "f9f8b27d82d043716ec74f7ae33db573f97437b5a2e3ee180f97d65051fbb338",
+  "terminal_decision": "SOUND_AND_STRENGTHENED_BY_D8",
+  "verdict": "READY_FOR_SUPERVISOR_REVIEW"
+}
