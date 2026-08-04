@@ -1286,3 +1286,37 @@ the 36-row evidence manifest SHA-256 is
 `15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd`.
 Per the predeclared decision rule, this failed blind holdout makes Stage 0 BLOCKED;
 candidate bytes remain frozen and Campaign A proceeds only to the A6 record.
+
+### L2 Stage 0 A6 terminal verdict (`l2-stage0`, 2026-08-04)
+
+**VERDICT: BLOCKED. CAMPAIGN A ENDS. CAMPAIGN B IS NOT AUTHORIZED.** A1-A4 and
+A5 development/validation passed. The only terminal failures are the single-opening
+holdout tape gains: `0.917431 pp < 1.0 pp` over L1 and `0.0 pp < 1.0 pp` over
+ledger-only. `L2_STAGE0_VERDICT.json`, SHA-256
+`f9f8b27d82d043716ec74f7ae33db573f97437b5a2e3ee180f97d65051fbb338`,
+contains input hashes, commands, local/deployment environments, six dev/validation
+plus three holdout three-arm results, A4 resources, and the failed-gate objects.
+
+`SEAM_INVENTORY.md`, SHA-256
+`7ade72f68606902fb26ad0085787e9eedc32b10ee4539d20b65e8e101e63ad35`,
+applies all five two-adapter/deletion-test questions. A3/A4 support the tested
+range-reader/lease and bounded-finalizing shapes, but failed A5 does not establish an
+accepted tape evidence adapter or winning span contract. Shared revision extraction,
+evidence protocol, full engine, and checkpoint remain deferred; no product seam is
+authorized.
+
+For the earlier A12 historical rows changed by the separately committed path fix,
+the owning-commit proof remains
+`evidence/anchor-fidelity/a12-owning-commit-verification.txt`, SHA-256
+`8adaf14810a061f75efaedea11ed1207c30d07ee7ad0d5c8cfa6e5b795d7ea52`.
+It records the exact `git -C ... show 19983e34...:<path> | shasum -a 256`
+commands and PASS output for both `run_l1_control.py` and `test_l1_control.py`.
+
+Design and ADR text now records only the measured Stage-0 facts: development pass,
+single holdout failure, lifecycle/resource pass, no rerun/tuning, and no product
+authorization. The immutable historical BLOCKED and superseded diagnosis evidence is
+retained inside the final all-evidence seal.
+
+`L2_STAGE0_EVIDENCE.sha256` contains 464 current-byte rows and has SHA-256
+`0591924533c4f4ec243c9f53dbe7db67572fb07408c4d1bc0d263c1376fa0130`;
+`shasum -a 256 -c` passes 464/464.

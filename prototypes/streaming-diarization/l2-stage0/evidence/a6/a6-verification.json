@@ -1,0 +1,28 @@
+{
+  "checks": {
+    "a0_a4_pass": true,
+    "campaign_b_not_authorized": true,
+    "dev_case_count": true,
+    "dev_pass": true,
+    "frozen_candidate_hashes": true,
+    "holdout_case_count": true,
+    "holdout_failed_once": true,
+    "input_hash:docs/plans/r1-stage0-minimum-seam-0803.md": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/SEAM_INVENTORY.md": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/a5-dev-candidate-family-v4.json": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/cache-rebuild-spec.json": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/candidate-config.json": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/candidate_engine.py": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/corpus-manifest.json": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/holdout-manifest.json": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/model-manifest.json": true,
+    "input_hash:prototypes/streaming-diarization/l2-stage0/run_candidates.py": true,
+    "only_expected_gates_failed": true,
+    "resource_gates_pass": true,
+    "terminal_blocked": true
+  },
+  "overall": "PASS",
+  "schema": "moss-l2-stage0-a6-verification.v1",
+  "verdict_sha256": "f9f8b27d82d043716ec74f7ae33db573f97437b5a2e3ee180f97d65051fbb338"
+}

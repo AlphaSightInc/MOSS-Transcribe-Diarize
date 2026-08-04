@@ -188,6 +188,29 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   0.70 is safe (max true cross-speaker centroid sim 0.259 across all clips); the
   terminal end-of-session sweep is load-bearing, not optional.
 
+- **L2 Stage-0 feasibility — BLOCKED at blind holdout (2026-08-04).** Campaign A
+  used production-planned spans, the pinned production WeSpeaker frontend, and three
+  same-frame arms: production L1, ledger-only control, and a frozen tape candidate.
+  On six development/validation cases the tape arm beat L1 by 1.860557 pp and
+  ledger-only by 1.432022 pp, recovered 13.025/24.854125 L1-unreachable seconds,
+  and passed the remaining accuracy/safety gates. The candidate was frozen before
+  one blind opening. On three holdout cases it scored 0.972477 versus L1 0.963303
+  and ledger-only 0.972477: +0.917431 pp over L1 and +0.0 pp over ledger, below the
+  required +1.0 pp over each. Recovery was 2.5/2.5 seconds; per-case regression,
+  FP-speaker-seconds/DER, two-sided mapping, correction evidence, adversarial
+  padding, same-frame, and repeatability gates passed. No rerun or tuning occurred.
+  `L2_STAGE0_VERDICT.json` is therefore `BLOCKED`; no product L2 path or Campaign B
+  implementation is authorized by this evidence.
+
+- **L2 Stage-0 lifecycle/resource facts (2026-08-04).** The prototype
+  `finalizing` model passed all eight lifecycle invariants and all three negative
+  controls. On the deployment i7-14700F under WSL, the operator-authorized
+  warm/reused CPU finalizer measured RTF 0.0997407 and 179.533 s for 30 minutes;
+  first-finalizer time was 180.294 s, 0.761 s over steady state and inside the
+  one-time 5 s allowance. Reads remained bounded to 40,000 samples, one CPU
+  finalizer was active, and the measured prototype contention proxies passed. These
+  facts prove the tested lifecycle/resource shapes, not an accepted L2 accuracy arm.
+
 Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
 0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge
 threshold 0.70 + terminal sweep at session end. The hash-pinned production-plan replay

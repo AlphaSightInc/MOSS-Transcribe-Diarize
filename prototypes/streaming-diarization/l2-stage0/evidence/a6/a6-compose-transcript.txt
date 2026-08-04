@@ -1,0 +1,3 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/write_a6_verdict.py
+{"failed_gates": ["tape_beats_l1_target_subset_pp", "tape_beats_ledger_target_subset_pp"], "output": {"path": "prototypes/streaming-diarization/l2-stage0/L2_STAGE0_VERDICT.json", "sha256": "f9f8b27d82d043716ec74f7ae33db573f97437b5a2e3ee180f97d65051fbb338"}, "overall": "BLOCKED"}
+EXIT: 0

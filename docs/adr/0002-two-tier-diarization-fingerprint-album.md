@@ -126,3 +126,23 @@ sweep. They describe two different levels:
 The “never re-hears earlier audio” statement governs live matching and shipped L1. The original
 re-VAD/re-embed language remains the L2 target. Claims of tape-driven convergence therefore remain
 future until L2 is built and measured; shipped L1 claims stay bounded to embedding-ledger rematch.
+
+## 2026-08-04 L2 Stage-0 feasibility amendment
+
+Prototype-only Campaign A ended `BLOCKED`; it did not change this ADR into product
+authorization. The frozen tape-derived arm passed its six-case development/validation
+gates (+1.860557 pp over L1, +1.432022 pp over ledger-only, 52.4058% unreachable
+seconds recovered), then failed the one-opening blind-holdout minimum-gain gates. On
+the three holdout cases, same-frame aggregate scores were L1 0.963303, ledger-only
+0.972477, and tape 0.972477. Tape's +0.917431 pp over L1 and +0.0 pp over ledger-only
+were both below the predeclared +1.0 pp requirement. No candidate or threshold changed
+after freeze; the holdout was not rerun.
+
+Separately, the lifecycle prototype passed 8/8 invariants and 3/3 negative controls,
+supporting an observable `finalizing` state, one bounded CPU-finalizer queue, tape read
+leases, and L1 fallback. Deployment-CPU measurements passed the operator-authorized
+warm/reused envelope (RTF 0.0997407; 179.533 s per projected/measured 30 minutes; first
+finalizer 180.294 s within the one-time 5 s allowance). These are measured
+lifecycle/resource facts only. Because the accuracy arm failed holdout, no L2 product
+caller, common evidence protocol, or full identity engine seam was earned. Future work
+requires a revised plan and separate authorization.
