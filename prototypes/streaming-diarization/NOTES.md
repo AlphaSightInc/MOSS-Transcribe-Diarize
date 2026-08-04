@@ -1251,3 +1251,38 @@ cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-
 The actual opening remains a separate one-process command run only from the clean
 harness commit. Its first write is `evidence/a5-holdout-opening/opening-start.json`;
 that marker makes every later attempt refuse with `holdout_already_opened`.
+
+### L2 Stage 0 A5 single holdout verdict (`l2-stage0`, 2026-08-04)
+
+**VERDICT: FAIL / BLOCKED; OPENING CONSUMED; NO RERUN OR TUNING.** From clean
+harness commit `de41d4386989ae35f04263366fa9d837e188ed4d`, the authorized
+one-process opening rebuilt all three holdout caches, ran L1 twice plus ledger-only
+and frozen tape arms, evaluated the unchanged gates, sealed the result, and exited
+`3`. Reproduce the seal only (do not rerun the opening):
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && shasum -a 256 -c prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/A5_HOLDOUT_EVIDENCE.sha256
+```
+
+All cache rebuilds passed self-replan. Old→new SHA-256 and unit counts were:
+`1m-lex-javier-milei` `60a83f61…`→`a6a16a9d…`, `24→24`;
+`1m-lex-keyu-jin` `51cafdaf…`→`56ba93f1…`, `24→24`; and
+`3m-lex-shapiro-destiny` `cc29c984…`→`eaa759d2…`, `64→65`.
+The updated corpus manifest and launcher pin both equal
+`e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad`.
+
+L1 was semantically deterministic twice for every case, with `0.0 pp` repeat
+deltas. Aggregate same-frame target scores were L1 `0.963303`, ledger `0.972477`,
+and tape `0.972477`. Tape gained only `0.917431 pp` over L1 (required `>=1.0`)
+and `0.0 pp` over ledger (required `>=1.0`): both comparison gates failed.
+Recovery was `2.5/2.5 s` (`1.0`); per-case regression, FP/DER, two-sided mapping,
+correction evidence, adversarial padding, same-frame, and repeatability gates passed.
+
+Raw summary SHA-256 is
+`43e9ff33e664331aa614bc748f5b6254a545c3252694a5522c90044c220e9966`;
+cache-audit SHA-256 is
+`7c418264ef695ae51f75c8ee1c822d8fbff25cf4dfaef3166d1be08f04e5d2b9`;
+the 36-row evidence manifest SHA-256 is
+`15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd`.
+Per the predeclared decision rule, this failed blind holdout makes Stage 0 BLOCKED;
+candidate bytes remain frozen and Campaign A proceeds only to the A6 record.

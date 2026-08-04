@@ -104,9 +104,8 @@
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 2,
       "split": "blind_holdout",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-lex-javier-milei/harness_cache.npz",
-      "vector_cache_sha256": "a6a16a9dc1a378f4355e76343c27c993443d49788f2e9f5844e3ece140d6e306",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "vector_cache_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/harness_cache.npz",
+      "vector_cache_sha256": "60a83f61f33b3be4571e74881746e7dcfd35553f9027c3e7e005692de990a53e"
     },
     {
       "acceptance_eligible": true,
@@ -120,9 +119,8 @@
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 2,
       "split": "blind_holdout",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-lex-keyu-jin/harness_cache.npz",
-      "vector_cache_sha256": "56ba93f19500c2fe2ad15d9f5234854822d684653e88a2e52f8ad4e2e3be9cd7",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "vector_cache_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/harness_cache.npz",
+      "vector_cache_sha256": "51cafdaf677e860a01a1eb6396d2953d144155ad7947b54e12032e1c82453bf4"
     },
     {
       "acceptance_eligible": true,
@@ -168,9 +166,8 @@
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 3,
       "split": "blind_holdout",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-lex-shapiro-destiny/harness_cache.npz",
-      "vector_cache_sha256": "eaa759d2b736679ec3cbbdfd06aceff3db4f1c0a3f9bdb4123f06587879ea206",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "vector_cache_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_shapiro_destiny/harness_cache.npz",
+      "vector_cache_sha256": "cc29c9847f8efa0cddba45480372d53c9095f82f1723fc36a69b89d592918a73"
     },
     {
       "acceptance_eligible": true,

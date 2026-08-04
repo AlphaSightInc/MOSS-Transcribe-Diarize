@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+    "prototypes/streaming-diarization/l2-stage0/run_a5_holdout.py"
+  ],
+  "freeze_commit": "60ccd70aeefc13a0edec7770bb6b3d77149d1826",
+  "git_head": "de41d4386989ae35f04263366fa9d837e188ed4d",
+  "opened_at": "2026-08-04T04:18:49.009460+00:00",
+  "opening_count": 1,
+  "pid": 36570,
+  "procedure_sha256": "6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902",
+  "schema": "moss-l2-stage0-a5-opening-start.v1"
+}

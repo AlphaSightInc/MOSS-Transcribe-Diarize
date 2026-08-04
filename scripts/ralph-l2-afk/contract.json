@@ -8,7 +8,7 @@
   ],
   "branch": "ralph/l2-retained-identity-v1",
   "contract_id": "moss-l2-retained-identity-v1",
-  "corpus_manifest_hash": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+  "corpus_manifest_hash": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
   "corpus_manifest_path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json",
   "denylist": [
     "macos/**",
