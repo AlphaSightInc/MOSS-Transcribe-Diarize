@@ -1,0 +1,464 @@
+Building for debugging...
+[0/18] /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/macos/MOSSCapture/.build/arm64-apple-macosx/debug/MOSSCapturePackageTests.derived/runner.swift
+[1/18] Write sources
+[4/18] Write MOSSCaptureApp-entitlement.plist
+[6/18] Write mtd-capture-entitlement.plist
+[6/18] Write sources
+[9/18] Write swift-version--58304C5D6DBC2206.txt
+[11/35] Compiling MOSSCaptureCore NativeLaneHealth.swift
+[12/35] Compiling MOSSCaptureCore NativeLaneWireFormat.swift
+[13/35] Compiling MOSSCaptureCore NativeAudioBuffers.swift
+[14/35] Compiling MOSSCaptureCore NativeDualCaptureSource.swift
+[15/35] Compiling MOSSCaptureCore SystemAudioTap.swift
+[16/35] Compiling MOSSCaptureCore SystemAudioPermissionProbe.swift
+[17/35] Compiling MOSSCaptureCore MicrophoneCapture.swift
+[18/35] Compiling MOSSCaptureCore FakeCaptureAdapters.swift
+[19/35] Compiling MOSSCaptureCore CaptureOutbox.swift
+[20/35] Compiling MOSSCaptureCore CaptureScheduling.swift
+[21/35] Compiling MOSSCaptureCore CaptureLatencyProbe.swift
+[22/35] Compiling MOSSCaptureCore CaptureController.swift
+[23/35] Compiling MOSSCaptureCore CapturePublishPump.swift
+[24/35] Emitting module MOSSCaptureCore
+[25/35] Compiling MOSSCaptureCore CaptureCommandLine.swift
+[26/35] Compiling MOSSCaptureCore CaptureHTTPTransport.swift
+[27/35] Compiling MOSSCaptureCore CaptureSecurity.swift
+[28/44] Emitting module MTDCaptureCLI
+[29/44] Compiling MTDCaptureCLI main.swift
+[29/44] Write Objects.LinkFileList
+[31/44] Compiling MOSSCaptureApp main.swift
+[32/44] Emitting module MOSSCaptureApp
+[32/44] Write Objects.LinkFileList
+[33/44] Linking mtd-capture
+[34/44] Linking MOSSCaptureApp
+[35/44] Applying mtd-capture
+[36/44] Applying MOSSCaptureApp
+[38/44] Compiling MTDCaptureCLITests MTDCaptureCLITests.swift
+[39/44] Emitting module MTDCaptureCLITests
+[40/44] Emitting module MOSSCaptureCoreTests
+[41/44] Compiling MOSSCaptureCoreTests NativeAudioBufferLayoutTests.swift
+[42/44] Compiling MOSSCaptureCoreTests CaptureControllerTests.swift
+[43/46] Compiling MOSSCapturePackageTests runner.swift
+[44/46] Emitting module MOSSCapturePackageTests
+[44/46] Write Objects.LinkFileList
+[45/46] Linking MOSSCapturePackageTests
+Build complete! (16.44s)
+Test Suite 'All tests' started at 2026-08-04 00:36:31.010.
+Test Suite 'MOSSCapturePackageTests.xctest' started at 2026-08-04 00:36:31.011.
+Test Suite 'CaptureControllerTests' started at 2026-08-04 00:36:31.011.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAcknowledgedFrameObserverSeesOnlyAcceptedAudioFactsAndNeverPCM]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAcknowledgedFrameObserverSeesOnlyAcceptedAudioFactsAndNeverPCM]' passed (0.005 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testADeviceTimelineGapMarksTheSplicedFrameAndKeepsFollowingTheDeviceClock]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testADeviceTimelineGapMarksTheSplicedFrameAndKeepsFollowingTheDeviceClock]' passed (0.011 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAGenuineDrainRefusalIsStillRecordedWhileStopping]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAGenuineDrainRefusalIsStillRecordedWhileStopping]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAHeartbeatLandingAsTheServerIsToldToStopIsNotASessionRefusal]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAHeartbeatLandingAsTheServerIsToldToStopIsNotASessionRefusal]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAlreadyNamedControlFailuresKeepTheirNamesAndCarryNoDetail]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAlreadyNamedControlFailuresKeepTheirNamesAndCarryNoDetail]' passed (0.071 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAmbiguousAnswerAndDuplicateRetryReuseTheOriginalLaneSequenceIdentity]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAmbiguousAnswerAndDuplicateRetryReuseTheOriginalLaneSequenceIdentity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAnOverrunLaneStillReportsTheFailureThatGenuinelyEndsIt]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAnOverrunLaneStillReportsTheFailureThatGenuinelyEndsIt]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAnUnclassifiedTransportFailureCarriesItsDomainCodeAndUnderlyingCodeButNoMessageOrURL]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAnUnclassifiedTransportFailureCarriesItsDomainCodeAndUnderlyingCodeButNoMessageOrURL]' passed (0.044 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAppDispatcherOwnsHandoffAndAnswersWithNonSecretViewAuthorityStatus]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAppDispatcherOwnsHandoffAndAnswersWithNonSecretViewAuthorityStatus]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAReleasedSessionIsReportedGoneInsteadOfMerelyUnreachable]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAReleasedSessionIsReportedGoneInsteadOfMerelyUnreachable]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testASessionTheServerRefusedStaysRefusedWhenALaterRequestSucceeds]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testASessionTheServerRefusedStaysRefusedWhenALaterRequestSucceeds]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testASourceStopThatThrowsLeavesNoLiveTimerAndNoLatchedFence]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testASourceStopThatThrowsLeavesNoLiveTimerAndNoLatchedFence]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAStartHeartbeatTheServerRefusesUnwindsInsteadOfLeavingTheLanesHot]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAStartHeartbeatTheServerRefusesUnwindsInsteadOfLeavingTheLanesHot]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAStopTheServerCannotBeToldAboutStillStopsLocallyAndNamesTheRefusal]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAStopTheServerCannotBeToldAboutStillStopsLocallyAndNamesTheRefusal]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAThrowingPublishStillEmitsTheHeartbeatThatHoldsTheServerLease]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testAThrowingPublishStillEmitsTheHeartbeatThatHoldsTheServerLease]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testATickArrivingDuringADrainSkipsInsteadOfReSendingFramesAlreadyInFlight]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testATickArrivingDuringADrainSkipsInsteadOfReSendingFramesAlreadyInFlight]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testATickThatOutrunsTheQuiescenceDeadlineStillCannotRecordASelfInducedRefusal]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testATickThatOutrunsTheQuiescenceDeadlineStillCannotRecordASelfInducedRefusal]' passed (0.369 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testATransientStartHeartbeatFailureIsADegradedStartWithAPumpRunning]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testATransientStartHeartbeatFailureIsADegradedStartWithAPumpRunning]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testBothLanesShareOneConvertedHostTimeDomain]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testBothLanesShareOneConvertedHostTimeDomain]' passed (0.033 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCaptureControllerPublicInterfaceIsLimitedToStartStatusStop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCaptureControllerPublicInterfaceIsLimitedToStartStatusStop]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCaptureControllerPublishesTheSourcesFlushedTailOnStop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCaptureControllerPublishesTheSourcesFlushedTailOnStop]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCaptureControllerStateSharedAccessInventoryIsLockFenced]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCaptureControllerStateSharedAccessInventoryIsLockFenced]' passed (0.008 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCleanStopTellsTheServerTheMeetingIsOverAfterTheFinalDrain]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testCleanStopTellsTheServerTheMeetingIsOverAfterTheFinalDrain]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testContinuousPumpPublishesAcrossTicks]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testContinuousPumpPublishesAcrossTicks]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlChannelStatusCarriesEveryLanesStateAndTypedFailureCode]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlChannelStatusCarriesEveryLanesStateAndTypedFailureCode]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlChannelStatusNamesALaneTheSourceNeverReported]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlChannelStatusNamesALaneTheSourceNeverReported]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControllerSharedStatusIsSynchronizedUnderConcurrentPumpStatus]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControllerSharedStatusIsSynchronizedUnderConcurrentPumpStatus]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerRejectsMalformedPartialOversizedAndTrailingFramesBeforeMutation]' passed (0.057 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerRejectsUnknownCommandAndMissingConfigurationWithoutControllerMutation]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerRejectsUnknownCommandAndMissingConfigurationWithoutControllerMutation]' passed (0.134 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerRejectsWrongSecretBeforeMutation]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerRejectsWrongSecretBeforeMutation]' passed (0.014 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerSanitizesUnknownErrorInActualResponseArtifact]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testControlServerSanitizesUnknownErrorInActualResponseArtifact]' passed (0.017 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDefaultSecretStoreKeepsItsDirectoryAndDocumentPrivate]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDefaultSecretStoreKeepsItsDirectoryAndDocumentPrivate]' passed (0.003 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDeviceRateInputBecomesSteadyCanonicalFramesOnTheConvertedHostClock]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDeviceRateInputBecomesSteadyCanonicalFramesOnTheConvertedHostClock]' passed (0.017 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDispatcherPersistsPairingAuthorityAndReloadsStartConfiguration]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDispatcherPersistsPairingAuthorityAndReloadsStartConfiguration]' passed (0.003 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDispatcherStoresPairingPinForSubsequentHTTPSClients]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDispatcherStoresPairingPinForSubsequentHTTPSClients]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDuplicateStartDoesNotRequestPermissionsTwice]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testDuplicateStartDoesNotRequestPermissionsTwice]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEachSessionNumbersItsLaneFramesFromZero]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEachSessionNumbersItsLaneFramesFromZero]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEveryLaneFailureIsLoggedOncePerFailureAndTheHeartbeatIsUnchanged]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEveryLaneFailureIsLoggedOncePerFailureAndTheHeartbeatIsUnchanged]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEveryReportedLaneStateComesFromTheOneStateVocabulary]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEveryReportedLaneStateComesFromTheOneStateVocabulary]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEveryUnclassifiedControlFailureIsLoggedOnceWithOnlyItsCommandAndDetail]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testEveryUnclassifiedControlFailureIsLoggedOnceWithOnlyItsCommandAndDetail]' passed (0.031 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testFileSecretStorePersistsRestartSafeAuthorityWithPrivateMode]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testFileSecretStorePersistsRestartSafeAuthorityWithPrivateMode]' passed (0.003 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testFortyEightAndFortyFourPointOneKilohertzInputConserveDuration]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testFortyEightAndFortyFourPointOneKilohertzInputConserveDuration]' passed (0.040 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testFullCertificatePinValidatorRequiresExactValidSHA256]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testFullCertificatePinValidatorRequiresExactValidSHA256]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHandoffFailsTypedWhenAuthorityIsMissingPasteboardFailsOrNoAdapterIsInjected]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHandoffFailsTypedWhenAuthorityIsMissingPasteboardFailsOrNoAdapterIsInjected]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHostTicksBecomeRealNanosecondsAndAZeroReadingIsRefused]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHostTicksBecomeRealNanosecondsAndAZeroReadingIsRefused]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPHealthPostsVersionedHeartbeatWithoutBearerLeakage]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPHealthPostsVersionedHeartbeatWithoutBearerLeakage]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPHealthSerializesTypedLaneFailureCode]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPHealthSerializesTypedLaneFailureCode]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPSessionStopPostsTheDrainDeadlineOnItsOwnBoundedRequest]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPSessionStopPostsTheDrainDeadlineOnItsOwnBoundedRequest]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPSessionStopSurfacesTheServersRefusalRatherThanReportingACleanStop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPSessionStopSurfacesTheServersRefusalRatherThanReportingACleanStop]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPTransportAndHealthBuildPinnedClientFromStoredPin]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPTransportAndHealthBuildPinnedClientFromStoredPin]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPTransportPostsStrictV2FramesWithBearerHeaderOnly]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPTransportPostsStrictV2FramesWithBearerHeaderOnly]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPTransportRejectsMissingBearerBeforeRequest]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testHTTPTransportRejectsMissingBearerBeforeRequest]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA036ContextKeepsEvidenceTierMissingFence]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA036ContextKeepsEvidenceTierMissingFence]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA042ContextKeepsEvidenceTierMissingFence]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA042ContextKeepsEvidenceTierMissingFence]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA042ResidualKillNodesNameExistingActualTests]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA042ResidualKillNodesNameExistingActualTests]' passed (0.105 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA043ContextAndADRUseSourceOwnedNativeTypedVocabulary]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testIDEA043ContextAndADRUseSourceOwnedNativeTypedVocabulary]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLanePermissionCoordinatorKeepsLaneStateAndFencesRetiredAnswers]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLanePermissionCoordinatorKeepsLaneStateAndFencesRetiredAnswers]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLanesPublishConcurrentlyWithOneRequestInFlightPerLane]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLanesPublishConcurrentlyWithOneRequestInFlightPerLane]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeIsDefaultOffAndAsksNothingUntilAFigureIsRequested]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeIsDefaultOffAndAsksNothingUntilAFigureIsRequested]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbePollsWithViewAuthorityAndEmitsOnlyAggregates]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbePollsWithViewAuthorityAndEmitsOnlyAggregates]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeResetsIncrementalCursorsForEachSession]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeResetsIncrementalCursorsForEachSession]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeStartsBothRoutesTogetherAndRecordsOneOwnedPair]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeStartsBothRoutesTogetherAndRecordsOneOwnedPair]' passed (0.160 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeStopsWithTheSessionAndStaysReadableAfterwards]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyProbeStopsWithTheSessionAndStaysReadableAfterwards]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyRenderBoundUsesTheP95OfEachPairedFetchMaximum]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyRenderBoundUsesTheP95OfEachPairedFetchMaximum]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyReportKeepsTheCommittedAndRenderComponentsSeparate]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencyReportKeepsTheCommittedAndRenderComponentsSeparate]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerMapsCommittedSamplesToTheMixerOriginOnOneCaptureClock]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerMapsCommittedSamplesToTheMixerOriginOnOneCaptureClock]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerRejectsNegativeRegressedAndPostBreakReadingsInsteadOfAveragingThem]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerRejectsNegativeRegressedAndPostBreakReadingsInsteadOfAveragingThem]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerTreatsAShortFrameAsABreakOnlyWhenTheLaneKeepsGoing]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerTreatsAShortFrameAsABreakOnlyWhenTheLaneKeepsGoing]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerWaitsForEveryContributingLaneThenFreezesTheOrigin]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatencySamplerWaitsForEveryContributingLaneThenFreezesTheOrigin]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatePermissionCompletionAfterStopIsNoop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testLatePermissionCompletionAfterStopIsNoop]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureConfigurationChangeUpdatesCurrentDeviceWithoutFailure]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureConfigurationChangeUpdatesCurrentDeviceWithoutFailure]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureDeniedPermissionReportsRawTerminalFact]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureDeniedPermissionReportsRawTerminalFact]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureFailedDeviceQueryStaysRecoveringOffCallback]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureFailedDeviceQueryStaysRecoveringOffCallback]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureOverloadIsRawNonTerminalFact]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureOverloadIsRawNonTerminalFact]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureReportsPermissionAndCurrentInputDevice]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureReportsPermissionAndCurrentInputDevice]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureReportsPostStartAbnormalStopThroughHealth]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureReportsPostStartAbnormalStopThroughHealth]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureRequestAccessIsTheExplicitPermissionTransition]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureRequestAccessIsTheExplicitPermissionTransition]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureStaleGenerationIgnoredAfterStop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureStaleGenerationIgnoredAfterStop]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureUndeterminedPermissionNeverTouchesInputNode]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureUndeterminedPermissionNeverTouchesInputNode]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureUsesInputAudioUnitCurrentDeviceWithoutDefaultLookup]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneCaptureUsesInputAudioUnitCurrentDeviceWithoutDefaultLookup]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneGrantedWithSystemDeniedKeepsLanePermissionsIndependent]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testMicrophoneGrantedWithSystemDeniedKeepsLanePermissionsIndependent]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceAttributesLaneOverrunAndDiscontinuityCounters]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceAttributesLaneOverrunAndDiscontinuityCounters]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceComposesTwoSourcesAndDrainsEachBufferOnce]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceComposesTwoSourcesAndDrainsEachBufferOnce]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceHandsOverItsFlushedTailAfterStop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceHandsOverItsFlushedTailAfterStop]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceInvalidatesGenerationBeforeComponentTeardown]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceInvalidatesGenerationBeforeComponentTeardown]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceMicrophoneSurvivesSystemStartFail]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceMicrophoneSurvivesSystemStartFail]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceSilenceIsNonTerminal]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceSilenceIsNonTerminal]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceStartDoesNotReplayEarlierGenerationDrops]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceStartDoesNotReplayEarlierGenerationDrops]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceSystemSurvivesMicrophoneStartFail]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceSystemSurvivesMicrophoneStartFail]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceUnwindsBothLanesWhenEveryStartFails]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeDualCaptureSourceUnwindsBothLanesWhenEveryStartFails]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthGenerationFenceRejectsDelayedFactsAfterStop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthGenerationFenceRejectsDelayedFactsAfterStop]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthIgnoresNonFailureFacts]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthIgnoresNonFailureFacts]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthMailboxOrderAndFirstCauseStickiness]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthMailboxOrderAndFirstCauseStickiness]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthMapsNativeTerminalFactsToStableCodes]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthMapsNativeTerminalFactsToStableCodes]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthMapsSurvivableFactsToDegradedCodes]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthMapsSurvivableFactsToDegradedCodes]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthStableCodeVocabularyIsClosed]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneHealthStableCodeVocabularyIsClosed]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneMailboxLinearizationBeatsCallbackTimestamp]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneMailboxLinearizationBeatsCallbackTimestamp]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneMailboxOverflowIsItsOwnCodeAndNotAudioLoss]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneMailboxOverflowIsItsOwnCodeAndNotAudioLoss]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneReducerDeferredBatchCannotCrossGeneration]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeLaneReducerDeferredBatchCannotCrossGeneration]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeRuntimeErrorsAreTyped]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeRuntimeErrorsAreTyped]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeSourceVectorsUseRequiredMacOSCapturePaths]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testNativeSourceVectorsUseRequiredMacOSCapturePaths]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOneStalledLaneNeitherBlocksTheOtherLaneNorReattemptsItsWholeBacklog]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOneStalledLaneNeitherBlocksTheOtherLaneNorReattemptsItsWholeBacklog]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOnlyTheAppCompositionRootHoldsViewAuthorityAndPasteboardAccess]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOnlyTheAppCompositionRootHoldsViewAuthorityAndPasteboardAccess]' passed (0.003 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOutboxIsTheWireSequenceAuthorityAndReleasesOnlyAcknowledgedAudio]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOutboxIsTheWireSequenceAuthorityAndReleasesOnlyAcknowledgedAudio]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOutboxOverflowKeepsSequencesGaplessAndReportsATypedDegradedState]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOutboxOverflowKeepsSequencesGaplessAndReportsATypedDegradedState]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOutboxRetainsEveryFrameAcrossAFiveSecondOutageAndDeliversEachExactlyOnce]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testOutboxRetainsEveryFrameAcrossAFiveSecondOutageAndDeliversEachExactlyOnce]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeBuildsHTTPSClientFromPayloadPin]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeBuildsHTTPSClientFromPayloadPin]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeRejectsMalformedPayloadBeforeRequest]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeRejectsMalformedPayloadBeforeRequest]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeStopsBeforeSessionWhenPairingFails]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeStopsBeforeSessionWhenPairingFails]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeUsesServerPairingThenAuthenticatedSessionContract]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingExchangeUsesServerPairingThenAuthenticatedSessionContract]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingPayloadReachesApp]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingPayloadReachesApp]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingPayloadTrimsHowItWasTypedAndSendsExactlyWhatItParsed]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingPayloadTrimsHowItWasTypedAndSendsExactlyWhatItParsed]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingPayloadWhitespaceFaultsAreReportedAgainstThePayloadNotTheCertificate]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPairingPayloadWhitespaceFaultsAreReportedAgainstThePayloadNotTheCertificate]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPinnedHTTPProviderRejectsMissingCertificatePinBeforeRequest]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPinnedHTTPProviderRejectsMissingCertificatePinBeforeRequest]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPinnedProviderKeepsOneSessionPerPinAndSupersedesARotatedOne]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPinnedProviderKeepsOneSessionPerPinAndSupersedesARotatedOne]' passed (0.005 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPinnedURLSessionDelegateRequiresPresentedCertificateHash]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPinnedURLSessionDelegateRequiresPresentedCertificateHash]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPortalCycleContractMatchesTheServedPortalCadence]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPortalCycleContractMatchesTheServedPortalCadence]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testProductionNativeQueueCoversMeasuredBlockedPumpTurn]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testProductionNativeQueueCoversMeasuredBlockedPumpTurn]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testProductionPumpTicksOncePerCanonicalWireFrameOnOneSharedPinnedProvider]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testProductionPumpTicksOncePerCanonicalWireFrameOnOneSharedPinnedProvider]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testProductionStartDefersPermissionStateToIndependentNativeLanes]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testProductionStartDefersPermissionStateToIndependentNativeLanes]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPromotedSwiftTestIdentifiersRemainCollected]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPromotedSwiftTestIdentifiersRemainCollected]' passed (0.005 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPumpFailureIsTypedAndLaterTicksContinue]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPumpFailureIsTypedAndLaterTicksContinue]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPumpMapsCaptureHTTPTransportErrorToTransportUnavailableAndRecovers]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testPumpMapsCaptureHTTPTransportErrorToTransportUnavailableAndRecovers]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRealtimeCallbacksNeitherConvertHostTimeNorResample]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRealtimeCallbacksNeitherConvertHostTimeNorResample]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRealtimeCallbacksOnlyCopyAndEnqueueNativeBuffers]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRealtimeCallbacksOnlyCopyAndEnqueueNativeBuffers]' passed (0.004 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRealtimeQueueIsBoundedAndFrameEmitterKeepsLaneStateIndependent]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRealtimeQueueIsBoundedAndFrameEmitterKeepsLaneStateIndependent]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRepeatingSchedulerContinuesUntilExplicitCancellation]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testRepeatingSchedulerContinuesUntilExplicitCancellation]' passed (0.034 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSameUserUDSAuthenticatorRequiresPrivateSocketPeerUIDAndSecret]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSameUserUDSAuthenticatorRequiresPrivateSocketPeerUIDAndSecret]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSecretStoreSavePublishesAReplacementRatherThanRewritingTheLiveDocument]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSecretStoreSavePublishesAReplacementRatherThanRewritingTheLiveDocument]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSecurityAdaptersExposeKeychainFullCertificatePinAndUDSInventory]' passed (0.003 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSessionRefusalNamesOnlyTheAnswersThatMeanTheSessionIsGone]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSessionRefusalNamesOnlyTheAnswersThatMeanTheSessionIsGone]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartRequiresControlSecretAndRejectsSecondStart]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartRequiresControlSecretAndRejectsSecondStart]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartStatusStopPublishesIndependentFakeLaneFrames]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartStatusStopPublishesIndependentFakeLaneFrames]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartUnwindsOnlyWhenNoRetryCouldEverPublish]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartUnwindsOnlyWhenNoRetryCouldEverPublish]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartWithNoLaneRecordingReportsThePendingPermissionAndDisownsIt]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStartWithNoLaneRecordingReportsThePendingPermissionAndDisownsIt]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopContractMatchesTheServedPortalControlTimings]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopContractMatchesTheServedPortalControlTimings]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopDuringPermissionPromptCancelsGeneration]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopDuringPermissionPromptCancelsGeneration]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopReportsASessionTheServerRefusedWhileDrainingTheLastFrames]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopReportsASessionTheServerRefusedWhileDrainingTheLastFrames]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopWaitsForAHeartbeatThatWasAlreadyRunningBeforeReleasingTheServer]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopWaitsForAHeartbeatThatWasAlreadyRunningBeforeReleasingTheServer]' passed (0.309 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopWaitsForTheRunningPassInsteadOfSkippingTheFinalDrain]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testStopWaitsForTheRunningPassInsteadOfSkippingTheFinalDrain]' passed (2.311 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionIsResolvedByTheUserInitiatedRecordingStart]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionIsResolvedByTheUserInitiatedRecordingStart]' passed (0.002 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeAnswerAfterStopCannotStartLane]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeAnswerAfterStopCannotStartLane]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeCancellationFencesLateDriverAnswer]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeCancellationFencesLateDriverAnswer]' passed (0.110 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeDenialFailsOnlySystemLane]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeDenialFailsOnlySystemLane]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeDriverDoesNotSignalHelperWhenMuteTapFails]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeDriverDoesNotSignalHelperWhenMuteTapFails]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeDriverSignalsHelperOnlyAfterMuteTapStarts]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeDriverSignalsHelperOnlyAfterMuteTapStarts]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeInfrastructureFailureKeepsTypedCause]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeInfrastructureFailureKeepsTypedCause]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeKeepsMicrophoneCapturingThenAdmitsSystem]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeKeepsMicrophoneCapturingThenAdmitsSystem]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeMapsMeasuredSignalAndAllZeroDecisions]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeMapsMeasuredSignalAndAllZeroDecisions]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbePreservesTypedDriverFailure]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbePreservesTypedDriverFailure]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeResolvesBeforeStartWhenMicrophoneDenied]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioPermissionProbeResolvesBeforeStartWhenMicrophoneDenied]' passed (0.015 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapConfigurationChangeIsNonTerminal]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapConfigurationChangeIsNonTerminal]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapPartialStartUnwindsCreatedResourcesInReverseOrder]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapPartialStartUnwindsCreatedResourcesInReverseOrder]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapReportsPostStartFailureThroughSourceHealth]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapReportsPostStartFailureThroughSourceHealth]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapStaleGenerationIgnoredAfterStop]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapStaleGenerationIgnoredAfterStop]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapStartsStopsAndDestroysCoreAudioInOrder]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemAudioTapStartsStopsAndDestroysCoreAudioInOrder]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemGrantedWithMicrophoneDeniedKeepsLanePermissionsIndependent]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testSystemGrantedWithMicrophoneDeniedKeepsLanePermissionsIndependent]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTerminalFlushAllowsAFreshDeviceStreamForTheNextMeeting]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTerminalFlushAllowsAFreshDeviceStreamForTheNextMeeting]' passed (0.016 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTerminalFlushReleasesTheTrailingPartialFrameExactlyOnce]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTerminalFlushReleasesTheTrailingPartialFrameExactlyOnce]' passed (0.017 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppEntrypointWiresTheControlChannelFailureLogAndTheCLIDoesNot]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppEntrypointWiresTheControlChannelFailureLogAndTheCLIDoesNot]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppFailureLogWritesOnlyAFixedCommandWordAndTheDetailsNumbers]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppFailureLogWritesOnlyAFixedCommandWordAndTheDetailsNumbers]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppLaneFailureLineNamesTheLaneAndTypedCodeAndNeverTheCause]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppLaneFailureLineNamesTheLaneAndTypedCodeAndNeverTheCause]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppLogRecordsADegradationAsLoudlyAsAFailureAndNamesItCorrectly]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheAppLogRecordsADegradationAsLoudlyAsAFailureAndNamesItCorrectly]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheHeartbeatCarriesAnOverrunLaneAsDegradedAndNotAsFailed]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheHeartbeatCarriesAnOverrunLaneAsDegradedAndNotAsFailed]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheLaneFailureIsRecordedFromTheSharedProjectionEvenWhenTheHeartbeatFails]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTheLaneFailureIsRecordedFromTheSharedProjectionEvenWhenTheHeartbeatFails]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testTypedRetryPolicySeparatesTransientAnswersFromUnauthorizedOnesAndNeitherLosesAudio]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUndeterminedMicrophoneDenialFailsOnlyThatLane]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUndeterminedMicrophoneDenialFailsOnlyThatLane]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUndeterminedMicrophonePromptsOnceAndJoinsRunningCaptureOnGrant]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUndeterminedMicrophonePromptsOnceAndJoinsRunningCaptureOnGrant]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUnixDomainControlClientUsesStoredControlSecretOnlyInUDSPayload]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUnixDomainControlClientUsesStoredControlSecretOnlyInUDSPayload]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUnixDomainControlRoundTrip]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUnixDomainControlRoundTrip]' passed (0.015 seconds).
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUnusableCaptureInstantIsRefusedRatherThanFabricated]' started.
+Test Case '-[MOSSCaptureCoreTests.CaptureControllerTests testUnusableCaptureInstantIsRefusedRatherThanFabricated]' passed (0.009 seconds).
+Test Suite 'CaptureControllerTests' passed at 2026-08-04 00:36:35.049.
+	 Executed 171 tests, with 0 failures (0 unexpected) in 4.030 (4.038) seconds
+Test Suite 'MTDCaptureCLITests' started at 2026-08-04 00:36:35.049.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testBundleDeclaresTheTransportExceptionThePinnedClientCannotWorkWithout]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testBundleDeclaresTheTransportExceptionThePinnedClientCannotWorkWithout]' passed (0.000 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testBundleMetadataPinsHelperContractWithoutSandbox]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testBundleMetadataPinsHelperContractWithoutSandbox]' passed (0.001 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIAppLaunchDecisionAndFailureArePropagated]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIAppLaunchDecisionAndFailureArePropagated]' passed (0.000 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIHandoffIsOneUDSRequestAndRelaysOnlyTheAppsNonSecretConfirmation]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIHandoffIsOneUDSRequestAndRelaysOnlyTheAppsNonSecretConfirmation]' passed (0.018 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLILatencyRelaysOnlyTheAppsAggregateTimingsAndNeverTheViewToken]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLILatencyRelaysOnlyTheAppsAggregateTimingsAndNeverTheViewToken]' passed (0.018 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIPairingPayloadCrossesStdinThroughRealUDSWithoutOutputLeak]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIPairingPayloadCrossesStdinThroughRealUDSWithoutOutputLeak]' passed (0.016 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIPrintsAppFailureResponseAndReturnsNonzeroWithoutSecretLeak]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIPrintsAppFailureResponseAndReturnsNonzeroWithoutSecretLeak]' passed (0.000 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIPropagatesControlResponse]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIPropagatesControlResponse]' passed (0.001 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIStatusReportsBothLanesAndTheTypedCodeOfAFailedOneAcrossTheRealSocket]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testCLIStatusReportsBothLanesAndTheTypedCodeOfAFailedOneAcrossTheRealSocket]' passed (0.016 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testLaunchServicesAdapterInvokesInjectedOpenAndPropagatesFailure]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testLaunchServicesAdapterInvokesInjectedOpenAndPropagatesFailure]' passed (0.000 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testNeitherProductEntrypointCanSelectTheDormantKeychainStore]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testNeitherProductEntrypointCanSelectTheDormantKeychainStore]' passed (0.003 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testProductEntrypointsResolveOneSharedPrivateFileStoreByDefault]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testProductEntrypointsResolveOneSharedPrivateFileStoreByDefault]' passed (0.002 seconds).
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testShimCommandsStayControlOnlyAndAudioFrameworkFree]' started.
+Test Case '-[MTDCaptureCLITests.MTDCaptureCLITests testShimCommandsStayControlOnlyAndAudioFrameworkFree]' passed (0.003 seconds).
+Test Suite 'MTDCaptureCLITests' passed at 2026-08-04 00:36:35.128.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.078 (0.079) seconds
+Test Suite 'NativeAudioBufferLayoutTests' started at 2026-08-04 00:36:35.128.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testEmptyHALBufferFailsClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testEmptyHALBufferFailsClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testEmptyHALBufferListFailsClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testEmptyHALBufferListFailsClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALBufferWithNonFloatAlignedByteSizeFailsClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALBufferWithNonFloatAlignedByteSizeFailsClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALBufferWithPartialTrailingFrameFailsClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALBufferWithPartialTrailingFrameFailsClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALBufferWithZeroChannelsFailsClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALBufferWithZeroChannelsFailsClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALListWithNilDataBufferFailsClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHALListWithNilDataBufferFailsClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHybridHALBufferListNormalizesThreeChannels]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testHybridHALBufferListNormalizesThreeChannels]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testIdenticalInterleavedStereoMatchesMonoThroughLiveRateConversion]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testIdenticalInterleavedStereoMatchesMonoThroughLiveRateConversion]' passed (0.021 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testInterleavedStereoHALBufferDownmixesPerFrame]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testInterleavedStereoHALBufferDownmixesPerFrame]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testMicrophoneInterleavedAndDeinterleavedBuffersCopyIdentically]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testMicrophoneInterleavedAndDeinterleavedBuffersCopyIdentically]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testMicrophoneNonFloatBufferFailsClosedWithoutFabricatingSilence]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testMicrophoneNonFloatBufferFailsClosedWithoutFabricatingSilence]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testMicrophoneZeroFrameBufferFailsClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testMicrophoneZeroFrameBufferFailsClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testNilHALInputPreservesEmptyDiscontinuityContract]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testNilHALInputPreservesEmptyDiscontinuityContract]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testPlanarMonoHALBuffersPreserveExistingChannelLayout]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testPlanarMonoHALBuffersPreserveExistingChannelLayout]' passed (0.000 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testSeededHALLayoutMatrixDownmixesOriginalPerFrameMeans]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testSeededHALLayoutMatrixDownmixesOriginalPerFrameMeans]' passed (0.001 seconds).
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testUnequalHALBufferFrameCountsFailClosedAsDiscontinuity]' started.
+Test Case '-[MOSSCaptureCoreTests.NativeAudioBufferLayoutTests testUnequalHALBufferFrameCountsFailClosedAsDiscontinuity]' passed (0.000 seconds).
+Test Suite 'NativeAudioBufferLayoutTests' passed at 2026-08-04 00:36:35.152.
+	 Executed 16 tests, with 0 failures (0 unexpected) in 0.024 (0.025) seconds
+Test Suite 'MOSSCapturePackageTests.xctest' passed at 2026-08-04 00:36:35.152.
+	 Executed 200 tests, with 0 failures (0 unexpected) in 4.132 (4.141) seconds
+Test Suite 'All tests' passed at 2026-08-04 00:36:35.152.
+	 Executed 200 tests, with 0 failures (0 unexpected) in 4.132 (4.143) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+EXIT=0

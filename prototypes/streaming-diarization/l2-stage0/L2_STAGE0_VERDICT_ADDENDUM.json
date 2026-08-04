@@ -1,0 +1,87 @@
+{
+  "addendum_only": true,
+  "campaign_a_verdict": "BLOCKED",
+  "campaign_b_authorized": false,
+  "certification_corrections": {
+    "d4_single_opening": {
+      "access_control_proven": false,
+      "holdout_paths_plaintext_since_commit": "5be0455745629c6410d48285d5d90a55c9d7bd95",
+      "procedurally_demonstrated": true,
+      "support": [
+        "guard refusal",
+        "one recorded harness run",
+        "no post-freeze tuning"
+      ]
+    },
+    "d6_ruling_provenance": {
+      "control_repo_archive": "docs/handoffs/rulings/",
+      "decision_authority_lines_1_39_sha256": "b8edf95713e3620072ed480d3b5ab7f924724b1f24b8cb20cebc5129518ac4e7",
+      "mtime_range": "2026-08-03 17:44:32 -0400 to 2026-08-04 00:32:48 -0400",
+      "ruling_a2_anchor": {
+        "mtime": "2026-08-03 19:21:21 -0400",
+        "sha256": "fd94bebc7b5aeadb22ee175f3b6789ced0e19689f377d42d104ab63d4b54f138"
+      },
+      "ruling_a2_complete": {
+        "mtime": "2026-08-03 20:52:26 -0400",
+        "sha256": "207e69ff1822ae2a587c80b59237b0d1877f2913d089efdf5d76bb9bfd81684f"
+      }
+    },
+    "d7_preregistration_order": {
+      "commit": "a16c6d811031cac826878200256af0b69224add8",
+      "independently_sealed": false,
+      "record": "v1-v4 preregistrations and results were co-committed; NOTES sequencing and run transcripts support ordering",
+      "future_rule": "commit each family preregistration before the family runs"
+    },
+    "d8_golden_input_leak": {
+      "audit_gap": "audit_candidate_source inspected candidate_engine.py only, not the evaluator-to-candidate input boundary",
+      "controlled_experiment": {
+        "actor": "independent reviewer",
+        "mutation": "golden labels A,B to A,A",
+        "runtime_shape_before_units": 2,
+        "runtime_shape_after_units": 1
+      },
+      "leakage_path": [
+        "run_candidates.py:401 loads golden reference before candidate execution",
+        "production_cache.py:166-218 indexes and groups runtime units by true speaker",
+        "candidate_engine.py:827-835 pools tape-window evidence over truth-partitioned intervals"
+      ],
+      "measurement_reclassification": "candidate gains and scores are truth-flattered upper bounds, not blind feasibility measurements"
+    }
+  },
+  "corpus_limits": {
+    "holdout": "three short, near-saturated cases",
+    "scope": "verdict binds current gated corpus, not the 30-minute class",
+    "thirty_minute_cases": "exploratory pending human audits in operator-questions-A1.md"
+  },
+  "decision": {
+    "blocked_strengthened": true,
+    "explanation": "the truth-flattered candidate still failed both predeclared holdout gain gates",
+    "gate_changed": false,
+    "remeasurement": false,
+    "rerun": false,
+    "tuning": false,
+    "verdict_flipped": false
+  },
+  "evidence": {
+    "a5_development_manifest_sha256": "8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34",
+    "a5_holdout_manifest_sha256": "15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd",
+    "sealed_stage0_evidence_manifest_sha256": "0591924533c4f4ec243c9f53dbe7db67572fb07408c4d1bc0d263c1376fa0130",
+    "sealed_verdict_sha256": "f9f8b27d82d043716ec74f7ae33db573f97437b5a2e3ee180f97d65051fbb338"
+  },
+  "independent_review": {
+    "base_head": "974a1d043374e7cc542e549a660379deb11df6f6",
+    "confirmed": 8,
+    "discrepancies": 6,
+    "package_before_addendum": "UNSOUND_AS_CERTIFICATION_RECORD",
+    "terminal_blocked_decision": "SOUND"
+  },
+  "reproducibility_corrections": {
+    "a3": "run_lifecycle_tests.py --test ... --json-output ... --transcript-output ..., followed by evaluate_lifecycle.py",
+    "a4": "nice -n 10 /home/devcontainers/.local/share/moss-transcribe-diarize/venv/bin/python /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/measure_runtime_cached.py --repo /mnt/d/Coding/MOSS-Transcribe-Diarize --model /home/devcontainers/.local/share/moss-transcribe-diarize/tier-b/hf/voxceleb_resnet152_LM.onnx --audio /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/audio.wav --scratch /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/optimized-runtime-scratch --lifecycle /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/lifecycle_prototype.py --session-cache eager-prewarmed-session-v1 --output /home/devcontainers/moss-a4-bench/stage0-2c2cb58-20260803-a4/a4-runtime-optimized.json",
+    "a4_transcript_sha256": "8b83f6378ee62a37d66ca3f22bd6ebc156c5d8c5afdd6023ecbd7030edc7514b",
+    "notes_location": "prototypes/streaming-diarization/NOTES.md"
+  },
+  "schema": "moss-l2-stage0-verdict-addendum.v1",
+  "sealed_evidence_modified": false,
+  "sealed_verdict_modified": false
+}

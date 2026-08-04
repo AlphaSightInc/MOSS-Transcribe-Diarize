@@ -191,16 +191,28 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
 - **L2 Stage-0 feasibility — BLOCKED at blind holdout (2026-08-04).** Campaign A
   used production-planned spans, the pinned production WeSpeaker frontend, and three
   same-frame arms: production L1, ledger-only control, and a frozen tape candidate.
-  On six development/validation cases the tape arm beat L1 by 1.860557 pp and
-  ledger-only by 1.432022 pp, recovered 13.025/24.854125 L1-unreachable seconds,
-  and passed the remaining accuracy/safety gates. The candidate was frozen before
-  one blind opening. On three holdout cases it scored 0.972477 versus L1 0.963303
-  and ledger-only 0.972477: +0.917431 pp over L1 and +0.0 pp over ledger, below the
-  required +1.0 pp over each. Recovery was 2.5/2.5 seconds; per-case regression,
-  FP-speaker-seconds/DER, two-sided mapping, correction evidence, adversarial
-  padding, same-frame, and repeatability gates passed. No rerun or tuning occurred.
-  `L2_STAGE0_VERDICT.json` is therefore `BLOCKED`; no product L2 path or Campaign B
-  implementation is authorized by this evidence.
+  The recorded six-case development/validation gains were +1.860557 pp over L1 and
+  +1.432022 pp over ledger-only, with 13.025/24.854125 L1-unreachable seconds
+  recovered. Independent review found those numbers are truth-flattered upper bounds,
+  not valid blind feasibility measurements: `run_candidates.py:401` loads the golden
+  reference, `production_cache.py:166-218` partitions units by true speaker, and
+  `candidate_engine.py:827-835` pools tape-window evidence over those intervals. A
+  controlled golden-label change A,B→A,A changed runtime shape from two units to one.
+  The source audit covered `candidate_engine.py` only and missed the evaluator-to-
+  candidate input boundary.
+
+  The candidate was frozen before one recorded holdout opening. On three holdout
+  cases the truth-conditioned tape arm scored 0.972477 versus L1 0.963303 and
+  ledger-only 0.972477: +0.917431 pp over L1 and +0.0 pp over ledger, below the
+  required +1.0 pp over each. Because even this flattered upper-bound path failed,
+  the terminal `BLOCKED` decision stands and is strengthened; the scores do not
+  certify a blind candidate. No rerun or post-freeze tuning occurred. No product L2
+  path or Campaign B implementation is authorized. Development evidence manifest:
+  SHA-256 `8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34`;
+  single-opening holdout evidence manifest: SHA-256
+  `15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd`.
+  Corrective record: `L2_STAGE0_VERDICT_ADDENDUM.md`; addendum-seal SHA-256
+  `ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3`.
 
 - **L2 Stage-0 lifecycle/resource facts (2026-08-04).** The prototype
   `finalizing` model passed all eight lifecycle invariants and all three negative
@@ -210,6 +222,42 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   one-time 5 s allowance. Reads remained bounded to 40,000 samples, one CPU
   finalizer was active, and the measured prototype contention proxies passed. These
   facts prove the tested lifecycle/resource shapes, not an accepted L2 accuracy arm.
+  A3/A4 evidence-manifest SHA-256:
+  `e2e3e3445f2a9b6a8623b28accfdbf58a8da3af19762d4b19e8424eac9876758` /
+  `885ccd49875931ebdd47c7418dad80c32052bc87160c31a3ac2cc85ba604d1fe`.
+
+- **Planner frame and seam result (2026-08-04).** L1 accuracy is
+  planner-frame-dependent: the evidence distinguishes a 55-unit stale-prototype
+  frame, a 92-unit corrected truth-pure prototype frame, and the 101-unit corrected
+  production-planned frame. Only same-production-frame arm comparisons are valid.
+  Frame result SHA-256:
+  `d45a963c2e385d734cfc5003da774ed4804816b05720fc89dd4deb4f3e5358f1`;
+  A2-completion evidence-manifest SHA-256:
+  `9118d88326e261899f30120aa9a448a91a9bb72936741ac82725b055bca9c387`.
+  Applying the two-adapter/deletion test after the holdout failure defers every
+  proposed product seam. Seam-inventory SHA-256:
+  `7ade72f68606902fb26ad0085787e9eedc32b10ee4539d20b65e8e101e63ad35`.
+
+- **Corpus limits on this verdict (2026-08-04).** The blind holdout comprised
+  three short, near-saturated cases; ledger-only and tape both fixed Keyu Jin to
+  1.000 while the other two cases left little or no headroom. Both 30-minute cases
+  remained exploratory and acceptance-ineligible pending the human audits in
+  `operator-questions-A1.md` (SHA-256
+  `81205f7f2f8f900b6bef0ae59516d28ba439aa78383fc0325968e9ab2c9b30bf`;
+  A1 evidence-manifest SHA-256
+  `5112f4ab5a9ec4f07f0408d53f3313fecbd8fc52484cec651f631224c7b644fe`).
+  The `BLOCKED` decision therefore binds the current gated corpus; it does not
+  measure or generalize to the unaudited 30-minute class.
+
+- **Certification limits (2026-08-04 independent review).** The single opening is
+  procedurally demonstrated by the guard, one recorded harness run, and absence of
+  post-freeze tuning; it is not access-control-proven because holdout paths were
+  plaintext in-tree from A1. Family v1→v4 preregistrations and results were
+  co-committed, so NOTES sequencing and run transcripts support but do not
+  independently seal ordering. These limits and corrected A3/A4 reproduction
+  surfaces are in `L2_STAGE0_VERDICT_ADDENDUM.md`; sealed A5/A6 artifacts remain
+  untouched. Addendum-seal SHA-256:
+  `ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3`.
 
 Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
 0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge

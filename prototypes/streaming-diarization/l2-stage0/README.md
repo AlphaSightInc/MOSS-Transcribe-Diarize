@@ -39,6 +39,8 @@ all 16 non-holdout derived caches through production `EndpointPolicy` and
 `WeSpeakerResNet152LmAdapter`; all caches matched their own replan. Holdout caches remain
 untouched and are pinned for rebuild inside the single A5 opening.
 
-Renewed A2 is `BLOCKED`: all six cases were deterministic across two runs, but the
-corrected-alphabet score 0.916765 fell outside the predeclared 0.913500 ± 0.001000
-repeatability band. Campaign A stopped without tuning or holdout access.
+Campaign A reached A5/A6 and ended `BLOCKED`. The candidate was frozen before the
+single recorded holdout opening and was not tuned or rerun afterward. The sealed A6
+verdict remains terminal; `L2_STAGE0_VERDICT_ADDENDUM.md` records the independent
+review's later finding that truth-partitioned runtime units make the candidate gains
+upper bounds rather than blind feasibility measurements. Campaign B is not authorized.

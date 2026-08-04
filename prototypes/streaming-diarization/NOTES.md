@@ -1312,11 +1312,110 @@ the owning-commit proof remains
 It records the exact `git -C ... show 19983e34...:<path> | shasum -a 256`
 commands and PASS output for both `run_l1_control.py` and `test_l1_control.py`.
 
-Design and ADR text now records only the measured Stage-0 facts: development pass,
-single holdout failure, lifecycle/resource pass, no rerun/tuning, and no product
-authorization. The immutable historical BLOCKED and superseded diagnosis evidence is
-retained inside the final all-evidence seal.
+Design and ADR text now records the then-known Stage-0 facts. The independent-review
+addendum below corrects the later-discovered truth-conditioned candidate frame without
+rewriting any sealed artifact.
 
 `L2_STAGE0_EVIDENCE.sha256` contains 464 current-byte rows and has SHA-256
 `0591924533c4f4ec243c9f53dbe7db67572fb07408c4d1bc0d263c1376fa0130`;
 `shasum -a 256 -c` passes 464/464.
+
+### L2 Stage 0 keeper-closing verification (`l2-stage0`, 2026-08-04)
+
+**VERDICT: CAMPAIGN A CLOSED AS BLOCKED; BRANCH READY FOR INDEPENDENT REVIEW,
+NOT MERGE-AUTHORIZED.** The post-verdict design/ADR amendment records measured
+facts only: A3's prototype lifecycle result; A4's operator-authorized warm/reused
+resource envelope; A5's truth-flattered upper-bound gains and single-opening failure;
+the
+planner-frame-dependence finding; the all-deferred seam inventory; and the explicit
+short/near-saturated holdout plus unaudited-30-minute corpus limits. Each statement
+cites its accepted evidence hash. No product path, candidate, threshold, cache,
+Campaign-B authorization, or historical evidence changed.
+
+Full product gates ran from this worktree with these exact commands:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && swift test --package-path macos/MOSSCapture
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m pytest tests -q -p no:cacheprovider
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0 && git diff --check
+```
+
+Swift passed `200/200`; transcript SHA-256
+`1e5ffa860fc861a20ec13704048929ba5cff66c40eecd533ef81ca5b9fc22947`.
+Python passed `865`, skipped `2`, and passed `373` subtests; transcript SHA-256
+`9ee7e0eab7089f9801b4f2149c262dca830aa01434590e6fbb6a1d91554f64fc`.
+The known-good `863 passed / 4 skipped / 373 subtests` profile has the same 867
+pytest nodes: the two real-corpus conditional tests ran and passed because the
+operator-owned corpus is provisioned; only the two Python-3.10 compatibility tests
+remain skipped. Reconciliation JSON SHA-256
+`cef10b1ba87c213cb28449ac22b594ab77cee6b5c61438cc0fb3e933c23a7e9f`.
+`git diff --check` passed; sealed transcript SHA-256
+`418a5c17f33c70e99b0cc0a07fce69191489cfedc94164bfa903785777c5bd4b`.
+
+The final evidence-lineage audit discovers 34 `*EVIDENCE*.sha256` manifests.
+Twenty-five verify entirely from HEAD bytes or exact historical owning-commit
+blobs. Those historical blob owners are `19983e34`, `1de6ca26`, `5be04557`,
+`956724a1`, `974a1d04`, `df89bb97`, and `df8e50d1`. Nine immutable superseded
+red-to-green/diagnosis manifests contain intermediate source or NOTES bytes that
+were not separately committed; as already accepted at their boundaries, they are
+classified explicitly as superseded history and resolve to `A3_EVIDENCE_V3`,
+`LEGACY_INGEST_DIAGNOSIS_EVIDENCE_V2`, or `A2_COMPLETION_EVIDENCE`. They are not
+misreported as literal current-byte `shasum -c` passes. The authoritative audit is
+`all-evidence-manifests-v5.json`; the earlier v1/v2 diagnostic failures and v3/v4
+pre-closing audit remain sealed history.
+
+Product paths `moss_transcribe_diarize/`, `macos/`, `ops/`, and `tests/` have an
+empty name-status diff against keeper `9089b33210401111865da7abc160ab0bcb4aa266`.
+The complete branch diff is confined to `docs/`, `prototypes/`, and
+`scripts/ralph-l2-afk/`. No merge or push is authorized or performed.
+
+### L2 Stage 0 independent-review remediation (`l2-stage0`, 2026-08-04)
+
+**VERDICT: CERTIFICATION PACKAGE CORRECTED; TERMINAL BLOCKED DECISION STANDS AND IS
+STRENGTHENED.** Adversarial review of sealed A6 HEAD `974a1d043374e7cc542e549a660379deb11df6f6`
+returned 8 confirmed findings and 6 discrepancies. Critical D8 found a golden-input
+leak: `run_candidates.py:401` loads reference truth; `production_cache.py:166-218`
+indexes and groups production-frame units by true speaker; and
+`candidate_engine.py:827-835` pools window votes over the resulting intervals. The
+reviewer's controlled A,B→A,A golden-label change altered candidate runtime shape
+from two units to one. The existing source audit at `run_candidates.py:104` inspected
+only `candidate_engine.py`; it did not audit the evaluator-to-candidate input boundary.
+
+Therefore the recorded development gains (+1.860557 pp over L1, +1.432022 pp over
+ledger-only) and candidate-arm holdout scores are truth-flattered upper bounds, not
+valid blind feasibility measurements. The sealed verdict and all evidence remain
+byte-unchanged. BLOCKED is a fortiori sound: the favored, truth-conditioned candidate
+still missed both predeclared holdout gain gates. No remeasurement, rerun, tuning,
+gate change, or verdict flip occurred.
+
+Other review limitations are now explicit. The single opening is procedurally shown
+by the guard, one recorded harness run, and no post-freeze tuning; it is not
+access-control-proven because plaintext holdout paths were in-tree from A1 commit
+`5be0455745629c6410d48285d5d90a55c9d7bd95`. Family v1→v4 preregistrations and
+results were co-committed in `a16c6d811031cac826878200256af0b69224add8`; NOTES
+sequencing and run transcripts support ordering but do not independently seal it.
+Future campaigns must commit each preregistration before its first family run and
+audit the full evaluator-to-candidate input boundary.
+
+The supervisor's D6 provenance cure is the contemporaneous ruling archive at control
+repo `docs/handoffs/rulings/`, preserving mtimes from 2026-08-03 17:44 through
+2026-08-04 00:32. In particular, `ruling-a2-anchor.md` mtime 19:21, SHA-256
+`fd94bebc7b5aeadb22ee175f3b6789ced0e19689f377d42d104ab63d4b54f138`, and
+`ruling-a2-complete.md` mtime 20:52, SHA-256
+`207e69ff1822ae2a587c80b59237b0d1877f2913d089efdf5d76bb9bfd81684f`, predate
+the 21:04 completion. The append-only decision-authority record at verdict time is
+reconstructed by lines 1–39, SHA-256
+`b8edf95713e3620072ed480d3b5ab7f924724b1f24b8cb20cebc5129518ac4e7`.
+
+The sealed verdict's command map is corrected only by addendum: A3 evidence uses
+`run_lifecycle_tests.py --test ... --json-output ... --transcript-output ...`, then
+`evaluate_lifecycle.py`; A4's real nice-10 command is recorded verbatim at
+`evidence/a4/optimized/a4-optimization-run-transcript.txt:21`, SHA-256
+`8b83f6378ee62a37d66ca3f22bd6ebc156c5d8c5afdd6023ecbd7030edc7514b`.
+Exact campaign commands and chronological decisions live in the parent
+`prototypes/streaming-diarization/NOTES.md`, not under `l2-stage0/NOTES.md`.
+`L2_STAGE0_VERDICT_ADDENDUM.json` and `.md` are sealed by
+`L2_STAGE0_VERDICT_ADDENDUM.sha256`, SHA-256
+`ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3`
+(`9334f356aa0cb58476e19d90cdc1929c977081dd703785882fc701c465b4b72e` JSON;
+`46619488fa4fa40c4bac93f9dca127506289f7849fdf7958835a93ebe05ac609` Markdown).

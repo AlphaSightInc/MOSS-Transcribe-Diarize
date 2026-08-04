@@ -130,13 +130,22 @@ future until L2 is built and measured; shipped L1 claims stay bounded to embeddi
 ## 2026-08-04 L2 Stage-0 feasibility amendment
 
 Prototype-only Campaign A ended `BLOCKED`; it did not change this ADR into product
-authorization. The frozen tape-derived arm passed its six-case development/validation
-gates (+1.860557 pp over L1, +1.432022 pp over ledger-only, 52.4058% unreachable
-seconds recovered), then failed the one-opening blind-holdout minimum-gain gates. On
-the three holdout cases, same-frame aggregate scores were L1 0.963303, ledger-only
-0.972477, and tape 0.972477. Tape's +0.917431 pp over L1 and +0.0 pp over ledger-only
-were both below the predeclared +1.0 pp requirement. No candidate or threshold changed
-after freeze; the holdout was not rerun.
+authorization. The recorded six-case development/validation gains (+1.860557 pp over
+L1, +1.432022 pp over ledger-only, 52.4058% unreachable seconds recovered) are
+truth-flattered upper bounds, not blind feasibility measurements. Independent review
+showed that the evaluator loads golden reference, produces true-speaker-partitioned
+runtime units, and hands those intervals to the tape candidate; changing golden labels
+A,B→A,A changed runtime shape from two units to one. The no-golden-path audit covered
+only `candidate_engine.py`, not the evaluator-to-candidate input boundary.
+
+On the three short holdout cases, the same truth-conditioned frame scored L1 0.963303,
+ledger-only 0.972477, and tape 0.972477. Tape's +0.917431 pp over L1 and +0.0 pp over
+ledger-only were both below the predeclared +1.0 pp requirement. Even the flattered
+candidate failed, strengthening the terminal `BLOCKED` decision while certifying no
+blind candidate. No candidate or threshold changed after freeze; the holdout was not
+rerun. Development/holdout evidence-manifest
+SHA-256: `8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34` /
+`15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd`.
 
 Separately, the lifecycle prototype passed 8/8 invariants and 3/3 negative controls,
 supporting an observable `finalizing` state, one bounded CPU-finalizer queue, tape read
@@ -145,4 +154,23 @@ warm/reused envelope (RTF 0.0997407; 179.533 s per projected/measured 30 minutes
 finalizer 180.294 s within the one-time 5 s allowance). These are measured
 lifecycle/resource facts only. Because the accuracy arm failed holdout, no L2 product
 caller, common evidence protocol, or full identity engine seam was earned. Future work
-requires a revised plan and separate authorization.
+requires a revised plan and separate authorization. A3/A4 evidence-manifest SHA-256:
+`e2e3e3445f2a9b6a8623b28accfdbf58a8da3af19762d4b19e8424eac9876758` /
+`885ccd49875931ebdd47c7418dad80c32052bc87160c31a3ac2cc85ba604d1fe`;
+seam-inventory SHA-256:
+`7ade72f68606902fb26ad0085787e9eedc32b10ee4539d20b65e8e101e63ad35`.
+
+The accuracy result is planner-frame-dependent; cross-frame scores are not comparable
+(frame-result SHA-256
+`d45a963c2e385d734cfc5003da774ed4804816b05720fc89dd4deb4f3e5358f1`).
+The blind holdout contained three short, near-saturated cases. Both 30-minute cases
+remained exploratory pending the human audits in `operator-questions-A1.md` (SHA-256
+`81205f7f2f8f900b6bef0ae59516d28ba439aa78383fc0325968e9ab2c9b30bf`).
+Accordingly, this amendment binds the current gated corpus and makes no claim about
+the unaudited 30-minute class. The opening is procedurally demonstrated, not
+access-control-proven; holdout paths were plaintext in-tree from A1. Family v1→v4
+preregistration ordering is supported by NOTES and transcripts but was not
+independently sealed because preregistrations and results were co-committed. The
+corrective record is `L2_STAGE0_VERDICT_ADDENDUM.md` plus its SHA-256 seal; sealed
+verdict/evidence bytes are unchanged. Addendum-seal SHA-256:
+`ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3`.

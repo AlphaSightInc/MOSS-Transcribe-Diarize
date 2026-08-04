@@ -21,3 +21,7 @@ Before A1, every gated run returns exit 2 with
 requires the exact worktree, branch, keeper ancestor, plan hash, clean tree, exact
 previous commit, frozen corpus hash, ten-iteration cap, single writer, and path
 scope. A `.stop` file requests a graceful stop before the next iteration.
+
+Future candidate campaigns must commit each family preregistration before executing
+that family's first run. A NOTES timestamp or a preregistration/result co-commit is
+not independently sealed proof of ordering.

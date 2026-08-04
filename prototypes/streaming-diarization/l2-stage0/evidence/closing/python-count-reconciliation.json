@@ -1,0 +1,28 @@
+{
+  "current": {
+    "passed": 865,
+    "skipped": 2,
+    "subtests_passed": 373,
+    "total_pytest_nodes": 867,
+    "warnings": 4
+  },
+  "known_good_profile": {
+    "passed": 863,
+    "skipped": 4,
+    "subtests_passed": 373,
+    "total_pytest_nodes": 867
+  },
+  "reconciliation": {
+    "conditionally_executed_now": [
+      "tests/test_live_identity_real_corpus.py::test_available_external_real_corpus_matches_the_adopted_hashes",
+      "tests/test_live_speaker_accuracy.py::test_f_cert_real_corpus_contract_is_exact"
+    ],
+    "explanation": "The current worktree has the operator-owned real corpus provisioned, so two previously conditional skips executed and passed. Total pytest nodes remain 867.",
+    "remaining_skips": [
+      "tests/test_large_upload.py:155: Python 3.10 compatibility contract",
+      "tests/test_large_upload.py:175: Python 3.10 compatibility contract"
+    ]
+  },
+  "schema": "moss-l2-stage0-python-gate-count-reconciliation.v1",
+  "verdict": "PASS"
+}

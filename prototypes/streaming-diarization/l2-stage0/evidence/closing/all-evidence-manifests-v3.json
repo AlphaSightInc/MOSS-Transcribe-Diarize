@@ -1,0 +1,585 @@
+{
+  "authoritative_pass_count": 25,
+  "manifest_count": 34,
+  "manifests": [
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 462,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/L2_STAGE0_EVIDENCE.sha256",
+      "manifest_sha256": "0591924533c4f4ec243c9f53dbe7db67572fb07408c4d1bc0d263c1376fa0130",
+      "overall": "PASS",
+      "owning_commit_row_count": 2,
+      "owning_commits": [
+        "974a1d043374e7cc542e549a660379deb11df6f6"
+      ],
+      "row_count": 464,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 38,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A12_EVIDENCE.sha256",
+      "manifest_sha256": "40ec1acf8d49146c10d4c4d2f6ee897bbc7d42a6b57edc3df2caf6dd4ab9bce4",
+      "overall": "PASS",
+      "owning_commit_row_count": 7,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "5be0455745629c6410d48285d5d90a55c9d7bd95"
+      ],
+      "row_count": 45,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 16,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A1_EVIDENCE.sha256",
+      "manifest_sha256": "5112f4ab5a9ec4f07f0408d53f3313fecbd8fc52484cec651f631224c7b644fe",
+      "overall": "PASS",
+      "owning_commit_row_count": 2,
+      "owning_commits": [
+        "5be0455745629c6410d48285d5d90a55c9d7bd95"
+      ],
+      "row_count": 18,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 2,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A1_GUARDRAIL_REGRESSION_EVIDENCE.sha256",
+      "manifest_sha256": "d27c084182c213816167268f595fa0d74e26355b3ee5a5a7a34f9466bba01e9a",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 2,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 157,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256",
+      "manifest_sha256": "9118d88326e261899f30120aa9a448a91a9bb72936741ac82725b055bca9c387",
+      "overall": "PASS",
+      "owning_commit_row_count": 1,
+      "owning_commits": [
+        "956724a13373cc0b5722274a98733cbde18a2f46"
+      ],
+      "row_count": 158,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 7,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_EVIDENCE.sha256",
+      "manifest_sha256": "e0747b97ec5750ed5b78f13114668c3a8668685c732f4cdb5448b5768543da14",
+      "overall": "PASS",
+      "owning_commit_row_count": 6,
+      "owning_commits": [
+        "1de6ca2693d2f5bd2fcdb5e36b564df30fac1dd4",
+        "5be0455745629c6410d48285d5d90a55c9d7bd95"
+      ],
+      "row_count": 13,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 5,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_PATH_FIX_EVIDENCE.sha256",
+      "manifest_sha256": "0135dc06705ee3c66a1bbe48844cd4c0ffbf482fc13b0126ea8f31021e00c476",
+      "overall": "PASS",
+      "owning_commit_row_count": 2,
+      "owning_commits": [
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 7,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 24,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_RENEWED_EVIDENCE.sha256",
+      "manifest_sha256": "9839f3fb65d9f0642e9e31ddd050c9cd100b7bdb58251ea4d66146e241b7a5e4",
+      "overall": "PASS",
+      "owning_commit_row_count": 6,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "5be0455745629c6410d48285d5d90a55c9d7bd95",
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 30,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 4,
+      "failures": [
+        {
+          "current_candidates": "879b95dffdcc6d1a8dfa143909738ec23d21750551227ac3ab6c281b1efa8639,MISSING",
+          "expected": "9c58ce6b6d7c99bdb9acbb93390646af78a487a702b342742605227fab93531c",
+          "path": "prototypes/streaming-diarization/l2-stage0/evaluate_lifecycle.py"
+        },
+        {
+          "current_candidates": "6d74637434bb8d16079e8a2b68698db9c59f50c28af844d90b49d32050057533,MISSING",
+          "expected": "42158f893729772095dde54c9d3bc72891bc74ff9f1ebce532e52c79dc9e6d3c",
+          "path": "prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py"
+        },
+        {
+          "current_candidates": "49c9ca634ad0fd9a33f8570c8cae3604d3bc0352b8d81ca3c770dbc0c8f75887,MISSING",
+          "expected": "a7f4c0cd62821a8de9ee2d705db5ae299e3d60e4b2f7a66f77c6842c1de7b7de",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py"
+        },
+        {
+          "current_candidates": "c757aee0b7b1c3f1abfaac7ef89e7c55c2eee83ee4f014f8beae6599e70ab054,MISSING",
+          "expected": "4786ba7b96ce8b79061d7ad87cd62fffdff8665b68598923008d31f1cf8442c2",
+          "path": "prototypes/streaming-diarization/l2-stage0/write_a3_evidence_manifest.py"
+        }
+      ],
+      "head_row_count": 64,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A3_EVIDENCE.sha256",
+      "manifest_sha256": "a8b333309f389c77a07c409d6efc9ef1946461938f8a882910d7a844b16a9998",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 68,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A3_EVIDENCE_V3.sha256"
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 1,
+      "failures": [
+        {
+          "current_candidates": "c757aee0b7b1c3f1abfaac7ef89e7c55c2eee83ee4f014f8beae6599e70ab054,MISSING",
+          "expected": "2509f1e130b78b79bdafbce73a78384aea2831f3e992c5e85e27ff74794d0dde",
+          "path": "prototypes/streaming-diarization/l2-stage0/write_a3_evidence_manifest.py"
+        }
+      ],
+      "head_row_count": 75,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A3_EVIDENCE_V2.sha256",
+      "manifest_sha256": "7bb6810c085e2eb3b41ec6d73c70530744c9618ddfb5eac23c8103f8cc45a5ee",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 76,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A3_EVIDENCE_V3.sha256"
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 76,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A3_EVIDENCE_V3.sha256",
+      "manifest_sha256": "e2e3e3445f2a9b6a8623b28accfdbf58a8da3af19762d4b19e8424eac9876758",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 76,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 11,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A4_COMPLETION_EVIDENCE.sha256",
+      "manifest_sha256": "885ccd49875931ebdd47c7418dad80c32052bc87160c31a3ac2cc85ba604d1fe",
+      "overall": "PASS",
+      "owning_commit_row_count": 1,
+      "owning_commits": [
+        "df8e50d18ac1c60680603628842b6ae1d2b44d45"
+      ],
+      "row_count": 12,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 25,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A4_EVIDENCE.sha256",
+      "manifest_sha256": "1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d",
+      "overall": "PASS",
+      "owning_commit_row_count": 1,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9"
+      ],
+      "row_count": 26,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 77,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A5_DEV_EVIDENCE.sha256",
+      "manifest_sha256": "8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34",
+      "overall": "PASS",
+      "owning_commit_row_count": 2,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "5be0455745629c6410d48285d5d90a55c9d7bd95"
+      ],
+      "row_count": 79,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 8,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/ANCHOR_FIDELITY_EVIDENCE.sha256",
+      "manifest_sha256": "ff76c726bd9642bdd14e253932ab13c1416ecb5dd6803d5ad40ce0888436d3c6",
+      "overall": "PASS",
+      "owning_commit_row_count": 4,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "5be0455745629c6410d48285d5d90a55c9d7bd95",
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 12,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 11,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/HARNESS_EVIDENCE.sha256",
+      "manifest_sha256": "bd4f04d0059fd23f9ff1364ce89d3f3134a022bf6e722e5ed7ece526353a2371",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 11,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 36,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/A5_HOLDOUT_EVIDENCE.sha256",
+      "manifest_sha256": "15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 36,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 3,
+      "failures": [
+        {
+          "current_candidates": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517,MISSING",
+          "expected": "3556e9e34fb0a2c99bd9bfaf034cb4a6a0bd106d65ade09fd4de03daba966a27",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        },
+        {
+          "current_candidates": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc,MISSING",
+          "expected": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+          "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py"
+        },
+        {
+          "current_candidates": "2df680123ed8d9191615e4e2779c2167700c0af8ccbb3b4f6b7958963f50e5d6,MISSING",
+          "expected": "5b29d6de191c0f7e516440e243c2c2265ce33a89bf7279bfe3a5b4ab23596f9e",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py"
+        }
+      ],
+      "head_row_count": 37,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/LEGACY_INGEST_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "ea4abf34f872de651fa261fb8a237a8756b3e4a804c725022459e432972674c5",
+      "overall": "PASS",
+      "owning_commit_row_count": 4,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 44,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/LEGACY_INGEST_DIAGNOSIS_EVIDENCE_V2.sha256"
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 2,
+      "failures": [
+        {
+          "current_candidates": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc,MISSING",
+          "expected": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+          "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py"
+        },
+        {
+          "current_candidates": "2df680123ed8d9191615e4e2779c2167700c0af8ccbb3b4f6b7958963f50e5d6,MISSING",
+          "expected": "5b29d6de191c0f7e516440e243c2c2265ce33a89bf7279bfe3a5b4ab23596f9e",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py"
+        }
+      ],
+      "head_row_count": 46,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/LEGACY_INGEST_DIAGNOSIS_EVIDENCE_V2.sha256",
+      "manifest_sha256": "70391fd90b088cf679b761b7532781d3c39f9f4f562ec62c6697b13f8c675ad1",
+      "overall": "PASS",
+      "owning_commit_row_count": 4,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 52,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256"
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 1,
+      "failures": [
+        {
+          "current_candidates": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517,MISSING",
+          "expected": "036b746c8850c20bbd7a53f67a5e8e7f04e11eb2acbb5398fe66745bc53ca24a",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "head_row_count": 14,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/ADAPTER_V3_BOUNDARY_EVIDENCE.sha256",
+      "manifest_sha256": "331584b7b0794ef5cb8abd26f9d56f0d90b905b66338dbaacd19f36c76a7c005",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 15,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256"
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 1,
+      "failures": [
+        {
+          "current_candidates": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517,MISSING",
+          "expected": "4919fde5bb586cf369c3c98176d6a337ab94b818fb6f3146161f7a207241cb5e",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "head_row_count": 17,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/FRAME_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "63f2b6e0c85cd6f5b87ea58e4e222219202f26f818608bc626fd4856f1253322",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 18,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256"
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 1,
+      "failures": [
+        {
+          "current_candidates": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517,MISSING",
+          "expected": "2713f2ac1bd43c7d77e7ba41ee9efe1d40bce2c916cf474b2525520275e7d61e",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "head_row_count": 5,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/INSTRUMENT_FIDELITY_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "15770306d7185a1ec683c6f0299d40a7303b103d28aa11e02e11a44df8c1c6cd",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 6,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256"
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 1,
+      "failures": [
+        {
+          "current_candidates": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517,MISSING",
+          "expected": "b2663eeb31dd7be8173acc9c9cc61bfa0cfeb9e95f6f140e8553249ba5ca7e8a",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "head_row_count": 21,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/ORIGINAL_RENEWED_DIFFERENTIAL_EVIDENCE.sha256",
+      "manifest_sha256": "430bc7514d6049387f4120de5fbff4c506a3ed20cf9c7dbe5cc8ba1ecbd682ff",
+      "overall": "PASS",
+      "owning_commit_row_count": 1,
+      "owning_commits": [
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 23,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256"
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 10,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/ADAPTER_V3_GREEN_EVIDENCE.sha256",
+      "manifest_sha256": "a52ea7f7d5a71ee0d0bf62a90eb3a9f1e63c2f20420184d53171f873531b914a",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 10,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 5,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/ADAPTER_V3_RED_EVIDENCE.sha256",
+      "manifest_sha256": "74bee1d413b1edcdbf96e52956a29b6b2be93812a206faa8b841c4e41ad14884",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 5,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 7,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h1-scorer-v1/H1_SCORER_EVIDENCE.sha256",
+      "manifest_sha256": "c024dbb7b43128c7068f58b4bdd95625d6b1a2517c223e64a4d1fc9ad8024e54",
+      "overall": "PASS",
+      "owning_commit_row_count": 1,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9"
+      ],
+      "row_count": 8,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 6,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2-constants-v1/H2_CONSTANTS_EVIDENCE.sha256",
+      "manifest_sha256": "99d202f62bc7bc0e53273f5ec5ad014057d1f5acf9d872f7d7094e2e0fd9b663",
+      "overall": "PASS",
+      "owning_commit_row_count": 2,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 8,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS_SUPERSEDED_HISTORY",
+      "failure_count": 1,
+      "failures": [
+        {
+          "current_candidates": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc,MISSING",
+          "expected": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+          "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py"
+        }
+      ],
+      "head_row_count": 8,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-first-divergence-v1/H3_FIRST_DIVERGENCE_EVIDENCE.sha256",
+      "manifest_sha256": "d128449f277d2c340ae8390cfa61c9c11f495a21b5b559a09a9b92011a41a866",
+      "overall": "PASS",
+      "owning_commit_row_count": 2,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 11,
+      "superseded_by": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256"
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 8,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-policy-v1/H3_POLICY_EVIDENCE.sha256",
+      "manifest_sha256": "a4619fcb555e1b5475da7252a2982a76c6a2f83c93ff47356a8e9b55dad19d1f",
+      "overall": "PASS",
+      "owning_commit_row_count": 1,
+      "owning_commits": [
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 9,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 2,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v1/V2_CONTAMINATION_FAILURE_EVIDENCE.sha256",
+      "manifest_sha256": "c42eb22652d617ad84b6e3486b19953e7025443371f6fb0e03d9c500bf850a47",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 2,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 6,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v2/V2_CONTAMINATION_EVIDENCE.sha256",
+      "manifest_sha256": "bcc667941906a847fd2d030fac3bb3416268486c0f5d569438404bc22a1f6ba6",
+      "overall": "PASS",
+      "owning_commit_row_count": 2,
+      "owning_commits": [
+        "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+        "df89bb9712366109e8ec7a4362905f340623832e"
+      ],
+      "row_count": 8,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 6,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/LEGACY_MEASUREMENT_EVIDENCE.sha256",
+      "manifest_sha256": "58b12ce154e679bd54280d909a66a75237777e3c9d672747642c9bc935e60e69",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 6,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 6,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v3/LEGACY_MEASUREMENT_EVIDENCE.sha256",
+      "manifest_sha256": "cdfc86d75527d998b1225c453a834b2eed4bb45c6a899745c308116f1b04920a",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 6,
+      "superseded_by": null
+    },
+    {
+      "classification": "PASS",
+      "failure_count": 0,
+      "failures": [],
+      "head_row_count": 2,
+      "manifest_path": "scripts/ralph-l2-afk/evidence/A0_EVIDENCE.sha256",
+      "manifest_sha256": "ab5b196d14c55bb4c93e087143eae81f06b9d876018ba8212cff049f8580487c",
+      "overall": "PASS",
+      "owning_commit_row_count": 0,
+      "owning_commits": [],
+      "row_count": 2,
+      "superseded_by": null
+    }
+  ],
+  "overall": "PASS",
+  "schema": "moss-l2-stage0-all-evidence-manifest-audit.v1",
+  "superseded_history_count": 9
+}

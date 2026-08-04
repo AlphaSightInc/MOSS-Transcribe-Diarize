@@ -1,0 +1,1042 @@
+{
+  "manifest_count": 31,
+  "manifests": [
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "3fcab6c507c1fb2f68174c2629436b52cad2c51e87c8c31993a82a5fad833063",
+          "expected": "71d80daed69b63313fac65649ce5586619ff77be8eada19e6bed1bb3f5306aa3",
+          "path": "docs/adr/0002-two-tier-diarization-fingerprint-album.md"
+        },
+        {
+          "actual": "4adb50b58beb5e3bdd3d749401cf8cc708d975a2ffbd6092c3cd361099957343",
+          "expected": "02102260c17817e1ea2d6f9bb31169a16d8fc955fe5808a2d7c6f5a80bcced78",
+          "path": "docs/design-streaming-diarization.md"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/L2_STAGE0_EVIDENCE.sha256",
+      "manifest_sha256": "0591924533c4f4ec243c9f53dbe7db67572fb07408c4d1bc0d263c1376fa0130",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 464,
+      "owning_commit": "974a1d043374e7cc542e549a660379deb11df6f6",
+      "row_count": 464
+    },
+    {
+      "current_failure_count": 7,
+      "current_failures": [
+        {
+          "actual": "94e2d1baa104471ee614133a5763c2236751e200cf8a2907af9e1b37ccd2e751",
+          "expected": "34f4f46b0ec5dfd6cdf88a6866b1f166dd352cbf84197c6f9061a0dc3826b5bd",
+          "path": "scripts/ralph-l2-afk/contract.json"
+        },
+        {
+          "actual": "6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902",
+          "expected": "3d745f92d941985d95c7351caf3c430b2f43209cbb4bb7c20f716bc73d1b3464",
+          "path": "prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json"
+        },
+        {
+          "actual": "0f9fc2b0d23df377e3b04432e50dd8b5f19d53793682f14396270b3d0bf669b9",
+          "expected": "e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb",
+          "path": "prototypes/streaming-diarization/l2-stage0/candidate-config.json"
+        },
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "22ee9a8f024a4898ea8636434141853e0880f5bb75cf542c06fdf0587c9d5752",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "ae8685938c4697ed95f910999a7f2ae4f9965c1402c47f40a0cd5d97a661ec60",
+          "expected": "ce6c1cbb335e96f722baea2bc6b78e51654fbf7293a6928cdffcea6e7a29e86f",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A12_EVIDENCE.sha256",
+      "manifest_sha256": "40ec1acf8d49146c10d4c4d2f6ee897bbc7d42a6b57edc3df2caf6dd4ab9bce4",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 16,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "164ed35f3b8c5d3e8093c3de0e6348f442bcc3ce18de89868585d57904fd8bdc",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-jamie-dimon/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "0ac28f9340a255d8fdafb2d589b2f7939381ed9025f219185ba5446a1283b3c7",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-nfl/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "85e2d573d6c768b659d67e831985302ce5a0dd1d8169af72b5235d6dd5cada68",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-rolex/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "78338559bd9975ff610c921194c3ce01e50c127f02ce0fbf13139713a4752305",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-lex-bill-ackman/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "2b463a00143460ecc86b2218a308736b0cbbe57722e420f0b40800580f363dcc",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-acquired-jamie-dimon/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "9b78e22d9137b9d4003e44206b94528ad05ee402eac2d9fc0d62e5108d7e442c",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-lex-adam-frank/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-coca-cola/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "f558664d04ebb43914b5e147e08f5338f36c07817ab61838253bbabd9975202e",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-jamie-dimon/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "9bfecb8c105e1aea8a3911bd0ce2dbb3271607e938aecc909f75206f32fc5402",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-nfl/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-rolex/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "3b73d7e4eae1aed818d78452c47fd1dd3e74bc3c09ea001a9b1deef7db89f491",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-bill-ackman/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "26fbca84f5cfc528d55a8af67e32e87d6432776b324095c52aa376f88215380c",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-javier-milei/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "c545173e82e2ad045b7c84c2751b3ec265104eb46867e77c07ecae1b3363e4fa",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-keyu-jin/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "0f436684063b7c44aec64096864c2ac60b24a7002487fcc25cf88881abdeac88",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/30m-acquired-jamie-dimon/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "6d0861e58c6ef2c5005972992279ceb9372aa5124dcf8379b57c028752358240",
+          "path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/30m-lex-bill-ackman/harness_cache.npz"
+        }
+      ],
+      "owner_row_count": 45,
+      "owning_commit": "19983e34c75dbe4e9a27b09494ff742db943e5e9",
+      "row_count": 45
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "0f9fc2b0d23df377e3b04432e50dd8b5f19d53793682f14396270b3d0bf669b9",
+          "expected": "e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb",
+          "path": "prototypes/streaming-diarization/l2-stage0/candidate-config.json"
+        },
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A1_EVIDENCE.sha256",
+      "manifest_sha256": "5112f4ab5a9ec4f07f0408d53f3313fecbd8fc52484cec651f631224c7b644fe",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 18,
+      "owning_commit": "5be0455745629c6410d48285d5d90a55c9d7bd95",
+      "row_count": 18
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "4059e6b5ab81d2fafed769122b434727e49ced23c1cd937b7d8be97d68da4a10",
+          "path": "a1-guardrail-regression.json"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "d7cd21885464d11a3cf47295524a8ec6746fb3d930b92f4d0d440de58bf39ff1",
+          "path": "a1-guardrail-regression-transcript.txt"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A1_GUARDRAIL_REGRESSION_EVIDENCE.sha256",
+      "manifest_sha256": "d27c084182c213816167268f595fa0d74e26355b3ee5a5a7a34f9466bba01e9a",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 2,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "4059e6b5ab81d2fafed769122b434727e49ced23c1cd937b7d8be97d68da4a10",
+          "path": "a1-guardrail-regression.json"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "d7cd21885464d11a3cf47295524a8ec6746fb3d930b92f4d0d440de58bf39ff1",
+          "path": "a1-guardrail-regression-transcript.txt"
+        }
+      ],
+      "owner_row_count": 2,
+      "owning_commit": "5be0455745629c6410d48285d5d90a55c9d7bd95",
+      "row_count": 2
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "bb5e1bca2c792876877c2a0cc60d72b495afae8b1bd15f02b9ad59abba49c23e",
+          "expected": "f2d8bd082dfecb94ba2f7c229d7b14fffa30f376970de2df4b20dc5f5dcea41f",
+          "path": "prototypes/streaming-diarization/l2-stage0/.gitattributes"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_COMPLETION_EVIDENCE.sha256",
+      "manifest_sha256": "9118d88326e261899f30120aa9a448a91a9bb72936741ac82725b055bca9c387",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 158,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 158
+    },
+    {
+      "current_failure_count": 6,
+      "current_failures": [
+        {
+          "actual": "6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902",
+          "expected": "f25d3df9376f68a4fb454dc3190a0c68e72518d09a85983a71b1ae182696ddeb",
+          "path": "prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json"
+        },
+        {
+          "actual": "0f9fc2b0d23df377e3b04432e50dd8b5f19d53793682f14396270b3d0bf669b9",
+          "expected": "e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb",
+          "path": "prototypes/streaming-diarization/l2-stage0/candidate-config.json"
+        },
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "b612a45e05d44a3904559d02fd0a435bc1fbdef09e832a6664122a4616d672d3",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "01485de792e6bf8a4eaf30869bb611befee8b0a0af428e6612760a07e767cf83",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "2213f324b3e40fa957d8afb14ef407d0128209713723e179d2260c858dd84038",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "ae8685938c4697ed95f910999a7f2ae4f9965c1402c47f40a0cd5d97a661ec60",
+          "expected": "0ac998713db04102036a50de4fadc1e048fb28bf465c7c3f3474a509091021d7",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_EVIDENCE.sha256",
+      "manifest_sha256": "e0747b97ec5750ed5b78f13114668c3a8668685c732f4cdb5448b5768543da14",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 13,
+      "owning_commit": "1de6ca2693d2f5bd2fcdb5e36b564df30fac1dd4",
+      "row_count": 13
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "ae8685938c4697ed95f910999a7f2ae4f9965c1402c47f40a0cd5d97a661ec60",
+          "expected": "2a97111c4bdf3ee3b3e84100b88600f1737bb5273dcef579f4812fe5cae5f2b4",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_PATH_FIX_EVIDENCE.sha256",
+      "manifest_sha256": "0135dc06705ee3c66a1bbe48844cd4c0ffbf482fc13b0126ea8f31021e00c476",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 7,
+      "owning_commit": "df89bb9712366109e8ec7a4362905f340623832e",
+      "row_count": 7
+    },
+    {
+      "current_failure_count": 6,
+      "current_failures": [
+        {
+          "actual": "6989d0ffdcdf2316b5c7c8549da226a00c2fa60b2ae9a712367d12b4d03d3902",
+          "expected": "3d745f92d941985d95c7351caf3c430b2f43209cbb4bb7c20f716bc73d1b3464",
+          "path": "prototypes/streaming-diarization/l2-stage0/a5-holdout-procedure.json"
+        },
+        {
+          "actual": "0f9fc2b0d23df377e3b04432e50dd8b5f19d53793682f14396270b3d0bf669b9",
+          "expected": "e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb",
+          "path": "prototypes/streaming-diarization/l2-stage0/candidate-config.json"
+        },
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "ae8685938c4697ed95f910999a7f2ae4f9965c1402c47f40a0cd5d97a661ec60",
+          "expected": "2a97111c4bdf3ee3b3e84100b88600f1737bb5273dcef579f4812fe5cae5f2b4",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A2_RENEWED_EVIDENCE.sha256",
+      "manifest_sha256": "9839f3fb65d9f0642e9e31ddd050c9cd100b7bdb58251ea4d66146e241b7a5e4",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 30,
+      "owning_commit": "c650e07af6e8d37546ae02b2027831bf3c6a59bc",
+      "row_count": 30
+    },
+    {
+      "current_failure_count": 4,
+      "current_failures": [
+        {
+          "actual": "879b95dffdcc6d1a8dfa143909738ec23d21750551227ac3ab6c281b1efa8639",
+          "expected": "9c58ce6b6d7c99bdb9acbb93390646af78a487a702b342742605227fab93531c",
+          "path": "prototypes/streaming-diarization/l2-stage0/evaluate_lifecycle.py"
+        },
+        {
+          "actual": "6d74637434bb8d16079e8a2b68698db9c59f50c28af844d90b49d32050057533",
+          "expected": "42158f893729772095dde54c9d3bc72891bc74ff9f1ebce532e52c79dc9e6d3c",
+          "path": "prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py"
+        },
+        {
+          "actual": "49c9ca634ad0fd9a33f8570c8cae3604d3bc0352b8d81ca3c770dbc0c8f75887",
+          "expected": "a7f4c0cd62821a8de9ee2d705db5ae299e3d60e4b2f7a66f77c6842c1de7b7de",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py"
+        },
+        {
+          "actual": "c757aee0b7b1c3f1abfaac7ef89e7c55c2eee83ee4f014f8beae6599e70ab054",
+          "expected": "4786ba7b96ce8b79061d7ad87cd62fffdff8665b68598923008d31f1cf8442c2",
+          "path": "prototypes/streaming-diarization/l2-stage0/write_a3_evidence_manifest.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A3_EVIDENCE.sha256",
+      "manifest_sha256": "a8b333309f389c77a07c409d6efc9ef1946461938f8a882910d7a844b16a9998",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 4,
+      "owner_failures": [
+        {
+          "actual": "879b95dffdcc6d1a8dfa143909738ec23d21750551227ac3ab6c281b1efa8639",
+          "expected": "9c58ce6b6d7c99bdb9acbb93390646af78a487a702b342742605227fab93531c",
+          "path": "prototypes/streaming-diarization/l2-stage0/evaluate_lifecycle.py"
+        },
+        {
+          "actual": "6d74637434bb8d16079e8a2b68698db9c59f50c28af844d90b49d32050057533",
+          "expected": "42158f893729772095dde54c9d3bc72891bc74ff9f1ebce532e52c79dc9e6d3c",
+          "path": "prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py"
+        },
+        {
+          "actual": "49c9ca634ad0fd9a33f8570c8cae3604d3bc0352b8d81ca3c770dbc0c8f75887",
+          "expected": "a7f4c0cd62821a8de9ee2d705db5ae299e3d60e4b2f7a66f77c6842c1de7b7de",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py"
+        },
+        {
+          "actual": "c757aee0b7b1c3f1abfaac7ef89e7c55c2eee83ee4f014f8beae6599e70ab054",
+          "expected": "4786ba7b96ce8b79061d7ad87cd62fffdff8665b68598923008d31f1cf8442c2",
+          "path": "prototypes/streaming-diarization/l2-stage0/write_a3_evidence_manifest.py"
+        }
+      ],
+      "owner_row_count": 68,
+      "owning_commit": "2c2cb580dc2ed2ae79c9f8ea14b4ed88ce0311d3",
+      "row_count": 68
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "bb5e1bca2c792876877c2a0cc60d72b495afae8b1bd15f02b9ad59abba49c23e",
+          "expected": "6cc8f6aa521d4f44077fd5d7f1d7ff91277c8c3b2eb8aff0041a655855f8d2d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/.gitattributes"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A4_COMPLETION_EVIDENCE.sha256",
+      "manifest_sha256": "885ccd49875931ebdd47c7418dad80c32052bc87160c31a3ac2cc85ba604d1fe",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 12,
+      "owning_commit": "df8e50d18ac1c60680603628842b6ae1d2b44d45",
+      "row_count": 12
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A4_EVIDENCE.sha256",
+      "manifest_sha256": "1e0125fe94d56a0d8a9eac4bb56893accb59a74025ee8dc5510be6b9a2fe958d",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 26,
+      "owning_commit": "9b9b3f2209f91dd7e6699bab0add9efb448a1f08",
+      "row_count": 26
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "0f9fc2b0d23df377e3b04432e50dd8b5f19d53793682f14396270b3d0bf669b9",
+          "expected": "e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb",
+          "path": "prototypes/streaming-diarization/l2-stage0/candidate-config.json"
+        },
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/A5_DEV_EVIDENCE.sha256",
+      "manifest_sha256": "8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34",
+      "mode": "OWNING_COMMIT",
+      "overall": "PASS",
+      "owner_failure_count": 0,
+      "owner_failures": [],
+      "owner_row_count": 79,
+      "owning_commit": "a16c6d811031cac826878200256af0b69224add8",
+      "row_count": 79
+    },
+    {
+      "current_failure_count": 4,
+      "current_failures": [
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "0f9fc2b0d23df377e3b04432e50dd8b5f19d53793682f14396270b3d0bf669b9",
+          "expected": "e017a9b7992b7cc19bd001fc917551625567ae6cef4da3ff9451fc1ac4c615bb",
+          "path": "prototypes/streaming-diarization/l2-stage0/candidate-config.json"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/ANCHOR_FIDELITY_EVIDENCE.sha256",
+      "manifest_sha256": "ff76c726bd9642bdd14e253932ab13c1416ecb5dd6803d5ad40ce0888436d3c6",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 1,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        }
+      ],
+      "owner_row_count": 12,
+      "owning_commit": "f765a26656a872da349f9f0aa7db5e337e546f59",
+      "row_count": 12
+    },
+    {
+      "current_failure_count": 0,
+      "current_failures": [],
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-harness/HARNESS_EVIDENCE.sha256",
+      "manifest_sha256": "bd4f04d0059fd23f9ff1364ce89d3f3134a022bf6e722e5ed7ece526353a2371",
+      "mode": "HEAD",
+      "overall": "PASS",
+      "owning_commit": null,
+      "row_count": 11
+    },
+    {
+      "current_failure_count": 0,
+      "current_failures": [],
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/A5_HOLDOUT_EVIDENCE.sha256",
+      "manifest_sha256": "15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd",
+      "mode": "HEAD",
+      "overall": "PASS",
+      "owning_commit": null,
+      "row_count": 36
+    },
+    {
+      "current_failure_count": 7,
+      "current_failures": [
+        {
+          "actual": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517",
+          "expected": "3556e9e34fb0a2c99bd9bfaf034cb4a6a0bd106d65ade09fd4de03daba966a27",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        },
+        {
+          "actual": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+          "expected": "002a6f6020396b0686fd8c5522d7ecd6971a2c9f9fef8fe8e123a2326a74b818",
+          "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc",
+          "expected": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+          "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "2df680123ed8d9191615e4e2779c2167700c0af8ccbb3b4f6b7958963f50e5d6",
+          "expected": "5b29d6de191c0f7e516440e243c2c2265ce33a89bf7279bfe3a5b4ab23596f9e",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py"
+        },
+        {
+          "actual": "94e2d1baa104471ee614133a5763c2236751e200cf8a2907af9e1b37ccd2e751",
+          "expected": "34f4f46b0ec5dfd6cdf88a6866b1f166dd352cbf84197c6f9061a0dc3826b5bd",
+          "path": "scripts/ralph-l2-afk/contract.json"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/LEGACY_INGEST_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "ea4abf34f872de651fa261fb8a237a8756b3e4a804c725022459e432972674c5",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 6,
+      "owner_failures": [
+        {
+          "actual": "491ca0c9ae1a5267947a4850996d16e281ce826707ba7a7ebb82870b33630068",
+          "expected": "3556e9e34fb0a2c99bd9bfaf034cb4a6a0bd106d65ade09fd4de03daba966a27",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc",
+          "expected": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+          "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "2df680123ed8d9191615e4e2779c2167700c0af8ccbb3b4f6b7958963f50e5d6",
+          "expected": "5b29d6de191c0f7e516440e243c2c2265ce33a89bf7279bfe3a5b4ab23596f9e",
+          "path": "prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py"
+        }
+      ],
+      "owner_row_count": 44,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 44
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517",
+          "expected": "036b746c8850c20bbd7a53f67a5e8e7f04e11eb2acbb5398fe66745bc53ca24a",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/ADAPTER_V3_BOUNDARY_EVIDENCE.sha256",
+      "manifest_sha256": "331584b7b0794ef5cb8abd26f9d56f0d90b905b66338dbaacd19f36c76a7c005",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 1,
+      "owner_failures": [
+        {
+          "actual": "491ca0c9ae1a5267947a4850996d16e281ce826707ba7a7ebb82870b33630068",
+          "expected": "036b746c8850c20bbd7a53f67a5e8e7f04e11eb2acbb5398fe66745bc53ca24a",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "owner_row_count": 15,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 15
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517",
+          "expected": "4919fde5bb586cf369c3c98176d6a337ab94b818fb6f3146161f7a207241cb5e",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/FRAME_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "63f2b6e0c85cd6f5b87ea58e4e222219202f26f818608bc626fd4856f1253322",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 2,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "491ca0c9ae1a5267947a4850996d16e281ce826707ba7a7ebb82870b33630068",
+          "expected": "4919fde5bb586cf369c3c98176d6a337ab94b818fb6f3146161f7a207241cb5e",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "owner_row_count": 18,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 18
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517",
+          "expected": "2713f2ac1bd43c7d77e7ba41ee9efe1d40bce2c916cf474b2525520275e7d61e",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/INSTRUMENT_FIDELITY_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "15770306d7185a1ec683c6f0299d40a7303b103d28aa11e02e11a44df8c1c6cd",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 1,
+      "owner_failures": [
+        {
+          "actual": "491ca0c9ae1a5267947a4850996d16e281ce826707ba7a7ebb82870b33630068",
+          "expected": "2713f2ac1bd43c7d77e7ba41ee9efe1d40bce2c916cf474b2525520275e7d61e",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "owner_row_count": 6,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 6
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "4c67600f2cad5aee7c3e258dd43964215a8efa0875513ae85c5c790eafd9c517",
+          "expected": "b2663eeb31dd7be8173acc9c9cc61bfa0cfeb9e95f6f140e8553249ba5ca7e8a",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/ORIGINAL_RENEWED_DIFFERENTIAL_EVIDENCE.sha256",
+      "manifest_sha256": "430bc7514d6049387f4120de5fbff4c506a3ed20cf9c7dbe5cc8ba1ecbd682ff",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 3,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        },
+        {
+          "actual": "491ca0c9ae1a5267947a4850996d16e281ce826707ba7a7ebb82870b33630068",
+          "expected": "b2663eeb31dd7be8173acc9c9cc61bfa0cfeb9e95f6f140e8553249ba5ca7e8a",
+          "path": "prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "owner_row_count": 23,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 23
+    },
+    {
+      "current_failure_count": 0,
+      "current_failures": [],
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-green-v2/ADAPTER_V3_GREEN_EVIDENCE.sha256",
+      "manifest_sha256": "a52ea7f7d5a71ee0d0bf62a90eb3a9f1e63c2f20420184d53171f873531b914a",
+      "mode": "HEAD",
+      "overall": "PASS",
+      "owning_commit": null,
+      "row_count": 10
+    },
+    {
+      "current_failure_count": 0,
+      "current_failures": [],
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/adapter-v3-red/ADAPTER_V3_RED_EVIDENCE.sha256",
+      "manifest_sha256": "74bee1d413b1edcdbf96e52956a29b6b2be93812a206faa8b841c4e41ad14884",
+      "mode": "HEAD",
+      "overall": "PASS",
+      "owning_commit": null,
+      "row_count": 5
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h1-scorer-v1/H1_SCORER_EVIDENCE.sha256",
+      "manifest_sha256": "c024dbb7b43128c7068f58b4bdd95625d6b1a2517c223e64a4d1fc9ad8024e54",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 3,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        }
+      ],
+      "owner_row_count": 8,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 8
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h2-constants-v1/H2_CONSTANTS_EVIDENCE.sha256",
+      "manifest_sha256": "99d202f62bc7bc0e53273f5ec5ad014057d1f5acf9d872f7d7094e2e0fd9b663",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 3,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "72e8b4d67dc5e74c2b9605cfd063906a7a7d6a72233b404f335265f40e8e379e",
+          "path": "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/evidence/f4b-remediation-20260803/deploy/server-finalize.txt"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "owner_row_count": 8,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 8
+    },
+    {
+      "current_failure_count": 3,
+      "current_failures": [
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc",
+          "expected": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+          "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-first-divergence-v1/H3_FIRST_DIVERGENCE_EVIDENCE.sha256",
+      "manifest_sha256": "d128449f277d2c340ae8390cfa61c9c11f495a21b5b559a09a9b92011a41a866",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 5,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "96d0a7491e27c502facd60423a27d8aa8f1d8d8effce06ba25757d63af1f9ffc",
+          "expected": "895aeda6870519ee5b577ce3fc0a47b9c8d7eda84d2af77369e8e503ae9c8c91",
+          "path": "prototypes/streaming-diarization/l2-stage0/legacy_ingest.py"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "owner_row_count": 11,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 11
+    },
+    {
+      "current_failure_count": 1,
+      "current_failures": [
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/h3-policy-v1/H3_POLICY_EVIDENCE.sha256",
+      "manifest_sha256": "a4619fcb555e1b5475da7252a2982a76c6a2f83c93ff47356a8e9b55dad19d1f",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 2,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "owner_row_count": 9,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 9
+    },
+    {
+      "current_failure_count": 0,
+      "current_failures": [],
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v1/V2_CONTAMINATION_FAILURE_EVIDENCE.sha256",
+      "manifest_sha256": "c42eb22652d617ad84b6e3486b19953e7025443371f6fb0e03d9c500bf850a47",
+      "mode": "HEAD",
+      "overall": "PASS",
+      "owning_commit": null,
+      "row_count": 2
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/instrument-fidelity/v2-contamination-v2/V2_CONTAMINATION_EVIDENCE.sha256",
+      "manifest_sha256": "bcc667941906a847fd2d030fac3bb3416268486c0f5d569438404bc22a1f6ba6",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 4,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+          "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl"
+        },
+        {
+          "actual": "8270ee6b68b6a7fcb0d3e4e63641b9be35c17797ea412a602dfb45e000076e12",
+          "expected": "883503461c225f3bfe5888abf3b3fbb5a071fc630d7e23abbf2f5ba2756ed735",
+          "path": "prototypes/streaming-diarization/l2-stage0/l1-control-spec.json"
+        },
+        {
+          "actual": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+          "expected": "8719c18a70433b166d563caca72f0075d89cdab2fea74d27cfecac1b168d85d5",
+          "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py"
+        }
+      ],
+      "owner_row_count": 8,
+      "owning_commit": "956724a13373cc0b5722274a98733cbde18a2f46",
+      "row_count": 8
+    },
+    {
+      "current_failure_count": 0,
+      "current_failures": [],
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v2/LEGACY_MEASUREMENT_EVIDENCE.sha256",
+      "manifest_sha256": "58b12ce154e679bd54280d909a66a75237777e3c9d672747642c9bc935e60e69",
+      "mode": "HEAD",
+      "overall": "PASS",
+      "owning_commit": null,
+      "row_count": 6
+    },
+    {
+      "current_failure_count": 0,
+      "current_failures": [],
+      "manifest_path": "prototypes/streaming-diarization/l2-stage0/evidence/anchor-fidelity/legacy-measurement-v3/LEGACY_MEASUREMENT_EVIDENCE.sha256",
+      "manifest_sha256": "cdfc86d75527d998b1225c453a834b2eed4bb45c6a899745c308116f1b04920a",
+      "mode": "HEAD",
+      "overall": "PASS",
+      "owning_commit": null,
+      "row_count": 6
+    },
+    {
+      "current_failure_count": 2,
+      "current_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "cf5a3401fbd5f8ee83a60889e7eafae8ee50cc62fcbba692003c2ea7a3991bc6",
+          "path": "a0-dry-run.json"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "b8224da1e840eabc039e1d2a5767624dd4583ded62346c70612cbf2bec9e870e",
+          "path": "a0-dry-run-transcript.txt"
+        }
+      ],
+      "manifest_bytes_match_owner": true,
+      "manifest_path": "scripts/ralph-l2-afk/evidence/A0_EVIDENCE.sha256",
+      "manifest_sha256": "ab5b196d14c55bb4c93e087143eae81f06b9d876018ba8212cff049f8580487c",
+      "mode": "OWNING_COMMIT",
+      "overall": "FAIL",
+      "owner_failure_count": 2,
+      "owner_failures": [
+        {
+          "actual": "MISSING",
+          "expected": "cf5a3401fbd5f8ee83a60889e7eafae8ee50cc62fcbba692003c2ea7a3991bc6",
+          "path": "a0-dry-run.json"
+        },
+        {
+          "actual": "MISSING",
+          "expected": "b8224da1e840eabc039e1d2a5767624dd4583ded62346c70612cbf2bec9e870e",
+          "path": "a0-dry-run-transcript.txt"
+        }
+      ],
+      "owner_row_count": 2,
+      "owning_commit": "8e88c90162c0f21af52100d6614fb9eb81a1e5a2",
+      "row_count": 2
+    }
+  ],
+  "overall": "FAIL",
+  "schema": "moss-l2-stage0-all-evidence-manifest-audit.v1"
+}
