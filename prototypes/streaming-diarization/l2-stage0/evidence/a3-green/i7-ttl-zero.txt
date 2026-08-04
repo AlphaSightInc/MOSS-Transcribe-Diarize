@@ -1,0 +1,6 @@
+test_ttl_zero_reaps_only_after_lease_release (test_lifecycle_prototype.LifecyclePrototypeTest.test_ttl_zero_reaps_only_after_lease_release) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

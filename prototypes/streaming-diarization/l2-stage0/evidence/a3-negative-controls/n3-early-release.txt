@@ -1,0 +1,6 @@
+test_early_tape_release_fails_read_lease_invariant (test_lifecycle_prototype.LifecycleNegativeControlTest.test_early_tape_release_fails_read_lease_invariant) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

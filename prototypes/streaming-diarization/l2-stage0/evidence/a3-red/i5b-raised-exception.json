@@ -1,0 +1,9 @@
+{
+  "errors": [
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_raised_finalizer_exception_releases_once_and_falls_back"
+  ],
+  "failures": [],
+  "successful": false,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_raised_finalizer_exception_releases_once_and_falls_back",
+  "tests_run": 1
+}

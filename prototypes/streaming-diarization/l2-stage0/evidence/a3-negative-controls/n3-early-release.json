@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "failures": [],
+  "successful": true,
+  "test": "test_lifecycle_prototype.LifecycleNegativeControlTest.test_early_tape_release_fails_read_lease_invariant",
+  "tests_run": 1
+}

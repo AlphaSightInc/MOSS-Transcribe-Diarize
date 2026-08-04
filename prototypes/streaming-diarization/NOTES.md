@@ -767,3 +767,74 @@ Historical A12 manifest provenance was independently preserved by:
 `22ee9a8f…5752` and test `ce6c1cbb…e86f`; hashing each file from that commit reproduced
 those values exactly. The sealed command/output record is SHA-256
 `8adaf14810a061f75efaedea11ed1207c30d07ee7ad0d5c8cfa6e5b795d7ea52`.
+
+### L2 Stage 0 A3 lifecycle-ownership verdict (`l2-stage0`, 2026-08-03)
+
+Command: `PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l2-stage0/evaluate_lifecycle.py --json-output prototypes/streaming-diarization/l2-stage0/evidence/a3-verdict/lifecycle-verdict-v2.json --transcript-output prototypes/streaming-diarization/l2-stage0/evidence/a3-verdict/lifecycle-verdict-v2.txt`
+
+**VERDICT: PASS; choose `finalizing`.** The prototype proves
+`active -> closing -> finalizing -> closed`, with
+`active -> closing -> finalizing -> failed` and
+`active -> closing -> aborted` branches. All eight predeclared invariants passed
+red-first behavior tests: capture authority ends exactly at stop acknowledgement;
+view authority and one terminal revision remain observable; the tape is sealed and
+read-leased; one bounded queue owns all finalizers and at most one CPU finalizer runs;
+timeout, cancellation, shutdown, degraded tape, and both tokenized and genuinely
+raised exception paths release the lease exactly once and fall back to L1; abort does
+not enqueue or start L2; TTL zero refuses a leased tape and reaps it after release; and
+a new live meeting captures while an older finalizer is active. Queue overflow also
+refuses atomically without partially revoking capture or acquiring a lease.
+
+All three negative controls failed their intended invariant and were detected: the
+current `active -> closing -> closed` shape publishes a revision after view authority
+is gone; one-thread-per-session reaches three concurrent CPU finalizers with no queue
+owner; early tape release leaves lease count zero and permits TTL-zero reaping before
+read. The final full suite passed 13/13. Therefore the plan's decision rule selects
+the visible `finalizing` state; a persisted job/result API is not required by A3, and
+L2 is never run synchronously inside stop. Holdout remained sealed. No product,
+service, deployment, host, TCC, volume, or retained-audio action occurred.
+
+Raw invariant matrix and full state trace:
+`evidence/a3-verdict/lifecycle-verdict-v2.json`, SHA-256
+`ff18d660fecd3a2f4e4e75b4aa14fd3bc6571213254332460cb084cb2953eb5a`.
+Verdict transcript SHA-256:
+`b11ddbd110821ca79d79cff282da4e7dafdec8fba96f24f8a59d03c10f69114f`.
+Full-suite JSON/transcript SHA-256:
+`665ee6d8ad30973facac7b12ecff5316023f3ae0b9a6c0901dd05a34b0d81d7f` /
+`aa983f41b542ea878ad5793465d90b0f5c25fcbe9276c8099ddf303dd102a045`.
+`evidence/A3_EVIDENCE.sha256` seals 68 files and has SHA-256
+`a8b333309f389c77a07c409d6efc9ef1946461938f8a882910d7a844b16a9998`.
+
+Commit-granularity deviation: supervisor authorized A3 as its own atomic commit,
+continuing the A1/A2 refinement of plan §5. This preserves §5's independently
+testable/revertible invariant; A3 is not held with A4 resource measurement work.
+
+A3 final proof-strength addendum: the 68-file v1 seal and 13-test v2 verdict above
+remain preserved. A post-green audit added two red→green mutation-sensitive checks:
+queue overflow now refuses without partial state/lease mutation, and an actually
+raised finalizer exception (not only an outcome token) releases once and falls back
+to L1. A third red→green supplement proves abort of an already queued finalization
+removes the job, releases its lease once, and never starts L2. Final full suite:
+14/14 PASS. Authoritative matrix/state trace:
+`evidence/a3-verdict/lifecycle-verdict-v3.json`, SHA-256
+`c3f10e9dc5c47c1d5a01a047dd3b444245d375e2e58b5a4766a5d560655d3ffe`;
+transcript SHA-256
+`b11ddbd110821ca79d79cff282da4e7dafdec8fba96f24f8a59d03c10f69114f`.
+Final full-suite JSON/transcript SHA-256:
+`27f3139362ce79c31e569dd44d5e6012f444c73b04ba6c7e11c72350f86e18f8` /
+`1d772587f4fcda1c0a8949f82940dd3a9ed9e0c20de599b393775665f2cf4e8a`.
+`evidence/A3_EVIDENCE_V2.sha256` seals 76 files and has SHA-256
+`7bb6810c085e2eb3b41ec6d73c70530744c9618ddfb5eac23c8103f8cc45a5ee`.
+The decision remains `finalizing`; holdout remains sealed; A4 remains unstarted.
+
+A3 authoritative-seal addendum: a final literal-audit added the queued-finalization
+abort proof after the v2 seal. The new red reproduces the leaked queued lease; green
+removes the job, releases exactly once, leaves `l2_started=false`, and makes the queue
+empty. Earlier v1/v2 seals remain historical; their four source rows reflect later
+red→green strengthening. The authoritative current-tree seal is
+`evidence/A3_EVIDENCE_V3.sha256`: 76/76 verify, SHA-256
+`e2e3e3445f2a9b6a8623b28accfdbf58a8da3af19762d4b19e8424eac9876758`.
+The authoritative verdict remains `lifecycle-verdict-v3.json` at SHA-256
+`c3f10e9dc5c47c1d5a01a047dd3b444245d375e2e58b5a4766a5d560655d3ffe`.
+Reproduce it with the command above, replacing both `lifecycle-verdict-v2` output
+stems with `lifecycle-verdict-v3`.

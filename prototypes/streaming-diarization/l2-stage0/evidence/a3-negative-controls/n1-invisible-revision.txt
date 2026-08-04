@@ -1,0 +1,6 @@
+test_active_closing_closed_reproduces_invisible_revision (test_lifecycle_prototype.LifecycleNegativeControlTest.test_active_closing_closed_reproduces_invisible_revision) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

@@ -1,0 +1,6 @@
+test_view_authority_survives_finalizing_through_terminal_revision (test_lifecycle_prototype.LifecyclePrototypeTest.test_view_authority_survives_finalizing_through_terminal_revision) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

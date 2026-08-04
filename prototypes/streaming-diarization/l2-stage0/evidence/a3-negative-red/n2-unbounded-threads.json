@@ -1,0 +1,9 @@
+{
+  "errors": [
+    "unittest.loader._FailedTest.test_lifecycle_prototype"
+  ],
+  "failures": [],
+  "successful": false,
+  "test": "test_lifecycle_prototype.LifecycleNegativeControlTest.test_one_thread_per_session_fails_bounded_concurrency",
+  "tests_run": 1
+}

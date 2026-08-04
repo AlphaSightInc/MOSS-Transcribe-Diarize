@@ -1,0 +1,66 @@
+test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) ... 
+  test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='timeout') ... ERROR
+  test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='cancelled') ... ERROR
+  test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='shutdown') ... ERROR
+  test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='degraded_tape') ... ERROR
+  test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='exception') ... ERROR
+
+======================================================================
+ERROR: test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 97, in test_every_failed_finalizer_releases_once_and_falls_back_to_l1
+    failed = lifecycle.finish_active_finalizer(outcome)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py", line 99, in finish_active_finalizer
+    raise LifecycleViolation("unsupported_finalizer_outcome")
+lifecycle_prototype.LifecycleViolation: unsupported_finalizer_outcome
+
+======================================================================
+ERROR: test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='cancelled')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 97, in test_every_failed_finalizer_releases_once_and_falls_back_to_l1
+    failed = lifecycle.finish_active_finalizer(outcome)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py", line 99, in finish_active_finalizer
+    raise LifecycleViolation("unsupported_finalizer_outcome")
+lifecycle_prototype.LifecycleViolation: unsupported_finalizer_outcome
+
+======================================================================
+ERROR: test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='shutdown')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 97, in test_every_failed_finalizer_releases_once_and_falls_back_to_l1
+    failed = lifecycle.finish_active_finalizer(outcome)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py", line 99, in finish_active_finalizer
+    raise LifecycleViolation("unsupported_finalizer_outcome")
+lifecycle_prototype.LifecycleViolation: unsupported_finalizer_outcome
+
+======================================================================
+ERROR: test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='degraded_tape')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 97, in test_every_failed_finalizer_releases_once_and_falls_back_to_l1
+    failed = lifecycle.finish_active_finalizer(outcome)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py", line 99, in finish_active_finalizer
+    raise LifecycleViolation("unsupported_finalizer_outcome")
+lifecycle_prototype.LifecycleViolation: unsupported_finalizer_outcome
+
+======================================================================
+ERROR: test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) (outcome='exception')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 97, in test_every_failed_finalizer_releases_once_and_falls_back_to_l1
+    failed = lifecycle.finish_active_finalizer(outcome)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/lifecycle_prototype.py", line 99, in finish_active_finalizer
+    raise LifecycleViolation("unsupported_finalizer_outcome")
+lifecycle_prototype.LifecycleViolation: unsupported_finalizer_outcome
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=5)

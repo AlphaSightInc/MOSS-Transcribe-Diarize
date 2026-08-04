@@ -1,0 +1,17 @@
+test_bounded_queue_refuses_overflow_without_partial_transition (test_lifecycle_prototype.LifecyclePrototypeTest.test_bounded_queue_refuses_overflow_without_partial_transition) ... FAIL
+
+======================================================================
+FAIL: test_bounded_queue_refuses_overflow_without_partial_transition (test_lifecycle_prototype.LifecyclePrototypeTest.test_bounded_queue_refuses_overflow_without_partial_transition)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 101, in test_bounded_queue_refuses_overflow_without_partial_transition
+    self.assertEqual(rejected["state"], "closing")
+AssertionError: 'finalizing' != 'closing'
+- finalizing
++ closing
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)

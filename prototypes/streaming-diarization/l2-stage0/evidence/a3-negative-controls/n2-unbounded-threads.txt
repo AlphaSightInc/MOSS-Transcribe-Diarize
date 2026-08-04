@@ -1,0 +1,6 @@
+test_one_thread_per_session_fails_bounded_concurrency (test_lifecycle_prototype.LifecycleNegativeControlTest.test_one_thread_per_session_fails_bounded_concurrency) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

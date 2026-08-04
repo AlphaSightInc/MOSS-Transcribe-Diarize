@@ -1,0 +1,15 @@
+test_view_authority_survives_finalizing_through_terminal_revision (test_lifecycle_prototype.LifecyclePrototypeTest.test_view_authority_survives_finalizing_through_terminal_revision) ... ERROR
+
+======================================================================
+ERROR: test_view_authority_survives_finalizing_through_terminal_revision (test_lifecycle_prototype.LifecyclePrototypeTest.test_view_authority_survives_finalizing_through_terminal_revision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 31, in test_view_authority_survives_finalizing_through_terminal_revision
+    finalizing = lifecycle.view("meeting-1")
+                 ^^^^^^^^^^^^^^
+AttributeError: 'LifecyclePrototype' object has no attribute 'view'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

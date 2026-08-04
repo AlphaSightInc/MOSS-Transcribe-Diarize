@@ -1,0 +1,13 @@
+{
+  "errors": [
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (outcome='timeout')",
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (outcome='cancelled')",
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (outcome='shutdown')",
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (outcome='degraded_tape')",
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (outcome='exception')"
+  ],
+  "failures": [],
+  "successful": false,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1",
+  "tests_run": 1
+}

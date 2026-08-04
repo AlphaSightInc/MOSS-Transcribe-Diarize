@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "failures": [],
+  "successful": true,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_bounded_queue_refuses_overflow_without_partial_transition",
+  "tests_run": 1
+}

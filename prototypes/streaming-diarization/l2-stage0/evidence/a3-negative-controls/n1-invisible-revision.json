@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "failures": [],
+  "successful": true,
+  "test": "test_lifecycle_prototype.LifecycleNegativeControlTest.test_active_closing_closed_reproduces_invisible_revision",
+  "tests_run": 1
+}

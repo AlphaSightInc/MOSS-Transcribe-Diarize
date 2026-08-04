@@ -1,0 +1,9 @@
+{
+  "errors": [
+    "test_lifecycle_prototype.LifecyclePrototypeTest.test_new_live_meeting_progresses_while_older_finalizer_runs"
+  ],
+  "failures": [],
+  "successful": false,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_new_live_meeting_progresses_while_older_finalizer_runs",
+  "tests_run": 1
+}

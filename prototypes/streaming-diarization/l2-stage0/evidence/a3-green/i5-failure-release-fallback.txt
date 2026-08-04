@@ -1,0 +1,6 @@
+test_every_failed_finalizer_releases_once_and_falls_back_to_l1 (test_lifecycle_prototype.LifecyclePrototypeTest.test_every_failed_finalizer_releases_once_and_falls_back_to_l1) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

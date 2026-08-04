@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "failures": [],
+  "successful": true,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_view_authority_survives_finalizing_through_terminal_revision",
+  "tests_run": 1
+}

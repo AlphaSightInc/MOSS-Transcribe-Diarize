@@ -1,0 +1,14 @@
+test_abort_of_queued_finalization_removes_job_without_l2 (test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_of_queued_finalization_removes_job_without_l2) ... FAIL
+
+======================================================================
+FAIL: test_abort_of_queued_finalization_removes_job_without_l2 (test_lifecycle_prototype.LifecyclePrototypeTest.test_abort_of_queued_finalization_removes_job_without_l2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py", line 178, in test_abort_of_queued_finalization_removes_job_without_l2
+    self.assertEqual(aborted["tape_lease_count"], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)

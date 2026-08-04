@@ -1,0 +1,6 @@
+test_new_live_meeting_progresses_while_older_finalizer_runs (test_lifecycle_prototype.LifecyclePrototypeTest.test_new_live_meeting_progresses_while_older_finalizer_runs) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

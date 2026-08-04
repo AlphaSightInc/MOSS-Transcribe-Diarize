@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "failures": [],
+  "successful": true,
+  "test": "test_lifecycle_prototype.LifecyclePrototypeTest.test_capture_authority_ends_at_stop_ack",
+  "tests_run": 1
+}
