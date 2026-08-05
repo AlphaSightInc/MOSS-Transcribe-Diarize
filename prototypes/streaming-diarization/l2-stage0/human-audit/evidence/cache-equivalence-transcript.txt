@@ -1,0 +1,3 @@
+PASS 5m-acquired-coca-cola unit_bounds_byte_identical=True vectors_byte_identical=True
+PASS 5m-acquired-rolex unit_bounds_byte_identical=True vectors_byte_identical=True
+{"case_count": 2, "overall": "PASS"}

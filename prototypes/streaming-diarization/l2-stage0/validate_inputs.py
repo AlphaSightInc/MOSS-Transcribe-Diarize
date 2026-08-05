@@ -21,8 +21,11 @@ ACCEPTED_ALPHABET_SHA256 = (
 )
 ACCEPTED_STATES = {
     "accepted_existing_provenance_zero_flags",
+    "human_audit_frozen",
     "post_audit_frozen",
 }
+ACCEPTANCE_POOL_SPLIT = "acceptance_pool"
+HUMAN_AUDIT_STATE = "human_audited"
 TRUTH_TOKENS = ("golden", "reference", "ground_truth", "truth_path")
 
 
@@ -115,6 +118,63 @@ def reference_findings(
         previous_start = start
         previous_end = end
     return findings
+
+
+def validate_declared_findings(
+    case_id: str,
+    actual: list[dict[str, Any]],
+    declared: list[dict[str, Any]],
+) -> None:
+    normalized = [
+        {key: value for key, value in finding.items() if key != "adjudicated"}
+        for finding in declared
+    ]
+    if actual != normalized:
+        raise ValidationError("reference_findings_drift", case_id)
+
+
+def validate_human_audit_metadata(
+    case: dict[str, Any],
+    *,
+    reference_path: Path,
+    findings: list[dict[str, Any]],
+) -> None:
+    case_id = str(case["case_id"])
+    if case.get("validation_state") != HUMAN_AUDIT_STATE:
+        raise ValidationError("human_audit_validation_state_missing", case_id)
+    if case.get("split") != ACCEPTANCE_POOL_SPLIT:
+        raise ValidationError("human_audit_split_not_acceptance_pool", case_id)
+    audit = case.get("human_audit")
+    if not isinstance(audit, dict):
+        raise ValidationError("human_audit_metadata_missing", case_id)
+    required = {"attestation_path", "basis", "date"}
+    if not required.issubset(audit):
+        raise ValidationError("human_audit_metadata_incomplete", case_id)
+    attestation = REPO / str(audit["attestation_path"])
+    if not attestation.is_file():
+        raise ValidationError("human_audit_attestation_missing", str(attestation))
+    try:
+        datetime.strptime(str(audit["date"]), "%Y-%m-%d")
+    except ValueError as exc:
+        raise ValidationError("human_audit_date_invalid", case_id) from exc
+    if not str(audit["basis"]).strip():
+        raise ValidationError("human_audit_basis_missing", case_id)
+    unadjudicated = [finding for finding in findings if finding.get("adjudicated") is not True]
+    if unadjudicated:
+        raise ValidationError(
+            "human_audit_finding_unadjudicated",
+            f"{case_id}:{json.dumps(unadjudicated, sort_keys=True)}",
+        )
+    superseded = case.get("superseded_reference")
+    if superseded is not None:
+        if not isinstance(superseded, dict) or not {"path", "sha256"}.issubset(superseded):
+            raise ValidationError("superseded_reference_incomplete", case_id)
+        old_reference = REPO / str(superseded["path"])
+        validate_declared_hash(
+            old_reference, str(superseded["sha256"]), "superseded_reference"
+        )
+        if old_reference.resolve() == reference_path.resolve():
+            raise ValidationError("superseded_reference_not_versioned", case_id)
 
 
 def validate_acoustic_support(
@@ -217,8 +277,8 @@ def _validate_case(case: dict[str, Any]) -> dict[str, Any]:
         raise ValidationError("audio_duration_mismatch", case["case_id"])
     rows = load_reference(reference)
     findings = reference_findings(rows, duration)
-    if findings != case["mechanical_findings"]:
-        raise ValidationError("reference_findings_drift", case["case_id"])
+    declared_findings = case["mechanical_findings"]
+    validate_declared_findings(case["case_id"], findings, declared_findings)
     speaker_count = len({speaker for _, _, speaker, _ in rows})
     if speaker_count != int(case["speaker_count"]):
         raise ValidationError("speaker_count_mismatch", case["case_id"])
@@ -226,7 +286,15 @@ def _validate_case(case: dict[str, Any]) -> dict[str, Any]:
     if case["acceptance_eligible"]:
         if declared not in ACCEPTED_STATES:
             raise ValidationError("reference_status_not_accepted", case["case_id"])
-        structural = [item for item in findings if item["kind"] != "high_word_rate"]
+        if declared == "human_audit_frozen":
+            validate_human_audit_metadata(
+                case, reference_path=reference, findings=declared_findings
+            )
+        structural = [
+            item
+            for item in declared_findings
+            if item["kind"] != "high_word_rate" and item.get("adjudicated") is not True
+        ]
         if structural:
             raise ValidationError(
                 "acceptance_reference_structural_failure",
@@ -237,7 +305,7 @@ def _validate_case(case: dict[str, Any]) -> dict[str, Any]:
                 "acceptance_reference_requires_audit",
                 f"{case['case_id']}:{json.dumps(findings, sort_keys=True)}",
             )
-        if duration >= 240 and declared != "post_audit_frozen":
+        if duration >= 240 and declared not in {"human_audit_frozen", "post_audit_frozen"}:
             raise ValidationError("long_acceptance_missing_acoustic_audit", case["case_id"])
     if declared == "post_audit_frozen":
         if case["reference_sha256"] != ACCEPTED_ALPHABET_SHA256:
@@ -252,10 +320,11 @@ def _validate_case(case: dict[str, Any]) -> dict[str, Any]:
         "case_id": case["case_id"],
         "duration_seconds": round(duration, 6),
         "finding_count": len(findings),
-        "findings": findings,
+        "findings": declared_findings,
         "reference_status": declared,
         "speaker_count": speaker_count,
         "split": case["split"],
+        "validation_state": case.get("validation_state"),
     }
 
 
@@ -317,6 +386,13 @@ def validate_repository(args: argparse.Namespace) -> dict[str, Any]:
             raise ValidationError("cache_model_pin_mismatch", str(cache_spec_path))
         if int(cache_spec["config"]["hard_cap_samples"]) != 40000:
             raise ValidationError("cache_hard_cap_changed", str(cache_spec_path))
+    attestation_manifest_hash = corpus.get("human_audit_attestations_manifest_sha256")
+    if attestation_manifest_hash is not None:
+        validate_declared_hash(
+            REPO / corpus["human_audit_attestations_manifest_path"],
+            attestation_manifest_hash,
+            "human_audit_attestations_manifest",
+        )
     holdout = REPO / corpus["holdout_manifest_path"]
     validate_declared_hash(
         holdout, candidate["holdout_manifest_sha256"], "holdout_manifest"
@@ -332,17 +408,28 @@ def validate_repository(args: argparse.Namespace) -> dict[str, Any]:
     accepted_metadata = [
         case for case in corpus["cases"] if case["acceptance_eligible"]
     ]
-    splits = {case["split"] for case in accepted_metadata}
+    splits = {
+        case["split"]
+        for case in accepted_metadata
+        if case["split"] != ACCEPTANCE_POOL_SPLIT
+    }
     if splits != {"development", "validation", "blind_holdout"}:
         raise ValidationError("acceptance_splits_incomplete", ",".join(sorted(splits)))
+    acceptance_pool = [
+        case for case in accepted_metadata if case["split"] == ACCEPTANCE_POOL_SPLIT
+    ]
+    if any(case.get("validation_state") != HUMAN_AUDIT_STATE for case in acceptance_pool):
+        raise ValidationError("acceptance_pool_not_human_audited", "validation_state")
     return {
         "accepted_case_count": len(accepted_metadata),
+        "acceptance_pool_case_count": len(acceptance_pool),
         "case_scope": args.case_scope,
         "cache_rebuild_spec_sha256": cache_spec_hash,
         "cases": cases,
         "corpus_manifest_sha256": actual_corpus_hash,
         "holdout_manifest_sha256": candidate["holdout_manifest_sha256"],
         "holdout_case_files_opened": args.case_scope == "all",
+        "human_audit_attestations_manifest_sha256": attestation_manifest_hash,
         "model_sha256": model["asset"]["sha256"],
         "overall": "PASS",
         "sealed_skipped_case_ids": skipped,

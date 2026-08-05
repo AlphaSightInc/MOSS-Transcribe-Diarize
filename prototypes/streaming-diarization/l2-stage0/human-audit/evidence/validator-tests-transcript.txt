@@ -1,0 +1,14 @@
+test_adjudicated_findings_preserve_scanner_history (test_validate_inputs.InputBoundaryTest.test_adjudicated_findings_preserve_scanner_history) ... ok
+test_golden_path_in_runtime_config_fails (test_validate_inputs.InputBoundaryTest.test_golden_path_in_runtime_config_fails) ... ok
+test_human_audit_cannot_preassign_campaign_split (test_validate_inputs.InputBoundaryTest.test_human_audit_cannot_preassign_campaign_split) ... ok
+test_human_audit_requires_every_finding_adjudicated (test_validate_inputs.InputBoundaryTest.test_human_audit_requires_every_finding_adjudicated) ... ok
+test_non_holdout_validation_scope_skips_sealed_case_paths (test_validate_inputs.InputBoundaryTest.test_non_holdout_validation_scope_skips_sealed_case_paths) ... ok
+test_one_byte_audio_reference_and_model_mutations_fail (test_validate_inputs.InputBoundaryTest.test_one_byte_audio_reference_and_model_mutations_fail) ... ok
+test_pre_freeze_holdout_open_fails (test_validate_inputs.InputBoundaryTest.test_pre_freeze_holdout_open_fails) ... ok
+test_reference_import_in_runtime_source_fails (test_validate_inputs.InputBoundaryTest.test_reference_import_in_runtime_source_fails) ... ok
+test_transcript_only_line_fails_acoustic_validation (test_validate_inputs.InputBoundaryTest.test_transcript_only_line_fails_acoustic_validation) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.005s
+
+OK

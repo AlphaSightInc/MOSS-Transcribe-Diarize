@@ -1,0 +1,236 @@
+{
+  "cases": [
+    {
+      "cache_arrays": {
+        "rows": {
+          "array_equal": true,
+          "current_bytes_sha256": "ee5f3a55d4cd0e0940176c38d0a7833f806b47a24103aba0a56a076413f62911",
+          "dtype": "float64",
+          "rebuilt_bytes_sha256": "ee5f3a55d4cd0e0940176c38d0a7833f806b47a24103aba0a56a076413f62911",
+          "shape": [
+            68,
+            6
+          ]
+        },
+        "span_bounds": {
+          "array_equal": true,
+          "current_bytes_sha256": "b48189adf093933df357761a4935a8dfd4deaa03d3d4beb7caf3a769771875ec",
+          "dtype": "int64",
+          "rebuilt_bytes_sha256": "b48189adf093933df357761a4935a8dfd4deaa03d3d4beb7caf3a769771875ec",
+          "shape": [
+            187,
+            3
+          ]
+        },
+        "span_reasons": {
+          "array_equal": true,
+          "current_bytes_sha256": "61c71f67f943b7ce06b51c8213a87144a3aacccf97c7b8e17f4081ecedb8ba44",
+          "dtype": "<U15",
+          "rebuilt_bytes_sha256": "61c71f67f943b7ce06b51c8213a87144a3aacccf97c7b8e17f4081ecedb8ba44",
+          "shape": [
+            187
+          ]
+        },
+        "vec_idx": {
+          "array_equal": true,
+          "current_bytes_sha256": "af80468608b67e715d72b831d4676215523f7c16dbcea7246d57cdce979bf4c2",
+          "dtype": "int64",
+          "rebuilt_bytes_sha256": "af80468608b67e715d72b831d4676215523f7c16dbcea7246d57cdce979bf4c2",
+          "shape": [
+            68
+          ]
+        },
+        "vecs": {
+          "array_equal": true,
+          "current_bytes_sha256": "72b2971240d2e7417caf773ef8a5f0a1313014001fc809a7d88bba631c0aed75",
+          "dtype": "float32",
+          "rebuilt_bytes_sha256": "72b2971240d2e7417caf773ef8a5f0a1313014001fc809a7d88bba631c0aed75",
+          "shape": [
+            56,
+            256
+          ]
+        }
+      },
+      "case_id": "5m-acquired-coca-cola",
+      "current_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-coca-cola/harness_cache.npz",
+      "current_cache_sha256": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9",
+      "new_reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/reference-v2-human-20260804.jsonl",
+      "new_reference_sha256": "d2b92f1aff1df0a15b183205cc04246bc09097270a3445b3203d96d9fbb738fa",
+      "only_text_changed": true,
+      "rebuilt_cache_path": "prototypes/streaming-diarization/l2-stage0/human-audit/evidence/cache-rebuild/5m-acquired-coca-cola/harness_cache.npz",
+      "rebuilt_cache_sha256": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9",
+      "reference_changed_lines": [
+        {
+          "line_number": 39,
+          "new_text": "It seamlessly and shamelessly integrated into the hippie culture of the 70s, and then of course, it had the epic cola wars of the 80s and onward.",
+          "new_word_count": 27,
+          "new_words_per_second": 10.401761,
+          "old_text": "It seamlessly and shamelessly integrated into the hippie culture of the 1970s, and then of course, it had the epic cola wars of the 1980s and onward.",
+          "old_word_count": 27,
+          "old_words_per_second": 10.401761,
+          "zero_based_index": 38
+        },
+        {
+          "line_number": 41,
+          "new_text": "Well, it's about America, and then America inserting itself everywhere else in the rest.",
+          "new_word_count": 14,
+          "new_words_per_second": 5.436893,
+          "old_text": "Well, it's about America, and then America inserting itself everywhere else in the rest of the world.",
+          "old_word_count": 17,
+          "old_words_per_second": 6.601942,
+          "zero_based_index": 40
+        }
+      ],
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 56,
+        "self_replan": "PASS",
+        "span_count": 187,
+        "unit_count": 68,
+        "vector_count": 56
+      },
+      "stats": {
+        "eligible_unit_count": 56,
+        "span_count": 187,
+        "unit_count": 68,
+        "vector_count": 56
+      },
+      "superseded_reference": {
+        "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/reference.jsonl",
+        "sha256": "41146f40c372a928607219df34b78b4cb68c10ca5cf1cbcb4bba1c33b8135809"
+      },
+      "text_carrying_cache_fields": [],
+      "unit_bounds_byte_identical": true,
+      "vectors_byte_identical": true
+    },
+    {
+      "cache_arrays": {
+        "rows": {
+          "array_equal": true,
+          "current_bytes_sha256": "9d6d6ba3c6bd67b831ab53c4454f61c5e180e295ac42d1b4b58e584141a4044f",
+          "dtype": "float64",
+          "rebuilt_bytes_sha256": "9d6d6ba3c6bd67b831ab53c4454f61c5e180e295ac42d1b4b58e584141a4044f",
+          "shape": [
+            71,
+            6
+          ]
+        },
+        "span_bounds": {
+          "array_equal": true,
+          "current_bytes_sha256": "2063d4ec4c6799120d27c967e3999f2a2b02349f971fbeaddc0d743ecc190764",
+          "dtype": "int64",
+          "rebuilt_bytes_sha256": "2063d4ec4c6799120d27c967e3999f2a2b02349f971fbeaddc0d743ecc190764",
+          "shape": [
+            182,
+            3
+          ]
+        },
+        "span_reasons": {
+          "array_equal": true,
+          "current_bytes_sha256": "d103ec6395ef7e542c3e368d8051e0b256b8075e3f521088639c9884c102eb2f",
+          "dtype": "<U15",
+          "rebuilt_bytes_sha256": "d103ec6395ef7e542c3e368d8051e0b256b8075e3f521088639c9884c102eb2f",
+          "shape": [
+            182
+          ]
+        },
+        "vec_idx": {
+          "array_equal": true,
+          "current_bytes_sha256": "b5f831d51aec61d8119da2398a922d1b68c4a91b6f1890445ff3cd89418dd084",
+          "dtype": "int64",
+          "rebuilt_bytes_sha256": "b5f831d51aec61d8119da2398a922d1b68c4a91b6f1890445ff3cd89418dd084",
+          "shape": [
+            71
+          ]
+        },
+        "vecs": {
+          "array_equal": true,
+          "current_bytes_sha256": "6946a6c5c01e8b4216bbb02b5289a2b874d0a328d2d46645f2f60353b3125f6a",
+          "dtype": "float32",
+          "rebuilt_bytes_sha256": "6946a6c5c01e8b4216bbb02b5289a2b874d0a328d2d46645f2f60353b3125f6a",
+          "shape": [
+            60,
+            256
+          ]
+        }
+      },
+      "case_id": "5m-acquired-rolex",
+      "current_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-rolex/harness_cache.npz",
+      "current_cache_sha256": "f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee",
+      "new_reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/reference-v2-human-20260804.jsonl",
+      "new_reference_sha256": "177caa44c892dc804d5efba661749c2e72ecf734d1457f3cc0ab079d4e5401d2",
+      "only_text_changed": true,
+      "rebuilt_cache_path": "prototypes/streaming-diarization/l2-stage0/human-audit/evidence/cache-rebuild/5m-acquired-rolex/harness_cache.npz",
+      "rebuilt_cache_sha256": "f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee",
+      "reference_changed_lines": [
+        {
+          "line_number": 23,
+          "new_text": "That is until you walk out of the store, and they instantly become worth more, at least for a lot of the models these days.",
+          "new_word_count": 25,
+          "new_words_per_second": 9.177118,
+          "old_text": "That is until you walk out of the store, then they instantly become worth more, at least for a lot of the models these days.",
+          "old_word_count": 25,
+          "old_words_per_second": 9.177118,
+          "zero_based_index": 22
+        },
+        {
+          "line_number": 26,
+          "new_text": "There's probably 10 times more Rolexes sold than Birkins sold, or at least on that order.",
+          "new_word_count": 16,
+          "new_words_per_second": 6.068268,
+          "old_text": "There are probably 10 times more Rolexes sold than Birkins sold, or at least on that order.",
+          "old_word_count": 17,
+          "old_words_per_second": 6.447535,
+          "zero_based_index": 25
+        }
+      ],
+      "self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 60,
+        "self_replan": "PASS",
+        "span_count": 182,
+        "unit_count": 71,
+        "vector_count": 60
+      },
+      "stats": {
+        "eligible_unit_count": 60,
+        "span_count": 182,
+        "unit_count": 71,
+        "vector_count": 60
+      },
+      "superseded_reference": {
+        "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/reference.jsonl",
+        "sha256": "88f84c94b0f184939906249747ae489c58563ac81483eb1447ef2d00e4f58b1c"
+      },
+      "text_carrying_cache_fields": [],
+      "unit_bounds_byte_identical": true,
+      "vectors_byte_identical": true
+    }
+  ],
+  "corpus_manifest_sha256": "7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb",
+  "generated_at": "2026-08-05T02:00:27.292743+00:00",
+  "model_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+  "overall": "PASS",
+  "production_embedder": {
+    "device": "cpu",
+    "embedding_dimension": 256,
+    "frontend_version": "wespeaker-onnx-fbank-v1",
+    "provider": "wespeaker_resnet152_lm",
+    "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+  },
+  "schema": "moss-human-audit-cache-equivalence.v1",
+  "spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061"
+}
