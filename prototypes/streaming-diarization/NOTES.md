@@ -1942,3 +1942,23 @@ lane metadata plus missing/wrong-lane controls; human-audited identity/activity/
 truth; preregistered dev/validation/single-open long/hard holdout; D8-safe same-frame L1/F2
 with full-chain perturbation audit; and all campaign accuracy/DER/FP/regression/mapping/
 determinism/compute gates. Gated corpus, validation, and holdout remained unopened.
+
+### Campaign L1.5 F3 preregistration (`l15`, 2026-08-05)
+
+**PREREGISTERED BEFORE RED-FIRST OR EXECUTION.** F3 schedules `min_match_margin` in
+the causal live preparation itself, so span assignment, abstention, and birth see only the
+margin available at that meeting time. It must instantiate production
+`BoundedCausalIdentityPreparer` per span over one causal production evidence provider and
+album; direct `assign_speakers` calls or copied policy are forbidden. Production terminal
+sweep remains unchanged at deployed margin `0.10`.
+
+One dev-only pass contains exactly three schedules: `0.10→0.15` after 5 minutes,
+`0.10→0.20` after 5 minutes, and staged `0.10` through 5 minutes / `0.15` through 15
+minutes / `0.20` thereafter. All short cases therefore retain deployed `0.10`; only the
+previously banked long-horizon margins vary. Selection uses dev accuracy subject to all
+non-gain gates; validation receives only the selected schedule once. Gates remain ≥1.0 pp
+over L1 on dev and validation, ≤0.5 pp case regression, no per-case FP/DER worsening,
+two-sided mapping, deterministic ×2, complete changed-assignment evidence, and 30-minute
+sweep p95 ≤ `0.20015926258638502 s`. Holdout remains sealed.
+Family-spec SHA-256:
+`56491ebcd5f6aa5da8a2366863b5c7fccbc7e454e2dc1692169ff8572c0e99ae`.
