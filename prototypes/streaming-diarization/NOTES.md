@@ -2035,3 +2035,29 @@ Terminal verdict SHA-256:
 `1722a9a0b792e9a3ed734c11b1f7c4f83f6bcdd81add65f974a073e8e82901a3`.
 Fail-closed verdict verification passed every check. No product code, product test, service,
 host, deployment, threshold, gate, or holdout state changed.
+
+### DL1 dual-lane inventory boundary (`l15`, 2026-08-05)
+
+**VERDICT: INVENTORY COMPLETE; CORPUS NOT ACCEPTANCE-GRADE.** Read-only discovery on
+`ga0@m4mbp` found one real aligned case, `pending_source_separation_001`: synchronized
+59.584-second `remote.wav` system-audio/Core Audio Tap and `local.wav`
+microphone/AVAudioEngine tracks, both mono 16 kHz signed-16 PCM. No recording or remote
+write occurred. The three physical m4mbp worktree replicas carry identical audio bytes:
+local SHA-256 `830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251`,
+remote SHA-256 `5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d`.
+
+The source checkout currently retains only ignored WAV bytes. The latest all-branch corpus
+revision is `dd9c7cb07f609763dea9993e9f2a2f0da2c5a8ae` on
+`ralph/diarization-architecture-0428`; its README, manifest, capture notes, and two
+per-lane JSONL references were copied byte-exact through read-only `git archive`. Each
+reference has three aligned rows, speakers Keyu Jin and Lex Fridman, and the same truth
+intervals from 2.005 through 57.005 seconds; only `source_lane` differs. These references
+were playback-derived from the historical one-minute Keyu Jin fixture and are not
+human-audited identity/activity/overlap truth.
+
+This single short, same-content-across-lanes leakage case cannot support F2-A acceptance
+splits or claims. Acceptance grade still requires multiple varied synchronized meetings,
+same-speaker-cross-lane and missing/wrong-lane controls, human-audited identity/activity/
+overlap/crosstalk truth, preregistered dev/validation/single-open long-hard holdout splits,
+and D8-safe same-frame gates. The inventory and byte seal live under
+`l15/evidence/dl1-inventory/`; DL2 remains a separate authorization.

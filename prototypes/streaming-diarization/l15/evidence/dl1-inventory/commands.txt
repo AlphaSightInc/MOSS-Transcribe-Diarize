@@ -1,0 +1,11 @@
+DL1 read-only source discovery and copy commands, 2026-08-05
+
+ssh -o BatchMode=yes ga0@m4mbp 'find "$HOME/Desktop" "$HOME/Documents" "$HOME/LiveTranscribe" -maxdepth 6 -type d \( -iname "dual_lane_diarization" -o -iname "*dual*lane*" \) -print 2>/dev/null'
+ssh -o BatchMode=yes ga0@m4mbp 'git -C "/Users/ga0/Desktop/AI_Projects/LiveTranscribe" log --all --date=iso-strict --format="%H%x09%ad%x09%an%x09%s" -- data/dual_lane_diarization'
+ssh -o BatchMode=yes ga0@m4mbp 'find "/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization" -type f -exec shasum -a 256 {} \;'
+ssh -o BatchMode=yes ga0@m4mbp 'afinfo "/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001/local.wav"; afinfo "/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav"'
+ssh -o BatchMode=yes ga0@m4mbp 'git -C "/Users/ga0/Desktop/AI_Projects/LiveTranscribe" archive dd9c7cb07f609763dea9993e9f2a2f0da2c5a8ae data/dual_lane_diarization' | tar -x -C prototypes/streaming-diarization/l15/data --strip-components=1
+scp -p ga0@m4mbp:/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001/local.wav ga0@m4mbp:/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/
+PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/dl1_inventory.py
+PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/seal_dl1_inventory.py
+(cd prototypes/streaming-diarization/l15/evidence/dl1-inventory && shasum -a 256 -c DL1_INVENTORY_EVIDENCE.sha256)

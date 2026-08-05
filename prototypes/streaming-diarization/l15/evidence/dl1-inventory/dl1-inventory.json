@@ -1,0 +1,212 @@
+{
+  "acceptance_grade_gap": {
+    "current_corpus_is_sufficient": false,
+    "reasons": [
+      "only one short 59.584-second meeting",
+      "both lanes carry the same playback-derived two-speaker content",
+      "identity, activity, overlap, and crosstalk truth is not human-audited",
+      "no varied speakers, acoustics, or same-speaker-cross-lane counterexamples",
+      "no dev, validation, or single-open long/hard holdout split is possible"
+    ],
+    "required_program": [
+      "multiple synchronized dual-lane meetings with varied speakers, acoustics, crosstalk, overlap, and same-speaker-cross-lane cases",
+      "immutable lane metadata plus missing-lane and wrong-lane controls",
+      "human-audited identity, activity, overlap, and crosstalk truth",
+      "preregistered development, validation, and single-open long/hard holdout splits",
+      "D8-safe same-frame L1/F2 measurement with full-chain label-perturbation audit",
+      "accuracy, DER, false-positive, regression, mapping, determinism, and compute gates"
+    ]
+  },
+  "cases": [
+    {
+      "acceptance_truth_status": "NOT_HUMAN_AUDITED",
+      "alignment": {
+        "capture_start_offset_sec": 2.005272,
+        "clock": "host_time",
+        "shared_start_timestamp_utc": "2026-04-29T12:49:21Z"
+      },
+      "capture_mode": "mic_plus_speaker",
+      "case_id": "pending_source_separation_001",
+      "duration_seconds": 59.584,
+      "known_stressors": [
+        "source_separation",
+        "speaker_playback_leakage",
+        "same_content_across_lanes"
+      ],
+      "lane_structure": "two synchronized per-lane mono tracks sharing host-time start",
+      "lanes": [
+        {
+          "audio": {
+            "channels": 1,
+            "container": "WAVE",
+            "duration_seconds": 59.584,
+            "encoding": "PCM signed 16-bit little-endian",
+            "file_bytes": 1906732,
+            "frame_count": 953344,
+            "sample_rate_hz": 16000,
+            "sample_width_bytes": 2
+          },
+          "audio_path": "cases/pending_source_separation_001/remote.wav",
+          "capture_seam": "Core Audio Tap",
+          "expected_speakers": 2,
+          "lane": "system_audio",
+          "reference": {
+            "end_max_seconds": 57.005,
+            "format": "JSONL",
+            "human_audit_status": "NOT_AUDITED",
+            "reference_sources": [
+              "data/benchmark_diarization_1min/samples/lex_keyu_jin/reference.jsonl"
+            ],
+            "row_count": 3,
+            "schema_fields": [
+              "capture_start_offset_sec",
+              "end",
+              "reference_source",
+              "source_lane",
+              "speaker",
+              "start",
+              "text"
+            ],
+            "speakers": [
+              "Keyu Jin",
+              "Lex Fridman"
+            ],
+            "start_min_seconds": 2.005
+          },
+          "reference_path": "cases/pending_source_separation_001/reference_system_audio.jsonl"
+        },
+        {
+          "audio": {
+            "channels": 1,
+            "container": "WAVE",
+            "duration_seconds": 59.584,
+            "encoding": "PCM signed 16-bit little-endian",
+            "file_bytes": 1906732,
+            "frame_count": 953344,
+            "sample_rate_hz": 16000,
+            "sample_width_bytes": 2
+          },
+          "audio_path": "cases/pending_source_separation_001/local.wav",
+          "capture_seam": "AVAudioEngine room capture",
+          "expected_speakers": 2,
+          "lane": "microphone",
+          "reference": {
+            "end_max_seconds": 57.005,
+            "format": "JSONL",
+            "human_audit_status": "NOT_AUDITED",
+            "reference_sources": [
+              "data/benchmark_diarization_1min/samples/lex_keyu_jin/reference.jsonl"
+            ],
+            "row_count": 3,
+            "schema_fields": [
+              "capture_start_offset_sec",
+              "end",
+              "reference_source",
+              "source_lane",
+              "speaker",
+              "start",
+              "text"
+            ],
+            "speakers": [
+              "Keyu Jin",
+              "Lex Fridman"
+            ],
+            "start_min_seconds": 2.005
+          },
+          "reference_path": "cases/pending_source_separation_001/reference_microphone.jsonl"
+        }
+      ],
+      "provenance_summary": "Captured from signed packaged-app Mic+Speaker mode by playing data/benchmark_diarization_1min/samples/lex_keyu_jin/audio.wav at macOS output volume 20. remote.wav is the Core Audio Tap/system-audio lane; local.wav is the MacBook Pro Microphone room-capture lane. Both lanes contain the same two reference speakers because this fixture is a speaker-playback leakage/source-separation case.",
+      "recording_status": "captured_real_recording",
+      "reference_relationship": "same three truth intervals and two speakers on both lanes; source_lane differs"
+    }
+  ],
+  "copied_files": [
+    {
+      "bytes": 2186,
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/README.md",
+      "sha256": "4bba1f0a6799247dcb6f33413441998d55275c47ecc068a9db74bdb8d1456a32"
+    },
+    {
+      "bytes": 3266,
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/capture_notes.md",
+      "sha256": "c8a4201b768edb3017bfc3dc3bf4fc66a03048d525bdf83064b64a23278f702b"
+    },
+    {
+      "bytes": 1906732,
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/local.wav",
+      "sha256": "830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251"
+    },
+    {
+      "bytes": 1682,
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/reference_microphone.jsonl",
+      "sha256": "b3acd32f2f1023b328b0ba0634427e035ca8ce32edc0bb101cc9607a2947d880"
+    },
+    {
+      "bytes": 1688,
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/reference_system_audio.jsonl",
+      "sha256": "fda7c141c7a5a9c7dc8d445a5fae83acf1e96cf25059c57912d4ce9a9a6c0abe"
+    },
+    {
+      "bytes": 1906732,
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav",
+      "sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d"
+    },
+    {
+      "bytes": 2682,
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/manifest.json",
+      "sha256": "bd910436aa5cf08e6f3e54fb3290e76085e7febf2e1a338a36c765df9e1db3b6"
+    }
+  ],
+  "dataset": {
+    "case_count": 1,
+    "case_ids": [
+      "pending_source_separation_001"
+    ],
+    "name": "dual_lane_diarization",
+    "source_schema_version": 1,
+    "total_aligned_duration_seconds": 59.584
+  },
+  "disposition": "INVENTORY_COMPLETE_EXPLORATORY_NOT_ACCEPTANCE_GRADE",
+  "generated_at": "2026-08-05T05:08:20.406785+00:00",
+  "new_recording_created": false,
+  "overall": "PASS",
+  "read_only_source": true,
+  "schema": "moss-l15-dl1-inventory.v1",
+  "source": {
+    "audio_source": "current ignored working-tree bytes",
+    "canonical_working_tree_path": "/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization",
+    "copy_protocol": {
+      "audio": "scp -p from canonical working tree",
+      "references_and_notes": "git archive from reference commit over read-only ssh",
+      "remote_writes": 0
+    },
+    "host": "ga0@m4mbp",
+    "physical_replicas": [
+      {
+        "local_wav_sha256": "830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251",
+        "path": "/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization",
+        "remote_wav_sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d"
+      },
+      {
+        "local_wav_sha256": "830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251",
+        "path": "/Users/ga0/Desktop/AI_Projects/LiveTranscribe--soniqo-vad-ane/data/dual_lane_diarization",
+        "remote_wav_sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d"
+      },
+      {
+        "local_wav_sha256": "830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251",
+        "path": "/Users/ga0/Desktop/AI_Projects/LiveTranscribe-ralph-outstanding-0727-v2/data/dual_lane_diarization",
+        "remote_wav_sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d"
+      }
+    ],
+    "reference_and_provenance_source": {
+      "branch": "ralph/diarization-architecture-0428",
+      "commit": "dd9c7cb07f609763dea9993e9f2a2f0da2c5a8ae",
+      "commit_subject": "ralph: iteration 3 - DARCHDISC-055: Capture real aligned dual-lane Mic+Speaker recordings",
+      "commit_timestamp": "2026-04-29T08:56:56-04:00",
+      "reason": "latest commit in all-branch history that changes data/dual_lane_diarization"
+    },
+    "working_tree_branch": "ralph/production",
+    "working_tree_head": "c861a51303229fb88527395019d17aad377c360a"
+  }
+}

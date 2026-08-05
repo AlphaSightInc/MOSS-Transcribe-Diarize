@@ -1,0 +1,56 @@
+{
+  "dataset_name": "dual_lane_diarization",
+  "schema_version": 1,
+  "recording_status": "captured_real_recording",
+  "fixture_root": "data/dual_lane_diarization",
+  "capture_steps": [
+    "Set macOS output volume to 20 with osascript before playback.",
+    "Build and launch the packaged app with ./scripts/build_app_bundle.sh; do not use the bare swift-build executable for capture.",
+    "Use Mic+Speaker mode so Core Audio Tap records remote/system audio and AVAudioEngine records local/microphone audio.",
+    "Disable LLM by leaving endpointUrl/modelName empty or setting summary and format intervals to 0.",
+    "Record aligned remote.wav and local.wav with a shared start timestamp and capture_start_offset_sec.",
+    "Write per-lane reference JSONL files with speaker, text, start, and end fields.",
+    "If a headed browser is used for validation, close the page/browser before finishing and record cleanup in capture_notes.md."
+  ],
+  "cases": [
+    {
+      "case_id": "pending_source_separation_001",
+      "capture_mode": "mic_plus_speaker",
+      "recording_status": "captured_real_recording",
+      "duration_sec": 59.584,
+      "source_lanes": [
+        "system_audio",
+        "microphone"
+      ],
+      "expected_speakers_by_lane": {
+        "system_audio": 2,
+        "microphone": 2
+      },
+      "alignment": {
+        "clock": "host_time",
+        "shared_start_timestamp_utc": "2026-04-29T12:49:21Z",
+        "capture_start_offset_sec": 2.005272
+      },
+      "lanes": [
+        {
+          "lane": "system_audio",
+          "audio_path": "data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav",
+          "reference_jsonl": "data/dual_lane_diarization/cases/pending_source_separation_001/reference_system_audio.jsonl",
+          "expected_speakers": 2
+        },
+        {
+          "lane": "microphone",
+          "audio_path": "data/dual_lane_diarization/cases/pending_source_separation_001/local.wav",
+          "reference_jsonl": "data/dual_lane_diarization/cases/pending_source_separation_001/reference_microphone.jsonl",
+          "expected_speakers": 2
+        }
+      ],
+      "known_stressors": [
+        "source_separation",
+        "speaker_playback_leakage",
+        "same_content_across_lanes"
+      ],
+      "notes": "Captured from signed packaged-app Mic+Speaker mode by playing data/benchmark_diarization_1min/samples/lex_keyu_jin/audio.wav at macOS output volume 20. remote.wav is the Core Audio Tap/system-audio lane; local.wav is the MacBook Pro Microphone room-capture lane. Both lanes contain the same two reference speakers because this fixture is a speaker-playback leakage/source-separation case."
+    }
+  ]
+}
