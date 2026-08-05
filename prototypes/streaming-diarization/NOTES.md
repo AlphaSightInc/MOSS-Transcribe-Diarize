@@ -1655,3 +1655,21 @@ Reproduce:
 ```bash
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_f1_precondition.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/seal_f1_precondition.py
 ```
+
+### Campaign L1.5 F1 runner freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — RUNNER FROZEN BEFORE FIRST SCORE.** Red-first failed on the
+absent runner; green proves the exact 27-point grid and preregistered deterministic
+tie-break. Candidate execution is a scorer-free process. Development decisions are
+sealed before a separate scorer loads truth and freezes one config; validation decisions
+then run in a fresh scorer-free process before validation truth opens. Source audit finds
+no evaluator import or golden key in the decision chain. No scoring output existed.
+
+Decision runner SHA-256:
+`078ea9c6c27b9a1c6e86b2f3c30494ee9435cf8648eb4f9f8bcbb37a123c95f0`;
+scorer SHA-256:
+`600e6109f13ecd1fd83fcac965a95899628e1cd5bed4aba48e98f84fdf63bab4`;
+audit SHA-256:
+`684130fffd09671538aafb0ac2b91ed46257888549f2672a3038fbad565b4a8b`;
+11-member evidence manifest SHA-256:
+`6b4af3384c782c1061f75d91446ee1bc14a0a74f3a54cedc8871470915372ab8`.

@@ -1,0 +1,6 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_f1_runner.py
+EXIT: 1
+Traceback (most recent call last):
+  File "prototypes/streaming-diarization/l15/test_f1_runner.py", line 7, in <module>
+    from run_f1_family import config_grid, select_config
+ModuleNotFoundError: No module named 'run_f1_family'

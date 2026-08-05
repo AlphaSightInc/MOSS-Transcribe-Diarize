@@ -1,0 +1,109 @@
+{
+  "decision_process_chain": [
+    {
+      "imports": [
+        "__future__",
+        "f1_candidate",
+        "pathlib",
+        "runtime_fixture",
+        "runtime_l1",
+        "typing"
+      ],
+      "path": "prototypes/streaming-diarization/l15/f1_decisions.py",
+      "sha256": "078ea9c6c27b9a1c6e86b2f3c30494ee9435cf8648eb4f9f8bcbb37a123c95f0",
+      "subscript_keys": [
+        "canonical_min_margin",
+        "canonical_min_score",
+        "case_id",
+        "cases",
+        "config",
+        "config_id",
+        "configuration_count",
+        "development_grid",
+        "family_id",
+        "family_spec_sha256",
+        "gate_seconds",
+        "l1",
+        "max_changed_duration_fraction",
+        "overall",
+        "runtime_shape_sha256",
+        "scoring_executed",
+        "split",
+        "target_error_subset"
+      ]
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "pathlib",
+        "runtime_l1",
+        "scipy.cluster.hierarchy",
+        "scipy.optimize",
+        "scipy.spatial.distance",
+        "typing"
+      ],
+      "path": "prototypes/streaming-diarization/l15/f1_candidate.py",
+      "sha256": "a63dfec023e3b0964d4491690415bc45c614cd31fc700e13c77961a187b17891",
+      "subscript_keys": [
+        "canonical_speaker",
+        "case_id",
+        "current_speaker",
+        "duration_seconds",
+        "incumbent_score",
+        "local_speaker",
+        "previous_speaker",
+        "proposed_score",
+        "score_delta",
+        "span_id",
+        "unit_index",
+        "vector"
+      ]
+    },
+    {
+      "imports": [
+        "__future__",
+        "pathlib",
+        "run_l1_control",
+        "runtime_fixture",
+        "typing"
+      ],
+      "path": "prototypes/streaming-diarization/l15/runtime_l1.py",
+      "sha256": "385054ae762d0663f49bbf917635be69764ad5b2046c9eb6bd737b10312e820b",
+      "subscript_keys": [
+        "case_id",
+        "cases",
+        "end_sample",
+        "final_unit_labels",
+        "local_speaker",
+        "pieces",
+        "production_config",
+        "runtime_cache_path",
+        "runtime_cache_sha256",
+        "span_id",
+        "spans",
+        "split",
+        "start_sample",
+        "total_samples",
+        "units",
+        "vec_idx",
+        "vecs"
+      ]
+    }
+  ],
+  "decision_process_imports_scorer": false,
+  "findings": [],
+  "grid_configuration_count": 27,
+  "overall": "PASS",
+  "process_order": [
+    "dev-decisions",
+    "dev-score-and-config-freeze",
+    "validation-decisions-fresh-process",
+    "validation-score",
+    "timing",
+    "verdict"
+  ],
+  "schema": "moss-l15-f1-runner-audit.v1",
+  "scorer_process_module": "run_f1_family.py",
+  "scoring_outputs_before_first_run": []
+}
