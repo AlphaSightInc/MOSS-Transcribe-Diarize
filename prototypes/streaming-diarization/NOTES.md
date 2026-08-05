@@ -1696,3 +1696,24 @@ Adapter verdict SHA-256:
 `0f9d8c28d0c59721d46dd0e4968628c13bc4b51ff0d60cbf8c8d82a648387e85`.
 Historical precondition seal remains owned by `f79411f`; the new adapter proofs are
 authoritative before the first successful decision output.
+
+### Campaign L1.5 F1 family verdict (`l15`, 2026-08-04)
+
+**VERDICT: FAIL — NOT FREEZEABLE; NO RETRY OR RETUNING.** The single 27-config
+development pass selected `f1-s040-m015-b002` (score `0.40`, margin `0.15`, rewrite
+budget `0.02`). Same-frame duration-weighted gain was only `+0.0342058102 pp` on
+development and `+0.5961729832 pp` on the one-config validation opening, both below
+the required `+1.0 pp`.
+
+Non-gain gates also failed: development had tiny FP/DER/two-sided failures on the
+3-minute Jamie case and FP/DER on 5-minute Jamie; validation had an FP-speaker-seconds
+failure on alphabet. Per-case regression stayed within 0.5 pp. Candidate compute passed:
+30-minute 20-sample p95 `0.082268596 s` ≤ `0.200159263 s`. All duplicate decisions
+were exact. Holdout stayed sealed.
+
+Verdict SHA-256:
+`6ac5cc42b4c182c2f4869adf263fd0eec49f00977eee048b3fc6d6832d50eab6`;
+verification SHA-256:
+`8441810f2ed5efaec926a6abcdd635efdbd48ccffaaf1f01fedfafcbc6fcca3e`;
+17-member evidence manifest SHA-256:
+`dcf453f2a147940b4eb3b45071801ea39ba5b516486ae2e32a9e766cf8f6967a`.

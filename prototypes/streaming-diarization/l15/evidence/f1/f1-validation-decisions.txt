@@ -1,0 +1,21 @@
+{
+  "events": [
+    "L1 validation 1/8 1m-acquired-rolex",
+    "PASS 1m-acquired-rolex configs=1 l1_sha256=d00ddbe70cfe075942bd50082777f8fe99cc13663bf402249afa5b4c380a2889",
+    "L1 validation 2/8 1m-lex-bill-ackman",
+    "PASS 1m-lex-bill-ackman configs=1 l1_sha256=1aaeb033a587d8479d28c4e309f6f417fa96d365114ed5faae65fc501162c42a",
+    "L1 validation 3/8 1m-lex-javier-milei",
+    "PASS 1m-lex-javier-milei configs=1 l1_sha256=aa04f59de2c85e52faea0237ff365c6764bf5dfbef2ee14c4742f3703bceb977",
+    "L1 validation 4/8 1m-lex-keyu-jin",
+    "PASS 1m-lex-keyu-jin configs=1 l1_sha256=4a1ab32db6b2e914bcf35eac28f1df33aa950125a56c11f735db29a22014b454",
+    "L1 validation 5/8 3m-lex-adam-frank",
+    "PASS 3m-lex-adam-frank configs=1 l1_sha256=700529c548d148e2944c59871490b7f5f5ef8f98a828300d81a2667fd3d28944",
+    "L1 validation 6/8 3m-lex-shapiro-destiny",
+    "PASS 3m-lex-shapiro-destiny configs=1 l1_sha256=23a25d6a4f9919d9da3e40bcbe3a77002190ba3e83308e67aec1d77cc3bc2d1f",
+    "L1 validation 7/8 5m-acquired-alphabet",
+    "PASS 5m-acquired-alphabet configs=1 l1_sha256=78a08ee49c0c87a11caef46e863e04cbc3711f3e7571ba6cfb27199a293ebec7",
+    "L1 validation 8/8 5m-acquired-rolex",
+    "PASS 5m-acquired-rolex configs=1 l1_sha256=af5b89395e27e26eee08841e2258ac4ee9e811414dfa9b128ab3412d3ea6a3fc"
+  ],
+  "output_sha256": "430e1823fae4879356d21357819df63ba50adccec8936afb95f20b35cbe34892"
+}

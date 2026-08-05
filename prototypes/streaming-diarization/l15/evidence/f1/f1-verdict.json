@@ -1,0 +1,1464 @@
+{
+  "development": {
+    "aggregate_speaker_accuracy": 0.8886195809658126,
+    "candidate_aggregate": {
+      "diarization_error_rate": 0.28814581404716966,
+      "false_positive_speaker_seconds": 475.802025,
+      "matched_speaker_seconds": 2441.9898319999998,
+      "reference_seconds": 2748.071148,
+      "speaker_accuracy": 0.8886195809658126
+    },
+    "cases": [
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 34.92,
+          "diarization_error_rate": 0.364221,
+          "false_positive_activity_seconds": 1.3,
+          "false_positive_speaker_seconds": 1.3,
+          "hypothesis_activity_seconds": 36.22,
+          "hypothesis_seconds": 36.22,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 34.92,
+          "missed_activity_seconds": 17.96,
+          "missed_speaker_seconds": 17.96,
+          "reference_activity_seconds": 52.88,
+          "reference_coverage": 0.660363,
+          "reference_seconds": 52.88,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.660363,
+          "speaker_activity_precision": 0.964108,
+          "speaker_activity_recall": 0.660363,
+          "speaker_correctness": {
+            "<EXCLUDE>": 0.0,
+            "Ben": 0.975527,
+            "David": 0.959877
+          },
+          "speaker_mapping": {
+            "<EXCLUDE>": "<HYP_PAD_001>",
+            "Ben": "speaker-0001",
+            "David": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 34.92,
+          "two_sided_mapping": false
+        },
+        "case_id": "1m-acquired-nfl",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "754258ca39cec4189a40deed72a7a2f0692268f1a3d47dfcd7827c81903efeac",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 34.92,
+          "diarization_error_rate": 0.364221,
+          "false_positive_activity_seconds": 1.3,
+          "false_positive_speaker_seconds": 1.3,
+          "hypothesis_activity_seconds": 36.22,
+          "hypothesis_seconds": 36.22,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 34.92,
+          "missed_activity_seconds": 17.96,
+          "missed_speaker_seconds": 17.96,
+          "reference_activity_seconds": 52.88,
+          "reference_coverage": 0.660363,
+          "reference_seconds": 52.88,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.660363,
+          "speaker_activity_precision": 0.964108,
+          "speaker_activity_recall": 0.660363,
+          "speaker_correctness": {
+            "<EXCLUDE>": 0.0,
+            "Ben": 0.975527,
+            "David": 0.959877
+          },
+          "speaker_mapping": {
+            "<EXCLUDE>": "<HYP_PAD_001>",
+            "Ben": "speaker-0001",
+            "David": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 34.92,
+          "two_sided_mapping": false
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 2.45,
+          "covered_reference_seconds": 171.62,
+          "diarization_error_rate": 0.060388,
+          "false_positive_activity_seconds": 0.96,
+          "false_positive_speaker_seconds": 0.97,
+          "hypothesis_activity_seconds": 172.58,
+          "hypothesis_seconds": 173.4,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 169.98,
+          "missed_activity_seconds": 7.39,
+          "missed_speaker_seconds": 7.39,
+          "reference_activity_seconds": 179.01,
+          "reference_coverage": 0.958717,
+          "reference_seconds": 179.01,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.949556,
+          "speaker_activity_precision": 0.994437,
+          "speaker_activity_recall": 0.958717,
+          "speaker_correctness": {
+            "Ben": 0.971561,
+            "David": 0.97832,
+            "Jamie": 0.0
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0001",
+            "David": "speaker-0002",
+            "Jamie": "<HYP_PAD_001>"
+          },
+          "true_positive_activity_seconds": 171.62,
+          "two_sided_mapping": false
+        },
+        "case_id": "3m-acquired-jamie-dimon",
+        "changed_duration_fraction": 0.017611,
+        "correction_evidence_gate": true,
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 17
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 0.85,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.353791,
+            "score_delta": 0.353791
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 55
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 1.02,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.193584,
+            "score_delta": 0.193584
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S04",
+              "span_id": 69
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 1.2,
+            "incumbent_score": 1.0,
+            "previous_speaker": "speaker-0003",
+            "proposed_score": 0.049399,
+            "score_delta": -0.950601
+          }
+        ],
+        "decision_semantic_sha256": "6ff719db0faf9a7d882a4938f2090bcc8531d3f36ed2bdd55607fa1197cba631",
+        "der_gate": false,
+        "deterministic": true,
+        "fp_gate": false,
+        "gain_pp": -0.0056000000000056005,
+        "l1": {
+          "confused_speaker_seconds": 0.91,
+          "covered_reference_seconds": 170.43,
+          "diarization_error_rate": 0.056533,
+          "false_positive_activity_seconds": 0.63,
+          "false_positive_speaker_seconds": 0.63,
+          "hypothesis_activity_seconds": 171.06,
+          "hypothesis_seconds": 171.53,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 169.99,
+          "missed_activity_seconds": 8.58,
+          "missed_speaker_seconds": 8.58,
+          "reference_activity_seconds": 179.01,
+          "reference_coverage": 0.95207,
+          "reference_seconds": 179.01,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.949612,
+          "speaker_activity_precision": 0.996317,
+          "speaker_activity_recall": 0.95207,
+          "speaker_correctness": {
+            "Ben": 0.971561,
+            "David": 0.92861,
+            "Jamie": 0.284293
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0001",
+            "David": "speaker-0002",
+            "Jamie": "speaker-0003"
+          },
+          "true_positive_activity_seconds": 170.43,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": false
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 8.927,
+          "diarization_error_rate": 3.78941,
+          "false_positive_activity_seconds": 43.273,
+          "false_positive_speaker_seconds": 43.273,
+          "hypothesis_activity_seconds": 52.2,
+          "hypothesis_seconds": 52.2,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 8.927,
+          "missed_activity_seconds": 3.386,
+          "missed_speaker_seconds": 3.386,
+          "reference_activity_seconds": 12.313,
+          "reference_coverage": 0.725006,
+          "reference_seconds": 12.313,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.725006,
+          "speaker_activity_precision": 0.171015,
+          "speaker_activity_recall": 0.725006,
+          "speaker_correctness": {
+            "Ben": 1.0,
+            "David": 0.816464,
+            "Jamie": 0.194862
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0002",
+            "David": "speaker-0001",
+            "Jamie": "speaker-0003"
+          },
+          "true_positive_activity_seconds": 8.927,
+          "two_sided_mapping": true
+        },
+        "case_id": "1m-acquired-jamie-dimon",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "0cd71e487126c1d88a2ad9f50167e58224f5cdce975da05ea6579c94c183ce01",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 8.927,
+          "diarization_error_rate": 3.78941,
+          "false_positive_activity_seconds": 43.273,
+          "false_positive_speaker_seconds": 43.273,
+          "hypothesis_activity_seconds": 52.2,
+          "hypothesis_seconds": 52.2,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 8.927,
+          "missed_activity_seconds": 3.386,
+          "missed_speaker_seconds": 3.386,
+          "reference_activity_seconds": 12.313,
+          "reference_coverage": 0.725006,
+          "reference_seconds": 12.313,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.725006,
+          "speaker_activity_precision": 0.171015,
+          "speaker_activity_recall": 0.725006,
+          "speaker_correctness": {
+            "Ben": 1.0,
+            "David": 0.816464,
+            "Jamie": 0.194862
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0002",
+            "David": "speaker-0001",
+            "Jamie": "speaker-0003"
+          },
+          "true_positive_activity_seconds": 8.927,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.489,
+          "covered_reference_seconds": 29.282799,
+          "diarization_error_rate": 6.631595,
+          "false_positive_activity_seconds": 226.637201,
+          "false_positive_speaker_seconds": 226.637201,
+          "hypothesis_activity_seconds": 255.92,
+          "hypothesis_seconds": 256.73,
+          "hypothesis_speaker_count": 4,
+          "matched_speaker_seconds": 28.793799,
+          "missed_activity_seconds": 5.848173,
+          "missed_speaker_seconds": 5.848173,
+          "reference_activity_seconds": 35.130972,
+          "reference_coverage": 0.833532,
+          "reference_seconds": 35.130972,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.819613,
+          "speaker_activity_precision": 0.114422,
+          "speaker_activity_recall": 0.833532,
+          "speaker_correctness": {
+            "Ben": 0.928239,
+            "David": 0.816566,
+            "Jamie": 0.183292
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0001",
+            "David": "speaker-0002",
+            "Jamie": "speaker-0004"
+          },
+          "true_positive_activity_seconds": 29.282799,
+          "two_sided_mapping": true
+        },
+        "case_id": "5m-acquired-jamie-dimon",
+        "changed_duration_fraction": 0.003247,
+        "correction_evidence_gate": true,
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S03",
+              "span_id": 78
+            },
+            "changed_duration_fraction": 0.003247,
+            "duration_seconds": 0.84,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.290931,
+            "score_delta": 0.290931
+          }
+        ],
+        "decision_semantic_sha256": "0cf1c39faa2e0410b58a242821061c7c113eabd9e5cff9018766a10d1332af7f",
+        "der_gate": false,
+        "deterministic": true,
+        "fp_gate": false,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.489,
+          "covered_reference_seconds": 29.282799,
+          "diarization_error_rate": 6.607684,
+          "false_positive_activity_seconds": 225.797201,
+          "false_positive_speaker_seconds": 225.797201,
+          "hypothesis_activity_seconds": 255.08,
+          "hypothesis_seconds": 255.89,
+          "hypothesis_speaker_count": 4,
+          "matched_speaker_seconds": 28.793799,
+          "missed_activity_seconds": 5.848173,
+          "missed_speaker_seconds": 5.848173,
+          "reference_activity_seconds": 35.130972,
+          "reference_coverage": 0.833532,
+          "reference_seconds": 35.130972,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.819613,
+          "speaker_activity_precision": 0.114798,
+          "speaker_activity_recall": 0.833532,
+          "speaker_correctness": {
+            "Ben": 0.928239,
+            "David": 0.816566,
+            "Jamie": 0.183292
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0001",
+            "David": "speaker-0002",
+            "Jamie": "speaker-0004"
+          },
+          "true_positive_activity_seconds": 29.282799,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.601,
+          "covered_reference_seconds": 58.198176,
+          "diarization_error_rate": 3.136826,
+          "false_positive_activity_seconds": 203.621824,
+          "false_positive_speaker_seconds": 203.621824,
+          "hypothesis_activity_seconds": 261.82,
+          "hypothesis_seconds": 275.26,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 58.509033,
+          "missed_activity_seconds": 10.139,
+          "missed_speaker_seconds": 10.139,
+          "reference_activity_seconds": 68.337176,
+          "reference_coverage": 0.851633,
+          "reference_seconds": 68.337176,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.856182,
+          "speaker_activity_precision": 0.222283,
+          "speaker_activity_recall": 0.851633,
+          "speaker_correctness": {
+            "Ben": 0.887076,
+            "David": 0.753121
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0001",
+            "David": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 58.198176,
+          "two_sided_mapping": true
+        },
+        "case_id": "5m-acquired-nfl",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "10784758d1bdca4401578e9ae93b5c9c8c93cbf7a5bc018660620fd4474d6028",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.601,
+          "covered_reference_seconds": 58.198176,
+          "diarization_error_rate": 3.136826,
+          "false_positive_activity_seconds": 203.621824,
+          "false_positive_speaker_seconds": 203.621824,
+          "hypothesis_activity_seconds": 261.82,
+          "hypothesis_seconds": 275.26,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 58.509033,
+          "missed_activity_seconds": 10.139,
+          "missed_speaker_seconds": 10.139,
+          "reference_activity_seconds": 68.337176,
+          "reference_coverage": 0.851633,
+          "reference_seconds": 68.337176,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.856182,
+          "speaker_activity_precision": 0.222283,
+          "speaker_activity_recall": 0.851633,
+          "speaker_correctness": {
+            "Ben": 0.887076,
+            "David": 0.753121
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0001",
+            "David": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 58.198176,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 6.92,
+          "covered_reference_seconds": 275.96,
+          "diarization_error_rate": 0.1032,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 275.96,
+          "hypothesis_seconds": 275.97,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 269.05,
+          "missed_activity_seconds": 24.04,
+          "missed_speaker_seconds": 24.04,
+          "reference_activity_seconds": 300.0,
+          "reference_coverage": 0.919867,
+          "reference_seconds": 300.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.896833,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.919867,
+          "speaker_correctness": {
+            "Bill Ackman": 0.895683,
+            "Lex Fridman": 0.900411
+          },
+          "speaker_mapping": {
+            "Bill Ackman": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 275.96,
+          "two_sided_mapping": true
+        },
+        "case_id": "5m-lex-bill-ackman",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "bde4b6a32bc31b74a87047dde36934a52b3c3588bd51d72d48135091d9b92fb7",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 6.92,
+          "covered_reference_seconds": 275.96,
+          "diarization_error_rate": 0.1032,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 275.96,
+          "hypothesis_seconds": 275.97,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 269.05,
+          "missed_activity_seconds": 24.04,
+          "missed_speaker_seconds": 24.04,
+          "reference_activity_seconds": 300.0,
+          "reference_coverage": 0.919867,
+          "reference_seconds": 300.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.896833,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.919867,
+          "speaker_correctness": {
+            "Bill Ackman": 0.895683,
+            "Lex Fridman": 0.900411
+          },
+          "speaker_mapping": {
+            "Bill Ackman": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 275.96,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 264.72,
+          "diarization_error_rate": 0.1176,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 264.72,
+          "hypothesis_seconds": 266.44,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 266.44,
+          "missed_activity_seconds": 35.28,
+          "missed_speaker_seconds": 35.28,
+          "reference_activity_seconds": 300.0,
+          "reference_coverage": 0.8824,
+          "reference_seconds": 300.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.888133,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.8824,
+          "speaker_correctness": {
+            "Javier Milei": 0.871649,
+            "Lex Fridman": 0.89601
+          },
+          "speaker_mapping": {
+            "Javier Milei": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 264.72,
+          "two_sided_mapping": true
+        },
+        "case_id": "5m-lex-javier-milei",
+        "changed_duration_fraction": 0.003354,
+        "correction_evidence_gate": true,
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 71
+            },
+            "changed_duration_fraction": 0.003354,
+            "duration_seconds": 0.9,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.32842,
+            "score_delta": 0.32842
+          }
+        ],
+        "decision_semantic_sha256": "64964d1e8d652e50029a6ac5fbe36fcc02e7c4cf16c4c044326f4f2f31265c6c",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.30000000000000027,
+        "l1": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 263.82,
+          "diarization_error_rate": 0.1206,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 263.82,
+          "hypothesis_seconds": 265.54,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 265.54,
+          "missed_activity_seconds": 36.18,
+          "missed_speaker_seconds": 36.18,
+          "reference_activity_seconds": 300.0,
+          "reference_coverage": 0.8794,
+          "reference_seconds": 300.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.885133,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.8794,
+          "speaker_correctness": {
+            "Javier Milei": 0.871649,
+            "Lex Fridman": 0.891576
+          },
+          "speaker_mapping": {
+            "Javier Milei": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 263.82,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 22.65,
+          "covered_reference_seconds": 1621.6,
+          "diarization_error_rate": 0.111942,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 1621.51,
+          "hypothesis_seconds": 1628.02,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 1605.37,
+          "missed_activity_seconds": 178.49,
+          "missed_speaker_seconds": 178.89,
+          "reference_activity_seconds": 1800.0,
+          "reference_coverage": 0.900689,
+          "reference_seconds": 1800.4,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.891674,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.900839,
+          "speaker_correctness": {
+            "Bill Ackman": 0.887717,
+            "Lex Fridman": 0.903791
+          },
+          "speaker_mapping": {
+            "Bill Ackman": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 1621.51,
+          "two_sided_mapping": true
+        },
+        "case_id": "30m-lex-bill-ackman",
+        "changed_duration_fraction": 0.00039,
+        "correction_evidence_gate": true,
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S09",
+              "span_id": 761
+            },
+            "changed_duration_fraction": 0.00039,
+            "duration_seconds": 0.64,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.14051,
+            "score_delta": 0.14051
+          }
+        ],
+        "decision_semantic_sha256": "f3752328d711a71f8e9306eed940fe5042ce953916eeb07b3012f9c9a97afa32",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.002799999999991698,
+        "l1": {
+          "confused_speaker_seconds": 22.06,
+          "covered_reference_seconds": 1620.96,
+          "diarization_error_rate": 0.11197,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 1620.87,
+          "hypothesis_seconds": 1627.38,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 1605.32,
+          "missed_activity_seconds": 179.13,
+          "missed_speaker_seconds": 179.53,
+          "reference_activity_seconds": 1800.0,
+          "reference_coverage": 0.900333,
+          "reference_seconds": 1800.4,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.891646,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.900483,
+          "speaker_correctness": {
+            "Bill Ackman": 0.887717,
+            "Lex Fridman": 0.903678
+          },
+          "speaker_mapping": {
+            "Bill Ackman": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 1620.87,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      }
+    ],
+    "config": {
+      "canonical_min_margin": 0.15,
+      "canonical_min_score": 0.4,
+      "max_changed_duration_fraction": 0.02
+    },
+    "config_id": "f1-s040-m015-b002",
+    "gain_gate": false,
+    "gain_pp": 0.0342058101619247,
+    "l1_aggregate": {
+      "diarization_error_rate": 0.2879347569206385,
+      "false_positive_speaker_seconds": 474.622025,
+      "matched_speaker_seconds": 2441.049832,
+      "reference_seconds": 2748.071148,
+      "speaker_accuracy": 0.8882775228641934
+    },
+    "non_gain_gates_passed": false,
+    "overall": "FAIL"
+  },
+  "family_id": "f1-ledger-only-bounded-clustering-v1",
+  "freezeable": false,
+  "gates": {
+    "compute_p95": true,
+    "development_gain": false,
+    "development_non_gain": false,
+    "validation_gain": false,
+    "validation_non_gain": false
+  },
+  "holdout_opened": false,
+  "optimization_passes_used": 1,
+  "overall": "FAIL",
+  "schema": "moss-l15-family-verdict.v1",
+  "selected_config_id": "f1-s040-m015-b002",
+  "timing": {
+    "case_id": "30m-lex-bill-ackman",
+    "config_id": "f1-s040-m015-b002",
+    "decision_semantic_sha256": "f3752328d711a71f8e9306eed940fe5042ce953916eeb07b3012f9c9a97afa32",
+    "gate_seconds": 0.20015926258638503,
+    "overall": "PASS",
+    "p50_seconds": 0.08027072914410383,
+    "p95_seconds": 0.08226859598653391,
+    "passed": true,
+    "sample_count": 20,
+    "samples_seconds": [
+      0.08476179209537804,
+      0.08213737513870001,
+      0.08059904212132096,
+      0.08128591696731746,
+      0.08058112510479987,
+      0.07915866700932384,
+      0.08003824995830655,
+      0.07980283396318555,
+      0.08044450008310378,
+      0.08009695820510387,
+      0.07967295800335705,
+      0.07978083286434412,
+      0.08075916697271168,
+      0.07948362501338124,
+      0.08064920781180263,
+      0.08107087505050004,
+      0.08094204100780189,
+      0.0800920829642564,
+      0.07937354105524719,
+      0.07967062504030764
+    ],
+    "schema": "moss-l15-f1-timing.v1"
+  },
+  "validation": {
+    "aggregate_speaker_accuracy": 0.909571318909368,
+    "candidate_aggregate": {
+      "diarization_error_rate": 0.46420809483074915,
+      "false_positive_speaker_seconds": 306.290916,
+      "matched_speaker_seconds": 756.730349,
+      "reference_seconds": 831.963732,
+      "speaker_accuracy": 0.909571318909368
+    },
+    "cases": [
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.455,
+          "covered_reference_seconds": 49.167,
+          "diarization_error_rate": 0.183729,
+          "false_positive_activity_seconds": 7.003,
+          "false_positive_speaker_seconds": 7.003,
+          "hypothesis_activity_seconds": 56.17,
+          "hypothesis_seconds": 56.17,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 48.712,
+          "missed_activity_seconds": 1.93,
+          "missed_speaker_seconds": 1.93,
+          "reference_activity_seconds": 51.097,
+          "reference_coverage": 0.962229,
+          "reference_seconds": 51.097,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.953324,
+          "speaker_activity_precision": 0.875325,
+          "speaker_activity_recall": 0.962229,
+          "speaker_correctness": {
+            "Ben": 0.970547,
+            "David": 0.91688
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0002",
+            "David": "speaker-0001"
+          },
+          "true_positive_activity_seconds": 49.167,
+          "two_sided_mapping": true
+        },
+        "case_id": "1m-acquired-rolex",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "b4e00327caf7257a08b9cb030fcd14341a2b9123cd945efcf55788e2f9407045",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.455,
+          "covered_reference_seconds": 49.167,
+          "diarization_error_rate": 0.183729,
+          "false_positive_activity_seconds": 7.003,
+          "false_positive_speaker_seconds": 7.003,
+          "hypothesis_activity_seconds": 56.17,
+          "hypothesis_seconds": 56.17,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 48.712,
+          "missed_activity_seconds": 1.93,
+          "missed_speaker_seconds": 1.93,
+          "reference_activity_seconds": 51.097,
+          "reference_coverage": 0.962229,
+          "reference_seconds": 51.097,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.953324,
+          "speaker_activity_precision": 0.875325,
+          "speaker_activity_recall": 0.962229,
+          "speaker_correctness": {
+            "Ben": 0.970547,
+            "David": 0.91688
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0002",
+            "David": "speaker-0001"
+          },
+          "true_positive_activity_seconds": 49.167,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 3.2,
+          "covered_reference_seconds": 56.85,
+          "diarization_error_rate": 0.105833,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 56.85,
+          "hypothesis_seconds": 56.85,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 53.65,
+          "missed_activity_seconds": 3.15,
+          "missed_speaker_seconds": 3.15,
+          "reference_activity_seconds": 60.0,
+          "reference_coverage": 0.9475,
+          "reference_seconds": 60.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.894167,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.9475,
+          "speaker_correctness": {
+            "Bill Ackman": 0.918519,
+            "Lex Fridman": 0.675
+          },
+          "speaker_mapping": {
+            "Bill Ackman": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 56.85,
+          "two_sided_mapping": true
+        },
+        "case_id": "1m-lex-bill-ackman",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "007134e6eb9b6a14e82393aa9ad30ade6985ccce2459ba2bd3ad73c0614dda46",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 3.2,
+          "covered_reference_seconds": 56.85,
+          "diarization_error_rate": 0.105833,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 56.85,
+          "hypothesis_seconds": 56.85,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 53.65,
+          "missed_activity_seconds": 3.15,
+          "missed_speaker_seconds": 3.15,
+          "reference_activity_seconds": 60.0,
+          "reference_coverage": 0.9475,
+          "reference_seconds": 60.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.894167,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.9475,
+          "speaker_correctness": {
+            "Bill Ackman": 0.918519,
+            "Lex Fridman": 0.675
+          },
+          "speaker_mapping": {
+            "Bill Ackman": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 56.85,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 50.54,
+          "diarization_error_rate": 0.157667,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 50.54,
+          "hypothesis_seconds": 50.54,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 50.54,
+          "missed_activity_seconds": 9.46,
+          "missed_speaker_seconds": 9.46,
+          "reference_activity_seconds": 60.0,
+          "reference_coverage": 0.842333,
+          "reference_seconds": 60.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.842333,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.842333,
+          "speaker_correctness": {
+            "Javier Milei": 0.551,
+            "Lex Fridman": 0.9006
+          },
+          "speaker_mapping": {
+            "Javier Milei": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 50.54,
+          "two_sided_mapping": true
+        },
+        "case_id": "1m-lex-javier-milei",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "81f79da577adb2e9de4be863fee354aa3ed4f2830ac930340cbc6c460a49baa5",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.0,
+          "covered_reference_seconds": 50.54,
+          "diarization_error_rate": 0.157667,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 50.54,
+          "hypothesis_seconds": 50.54,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 50.54,
+          "missed_activity_seconds": 9.46,
+          "missed_speaker_seconds": 9.46,
+          "reference_activity_seconds": 60.0,
+          "reference_coverage": 0.842333,
+          "reference_seconds": 60.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.842333,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.842333,
+          "speaker_correctness": {
+            "Javier Milei": 0.551,
+            "Lex Fridman": 0.9006
+          },
+          "speaker_mapping": {
+            "Javier Milei": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 50.54,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.68,
+          "covered_reference_seconds": 54.98,
+          "diarization_error_rate": 0.095,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 54.98,
+          "hypothesis_seconds": 54.98,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 54.3,
+          "missed_activity_seconds": 5.02,
+          "missed_speaker_seconds": 5.02,
+          "reference_activity_seconds": 60.0,
+          "reference_coverage": 0.916333,
+          "reference_seconds": 60.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.905,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.916333,
+          "speaker_correctness": {
+            "Keyu Jin": 0.884,
+            "Lex Fridman": 0.968
+          },
+          "speaker_mapping": {
+            "Keyu Jin": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 54.98,
+          "two_sided_mapping": true
+        },
+        "case_id": "1m-lex-keyu-jin",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "5816add01be67219f169792b4766ebf0030647e37fa0632f34dbd69950b2e859",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.68,
+          "covered_reference_seconds": 54.98,
+          "diarization_error_rate": 0.095,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 54.98,
+          "hypothesis_seconds": 54.98,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 54.3,
+          "missed_activity_seconds": 5.02,
+          "missed_speaker_seconds": 5.02,
+          "reference_activity_seconds": 60.0,
+          "reference_coverage": 0.916333,
+          "reference_seconds": 60.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.905,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.916333,
+          "speaker_correctness": {
+            "Keyu Jin": 0.884,
+            "Lex Fridman": 0.968
+          },
+          "speaker_mapping": {
+            "Keyu Jin": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 54.98,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.54,
+          "covered_reference_seconds": 167.51,
+          "diarization_error_rate": 0.072389,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 167.51,
+          "hypothesis_seconds": 169.85,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 169.31,
+          "missed_activity_seconds": 12.49,
+          "missed_speaker_seconds": 12.49,
+          "reference_activity_seconds": 180.0,
+          "reference_coverage": 0.930611,
+          "reference_seconds": 180.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.940611,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.930611,
+          "speaker_correctness": {
+            "Adam Frank": 0.950902,
+            "Lex Fridman": 0.911489
+          },
+          "speaker_mapping": {
+            "Adam Frank": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 167.51,
+          "two_sided_mapping": true
+        },
+        "case_id": "3m-lex-adam-frank",
+        "changed_duration_fraction": 0.003271,
+        "correction_evidence_gate": true,
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 15
+            },
+            "changed_duration_fraction": 0.003271,
+            "duration_seconds": 0.56,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.208541,
+            "score_delta": 0.208541
+          }
+        ],
+        "decision_semantic_sha256": "2d7c79fc70c4b45b4dc1a88725dd5fc8742b80bb90f7cbf8058f3739c9fb1142",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.3110999999999975,
+        "l1": {
+          "confused_speaker_seconds": 0.54,
+          "covered_reference_seconds": 166.95,
+          "diarization_error_rate": 0.0755,
+          "false_positive_activity_seconds": 0.0,
+          "false_positive_speaker_seconds": 0.0,
+          "hypothesis_activity_seconds": 166.95,
+          "hypothesis_seconds": 169.29,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 168.75,
+          "missed_activity_seconds": 13.05,
+          "missed_speaker_seconds": 13.05,
+          "reference_activity_seconds": 180.0,
+          "reference_coverage": 0.9275,
+          "reference_seconds": 180.0,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.9375,
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.9275,
+          "speaker_correctness": {
+            "Adam Frank": 0.950902,
+            "Lex Fridman": 0.899574
+          },
+          "speaker_mapping": {
+            "Adam Frank": "speaker-0001",
+            "Lex Fridman": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 166.95,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 0.88,
+          "covered_reference_seconds": 149.26,
+          "diarization_error_rate": 0.198187,
+          "false_positive_activity_seconds": 26.1035,
+          "false_positive_speaker_seconds": 26.1035,
+          "hypothesis_activity_seconds": 175.3635,
+          "hypothesis_seconds": 175.3635,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 148.38,
+          "missed_activity_seconds": 3.24,
+          "missed_speaker_seconds": 3.24,
+          "reference_activity_seconds": 152.5,
+          "reference_coverage": 0.978754,
+          "reference_seconds": 152.5,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.972984,
+          "speaker_activity_precision": 0.851146,
+          "speaker_activity_recall": 0.978754,
+          "speaker_correctness": {
+            "Ben": 0.967879,
+            "Destiny": 0.98292,
+            "Lex": 0.953889
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0003",
+            "Destiny": "speaker-0002",
+            "Lex": "speaker-0001"
+          },
+          "true_positive_activity_seconds": 149.26,
+          "two_sided_mapping": true
+        },
+        "case_id": "3m-lex-shapiro-destiny",
+        "changed_duration_fraction": 0.0,
+        "correction_evidence_gate": true,
+        "corrections": [],
+        "decision_semantic_sha256": "7e99e7f2e34c62a8dd7c562b2b10c20cf115057a420cc180f1563a7a1fc0a854",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 0.88,
+          "covered_reference_seconds": 149.26,
+          "diarization_error_rate": 0.198187,
+          "false_positive_activity_seconds": 26.1035,
+          "false_positive_speaker_seconds": 26.1035,
+          "hypothesis_activity_seconds": 175.3635,
+          "hypothesis_seconds": 175.3635,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 148.38,
+          "missed_activity_seconds": 3.24,
+          "missed_speaker_seconds": 3.24,
+          "reference_activity_seconds": 152.5,
+          "reference_coverage": 0.978754,
+          "reference_seconds": 152.5,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.972984,
+          "speaker_activity_precision": 0.851146,
+          "speaker_activity_recall": 0.978754,
+          "speaker_correctness": {
+            "Ben": 0.967879,
+            "Destiny": 0.98292,
+            "Lex": 0.953889
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0003",
+            "Destiny": "speaker-0002",
+            "Lex": "speaker-0001"
+          },
+          "true_positive_activity_seconds": 149.26,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 1.336045,
+          "covered_reference_seconds": 167.043065,
+          "diarization_error_rate": 0.533523,
+          "false_positive_activity_seconds": 83.106935,
+          "false_positive_speaker_seconds": 83.106935,
+          "hypothesis_activity_seconds": 250.15,
+          "hypothesis_seconds": 252.49,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 168.04702,
+          "missed_activity_seconds": 10.029185,
+          "missed_speaker_seconds": 10.029185,
+          "reference_activity_seconds": 177.07225,
+          "reference_coverage": 0.943361,
+          "reference_seconds": 177.07225,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.949031,
+          "speaker_activity_precision": 0.667772,
+          "speaker_activity_recall": 0.943361,
+          "speaker_correctness": {
+            "Ben": 0.983439,
+            "David": 0.893065
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0002",
+            "David": "speaker-0003"
+          },
+          "true_positive_activity_seconds": 167.043065,
+          "two_sided_mapping": true
+        },
+        "case_id": "5m-acquired-alphabet",
+        "changed_duration_fraction": 0.019002,
+        "correction_evidence_gate": true,
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S01",
+              "span_id": 56
+            },
+            "changed_duration_fraction": 0.019002,
+            "duration_seconds": 1.6,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.62779,
+            "score_delta": 0.62779
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 56
+            },
+            "changed_duration_fraction": 0.019002,
+            "duration_seconds": 0.87,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.61569,
+            "score_delta": 0.61569
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S01",
+              "span_id": 122
+            },
+            "changed_duration_fraction": 0.019002,
+            "duration_seconds": 0.88,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.541814,
+            "score_delta": 0.541814
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S01",
+              "span_id": 123
+            },
+            "changed_duration_fraction": 0.019002,
+            "duration_seconds": 1.52,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.511651,
+            "score_delta": 0.511651
+          }
+        ],
+        "decision_semantic_sha256": "e149defe5bf1c1b90dc2fea3f8258d76b919eb92b5a87b14356440cb7ede0082",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": false,
+        "gain_pp": 2.484799999999998,
+        "l1": {
+          "confused_speaker_seconds": 1.336045,
+          "covered_reference_seconds": 162.643122,
+          "diarization_error_rate": 0.555717,
+          "false_positive_activity_seconds": 82.636878,
+          "false_positive_speaker_seconds": 82.636878,
+          "hypothesis_activity_seconds": 245.28,
+          "hypothesis_seconds": 247.62,
+          "hypothesis_speaker_count": 3,
+          "matched_speaker_seconds": 163.647077,
+          "missed_activity_seconds": 14.429128,
+          "missed_speaker_seconds": 14.429128,
+          "reference_activity_seconds": 177.07225,
+          "reference_coverage": 0.918513,
+          "reference_seconds": 177.07225,
+          "reference_speaker_count": 2,
+          "speaker_accuracy": 0.924183,
+          "speaker_activity_precision": 0.663092,
+          "speaker_activity_recall": 0.918513,
+          "speaker_correctness": {
+            "Ben": 0.975543,
+            "David": 0.840644
+          },
+          "speaker_mapping": {
+            "Ben": "speaker-0002",
+            "David": "speaker-0003"
+          },
+          "true_positive_activity_seconds": 162.643122,
+          "two_sided_mapping": true
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      },
+      {
+        "candidate": {
+          "confused_speaker_seconds": 2.31119,
+          "covered_reference_seconds": 66.102519,
+          "diarization_error_rate": 2.383284,
+          "false_positive_activity_seconds": 190.077481,
+          "false_positive_speaker_seconds": 190.077481,
+          "hypothesis_activity_seconds": 256.18,
+          "hypothesis_seconds": 256.18,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 63.791329,
+          "missed_activity_seconds": 24.399963,
+          "missed_speaker_seconds": 25.191963,
+          "reference_activity_seconds": 90.502482,
+          "reference_coverage": 0.724058,
+          "reference_seconds": 91.294482,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.698742,
+          "speaker_activity_precision": 0.258032,
+          "speaker_activity_recall": 0.730395,
+          "speaker_correctness": {
+            "<EXCLUDE>": 0.0,
+            "Ben": 0.852283,
+            "David": 0.834014
+          },
+          "speaker_mapping": {
+            "<EXCLUDE>": "<HYP_PAD_001>",
+            "Ben": "speaker-0001",
+            "David": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 66.102519,
+          "two_sided_mapping": false
+        },
+        "case_id": "5m-acquired-rolex",
+        "changed_duration_fraction": 0.002164,
+        "correction_evidence_gate": true,
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 111
+            },
+            "changed_duration_fraction": 0.002164,
+            "duration_seconds": 0.56,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.185142,
+            "score_delta": 0.185142
+          }
+        ],
+        "decision_semantic_sha256": "447abd2b37fd02d0bf3433c791212aeb8beb86573c8930d1da75696069b34a57",
+        "der_gate": true,
+        "deterministic": true,
+        "fp_gate": true,
+        "gain_pp": 0.0,
+        "l1": {
+          "confused_speaker_seconds": 1.75119,
+          "covered_reference_seconds": 65.542519,
+          "diarization_error_rate": 2.383284,
+          "false_positive_activity_seconds": 190.077481,
+          "false_positive_speaker_seconds": 190.077481,
+          "hypothesis_activity_seconds": 255.62,
+          "hypothesis_seconds": 255.62,
+          "hypothesis_speaker_count": 2,
+          "matched_speaker_seconds": 63.791329,
+          "missed_activity_seconds": 24.959963,
+          "missed_speaker_seconds": 25.751963,
+          "reference_activity_seconds": 90.502482,
+          "reference_coverage": 0.717924,
+          "reference_seconds": 91.294482,
+          "reference_speaker_count": 3,
+          "speaker_accuracy": 0.698742,
+          "speaker_activity_precision": 0.256406,
+          "speaker_activity_recall": 0.724207,
+          "speaker_correctness": {
+            "<EXCLUDE>": 0.0,
+            "Ben": 0.852283,
+            "David": 0.834014
+          },
+          "speaker_mapping": {
+            "<EXCLUDE>": "<HYP_PAD_001>",
+            "Ben": "speaker-0001",
+            "David": "speaker-0002"
+          },
+          "true_positive_activity_seconds": 65.542519,
+          "two_sided_mapping": false
+        },
+        "regression_gate": true,
+        "two_sided_gate": true
+      }
+    ],
+    "config": {
+      "canonical_min_margin": 0.15,
+      "canonical_min_score": 0.4,
+      "max_changed_duration_fraction": 0.02
+    },
+    "config_id": "f1-s040-m015-b002",
+    "gain_gate": false,
+    "gain_pp": 0.5961729831751916,
+    "l1_aggregate": {
+      "diarization_error_rate": 0.46960482767775263,
+      "false_positive_speaker_seconds": 305.820859,
+      "matched_speaker_seconds": 751.770406,
+      "reference_seconds": 831.963732,
+      "speaker_accuracy": 0.9036095890776161
+    },
+    "non_gain_gates_passed": false,
+    "overall": "FAIL"
+  },
+  "validation_configurations_run": 1
+}
