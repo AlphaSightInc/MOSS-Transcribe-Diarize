@@ -1673,3 +1673,26 @@ audit SHA-256:
 `684130fffd09671538aafb0ac2b91ed46257888549f2672a3038fbad565b4a8b`;
 11-member evidence manifest SHA-256:
 `6b4af3384c782c1061f75d91446ee1bc14a0a74f3a54cedc8871470915372ab8`.
+
+### Campaign L1.5 F1 runtime-L1 adapter correction (`l15`, 2026-08-04)
+
+**VERDICT: PASS — INPUT-INSTRUMENT CORRECTION; FIRST DECISION ATTEMPT PRODUCED NO
+OUTPUT OR SCORE.** The first scorer-free development command completed one case only
+in memory, then the 3-minute case drove RSS to about 12 GB. Cause: the runtime adapter
+gave every unit a unique synthetic speaker, so A2's terminal *discarded* synthetic score
+entered the production evaluator's exponential used-mask mapper. The owned process was
+interrupted before OOM. No score, output file, validation, or holdout access occurred.
+
+The correction suppresses only `run_l1_control.score_live_speaker_accuracy` while A2
+replays synthetic runtime activity, restores it in `finally`, and still discards those
+metrics. A rediagnosis test runs unsuppressed and suppressed paths on identical inputs and
+proves all decision-bearing labels, traces, counts, changes, configs, and production
+bindings identical. A2 source lines prove final labels exist before terminal scoring.
+Candidate spec/implementation and all thresholds are byte-unchanged.
+
+Adapter verdict SHA-256:
+`d25694ff4e3cfcd85f9f1f34b8707b79a6fb4b04753831e03edf927b511d3b7f`;
+10-member evidence manifest SHA-256:
+`0f9d8c28d0c59721d46dd0e4968628c13bc4b51ff0d60cbf8c8d82a648387e85`.
+Historical precondition seal remains owned by `f79411f`; the new adapter proofs are
+authoritative before the first successful decision output.

@@ -18,7 +18,7 @@ L2 = REPO / "prototypes/streaming-diarization/l2-stage0"
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(L2))
 
-from run_l1_control import replay_case  # noqa: E402
+import run_l1_control as a2_control  # noqa: E402
 from runtime_fixture import sha256_file  # noqa: E402
 
 
@@ -54,7 +54,9 @@ def _runtime_activity_rows(runtime: dict[str, Any]) -> list[dict[str, object]]:
     return rows
 
 
-def run_runtime_l1(runtime: dict[str, Any]) -> dict[str, Any]:
+def run_runtime_l1(
+    runtime: dict[str, Any], *, suppress_terminal_synthetic_metrics: bool = True
+) -> dict[str, Any]:
     """Use A2 replay_case with a temporary activity file made only from runtime units."""
 
     production = json.loads(BASELINE_SPEC.read_text(encoding="utf-8"))["production_config"]
@@ -65,24 +67,37 @@ def run_runtime_l1(runtime: dict[str, Any]) -> dict[str, Any]:
             "".join(json.dumps(row, separators=(",", ":")) + "\n" for row in _runtime_activity_rows(runtime)),
             encoding="utf-8",
         )
-        result = replay_case(
-            {
-                "case_id": runtime["case_id"],
-                "reference_path": str(activity_path),
-                "vector_cache_path": str(cache_path),
-                "duration_seconds": runtime["total_samples"] / 16_000.0,
-                "split": runtime["split"],
-            },
-            production,
-            repo_root=REPO,
-        )
+        original_scorer = a2_control.score_live_speaker_accuracy
+        if suppress_terminal_synthetic_metrics:
+            # replay_case computes both hypotheses only after every causal assignment and
+            # production sweep are complete. Its terminal score is against this temporary
+            # runtime activity, is discarded below, and cannot influence those decisions.
+            a2_control.score_live_speaker_accuracy = lambda _reference, _hypothesis: {
+                "synthetic_terminal_score_suppressed": True
+            }
+        try:
+            result = a2_control.replay_case(
+                {
+                    "case_id": runtime["case_id"],
+                    "reference_path": str(activity_path),
+                    "vector_cache_path": str(cache_path),
+                    "duration_seconds": runtime["total_samples"] / 16_000.0,
+                    "split": runtime["split"],
+                },
+                production,
+                repo_root=REPO,
+            )
+        finally:
+            a2_control.score_live_speaker_accuracy = original_scorer
     # A2's terminal scorer necessarily scores the synthetic runtime activity. Those metrics
     # are discarded and cannot affect the already-computed labels or production traces.
-    return {
+    decision = {
         key: value
         for key, value in result.items()
         if key not in {"metrics", "live_metrics"}
     }
+    decision["terminal_synthetic_metrics_suppressed"] = suppress_terminal_synthetic_metrics
+    return decision
 
 
 def decision_units(runtime: dict[str, Any], l1: dict[str, Any]) -> list[dict[str, object]]:

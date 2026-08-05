@@ -1,0 +1,13 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/f1_decisions.py dev-decisions
+OUTCOME: INTERRUPTED BEFORE OUTPUT OR SCORING
+COMPLETED: 1m-acquired-nfl decisions in memory only; no output file written
+FAILURE_CASE: 3m-acquired-jamie-dimon
+OBSERVED_RSS_BYTES_APPROX: 11975360 KiB
+CAUSE: runtime_l1.py synthesized one fake reference speaker per runtime unit. A2 replay_case terminal synthetic scoring called live_speaker_accuracy._maximum_weight_assignment, whose used-mask dynamic program is exponential in speaker count. Stack repeated solve() at live_speaker_accuracy.py:407.
+INTERRUPT: owned process received Ctrl-C to prevent host OOM; KeyboardInterrupt propagated from _maximum_weight_assignment.
+CANDIDATE_SPEC_CHANGED: false
+CANDIDATE_IMPLEMENTATION_CHANGED: false
+GOLDEN_OPENED: false
+SCORE_OUTPUT_WRITTEN: false
+VALIDATION_OPENED: false
+HOLDOUT_OPENED: false

@@ -1,0 +1,8 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_runtime_l1_adapter.py
+EXIT: 0
+test_terminal_synthetic_scorer_is_decision_independent ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 18.194s
+
+OK
