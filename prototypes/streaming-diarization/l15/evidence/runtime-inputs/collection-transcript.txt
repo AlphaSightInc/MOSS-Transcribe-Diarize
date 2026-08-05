@@ -1,0 +1,18 @@
+PASS preflight idle healthy no-live-session
+PASS 1m-acquired-nfl job=d80bda66fccb reused=False segments=11
+PASS 3m-acquired-jamie-dimon job=bab7c906acdb reused=False segments=50
+PASS 1m-acquired-jamie-dimon job=493868ad900f reused=True segments=17
+PASS 5m-acquired-jamie-dimon job=a2ebbc9aa37c reused=True segments=74
+PASS 5m-acquired-nfl job=60d4ec44355d reused=True segments=54
+PASS 5m-lex-bill-ackman job=d49c8141eb22 reused=True segments=76
+PASS 5m-lex-javier-milei job=e1a673321ee8 reused=True segments=81
+PASS 30m-lex-bill-ackman job=4511b53252e5 reused=True segments=430
+PASS 1m-acquired-rolex job=93f2fa9926e2 reused=False segments=13
+PASS 1m-lex-bill-ackman job=ecdd8ee84350 reused=False segments=18
+PASS 1m-lex-javier-milei job=5bb41825302c reused=False segments=20
+PASS 1m-lex-keyu-jin job=62dfb35e1481 reused=False segments=10
+PASS 3m-lex-adam-frank job=c280ff7944f1 reused=False segments=38
+PASS 3m-lex-shapiro-destiny job=bd6b76ae04a0 reused=False segments=43
+PASS 5m-acquired-alphabet job=5a7e8b4f6867 reused=False segments=90
+PASS 5m-acquired-rolex job=6b61c2b97d94 reused=True segments=74
+PASS overall cases=16 provenance_sha256=fd26aad31256367bf21f616309d11133671a45c87db24998bef929f1d89b4147

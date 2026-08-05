@@ -1,0 +1,522 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.51,
+      "end": 1.77,
+      "speaker": "S01",
+      "text": "All right, David, what's on your wrist?"
+    },
+    {
+      "id": "seg_0002",
+      "start": 2.19,
+      "end": 8.01,
+      "speaker": "S02",
+      "text": "Well, currently on the wrist is my stainless whiteface Daytona that my dad gave me."
+    },
+    {
+      "id": "seg_0003",
+      "start": 8.52,
+      "end": 12.81,
+      "speaker": "S02",
+      "text": "I think it was still quite popular when he gave it to me, probably close to 15 years ago,"
+    },
+    {
+      "id": "seg_0004",
+      "start": 12.81,
+      "end": 14.55,
+      "speaker": "S02",
+      "text": "but not like it is today."
+    },
+    {
+      "id": "seg_0005",
+      "start": 14.91,
+      "end": 19.29,
+      "speaker": "S01",
+      "text": "A strong choice. I am actually also wearing a Daytona that I am borrowing from a good"
+    },
+    {
+      "id": "seg_0006",
+      "start": 19.29,
+      "end": 19.82,
+      "speaker": "S01",
+      "text": "friend of the show."
+    },
+    {
+      "id": "seg_0007",
+      "start": 20.13,
+      "end": 21.27,
+      "speaker": "S02",
+      "text": "Mmm, love it."
+    },
+    {
+      "id": "seg_0008",
+      "start": 21.72,
+      "end": 26.07,
+      "speaker": "S01",
+      "text": "Well, fun fact for our listeners, the watch that David is wearing is the one that"
+    },
+    {
+      "id": "seg_0009",
+      "start": 26.07,
+      "end": 30.81,
+      "speaker": "S01",
+      "text": "I was wearing during the Morris Chang interview when we wanted to foreshadow that this was"
+    },
+    {
+      "id": "seg_0010",
+      "start": 30.81,
+      "end": 31.56,
+      "speaker": "S01",
+      "text": "our next episode."
+    },
+    {
+      "id": "seg_0011",
+      "start": 32.01,
+      "end": 37.11,
+      "speaker": "S02",
+      "text": "Yes, and in front of me here now, in my hand, but not on my wrist, is my other Rolex"
+    },
+    {
+      "id": "seg_0012",
+      "start": 37.11,
+      "end": 41.19,
+      "speaker": "S02",
+      "text": "that my dad gave me a long time ago, my Rolosor Digest."
+    },
+    {
+      "id": "seg_0013",
+      "start": 41.49,
+      "end": 42.75,
+      "speaker": "S01",
+      "text": "Dude, you gotta go one on each wrist."
+    },
+    {
+      "id": "seg_0014",
+      "start": 43.05,
+      "end": 43.32,
+      "speaker": "S02",
+      "text": "Yeah."
+    },
+    {
+      "id": "seg_0015",
+      "start": 45.18,
+      "end": 45.54,
+      "speaker": "S02",
+      "text": "Great."
+    },
+    {
+      "id": "seg_0016",
+      "start": 46.08,
+      "end": 46.44,
+      "speaker": "S01",
+      "text": "All right."
+    },
+    {
+      "id": "seg_0017",
+      "start": 63.45,
+      "end": 68.43,
+      "speaker": "S01",
+      "text": "Welcome to the Spring 2025 Season of Acquired, the podcast about great companies and the"
+    },
+    {
+      "id": "seg_0018",
+      "start": 68.43,
+      "end": 71.04,
+      "speaker": "S01",
+      "text": "stories and playbooks behind them. I'm Ben Gilbert."
+    },
+    {
+      "id": "seg_0019",
+      "start": 71.25,
+      "end": 72.27,
+      "speaker": "S02",
+      "text": "I'm David Rosenthal."
+    },
+    {
+      "id": "seg_0020",
+      "start": 72.57,
+      "end": 78.0,
+      "speaker": "S01",
+      "text": "And we are your hosts. All you need for timekeeping is something that happens at"
+    },
+    {
+      "id": "seg_0021",
+      "start": 78.0,
+      "end": 84.0,
+      "speaker": "S01",
+      "text": "a constant rate and some way to count it. It could be sand in an hourglass. It could"
+    },
+    {
+      "id": "seg_0022",
+      "start": 84.0,
+      "end": 89.34,
+      "speaker": "S01",
+      "text": "be a weight being pulled down by gravity on a grandfather clock, slowly turning the"
+    },
+    {
+      "id": "seg_0023",
+      "start": 89.34,
+      "end": 95.97,
+      "speaker": "S01",
+      "text": "hands, moderated by the tick tock of a pendulum. Or it could be a mechanical watch on your"
+    },
+    {
+      "id": "seg_0024",
+      "start": 95.97,
+      "end": 102.72,
+      "speaker": "S01",
+      "text": "wrist, driven by a complex and beautiful array of hundreds of gears and springs. Today,"
+    },
+    {
+      "id": "seg_0025",
+      "start": 102.72,
+      "end": 107.67,
+      "speaker": "S01",
+      "text": "listeners, we tell you the story that we can't believe we haven't already told on Acquired:"
+    },
+    {
+      "id": "seg_0026",
+      "start": 107.97,
+      "end": 108.72,
+      "speaker": "S01",
+      "text": "Rolex."
+    },
+    {
+      "id": "seg_0027",
+      "start": 109.05,
+      "end": 109.32,
+      "speaker": "S02",
+      "text": "Ooh."
+    },
+    {
+      "id": "seg_0028",
+      "start": 109.74,
+      "end": 114.18,
+      "speaker": "S01",
+      "text": "Rolex is a cascade of paradoxes. It's one of the best-known brands in the world,"
+    },
+    {
+      "id": "seg_0029",
+      "start": 114.51,
+      "end": 119.4,
+      "speaker": "S01",
+      "text": "but despite that, it's one of the least-known companies in the world. They're privately"
+    },
+    {
+      "id": "seg_0030",
+      "start": 119.4,
+      "end": 124.29,
+      "speaker": "S01",
+      "text": "held by a charitable foundation, the Hans Wilsdorf Foundation, so they don't have"
+    },
+    {
+      "id": "seg_0031",
+      "start": 124.29,
+      "end": 129.41,
+      "speaker": "S01",
+      "text": "to disclose anything. And really, they never do. They're one of the most secretive companies"
+    },
+    {
+      "id": "seg_0032",
+      "start": 129.41,
+      "end": 133.41,
+      "speaker": "S01",
+      "text": "that we have ever studied. And David, check me on this, I think they're even more secretive"
+    },
+    {
+      "id": "seg_0033",
+      "start": 133.41,
+      "end": 134.58,
+      "speaker": "S01",
+      "text": "than IKEA or Mars."
+    },
+    {
+      "id": "seg_0034",
+      "start": 134.85,
+      "end": 135.36,
+      "speaker": "S02",
+      "text": "Oh, yeah."
+    },
+    {
+      "id": "seg_0035",
+      "start": 135.63,
+      "end": 138.98,
+      "speaker": "S02",
+      "text": "It's funny that the closer to the present day we get, the less we know."
+    },
+    {
+      "id": "seg_0036",
+      "start": 139.38,
+      "end": 139.95,
+      "speaker": "S01",
+      "text": "Totally."
+    },
+    {
+      "id": "seg_0037",
+      "start": 139.95,
+      "end": 142.17,
+      "speaker": "S01",
+      "text": "They operate like an intelligence agency over there."
+    },
+    {
+      "id": "seg_0038",
+      "start": 142.32,
+      "end": 144.57,
+      "speaker": "S02",
+      "text": "Yes, like James Bond, one might say."
+    },
+    {
+      "id": "seg_0039",
+      "start": 144.66,
+      "end": 147.09,
+      "speaker": "S01",
+      "text": "Oh, or one might not say."
+    },
+    {
+      "id": "seg_0040",
+      "start": 148.14,
+      "end": 151.92,
+      "speaker": "S01",
+      "text": "Listeners, they make watches that everyone wants to buy,"
+    },
+    {
+      "id": "seg_0041",
+      "start": 151.95,
+      "end": 157.22,
+      "speaker": "S01",
+      "text": "but nobody seems to be able to get with famously long and opaque lists at retailers."
+    },
+    {
+      "id": "seg_0042",
+      "start": 157.5,
+      "end": 161.52,
+      "speaker": "S01",
+      "text": "Except, of course, over a million people a year actually do buy one."
+    },
+    {
+      "id": "seg_0043",
+      "start": 161.82,
+      "end": 165.72,
+      "speaker": "S01",
+      "text": "And for an average price of $13,000 each."
+    },
+    {
+      "id": "seg_0044",
+      "start": 165.9,
+      "end": 168.06,
+      "speaker": "S01",
+      "text": "That is, until you walk out of the store."
+    },
+    {
+      "id": "seg_0045",
+      "start": 168.45,
+      "end": 173.07,
+      "speaker": "S01",
+      "text": "And then they instantly become worth more, at least for a lot of the models these days."
+    },
+    {
+      "id": "seg_0046",
+      "start": 173.28,
+      "end": 176.76,
+      "speaker": "S02",
+      "text": "To your point about paradoxes of Rolex, this is one of the greatest ones."
+    },
+    {
+      "id": "seg_0047",
+      "start": 176.79,
+      "end": 181.23,
+      "speaker": "S02",
+      "text": "It is absolutely one of the very, very top, top tier luxury brands in the world."
+    },
+    {
+      "id": "seg_0048",
+      "start": 181.74,
+      "end": 184.41,
+      "speaker": "S02",
+      "text": "And yet they also sell a lot of units."
+    },
+    {
+      "id": "seg_0049",
+      "start": 184.7,
+      "end": 186.81,
+      "speaker": "S02",
+      "text": "Hermès doesn't sell a million Birkins every year."
+    },
+    {
+      "id": "seg_0050",
+      "start": 187.05,
+      "end": 191.94,
+      "speaker": "S01",
+      "text": "There's probably 10 times more Rolexes sold than Birkins sold, or at least on that order."
+    },
+    {
+      "id": "seg_0051",
+      "start": 192.27,
+      "end": 199.47,
+      "speaker": "S01",
+      "text": "It's a success built on the back of craftsmanship, engineering and manufacturing honed and perfected over 120 years."
+    },
+    {
+      "id": "seg_0052",
+      "start": 199.77,
+      "end": 204.6,
+      "speaker": "S01",
+      "text": "It is one of the greatest brands in the world, built meticulously and so intentionally, David."
+    },
+    {
+      "id": "seg_0053",
+      "start": 204.87,
+      "end": 207.0,
+      "speaker": "S01",
+      "text": "And my favorite part of the paradox."
+    },
+    {
+      "id": "seg_0054",
+      "start": 207.45,
+      "end": 210.93,
+      "speaker": "S01",
+      "text": "This is the story of the most successful Swiss watch company."
+    },
+    {
+      "id": "seg_0055",
+      "start": 211.35,
+      "end": 215.04,
+      "speaker": "S01",
+      "text": "But it wasn't founded in Switzerland or even by a Swiss person."
+    },
+    {
+      "id": "seg_0056",
+      "start": 215.58,
+      "end": 216.78,
+      "speaker": "S02",
+      "text": "No, no, it was not."
+    },
+    {
+      "id": "seg_0057",
+      "start": 217.56,
+      "end": 223.77,
+      "speaker": "S01",
+      "text": "It's a 10-plus billion dollar revenue business performing a dead craft, obsoleted by the digital world."
+    },
+    {
+      "id": "seg_0058",
+      "start": 223.92,
+      "end": 227.4,
+      "speaker": "S01",
+      "text": "They make a watch that can't tell the time as good as my Apple Watch,"
+    },
+    {
+      "id": "seg_0059",
+      "start": 227.73,
+      "end": 230.22,
+      "speaker": "S01",
+      "text": "or even a $10 Casio, for that matter."
+    },
+    {
+      "id": "seg_0060",
+      "start": 230.34,
+      "end": 231.9,
+      "speaker": "S01",
+      "text": "So what is going on here?"
+    },
+    {
+      "id": "seg_0061",
+      "start": 231.9,
+      "end": 233.82,
+      "speaker": "S01",
+      "text": "How did Rolex become Rolex?"
+    },
+    {
+      "id": "seg_0062",
+      "start": 234.24,
+      "end": 235.86,
+      "speaker": "S01",
+      "text": "This is a story we've been giddy to share."
+    },
+    {
+      "id": "seg_0063",
+      "start": 236.22,
+      "end": 237.27,
+      "speaker": "S02",
+      "text": "Oh, so excited."
+    },
+    {
+      "id": "seg_0064",
+      "start": 237.72,
+      "end": 239.37,
+      "speaker": "S01",
+      "text": "Well, one big disclaimer upfront."
+    },
+    {
+      "id": "seg_0065",
+      "start": 239.37,
+      "end": 244.53,
+      "speaker": "S01",
+      "text": "Much like how our NFL episode wasn't about football and our NBA episode wasn't about basketball."
+    },
+    {
+      "id": "seg_0066",
+      "start": 244.83,
+      "end": 247.17,
+      "speaker": "S01",
+      "text": "This episode isn't really about watches."
+    },
+    {
+      "id": "seg_0067",
+      "start": 247.26,
+      "end": 249.38,
+      "speaker": "S01",
+      "text": "It's about the business of watches."
+    },
+    {
+      "id": "seg_0068",
+      "start": 249.75,
+      "end": 250.11,
+      "speaker": "S02",
+      "text": "Yes."
+    },
+    {
+      "id": "seg_0069",
+      "start": 250.59,
+      "end": 253.56,
+      "speaker": "S01",
+      "text": "If you want to know every time an episode drops, check out our email list."
+    },
+    {
+      "id": "seg_0070",
+      "start": 258.12,
+      "end": 266.7,
+      "speaker": "S01",
+      "text": "It will share corrections, updates, and little tidbits that we learn from previous episodes. That's acquired.fm/ email or click the link in the show notes."
+    },
+    {
+      "id": "seg_0071",
+      "start": 266.97,
+      "end": 273.86,
+      "speaker": "S01",
+      "text": "Join the Slack. Come talk to us about this episode with the whole acquired community afterwards. Acquired.fm/Slack."
+    },
+    {
+      "id": "seg_0072",
+      "start": 274.08,
+      "end": 283.44,
+      "speaker": "S01",
+      "text": "And if you want more acquired between monthly episodes, check out ACQ2, our interview show where we talk to founders, CEOs, and investors who are building businesses"
+    },
+    {
+      "id": "seg_0073",
+      "start": 283.74,
+      "end": 290.07,
+      "speaker": "S01",
+      "text": "in areas that we've covered on the show. The most recent one was a very fun interview we did with a friend of the show, Guillermo Rousch,"
+    },
+    {
+      "id": "seg_0074",
+      "start": 290.13,
+      "end": 299.97,
+      "speaker": "S01",
+      "text": "the founder and CEO of Versel about really the whole history of web development frameworks and their latest and greatest product, V0, a startup within."
+    }
+  ]
+}

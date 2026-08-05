@@ -1,0 +1,35 @@
+{
+  "case_id": "5m-lex-bill-ackman",
+  "split": "development",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_bill_ackman/audio.wav",
+  "audio_sha256": "f1c178d12d960d793cb66c90929e9963db51c248ede3b9c1e738eb1b93b3b497",
+  "job_id": "d49c8141eb22",
+  "job_reused": true,
+  "submit_api_argv": null,
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/d49c8141eb22"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/d49c8141eb22/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:18Z",
+  "ended_at_utc": "2026-08-05T02:58:19Z",
+  "collection_wall_seconds": 0.476867,
+  "terminal_status": "waiting_review",
+  "window_count": 3,
+  "completed_windows": 3,
+  "possibly_truncated": false,
+  "segment_count": 76,
+  "speaker_labels": [
+    "S01",
+    "S02"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-lex-bill-ackman/segments.json",
+  "segments_sha256": "35dbc9a5671f46191da8c894efeec4eb99fa3dec85e20ca0aa290ad9c96226b1",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-lex-bill-ackman/job-terminal.json",
+  "job_terminal_sha256": "85d88bb5c849a42557c7f725bc8e3ac4898ebd4dd5d2642d3cb883f8076cb659"
+}

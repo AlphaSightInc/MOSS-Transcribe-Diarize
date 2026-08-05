@@ -1549,3 +1549,28 @@ Exact executed command:
 ```bash
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_l1_baseline.py --evidence-dir prototypes/streaming-diarization/l15/evidence/l1a-baseline --json-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json --transcript-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-transcript.txt
 ```
+
+### Campaign L1.5 runtime-visible ASR input freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — COMMON D8 INPUT PRECONDITION ONLY; NO FAMILY RUN.** The
+truth-partitioned L1.a cache remains evaluation-only and is forbidden from every
+candidate. The deployed batch path at product SHA `9089b332…266` supplied speaker-
+labelled ASR segments for all 16 development/validation clips: seven prior blind jobs
+were fetched by ID and nine missing clips were submitted once. Preflight proved all
+three services healthy, batch queue idle, deployed tree clean, and zero live API
+mutations since the live service start. No holdout or golden-reference path was read.
+
+The resulting fixtures are runtime-visible inputs only. Family runners must still plan
+production spans from these ASR segments, construct decisions before the evaluator loads
+golden truth, and pass their own full-chain label-perturbation proof before scoring.
+Provenance SHA-256 is
+`fd26aad31256367bf21f616309d11133671a45c87db24998bef929f1d89b4147`;
+53-member evidence manifest SHA-256 is
+`c4d84362a6f3041d8ca58c33e3489d7c9d47e8bb56d930dfa1d922c5cf18b9a0`.
+
+Exact collection and verification commands:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/collect_runtime_asr.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/verify_runtime_asr.py && cd prototypes/streaming-diarization/l15/evidence/runtime-inputs && shasum -a 256 -c RUNTIME_ASR_EVIDENCE.sha256
+```

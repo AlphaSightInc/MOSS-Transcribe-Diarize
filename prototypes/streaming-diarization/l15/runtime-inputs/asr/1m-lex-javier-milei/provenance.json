@@ -1,0 +1,45 @@
+{
+  "case_id": "1m-lex-javier-milei",
+  "split": "validation",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/audio.wav",
+  "audio_sha256": "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd",
+  "job_id": "5bb41825302c",
+  "job_reused": false,
+  "submit_api_argv": [
+    "/usr/bin/curl",
+    "-fsS",
+    "--max-time",
+    "900",
+    "-X",
+    "POST",
+    "-F",
+    "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/audio.wav;type=audio/wav",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+  ],
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/5bb41825302c"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/5bb41825302c/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:26Z",
+  "ended_at_utc": "2026-08-05T02:58:29Z",
+  "collection_wall_seconds": 2.976259,
+  "terminal_status": "waiting_review",
+  "window_count": 1,
+  "completed_windows": 1,
+  "possibly_truncated": false,
+  "segment_count": 20,
+  "speaker_labels": [
+    "S01",
+    "S02"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-lex-javier-milei/segments.json",
+  "segments_sha256": "bc393f60ec74120b2f26529a27b4c78f79457b853d8663e8c40385417a6d458d",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-lex-javier-milei/job-terminal.json",
+  "job_terminal_sha256": "17d56fdd50bb122be47b3dc101f362a8e442b921b657bbee7603811c915320bb"
+}

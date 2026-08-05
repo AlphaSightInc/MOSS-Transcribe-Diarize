@@ -1,0 +1,37 @@
+{
+  "case_id": "1m-acquired-jamie-dimon",
+  "split": "development",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/audio.wav",
+  "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+  "job_id": "493868ad900f",
+  "job_reused": true,
+  "submit_api_argv": null,
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/493868ad900f"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/493868ad900f/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:17Z",
+  "ended_at_utc": "2026-08-05T02:58:17Z",
+  "collection_wall_seconds": 0.479859,
+  "terminal_status": "waiting_review",
+  "window_count": 1,
+  "completed_windows": 1,
+  "possibly_truncated": false,
+  "segment_count": 17,
+  "speaker_labels": [
+    "S01",
+    "S02",
+    "S03",
+    "S04"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-acquired-jamie-dimon/segments.json",
+  "segments_sha256": "a1c0b66664b501140008f77059a6d756781175e9a0a1b0150f614d699d6053ba",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-acquired-jamie-dimon/job-terminal.json",
+  "job_terminal_sha256": "c621d0f6b4ab6e17ceb13bfc0b625504e4aa55fddf517ee454023296ba1a8da3"
+}

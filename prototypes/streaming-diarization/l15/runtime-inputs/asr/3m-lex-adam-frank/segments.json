@@ -1,0 +1,270 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.0,
+      "end": 4.29,
+      "speaker": "S01",
+      "text": "We're not the first. It's happened somewhere else. And to me, that was an, that was mind blowing."
+    },
+    {
+      "id": "seg_0002",
+      "start": 4.32,
+      "end": 8.82,
+      "speaker": "S01",
+      "text": "Doesn't tell me there's anybody nearby. The galaxy could be sterile. It just told me that like,"
+    },
+    {
+      "id": "seg_0003",
+      "start": 9.03,
+      "end": 14.73,
+      "speaker": "S01",
+      "text": "you know, unless nature's really against, it has some bias against civilizations."
+    },
+    {
+      "id": "seg_0004",
+      "start": 15.18,
+      "end": 19.64,
+      "speaker": "S01",
+      "text": "We're not the first time this has happened. This has happened elsewhere over the course of cosmic history."
+    },
+    {
+      "id": "seg_0005",
+      "start": 21.99,
+      "end": 28.47,
+      "speaker": "S02",
+      "text": "The following is a conversation with Adam Frank, an astrophysicist interested in the evolution of star"
+    },
+    {
+      "id": "seg_0006",
+      "start": 28.47,
+      "end": 33.06,
+      "speaker": "S02",
+      "text": "systems and the search for alien civilizations in our universe."
+    },
+    {
+      "id": "seg_0007",
+      "start": 33.96,
+      "end": 38.88,
+      "speaker": "S02",
+      "text": "This is the Lex Friedman Podcast. To support it, please check out our sponsors in the description."
+    },
+    {
+      "id": "seg_0008",
+      "start": 39.21,
+      "end": 42.66,
+      "speaker": "S02",
+      "text": "And now, dear friends, here's Adam Frank."
+    },
+    {
+      "id": "seg_0009",
+      "start": 43.86,
+      "end": 49.26,
+      "speaker": "S02",
+      "text": "You wrote a book about aliens. So the big question, how many alien civilizations are out there?"
+    },
+    {
+      "id": "seg_0010",
+      "start": 49.59,
+      "end": 55.41,
+      "speaker": "S01",
+      "text": "Yeah, that's the question, right? The amazing thing is that after two and a half millennia of,"
+    },
+    {
+      "id": "seg_0011",
+      "start": 55.44,
+      "end": 59.46,
+      "speaker": "S01",
+      "text": "you know, people yelling at each other or setting each other on fire occasionally over the answer,"
+    },
+    {
+      "id": "seg_0012",
+      "start": 59.64,
+      "end": 65.67,
+      "speaker": "S01",
+      "text": "we now actually have the capacity to answer that question. So in the next 10, 20, 30 years,"
+    },
+    {
+      "id": "seg_0013",
+      "start": 65.97,
+      "end": 70.8,
+      "speaker": "S01",
+      "text": "we're going to have data relevant to the answer to that question. We're going to have hard data,"
+    },
+    {
+      "id": "seg_0014",
+      "start": 70.83,
+      "end": 75.78,
+      "speaker": "S01",
+      "text": "finally, that will, one way or the other, you know, even if we don't find anything immediately,"
+    },
+    {
+      "id": "seg_0015",
+      "start": 75.78,
+      "end": 80.91,
+      "speaker": "S01",
+      "text": "we will have gone through a number of planets, we'll be able to start putting limits on how"
+    },
+    {
+      "id": "seg_0016",
+      "start": 80.94,
+      "end": 86.85,
+      "speaker": "S01",
+      "text": "common life is. The one answer I can tell you, which is, was an important part of the problem,"
+    },
+    {
+      "id": "seg_0017",
+      "start": 86.85,
+      "end": 92.58,
+      "speaker": "S01",
+      "text": "is how many planets are there, right? And just like people have been arguing about the"
+    },
+    {
+      "id": "seg_0018",
+      "start": 92.67,
+      "end": 98.16,
+      "speaker": "S01",
+      "text": "existence of life elsewhere for 2,500 years, people have been arguing about planets for"
+    },
+    {
+      "id": "seg_0019",
+      "start": 98.16,
+      "end": 102.96,
+      "speaker": "S01",
+      "text": "the exact same amount of time, right? You can see Aristotle yelling at Democritus about this."
+    },
+    {
+      "id": "seg_0020",
+      "start": 103.02,
+      "end": 106.74,
+      "speaker": "S01",
+      "text": "You know, you can see they had very wildly different opinions about how common planets"
+    },
+    {
+      "id": "seg_0021",
+      "start": 106.89,
+      "end": 110.91,
+      "speaker": "S01",
+      "text": "were going to be and how unique Earth was. And that question got answered, right?"
+    },
+    {
+      "id": "seg_0022",
+      "start": 111.54,
+      "end": 116.07,
+      "speaker": "S01",
+      "text": "Which is pretty remarkable that in a lifetime, you can have a 2,500 year old question."
+    },
+    {
+      "id": "seg_0023",
+      "start": 116.31,
+      "end": 120.84,
+      "speaker": "S01",
+      "text": "The answer is they're everywhere. There are planets everywhere. And it was possible that"
+    },
+    {
+      "id": "seg_0024",
+      "start": 121.14,
+      "end": 125.07,
+      "speaker": "S01",
+      "text": "planets were really rare. We didn't really understand how planets formed. And so if you"
+    },
+    {
+      "id": "seg_0025",
+      "start": 125.07,
+      "end": 131.19,
+      "speaker": "S01",
+      "text": "go back to, say, the turn of the 20th century, there was a theory that said planets formed"
+    },
+    {
+      "id": "seg_0026",
+      "start": 131.19,
+      "end": 136.29,
+      "speaker": "S01",
+      "text": "when two stars passed by each other closely and then material was gravitationally squeezed"
+    },
+    {
+      "id": "seg_0027",
+      "start": 133.95,
+      "end": 136.62,
+      "speaker": "S01",
+      "text": "and then material was gravitationally squeezed out."
+    },
+    {
+      "id": "seg_0028",
+      "start": 136.98,
+      "end": 140.58,
+      "speaker": "S01",
+      "text": "In which case, those kinds of collisions are so rare"
+    },
+    {
+      "id": "seg_0029",
+      "start": 140.73,
+      "end": 143.22,
+      "speaker": "S01",
+      "text": "that you would expect one in a trillion stars to have planets."
+    },
+    {
+      "id": "seg_0030",
+      "start": 143.25,
+      "end": 146.28,
+      "speaker": "S01",
+      "text": "Instead, every star in the night sky has planets."
+    },
+    {
+      "id": "seg_0031",
+      "start": 147.06,
+      "end": 151.77,
+      "speaker": "S02",
+      "text": "So one of the things you've done is simulated the formation of stars."
+    },
+    {
+      "id": "seg_0032",
+      "start": 152.15,
+      "end": 155.97,
+      "speaker": "S02",
+      "text": "How difficult do you think it is to simulate the formation of planets?"
+    },
+    {
+      "id": "seg_0033",
+      "start": 155.97,
+      "end": 159.72,
+      "speaker": "S02",
+      "text": "Like simulate a solar system, through the entire evolution of the solar system?"
+    },
+    {
+      "id": "seg_0034",
+      "start": 160.02,
+      "end": 166.53,
+      "speaker": "S02",
+      "text": "This is kind of a numerical simulation sneaking up to the question of how many planets are there?"
+    },
+    {
+      "id": "seg_0035",
+      "start": 166.68,
+      "end": 171.24,
+      "speaker": "S01",
+      "text": "That actually we're able to do now. There is, you can run simulations of the formation"
+    },
+    {
+      "id": "seg_0036",
+      "start": 171.63,
+      "end": 173.28,
+      "speaker": "S01",
+      "text": "of planetary system."
+    },
+    {
+      "id": "seg_0037",
+      "start": 173.55,
+      "end": 177.39,
+      "speaker": "S01",
+      "text": "So if you run the simulation, really where you want to start is a cloud of gas,"
+    },
+    {
+      "id": "seg_0038",
+      "start": 177.39,
+      "end": 179.52,
+      "speaker": "S01",
+      "text": "these giant interstellar clouds of gas."
+    }
+  ]
+}

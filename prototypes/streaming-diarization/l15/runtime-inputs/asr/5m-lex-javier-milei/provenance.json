@@ -1,0 +1,36 @@
+{
+  "case_id": "5m-lex-javier-milei",
+  "split": "development",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_javier_milei/audio.wav",
+  "audio_sha256": "a81c26388c604ef02452a22525381f501d0da7c0a52b2de9b0fd9bd3590c36a1",
+  "job_id": "e1a673321ee8",
+  "job_reused": true,
+  "submit_api_argv": null,
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/e1a673321ee8"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/e1a673321ee8/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:19Z",
+  "ended_at_utc": "2026-08-05T02:58:19Z",
+  "collection_wall_seconds": 0.474807,
+  "terminal_status": "waiting_review",
+  "window_count": 3,
+  "completed_windows": 3,
+  "possibly_truncated": false,
+  "segment_count": 81,
+  "speaker_labels": [
+    "S01",
+    "S02",
+    "S03"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-lex-javier-milei/segments.json",
+  "segments_sha256": "e93c0cfca034fed08add0d77b143ea8385b4dbc026b285ce38f1194dcce0f3af",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-lex-javier-milei/job-terminal.json",
+  "job_terminal_sha256": "d435f0be4edc45cfd9d0711f41e762dd8c2635f2bc7c10ca2148551616ec3c96"
+}

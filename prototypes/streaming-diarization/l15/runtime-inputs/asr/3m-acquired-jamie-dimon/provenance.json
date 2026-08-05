@@ -1,0 +1,47 @@
+{
+  "case_id": "3m-acquired-jamie-dimon",
+  "split": "development",
+  "audio_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/acquired_jamie_dimon_3min/audio.wav",
+  "audio_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+  "job_id": "bab7c906acdb",
+  "job_reused": false,
+  "submit_api_argv": [
+    "/usr/bin/curl",
+    "-fsS",
+    "--max-time",
+    "900",
+    "-X",
+    "POST",
+    "-F",
+    "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/acquired_jamie_dimon_3min/audio.wav;type=audio/wav",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+  ],
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/bab7c906acdb"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/bab7c906acdb/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:07Z",
+  "ended_at_utc": "2026-08-05T02:58:17Z",
+  "collection_wall_seconds": 9.765359,
+  "terminal_status": "waiting_review",
+  "window_count": 2,
+  "completed_windows": 2,
+  "possibly_truncated": false,
+  "segment_count": 50,
+  "speaker_labels": [
+    "S01",
+    "S02",
+    "S03",
+    "S04"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/3m-acquired-jamie-dimon/segments.json",
+  "segments_sha256": "63d4b9b26e3730540f744026ecde9a51d1b5118266886364df95941d5d23a209",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/3m-acquired-jamie-dimon/job-terminal.json",
+  "job_terminal_sha256": "f186ea9f066c6f098d492d302094ae41a0b8196a851091e9805ff5e310fc9469"
+}

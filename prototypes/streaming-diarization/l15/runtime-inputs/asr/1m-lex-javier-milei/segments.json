@@ -1,0 +1,144 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.11,
+      "end": 5.04,
+      "speaker": "S01",
+      "text": "So what is the difference between a madman and a genius?"
+    },
+    {
+      "id": "seg_0002",
+      "start": 6.88,
+      "end": 7.74,
+      "speaker": "S01",
+      "text": "Success?"
+    },
+    {
+      "id": "seg_0003",
+      "start": 10.88,
+      "end": 13.88,
+      "speaker": "S02",
+      "text": "The following is a conversation with Javier Malé,"
+    },
+    {
+      "id": "seg_0004",
+      "start": 13.91,
+      "end": 15.71,
+      "speaker": "S02",
+      "text": "the president of Argentina."
+    },
+    {
+      "id": "seg_0005",
+      "start": 16.35,
+      "end": 21.25,
+      "speaker": "S02",
+      "text": "He is a libertarian, anarcho-capitalist and economist"
+    },
+    {
+      "id": "seg_0006",
+      "start": 21.28,
+      "end": 23.88,
+      "speaker": "S02",
+      "text": "who campaigned with a chainsaw"
+    },
+    {
+      "id": "seg_0007",
+      "start": 23.91,
+      "end": 25.78,
+      "speaker": "S02",
+      "text": "that symbolized his promise"
+    },
+    {
+      "id": "seg_0008",
+      "start": 25.81,
+      "end": 28.21,
+      "speaker": "S02",
+      "text": "to slash the corrupt bureaucracy of the state."
+    },
+    {
+      "id": "seg_0009",
+      "start": 29.28,
+      "end": 32.65,
+      "speaker": "S02",
+      "text": "He stepped into the presidency one year ago"
+    },
+    {
+      "id": "seg_0010",
+      "start": 32.68,
+      "end": 34.91,
+      "speaker": "S02",
+      "text": "with the country on the brink of hyperinflation,"
+    },
+    {
+      "id": "seg_0011",
+      "start": 34.94,
+      "end": 36.94,
+      "speaker": "S02",
+      "text": "deep in debt and suffering"
+    },
+    {
+      "id": "seg_0012",
+      "start": 36.97,
+      "end": 39.01,
+      "speaker": "S02",
+      "text": "for mass unemployment and poverty."
+    },
+    {
+      "id": "seg_0013",
+      "start": 40.01,
+      "end": 42.08,
+      "speaker": "S02",
+      "text": "He took this crisis head-on,"
+    },
+    {
+      "id": "seg_0014",
+      "start": 42.11,
+      "end": 45.48,
+      "speaker": "S02",
+      "text": "transforming one of Latin America's largest economies"
+    },
+    {
+      "id": "seg_0015",
+      "start": 45.51,
+      "end": 47.88,
+      "speaker": "S02",
+      "text": "through pure free-market principles."
+    },
+    {
+      "id": "seg_0016",
+      "start": 48.78,
+      "end": 50.78,
+      "speaker": "S02",
+      "text": "In just a few months in office,"
+    },
+    {
+      "id": "seg_0017",
+      "start": 50.81,
+      "end": 52.51,
+      "speaker": "S02",
+      "text": "he already achieved Argentina's"
+    },
+    {
+      "id": "seg_0018",
+      "start": 52.54,
+      "end": 55.65,
+      "speaker": "S02",
+      "text": "first fiscal surplus in 16 years"
+    },
+    {
+      "id": "seg_0019",
+      "start": 55.68,
+      "end": 57.81,
+      "speaker": "S02",
+      "text": "and not just avoided the hyperinflation,"
+    },
+    {
+      "id": "seg_0020",
+      "start": 57.84,
+      "end": 59.98,
+      "speaker": "S02",
+      "text": "but brought inflation down."
+    }
+  ]
+}

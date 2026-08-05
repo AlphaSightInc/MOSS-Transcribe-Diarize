@@ -1,0 +1,95 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.0,
+      "end": 3.96,
+      "speaker": "S01",
+      "text": "Yeah, it's funny that the closer to the present day we get, the less we know."
+    },
+    {
+      "id": "seg_0002",
+      "start": 4.38,
+      "end": 7.14,
+      "speaker": "S02",
+      "text": "Totally. They operate like an intelligence agency over there."
+    },
+    {
+      "id": "seg_0003",
+      "start": 7.32,
+      "end": 9.54,
+      "speaker": "S01",
+      "text": "Yes, like James Bond, one might say."
+    },
+    {
+      "id": "seg_0004",
+      "start": 9.63,
+      "end": 12.06,
+      "speaker": "S02",
+      "text": "Oh, or one might not say."
+    },
+    {
+      "id": "seg_0005",
+      "start": 13.14,
+      "end": 19.55,
+      "speaker": "S02",
+      "text": "Listeners, they make watches that everyone wants to buy, but nobody seems to be able to get with famously"
+    },
+    {
+      "id": "seg_0006",
+      "start": 19.56,
+      "end": 26.1,
+      "speaker": "S02",
+      "text": "long and opaque lists at retailers, except of course, over a million people a year actually do buy"
+    },
+    {
+      "id": "seg_0007",
+      "start": 26.1,
+      "end": 33.72,
+      "speaker": "S02",
+      "text": "one and for an average price of $13,000 each. That is, until you walk out of the store and then"
+    },
+    {
+      "id": "seg_0008",
+      "start": 33.72,
+      "end": 38.01,
+      "speaker": "S02",
+      "text": "they instantly become worth more, at least for a lot of the models these days."
+    },
+    {
+      "id": "seg_0009",
+      "start": 38.28,
+      "end": 43.26,
+      "speaker": "S01",
+      "text": "To your point about paradoxes of Rolex, this is one of the greatest ones. It is absolutely"
+    },
+    {
+      "id": "seg_0010",
+      "start": 43.26,
+      "end": 48.9,
+      "speaker": "S01",
+      "text": "one of the very, very top, top tier luxury brands in the world. And yet they also sell a lot of"
+    },
+    {
+      "id": "seg_0011",
+      "start": 48.9,
+      "end": 51.78,
+      "speaker": "S01",
+      "text": "units. Hermès doesn't sell a million Birkins every year."
+    },
+    {
+      "id": "seg_0012",
+      "start": 52.05,
+      "end": 56.88,
+      "speaker": "S02",
+      "text": "There's probably 10 times more Rolexes sold than Birkins sold, or at least on that order."
+    },
+    {
+      "id": "seg_0013",
+      "start": 57.27,
+      "end": 59.88,
+      "speaker": "S02",
+      "text": "It's a success built on the back of craftsmanship."
+    }
+  ]
+}

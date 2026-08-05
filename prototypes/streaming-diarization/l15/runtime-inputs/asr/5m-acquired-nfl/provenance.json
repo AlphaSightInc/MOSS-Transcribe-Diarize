@@ -1,0 +1,37 @@
+{
+  "case_id": "5m-acquired-nfl",
+  "split": "development",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_nfl/audio.wav",
+  "audio_sha256": "636e42c9e10f488b739dda8b6973aaead66ca89329b4ee61f08870bbec8ac3a5",
+  "job_id": "60d4ec44355d",
+  "job_reused": true,
+  "submit_api_argv": null,
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/60d4ec44355d"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/60d4ec44355d/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:18Z",
+  "ended_at_utc": "2026-08-05T02:58:18Z",
+  "collection_wall_seconds": 0.471535,
+  "terminal_status": "waiting_review",
+  "window_count": 3,
+  "completed_windows": 3,
+  "possibly_truncated": false,
+  "segment_count": 54,
+  "speaker_labels": [
+    "S01",
+    "S02",
+    "S03",
+    "S04"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-acquired-nfl/segments.json",
+  "segments_sha256": "f3f3f67864124c090b9b4fb1352df309b8a524bcb5b4f287fec8dd594b34c335",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-acquired-nfl/job-terminal.json",
+  "job_terminal_sha256": "23ee94bff7fa03852d2a316973d1d03c787207d1322b201c53fb6c3543b353fa"
+}

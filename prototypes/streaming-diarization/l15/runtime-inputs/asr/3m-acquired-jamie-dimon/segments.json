@@ -1,0 +1,354 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.08,
+      "end": 1.52,
+      "speaker": "S01",
+      "text": "First Republic."
+    },
+    {
+      "id": "seg_0002",
+      "start": 1.55,
+      "end": 6.62,
+      "speaker": "S01",
+      "text": "Jamie is now the longest-serving CEO of any major Wall Street bank and is viewed"
+    },
+    {
+      "id": "seg_0003",
+      "start": 6.62,
+      "end": 11.33,
+      "speaker": "S01",
+      "text": "as kind of the great stabilizer of the American financial system, especially during"
+    },
+    {
+      "id": "seg_0004",
+      "start": 11.33,
+      "end": 13.3,
+      "speaker": "S01",
+      "text": "the 2008 financial crisis."
+    },
+    {
+      "id": "seg_0005",
+      "start": 13.3,
+      "end": 19.32,
+      "speaker": "S01",
+      "text": "He now sits atop the largest bank in the US with an over $800 billion market cap,"
+    },
+    {
+      "id": "seg_0006",
+      "start": 19.32,
+      "end": 22.14,
+      "speaker": "S01",
+      "text": "which is more than twice their nearest competitor."
+    },
+    {
+      "id": "seg_0007",
+      "start": 22.14,
+      "end": 27.05,
+      "speaker": "S01",
+      "text": "They are the only bank within spitting distance of the sort of big trillion-dollar tech companies"
+    },
+    {
+      "id": "seg_0008",
+      "start": 27.05,
+      "end": 28.86,
+      "speaker": "S01",
+      "text": "that we've covered here on Acquired."
+    },
+    {
+      "id": "seg_0009",
+      "start": 28.86,
+      "end": 34.14,
+      "speaker": "S01",
+      "text": "And to really put a finer point on the dominance, they are the most valuable company east of"
+    },
+    {
+      "id": "seg_0010",
+      "start": 34.14,
+      "end": 38.79,
+      "speaker": "S01",
+      "text": "the Mississippi in the United States and the only company east of the Mississippi worth"
+    },
+    {
+      "id": "seg_0011",
+      "start": 38.79,
+      "end": 40.86,
+      "speaker": "S01",
+      "text": "more than half a trillion dollars."
+    },
+    {
+      "id": "seg_0012",
+      "start": 40.86,
+      "end": 41.71,
+      "speaker": "S02",
+      "text": "Incredible."
+    },
+    {
+      "id": "seg_0013",
+      "start": 41.71,
+      "end": 44.82,
+      "speaker": "S01",
+      "text": "So the question, of course, is how did he do it?"
+    },
+    {
+      "id": "seg_0014",
+      "start": 44.82,
+      "end": 46.14,
+      "speaker": "S01",
+      "text": "I mean, banks fail."
+    },
+    {
+      "id": "seg_0015",
+      "start": 46.14,
+      "end": 51.92,
+      "speaker": "S01",
+      "text": "Financial firms often have spectacular blowups and large organizations, period, financial"
+    },
+    {
+      "id": "seg_0016",
+      "start": 51.92,
+      "end": 55.19,
+      "speaker": "S01",
+      "text": "or not, can often get so bloated that they slow down to a crawl."
+    },
+    {
+      "id": "seg_0017",
+      "start": 55.19,
+      "end": 57.89,
+      "speaker": "S01",
+      "text": "So what did Jamie Dimon do differently?"
+    },
+    {
+      "id": "seg_0018",
+      "start": 57.89,
+      "end": 62.05,
+      "speaker": "S01",
+      "text": "Well, today's episode, we have Jamie with us, himself, to tell the story."
+    },
+    {
+      "id": "seg_0019",
+      "start": 62.05,
+      "end": 66.53,
+      "speaker": "S01",
+      "text": "We recorded this live in front of 6,000 Acquired fans at Radio City Music Hall in New York"
+    },
+    {
+      "id": "seg_0020",
+      "start": 66.53,
+      "end": 67.2,
+      "speaker": "S01",
+      "text": "City."
+    },
+    {
+      "id": "seg_0021",
+      "start": 67.2,
+      "end": 70.64,
+      "speaker": "S01",
+      "text": "So you'll notice it's a different format than our usual episode."
+    },
+    {
+      "id": "seg_0022",
+      "start": 70.64,
+      "end": 74.53,
+      "speaker": "S01",
+      "text": "We're always trying to figure out what version of Acquired works live with an audience,"
+    },
+    {
+      "id": "seg_0023",
+      "start": 74.53,
+      "end": 76.92,
+      "speaker": "S01",
+      "text": "and this is our latest iteration."
+    },
+    {
+      "id": "seg_0024",
+      "start": 76.92,
+      "end": 81.36,
+      "speaker": "S01",
+      "text": "The Radio City Show also had a second act, a late-night talk show, where we had conversations"
+    },
+    {
+      "id": "seg_0025",
+      "start": 81.36,
+      "end": 86.22,
+      "speaker": "S01",
+      "text": "with the CEO of The New York Times, Meredith Kobit-Levian, and the chairman of IAC, Barry"
+    },
+    {
+      "id": "seg_0026",
+      "start": 86.22,
+      "end": 90.25,
+      "speaker": "S01",
+      "text": "Diller, plus some cameos from around the Acquired cinematic universe."
+    },
+    {
+      "id": "seg_0027",
+      "start": 90.25,
+      "end": 95.11,
+      "speaker": "S01",
+      "text": "And we cannot wait to share all of that with you at a later date."
+    },
+    {
+      "id": "seg_0028",
+      "start": 95.11,
+      "end": 100.5,
+      "speaker": "S01",
+      "text": "Well, if you want to know every time an episode drops, check out our email list, acquired.fm/ email."
+    },
+    {
+      "id": "seg_0029",
+      "start": 100.5,
+      "end": 105.84,
+      "speaker": "S01",
+      "text": "Come join the Slack and talk about this with us afterwards, acquired.fm/slash."
+    },
+    {
+      "id": "seg_0030",
+      "start": 105.84,
+      "end": 110.42,
+      "speaker": "S01",
+      "text": "If you want more Acquired between each monthly episode, check out ACQ2, our interview show,"
+    },
+    {
+      "id": "seg_0031",
+      "start": 110.42,
+      "end": 113.95,
+      "speaker": "S01",
+      "text": "where we talk with founders and CEOs building businesses in areas we've covered on the"
+    },
+    {
+      "id": "seg_0032",
+      "start": 113.95,
+      "end": 114.81,
+      "speaker": "S01",
+      "text": "show."
+    },
+    {
+      "id": "seg_0033",
+      "start": 114.81,
+      "end": 119.25,
+      "speaker": "S01",
+      "text": "And before we dive in, we want to briefly thank our presenting partner, JP Morgan."
+    },
+    {
+      "id": "seg_0034",
+      "start": 119.25,
+      "end": 125.17,
+      "speaker": "S02",
+      "text": "Yes, the same JP Morgan, which is funny because when we started planning this show"
+    },
+    {
+      "id": "seg_0035",
+      "start": 125.17,
+      "end": 130.78,
+      "speaker": "S02",
+      "text": "together, gosh, almost a year ago, it was immediately clear to Ben and me that the very"
+    },
+    {
+      "id": "seg_0036",
+      "start": 130.78,
+      "end": 135.76,
+      "speaker": "S02",
+      "text": "best person who acquired could interview in New York also happened to be their CEO."
+    },
+    {
+      "id": "seg_0037",
+      "start": 134.61,
+      "end": 135.42,
+      "speaker": "S02",
+      "text": "to be their CEO."
+    },
+    {
+      "id": "seg_0038",
+      "start": 135.75,
+      "end": 138.6,
+      "speaker": "S01",
+      "text": "And as you all know, from the episodes over the last couple of years, JP Morgan"
+    },
+    {
+      "id": "seg_0039",
+      "start": 138.6,
+      "end": 142.23,
+      "speaker": "S01",
+      "text": "has been a fantastic partner of ours and their payments team demoed all kinds of"
+    },
+    {
+      "id": "seg_0040",
+      "start": 142.23,
+      "end": 145.95,
+      "speaker": "S01",
+      "text": "cool technology at the event. Our huge thanks to the JP Morgan team for putting on the"
+    },
+    {
+      "id": "seg_0041",
+      "start": 145.95,
+      "end": 149.43,
+      "speaker": "S01",
+      "text": "show with us. And if you ever want to learn more, just click the link in the show notes"
+    },
+    {
+      "id": "seg_0042",
+      "start": 149.43,
+      "end": 153.33,
+      "speaker": "S01",
+      "text": "and tell them that Ben and David sent you. So with that, this show is not investment"
+    },
+    {
+      "id": "seg_0043",
+      "start": 153.33,
+      "end": 156.86,
+      "speaker": "S01",
+      "text": "advice. David and I may have investments in the companies we discuss, and this show"
+    },
+    {
+      "id": "seg_0044",
+      "start": 156.86,
+      "end": 162.15,
+      "speaker": "S01",
+      "text": "is for informational and entertainment purposes only. On to our conversation with Jamie Dimon."
+    },
+    {
+      "id": "seg_0045",
+      "start": 163.47,
+      "end": 164.49,
+      "speaker": "S03",
+      "text": "Well, this feels appropriate."
+    },
+    {
+      "id": "seg_0046",
+      "start": 165.66,
+      "end": 166.86,
+      "speaker": "S04",
+      "text": "You guys dressed up for me."
+    },
+    {
+      "id": "seg_0047",
+      "start": 169.44,
+      "end": 170.64,
+      "speaker": "S03",
+      "text": "You dressed up for us, too. Thank you."
+    },
+    {
+      "id": "seg_0048",
+      "start": 171.66,
+      "end": 175.98,
+      "speaker": "S02",
+      "text": "Last year, we had you on the video board at Jason. You were looking very summery"
+    },
+    {
+      "id": "seg_0049",
+      "start": 175.98,
+      "end": 177.78,
+      "speaker": "S02",
+      "text": "there. You look great tonight."
+    },
+    {
+      "id": "seg_0050",
+      "start": 178.05,
+      "end": 179.97,
+      "speaker": "S03",
+      "text": "Yes. Well, we know you're a big history"
+    }
+  ]
+}

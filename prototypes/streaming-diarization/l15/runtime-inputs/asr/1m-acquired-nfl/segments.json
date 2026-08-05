@@ -1,0 +1,81 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.54,
+      "end": 3.03,
+      "speaker": "S01",
+      "text": "So in my headphones I have, are you ready for some football?"
+    },
+    {
+      "id": "seg_0002",
+      "start": 3.24,
+      "end": 7.44,
+      "speaker": "S02",
+      "text": "Yeah, I was listening to that too. Yes. Dude, it gets you so pumped up."
+    },
+    {
+      "id": "seg_0003",
+      "start": 7.71,
+      "end": 11.01,
+      "speaker": "S01",
+      "text": "It totally does. I feel like I grew up on the Fox Sports theme."
+    },
+    {
+      "id": "seg_0004",
+      "start": 15.27,
+      "end": 16.64,
+      "speaker": "S02",
+      "text": "It always makes me think of Thanksgiving."
+    },
+    {
+      "id": "seg_0005",
+      "start": 17.01,
+      "end": 20.67,
+      "speaker": "S01",
+      "text": "It makes me think of, I think it was a Jock Jams tape that I bought."
+    },
+    {
+      "id": "seg_0006",
+      "start": 37.65,
+      "end": 42.78,
+      "speaker": "S03",
+      "text": "Welcome to this special remastered edition of Acquired, the podcast about great companies"
+    },
+    {
+      "id": "seg_0007",
+      "start": 42.78,
+      "end": 45.54,
+      "speaker": "S03",
+      "text": "and the stories and playbooks behind them. I'm Ben Gilbert."
+    },
+    {
+      "id": "seg_0008",
+      "start": 45.81,
+      "end": 46.92,
+      "speaker": "S04",
+      "text": "I'm David Rosenthal."
+    },
+    {
+      "id": "seg_0009",
+      "start": 47.22,
+      "end": 53.55,
+      "speaker": "S03",
+      "text": "And we are your hosts. Three years ago, in January of 2023, we released an episode"
+    },
+    {
+      "id": "seg_0010",
+      "start": 53.55,
+      "end": 58.89,
+      "speaker": "S03",
+      "text": "on the National Football League, which, David, I think is absolutely an essential"
+    },
+    {
+      "id": "seg_0011",
+      "start": 58.89,
+      "end": 59.94,
+      "speaker": "S03",
+      "text": "part of Acquired canon."
+    }
+  ]
+}

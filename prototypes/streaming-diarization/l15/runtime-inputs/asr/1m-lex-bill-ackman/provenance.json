@@ -1,0 +1,45 @@
+{
+  "case_id": "1m-lex-bill-ackman",
+  "split": "validation",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/audio.wav",
+  "audio_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+  "job_id": "ecdd8ee84350",
+  "job_reused": false,
+  "submit_api_argv": [
+    "/usr/bin/curl",
+    "-fsS",
+    "--max-time",
+    "900",
+    "-X",
+    "POST",
+    "-F",
+    "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/audio.wav;type=audio/wav",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+  ],
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/ecdd8ee84350"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/ecdd8ee84350/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:23Z",
+  "ended_at_utc": "2026-08-05T02:58:26Z",
+  "collection_wall_seconds": 2.970884,
+  "terminal_status": "waiting_review",
+  "window_count": 1,
+  "completed_windows": 1,
+  "possibly_truncated": false,
+  "segment_count": 18,
+  "speaker_labels": [
+    "S01",
+    "S02"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-lex-bill-ackman/segments.json",
+  "segments_sha256": "0a562b7b17ca8a89ebce2406c223984ecfa2f69f64ee966c08011eb83697a289",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-lex-bill-ackman/job-terminal.json",
+  "job_terminal_sha256": "ee61d8b27d5da4cdb76037b9d72db94a62793e4913b542da656991669940f90e"
+}

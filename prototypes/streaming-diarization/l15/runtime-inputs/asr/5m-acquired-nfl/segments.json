@@ -1,0 +1,382 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.54,
+      "end": 3.03,
+      "speaker": "S01",
+      "text": "So in my headphones I have, are you ready for some football?"
+    },
+    {
+      "id": "seg_0002",
+      "start": 3.24,
+      "end": 7.44,
+      "speaker": "S02",
+      "text": "Yeah, I was listening to that too. Yes. Dude, it gets you so pumped up."
+    },
+    {
+      "id": "seg_0003",
+      "start": 7.71,
+      "end": 11.01,
+      "speaker": "S01",
+      "text": "It totally does. I feel like I grew up on the Fox Sports theme."
+    },
+    {
+      "id": "seg_0004",
+      "start": 15.27,
+      "end": 16.64,
+      "speaker": "S02",
+      "text": "It always makes me think of Thanksgiving."
+    },
+    {
+      "id": "seg_0005",
+      "start": 17.01,
+      "end": 20.67,
+      "speaker": "S01",
+      "text": "It makes me think of, I think it was a Jock Jams tape that I bought."
+    },
+    {
+      "id": "seg_0006",
+      "start": 37.65,
+      "end": 42.78,
+      "speaker": "S03",
+      "text": "Welcome to this special remastered edition of Acquired, the podcast about great companies"
+    },
+    {
+      "id": "seg_0007",
+      "start": 42.78,
+      "end": 45.54,
+      "speaker": "S03",
+      "text": "and the stories and playbooks behind them. I'm Ben Gilbert."
+    },
+    {
+      "id": "seg_0008",
+      "start": 45.81,
+      "end": 46.92,
+      "speaker": "S02",
+      "text": "I'm David Rosenthal."
+    },
+    {
+      "id": "seg_0009",
+      "start": 47.22,
+      "end": 53.55,
+      "speaker": "S03",
+      "text": "And we are your hosts. Three years ago, in January of 2023, we released an episode"
+    },
+    {
+      "id": "seg_0010",
+      "start": 53.55,
+      "end": 59.22,
+      "speaker": "S03",
+      "text": "on the National Football League, which, David, I think is absolutely an essential part of"
+    },
+    {
+      "id": "seg_0011",
+      "start": 59.22,
+      "end": 59.97,
+      "speaker": "S03",
+      "text": "Acquired canon."
+    },
+    {
+      "id": "seg_0012",
+      "start": 60.33,
+      "end": 63.18,
+      "speaker": "S02",
+      "text": "Totally agree. We took so much from that episode."
+    },
+    {
+      "id": "seg_0013",
+      "start": 63.54,
+      "end": 69.66,
+      "speaker": "S03",
+      "text": "But listeners, a few things have happened since then. One, the NFL has become even"
+    },
+    {
+      "id": "seg_0014",
+      "start": 69.66,
+      "end": 76.05,
+      "speaker": "S03",
+      "text": "more of a juggernaut. Two, Acquired's audience grew a lot, so many of you never heard that"
+    },
+    {
+      "id": "seg_0015",
+      "start": 76.05,
+      "end": 84.15,
+      "speaker": "S03",
+      "text": "episode. And three, the ultimate Acquired-universe crossover happened between the NFL and Taylor"
+    },
+    {
+      "id": "seg_0016",
+      "start": 84.15,
+      "end": 84.69,
+      "speaker": "S03",
+      "text": "Swift."
+    },
+    {
+      "id": "seg_0017",
+      "start": 86.16,
+      "end": 90.9,
+      "speaker": "S02",
+      "text": "Yes. It was kind of a bad timing when we made this originally because it was right"
+    },
+    {
+      "id": "seg_0018",
+      "start": 90.9,
+      "end": 92.19,
+      "speaker": "S02",
+      "text": "before that happened."
+    },
+    {
+      "id": "seg_0019",
+      "start": 92.52,
+      "end": 92.97,
+      "speaker": "S03",
+      "text": "Yes."
+    },
+    {
+      "id": "seg_0020",
+      "start": 93.27,
+      "end": 99.27,
+      "speaker": "S02",
+      "text": "But Ben, you forgot the most important thing, which is that this year, in 2026,"
+    },
+    {
+      "id": "seg_0021",
+      "start": 99.27,
+      "end": 103.86,
+      "speaker": "S02",
+      "text": "we are hosting the Super Bowl's Innovation Summit at the Super Bowl in San Francisco"
+    },
+    {
+      "id": "seg_0022",
+      "start": 103.86,
+      "end": 104.22,
+      "speaker": "S02",
+      "text": "this year."
+    },
+    {
+      "id": "seg_0023",
+      "start": 104.49,
+      "end": 110.19,
+      "speaker": "S03",
+      "text": "Yes, we are. Listeners, details on how and when you can watch that are in the"
+    },
+    {
+      "id": "seg_0024",
+      "start": 110.19,
+      "end": 114.96,
+      "speaker": "S03",
+      "text": "show notes. So to help us come up to speed and prepare for that, and to help you get"
+    },
+    {
+      "id": "seg_0025",
+      "start": 114.96,
+      "end": 120.87,
+      "speaker": "S03",
+      "text": "pumped for the Super Bowl, we decided to remaster our NFL episode to today's acquired"
+    },
+    {
+      "id": "seg_0026",
+      "start": 120.87,
+      "end": 125.37,
+      "speaker": "S03",
+      "text": "production quality standards. We also decided to update the episode with everything that"
+    },
+    {
+      "id": "seg_0027",
+      "start": 125.37,
+      "end": 131.28,
+      "speaker": "S03",
+      "text": "has changed about the league, from streaming on YouTube and Netflix and Amazon and all"
+    },
+    {
+      "id": "seg_0028",
+      "start": 131.28,
+      "end": 136.59,
+      "speaker": "S03",
+      "text": "those deals, to our updated thinking on the international strategy for the NFL, and"
+    },
+    {
+      "id": "seg_0029",
+      "start": 136.44,
+      "end": 141.33,
+      "speaker": "S03",
+      "text": "And of course, how the influx of gambling being legalized has affected the league."
+    },
+    {
+      "id": "seg_0030",
+      "start": 141.78,
+      "end": 146.52,
+      "speaker": "S02",
+      "text": "And at the very end, we have the wild story of how private equity"
+    },
+    {
+      "id": "seg_0031",
+      "start": 146.97,
+      "end": 150.54,
+      "speaker": "S02",
+      "text": "has entered the league too. So make sure you stay tuned for that because it is nuts."
+    },
+    {
+      "id": "seg_0032",
+      "start": 150.78,
+      "end": 156.33,
+      "speaker": "S03",
+      "text": "Yes, we're going to put all of these updates in a special news section right at the end of the episode."
+    },
+    {
+      "id": "seg_0033",
+      "start": 156.81,
+      "end": 161.55,
+      "speaker": "S03",
+      "text": "So listeners, it is time to throw it over to myself from 2023"
+    },
+    {
+      "id": "seg_0034",
+      "start": 161.85,
+      "end": 165.99,
+      "speaker": "S03",
+      "text": "and on to our remastered episode of the National Football League."
+    },
+    {
+      "id": "seg_0035",
+      "start": 166.83,
+      "end": 170.88,
+      "speaker": "S03",
+      "text": "Football is America's favorite sport by far."
+    },
+    {
+      "id": "seg_0036",
+      "start": 171.21,
+      "end": 176.4,
+      "speaker": "S03",
+      "text": "In fact, football is more than three times as popular as the next highest sport, basketball."
+    },
+    {
+      "id": "seg_0037",
+      "start": 176.85,
+      "end": 180.81,
+      "speaker": "S03",
+      "text": "The Super Bowl is watched by over 100 million viewers every year"
+    },
+    {
+      "id": "seg_0038",
+      "start": 180.99,
+      "end": 183.54,
+      "speaker": "S03",
+      "text": "in approximately two thirds of American households."
+    },
+    {
+      "id": "seg_0039",
+      "start": 183.99,
+      "end": 189.06,
+      "speaker": "S03",
+      "text": "My favorite Super Bowl stat is that it's the weekend with the fewest weddings planned of the year."
+    },
+    {
+      "id": "seg_0040",
+      "start": 191.04,
+      "end": 194.88,
+      "speaker": "S03",
+      "text": "It is the NFL's world and Americans are just living in it,"
+    },
+    {
+      "id": "seg_0041",
+      "start": 195.18,
+      "end": 200.19,
+      "speaker": "S03",
+      "text": "especially the TV networks, which have been reduced from pillars of our nation in their heyday"
+    },
+    {
+      "id": "seg_0042",
+      "start": 200.52,
+      "end": 205.92,
+      "speaker": "S03",
+      "text": "to largely distribution channels for the NFL today, plus some other lesser programming sprinkled in."
+    },
+    {
+      "id": "seg_0043",
+      "start": 206.25,
+      "end": 211.89,
+      "speaker": "S03",
+      "text": "Of the top 100 TV broadcasts aired last year, 82 of them were NFL games."
+    },
+    {
+      "id": "seg_0044",
+      "start": 211.98,
+      "end": 213.84,
+      "speaker": "S02",
+      "text": "Wow, that is wild."
+    },
+    {
+      "id": "seg_0045",
+      "start": 214.35,
+      "end": 216.33,
+      "speaker": "S03",
+      "text": "Totally wild. But how did we get here?"
+    },
+    {
+      "id": "seg_0046",
+      "start": 216.42,
+      "end": 220.92,
+      "speaker": "S03",
+      "text": "How did this game become the most valuable media property in America?"
+    },
+    {
+      "id": "seg_0047",
+      "start": 221.43,
+      "end": 228.06,
+      "speaker": "S03",
+      "text": "The story is one of incredible cooperation, of belief in growing the pie over a century."
+    },
+    {
+      "id": "seg_0048",
+      "start": 228.36,
+      "end": 233.04,
+      "speaker": "S03",
+      "text": "And just like our benchmark episode, of communist capitalism at its finest."
+    },
+    {
+      "id": "seg_0049",
+      "start": 233.55,
+      "end": 239.52,
+      "speaker": "S03",
+      "text": "The NFL owners have made bold, long-term bets in choosing to divide their revenues equally"
+    },
+    {
+      "id": "seg_0050",
+      "start": 239.82,
+      "end": 242.88,
+      "speaker": "S03",
+      "text": "in a way that no other sports league has."
+    },
+    {
+      "id": "seg_0051",
+      "start": 240.0,
+      "end": 296.88,
+      "speaker": "S03",
+      "text": "way that no other sports league has. Of course, the NFL hasn't been free of controversy from the horrible recent on field collapse of Damar Hamlin to the epidemic of CTE among former football players. Players are clearly putting their lives at risk and the modern fans relationship with the sport is complicated. I personally love watching football. It has been finely tuned over the years to be maximally maximally entertaining, but it comes with cognitive dissonance for me every time I tune in and I know many others feel the same. Whether pro football is your favorite pastime or you think it's a societal ill, there is no denying the incredible role that it plays in all of our lives today. Now listeners, just like our NBA episode a couple of years ago, this is an episode on the business of football. It's not specifically about things I learned reviewing game film or the merits of the I formation. Today, we're talking about the business."
+    },
+    {
+      "id": "seg_0052",
+      "start": 243.57,
+      "end": 247.02,
+      "speaker": "S03",
+      "text": "Of course, the NFL hasn't been free of controversy."
+    },
+    {
+      "id": "seg_0053",
+      "start": 247.32,
+      "end": 254.28,
+      "speaker": "S03",
+      "text": "From the horrible recent on-field collapse of Damar Hamlin to the epidemic of CTE among former football players,"
+    },
+    {
+      "id": "seg_0054",
+      "start": 297.24,
+      "end": 299.94,
+      "speaker": "S04",
+      "text": "But we do have some sports thank yous to"
+    }
+  ]
+}
