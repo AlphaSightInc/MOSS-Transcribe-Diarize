@@ -1602,3 +1602,31 @@ Exact build/verification commands:
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/build_runtime_fixtures.py
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_runtime_fixture.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/verify_runtime_fixtures.py && cd prototypes/streaming-diarization/l15/evidence/runtime-fixture && shasum -a 256 -c RUNTIME_FIXTURE_EVIDENCE.sha256
 ```
+
+### Campaign L1.5 F1 preregistration (`l15`, 2026-08-04)
+
+**PREREGISTERED BEFORE IMPLEMENTATION OR SCORING.** Family 1 is
+`f1-ledger-only-bounded-clustering-v1`: average-linkage cosine clustering over the
+vectors the production sweep already retains, cut to the runtime-visible final L1
+canonical count, then duration-weighted one-to-one cluster mapping and bounded
+`(span_id, local_speaker)` rewrites. Current labels form canonical references but are
+never the clustering/pooling key. Words and timing cannot change.
+
+The sole optimization pass is the complete 27-point development grid:
+score `{0.30,0.35,0.40}` × margin `{0.05,0.10,0.15}` × meeting rewrite budget
+`{0.02,0.05,0.08}`. Selection maximizes duration-weighted development speaker
+accuracy subject to all non-gain gates; ties prefer smaller budget, then higher score,
+then higher margin. The selected configuration alone touches validation once. No grid
+extension or second pass is allowed.
+
+Target-error subsets are the complete frozen development and validation groups—no
+post-result case selection. Each must gain at least `1.0 pp` over same-frame L1; every
+case must stay within `0.5 pp`, with FP speaker-seconds/DER not worse, two-sided
+mapping preserved, deterministic duplicate decisions, complete correction evidence,
+and 30-minute candidate p95 at most `0.20015926258638502 s` (2× L1.a sweep p95).
+Before any score, the full-chain audit and A,B→A,A decision-hash perturbation must PASS.
+Holdout remains sealed.
+
+Machine-readable preregistration:
+`prototypes/streaming-diarization/l15/f1-ledger-only-family.json`, SHA-256
+`770b73703550cd989a6125f51a4e32ef352b4d203a7d888589864d19d20d13fb`.
