@@ -1476,3 +1476,33 @@ Reproduce without corpus-content reads:
 ```bash
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/freeze_splits.py --check && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/test_holdout_gate.py
 ```
+
+### Campaign L1.5 L1.a baseline instrument preregistration (`l15`, 2026-08-04)
+
+**PREDECLARED BEFORE MEASUREMENT.** `run_l1_baseline.py` imports and hash-asserts
+the accepted A2 instrument (`5f7ca385…ebf91`) and therefore calls its exact
+production `BoundedCausalIdentityPreparer`, `SweepLedger`, and `sweep()` bindings;
+it contains no identity-policy copy. The wrapper extends case scope only, preserves
+the production-planned cache frame, runs every dev/validation case twice, applies
+the accepted alphabet cross-instrument gate unchanged, and records full A2 traces.
+
+For the dev-side 30-minute case, `sys.setprofile` observes the unchanged production
+`sweep` function's call/return wall time without replacing its binding. Sweep p95 is
+predeclared as linear Type-7 over both runs. Timing is excluded from the semantic
+determinism hash. Spec SHA-256:
+`46d145e1e82b1d2322b346d901666a082e864b5a2d6e7c02e04ab4bef36a4c99`;
+runner SHA-256:
+`b6456a063290df0582bec9b870e04deaae1dd716e5dde0e27b8f1cd5a9c1bb7c`.
+
+Red-first/green tests passed 4/4 after the missing-wrapper red. Input preflight
+verified all 16 pinned cases and exact source/cache/model bindings. A direct attempt
+to select `5m-acquired-coca-cola` returned exit 2 with named
+`l15_l1_holdout_sealed`; active holdout audio/reference/cache paths remain absent
+from this worktree. Instrument evidence manifest SHA-256:
+`a8b1c3359736e9426516df9c528e32aa616880f63360bc880e3a87a5e2b8d362`.
+
+The first measurement command, permitted only after this preregistration commit, is:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_l1_baseline.py --evidence-dir prototypes/streaming-diarization/l15/evidence/l1a-baseline --json-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json --transcript-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-transcript.txt
+```

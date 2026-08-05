@@ -1,0 +1,96 @@
+{
+  "a2_instrument": {
+    "path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py",
+    "sha256": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91"
+  },
+  "accepted_alphabet_gate": {
+    "absolute_tolerance": 0.005,
+    "anchor_kind": "cross_instrument_production_truth",
+    "case_id": "5m-acquired-alphabet",
+    "comparison_frame": {
+      "planner": "production_endpoint_policy",
+      "reference_sha256": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+      "unit_count": 101,
+      "vector_cache_sha256": "6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef"
+    },
+    "immutable_live_speaker_accuracy": [
+      0.9135,
+      0.9144
+    ],
+    "pass_rule": "production-planned baseline must be within absolute_tolerance of each immutable live value",
+    "supervisor_authorized_on": "2026-08-03"
+  },
+  "cache_rebuild_spec": {
+    "path": "prototypes/streaming-diarization/l2-stage0/cache-rebuild-spec.json",
+    "sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061"
+  },
+  "case_ids": [
+    "1m-acquired-nfl",
+    "3m-acquired-jamie-dimon",
+    "1m-acquired-jamie-dimon",
+    "5m-acquired-jamie-dimon",
+    "5m-acquired-nfl",
+    "5m-lex-bill-ackman",
+    "5m-lex-javier-milei",
+    "30m-lex-bill-ackman",
+    "1m-acquired-rolex",
+    "1m-lex-bill-ackman",
+    "1m-lex-javier-milei",
+    "1m-lex-keyu-jin",
+    "3m-lex-adam-frank",
+    "3m-lex-shapiro-destiny",
+    "5m-acquired-alphabet",
+    "5m-acquired-rolex"
+  ],
+  "corpus_manifest": {
+    "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json",
+    "sha256": "7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb"
+  },
+  "expected_case_count": 16,
+  "holdout_procedure": {
+    "path": "prototypes/streaming-diarization/l15/holdout-procedure.json",
+    "sha256": "f4a06939e2701b8f48ca9d090e8cd01d5853e64f2953bbd7982b3f6b3f5f5489"
+  },
+  "model_manifest": {
+    "path": "prototypes/streaming-diarization/l2-stage0/model-manifest.json",
+    "sha256": "a04db6c33fdb425cf2b1b940ca2a2ff3950d9aabc269385f6c4a579e419c7184"
+  },
+  "production_config": {
+    "album_admission_seconds": 2.0,
+    "album_birth_min_seconds": 1.0,
+    "album_exemplars_per_speaker": 10,
+    "hard_cap_samples": 40000,
+    "max_speakers": 16,
+    "merge_threshold": 0.7,
+    "min_evidence_samples": 8000,
+    "min_silence_samples": 8000,
+    "min_speech_samples": 1600,
+    "min_match_margin": 0.1,
+    "min_match_score": 0.35,
+    "post_speech_padding_samples": 0,
+    "pre_speech_padding_samples": 0,
+    "sample_rate": 16000,
+    "sweep_interval_seconds": 60.0
+  },
+  "production_source_commit": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "repeatability": {
+    "metric_absolute_tolerance": 0.0,
+    "runs_per_case": 2,
+    "semantic_sha256_must_match": true
+  },
+  "schema": "moss-l15-l1-baseline-spec.v1",
+  "split_manifest": {
+    "path": "prototypes/streaming-diarization/l15/split-manifest.json",
+    "sha256": "308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3"
+  },
+  "sweep_timing": {
+    "case_ids": [
+      "30m-lex-bill-ackman"
+    ],
+    "clock": "time.perf_counter",
+    "measurement": "production sweep function call wall time",
+    "percentile": 95,
+    "percentile_method": "linear_type7",
+    "runs_per_case": 2
+  }
+}
