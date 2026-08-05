@@ -1789,3 +1789,67 @@ Reproduce:
 ```bash
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && diagnosis_tmp=$(mktemp -d /tmp/moss-f1-diagnosis.XXXXXX) && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/diagnose_f1_parameter_flow.py --output "$diagnosis_tmp/f1-two-config-differential-v2.json" && shasum -a 256 "$diagnosis_tmp/f1-two-config-differential-v2.json"
 ```
+
+### Campaign L1.5 F1 Stage-0 ledger differential — boundary 2 (`l15`, 2026-08-05)
+
+**VERDICT: DATA/FRAME-SIDE BRANCH; THE SEALED STAGE-0 ARM ALSO COLLAPSES ON THE
+L1.5 D8-SAFE INPUTS. F1 IMPLEMENTATION DEFECT NOT PROVEN; NO F1-PRIME. STOP.**
+The exact Stage-0 A5 `candidate_engine.py` was loaded read-only with `git show` from
+owning commit `a16c6d811031cac826878200256af0b69224add8`, SHA-256
+`fbed07c2a06efee9f1efab24000ae3e7c7f083761fa21b5ab544a7afce538467`.
+Its frozen v4 family config SHA-256 is
+`280041b25865c0ce912ab3d05afdf8636561296723832deadeb6e328ea7b7a0f`;
+the ledger values are score `0.35`, margin `0.10`, budget `0.05`.
+
+Candidate decisions ran in a scorer-free process over the same L1.5 runtime units and
+sealed before a separate process opened development truth. Decision JSON SHA-256 is
+`e2409e03b05884c36eeefba4dfc0964ed44b4fbbff931cf6311e096ad71b32aa`;
+its 10-member pre-score seal SHA-256 is
+`0dc303959c01673d26eed707c3a3c2007b3d115c1558cdacdbd3a8957dd55d70`.
+The scored raw JSON was then sealed before interpretation: SHA-256
+`d5a7769017cf90a3a9cc39447d63c2b8af9e2162146688322d33a0d8281ff013`;
+7-member scored seal SHA-256
+`83bbaa6a270418f5022d43507399a9a1c7574bec17b65ecc2e0a6410a21f7f66`.
+
+Per-case Stage-0/F1 proposal counts and Stage-0 gain over L1:
+
+| Case | Eligible | Stage-0 proposals | F1 proposals | Gain pp |
+|---|---:|---:|---:|---:|
+| 1m-acquired-nfl | 19 | 0 | 0 | 0.0000 |
+| 3m-acquired-jamie-dimon | 75 | 3 | 3 | -0.0056 |
+| 1m-acquired-jamie-dimon | 24 | 0 | 0 | 0.0000 |
+| 5m-acquired-jamie-dimon | 114 | 1 | 1 | 0.0000 |
+| 5m-acquired-nfl | 120 | 0 | 0 | 0.0000 |
+| 5m-lex-bill-ackman | 130 | 0 | 0 | 0.0000 |
+| 5m-lex-javier-milei | 127 | 1 | 1 | +0.3000 |
+| 30m-lex-bill-ackman | 768 | 1 | 1 | +0.0028 |
+
+Totals are 6 proposals and 6 accepted corrections for both implementations. Every
+per-case proposal count, accepted count, and final-label semantic hash is identical.
+Both yield the exact duration-weighted aggregate gain `+0.0342058101619247 pp`.
+Therefore the Stage-0 arm does **not** produce meaningful additional corrections on the
+L1.5 D8-safe ASR frame. Under the supervisor's directed decision tree, the discrepancy
+with historical Stage-0 behavior is input/frame-side or common-method geometry, not a
+proven F1 implementation defect. Step 3's F1-PRIME condition is false.
+
+Decision attempt 1 produced no JSON or score: Stage-0 `RuntimeUnit` constructor rejected
+overlapping ASR pieces. Its transcript is preserved. The exact sealed ledger function and
+helpers do not read interval geometry; a source-audited immutable adapter therefore passed
+only their actual five fields (`span_id`, local/current speaker, unchanged duration, unchanged
+vector). No interval was merged/retimed, no value changed, and Stage-0 source remained
+byte-exact. Red-first 3-test then strengthened to 4-test green before the successful run.
+
+Verdict JSON SHA-256:
+`ab20f2a005254733e0f2c05fd23666cfd286adeca72873a0e3ad4718815283c3`;
+17-member final evidence manifest SHA-256:
+`c1973a7f8e65b60d46bebabc3e42c27c58429572ee4e56f27ffa30e4e4edb9a4`.
+F1 sealed FAIL remains immutable. F2 stays paused. No validation, holdout, gate,
+tolerance, target subset, FP rule, or implementation changed.
+
+Exact commands:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_stage0_ledger_differential.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/score_stage0_ledger_differential.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/write_stage0_ledger_differential_verdict.py
+```

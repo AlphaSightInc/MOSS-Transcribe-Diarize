@@ -1,0 +1,1 @@
+STOP data_frame_side proposals=6 gain_pp=0.034205810 sha256=ab20f2a005254733e0f2c05fd23666cfd286adeca72873a0e3ad4718815283c3

@@ -1,0 +1,9 @@
+SCORE 1/8 1m-acquired-nfl stage0_proposals=0 f1_proposals=0 stage0_gain_pp=0.000000000
+SCORE 2/8 3m-acquired-jamie-dimon stage0_proposals=3 f1_proposals=3 stage0_gain_pp=-0.005600000
+SCORE 3/8 1m-acquired-jamie-dimon stage0_proposals=0 f1_proposals=0 stage0_gain_pp=0.000000000
+SCORE 4/8 5m-acquired-jamie-dimon stage0_proposals=1 f1_proposals=1 stage0_gain_pp=0.000000000
+SCORE 5/8 5m-acquired-nfl stage0_proposals=0 f1_proposals=0 stage0_gain_pp=0.000000000
+SCORE 6/8 5m-lex-bill-ackman stage0_proposals=0 f1_proposals=0 stage0_gain_pp=0.000000000
+SCORE 7/8 5m-lex-javier-milei stage0_proposals=1 f1_proposals=1 stage0_gain_pp=0.300000000
+SCORE 8/8 30m-lex-bill-ackman stage0_proposals=1 f1_proposals=1 stage0_gain_pp=0.002800000
+PASS scored gain_pp=0.034205810 sha256=d5a7769017cf90a3a9cc39447d63c2b8af9e2162146688322d33a0d8281ff013
