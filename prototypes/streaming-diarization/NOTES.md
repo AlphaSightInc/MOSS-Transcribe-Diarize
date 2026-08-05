@@ -1717,3 +1717,33 @@ verification SHA-256:
 `8441810f2ed5efaec926a6abcdd635efdbd48ccffaaf1f01fedfafcbc6fcca3e`;
 17-member evidence manifest SHA-256:
 `dcf453f2a147940b4eb3b45071801ea39ba5b516486ae2e32a9e766cf8f6967a`.
+
+### Campaign L1.5 F2 preregistration (`l15`, 2026-08-04)
+
+**PREREGISTERED BEFORE IMPLEMENTATION OR ANY F2 RUN.** Family 2 is
+`f2-soft-lane-provenance-prior-v1`. A canonical's runtime lane is the
+duration-weighted majority of its known admitted evidence. Cross-known-lane cosine
+similarity is multiplied by `1-prior_strength`; same-lane and either-unknown comparisons
+remain neutral. Lane is never a hard key/cannot-link, never creates a birth or rewrite by
+itself, and one-person-per-lane collapse is explicitly excluded.
+
+The sole optimization pass is the complete development grid `prior_strength`
+`{0.05,0.10,0.20}`. Selection maximizes duration-weighted development speaker accuracy
+subject to all non-gain gates; ties choose `0.05`. The selected configuration alone may
+touch validation once. Target-error subsets are all frozen dev and validation cases.
+Their frozen runtime inputs carry no `capture_lane`, so they exercise the preregistered
+neutral-unknown behavior; no lane may be inferred from truth.
+
+The unaudited m4mbp dual-lane pair is separately exploratory: local SHA-256
+`830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251`, remote SHA-256
+`5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d`.
+It has no speaker golden, so it may measure signal/production-embedding lane separation
+only and cannot contribute acceptance evidence. The historical `+8.1 pp` required the
+excluded explicit one-person-per-lane collapse; the generic constraint was `+0.0 pp`.
+
+Before any score, full evaluator-to-candidate audit and A,B→A,A runtime-shape plus
+decision-hash invariance must PASS. Each split must gain at least `1.0 pp` over L1;
+case regression, FP-speaker-seconds, DER, determinism, two-sided mapping, correction
+evidence, and the `0.20015926258638502 s` 30-minute p95 gate are unchanged. Holdout
+remains sealed. Machine-readable preregistration SHA-256:
+`f3459dbc0599d0d504befd1c77ba01ff747abf2f2311fa83ea0fb85d699c48bb`.
