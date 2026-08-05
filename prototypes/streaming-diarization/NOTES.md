@@ -1853,3 +1853,33 @@ cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/score_stage0_ledger_differential.py
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/write_stage0_ledger_differential_verdict.py
 ```
+
+### Campaign L1.5 F1 final scientific disposition (`l15`, 2026-08-05)
+
+**FINAL DISPOSITION: FAIL — METHOD-CLASS LIMITATION UNDER THE HONEST RUNTIME
+FRAME, NOT AN INSTRUMENT DEFECT.** Boundary 1 proved that every configured threshold
+reached the algorithm but became nonbinding after fixed-mapping proposal starvation.
+Boundary 2 then ran the exact sealed Stage-0 ledger method on the same L1.5 D8-safe
+runtime inputs: all per-case proposal counts, accepted corrections, and final labels were
+identical to F1, with the same aggregate gain `+0.0342058101619247 pp`. The authoritative
+D8-frame scored raw SHA-256 is
+`d5a7769017cf90a3a9cc39447d63c2b8af9e2162146688322d33a0d8281ff013`;
+the 17-member differential evidence manifest SHA-256 is
+`c1973a7f8e65b60d46bebabc3e42c27c58429572ee4e56f27ffa30e4e4edb9a4`.
+
+**Corollary: the Stage-0 ledger-control gains were frame-flattered.** Its reported dev
+score moved from L1 `0.946284` to ledger `0.950569` (`+0.4285 pp`, commonly rounded
+`+0.43 pp`) on truth-timed unit partitions. Stage-0 dev raw SHA-256:
+`2842f66eae64843d8aa13c9e65c1f95f20a803489613c355c2a07bb1a40c71d5`;
+A5 dev evidence-manifest SHA-256:
+`8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34`.
+Its single blind opening moved L1 `0.963303` to ledger `0.972477`
+(`+0.917431 pp`) in the same truth-timed frame. Holdout-summary raw SHA-256:
+`43e9ff33e664331aa614bc748f5b6254a545c3252694a5522c90044c220e9966`;
+A5 holdout evidence-manifest SHA-256:
+`15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd`.
+
+Those historical numbers remain immutable measurements of their frame but do **not**
+survive the D8-safe production-endpoint-over-deployed-ASR frame and no longer carry
+strategic weight as a cheap live-mode win. No F1-PRIME is authorized. No gate, target
+subset, FP rule, sealed artifact, or holdout state changed.
