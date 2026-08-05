@@ -1506,3 +1506,46 @@ The first measurement command, permitted only after this preregistration commit,
 ```bash
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_l1_baseline.py --evidence-dir prototypes/streaming-diarization/l15/evidence/l1a-baseline --json-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json --transcript-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-transcript.txt
 ```
+
+### Campaign L1.5 L1.a baseline verdict (`l15`, 2026-08-04)
+
+**VERDICT: PASS — L1.a COMPLETE; STOP BEFORE CANDIDATE WORK.** The single
+prescribed baseline execution ran the frozen 16 development/validation cases twice
+through hash-pinned A2 `replay_case()`. All 16 semantic results were byte-equivalent
+across runs; all retained two-sided mapping. Thirty-two raw wrappers preserve full
+span/revision traces, mappings, per-speaker correctness, activity precision/recall,
+false-positive speaker seconds, DER-family metrics, and changed-duration fraction.
+
+The accepted production-frame alphabet baseline reproduced at `0.916765`; absolute
+deltas from immutable live anchors `0.9135/0.9144` were `0.003265/0.002365`, both
+inside the unchanged `0.005` cross-instrument gate. The newly gated 30-minute
+development case `30m-lex-bill-ackman` measured speaker accuracy `0.963119`, DER
+`0.036881`, zero false-positive speaker seconds, and changed-duration fraction
+`0.009998`.
+
+Production `sweep()` timing on that 30-minute case produced 64 call samples across
+two runs. Linear Type-7 p95 was `0.10007963129319251 s`; this is the frozen current
+sweep-compute baseline for the later `<=2x` gate. Post-run verification independently
+recomputed every file and semantic hash, p95, exact case scope, traces, mapping, and
+holdout seal: PASS 10/10, 32/32 wrappers. Its first attempt failed only while rendering
+a relative summary path; that sealed reporting defect was corrected without rerunning
+or changing any measurement.
+
+Holdout remains unopened. Its three active audio, reference, and cache paths were
+absent before and after the run; the summary records all nine absences. No candidate
+family, threshold, implementation, or F1/F2/F3 preregistration exists yet.
+
+Raw summary SHA-256:
+`45edc8ce142c3ae15cc03ddd6739cb40ff59ced907b2885667894f2b5f74be21`;
+transcript SHA-256:
+`eeec46c98e31a04243f98d80d35bc8baf61b4136240064c07919078666612351`;
+verification JSON SHA-256:
+`843ec6587d73f8af10f89644055623be5657147f09347b311f809c4429c210da`;
+complete evidence manifest SHA-256:
+`a43dd67cca8418d28c342995b87f9f40a3c605eede768c55f02807e3dd5d3402`.
+
+Exact executed command:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_l1_baseline.py --evidence-dir prototypes/streaming-diarization/l15/evidence/l1a-baseline --json-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json --transcript-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-transcript.txt
+```

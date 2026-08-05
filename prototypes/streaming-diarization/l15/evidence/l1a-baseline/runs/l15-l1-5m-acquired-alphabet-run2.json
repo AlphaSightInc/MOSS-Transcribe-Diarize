@@ -1,0 +1,5746 @@
+{
+  "case_id": "5m-acquired-alphabet",
+  "result": {
+    "case_id": "5m-acquired-alphabet",
+    "changed_duration_fraction": 0.052385,
+    "changed_speaker_seconds": 9.275875,
+    "counts": {
+      "abstain": 6,
+      "failed": 0,
+      "final_canonical_speakers": 2,
+      "ledger_refused_units": 0,
+      "ledger_spans": 85,
+      "ledger_units": 91,
+      "live_canonical_speakers": 4,
+      "no_speaker_activity": 67,
+      "prepared": 87,
+      "residual_corrections": 0
+    },
+    "final_unit_labels": [
+      "speaker-0004",
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      null,
+      null,
+      "speaker-0004",
+      "speaker-0003",
+      null,
+      null,
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0003",
+      null,
+      null,
+      "speaker-0004",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0003",
+      null,
+      null,
+      null,
+      "speaker-0003",
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      null,
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      null,
+      null,
+      null,
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      null,
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004"
+    ],
+    "fixture_fidelity": {
+      "cache_self_replan": {
+        "checks": {
+          "rows": true,
+          "span_bounds": true,
+          "span_reasons": true,
+          "vector_count": true,
+          "vector_indexes": true
+        },
+        "eligible_unit_count": 91,
+        "self_replan": "PASS",
+        "span_count": 160,
+        "unit_count": 101,
+        "vector_count": 91
+      },
+      "eligible_unit_count": 91,
+      "max_duration_delta_seconds": 0.0,
+      "unit_count": 101
+    },
+    "live_metrics": {
+      "confused_speaker_seconds": 7.287635,
+      "covered_reference_seconds": 160.345447,
+      "diarization_error_rate": 0.135623,
+      "false_positive_activity_seconds": 0.000553,
+      "false_positive_speaker_seconds": 0.000553,
+      "hypothesis_activity_seconds": 160.346,
+      "hypothesis_seconds": 160.346,
+      "hypothesis_speaker_count": 4,
+      "matched_speaker_seconds": 153.057812,
+      "missed_activity_seconds": 16.726803,
+      "missed_speaker_seconds": 16.726803,
+      "reference_activity_seconds": 177.07225,
+      "reference_coverage": 0.905537,
+      "reference_seconds": 177.07225,
+      "reference_speaker_count": 2,
+      "speaker_accuracy": 0.864381,
+      "speaker_activity_precision": 0.999997,
+      "speaker_activity_recall": 0.905537,
+      "speaker_correctness": {
+        "Ben": 0.906976,
+        "David": 0.795098
+      },
+      "speaker_mapping": {
+        "Ben": "speaker-0003",
+        "David": "speaker-0004"
+      },
+      "true_positive_activity_seconds": 160.345447,
+      "two_sided_mapping": true
+    },
+    "live_unit_labels": [
+      "speaker-0001",
+      null,
+      "speaker-0002",
+      "speaker-0002",
+      "speaker-0003",
+      null,
+      null,
+      "speaker-0001",
+      "speaker-0003",
+      null,
+      null,
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0001",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0003",
+      null,
+      null,
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      null,
+      "speaker-0003",
+      null,
+      null,
+      null,
+      "speaker-0003",
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      null,
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      null,
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      null,
+      null,
+      null,
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      null,
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0003",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004",
+      "speaker-0004"
+    ],
+    "metrics": {
+      "confused_speaker_seconds": 0.0,
+      "covered_reference_seconds": 162.333608,
+      "diarization_error_rate": 0.083238,
+      "false_positive_activity_seconds": 0.00058,
+      "false_positive_speaker_seconds": 0.00058,
+      "hypothesis_activity_seconds": 162.334188,
+      "hypothesis_seconds": 162.334188,
+      "hypothesis_speaker_count": 2,
+      "matched_speaker_seconds": 162.333608,
+      "missed_activity_seconds": 14.738643,
+      "missed_speaker_seconds": 14.738643,
+      "reference_activity_seconds": 177.07225,
+      "reference_coverage": 0.916765,
+      "reference_seconds": 177.07225,
+      "reference_speaker_count": 2,
+      "speaker_accuracy": 0.916765,
+      "speaker_activity_precision": 0.999996,
+      "speaker_activity_recall": 0.916765,
+      "speaker_correctness": {
+        "Ben": 0.929238,
+        "David": 0.896477
+      },
+      "speaker_mapping": {
+        "Ben": "speaker-0003",
+        "David": "speaker-0004"
+      },
+      "true_positive_activity_seconds": 162.333608,
+      "two_sided_mapping": true
+    },
+    "production_bindings": {
+      "ledger": "moss_transcribe_diarize.app.live_identity_sweep.SweepLedger",
+      "source_path": "moss_transcribe_diarize/app/live_identity_sweep.py",
+      "source_sha256": "23bf894d4897c2265681b718bedd59d43a7ea98c5d9f00dccbbb4d6edb94cfc9",
+      "sweep": "moss_transcribe_diarize.app.live_identity_sweep.sweep"
+    },
+    "production_config": {
+      "album_admission_seconds": 2.0,
+      "album_birth_min_seconds": 1.0,
+      "album_exemplars_per_speaker": 10,
+      "hard_cap_samples": 40000,
+      "max_speakers": 16,
+      "merge_threshold": 0.7,
+      "min_evidence_samples": 8000,
+      "min_match_margin": 0.1,
+      "min_match_score": 0.35,
+      "min_silence_samples": 8000,
+      "min_speech_samples": 1600,
+      "post_speech_padding_samples": 0,
+      "pre_speech_padding_samples": 0,
+      "sample_rate": 16000,
+      "sweep_interval_seconds": 60.0
+    },
+    "production_planner": {
+      "policy": "moss_transcribe_diarize.app.live_endpoint.EndpointPolicy",
+      "source_path": "moss_transcribe_diarize/app/live_endpoint.py",
+      "source_sha256": "0d91f0607b139cbeed6a44b60f62984b2178e0482d6844722290856fa5e770b8"
+    },
+    "revision_trace": [
+      {
+        "applied_corrections": 2,
+        "apply": true,
+        "labels_after": {
+          "10:S01": "speaker-0003",
+          "1:S01": "speaker-0001",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0001",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "8:S01": "speaker-0001"
+        },
+        "labels_before": {
+          "10:S01": "speaker-0003",
+          "1:S01": "speaker-0001",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0001",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0002",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "3:S01": "speaker-0002",
+          "6:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "8:S01": "speaker-0001"
+        },
+        "meeting_seconds": 60.396125,
+        "reason": "cadence",
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S02",
+              "previous_speaker": "speaker-0002",
+              "reason": "reassigned",
+              "score": 0.579735,
+              "span_id": 2
+            },
+            {
+              "canonical_speaker": "speaker-0003",
+              "local_speaker": "S01",
+              "previous_speaker": "speaker-0002",
+              "reason": "reassigned",
+              "score": 0.615277,
+              "span_id": 3
+            }
+          ],
+          "dispositions": {
+            "kept": 13,
+            "kept_ambiguous": 2,
+            "kept_unmatched": 1
+          },
+          "merges": [],
+          "swept_spans": 16,
+          "swept_units": 18
+        }
+      },
+      {
+        "applied_corrections": 2,
+        "apply": true,
+        "labels_after": {
+          "10:S01": "speaker-0003",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "8:S01": "speaker-0001"
+        },
+        "labels_before": {
+          "10:S01": "speaker-0003",
+          "1:S01": "speaker-0001",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0001",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "8:S01": "speaker-0001"
+        },
+        "meeting_seconds": 120.396125,
+        "reason": "cadence",
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0004",
+              "local_speaker": "S01",
+              "previous_speaker": "speaker-0001",
+              "reason": "reassigned",
+              "score": 0.507419,
+              "span_id": 1
+            },
+            {
+              "canonical_speaker": "speaker-0004",
+              "local_speaker": "S01",
+              "previous_speaker": "speaker-0001",
+              "reason": "reassigned",
+              "score": 0.629076,
+              "span_id": 25
+            }
+          ],
+          "dispositions": {
+            "kept": 23,
+            "kept_ambiguous": 2,
+            "kept_unmatched": 2
+          },
+          "merges": [],
+          "swept_spans": 27,
+          "swept_units": 29
+        }
+      },
+      {
+        "applied_corrections": 0,
+        "apply": true,
+        "labels_after": {
+          "10:S01": "speaker-0003",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": null,
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": null,
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0001",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "labels_before": {
+          "10:S01": "speaker-0003",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": null,
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": null,
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0001",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "meeting_seconds": 181.072188,
+        "reason": "cadence",
+        "revision": {
+          "corrections": [],
+          "dispositions": {
+            "kept": 45,
+            "kept_ambiguous": 7,
+            "kept_unmatched": 3
+          },
+          "merges": [],
+          "swept_spans": 50,
+          "swept_units": 55
+        }
+      },
+      {
+        "applied_corrections": 3,
+        "apply": true,
+        "labels_after": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": "speaker-0004",
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": "speaker-0004",
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0004",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "labels_before": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": null,
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": null,
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0001",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "meeting_seconds": 241.616625,
+        "reason": "cadence",
+        "revision": {
+          "corrections": [
+            {
+              "canonical_speaker": "speaker-0004",
+              "local_speaker": "S01",
+              "previous_speaker": "speaker-0001",
+              "reason": "reassigned",
+              "score": 0.434308,
+              "span_id": 8
+            },
+            {
+              "canonical_speaker": "speaker-0004",
+              "local_speaker": "S01",
+              "previous_speaker": null,
+              "reason": "labelled",
+              "score": 0.658296,
+              "span_id": 67
+            },
+            {
+              "canonical_speaker": "speaker-0004",
+              "local_speaker": "S02",
+              "previous_speaker": null,
+              "reason": "labelled",
+              "score": 0.458362,
+              "span_id": 84
+            }
+          ],
+          "dispositions": {
+            "kept": 59,
+            "kept_ambiguous": 6
+          },
+          "merges": [],
+          "swept_spans": 63,
+          "swept_units": 68
+        }
+      },
+      {
+        "applied_corrections": 0,
+        "apply": true,
+        "labels_after": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "126:S01": "speaker-0004",
+          "128:S01": null,
+          "128:S02": null,
+          "129:S01": null,
+          "130:S01": "speaker-0004",
+          "132:S01": "speaker-0004",
+          "133:S01": "speaker-0004",
+          "136:S01": "speaker-0004",
+          "137:S01": "speaker-0004",
+          "138:S01": "speaker-0004",
+          "139:S01": "speaker-0004",
+          "140:S01": "speaker-0004",
+          "142:S01": "speaker-0004",
+          "143:S01": "speaker-0004",
+          "144:S01": "speaker-0004",
+          "149:S01": "speaker-0003",
+          "150:S01": "speaker-0003",
+          "152:S01": "speaker-0004",
+          "153:S01": "speaker-0004",
+          "154:S01": "speaker-0004",
+          "155:S01": "speaker-0004",
+          "156:S01": "speaker-0004",
+          "157:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": "speaker-0004",
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": "speaker-0004",
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0004",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "labels_before": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "126:S01": "speaker-0004",
+          "128:S01": null,
+          "128:S02": null,
+          "129:S01": null,
+          "130:S01": "speaker-0004",
+          "132:S01": "speaker-0004",
+          "133:S01": "speaker-0004",
+          "136:S01": "speaker-0004",
+          "137:S01": "speaker-0004",
+          "138:S01": "speaker-0004",
+          "139:S01": "speaker-0004",
+          "140:S01": "speaker-0004",
+          "142:S01": "speaker-0004",
+          "143:S01": "speaker-0004",
+          "144:S01": "speaker-0004",
+          "149:S01": "speaker-0003",
+          "150:S01": "speaker-0003",
+          "152:S01": "speaker-0004",
+          "153:S01": "speaker-0004",
+          "154:S01": "speaker-0004",
+          "155:S01": "speaker-0004",
+          "156:S01": "speaker-0004",
+          "157:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": "speaker-0004",
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": "speaker-0004",
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0004",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "meeting_seconds": 300.0,
+        "reason": "cadence",
+        "revision": {
+          "corrections": [],
+          "dispositions": {
+            "kept": 82,
+            "kept_ambiguous": 9
+          },
+          "merges": [],
+          "swept_spans": 85,
+          "swept_units": 91
+        }
+      },
+      {
+        "applied_corrections": 0,
+        "apply": true,
+        "labels_after": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "126:S01": "speaker-0004",
+          "128:S01": null,
+          "128:S02": null,
+          "129:S01": null,
+          "130:S01": "speaker-0004",
+          "132:S01": "speaker-0004",
+          "133:S01": "speaker-0004",
+          "136:S01": "speaker-0004",
+          "137:S01": "speaker-0004",
+          "138:S01": "speaker-0004",
+          "139:S01": "speaker-0004",
+          "140:S01": "speaker-0004",
+          "142:S01": "speaker-0004",
+          "143:S01": "speaker-0004",
+          "144:S01": "speaker-0004",
+          "149:S01": "speaker-0003",
+          "150:S01": "speaker-0003",
+          "152:S01": "speaker-0004",
+          "153:S01": "speaker-0004",
+          "154:S01": "speaker-0004",
+          "155:S01": "speaker-0004",
+          "156:S01": "speaker-0004",
+          "157:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": "speaker-0004",
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": "speaker-0004",
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0004",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "labels_before": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "126:S01": "speaker-0004",
+          "128:S01": null,
+          "128:S02": null,
+          "129:S01": null,
+          "130:S01": "speaker-0004",
+          "132:S01": "speaker-0004",
+          "133:S01": "speaker-0004",
+          "136:S01": "speaker-0004",
+          "137:S01": "speaker-0004",
+          "138:S01": "speaker-0004",
+          "139:S01": "speaker-0004",
+          "140:S01": "speaker-0004",
+          "142:S01": "speaker-0004",
+          "143:S01": "speaker-0004",
+          "144:S01": "speaker-0004",
+          "149:S01": "speaker-0003",
+          "150:S01": "speaker-0003",
+          "152:S01": "speaker-0004",
+          "153:S01": "speaker-0004",
+          "154:S01": "speaker-0004",
+          "155:S01": "speaker-0004",
+          "156:S01": "speaker-0004",
+          "157:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": "speaker-0004",
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": "speaker-0004",
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0004",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "meeting_seconds": 300.0,
+        "reason": "final",
+        "revision": {
+          "corrections": [],
+          "dispositions": {
+            "kept": 82,
+            "kept_ambiguous": 9
+          },
+          "merges": [],
+          "swept_spans": 85,
+          "swept_units": 91
+        }
+      },
+      {
+        "applied_corrections": 0,
+        "apply": false,
+        "labels_after": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "126:S01": "speaker-0004",
+          "128:S01": null,
+          "128:S02": null,
+          "129:S01": null,
+          "130:S01": "speaker-0004",
+          "132:S01": "speaker-0004",
+          "133:S01": "speaker-0004",
+          "136:S01": "speaker-0004",
+          "137:S01": "speaker-0004",
+          "138:S01": "speaker-0004",
+          "139:S01": "speaker-0004",
+          "140:S01": "speaker-0004",
+          "142:S01": "speaker-0004",
+          "143:S01": "speaker-0004",
+          "144:S01": "speaker-0004",
+          "149:S01": "speaker-0003",
+          "150:S01": "speaker-0003",
+          "152:S01": "speaker-0004",
+          "153:S01": "speaker-0004",
+          "154:S01": "speaker-0004",
+          "155:S01": "speaker-0004",
+          "156:S01": "speaker-0004",
+          "157:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": "speaker-0004",
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": "speaker-0004",
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0004",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "labels_before": {
+          "109:S01": "speaker-0004",
+          "10:S01": "speaker-0003",
+          "110:S01": "speaker-0004",
+          "111:S01": "speaker-0004",
+          "112:S01": "speaker-0004",
+          "113:S01": "speaker-0003",
+          "114:S01": "speaker-0003",
+          "115:S01": "speaker-0003",
+          "117:S01": "speaker-0003",
+          "118:S01": "speaker-0003",
+          "121:S01": "speaker-0004",
+          "122:S01": "speaker-0004",
+          "124:S01": "speaker-0004",
+          "125:S01": "speaker-0004",
+          "126:S01": "speaker-0004",
+          "128:S01": null,
+          "128:S02": null,
+          "129:S01": null,
+          "130:S01": "speaker-0004",
+          "132:S01": "speaker-0004",
+          "133:S01": "speaker-0004",
+          "136:S01": "speaker-0004",
+          "137:S01": "speaker-0004",
+          "138:S01": "speaker-0004",
+          "139:S01": "speaker-0004",
+          "140:S01": "speaker-0004",
+          "142:S01": "speaker-0004",
+          "143:S01": "speaker-0004",
+          "144:S01": "speaker-0004",
+          "149:S01": "speaker-0003",
+          "150:S01": "speaker-0003",
+          "152:S01": "speaker-0004",
+          "153:S01": "speaker-0004",
+          "154:S01": "speaker-0004",
+          "155:S01": "speaker-0004",
+          "156:S01": "speaker-0004",
+          "157:S01": "speaker-0004",
+          "1:S01": "speaker-0004",
+          "21:S01": "speaker-0003",
+          "22:S01": "speaker-0003",
+          "23:S01": "speaker-0003",
+          "25:S01": "speaker-0004",
+          "25:S02": "speaker-0003",
+          "27:S01": "speaker-0003",
+          "28:S01": "speaker-0003",
+          "29:S01": "speaker-0003",
+          "2:S02": "speaker-0003",
+          "30:S01": "speaker-0003",
+          "31:S01": "speaker-0003",
+          "32:S01": "speaker-0003",
+          "33:S01": "speaker-0003",
+          "34:S01": "speaker-0003",
+          "3:S01": "speaker-0003",
+          "50:S01": "speaker-0004",
+          "51:S01": "speaker-0004",
+          "54:S01": "speaker-0003",
+          "55:S01": "speaker-0003",
+          "56:S01": "speaker-0003",
+          "57:S01": "speaker-0003",
+          "58:S01": "speaker-0003",
+          "60:S01": "speaker-0003",
+          "61:S01": "speaker-0003",
+          "63:S01": "speaker-0004",
+          "63:S02": "speaker-0003",
+          "67:S01": "speaker-0004",
+          "69:S01": "speaker-0003",
+          "6:S01": "speaker-0003",
+          "70:S01": "speaker-0003",
+          "71:S01": "speaker-0003",
+          "72:S01": "speaker-0003",
+          "74:S01": "speaker-0003",
+          "75:S01": "speaker-0003",
+          "76:S01": "speaker-0003",
+          "77:S01": "speaker-0003",
+          "78:S01": "speaker-0003",
+          "79:S01": "speaker-0003",
+          "7:S01": null,
+          "7:S02": null,
+          "80:S01": "speaker-0003",
+          "81:S01": "speaker-0003",
+          "83:S01": "speaker-0003",
+          "84:S01": "speaker-0003",
+          "84:S02": "speaker-0004",
+          "85:S01": null,
+          "85:S02": null,
+          "86:S01": null,
+          "87:S01": "speaker-0003",
+          "89:S01": "speaker-0003",
+          "8:S01": "speaker-0004",
+          "90:S01": "speaker-0003",
+          "93:S01": "speaker-0003"
+        },
+        "meeting_seconds": 300.0,
+        "reason": "residual_check",
+        "revision": {
+          "corrections": [],
+          "dispositions": {
+            "kept": 82,
+            "kept_ambiguous": 9
+          },
+          "merges": [],
+          "swept_spans": 85,
+          "swept_units": 91
+        }
+      }
+    ],
+    "span_trace": [
+      {
+        "assignments": {},
+        "canonical_speakers": [],
+        "diagnostics": {},
+        "end_seconds": 0.54025,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 0,
+        "start_seconds": 0.0,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0001"
+        },
+        "canonical_speakers": [
+          "speaker-0001"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0001",
+          "canonical_speakers": "speaker-0001",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "1",
+          "span_samples": "8644:40000",
+          "status": "prepared"
+        },
+        "end_seconds": 2.5,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0001",
+            "disposition": "recorded",
+            "duration_seconds": 1.95975,
+            "local_speaker": "S01",
+            "unit_index": 0
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 1,
+        "start_seconds": 0.54025,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S02": "speaker-0002"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002"
+        ],
+        "diagnostics": {
+          "assignments": "S02->speaker-0002",
+          "canonical_speakers": "speaker-0001,speaker-0002",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01,S02",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "2",
+          "span_samples": "40000:80000",
+          "status": "prepared"
+        },
+        "end_seconds": 5.0,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0002",
+            "disposition": "recorded",
+            "duration_seconds": 1.838563,
+            "local_speaker": "S02",
+            "unit_index": 2
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 2,
+        "start_seconds": 2.5,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0002"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0002",
+          "canonical_speakers": "speaker-0001,speaker-0002",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "3",
+          "span_samples": "80000:89641",
+          "status": "prepared"
+        },
+        "end_seconds": 5.602563,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0002",
+            "disposition": "recorded",
+            "duration_seconds": 0.602563,
+            "local_speaker": "S01",
+            "unit_index": 3
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 3,
+        "start_seconds": 5.0,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002"
+        ],
+        "diagnostics": {},
+        "end_seconds": 7.5,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 4,
+        "start_seconds": 5.602563,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002"
+        ],
+        "diagnostics": {},
+        "end_seconds": 7.583437,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 5,
+        "start_seconds": 7.5,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "6",
+          "span_samples": "121335:160000",
+          "status": "prepared"
+        },
+        "end_seconds": 10.0,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.416562,
+            "local_speaker": "S01",
+            "unit_index": 4
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 6,
+        "start_seconds": 7.583437,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01,S02",
+          "reason": "ambiguous_identity",
+          "schema_version": "1",
+          "span_id": "7",
+          "span_samples": "160000:200000",
+          "status": "abstain"
+        },
+        "end_seconds": 12.5,
+        "ledger_records": [
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 1.145062,
+            "local_speaker": "S01",
+            "unit_index": 6
+          },
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 0.93475,
+            "local_speaker": "S02",
+            "unit_index": 5
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 7,
+        "start_seconds": 10.0,
+        "status": "abstain"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0001"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0001",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "8",
+          "span_samples": "200000:240000",
+          "status": "prepared"
+        },
+        "end_seconds": 15.0,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0001",
+            "disposition": "recorded",
+            "duration_seconds": 2.086688,
+            "local_speaker": "S01",
+            "unit_index": 7
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 8,
+        "start_seconds": 12.5,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 15.387,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 9,
+        "start_seconds": 15.0,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "10",
+          "span_samples": "246192:286192",
+          "status": "prepared"
+        },
+        "end_seconds": 17.887,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.081,
+            "local_speaker": "S01",
+            "unit_index": 8
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 10,
+        "start_seconds": 15.387,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 19.969125,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 11,
+        "start_seconds": 17.887,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "12",
+          "span_samples": "319506:326192",
+          "status": "prepared"
+        },
+        "end_seconds": 20.387,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 12,
+        "start_seconds": 19.969125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "13",
+          "span_samples": "326192:331351",
+          "status": "prepared"
+        },
+        "end_seconds": 20.709437,
+        "ledger_records": [],
+        "reason": "end_silence",
+        "span_id": 13,
+        "start_seconds": 20.387,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 22.887,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 14,
+        "start_seconds": 20.709437,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 25.387,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 15,
+        "start_seconds": 22.887,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 27.887,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 16,
+        "start_seconds": 25.387,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 30.387,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 17,
+        "start_seconds": 27.887,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 32.887,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 18,
+        "start_seconds": 30.387,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 35.387,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 19,
+        "start_seconds": 32.887,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "20",
+          "span_samples": "566192:606192",
+          "status": "prepared"
+        },
+        "end_seconds": 37.887,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 20,
+        "start_seconds": 35.387,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "21",
+          "span_samples": "606192:646192",
+          "status": "prepared"
+        },
+        "end_seconds": 40.387,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 12
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 21,
+        "start_seconds": 37.887,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "22",
+          "span_samples": "646192:686192",
+          "status": "prepared"
+        },
+        "end_seconds": 42.887,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 13
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 22,
+        "start_seconds": 40.387,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "23",
+          "span_samples": "686192:726192",
+          "status": "prepared"
+        },
+        "end_seconds": 45.387,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.109063,
+            "local_speaker": "S01",
+            "unit_index": 14
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 23,
+        "start_seconds": 42.887,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 45.396125,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 24,
+        "start_seconds": 45.387,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0001",
+          "S02": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0001,S02->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01,S02",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "25",
+          "span_samples": "726338:766338",
+          "status": "prepared"
+        },
+        "end_seconds": 47.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0001",
+            "disposition": "recorded",
+            "duration_seconds": 0.800125,
+            "local_speaker": "S01",
+            "unit_index": 15
+          },
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.120187,
+            "local_speaker": "S02",
+            "unit_index": 16
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 25,
+        "start_seconds": 45.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 48.1565,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 26,
+        "start_seconds": 47.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "27",
+          "span_samples": "770504:806338",
+          "status": "prepared"
+        },
+        "end_seconds": 50.396125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.239625,
+            "local_speaker": "S01",
+            "unit_index": 17
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 27,
+        "start_seconds": 48.1565,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "28",
+          "span_samples": "806338:846338",
+          "status": "prepared"
+        },
+        "end_seconds": 52.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 18
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 28,
+        "start_seconds": 50.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "29",
+          "span_samples": "846338:886338",
+          "status": "prepared"
+        },
+        "end_seconds": 55.396125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.798812,
+            "local_speaker": "S01",
+            "unit_index": 19
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 29,
+        "start_seconds": 52.896125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "30",
+          "span_samples": "886338:926338",
+          "status": "prepared"
+        },
+        "end_seconds": 57.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 20
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 30,
+        "start_seconds": 55.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "31",
+          "span_samples": "926338:966338",
+          "status": "prepared"
+        },
+        "end_seconds": 60.396125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 21
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 31,
+        "start_seconds": 57.896125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "32",
+          "span_samples": "966338:1006338",
+          "status": "prepared"
+        },
+        "end_seconds": 62.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 22
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 32,
+        "start_seconds": 60.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "33",
+          "span_samples": "1006338:1046338",
+          "status": "prepared"
+        },
+        "end_seconds": 65.396125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 23
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 33,
+        "start_seconds": 62.896125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "34",
+          "span_samples": "1046338:1071028",
+          "status": "prepared"
+        },
+        "end_seconds": 66.93925,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.543125,
+            "local_speaker": "S01",
+            "unit_index": 24
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 34,
+        "start_seconds": 65.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 67.896125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 35,
+        "start_seconds": 66.93925,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 70.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 36,
+        "start_seconds": 67.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 72.896125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 37,
+        "start_seconds": 70.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 75.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 38,
+        "start_seconds": 72.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 77.896125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 39,
+        "start_seconds": 75.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 80.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 40,
+        "start_seconds": 77.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 82.896125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 41,
+        "start_seconds": 80.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 85.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 42,
+        "start_seconds": 82.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 87.896125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 43,
+        "start_seconds": 85.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 90.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 44,
+        "start_seconds": 87.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 92.896125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 45,
+        "start_seconds": 90.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 95.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 46,
+        "start_seconds": 92.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 97.896125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 47,
+        "start_seconds": 95.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 100.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 48,
+        "start_seconds": 97.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003"
+        ],
+        "diagnostics": {},
+        "end_seconds": 101.403625,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 49,
+        "start_seconds": 100.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "50",
+          "span_samples": "1622458:1646338",
+          "status": "prepared"
+        },
+        "end_seconds": 102.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.4925,
+            "local_speaker": "S01",
+            "unit_index": 25
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 50,
+        "start_seconds": 101.403625,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "51",
+          "span_samples": "1646338:1671743",
+          "status": "prepared"
+        },
+        "end_seconds": 104.483937,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.587812,
+            "local_speaker": "S01",
+            "unit_index": 26
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 51,
+        "start_seconds": 102.896125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 105.396125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 52,
+        "start_seconds": 104.483937,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 105.884125,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 53,
+        "start_seconds": 105.396125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "54",
+          "span_samples": "1694146:1726338",
+          "status": "prepared"
+        },
+        "end_seconds": 107.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.012,
+            "local_speaker": "S01",
+            "unit_index": 27
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 54,
+        "start_seconds": 105.884125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "55",
+          "span_samples": "1726338:1766338",
+          "status": "prepared"
+        },
+        "end_seconds": 110.396125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 28
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 55,
+        "start_seconds": 107.896125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "56",
+          "span_samples": "1766338:1806338",
+          "status": "prepared"
+        },
+        "end_seconds": 112.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 29
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 56,
+        "start_seconds": 110.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "57",
+          "span_samples": "1806338:1846338",
+          "status": "prepared"
+        },
+        "end_seconds": 115.396125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 30
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 57,
+        "start_seconds": 112.896125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "58",
+          "span_samples": "1846338:1886338",
+          "status": "prepared"
+        },
+        "end_seconds": 117.896125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.429375,
+            "local_speaker": "S01",
+            "unit_index": 31
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 58,
+        "start_seconds": 115.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 118.225562,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 59,
+        "start_seconds": 117.896125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "60",
+          "span_samples": "1891609:1926338",
+          "status": "prepared"
+        },
+        "end_seconds": 120.396125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.170562,
+            "local_speaker": "S01",
+            "unit_index": 32
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 60,
+        "start_seconds": 118.225562,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "61",
+          "span_samples": "1926338:1936734",
+          "status": "prepared"
+        },
+        "end_seconds": 121.045875,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 0.64975,
+            "local_speaker": "S01",
+            "unit_index": 33
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 61,
+        "start_seconds": 120.396125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 121.545937,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 62,
+        "start_seconds": 121.045875,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004",
+          "S02": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004,S02->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01,S02",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "63",
+          "span_samples": "1944735:1984735",
+          "status": "prepared"
+        },
+        "end_seconds": 124.045937,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.500125,
+            "local_speaker": "S01",
+            "unit_index": 34
+          },
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 0.759812,
+            "local_speaker": "S02",
+            "unit_index": 35
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 63,
+        "start_seconds": 121.545937,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "64",
+          "span_samples": "1984735:1989220",
+          "status": "prepared"
+        },
+        "end_seconds": 124.32625,
+        "ledger_records": [],
+        "reason": "end_silence",
+        "span_id": 64,
+        "start_seconds": 124.045937,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 126.4065,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 65,
+        "start_seconds": 124.32625,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "66",
+          "span_samples": "2022504:2029220",
+          "status": "prepared"
+        },
+        "end_seconds": 126.82625,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 66,
+        "start_seconds": 126.4065,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ambiguous_identity",
+          "schema_version": "1",
+          "span_id": "67",
+          "span_samples": "2029220:2048427",
+          "status": "abstain"
+        },
+        "end_seconds": 128.026688,
+        "ledger_records": [
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 1.200438,
+            "local_speaker": "S01",
+            "unit_index": 38
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 67,
+        "start_seconds": 126.82625,
+        "status": "abstain"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 128.60675,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 68,
+        "start_seconds": 128.026688,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "69",
+          "span_samples": "2057708:2097708",
+          "status": "prepared"
+        },
+        "end_seconds": 131.10675,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.16,
+            "local_speaker": "S01",
+            "unit_index": 39
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 69,
+        "start_seconds": 128.60675,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "70",
+          "span_samples": "2097708:2137708",
+          "status": "prepared"
+        },
+        "end_seconds": 133.60675,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 40
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 70,
+        "start_seconds": 131.10675,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "71",
+          "span_samples": "2137708:2177708",
+          "status": "prepared"
+        },
+        "end_seconds": 136.10675,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 41
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 71,
+        "start_seconds": 133.60675,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "72",
+          "span_samples": "2177708:2201404",
+          "status": "prepared"
+        },
+        "end_seconds": 137.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.481,
+            "local_speaker": "S01",
+            "unit_index": 42
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 72,
+        "start_seconds": 136.10675,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 138.407875,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 73,
+        "start_seconds": 137.58775,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "74",
+          "span_samples": "2214526:2241404",
+          "status": "prepared"
+        },
+        "end_seconds": 140.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.679875,
+            "local_speaker": "S01",
+            "unit_index": 43
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 74,
+        "start_seconds": 138.407875,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "75",
+          "span_samples": "2241404:2281404",
+          "status": "prepared"
+        },
+        "end_seconds": 142.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 44
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 75,
+        "start_seconds": 140.08775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "76",
+          "span_samples": "2281404:2321404",
+          "status": "prepared"
+        },
+        "end_seconds": 145.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 45
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 76,
+        "start_seconds": 142.58775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "77",
+          "span_samples": "2321404:2361404",
+          "status": "prepared"
+        },
+        "end_seconds": 147.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 46
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 77,
+        "start_seconds": 145.08775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "78",
+          "span_samples": "2361404:2401404",
+          "status": "prepared"
+        },
+        "end_seconds": 150.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 47
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 78,
+        "start_seconds": 147.58775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "79",
+          "span_samples": "2401404:2441404",
+          "status": "prepared"
+        },
+        "end_seconds": 152.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.059937,
+            "local_speaker": "S01",
+            "unit_index": 48
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 79,
+        "start_seconds": 150.08775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "80",
+          "span_samples": "2441404:2481404",
+          "status": "prepared"
+        },
+        "end_seconds": 155.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 49
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 80,
+        "start_seconds": 152.58775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "81",
+          "span_samples": "2481404:2521404",
+          "status": "prepared"
+        },
+        "end_seconds": 157.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.02225,
+            "local_speaker": "S01",
+            "unit_index": 50
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 81,
+        "start_seconds": 155.08775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 157.790063,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 82,
+        "start_seconds": 157.58775,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "83",
+          "span_samples": "2524641:2561404",
+          "status": "prepared"
+        },
+        "end_seconds": 160.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.297687,
+            "local_speaker": "S01",
+            "unit_index": 51
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 83,
+        "start_seconds": 157.790063,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "S02=0.788",
+          "local_speakers": "S01,S02",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "84",
+          "span_samples": "2561404:2601404",
+          "status": "prepared"
+        },
+        "end_seconds": 162.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.42275,
+            "local_speaker": "S01",
+            "unit_index": 53
+          },
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 0.78775,
+            "local_speaker": "S02",
+            "unit_index": 52
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 84,
+        "start_seconds": 160.08775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01,S02",
+          "reason": "ambiguous_identity",
+          "schema_version": "1",
+          "span_id": "85",
+          "span_samples": "2601404:2641404",
+          "status": "abstain"
+        },
+        "end_seconds": 165.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 0.822937,
+            "local_speaker": "S01",
+            "unit_index": 54
+          },
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 1.557,
+            "local_speaker": "S02",
+            "unit_index": 55
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 85,
+        "start_seconds": 162.58775,
+        "status": "abstain"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ambiguous_identity",
+          "schema_version": "1",
+          "span_id": "86",
+          "span_samples": "2641404:2681404",
+          "status": "abstain"
+        },
+        "end_seconds": 167.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 56
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 86,
+        "start_seconds": 165.08775,
+        "status": "abstain"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "87",
+          "span_samples": "2681404:2721404",
+          "status": "prepared"
+        },
+        "end_seconds": 170.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 57
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 87,
+        "start_seconds": 167.58775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "88",
+          "span_samples": "2721404:2732665",
+          "status": "prepared"
+        },
+        "end_seconds": 170.791562,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 88,
+        "start_seconds": 170.08775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "89",
+          "span_samples": "2732665:2761404",
+          "status": "prepared"
+        },
+        "end_seconds": 172.58775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.796188,
+            "local_speaker": "S01",
+            "unit_index": 59
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 89,
+        "start_seconds": 170.791562,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "90",
+          "span_samples": "2761404:2801404",
+          "status": "prepared"
+        },
+        "end_seconds": 175.08775,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 60
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 90,
+        "start_seconds": 172.58775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "91",
+          "span_samples": "2801404:2806593",
+          "status": "prepared"
+        },
+        "end_seconds": 175.412062,
+        "ledger_records": [],
+        "reason": "end_silence",
+        "span_id": 91,
+        "start_seconds": 175.08775,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 176.072188,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 92,
+        "start_seconds": 175.412062,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "93",
+          "span_samples": "2817155:2837637",
+          "status": "prepared"
+        },
+        "end_seconds": 177.352313,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.280125,
+            "local_speaker": "S01",
+            "unit_index": 62
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 93,
+        "start_seconds": 176.072188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 178.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 94,
+        "start_seconds": 177.352313,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 181.072188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 95,
+        "start_seconds": 178.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 183.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 96,
+        "start_seconds": 181.072188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 186.072188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 97,
+        "start_seconds": 183.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 188.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 98,
+        "start_seconds": 186.072188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 191.072188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 99,
+        "start_seconds": 188.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 193.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 100,
+        "start_seconds": 191.072188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 196.072188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 101,
+        "start_seconds": 193.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 198.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 102,
+        "start_seconds": 196.072188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 201.072188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 103,
+        "start_seconds": 198.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 203.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 104,
+        "start_seconds": 201.072188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 206.072188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 105,
+        "start_seconds": 203.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 208.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 106,
+        "start_seconds": 206.072188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 211.072188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 107,
+        "start_seconds": 208.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 211.515312,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 108,
+        "start_seconds": 211.072188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "109",
+          "span_samples": "3384245:3417155",
+          "status": "prepared"
+        },
+        "end_seconds": 213.572188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.056875,
+            "local_speaker": "S01",
+            "unit_index": 63
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 109,
+        "start_seconds": 211.515312,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "110",
+          "span_samples": "3417155:3457155",
+          "status": "prepared"
+        },
+        "end_seconds": 216.072188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 64
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 110,
+        "start_seconds": 213.572188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "111",
+          "span_samples": "3457155:3497155",
+          "status": "prepared"
+        },
+        "end_seconds": 218.572188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.116625,
+            "local_speaker": "S01",
+            "unit_index": 65
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 111,
+        "start_seconds": 216.072188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "S02=0.000",
+          "local_speakers": "S01,S02",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "112",
+          "span_samples": "3497155:3537155",
+          "status": "prepared"
+        },
+        "end_seconds": 221.072188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.863563,
+            "local_speaker": "S01",
+            "unit_index": 66
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 112,
+        "start_seconds": 218.572188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "113",
+          "span_samples": "3537155:3577155",
+          "status": "prepared"
+        },
+        "end_seconds": 223.572188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.46,
+            "local_speaker": "S01",
+            "unit_index": 68
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 113,
+        "start_seconds": 221.072188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "114",
+          "span_samples": "3577155:3617155",
+          "status": "prepared"
+        },
+        "end_seconds": 226.072188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 69
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 114,
+        "start_seconds": 223.572188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "115",
+          "span_samples": "3617155:3657155",
+          "status": "prepared"
+        },
+        "end_seconds": 228.572188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.444,
+            "local_speaker": "S01",
+            "unit_index": 70
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 115,
+        "start_seconds": 226.072188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 229.23625,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 116,
+        "start_seconds": 228.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "117",
+          "span_samples": "3667780:3697155",
+          "status": "prepared"
+        },
+        "end_seconds": 231.072188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.835938,
+            "local_speaker": "S01",
+            "unit_index": 71
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 117,
+        "start_seconds": 229.23625,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "118",
+          "span_samples": "3697155:3720903",
+          "status": "prepared"
+        },
+        "end_seconds": 232.556437,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.48425,
+            "local_speaker": "S01",
+            "unit_index": 72
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 118,
+        "start_seconds": 231.072188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 233.572188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 119,
+        "start_seconds": 232.556437,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 233.7765,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 120,
+        "start_seconds": 233.572188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "121",
+          "span_samples": "3740424:3777155",
+          "status": "prepared"
+        },
+        "end_seconds": 236.072188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.295688,
+            "local_speaker": "S01",
+            "unit_index": 73
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 121,
+        "start_seconds": 233.7765,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "122",
+          "span_samples": "3777155:3785866",
+          "status": "prepared"
+        },
+        "end_seconds": 236.616625,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 0.544437,
+            "local_speaker": "S01",
+            "unit_index": 74
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 122,
+        "start_seconds": 236.072188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 237.636687,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 123,
+        "start_seconds": 236.616625,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "124",
+          "span_samples": "3802187:3825866",
+          "status": "prepared"
+        },
+        "end_seconds": 239.116625,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.479937,
+            "local_speaker": "S01",
+            "unit_index": 75
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 124,
+        "start_seconds": 237.636687,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "125",
+          "span_samples": "3825866:3865866",
+          "status": "prepared"
+        },
+        "end_seconds": 241.616625,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 76
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 125,
+        "start_seconds": 239.116625,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "126",
+          "span_samples": "3865866:3874511",
+          "status": "prepared"
+        },
+        "end_seconds": 242.156937,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 0.540312,
+            "local_speaker": "S01",
+            "unit_index": 77
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 126,
+        "start_seconds": 241.616625,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 242.736938,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 127,
+        "start_seconds": 242.156937,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01,S02",
+          "reason": "ambiguous_identity",
+          "schema_version": "1",
+          "span_id": "128",
+          "span_samples": "3883791:3923791",
+          "status": "abstain"
+        },
+        "end_seconds": 245.236938,
+        "ledger_records": [
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 0.820062,
+            "local_speaker": "S01",
+            "unit_index": 79
+          },
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 1.659938,
+            "local_speaker": "S02",
+            "unit_index": 78
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 128,
+        "start_seconds": 242.736938,
+        "status": "abstain"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ambiguous_identity",
+          "schema_version": "1",
+          "span_id": "129",
+          "span_samples": "3923791:3963791",
+          "status": "abstain"
+        },
+        "end_seconds": 247.736938,
+        "ledger_records": [
+          {
+            "canonical_speaker": null,
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 80
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 129,
+        "start_seconds": 245.236938,
+        "status": "abstain"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "130",
+          "span_samples": "3963791:3982037",
+          "status": "prepared"
+        },
+        "end_seconds": 248.877312,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.140375,
+            "local_speaker": "S01",
+            "unit_index": 81
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 130,
+        "start_seconds": 247.736938,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 249.837312,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 131,
+        "start_seconds": 248.877312,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "132",
+          "span_samples": "3997397:4022037",
+          "status": "prepared"
+        },
+        "end_seconds": 251.377312,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.54,
+            "local_speaker": "S01",
+            "unit_index": 82
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 132,
+        "start_seconds": 249.837312,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "133",
+          "span_samples": "4022037:4062037",
+          "status": "prepared"
+        },
+        "end_seconds": 253.877312,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 83
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 133,
+        "start_seconds": 251.377312,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "S01=0.000",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "134",
+          "span_samples": "4062037:4065881",
+          "status": "prepared"
+        },
+        "end_seconds": 254.117562,
+        "ledger_records": [],
+        "reason": "end_silence",
+        "span_id": 134,
+        "start_seconds": 253.877312,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 254.657563,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 135,
+        "start_seconds": 254.117562,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "136",
+          "span_samples": "4074521:4114521",
+          "status": "prepared"
+        },
+        "end_seconds": 257.157562,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.02,
+            "local_speaker": "S01",
+            "unit_index": 85
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 136,
+        "start_seconds": 254.657563,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "137",
+          "span_samples": "4114521:4154521",
+          "status": "prepared"
+        },
+        "end_seconds": 259.657562,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 86
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 137,
+        "start_seconds": 257.157562,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "138",
+          "span_samples": "4154521:4194521",
+          "status": "prepared"
+        },
+        "end_seconds": 262.157562,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.16,
+            "local_speaker": "S01",
+            "unit_index": 87
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 138,
+        "start_seconds": 259.657562,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "139",
+          "span_samples": "4194521:4234521",
+          "status": "prepared"
+        },
+        "end_seconds": 264.657562,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 88
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 139,
+        "start_seconds": 262.157562,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "140",
+          "span_samples": "4234521:4252131",
+          "status": "prepared"
+        },
+        "end_seconds": 265.758188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 1.100625,
+            "local_speaker": "S01",
+            "unit_index": 89
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 140,
+        "start_seconds": 264.657562,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 266.258188,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 141,
+        "start_seconds": 265.758188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "142",
+          "span_samples": "4260131:4292131",
+          "status": "prepared"
+        },
+        "end_seconds": 268.258188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.0,
+            "local_speaker": "S01",
+            "unit_index": 90
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 142,
+        "start_seconds": 266.258188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "143",
+          "span_samples": "4292131:4332131",
+          "status": "prepared"
+        },
+        "end_seconds": 270.758188,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.179937,
+            "local_speaker": "S01",
+            "unit_index": 91
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 143,
+        "start_seconds": 268.258188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "144",
+          "span_samples": "4332131:4345576",
+          "status": "prepared"
+        },
+        "end_seconds": 271.5985,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 0.840312,
+            "local_speaker": "S01",
+            "unit_index": 92
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 144,
+        "start_seconds": 270.758188,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 273.258188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 145,
+        "start_seconds": 271.5985,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 275.758188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 146,
+        "start_seconds": 273.258188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 278.258188,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 147,
+        "start_seconds": 275.758188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 279.538937,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 148,
+        "start_seconds": 278.258188,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "149",
+          "span_samples": "4472623:4512623",
+          "status": "prepared"
+        },
+        "end_seconds": 282.038937,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 2.259937,
+            "local_speaker": "S01",
+            "unit_index": 93
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 149,
+        "start_seconds": 279.538937,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0003"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0003",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "150",
+          "span_samples": "4512623:4531186",
+          "status": "prepared"
+        },
+        "end_seconds": 283.199125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0003",
+            "disposition": "recorded",
+            "duration_seconds": 1.160187,
+            "local_speaker": "S01",
+            "unit_index": 94
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 150,
+        "start_seconds": 282.038937,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 283.699125,
+        "ledger_records": [],
+        "reason": "leading_silence",
+        "span_id": 151,
+        "start_seconds": 283.199125,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "152",
+          "span_samples": "4539186:4571186",
+          "status": "prepared"
+        },
+        "end_seconds": 285.699125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.0,
+            "local_speaker": "S01",
+            "unit_index": 95
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 152,
+        "start_seconds": 283.699125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "153",
+          "span_samples": "4571186:4611186",
+          "status": "prepared"
+        },
+        "end_seconds": 288.199125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.08,
+            "local_speaker": "S01",
+            "unit_index": 96
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 153,
+        "start_seconds": 285.699125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "154",
+          "span_samples": "4611186:4651186",
+          "status": "prepared"
+        },
+        "end_seconds": 290.699125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 97
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 154,
+        "start_seconds": 288.199125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "155",
+          "span_samples": "4651186:4691186",
+          "status": "prepared"
+        },
+        "end_seconds": 293.199125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 98
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 155,
+        "start_seconds": 290.699125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "156",
+          "span_samples": "4691186:4731186",
+          "status": "prepared"
+        },
+        "end_seconds": 295.699125,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 2.5,
+            "local_speaker": "S01",
+            "unit_index": 99
+          }
+        ],
+        "reason": "hard_cap",
+        "span_id": 156,
+        "start_seconds": 293.199125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {
+          "S01": "speaker-0004"
+        },
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {
+          "assignments": "S01->speaker-0004",
+          "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004",
+          "deferred_births": "",
+          "local_speakers": "S01",
+          "reason": "ok",
+          "schema_version": "1",
+          "span_id": "157",
+          "span_samples": "4731186:4743677",
+          "status": "prepared"
+        },
+        "end_seconds": 296.479812,
+        "ledger_records": [
+          {
+            "canonical_speaker": "speaker-0004",
+            "disposition": "recorded",
+            "duration_seconds": 0.780687,
+            "local_speaker": "S01",
+            "unit_index": 100
+          }
+        ],
+        "reason": "end_silence",
+        "span_id": 157,
+        "start_seconds": 295.699125,
+        "status": "prepared"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 298.199125,
+        "ledger_records": [],
+        "reason": "hard_cap",
+        "span_id": 158,
+        "start_seconds": 296.479812,
+        "status": "no_speaker_activity"
+      },
+      {
+        "assignments": {},
+        "canonical_speakers": [
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0003",
+          "speaker-0004"
+        ],
+        "diagnostics": {},
+        "end_seconds": 300.0,
+        "ledger_records": [],
+        "reason": "flush",
+        "span_id": 159,
+        "start_seconds": 298.199125,
+        "status": "no_speaker_activity"
+      }
+    ],
+    "split": "validation"
+  },
+  "run_index": 2,
+  "semantic_sha256": "d8a4b823c8995d21170d508391729fbd76468ecd70733c6169b445424f6896f3",
+  "sweep_wall_time": {
+    "call_count": 0,
+    "p95_seconds": null,
+    "samples_seconds": [],
+    "total_seconds": 0
+  }
+}

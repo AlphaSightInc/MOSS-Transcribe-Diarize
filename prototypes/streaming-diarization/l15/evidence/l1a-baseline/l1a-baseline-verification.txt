@@ -1,0 +1,12 @@
+PASS alphabet_gate_passed
+PASS case_scope_exact
+PASS holdout_sealed
+PASS overall_pass
+PASS production_bindings
+PASS raw_run_count
+PASS sweep_call_count
+PASS sweep_p95_recomputed
+PASS all_cases_deterministic
+PASS all_cases_two_sided
+PASS raw_wrappers_verified=32
+RESULT PASS
