@@ -1,0 +1,125 @@
+{
+  "candidate_config": {
+    "canonical_min_margin": 0.1,
+    "canonical_min_score": 0.35,
+    "max_changed_duration_fraction": 0.05
+  },
+  "case_id": "1m-acquired-nfl",
+  "family_id": "f1-ledger-only-bounded-clustering-v1",
+  "full_chain_audit": {
+    "a2_terminal_synthetic_metrics_discarded": true,
+    "candidate_receives": [
+      "runtime_case",
+      "runtime_l1_decision",
+      "F1Config"
+    ],
+    "candidate_receives_evaluation_truth": false,
+    "files": [
+      {
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "pathlib",
+          "runtime_l1",
+          "scipy.cluster.hierarchy",
+          "scipy.optimize",
+          "scipy.spatial.distance",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/f1_candidate.py",
+        "sha256": "a63dfec023e3b0964d4491690415bc45c614cd31fc700e13c77961a187b17891",
+        "subscript_keys": [
+          "canonical_speaker",
+          "case_id",
+          "current_speaker",
+          "duration_seconds",
+          "incumbent_score",
+          "local_speaker",
+          "previous_speaker",
+          "proposed_score",
+          "score_delta",
+          "span_id",
+          "unit_index",
+          "vector"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "pathlib",
+          "run_l1_control",
+          "runtime_fixture",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/runtime_l1.py",
+        "sha256": "385054ae762d0663f49bbf917635be69764ad5b2046c9eb6bd737b10312e820b",
+        "subscript_keys": [
+          "case_id",
+          "cases",
+          "end_sample",
+          "final_unit_labels",
+          "local_speaker",
+          "pieces",
+          "production_config",
+          "runtime_cache_path",
+          "runtime_cache_sha256",
+          "span_id",
+          "spans",
+          "split",
+          "start_sample",
+          "total_samples",
+          "units",
+          "vec_idx",
+          "vecs"
+        ]
+      }
+    ],
+    "findings": [],
+    "passed": true,
+    "runtime_l1_activity_source": "temporary rows synthesized only from runtime manifest units"
+  },
+  "golden_path_opened": false,
+  "holdout_opened": false,
+  "label_perturbation": {
+    "after": [
+      [
+        0.0,
+        1.0,
+        "A"
+      ],
+      [
+        1.0,
+        2.0,
+        "A"
+      ]
+    ],
+    "before": [
+      [
+        0.0,
+        1.0,
+        "A"
+      ],
+      [
+        1.0,
+        2.0,
+        "B"
+      ]
+    ],
+    "decision_after_sha256": "39082a127d2a538bd3f7fd23dbe305585393c26b0bffcfe3f47a515c9461e1c9",
+    "decision_before_sha256": "39082a127d2a538bd3f7fd23dbe305585393c26b0bffcfe3f47a515c9461e1c9",
+    "decision_identical": true,
+    "runtime_shape_after_sha256": "db92bca58c2b7f78705a7eebe44b8a408773a36836af3b4816e3cc5179718f23",
+    "runtime_shape_before_sha256": "db92bca58c2b7f78705a7eebe44b8a408773a36836af3b4816e3cc5179718f23",
+    "runtime_shape_identical": true,
+    "truth_changed": true
+  },
+  "overall": "PASS",
+  "production_bindings": {
+    "ledger": "moss_transcribe_diarize.app.live_identity_sweep.SweepLedger",
+    "source_path": "moss_transcribe_diarize/app/live_identity_sweep.py",
+    "source_sha256": "23bf894d4897c2265681b718bedd59d43a7ea98c5d9f00dccbbb4d6edb94cfc9",
+    "sweep": "moss_transcribe_diarize.app.live_identity_sweep.sweep"
+  },
+  "schema": "moss-l15-f1-precondition.v1",
+  "scoring_executed": false
+}

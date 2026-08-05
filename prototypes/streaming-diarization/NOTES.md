@@ -1630,3 +1630,28 @@ Holdout remains sealed.
 Machine-readable preregistration:
 `prototypes/streaming-diarization/l15/f1-ledger-only-family.json`, SHA-256
 `770b73703550cd989a6125f51a4e32ef352b4d203a7d888589864d19d20d13fb`.
+
+### Campaign L1.5 F1 precondition (`l15`, 2026-08-04)
+
+**VERDICT: PASS — SCORING NOW PERMITTED.** Red-first failed on the absent F1
+module. Green calls the calibrated A2 `replay_case()` with a temporary activity file
+synthesized only from frozen runtime units; its synthetic terminal metrics are discarded
+after production L1 labels/traces exist. F1 receives only runtime units, those L1 labels,
+retained vectors, and its config. The source audit finds no evaluator import or golden key
+in candidate code.
+
+The controlled truth mutation A,B→A,A changed truth bytes while runtime shape stayed
+`db92bca58c2b7f78705a7eebe44b8a408773a36836af3b4816e3cc5179718f23`
+and complete F1 decision hash stayed
+`39082a127d2a538bd3f7fd23dbe305585393c26b0bffcfe3f47a515c9461e1c9`.
+No score, validation result, golden path, or holdout path was opened.
+Precondition JSON SHA-256:
+`a3a86f25ddc14392ff7c1840e3d1389bb8811cc39e9c0f845315cd029877424f`;
+9-member evidence manifest SHA-256:
+`5137d5443b1b95f65ceb5e8bffa91622afc57463fbf69c8016ae618e1ba83d96`.
+
+Reproduce:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_f1_precondition.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/seal_f1_precondition.py
+```
