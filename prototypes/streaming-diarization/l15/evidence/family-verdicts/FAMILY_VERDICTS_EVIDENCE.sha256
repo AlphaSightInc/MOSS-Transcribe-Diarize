@@ -1,0 +1,10 @@
+dcf453f2a147940b4eb3b45071801ea39ba5b516486ae2e32a9e766cf8f6967a  ../f1/F1_EVIDENCE.sha256
+6ac5cc42b4c182c2f4869adf263fd0eec49f00977eee048b3fc6d6832d50eab6  ../f1/f1-verdict.json
+800b0aa8144a4f80f453d82b960204ef44687ad56f312ae78fcdbbf2856030bb  ../f2/F2_EXPLORATORY_EVIDENCE.sha256
+b66997d4d8e0f19b8b83b03f8a84b434bd001647b1b49157397904d795acdb5a  ../f2/f2-exploratory-verdict.json
+a0fac3d01565e7b25e0783b2e505102a3e31d3d733ff3fc289c5412acda5aed1  ../f3/F3_EVIDENCE.sha256
+af63f90888fd93875301094a463ef2d68799a5e8d5098134b81688606191d4af  ../f3/f3-verdict.json
+faba669c407f156df9dbe885a505dcc18b955339aaaba483e5180344818fb1b2  family-verdicts-verification.json
+94e63b95a2c3305be0e893144ea759f7e2faa19987432792718634eeeff16f02  family-verdicts.json
+63a450b9a7f38bf047ba87f2a2016862ff72f5ee6f3fb739f62f0c14a9e33117  ../../seal_family_verdicts.py
+c1eebed8155b16e644fa10be041f13874e8f5e01926ca8c814042b82dd1caf25  ../../write_family_verdicts.py

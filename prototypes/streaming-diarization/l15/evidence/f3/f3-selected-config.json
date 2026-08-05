@@ -1,0 +1,29 @@
+{
+  "config": {
+    "config_id": "f3-staged-5m-15m",
+    "segments": [
+      {
+        "end_seconds_exclusive": 300.0,
+        "margin": 0.1
+      },
+      {
+        "end_seconds_exclusive": 900.0,
+        "margin": 0.15
+      },
+      {
+        "end_seconds_exclusive": null,
+        "margin": 0.2
+      }
+    ]
+  },
+  "config_id": "f3-staged-5m-15m",
+  "dev_gain_pp": -0.054219848022663,
+  "dev_non_gain_gates_passed": false,
+  "dev_score_sha256": "95c807a928af0ee0eed9ddffb5bb8a5a49b2d5052c4ce50bf113e3112a0c2840",
+  "family_id": "f3-live-pass-duration-adaptive-margin-v1",
+  "family_spec_sha256": "56491ebcd5f6aa5da8a2366863b5c7fccbc7e454e2dc1692169ff8572c0e99ae",
+  "frozen_for_validation": true,
+  "schema": "moss-l15-f3-selected-config.v1",
+  "selection_rule": "preregistered accuracy/non-gain/lexicographic rule",
+  "validation_opened": false
+}

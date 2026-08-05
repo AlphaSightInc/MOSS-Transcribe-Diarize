@@ -1,0 +1,13 @@
+{
+  "checks": {
+    "all_deterministic": true,
+    "eight_cases": true,
+    "golden_unopened": true,
+    "holdout_sealed": true,
+    "one_frozen_schedule": true,
+    "selected_only": true,
+    "unscored": true,
+    "validation": true
+  },
+  "overall": "PASS"
+}

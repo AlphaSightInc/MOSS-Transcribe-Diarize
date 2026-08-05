@@ -1962,3 +1962,55 @@ two-sided mapping, deterministic ×2, complete changed-assignment evidence, and 
 sweep p95 ≤ `0.20015926258638502 s`. Holdout remains sealed.
 Family-spec SHA-256:
 `56491ebcd5f6aa5da8a2366863b5c7fccbc7e454e2dc1692169ff8572c0e99ae`.
+
+### Campaign L1.5 F3 verdict (`l15`, 2026-08-05)
+
+**VERDICT: FAIL; NOT FREEZEABLE.** Red-first missing-candidate refusal preceded the
+implementation. The first green attempt stopped before any decision because the editable
+install resolved the main-checkout product before the worktree; the transcript is sealed,
+and pinning worktree import order was a reproducibility correction only. The final
+precondition proved the full evaluator→candidate boundary contains no golden path, truth
+label A,B→A,A leaves runtime shape and decision hashes identical, short runtime margins
+remain `{0.10}`, and the 30-minute runtime crosses `{0.10,0.15,0.20}`. Every span calls
+production `BoundedCausalIdentityPreparer`; no copied assignment policy. Precondition
+manifest SHA-256:
+`13f6b3d34caf5f516f62c3aa86f7f8044546210e3a9e8580cb2b7952a2a71624`.
+
+All three dev schedules produced the same result. Selected by the preregistered tie rule:
+`f3-staged-5m-15m`; development gain `-0.0542198480 pp`. Seven short dev cases were
+unchanged; `30m-lex-bill-ackman` regressed `-0.0827 pp`, worsened DER, and its one changed
+unit lacked causal pair scores, failing changed-assignment evidence. Dev decisions were
+sealed before development scoring (prescore manifest SHA-256
+`28800dd4af2b6785cb54a32de87bba4592272907f889d27273849a3e133d53df`;
+dev-score raw SHA-256
+`95c807a928af0ee0eed9ddffb5bb8a5a49b2d5052c4ce50bf113e3112a0c2840`).
+
+The selected schedule alone ran validation once: every case was identical to L1; gain
+`0.0 pp`, non-gain gates PASS, gain gate FAIL. Validation decisions were sealed before
+validation scoring (prescore manifest SHA-256
+`59faa030bf2fc186400fd48adf3319cfc68ee78f52a6d1379987fc952ffad937`;
+validation-score raw SHA-256
+`16923b514e7e377b970025d8c01dfdcd568dd5eeaf632eab164fda325b80cf93`).
+Twenty deterministic 30-minute replays yielded 640 production sweep calls; Type-7 p95
+`0.0729178397 s` ≤ `0.2001592626 s` (timing raw SHA-256
+`63529008d852882f94959f96c79c0b12b2a8c923bdc77cfe9bf0f4d1794550bc`).
+Verdict raw SHA-256:
+`af63f90888fd93875301094a463ef2d68799a5e8d5098134b81688606191d4af`;
+25-member F3 evidence-manifest SHA-256:
+`a0fac3d01565e7b25e0783b2e505102a3e31d3d733ff3fc289c5412acda5aed1`.
+No second pass, validation tuning, gate change, or holdout opening occurred.
+
+### Campaign L1.5 family-verdicts boundary (`l15`, 2026-08-05)
+
+**CAMPAIGN DISPOSITION: BLOCKED_FOR_PRODUCT; PROCESS PASS; HOLDOUT SEALED.** F1 is
+an acceptance-bearing FAIL under the honest D8-safe runtime frame; F2 completed only its
+authorized exploratory acoustic measurement and is not freezeable; F3 is an
+acceptance-bearing FAIL. No acceptance-bearing family cleared its gates, so no composition
+arm is justified, no candidate freeze is proposed, and the single blind opening does not
+occur. The separately authorized DL1 dual-lane inventory is future work and does not alter
+this verdict.
+
+Consolidated verdict raw SHA-256:
+`94e63b95a2c3305be0e893144ea759f7e2faa19987432792718634eeeff16f02`;
+10-member family-verdict evidence-manifest SHA-256:
+`03bc9919c539c1fd4cc012333e6abcd85450bdbcee8e955f1986fdd75f19e942`.

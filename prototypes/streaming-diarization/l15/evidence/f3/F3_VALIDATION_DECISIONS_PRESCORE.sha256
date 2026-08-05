@@ -1,0 +1,9 @@
+13f6b3d34caf5f516f62c3aa86f7f8044546210e3a9e8580cb2b7952a2a71624  ../f3-precondition/F3_PRECONDITION_EVIDENCE.sha256
+17a6f0a0dfc14cf923b5352613882f3f90cb2181a80142ae9b5bd05ca881d576  f3-selected-config.json
+5cebc110f7e2d6e527100bdad455846c687107c3e9be87a345561322640b856d  f3-validation-decisions.json
+7cf91359af7dac7e6aa41002642d6195581d3caacce4bb22d0989e15ddef4fe2  f3-validation-decisions.txt
+32774309bc93ffa67a50c84a5a0ca21af5c79ea970abaabedaf537c6f30ef3c6  f3-validation-prescore-verification.json
+56491ebcd5f6aa5da8a2366863b5c7fccbc7e454e2dc1692169ff8572c0e99ae  ../../f3-adaptive-margin-family.json
+90ca57eede0070a47d833d50682fd88e1ab6b868006a6caad8a98a9364f74d1a  ../../f3_candidate.py
+22bff81dc5f592ceb7bdbbeda978ec70f7bd01d03544e01b8cd98eb22a4a3df6  ../../f3_decisions.py
+ea19dfdaa5fa97cee8a2463d407fee1335bdfb9405b1bd2df4c8fec02f49a984  ../../runtime_l1.py
