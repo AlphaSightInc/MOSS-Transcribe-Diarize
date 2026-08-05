@@ -1,0 +1,57 @@
+{
+  "candidate_freeze_path": "prototypes/streaming-diarization/l15/candidate-freeze.json",
+  "corpus_manifest_sha256": "7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb",
+  "holdout_cases": [
+    {
+      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/audio.wav",
+      "audio_sha256": "693317c142945d6e1918e36e1dbcb2e4f0e4d8d142ef15bd4a68ef90217d058f",
+      "case_id": "5m-acquired-coca-cola",
+      "duration_seconds": 300.0,
+      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/reference-v2-human-20260804.jsonl",
+      "reference_sha256": "d2b92f1aff1df0a15b183205cc04246bc09097270a3445b3203d96d9fbb738fa",
+      "split": "blind_holdout",
+      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-coca-cola/harness_cache.npz",
+      "vector_cache_sha256": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9"
+    },
+    {
+      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/audio.wav",
+      "audio_sha256": "85176388cf783fb1b75beeaaefba745bb315202ab4d74e40052f0d3fc2b5c7d9",
+      "case_id": "5m-lex-keyu-jin",
+      "duration_seconds": 300.0,
+      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/reference.jsonl",
+      "reference_sha256": "f479c10d4762980639d8514c9e0faffc2c97b0ae8b76e2ec60cf43253c003812",
+      "split": "blind_holdout",
+      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-keyu-jin/harness_cache.npz",
+      "vector_cache_sha256": "c545173e82e2ad045b7c84c2751b3ec265104eb46867e77c07ecae1b3363e4fa"
+    },
+    {
+      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_30m/acquired_jamie_dimon/audio.wav",
+      "audio_sha256": "842c9609ac4473bee0c29275fa2f38d73b00484acc603673f2317039005f8996",
+      "case_id": "30m-acquired-jamie-dimon",
+      "duration_seconds": 1800.0,
+      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_30m/acquired_jamie_dimon/reference.jsonl",
+      "reference_sha256": "98d0acbee1ccc1f67b971050243797214d7ddbb621788887d25936cabc9e3c71",
+      "split": "blind_holdout",
+      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/30m-acquired-jamie-dimon/harness_cache.npz",
+      "vector_cache_sha256": "0f436684063b7c44aec64096864c2ac60b24a7002487fcc25cf88881abdeac88"
+    }
+  ],
+  "opening_marker_path": "prototypes/streaming-diarization/l15/evidence/holdout-opening/holdout-opened.json",
+  "rules": {
+    "all_frozen_candidate_arms_same_session": true,
+    "candidate_family_and_thresholds_frozen_before_open": true,
+    "holdout_cache_rebuild_inside_opening": true,
+    "l1_runs_per_case": 2,
+    "no_post_open_tuning": true,
+    "opening_count_max": 1,
+    "same_production_planned_frame_all_arms": true
+  },
+  "schema": "moss-l15-holdout-procedure.v1",
+  "split_manifest_path": "prototypes/streaming-diarization/l15/split-manifest.json",
+  "split_manifest_sha256": "308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3",
+  "status": "SEALED_UNTIL_POST_FREEZE_SUPERVISOR_GO",
+  "supervisor_ruling": {
+    "date": "2026-08-04",
+    "text": "L1 baseline runs on dev/validation only now; holdout L1 x2 runs inside the single post-freeze opening alongside candidate arms"
+  }
+}

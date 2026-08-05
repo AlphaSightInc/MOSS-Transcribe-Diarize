@@ -1,0 +1,1 @@
+{"case_count": 19, "holdout": ["5m-acquired-coca-cola", "5m-lex-keyu-jin", "30m-acquired-jamie-dimon"], "holdout_procedure_sha256": "f4a06939e2701b8f48ca9d090e8cd01d5853e64f2953bbd7982b3f6b3f5f5489", "overall": "PASS", "split_manifest_sha256": "308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3"}

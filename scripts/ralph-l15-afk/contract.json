@@ -17,11 +17,12 @@
     "tests/**"
   ],
   "holdout_procedure_path": "prototypes/streaming-diarization/l15/holdout-procedure.json",
+  "holdout_procedure_sha256": "f4a06939e2701b8f48ca9d090e8cd01d5853e64f2953bbd7982b3f6b3f5f5489",
   "max_iterations": 12,
   "plan_path": "docs/plans/l15-live-uplift-0804.md",
   "plan_sha256": "456cb01efc7e9ffbfeb1091f251f03a666ee81d3ff2ca9229faaf93faab8cdce",
   "required_ancestor": "15d45afc418e2cc83e3967110553371010da1784",
-  "split_manifest_hash": "UNFROZEN",
+  "split_manifest_hash": "308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3",
   "split_manifest_path": "prototypes/streaming-diarization/l15/split-manifest.json",
   "worktree": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15"
 }

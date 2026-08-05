@@ -1,0 +1,35 @@
+{
+  "checks": {
+    "candidate_freeze_absent": true,
+    "corpus_pin": true,
+    "exact_19_cases": true,
+    "holdout_has_30m": true,
+    "holdout_has_three_prior_dev_unseen": true,
+    "opening_marker_absent": true,
+    "procedure_pin": true,
+    "split_pin": true,
+    "training_has_30m": true
+  },
+  "content_files_read": [
+    "scripts/ralph-l15-afk/contract.json",
+    "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json",
+    "prototypes/streaming-diarization/l15/holdout-procedure.json",
+    "prototypes/streaming-diarization/l15/split-manifest.json"
+  ],
+  "counts": {
+    "blind_holdout": 3,
+    "development": 8,
+    "validation": 8
+  },
+  "failures": [],
+  "holdout_case_ids": [
+    "5m-acquired-coca-cola",
+    "5m-lex-keyu-jin",
+    "30m-acquired-jamie-dimon"
+  ],
+  "holdout_status": "SEALED",
+  "overall": "PASS",
+  "procedure_sha256": "f4a06939e2701b8f48ca9d090e8cd01d5853e64f2953bbd7982b3f6b3f5f5489",
+  "schema": "moss-l15-split-freeze-verdict.v1",
+  "split_manifest_sha256": "308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3"
+}

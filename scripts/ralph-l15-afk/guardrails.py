@@ -42,6 +42,7 @@ def load_contract(path: Path) -> dict[str, Any]:
         "corpus_manifest_path",
         "denylist",
         "holdout_procedure_path",
+        "holdout_procedure_sha256",
         "max_iterations",
         "plan_path",
         "plan_sha256",
@@ -124,6 +125,12 @@ def validate_split_pin(contract: dict[str, Any], repo: Path) -> None:
 def validate_gated_pins(contract: dict[str, Any], repo: Path) -> None:
     validate_corpus_pin(contract, repo)
     validate_split_pin(contract, repo)
+    _validate_hash_pin(
+        repo,
+        expected=contract["holdout_procedure_sha256"],
+        relative_path=contract["holdout_procedure_path"],
+        name="holdout_procedure",
+    )
 
 
 def classify_promise(output: str) -> str:

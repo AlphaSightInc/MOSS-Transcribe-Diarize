@@ -1442,3 +1442,37 @@ Reproduce:
 ```bash
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 scripts/ralph-l15-afk/launch.sh --dry-run --evidence-dir scripts/ralph-l15-afk/evidence
 ```
+
+### Campaign L1.5 L1.a split freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — 19 CASES FROZEN; HOLDOUT SEALED.** The split was selected
+from promoted-manifest metadata and prior exposure only; no audio or reference
+content was read. Development/validation each contain eight cases. Blind holdout
+contains `5m-acquired-coca-cola`, `5m-lex-keyu-jin`, and
+`30m-acquired-jamie-dimon`: all three were absent from Stage-0
+development/validation and one is certified 30-minute. Development contains the
+other certified 30-minute case, `30m-lex-bill-ackman`.
+
+Supervisor correction dated 2026-08-04 is binding: the launch brief's “ALL gated
+cases” baseline wording contradicted the standing seal. L1.a runs L1 twice on
+development/validation only. Holdout L1 runs twice inside the one post-freeze
+opening alongside all frozen candidate arms. `holdout-procedure.json` pins that
+rule, in-opening cache rebuild, same production-planned frame, no post-open tuning,
+and maximum one opening.
+
+Split SHA-256 is
+`308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3`;
+procedure SHA-256 is
+`f4a06939e2701b8f48ca9d090e8cd01d5853e64f2953bbd7982b3f6b3f5f5489`.
+The launcher pins both with corpus
+`7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb`.
+Red-first proved the absent guard; green proved dev access, pre-freeze holdout
+refusal, split-drift refusal, and an exclusive second-opening refusal. Evidence
+manifest SHA-256:
+`36022717c51ebb79ebe823b359bd968b6a858a8eb8ba4e3866fcbe954c0b6ce0`.
+
+Reproduce without corpus-content reads:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/freeze_splits.py --check && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/test_holdout_gate.py
+```
