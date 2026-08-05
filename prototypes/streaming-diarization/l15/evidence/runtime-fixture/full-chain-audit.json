@@ -1,0 +1,239 @@
+{
+  "candidate_receives_runtime_manifest_only": true,
+  "case_count": 16,
+  "cases": [
+    {
+      "case_id": "1m-acquired-nfl",
+      "runtime_cache_sha256": "d2dc7de49b6c67cad6760d30809db441431d70a749c965f8f8586bebe7d8e426",
+      "runtime_shape_sha256": "db92bca58c2b7f78705a7eebe44b8a408773a36836af3b4816e3cc5179718f23",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "3m-acquired-jamie-dimon",
+      "runtime_cache_sha256": "4e852eab9a2846aab8f4a5255a67e145f9c463cb54ff707ce26857470c9e9231",
+      "runtime_shape_sha256": "1d404907ba10a1dd9801bf318db5c87e0d1e3c8fc37a0892db7f0de2899c488e",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "1m-acquired-jamie-dimon",
+      "runtime_cache_sha256": "eb57e7359bc77c2f939e0bfd2cb7e6291b3323ca15feb8547ea90f8bccf899c8",
+      "runtime_shape_sha256": "db9dd838f375f68d4c90189ad40e9815b6a7944fa9f17210db562d2d71e02d84",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "5m-acquired-jamie-dimon",
+      "runtime_cache_sha256": "f01ed6f4c398d7cbfe5dc72c069f4c561948c0d9c7912c6cbeca8a7c10f1753e",
+      "runtime_shape_sha256": "e4409a4292f6be302b4866b0ce9ebb28c88141498a1a241acbfc0bde6ea9de6c",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "5m-acquired-nfl",
+      "runtime_cache_sha256": "a545d8c54354a04cc54b2098e25474f9bc7b346149116851e834fe1e496c2c51",
+      "runtime_shape_sha256": "bc0b4f9ef156b3235a0d4047951f77dcf8eda1d59ef7ec87d2ef8d179ffc9e29",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "5m-lex-bill-ackman",
+      "runtime_cache_sha256": "05e5e01b535e0796fee8ccf4b32e4e74b5c031f46b636784ea7623ae166e6176",
+      "runtime_shape_sha256": "db2e29d9c58af69be916ecd9fcd2752c0c7222a4b659e1b17b5314cc99cdab35",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "5m-lex-javier-milei",
+      "runtime_cache_sha256": "00f89edd47a152a5ec12bdf54e1fc130c2103bb5f7785f8624d1e6335ca60792",
+      "runtime_shape_sha256": "301522c298837c294f5fc09495bb46676c3853e73bb23cdc0c3e374d85d717d8",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "30m-lex-bill-ackman",
+      "runtime_cache_sha256": "691cfc2c1510138300d3481b94f3bf96f001b6527609d06107e0ab53c573fddc",
+      "runtime_shape_sha256": "4b1a8b6ab84920351b33f117e11e9f942ae733a3c9e07cd56dfc9c19997a7187",
+      "self_replan": "PASS",
+      "split": "development"
+    },
+    {
+      "case_id": "1m-acquired-rolex",
+      "runtime_cache_sha256": "f838176b6f080ebfb86fae398373b65f18dc74d469b777b7c329eb487836f26a",
+      "runtime_shape_sha256": "531ae7fed914ef34fdfac2fa88b05ce79e8eb88bbad3886d165d1e1389215d87",
+      "self_replan": "PASS",
+      "split": "validation"
+    },
+    {
+      "case_id": "1m-lex-bill-ackman",
+      "runtime_cache_sha256": "160eef63dba2407ae3b27f64eb59540157d05a22db25e1982d9facee3e143613",
+      "runtime_shape_sha256": "66760c444f658a52f599cff08137393c5dc4169e58dff69f36c0bf71820430ea",
+      "self_replan": "PASS",
+      "split": "validation"
+    },
+    {
+      "case_id": "1m-lex-javier-milei",
+      "runtime_cache_sha256": "63e24a97d6e3bd636f6f3372afd51790f2587c32cc7e4d8c6b22c3918bf24640",
+      "runtime_shape_sha256": "38dd3af21c073edf6deea03356f514be301f8f69f1330cc484e39621158e4bf4",
+      "self_replan": "PASS",
+      "split": "validation"
+    },
+    {
+      "case_id": "1m-lex-keyu-jin",
+      "runtime_cache_sha256": "5786e73020fad19f7178eefad1f29cd8208fb25f3070c260846ecccd21876c47",
+      "runtime_shape_sha256": "0fbf781d1979d937f9872d8c9a7b412b3927fc55abd46068f475f2c70987406f",
+      "self_replan": "PASS",
+      "split": "validation"
+    },
+    {
+      "case_id": "3m-lex-adam-frank",
+      "runtime_cache_sha256": "191317c9f40b4861dd3c8c19bf66f81f2b1e06850a57e18a3aa1078c370fa026",
+      "runtime_shape_sha256": "a7bc784a83f7b020c342294710ce43a75cbe13999771a76b30b5d0b3739c6a05",
+      "self_replan": "PASS",
+      "split": "validation"
+    },
+    {
+      "case_id": "3m-lex-shapiro-destiny",
+      "runtime_cache_sha256": "ef146eba42d845306ed81a7ac27a82ea221012cadf34d7dc7a34f30918cd6511",
+      "runtime_shape_sha256": "41912b5c0e3152503c09c4a343ae1855161e5d5426702e03f7440c9cd1c1421b",
+      "self_replan": "PASS",
+      "split": "validation"
+    },
+    {
+      "case_id": "5m-acquired-alphabet",
+      "runtime_cache_sha256": "d2b87a73c839ce4df1c43f01874f2d142ffd9cdf230dc9085858c0b7e2378886",
+      "runtime_shape_sha256": "162d5d3bd31c29f19d37b417d1c539f4e0f5561c5590512bf9d63eb83d1232d7",
+      "self_replan": "PASS",
+      "split": "validation"
+    },
+    {
+      "case_id": "5m-acquired-rolex",
+      "runtime_cache_sha256": "865ef81fdf643bd7eccd47b596ef1f6b748cac984d05d72ec8e2c105cac5c0eb",
+      "runtime_shape_sha256": "a721454c1261bd50452c7b92b3b4f2644958fba052614fb1ec57265d7e6a8557",
+      "self_replan": "PASS",
+      "split": "validation"
+    }
+  ],
+  "chain_order": [
+    "prototypes/streaming-diarization/l15/collect_runtime_asr.py",
+    "prototypes/streaming-diarization/l15/runtime_fixture.py",
+    "prototypes/streaming-diarization/l15/build_runtime_fixtures.py"
+  ],
+  "evaluation_truth_loaded_after_decisions": "enforced later by each family runner",
+  "label_perturbation": "synthetic runtime shape proof green; per-family decision proof required",
+  "manifest_path_findings": [],
+  "overall": "PASS",
+  "schema": "moss-l15-full-chain-input-audit.v1",
+  "source_audit": {
+    "files": [
+      {
+        "imports": [
+          "__future__",
+          "datetime",
+          "hashlib",
+          "json",
+          "pathlib",
+          "subprocess",
+          "time",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/collect_runtime_asr.py",
+        "sha256": "ba899f5fcd8eac76416d58d14eb33857e257f2ae634bcffb21c522d72166480f",
+        "subscript_keys": [
+          "audio_path",
+          "audio_sha256",
+          "case_id",
+          "completed_windows",
+          "deployed_sha",
+          "development",
+          "dirty_count",
+          "groups",
+          "job_reused",
+          "live_post_count",
+          "possibly_truncated",
+          "segment_count",
+          "segments",
+          "split",
+          "status",
+          "validation",
+          "window_count"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "hashlib",
+          "inspect",
+          "moss_transcribe_diarize.app.live_endpoint",
+          "numpy",
+          "pathlib",
+          "sys",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/runtime_fixture.py",
+        "sha256": "90b7baac73da47a8955b74f7a5046beff8204ff4ed906a197b90cc2cdf5fb9c5",
+        "subscript_keys": [
+          "end",
+          "local_speakers",
+          "rows",
+          "span_bounds",
+          "span_reasons",
+          "start",
+          "vec_idx",
+          "vecs"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "datetime",
+          "json",
+          "moss_transcribe_diarize.app.speaker_identity",
+          "pathlib",
+          "runtime_fixture",
+          "sys",
+          "wave"
+        ],
+        "path": "prototypes/streaming-diarization/l15/build_runtime_fixtures.py",
+        "sha256": "355f9c149c902dfae2236de30bb9dd2ec147503b5983d48ac17d7628445e04f4",
+        "subscript_keys": [
+          "asset",
+          "audio_path",
+          "audio_sha256",
+          "case_count",
+          "case_id",
+          "cases",
+          "config",
+          "constraints",
+          "embedding_dimension",
+          "frontend",
+          "hard_cap_samples",
+          "holdout_case_opened",
+          "path",
+          "runtime_cache_sha256",
+          "segments",
+          "segments_path",
+          "segments_sha256",
+          "sha256",
+          "source_sha256",
+          "split"
+        ]
+      }
+    ],
+    "forbidden_import_names": [
+      "live_speaker_accuracy",
+      "validate_inputs"
+    ],
+    "forbidden_import_names_found": [],
+    "forbidden_subscript_keys": [
+      "reference",
+      "reference_path",
+      "reference_sha256",
+      "true_speaker"
+    ],
+    "forbidden_subscript_keys_found": [],
+    "passed": true
+  }
+}

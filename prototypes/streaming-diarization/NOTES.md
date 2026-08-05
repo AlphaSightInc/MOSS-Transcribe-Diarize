@@ -1574,3 +1574,31 @@ Exact collection and verification commands:
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/collect_runtime_asr.py
 cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/verify_runtime_asr.py && cd prototypes/streaming-diarization/l15/evidence/runtime-inputs && shasum -a 256 -c RUNTIME_ASR_EVIDENCE.sha256
 ```
+
+### Campaign L1.5 D8-safe runtime fixture freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — COMMON INPUT FRAME FROZEN; NO FAMILY RUN.** Red-first proved the
+runtime planner module absent. Green then built every dev/validation unit exclusively
+from deployed ASR timestamps/labels and audio, called production `EndpointPolicy`, and
+embedded speech intervals with the pinned production `WeSpeakerResNet152LmAdapter`.
+All 16 caches self-replan exactly; `hard_cap_samples=40000` remains fixed.
+
+The full-chain source audit found zero access to `reference`, `reference_path`,
+`reference_sha256`, or `true_speaker`, and zero evaluator/scorer imports across
+collector → planner → cache builder. The runtime manifest contains no golden path or
+holdout case. Its synthetic A,B→A,A perturbation leaves runtime shape identical.
+Each family must separately prove decision identity before its first score.
+
+Runtime manifest SHA-256:
+`886ce7a6b53f1f55c1966753b8e691113c074fee11bd3b4fdd6e650d0712209e`;
+full-chain audit SHA-256:
+`5b88de8fc25f855972c73efe0acd5ca67585255781ef6425b9f6d2a33bb9b5fd`;
+42-member evidence manifest SHA-256:
+`49812bcfe607855d83f7fb8b60578b25b0d89bc4afe3450344a5fb2deb12597e`.
+
+Exact build/verification commands:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/build_runtime_fixtures.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_runtime_fixture.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/verify_runtime_fixtures.py && cd prototypes/streaming-diarization/l15/evidence/runtime-fixture && shasum -a 256 -c RUNTIME_FIXTURE_EVIDENCE.sha256
+```

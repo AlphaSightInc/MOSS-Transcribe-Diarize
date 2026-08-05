@@ -1,0 +1,32 @@
+BUILD 1/16 1m-acquired-nfl spans=30 units=21
+PASS 1m-acquired-nfl cache_sha256=d2dc7de49b6c67cad6760d30809db441431d70a749c965f8f8586bebe7d8e426
+BUILD 2/16 3m-acquired-jamie-dimon spans=78 units=76
+PASS 3m-acquired-jamie-dimon cache_sha256=4e852eab9a2846aab8f4a5255a67e145f9c463cb54ff707ce26857470c9e9231
+BUILD 3/16 1m-acquired-jamie-dimon spans=30 units=26
+PASS 1m-acquired-jamie-dimon cache_sha256=eb57e7359bc77c2f939e0bfd2cb7e6291b3323ca15feb8547ea90f8bccf899c8
+BUILD 4/16 5m-acquired-jamie-dimon spans=140 units=123
+PASS 5m-acquired-jamie-dimon cache_sha256=f01ed6f4c398d7cbfe5dc72c069f4c561948c0d9c7912c6cbeca8a7c10f1753e
+BUILD 5/16 5m-acquired-nfl spans=140 units=128
+PASS 5m-acquired-nfl cache_sha256=a545d8c54354a04cc54b2098e25474f9bc7b346149116851e834fe1e496c2c51
+BUILD 6/16 5m-lex-bill-ackman spans=151 units=139
+PASS 5m-lex-bill-ackman cache_sha256=05e5e01b535e0796fee8ccf4b32e4e74b5c031f46b636784ea7623ae166e6176
+BUILD 7/16 5m-lex-javier-milei spans=168 units=137
+PASS 5m-lex-javier-milei cache_sha256=00f89edd47a152a5ec12bdf54e1fc130c2103bb5f7785f8624d1e6335ca60792
+BUILD 8/16 30m-lex-bill-ackman spans=957 units=823
+PASS 30m-lex-bill-ackman cache_sha256=691cfc2c1510138300d3481b94f3bf96f001b6527609d06107e0ab53c573fddc
+BUILD 9/16 1m-acquired-rolex spans=25 units=29
+PASS 1m-acquired-rolex cache_sha256=f838176b6f080ebfb86fae398373b65f18dc74d469b777b7c329eb487836f26a
+BUILD 10/16 1m-lex-bill-ackman spans=29 units=29
+PASS 1m-lex-bill-ackman cache_sha256=160eef63dba2407ae3b27f64eb59540157d05a22db25e1982d9facee3e143613
+BUILD 11/16 1m-lex-javier-milei spans=35 units=28
+PASS 1m-lex-javier-milei cache_sha256=63e24a97d6e3bd636f6f3372afd51790f2587c32cc7e4d8c6b22c3918bf24640
+BUILD 12/16 1m-lex-keyu-jin spans=29 units=29
+PASS 1m-lex-keyu-jin cache_sha256=5786e73020fad19f7178eefad1f29cd8208fb25f3070c260846ecccd21876c47
+BUILD 13/16 3m-lex-adam-frank spans=83 units=77
+PASS 3m-lex-adam-frank cache_sha256=191317c9f40b4861dd3c8c19bf66f81f2b1e06850a57e18a3aa1078c370fa026
+BUILD 14/16 3m-lex-shapiro-destiny spans=80 units=78
+PASS 3m-lex-shapiro-destiny cache_sha256=ef146eba42d845306ed81a7ac27a82ea221012cadf34d7dc7a34f30918cd6511
+BUILD 15/16 5m-acquired-alphabet spans=154 units=139
+PASS 5m-acquired-alphabet cache_sha256=d2b87a73c839ce4df1c43f01874f2d142ffd9cdf230dc9085858c0b7e2378886
+BUILD 16/16 5m-acquired-rolex spans=141 units=133
+PASS 5m-acquired-rolex cache_sha256=865ef81fdf643bd7eccd47b596ef1f6b748cac984d05d72ec8e2c105cac5c0eb
