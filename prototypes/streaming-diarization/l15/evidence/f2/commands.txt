@@ -1,0 +1,9 @@
+ssh ga0@m4mbp 'set -e; cd /Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001; pwd; find . -maxdepth 2 -type f -print; shasum -a 256 local.wav remote.wav 2>/dev/null || true; for f in *.wav; do afinfo "$f" | sed -n "1,12p"; done'
+scp ga0@m4mbp:/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001/local.wav prototypes/streaming-diarization/l15/exploratory/f2-dual-lane/source/local.wav
+scp ga0@m4mbp:/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav prototypes/streaming-diarization/l15/exploratory/f2-dual-lane/source/remote.wav
+PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/seal_f2_precondition.py
+PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/collect_f2_runtime_asr.py
+PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/build_f2_runtime_fixture.py
+# First invocation used evidence/f2-precondition as cwd and refused before execution: python could not resolve prototypes/streaming-diarization/l15/run_f2_exploratory.py. No result was created.
+PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_f2_exploratory.py
+PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/seal_f2_results.py

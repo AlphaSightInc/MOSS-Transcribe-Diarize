@@ -1,0 +1,110 @@
+{
+  "aggregate": {
+    "all_counts_and_labels_identical": true,
+    "f1_proposals": 6,
+    "f1_same_config_gain_over_l1_pp": 0.0342058101619247,
+    "stage0_accepted_corrections": 6,
+    "stage0_gain_over_l1_pp": 0.0342058101619247,
+    "stage0_proposals": 6
+  },
+  "diagnosis_step": 2,
+  "directed_decision_tree_result": "DATA_OR_FRAME_SIDE; SEALED_STAGE0_ARM_ALSO_COLLAPSES_ON_L15_D8_INPUTS",
+  "f1_implementation_defect_proven": false,
+  "f1_prime_authorized": false,
+  "frame": "L1.5 D8-safe production-endpoint-over-deployed-ASR runtime units",
+  "gates_or_tolerances_changed": false,
+  "holdout_opened": false,
+  "next_action": "STOP_FOR_SUPERVISOR_JOINT_RETHINK",
+  "overall": "STOP",
+  "per_case": [
+    {
+      "case_id": "1m-acquired-nfl",
+      "eligible_vector_unit_count": 19,
+      "f1_accepted_corrections": 0,
+      "f1_proposal_count": 0,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": 0.0,
+      "stage0_accepted_corrections": 0,
+      "stage0_proposal_count": 0
+    },
+    {
+      "case_id": "3m-acquired-jamie-dimon",
+      "eligible_vector_unit_count": 75,
+      "f1_accepted_corrections": 3,
+      "f1_proposal_count": 3,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": -0.0056000000000056005,
+      "stage0_accepted_corrections": 3,
+      "stage0_proposal_count": 3
+    },
+    {
+      "case_id": "1m-acquired-jamie-dimon",
+      "eligible_vector_unit_count": 24,
+      "f1_accepted_corrections": 0,
+      "f1_proposal_count": 0,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": 0.0,
+      "stage0_accepted_corrections": 0,
+      "stage0_proposal_count": 0
+    },
+    {
+      "case_id": "5m-acquired-jamie-dimon",
+      "eligible_vector_unit_count": 114,
+      "f1_accepted_corrections": 1,
+      "f1_proposal_count": 1,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": 0.0,
+      "stage0_accepted_corrections": 1,
+      "stage0_proposal_count": 1
+    },
+    {
+      "case_id": "5m-acquired-nfl",
+      "eligible_vector_unit_count": 120,
+      "f1_accepted_corrections": 0,
+      "f1_proposal_count": 0,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": 0.0,
+      "stage0_accepted_corrections": 0,
+      "stage0_proposal_count": 0
+    },
+    {
+      "case_id": "5m-lex-bill-ackman",
+      "eligible_vector_unit_count": 130,
+      "f1_accepted_corrections": 0,
+      "f1_proposal_count": 0,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": 0.0,
+      "stage0_accepted_corrections": 0,
+      "stage0_proposal_count": 0
+    },
+    {
+      "case_id": "5m-lex-javier-milei",
+      "eligible_vector_unit_count": 127,
+      "f1_accepted_corrections": 1,
+      "f1_proposal_count": 1,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": 0.30000000000000027,
+      "stage0_accepted_corrections": 1,
+      "stage0_proposal_count": 1
+    },
+    {
+      "case_id": "30m-lex-bill-ackman",
+      "eligible_vector_unit_count": 768,
+      "f1_accepted_corrections": 1,
+      "f1_proposal_count": 1,
+      "final_labels_equal": true,
+      "gain_over_l1_pp": 0.002799999999991698,
+      "stage0_accepted_corrections": 1,
+      "stage0_proposal_count": 1
+    }
+  ],
+  "raw_scored_seal_sha256": "83bbaa6a270418f5022d43507399a9a1c7574bec17b65ecc2e0a6410a21f7f66",
+  "raw_scored_sha256": "d5a7769017cf90a3a9cc39447d63c2b8af9e2162146688322d33a0d8281ff013",
+  "raw_sealed_before_interpretation": true,
+  "schema": "moss-l15-stage0-ledger-differential-verdict.v1",
+  "stage0_candidate_engine_sha256": "fbed07c2a06efee9f1efab24000ae3e7c7f083761fa21b5ab544a7afce538467",
+  "stage0_family_config_sha256": "280041b25865c0ce912ab3d05afdf8636561296723832deadeb6e328ea7b7a0f",
+  "stage0_owning_commit": "a16c6d811031cac826878200256af0b69224add8",
+  "target_subset_or_fp_rule_changed": false,
+  "validation_opened": false
+}

@@ -1,0 +1,6 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_f1_precondition.py
+EXIT: 1
+Traceback (most recent call last):
+  File "prototypes/streaming-diarization/l15/test_f1_precondition.py", line 7, in <module>
+    from f1_candidate import F1Config, audit_f1_chain, decide_f1, semantic_hash
+ModuleNotFoundError: No module named 'f1_candidate'

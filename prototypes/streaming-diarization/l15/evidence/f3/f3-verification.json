@@ -1,0 +1,32 @@
+{
+  "checks": {
+    "dev_all_deterministic": true,
+    "dev_case_count_8": true,
+    "dev_gain_exact": true,
+    "dev_prescore_sealed": true,
+    "dev_schedules_3": true,
+    "holdout_sealed": true,
+    "one_optimization_pass": true,
+    "selected_from_dev": true,
+    "timing_20_replays": true,
+    "timing_gate_pass": true,
+    "validation_all_deterministic": true,
+    "validation_case_count_8": true,
+    "validation_gain_exact": true,
+    "validation_no_tuning": true,
+    "validation_prescore_sealed": true,
+    "validation_schedule_count_1": true,
+    "verdict_fail": true
+  },
+  "development_gain_pp": -0.054219848022663,
+  "failed_gates": [
+    "development_gain",
+    "development_non_gain",
+    "validation_gain"
+  ],
+  "overall": "PASS",
+  "schema": "moss-l15-f3-verification.v1",
+  "selected_config_id": "f3-staged-5m-15m",
+  "timing_p95_seconds": 0.07291783969849348,
+  "validation_gain_pp": 0.0
+}

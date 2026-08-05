@@ -1,0 +1,2728 @@
+{
+  "acceptance_scoring_performed": false,
+  "eligible_unit_count": 48,
+  "family_id": "f2-soft-lane-provenance-prior-v1",
+  "family_spec_sha256": "4d371dc9fb7e5a06fae5e5b298995bcd19b62334b3644566d5c2e6aed4bb1fba",
+  "frame": "production-endpoint-over-deployed-asr-per-capture-lane",
+  "gated_corpus_opened": false,
+  "holdout_opened": false,
+  "identity_accuracy_claim": false,
+  "overall": "PASS_EXPLORATORY_MEASUREMENT",
+  "reference_opened": false,
+  "runs": [
+    {
+      "deterministic": true,
+      "measurement": {
+        "config": {
+          "prior_strength": 0.05
+        },
+        "cross_score_multiplier": 0.95,
+        "duration_seconds": 100.29,
+        "flips": {
+          "count": 1,
+          "duration_seconds": 2.5,
+          "units": [
+            "local-mic:0015"
+          ]
+        },
+        "identity_accuracy_claim": false,
+        "margin": {
+          "after_weighted_mean": 0.08273160779463738,
+          "after_weighted_median": 0.09705064145727926,
+          "after_weighted_p95": 0.14630041075316624,
+          "before_weighted_mean": 0.055282239068663315,
+          "before_weighted_median": 0.06310043343452121,
+          "before_weighted_p95": 0.11302277198049959,
+          "weighted_mean_delta": 0.027449368725974067
+        },
+        "own_lane_classification_rate": {
+          "after": 0.9158440522484793,
+          "before": 0.8909163426064413,
+          "delta": 0.02492770964203809
+        },
+        "trace": [
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6858800873195982,
+              "remote-system": 0.6499156302751375
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.03596445704446061,
+            "margin_before": 0.0017583712405059293,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6858800873195982,
+              "remote-system": 0.6841217160790922
+            },
+            "unit_id": "local-mic:0001"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6976493313985767,
+              "remote-system": 0.5834686494131943
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.11418068198538234,
+            "margin_before": 0.0834718057004773,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6976493313985767,
+              "remote-system": 0.6141775256980994
+            },
+            "unit_id": "local-mic:0002"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6213423994731813,
+              "remote-system": 0.5303298677367271
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.79,
+            "flipped": false,
+            "margin_after": 0.09101253173645418,
+            "margin_before": 0.06310043343452121,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6213423994731813,
+              "remote-system": 0.55824196603866
+            },
+            "unit_id": "local-mic:0004"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.8172867438214992,
+              "remote-system": 0.7261890613340162
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.09109768248748307,
+            "margin_before": 0.0528772055751664,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.8172867438214992,
+              "remote-system": 0.7644095382463328
+            },
+            "unit_id": "local-mic:0005"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7121460543497431,
+              "remote-system": 0.6369196887614778
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.41,
+            "flipped": false,
+            "margin_after": 0.07522636558826534,
+            "margin_before": 0.04170427670608223,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7121460543497431,
+              "remote-system": 0.6704417776436609
+            },
+            "unit_id": "local-mic:0006"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7231371778179552,
+              "remote-system": 0.6260865363606759
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.09705064145727926,
+            "margin_before": 0.06409871849092785,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7231371778179552,
+              "remote-system": 0.6590384593270273
+            },
+            "unit_id": "local-mic:0007"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7498205273035827,
+              "remote-system": 0.6656554467815678
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.08416508052201488,
+            "margin_before": 0.04913058332298492,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7498205273035827,
+              "remote-system": 0.7006899439805978
+            },
+            "unit_id": "local-mic:0008"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7633815756562963,
+              "remote-system": 0.6642268805879871
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.23,
+            "flipped": false,
+            "margin_after": 0.0991546950683092,
+            "margin_before": 0.06419538556367832,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7633815756562963,
+              "remote-system": 0.699186190092618
+            },
+            "unit_id": "local-mic:0009"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.695679498761465,
+              "remote-system": 0.5246597576462598
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.17101974111520513,
+            "margin_before": 0.1434060696601388,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.695679498761465,
+              "remote-system": 0.5522734291013262
+            },
+            "unit_id": "local-mic:0010"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6755667545863391,
+              "remote-system": 0.5413573316095458
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.81,
+            "flipped": false,
+            "margin_after": 0.13420942297679328,
+            "margin_before": 0.10571693183944875,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6755667545863391,
+              "remote-system": 0.5698498227468903
+            },
+            "unit_id": "local-mic:0011"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.2516574253105232,
+              "remote-system": 0.2259916309882819
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.02566579432224131,
+            "margin_before": 0.013771497954436995,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2516574253105232,
+              "remote-system": 0.2378859273560862
+            },
+            "unit_id": "local-mic:0013"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.23346940549285278,
+              "remote-system": 0.17864127935756371
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.05482812613528906,
+            "margin_before": 0.045425953537522545,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.23346940549285278,
+              "remote-system": 0.18804345195533023
+            },
+            "unit_id": "local-mic:0014"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.20067753679494746,
+              "remote-system": 0.19144019512897675
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": true,
+            "margin_after": 0.009237341665970705,
+            "margin_before": -0.0008384580776596706,
+            "prediction_after": "local-mic",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.20067753679494746,
+              "remote-system": 0.20151599487260713
+            },
+            "unit_id": "local-mic:0015"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.26921981496748965,
+              "remote-system": 0.23281971731627035
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.03640009765121929,
+            "margin_before": 0.024146428318783997,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.26921981496748965,
+              "remote-system": 0.24507338664870565
+            },
+            "unit_id": "local-mic:0016"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6669606487356643,
+              "remote-system": 0.5917189915064284
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.04,
+            "flipped": false,
+            "margin_after": 0.07524165722923593,
+            "margin_before": 0.044098552413108116,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6669606487356643,
+              "remote-system": 0.6228620963225562
+            },
+            "unit_id": "local-mic:0017"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.729946045082952,
+              "remote-system": 0.6261484049353382
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.10379764014761383,
+            "margin_before": 0.07084246094049074,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.729946045082952,
+              "remote-system": 0.6591035841424613
+            },
+            "unit_id": "local-mic:0019"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6585064763816388,
+              "remote-system": 0.5742382020109533
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.0,
+            "flipped": false,
+            "margin_after": 0.08426827437068551,
+            "margin_before": 0.05404521110695115,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6585064763816388,
+              "remote-system": 0.6044612652746877
+            },
+            "unit_id": "local-mic:0021"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6875715707117117,
+              "remote-system": 0.5883180701067933
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.09925350060491844,
+            "margin_before": 0.06828939165192927,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6875715707117117,
+              "remote-system": 0.6192821790597824
+            },
+            "unit_id": "local-mic:0022"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7226241639098979,
+              "remote-system": 0.6378323512309306
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.0847918126789673,
+            "margin_before": 0.05122168892997092,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7226241639098979,
+              "remote-system": 0.671402474979927
+            },
+            "unit_id": "local-mic:0023"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7555789646477047,
+              "remote-system": 0.6583761939758696
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.09720277067183514,
+            "margin_before": 0.06255139204152615,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7555789646477047,
+              "remote-system": 0.6930275726061785
+            },
+            "unit_id": "local-mic:0024"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7256890964335112,
+              "remote-system": 0.6416278824716383
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.08406121396187294,
+            "margin_before": 0.050291325410734,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7256890964335112,
+              "remote-system": 0.6753977710227772
+            },
+            "unit_id": "local-mic:0025"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5697524559221906,
+              "remote-system": 0.46855598114444186
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.59,
+            "flipped": false,
+            "margin_after": 0.10119647477774874,
+            "margin_before": 0.07653563366488336,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.5697524559221906,
+              "remote-system": 0.49321682225730723
+            },
+            "unit_id": "local-mic:0026"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.24411022458642515,
+              "remote-system": 0.1661234995738632
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.29,
+            "flipped": false,
+            "margin_after": 0.07798672501256196,
+            "margin_before": 0.06924338292972704,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.24411022458642515,
+              "remote-system": 0.1748668416566981
+            },
+            "unit_id": "local-mic:0028"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.37862111474185867,
+              "remote-system": 0.4409924031418229
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 0.56,
+            "flipped": false,
+            "margin_after": 0.06237128839996425,
+            "margin_before": 0.04244386130828748,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.39854854183353544,
+              "remote-system": 0.4409924031418229
+            },
+            "unit_id": "remote-system:0000"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.609489115663246,
+              "remote-system": 0.7211641029992871
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.74,
+            "flipped": false,
+            "margin_after": 0.11167498733604109,
+            "margin_before": 0.07959661282744912,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.641567490171838,
+              "remote-system": 0.7211641029992871
+            },
+            "unit_id": "remote-system:0001"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6478217835795589,
+              "remote-system": 0.7415181658690395
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.23,
+            "flipped": false,
+            "margin_after": 0.09369638228948063,
+            "margin_before": 0.059600498943187974,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6819176669258515,
+              "remote-system": 0.7415181658690395
+            },
+            "unit_id": "remote-system:0002"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5809274602554065,
+              "remote-system": 0.6926645776549659
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.93,
+            "flipped": false,
+            "margin_after": 0.11173711739955938,
+            "margin_before": 0.08116198791243268,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6115025897425332,
+              "remote-system": 0.6926645776549659
+            },
+            "unit_id": "remote-system:0003"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6772642802574262,
+              "remote-system": 0.7959795837926514
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.15,
+            "flipped": false,
+            "margin_after": 0.11871530353522519,
+            "margin_before": 0.08306981510062383,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.7129097686920276,
+              "remote-system": 0.7959795837926514
+            },
+            "unit_id": "remote-system:0004"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.592811938058506,
+              "remote-system": 0.7226051530557862
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.4,
+            "flipped": false,
+            "margin_after": 0.12979321499728025,
+            "margin_before": 0.09859258667841153,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6240125663773747,
+              "remote-system": 0.7226051530557862
+            },
+            "unit_id": "remote-system:0005"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6082739171988606,
+              "remote-system": 0.7077616181523911
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.53,
+            "flipped": false,
+            "margin_after": 0.09948770095353054,
+            "margin_before": 0.06747328425885368,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6402883338935375,
+              "remote-system": 0.7077616181523911
+            },
+            "unit_id": "remote-system:0006"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6396547702395056,
+              "remote-system": 0.7617974419486216
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.93,
+            "flipped": false,
+            "margin_after": 0.12214267170911608,
+            "margin_before": 0.08847663117019466,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.673320810778427,
+              "remote-system": 0.7617974419486216
+            },
+            "unit_id": "remote-system:0007"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6322751366806656,
+              "remote-system": 0.7785755474338318
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.02,
+            "flipped": false,
+            "margin_after": 0.14630041075316624,
+            "margin_before": 0.11302277198049959,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6655527754533322,
+              "remote-system": 0.7785755474338318
+            },
+            "unit_id": "remote-system:0008"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5953609198292444,
+              "remote-system": 0.696611796038185
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.11,
+            "flipped": false,
+            "margin_after": 0.10125087620894058,
+            "margin_before": 0.0699160909547698,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6266957050834152,
+              "remote-system": 0.696611796038185
+            },
+            "unit_id": "remote-system:0009"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6028068296502112,
+              "remote-system": 0.7117391531987076
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.42,
+            "flipped": false,
+            "margin_after": 0.10893232354849647,
+            "margin_before": 0.07720564830374843,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6345335048949592,
+              "remote-system": 0.7117391531987076
+            },
+            "unit_id": "remote-system:0010"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.23016716586373945,
+              "remote-system": 0.18426744003145762
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.19,
+            "flipped": false,
+            "margin_after": -0.04589972583228183,
+            "margin_before": -0.058013787193531285,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2422812272249889,
+              "remote-system": 0.18426744003145762
+            },
+            "unit_id": "remote-system:0011"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.2380624533447746,
+              "remote-system": 0.22036513349164355
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.95,
+            "flipped": false,
+            "margin_after": -0.017697319853131055,
+            "margin_before": -0.030226922660750777,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2505920561523943,
+              "remote-system": 0.22036513349164355
+            },
+            "unit_id": "remote-system:0012"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.21116300431231183,
+              "remote-system": 0.20675309720391333
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": -0.004409907108398503,
+            "margin_before": -0.015523749440625456,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.22227684664453878,
+              "remote-system": 0.20675309720391333
+            },
+            "unit_id": "remote-system:0013"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.16580321514685514,
+              "remote-system": 0.17631318335811974
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.21,
+            "flipped": false,
+            "margin_after": 0.010509968211264598,
+            "margin_before": 0.0017834832035353576,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.17452970015458438,
+              "remote-system": 0.17631318335811974
+            },
+            "unit_id": "remote-system:0015"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5682034288862532,
+              "remote-system": 0.5987744856483235
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.48,
+            "flipped": false,
+            "margin_after": 0.03057105676207028,
+            "margin_before": 0.0006656131364779494,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.5981088725118455,
+              "remote-system": 0.5987744856483235
+            },
+            "unit_id": "remote-system:0016"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.19262387245666554,
+              "remote-system": 0.20830539209528065
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 0.68,
+            "flipped": false,
+            "margin_after": 0.01568151963861511,
+            "margin_before": 0.005543421088264278,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.20276197100701637,
+              "remote-system": 0.20830539209528065
+            },
+            "unit_id": "remote-system:0017"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6838546129853398,
+              "remote-system": 0.7886522622090795
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.48,
+            "flipped": false,
+            "margin_after": 0.10479764922373969,
+            "margin_before": 0.06880530117187966,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.7198469610371998,
+              "remote-system": 0.7886522622090795
+            },
+            "unit_id": "remote-system:0018"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.4339142124104689,
+              "remote-system": 0.5331153308965612
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.75,
+            "flipped": false,
+            "margin_after": 0.09920111848609225,
+            "margin_before": 0.07636352835922544,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.4567518025373357,
+              "remote-system": 0.5331153308965612
+            },
+            "unit_id": "remote-system:0019"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.650899975605628,
+              "remote-system": 0.7240888210514935
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.08,
+            "flipped": false,
+            "margin_after": 0.07318884544586557,
+            "margin_before": 0.03893095199293772,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6851578690585558,
+              "remote-system": 0.7240888210514935
+            },
+            "unit_id": "remote-system:0020"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5780579789847875,
+              "remote-system": 0.7172080672360556
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.13915008825126807,
+            "margin_before": 0.108725984094174,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6084820831418816,
+              "remote-system": 0.7172080672360556
+            },
+            "unit_id": "remote-system:0021"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6299212236260264,
+              "remote-system": 0.7479941808135084
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.48,
+            "flipped": false,
+            "margin_after": 0.11807295718748201,
+            "margin_before": 0.08491920857558588,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6630749722379226,
+              "remote-system": 0.7479941808135084
+            },
+            "unit_id": "remote-system:0022"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.595384737863776,
+              "remote-system": 0.7451130085488273
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.4,
+            "flipped": false,
+            "margin_after": 0.14972827068505135,
+            "margin_before": 0.11839223185011571,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6267207766987116,
+              "remote-system": 0.7451130085488273
+            },
+            "unit_id": "remote-system:0023"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.4858341732407936,
+              "remote-system": 0.5497257773395434
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.11,
+            "flipped": false,
+            "margin_after": 0.06389160409874983,
+            "margin_before": 0.03832138445449751,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.5114043928850459,
+              "remote-system": 0.5497257773395434
+            },
+            "unit_id": "remote-system:0024"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.1798776622370536,
+              "remote-system": 0.1648797930813355
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.8,
+            "flipped": false,
+            "margin_after": -0.014997869155718102,
+            "margin_before": -0.02446511453661568,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.18934490761795117,
+              "remote-system": 0.1648797930813355
+            },
+            "unit_id": "remote-system:0025"
+          }
+        ],
+        "unit_count": 48
+      },
+      "prior_strength": 0.05,
+      "run_1_sha256": "c3143a6593d0ff157cb8d3829755f762218620a0134b50e88f44c0ff69995a67",
+      "run_2_sha256": "c3143a6593d0ff157cb8d3829755f762218620a0134b50e88f44c0ff69995a67"
+    },
+    {
+      "deterministic": true,
+      "measurement": {
+        "config": {
+          "prior_strength": 0.1
+        },
+        "cross_score_multiplier": 0.9,
+        "duration_seconds": 100.29,
+        "flips": {
+          "count": 2,
+          "duration_seconds": 5.0,
+          "units": [
+            "local-mic:0015",
+            "remote-system:0013"
+          ]
+        },
+        "identity_accuracy_claim": false,
+        "margin": {
+          "after_weighted_mean": 0.1101809765206114,
+          "after_weighted_median": 0.12779226563577306,
+          "after_weighted_p95": 0.17957804952583278,
+          "before_weighted_mean": 0.055282239068663315,
+          "before_weighted_median": 0.06310043343452121,
+          "before_weighted_p95": 0.11302277198049959,
+          "weighted_mean_delta": 0.054898737451948086
+        },
+        "own_lane_classification_rate": {
+          "after": 0.9407717618905174,
+          "before": 0.8909163426064413,
+          "delta": 0.04985541928407618
+        },
+        "trace": [
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6858800873195982,
+              "remote-system": 0.615709544471183
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.07017054284841517,
+            "margin_before": 0.0017583712405059293,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6858800873195982,
+              "remote-system": 0.6841217160790922
+            },
+            "unit_id": "local-mic:0001"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6976493313985767,
+              "remote-system": 0.5527597731282894
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.14488955827028727,
+            "margin_before": 0.0834718057004773,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6976493313985767,
+              "remote-system": 0.6141775256980994
+            },
+            "unit_id": "local-mic:0002"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6213423994731813,
+              "remote-system": 0.5024177694347941
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.79,
+            "flipped": false,
+            "margin_after": 0.11892463003838716,
+            "margin_before": 0.06310043343452121,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6213423994731813,
+              "remote-system": 0.55824196603866
+            },
+            "unit_id": "local-mic:0004"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.8172867438214992,
+              "remote-system": 0.6879685844216996
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.12931815939979963,
+            "margin_before": 0.0528772055751664,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.8172867438214992,
+              "remote-system": 0.7644095382463328
+            },
+            "unit_id": "local-mic:0005"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7121460543497431,
+              "remote-system": 0.6033975998792948
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.41,
+            "flipped": false,
+            "margin_after": 0.10874845447044834,
+            "margin_before": 0.04170427670608223,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7121460543497431,
+              "remote-system": 0.6704417776436609
+            },
+            "unit_id": "local-mic:0006"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7231371778179552,
+              "remote-system": 0.5931346133943246
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.13000256442363056,
+            "margin_before": 0.06409871849092785,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7231371778179552,
+              "remote-system": 0.6590384593270273
+            },
+            "unit_id": "local-mic:0007"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7498205273035827,
+              "remote-system": 0.630620949582538
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.11919957772104472,
+            "margin_before": 0.04913058332298492,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7498205273035827,
+              "remote-system": 0.7006899439805978
+            },
+            "unit_id": "local-mic:0008"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7633815756562963,
+              "remote-system": 0.6292675710833562
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.23,
+            "flipped": false,
+            "margin_after": 0.1341140045729401,
+            "margin_before": 0.06419538556367832,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7633815756562963,
+              "remote-system": 0.699186190092618
+            },
+            "unit_id": "local-mic:0009"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.695679498761465,
+              "remote-system": 0.49704608619119356
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.1986334125702714,
+            "margin_before": 0.1434060696601388,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.695679498761465,
+              "remote-system": 0.5522734291013262
+            },
+            "unit_id": "local-mic:0010"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6755667545863391,
+              "remote-system": 0.5128648404722013
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.81,
+            "flipped": false,
+            "margin_after": 0.1627019141141378,
+            "margin_before": 0.10571693183944875,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6755667545863391,
+              "remote-system": 0.5698498227468903
+            },
+            "unit_id": "local-mic:0011"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.2516574253105232,
+              "remote-system": 0.2140973346204776
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.03756009069004562,
+            "margin_before": 0.013771497954436995,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2516574253105232,
+              "remote-system": 0.2378859273560862
+            },
+            "unit_id": "local-mic:0013"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.23346940549285278,
+              "remote-system": 0.16923910675979723
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.06423029873305555,
+            "margin_before": 0.045425953537522545,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.23346940549285278,
+              "remote-system": 0.18804345195533023
+            },
+            "unit_id": "local-mic:0014"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.20067753679494746,
+              "remote-system": 0.18136439538534643
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": true,
+            "margin_after": 0.019313141409601026,
+            "margin_before": -0.0008384580776596706,
+            "prediction_after": "local-mic",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.20067753679494746,
+              "remote-system": 0.20151599487260713
+            },
+            "unit_id": "local-mic:0015"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.26921981496748965,
+              "remote-system": 0.22056604798383508
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.04865376698365456,
+            "margin_before": 0.024146428318783997,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.26921981496748965,
+              "remote-system": 0.24507338664870565
+            },
+            "unit_id": "local-mic:0016"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6669606487356643,
+              "remote-system": 0.5605758866903006
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.04,
+            "flipped": false,
+            "margin_after": 0.10638476204536373,
+            "margin_before": 0.044098552413108116,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6669606487356643,
+              "remote-system": 0.6228620963225562
+            },
+            "unit_id": "local-mic:0017"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.729946045082952,
+              "remote-system": 0.5931932257282152
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.13675281935473682,
+            "margin_before": 0.07084246094049074,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.729946045082952,
+              "remote-system": 0.6591035841424613
+            },
+            "unit_id": "local-mic:0019"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6585064763816388,
+              "remote-system": 0.544015138747219
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.0,
+            "flipped": false,
+            "margin_after": 0.11449133763441988,
+            "margin_before": 0.05404521110695115,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6585064763816388,
+              "remote-system": 0.6044612652746877
+            },
+            "unit_id": "local-mic:0021"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6875715707117117,
+              "remote-system": 0.5573539611538042
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.1302176095579075,
+            "margin_before": 0.06828939165192927,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6875715707117117,
+              "remote-system": 0.6192821790597824
+            },
+            "unit_id": "local-mic:0022"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7226241639098979,
+              "remote-system": 0.6042622274819344
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.11836193642796355,
+            "margin_before": 0.05122168892997092,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7226241639098979,
+              "remote-system": 0.671402474979927
+            },
+            "unit_id": "local-mic:0023"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7555789646477047,
+              "remote-system": 0.6237248153455607
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.131854149302144,
+            "margin_before": 0.06255139204152615,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7555789646477047,
+              "remote-system": 0.6930275726061785
+            },
+            "unit_id": "local-mic:0024"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7256890964335112,
+              "remote-system": 0.6078579939204996
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.11783110251301165,
+            "margin_before": 0.050291325410734,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7256890964335112,
+              "remote-system": 0.6753977710227772
+            },
+            "unit_id": "local-mic:0025"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5697524559221906,
+              "remote-system": 0.44389514003157654
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.59,
+            "flipped": false,
+            "margin_after": 0.12585731589061405,
+            "margin_before": 0.07653563366488336,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.5697524559221906,
+              "remote-system": 0.49321682225730723
+            },
+            "unit_id": "local-mic:0026"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.24411022458642515,
+              "remote-system": 0.1573801574910283
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.29,
+            "flipped": false,
+            "margin_after": 0.08673006709539685,
+            "margin_before": 0.06924338292972704,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.24411022458642515,
+              "remote-system": 0.1748668416566981
+            },
+            "unit_id": "local-mic:0028"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.3586936876501819,
+              "remote-system": 0.4409924031418229
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 0.56,
+            "flipped": false,
+            "margin_after": 0.08229871549164103,
+            "margin_before": 0.04244386130828748,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.39854854183353544,
+              "remote-system": 0.4409924031418229
+            },
+            "unit_id": "remote-system:0000"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5774107411546542,
+              "remote-system": 0.7211641029992871
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.74,
+            "flipped": false,
+            "margin_after": 0.14375336184463294,
+            "margin_before": 0.07959661282744912,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.641567490171838,
+              "remote-system": 0.7211641029992871
+            },
+            "unit_id": "remote-system:0001"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6137259002332665,
+              "remote-system": 0.7415181658690395
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.23,
+            "flipped": false,
+            "margin_after": 0.12779226563577306,
+            "margin_before": 0.059600498943187974,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6819176669258515,
+              "remote-system": 0.7415181658690395
+            },
+            "unit_id": "remote-system:0002"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5503523307682799,
+              "remote-system": 0.6926645776549659
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.93,
+            "flipped": false,
+            "margin_after": 0.14231224688668598,
+            "margin_before": 0.08116198791243268,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6115025897425332,
+              "remote-system": 0.6926645776549659
+            },
+            "unit_id": "remote-system:0003"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6416187918228249,
+              "remote-system": 0.7959795837926514
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.15,
+            "flipped": false,
+            "margin_after": 0.15436079196982655,
+            "margin_before": 0.08306981510062383,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.7129097686920276,
+              "remote-system": 0.7959795837926514
+            },
+            "unit_id": "remote-system:0004"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5616113097396372,
+              "remote-system": 0.7226051530557862
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.4,
+            "flipped": false,
+            "margin_after": 0.16099384331614897,
+            "margin_before": 0.09859258667841153,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6240125663773747,
+              "remote-system": 0.7226051530557862
+            },
+            "unit_id": "remote-system:0005"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5762595005041837,
+              "remote-system": 0.7077616181523911
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.53,
+            "flipped": false,
+            "margin_after": 0.1315021176482074,
+            "margin_before": 0.06747328425885368,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6402883338935375,
+              "remote-system": 0.7077616181523911
+            },
+            "unit_id": "remote-system:0006"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6059887297005843,
+              "remote-system": 0.7617974419486216
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.93,
+            "flipped": false,
+            "margin_after": 0.15580871224803738,
+            "margin_before": 0.08847663117019466,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.673320810778427,
+              "remote-system": 0.7617974419486216
+            },
+            "unit_id": "remote-system:0007"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.598997497907999,
+              "remote-system": 0.7785755474338318
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.02,
+            "flipped": false,
+            "margin_after": 0.17957804952583278,
+            "margin_before": 0.11302277198049959,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6655527754533322,
+              "remote-system": 0.7785755474338318
+            },
+            "unit_id": "remote-system:0008"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5640261345750737,
+              "remote-system": 0.696611796038185
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.11,
+            "flipped": false,
+            "margin_after": 0.13258566146311135,
+            "margin_before": 0.0699160909547698,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6266957050834152,
+              "remote-system": 0.696611796038185
+            },
+            "unit_id": "remote-system:0009"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5710801544054633,
+              "remote-system": 0.7117391531987076
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.42,
+            "flipped": false,
+            "margin_after": 0.14065899879324428,
+            "margin_before": 0.07720564830374843,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6345335048949592,
+              "remote-system": 0.7117391531987076
+            },
+            "unit_id": "remote-system:0010"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.21805310450249002,
+              "remote-system": 0.18426744003145762
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.19,
+            "flipped": false,
+            "margin_after": -0.0337856644710324,
+            "margin_before": -0.058013787193531285,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2422812272249889,
+              "remote-system": 0.18426744003145762
+            },
+            "unit_id": "remote-system:0011"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.2255328505371549,
+              "remote-system": 0.22036513349164355
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.95,
+            "flipped": false,
+            "margin_after": -0.005167717045511361,
+            "margin_before": -0.030226922660750777,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2505920561523943,
+              "remote-system": 0.22036513349164355
+            },
+            "unit_id": "remote-system:0012"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.2000491619800849,
+              "remote-system": 0.20675309720391333
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.5,
+            "flipped": true,
+            "margin_after": 0.006703935223828422,
+            "margin_before": -0.015523749440625456,
+            "prediction_after": "remote-system",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.22227684664453878,
+              "remote-system": 0.20675309720391333
+            },
+            "unit_id": "remote-system:0013"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.15707673013912596,
+              "remote-system": 0.17631318335811974
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.21,
+            "flipped": false,
+            "margin_after": 0.019236453218993782,
+            "margin_before": 0.0017834832035353576,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.17452970015458438,
+              "remote-system": 0.17631318335811974
+            },
+            "unit_id": "remote-system:0015"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.538297985260661,
+              "remote-system": 0.5987744856483235
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.48,
+            "flipped": false,
+            "margin_after": 0.0604765003876625,
+            "margin_before": 0.0006656131364779494,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.5981088725118455,
+              "remote-system": 0.5987744856483235
+            },
+            "unit_id": "remote-system:0016"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.18248577390631474,
+              "remote-system": 0.20830539209528065
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 0.68,
+            "flipped": false,
+            "margin_after": 0.025819618188965915,
+            "margin_before": 0.005543421088264278,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.20276197100701637,
+              "remote-system": 0.20830539209528065
+            },
+            "unit_id": "remote-system:0017"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6478622649334799,
+              "remote-system": 0.7886522622090795
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.48,
+            "flipped": false,
+            "margin_after": 0.1407899972755996,
+            "margin_before": 0.06880530117187966,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.7198469610371998,
+              "remote-system": 0.7886522622090795
+            },
+            "unit_id": "remote-system:0018"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.41107662228360214,
+              "remote-system": 0.5331153308965612
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.75,
+            "flipped": false,
+            "margin_after": 0.12203870861295901,
+            "margin_before": 0.07636352835922544,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.4567518025373357,
+              "remote-system": 0.5331153308965612
+            },
+            "unit_id": "remote-system:0019"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6166420821527002,
+              "remote-system": 0.7240888210514935
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.08,
+            "flipped": false,
+            "margin_after": 0.1074467388987933,
+            "margin_before": 0.03893095199293772,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6851578690585558,
+              "remote-system": 0.7240888210514935
+            },
+            "unit_id": "remote-system:0020"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5476338748276934,
+              "remote-system": 0.7172080672360556
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.16957419240836213,
+            "margin_before": 0.108725984094174,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6084820831418816,
+              "remote-system": 0.7172080672360556
+            },
+            "unit_id": "remote-system:0021"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5967674750141303,
+              "remote-system": 0.7479941808135084
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.48,
+            "flipped": false,
+            "margin_after": 0.15122670579937814,
+            "margin_before": 0.08491920857558588,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6630749722379226,
+              "remote-system": 0.7479941808135084
+            },
+            "unit_id": "remote-system:0022"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5640486990288405,
+              "remote-system": 0.7451130085488273
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.4,
+            "flipped": false,
+            "margin_after": 0.18106430951998687,
+            "margin_before": 0.11839223185011571,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6267207766987116,
+              "remote-system": 0.7451130085488273
+            },
+            "unit_id": "remote-system:0023"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.4602639535965413,
+              "remote-system": 0.5497257773395434
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.11,
+            "flipped": false,
+            "margin_after": 0.0894618237430021,
+            "margin_before": 0.03832138445449751,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.5114043928850459,
+              "remote-system": 0.5497257773395434
+            },
+            "unit_id": "remote-system:0024"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.17041041685615604,
+              "remote-system": 0.1648797930813355
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.8,
+            "flipped": false,
+            "margin_after": -0.005530623774820553,
+            "margin_before": -0.02446511453661568,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.18934490761795117,
+              "remote-system": 0.1648797930813355
+            },
+            "unit_id": "remote-system:0025"
+          }
+        ],
+        "unit_count": 48
+      },
+      "prior_strength": 0.1,
+      "run_1_sha256": "07a56feea4fd9f42ca917fe72c8072229020fdb8d2aa3ecb8ad5e34360833215",
+      "run_2_sha256": "07a56feea4fd9f42ca917fe72c8072229020fdb8d2aa3ecb8ad5e34360833215"
+    },
+    {
+      "deterministic": true,
+      "measurement": {
+        "config": {
+          "prior_strength": 0.2
+        },
+        "cross_score_multiplier": 0.8,
+        "duration_seconds": 100.29,
+        "flips": {
+          "count": 4,
+          "duration_seconds": 8.75,
+          "units": [
+            "local-mic:0015",
+            "remote-system:0012",
+            "remote-system:0013",
+            "remote-system:0025"
+          ]
+        },
+        "identity_accuracy_claim": false,
+        "margin": {
+          "after_weighted_mean": 0.1650797139725595,
+          "after_weighted_median": 0.19214582746388575,
+          "after_weighted_p95": 0.24373638718985802,
+          "before_weighted_mean": 0.055282239068663315,
+          "before_weighted_median": 0.06310043343452121,
+          "before_weighted_p95": 0.11302277198049959,
+          "weighted_mean_delta": 0.10979747490389619
+        },
+        "own_lane_classification_rate": {
+          "after": 0.9781633263535745,
+          "before": 0.8909163426064413,
+          "delta": 0.08724698374713331
+        },
+        "trace": [
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6858800873195982,
+              "remote-system": 0.5472973728632738
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.1385827144563243,
+            "margin_before": 0.0017583712405059293,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6858800873195982,
+              "remote-system": 0.6841217160790922
+            },
+            "unit_id": "local-mic:0001"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6976493313985767,
+              "remote-system": 0.49134202055847953
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.20630731084009712,
+            "margin_before": 0.0834718057004773,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6976493313985767,
+              "remote-system": 0.6141775256980994
+            },
+            "unit_id": "local-mic:0002"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6213423994731813,
+              "remote-system": 0.44659357283092804
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.79,
+            "flipped": false,
+            "margin_after": 0.17474882664225322,
+            "margin_before": 0.06310043343452121,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6213423994731813,
+              "remote-system": 0.55824196603866
+            },
+            "unit_id": "local-mic:0004"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.8172867438214992,
+              "remote-system": 0.6115276305970663
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.20575911322443297,
+            "margin_before": 0.0528772055751664,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.8172867438214992,
+              "remote-system": 0.7644095382463328
+            },
+            "unit_id": "local-mic:0005"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7121460543497431,
+              "remote-system": 0.5363534221149288
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.41,
+            "flipped": false,
+            "margin_after": 0.17579263223481434,
+            "margin_before": 0.04170427670608223,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7121460543497431,
+              "remote-system": 0.6704417776436609
+            },
+            "unit_id": "local-mic:0006"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7231371778179552,
+              "remote-system": 0.5272307674616219
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.19590641035633327,
+            "margin_before": 0.06409871849092785,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7231371778179552,
+              "remote-system": 0.6590384593270273
+            },
+            "unit_id": "local-mic:0007"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7498205273035827,
+              "remote-system": 0.5605519551844783
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.18926857211910442,
+            "margin_before": 0.04913058332298492,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7498205273035827,
+              "remote-system": 0.7006899439805978
+            },
+            "unit_id": "local-mic:0008"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7633815756562963,
+              "remote-system": 0.5593489520740944
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.23,
+            "flipped": false,
+            "margin_after": 0.20403262358220187,
+            "margin_before": 0.06419538556367832,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7633815756562963,
+              "remote-system": 0.699186190092618
+            },
+            "unit_id": "local-mic:0009"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.695679498761465,
+              "remote-system": 0.44181874328106097
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.253860755480404,
+            "margin_before": 0.1434060696601388,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.695679498761465,
+              "remote-system": 0.5522734291013262
+            },
+            "unit_id": "local-mic:0010"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6755667545863391,
+              "remote-system": 0.4558798581975123
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.81,
+            "flipped": false,
+            "margin_after": 0.21968689638882677,
+            "margin_before": 0.10571693183944875,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6755667545863391,
+              "remote-system": 0.5698498227468903
+            },
+            "unit_id": "local-mic:0011"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.2516574253105232,
+              "remote-system": 0.190308741884869
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.06134868342565422,
+            "margin_before": 0.013771497954436995,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2516574253105232,
+              "remote-system": 0.2378859273560862
+            },
+            "unit_id": "local-mic:0013"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.23346940549285278,
+              "remote-system": 0.1504347615642642
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.08303464392858859,
+            "margin_before": 0.045425953537522545,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.23346940549285278,
+              "remote-system": 0.18804345195533023
+            },
+            "unit_id": "local-mic:0014"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.20067753679494746,
+              "remote-system": 0.1612127958980857
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": true,
+            "margin_after": 0.03946474089686175,
+            "margin_before": -0.0008384580776596706,
+            "prediction_after": "local-mic",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.20067753679494746,
+              "remote-system": 0.20151599487260713
+            },
+            "unit_id": "local-mic:0015"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.26921981496748965,
+              "remote-system": 0.19605870931896452
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.07316110564852513,
+            "margin_before": 0.024146428318783997,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.26921981496748965,
+              "remote-system": 0.24507338664870565
+            },
+            "unit_id": "local-mic:0016"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6669606487356643,
+              "remote-system": 0.49828967705804494
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.04,
+            "flipped": false,
+            "margin_after": 0.16867097167761935,
+            "margin_before": 0.044098552413108116,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6669606487356643,
+              "remote-system": 0.6228620963225562
+            },
+            "unit_id": "local-mic:0017"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.729946045082952,
+              "remote-system": 0.527282867313969
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.20266317776898302,
+            "margin_before": 0.07084246094049074,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.729946045082952,
+              "remote-system": 0.6591035841424613
+            },
+            "unit_id": "local-mic:0019"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6585064763816388,
+              "remote-system": 0.4835690122197502
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.0,
+            "flipped": false,
+            "margin_after": 0.17493746416188866,
+            "margin_before": 0.05404521110695115,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6585064763816388,
+              "remote-system": 0.6044612652746877
+            },
+            "unit_id": "local-mic:0021"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.6875715707117117,
+              "remote-system": 0.49542574324782596
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.19214582746388575,
+            "margin_before": 0.06828939165192927,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.6875715707117117,
+              "remote-system": 0.6192821790597824
+            },
+            "unit_id": "local-mic:0022"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7226241639098979,
+              "remote-system": 0.5371219799839416
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.1855021839259563,
+            "margin_before": 0.05122168892997092,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7226241639098979,
+              "remote-system": 0.671402474979927
+            },
+            "unit_id": "local-mic:0023"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7555789646477047,
+              "remote-system": 0.5544220580849428
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.20115690656276186,
+            "margin_before": 0.06255139204152615,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7555789646477047,
+              "remote-system": 0.6930275726061785
+            },
+            "unit_id": "local-mic:0024"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.7256890964335112,
+              "remote-system": 0.5403182168182218
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.18537087961528942,
+            "margin_before": 0.050291325410734,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.7256890964335112,
+              "remote-system": 0.6753977710227772
+            },
+            "unit_id": "local-mic:0025"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5697524559221906,
+              "remote-system": 0.3945734578058458
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.59,
+            "flipped": false,
+            "margin_after": 0.1751789981163448,
+            "margin_before": 0.07653563366488336,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.5697524559221906,
+              "remote-system": 0.49321682225730723
+            },
+            "unit_id": "local-mic:0026"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.24411022458642515,
+              "remote-system": 0.13989347332535848
+            },
+            "capture_lane": "local-mic",
+            "duration_seconds": 1.29,
+            "flipped": false,
+            "margin_after": 0.10421675126106666,
+            "margin_before": 0.06924338292972704,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.24411022458642515,
+              "remote-system": 0.1748668416566981
+            },
+            "unit_id": "local-mic:0028"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.3188388334668284,
+              "remote-system": 0.4409924031418229
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 0.56,
+            "flipped": false,
+            "margin_after": 0.12215356967499452,
+            "margin_before": 0.04244386130828748,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.39854854183353544,
+              "remote-system": 0.4409924031418229
+            },
+            "unit_id": "remote-system:0000"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5132539921374705,
+              "remote-system": 0.7211641029992871
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.74,
+            "flipped": false,
+            "margin_after": 0.20791011086181665,
+            "margin_before": 0.07959661282744912,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.641567490171838,
+              "remote-system": 0.7211641029992871
+            },
+            "unit_id": "remote-system:0001"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5455341335406813,
+              "remote-system": 0.7415181658690395
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.23,
+            "flipped": false,
+            "margin_after": 0.19598403232835826,
+            "margin_before": 0.059600498943187974,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6819176669258515,
+              "remote-system": 0.7415181658690395
+            },
+            "unit_id": "remote-system:0002"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.48920207179402664,
+              "remote-system": 0.6926645776549659
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.93,
+            "flipped": false,
+            "margin_after": 0.20346250586093928,
+            "margin_before": 0.08116198791243268,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6115025897425332,
+              "remote-system": 0.6926645776549659
+            },
+            "unit_id": "remote-system:0003"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5703278149536221,
+              "remote-system": 0.7959795837926514
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.15,
+            "flipped": false,
+            "margin_after": 0.22565176883902938,
+            "margin_before": 0.08306981510062383,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.7129097686920276,
+              "remote-system": 0.7959795837926514
+            },
+            "unit_id": "remote-system:0004"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.49921005310189975,
+              "remote-system": 0.7226051530557862
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.4,
+            "flipped": false,
+            "margin_after": 0.22339509995388646,
+            "margin_before": 0.09859258667841153,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6240125663773747,
+              "remote-system": 0.7226051530557862
+            },
+            "unit_id": "remote-system:0005"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.51223066711483,
+              "remote-system": 0.7077616181523911
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.53,
+            "flipped": false,
+            "margin_after": 0.19553095103756113,
+            "margin_before": 0.06747328425885368,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6402883338935375,
+              "remote-system": 0.7077616181523911
+            },
+            "unit_id": "remote-system:0006"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5386566486227417,
+              "remote-system": 0.7617974419486216
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.93,
+            "flipped": false,
+            "margin_after": 0.22314079332588,
+            "margin_before": 0.08847663117019466,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.673320810778427,
+              "remote-system": 0.7617974419486216
+            },
+            "unit_id": "remote-system:0007"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5324422203626659,
+              "remote-system": 0.7785755474338318
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.02,
+            "flipped": false,
+            "margin_after": 0.24613332707116597,
+            "margin_before": 0.11302277198049959,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6655527754533322,
+              "remote-system": 0.7785755474338318
+            },
+            "unit_id": "remote-system:0008"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5013565640667322,
+              "remote-system": 0.696611796038185
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.11,
+            "flipped": false,
+            "margin_after": 0.19525523197145278,
+            "margin_before": 0.0699160909547698,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6266957050834152,
+              "remote-system": 0.696611796038185
+            },
+            "unit_id": "remote-system:0009"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5076268039159674,
+              "remote-system": 0.7117391531987076
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.42,
+            "flipped": false,
+            "margin_after": 0.20411234928274025,
+            "margin_before": 0.07720564830374843,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6345335048949592,
+              "remote-system": 0.7117391531987076
+            },
+            "unit_id": "remote-system:0010"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.19382498177999113,
+              "remote-system": 0.18426744003145762
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.19,
+            "flipped": false,
+            "margin_after": -0.009557541748533516,
+            "margin_before": -0.058013787193531285,
+            "prediction_after": "local-mic",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2422812272249889,
+              "remote-system": 0.18426744003145762
+            },
+            "unit_id": "remote-system:0011"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.20047364492191547,
+              "remote-system": 0.22036513349164355
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.95,
+            "flipped": true,
+            "margin_after": 0.019891488569728083,
+            "margin_before": -0.030226922660750777,
+            "prediction_after": "remote-system",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.2505920561523943,
+              "remote-system": 0.22036513349164355
+            },
+            "unit_id": "remote-system:0012"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.17782147731563103,
+              "remote-system": 0.20675309720391333
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.5,
+            "flipped": true,
+            "margin_after": 0.0289316198882823,
+            "margin_before": -0.015523749440625456,
+            "prediction_after": "remote-system",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.22227684664453878,
+              "remote-system": 0.20675309720391333
+            },
+            "unit_id": "remote-system:0013"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.1396237601236675,
+              "remote-system": 0.17631318335811974
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.21,
+            "flipped": false,
+            "margin_after": 0.036689423234452234,
+            "margin_before": 0.0017834832035353576,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.17452970015458438,
+              "remote-system": 0.17631318335811974
+            },
+            "unit_id": "remote-system:0015"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.4784870980094764,
+              "remote-system": 0.5987744856483235
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.48,
+            "flipped": false,
+            "margin_after": 0.12028738763884705,
+            "margin_before": 0.0006656131364779494,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.5981088725118455,
+              "remote-system": 0.5987744856483235
+            },
+            "unit_id": "remote-system:0016"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.1622095768056131,
+              "remote-system": 0.20830539209528065
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 0.68,
+            "flipped": false,
+            "margin_after": 0.04609581528966755,
+            "margin_before": 0.005543421088264278,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.20276197100701637,
+              "remote-system": 0.20830539209528065
+            },
+            "unit_id": "remote-system:0017"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5758775688297598,
+              "remote-system": 0.7886522622090795
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.48,
+            "flipped": false,
+            "margin_after": 0.21277469337931965,
+            "margin_before": 0.06880530117187966,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.7198469610371998,
+              "remote-system": 0.7886522622090795
+            },
+            "unit_id": "remote-system:0018"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.3654014420298686,
+              "remote-system": 0.5331153308965612
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.75,
+            "flipped": false,
+            "margin_after": 0.16771388886669258,
+            "margin_before": 0.07636352835922544,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.4567518025373357,
+              "remote-system": 0.5331153308965612
+            },
+            "unit_id": "remote-system:0019"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5481262952468446,
+              "remote-system": 0.7240888210514935
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.08,
+            "flipped": false,
+            "margin_after": 0.17596252580464888,
+            "margin_before": 0.03893095199293772,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6851578690585558,
+              "remote-system": 0.7240888210514935
+            },
+            "unit_id": "remote-system:0020"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.4867856665135053,
+              "remote-system": 0.7172080672360556
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.5,
+            "flipped": false,
+            "margin_after": 0.23042240072255027,
+            "margin_before": 0.108725984094174,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6084820831418816,
+              "remote-system": 0.7172080672360556
+            },
+            "unit_id": "remote-system:0021"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.530459977790338,
+              "remote-system": 0.7479941808135084
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.48,
+            "flipped": false,
+            "margin_after": 0.2175342030231704,
+            "margin_before": 0.08491920857558588,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6630749722379226,
+              "remote-system": 0.7479941808135084
+            },
+            "unit_id": "remote-system:0022"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.5013766213589693,
+              "remote-system": 0.7451130085488273
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 2.4,
+            "flipped": false,
+            "margin_after": 0.24373638718985802,
+            "margin_before": 0.11839223185011571,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.6267207766987116,
+              "remote-system": 0.7451130085488273
+            },
+            "unit_id": "remote-system:0023"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.40912351430803673,
+              "remote-system": 0.5497257773395434
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.11,
+            "flipped": false,
+            "margin_after": 0.1406022630315067,
+            "margin_before": 0.03832138445449751,
+            "prediction_after": "remote-system",
+            "prediction_before": "remote-system",
+            "raw_scores": {
+              "local-mic": 0.5114043928850459,
+              "remote-system": 0.5497257773395434
+            },
+            "unit_id": "remote-system:0024"
+          },
+          {
+            "adjusted_scores": {
+              "local-mic": 0.15147592609436095,
+              "remote-system": 0.1648797930813355
+            },
+            "capture_lane": "remote-system",
+            "duration_seconds": 1.8,
+            "flipped": true,
+            "margin_after": 0.013403866986974544,
+            "margin_before": -0.02446511453661568,
+            "prediction_after": "remote-system",
+            "prediction_before": "local-mic",
+            "raw_scores": {
+              "local-mic": 0.18934490761795117,
+              "remote-system": 0.1648797930813355
+            },
+            "unit_id": "remote-system:0025"
+          }
+        ],
+        "unit_count": 48
+      },
+      "prior_strength": 0.2,
+      "run_1_sha256": "8e24381a104c5e9745ea7948b16b2e965e461bc60da368f70823af912d85f379",
+      "run_2_sha256": "8e24381a104c5e9745ea7948b16b2e965e461bc60da368f70823af912d85f379"
+    }
+  ],
+  "runtime_fixture_sha256": "cb1958e7802dc8b4a21496e187dcca9c938c7a88d8490aaef6c95b81309a6209",
+  "schema": "moss-l15-f2-exploratory-effects.v1",
+  "selection_performed": false,
+  "validation_opened": false
+}

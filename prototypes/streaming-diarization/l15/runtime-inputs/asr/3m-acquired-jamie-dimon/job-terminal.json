@@ -1,0 +1,61 @@
+{
+  "id": "bab7c906acdb",
+  "status": "waiting_review",
+  "media_name": "audio.wav",
+  "input_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/input.wav",
+  "job_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb",
+  "inference_prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+  "max_length": 16384,
+  "max_new_tokens": 12000,
+  "decoding": "greedy",
+  "temperature": null,
+  "progress": 0.95,
+  "error": null,
+  "created_at": 1785898688.2999287,
+  "updated_at": 1785898696.4926534,
+  "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+  "prompt_len": 5515,
+  "generated_tokens": 1826,
+  "elapsed_sec": 7.812091126004816,
+  "window_count": 2,
+  "completed_windows": 2,
+  "possibly_truncated": false,
+  "identity_summary": {
+    "schema_version": 2,
+    "accepted_edges": 2,
+    "tier_a_accepted": 2,
+    "tier_b_status": "disabled",
+    "tier_b_accepted": 0,
+    "false_accepted_edges": 0,
+    "fragmented_recurring_speakers": 2
+  },
+  "subtitle_style": {},
+  "source_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+  "checkpoint_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/checkpoint",
+  "checkpoint_state": "complete",
+  "resume_attempts": 0,
+  "inference": {
+    "prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+    "max_length": 16384,
+    "max_new_tokens": 12000,
+    "decoding": "greedy",
+    "temperature": null
+  },
+  "usage": {
+    "prompt_tokens": 5515,
+    "generated_tokens": 1826,
+    "max_new_tokens": 12000,
+    "possibly_truncated": false,
+    "elapsed_sec": 7.812091126004816,
+    "window_count": 2,
+    "completed_windows": 2
+  },
+  "files": {
+    "raw_transcript": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/raw_transcript.txt",
+    "segments": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/segments.json",
+    "srt": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/subtitle.srt",
+    "ass": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/subtitle.ass",
+    "mp4": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/output.mp4",
+    "identity_resolution": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/bab7c906acdb/identity-resolution.json"
+  }
+}

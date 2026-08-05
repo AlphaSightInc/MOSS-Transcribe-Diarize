@@ -1,0 +1,536 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.0,
+      "end": 3.36,
+      "speaker": "S01",
+      "text": "The only person who can cause you more harm than a thief with a dagger is a journalist with a pen."
+    },
+    {
+      "id": "seg_0002",
+      "start": 6.03,
+      "end": 16.01,
+      "speaker": "S02",
+      "text": "The following is a conversation with Bill Ackman, a legendary activist investor who has been part of some of the biggest and at times controversial trades in history."
+    },
+    {
+      "id": "seg_0003",
+      "start": 16.65,
+      "end": 24.93,
+      "speaker": "S02",
+      "text": "Also, he is fearlessly vocal on X, FKA Twitter, and uses the platform to fight for ideas he believes in."
+    },
+    {
+      "id": "seg_0004",
+      "start": 25.38,
+      "end": 32.04,
+      "speaker": "S02",
+      "text": "For example, he was a central figure in the resignation of the president of Harvard University, Claudine Gay,"
+    },
+    {
+      "id": "seg_0005",
+      "start": 32.82,
+      "end": 35.64,
+      "speaker": "S02",
+      "text": "the saga of which we discuss in this episode."
+    },
+    {
+      "id": "seg_0006",
+      "start": 36.93,
+      "end": 42.33,
+      "speaker": "S02",
+      "text": "This is the Lex Friedman Podcast. To support it, please check out our sponsors in the description."
+    },
+    {
+      "id": "seg_0007",
+      "start": 42.66,
+      "end": 46.17,
+      "speaker": "S02",
+      "text": "And now, dear friends, here's Bill Ackman."
+    },
+    {
+      "id": "seg_0008",
+      "start": 47.34,
+      "end": 53.43,
+      "speaker": "S02",
+      "text": "In your lecture on the basics of finance and investing, you mentioned a book, Intelligent Investor by Benjamin Graham,"
+    },
+    {
+      "id": "seg_0009",
+      "start": 53.91,
+      "end": 60.27,
+      "speaker": "S02",
+      "text": "as being formative in your life. What key lesson do you take away from that book that informs your own investing?"
+    },
+    {
+      "id": "seg_0010",
+      "start": 60.42,
+      "end": 62.64,
+      "speaker": "S01",
+      "text": "Sure. Actually, it was the first investment book I read."
+    },
+    {
+      "id": "seg_0011",
+      "start": 63.33,
+      "end": 68.31,
+      "speaker": "S01",
+      "text": "And as such, it was kind of the inspiration for my career and a lot of my life. So important book."
+    },
+    {
+      "id": "seg_0012",
+      "start": 68.64,
+      "end": 71.88,
+      "speaker": "S01",
+      "text": "You know, bear in mind, this is sort of after the Great Depression."
+    },
+    {
+      "id": "seg_0013",
+      "start": 72.59,
+      "end": 79.14,
+      "speaker": "S01",
+      "text": "People lost confidence in investing in markets, World War II, and then he writes this book. It's for like the average man."
+    },
+    {
+      "id": "seg_0014",
+      "start": 79.95,
+      "end": 86.28,
+      "speaker": "S01",
+      "text": "And basically, he says that you have to understand the difference between price and value, right?"
+    },
+    {
+      "id": "seg_0015",
+      "start": 86.61,
+      "end": 89.52,
+      "speaker": "S01",
+      "text": "Price is what you pay. Value is what you get."
+    },
+    {
+      "id": "seg_0016",
+      "start": 90.21,
+      "end": 93.78,
+      "speaker": "S01",
+      "text": "And he said, \"The stock market is here to serve you,\" right?"
+    },
+    {
+      "id": "seg_0017",
+      "start": 93.99,
+      "end": 97.44,
+      "speaker": "S01",
+      "text": "And it's a bit like the neighbor that comes by every day and makes you an offer for your house."
+    },
+    {
+      "id": "seg_0018",
+      "start": 97.98,
+      "end": 102.69,
+      "speaker": "S01",
+      "text": "Makes you a stupid offer, you ignore it. Makes you a great offer, you can take it."
+    },
+    {
+      "id": "seg_0019",
+      "start": 103.08,
+      "end": 108.24,
+      "speaker": "S01",
+      "text": "And that's the stock market. And the key is to figure out what something's worth, and you have to kind of weigh it."
+    },
+    {
+      "id": "seg_0020",
+      "start": 109.05,
+      "end": 114.3,
+      "speaker": "S01",
+      "text": "He talked about the difference between, you said, \"The stock market in the short term is a voting machine."
+    },
+    {
+      "id": "seg_0021",
+      "start": 114.54,
+      "end": 120.18,
+      "speaker": "S01",
+      "text": "It represents speculative interests, you know, supply and demand of people in the short term."
+    },
+    {
+      "id": "seg_0022",
+      "start": 120.3,
+      "end": 124.38,
+      "speaker": "S01",
+      "text": "But in the long term, the stock market is a weighing machine. You're much more accurate."
+    },
+    {
+      "id": "seg_0023",
+      "start": 124.68,
+      "end": 128.91,
+      "speaker": "S01",
+      "text": "It's going to tell you what something's worth. And so if you can divine what something's worth,"
+    },
+    {
+      "id": "seg_0024",
+      "start": 129.21,
+      "end": 134.25,
+      "speaker": "S01",
+      "text": "then you can really take advantage of the market because it's really here to help you. And that's kind of the message of the book.\""
+    },
+    {
+      "id": "seg_0025",
+      "start": 134.57,
+      "end": 138.85,
+      "speaker": "S02",
+      "text": "In that same way, there's a kind of difference between speculation and investing."
+    },
+    {
+      "id": "seg_0026",
+      "start": 138.88,
+      "end": 145.11,
+      "speaker": "S01",
+      "text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+    },
+    {
+      "id": "seg_0027",
+      "start": 145.14,
+      "end": 145.62,
+      "speaker": "S01",
+      "text": "You're"
+    },
+    {
+      "id": "seg_0028",
+      "start": 145.65,
+      "end": 147.17,
+      "speaker": "S02",
+      "text": "Strong words."
+    },
+    {
+      "id": "seg_0029",
+      "start": 147.2,
+      "end": 149.89,
+      "speaker": "S01",
+      "text": "Well, short term trading crypto."
+    },
+    {
+      "id": "seg_0030",
+      "start": 149.92,
+      "end": 151.72,
+      "speaker": "S01",
+      "text": "Maybe in the long run, there's intrinsic value."
+    },
+    {
+      "id": "seg_0031",
+      "start": 151.75,
+      "end": 160.11,
+      "speaker": "S01",
+      "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+    },
+    {
+      "id": "seg_0032",
+      "start": 160.14,
+      "end": 163.29,
+      "speaker": "S01",
+      "text": "the crash were really just pure speculators."
+    },
+    {
+      "id": "seg_0033",
+      "start": 163.32,
+      "end": 164.38,
+      "speaker": "S01",
+      "text": "They didn't know what things were worth."
+    },
+    {
+      "id": "seg_0034",
+      "start": 164.41,
+      "end": 166.21,
+      "speaker": "S01",
+      "text": "They just knew they were going up, right?"
+    },
+    {
+      "id": "seg_0035",
+      "start": 166.24,
+      "end": 168.34,
+      "speaker": "S01",
+      "text": "That's speculation."
+    },
+    {
+      "id": "seg_0036",
+      "start": 168.37,
+      "end": 174.34,
+      "speaker": "S01",
+      "text": "And investing is, you know, doing your homework, digging down, understanding a business,"
+    },
+    {
+      "id": "seg_0037",
+      "start": 174.37,
+      "end": 177.95,
+      "speaker": "S01",
+      "text": "understanding the competitive dynamics of an industry, understanding what management's"
+    },
+    {
+      "id": "seg_0038",
+      "start": 177.98,
+      "end": 179.88,
+      "speaker": "S01",
+      "text": "going to do, understanding what price you're going to pay."
+    },
+    {
+      "id": "seg_0039",
+      "start": 179.91,
+      "end": 186.27,
+      "speaker": "S01",
+      "text": "You know, the value of anything, I would say, other than love, let's say, is the present"
+    },
+    {
+      "id": "seg_0040",
+      "start": 186.3,
+      "end": 189.09,
+      "speaker": "S01",
+      "text": "value of the cash you can take out of it over its life."
+    },
+    {
+      "id": "seg_0041",
+      "start": 189.13,
+      "end": 193.29,
+      "speaker": "S01",
+      "text": "Now, some people think about love that way, but it's not, it's not the right way to think"
+    },
+    {
+      "id": "seg_0042",
+      "start": 193.31,
+      "end": 193.7,
+      "speaker": "S01",
+      "text": "about love."
+    },
+    {
+      "id": "seg_0043",
+      "start": 193.73,
+      "end": 200.25,
+      "speaker": "S01",
+      "text": "But it's, yeah, so investing is about basically building a, a model of what this business"
+    },
+    {
+      "id": "seg_0044",
+      "start": 200.28,
+      "end": 202.25,
+      "speaker": "S01",
+      "text": "is going to produce over its lifetime."
+    },
+    {
+      "id": "seg_0045",
+      "start": 202.28,
+      "end": 203.95,
+      "speaker": "S02",
+      "text": "So how do you get to that?"
+    },
+    {
+      "id": "seg_0046",
+      "start": 203.98,
+      "end": 206.21,
+      "speaker": "S02",
+      "text": "This idea of called value investing?"
+    },
+    {
+      "id": "seg_0047",
+      "start": 206.24,
+      "end": 208.34,
+      "speaker": "S02",
+      "text": "How do you get to the value of a thing?"
+    },
+    {
+      "id": "seg_0048",
+      "start": 208.37,
+      "end": 212.79,
+      "speaker": "S02",
+      "text": "Even like philosophically, value of anything really, but we can just talk about the things"
+    },
+    {
+      "id": "seg_0049",
+      "start": 212.82,
+      "end": 214.11,
+      "speaker": "S02",
+      "text": "that are on the stock market."
+    },
+    {
+      "id": "seg_0050",
+      "start": 214.14,
+      "end": 214.45,
+      "speaker": "S01",
+      "text": "Sure."
+    },
+    {
+      "id": "seg_0051",
+      "start": 214.48,
+      "end": 215.31,
+      "speaker": "S02",
+      "text": "Companies."
+    },
+    {
+      "id": "seg_0052",
+      "start": 215.34,
+      "end": 220.98,
+      "speaker": "S01",
+      "text": "The value of a, a security, the value is the present value of the cash you can"
+    },
+    {
+      "id": "seg_0053",
+      "start": 221.01,
+      "end": 223.45,
+      "speaker": "S01",
+      "text": "take out of it over its life."
+    },
+    {
+      "id": "seg_0054",
+      "start": 223.48,
+      "end": 228.31,
+      "speaker": "S01",
+      "text": "So if you think about a bond, your bond, you know, pays a 5% coupon interest rate."
+    },
+    {
+      "id": "seg_0055",
+      "start": 228.34,
+      "end": 231.93,
+      "speaker": "S01",
+      "text": "You get that, you know, let's say every year or twice a year, split in half."
+    },
+    {
+      "id": "seg_0056",
+      "start": 231.96,
+      "end": 233.29,
+      "speaker": "S01",
+      "text": "And it's very predictable."
+    },
+    {
+      "id": "seg_0057",
+      "start": 233.32,
+      "end": 235.13,
+      "speaker": "S01",
+      "text": "And if it's a US government bond, you know, you're going to get it."
+    },
+    {
+      "id": "seg_0058",
+      "start": 235.16,
+      "end": 238.14,
+      "speaker": "S01",
+      "text": "So that's a pretty easy thing to value."
+    },
+    {
+      "id": "seg_0059",
+      "start": 238.17,
+      "end": 240.61,
+      "speaker": "S01",
+      "text": "A stock is an interest in a business."
+    },
+    {
+      "id": "seg_0060",
+      "start": 240.64,
+      "end": 242.93,
+      "speaker": "S01",
+      "text": "It's like owning a piece of a company."
+    },
+    {
+      "id": "seg_0061",
+      "start": 242.96,
+      "end": 247.71,
+      "speaker": "S01",
+      "text": "And a business, a profitable one, is like a bond in that it generates these coupons"
+    },
+    {
+      "id": "seg_0062",
+      "start": 247.74,
+      "end": 251.34,
+      "speaker": "S01",
+      "text": "or these earnings or cash flow, you know, every year."
+    },
+    {
+      "id": "seg_0063",
+      "start": 251.37,
+      "end": 256.66,
+      "speaker": "S01",
+      "text": "The difference with a stock and a bond is that the bond, it's a contract."
+    },
+    {
+      "id": "seg_0064",
+      "start": 256.65,
+      "end": 259.92,
+      "speaker": "S01",
+      "text": "You know what you're going to get as long as they don't go bankrupt and default."
+    },
+    {
+      "id": "seg_0065",
+      "start": 260.58,
+      "end": 262.71,
+      "speaker": "S01",
+      "text": "With a stock, you have to make predictions about the business."
+    },
+    {
+      "id": "seg_0066",
+      "start": 262.89,
+      "end": 264.3,
+      "speaker": "S01",
+      "text": "How many widgets are going to sell this year?"
+    },
+    {
+      "id": "seg_0067",
+      "start": 264.33,
+      "end": 265.35,
+      "speaker": "S01",
+      "text": "How many are going to sell next year?"
+    },
+    {
+      "id": "seg_0068",
+      "start": 266.67,
+      "end": 267.69,
+      "speaker": "S01",
+      "text": "What are their costs going to be?"
+    },
+    {
+      "id": "seg_0069",
+      "start": 267.87,
+      "end": 272.01,
+      "speaker": "S01",
+      "text": "How much of the money that they generate, do they need to reinvest in the business to keep the business going?"
+    },
+    {
+      "id": "seg_0070",
+      "start": 273.24,
+      "end": 275.28,
+      "speaker": "S01",
+      "text": "And that's more complicated."
+    },
+    {
+      "id": "seg_0071",
+      "start": 276.36,
+      "end": 281.01,
+      "speaker": "S01",
+      "text": "But what we do is we try to find businesses where with a very high degree of confidence,"
+    },
+    {
+      "id": "seg_0072",
+      "start": 281.04,
+      "end": 284.28,
+      "speaker": "S01",
+      "text": "we know what those cash flows are going to be for a very long time."
+    },
+    {
+      "id": "seg_0073",
+      "start": 285.12,
+      "end": 288.12,
+      "speaker": "S01",
+      "text": "And there are a few businesses that you can have a really high degree of certainty about."
+    },
+    {
+      "id": "seg_0074",
+      "start": 288.3,
+      "end": 293.97,
+      "speaker": "S01",
+      "text": "As a result, many investments are speculations because it's really very difficult to predict the future."
+    },
+    {
+      "id": "seg_0075",
+      "start": 294.0,
+      "end": 298.26,
+      "speaker": "S01",
+      "text": "So what we do for a living, what I do for a living is find those rare companies"
+    },
+    {
+      "id": "seg_0076",
+      "start": 298.29,
+      "end": 299.94,
+      "speaker": "S01",
+      "text": "that you can kind of predict what they're going to look like."
+    }
+  ]
+}

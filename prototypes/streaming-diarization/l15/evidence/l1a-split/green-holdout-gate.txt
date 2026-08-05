@@ -1,0 +1,9 @@
+test_development_case_is_available_before_freeze (__main__.HoldoutGateTests) ... ok
+test_holdout_case_refuses_before_candidate_freeze (__main__.HoldoutGateTests) ... ok
+test_opening_is_exactly_once_after_valid_freeze (__main__.HoldoutGateTests) ... ok
+test_split_hash_drift_refuses (__main__.HoldoutGateTests) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.004s
+
+OK

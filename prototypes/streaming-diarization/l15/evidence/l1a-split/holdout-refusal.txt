@@ -1,0 +1,3 @@
+BLOCKED l15_holdout_before_candidate_freeze: /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/candidate-freeze.json
+<promise>BLOCKED</promise>
+EXIT 2

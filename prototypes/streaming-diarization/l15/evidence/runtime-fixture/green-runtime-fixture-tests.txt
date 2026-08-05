@@ -1,0 +1,10 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_runtime_fixture.py
+EXIT: 0
+test_planner_binding_is_production_endpoint_policy ... ok
+test_runtime_cache_round_trips_its_own_plan ... ok
+test_runtime_shape_is_independent_of_evaluation_label_perturbation ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+OK

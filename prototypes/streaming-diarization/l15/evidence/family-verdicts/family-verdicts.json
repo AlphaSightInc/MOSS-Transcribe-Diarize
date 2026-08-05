@@ -1,0 +1,52 @@
+{
+  "campaign_disposition": "BLOCKED_FOR_PRODUCT",
+  "candidate_freeze_proposed": false,
+  "composition_arm_reason": "no acceptance-bearing constituent cleared its family gates",
+  "composition_arm_run": false,
+  "families": [
+    {
+      "development_gain_pp": 0.0342058101619247,
+      "disposition": "FAIL_METHOD_CLASS_LIMITATION_D8_RUNTIME_FRAME",
+      "evidence_manifest_sha256": "dcf453f2a147940b4eb3b45071801ea39ba5b516486ae2e32a9e766cf8f6967a",
+      "family_id": "f1-ledger-only-bounded-clustering-v1",
+      "freezeable": false,
+      "scope": "acceptance-bearing",
+      "validation_gain_pp": 0.5961729831751916,
+      "verdict_path": "prototypes/streaming-diarization/l15/evidence/f1/f1-verdict.json",
+      "verdict_sha256": "6ac5cc42b4c182c2f4869adf263fd0eec49f00977eee048b3fc6d6832d50eab6"
+    },
+    {
+      "disposition": "EXPLORATORY_ONLY_NOT_FREEZEABLE",
+      "evidence_manifest_sha256": "800b0aa8144a4f80f453d82b960204ef44687ad56f312ae78fcdbbf2856030bb",
+      "family_id": "f2-soft-lane-provenance-prior-v1",
+      "freezeable": false,
+      "identity_accuracy_claim": false,
+      "scope": "exploratory-only",
+      "verdict_path": "prototypes/streaming-diarization/l15/evidence/f2/f2-exploratory-verdict.json",
+      "verdict_sha256": "b66997d4d8e0f19b8b83b03f8a84b434bd001647b1b49157397904d795acdb5a"
+    },
+    {
+      "development_gain_pp": -0.054219848022663,
+      "disposition": "FAIL",
+      "evidence_manifest_sha256": "a0fac3d01565e7b25e0783b2e505102a3e31d3d733ff3fc289c5412acda5aed1",
+      "family_id": "f3-live-pass-duration-adaptive-margin-v1",
+      "freezeable": false,
+      "scope": "acceptance-bearing",
+      "validation_gain_pp": 0.0,
+      "verdict_path": "prototypes/streaming-diarization/l15/evidence/f3/f3-verdict.json",
+      "verdict_sha256": "af63f90888fd93875301094a463ef2d68799a5e8d5098134b81688606191d4af"
+    }
+  ],
+  "future_dual_lane_program": "DL1 inventory authorized separately; no effect on this sealed family verdict",
+  "holdout_opened": false,
+  "holdout_status": "SEALED",
+  "overall": "PASS_EVIDENCE_PROCESS_BLOCKED_PRODUCT",
+  "ready_for_product": false,
+  "schema": "moss-l15-family-verdicts.v1",
+  "stage": "L1.b_PRE_HOLDOUT",
+  "strategic_findings": [
+    "F1 ledger-only gains from Stage 0 were truth-timed-frame-flattered and collapse in the D8-safe runtime frame",
+    "F2 shows a measurable acoustic lane-prior effect but lacks audited dual-lane identity evidence",
+    "F3 live-pass adaptive margin does not clear gain gates and slightly worsens the 30-minute development case"
+  ]
+}

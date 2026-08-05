@@ -1,0 +1,53 @@
+{
+  "id": "ecdd8ee84350",
+  "status": "waiting_review",
+  "media_name": "audio.wav",
+  "input_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/input.wav",
+  "job_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350",
+  "inference_prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+  "max_length": 16384,
+  "max_new_tokens": 12000,
+  "decoding": "greedy",
+  "temperature": null,
+  "progress": 0.95,
+  "error": null,
+  "created_at": 1785898704.0370717,
+  "updated_at": 1785898706.2269459,
+  "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+  "prompt_len": 1609,
+  "generated_tokens": 518,
+  "elapsed_sec": 2.0612341099913465,
+  "window_count": 1,
+  "completed_windows": 1,
+  "possibly_truncated": false,
+  "identity_summary": null,
+  "subtitle_style": {},
+  "source_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+  "checkpoint_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/checkpoint",
+  "checkpoint_state": "complete",
+  "resume_attempts": 0,
+  "inference": {
+    "prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+    "max_length": 16384,
+    "max_new_tokens": 12000,
+    "decoding": "greedy",
+    "temperature": null
+  },
+  "usage": {
+    "prompt_tokens": 1609,
+    "generated_tokens": 518,
+    "max_new_tokens": 12000,
+    "possibly_truncated": false,
+    "elapsed_sec": 2.0612341099913465,
+    "window_count": 1,
+    "completed_windows": 1
+  },
+  "files": {
+    "raw_transcript": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/raw_transcript.txt",
+    "segments": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/segments.json",
+    "srt": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/subtitle.srt",
+    "ass": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/subtitle.ass",
+    "mp4": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/output.mp4",
+    "identity_resolution": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/ecdd8ee84350/identity-resolution.json"
+  }
+}

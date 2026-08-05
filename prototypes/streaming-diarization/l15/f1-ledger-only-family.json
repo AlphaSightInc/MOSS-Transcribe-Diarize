@@ -1,0 +1,102 @@
+{
+  "schema": "moss-l15-family-preregistration.v1",
+  "family_id": "f1-ledger-only-bounded-clustering-v1",
+  "family_order": 1,
+  "preregistered_at": "2026-08-04",
+  "run_started": false,
+  "runtime_input": {
+    "manifest_path": "prototypes/streaming-diarization/l15/runtime-input-manifest.json",
+    "manifest_sha256": "886ce7a6b53f1f55c1966753b8e691113c074fee11bd3b4fdd6e650d0712209e",
+    "frame": "production-endpoint-over-deployed-asr",
+    "golden_reachable_by_candidate": false,
+    "holdout_present": false
+  },
+  "algorithm": {
+    "input": "production L1 final SweepLedger units and retained production WeSpeaker vectors",
+    "distance": "cosine",
+    "linkage": "average",
+    "cluster_count": "runtime-visible final L1 canonical count",
+    "canonical_references": "per-L1-canonical duration-weighted mean of up to 10 longest admitted retained vectors; fall back to all retained vectors",
+    "cluster_mapping": "duration-weighted centroid to canonical references, global one-to-one linear assignment, then score and margin gates",
+    "rewrite": "rank changed units by descending proposed-minus-incumbent cosine score; preserve one-to-one labels within each span; enforce meeting duration budget",
+    "correction_address": [
+      "span_id",
+      "local_speaker"
+    ],
+    "words_or_timings_mutable": false,
+    "current_label_pooling_key": false,
+    "new_model_or_gpu": false
+  },
+  "development_grid": {
+    "canonical_min_score": [
+      0.3,
+      0.35,
+      0.4
+    ],
+    "canonical_min_margin": [
+      0.05,
+      0.1,
+      0.15
+    ],
+    "max_changed_duration_fraction": [
+      0.02,
+      0.05,
+      0.08
+    ],
+    "configuration_count": 27,
+    "selection": "maximize duration-weighted development speaker accuracy subject to every non-gain gate; deterministic ties choose smaller rewrite budget, then higher score, then higher margin",
+    "validation_access": "selected configuration only, exactly once after selection"
+  },
+  "target_error_subset": {
+    "definition": "all cases in each frozen split; no post-result case selection",
+    "development_case_ids": [
+      "1m-acquired-nfl",
+      "3m-acquired-jamie-dimon",
+      "1m-acquired-jamie-dimon",
+      "5m-acquired-jamie-dimon",
+      "5m-acquired-nfl",
+      "5m-lex-bill-ackman",
+      "5m-lex-javier-milei",
+      "30m-lex-bill-ackman"
+    ],
+    "validation_case_ids": [
+      "1m-acquired-rolex",
+      "1m-lex-bill-ackman",
+      "1m-lex-javier-milei",
+      "1m-lex-keyu-jin",
+      "3m-lex-adam-frank",
+      "3m-lex-shapiro-destiny",
+      "5m-acquired-alphabet",
+      "5m-acquired-rolex"
+    ],
+    "score": "duration-weighted speaker accuracy over complete reference speaker seconds"
+  },
+  "preconditions_before_scoring": {
+    "full_chain_audit": "evaluator to candidate input boundary; candidate sees runtime manifest and decision objects only",
+    "label_perturbation": "change evaluation truth labels A,B to A,A; runtime shape and complete decision semantic hash must remain identical",
+    "required_result": "PASS",
+    "red_first": true
+  },
+  "gates": {
+    "minimum_gain_over_l1_pp": 1.0,
+    "gain_required_on_development_and_validation": true,
+    "maximum_case_regression_pp": 0.5,
+    "false_positive_speaker_seconds_not_worse_each_case": true,
+    "diarization_error_rate_not_worse_each_case": true,
+    "deterministic_runs": 2,
+    "two_sided_mapping_preserved_where_l1_has_it": true,
+    "correction_evidence_has_score_delta_and_changed_duration_fraction": true,
+    "thirty_minute_sweep_p95_seconds_max": 0.20015926258638502,
+    "thirty_minute_timing_samples": 20
+  },
+  "optimization_budget": {
+    "maximum_passes": 1,
+    "pass_1": "the complete predeclared 27-configuration development grid",
+    "extensions_or_second_pass": false,
+    "validation_driven_tuning": false
+  },
+  "holdout": {
+    "status": "SEALED",
+    "opening_allowed": false
+  }
+}

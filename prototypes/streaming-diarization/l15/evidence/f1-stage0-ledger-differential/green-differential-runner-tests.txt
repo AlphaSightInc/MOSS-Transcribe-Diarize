@@ -1,0 +1,8 @@
+test_decision_process_has_no_scorer_import (__main__.Stage0LedgerDifferentialTests.test_decision_process_has_no_scorer_import) ... ok
+test_exact_engine_loads_without_source_edit (__main__.Stage0LedgerDifferentialTests.test_exact_engine_loads_without_source_edit) ... ok
+test_owning_commit_blobs_match_immutable_pins (__main__.Stage0LedgerDifferentialTests.test_owning_commit_blobs_match_immutable_pins) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.124s
+
+OK

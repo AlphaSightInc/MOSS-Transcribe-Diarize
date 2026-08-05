@@ -1,0 +1,87 @@
+{
+  "count_reconciliation": {
+    "pytest_summary_line": "865 passed, 2 skipped, 4 warnings, 373 subtests passed in 74.67s (0:01:14)",
+    "swift_executed_counts": [
+      171,
+      13,
+      16,
+      200,
+      200
+    ],
+    "swift_max_executed_tests": 200,
+    "swift_testing_zero_suite_line_benign": true
+  },
+  "gates": [
+    {
+      "argv": [
+        "swift",
+        "test",
+        "--package-path",
+        "macos/MOSSCapture"
+      ],
+      "exit_code": 0,
+      "name": "swift",
+      "output_path": "prototypes/streaming-diarization/l15/evidence/closing/gate-swift.txt",
+      "passed": true,
+      "started_at": "2026-08-05T04:50:08.125326+00:00",
+      "wall_seconds": 22.394038500031456
+    },
+    {
+      "argv": [
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "exit_code": 0,
+      "name": "pytest",
+      "output_path": "prototypes/streaming-diarization/l15/evidence/closing/gate-pytest.txt",
+      "passed": true,
+      "started_at": "2026-08-05T04:50:30.520056+00:00",
+      "wall_seconds": 75.5636536248494
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15",
+        "diff",
+        "--check",
+        "15d45afc418e2cc83e3967110553371010da1784..HEAD"
+      ],
+      "exit_code": 0,
+      "name": "diff-committed",
+      "output_path": "prototypes/streaming-diarization/l15/evidence/closing/gate-diff-committed.txt",
+      "passed": true,
+      "started_at": "2026-08-05T04:51:46.084834+00:00",
+      "wall_seconds": 0.15702241705730557
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "name": "diff-worktree",
+      "output_path": "prototypes/streaming-diarization/l15/evidence/closing/gate-diff-worktree.txt",
+      "passed": true,
+      "started_at": "2026-08-05T04:51:46.241978+00:00",
+      "wall_seconds": 0.017991374945268035
+    }
+  ],
+  "generated_at": "2026-08-05T04:51:46.260274+00:00",
+  "overall": "PASS",
+  "prototype_python_syntax": {
+    "failures": [],
+    "file_count": 52,
+    "output_path": "prototypes/streaming-diarization/l15/evidence/closing/gate-prototype-python-syntax.txt",
+    "passed": true
+  },
+  "schema": "moss-l15-closing-gates.v1"
+}

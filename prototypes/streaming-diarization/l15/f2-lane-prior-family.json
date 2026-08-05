@@ -1,0 +1,89 @@
+{
+  "schema": "moss-l15-family-preregistration.v2",
+  "family_id": "f2-soft-lane-provenance-prior-v1",
+  "family_order": 2,
+  "preregistered_at": "2026-08-04",
+  "scope_revised_at": "2026-08-05",
+  "scope_revision": {
+    "authorization": "supervisor joint-rethink ruling after F1 method-class disposition",
+    "timing": "before any F2 execution or scoring",
+    "reason": "the only available dual-lane corpus is not human-audited and therefore cannot support acceptance claims",
+    "supersedes": "the unexecuted development/validation selection and gated-gain protocol in schema v1",
+    "sealed_prior_results_modified": false
+  },
+  "run_started": false,
+  "acceptance_scope": "NONE_EXPLORATORY_ONLY",
+  "runtime_input": {
+    "frame": "production-endpoint-over-deployed-asr, independently per capture lane",
+    "lane_field": "capture_lane",
+    "accepted_lane_values": [
+      "local-mic",
+      "remote-system",
+      "unknown"
+    ],
+    "unknown_lane_behavior": "neutral multiplier 1.0; never infer a lane from evaluation truth",
+    "golden_reachable_by_candidate": false,
+    "gated_corpus_run": false,
+    "validation_opened": false,
+    "holdout_present": false,
+    "holdout_opened": false
+  },
+  "algorithm": {
+    "input": "runtime-visible production EndpointPolicy units, production WeSpeaker vectors, and capture-lane provenance",
+    "lane_centroids": "leave-one-unit-out duration-weighted centroid for each known capture lane",
+    "soft_prior": "multiply a cross-known-lane centroid similarity by 1-prior-strength; same-lane or either-unknown similarity is unchanged",
+    "assignment_probe": "compare each unit's own-lane and other-lane centroid scores before and after the soft prior",
+    "hard_lane_key": false,
+    "hard_cannot_link": false,
+    "one_person_per_lane": false,
+    "lane_only_birth_or_rewrite": false,
+    "identity_accuracy_claim": false,
+    "reason_no_identity_claim": "the corpus has no human-audited speaker or activity truth and a lane is not assumed to contain one person",
+    "words_or_timings_mutable": false,
+    "new_model_or_gpu": false
+  },
+  "exploratory_grid": {
+    "prior_strength": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "configuration_count": 3,
+    "selection": "none; report every preregistered strength without choosing or freezing a winner",
+    "optimization_passes": 1,
+    "extensions_or_second_pass": false
+  },
+  "exploratory_dual_lane": {
+    "source_host": "ga0@m4mbp",
+    "source_root": "/Users/ga0/Desktop/AI_Projects/LiveTranscribe/data/dual_lane_diarization/cases/pending_source_separation_001",
+    "local_audio_sha256": "830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251",
+    "remote_audio_sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d",
+    "reference_present": false,
+    "permitted_measurement": "runtime-frame acoustic lane-prior effect size only",
+    "acceptance_evidence": false
+  },
+  "preconditions_before_measurement": {
+    "full_chain_audit": "audio and runtime lane metadata to candidate decision boundary; no reference or scorer input is reachable",
+    "label_perturbation": "change synthetic evaluation labels A,B to A,A; runtime unit shape and complete candidate-decision semantic hash must remain identical",
+    "required_result": "PASS",
+    "red_first": true
+  },
+  "reported_effect_sizes": [
+    "duration-weighted mean, median, and p95 own-lane-minus-other-lane cosine margin before and after prior",
+    "duration-weighted count and duration of lane-consistency classification flips",
+    "duration-weighted own-lane classification rate before and after prior",
+    "cross-lane score reduction by prior strength"
+  ],
+  "acceptance_grade_evidence_requirements": {
+    "corpus": "multiple meetings with both local-mic and remote-system lanes, varied speakers, genders, acoustics, crosstalk, overlap, and genuine same-speaker-across-lanes cases",
+    "source_integrity": "immutable synchronized audio and runtime lane metadata with captured missing-lane and wrong-lane controls",
+    "human_audit": "speaker and activity references audited for identity, timing, overlap, and crosstalk; no one-person-per-lane assumption",
+    "splits": "preregistered development, validation, and single-open blind holdout containing long meetings and similar-voice hard cases",
+    "instrument": "D8-safe production runtime segmentation, full-chain golden-path audit, label-perturbation invariance, and same-frame L1/F2 comparison",
+    "acceptance_metrics": "duration-weighted speaker accuracy, DER family, FP speaker-seconds, per-case regressions, two-sided mapping, determinism, and compute budget under the campaign gates"
+  },
+  "holdout": {
+    "status": "SEALED",
+    "opening_allowed": false
+  }
+}

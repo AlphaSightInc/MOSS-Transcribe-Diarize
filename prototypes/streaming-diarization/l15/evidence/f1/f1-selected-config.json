@@ -1,0 +1,17 @@
+{
+  "config": {
+    "canonical_min_margin": 0.15,
+    "canonical_min_score": 0.4,
+    "max_changed_duration_fraction": 0.02
+  },
+  "config_id": "f1-s040-m015-b002",
+  "dev_gain_pp": 0.0342058101619247,
+  "dev_non_gain_gates_passed": false,
+  "dev_score_sha256": "ec73acf53746882c067387cd63d4662d5d0ffb57e793e8bf08355d62b55e006e",
+  "family_id": "f1-ledger-only-bounded-clustering-v1",
+  "family_spec_sha256": "770b73703550cd989a6125f51a4e32ef352b4d203a7d888589864d19d20d13fb",
+  "frozen_for_validation": true,
+  "schema": "moss-l15-f1-selected-config.v1",
+  "selection_rule": "preregistered accuracy/non-gain/tie-break rule",
+  "validation_opened": false
+}

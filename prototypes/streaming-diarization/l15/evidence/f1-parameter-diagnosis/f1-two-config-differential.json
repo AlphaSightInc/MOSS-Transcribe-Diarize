@@ -1,0 +1,381 @@
+{
+  "boundary_1_verdict": "PARAMETERS_FLOW_CORRECT_BUT_ALL_THREE_RANGES_ARE_NONBINDING_AFTER_PROPOSAL_STARVATION",
+  "case_id": "3m-acquired-jamie-dimon",
+  "decision_projection_identical": true,
+  "holdout_opened": false,
+  "inputs": {
+    "f1_candidate_sha256": "a63dfec023e3b0964d4491690415bc45c614cd31fc700e13c77961a187b17891",
+    "f1_decisions_sha256": "078ea9c6c27b9a1c6e86b2f3c30494ee9435cf8648eb4f9f8bcbb37a123c95f0",
+    "f1_dev_decisions_path": "prototypes/streaming-diarization/l15/evidence/f1/f1-dev-decisions.json",
+    "f1_dev_decisions_sha256": "a47d94f464213ea045461adb300624c79be99bb413fb65bf514f66d36d0dc6f1",
+    "l1_semantic_sha256": "8de07a67e2de77e3b6c10a081e72b34c6837322c3c8af5071ef6e0e2ca186b9a",
+    "runtime_shape_sha256": "1d404907ba10a1dd9801bf318db5c87e0d1e3c8fc37a0892db7f0de2899c488e"
+  },
+  "next_step_authorized": "Stage-0 sealed ledger-arm differential; no fix before that evidence",
+  "overall": "PASS",
+  "root_cause": {
+    "config_key_mismatch": false,
+    "constant_shadowing": false,
+    "effective_thresholds_differ": true,
+    "explanation": "The distinct config values reach decide_f1. Score/margin gate only the cluster-to-canonical mapping; every viable cluster lies outside both grid boundaries, while the third cluster fails both. That fixed mapping yields only three proposals from 75 eligible units. Their 3.07 seconds fit inside the smallest 3.4864-second budget, so every larger budget is inert.",
+    "minimum_budget_nonbinding": true,
+    "proposal_stage_starved": false,
+    "same_config_object": false,
+    "score_margin_nonbinding": true
+  },
+  "schema": "moss-l15-f1-parameter-diagnosis.v1",
+  "scoring_executed": false,
+  "source_bindings": [
+    "f1_decisions.py:50-55 constructs distinct F1Config values",
+    "f1_decisions.py:110-113 passes each config to decide_f1",
+    "f1_candidate.py:100-111 applies score and margin only to cluster mapping",
+    "f1_candidate.py:113-138 emits proposals only where fixed cluster mapping differs from L1",
+    "f1_candidate.py:139-159 applies the duration budget after proposal starvation"
+  ],
+  "two_config_trace": {
+    "high": {
+      "budget_seconds": 13.9456,
+      "changed_duration_seconds": 3.07,
+      "cluster_gate_trace": [
+        {
+          "cluster": "1",
+          "mapped": true,
+          "margin": 0.8622645041971512,
+          "margin_pass": true,
+          "margin_threshold": 0.15,
+          "score": 0.976183725677261,
+          "score_pass": true,
+          "score_threshold": 0.4
+        },
+        {
+          "cluster": "2",
+          "mapped": true,
+          "margin": 0.8574432313410724,
+          "margin_pass": true,
+          "margin_threshold": 0.15,
+          "score": 0.9897925481353533,
+          "score_pass": true,
+          "score_threshold": 0.4
+        },
+        {
+          "cluster": "3",
+          "mapped": false,
+          "margin": -0.018828928126567356,
+          "margin_pass": false,
+          "margin_threshold": 0.15,
+          "score": -0.036803224245331445,
+          "score_pass": false,
+          "score_threshold": 0.4
+        }
+      ],
+      "complete_semantic_sha256": "d6936743f74d9b518030b10fe9744acbedbf8bf5ec984dc7653f442ce7e3e47e",
+      "decision_projection": {
+        "accepted_correction_count": 3,
+        "changed_duration_fraction": 0.017611,
+        "changed_duration_seconds": 3.07,
+        "cluster_mapping": {
+          "1": "speaker-0001",
+          "2": "speaker-0002"
+        },
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 17
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 0.85,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.353791,
+            "score_delta": 0.353791
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 55
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 1.02,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.193584,
+            "score_delta": 0.193584
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S04",
+              "span_id": 69
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 1.2,
+            "incumbent_score": 1.0,
+            "previous_speaker": "speaker-0003",
+            "proposed_score": 0.049399,
+            "score_delta": -0.950601
+          }
+        ],
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          null,
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          null,
+          "speaker-0001"
+        ],
+        "proposal_count": 3
+      },
+      "decision_projection_sha256": "3fd34c37dbd6223246da97d88b487c7feff59ab79f2dfe335257d076b475e482",
+      "effective_config_reported_inside_decide_f1": {
+        "canonical_min_margin": 0.15,
+        "canonical_min_score": 0.4,
+        "max_changed_duration_fraction": 0.08
+      }
+    },
+    "low": {
+      "budget_seconds": 3.4864,
+      "changed_duration_seconds": 3.07,
+      "cluster_gate_trace": [
+        {
+          "cluster": "1",
+          "mapped": true,
+          "margin": 0.8622645041971512,
+          "margin_pass": true,
+          "margin_threshold": 0.05,
+          "score": 0.976183725677261,
+          "score_pass": true,
+          "score_threshold": 0.3
+        },
+        {
+          "cluster": "2",
+          "mapped": true,
+          "margin": 0.8574432313410724,
+          "margin_pass": true,
+          "margin_threshold": 0.05,
+          "score": 0.9897925481353533,
+          "score_pass": true,
+          "score_threshold": 0.3
+        },
+        {
+          "cluster": "3",
+          "mapped": false,
+          "margin": -0.018828928126567356,
+          "margin_pass": false,
+          "margin_threshold": 0.05,
+          "score": -0.036803224245331445,
+          "score_pass": false,
+          "score_threshold": 0.3
+        }
+      ],
+      "complete_semantic_sha256": "ff5dac25d7d52bb3d4c7e57e83a1382edf4f3a857f6e277de992217295b5cd7b",
+      "decision_projection": {
+        "accepted_correction_count": 3,
+        "changed_duration_fraction": 0.017611,
+        "changed_duration_seconds": 3.07,
+        "cluster_mapping": {
+          "1": "speaker-0001",
+          "2": "speaker-0002"
+        },
+        "corrections": [
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 17
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 0.85,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.353791,
+            "score_delta": 0.353791
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S02",
+              "span_id": 55
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 1.02,
+            "incumbent_score": 0.0,
+            "previous_speaker": null,
+            "proposed_score": 0.193584,
+            "score_delta": 0.193584
+          },
+          {
+            "address": {
+              "canonical_speaker": "speaker-0002",
+              "local_speaker": "S04",
+              "span_id": 69
+            },
+            "changed_duration_fraction": 0.017611,
+            "duration_seconds": 1.2,
+            "incumbent_score": 1.0,
+            "previous_speaker": "speaker-0003",
+            "proposed_score": 0.049399,
+            "score_delta": -0.950601
+          }
+        ],
+        "final_unit_labels": [
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          null,
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0001",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          "speaker-0002",
+          null,
+          "speaker-0001"
+        ],
+        "proposal_count": 3
+      },
+      "decision_projection_sha256": "3fd34c37dbd6223246da97d88b487c7feff59ab79f2dfe335257d076b475e482",
+      "effective_config_reported_inside_decide_f1": {
+        "canonical_min_margin": 0.05,
+        "canonical_min_score": 0.3,
+        "max_changed_duration_fraction": 0.02
+      }
+    }
+  }
+}

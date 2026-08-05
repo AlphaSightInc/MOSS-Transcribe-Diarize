@@ -1419,3 +1419,619 @@ Exact campaign commands and chronological decisions live in the parent
 `ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3`
 (`9334f356aa0cb58476e19d90cdc1929c977081dd703785882fc701c465b4b72e` JSON;
 `46619488fa4fa40c4bac93f9dca127506289f7849fdf7958835a93ebe05ac609` Markdown).
+
+### Campaign L1.5 L0 guardrails (`l15`, 2026-08-04)
+
+**VERDICT: PASS — L0 COMPLETE; SPLIT-DEPENDENT WORK FAILS CLOSED.** Contract
+`moss-l15-live-uplift-v1` pins keeper ancestor `15d45afc`, branch
+`ralph/l15-live-uplift-v1`, promoted corpus manifest
+`7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb`,
+plan `456cb01efc7e9ffbfeb1091f251f03a666ee81d3ff2ca9229faaf93faab8cdce`,
+the prototype/docs allowlist, product denylist, and iteration cap 12. The split
+pin is literal `UNFROZEN` until L1.a commits the split and real pin atomically.
+
+Dry-run passed 22/22 positive and negative proofs, including exact allow/deny
+scope, iteration cap, corpus drift, split drift, single writer, expected HEAD,
+dirty-tree refusal, and terminal promises. A real gated invocation returned exit
+2 with named `split_manifest_unfrozen` and `<promise>BLOCKED</promise>`. Evidence
+manifest SHA-256:
+`0744919edc5d9fb08343a2302fe50b9d6b3f0d3099a012026a83f1cf4cc9258a`.
+
+Reproduce:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 scripts/ralph-l15-afk/launch.sh --dry-run --evidence-dir scripts/ralph-l15-afk/evidence
+```
+
+### Campaign L1.5 L1.a split freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — 19 CASES FROZEN; HOLDOUT SEALED.** The split was selected
+from promoted-manifest metadata and prior exposure only; no audio or reference
+content was read. Development/validation each contain eight cases. Blind holdout
+contains `5m-acquired-coca-cola`, `5m-lex-keyu-jin`, and
+`30m-acquired-jamie-dimon`: all three were absent from Stage-0
+development/validation and one is certified 30-minute. Development contains the
+other certified 30-minute case, `30m-lex-bill-ackman`.
+
+Supervisor correction dated 2026-08-04 is binding: the launch brief's “ALL gated
+cases” baseline wording contradicted the standing seal. L1.a runs L1 twice on
+development/validation only. Holdout L1 runs twice inside the one post-freeze
+opening alongside all frozen candidate arms. `holdout-procedure.json` pins that
+rule, in-opening cache rebuild, same production-planned frame, no post-open tuning,
+and maximum one opening.
+
+Split SHA-256 is
+`308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3`;
+procedure SHA-256 is
+`f4a06939e2701b8f48ca9d090e8cd01d5853e64f2953bbd7982b3f6b3f5f5489`.
+The launcher pins both with corpus
+`7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb`.
+Red-first proved the absent guard; green proved dev access, pre-freeze holdout
+refusal, split-drift refusal, and an exclusive second-opening refusal. Evidence
+manifest SHA-256:
+`36022717c51ebb79ebe823b359bd968b6a858a8eb8ba4e3866fcbe954c0b6ce0`.
+
+Reproduce without corpus-content reads:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/freeze_splits.py --check && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/test_holdout_gate.py
+```
+
+### Campaign L1.5 L1.a baseline instrument preregistration (`l15`, 2026-08-04)
+
+**PREDECLARED BEFORE MEASUREMENT.** `run_l1_baseline.py` imports and hash-asserts
+the accepted A2 instrument (`5f7ca385…ebf91`) and therefore calls its exact
+production `BoundedCausalIdentityPreparer`, `SweepLedger`, and `sweep()` bindings;
+it contains no identity-policy copy. The wrapper extends case scope only, preserves
+the production-planned cache frame, runs every dev/validation case twice, applies
+the accepted alphabet cross-instrument gate unchanged, and records full A2 traces.
+
+For the dev-side 30-minute case, `sys.setprofile` observes the unchanged production
+`sweep` function's call/return wall time without replacing its binding. Sweep p95 is
+predeclared as linear Type-7 over both runs. Timing is excluded from the semantic
+determinism hash. Spec SHA-256:
+`46d145e1e82b1d2322b346d901666a082e864b5a2d6e7c02e04ab4bef36a4c99`;
+runner SHA-256:
+`b6456a063290df0582bec9b870e04deaae1dd716e5dde0e27b8f1cd5a9c1bb7c`.
+
+Red-first/green tests passed 4/4 after the missing-wrapper red. Input preflight
+verified all 16 pinned cases and exact source/cache/model bindings. A direct attempt
+to select `5m-acquired-coca-cola` returned exit 2 with named
+`l15_l1_holdout_sealed`; active holdout audio/reference/cache paths remain absent
+from this worktree. Instrument evidence manifest SHA-256:
+`a8b1c3359736e9426516df9c528e32aa616880f63360bc880e3a87a5e2b8d362`.
+
+The first measurement command, permitted only after this preregistration commit, is:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_l1_baseline.py --evidence-dir prototypes/streaming-diarization/l15/evidence/l1a-baseline --json-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json --transcript-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-transcript.txt
+```
+
+### Campaign L1.5 L1.a baseline verdict (`l15`, 2026-08-04)
+
+**VERDICT: PASS — L1.a COMPLETE; STOP BEFORE CANDIDATE WORK.** The single
+prescribed baseline execution ran the frozen 16 development/validation cases twice
+through hash-pinned A2 `replay_case()`. All 16 semantic results were byte-equivalent
+across runs; all retained two-sided mapping. Thirty-two raw wrappers preserve full
+span/revision traces, mappings, per-speaker correctness, activity precision/recall,
+false-positive speaker seconds, DER-family metrics, and changed-duration fraction.
+
+The accepted production-frame alphabet baseline reproduced at `0.916765`; absolute
+deltas from immutable live anchors `0.9135/0.9144` were `0.003265/0.002365`, both
+inside the unchanged `0.005` cross-instrument gate. The newly gated 30-minute
+development case `30m-lex-bill-ackman` measured speaker accuracy `0.963119`, DER
+`0.036881`, zero false-positive speaker seconds, and changed-duration fraction
+`0.009998`.
+
+Production `sweep()` timing on that 30-minute case produced 64 call samples across
+two runs. Linear Type-7 p95 was `0.10007963129319251 s`; this is the frozen current
+sweep-compute baseline for the later `<=2x` gate. Post-run verification independently
+recomputed every file and semantic hash, p95, exact case scope, traces, mapping, and
+holdout seal: PASS 10/10, 32/32 wrappers. Its first attempt failed only while rendering
+a relative summary path; that sealed reporting defect was corrected without rerunning
+or changing any measurement.
+
+Holdout remains unopened. Its three active audio, reference, and cache paths were
+absent before and after the run; the summary records all nine absences. No candidate
+family, threshold, implementation, or F1/F2/F3 preregistration exists yet.
+
+Raw summary SHA-256:
+`45edc8ce142c3ae15cc03ddd6739cb40ff59ced907b2885667894f2b5f74be21`;
+transcript SHA-256:
+`eeec46c98e31a04243f98d80d35bc8baf61b4136240064c07919078666612351`;
+verification JSON SHA-256:
+`843ec6587d73f8af10f89644055623be5657147f09347b311f809c4429c210da`;
+complete evidence manifest SHA-256:
+`a43dd67cca8418d28c342995b87f9f40a3c605eede768c55f02807e3dd5d3402`.
+
+Exact executed command:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_l1_baseline.py --evidence-dir prototypes/streaming-diarization/l15/evidence/l1a-baseline --json-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json --transcript-output prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-transcript.txt
+```
+
+### Campaign L1.5 runtime-visible ASR input freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — COMMON D8 INPUT PRECONDITION ONLY; NO FAMILY RUN.** The
+truth-partitioned L1.a cache remains evaluation-only and is forbidden from every
+candidate. The deployed batch path at product SHA `9089b332…266` supplied speaker-
+labelled ASR segments for all 16 development/validation clips: seven prior blind jobs
+were fetched by ID and nine missing clips were submitted once. Preflight proved all
+three services healthy, batch queue idle, deployed tree clean, and zero live API
+mutations since the live service start. No holdout or golden-reference path was read.
+
+The resulting fixtures are runtime-visible inputs only. Family runners must still plan
+production spans from these ASR segments, construct decisions before the evaluator loads
+golden truth, and pass their own full-chain label-perturbation proof before scoring.
+Provenance SHA-256 is
+`fd26aad31256367bf21f616309d11133671a45c87db24998bef929f1d89b4147`;
+53-member evidence manifest SHA-256 is
+`c4d84362a6f3041d8ca58c33e3489d7c9d47e8bb56d930dfa1d922c5cf18b9a0`.
+
+Exact collection and verification commands:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/collect_runtime_asr.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/l15/verify_runtime_asr.py && cd prototypes/streaming-diarization/l15/evidence/runtime-inputs && shasum -a 256 -c RUNTIME_ASR_EVIDENCE.sha256
+```
+
+### Campaign L1.5 D8-safe runtime fixture freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — COMMON INPUT FRAME FROZEN; NO FAMILY RUN.** Red-first proved the
+runtime planner module absent. Green then built every dev/validation unit exclusively
+from deployed ASR timestamps/labels and audio, called production `EndpointPolicy`, and
+embedded speech intervals with the pinned production `WeSpeakerResNet152LmAdapter`.
+All 16 caches self-replan exactly; `hard_cap_samples=40000` remains fixed.
+
+The full-chain source audit found zero access to `reference`, `reference_path`,
+`reference_sha256`, or `true_speaker`, and zero evaluator/scorer imports across
+collector → planner → cache builder. The runtime manifest contains no golden path or
+holdout case. Its synthetic A,B→A,A perturbation leaves runtime shape identical.
+Each family must separately prove decision identity before its first score.
+
+Runtime manifest SHA-256:
+`886ce7a6b53f1f55c1966753b8e691113c074fee11bd3b4fdd6e650d0712209e`;
+full-chain audit SHA-256:
+`5b88de8fc25f855972c73efe0acd5ca67585255781ef6425b9f6d2a33bb9b5fd`;
+42-member evidence manifest SHA-256:
+`49812bcfe607855d83f7fb8b60578b25b0d89bc4afe3450344a5fb2deb12597e`.
+
+Exact build/verification commands:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/build_runtime_fixtures.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_runtime_fixture.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/verify_runtime_fixtures.py && cd prototypes/streaming-diarization/l15/evidence/runtime-fixture && shasum -a 256 -c RUNTIME_FIXTURE_EVIDENCE.sha256
+```
+
+### Campaign L1.5 F1 preregistration (`l15`, 2026-08-04)
+
+**PREREGISTERED BEFORE IMPLEMENTATION OR SCORING.** Family 1 is
+`f1-ledger-only-bounded-clustering-v1`: average-linkage cosine clustering over the
+vectors the production sweep already retains, cut to the runtime-visible final L1
+canonical count, then duration-weighted one-to-one cluster mapping and bounded
+`(span_id, local_speaker)` rewrites. Current labels form canonical references but are
+never the clustering/pooling key. Words and timing cannot change.
+
+The sole optimization pass is the complete 27-point development grid:
+score `{0.30,0.35,0.40}` × margin `{0.05,0.10,0.15}` × meeting rewrite budget
+`{0.02,0.05,0.08}`. Selection maximizes duration-weighted development speaker
+accuracy subject to all non-gain gates; ties prefer smaller budget, then higher score,
+then higher margin. The selected configuration alone touches validation once. No grid
+extension or second pass is allowed.
+
+Target-error subsets are the complete frozen development and validation groups—no
+post-result case selection. Each must gain at least `1.0 pp` over same-frame L1; every
+case must stay within `0.5 pp`, with FP speaker-seconds/DER not worse, two-sided
+mapping preserved, deterministic duplicate decisions, complete correction evidence,
+and 30-minute candidate p95 at most `0.20015926258638502 s` (2× L1.a sweep p95).
+Before any score, the full-chain audit and A,B→A,A decision-hash perturbation must PASS.
+Holdout remains sealed.
+
+Machine-readable preregistration:
+`prototypes/streaming-diarization/l15/f1-ledger-only-family.json`, SHA-256
+`770b73703550cd989a6125f51a4e32ef352b4d203a7d888589864d19d20d13fb`.
+
+### Campaign L1.5 F1 precondition (`l15`, 2026-08-04)
+
+**VERDICT: PASS — SCORING NOW PERMITTED.** Red-first failed on the absent F1
+module. Green calls the calibrated A2 `replay_case()` with a temporary activity file
+synthesized only from frozen runtime units; its synthetic terminal metrics are discarded
+after production L1 labels/traces exist. F1 receives only runtime units, those L1 labels,
+retained vectors, and its config. The source audit finds no evaluator import or golden key
+in candidate code.
+
+The controlled truth mutation A,B→A,A changed truth bytes while runtime shape stayed
+`db92bca58c2b7f78705a7eebe44b8a408773a36836af3b4816e3cc5179718f23`
+and complete F1 decision hash stayed
+`39082a127d2a538bd3f7fd23dbe305585393c26b0bffcfe3f47a515c9461e1c9`.
+No score, validation result, golden path, or holdout path was opened.
+Precondition JSON SHA-256:
+`a3a86f25ddc14392ff7c1840e3d1389bb8811cc39e9c0f845315cd029877424f`;
+9-member evidence manifest SHA-256:
+`5137d5443b1b95f65ceb5e8bffa91622afc57463fbf69c8016ae618e1ba83d96`.
+
+Reproduce:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_f1_precondition.py && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/seal_f1_precondition.py
+```
+
+### Campaign L1.5 F1 runner freeze (`l15`, 2026-08-04)
+
+**VERDICT: PASS — RUNNER FROZEN BEFORE FIRST SCORE.** Red-first failed on the
+absent runner; green proves the exact 27-point grid and preregistered deterministic
+tie-break. Candidate execution is a scorer-free process. Development decisions are
+sealed before a separate scorer loads truth and freezes one config; validation decisions
+then run in a fresh scorer-free process before validation truth opens. Source audit finds
+no evaluator import or golden key in the decision chain. No scoring output existed.
+
+Decision runner SHA-256:
+`078ea9c6c27b9a1c6e86b2f3c30494ee9435cf8648eb4f9f8bcbb37a123c95f0`;
+scorer SHA-256:
+`600e6109f13ecd1fd83fcac965a95899628e1cd5bed4aba48e98f84fdf63bab4`;
+audit SHA-256:
+`684130fffd09671538aafb0ac2b91ed46257888549f2672a3038fbad565b4a8b`;
+11-member evidence manifest SHA-256:
+`6b4af3384c782c1061f75d91446ee1bc14a0a74f3a54cedc8871470915372ab8`.
+
+### Campaign L1.5 F1 runtime-L1 adapter correction (`l15`, 2026-08-04)
+
+**VERDICT: PASS — INPUT-INSTRUMENT CORRECTION; FIRST DECISION ATTEMPT PRODUCED NO
+OUTPUT OR SCORE.** The first scorer-free development command completed one case only
+in memory, then the 3-minute case drove RSS to about 12 GB. Cause: the runtime adapter
+gave every unit a unique synthetic speaker, so A2's terminal *discarded* synthetic score
+entered the production evaluator's exponential used-mask mapper. The owned process was
+interrupted before OOM. No score, output file, validation, or holdout access occurred.
+
+The correction suppresses only `run_l1_control.score_live_speaker_accuracy` while A2
+replays synthetic runtime activity, restores it in `finally`, and still discards those
+metrics. A rediagnosis test runs unsuppressed and suppressed paths on identical inputs and
+proves all decision-bearing labels, traces, counts, changes, configs, and production
+bindings identical. A2 source lines prove final labels exist before terminal scoring.
+Candidate spec/implementation and all thresholds are byte-unchanged.
+
+Adapter verdict SHA-256:
+`d25694ff4e3cfcd85f9f1f34b8707b79a6fb4b04753831e03edf927b511d3b7f`;
+10-member evidence manifest SHA-256:
+`0f9d8c28d0c59721d46dd0e4968628c13bc4b51ff0d60cbf8c8d82a648387e85`.
+Historical precondition seal remains owned by `f79411f`; the new adapter proofs are
+authoritative before the first successful decision output.
+
+### Campaign L1.5 F1 family verdict (`l15`, 2026-08-04)
+
+**VERDICT: FAIL — NOT FREEZEABLE; NO RETRY OR RETUNING.** The single 27-config
+development pass selected `f1-s040-m015-b002` (score `0.40`, margin `0.15`, rewrite
+budget `0.02`). Same-frame duration-weighted gain was only `+0.0342058102 pp` on
+development and `+0.5961729832 pp` on the one-config validation opening, both below
+the required `+1.0 pp`.
+
+Non-gain gates also failed: development had tiny FP/DER/two-sided failures on the
+3-minute Jamie case and FP/DER on 5-minute Jamie; validation had an FP-speaker-seconds
+failure on alphabet. Per-case regression stayed within 0.5 pp. Candidate compute passed:
+30-minute 20-sample p95 `0.082268596 s` ≤ `0.200159263 s`. All duplicate decisions
+were exact. Holdout stayed sealed.
+
+Verdict SHA-256:
+`6ac5cc42b4c182c2f4869adf263fd0eec49f00977eee048b3fc6d6832d50eab6`;
+verification SHA-256:
+`8441810f2ed5efaec926a6abcdd635efdbd48ccffaaf1f01fedfafcbc6fcca3e`;
+17-member evidence manifest SHA-256:
+`dcf453f2a147940b4eb3b45071801ea39ba5b516486ae2e32a9e766cf8f6967a`.
+
+### Campaign L1.5 F2 preregistration (`l15`, 2026-08-04)
+
+**PREREGISTERED BEFORE IMPLEMENTATION OR ANY F2 RUN.** Family 2 is
+`f2-soft-lane-provenance-prior-v1`. A canonical's runtime lane is the
+duration-weighted majority of its known admitted evidence. Cross-known-lane cosine
+similarity is multiplied by `1-prior_strength`; same-lane and either-unknown comparisons
+remain neutral. Lane is never a hard key/cannot-link, never creates a birth or rewrite by
+itself, and one-person-per-lane collapse is explicitly excluded.
+
+The sole optimization pass is the complete development grid `prior_strength`
+`{0.05,0.10,0.20}`. Selection maximizes duration-weighted development speaker accuracy
+subject to all non-gain gates; ties choose `0.05`. The selected configuration alone may
+touch validation once. Target-error subsets are all frozen dev and validation cases.
+Their frozen runtime inputs carry no `capture_lane`, so they exercise the preregistered
+neutral-unknown behavior; no lane may be inferred from truth.
+
+The unaudited m4mbp dual-lane pair is separately exploratory: local SHA-256
+`830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251`, remote SHA-256
+`5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d`.
+It has no speaker golden, so it may measure signal/production-embedding lane separation
+only and cannot contribute acceptance evidence. The historical `+8.1 pp` required the
+excluded explicit one-person-per-lane collapse; the generic constraint was `+0.0 pp`.
+
+Before any score, full evaluator-to-candidate audit and A,B→A,A runtime-shape plus
+decision-hash invariance must PASS. Each split must gain at least `1.0 pp` over L1;
+case regression, FP-speaker-seconds, DER, determinism, two-sided mapping, correction
+evidence, and the `0.20015926258638502 s` 30-minute p95 gate are unchanged. Holdout
+remains sealed. Machine-readable preregistration SHA-256:
+`f3459dbc0599d0d504befd1c77ba01ff747abf2f2311fa83ea0fb85d699c48bb`.
+
+### Campaign L1.5 F1 parameter-insensitivity diagnosis — boundary 1 (`l15`, 2026-08-04)
+
+**VERDICT: ROOT CAUSE LOCATED; CONFIG PLUMBING IS CORRECT, BUT ALL THREE GRID
+DIMENSIONS ARE NONBINDING AFTER THE PROPOSAL STAGE STARVES. F2 PAUSED; NO FIX.**
+`f1_decisions.py:50-55` constructs distinct configs and lines 110-113 pass each into
+`decide_f1`. On `3m-acquired-jamie-dimon`, a fresh same-input trace reports effective
+`0.30/0.05/0.02` versus `0.40/0.15/0.08` from inside the returned decision. The two
+complete semantic hashes differ because config/budget diagnostics differ, but the
+decision-bearing projection is byte-semantically identical.
+
+At `f1_candidate.py:100-111`, score and margin gate only the global
+cluster-to-canonical mapping. Two clusters score `0.9762/0.9898` with margins
+`0.8623/0.8574`, above both grids; the third scores `-0.0368` with margin `-0.0188`,
+below both. Thus both configs form the same mapping. Lines 113-138 then yield only 3
+proposals from 75 eligible units. Their `3.07 s` total fits the smallest `3.4864 s`
+budget at lines 139-159; larger budgets cannot act. The sealed full dev result shows
+the same mechanism globally: only 6 corrections and one aggregate outcome across all
+27 configurations. No key mismatch, shadowed constant, or reused config object exists.
+
+This proves why the parameters were insensitive; it does **not yet** prove whether the
+proposal starvation is an F1 implementation defect or a property of the D8-safe runtime
+frame. Per supervisor direction, the next and only authorized action is the read-only
+Stage-0 sealed ledger-arm differential. No gate, tolerance, target subset, FP rule, F1
+implementation, or sealed F1 evidence changed; no scorer or holdout path opened.
+
+The first transcript capture raced directory creation; its JSON was preserved and an
+identical-byte rerun captured stdout. Diagnosis v1 then encoded the correct explanation
+but a bookkeeping predicate compared 75 eligible units with total runtime units; both v1
+JSONs remain preserved. V2 corrects only that diagnosis predicate and is authoritative.
+V2 JSON SHA-256:
+`e5e30d50d06b993b091a2d3f59a4ff87790d70efc7036d7dee79d91104153926`;
+transcript SHA-256:
+`ec9d38ebf7ffc0749ccfb19d580508d06da18eb227acb1fab9b09036fbde87bd`;
+10-member evidence manifest SHA-256:
+`6646576bbbc46d16389deceb24bf04afd2b5bc308a3b0d5449ae6287a7d1729a`.
+
+Reproduce:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && diagnosis_tmp=$(mktemp -d /tmp/moss-f1-diagnosis.XXXXXX) && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/diagnose_f1_parameter_flow.py --output "$diagnosis_tmp/f1-two-config-differential-v2.json" && shasum -a 256 "$diagnosis_tmp/f1-two-config-differential-v2.json"
+```
+
+### Campaign L1.5 F1 Stage-0 ledger differential — boundary 2 (`l15`, 2026-08-05)
+
+**VERDICT: DATA/FRAME-SIDE BRANCH; THE SEALED STAGE-0 ARM ALSO COLLAPSES ON THE
+L1.5 D8-SAFE INPUTS. F1 IMPLEMENTATION DEFECT NOT PROVEN; NO F1-PRIME. STOP.**
+The exact Stage-0 A5 `candidate_engine.py` was loaded read-only with `git show` from
+owning commit `a16c6d811031cac826878200256af0b69224add8`, SHA-256
+`fbed07c2a06efee9f1efab24000ae3e7c7f083761fa21b5ab544a7afce538467`.
+Its frozen v4 family config SHA-256 is
+`280041b25865c0ce912ab3d05afdf8636561296723832deadeb6e328ea7b7a0f`;
+the ledger values are score `0.35`, margin `0.10`, budget `0.05`.
+
+Candidate decisions ran in a scorer-free process over the same L1.5 runtime units and
+sealed before a separate process opened development truth. Decision JSON SHA-256 is
+`e2409e03b05884c36eeefba4dfc0964ed44b4fbbff931cf6311e096ad71b32aa`;
+its 10-member pre-score seal SHA-256 is
+`0dc303959c01673d26eed707c3a3c2007b3d115c1558cdacdbd3a8957dd55d70`.
+The scored raw JSON was then sealed before interpretation: SHA-256
+`d5a7769017cf90a3a9cc39447d63c2b8af9e2162146688322d33a0d8281ff013`;
+7-member scored seal SHA-256
+`83bbaa6a270418f5022d43507399a9a1c7574bec17b65ecc2e0a6410a21f7f66`.
+
+Per-case Stage-0/F1 proposal counts and Stage-0 gain over L1:
+
+| Case | Eligible | Stage-0 proposals | F1 proposals | Gain pp |
+|---|---:|---:|---:|---:|
+| 1m-acquired-nfl | 19 | 0 | 0 | 0.0000 |
+| 3m-acquired-jamie-dimon | 75 | 3 | 3 | -0.0056 |
+| 1m-acquired-jamie-dimon | 24 | 0 | 0 | 0.0000 |
+| 5m-acquired-jamie-dimon | 114 | 1 | 1 | 0.0000 |
+| 5m-acquired-nfl | 120 | 0 | 0 | 0.0000 |
+| 5m-lex-bill-ackman | 130 | 0 | 0 | 0.0000 |
+| 5m-lex-javier-milei | 127 | 1 | 1 | +0.3000 |
+| 30m-lex-bill-ackman | 768 | 1 | 1 | +0.0028 |
+
+Totals are 6 proposals and 6 accepted corrections for both implementations. Every
+per-case proposal count, accepted count, and final-label semantic hash is identical.
+Both yield the exact duration-weighted aggregate gain `+0.0342058101619247 pp`.
+Therefore the Stage-0 arm does **not** produce meaningful additional corrections on the
+L1.5 D8-safe ASR frame. Under the supervisor's directed decision tree, the discrepancy
+with historical Stage-0 behavior is input/frame-side or common-method geometry, not a
+proven F1 implementation defect. Step 3's F1-PRIME condition is false.
+
+Decision attempt 1 produced no JSON or score: Stage-0 `RuntimeUnit` constructor rejected
+overlapping ASR pieces. Its transcript is preserved. The exact sealed ledger function and
+helpers do not read interval geometry; a source-audited immutable adapter therefore passed
+only their actual five fields (`span_id`, local/current speaker, unchanged duration, unchanged
+vector). No interval was merged/retimed, no value changed, and Stage-0 source remained
+byte-exact. Red-first 3-test then strengthened to 4-test green before the successful run.
+
+Verdict JSON SHA-256:
+`ab20f2a005254733e0f2c05fd23666cfd286adeca72873a0e3ad4718815283c3`;
+17-member final evidence manifest SHA-256:
+`c1973a7f8e65b60d46bebabc3e42c27c58429572ee4e56f27ffa30e4e4edb9a4`.
+F1 sealed FAIL remains immutable. F2 stays paused. No validation, holdout, gate,
+tolerance, target subset, FP rule, or implementation changed.
+
+Exact commands:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_stage0_ledger_differential.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/score_stage0_ledger_differential.py
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/write_stage0_ledger_differential_verdict.py
+```
+
+### Campaign L1.5 F1 final scientific disposition (`l15`, 2026-08-05)
+
+**FINAL DISPOSITION: FAIL — METHOD-CLASS LIMITATION UNDER THE HONEST RUNTIME
+FRAME, NOT AN INSTRUMENT DEFECT.** Boundary 1 proved that every configured threshold
+reached the algorithm but became nonbinding after fixed-mapping proposal starvation.
+Boundary 2 then ran the exact sealed Stage-0 ledger method on the same L1.5 D8-safe
+runtime inputs: all per-case proposal counts, accepted corrections, and final labels were
+identical to F1, with the same aggregate gain `+0.0342058101619247 pp`. The authoritative
+D8-frame scored raw SHA-256 is
+`d5a7769017cf90a3a9cc39447d63c2b8af9e2162146688322d33a0d8281ff013`;
+the 17-member differential evidence manifest SHA-256 is
+`c1973a7f8e65b60d46bebabc3e42c27c58429572ee4e56f27ffa30e4e4edb9a4`.
+
+**Corollary: the Stage-0 ledger-control gains were frame-flattered.** Its reported dev
+score moved from L1 `0.946284` to ledger `0.950569` (`+0.4285 pp`, commonly rounded
+`+0.43 pp`) on truth-timed unit partitions. Stage-0 dev raw SHA-256:
+`2842f66eae64843d8aa13c9e65c1f95f20a803489613c355c2a07bb1a40c71d5`;
+A5 dev evidence-manifest SHA-256:
+`8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34`.
+Its single blind opening moved L1 `0.963303` to ledger `0.972477`
+(`+0.917431 pp`) in the same truth-timed frame. Holdout-summary raw SHA-256:
+`43e9ff33e664331aa614bc748f5b6254a545c3252694a5522c90044c220e9966`;
+A5 holdout evidence-manifest SHA-256:
+`15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd`.
+
+Those historical numbers remain immutable measurements of their frame but do **not**
+survive the D8-safe production-endpoint-over-deployed-ASR frame and no longer carry
+strategic weight as a cheap live-mode win. No F1-PRIME is authorized. No gate, target
+subset, FP rule, sealed artifact, or holdout state changed.
+
+### Campaign L1.5 F2 exploratory scope revision — preregistration (`l15`, 2026-08-05)
+
+**PREREGISTERED BEFORE ANY F2 RUN: EXPLORATORY-ONLY.** The supervisor's joint-rethink
+ruling authorizes F2 solely to measure the lane-provenance prior on the unaudited m4mbp
+dual-lane corpus in the honest runtime frame. It makes no acceptance claim, does not run
+on the gated corpus, opens neither validation nor holdout, selects no winner, and freezes
+no configuration. The earlier unexecuted F2 development/validation protocol is
+prospectively superseded; no F2 result existed when this revision was committed.
+
+The single pass reports all three already-preregistered soft-prior strengths (`0.05`,
+`0.10`, `0.20`). Candidate inputs are production EndpointPolicy units, production
+WeSpeaker vectors, and runtime capture-lane metadata only. Full-chain no-golden audit and
+label-perturbation invariance are mandatory before measurement. The deliverable is an
+acoustic lane-prior effect size plus the acceptance-grade corpus/audit requirements now
+pinned in `l15/f2-lane-prior-family.json` (SHA-256
+`4d371dc9fb7e5a06fae5e5b298995bcd19b62334b3644566d5c2e6aed4bb1fba`). No
+campaign gate or tolerance changes.
+
+### Campaign L1.5 F2 exploratory verdict (`l15`, 2026-08-05)
+
+**VERDICT: EXPLORATORY DELIVERABLE COMPLETE; NOT ACCEPTANCE EVIDENCE; NOT
+FREEZEABLE.** Before either batch submission, the deployed host preflight passed with all
+three services active/enabled, no active batch job, no live API mutation since service
+start, clean deployed tree, and deployed SHA `9089b332`. Jobs `b0d8f6d96da4`
+(`local-mic`, 10 ASR segments) and `4e7050977b13` (`remote-system`, 21 ASR segments)
+completed normally. Preflight raw SHA-256:
+`f95ba1fc4bcb29467065ef4895d7ad3d27064d9a729d36230a38e5676d018451`;
+ASR provenance SHA-256:
+`fe42560c16d393c91543a27a796f848f55c4e38e523af1914e3f561e66680011`.
+
+Production EndpointPolicy produced 29 local and 39 remote spans. The pinned production
+WeSpeaker frontend/model (`5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8`)
+yielded 23 local and 25 remote eligible vectors. Runtime-fixture SHA-256:
+`cb1958e7802dc8b4a21496e187dcca9c938c7a88d8490aaef6c95b81309a6209`.
+Full-chain no-golden audit and label-perturbation invariance passed before measurement;
+precondition-manifest SHA-256:
+`f9b2d76724e63233f6991d5097b5ffb13921c1735ebbfa428911f9ad39736ce0`.
+
+Across the 48 eligible runtime units, baseline duration-weighted own-lane centroid
+classification was `0.890916`. Soft-prior strengths `0.05`, `0.10`, `0.20` increased the
+own-minus-cross weighted mean cosine margin by `0.027449`, `0.054899`, `0.109797` and
+changed the lane-consistency rate by `+0.024928`, `+0.049855`, `+0.087247`, respectively.
+They flipped 1/2/4 units covering 2.50/5.00/8.75 seconds. Each measurement was exactly
+deterministic across two runs; no configuration was selected. Raw effects SHA-256:
+`b9c119aafdce0c60b6e0d4c87a0aebd83f4a9afdc387ba8ef2780404a4a1b209`;
+verdict SHA-256:
+`b66997d4d8e0f19b8b83b03f8a84b434bd001647b1b49157397904d795acdb5a`;
+23-member evidence-manifest SHA-256:
+`800b0aa8144a4f80f453d82b960204ef44687ad56f312ae78fcdbbf2856030bb`.
+
+These are acoustic lane-separation effects, not speaker-identity accuracy: the one-minute
+corpus has no audited identity/activity truth and a lane is not assumed to contain one
+person. Acceptance-grade evidence requires multiple synchronized dual-lane meetings with
+varied speakers/acoustics/crosstalk/overlap and same-speaker-cross-lane cases; immutable
+lane metadata plus missing/wrong-lane controls; human-audited identity/activity/overlap
+truth; preregistered dev/validation/single-open long/hard holdout; D8-safe same-frame L1/F2
+with full-chain perturbation audit; and all campaign accuracy/DER/FP/regression/mapping/
+determinism/compute gates. Gated corpus, validation, and holdout remained unopened.
+
+### Campaign L1.5 F3 preregistration (`l15`, 2026-08-05)
+
+**PREREGISTERED BEFORE RED-FIRST OR EXECUTION.** F3 schedules `min_match_margin` in
+the causal live preparation itself, so span assignment, abstention, and birth see only the
+margin available at that meeting time. It must instantiate production
+`BoundedCausalIdentityPreparer` per span over one causal production evidence provider and
+album; direct `assign_speakers` calls or copied policy are forbidden. Production terminal
+sweep remains unchanged at deployed margin `0.10`.
+
+One dev-only pass contains exactly three schedules: `0.10→0.15` after 5 minutes,
+`0.10→0.20` after 5 minutes, and staged `0.10` through 5 minutes / `0.15` through 15
+minutes / `0.20` thereafter. All short cases therefore retain deployed `0.10`; only the
+previously banked long-horizon margins vary. Selection uses dev accuracy subject to all
+non-gain gates; validation receives only the selected schedule once. Gates remain ≥1.0 pp
+over L1 on dev and validation, ≤0.5 pp case regression, no per-case FP/DER worsening,
+two-sided mapping, deterministic ×2, complete changed-assignment evidence, and 30-minute
+sweep p95 ≤ `0.20015926258638502 s`. Holdout remains sealed.
+Family-spec SHA-256:
+`56491ebcd5f6aa5da8a2366863b5c7fccbc7e454e2dc1692169ff8572c0e99ae`.
+
+### Campaign L1.5 F3 verdict (`l15`, 2026-08-05)
+
+**VERDICT: FAIL; NOT FREEZEABLE.** Red-first missing-candidate refusal preceded the
+implementation. The first green attempt stopped before any decision because the editable
+install resolved the main-checkout product before the worktree; the transcript is sealed,
+and pinning worktree import order was a reproducibility correction only. The final
+precondition proved the full evaluator→candidate boundary contains no golden path, truth
+label A,B→A,A leaves runtime shape and decision hashes identical, short runtime margins
+remain `{0.10}`, and the 30-minute runtime crosses `{0.10,0.15,0.20}`. Every span calls
+production `BoundedCausalIdentityPreparer`; no copied assignment policy. Precondition
+manifest SHA-256:
+`13f6b3d34caf5f516f62c3aa86f7f8044546210e3a9e8580cb2b7952a2a71624`.
+
+All three dev schedules produced the same result. Selected by the preregistered tie rule:
+`f3-staged-5m-15m`; development gain `-0.0542198480 pp`. Seven short dev cases were
+unchanged; `30m-lex-bill-ackman` regressed `-0.0827 pp`, worsened DER, and its one changed
+unit lacked causal pair scores, failing changed-assignment evidence. Dev decisions were
+sealed before development scoring (prescore manifest SHA-256
+`28800dd4af2b6785cb54a32de87bba4592272907f889d27273849a3e133d53df`;
+dev-score raw SHA-256
+`95c807a928af0ee0eed9ddffb5bb8a5a49b2d5052c4ce50bf113e3112a0c2840`).
+
+The selected schedule alone ran validation once: every case was identical to L1; gain
+`0.0 pp`, non-gain gates PASS, gain gate FAIL. Validation decisions were sealed before
+validation scoring (prescore manifest SHA-256
+`59faa030bf2fc186400fd48adf3319cfc68ee78f52a6d1379987fc952ffad937`;
+validation-score raw SHA-256
+`16923b514e7e377b970025d8c01dfdcd568dd5eeaf632eab164fda325b80cf93`).
+Twenty deterministic 30-minute replays yielded 640 production sweep calls; Type-7 p95
+`0.0729178397 s` ≤ `0.2001592626 s` (timing raw SHA-256
+`63529008d852882f94959f96c79c0b12b2a8c923bdc77cfe9bf0f4d1794550bc`).
+Verdict raw SHA-256:
+`af63f90888fd93875301094a463ef2d68799a5e8d5098134b81688606191d4af`;
+25-member F3 evidence-manifest SHA-256:
+`a0fac3d01565e7b25e0783b2e505102a3e31d3d733ff3fc289c5412acda5aed1`.
+No second pass, validation tuning, gate change, or holdout opening occurred.
+
+### Campaign L1.5 family-verdicts boundary (`l15`, 2026-08-05)
+
+**CAMPAIGN DISPOSITION: BLOCKED_FOR_PRODUCT; PROCESS PASS; HOLDOUT SEALED.** F1 is
+an acceptance-bearing FAIL under the honest D8-safe runtime frame; F2 completed only its
+authorized exploratory acoustic measurement and is not freezeable; F3 is an
+acceptance-bearing FAIL. No acceptance-bearing family cleared its gates, so no composition
+arm is justified, no candidate freeze is proposed, and the single blind opening does not
+occur. The separately authorized DL1 dual-lane inventory is future work and does not alter
+this verdict.
+
+Consolidated verdict raw SHA-256:
+`94e63b95a2c3305be0e893144ea759f7e2faa19987432792718634eeeff16f02`;
+10-member family-verdict evidence-manifest SHA-256:
+`03bc9919c539c1fd4cc012333e6abcd85450bdbcee8e955f1986fdd75f19e942`.
+
+### Campaign L1.5 terminal verdict package (`l15`, 2026-08-05)
+
+**TERMINAL VERDICT: BLOCKED_FOR_PRODUCT; PROCESS WORKED AS DESIGNED.** No
+acceptance-bearing family is freezeable. F1 confirms that post-hoc regrouping is inert on
+the D8-safe runtime frame and that Stage-0's +0.43 pp development / +0.917 pp blind ledger
+gains were frame-flattered. F2 preserves a monotonic acoustic lane-prior dose response as
+directional evidence only. F3 produces no dev/validation uplift. Three cheap hypotheses
+were killed with bounded bench compute; acceptance-grade lane evidence is the primary
+surviving lever.
+
+The holdout was **never opened**: opening count `0`, no candidate-freeze artifact, no
+opening marker, and all nine audio/reference/cache paths absent. The three cases
+`5m-acquired-coca-cola`, `5m-lex-keyu-jin`, and `30m-acquired-jamie-dimon` remain sealed
+and virgin for the next campaign. Refusing to spend that holdout after no family reached
+freeze is the intended guardrail outcome and preserves a real evidentiary asset.
+
+Terminal verdict SHA-256:
+`1722a9a0b792e9a3ed734c11b1f7c4f83f6bcdd81add65f974a073e8e82901a3`.
+Fail-closed verdict verification passed every check. No product code, product test, service,
+host, deployment, threshold, gate, or holdout state changed.

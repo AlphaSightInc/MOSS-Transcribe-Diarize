@@ -1,0 +1,305 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.04,
+      "end": 5.52,
+      "speaker": "S01",
+      "text": "Sponsors in the description. And now, dear friends, here's Ben Shapiro and Destiny."
+    },
+    {
+      "id": "seg_0002",
+      "start": 6.64,
+      "end": 12.44,
+      "speaker": "S01",
+      "text": "Ben, you're a conservative. Destiny, you're a liberal. Can you each describe what key values"
+    },
+    {
+      "id": "seg_0003",
+      "start": 12.47,
+      "end": 18.12,
+      "speaker": "S01",
+      "text": "underpin your philosophy on politics and maybe life in the context of this left-right"
+    },
+    {
+      "id": "seg_0004",
+      "start": 18.14,
+      "end": 19.8,
+      "speaker": "S01",
+      "text": "political spectrum? You want to go first?"
+    },
+    {
+      "id": "seg_0005",
+      "start": 20.18,
+      "end": 25.82,
+      "speaker": "S02",
+      "text": "Yeah, so I think that we have a huge country full of a lot of people, a lot of"
+    },
+    {
+      "id": "seg_0006",
+      "start": 25.84,
+      "end": 31.78,
+      "speaker": "S02",
+      "text": "individual talents, capabilities. And I think that the goal of government, broadly speaking,"
+    },
+    {
+      "id": "seg_0007",
+      "start": 31.81,
+      "end": 37.02,
+      "speaker": "S02",
+      "text": "should be to try to ensure that everybody's able to achieve as much as possible. So on"
+    },
+    {
+      "id": "seg_0008",
+      "start": 37.04,
+      "end": 40.44,
+      "speaker": "S02",
+      "text": "a liberal level, that usually means some people might need a little bit of a boost"
+    },
+    {
+      "id": "seg_0009",
+      "start": 40.46,
+      "end": 44.02,
+      "speaker": "S02",
+      "text": "when it comes to things like education. They might need a little bit of a boost when it"
+    },
+    {
+      "id": "seg_0010",
+      "start": 44.04,
+      "end": 48.96,
+      "speaker": "S02",
+      "text": "comes to providing certain necessities like housing or food or clothing. But broadly"
+    },
+    {
+      "id": "seg_0011",
+      "start": 48.98,
+      "end": 52.0,
+      "speaker": "S02",
+      "text": "speaking, I mean, I'm still a liberal, not a communist or socialist. I don't believe"
+    },
+    {
+      "id": "seg_0012",
+      "start": 52.02,
+      "end": 56.82,
+      "speaker": "S02",
+      "text": "in the, you know, total command economy, total communist takeover of all of the, you"
+    },
+    {
+      "id": "seg_0013",
+      "start": 56.84,
+      "end": 59.94,
+      "speaker": "S02",
+      "text": "know, economy. But I think that broadly speaking, the government should kind of like kick in"
+    },
+    {
+      "id": "seg_0014",
+      "start": 59.96,
+      "end": 61.64,
+      "speaker": "S02",
+      "text": "and help people when they need it."
+    },
+    {
+      "id": "seg_0015",
+      "start": 61.98,
+      "end": 64.34,
+      "speaker": "S01",
+      "text": "And that government can and should be big."
+    },
+    {
+      "id": "seg_0016",
+      "start": 64.84,
+      "end": 68.73,
+      "speaker": "S02",
+      "text": "Not necessarily. I noticed that when liberals talk about government, especially"
+    },
+    {
+      "id": "seg_0017",
+      "start": 68.75,
+      "end": 74.25,
+      "speaker": "S02",
+      "text": "taxes, it seems like they talk about it for taxes sake or bigness sake. So people talk"
+    },
+    {
+      "id": "seg_0018",
+      "start": 74.28,
+      "end": 78.88,
+      "speaker": "S02",
+      "text": "about taxes sometimes as like a punishment, like tax the rich. I think taxing the rich"
+    },
+    {
+      "id": "seg_0019",
+      "start": 78.91,
+      "end": 83.72,
+      "speaker": "S02",
+      "text": "is fine insofar as it funds the programs that we want to fund. But Democrats have"
+    },
+    {
+      "id": "seg_0020",
+      "start": 83.74,
+      "end": 87.54,
+      "speaker": "S02",
+      "text": "a really big problem demonizing success or wealth. And I don't think that's a bad"
+    },
+    {
+      "id": "seg_0021",
+      "start": 87.56,
+      "end": 91.14,
+      "speaker": "S02",
+      "text": "thing. I don't think it's a bad thing to be wealthy, to be a billionaire, whatever,"
+    },
+    {
+      "id": "seg_0022",
+      "start": 91.16,
+      "end": 92.54,
+      "speaker": "S02",
+      "text": "as long as we're funding what we need to fund."
+    },
+    {
+      "id": "seg_0023",
+      "start": 93.44,
+      "end": 96.68,
+      "speaker": "S01",
+      "text": "Ben, what do you think it means to be a conservative? What's the philosophy that"
+    },
+    {
+      "id": "seg_0024",
+      "start": 96.71,
+      "end": 97.88,
+      "speaker": "S01",
+      "text": "underlies your political view?"
+    },
+    {
+      "id": "seg_0025",
+      "start": 97.91,
+      "end": 100.98,
+      "speaker": "S03",
+      "text": "So first of all, I'm glad that Destiny, you're already coming on as a Republican."
+    },
+    {
+      "id": "seg_0026",
+      "start": 101.01,
+      "end": 106.28,
+      "speaker": "S03",
+      "text": "That's exciting. I mean, we hold a lot in common in terms of, you know, the basic idea"
+    },
+    {
+      "id": "seg_0027",
+      "start": 106.31,
+      "end": 113.92,
+      "speaker": "S03",
+      "text": "that people ought to have as much opportunity as possible. And also, insofar as the government"
+    },
+    {
+      "id": "seg_0028",
+      "start": 113.95,
+      "end": 120.81,
+      "speaker": "S03",
+      "text": "should do the minimum amount necessary to interfere in people's lives in order to pursue"
+    },
+    {
+      "id": "seg_0029",
+      "start": 120.84,
+      "end": 125.22,
+      "speaker": "S03",
+      "text": "certain functions, particularly at the local level. So a lot of governmental discussions"
+    },
+    {
+      "id": "seg_0030",
+      "start": 125.24,
+      "end": 129.08,
+      "speaker": "S03",
+      "text": "on a pragmatic level end up being discussions about where government ought to be involved,"
+    },
+    {
+      "id": "seg_0031",
+      "start": 129.11,
+      "end": 134.88,
+      "speaker": "S03",
+      "text": "but also at what level government ought to be involved. And I have an incredibly subsidiary"
+    },
+    {
+      "id": "seg_0032",
+      "start": 135.92,
+      "end": 140.39,
+      "speaker": "S03",
+      "text": "I think that, you know, local governments, because you have higher levels of homogeneity"
+    },
+    {
+      "id": "seg_0033",
+      "start": 140.39,
+      "end": 144.01,
+      "speaker": "S03",
+      "text": "and consent, are capable of doing more things."
+    },
+    {
+      "id": "seg_0034",
+      "start": 144.01,
+      "end": 147.68,
+      "speaker": "S03",
+      "text": "And as you abstract up the chain, it becomes more and more impractical and more and more"
+    },
+    {
+      "id": "seg_0035",
+      "start": 147.68,
+      "end": 149.73,
+      "speaker": "S03",
+      "text": "divisive to do more things."
+    },
+    {
+      "id": "seg_0036",
+      "start": 149.73,
+      "end": 156.11,
+      "speaker": "S03",
+      "text": "In my view, government is basically there to preserve certain key liberties."
+    },
+    {
+      "id": "seg_0037",
+      "start": 156.11,
+      "end": 162.14,
+      "speaker": "S03",
+      "text": "Those key liberties preexist the government insofar as they are more important than what"
+    },
+    {
+      "id": "seg_0038",
+      "start": 162.14,
+      "end": 163.89,
+      "speaker": "S03",
+      "text": "priorities the government has."
+    },
+    {
+      "id": "seg_0039",
+      "start": 163.89,
+      "end": 169.41,
+      "speaker": "S03",
+      "text": "The job of government is to maintain, for example, national defense, protection of"
+    },
+    {
+      "id": "seg_0040",
+      "start": 169.41,
+      "end": 172.98,
+      "speaker": "S03",
+      "text": "property rights, protection of religious freedom."
+    },
+    {
+      "id": "seg_0041",
+      "start": 172.98,
+      "end": 176.8,
+      "speaker": "S03",
+      "text": "These are the key focuses of government as generally expressed in the Bill of Rights"
+    },
+    {
+      "id": "seg_0042",
+      "start": 176.8,
+      "end": 177.98,
+      "speaker": "S03",
+      "text": "and the Constitution."
+    },
+    {
+      "id": "seg_0043",
+      "start": 177.98,
+      "end": 181.01,
+      "speaker": "S03",
+      "text": "And I agree with the general philosophy of the Bill of Rights and the Constitution."
+    }
+  ]
+}

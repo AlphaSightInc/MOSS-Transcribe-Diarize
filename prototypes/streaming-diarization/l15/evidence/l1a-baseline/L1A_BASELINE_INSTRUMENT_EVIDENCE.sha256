@@ -1,0 +1,7 @@
+8cd02ff69a40a9249446a21d1496b2eaf11c99d9a455e6e6d5da0419ed6b8181  red-baseline-wrapper.txt
+c97ea4ce9c601eff456c9216401e37b32af91791c4c68b295fe7dab2268247fb  green-baseline-wrapper.txt
+09b5857e261e8fd49901a32899c8d3722aa291e53d7efac1ff7383ebbca43327  dev-validation-preflight.txt
+482dfdf7ccffa8053e399caaa47c57423142161d848c9dc34324e2e662d3f904  red-holdout-runner-refusal.txt
+46d145e1e82b1d2322b346d901666a082e864b5a2d6e7c02e04ab4bef36a4c99  ../../l1-baseline-spec.json
+b6456a063290df0582bec9b870e04deaae1dd716e5dde0e27b8f1cd5a9c1bb7c  ../../run_l1_baseline.py
+fb83c1f28611433045800b36c18cbb78fbd461fbaf41a6c5f17a537051e4b97c  ../../test_l1_baseline.py

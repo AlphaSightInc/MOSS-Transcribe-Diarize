@@ -1,0 +1,49 @@
+{
+  "acceptance_grade_evidence_requirements": {
+    "acceptance_metrics": "duration-weighted speaker accuracy, DER family, FP speaker-seconds, per-case regressions, two-sided mapping, determinism, and compute budget under the campaign gates",
+    "corpus": "multiple meetings with both local-mic and remote-system lanes, varied speakers, genders, acoustics, crosstalk, overlap, and genuine same-speaker-across-lanes cases",
+    "human_audit": "speaker and activity references audited for identity, timing, overlap, and crosstalk; no one-person-per-lane assumption",
+    "instrument": "D8-safe production runtime segmentation, full-chain golden-path audit, label-perturbation invariance, and same-frame L1/F2 comparison",
+    "source_integrity": "immutable synchronized audio and runtime lane metadata with captured missing-lane and wrong-lane controls",
+    "splits": "preregistered development, validation, and single-open blind holdout containing long meetings and similar-voice hard cases"
+  },
+  "campaign_gates_applied": false,
+  "disposition": "EXPLORATORY_ONLY_NOT_FREEZEABLE",
+  "effect_by_prior_strength": [
+    {
+      "classification_rate_delta": 0.02492770964203809,
+      "flip_count": 1,
+      "flip_duration_seconds": 2.5,
+      "margin_weighted_mean_delta": 0.027449368725974067,
+      "own_lane_classification_rate_after": 0.9158440522484793,
+      "own_lane_classification_rate_before": 0.8909163426064413,
+      "prior_strength": 0.05
+    },
+    {
+      "classification_rate_delta": 0.04985541928407618,
+      "flip_count": 2,
+      "flip_duration_seconds": 5.0,
+      "margin_weighted_mean_delta": 0.054898737451948086,
+      "own_lane_classification_rate_after": 0.9407717618905174,
+      "own_lane_classification_rate_before": 0.8909163426064413,
+      "prior_strength": 0.1
+    },
+    {
+      "classification_rate_delta": 0.08724698374713331,
+      "flip_count": 4,
+      "flip_duration_seconds": 8.75,
+      "margin_weighted_mean_delta": 0.10979747490389619,
+      "own_lane_classification_rate_after": 0.9781633263535745,
+      "own_lane_classification_rate_before": 0.8909163426064413,
+      "prior_strength": 0.2
+    }
+  ],
+  "effect_result_path": "prototypes/streaming-diarization/l15/evidence/f2/f2-exploratory-effects.json",
+  "effect_result_sha256": "b9c119aafdce0c60b6e0d4c87a0aebd83f4a9afdc387ba8ef2780404a4a1b209",
+  "family_id": "f2-soft-lane-provenance-prior-v1",
+  "freezeable": false,
+  "holdout_opened": false,
+  "interpretation": "measured acoustic lane-prior effect only; no speaker identity or acceptance claim",
+  "overall": "PASS_EXPLORATORY_DELIVERABLE",
+  "schema": "moss-l15-f2-exploratory-verdict.v1"
+}

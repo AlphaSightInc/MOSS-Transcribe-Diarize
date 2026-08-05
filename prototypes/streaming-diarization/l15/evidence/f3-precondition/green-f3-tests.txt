@@ -1,0 +1,9 @@
+test_full_chain_calls_production_preparer_without_policy_copy (__main__.F3PreconditionTests.test_full_chain_calls_production_preparer_without_policy_copy) ... ok
+test_schedule_boundaries_are_end_exclusive (__main__.F3PreconditionTests.test_schedule_boundaries_are_end_exclusive) ... ok
+test_semantic_hash_is_deterministic (__main__.F3PreconditionTests.test_semantic_hash_is_deterministic) ... ok
+test_short_meeting_remains_at_deployed_margin (__main__.F3PreconditionTests.test_short_meeting_remains_at_deployed_margin) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.008s
+
+OK

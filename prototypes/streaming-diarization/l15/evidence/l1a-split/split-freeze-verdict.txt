@@ -1,0 +1,11 @@
+PASS candidate_freeze_absent
+PASS corpus_pin
+PASS exact_19_cases
+PASS holdout_has_30m
+PASS holdout_has_three_prior_dev_unseen
+PASS opening_marker_absent
+PASS procedure_pin
+PASS split_pin
+PASS training_has_30m
+HOLDOUT SEALED cases=5m-acquired-coca-cola,5m-lex-keyu-jin,30m-acquired-jamie-dimon
+RESULT PASS failures=none

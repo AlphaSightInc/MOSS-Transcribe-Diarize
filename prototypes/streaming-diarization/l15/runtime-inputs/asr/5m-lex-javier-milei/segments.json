@@ -1,0 +1,571 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.11,
+      "end": 5.04,
+      "speaker": "S01",
+      "text": "So what is the difference between a madman and a genius?"
+    },
+    {
+      "id": "seg_0002",
+      "start": 6.88,
+      "end": 7.75,
+      "speaker": "S01",
+      "text": "Success."
+    },
+    {
+      "id": "seg_0003",
+      "start": 10.88,
+      "end": 13.88,
+      "speaker": "S02",
+      "text": "The following is a conversation with Javier Malé,"
+    },
+    {
+      "id": "seg_0004",
+      "start": 13.91,
+      "end": 15.71,
+      "speaker": "S02",
+      "text": "the president of Argentina."
+    },
+    {
+      "id": "seg_0005",
+      "start": 16.35,
+      "end": 21.25,
+      "speaker": "S02",
+      "text": "He is a libertarian, anarcho-capitalist and economist"
+    },
+    {
+      "id": "seg_0006",
+      "start": 21.28,
+      "end": 23.88,
+      "speaker": "S02",
+      "text": "who campaigned with a chainsaw"
+    },
+    {
+      "id": "seg_0007",
+      "start": 23.91,
+      "end": 25.78,
+      "speaker": "S02",
+      "text": "that symbolized his promise"
+    },
+    {
+      "id": "seg_0008",
+      "start": 25.81,
+      "end": 28.21,
+      "speaker": "S02",
+      "text": "to slash the corrupt bureaucracy of the state."
+    },
+    {
+      "id": "seg_0009",
+      "start": 29.28,
+      "end": 32.65,
+      "speaker": "S02",
+      "text": "He stepped into the presidency one year ago,"
+    },
+    {
+      "id": "seg_0010",
+      "start": 32.68,
+      "end": 34.91,
+      "speaker": "S02",
+      "text": "with the country on the brink of hyperinflation,"
+    },
+    {
+      "id": "seg_0011",
+      "start": 34.94,
+      "end": 36.91,
+      "speaker": "S02",
+      "text": "deep in debt and suffering"
+    },
+    {
+      "id": "seg_0012",
+      "start": 36.94,
+      "end": 39.01,
+      "speaker": "S02",
+      "text": "for mass unemployment and poverty."
+    },
+    {
+      "id": "seg_0013",
+      "start": 40.01,
+      "end": 42.08,
+      "speaker": "S02",
+      "text": "He took this crisis head-on,"
+    },
+    {
+      "id": "seg_0014",
+      "start": 42.11,
+      "end": 45.48,
+      "speaker": "S02",
+      "text": "transforming one of Latin America's largest economies"
+    },
+    {
+      "id": "seg_0015",
+      "start": 45.51,
+      "end": 47.91,
+      "speaker": "S02",
+      "text": "through pure free-market principles."
+    },
+    {
+      "id": "seg_0016",
+      "start": 48.78,
+      "end": 50.78,
+      "speaker": "S02",
+      "text": "In just a few months in office,"
+    },
+    {
+      "id": "seg_0017",
+      "start": 50.81,
+      "end": 52.51,
+      "speaker": "S02",
+      "text": "he already achieved Argentina's"
+    },
+    {
+      "id": "seg_0018",
+      "start": 52.54,
+      "end": 55.65,
+      "speaker": "S02",
+      "text": "first fiscal surplus in 16 years,"
+    },
+    {
+      "id": "seg_0019",
+      "start": 55.68,
+      "end": 57.81,
+      "speaker": "S02",
+      "text": "and not just avoided the hyperinflation,"
+    },
+    {
+      "id": "seg_0020",
+      "start": 57.84,
+      "end": 61.61,
+      "speaker": "S02",
+      "text": "but brought inflation down to its lowest in three years."
+    },
+    {
+      "id": "seg_0021",
+      "start": 62.54,
+      "end": 64.58,
+      "speaker": "S02",
+      "text": "We discuss all of this in detail,"
+    },
+    {
+      "id": "seg_0022",
+      "start": 64.61,
+      "end": 66.58,
+      "speaker": "S02",
+      "text": "both the successes and the challenges."
+    },
+    {
+      "id": "seg_0023",
+      "start": 67.28,
+      "end": 68.84,
+      "speaker": "S02",
+      "text": "His depth of knowledge"
+    },
+    {
+      "id": "seg_0024",
+      "start": 68.88,
+      "end": 71.2,
+      "speaker": "S02",
+      "text": "of economic principles, metrics and data"
+    },
+    {
+      "id": "seg_0025",
+      "start": 71.23,
+      "end": 73.34,
+      "speaker": "S02",
+      "text": "was truly impressive and refreshing"
+    },
+    {
+      "id": "seg_0026",
+      "start": 73.37,
+      "end": 75.08,
+      "speaker": "S02",
+      "text": "to hear from a world leader."
+    },
+    {
+      "id": "seg_0027",
+      "start": 75.91,
+      "end": 79.15,
+      "speaker": "S02",
+      "text": "But even bigger than the economic transformation of Argentina,"
+    },
+    {
+      "id": "seg_0028",
+      "start": 79.18,
+      "end": 82.08,
+      "speaker": "S02",
+      "text": "Javier represents the universal fight"
+    },
+    {
+      "id": "seg_0029",
+      "start": 82.11,
+      "end": 85.68,
+      "speaker": "S02",
+      "text": "against government corruption and the fight for freedom,"
+    },
+    {
+      "id": "seg_0030",
+      "start": 85.71,
+      "end": 89.48,
+      "speaker": "S02",
+      "text": "economic freedom, political freedom and freedom of speech."
+    },
+    {
+      "id": "seg_0031",
+      "start": 89.51,
+      "end": 91.25,
+      "speaker": "S02",
+      "text": "He has many critics,"
+    },
+    {
+      "id": "seg_0032",
+      "start": 91.28,
+      "end": 93.88,
+      "speaker": "S02",
+      "text": "many of whom are part of the corrupt establishment"
+    },
+    {
+      "id": "seg_0033",
+      "start": 93.91,
+      "end": 95.68,
+      "speaker": "S02",
+      "text": "he is seeking to dismantle."
+    },
+    {
+      "id": "seg_0034",
+      "start": 95.71,
+      "end": 98.54,
+      "speaker": "S02",
+      "text": "But many are simply Argentinian citizens,"
+    },
+    {
+      "id": "seg_0035",
+      "start": 98.57,
+      "end": 102.08,
+      "speaker": "S02",
+      "text": "scared of the pain his radical policies may bring,"
+    },
+    {
+      "id": "seg_0036",
+      "start": 102.11,
+      "end": 103.58,
+      "speaker": "S02",
+      "text": "at least in the short term."
+    },
+    {
+      "id": "seg_0037",
+      "start": 104.58,
+      "end": 107.28,
+      "speaker": "S02",
+      "text": "But whether one disagrees with his methods or not,"
+    },
+    {
+      "id": "seg_0038",
+      "start": 107.31,
+      "end": 109.78,
+      "speaker": "S02",
+      "text": "no one can deny that his presidency"
+    },
+    {
+      "id": "seg_0039",
+      "start": 109.81,
+      "end": 112.18,
+      "speaker": "S02",
+      "text": "marks one of the most ambitious attempts"
+    },
+    {
+      "id": "seg_0040",
+      "start": 112.21,
+      "end": 114.98,
+      "speaker": "S02",
+      "text": "at economic transformation in modern history,"
+    },
+    {
+      "id": "seg_0041",
+      "start": 115.01,
+      "end": 118.88,
+      "speaker": "S02",
+      "text": "and that Javier Malé is truly a force of nature,"
+    },
+    {
+      "id": "seg_0042",
+      "start": 118.91,
+      "end": 120.88,
+      "speaker": "S02",
+      "text": "combining the rigor of an economist"
+    },
+    {
+      "id": "seg_0043",
+      "start": 120.91,
+      "end": 123.25,
+      "speaker": "S02",
+      "text": "with the passion of a revolutionary"
+    },
+    {
+      "id": "seg_0044",
+      "start": 123.28,
+      "end": 126.75,
+      "speaker": "S02",
+      "text": "in the fight for freedom of a nation he loves."
+    },
+    {
+      "id": "seg_0045",
+      "start": 127.71,
+      "end": 130.18,
+      "speaker": "S02",
+      "text": "Argentina is one of my favorite countries,"
+    },
+    {
+      "id": "seg_0046",
+      "start": 130.21,
+      "end": 132.65,
+      "speaker": "S02",
+      "text": "so I sincerely hope he succeeds."
+    },
+    {
+      "id": "seg_0047",
+      "start": 133.54,
+      "end": 135.28,
+      "speaker": "S02",
+      "text": "This interview was conducted"
+    },
+    {
+      "id": "seg_0048",
+      "start": 133.56,
+      "end": 139.32,
+      "speaker": "S02",
+      "text": "This interview was conducted with the president speaking Spanish and me speaking English with"
+    },
+    {
+      "id": "seg_0049",
+      "start": 139.32,
+      "end": 141.56,
+      "speaker": "S02",
+      "text": "an interpreter simultaneously translating."
+    },
+    {
+      "id": "seg_0050",
+      "start": 142.72,
+      "end": 147.92,
+      "speaker": "S02",
+      "text": "We make the episode available, overdubbed and subtitled in both English and Spanish."
+    },
+    {
+      "id": "seg_0051",
+      "start": 147.92,
+      "end": 151.04,
+      "speaker": "S02",
+      "text": "Thanks to our great friends at Eleven Labs."
+    },
+    {
+      "id": "seg_0052",
+      "start": 151.64,
+      "end": 156.15,
+      "speaker": "S02",
+      "text": "If you're watching on YouTube, you can switch between English and Spanish by clicking the gear"
+    },
+    {
+      "id": "seg_0053",
+      "start": 156.15,
+      "end": 158.84,
+      "speaker": "S02",
+      "text": "icon, selecting audio track, and then choosing the language."
+    },
+    {
+      "id": "seg_0054",
+      "start": 159.52,
+      "end": 160.6,
+      "speaker": "S02",
+      "text": "Same with the captions."
+    },
+    {
+      "id": "seg_0055",
+      "start": 161.08,
+      "end": 165.08,
+      "speaker": "S02",
+      "text": "If you're watching on X, I'll post both Spanish and English versions separately."
+    },
+    {
+      "id": "seg_0056",
+      "start": 165.6,
+      "end": 169.8,
+      "speaker": "S02",
+      "text": "If you're watching on Spotify or listening elsewhere, I'll probably only post the English"
+    },
+    {
+      "id": "seg_0057",
+      "start": 169.8,
+      "end": 170.32,
+      "speaker": "S02",
+      "text": "version."
+    },
+    {
+      "id": "seg_0058",
+      "start": 170.96,
+      "end": 175.36,
+      "speaker": "S02",
+      "text": "This is a first time for me doing something like this in a foreign language."
+    },
+    {
+      "id": "seg_0059",
+      "start": 175.8,
+      "end": 177.72,
+      "speaker": "S02",
+      "text": "It was challenging but illuminating."
+    },
+    {
+      "id": "seg_0060",
+      "start": 178.48,
+      "end": 182.56,
+      "speaker": "S02",
+      "text": "I hope to continue talking to many world leaders for two to three hours in this way,"
+    },
+    {
+      "id": "seg_0061",
+      "start": 182.92,
+      "end": 188.95,
+      "speaker": "S02",
+      "text": "including Volodymyr Zelensky, Vladimir Putin, Narendra Modi, and Xi Jinping."
+    },
+    {
+      "id": "seg_0062",
+      "start": 189.76,
+      "end": 195.44,
+      "speaker": "S02",
+      "text": "I want to explore who they are, how they think, and how they hope to help their country"
+    },
+    {
+      "id": "seg_0063",
+      "start": 195.44,
+      "end": 196.72,
+      "speaker": "S02",
+      "text": "and humanity flourish."
+    },
+    {
+      "id": "seg_0064",
+      "start": 197.88,
+      "end": 199.56,
+      "speaker": "S02",
+      "text": "This is the Lex Friedman Podcast."
+    },
+    {
+      "id": "seg_0065",
+      "start": 199.56,
+      "end": 202.28,
+      "speaker": "S02",
+      "text": "To support it, please check out our sponsors in the description."
+    },
+    {
+      "id": "seg_0066",
+      "start": 202.76,
+      "end": 206.08,
+      "speaker": "S02",
+      "text": "And now, dear friends, here's Javier Malé."
+    },
+    {
+      "id": "seg_0067",
+      "start": 207.52,
+      "end": 212.04,
+      "speaker": "S02",
+      "text": "When did you first understand the value of freedom, especially economic freedom?"
+    },
+    {
+      "id": "seg_0068",
+      "start": 213.64,
+      "end": 217.88,
+      "speaker": "S03",
+      "text": "Well, actually, I came to understand the ideas of freedom."
+    },
+    {
+      "id": "seg_0069",
+      "start": 219.12,
+      "end": 224.92,
+      "speaker": "S03",
+      "text": "As an economic growth specialist back in the years of 2013 to 2014,"
+    },
+    {
+      "id": "seg_0070",
+      "start": 227.24,
+      "end": 233.68,
+      "speaker": "S03",
+      "text": "I could see that per capita GDP statistics over the last 2,000 years of the Christian"
+    },
+    {
+      "id": "seg_0071",
+      "start": 233.68,
+      "end": 241.72,
+      "speaker": "S03",
+      "text": "era essentially looked like a hockey stick, indicating that per capita GDP remained almost"
+    },
+    {
+      "id": "seg_0072",
+      "start": 241.72,
+      "end": 246.92,
+      "speaker": "S03",
+      "text": "constant until around 1800, after which it accelerated sharply."
+    },
+    {
+      "id": "seg_0073",
+      "start": 247.28,
+      "end": 253.68,
+      "speaker": "S03",
+      "text": "In the same context of that phenomenal increase in productivity and per capita GDP,"
+    },
+    {
+      "id": "seg_0074",
+      "start": 254.08,
+      "end": 259.32,
+      "speaker": "S03",
+      "text": "the population had multiplied sevenfold over the preceding two hundred years."
+    },
+    {
+      "id": "seg_0075",
+      "start": 260.11,
+      "end": 265.93,
+      "speaker": "S03",
+      "text": "So basically, in economics, that means you get increasing returns."
+    },
+    {
+      "id": "seg_0076",
+      "start": 265.96,
+      "end": 271.85,
+      "speaker": "S03",
+      "text": "And the presence of increasing returns implies the existence of monopolies,"
+    },
+    {
+      "id": "seg_0077",
+      "start": 271.88,
+      "end": 277.89,
+      "speaker": "S03",
+      "text": "concentrated structures, and according to traditional neoclassical economic theory,"
+    },
+    {
+      "id": "seg_0078",
+      "start": 277.92,
+      "end": 282.92,
+      "speaker": "S03",
+      "text": "the presence of monopolies and concentrated structures is not a good thing."
+    },
+    {
+      "id": "seg_0079",
+      "start": 283.82,
+      "end": 289.89,
+      "speaker": "S03",
+      "text": "But at the same time, one could see that living standards had increased tremendously"
+    },
+    {
+      "id": "seg_0080",
+      "start": 289.92,
+      "end": 295.92,
+      "speaker": "S03",
+      "text": "and that middle-income people ended up living far better than emperors did in the Roman era."
+    },
+    {
+      "id": "seg_0081",
+      "start": 297.04,
+      "end": 299.96,
+      "speaker": "S03",
+      "text": "And the population had gone from having nine"
+    }
+  ]
+}

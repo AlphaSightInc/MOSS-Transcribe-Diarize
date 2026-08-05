@@ -1,0 +1,114 @@
+{
+  "schema": "moss-l15-family-preregistration.v1",
+  "family_id": "f3-live-pass-duration-adaptive-margin-v1",
+  "family_order": 3,
+  "preregistered_at": "2026-08-05",
+  "run_started": false,
+  "runtime_input": {
+    "manifest_path": "prototypes/streaming-diarization/l15/runtime-input-manifest.json",
+    "manifest_sha256": "886ce7a6b53f1f55c1966753b8e691113c074fee11bd3b4fdd6e650d0712209e",
+    "split_manifest_path": "prototypes/streaming-diarization/l15/split-manifest.json",
+    "split_manifest_sha256": "308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3",
+    "frame": "production-endpoint-over-deployed-asr",
+    "golden_reachable_by_candidate": false,
+    "holdout_present": false
+  },
+  "algorithm": {
+    "scope": "live causal preparation only; each span's assignment, abstention, and birth uses the margin scheduled at that span's end time",
+    "production_binding": "moss_transcribe_diarize.app.live_identity.BoundedCausalIdentityPreparer",
+    "call_not_copy": true,
+    "provider_state": "one production WeSpeakerLiveEvidenceProvider and FingerprintAlbum persist causally across spans",
+    "fixed_min_match_score": 0.35,
+    "fixed_max_speakers": 16,
+    "sweep_behavior": "unchanged production SweepLedger/sweep with deployed margin 0.10; F3 does not alter retrospective policy",
+    "words_or_timings_mutable": false,
+    "span_boundaries_mutable": false,
+    "new_model_or_gpu": false
+  },
+  "development_grid": {
+    "schedules": [
+      {
+        "config_id": "f3-step-5m-m015",
+        "segments": [
+          {"end_seconds_exclusive": 300.0, "margin": 0.1},
+          {"end_seconds_exclusive": null, "margin": 0.15}
+        ]
+      },
+      {
+        "config_id": "f3-step-5m-m020",
+        "segments": [
+          {"end_seconds_exclusive": 300.0, "margin": 0.1},
+          {"end_seconds_exclusive": null, "margin": 0.2}
+        ]
+      },
+      {
+        "config_id": "f3-staged-5m-15m",
+        "segments": [
+          {"end_seconds_exclusive": 300.0, "margin": 0.1},
+          {"end_seconds_exclusive": 900.0, "margin": 0.15},
+          {"end_seconds_exclusive": null, "margin": 0.2}
+        ]
+      }
+    ],
+    "configuration_count": 3,
+    "selection": "maximize duration-weighted development speaker accuracy subject to every non-gain gate; deterministic ties choose lexicographically smallest config_id",
+    "validation_access": "selected configuration only, exactly once after development selection",
+    "rationale": "retain deployed 0.10 throughout the short-case class; test only the previously banked 0.15/0.20 long-horizon margins after five minutes"
+  },
+  "target_error_subset": {
+    "definition": "all cases in each frozen split; no post-result case selection",
+    "development_case_ids": [
+      "1m-acquired-nfl",
+      "3m-acquired-jamie-dimon",
+      "1m-acquired-jamie-dimon",
+      "5m-acquired-jamie-dimon",
+      "5m-acquired-nfl",
+      "5m-lex-bill-ackman",
+      "5m-lex-javier-milei",
+      "30m-lex-bill-ackman"
+    ],
+    "validation_case_ids": [
+      "1m-acquired-rolex",
+      "1m-lex-bill-ackman",
+      "1m-lex-javier-milei",
+      "1m-lex-keyu-jin",
+      "3m-lex-adam-frank",
+      "3m-lex-shapiro-destiny",
+      "5m-acquired-alphabet",
+      "5m-acquired-rolex"
+    ],
+    "score": "duration-weighted speaker accuracy over complete reference speaker seconds"
+  },
+  "preconditions_before_scoring": {
+    "full_chain_audit": "evaluator to candidate input boundary; candidate process sees runtime manifest and decisions only",
+    "label_perturbation": "change evaluation truth labels A,B to A,A; runtime unit shape and complete decision semantic hash must remain identical",
+    "production_binding_assertion": "scheduled wrapper must instantiate the production BoundedCausalIdentityPreparer for every span and may not call assign_speakers directly",
+    "schedule_activation_red_check": "the 30-minute runtime trace must cross every configured time boundary while a short trace remains at 0.10",
+    "required_result": "PASS",
+    "red_first": true
+  },
+  "gates": {
+    "minimum_gain_over_l1_pp": 1.0,
+    "gain_required_on_development_and_validation": true,
+    "maximum_case_regression_pp": 0.5,
+    "false_positive_speaker_seconds_not_worse_each_case": true,
+    "diarization_error_rate_not_worse_each_case": true,
+    "deterministic_runs": 2,
+    "two_sided_mapping_preserved_where_l1_has_it": true,
+    "changed_assignment_evidence_has_score_delta_and_changed_duration_fraction": true,
+    "thirty_minute_sweep_p95_seconds_max": 0.20015926258638502,
+    "thirty_minute_timing_samples": 20,
+    "sweep_baseline_path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json",
+    "sweep_baseline_sha256": "45edc8ce142c3ae15cc03ddd6739cb40ff59ced907b2885667894f2b5f74be21"
+  },
+  "optimization_budget": {
+    "maximum_passes": 1,
+    "pass_1": "the complete predeclared three-schedule development grid",
+    "extensions_or_second_pass": false,
+    "validation_driven_tuning": false
+  },
+  "holdout": {
+    "status": "SEALED",
+    "opening_allowed": false
+  }
+}

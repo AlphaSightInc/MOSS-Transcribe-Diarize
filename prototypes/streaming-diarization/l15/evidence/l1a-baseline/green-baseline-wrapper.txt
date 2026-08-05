@@ -1,0 +1,9 @@
+test_a2_instrument_is_hash_pinned_and_production_bound (__main__.BaselineContractTests.test_a2_instrument_is_hash_pinned_and_production_bound) ... ok
+test_exact_dev_validation_scope_is_selected (__main__.BaselineContractTests.test_exact_dev_validation_scope_is_selected) ... ok
+test_holdout_is_refused_before_baseline_selection (__main__.BaselineContractTests.test_holdout_is_refused_before_baseline_selection) ... ok
+test_type7_percentile_is_predeclared_and_deterministic (__main__.BaselineContractTests.test_type7_percentile_is_predeclared_and_deterministic) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 4.118s
+
+OK

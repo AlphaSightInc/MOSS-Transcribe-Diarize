@@ -259,6 +259,41 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   untouched. Addendum-seal SHA-256:
   `ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3`.
 
+- **L1.5 live-mode uplift bench campaign — BLOCKED for product (2026-08-05).**
+  Same-method numbers are planner-frame-dependent. The Stage-0 ledger control measured
+  +0.4285 pp on development and +0.917431 pp on its blind holdout over truth-timed unit
+  partitions. On L1.5's D8-safe production-endpoint-over-deployed-ASR runtime units, the
+  exact sealed Stage-0 ledger arm and the newly written F1 arm produced identical labels,
+  six proposals, six accepted changes, and only +0.0342058 pp over L1. The prior gains are
+  therefore frame-flattered and are not evidence of a cheap live-mode uplift. Stage-0
+  development/holdout raw SHA-256:
+  `2842f66eae64843d8aa13c9e65c1f95f20a803489613c355c2a07bb1a40c71d5` /
+  `43e9ff33e664331aa614bc748f5b6254a545c3252694a5522c90044c220e9966`;
+  D8-safe differential evidence-manifest SHA-256:
+  `c1973a7f8e65b60d46bebabc3e42c27c58429572ee4e56f27ffa30e4e4edb9a4`.
+
+  The post-hoc regrouping method class is inert on this runtime frame: all 27 F1 grid
+  configurations produced one aggregate outcome; the two-config trace showed three
+  proposals from 75 eligible units because fixed cluster-to-canonical mapping starved the
+  proposal stage before score, margin, or budget could bind. Parameter-diagnosis evidence-
+  manifest SHA-256:
+  `6646576bbbc46d16389deceb24bf04afd2b5bc308a3b0d5449ae6287a7d1729a`.
+  Duration-adaptive live-pass margin also failed: development was -0.054220 pp, validation
+  was unchanged, while its 30-minute sweep-compute p95 passed. F3 evidence-manifest
+  SHA-256: `a0fac3d01565e7b25e0783b2e505102a3e31d3d733ff3fc289c5412acda5aed1`.
+
+  F2 remains directional evidence only. On one unaudited dual-lane minute, the
+  duration-weighted own-lane acoustic classification rate moved from 0.890916 without the
+  prior to 0.915844, 0.940772, and 0.978163 at strengths 0.05, 0.10, and 0.20. It is not
+  speaker-identity acceptance evidence. F2 evidence-manifest SHA-256:
+  `800b0aa8144a4f80f453d82b960204ef44687ad56f312ae78fcdbbf2856030bb`.
+  Acceptance-grade dual-lane evidence is the primary surviving lever: it requires multiple
+  synchronized meetings, audited speaker/activity/overlap truth, lane-integrity controls,
+  D8-safe same-frame arms, and preregistered dev/validation/single-open holdout gates. No
+  family reached freeze, so the L1.5 holdout was never opened; its three cases retain blind
+  evidentiary value. Family-verdict evidence-manifest SHA-256:
+  `03bc9919c539c1fd4cc012333e6abcd85450bdbcee8e955f1986fdd75f19e942`.
+
 Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
 0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge
 threshold 0.70 + terminal sweep at session end. The hash-pinned production-plan replay

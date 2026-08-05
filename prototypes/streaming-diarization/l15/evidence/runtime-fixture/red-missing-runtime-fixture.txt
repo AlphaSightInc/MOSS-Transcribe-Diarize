@@ -1,0 +1,6 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_runtime_fixture.py
+EXIT: 1
+Traceback (most recent call last):
+  File "prototypes/streaming-diarization/l15/test_runtime_fixture.py", line 7, in <module>
+    from runtime_fixture import planner_bindings, plan_runtime_asr, runtime_shape
+ModuleNotFoundError: No module named 'runtime_fixture'

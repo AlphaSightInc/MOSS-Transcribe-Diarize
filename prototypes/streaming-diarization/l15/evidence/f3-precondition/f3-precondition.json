@@ -1,0 +1,169 @@
+{
+  "family_id": "f3-live-pass-duration-adaptive-margin-v1",
+  "full_chain_audit": {
+    "candidate_calls_assign_speakers_directly": false,
+    "candidate_receives_evaluation_truth": false,
+    "chain": [
+      {
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "moss_transcribe_diarize.app.live_identity",
+          "pathlib",
+          "runtime_fixture",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/f3_candidate.py",
+        "sha256": "90ca57eede0070a47d833d50682fd88e1ab6b868006a6caad8a98a9364f74d1a",
+        "subscript_keys": [
+          "canonical_speaker",
+          "diagnostics",
+          "end_sample",
+          "evidence",
+          "f3",
+          "final_unit_labels",
+          "ledger_records",
+          "local_speaker",
+          "pieces",
+          "reason",
+          "score",
+          "span",
+          "span_id",
+          "span_records",
+          "span_trace",
+          "start_sample",
+          "status",
+          "unit_index",
+          "units"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "f3_candidate",
+          "pathlib",
+          "runtime_fixture",
+          "runtime_l1",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/f3_decisions.py",
+        "sha256": "22bff81dc5f592ceb7bdbbeda978ec70f7bd01d03544e01b8cd98eb22a4a3df6",
+        "subscript_keys": [
+          "case_id",
+          "config_id",
+          "configuration_count",
+          "counts",
+          "development_grid",
+          "end_seconds_exclusive",
+          "f3",
+          "family_id",
+          "family_spec_sha256",
+          "final_unit_labels",
+          "live_unit_labels",
+          "margin",
+          "overall",
+          "production_bindings",
+          "production_config",
+          "revision_trace",
+          "runtime_shape_sha256",
+          "schedules",
+          "scoring_executed",
+          "segments",
+          "span_trace",
+          "split",
+          "target_error_subset"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "pathlib",
+          "runtime_fixture",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/runtime_l1.py",
+        "sha256": "ea19dfdaa5fa97cee8a2463d407fee1335bdfb9405b1bd2df4c8fec02f49a984",
+        "subscript_keys": [
+          "case_id",
+          "cases",
+          "end_sample",
+          "final_unit_labels",
+          "local_speaker",
+          "pieces",
+          "production_config",
+          "runtime_cache_path",
+          "runtime_cache_sha256",
+          "span_id",
+          "spans",
+          "split",
+          "start_sample",
+          "terminal_synthetic_metrics_suppressed",
+          "total_samples",
+          "units",
+          "vec_idx",
+          "vecs"
+        ]
+      }
+    ],
+    "findings": [],
+    "passed": true,
+    "production_preparer_binding": "moss_transcribe_diarize.app.live_identity.BoundedCausalIdentityPreparer",
+    "production_preparer_source": "moss_transcribe_diarize/app/live_identity.py",
+    "production_preparer_source_sha256": "b42efca21dc33462c1b1fe46e9884b6500701060c38b036eacb0a6a232bef744"
+  },
+  "golden_path_opened": false,
+  "holdout_opened": false,
+  "label_perturbation": {
+    "after": [
+      [
+        0.0,
+        1.0,
+        "A"
+      ],
+      [
+        1.0,
+        2.0,
+        "A"
+      ]
+    ],
+    "before": [
+      [
+        0.0,
+        1.0,
+        "A"
+      ],
+      [
+        1.0,
+        2.0,
+        "B"
+      ]
+    ],
+    "decision_after_sha256": "fdb3c31b6c252b0d99720840a4ecc572d2a84597b541dc6f9ffd678e9260183f",
+    "decision_before_sha256": "fdb3c31b6c252b0d99720840a4ecc572d2a84597b541dc6f9ffd678e9260183f",
+    "decision_identical": true,
+    "runtime_shape_after_sha256": "db92bca58c2b7f78705a7eebe44b8a408773a36836af3b4816e3cc5179718f23",
+    "runtime_shape_before_sha256": "db92bca58c2b7f78705a7eebe44b8a408773a36836af3b4816e3cc5179718f23",
+    "runtime_shape_identical": true,
+    "truth_changed": true
+  },
+  "overall": "PASS",
+  "schedule_activation": {
+    "long_case_id": "30m-lex-bill-ackman",
+    "long_crosses_all_schedule_segments": true,
+    "long_margins": [
+      0.1,
+      0.15,
+      0.2
+    ],
+    "short_case_id": "1m-acquired-nfl",
+    "short_margins": [
+      0.1
+    ],
+    "short_only_deployed_margin": true,
+    "traces_path": "prototypes/streaming-diarization/l15/evidence/f3-precondition/f3-precondition-traces.json",
+    "traces_sha256": "3d916a755c243fec5fd71d41bfb68efec22e7c3dda9397f70e9c81c80a781cb8"
+  },
+  "schema": "moss-l15-f3-precondition.v1",
+  "scoring_executed": false,
+  "validation_opened": false
+}

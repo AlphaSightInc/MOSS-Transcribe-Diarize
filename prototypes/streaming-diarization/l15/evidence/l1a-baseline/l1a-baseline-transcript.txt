@@ -1,0 +1,21 @@
+L1.a calibrated baseline scope=16 dev/validation holdout=SEALED
+a2_instrument=5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91
+PASS 1m-acquired-nfl split=development accuracy=0.813540 der=0.186460 repeat=62c368e4a56f44697df54e61eefee558f6ad91f59805028c83ffad9edade5944
+PASS 3m-acquired-jamie-dimon split=development accuracy=0.987034 der=0.012966 repeat=1192430f57b5d36ea0cf2d2ffb93fc05cd8c506a0f25aa5b52a6db3bcba96bc5
+PASS 1m-acquired-jamie-dimon split=development accuracy=0.732397 der=0.267603 repeat=e44cf5aac8115fa25f8270be761ee2c105e7f0cac512e945c7eb8cb8f8c53520
+PASS 5m-acquired-jamie-dimon split=development accuracy=0.628259 der=0.371743 repeat=d4be5eb4c36f38ffedcd54cbbf4571b9bfb3b57e52af939220d5aa767c9eacbf
+PASS 5m-acquired-nfl split=development accuracy=0.806764 der=0.193238 repeat=acdfb892900f2516bcd25f6efa00603c258a98ab1e9680b2e97fc6965db1bae1
+PASS 5m-lex-bill-ackman split=development accuracy=0.960000 der=0.040000 repeat=9a6a4568c24eff4f8635c49a58adfddee04c1bc86a8b2c541bd10dd473d334c5
+PASS 5m-lex-javier-milei split=development accuracy=0.890000 der=0.110000 repeat=16a4b3931f95aa22b20de863cf9e5ff7f54a4235794ac74d5585df1bc755f380
+PASS 30m-lex-bill-ackman split=development accuracy=0.963119 der=0.036881 repeat=47961921b1c414c472cbe35413df85835053b08424c0fa9de60b6410e7f44a79
+PASS 1m-acquired-rolex split=validation accuracy=0.986594 der=0.013406 repeat=763d49933feafee746bd533dc8bb585b3c632d7fec678c4e62f301a93d5ca42c
+PASS 1m-lex-bill-ackman split=validation accuracy=0.950000 der=0.050000 repeat=90e28ec11d015f6ead87117e68052565d1893216d3772e85d16f98153b762c12
+PASS 1m-lex-javier-milei split=validation accuracy=0.875000 der=0.125000 repeat=760fb14cab111a73b7ebbb1438a07e0f271387283e77159e439adcb91e72c42b
+PASS 1m-lex-keyu-jin split=validation accuracy=0.958333 der=0.041667 repeat=e8d5dc4316c062715d7e8f7e5e8235250f67a00ade4d249cbe6ba1e46b837c8d
+PASS 3m-lex-adam-frank split=validation accuracy=0.961111 der=0.038889 repeat=cd7cbff311d86f262dafd751b8f8bc3f2ebe35a53762bf89738e62870df38889
+PASS 3m-lex-shapiro-destiny split=validation accuracy=1.000000 der=0.000000 repeat=ed7decbd89407e582296780f54cd86bb0ce8fe01033972471c310f45a50b55ad
+PASS 5m-acquired-alphabet split=validation accuracy=0.916765 der=0.083238 repeat=d8a4b823c8995d21170d508391729fbd76468ecd70733c6169b445424f6896f3
+PASS 5m-acquired-rolex split=validation accuracy=0.853614 der=0.146388 repeat=30127b2083614472ad8a5af12394cf4cbd4fb009c95edad3cb4eef074c52bbec
+PASS accepted_alphabet actual=0.916765 deltas=[0.003265, 0.002365] tolerance=0.005000
+PASS sweep_timing 30m-lex-bill-ackman calls=64 p95_seconds=0.100079631
+RESULT PASS failures=none

@@ -1,0 +1,4 @@
+PASS preflight idle healthy no-live-session
+PASS local-mic job=b0d8f6d96da4 segments=10
+PASS remote-system job=4e7050977b13 segments=21
+PASS overall lanes=2 provenance_sha256=fe42560c16d393c91543a27a796f848f55c4e38e523af1914e3f561e66680011

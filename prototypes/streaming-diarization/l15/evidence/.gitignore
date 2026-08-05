@@ -1,0 +1,3 @@
+# Raw campaign runs are evidence and must remain trackable despite root `runs/`.
+!**/runs/
+!**/runs/**

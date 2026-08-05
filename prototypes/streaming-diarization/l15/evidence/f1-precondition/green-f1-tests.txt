@@ -1,0 +1,10 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/test_f1_precondition.py
+EXIT: 0
+test_full_chain_has_no_golden_access ... ok
+test_label_perturbation_cannot_change_runtime_shape_or_decision ... ok
+test_runtime_l1_calls_calibrated_production_bindings ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 29.428s
+
+OK

@@ -1,0 +1,124 @@
+{
+  "campaign": "L1.5",
+  "contract_id": "moss-l15-live-uplift-v1",
+  "corpus_manifest_hash": "7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb",
+  "generated_at": "2026-08-05T02:26:56.735505+00:00",
+  "guardrails_sha256": "940b8ceec22f3b1e2cf11231fbeb08645ebed439cd77af52a88c6b06fb8805d9",
+  "launch_sha256": "7af750728cb299d65e389024ecb8621c0cbceeb55c0987c9c9a252206faafde6",
+  "overall": "PASS",
+  "plan_sha256": "456cb01efc7e9ffbfeb1091f251f03a666ee81d3ff2ca9229faaf93faab8cdce",
+  "reproduce": "scripts/ralph-l15-afk/launch.sh --dry-run --evidence-dir scripts/ralph-l15-afk/evidence",
+  "results": [
+    {
+      "detail": "ancestor, branch, corpus, and UNFROZEN split pinned",
+      "name": "contract_pins",
+      "status": "PASS"
+    },
+    {
+      "detail": "promoted corpus-manifest hash matches",
+      "name": "active_corpus_pin_matches",
+      "status": "PASS"
+    },
+    {
+      "detail": "split-dependent work refused with split_manifest_unfrozen",
+      "name": "split_manifest_unfrozen",
+      "status": "PASS"
+    },
+    {
+      "detail": "exit=2 named refusal ending with BLOCKED promise",
+      "name": "gated_unfrozen_run_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "L1.5 prototype, shared notes/readme, and bundle accepted",
+      "name": "allowlist_accepts_l15",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused moss_transcribe_diarize/app/live_identity.py with product_path_denied",
+      "name": "deny_product_python",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused macos/MOSSCapture/Sources/x.swift with product_path_denied",
+      "name": "deny_macos",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused ops/service.json with product_path_denied",
+      "name": "deny_ops",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused tests/test_live_identity.py with product_path_denied",
+      "name": "deny_product_tests",
+      "status": "PASS"
+    },
+    {
+      "detail": "refused path outside allowlist",
+      "name": "deny_unlisted_path",
+      "status": "PASS"
+    },
+    {
+      "detail": "iteration budget 12 accepted",
+      "name": "iteration_12_allowed",
+      "status": "PASS"
+    },
+    {
+      "detail": "iteration budget 13 refused",
+      "name": "iteration_13_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "matching corpus and split pins accepted",
+      "name": "frozen_pins_accept",
+      "status": "PASS"
+    },
+    {
+      "detail": "split mutation refused",
+      "name": "split_hash_drift_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "corpus mutation refused",
+      "name": "corpus_hash_drift_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "second writer refused",
+      "name": "single_writer_refusal",
+      "status": "PASS"
+    },
+    {
+      "detail": "clean tree at expected commit accepted",
+      "name": "clean_expected_head_accepts",
+      "status": "PASS"
+    },
+    {
+      "detail": "unexpected HEAD refused",
+      "name": "expected_head_drift_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "dirty tree refused",
+      "name": "dirty_tree_refused",
+      "status": "PASS"
+    },
+    {
+      "detail": "BLOCKED promise recognized",
+      "name": "blocked_stop_promise",
+      "status": "PASS"
+    },
+    {
+      "detail": "COMPLETE promise recognized",
+      "name": "complete_stop_promise",
+      "status": "PASS"
+    },
+    {
+      "detail": "missing terminal promise continues",
+      "name": "missing_promise_continues",
+      "status": "PASS"
+    }
+  ],
+  "split_manifest_hash": "UNFROZEN"
+}

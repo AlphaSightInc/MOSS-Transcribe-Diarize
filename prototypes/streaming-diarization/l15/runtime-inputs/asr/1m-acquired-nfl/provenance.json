@@ -1,0 +1,47 @@
+{
+  "case_id": "1m-acquired-nfl",
+  "split": "development",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_nfl/audio.wav",
+  "audio_sha256": "d2505e3bb048bd7645fffdd8b5afc4b34d1511990ce6771366243e02869f3be3",
+  "job_id": "d80bda66fccb",
+  "job_reused": false,
+  "submit_api_argv": [
+    "/usr/bin/curl",
+    "-fsS",
+    "--max-time",
+    "900",
+    "-X",
+    "POST",
+    "-F",
+    "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_nfl/audio.wav;type=audio/wav",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+  ],
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/d80bda66fccb"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/d80bda66fccb/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:04Z",
+  "ended_at_utc": "2026-08-05T02:58:07Z",
+  "collection_wall_seconds": 2.988247,
+  "terminal_status": "waiting_review",
+  "window_count": 1,
+  "completed_windows": 1,
+  "possibly_truncated": false,
+  "segment_count": 11,
+  "speaker_labels": [
+    "S01",
+    "S02",
+    "S03",
+    "S04"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-acquired-nfl/segments.json",
+  "segments_sha256": "3073272910941667a828549433c5f77498da5b8d6c6da384a3a52a2f487f8df7",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/1m-acquired-nfl/job-terminal.json",
+  "job_terminal_sha256": "20c31bd252c47ca428455aeb39e297f5c1f0f4a94e38683f43ed7b311a68ce77"
+}

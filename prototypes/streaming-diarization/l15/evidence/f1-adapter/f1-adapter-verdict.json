@@ -1,0 +1,47 @@
+{
+  "candidate_implementation_changed": false,
+  "candidate_implementation_sha256": "a63dfec023e3b0964d4491690415bc45c614cd31fc700e13c77961a187b17891",
+  "candidate_spec_changed": false,
+  "candidate_spec_sha256": "770b73703550cd989a6125f51a4e32ef352b4d203a7d888589864d19d20d13fb",
+  "classification": "runtime-only synthetic terminal-score adapter defect; candidate policy and thresholds untouched",
+  "decision_independence": {
+    "a2_replay_source_path": "prototypes/streaming-diarization/l2-stage0/run_l1_control.py",
+    "a2_replay_source_sha256": "5f7ca3851f742911df679c4ff5fa9a819d2b3387edf153979f75441ae78ebf91",
+    "decision_keys": [
+      "final_unit_labels",
+      "live_unit_labels",
+      "counts",
+      "revision_trace",
+      "span_trace",
+      "changed_duration_fraction",
+      "changed_speaker_seconds",
+      "production_bindings",
+      "production_config",
+      "production_planner"
+    ],
+    "first_final_labels_line": 292,
+    "first_terminal_score_line": 454,
+    "replay_function_start_line": 233,
+    "terminal_score_after_decisions": true,
+    "test": "test_runtime_l1_adapter.py",
+    "unsuppressed_vs_suppressed_decision_keys_identical": true
+  },
+  "failed_attempt": {
+    "case_completed_in_memory": "1m-acquired-nfl",
+    "cause": "one synthetic speaker per unit drove exponential used-mask assignment",
+    "failure_case": "3m-acquired-jamie-dimon",
+    "holdout_opened": false,
+    "output_written": false,
+    "score_written": false,
+    "validation_opened": false
+  },
+  "fix": "temporarily replace only run_l1_control.score_live_speaker_accuracy while replaying runtime-only synthetic activity; restore in finally; terminal metrics remain discarded",
+  "historical_precondition_evidence": {
+    "owning_commit": "f79411f",
+    "preserved_not_overwritten": true,
+    "runtime_l1_manifest_line": "385054ae762d0663f49bbf917635be69764ad5b2046c9eb6bd737b10312e820b  ../../runtime_l1.py"
+  },
+  "overall": "PASS",
+  "schema": "moss-l15-f1-adapter-verdict.v1",
+  "scoring_outputs_present": false
+}

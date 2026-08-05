@@ -1,0 +1,24 @@
+L0 dry-run contract=moss-l15-live-uplift-v1
+PASS contract_pins: ancestor, branch, corpus, and UNFROZEN split pinned
+PASS active_corpus_pin_matches: promoted corpus-manifest hash matches
+PASS split_manifest_unfrozen: split-dependent work refused with split_manifest_unfrozen
+PASS gated_unfrozen_run_refused: exit=2 named refusal ending with BLOCKED promise
+PASS allowlist_accepts_l15: L1.5 prototype, shared notes/readme, and bundle accepted
+PASS deny_product_python: refused moss_transcribe_diarize/app/live_identity.py with product_path_denied
+PASS deny_macos: refused macos/MOSSCapture/Sources/x.swift with product_path_denied
+PASS deny_ops: refused ops/service.json with product_path_denied
+PASS deny_product_tests: refused tests/test_live_identity.py with product_path_denied
+PASS deny_unlisted_path: refused path outside allowlist
+PASS iteration_12_allowed: iteration budget 12 accepted
+PASS iteration_13_refused: iteration budget 13 refused
+PASS frozen_pins_accept: matching corpus and split pins accepted
+PASS split_hash_drift_refused: split mutation refused
+PASS corpus_hash_drift_refused: corpus mutation refused
+PASS single_writer_refusal: second writer refused
+PASS clean_expected_head_accepts: clean tree at expected commit accepted
+PASS expected_head_drift_refused: unexpected HEAD refused
+PASS dirty_tree_refused: dirty tree refused
+PASS blocked_stop_promise: BLOCKED promise recognized
+PASS complete_stop_promise: COMPLETE promise recognized
+PASS missing_promise_continues: missing terminal promise continues
+RESULT PASS 22/22

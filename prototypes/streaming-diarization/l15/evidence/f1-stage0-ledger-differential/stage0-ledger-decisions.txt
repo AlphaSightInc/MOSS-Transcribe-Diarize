@@ -1,0 +1,9 @@
+DECISION 1/8 1m-acquired-nfl eligible=19 stage0_proposals=0 stage0_accepted=0 f1_proposals=0
+DECISION 2/8 3m-acquired-jamie-dimon eligible=75 stage0_proposals=3 stage0_accepted=3 f1_proposals=3
+DECISION 3/8 1m-acquired-jamie-dimon eligible=24 stage0_proposals=0 stage0_accepted=0 f1_proposals=0
+DECISION 4/8 5m-acquired-jamie-dimon eligible=114 stage0_proposals=1 stage0_accepted=1 f1_proposals=1
+DECISION 5/8 5m-acquired-nfl eligible=120 stage0_proposals=0 stage0_accepted=0 f1_proposals=0
+DECISION 6/8 5m-lex-bill-ackman eligible=130 stage0_proposals=0 stage0_accepted=0 f1_proposals=0
+DECISION 7/8 5m-lex-javier-milei eligible=127 stage0_proposals=1 stage0_accepted=1 f1_proposals=1
+DECISION 8/8 30m-lex-bill-ackman eligible=768 stage0_proposals=1 stage0_accepted=1 f1_proposals=1
+PASS decisions sha256=e2409e03b05884c36eeefba4dfc0964ed44b4fbbff931cf6311e096ad71b32aa

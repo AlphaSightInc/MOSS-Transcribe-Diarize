@@ -1,0 +1,8 @@
+L1.a post-run verifier attempt 1: FAILED before writing verification outputs.
+Measurement files were already complete and were not rerun or modified.
+
+Traceback terminal cause:
+ValueError: 'prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json' is not in the subpath of '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15'
+
+Classification: reporting-path normalization defect in verify_l1a_baseline.py.
+Correction: resolve the CLI summary path before Path.relative_to(REPO).

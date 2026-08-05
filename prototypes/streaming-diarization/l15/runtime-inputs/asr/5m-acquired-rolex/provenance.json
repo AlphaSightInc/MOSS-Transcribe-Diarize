@@ -1,0 +1,35 @@
+{
+  "case_id": "5m-acquired-rolex",
+  "split": "validation",
+  "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/audio.wav",
+  "audio_sha256": "300df751d1157a090a08007d4f81a9c878516da87ac1b684231b70f4401f04e5",
+  "job_id": "6b61c2b97d94",
+  "job_reused": true,
+  "submit_api_argv": null,
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/6b61c2b97d94"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/6b61c2b97d94/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:59:08Z",
+  "ended_at_utc": "2026-08-05T02:59:08Z",
+  "collection_wall_seconds": 0.471113,
+  "terminal_status": "waiting_review",
+  "window_count": 3,
+  "completed_windows": 3,
+  "possibly_truncated": false,
+  "segment_count": 74,
+  "speaker_labels": [
+    "S01",
+    "S02"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-acquired-rolex/segments.json",
+  "segments_sha256": "7a235d2083ef50fa72be624cc269d2ad8e897c6f6735e9b4dc9e3789e7fdfdfc",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/5m-acquired-rolex/job-terminal.json",
+  "job_terminal_sha256": "a034bfcfa1833d96116cfb087d747e5e58bf7f60e0353d20c78a7d3f736a1d84"
+}

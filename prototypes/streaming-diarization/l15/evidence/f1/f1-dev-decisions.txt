@@ -1,0 +1,21 @@
+{
+  "events": [
+    "L1 development 1/8 1m-acquired-nfl",
+    "PASS 1m-acquired-nfl configs=27 l1_sha256=d40606725e46f0d309021b21a6568288fd07a437e7391f0e39011b4f5b575e3d",
+    "L1 development 2/8 3m-acquired-jamie-dimon",
+    "PASS 3m-acquired-jamie-dimon configs=27 l1_sha256=8de07a67e2de77e3b6c10a081e72b34c6837322c3c8af5071ef6e0e2ca186b9a",
+    "L1 development 3/8 1m-acquired-jamie-dimon",
+    "PASS 1m-acquired-jamie-dimon configs=27 l1_sha256=4521f0aaf55b005f4b661d209210180683a6bfb0b855b4539ba49dd88a801795",
+    "L1 development 4/8 5m-acquired-jamie-dimon",
+    "PASS 5m-acquired-jamie-dimon configs=27 l1_sha256=42c4f9b409bffb2ad54e165c448e369ce5435721a2eff68fac5eca4f913f58e5",
+    "L1 development 5/8 5m-acquired-nfl",
+    "PASS 5m-acquired-nfl configs=27 l1_sha256=19ca2f362df40cb3bbb9585a10de4405d27efd4b28d4bb78fc3f8accb435b52f",
+    "L1 development 6/8 5m-lex-bill-ackman",
+    "PASS 5m-lex-bill-ackman configs=27 l1_sha256=e23d2eab3b72ba2314e6aee278a11a23d61c599e248e4be0ad4bd7bd96338674",
+    "L1 development 7/8 5m-lex-javier-milei",
+    "PASS 5m-lex-javier-milei configs=27 l1_sha256=93c866b8b2f56dfaf35696d9f9b7b45c53299a0dee17f358a22532b7d0507512",
+    "L1 development 8/8 30m-lex-bill-ackman",
+    "PASS 30m-lex-bill-ackman configs=27 l1_sha256=4d4f5f0f2073d724f76c7eea35286dcbc642133e19cec47adfa4bccf35500f5b"
+  ],
+  "output_sha256": "a47d94f464213ea045461adb300624c79be99bb413fb65bf514f66d36d0dc6f1"
+}

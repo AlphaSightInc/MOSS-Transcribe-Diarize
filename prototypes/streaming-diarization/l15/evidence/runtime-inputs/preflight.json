@@ -1,0 +1,80 @@
+{
+  "checked_at_utc": "2026-08-05T02:58:04Z",
+  "raw_ssh_stdout": "moss-live-web.service\tactive\tenabled\nmoss-web.service\tactive\tenabled\nmoss-vllm.service\tactive\tenabled\nsince\tMon 2026-08-03 14:11:09 EDT\nlive_post_count\t0\ndeployed_sha\t9089b33210401111865da7abc160ab0bcb4aa266\ndirty_count\t0\n",
+  "services": {
+    "moss-live-web.service": {
+      "active": "active",
+      "enabled": "enabled"
+    },
+    "moss-web.service": {
+      "active": "active",
+      "enabled": "enabled"
+    },
+    "moss-vllm.service": {
+      "active": "active",
+      "enabled": "enabled"
+    }
+  },
+  "live_service_since": "Mon 2026-08-03 14:11:09 EDT",
+  "live_api_mutation_count_since_service_start": 0,
+  "deployed_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "deployed_dirty_count": 0,
+  "batch_total_jobs": 151,
+  "batch_active_jobs": [],
+  "runtime": {
+    "ffmpeg": {
+      "available": true,
+      "ffmpeg": "/usr/bin/ffmpeg",
+      "ffprobe": "/usr/bin/ffprobe"
+    },
+    "model": {
+      "backend": "vllm",
+      "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+      "device": "vllm-api",
+      "dtype": "remote",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "windowing": {
+        "window_seconds": 150,
+        "stride_seconds": 120
+      },
+      "speaker_identity": {
+        "schema_version": 2,
+        "config": {
+          "tier_a": {
+            "min_overlap_support_seconds": 2.0,
+            "min_overlap_dice": 0.75,
+            "mutual_margin_seconds": 1.0
+          },
+          "tier_b": {
+            "enabled": false,
+            "min_segment_seconds": 2.0,
+            "max_segments_per_node": 3,
+            "similarity": 0.7,
+            "margin": 0.2
+          }
+        },
+        "provider": {
+          "provider": "wespeaker_resnet152_lm",
+          "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+          "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+          "embedding_dimension": 256,
+          "frontend_version": "wespeaker-onnx-fbank-v1",
+          "device": "cpu"
+        },
+        "availability": {
+          "available": false,
+          "reason": "disabled"
+        }
+      },
+      "processor": {}
+    },
+    "inference": {
+      "prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+      "max_length": 16384,
+      "max_new_tokens": 12000,
+      "decoding": "greedy",
+      "temperature": 1.0
+    }
+  },
+  "verdict": "PASS_IDLE_HEALTHY_NO_LIVE_SESSION"
+}

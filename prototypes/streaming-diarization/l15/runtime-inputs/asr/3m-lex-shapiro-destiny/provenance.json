@@ -1,0 +1,46 @@
+{
+  "case_id": "3m-lex-shapiro-destiny",
+  "split": "validation",
+  "audio_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_shapiro_destiny/audio.wav",
+  "audio_sha256": "9d18487ac522db1119e2633a87816466b6b85e166d0dcd7e8e6fc89e6e11a895",
+  "job_id": "bd6b76ae04a0",
+  "job_reused": false,
+  "submit_api_argv": [
+    "/usr/bin/curl",
+    "-fsS",
+    "--max-time",
+    "900",
+    "-X",
+    "POST",
+    "-F",
+    "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_shapiro_destiny/audio.wav;type=audio/wav",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+  ],
+  "status_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/bd6b76ae04a0"
+  ],
+  "segments_api_argv": [
+    "curl",
+    "-fsS",
+    "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/bd6b76ae04a0/segments"
+  ],
+  "started_at_utc": "2026-08-05T02:58:42Z",
+  "ended_at_utc": "2026-08-05T02:58:51Z",
+  "collection_wall_seconds": 9.757152,
+  "terminal_status": "waiting_review",
+  "window_count": 2,
+  "completed_windows": 2,
+  "possibly_truncated": false,
+  "segment_count": 43,
+  "speaker_labels": [
+    "S01",
+    "S02",
+    "S03"
+  ],
+  "segments_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/3m-lex-shapiro-destiny/segments.json",
+  "segments_sha256": "e66d35c532a6bb01d465e7ddb9a1a99b1f58a8119d00d6e2047797b6ed7bd32f",
+  "job_terminal_path": "prototypes/streaming-diarization/l15/runtime-inputs/asr/3m-lex-shapiro-destiny/job-terminal.json",
+  "job_terminal_sha256": "d844f3d3a94e523b831d19534351af8ab6048093675b3eeb8f06b2e3b049949a"
+}

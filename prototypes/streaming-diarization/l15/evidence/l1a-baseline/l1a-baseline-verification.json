@@ -1,0 +1,183 @@
+{
+  "checks": {
+    "all_cases_deterministic": true,
+    "all_cases_two_sided": true,
+    "alphabet_gate_passed": true,
+    "case_scope_exact": true,
+    "holdout_sealed": true,
+    "overall_pass": true,
+    "production_bindings": true,
+    "raw_run_count": true,
+    "sweep_call_count": true,
+    "sweep_p95_recomputed": true
+  },
+  "failures": [],
+  "overall": "PASS",
+  "raw_run_count": 32,
+  "raw_runs": [
+    {
+      "case_id": "1m-acquired-nfl",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-acquired-nfl-run1.json",
+      "sha256": "717c6e327c0a063d0eb8f2034ee145285d3eb4a96bbd40c9f2aef2cdf3fa3d8d"
+    },
+    {
+      "case_id": "1m-acquired-nfl",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-acquired-nfl-run2.json",
+      "sha256": "541f4ba55b29c57ff850f801ba6d159689375172a025717e451c6eadc7eb91c4"
+    },
+    {
+      "case_id": "3m-acquired-jamie-dimon",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-3m-acquired-jamie-dimon-run1.json",
+      "sha256": "0b01f71228eabad784b33f17f4342378339fb8d5dd68fffc56bbf19ddc02e6f4"
+    },
+    {
+      "case_id": "3m-acquired-jamie-dimon",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-3m-acquired-jamie-dimon-run2.json",
+      "sha256": "2fad0296c00f1953ee8f3ae105c3101d9ca6d30435745074ed0f3323cec9471a"
+    },
+    {
+      "case_id": "1m-acquired-jamie-dimon",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-acquired-jamie-dimon-run1.json",
+      "sha256": "6b86ee3d9da136dc980ac66d509e5730b175e77474cac2a659000407f8045c9d"
+    },
+    {
+      "case_id": "1m-acquired-jamie-dimon",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-acquired-jamie-dimon-run2.json",
+      "sha256": "225e8a7379bf57329bc041cc7f2e44763788d024e333bc3e54f7145c7108ff99"
+    },
+    {
+      "case_id": "5m-acquired-jamie-dimon",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-jamie-dimon-run1.json",
+      "sha256": "7461ed9c584acc7f5649309457f9005b841f1d407d03e3c44b9f1f43ef104e81"
+    },
+    {
+      "case_id": "5m-acquired-jamie-dimon",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-jamie-dimon-run2.json",
+      "sha256": "84b0ca3d8bd682ff44388012174c5c330c359bf78737282074e4548da270dc44"
+    },
+    {
+      "case_id": "5m-acquired-nfl",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-nfl-run1.json",
+      "sha256": "e29469bc51934bc18c48ebce4b874e373c708463b7cc551815a41a0bec096a58"
+    },
+    {
+      "case_id": "5m-acquired-nfl",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-nfl-run2.json",
+      "sha256": "55617a1179f70ebc0f56e27d83c84f68efad703b565c0161f5b53da6a7602327"
+    },
+    {
+      "case_id": "5m-lex-bill-ackman",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-lex-bill-ackman-run1.json",
+      "sha256": "f82e73e677f02d0fb25ac3b1b45df18d9092a966a7a2028a1bfaf26ea7d2b56d"
+    },
+    {
+      "case_id": "5m-lex-bill-ackman",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-lex-bill-ackman-run2.json",
+      "sha256": "c7a7ceaa52dff50f3859c97079464b81b676004833c057a879dc760f96f114fd"
+    },
+    {
+      "case_id": "5m-lex-javier-milei",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-lex-javier-milei-run1.json",
+      "sha256": "64a1676cc4c2d0698b8782e815f5e7536b79515aa54078abaa909fde20f9fdb6"
+    },
+    {
+      "case_id": "5m-lex-javier-milei",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-lex-javier-milei-run2.json",
+      "sha256": "cc31f09a2347b7e5921cd992b976a715d8074f5a56e22ab9943785723296fe7d"
+    },
+    {
+      "case_id": "30m-lex-bill-ackman",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-30m-lex-bill-ackman-run1.json",
+      "sha256": "42f587a2d1871968e3a3675b18af08890439af56323f9bd05bdf08cd1cafcb34"
+    },
+    {
+      "case_id": "30m-lex-bill-ackman",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-30m-lex-bill-ackman-run2.json",
+      "sha256": "f07939cc50434e60c336b8079b2719943b51ecd5eda44bd2a1a49f23aa91a216"
+    },
+    {
+      "case_id": "1m-acquired-rolex",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-acquired-rolex-run1.json",
+      "sha256": "b3079943c88c3f655372bde83453477bfc9f94f55cff88d78a0c7296e3c53301"
+    },
+    {
+      "case_id": "1m-acquired-rolex",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-acquired-rolex-run2.json",
+      "sha256": "072793f6afd034e3e7e1f1c6704c8b46e7caf6de50fdc5b7fdde9c999d0361f4"
+    },
+    {
+      "case_id": "1m-lex-bill-ackman",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-lex-bill-ackman-run1.json",
+      "sha256": "e5f138f5dbf1e4a402517f9832f0e954a218c164b06e52c56854cc75cb16dcff"
+    },
+    {
+      "case_id": "1m-lex-bill-ackman",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-lex-bill-ackman-run2.json",
+      "sha256": "7e55b83849c5ab7e0b4d44225531d3d8d07d908633d4b717e9ccb255c11387fe"
+    },
+    {
+      "case_id": "1m-lex-javier-milei",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-lex-javier-milei-run1.json",
+      "sha256": "ffc7dd50bb6a97eabb158896dd39051df694c9fc7b72375ccae8c64ca7f4b9e8"
+    },
+    {
+      "case_id": "1m-lex-javier-milei",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-lex-javier-milei-run2.json",
+      "sha256": "9a0475d7cd5f32eb0fb1af9e7075758f12c8811d585d024d140a4c8e136866e6"
+    },
+    {
+      "case_id": "1m-lex-keyu-jin",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-lex-keyu-jin-run1.json",
+      "sha256": "1f109c9238eb6a6d60cdeeb00ddffc5474aaf459dbaf41563b90b74133f02b43"
+    },
+    {
+      "case_id": "1m-lex-keyu-jin",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-1m-lex-keyu-jin-run2.json",
+      "sha256": "31518227b67f5379cb33250193be6b253a4da488b98db220cef9c22f8624cced"
+    },
+    {
+      "case_id": "3m-lex-adam-frank",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-3m-lex-adam-frank-run1.json",
+      "sha256": "da9a7057546a14a6c5754c0b46b7c0cf7592ec8ff47b22593ee26e271822cad0"
+    },
+    {
+      "case_id": "3m-lex-adam-frank",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-3m-lex-adam-frank-run2.json",
+      "sha256": "52311215790b2211a27e243efd4dc43541e8469575cb596280a81cdf0dd32b9a"
+    },
+    {
+      "case_id": "3m-lex-shapiro-destiny",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-3m-lex-shapiro-destiny-run1.json",
+      "sha256": "6a8b4d23ca90f83af5ee82cafc6854b1a550dc00ca4a19de5fd1bdc1d93bf3ad"
+    },
+    {
+      "case_id": "3m-lex-shapiro-destiny",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-3m-lex-shapiro-destiny-run2.json",
+      "sha256": "06a4f1a75fb4e6b0e616f8634d3be02623cdfcc3b9b0889e72a71005248c7465"
+    },
+    {
+      "case_id": "5m-acquired-alphabet",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-alphabet-run1.json",
+      "sha256": "001d4ff3082f17bbd3e5867622b672d575f73f5beda31fb8e2b36e67f9cef886"
+    },
+    {
+      "case_id": "5m-acquired-alphabet",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-alphabet-run2.json",
+      "sha256": "3ae7a3caa31f26ad052ca6f4900662d3ca2576419eadc1d619361e3fe5709151"
+    },
+    {
+      "case_id": "5m-acquired-rolex",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-rolex-run1.json",
+      "sha256": "e9f209b5c7367c600c133f889e08e936b30521a1221cf80444ed7c595cdef21b"
+    },
+    {
+      "case_id": "5m-acquired-rolex",
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/runs/l15-l1-5m-acquired-rolex-run2.json",
+      "sha256": "d628e900736783c531cc8958223a2f184c80ef4d198941c0074d7ea25353ba51"
+    }
+  ],
+  "schema": "moss-l15-l1a-baseline-verification.v1",
+  "summary_path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/l1a-baseline-summary.json",
+  "summary_sha256": "45edc8ce142c3ae15cc03ddd6739cb40ff59ced907b2885667894f2b5f74be21",
+  "sweep_p95_seconds": 0.10007963129319251
+}

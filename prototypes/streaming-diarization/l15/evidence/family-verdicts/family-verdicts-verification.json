@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "blocked_product": true,
+    "holdout_sealed": true,
+    "no_composition": true,
+    "no_freeze": true,
+    "none_freezeable": true,
+    "three_families": true
+  },
+  "overall": "PASS"
+}

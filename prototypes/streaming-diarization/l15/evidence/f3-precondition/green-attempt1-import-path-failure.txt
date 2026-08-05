@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/test_f3_precondition.py", line 7, in <module>
+    from f3_candidate import F3Schedule, audit_f3_chain, semantic_hash
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/f3_candidate.py", line 19, in <module>
+    import runtime_l1
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/runtime_l1.py", line 21, in <module>
+    import run_l1_control as a2_control
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l2-stage0/run_l1_control.py", line 41, in <module>
+    from moss_transcribe_diarize.live_speaker_accuracy import SpeakerActivityInterval
+ImportError: cannot import name 'SpeakerActivityInterval' from 'moss_transcribe_diarize.live_speaker_accuracy' (/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/moss_transcribe_diarize/live_speaker_accuracy.py)
+
+Classification: implementation-attempt import-order defect. f3_candidate imported the
+editable-install product package before inserting the worktree root. No candidate decision
+or score ran. Corrected by pinning the worktree root before any product import.

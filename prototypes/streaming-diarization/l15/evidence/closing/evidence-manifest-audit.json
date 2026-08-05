@@ -1,0 +1,166 @@
+{
+  "failures": [],
+  "head_pass_count": 17,
+  "manifest_count": 19,
+  "manifests": [
+    {
+      "head_failed": [],
+      "owning_commit": "59b98a394165812545d93d03ca90e42688ea8fd5",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1/F1_EVIDENCE.sha256",
+      "row_count": 17,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "e38c31dfd724b5561f90fde8a8da1f529ef8670a",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1-adapter/F1_ADAPTER_EVIDENCE.sha256",
+      "row_count": 10,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "e84d8aa8075bb9c169e3b1a838674b6f7423c9fe",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1-parameter-diagnosis/F1_PARAMETER_DIAGNOSIS_EVIDENCE.sha256",
+      "row_count": 10,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [
+        "../../runtime_l1.py"
+      ],
+      "owning_commit": "f79411f34a04cfdc061a959fd677a3cb662bf003",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1-precondition/F1_PRECONDITION_EVIDENCE.sha256",
+      "row_count": 9,
+      "status": "OWNING_COMMIT_PASS"
+    },
+    {
+      "head_failed": [
+        "../../runtime_l1.py"
+      ],
+      "owning_commit": "288051ea08f8c51fd8f69a0afd14a41cea010160",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1-runner/F1_RUNNER_EVIDENCE.sha256",
+      "row_count": 11,
+      "status": "OWNING_COMMIT_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "4e332cc8814c02d62f3ced251d6a0bd34e84c126",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1-stage0-ledger-differential/STAGE0_LEDGER_DECISIONS_EVIDENCE.sha256",
+      "row_count": 10,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "4e332cc8814c02d62f3ced251d6a0bd34e84c126",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1-stage0-ledger-differential/STAGE0_LEDGER_DIFFERENTIAL_EVIDENCE.sha256",
+      "row_count": 17,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "4e332cc8814c02d62f3ced251d6a0bd34e84c126",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f1-stage0-ledger-differential/STAGE0_LEDGER_SCORED_EVIDENCE.sha256",
+      "row_count": 7,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "1f602f062dcb7a36e61f43b00d6b7a7693c50d63",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f2/F2_EXPLORATORY_EVIDENCE.sha256",
+      "row_count": 23,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "1f602f062dcb7a36e61f43b00d6b7a7693c50d63",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f2-precondition/F2_PRECONDITION_EVIDENCE.sha256",
+      "row_count": 10,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "b278afd4befe86d04ded7e6e32e3a6243051f111",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f3/F3_EVIDENCE.sha256",
+      "row_count": 25,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "b278afd4befe86d04ded7e6e32e3a6243051f111",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/f3-precondition/F3_PRECONDITION_EVIDENCE.sha256",
+      "row_count": 11,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "b278afd4befe86d04ded7e6e32e3a6243051f111",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/family-verdicts/FAMILY_VERDICTS_EVIDENCE.sha256",
+      "row_count": 10,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "a0b8b62193c3c0c308a2b59fb78ba69ba5569393",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/L1A_BASELINE_EVIDENCE.sha256",
+      "row_count": 50,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "3e00aca5a8701abe17110e7500259a264640b4c4",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-baseline/L1A_BASELINE_INSTRUMENT_EVIDENCE.sha256",
+      "row_count": 7,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "9dbc3de91fec3534f398ca1045dff6b2af5423bc",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/l1a-split/L1A_SPLIT_EVIDENCE.sha256",
+      "row_count": 10,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "832ad82d9da1ef6d2a9da76186a6b6f59dec0940",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/runtime-fixture/RUNTIME_FIXTURE_EVIDENCE.sha256",
+      "row_count": 42,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "860402302ad88f4078b119e7395a0e5b2ef79e42",
+      "owning_commit_failed": [],
+      "path": "prototypes/streaming-diarization/l15/evidence/runtime-inputs/RUNTIME_ASR_EVIDENCE.sha256",
+      "row_count": 53,
+      "status": "HEAD_PASS"
+    },
+    {
+      "head_failed": [],
+      "owning_commit": "13d36d645cdd65c16b8c6aa0bda3758d99074600",
+      "owning_commit_failed": [],
+      "path": "scripts/ralph-l15-afk/evidence/L0_EVIDENCE.sha256",
+      "row_count": 3,
+      "status": "HEAD_PASS"
+    }
+  ],
+  "overall": "PASS",
+  "owning_commit_pass_count": 2,
+  "schema": "moss-l15-evidence-manifest-audit.v1"
+}

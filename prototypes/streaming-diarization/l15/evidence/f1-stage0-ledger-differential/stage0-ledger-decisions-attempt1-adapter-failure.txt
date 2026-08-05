@@ -1,0 +1,17 @@
+DECISION 1/8 1m-acquired-nfl eligible=19 stage0_proposals=0 stage0_accepted=0 f1_proposals=0
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/run_stage0_ledger_differential.py", line 246, in <module>
+    raise SystemExit(main(args.output))
+                     ^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/run_stage0_ledger_differential.py", line 166, in main
+    units = _runtime_units(module, runtime, case["l1"])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/run_stage0_ledger_differential.py", line 98, in _runtime_units
+    return tuple(
+           ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15/prototypes/streaming-diarization/l15/run_stage0_ledger_differential.py", line 99, in <genexpr>
+    module.RuntimeUnit(
+  File "<string>", line 11, in __init__
+  File "/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-stage0-ledger-mc3v6hj9/candidate_engine.py", line 58, in __post_init__
+    raise CandidateError("candidate_interval_invalid_or_nonmonotonic")
+stage0_candidate_engine_a16c6d8.CandidateError: candidate_interval_invalid_or_nonmonotonic
