@@ -1,0 +1,5 @@
+low effective score=0.30 margin=0.05 budget_fraction=0.02
+low proposals=3 accepted=3 used=3.070000 budget=3.486400
+high effective score=0.40 margin=0.15 budget_fraction=0.08
+high proposals=3 accepted=3 used=3.070000 budget=13.945600
+PASS output=prototypes/streaming-diarization/l15/evidence/f1-parameter-diagnosis/f1-two-config-differential.json sha256=be4f5c8d231071a45dc17125fb676b1a18455d770740bcb70e48872b200584ff

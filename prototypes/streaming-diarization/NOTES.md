@@ -1747,3 +1747,45 @@ case regression, FP-speaker-seconds, DER, determinism, two-sided mapping, correc
 evidence, and the `0.20015926258638502 s` 30-minute p95 gate are unchanged. Holdout
 remains sealed. Machine-readable preregistration SHA-256:
 `f3459dbc0599d0d504befd1c77ba01ff747abf2f2311fa83ea0fb85d699c48bb`.
+
+### Campaign L1.5 F1 parameter-insensitivity diagnosis — boundary 1 (`l15`, 2026-08-04)
+
+**VERDICT: ROOT CAUSE LOCATED; CONFIG PLUMBING IS CORRECT, BUT ALL THREE GRID
+DIMENSIONS ARE NONBINDING AFTER THE PROPOSAL STAGE STARVES. F2 PAUSED; NO FIX.**
+`f1_decisions.py:50-55` constructs distinct configs and lines 110-113 pass each into
+`decide_f1`. On `3m-acquired-jamie-dimon`, a fresh same-input trace reports effective
+`0.30/0.05/0.02` versus `0.40/0.15/0.08` from inside the returned decision. The two
+complete semantic hashes differ because config/budget diagnostics differ, but the
+decision-bearing projection is byte-semantically identical.
+
+At `f1_candidate.py:100-111`, score and margin gate only the global
+cluster-to-canonical mapping. Two clusters score `0.9762/0.9898` with margins
+`0.8623/0.8574`, above both grids; the third scores `-0.0368` with margin `-0.0188`,
+below both. Thus both configs form the same mapping. Lines 113-138 then yield only 3
+proposals from 75 eligible units. Their `3.07 s` total fits the smallest `3.4864 s`
+budget at lines 139-159; larger budgets cannot act. The sealed full dev result shows
+the same mechanism globally: only 6 corrections and one aggregate outcome across all
+27 configurations. No key mismatch, shadowed constant, or reused config object exists.
+
+This proves why the parameters were insensitive; it does **not yet** prove whether the
+proposal starvation is an F1 implementation defect or a property of the D8-safe runtime
+frame. Per supervisor direction, the next and only authorized action is the read-only
+Stage-0 sealed ledger-arm differential. No gate, tolerance, target subset, FP rule, F1
+implementation, or sealed F1 evidence changed; no scorer or holdout path opened.
+
+The first transcript capture raced directory creation; its JSON was preserved and an
+identical-byte rerun captured stdout. Diagnosis v1 then encoded the correct explanation
+but a bookkeeping predicate compared 75 eligible units with total runtime units; both v1
+JSONs remain preserved. V2 corrects only that diagnosis predicate and is authoritative.
+V2 JSON SHA-256:
+`e5e30d50d06b993b091a2d3f59a4ff87790d70efc7036d7dee79d91104153926`;
+transcript SHA-256:
+`ec9d38ebf7ffc0749ccfb19d580508d06da18eb227acb1fab9b09036fbde87bd`;
+10-member evidence manifest SHA-256:
+`6646576bbbc46d16389deceb24bf04afd2b5bc308a3b0d5449ae6287a7d1729a`.
+
+Reproduce:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && diagnosis_tmp=$(mktemp -d /tmp/moss-f1-diagnosis.XXXXXX) && PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/diagnose_f1_parameter_flow.py --output "$diagnosis_tmp/f1-two-config-differential-v2.json" && shasum -a 256 "$diagnosis_tmp/f1-two-config-differential-v2.json"
+```
