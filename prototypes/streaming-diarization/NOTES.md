@@ -1883,3 +1883,21 @@ Those historical numbers remain immutable measurements of their frame but do **n
 survive the D8-safe production-endpoint-over-deployed-ASR frame and no longer carry
 strategic weight as a cheap live-mode win. No F1-PRIME is authorized. No gate, target
 subset, FP rule, sealed artifact, or holdout state changed.
+
+### Campaign L1.5 F2 exploratory scope revision — preregistration (`l15`, 2026-08-05)
+
+**PREREGISTERED BEFORE ANY F2 RUN: EXPLORATORY-ONLY.** The supervisor's joint-rethink
+ruling authorizes F2 solely to measure the lane-provenance prior on the unaudited m4mbp
+dual-lane corpus in the honest runtime frame. It makes no acceptance claim, does not run
+on the gated corpus, opens neither validation nor holdout, selects no winner, and freezes
+no configuration. The earlier unexecuted F2 development/validation protocol is
+prospectively superseded; no F2 result existed when this revision was committed.
+
+The single pass reports all three already-preregistered soft-prior strengths (`0.05`,
+`0.10`, `0.20`). Candidate inputs are production EndpointPolicy units, production
+WeSpeaker vectors, and runtime capture-lane metadata only. Full-chain no-golden audit and
+label-perturbation invariance are mandatory before measurement. The deliverable is an
+acoustic lane-prior effect size plus the acceptance-grade corpus/audit requirements now
+pinned in `l15/f2-lane-prior-family.json` (SHA-256
+`4d371dc9fb7e5a06fae5e5b298995bcd19b62334b3644566d5c2e6aed4bb1fba`). No
+campaign gate or tolerance changes.
