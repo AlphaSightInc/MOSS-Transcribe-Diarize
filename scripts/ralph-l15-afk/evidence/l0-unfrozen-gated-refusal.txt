@@ -1,0 +1,3 @@
+BLOCKED split_manifest_unfrozen: L1.5 gated iteration refused until L1.a freezes split-manifest.json
+<promise>BLOCKED</promise>
+EXIT 2

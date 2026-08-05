@@ -1419,3 +1419,26 @@ Exact campaign commands and chronological decisions live in the parent
 `ad06409e9f842d6de236310820c06c59d77803edb54c8684ab767a7f691633f3`
 (`9334f356aa0cb58476e19d90cdc1929c977081dd703785882fc701c465b4b72e` JSON;
 `46619488fa4fa40c4bac93f9dca127506289f7849fdf7958835a93ebe05ac609` Markdown).
+
+### Campaign L1.5 L0 guardrails (`l15`, 2026-08-04)
+
+**VERDICT: PASS — L0 COMPLETE; SPLIT-DEPENDENT WORK FAILS CLOSED.** Contract
+`moss-l15-live-uplift-v1` pins keeper ancestor `15d45afc`, branch
+`ralph/l15-live-uplift-v1`, promoted corpus manifest
+`7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb`,
+plan `456cb01efc7e9ffbfeb1091f251f03a666ee81d3ff2ca9229faaf93faab8cdce`,
+the prototype/docs allowlist, product denylist, and iteration cap 12. The split
+pin is literal `UNFROZEN` until L1.a commits the split and real pin atomically.
+
+Dry-run passed 22/22 positive and negative proofs, including exact allow/deny
+scope, iteration cap, corpus drift, split drift, single writer, expected HEAD,
+dirty-tree refusal, and terminal promises. A real gated invocation returned exit
+2 with named `split_manifest_unfrozen` and `<promise>BLOCKED</promise>`. Evidence
+manifest SHA-256:
+`0744919edc5d9fb08343a2302fe50b9d6b3f0d3099a012026a83f1cf4cc9258a`.
+
+Reproduce:
+
+```bash
+cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l15 && PYTHONDONTWRITEBYTECODE=1 scripts/ralph-l15-afk/launch.sh --dry-run --evidence-dir scripts/ralph-l15-afk/evidence
+```
