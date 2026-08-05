@@ -1,0 +1,33 @@
+{
+  "checks": {
+    "f1_fail_exact": true,
+    "f2_dose_response": true,
+    "f2_exploratory_only": true,
+    "f3_fail_exact": true,
+    "family:f1-ledger-only-bounded-clustering-v1:evidence_manifest": true,
+    "family:f1-ledger-only-bounded-clustering-v1:verdict": true,
+    "family:f2-soft-lane-provenance-prior-v1:evidence_manifest": true,
+    "family:f2-soft-lane-provenance-prior-v1:verdict": true,
+    "family:f3-live-pass-duration-adaptive-margin-v1:evidence_manifest": true,
+    "family:f3-live-pass-duration-adaptive-margin-v1:verdict": true,
+    "family_count_3": true,
+    "holdout_cases_exact": true,
+    "holdout_inputs_absent": true,
+    "holdout_never_opened": true,
+    "input_hashes:f1_spec": true,
+    "input_hashes:f2_spec": true,
+    "input_hashes:f3_spec": true,
+    "input_hashes:family_boundary": true,
+    "input_hashes:family_boundary_evidence": true,
+    "input_hashes:plan": true,
+    "input_hashes:runtime_input_manifest": true,
+    "method_inert": true,
+    "no_freeze_or_composition": true,
+    "none_freezeable": true,
+    "stage0_frame_finding": true,
+    "terminal_blocked": true
+  },
+  "overall": "PASS",
+  "schema": "moss-l15-terminal-verdict-verification.v1",
+  "verdict_sha256": "1722a9a0b792e9a3ed734c11b1f7c4f83f6bcdd81add65f974a073e8e82901a3"
+}

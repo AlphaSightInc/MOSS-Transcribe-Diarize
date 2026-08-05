@@ -2014,3 +2014,24 @@ Consolidated verdict raw SHA-256:
 `94e63b95a2c3305be0e893144ea759f7e2faa19987432792718634eeeff16f02`;
 10-member family-verdict evidence-manifest SHA-256:
 `03bc9919c539c1fd4cc012333e6abcd85450bdbcee8e955f1986fdd75f19e942`.
+
+### Campaign L1.5 terminal verdict package (`l15`, 2026-08-05)
+
+**TERMINAL VERDICT: BLOCKED_FOR_PRODUCT; PROCESS WORKED AS DESIGNED.** No
+acceptance-bearing family is freezeable. F1 confirms that post-hoc regrouping is inert on
+the D8-safe runtime frame and that Stage-0's +0.43 pp development / +0.917 pp blind ledger
+gains were frame-flattered. F2 preserves a monotonic acoustic lane-prior dose response as
+directional evidence only. F3 produces no dev/validation uplift. Three cheap hypotheses
+were killed with bounded bench compute; acceptance-grade lane evidence is the primary
+surviving lever.
+
+The holdout was **never opened**: opening count `0`, no candidate-freeze artifact, no
+opening marker, and all nine audio/reference/cache paths absent. The three cases
+`5m-acquired-coca-cola`, `5m-lex-keyu-jin`, and `30m-acquired-jamie-dimon` remain sealed
+and virgin for the next campaign. Refusing to spend that holdout after no family reached
+freeze is the intended guardrail outcome and preserves a real evidentiary asset.
+
+Terminal verdict SHA-256:
+`1722a9a0b792e9a3ed734c11b1f7c4f83f6bcdd81add65f974a073e8e82901a3`.
+Fail-closed verdict verification passed every check. No product code, product test, service,
+host, deployment, threshold, gate, or holdout state changed.

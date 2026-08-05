@@ -1,0 +1,271 @@
+{
+  "blocked": {
+    "designed_process_behavior": true,
+    "hypotheses_killed": 3,
+    "interpretation": "Three cheap hypotheses were resolved with bounded bench compute; the surviving lever is acceptance-grade lane evidence.",
+    "reason": "No acceptance-bearing family cleared the predeclared development and validation gates."
+  },
+  "campaign": "L1.5",
+  "campaign_disposition": "BLOCKED_FOR_PRODUCT",
+  "candidate_freeze_proposed": false,
+  "commands": {
+    "diff_gate": "git diff --check",
+    "f1": "see prototypes/streaming-diarization/l15/evidence/f1/commands.txt",
+    "f2": "see prototypes/streaming-diarization/l15/evidence/f2/commands.txt",
+    "f3": "see prototypes/streaming-diarization/l15/evidence/f3/commands.txt",
+    "full_python_gate": "PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python -m pytest tests -q -p no:cacheprovider",
+    "full_swift_gate": "swift test --package-path macos/MOSSCapture",
+    "l0_guardrail": "scripts/ralph-l15-afk/launch.sh --dry-run --evidence-dir scripts/ralph-l15-afk/evidence",
+    "l1a_baseline": "PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/run_l1_baseline.py",
+    "terminal_verdict": "PYTHONDONTWRITEBYTECODE=1 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python prototypes/streaming-diarization/l15/write_l15_verdict.py"
+  },
+  "composition_arm_run": false,
+  "environment": {
+    "generated_at": "2026-08-05T04:48:40.341790+00:00",
+    "machine": "arm64",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "python": "3.12.12 (main, Nov 19 2025, 22:30:44) [Clang 21.1.4 ]",
+    "worktree_head_before_package": "b278afd4befe86d04ded7e6e32e3a6243051f111"
+  },
+  "families": [
+    {
+      "development_gain_pp": 0.0342058101619247,
+      "disposition": "FAIL_METHOD_CLASS_LIMITATION_D8_RUNTIME_FRAME",
+      "evidence_manifest": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f1/F1_EVIDENCE.sha256",
+        "sha256": "dcf453f2a147940b4eb3b45071801ea39ba5b516486ae2e32a9e766cf8f6967a"
+      },
+      "family_id": "f1-ledger-only-bounded-clustering-v1",
+      "freezeable": false,
+      "overall": "FAIL",
+      "scope": "acceptance-bearing",
+      "validation_gain_pp": 0.5961729831751916,
+      "verdict": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f1/f1-verdict.json",
+        "sha256": "6ac5cc42b4c182c2f4869adf263fd0eec49f00977eee048b3fc6d6832d50eab6"
+      }
+    },
+    {
+      "disposition": "EXPLORATORY_ONLY_NOT_FREEZEABLE",
+      "evidence_manifest": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f2/F2_EXPLORATORY_EVIDENCE.sha256",
+        "sha256": "800b0aa8144a4f80f453d82b960204ef44687ad56f312ae78fcdbbf2856030bb"
+      },
+      "family_id": "f2-soft-lane-provenance-prior-v1",
+      "freezeable": false,
+      "identity_accuracy_claim": false,
+      "overall": "PASS_EXPLORATORY_DELIVERABLE",
+      "scope": "exploratory-only",
+      "verdict": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f2/f2-exploratory-verdict.json",
+        "sha256": "b66997d4d8e0f19b8b83b03f8a84b434bd001647b1b49157397904d795acdb5a"
+      }
+    },
+    {
+      "development_gain_pp": -0.054219848022663,
+      "disposition": "FAIL",
+      "evidence_manifest": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f3/F3_EVIDENCE.sha256",
+        "sha256": "a0fac3d01565e7b25e0783b2e505102a3e31d3d733ff3fc289c5412acda5aed1"
+      },
+      "family_id": "f3-live-pass-duration-adaptive-margin-v1",
+      "freezeable": false,
+      "overall": "FAIL",
+      "scope": "acceptance-bearing",
+      "sweep_compute_gate_seconds": 0.20015926258638503,
+      "sweep_compute_p95_seconds": 0.07291783969849348,
+      "validation_gain_pp": 0.0,
+      "validation_non_gain_gates_passed": true,
+      "verdict": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f3/f3-verdict.json",
+        "sha256": "af63f90888fd93875301094a463ef2d68799a5e8d5098134b81688606191d4af"
+      }
+    }
+  ],
+  "findings_of_record": {
+    "f2_lane_prior_direction": {
+      "acceptance_grade_evidence_requirements": {
+        "acceptance_metrics": "duration-weighted speaker accuracy, DER family, FP speaker-seconds, per-case regressions, two-sided mapping, determinism, and compute budget under the campaign gates",
+        "corpus": "multiple meetings with both local-mic and remote-system lanes, varied speakers, genders, acoustics, crosstalk, overlap, and genuine same-speaker-across-lanes cases",
+        "human_audit": "speaker and activity references audited for identity, timing, overlap, and crosstalk; no one-person-per-lane assumption",
+        "instrument": "D8-safe production runtime segmentation, full-chain golden-path audit, label-perturbation invariance, and same-frame L1/F2 comparison",
+        "source_integrity": "immutable synchronized audio and runtime lane metadata with captured missing-lane and wrong-lane controls",
+        "splits": "preregistered development, validation, and single-open blind holdout containing long meetings and similar-voice hard cases"
+      },
+      "baseline_own_lane_rate": 0.8909163426064413,
+      "dose_response": [
+        {
+          "classification_rate_delta": 0.02492770964203809,
+          "flip_count": 1,
+          "flip_duration_seconds": 2.5,
+          "margin_weighted_mean_delta": 0.027449368725974067,
+          "own_lane_classification_rate_after": 0.9158440522484793,
+          "own_lane_classification_rate_before": 0.8909163426064413,
+          "prior_strength": 0.05
+        },
+        {
+          "classification_rate_delta": 0.04985541928407618,
+          "flip_count": 2,
+          "flip_duration_seconds": 5.0,
+          "margin_weighted_mean_delta": 0.054898737451948086,
+          "own_lane_classification_rate_after": 0.9407717618905174,
+          "own_lane_classification_rate_before": 0.8909163426064413,
+          "prior_strength": 0.1
+        },
+        {
+          "classification_rate_delta": 0.08724698374713331,
+          "flip_count": 4,
+          "flip_duration_seconds": 8.75,
+          "margin_weighted_mean_delta": 0.10979747490389619,
+          "own_lane_classification_rate_after": 0.9781633263535745,
+          "own_lane_classification_rate_before": 0.8909163426064413,
+          "prior_strength": 0.2
+        }
+      ],
+      "evidence_manifest": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f2/F2_EXPLORATORY_EVIDENCE.sha256",
+        "sha256": "800b0aa8144a4f80f453d82b960204ef44687ad56f312ae78fcdbbf2856030bb"
+      },
+      "finding": "A stronger soft lane prior monotonically increased the exploratory own-lane acoustic classification rate; this is directional evidence only, not identity acceptance evidence.",
+      "raw": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f2/f2-exploratory-effects.json",
+        "sha256": "b9c119aafdce0c60b6e0d4c87a0aebd83f4a9afdc387ba8ef2780404a4a1b209"
+      }
+    },
+    "posthoc_regrouping_inert_in_runtime_frame": {
+      "all_stage0_f1_counts_and_labels_identical": true,
+      "diagnosis": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f1-parameter-diagnosis/f1-two-config-differential-v2.json",
+        "sha256": "e5e30d50d06b993b091a2d3f59a4ff87790d70efc7036d7dee79d91104153926"
+      },
+      "diagnosis_evidence_manifest": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f1-parameter-diagnosis/F1_PARAMETER_DIAGNOSIS_EVIDENCE.sha256",
+        "sha256": "6646576bbbc46d16389deceb24bf04afd2b5bc308a3b0d5449ae6287a7d1729a"
+      },
+      "diagnostic_case": "3m-acquired-jamie-dimon",
+      "diagnostic_proposals_from_eligible_units": [
+        3,
+        75
+      ],
+      "differential": {
+        "path": "prototypes/streaming-diarization/l15/evidence/f1-stage0-ledger-differential/stage0-ledger-differential-verdict.json",
+        "sha256": "ab20f2a005254733e0f2c05fd23666cfd286adeca72873a0e3ad4718815283c3"
+      },
+      "finding": "The post-hoc regrouping method class is proposal-starved under honest runtime units; the exact sealed Stage-0 arm and F1 produce identical proposal counts, accepted corrections, and labels.",
+      "parameter_grid_distinct_outcome_count": 1
+    },
+    "stage0_ledger_gains_frame_flattered": {
+      "d8_safe_runtime_frame": {
+        "accepted_correction_count": 6,
+        "evidence_manifest": {
+          "path": "prototypes/streaming-diarization/l15/evidence/f1-stage0-ledger-differential/STAGE0_LEDGER_DIFFERENTIAL_EVIDENCE.sha256",
+          "sha256": "c1973a7f8e65b60d46bebabc3e42c27c58429572ee4e56f27ffa30e4e4edb9a4"
+        },
+        "gain_over_l1_pp": 0.0342058101619247,
+        "proposal_count": 6,
+        "raw": {
+          "path": "prototypes/streaming-diarization/l15/evidence/f1-stage0-ledger-differential/stage0-ledger-scored.json",
+          "sha256": "d5a7769017cf90a3a9cc39447d63c2b8af9e2162146688322d33a0d8281ff013"
+        },
+        "verdict": {
+          "path": "prototypes/streaming-diarization/l15/evidence/f1-stage0-ledger-differential/stage0-ledger-differential-verdict.json",
+          "sha256": "ab20f2a005254733e0f2c05fd23666cfd286adeca72873a0e3ad4718815283c3"
+        }
+      },
+      "finding": "Stage-0 ledger-control gains on truth-timed partitions do not survive the D8-safe production-endpoint-over-deployed-ASR runtime frame and no longer carry strategic weight as a cheap live-mode win.",
+      "truth_timed_frame": {
+        "blind_evidence_manifest": {
+          "path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/A5_HOLDOUT_EVIDENCE.sha256",
+          "sha256": "15eb5f5f2c788802ecce4156c26d1f0819f7aafa2b1df744b8209a3a1a0e44dd"
+        },
+        "blind_gain_pp": 0.9174000000000015,
+        "blind_l1_accuracy": 0.963303,
+        "blind_ledger_accuracy": 0.972477,
+        "blind_raw": {
+          "path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-holdout-opening/a5-holdout-summary.json",
+          "sha256": "43e9ff33e664331aa614bc748f5b6254a545c3252694a5522c90044c220e9966"
+        },
+        "development_evidence_manifest": {
+          "path": "prototypes/streaming-diarization/l2-stage0/evidence/A5_DEV_EVIDENCE.sha256",
+          "sha256": "8f965003322fe6cf616796385e4b08cb07da0fe0f8d47fd1c70705bb62657f34"
+        },
+        "development_gain_pp": 0.4284999999999983,
+        "development_l1_accuracy": 0.946284,
+        "development_ledger_accuracy": 0.950569,
+        "development_raw": {
+          "path": "prototypes/streaming-diarization/l2-stage0/evidence/a5-dev-v4/a5-dev-validation.json",
+          "sha256": "2842f66eae64843d8aa13c9e65c1f95f20a803489613c355c2a07bb1a40c71d5"
+        }
+      }
+    }
+  },
+  "holdout": {
+    "asset_value": "The three cases retain blind evidentiary value for the next campaign.",
+    "candidate_freeze_created": false,
+    "case_durations_seconds": {
+      "30m-acquired-jamie-dimon": 1800.0,
+      "5m-acquired-coca-cola": 300.0,
+      "5m-lex-keyu-jin": 300.0
+    },
+    "case_ids": [
+      "5m-acquired-coca-cola",
+      "5m-lex-keyu-jin",
+      "30m-acquired-jamie-dimon"
+    ],
+    "input_paths_absent_count": 9,
+    "input_paths_present": [],
+    "opened": false,
+    "opening_count": 0,
+    "opening_marker_created": false,
+    "procedure": {
+      "path": "prototypes/streaming-diarization/l15/holdout-procedure.json",
+      "sha256": "f4a06939e2701b8f48ca9d090e8cd01d5853e64f2953bbd7982b3f6b3f5f5489"
+    },
+    "reason": "No candidate reached the preregistered freeze gate; refusing the opening is the designed behavior.",
+    "remains_virgin_for_next_campaign": true,
+    "split_manifest": {
+      "path": "prototypes/streaming-diarization/l15/split-manifest.json",
+      "sha256": "308ed56783783dba643d1797e5cb3873de4ae684b4c36a6e97a1c914241f67d3"
+    },
+    "status": "SEALED_NEVER_OPENED"
+  },
+  "input_hashes": {
+    "f1_spec": {
+      "path": "prototypes/streaming-diarization/l15/f1-ledger-only-family.json",
+      "sha256": "770b73703550cd989a6125f51a4e32ef352b4d203a7d888589864d19d20d13fb"
+    },
+    "f2_spec": {
+      "path": "prototypes/streaming-diarization/l15/f2-lane-prior-family.json",
+      "sha256": "4d371dc9fb7e5a06fae5e5b298995bcd19b62334b3644566d5c2e6aed4bb1fba"
+    },
+    "f3_spec": {
+      "path": "prototypes/streaming-diarization/l15/f3-adaptive-margin-family.json",
+      "sha256": "56491ebcd5f6aa5da8a2366863b5c7fccbc7e454e2dc1692169ff8572c0e99ae"
+    },
+    "family_boundary": {
+      "path": "prototypes/streaming-diarization/l15/evidence/family-verdicts/family-verdicts.json",
+      "sha256": "94e63b95a2c3305be0e893144ea759f7e2faa19987432792718634eeeff16f02"
+    },
+    "family_boundary_evidence": {
+      "path": "prototypes/streaming-diarization/l15/evidence/family-verdicts/FAMILY_VERDICTS_EVIDENCE.sha256",
+      "sha256": "03bc9919c539c1fd4cc012333e6abcd85450bdbcee8e955f1986fdd75f19e942"
+    },
+    "plan": {
+      "path": "docs/plans/l15-live-uplift-0804.md",
+      "sha256": "456cb01efc7e9ffbfeb1091f251f03a666ee81d3ff2ca9229faaf93faab8cdce"
+    },
+    "runtime_input_manifest": {
+      "path": "prototypes/streaming-diarization/l15/runtime-input-manifest.json",
+      "sha256": "886ce7a6b53f1f55c1966753b8e691113c074fee11bd3b4fdd6e650d0712209e"
+    }
+  },
+  "ready_for_product": false,
+  "schema": "moss-l15-terminal-verdict.v1",
+  "stage": "L1_BENCH_CAMPAIGN",
+  "status": "BLOCKED",
+  "strategic_conclusion": {
+    "dl1_inventory_authorized_after_merge": true,
+    "no_product_change_authorized": true,
+    "primary_surviving_lever": "acceptance-grade dual-lane evidence and a later separately preregistered F2-A campaign"
+  }
+}
