@@ -1,0 +1,209 @@
+{
+  "schema": "moss-corpus-promotion-verdict.v1",
+  "generated_at": "2026-08-05T02:06:35Z",
+  "overall": "PASS",
+  "keeper_ready_for_independent_review": true,
+  "base_commit": "08f142617aa7b4b7988cf503f8d7a1d10fbeec42",
+  "branch": "evidence/corpus-promotion-20260804",
+  "scope": {
+    "product_code_modified": false,
+    "product_tests_modified": false,
+    "corpus_originals_overwritten": false,
+    "l15_dev_validation_holdout_assigned": false
+  },
+  "attestations": {
+    "count": 8,
+    "destination": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations",
+    "manifest_sha256": "d78c793171a09d058a6f071598b47b101b334ae3af5b1e107d3b6d74e712d3d8",
+    "source": "control repo docs/handoffs/human-audit/"
+  },
+  "campaign_plan": {
+    "path": "docs/plans/l15-live-uplift-0804.md",
+    "sha256": "456cb01efc7e9ffbfeb1091f251f03a666ee81d3ff2ca9229faaf93faab8cdce",
+    "source": "control repo docs/handoffs/l15-live-uplift-campaign-plan-20260804.md",
+    "byte_exact": true
+  },
+  "corpus_manifest": {
+    "path": "prototypes/streaming-diarization/l2-stage0/corpus-manifest.json",
+    "source_sha256": "e8eea13f81fab556c7434f7d50188dcaf5e15a99fe91af1cb2a0dbc8c69db9ad",
+    "promoted_sha256": "7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb",
+    "schema": "moss-l2-stage0-corpus.v2",
+    "accepted_case_count": 19,
+    "acceptance_pool_case_count": 10,
+    "acceptance_pool_split": "acceptance_pool",
+    "validation_state": "human_audited",
+    "l15_split_policy": "unassigned"
+  },
+  "versioned_references": [
+    {
+      "case_id": "5m-acquired-coca-cola",
+      "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/reference-v2-human-20260804.jsonl",
+      "sha256": "d2b92f1aff1df0a15b183205cc04246bc09097270a3445b3203d96d9fbb738fa",
+      "superseded_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/reference.jsonl",
+      "superseded_sha256": "41146f40c372a928607219df34b78b4cb68c10ca5cf1cbcb4bba1c33b8135809",
+      "original_preserved": true,
+      "repository_tracking": "local-only corpus path per prototypes/streaming-diarization/.gitignore; present in retained worktree"
+    },
+    {
+      "case_id": "5m-acquired-rolex",
+      "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/reference-v2-human-20260804.jsonl",
+      "sha256": "177caa44c892dc804d5efba661749c2e72ecf734d1457f3cc0ab079d4e5401d2",
+      "superseded_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/reference.jsonl",
+      "superseded_sha256": "88f84c94b0f184939906249747ae489c58563ac81483eb1447ef2d00e4f58b1c",
+      "original_preserved": true,
+      "repository_tracking": "local-only corpus path per prototypes/streaming-diarization/.gitignore; present in retained worktree"
+    }
+  ],
+  "cache_equivalence": {
+    "overall": "PASS",
+    "proof_path": "prototypes/streaming-diarization/l2-stage0/human-audit/evidence/cache-equivalence.json",
+    "proof_sha256": "62ea28d74c1ad1207c82b805e3e241d48b780ab6a7906aa71fd80336cbf6bd26",
+    "evidence_manifest_sha256": "7370466de7f15595d33fd33a84ff1f1e51c63ba862b9697f87ff24ed38627337",
+    "cases": [
+      {
+        "case_id": "5m-acquired-coca-cola",
+        "current_cache_sha256": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9",
+        "rebuilt_cache_sha256": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9",
+        "unit_bounds_byte_identical": true,
+        "vectors_byte_identical": true,
+        "reference_changed_lines": [
+          {
+            "line_number": 39,
+            "new_text": "It seamlessly and shamelessly integrated into the hippie culture of the 70s, and then of course, it had the epic cola wars of the 80s and onward.",
+            "new_word_count": 27,
+            "new_words_per_second": 10.401761,
+            "old_text": "It seamlessly and shamelessly integrated into the hippie culture of the 1970s, and then of course, it had the epic cola wars of the 1980s and onward.",
+            "old_word_count": 27,
+            "old_words_per_second": 10.401761,
+            "zero_based_index": 38
+          },
+          {
+            "line_number": 41,
+            "new_text": "Well, it's about America, and then America inserting itself everywhere else in the rest.",
+            "new_word_count": 14,
+            "new_words_per_second": 5.436893,
+            "old_text": "Well, it's about America, and then America inserting itself everywhere else in the rest of the world.",
+            "old_word_count": 17,
+            "old_words_per_second": 6.601942,
+            "zero_based_index": 40
+          }
+        ]
+      },
+      {
+        "case_id": "5m-acquired-rolex",
+        "current_cache_sha256": "f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee",
+        "rebuilt_cache_sha256": "f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee",
+        "unit_bounds_byte_identical": true,
+        "vectors_byte_identical": true,
+        "reference_changed_lines": [
+          {
+            "line_number": 23,
+            "new_text": "That is until you walk out of the store, and they instantly become worth more, at least for a lot of the models these days.",
+            "new_word_count": 25,
+            "new_words_per_second": 9.177118,
+            "old_text": "That is until you walk out of the store, then they instantly become worth more, at least for a lot of the models these days.",
+            "old_word_count": 25,
+            "old_words_per_second": 9.177118,
+            "zero_based_index": 22
+          },
+          {
+            "line_number": 26,
+            "new_text": "There's probably 10 times more Rolexes sold than Birkins sold, or at least on that order.",
+            "new_word_count": 16,
+            "new_words_per_second": 6.068268,
+            "old_text": "There are probably 10 times more Rolexes sold than Birkins sold, or at least on that order.",
+            "old_word_count": 17,
+            "old_words_per_second": 6.447535,
+            "zero_based_index": 25
+          }
+        ]
+      }
+    ],
+    "all_cache_fields_byte_identical": true,
+    "text_carrying_cache_fields": []
+  },
+  "validation": {
+    "overall": "PASS",
+    "path": "prototypes/streaming-diarization/l2-stage0/human-audit/evidence/validate-inputs.json",
+    "sha256": "2aa48edf3209d6c8b01dd34336c42c547ca67ef9baee7560c48d9285087b780e",
+    "validated_case_count": 19,
+    "accepted_case_count": 19,
+    "acceptance_pool_case_count": 10,
+    "adjudication_annotations_honored": true
+  },
+  "gates": {
+    "prototype_validation": {
+      "command": [
+        "PYTHONDONTWRITEBYTECODE=1",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+        "prototypes/streaming-diarization/l2-stage0/run_validation_tests.py",
+        "--label",
+        "corpus-promotion",
+        "--evidence-dir",
+        "prototypes/streaming-diarization/l2-stage0/human-audit/evidence"
+      ],
+      "tests": 14,
+      "failures": 0,
+      "sha256": "59b2ba66b9998e58f4e73ebd216f04832fce5556b549283fd66e9f802c9c0a0f"
+    },
+    "swift": {
+      "command": [
+        "swift",
+        "test",
+        "--package-path",
+        "macos/MOSSCapture"
+      ],
+      "tests": 200,
+      "failures": 0,
+      "sha256": "29336ff7d254f7a5a36cf207a23b3118e31c8e66e326cd31f6004bbf0ee1d31b"
+    },
+    "python": {
+      "command": [
+        "PYTHONDONTWRITEBYTECODE=1",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "passed": 865,
+      "skipped": 2,
+      "subtests_passed": 373,
+      "sha256": "414caa390e7fa4025e579668ab456bd45ef4902f0148a9cd7e85fb37d5e954b6"
+    },
+    "diff_check": {
+      "command": [
+        "git",
+        "-C",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-corpus-promotion-0804",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "exit_code": 0
+    }
+  },
+  "commands": {
+    "promote_manifest": [
+      "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+      "prototypes/streaming-diarization/l2-stage0/human-audit/promote_corpus_manifest.py"
+    ],
+    "prove_cache_equivalence": [
+      "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+      "prototypes/streaming-diarization/l2-stage0/human-audit/prove_cache_equivalence.py",
+      "--output-root",
+      "prototypes/streaming-diarization/l2-stage0/human-audit/evidence/cache-rebuild",
+      "--json-output",
+      "prototypes/streaming-diarization/l2-stage0/human-audit/evidence/cache-equivalence.json"
+    ],
+    "validate_inputs": [
+      "PYTHONDONTWRITEBYTECODE=1",
+      "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+      "prototypes/streaming-diarization/l2-stage0/validate_inputs.py",
+      "--json-output",
+      "prototypes/streaming-diarization/l2-stage0/human-audit/evidence/validate-inputs.json"
+    ]
+  }
+}

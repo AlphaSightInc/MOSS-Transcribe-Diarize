@@ -1,0 +1,22 @@
+{
+  "acceptance_pool_case_count": 10,
+  "changed_reference_case_ids": [
+    "5m-acquired-coca-cola",
+    "5m-acquired-rolex"
+  ],
+  "finding_counts": {
+    "1m-acquired-jamie-dimon": 5,
+    "30m-acquired-jamie-dimon": 89,
+    "30m-lex-bill-ackman": 4,
+    "5m-acquired-coca-cola": 23,
+    "5m-acquired-jamie-dimon": 11,
+    "5m-acquired-nfl": 11,
+    "5m-acquired-rolex": 16,
+    "5m-lex-bill-ackman": 0,
+    "5m-lex-javier-milei": 0,
+    "5m-lex-keyu-jin": 0
+  },
+  "manifest_sha256": "7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb",
+  "overall": "PASS",
+  "schema": "moss-l2-stage0-corpus.v2"
+}

@@ -15,7 +15,9 @@ from validate_inputs import (
     authorize_holdout_open,
     select_case_scope,
     validate_acoustic_support,
+    validate_declared_findings,
     validate_declared_hash,
+    validate_human_audit_metadata,
 )
 
 
@@ -112,6 +114,57 @@ class InputBoundaryTest(unittest.TestCase):
         selected, skipped = select_case_scope(cases, "non-holdout")
         self.assertEqual([case["case_id"] for case in selected], ["dev"])
         self.assertEqual(skipped, ["sealed"])
+
+    def test_adjudicated_findings_preserve_scanner_history(self) -> None:
+        actual = [{"index": 9, "kind": "overlap", "previous_end": 47.792, "start": 47.0}]
+        declared = [{**actual[0], "adjudicated": True}]
+        validate_declared_findings("audited", actual, declared)
+
+    def test_human_audit_requires_every_finding_adjudicated(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="moss-l2-human-audit-red-") as temp:
+            attestation = Path(temp) / "attestation.md"
+            attestation.write_text("operator attestation\n", encoding="utf-8")
+            case = {
+                "case_id": "audited",
+                "human_audit": {
+                    "attestation_path": str(attestation),
+                    "basis": "operator direct listening",
+                    "date": "2026-08-04",
+                },
+                "split": "acceptance_pool",
+                "validation_state": "human_audited",
+            }
+            self.assert_code(
+                "human_audit_finding_unadjudicated",
+                lambda: validate_human_audit_metadata(
+                    case,
+                    reference_path=Path(temp) / "reference.jsonl",
+                    findings=[{"index": 1, "kind": "high_word_rate"}],
+                ),
+            )
+
+    def test_human_audit_cannot_preassign_campaign_split(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="moss-l2-human-audit-split-red-") as temp:
+            attestation = Path(temp) / "attestation.md"
+            attestation.write_text("operator attestation\n", encoding="utf-8")
+            case = {
+                "case_id": "audited",
+                "human_audit": {
+                    "attestation_path": str(attestation),
+                    "basis": "operator direct listening",
+                    "date": "2026-08-04",
+                },
+                "split": "development",
+                "validation_state": "human_audited",
+            }
+            self.assert_code(
+                "human_audit_split_not_acceptance_pool",
+                lambda: validate_human_audit_metadata(
+                    case,
+                    reference_path=Path(temp) / "reference.jsonl",
+                    findings=[],
+                ),
+            )
 
 
 if __name__ == "__main__":

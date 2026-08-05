@@ -1,0 +1,1 @@
+git_diff_cached_check_exit_code=0

@@ -1,21 +1,15 @@
 {
-  "acceptance_pool_promoted_at": "2026-08-04",
-  "acceptance_pool_split_policy": "unassigned; L1.5 dev/validation/holdout freeze is a separate campaign action",
-  "cache_rebuild_spec_path": "prototypes/streaming-diarization/l2-stage0/cache-rebuild-spec.json",
+  "acceptance_pool_case_count": 10,
+  "accepted_case_count": 19,
   "cache_rebuild_spec_sha256": "aaf1b95110a6ae74ff8e66aa93df17a1d8e658e79b43d513ecd3642c80b84061",
+  "case_scope": "all",
   "cases": [
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/audio.wav",
-      "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
       "case_id": "1m-acquired-jamie-dimon",
       "duration_seconds": 60.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q1-1m-acquired-jamie-dimon-20260804.md",
-        "basis": "operator direct listening; blind fresh ASR cross-check at deployed 9089b332; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [
+      "finding_count": 5,
+      "findings": [
         {
           "adjudicated": true,
           "index": 1,
@@ -47,178 +41,116 @@
           "words_per_second": 8.354219
         }
       ],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/reference.jsonl",
-      "reference_sha256": "325c83712849262ebe7c6e513a9be495d6d6bf5230e70f174243f66ee691e01d",
       "reference_status": "human_audit_frozen",
       "speaker_count": 3,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-jamie-dimon/harness_cache.npz",
-      "vector_cache_sha256": "164ed35f3b8c5d3e8093c3de0e6348f442bcc3ce18de89868585d57904fd8bdc",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_nfl/audio.wav",
-      "audio_sha256": "d2505e3bb048bd7645fffdd8b5afc4b34d1511990ce6771366243e02869f3be3",
       "case_id": "1m-acquired-nfl",
       "duration_seconds": 60.0,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_nfl/reference.jsonl",
-      "reference_sha256": "7c5deb4941e674d9b86a59698f03b30533444c81717eddb429f9297f420d95cd",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 3,
       "split": "development",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-nfl/harness_cache.npz",
-      "vector_cache_sha256": "0ac28f9340a255d8fdafb2d589b2f7939381ed9025f219185ba5446a1283b3c7",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_rolex/audio.wav",
-      "audio_sha256": "f2d20b3b08a58c902f68c5882ef9b2a4349b515f1d7abaa7f0f0e44b7cdb203a",
       "case_id": "1m-acquired-rolex",
       "duration_seconds": 60.0,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_rolex/reference.jsonl",
-      "reference_sha256": "95871988a18bf5caf9ecddd119ace40f16cec1a44c010b3a6e5e8390d5710ea9",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 2,
       "split": "validation",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-acquired-rolex/harness_cache.npz",
-      "vector_cache_sha256": "85e2d573d6c768b659d67e831985302ce5a0dd1d8169af72b5235d6dd5cada68",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/audio.wav",
-      "audio_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
       "case_id": "1m-lex-bill-ackman",
       "duration_seconds": 60.0,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/reference.jsonl",
-      "reference_sha256": "9e50d6d3c9006337d1d357af5593f669ef0e3014b734fb6ddcc9a119bf49d71c",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 2,
       "split": "validation",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-lex-bill-ackman/harness_cache.npz",
-      "vector_cache_sha256": "78338559bd9975ff610c921194c3ce01e50c127f02ce0fbf13139713a4752305",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/audio.wav",
-      "audio_sha256": "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd",
       "case_id": "1m-lex-javier-milei",
       "duration_seconds": 60.0,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/reference.jsonl",
-      "reference_sha256": "89fcc6958bf5d6d10ec59680b97065dff0d12debed4e9000f536d0e0fc32baa8",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 2,
       "split": "blind_holdout",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-lex-javier-milei/harness_cache.npz",
-      "vector_cache_sha256": "a6a16a9dc1a378f4355e76343c27c993443d49788f2e9f5844e3ece140d6e306",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/audio.wav",
-      "audio_sha256": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120",
       "case_id": "1m-lex-keyu-jin",
       "duration_seconds": 60.0,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/reference.jsonl",
-      "reference_sha256": "0c7cb619df47707a2e4ea9ce29441047cf58b01f65a52952e7833aa03bb5a1d0",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 2,
       "split": "blind_holdout",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/1m-lex-keyu-jin/harness_cache.npz",
-      "vector_cache_sha256": "56ba93f19500c2fe2ad15d9f5234854822d684653e88a2e52f8ad4e2e3be9cd7",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/acquired_jamie_dimon_3min/audio.wav",
-      "audio_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
       "case_id": "3m-acquired-jamie-dimon",
       "duration_seconds": 180.0,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/acquired_jamie_dimon_3min/reference.jsonl",
-      "reference_sha256": "72a6173d92323d5c7ff5e6ba084063970966d4bd4e146c23e24d57949ad1a01b",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 3,
       "split": "development",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-acquired-jamie-dimon/harness_cache.npz",
-      "vector_cache_sha256": "2b463a00143460ecc86b2218a308736b0cbbe57722e420f0b40800580f363dcc",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank/audio.wav",
-      "audio_sha256": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
       "case_id": "3m-lex-adam-frank",
       "duration_seconds": 180.0,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank/reference.jsonl",
-      "reference_sha256": "650450979435c9f4389959465f87dbf37c78109bc925c24d67878cc9574bc9cc",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 2,
       "split": "validation",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-lex-adam-frank/harness_cache.npz",
-      "vector_cache_sha256": "9b78e22d9137b9d4003e44206b94528ad05ee402eac2d9fc0d62e5108d7e442c",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_shapiro_destiny/audio.wav",
-      "audio_sha256": "9d18487ac522db1119e2633a87816466b6b85e166d0dcd7e8e6fc89e6e11a895",
       "case_id": "3m-lex-shapiro-destiny",
       "duration_seconds": 180.9735,
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_shapiro_destiny/reference.jsonl",
-      "reference_sha256": "aa250575e849f517d69dd6182ce617e705d86cdadb88c170ec0d97fc7ac35792",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "accepted_existing_provenance_zero_flags",
       "speaker_count": 3,
       "split": "blind_holdout",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/3m-lex-shapiro-destiny/harness_cache.npz",
-      "vector_cache_sha256": "eaa759d2b736679ec3cbbdfd06aceff3db4f1c0a3f9bdb4123f06587879ea206",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "acoustic_evidence_path": "tests/fixtures/live_identity_real_corpus/speaker-reference-v2-candidate.acoustic-evidence.json",
-      "acoustic_evidence_sha256": "367b474cf8c6f9da3f8dd28dbd47961f9c34f2d9060497e9cdd7051205531896",
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/audio.wav",
-      "audio_sha256": "333b1e50b05d5dc888a6bdb4dc82f1c429e0e9c5a0b1df0cf115c2215eb394fb",
       "case_id": "5m-acquired-alphabet",
       "duration_seconds": 300.0,
-      "human_audit_path": "tests/fixtures/live_identity_real_corpus/speaker-reference-v2-human-audit-20260803.json",
-      "human_audit_sha256": "ef73021be3049a27a872b6e069ee361f3db9eb4c870897bbba7679ba3b351dce",
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl",
-      "reference_provenance_path": "tests/fixtures/live_identity_real_corpus/speaker-reference-v2-post-audit.provenance.json",
-      "reference_provenance_sha256": "47f782fd0f9a44efa804e1fe966fb6aeb9e13c6fa377bc2bc4f728521ea49447",
-      "reference_sha256": "28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "post_audit_frozen",
       "speaker_count": 2,
       "split": "validation",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-alphabet/harness_cache.npz",
-      "vector_cache_sha256": "6fe79ce7eedbf91ccd26c60f473cf016baf053f6335f3e2247b11170d689bdef",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": null
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/audio.wav",
-      "audio_sha256": "693317c142945d6e1918e36e1dbcb2e4f0e4d8d142ef15bd4a68ef90217d058f",
       "case_id": "5m-acquired-coca-cola",
       "duration_seconds": 300.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q2-5m-acquired-coca-cola-20260804.md",
-        "basis": "operator direct listening; blind fresh ASR cross-check at deployed 9089b332; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [
+      "finding_count": 23,
+      "findings": [
         {
           "adjudicated": true,
           "index": 2,
@@ -358,32 +290,17 @@
           "words_per_second": 12.037693
         }
       ],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/reference-v2-human-20260804.jsonl",
-      "reference_sha256": "d2b92f1aff1df0a15b183205cc04246bc09097270a3445b3203d96d9fbb738fa",
       "reference_status": "human_audit_frozen",
       "speaker_count": 2,
       "split": "acceptance_pool",
-      "superseded_reference": {
-        "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_coca_cola/reference.jsonl",
-        "sha256": "41146f40c372a928607219df34b78b4cb68c10ca5cf1cbcb4bba1c33b8135809"
-      },
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-coca-cola/harness_cache.npz",
-      "vector_cache_sha256": "f9c9c1fc2be507c0c02f4d923266e96bb9ab3bbc88ed875eefc12b1e9d64bea9",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_jamie_dimon/audio.wav",
-      "audio_sha256": "c18830aad32d08afdd92965c673c3a3bf5cdc150c611ddad71a8df2e156f6c83",
       "case_id": "5m-acquired-jamie-dimon",
       "duration_seconds": 300.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q2-5m-acquired-jamie-dimon-20260804.md",
-        "basis": "operator direct listening; blind fresh ASR cross-check at deployed 9089b332; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [
+      "finding_count": 11,
+      "findings": [
         {
           "adjudicated": true,
           "index": 1,
@@ -451,28 +368,17 @@
           "words_per_second": 10.0
         }
       ],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_jamie_dimon/reference.jsonl",
-      "reference_sha256": "1f8c981f3a238409a25415d5abb87681a4f0c88e9633afffd94b0fefc0746e1e",
       "reference_status": "human_audit_frozen",
       "speaker_count": 3,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-jamie-dimon/harness_cache.npz",
-      "vector_cache_sha256": "f558664d04ebb43914b5e147e08f5338f36c07817ab61838253bbabd9975202e",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_nfl/audio.wav",
-      "audio_sha256": "636e42c9e10f488b739dda8b6973aaead66ca89329b4ee61f08870bbec8ac3a5",
       "case_id": "5m-acquired-nfl",
       "duration_seconds": 300.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q2-5m-acquired-nfl-20260804.md",
-        "basis": "operator direct listening; blind fresh ASR cross-check at deployed 9089b332; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [
+      "finding_count": 11,
+      "findings": [
         {
           "adjudicated": true,
           "index": 0,
@@ -540,28 +446,17 @@
           "words_per_second": 8.263591
         }
       ],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_nfl/reference.jsonl",
-      "reference_sha256": "f285f265a81798330a2cac1c95ec005ea39af492a259f439de3a473b0ff33667",
       "reference_status": "human_audit_frozen",
       "speaker_count": 2,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-nfl/harness_cache.npz",
-      "vector_cache_sha256": "9bfecb8c105e1aea8a3911bd0ce2dbb3271607e938aecc909f75206f32fc5402",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/audio.wav",
-      "audio_sha256": "300df751d1157a090a08007d4f81a9c878516da87ac1b684231b70f4401f04e5",
       "case_id": "5m-acquired-rolex",
       "duration_seconds": 300.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q2-5m-acquired-rolex-20260804.md",
-        "basis": "operator direct listening; blind fresh ASR cross-check at deployed 9089b332; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [
+      "finding_count": 16,
+      "findings": [
         {
           "adjudicated": true,
           "index": 2,
@@ -660,98 +555,50 @@
           "words_per_second": 9.343066
         }
       ],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/reference-v2-human-20260804.jsonl",
-      "reference_sha256": "177caa44c892dc804d5efba661749c2e72ecf734d1457f3cc0ab079d4e5401d2",
       "reference_status": "human_audit_frozen",
       "speaker_count": 3,
       "split": "acceptance_pool",
-      "superseded_reference": {
-        "path": "prototypes/streaming-diarization/data/real/benchmark_5m/acquired_rolex/reference.jsonl",
-        "sha256": "88f84c94b0f184939906249747ae489c58563ac81483eb1447ef2d00e4f58b1c"
-      },
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-acquired-rolex/harness_cache.npz",
-      "vector_cache_sha256": "f1c53b71a4650d7c133cfb7c8883d45df61a4e21e3ede9c36b4e69039dd358ee",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_bill_ackman/audio.wav",
-      "audio_sha256": "f1c178d12d960d793cb66c90929e9963db51c248ede3b9c1e738eb1b93b3b497",
       "case_id": "5m-lex-bill-ackman",
       "duration_seconds": 300.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q3-lex-5m-batch-20260804.md",
-        "basis": "three-source validation: golden reference, blind fresh ASR at deployed 9089b332, and official lexfridman.com transcript; operator signed off; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_bill_ackman/reference.jsonl",
-      "reference_sha256": "46e6288ede6937a41ae3727264f14c001c30bc3131b5135d7391506bffa51069",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "human_audit_frozen",
       "speaker_count": 2,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-bill-ackman/harness_cache.npz",
-      "vector_cache_sha256": "3b73d7e4eae1aed818d78452c47fd1dd3e74bc3c09ea001a9b1deef7db89f491",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_javier_milei/audio.wav",
-      "audio_sha256": "a81c26388c604ef02452a22525381f501d0da7c0a52b2de9b0fd9bd3590c36a1",
       "case_id": "5m-lex-javier-milei",
       "duration_seconds": 300.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q3-lex-5m-batch-20260804.md",
-        "basis": "three-source validation: golden reference, blind fresh ASR at deployed 9089b332, and official lexfridman.com transcript; operator signed off; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_javier_milei/reference.jsonl",
-      "reference_sha256": "bcad1a474a53c47474df37d0b6f40ac5c9b61ed17abd7d07b6f6ff8c5b63849d",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "human_audit_frozen",
       "speaker_count": 2,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-javier-milei/harness_cache.npz",
-      "vector_cache_sha256": "26fbca84f5cfc528d55a8af67e32e87d6432776b324095c52aa376f88215380c",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/audio.wav",
-      "audio_sha256": "85176388cf783fb1b75beeaaefba745bb315202ab4d74e40052f0d3fc2b5c7d9",
       "case_id": "5m-lex-keyu-jin",
       "duration_seconds": 300.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q3-lex-5m-batch-20260804.md",
-        "basis": "three-source validation: golden reference, blind fresh ASR at deployed 9089b332, and official lexfridman.com transcript; operator signed off; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/reference.jsonl",
-      "reference_sha256": "f479c10d4762980639d8514c9e0faffc2c97b0ae8b76e2ec60cf43253c003812",
+      "finding_count": 0,
+      "findings": [],
       "reference_status": "human_audit_frozen",
       "speaker_count": 2,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/5m-lex-keyu-jin/harness_cache.npz",
-      "vector_cache_sha256": "c545173e82e2ad045b7c84c2751b3ec265104eb46867e77c07ecae1b3363e4fa",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_30m/acquired_jamie_dimon/audio.wav",
-      "audio_sha256": "842c9609ac4473bee0c29275fa2f38d73b00484acc603673f2317039005f8996",
       "case_id": "30m-acquired-jamie-dimon",
       "duration_seconds": 1800.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q4-30m-acquired-jamie-dimon-20260804.md",
-        "basis": "operator targeted listening, official show transcript, and blind fresh ASR at deployed 9089b332; blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [
+      "finding_count": 89,
+      "findings": [
         {
           "adjudicated": true,
           "index": 1,
@@ -1287,28 +1134,17 @@
           "words_per_second": 20.0
         }
       ],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_30m/acquired_jamie_dimon/reference.jsonl",
-      "reference_sha256": "98d0acbee1ccc1f67b971050243797214d7ddbb621788887d25936cabc9e3c71",
       "reference_status": "human_audit_frozen",
       "speaker_count": 3,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/30m-acquired-jamie-dimon/harness_cache.npz",
-      "vector_cache_sha256": "0f436684063b7c44aec64096864c2ac60b24a7002487fcc25cf88881abdeac88",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     },
     {
       "acceptance_eligible": true,
-      "audio_path": "prototypes/streaming-diarization/data/real/benchmark_30m/lex_bill_ackman/audio.wav",
-      "audio_sha256": "911889b4899b3e2d82699238e4277817da8ef82b9cf3e6d18e272d65f0035474",
       "case_id": "30m-lex-bill-ackman",
       "duration_seconds": 1800.0,
-      "human_audit": {
-        "attestation_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/q5-30m-lex-bill-ackman-20260804.md",
-        "basis": "operator targeted listening, official lexfridman.com transcript, and blind fresh ASR at deployed 9089b332; genuine-crosstalk overlaps and blanket timing confirmation",
-        "date": "2026-08-04"
-      },
-      "mechanical_findings": [
+      "finding_count": 4,
+      "findings": [
         {
           "adjudicated": true,
           "index": 17,
@@ -1336,20 +1172,19 @@
           "words_per_second": 9.0
         }
       ],
-      "reference_path": "prototypes/streaming-diarization/data/real/benchmark_30m/lex_bill_ackman/reference.jsonl",
-      "reference_sha256": "fac005f5a91651877bed78e18727ebce9dc93ed76c64042fa4a86af2447ecb96",
       "reference_status": "human_audit_frozen",
       "speaker_count": 2,
       "split": "acceptance_pool",
-      "validation_state": "human_audited",
-      "vector_cache_path": "prototypes/streaming-diarization/l2-stage0/data/cache-v2-production-endpoint/30m-lex-bill-ackman/harness_cache.npz",
-      "vector_cache_sha256": "6d0861e58c6ef2c5005972992279ceb9372aa5124dcf8379b57c028752358240",
-      "vector_cache_version": "cache-v2-production-endpoint"
+      "validation_state": "human_audited"
     }
   ],
-  "holdout_manifest_path": "prototypes/streaming-diarization/l2-stage0/holdout-manifest.json",
-  "human_audit_attestations_manifest_path": "prototypes/streaming-diarization/l2-stage0/human-audit/attestations/ATTESTATIONS.sha256",
+  "corpus_manifest_sha256": "7c60cb1aaba807adcf6969c616130f0c71b7d8ffb9014d9221d60e1c333f27cb",
+  "generated_at": "2026-08-05T02:01:29.480883+00:00",
+  "holdout_case_files_opened": true,
+  "holdout_manifest_sha256": "45412c90672015ece660b09cfbb4e8eeeba3e6603d671656a6ea26c3695f505d",
   "human_audit_attestations_manifest_sha256": "d78c793171a09d058a6f071598b47b101b334ae3af5b1e107d3b6d74e712d3d8",
-  "schema": "moss-l2-stage0-corpus.v2",
-  "split_frozen_at": "2026-08-03"
+  "model_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+  "overall": "PASS",
+  "sealed_skipped_case_ids": [],
+  "validated_case_count": 19
 }
