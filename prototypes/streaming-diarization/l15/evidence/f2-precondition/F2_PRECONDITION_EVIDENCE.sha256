@@ -1,0 +1,10 @@
+78f6ace220c2a3325512337ce1cf7e05af86f1c8a5e1e65464ab6fcfd498f40a  ../../build_f2_runtime_fixture.py
+69fc6fc423cafb47a430ebe1309f6d5958c0ed48bb45bc9f253208cbff5af72e  ../../collect_f2_runtime_asr.py
+39a90a26578edc84062f936c808e28662b66a6eed4701a4b02655a64d6b34b2f  f2-precondition.json
+7a949f2928641bf1f5a4a48671c8c4b55318f0d9c8cb2b59a0734f305c01f3a2  green-f2-tests.txt
+a4779312c9115b750d7b73599c4176dba34b16c78424c837dc91dede2a9cccda  red-missing-f2.txt
+4d371dc9fb7e5a06fae5e5b298995bcd19b62334b3644566d5c2e6aed4bb1fba  ../../f2-lane-prior-family.json
+3bac18d35e5cfb762c9f2c9772ac2b3554f5ccd122fe0868538c953c6e289910  ../../f2_candidate.py
+6c366e4fb5f6bdbc1b7e1087c8efe47a5e55a3051ac39e0ca9ae142d7f4259a5  ../../run_f2_exploratory.py
+092e2d753a5ba3a88156e4eab72293622def680baee91dcba7e924955d3c8e99  ../../seal_f2_precondition.py
+3cbda70815cb1d6263b177c5184dbae0656afbd83434785da9bc8575436b984c  ../../test_f2_precondition.py

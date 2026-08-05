@@ -1,0 +1,195 @@
+{
+  "acceptance_scoring_executed": false,
+  "family_id": "f2-soft-lane-provenance-prior-v1",
+  "full_chain_audit": {
+    "candidate_receives": [
+      "runtime_unit_vectors",
+      "capture_lane",
+      "F2Config"
+    ],
+    "candidate_receives_evaluation_truth": false,
+    "chain": [
+      {
+        "imports": [
+          "__future__",
+          "collect_runtime_asr",
+          "pathlib"
+        ],
+        "path": "prototypes/streaming-diarization/l15/collect_f2_runtime_asr.py",
+        "sha256": "69fc6fc423cafb47a430ebe1309f6d5958c0ed48bb45bc9f253208cbff5af72e",
+        "subscript_keys": [
+          "segment_count",
+          "segments",
+          "status"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "moss_transcribe_diarize.app.speaker_identity",
+          "pathlib",
+          "runtime_fixture"
+        ],
+        "path": "prototypes/streaming-diarization/l15/build_f2_runtime_fixture.py",
+        "sha256": "78f6ace220c2a3325512337ce1cf7e05af86f1c8a5e1e65464ab6fcfd498f40a",
+        "subscript_keys": [
+          "asset",
+          "audio_path",
+          "audio_sha256",
+          "capture_lane",
+          "cases",
+          "constraints",
+          "frontend",
+          "overall",
+          "path",
+          "segments",
+          "segments_path",
+          "segments_sha256",
+          "sha256",
+          "source_sha256",
+          "span_count",
+          "unit_count",
+          "vector_count"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "pathlib",
+          "typing"
+        ],
+        "path": "prototypes/streaming-diarization/l15/f2_candidate.py",
+        "sha256": "3bac18d35e5cfb762c9f2c9772ac2b3554f5ccd122fe0868538c953c6e289910",
+        "subscript_keys": [
+          "capture_lane",
+          "duration_seconds",
+          "flipped",
+          "margin_after",
+          "margin_before",
+          "prediction_after",
+          "prediction_before",
+          "unit_id",
+          "vector"
+        ]
+      },
+      {
+        "imports": [
+          "__future__",
+          "f2_candidate",
+          "pathlib",
+          "runtime_fixture"
+        ],
+        "path": "prototypes/streaming-diarization/l15/run_f2_exploratory.py",
+        "sha256": "6c366e4fb5f6bdbc1b7e1087c8efe47a5e55a3051ac39e0ca9ae142d7f4259a5",
+        "subscript_keys": [
+          "acceptance_grade_evidence_requirements",
+          "acceptance_scope",
+          "after",
+          "before",
+          "cache_path",
+          "cache_sha256",
+          "capture_lane",
+          "cases",
+          "count",
+          "delta",
+          "duration_seconds",
+          "exploratory_grid",
+          "family_id",
+          "flips",
+          "frame",
+          "holdout",
+          "holdout_opened",
+          "margin",
+          "measurement",
+          "opening_allowed",
+          "overall",
+          "own_lane_classification_rate",
+          "prior_strength",
+          "reference_opened",
+          "rows",
+          "run_started",
+          "status",
+          "vec_idx",
+          "vecs",
+          "weighted_mean_delta"
+        ]
+      }
+    ],
+    "findings": [],
+    "passed": true
+  },
+  "gated_corpus_opened": false,
+  "holdout_opened": false,
+  "label_perturbation": {
+    "after": [
+      [
+        0.0,
+        1.0,
+        "A"
+      ],
+      [
+        1.0,
+        2.0,
+        "A"
+      ]
+    ],
+    "before": [
+      [
+        0.0,
+        1.0,
+        "A"
+      ],
+      [
+        1.0,
+        2.0,
+        "B"
+      ]
+    ],
+    "decision_after_sha256": "b33dfe30eb3c494c6a5a9eedceae2b0423a784f7c60603661a5409ca8cd7fd4d",
+    "decision_before_sha256": "b33dfe30eb3c494c6a5a9eedceae2b0423a784f7c60603661a5409ca8cd7fd4d",
+    "decision_identical": true,
+    "runtime_shape_after": [
+      [
+        "l0",
+        "local-mic"
+      ],
+      [
+        "l1",
+        "local-mic"
+      ],
+      [
+        "r0",
+        "remote-system"
+      ],
+      [
+        "r1",
+        "remote-system"
+      ]
+    ],
+    "runtime_shape_before": [
+      [
+        "l0",
+        "local-mic"
+      ],
+      [
+        "l1",
+        "local-mic"
+      ],
+      [
+        "r0",
+        "remote-system"
+      ],
+      [
+        "r1",
+        "remote-system"
+      ]
+    ],
+    "runtime_shape_identical": true,
+    "truth_changed": true
+  },
+  "overall": "PASS",
+  "reference_opened": false,
+  "schema": "moss-l15-f2-precondition.v1",
+  "validation_opened": false
+}

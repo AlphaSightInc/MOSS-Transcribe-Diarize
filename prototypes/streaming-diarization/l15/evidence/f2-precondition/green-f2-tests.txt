@@ -1,0 +1,10 @@
+test_cross_lane_is_soft_not_hard (__main__.F2PreconditionTests.test_cross_lane_is_soft_not_hard) ... ok
+test_full_chain_has_no_golden_access (__main__.F2PreconditionTests.test_full_chain_has_no_golden_access) ... ok
+test_label_perturbation_cannot_change_runtime_shape_or_decision (__main__.F2PreconditionTests.test_label_perturbation_cannot_change_runtime_shape_or_decision) ... ok
+test_soft_prior_changes_margin_without_changing_runtime_shape (__main__.F2PreconditionTests.test_soft_prior_changes_margin_without_changing_runtime_shape) ... ok
+test_unknown_lane_is_exactly_neutral (__main__.F2PreconditionTests.test_unknown_lane_is_exactly_neutral) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.006s
+
+OK

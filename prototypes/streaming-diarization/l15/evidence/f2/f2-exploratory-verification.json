@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "all_deterministic": true,
+    "cache_self_replan": true,
+    "exploratory_verdict": true,
+    "holdout_sealed": true,
+    "no_acceptance_scoring": true,
+    "no_identity_claim": true,
+    "no_selection": true,
+    "not_freezeable": true,
+    "sources_pinned": true,
+    "three_strengths": true
+  },
+  "overall": "PASS",
+  "schema": "moss-l15-f2-exploratory-verification.v1"
+}

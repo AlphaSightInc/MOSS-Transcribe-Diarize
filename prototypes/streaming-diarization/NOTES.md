@@ -1901,3 +1901,44 @@ acoustic lane-prior effect size plus the acceptance-grade corpus/audit requireme
 pinned in `l15/f2-lane-prior-family.json` (SHA-256
 `4d371dc9fb7e5a06fae5e5b298995bcd19b62334b3644566d5c2e6aed4bb1fba`). No
 campaign gate or tolerance changes.
+
+### Campaign L1.5 F2 exploratory verdict (`l15`, 2026-08-05)
+
+**VERDICT: EXPLORATORY DELIVERABLE COMPLETE; NOT ACCEPTANCE EVIDENCE; NOT
+FREEZEABLE.** Before either batch submission, the deployed host preflight passed with all
+three services active/enabled, no active batch job, no live API mutation since service
+start, clean deployed tree, and deployed SHA `9089b332`. Jobs `b0d8f6d96da4`
+(`local-mic`, 10 ASR segments) and `4e7050977b13` (`remote-system`, 21 ASR segments)
+completed normally. Preflight raw SHA-256:
+`f95ba1fc4bcb29467065ef4895d7ad3d27064d9a729d36230a38e5676d018451`;
+ASR provenance SHA-256:
+`fe42560c16d393c91543a27a796f848f55c4e38e523af1914e3f561e66680011`.
+
+Production EndpointPolicy produced 29 local and 39 remote spans. The pinned production
+WeSpeaker frontend/model (`5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8`)
+yielded 23 local and 25 remote eligible vectors. Runtime-fixture SHA-256:
+`cb1958e7802dc8b4a21496e187dcca9c938c7a88d8490aaef6c95b81309a6209`.
+Full-chain no-golden audit and label-perturbation invariance passed before measurement;
+precondition-manifest SHA-256:
+`f9b2d76724e63233f6991d5097b5ffb13921c1735ebbfa428911f9ad39736ce0`.
+
+Across the 48 eligible runtime units, baseline duration-weighted own-lane centroid
+classification was `0.890916`. Soft-prior strengths `0.05`, `0.10`, `0.20` increased the
+own-minus-cross weighted mean cosine margin by `0.027449`, `0.054899`, `0.109797` and
+changed the lane-consistency rate by `+0.024928`, `+0.049855`, `+0.087247`, respectively.
+They flipped 1/2/4 units covering 2.50/5.00/8.75 seconds. Each measurement was exactly
+deterministic across two runs; no configuration was selected. Raw effects SHA-256:
+`b9c119aafdce0c60b6e0d4c87a0aebd83f4a9afdc387ba8ef2780404a4a1b209`;
+verdict SHA-256:
+`b66997d4d8e0f19b8b83b03f8a84b434bd001647b1b49157397904d795acdb5a`;
+23-member evidence-manifest SHA-256:
+`800b0aa8144a4f80f453d82b960204ef44687ad56f312ae78fcdbbf2856030bb`.
+
+These are acoustic lane-separation effects, not speaker-identity accuracy: the one-minute
+corpus has no audited identity/activity truth and a lane is not assumed to contain one
+person. Acceptance-grade evidence requires multiple synchronized dual-lane meetings with
+varied speakers/acoustics/crosstalk/overlap and same-speaker-cross-lane cases; immutable
+lane metadata plus missing/wrong-lane controls; human-audited identity/activity/overlap
+truth; preregistered dev/validation/single-open long/hard holdout; D8-safe same-frame L1/F2
+with full-chain perturbation audit; and all campaign accuracy/DER/FP/regression/mapping/
+determinism/compute gates. Gated corpus, validation, and holdout remained unopened.
