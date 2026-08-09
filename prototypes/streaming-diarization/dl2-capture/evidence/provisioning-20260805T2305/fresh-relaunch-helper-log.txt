@@ -1,0 +1,24 @@
+COMMANDS:
+  local: date; date -u; TZ=America/New_York date
+  m4mbp: ps -p 53886 -o pid,ppid,lstart,etime,command; mtd-capture status
+  server: journalctl --user -u moss-live-web.service --since 2026-08-06T12:13:00-04:00
+
+CLOCKS:
+  orchestrator EDT 2026-08-06T12:14:15-04:00 / UTC 2026-08-06T16:14:15Z
+  m4mbp       EDT 2026-08-06T12:14:15-04:00 / UTC 2026-08-06T16:14:15Z
+  server      EDT 2026-08-06T12:14:16-04:00 / UTC 2026-08-06T16:14:16Z
+  observed cross-host skew: <=1 second; m4mbp's Aug 6 12:13 process start is recorded as observed.
+
+M4MBP PROCESS:
+  PID 53886, PPID 1, started Thu Aug 6 12:13:17 2026, /Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp
+
+CANARY:
+  complete_provisioning.py exit 1 because remote mtd-capture start exited 70.
+  post-attempt status: running=false, both lanes stopped, sessionRefusal=sessionDisowned.
+
+SERVER HELPER/LEASE:
+  Aug 06 12:14:27 moss-live-web: POST /api/live/sessions/cdb72d743b874554be48266232667bf7/heartbeat HTTP/1.1 403 Forbidden
+  No accepted heartbeat and no helper lease acquisition after PID 53886 started.
+
+RETENTION:
+  root entries after failure: 0; no session or tape created.

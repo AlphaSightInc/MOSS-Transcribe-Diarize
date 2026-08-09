@@ -1,0 +1,6 @@
+S06 block session, 2026-08-08 ET
+Operator completed the visible supervisor-driven S06 card and spoke throughout all phases.
+Self-recording was queued in AirPods before begin, initially paused.
+Operator never heard the self-recording in AirPods; playback may never have started on the Mac.
+Priority expected play windows, card-relative and approximate: 25-55 seconds and 85-125 seconds.
+Interpretation gate: system signal in those windows means digital playback with output-monitoring failure; system silence means playback never occurred and the case is invalid for cross-lane use.

@@ -1,0 +1,5 @@
+=== microphone silencedetect -50dB ===
+=== mixed silencedetect -50dB ===
+=== system silencedetect -50dB ===
+[Parsed_silencedetect_0 @ 0x792c149c0] silence_start: 131.38275
+[Parsed_silencedetect_0 @ 0x792c149c0] silence_end: 444.234688 | silence_duration: 312.851938

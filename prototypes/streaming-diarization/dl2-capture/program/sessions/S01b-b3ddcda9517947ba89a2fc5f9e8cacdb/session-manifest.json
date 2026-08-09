@@ -1,0 +1,278 @@
+{
+  "attempt_label": "S01b",
+  "audio": {
+    "microphone": {
+      "path": "audio/microphone.wav",
+      "sha256": "0cea91460c9fb2c8d38ce4f4f5898924d16ddf5c1a9e074727252bb9023a7b2a"
+    },
+    "mixed": {
+      "path": "audio/mixed.wav",
+      "sha256": "d5518746053be41734e2831d1ab4247d11511611657c1c63e5707dcaed183e57"
+    },
+    "system": {
+      "path": "audio/system.wav",
+      "sha256": "c2f307cc696df3113d1d34cbcfcceab6b6ef5e006ebaa331a9c954858da4090e"
+    }
+  },
+  "capture_handoff": {
+    "ok": true,
+    "portalURL": "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/live",
+    "sessionID": "b3ddcda9517947ba89a2fc5f9e8cacdb",
+    "viewAuthority": "copied-to-pasteboard"
+  },
+  "capture_running_status": {
+    "lanes": [
+      {
+        "lane": "system",
+        "state": "capturing"
+      },
+      {
+        "lane": "microphone",
+        "state": "capturing"
+      }
+    ],
+    "ok": true,
+    "outboxRetainedFrames": 0,
+    "publishedFrameCount": 2,
+    "running": true,
+    "sessionID": "b3ddcda9517947ba89a2fc5f9e8cacdb"
+  },
+  "capture_start": {
+    "lanes": [
+      {
+        "lane": "system",
+        "state": "pending"
+      },
+      {
+        "lane": "microphone",
+        "state": "capturing"
+      }
+    ],
+    "ok": true,
+    "outboxRetainedFrames": 0,
+    "publishedFrameCount": 0,
+    "running": true,
+    "sessionID": "b3ddcda9517947ba89a2fc5f9e8cacdb"
+  },
+  "capture_stop": {
+    "lanes": [
+      {
+        "lane": "system",
+        "state": "stopped"
+      },
+      {
+        "lane": "microphone",
+        "state": "stopped"
+      }
+    ],
+    "ok": true,
+    "outboxRetainedFrames": 0,
+    "publishedFrameCount": 910,
+    "running": false,
+    "sessionID": "b3ddcda9517947ba89a2fc5f9e8cacdb"
+  },
+  "capture_stopped_status": {
+    "lanes": [
+      {
+        "lane": "system",
+        "state": "stopped"
+      },
+      {
+        "lane": "microphone",
+        "state": "stopped"
+      }
+    ],
+    "ok": true,
+    "outboxRetainedFrames": 0,
+    "publishedFrameCount": 910,
+    "running": false
+  },
+  "capture_window_authority": "POST_DECISION_SINGLE_USE_RETRY",
+  "bleed_rate": {
+    "status": "human_audited",
+    "bleeded_speech_seconds": 66.79,
+    "true_local_speech_seconds": 75.27,
+    "mic_speech_seconds": 142.06,
+    "value": 0.47015345628607635,
+    "percent_rounded_1dp": 47.0,
+    "formula": "bleeded_speech_seconds / mic_speech_seconds"
+  },
+  "derived": {
+    "audit_html_path": "derived/audit-packet/audit-rows.html",
+    "audit_html_sha256": "6f3a49ea02b4613acc6cc9cb1acd082c6e314a68f683c210a8b6a6d60de0a791",
+    "audit_rows_path": "derived/audit-packet/audit-rows.json",
+    "audit_rows_sha256": "d209b8df7da6b0d8932943449ee0ca3b71a1d1e5a22769a6cc42b5ae081db3ee",
+    "provenance_path": "derived/provenance.json",
+    "provenance_sha256": "ef72c8d5bd1c1fcbae17aaab85325d4db7731264e3744e0c2e94017ebe42e1fe",
+    "seal_path": "derived/DERIVED_EVIDENCE.sha256",
+    "seal_sha256": "b547125e5148d74606010d4101d9a1f287055a8df15d85c07053dffa25cfd100"
+  },
+  "ended_at_utc": "2026-08-06T19:05:05Z",
+  "grant_sha256": "2c851d6adb452054f1b29cd8c6da4895702b03addb7f908b3e8c973c612a9329",
+  "human_audit": {
+    "date": "2026-08-06",
+    "attestation": {
+      "path": "human-audit/s01b-mic-split-20260806.md",
+      "sha256": "aa23df7439879a8e52de3d561d48d0894a27e5ce030b6c40f1b4c7ba0f8c97e7"
+    },
+    "true_split": {
+      "path": "human-audit/s01b-mic-TRUE.md",
+      "sha256": "ab66bb9e359222e6e0e3839e3a0ad4d6df2a2aaaaffe2f2bec48256e80231355"
+    },
+    "bleed_split": {
+      "path": "human-audit/s01b-mic-BLEED.md",
+      "sha256": "5fe3aaa74899ac7ce372de7861a88958be90caff3c1437a31ef55fb3c8371311"
+    },
+    "true_reference": {
+      "path": "human-audit/microphone-true-reference.jsonl",
+      "sha256": "863b09004e5d786d4f6af56cae549d489bdc9bd2349d647fd183f2908b5995d2",
+      "speaker": "Operator",
+      "collapsed_source_asr_speakers": [
+        "S02",
+        "S03"
+      ]
+    },
+    "bleed_reference": {
+      "path": "human-audit/microphone-bleed-reference.jsonl",
+      "sha256": "6b55fc6c32df7256cb6dd09553a96bf3fb02ec96756cc5f46efa8e57f2cef203",
+      "ownership": "remote_system_lane"
+    },
+    "reference_layers": {
+      "path": "human-audit/reference-layers.json",
+      "sha256": "156edfe77906d020fea8df4519e195c205100f3bda97cafd9c4c79a27ca76632"
+    }
+  },
+  "host_after": {
+    "server": {
+      "checked_at_utc": "2026-08-06T19:05:05Z",
+      "deployed_dirty_count": 0,
+      "deployed_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+      "raw_stdout": "service:moss-live-web.service\tactive/enabled\nservice:moss-web.service\tactive/enabled\nservice:moss-vllm.service\tactive/enabled\nmain_pid\t377978\ndeployed_sha\t9089b33210401111865da7abc160ab0bcb4aa266\ndeployed_dirty_count\t0\nflag:--live-retention-root\t/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint\nflag:--live-retention-max-bytes\t2147483648\nflag:--live-retention-ttl-seconds\t86400\n",
+      "retention": {
+        "max_bytes_per_session": 2147483648,
+        "root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+        "ttl_seconds": 86400
+      },
+      "services": {
+        "moss-live-web.service": "active/enabled",
+        "moss-vllm.service": "active/enabled",
+        "moss-web.service": "active/enabled"
+      },
+      "verdict": "PASS_HEALTHY_DECLARED_WITHIN_GRANT"
+    }
+  },
+  "host_before": {
+    "capture": {
+      "capture_cli_sha256": "90080e9f72ffd9dab1d4d4a03c84966eacfd9ca6e9af99dfe50dde3f9f8b7232",
+      "checked_at_utc": "2026-08-06T19:01:14Z",
+      "raw_stdout": "STATUS\t{\"publishedFrameCount\":1781,\"outboxRetainedFrames\":0,\"lanes\":[{\"lane\":\"system\",\"state\":\"stopped\"},{\"lane\":\"microphone\",\"state\":\"stopped\"}],\"running\":false,\"ok\":true}\nTOPOLOGY\toutput_volume=43;output_muted=false\nCLI_SHA\t90080e9f72ffd9dab1d4d4a03c84966eacfd9ca6e9af99dfe50dde3f9f8b7232\n",
+      "status": {
+        "lanes": [
+          {
+            "lane": "system",
+            "state": "stopped"
+          },
+          {
+            "lane": "microphone",
+            "state": "stopped"
+          }
+        ],
+        "ok": true,
+        "outboxRetainedFrames": 0,
+        "publishedFrameCount": 1781,
+        "running": false
+      },
+      "topology_read_only": "output_volume=43;output_muted=false"
+    },
+    "server": {
+      "checked_at_utc": "2026-08-06T19:01:14Z",
+      "deployed_dirty_count": 0,
+      "deployed_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+      "raw_stdout": "service:moss-live-web.service\tactive/enabled\nservice:moss-web.service\tactive/enabled\nservice:moss-vllm.service\tactive/enabled\nmain_pid\t377978\ndeployed_sha\t9089b33210401111865da7abc160ab0bcb4aa266\ndeployed_dirty_count\t0\nflag:--live-retention-root\t/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint\nflag:--live-retention-max-bytes\t2147483648\nflag:--live-retention-ttl-seconds\t86400\n",
+      "retention": {
+        "max_bytes_per_session": 2147483648,
+        "root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+        "ttl_seconds": 86400
+      },
+      "services": {
+        "moss-live-web.service": "active/enabled",
+        "moss-vllm.service": "active/enabled",
+        "moss-web.service": "active/enabled"
+      },
+      "verdict": "PASS_HEALTHY_DECLARED_WITHIN_GRANT"
+    }
+  },
+  "label": "dl2-s01b-20260806-150114",
+  "live_descriptor_preflight": {
+    "snapshot_http": 200,
+    "snapshot_sha256": "fa9183d8aeabcd790def887a8c23853536b4820533e324256677f7c317175ffb",
+    "source_revision": "9089b33210401111865da7abc160ab0bcb4aa266",
+    "verdict": "PASS_BEFORE_OPERATOR_SPEECH"
+  },
+  "operator_cue_log": {
+    "path": "operator-cue-log.txt",
+    "sha256": "cfda4111fa6272b9528d9d96dabc178feeea9d1d5ae18d3d42cf0aba080dd3d5"
+  },
+  "program_raw_delete_deadline_et": "2026-08-06T23:05:00-04:00",
+  "raw_cleanup": {
+    "at_utc": "2026-08-06T19:05:38Z",
+    "local_removed": [
+      "raw",
+      "audio"
+    ],
+    "mock": false,
+    "remote_deleted": true
+  },
+  "safety": {
+    "service_changed_by_harness": false,
+    "tcc_changed_by_harness": false,
+    "volume_changed_by_harness": false
+  },
+  "schema": "moss-dl2-capture-session.v1",
+  "session_id": "b3ddcda9517947ba89a2fc5f9e8cacdb",
+  "shape": {
+    "blueprint_number": 1,
+    "capture_minutes": 10,
+    "cumulative_minutes": 15,
+    "operator_cues": [
+      "remote speaker on system lane",
+      "operator speaks on microphone lane",
+      "include two short overlaps"
+    ],
+    "priority": 1,
+    "setup_minutes": 5,
+    "shape": "operator solo microphone plus one remote speaker",
+    "shape_id": "S01"
+  },
+  "started_at_utc": "2026-08-06T19:01:17Z",
+  "state": "audit_ready_raw_deleted",
+  "tape": {
+    "degradation": null,
+    "ended_at": 1786043104.7991626,
+    "index_sha256": "d4d1758d00f5845f8f734bf7cfd4b3cfd07ca6eabb47aacdf4f8b9f4ef1a9808",
+    "sample_rate": 16000,
+    "session_id": "b3ddcda9517947ba89a2fc5f9e8cacdb",
+    "total_bytes": 21824428,
+    "tracks": {
+      "microphone": {
+        "bytes": 7296800,
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/raw/microphone.pcm",
+        "sample_count": 3648400,
+        "sha256": "14dc33865a233cc918878da3bdedd35cb9a1cd23a2604f1e21fcb4ab4da6d8cf"
+      },
+      "mixed": {
+        "bytes": 7282826,
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/raw/mixed.pcm",
+        "sample_count": 3641413,
+        "sha256": "bfc063833893f837bb60ce1054e6ac67e9b80ee9cc4deeff2e67b4023a64aa38"
+      },
+      "system": {
+        "bytes": 7244802,
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/raw/system.pcm",
+        "sample_count": 3622401,
+        "sha256": "7b12a4ee2666b3a164a9bd58b4933377b26acbd920899e3b1ce87fb4da74eba2"
+      }
+    }
+  },
+  "topology_after_read_only": "output_volume=43;output_muted=false"
+}

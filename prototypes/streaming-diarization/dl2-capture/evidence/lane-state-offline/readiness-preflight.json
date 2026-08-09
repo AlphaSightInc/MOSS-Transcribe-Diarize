@@ -1,0 +1,23 @@
+{
+  "checked_at_utc": "2026-08-06T17:57:09Z",
+  "command": "PYTHONDONTWRITEBYTECODE=1 python3 capture_harness.py preflight --program-root program --projected-bytes 256000000",
+  "exit_code": 0,
+  "capture_running": false,
+  "capture_lanes": {
+    "system": "stopped",
+    "microphone": "stopped"
+  },
+  "outbox_retained_frames": 0,
+  "capture_cli_sha256": "90080e9f72ffd9dab1d4d4a03c84966eacfd9ca6e9af99dfe50dde3f9f8b7232",
+  "services": {
+    "moss-live-web.service": "active/enabled",
+    "moss-web.service": "active/enabled",
+    "moss-vllm.service": "active/enabled"
+  },
+  "deployed_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "deployed_dirty_count": 0,
+  "retention_root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+  "retention_max_bytes": 2147483648,
+  "retention_ttl_seconds": 86400,
+  "overall": "PASS_HEALTHY_DECLARED_WITHIN_GRANT"
+}

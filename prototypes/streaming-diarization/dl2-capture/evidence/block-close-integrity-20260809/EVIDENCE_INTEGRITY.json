@@ -1,0 +1,715 @@
+{
+  "generated_at_utc": "2026-08-09T04:24:52.115525Z",
+  "manifest_count": 47,
+  "manifests": [
+    {
+      "counts": {
+        "PASS": 25
+      },
+      "exceptions": [],
+      "manifest": "evidence/DL2_PREP_EVIDENCE.sha256",
+      "manifest_sha256": "ea3c12a99d0d8fdbd547749c66fc0385bb0ef89b5fe2afceec7af1d673241833",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/block-close-deprovision-20260809/DEPROVISION_EVIDENCE.sha256",
+      "manifest_sha256": "79ce6994d3221fc2a5a53064aeabcef1561e8708d0c71f9b4de204bfcc5359cb",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 3
+      },
+      "exceptions": [],
+      "manifest": "evidence/block-close-deprovision-attempt-1-http-readiness-race/ATTEMPT1_EVIDENCE.sha256",
+      "manifest_sha256": "4eea726c06752b869b0f0b09d185b1479b30dd0e854baf4c0b8fdd7932644add",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/block-close-raw-cleanup-20260809/RAW_CLEANUP_EVIDENCE.sha256",
+      "manifest_sha256": "39ccd638acb9612b7f0958d9da291ac64b890749f04eeaa07010350c9bd0006f",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "HISTORICAL_MUTABLE_PATH_DRIFT": 8,
+        "PASS": 47
+      },
+      "exceptions": [
+        {
+          "actual_sha256": "b4df96c8132f620f47d3b9ae725a5986b8241cd1f95e4c0624f368967f969100",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "d10a510381fe86ecaeb670d960473978f76da098c768c90a3deb6e5feabc7563",
+          "line": 47,
+          "path": "../../post_session.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/post_session.py"
+        },
+        {
+          "actual_sha256": "268c29e8a9a393f9608ae03489c4fb0f1f7ef2796c4a02eb8ead2397dc65f8ea",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "e28fb77fe547546d1e146e58395697d3ed89fd972bd219b93300681e36c04dd8",
+          "line": 48,
+          "path": "../../capture_harness.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/capture_harness.py"
+        },
+        {
+          "actual_sha256": "46b8dc73444f9ee9402e39f754447b2ac644342621cfe008d8dd94ac8c330eff",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "a626ee68c2dae62beb68de202adced164c4a24f980149a35a2905cfa1f4f8091",
+          "line": 49,
+          "path": "../../test_post_session.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/test_post_session.py"
+        },
+        {
+          "actual_sha256": "6830ae50e82d9acba076ec094ebf1792d95edfad72da1cdabfc18753889b9ea6",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "87c6022a0445654f73ba2dc4bc45532334e7be963814e1442a1f7587236451e5",
+          "line": 50,
+          "path": "../../test_capture_harness.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/test_capture_harness.py"
+        },
+        {
+          "actual_sha256": "f3f2c597a42b4123c96a2e16169f0e5217931ce8ec8d1268eaf75414adde3927",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "b3f351d87cb19fcdf39c103f8220fb8ef9b4a4a374e67aa77639a3a5bce1f350",
+          "line": 51,
+          "path": "../../session-blueprint.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/session-blueprint.json"
+        },
+        {
+          "actual_sha256": "2ba00137957d0f426543dd108e5dcbf5e2323ae622e56673e44a8b8315217d4b",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "46b1b24522c0ce0d04f7bebaba2b96ebcd83c063fb8cf35839fee6d8ef9e777c",
+          "line": 52,
+          "path": "../../operator-session-block-20260806.md",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/operator-session-block-20260806.md"
+        },
+        {
+          "actual_sha256": "8b909ee00f0b03294b66d2f9e76269b2c4300f3f2e778755a5c3b539d1ec7b0e",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "146ae7acd863a62c57b42031adbf92e48011a1594c2bd3a276036247a2435cf7",
+          "line": 53,
+          "path": "../../program/grant.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/grant.json"
+        },
+        {
+          "actual_sha256": "02ac874377935533c874b99d5f8b667ff4dab32389b465b7977fd19a768a8b8c",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "0c035d1486011d01c0ede2a79ab49c1daeac9fe139659423fb8f3d7fe03dcb7e",
+          "line": 54,
+          "path": "../../../NOTES.md",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "manifest": "evidence/d3-leading-silence/D3_EVIDENCE.sha256",
+      "manifest_sha256": "c37cf4069dbbafc66addc45f77b4298ad7818f4e069a904ffe78550c5045816e",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 6
+      },
+      "exceptions": [],
+      "manifest": "evidence/descriptor-path-offline/S01_READY_EVIDENCE.sha256",
+      "manifest_sha256": "e4fb1020ff32450c24fbaa08d0cd8e15c79252b7d716faa5d1eb8184b744e56a",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 5
+      },
+      "exceptions": [],
+      "manifest": "evidence/dl2-block-20260808/DL2_BLOCK_PREFLIGHT_EVIDENCE.sha256",
+      "manifest_sha256": "8c5e00d9f02bd15b67d6d149cbcda8bfb82749e7315e922f775b51e863c41d63",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "HISTORICAL_MUTABLE_PATH_DRIFT": 5,
+        "PASS": 7
+      },
+      "exceptions": [
+        {
+          "actual_sha256": "8b909ee00f0b03294b66d2f9e76269b2c4300f3f2e778755a5c3b539d1ec7b0e",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "16d2151f38d69ed2a639388823c301115bbc8e6d458da5d2e79ef300ef9dfee9",
+          "line": 7,
+          "path": "../../program/grant.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/grant.json"
+        },
+        {
+          "actual_sha256": "268c29e8a9a393f9608ae03489c4fb0f1f7ef2796c4a02eb8ead2397dc65f8ea",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "7f42f3549e854cdd7c88147ce40eb8c9e10996a9e6bbe56e67b65eedf3fa8188",
+          "line": 8,
+          "path": "../../capture_harness.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/capture_harness.py"
+        },
+        {
+          "actual_sha256": "6830ae50e82d9acba076ec094ebf1792d95edfad72da1cdabfc18753889b9ea6",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "daae0647ccc453d8ca393fa2566be2f5137c5a25ade6863c0a194630fc6b3784",
+          "line": 9,
+          "path": "../../test_capture_harness.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/test_capture_harness.py"
+        },
+        {
+          "actual_sha256": "2ba00137957d0f426543dd108e5dcbf5e2323ae622e56673e44a8b8315217d4b",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "a7ceef53293a98f1eb3caf58c3aec310a954cfe26fe032d06e1197546fcafb1e",
+          "line": 10,
+          "path": "../../operator-session-block-20260806.md",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/operator-session-block-20260806.md"
+        },
+        {
+          "actual_sha256": "02ac874377935533c874b99d5f8b667ff4dab32389b465b7977fd19a768a8b8c",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "b8bbd5d9d0b94c3ee514bfd657ac512fa411ed8fd82fe9e23ce3251ed8fdb69c",
+          "line": 12,
+          "path": "../../../NOTES.md",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "manifest": "evidence/dl2-block-20260808/DL2_BLOCK_PREFLIGHT_EVIDENCE_V2.sha256",
+      "manifest_sha256": "0cf2185932c486c955efdcd728876fe1ecff1e9a5ebe4830125e74a2c90903a8",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "HISTORICAL_MUTABLE_PATH_DRIFT": 1,
+        "PASS": 4
+      },
+      "exceptions": [
+        {
+          "actual_sha256": "6830ae50e82d9acba076ec094ebf1792d95edfad72da1cdabfc18753889b9ea6",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "f7fee2e376f8ffe31cba4f1f67a8955df767592deba4416262ddc0cf35d22980",
+          "line": 5,
+          "path": "../../test_capture_harness.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/test_capture_harness.py"
+        }
+      ],
+      "manifest": "evidence/dl2-block-20260808/S06R_AUTHORIZATION_EVIDENCE.sha256",
+      "manifest_sha256": "a720130b029bceb27032c86ec73113231c2c69c622b9a22a7cd818bdf60732e2",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 12
+      },
+      "exceptions": [],
+      "manifest": "evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "088ecd451fa70752e73ad28ae262502c1df42e5537924ee0acbd30c0ec29f25a",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/keeper-closing-20260809/KEEPER_CLOSING_EVIDENCE.sha256",
+      "manifest_sha256": "adc39abdbb1e777771adfc38dbf0316f0164797ec6c1d7a82217d7ede085887c",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/keeper-closing-20260809-attempt-1-lifecycle-race/KEEPER_CLOSING_EVIDENCE.sha256",
+      "manifest_sha256": "e7a8f71db5dcc91156f992b0cb793d32f9b466af09f28d7b6f476a54f3488979",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/keeper-closing-20260809-attempt-2-ssh-audit-session/KEEPER_CLOSING_EVIDENCE.sha256",
+      "manifest_sha256": "1b7145cb3961306fc2f421c8f6a40cc92df25102f0baa2fd3ba7a8305f639e72",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/keeper-closing-20260809-attempt-3-gui-poll-bug/KEEPER_CLOSING_EVIDENCE.sha256",
+      "manifest_sha256": "f655210e0da1304f55981d2edc10462c58abf456677deade5d3ab38b343eb9e4",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 6
+      },
+      "exceptions": [],
+      "manifest": "evidence/lane-state-offline/LANE_STATE_FIX_READY_EVIDENCE.sha256",
+      "manifest_sha256": "44bc70937e6aee1a57fa4bcc8c4666ec94605dcaffaebe80025be8096380f743",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/provisioning-20260805T2305/BEFORE_EVIDENCE.sha256",
+      "manifest_sha256": "4261971063729a4fa1d03240eb16d65202eb6af7baf717b51b97b12c4f152da1",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 2
+      },
+      "exceptions": [],
+      "manifest": "evidence/provisioning-20260805T2305/FRESH_RELAUNCH_CANARY_FAILURE_EVIDENCE.sha256",
+      "manifest_sha256": "96524334580697e7489c65c0137365a0388550578567bfec06e4173fd2768b6c",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/provisioning-20260805T2305/POST_FIX_RERUN_FAILURE_EVIDENCE.sha256",
+      "manifest_sha256": "f3a3c7de51738f2e7993cdad71d5e207ae6975cbf34569fb5b6e75072aa29b26",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 6
+      },
+      "exceptions": [],
+      "manifest": "evidence/provisioning-20260805T2305/POST_PAIR_CANARY_FAILURE_EVIDENCE.sha256",
+      "manifest_sha256": "b03e922baf2be311e3acf8aabc2ae673c9e4e340e517358e4c0caa5ea3a826bc",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 7
+      },
+      "exceptions": [],
+      "manifest": "evidence/provisioning-20260805T2305/PROVISIONING_BLOCK_EVIDENCE.sha256",
+      "manifest_sha256": "700e4cec2989b5ba41c559ea0d323635e1c5e6dd51021a588473e3d3ab1aa36f",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 8
+      },
+      "exceptions": [],
+      "manifest": "evidence/provisioning-20260805T2305/PROVISION_PHASE_EVIDENCE.sha256",
+      "manifest_sha256": "1cccb4a43df1f0f021934b0212d26f3e6ee8a2890552f5d38753fcdfe3d6562e",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 3
+      },
+      "exceptions": [],
+      "manifest": "evidence/provisioning-20260805T2305/RELAUNCH_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "b61c16ab963006812c746614f0bfd159acc56b4aef3c587479fcba9525330454",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 36
+      },
+      "exceptions": [],
+      "manifest": "evidence/s01-content-diagnosis/S01_CONTENT_DIAGNOSIS_EVIDENCE.sha256",
+      "manifest_sha256": "fbd954d9783e7b504eadc999ae97ad6aa9c9e8faf153b3e2cd0d943062c16a5b",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 3
+      },
+      "exceptions": [],
+      "manifest": "evidence/s01-post-session-attempt-1/S01_POST_SESSION_ATTEMPT1_EVIDENCE.sha256",
+      "manifest_sha256": "9648d5c083a46fedfddbc7dcb1acd72af2aaa672a883dd321f3ec8434761347a",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "AUTHORIZED_RAW_DELETION": 7,
+        "HISTORICAL_MUTABLE_PATH_DRIFT": 4,
+        "PASS": 11
+      },
+      "exceptions": [
+        {
+          "actual_sha256": "02ac874377935533c874b99d5f8b667ff4dab32389b465b7977fd19a768a8b8c",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "f30a296b5ddd0a48646110f13c83118757dc0b5da5cc7ba371b611ea9aea9ad0",
+          "line": 1,
+          "path": "../NOTES.md",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/NOTES.md"
+        },
+        {
+          "actual_sha256": "b4df96c8132f620f47d3b9ae725a5986b8241cd1f95e4c0624f368967f969100",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "f623de768263a3b48a93aa735cb31b77f16e7c2db7b9bea703cc60e007b57fe9",
+          "line": 8,
+          "path": "post_session.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/post_session.py"
+        },
+        {
+          "actual_sha256": "9dabe191a6b19eeebd63572336ce3031783d8e61bb9a993c523f14fce68057eb",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "c5cf31daa25a9e342ecbee937f25defd64d222c712d1ba6df4f3d1f9cdf7f35f",
+          "line": 9,
+          "path": "program/program-ledger.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/program-ledger.json"
+        },
+        {
+          "category": "AUTHORIZED_RAW_DELETION",
+          "expected_sha256": "29978db914f8ffd2eae9f46c84e908037499ebbf7fd3889f3a2be8615cca77e1",
+          "line": 11,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/microphone.wav",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/microphone.wav"
+        },
+        {
+          "category": "AUTHORIZED_RAW_DELETION",
+          "expected_sha256": "83a8a88bf8aebc5fcc73f45dee7903ff91077b850798384588cdbf85b131f4df",
+          "line": 12,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/mixed.wav",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/mixed.wav"
+        },
+        {
+          "category": "AUTHORIZED_RAW_DELETION",
+          "expected_sha256": "2eaa2123c5aa7490b2c20e81b2028225861c825b6961266848e9e56e0cddff03",
+          "line": 13,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/system.wav",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/system.wav"
+        },
+        {
+          "category": "AUTHORIZED_RAW_DELETION",
+          "expected_sha256": "ffa584a371975298d90a222c6defe2c7917082a4f622522c1a2f3825b80b8027",
+          "line": 18,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/index.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/index.json"
+        },
+        {
+          "category": "AUTHORIZED_RAW_DELETION",
+          "expected_sha256": "231d1e9f9df5d5adb7c72391a9ea6c484553afe7d0b4d3336175e94c7ce52d8b",
+          "line": 19,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/microphone.pcm",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/microphone.pcm"
+        },
+        {
+          "category": "AUTHORIZED_RAW_DELETION",
+          "expected_sha256": "60e84f6beacacb3ddf011f5045d5f9502c653e4fbb8d6f1495d6e83fc7fba9a9",
+          "line": 20,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/mixed.pcm",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/mixed.pcm"
+        },
+        {
+          "category": "AUTHORIZED_RAW_DELETION",
+          "expected_sha256": "a8818f8a75b408be617dc822f8a6998252e8be5edcd0dc16879a597915082933",
+          "line": 21,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/system.pcm",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/raw/system.pcm"
+        },
+        {
+          "actual_sha256": "5769a988537bda5df9e450c4bda9f710392f9201e52503ea89b828ede312b273",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "5e3da4a61c58cb7a1adaae21126f08e77740ad596be6835cb4d3d04e7ff5b7c5",
+          "line": 22,
+          "path": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/session-manifest.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01-00f8a46e99b44f1b867088de48860348/session-manifest.json"
+        }
+      ],
+      "manifest": "evidence/s01-post-session-attempt-2/S01_POST_SESSION_ATTEMPT2_EVIDENCE.sha256",
+      "manifest_sha256": "d61c78503173e0dbdb9cc2a5ba995dd2e84589b32375a7f37ff44dc88371c3ef",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 6
+      },
+      "exceptions": [],
+      "manifest": "evidence/s01-preflight-attempt-1/S01_PREFLIGHT_FAILURE_EVIDENCE.sha256",
+      "manifest_sha256": "f0f7b2081e2155aa5691b665d4f8fe5f21b62d595aee30c130a282b9f163eab6",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 7
+      },
+      "exceptions": [],
+      "manifest": "evidence/s01-preflight-attempt-2/S01_PREFLIGHT_FAILURE_V2_EVIDENCE.sha256",
+      "manifest_sha256": "357859877ba09bb7269deffcd9bfa0c9cb29732081209fb904dd00de8b654077",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "HISTORICAL_MUTABLE_PATH_DRIFT": 5,
+        "PASS": 5
+      },
+      "exceptions": [
+        {
+          "actual_sha256": "268c29e8a9a393f9608ae03489c4fb0f1f7ef2796c4a02eb8ead2397dc65f8ea",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "619b344581d856f074c8c2aacd92b6f042fc90485258ca8408f5250bb42ec348",
+          "line": 3,
+          "path": "../../capture_harness.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/capture_harness.py"
+        },
+        {
+          "actual_sha256": "6830ae50e82d9acba076ec094ebf1792d95edfad72da1cdabfc18753889b9ea6",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "5425d5984f68cd6f66e34e6e28b8e2086e848cb69da487a284b1f57af8a5b966",
+          "line": 4,
+          "path": "../../test_capture_harness.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/test_capture_harness.py"
+        },
+        {
+          "actual_sha256": "8b909ee00f0b03294b66d2f9e76269b2c4300f3f2e778755a5c3b539d1ec7b0e",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "2c851d6adb452054f1b29cd8c6da4895702b03addb7f908b3e8c973c612a9329",
+          "line": 5,
+          "path": "../../program/grant.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/grant.json"
+        },
+        {
+          "actual_sha256": "9dabe191a6b19eeebd63572336ce3031783d8e61bb9a993c523f14fce68057eb",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "2a446929226ef664b6e67587618e13ef01c01d4c83568cb3463959f6dba3f01a",
+          "line": 6,
+          "path": "../../program/program-ledger.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/program-ledger.json"
+        },
+        {
+          "actual_sha256": "ae5ba219f54478e8a1125b2b741a12bb36bd1a292999d03f4389ae7b159340ef",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "c47a25dc00693fdda1cf261edfe778aa9ac3092b825a853d094dce0c8ca08d10",
+          "line": 8,
+          "path": "../../program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/session-manifest.json",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/session-manifest.json"
+        }
+      ],
+      "manifest": "evidence/s01b-capture/S01B_EVIDENCE.sha256",
+      "manifest_sha256": "f909ed14c9c3dcce973fe573f70cfcf25ae4d36c932e8d871e8fba0afa3a7530",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "HISTORICAL_MUTABLE_PATH_DRIFT": 3,
+        "PASS": 19
+      },
+      "exceptions": [
+        {
+          "actual_sha256": "b4df96c8132f620f47d3b9ae725a5986b8241cd1f95e4c0624f368967f969100",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "208526a3cf664b8a34100bcd4b4cb2c6eff941db82e0737a772f92e4dfbc3289",
+          "line": 7,
+          "path": "../../post_session.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/post_session.py"
+        },
+        {
+          "actual_sha256": "46b8dc73444f9ee9402e39f754447b2ac644342621cfe008d8dd94ac8c330eff",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "42f947017cf7cb781862d815f2e55af7e3f0663bb8810a0a31d3d389e418d989",
+          "line": 8,
+          "path": "../../test_post_session.py",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/test_post_session.py"
+        },
+        {
+          "actual_sha256": "02ac874377935533c874b99d5f8b667ff4dab32389b465b7977fd19a768a8b8c",
+          "category": "HISTORICAL_MUTABLE_PATH_DRIFT",
+          "expected_sha256": "9f7b5f9e803d78218ed07d24581eed2c73c192aeb8f43dc6bfd2bc01e252430c",
+          "line": 11,
+          "path": "../../../NOTES.md",
+          "resolved_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/NOTES.md"
+        }
+      ],
+      "manifest": "evidence/s01b-reference-layers/S01B_REFERENCE_EVIDENCE.sha256",
+      "manifest_sha256": "72ac9740ff1c0993437ebd8858bee512af67d30454894d70201a8a6ab1982bba",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "evidence/s05-recovery-boundary/S05_BOUNDARY_EVIDENCE.sha256",
+      "manifest_sha256": "d214158b75e0bf9ead580f43437914e8b2e947bc8bec552d9ea8028ec158ee6b",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 2
+      },
+      "exceptions": [],
+      "manifest": "evidence/s05-recovery-boundary-attempt-1-env-path-failure/ATTEMPT1_EVIDENCE.sha256",
+      "manifest_sha256": "e76149d7cae14cebe0589fda4d95c36e30107f7351e3bb8c9e421a1ad2a0132d",
+      "terminal_authority": false
+    },
+    {
+      "counts": {
+        "PASS": 12
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "86a3e318f7761bbbc66f7d39345fb201d0798923c95fc9b4d5442113d45e3ac3",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 9
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/CAL-HP-BLOCK-20260808-79a72cdb46df4c3e8a1fe1857b9836e8/derived/CAL_HP_DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "bd400d2346a2debfd018dc6d38035c5c471165e939dba8edb3f98cccb626ca48",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 2
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/CAL-HP-BLOCK-20260808-79a72cdb46df4c3e8a1fe1857b9836e8/derived/cal-hp-gate/CAL_HP_GATE_EVIDENCE.sha256",
+      "manifest_sha256": "c857b3819a5350a1a9ddf4f349ba9327d913c247bf1192e1acf8ddde27bd5e30",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 12
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/CAL-MIC-20260808-046e5969ef1642d2a5be606d0943056a/derived/DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "faa65cf1147dc31f9956b9cdea1e0008925b91048a44b606658acda5c6d59bd8",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 12
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/derived/DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "b547125e5148d74606010d4101d9a1f287055a8df15d85c07053dffa25cfd100",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 20
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/DERIVED_EVIDENCE_V2.sha256",
+      "manifest_sha256": "dffb7df6a9cae10fb13778e5c9e50f902481baa0b1a311585eaac7c020ab4c99",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/recovery/S05_RECOVERY_EVIDENCE.sha256",
+      "manifest_sha256": "8f2a3262373a9a55e91c30304cffe1d0200d187e76b213370bfd7c7964600523",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 1
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/s05-verdict/S05_VERDICT_EVIDENCE.sha256",
+      "manifest_sha256": "93a3ceb7ce5332b8d30f5da57be94d0cadfab1471c5c008ae2d0f99c58c5f9eb",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 3
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived-attempt-card-60-360-partial/PARTIAL_ATTEMPT_EVIDENCE.sha256",
+      "manifest_sha256": "1a6ac1d81433511b9cdcd734975e7bd9d0200231a902cc054105aab5ed5a4d63",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 17
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived-recovery-v1-system-through-360/DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "3359a6f7a52d0c2fa492bc8603ce0d26e5190156e6596614e4d294d5035a8a7b",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 4
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived-recovery-v1-system-through-360/recovery/S05_RECOVERY_EVIDENCE.sha256",
+      "manifest_sha256": "8f2a3262373a9a55e91c30304cffe1d0200d187e76b213370bfd7c7964600523",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 10
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S06-BLOCK-20260808-52f4856ab04a469b92f72fc5ea199d44/derived/S06_DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "bfb1e197e7517756e1a133ce27567027978659aac47b75fe7b56c28059c3bed4",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 3
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S06-BLOCK-20260808-52f4856ab04a469b92f72fc5ea199d44/derived/s06-verdict/S06_SOLO_EVIDENCE.sha256",
+      "manifest_sha256": "99b288dd689547767501e072759f3759b527d529f9780a78a9d183290c8f9974",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 8
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S06-BLOCK-20260808-52f4856ab04a469b92f72fc5ea199d44/derived/s06-verdict/S06_VERDICT_EVIDENCE.sha256",
+      "manifest_sha256": "b1161b6176c83dd75d825d053282548f49bbd8b990e7b43401a3de909fa8332c",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 12
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S06R-BLOCK-20260808-7515d518db0a4488a8e6b26eae04fe66/derived/DERIVED_EVIDENCE.sha256",
+      "manifest_sha256": "fe4720788b85397f9e689e7b6696bc3005360bb80654b7bc691bb49251fb923b",
+      "terminal_authority": true
+    },
+    {
+      "counts": {
+        "PASS": 1
+      },
+      "exceptions": [],
+      "manifest": "program/sessions/S06R-BLOCK-20260808-7515d518db0a4488a8e6b26eae04fe66/derived/s06r-verdict/S06R_VERDICT_EVIDENCE.sha256",
+      "manifest_sha256": "d833e999bc9fad15d68f26160b36eac6431f91d55c2c6ced581c2c0f66c41220",
+      "terminal_authority": true
+    }
+  ],
+  "policy": {
+    "authorized_raw_deletion_requires_session_manifest_cleanup_record": true,
+    "historical_mutable_path_drift_is_disclosed_not_rewritten": true,
+    "historical_mutable_rows_have_no_owning_commit_before_first_harness_commit": true,
+    "terminal_authority_must_pass": true
+  },
+  "root": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture",
+  "row_count": 429,
+  "schema_version": 1,
+  "terminal_authority_nonpass": [],
+  "totals": {
+    "AUTHORIZED_RAW_DELETION": 7,
+    "HISTORICAL_MUTABLE_PATH_DRIFT": 26,
+    "PASS": 396
+  },
+  "verdict": "PASS_WITH_DISCLOSED_HISTORICAL_DRIFT"
+}

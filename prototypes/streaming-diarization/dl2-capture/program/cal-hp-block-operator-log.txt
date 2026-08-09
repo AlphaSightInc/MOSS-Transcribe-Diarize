@@ -1,0 +1,6 @@
+CAL-HP block gate, 2026-08-08 ET
+Operator fully silent for entire capture.
+YouTube interview speech continuously playing through AirPods Pro system output.
+Default input manually set to MacBook Pro Microphone before pairing.
+Default output AirPods Pro.
+Strict gate: system lane must contain interview speech; microphone lane must contain no intelligible YouTube speech.

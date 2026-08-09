@@ -1,0 +1,36 @@
+=== offset 260 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0xa9d009140] mean_volume: -40.9 dB [Parsed_volumedetect_0 @ 0xa9d009140] max_volume: -21.9 dB 
+mixed [Parsed_volumedetect_0 @ 0xb7d009140] mean_volume: -46.8 dB [Parsed_volumedetect_0 @ 0xb7d009140] max_volume: -27.3 dB 
+system [Parsed_volumedetect_0 @ 0xad1009140] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0xad1009140] max_volume: -91.0 dB 
+=== offset 280 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0xc4ec149c0] mean_volume: -40.9 dB [Parsed_volumedetect_0 @ 0xc4ec149c0] max_volume: -24.6 dB 
+mixed [Parsed_volumedetect_0 @ 0xa8b01c9c0] mean_volume: -46.8 dB [Parsed_volumedetect_0 @ 0xa8b01c9c0] max_volume: -30.6 dB 
+system [Parsed_volumedetect_0 @ 0xaa70249c0] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0xaa70249c0] max_volume: -91.0 dB 
+=== offset 300 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0x98501c9c0] mean_volume: -40.8 dB [Parsed_volumedetect_0 @ 0x98501c9c0] max_volume: -24.5 dB 
+mixed [Parsed_volumedetect_0 @ 0xa94c149c0] mean_volume: -46.7 dB [Parsed_volumedetect_0 @ 0xa94c149c0] max_volume: -30.5 dB 
+system [Parsed_volumedetect_0 @ 0x8f90249c0] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0x8f90249c0] max_volume: -91.0 dB 
+=== offset 320 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0xb3ac149c0] mean_volume: -41.6 dB [Parsed_volumedetect_0 @ 0xb3ac149c0] max_volume: -22.8 dB 
+mixed [Parsed_volumedetect_0 @ 0x86701c9c0] mean_volume: -47.6 dB [Parsed_volumedetect_0 @ 0x86701c9c0] max_volume: -28.9 dB 
+system [Parsed_volumedetect_0 @ 0x85b01c9c0] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0x85b01c9c0] max_volume: -91.0 dB 
+=== offset 340 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0xacd009140] mean_volume: -41.9 dB [Parsed_volumedetect_0 @ 0xacd009140] max_volume: -28.1 dB 
+mixed [Parsed_volumedetect_0 @ 0xbcb0249c0] mean_volume: -47.7 dB [Parsed_volumedetect_0 @ 0xbcb0249c0] max_volume: -34.1 dB 
+system [Parsed_volumedetect_0 @ 0xb870249c0] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0xb870249c0] max_volume: -91.0 dB 
+=== offset 360 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0x8b8c149c0] mean_volume: -41.5 dB [Parsed_volumedetect_0 @ 0x8b8c149c0] max_volume: -24.8 dB 
+mixed [Parsed_volumedetect_0 @ 0xc1901c9c0] mean_volume: -47.4 dB [Parsed_volumedetect_0 @ 0xc1901c9c0] max_volume: -30.8 dB 
+system [Parsed_volumedetect_0 @ 0x779009140] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0x779009140] max_volume: -91.0 dB 
+=== offset 380 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0xbd90249c0] mean_volume: -40.7 dB [Parsed_volumedetect_0 @ 0xbd90249c0] max_volume: -24.3 dB 
+mixed [Parsed_volumedetect_0 @ 0xab9009140] mean_volume: -46.6 dB [Parsed_volumedetect_0 @ 0xab9009140] max_volume: -30.3 dB 
+system [Parsed_volumedetect_0 @ 0x97d0249c0] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0x97d0249c0] max_volume: -91.0 dB 
+=== offset 400 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0x71ec149c0] mean_volume: -39.9 dB [Parsed_volumedetect_0 @ 0x71ec149c0] max_volume: -16.9 dB 
+mixed [Parsed_volumedetect_0 @ 0x7bec149c0] mean_volume: -45.9 dB [Parsed_volumedetect_0 @ 0x7bec149c0] max_volume: -23.8 dB 
+system [Parsed_volumedetect_0 @ 0xbd1009140] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0xbd1009140] max_volume: -91.0 dB 
+=== offset 420 duration 20 ===
+microphone [Parsed_volumedetect_0 @ 0x893009140] mean_volume: -41.6 dB [Parsed_volumedetect_0 @ 0x893009140] max_volume: -27.7 dB 
+mixed [Parsed_volumedetect_0 @ 0x89701c9c0] mean_volume: -47.5 dB [Parsed_volumedetect_0 @ 0x89701c9c0] max_volume: -33.7 dB 
+system [Parsed_volumedetect_0 @ 0xa8101c9c0] mean_volume: -91.0 dB [Parsed_volumedetect_0 @ 0xa8101c9c0] max_volume: -91.0 dB 

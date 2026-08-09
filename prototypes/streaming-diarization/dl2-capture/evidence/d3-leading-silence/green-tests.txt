@@ -1,0 +1,19 @@
+test_210s_leading_silence_is_trimmed_with_exact_sample_offset ... ok
+test_audited_bleed_rate_is_emitted ... ok
+test_full_future_packet_emits_pending_bleed_rate ... ok
+test_full_pipeline_records_and_applies_leading_silence_sample_offset ... ok
+test_future_packet_marks_bleed_rate_pending_until_human_audit ... ok
+test_tonight_raw_retention_is_scoped_and_deadline_bounded ... ok
+test_begin_embeds_descriptor_hard_abort_before_speech ... ok
+test_capture_script_uses_hostkey_checked_tailscale_fallback_on_dns_failure ... ok
+test_complete_three_track_tape_passes ... ok
+test_grant_bounds_refuse_cap_over_2_gib ... ok
+test_grant_bounds_refuse_ttl_over_24_hours ... ok
+test_missing_lane_is_named ... ok
+test_overdue_retained_raw_blocks_new_preflight ... ok
+test_post_decision_pilot_is_single_shape_single_use ... ok
+test_post_decision_retry_requires_exact_one_use_label ... ok
+test_program_accounting_refuses_projected_overrun ... ok
+
+Ran 16 tests in 0.196s
+OK

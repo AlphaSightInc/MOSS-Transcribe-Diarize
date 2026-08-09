@@ -1,0 +1,3 @@
+checkpoint/manifest.json	2806 bytes
+input.wav	5946400 bytes
+job.json	2448 bytes

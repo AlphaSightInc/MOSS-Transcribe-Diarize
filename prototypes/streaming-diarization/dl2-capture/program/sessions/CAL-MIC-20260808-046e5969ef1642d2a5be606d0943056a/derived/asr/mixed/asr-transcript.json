@@ -1,0 +1,144 @@
+{
+  "segments": [
+    {
+      "end": 1.82,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 0.0,
+      "text": "On whatever I saw."
+    },
+    {
+      "end": 3.46,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 2.32,
+      "text": "From the screen."
+    },
+    {
+      "end": 6.94,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 4.54,
+      "text": "And whatever."
+    },
+    {
+      "end": 10.68,
+      "id": "seg_0004",
+      "speaker": "S01",
+      "start": 6.99,
+      "text": "Starting now, speak normally for about thirty seconds."
+    },
+    {
+      "end": 12.72,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 10.98,
+      "text": "Then remain silent."
+    },
+    {
+      "end": 13.52,
+      "id": "seg_0006",
+      "speaker": "S02",
+      "start": 12.68,
+      "text": "Until."
+    },
+    {
+      "end": 14.64,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 13.46,
+      "text": "I say stopped."
+    },
+    {
+      "end": 17.46,
+      "id": "seg_0008",
+      "speaker": "S01",
+      "start": 14.98,
+      "text": "Keep YouTube paused, which is for sure."
+    },
+    {
+      "end": 18.72,
+      "id": "seg_0009",
+      "speaker": "S01",
+      "start": 17.76,
+      "text": "The case."
+    },
+    {
+      "end": 21.81,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 19.24,
+      "text": "And I'm going to read again, starting."
+    },
+    {
+      "end": 22.31,
+      "id": "seg_0011",
+      "speaker": "S02",
+      "start": 21.68,
+      "text": "Now."
+    },
+    {
+      "end": 24.84,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 22.24,
+      "text": "Speak normally for about thirty seconds."
+    },
+    {
+      "end": 26.02,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 25.18,
+      "text": "Then."
+    },
+    {
+      "end": 27.74,
+      "id": "seg_0014",
+      "speaker": "S01",
+      "start": 26.12,
+      "text": "Remain silent until."
+    },
+    {
+      "end": 28.28,
+      "id": "seg_0015",
+      "speaker": "S02",
+      "start": 27.62,
+      "text": "I see."
+    },
+    {
+      "end": 28.92,
+      "id": "seg_0016",
+      "speaker": "S01",
+      "start": 28.24,
+      "text": "Stopped."
+    },
+    {
+      "end": 31.24,
+      "id": "seg_0017",
+      "speaker": "S01",
+      "start": 29.86,
+      "text": "Keep YouTube."
+    },
+    {
+      "end": 32.68,
+      "id": "seg_0018",
+      "speaker": "S01",
+      "start": 31.81,
+      "text": "Paused."
+    },
+    {
+      "end": 34.22,
+      "id": "seg_0019",
+      "speaker": "S02",
+      "start": 33.36,
+      "text": "I."
+    },
+    {
+      "end": 35.42,
+      "id": "seg_0020",
+      "speaker": "S01",
+      "start": 34.38,
+      "text": "I'm going to stop here."
+    }
+  ]
+}

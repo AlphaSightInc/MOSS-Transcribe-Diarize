@@ -1,0 +1,12 @@
+S05 recovery record, 2026-08-08 ET
+Capture began under harness at approximately 23:23 ET; RECORD was relayed.
+Operator completed the supervisor-visible card approximately 23:25-23:29 ET:
+- announce
+- operator solo speech for 45 seconds
+- two-male interview remote-only for 45 seconds
+- overlap for 30 seconds, then 20 seconds
+- closing and stop phrase
+The original capture-controller session died mid-capture and did not receive the stop phrase.
+Supervisor externally ran mtd-capture stop at approximately 23:35 ET.
+External stop observation: running=false, publishedFrameCount=2747, outboxRetainedFrames=0, system=stopped, microphone=stopped.
+Trailing dead air exists after the card until the external stop.

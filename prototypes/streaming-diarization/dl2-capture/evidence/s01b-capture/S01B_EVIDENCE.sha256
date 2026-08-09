@@ -1,0 +1,10 @@
+d1ac529756471df3fe7e339a39602e43de94b3f4d7e7acf6696c47c88b185b15  verdict.json
+3586d7ee0b9dd41891df599df0b5e9ae32cf653dfb1906fc9572b4e64d144133  commands-and-rail-proof.txt
+619b344581d856f074c8c2aacd92b6f042fc90485258ca8408f5250bb42ec348  ../../capture_harness.py
+5425d5984f68cd6f66e34e6e28b8e2086e848cb69da487a284b1f57af8a5b966  ../../test_capture_harness.py
+2c851d6adb452054f1b29cd8c6da4895702b03addb7f908b3e8c973c612a9329  ../../program/grant.json
+2a446929226ef664b6e67587618e13ef01c01d4c83568cb3463959f6dba3f01a  ../../program/program-ledger.json
+cfda4111fa6272b9528d9d96dabc178feeea9d1d5ae18d3d42cf0aba080dd3d5  ../../program/s01b-operator-cues.txt
+c47a25dc00693fdda1cf261edfe778aa9ac3092b825a853d094dce0c8ca08d10  ../../program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/session-manifest.json
+cfda4111fa6272b9528d9d96dabc178feeea9d1d5ae18d3d42cf0aba080dd3d5  ../../program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/operator-cue-log.txt
+b547125e5148d74606010d4101d9a1f287055a8df15d85c07053dffa25cfd100  ../../program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/derived/DERIVED_EVIDENCE.sha256

@@ -1,0 +1,35 @@
+{
+  "schema": "moss-dl2-s01-system-audio-hypotheses.v1",
+  "root_cause": "SOURCE_PLAYBACK_PAUSED_NOT_CAPTURE_TAP_FAILURE",
+  "h1_stale_device_binding": {
+    "verdict": "REFUTED",
+    "evidence": [
+      "production tap aggregate contains only its tap UID and no physical output UID",
+      "current and S01-start default output is BuiltInSpeakerDevice/MacBook Pro Speakers at 48000 Hz",
+      "S01 captured loud browser audio before the explicit pause"
+    ]
+  },
+  "h2_format_sample_rate_zeroing": {
+    "verdict": "REFUTED",
+    "evidence": [
+      "production converter started as 1ch 48000 Hz Float32 to 1ch 16000 Hz Float32",
+      "valid audio crossed that converter until Safari paused",
+      "no format, rate, overload, tap-failure, or premature-stop event occurred"
+    ]
+  },
+  "h3_process_scope_excludes_browser": {
+    "verdict": "REFUTED",
+    "evidence": [
+      "production uses the default global CATapDescription, not a process-list initializer",
+      "S01 captured Safari audio while Safari reported Playing",
+      "F4b captured fresh say processes and a second system phase after 25 seconds of silence"
+    ]
+  },
+  "causal_timing": {
+    "safari_pause_et": "2026-08-06T14:01:59.044-04:00",
+    "retained_system_silence_et": "2026-08-06T14:02:00.611512-04:00",
+    "delta_seconds": 1.567513,
+    "playing_updates_after_pause": 0
+  },
+  "minimal_action": "No app relaunch, re-pair, TCC, device, format, or service action. Before a system-bearing phase, operator presses Play in Safari and confirms the player remains Playing; use interview speech, not music. Keep the next session blocked until supervisor explicitly authorizes it."
+}

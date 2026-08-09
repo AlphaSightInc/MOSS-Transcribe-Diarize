@@ -1,0 +1,51 @@
+{
+  "schema": "moss-f2a-preregistration-skeleton.v1",
+  "status": "UNFROZEN_SKELETON_DO_NOT_RUN",
+  "family": "bleed-aware-lane-provenance-prior-live-runtime-v1",
+  "purpose": "test whether bleed-aware capture-lane provenance improves causal live identity without forcing a speaker split",
+  "runtime_input_rule": "candidate receives only runtime-visible ASR, production-planned units, embeddings, lane metadata, cross-lane voiceprint matches, and causal history; no reference/golden path",
+  "bleed_aware_mechanism": {
+    "rule": "flag a microphone-lane cluster as bleed when its runtime voiceprint matches a system-lane speaker; suppress or reassign that evidence to the matching system speaker; treat only residual microphone clusters as local-owned",
+    "naive_lane_ownership": "REFUTED: microphone lane does not imply local speaker ownership",
+    "specimen": {
+      "session": "S01b",
+      "shape": "S01",
+      "attestation_path": "program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/human-audit/s01b-mic-split-20260806.md",
+      "attestation_sha256": "aa23df7439879a8e52de3d561d48d0894a27e5ce030b6c40f1b4c7ba0f8c97e7",
+      "mic_bleed_rate": 0.47015345628607635,
+      "mic_bleed_percent_rounded_1dp": 47.0,
+      "finding": "all 15 bleed rows clustered as microphone ASR S01 while the single operator voice over-birthed as S02 and S03"
+    }
+  },
+  "preconditions": [
+    "operator human audit complete for every gated case",
+    "full evaluator-to-candidate D8 audit PASS",
+    "truth-label perturbation leaves candidate runtime shape and decisions byte-identical",
+    "preregistration committed before first family run",
+    "splits and holdout opening-once guard frozen"
+  ],
+  "parameter_budget": "one preregistered pass; exact strength grid must be filled before commit",
+  "gates": {
+    "target_subset_gain_over_l1_pp_min": 1.0,
+    "target_subset_gain_over_best_control_pp_min": 1.0,
+    "max_per_case_regression_pp": 0.5,
+    "fp_speaker_seconds_not_worse_each_case": true,
+    "der_not_worse_each_case": true,
+    "two_sided_mapping_preserved": true,
+    "deterministic_repeats": 2,
+    "sweep_compute_p95_max_multiple_of_l15_baseline": 2.0
+  },
+  "split_rules": {
+    "unit": "human-audited lane-bearing session",
+    "development": "contains basic and in-lane-confusion shapes",
+    "validation": "contains an audited hard class unseen during tuning",
+    "sealed_holdout": "contains the long case and at least one counterexample/control when count permits",
+    "selection": "metadata-only before seal; no transcript, metric, or reference inspection",
+    "single_opening": true,
+    "minimum_for_non_preliminary_label": "must be set and justified before freeze"
+  },
+  "small_n_rule": "if case count is thin at sprint hour 8, run under frozen rules and label every result PRELIMINARY-SMALL-N; no acceptance claim",
+  "thresholds": "UNFROZEN",
+  "splits": "UNFROZEN",
+  "implementation_sha256": "UNFROZEN"
+}

@@ -1,0 +1,26 @@
+{
+  "detector": "ffmpeg silencedetect",
+  "detector_argv": [
+    "ffmpeg",
+    "-hide_banner",
+    "-nostats",
+    "-i",
+    "evidence/d3-leading-silence/fixtures/leading-210s.wav",
+    "-af",
+    "silencedetect=noise=-35dB:d=2.0",
+    "-f",
+    "null",
+    "-"
+  ],
+  "leading_silence_end_seconds": 210.0,
+  "minimum_seconds": 2.0,
+  "offset_seconds": 210.0,
+  "preroll_seconds": 0.0,
+  "sample_offset": 3360000,
+  "sample_rate": 16000,
+  "selected_sample_count": 960000,
+  "selected_sha256": "08c7bfb82c9b7918b4952a76a67edd42f34f79a0a83499252965f7c2c2346a70",
+  "source_sample_count": 4320000,
+  "threshold_db": -35,
+  "trimmed": true
+}

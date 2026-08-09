@@ -1,0 +1,7 @@
+COMMAND: python3 deprovision_retention.py
+EXIT: 0
+--- STDOUT ---
+PASS restored_env_sha256	b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313
+live_pid	886111
+vllm_pid	1899
+--- STDERR ---

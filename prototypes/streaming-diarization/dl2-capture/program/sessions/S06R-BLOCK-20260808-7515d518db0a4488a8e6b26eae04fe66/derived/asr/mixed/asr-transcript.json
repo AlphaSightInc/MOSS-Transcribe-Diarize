@@ -1,0 +1,452 @@
+{
+  "segments": [
+    {
+      "end": 2.02,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 1.18,
+      "text": "Device."
+    },
+    {
+      "end": 3.92,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 3.12,
+      "text": "Check."
+    },
+    {
+      "end": 5.88,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 4.62,
+      "text": "The key segment."
+    },
+    {
+      "end": 8.34,
+      "id": "seg_0004",
+      "speaker": "S01",
+      "start": 6.12,
+      "text": "Playing, recording and keep talking."
+    },
+    {
+      "end": 11.62,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 9.32,
+      "text": "Um, I don't know if that's right, record."
+    },
+    {
+      "end": 13.42,
+      "id": "seg_0006",
+      "speaker": "S02",
+      "start": 11.62,
+      "text": "S zero six R."
+    },
+    {
+      "end": 13.84,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 13.34,
+      "text": "Say."
+    },
+    {
+      "end": 14.44,
+      "id": "seg_0008",
+      "speaker": "S03",
+      "start": 13.58,
+      "text": "Cross lane."
+    },
+    {
+      "end": 17.24,
+      "id": "seg_0009",
+      "speaker": "S02",
+      "start": 14.44,
+      "text": "Count for example, my own voice remote."
+    },
+    {
+      "end": 15.72,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 14.54,
+      "text": "S zero six."
+    },
+    {
+      "end": 16.34,
+      "id": "seg_0011",
+      "speaker": "S01",
+      "start": 15.72,
+      "text": "Closing."
+    },
+    {
+      "end": 18.98,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 17.46,
+      "text": "S zero six."
+    },
+    {
+      "end": 19.64,
+      "id": "seg_0013",
+      "speaker": "S02",
+      "start": 18.24,
+      "text": "Recording, closing."
+    },
+    {
+      "end": 20.92,
+      "id": "seg_0014",
+      "speaker": "S01",
+      "start": 19.44,
+      "text": "Stays paused."
+    },
+    {
+      "end": 24.22,
+      "id": "seg_0015",
+      "speaker": "S01",
+      "start": 21.54,
+      "text": "Stop X zero six."
+    },
+    {
+      "end": 25.52,
+      "id": "seg_0016",
+      "speaker": "S02",
+      "start": 23.64,
+      "text": "Countdown pace up, follow it, stop."
+    },
+    {
+      "end": 25.88,
+      "id": "seg_0017",
+      "speaker": "S01",
+      "start": 25.12,
+      "text": "The first cue."
+    },
+    {
+      "end": 26.62,
+      "id": "seg_0018",
+      "speaker": "S03",
+      "start": 25.88,
+      "text": "Pause the."
+    },
+    {
+      "end": 27.32,
+      "id": "seg_0019",
+      "speaker": "S01",
+      "start": 26.24,
+      "text": "S recording."
+    },
+    {
+      "end": 27.62,
+      "id": "seg_0020",
+      "speaker": "S02",
+      "start": 26.72,
+      "text": "Six."
+    },
+    {
+      "end": 29.54,
+      "id": "seg_0021",
+      "speaker": "S03",
+      "start": 29.08,
+      "text": "And."
+    },
+    {
+      "end": 31.62,
+      "id": "seg_0022",
+      "speaker": "S01",
+      "start": 29.44,
+      "text": "Has you announced, then recording."
+    },
+    {
+      "end": 39.44,
+      "id": "seg_0023",
+      "speaker": "S01",
+      "start": 38.52,
+      "text": "Device."
+    },
+    {
+      "end": 41.32,
+      "id": "seg_0024",
+      "speaker": "S01",
+      "start": 40.52,
+      "text": "Check."
+    },
+    {
+      "end": 43.24,
+      "id": "seg_0025",
+      "speaker": "S01",
+      "start": 41.98,
+      "text": "The key segment."
+    },
+    {
+      "end": 45.82,
+      "id": "seg_0026",
+      "speaker": "S01",
+      "start": 43.52,
+      "text": "Playing, recording and keep talking."
+    },
+    {
+      "end": 49.94,
+      "id": "seg_0027",
+      "speaker": "S01",
+      "start": 46.74,
+      "text": "Um, I don't know if that's right, record fired."
+    },
+    {
+      "end": 51.32,
+      "id": "seg_0028",
+      "speaker": "S01",
+      "start": 50.64,
+      "text": "Say."
+    },
+    {
+      "end": 53.92,
+      "id": "seg_0029",
+      "speaker": "S01",
+      "start": 51.82,
+      "text": "S zero six, closing."
+    },
+    {
+      "end": 57.14,
+      "id": "seg_0030",
+      "speaker": "S01",
+      "start": 54.86,
+      "text": "S zero six, closing."
+    },
+    {
+      "end": 61.84,
+      "id": "seg_0031",
+      "speaker": "S01",
+      "start": 58.94,
+      "text": "Stop X zero six."
+    },
+    {
+      "end": 63.04,
+      "id": "seg_0032",
+      "speaker": "S01",
+      "start": 62.32,
+      "text": "Stop."
+    },
+    {
+      "end": 65.24,
+      "id": "seg_0033",
+      "speaker": "S01",
+      "start": 63.62,
+      "text": "S zero six."
+    },
+    {
+      "end": 82.52,
+      "id": "seg_0034",
+      "speaker": "S01",
+      "start": 81.32,
+      "text": "For thirty second."
+    },
+    {
+      "end": 86.24,
+      "id": "seg_0035",
+      "speaker": "S01",
+      "start": 82.98,
+      "text": "Talk freely, different content than the recording."
+    },
+    {
+      "end": 90.74,
+      "id": "seg_0036",
+      "speaker": "S01",
+      "start": 87.62,
+      "text": "Okay, now pause recording, speak alive."
+    },
+    {
+      "end": 94.24,
+      "id": "seg_0037",
+      "speaker": "S01",
+      "start": 93.08,
+      "text": "Play recording."
+    },
+    {
+      "end": 97.74,
+      "id": "seg_0038",
+      "speaker": "S01",
+      "start": 95.18,
+      "text": "And keep talking, both at once."
+    },
+    {
+      "end": 97.74,
+      "id": "seg_0039",
+      "speaker": "S02",
+      "start": 96.04,
+      "text": "I didn't hear."
+    },
+    {
+      "end": 102.14,
+      "id": "seg_0040",
+      "speaker": "S01",
+      "start": 98.52,
+      "text": "You live, plus you record my own segment."
+    },
+    {
+      "end": 99.82,
+      "id": "seg_0041",
+      "speaker": "S02",
+      "start": 98.62,
+      "text": "Any of the."
+    },
+    {
+      "end": 102.14,
+      "id": "seg_0042",
+      "speaker": "S03",
+      "start": 100.92,
+      "text": "The key segment."
+    },
+    {
+      "end": 107.04,
+      "id": "seg_0043",
+      "speaker": "S01",
+      "start": 102.94,
+      "text": "I think I might have a different uh segment."
+    },
+    {
+      "end": 106.34,
+      "id": "seg_0044",
+      "speaker": "S02",
+      "start": 103.84,
+      "text": "I have a wonder if not."
+    },
+    {
+      "end": 115.14,
+      "id": "seg_0045",
+      "speaker": "S01",
+      "start": 107.74,
+      "text": "I think done, okay, both at once, you are live, plus you are recording, the key segment."
+    },
+    {
+      "end": 112.44,
+      "id": "seg_0046",
+      "speaker": "S02",
+      "start": 111.82,
+      "text": "Uh."
+    },
+    {
+      "end": 115.84,
+      "id": "seg_0047",
+      "speaker": "S02",
+      "start": 113.14,
+      "text": "I think uh the first uh."
+    },
+    {
+      "end": 117.64,
+      "id": "seg_0048",
+      "speaker": "S01",
+      "start": 115.84,
+      "text": "Playing, recording and keep talking."
+    },
+    {
+      "end": 119.84,
+      "id": "seg_0049",
+      "speaker": "S02",
+      "start": 116.44,
+      "text": "Segment was uh, I've been always talking."
+    },
+    {
+      "end": 120.94,
+      "id": "seg_0050",
+      "speaker": "S01",
+      "start": 120.24,
+      "text": "Both."
+    },
+    {
+      "end": 122.64,
+      "id": "seg_0051",
+      "speaker": "S02",
+      "start": 120.34,
+      "text": "No hoarding and."
+    },
+    {
+      "end": 122.64,
+      "id": "seg_0052",
+      "speaker": "S01",
+      "start": 121.34,
+      "text": "And."
+    },
+    {
+      "end": 123.94,
+      "id": "seg_0053",
+      "speaker": "S02",
+      "start": 122.68,
+      "text": "And effortless."
+    },
+    {
+      "end": 124.04,
+      "id": "seg_0054",
+      "speaker": "S01",
+      "start": 123.44,
+      "text": "My."
+    },
+    {
+      "end": 125.14,
+      "id": "seg_0055",
+      "speaker": "S01",
+      "start": 124.44,
+      "text": "Life."
+    },
+    {
+      "end": 126.44,
+      "id": "seg_0056",
+      "speaker": "S01",
+      "start": 125.34,
+      "text": "Voice."
+    },
+    {
+      "end": 131.04,
+      "id": "seg_0057",
+      "speaker": "S01",
+      "start": 127.58,
+      "text": "Latter, I noticed it, my."
+    },
+    {
+      "end": 130.44,
+      "id": "seg_0058",
+      "speaker": "S02",
+      "start": 128.68,
+      "text": "Key segment."
+    },
+    {
+      "end": 132.84,
+      "id": "seg_0059",
+      "speaker": "S01",
+      "start": 130.58,
+      "text": "Playing, recording and keep talking."
+    },
+    {
+      "end": 133.64,
+      "id": "seg_0060",
+      "speaker": "S02",
+      "start": 131.54,
+      "text": "S zero six R, closing."
+    },
+    {
+      "end": 135.44,
+      "id": "seg_0061",
+      "speaker": "S01",
+      "start": 133.84,
+      "text": "Um, I don't know if that's right."
+    },
+    {
+      "end": 137.15,
+      "id": "seg_0062",
+      "speaker": "S04",
+      "start": 134.61,
+      "text": "S zero six R closing."
+    },
+    {
+      "end": 138.41,
+      "id": "seg_0063",
+      "speaker": "S05",
+      "start": 137.71,
+      "text": "Say."
+    },
+    {
+      "end": 143.51,
+      "id": "seg_0064",
+      "speaker": "S05",
+      "start": 139.68,
+      "text": "S zero R, stop, S zero six R."
+    }
+  ]
+}

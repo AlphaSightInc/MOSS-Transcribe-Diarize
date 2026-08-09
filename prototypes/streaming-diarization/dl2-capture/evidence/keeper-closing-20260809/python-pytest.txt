@@ -1,0 +1,111 @@
+execution_context=gui/501
+launch_agent_label=com.alphasight.moss.keeper-gate.76112.1786249368759326000
+bootstrap_output=
+launch_state:
+gui/501/com.alphasight.moss.keeper-gate.76112.1786249368759326000 = {
+	active count = 0
+	path = /private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-keeper-gui-2194fcny/com.alphasight.moss.keeper-gate.76112.1786249368759326000.plist
+	type = LaunchAgent
+	state = not running
+
+	program = /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python
+	arguments = {
+		/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python
+		-m
+		pytest
+		tests
+		-q
+		-p
+		no:cacheprovider
+	}
+
+	working directory = /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep
+
+	stdout path = /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-keeper-gui-2194fcny/stdout.txt
+	stderr path = /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-keeper-gui-2194fcny/stderr.txt
+	inherited environment = {
+		SSH_AUTH_SOCK => /var/run/com.apple.launchd.LFB9jFnKqA/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		OSLogRateLimit => 64
+		PYTHONDONTWRITEBYTECODE => 1
+		PATH => /usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+		XPC_SERVICE_NAME => com.alphasight.moss.keeper-gate.76112.1786249368759326000
+	}
+
+	domain = gui/501 [103674]
+	asid = 103674
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	last exit code = 0
+
+	resource coalition = {
+		ID = 248686
+		type = resource
+		state = active
+		active count = 1
+		name = com.alphasight.moss.keeper-gate.76112.1786249368759326000
+	}
+
+	jetsam coalition = {
+		ID = 248687
+		type = jetsam
+		state = active
+		active count = 1
+		name = com.alphasight.moss.keeper-gate.76112.1786249368759326000
+	}
+
+	spawn type = daemon (3)
+	jetsam priority = 40
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = runatload | inferred program
+}
+
+stdout:
+.............................................................ss... [  7%]
+................................... [ 11%]
+.............................................. [ 16%]
+........................................................................ [ 25%]
+......s................................................................. [ 33%]
+........................................................................ [ 41%]
+........................................................................ [ 50%]
+.................................................................... [ 58%]
+...................................................................... [ 66%]
+................................................................. [ 73%]
+..s..................................................................... [ 81%]
+........................................................................ [ 90%]
+..................................................................... [ 98%]
+................                                                         [100%]
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+863 passed, 4 skipped, 4 warnings, 373 subtests passed in 74.60s (0:01:14)
+
+stderr:
+

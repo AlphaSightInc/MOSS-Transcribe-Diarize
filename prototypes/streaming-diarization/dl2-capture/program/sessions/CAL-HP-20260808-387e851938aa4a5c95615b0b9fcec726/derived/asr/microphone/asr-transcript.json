@@ -1,0 +1,130 @@
+{
+  "segments": [
+    {
+      "end": 6.29,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 0.12,
+      "text": "I've created a wrapper right here saying to you, simplify comments and then whatever else I might want to add to this."
+    },
+    {
+      "end": 7.92,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 6.34,
+      "text": "Anytime it's ready to hand back to me."
+    },
+    {
+      "end": 10.41,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 8.03,
+      "text": "And the last one is testing the desktop app."
+    },
+    {
+      "end": 15.12,
+      "id": "seg_0004",
+      "speaker": "S01",
+      "start": 10.54,
+      "text": "This is the kind of skill that I think every repository at a minimum should have."
+    },
+    {
+      "end": 20.38,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 15.23,
+      "text": "Because if the agent doesn't know how to open the app that's built and test that it runs appropriately,"
+    },
+    {
+      "end": 26.32,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 20.48,
+      "text": "you're going to constantly copy paste error messages back from the client console into your prop box."
+    },
+    {
+      "end": 28.22,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 26.35,
+      "text": "That is so 2024."
+    },
+    {
+      "end": 34.74,
+      "id": "seg_0008",
+      "speaker": "S01",
+      "start": 28.33,
+      "text": "You should give the agents the keys to the kingdom to actually open the app, click around and come back to you once it's working."
+    },
+    {
+      "end": 40.56,
+      "id": "seg_0009",
+      "speaker": "S01",
+      "start": 34.93,
+      "text": "In my case, I'm building an Electron app, so I'm telling it, use it whenever you're inspecting, clicking, screenshotting,"
+    },
+    {
+      "end": 42.98,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 40.72,
+      "text": "or verifying anything in the running app."
+    },
+    {
+      "end": 46.46,
+      "id": "seg_0011",
+      "speaker": "S01",
+      "start": 43.21,
+      "text": "And these are of course very specific instructions to my setup."
+    },
+    {
+      "end": 49.52,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 46.65,
+      "text": "If you're building an Electron app, this might be useful to you."
+    },
+    {
+      "end": 52.98,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 49.66,
+      "text": "I've created an environment variable to let it bypass some things."
+    },
+    {
+      "end": 55.02,
+      "id": "seg_0014",
+      "speaker": "S01",
+      "start": 53.21,
+      "text": "It can go into the dev tools there."
+    },
+    {
+      "end": 57.61,
+      "id": "seg_0015",
+      "speaker": "S01",
+      "start": 55.18,
+      "text": "And I'm not using computer use or anything fancy."
+    },
+    {
+      "end": 62.54,
+      "id": "seg_0016",
+      "speaker": "S01",
+      "start": 57.62,
+      "text": "This will work with whatever harness you have, like if you're using Pi or Claude Code or whatever else."
+    },
+    {
+      "end": 69.59,
+      "id": "seg_0017",
+      "speaker": "S01",
+      "start": 64.84,
+      "text": "The side of the Electron app to screenshot and verify that everything's working."
+    },
+    {
+      "end": 70.68,
+      "id": "seg_0018",
+      "speaker": "S01",
+      "start": 69.65,
+      "text": "Again, can't stress this."
+    }
+  ]
+}

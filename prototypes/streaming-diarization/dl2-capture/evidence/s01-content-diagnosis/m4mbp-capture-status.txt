@@ -1,0 +1,4 @@
+Thu Aug  6 14:30:33 EDT 2026
+{"running":false,"publishedFrameCount":1781,"lanes":[{"lane":"system","state":"stopped"},{"lane":"microphone","state":"stopped"}],"outboxRetainedFrames":0,"ok":true}
+=== HELP ===
+usage: mtd-capture pair --server <https-url> | start [--label <name>] | stop | status | handoff | latency

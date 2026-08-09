@@ -1,0 +1,32 @@
+{
+  "schema": "moss-dl2-d3-leading-silence-preregistration.v1",
+  "frozen_at_et": "2026-08-06T21:01:00-04:00",
+  "scope": "offline batch diagnosis only; no live session or recording",
+  "source": {
+    "case_id": "1m-acquired-jamie-dimon",
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/audio.wav",
+    "sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+    "accepted_control": {
+      "job_id": "77bc16ec2ae6",
+      "generated_tokens": 521,
+      "segment_count": 17
+    }
+  },
+  "fixture_rule": "prepend exact-zero PCM16 mono 16000Hz silence; decoded source samples after the prefix must remain byte-identical",
+  "prepend_seconds": [
+    30,
+    60,
+    120,
+    210
+  ],
+  "batch_rule": "submit sequentially to deployed port-7860 batch API only while idle; production model/runtime unchanged; preserve submit, terminal, and segments JSON",
+  "prediction": "tokens and/or parsed segments decrease or a job early-stops/fails as leading silence grows; the 210-second case reproduces the S01 class",
+  "reproduction_verdict_rule": "CONFIRMED when the 210-second case has fewer parsed segments than the 17-segment control or terminates without a parseable transcript; report the complete dose response without requiring strict monotonicity",
+  "prospective_fix": {
+    "detector": "ffmpeg silencedetect=noise=-35dB:d=2.0",
+    "eligibility": "only a detected silence_start at <=0.05 seconds is leading silence",
+    "trim": "first corresponding silence_end minus 0.250 seconds preroll, floored at zero and rounded to an integer source sample",
+    "timestamp_mapping": "add sample_offset/sample_rate to every returned start/end; provenance records sample_offset, sample_rate, and seconds",
+    "regression": "the 210-second fixture must yield the same token and segment counts as the accepted control after automatic trim, with returned timestamps shifted back into original tape time"
+  }
+}

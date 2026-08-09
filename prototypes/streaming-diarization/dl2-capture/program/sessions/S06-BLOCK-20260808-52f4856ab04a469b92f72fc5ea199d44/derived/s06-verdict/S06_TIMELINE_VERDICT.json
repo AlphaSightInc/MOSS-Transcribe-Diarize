@@ -1,0 +1,63 @@
+{
+  "schema": "moss-dl2-s06-timeline-verdict.v1",
+  "session_id": "52f4856ab04a469b92f72fc5ea199d44",
+  "shape_id": "S06",
+  "acceptance_case": false,
+  "operator_report": "operator spoke throughout; self-recording was queued but never audible in AirPods; playback may never have started",
+  "decision_question": {
+    "a": "system lane contains the self-recording; output monitoring failed",
+    "b": "system lane is silent; playback never occurred; solo-speech session invalid for cross-lane purpose"
+  },
+  "audio": {
+    "system": {
+      "sha256": "fd022c214940f0ce57a0fe82fbf1d510414ac966b1d814fac249046174ecbda5",
+      "duration_seconds": 293.130688,
+      "segment_count": 0,
+      "full": {"peak_dbfs": -120.0, "rms_dbfs": -120.0, "exact_zero": true},
+      "windows": {
+        "0-25": {"peak_dbfs": -120.0, "rms_dbfs": -120.0, "exact_zero": true},
+        "25-55_expected_play_1": {"peak_dbfs": -120.0, "rms_dbfs": -120.0, "exact_zero": true},
+        "55-85": {"peak_dbfs": -120.0, "rms_dbfs": -120.0, "exact_zero": true},
+        "85-125_expected_play_2": {"peak_dbfs": -120.0, "rms_dbfs": -120.0, "exact_zero": true},
+        "125-150": {"peak_dbfs": -120.0, "rms_dbfs": -120.0, "exact_zero": true}
+      },
+      "post_session_result": "leading_silence_no_speech:system.wav"
+    },
+    "microphone": {
+      "sha256": "836c1060a1764d4d8f4dc18f63f21f4d6f829811c35b49e0118a6634adc1061c",
+      "duration_seconds": 294.741375,
+      "full_peak_dbfs": -14.856698,
+      "full_rms_dbfs": -39.39539,
+      "segment_count": 22,
+      "asr_interval_seconds": [0, 150],
+      "job_id": "7966040c417c",
+      "transcript_sha256": "87bcfc3ab5fb3d5cf256e6ac41fd6d37492175fd89c3783255529273b626c108"
+    },
+    "mixed": {
+      "sha256": "e1c33e2ed227a1c70fe8c89ba2d73589f894c1f15ccded68909a622725ab6d36",
+      "duration_seconds": 293.130688,
+      "full_peak_dbfs": -20.891972,
+      "full_rms_dbfs": -45.323672,
+      "segment_count": 53,
+      "asr_interval_seconds": [0, 150],
+      "job_id": "6dc5cc05121a",
+      "transcript_sha256": "24e350a81ac1011f3127f2d118edc0a46ac8ff338127ea3b1518fcbd7ca832d4"
+    }
+  },
+  "full_track_pipeline": {
+    "initial_refusal": "leading_silence_no_speech:system.wav",
+    "microphone_followup_full_track_job_id": "f690ca9573fd",
+    "microphone_followup_full_track_result": "window 2 (240-279.309s) zero parsed segments due trailing dead air",
+    "microphone_job_json_sha256": "7c8d405587b0e1bde7b2791bc3dd79a990386ac8a0c2bd131e65d507923b5314",
+    "diagnostic_interval_basis": "0-150s includes both declared play windows through 125s plus 25s margin and excludes known trailing dead air",
+    "capture_rerun": false
+  },
+  "raw": {
+    "retained": true,
+    "raw_bytes": 28192088,
+    "cleanup_at_block_close": true,
+    "hard_delete_deadline_et": "2026-08-09T23:59:00-04:00"
+  },
+  "timeline_verdict": "B_SYSTEM_LANE_SILENT_PLAYBACK_NEVER_OCCURRED",
+  "verdict": "INVALID_SOLO_SPEECH_NOT_CROSS_LANE_EVIDENCE"
+}

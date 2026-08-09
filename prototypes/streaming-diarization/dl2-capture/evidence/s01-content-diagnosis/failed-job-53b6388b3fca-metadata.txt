@@ -1,0 +1,58 @@
+=== job.json ===
+4424ee1614767f67ca7af103240d6b9bb2776fd4a4adb96dfb8b7bfe8c300f9d  /mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/job.json
+{
+  "id": "53b6388b3fca",
+  "status": "failed",
+  "media_name": "microphone.wav",
+  "input_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/input.wav",
+  "job_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca",
+  "inference_prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+  "max_length": 16384,
+  "max_new_tokens": 12000,
+  "decoding": "greedy",
+  "temperature": null,
+  "progress": 1.0,
+  "error": "window 0 (0-150s) failed: vLLM transcription returned zero parsed segments for /tmp/mtd-window-c0wt1qgt/window-0000.wav.",
+  "created_at": 1786040077.9675374,
+  "updated_at": 1786040079.0409946,
+  "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+  "prompt_len": null,
+  "generated_tokens": 59,
+  "elapsed_sec": null,
+  "window_count": null,
+  "completed_windows": null,
+  "possibly_truncated": null,
+  "identity_summary": null,
+  "subtitle_style": {},
+  "source_sha256": "c40dba3ddbeda6613bd2d4b8adeb83154f08c7f47f0176d1a1e64378b32400ea",
+  "checkpoint_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/checkpoint",
+  "checkpoint_state": "failed",
+  "resume_attempts": 0,
+  "inference": {
+    "prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+    "max_length": 16384,
+    "max_new_tokens": 12000,
+    "decoding": "greedy",
+    "temperature": null
+  },
+  "usage": {
+    "prompt_tokens": null,
+    "generated_tokens": 59,
+    "max_new_tokens": 12000,
+    "possibly_truncated": false,
+    "elapsed_sec": null,
+    "window_count": null,
+    "completed_windows": null
+  },
+  "files": {
+    "raw_transcript": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/raw_transcript.txt",
+    "segments": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/segments.json",
+    "srt": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/subtitle.srt",
+    "ass": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/subtitle.ass",
+    "mp4": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/output.mp4",
+    "identity_resolution": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/identity-resolution.json"
+  }
+}
+=== checkpoint/manifest.json ===
+b9d0e52c3d6fa62fb10c5c15dcbf76ffac7d4e00ae7fa969953d4a65f54ca723  /mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca/checkpoint/manifest.json
+{"contract":{"identity":{"availability":{"available":false,"reason":"disabled"},"config":{"tier_a":{"min_overlap_dice":0.75,"min_overlap_support_seconds":2.0,"mutual_margin_seconds":1.0},"tier_b":{"enabled":false,"margin":0.2,"max_segments_per_node":3,"min_segment_seconds":2.0,"similarity":0.7}},"provider":{"device":"cpu","embedding_dimension":256,"frontend_version":"wespeaker-onnx-fbank-v1","provider":"wespeaker_resnet152_lm","revision":"4adba1525a6c9d5fff74b6df43a6ec97a86c4112","state_sha256":"5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"},"schema_version":2},"inference":{"decoding":"greedy","max_length":16384,"max_new_tokens":12000,"prompt":"请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。","temperature":null,"top_k":null,"top_p":null},"model":"OpenMOSS-Team/MOSS-Transcribe-Diarize","plan":[{"end_us":150000000,"index":0,"own_end_us":135000000,"own_start_us":0,"start_us":0},{"end_us":185823625,"index":1,"own_end_us":185823625,"own_start_us":135000000,"start_us":120000000}],"source_sha256":"c40dba3ddbeda6613bd2d4b8adeb83154f08c7f47f0176d1a1e64378b32400ea","windowing":{"stride_seconds":120.0,"window_seconds":150.0}},"contract_fingerprint":"f7d0c77f4f51db0226df575d704e79d258247105b585c4e100357c52a5f98e76","created_at":1786040078.0658338,"identity":{"availability":{"available":false,"reason":"disabled"},"config":{"tier_a":{"min_overlap_dice":0.75,"min_overlap_support_seconds":2.0,"mutual_margin_seconds":1.0},"tier_b":{"enabled":false,"margin":0.2,"max_segments_per_node":3,"min_segment_seconds":2.0,"similarity":0.7}},"provider":{"device":"cpu","embedding_dimension":256,"frontend_version":"wespeaker-onnx-fbank-v1","provider":"wespeaker_resnet152_lm","revision":"4adba1525a6c9d5fff74b6df43a6ec97a86c4112","state_sha256":"5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"},"schema_version":2},"inference":{"decoding":"greedy","max_length":16384,"max_new_tokens":12000,"prompt":"请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。","temperature":null,"top_k":null,"top_p":null},"job_id":"checkpoint","model":"OpenMOSS-Team/MOSS-Transcribe-Diarize","plan":[{"end_us":150000000,"index":0,"own_end_us":135000000,"own_start_us":0,"start_us":0},{"end_us":185823625,"index":1,"own_end_us":185823625,"own_start_us":135000000,"start_us":120000000}],"schema_version":1,"source_sha256":"c40dba3ddbeda6613bd2d4b8adeb83154f08c7f47f0176d1a1e64378b32400ea","windowing":{"stride_seconds":120.0,"window_seconds":150.0}}

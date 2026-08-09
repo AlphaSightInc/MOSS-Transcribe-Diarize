@@ -1,0 +1,59 @@
+{
+  "base_commit": "f0c092a720cb49dde30d63ccdaece3afc3da2213",
+  "generated_at_utc": "2026-08-09T04:24:04.157856Z",
+  "results": [
+    {
+      "command": [
+        "swift",
+        "test",
+        "--package-path",
+        "macos/MOSSCapture"
+      ],
+      "duration_seconds": 4.742,
+      "ended_at_utc": "2026-08-09T04:22:48.758914Z",
+      "exit_code": 0,
+      "log": "swift-test.txt",
+      "log_sha256": "b944c530255428a1ee69a96c1b68cd515dcd5a9d2aa9e8ffff7370939cd02c4b",
+      "name": "swift-test",
+      "started_at_utc": "2026-08-09T04:22:44.016570Z"
+    },
+    {
+      "command": [
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "duration_seconds": 75.374,
+      "ended_at_utc": "2026-08-09T04:24:04.133533Z",
+      "execution_context": "gui/501 LaunchAgent (SSH-safe Launch Services context)",
+      "exit_code": 0,
+      "log": "python-pytest.txt",
+      "log_sha256": "c77f83651ca1d5fafe4bae3ae32a893efd59c98bb8d69693e3efda0ddfd174ff",
+      "name": "python-pytest",
+      "started_at_utc": "2026-08-09T04:22:48.759327Z"
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep",
+        "diff",
+        "--check"
+      ],
+      "duration_seconds": 0.024,
+      "ended_at_utc": "2026-08-09T04:24:04.157765Z",
+      "exit_code": 0,
+      "log": "git-diff-check.txt",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "git-diff-check",
+      "started_at_utc": "2026-08-09T04:24:04.133711Z"
+    }
+  ],
+  "schema_version": 1,
+  "verdict": "PASS",
+  "worktree": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep"
+}

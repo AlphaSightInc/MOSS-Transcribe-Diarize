@@ -1,0 +1,1 @@
+The sealed deprovision command exited 0 and restored the exact pre-sprint env. The wrapper's immediate after-state query raced service HTTP readiness: systemd was active, but port 7861 was not yet listening. No deprovision rerun is permitted or needed. Authoritative validation uses a bounded descriptor readiness poll against this already-restored service.

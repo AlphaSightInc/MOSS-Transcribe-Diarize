@@ -1,0 +1,10 @@
+COMMAND: python3 dry_run.py
+EXIT: 0
+--- STDOUT ---
+PASS grant_bounds accepted within 24h/2GiB
+PASS both_lanes_present system+microphone+mixed
+PASS blind_asr mock tracks=3
+PASS audit_packet rows=3 target_listen=3
+PASS raw_cleanup local=yes remote=mock
+PASS end_to_end
+--- STDERR ---

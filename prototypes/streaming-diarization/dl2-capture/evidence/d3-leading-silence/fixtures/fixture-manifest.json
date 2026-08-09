@@ -1,0 +1,73 @@
+{
+  "created_at_utc": "2026-08-07T01:03:29Z",
+  "fixtures": [
+    {
+      "audio": {
+        "channels": 1,
+        "duration_seconds": 90.0,
+        "sample_count": 1440000,
+        "sample_rate": 16000,
+        "sample_width": 2
+      },
+      "decoded_source_suffix_byte_identical": true,
+      "path": "leading-030s.wav",
+      "prefix_exact_zero": true,
+      "prepend_seconds": 30,
+      "sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea"
+    },
+    {
+      "audio": {
+        "channels": 1,
+        "duration_seconds": 120.0,
+        "sample_count": 1920000,
+        "sample_rate": 16000,
+        "sample_width": 2
+      },
+      "decoded_source_suffix_byte_identical": true,
+      "path": "leading-060s.wav",
+      "prefix_exact_zero": true,
+      "prepend_seconds": 60,
+      "sha256": "7663f1d175d7e3133ecf5e92c516486d5ee0b6bfa843511c637105ad9ae71153"
+    },
+    {
+      "audio": {
+        "channels": 1,
+        "duration_seconds": 180.0,
+        "sample_count": 2880000,
+        "sample_rate": 16000,
+        "sample_width": 2
+      },
+      "decoded_source_suffix_byte_identical": true,
+      "path": "leading-120s.wav",
+      "prefix_exact_zero": true,
+      "prepend_seconds": 120,
+      "sha256": "4a968206a0f698608da0eed3c7d463be08557a7d3a9a8f1e08858f53ddf09525"
+    },
+    {
+      "audio": {
+        "channels": 1,
+        "duration_seconds": 270.0,
+        "sample_count": 4320000,
+        "sample_rate": 16000,
+        "sample_width": 2
+      },
+      "decoded_source_suffix_byte_identical": true,
+      "path": "leading-210s.wav",
+      "prefix_exact_zero": true,
+      "prepend_seconds": 210,
+      "sha256": "81b2e09c35acdf95fd334c88df7e3612c0f290f8d1c6ad8c872bda159b37079f"
+    }
+  ],
+  "schema": "moss-dl2-d3-fixtures.v1",
+  "source": {
+    "audio": {
+      "channels": 1,
+      "duration_seconds": 60.0,
+      "sample_count": 960000,
+      "sample_rate": 16000,
+      "sample_width": 2
+    },
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/audio.wav",
+    "sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a"
+  }
+}

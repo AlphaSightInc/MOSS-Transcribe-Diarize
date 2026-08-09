@@ -1,0 +1,27 @@
+=== system offset 0 duration 10 ===
+[Parsed_volumedetect_0 @ 0xc8d0249c0] mean_volume: -16.4 dB
+[Parsed_volumedetect_0 @ 0xc8d0249c0] max_volume: -5.5 dB
+=== system offset 20 duration 10 ===
+[Parsed_volumedetect_0 @ 0xab901c9c0] mean_volume: -16.2 dB
+[Parsed_volumedetect_0 @ 0xab901c9c0] max_volume: -5.1 dB
+=== system offset 40 duration 10 ===
+[Parsed_volumedetect_0 @ 0x904c149c0] mean_volume: -16.1 dB
+[Parsed_volumedetect_0 @ 0x904c149c0] max_volume: -5.5 dB
+=== system offset 60 duration 10 ===
+[Parsed_volumedetect_0 @ 0xa4f01c9c0] mean_volume: -26.6 dB
+[Parsed_volumedetect_0 @ 0xa4f01c9c0] max_volume: -10.6 dB
+=== system offset 80 duration 10 ===
+[Parsed_volumedetect_0 @ 0xadf0249c0] mean_volume: -15.9 dB
+[Parsed_volumedetect_0 @ 0xadf0249c0] max_volume: -4.6 dB
+=== system offset 100 duration 10 ===
+[Parsed_volumedetect_0 @ 0xb7ec149c0] mean_volume: -15.6 dB
+[Parsed_volumedetect_0 @ 0xb7ec149c0] max_volume: -5.0 dB
+=== system offset 120 duration 10 ===
+[Parsed_volumedetect_0 @ 0xa81009140] mean_volume: -15.2 dB
+[Parsed_volumedetect_0 @ 0xa81009140] max_volume: -4.7 dB
+=== system offset 130 duration 10 ===
+[Parsed_volumedetect_0 @ 0xb0cc149c0] mean_volume: -23.9 dB
+[Parsed_volumedetect_0 @ 0xb0cc149c0] max_volume: -5.1 dB
+=== system offset 140 duration 10 ===
+[Parsed_volumedetect_0 @ 0x8ed0249c0] mean_volume: -91.0 dB
+[Parsed_volumedetect_0 @ 0x8ed0249c0] max_volume: -91.0 dB

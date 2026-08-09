@@ -1,0 +1,142 @@
+Timestamp               Ty Process[PID:TID]
+2026-08-06 13:59:46.005 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0xb304aa280, from  2 ch,  44100 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.005 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is DISABLED
+2026-08-06 13:59:46.005 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Input stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.055 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0xb304aa280, from  2 ch,  44100 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.055 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is DISABLED
+2026-08-06 13:59:46.056 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Input stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.058 Df MOSSCaptureApp[53886:19d6e07] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1182  Engine@0xb30d84470: start, was running 0
+2026-08-06 13:59:46.059 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0xb304aa280, from  2 ch,  44100 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.059 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is DISABLED
+2026-08-06 13:59:46.059 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Input stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.063 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Started  Input {moss.permission-probe.3C558197-8F64-4968-97F7-0050A3A4ECD4, 0xa}
+2026-08-06 13:59:46.064 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [1, 0]. BT device UIDS: {(
+)}
+2026-08-06 13:59:46.064 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:46.065 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0xb304a9c20, from  2 ch,  44100 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.065 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is DISABLED
+2026-08-06 13:59:46.065 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Input stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.078 Df MOSSCaptureApp[78178:19fd42c] [com.apple.xpc:connection] [0x104c40bc0] activating connection: mach=true listener=false peer=false name=com.apple.audio.AudioComponentRegistrar
+2026-08-06 13:59:46.083 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AMCP] System_Input_Processing_Notification_Handler.mm:456   System_Input_Processing_Notification_Handler::is_vi_available(): Voice isolation DSP is available for client with bundle id com.alphasight.moss.capture (AVFoundation is available, application is not in client deny list, application is not FaceTime variant)
+2026-08-06 13:59:46.095 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Started  Input {CADefaultDeviceAggregate-53886-0, 0xa}
+2026-08-06 13:59:46.099 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [2, 0]. BT device UIDS: {(
+)}
+2026-08-06 13:59:46.099 Df MOSSCaptureApp[53886:19d6e07] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:46.132 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Started  Input {moss.permission-probe.F55BF9A8-1DEE-4EBA-AC3F-9D394B08D8B0, 0xa}
+2026-08-06 13:59:46.135 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [3, 0]. BT device UIDS: {(
+)}
+2026-08-06 13:59:46.135 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:420   AUHAL: (0x104c45f30) Selecting device 112 from constructor
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:629   SelectDevice: -> (0x104c45f30)
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:681   SelectDevice: (0x104c45f30) not already running
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:757   SelectDevice: (0x104c45f30) nothing to teardown
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:762   SelectDevice: (0x104c45f30) connecting device 112
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:3418  IsDeviceUsable: (0x104c45f30) Device ID: 112 (Input:No | Output:Yes): true
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:774   SelectDevice: (0x104c45f30) created ioproc 0xa for device 112
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:863   SelectDevice: (0x104c45f30) adding 7 device listeners to device 112
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:863   SelectDevice: (0x104c45f30) adding 0 device delegate listeners to device 112
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1586  UpdateStreamFormats: -> (0x104c45f30)
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1682  UpdateStreamFormats: 
+  output stream 0 [0x71]:  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1694  UpdateStreamFormats: 1 output streams; not all mono
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1706  UpdateStreamFormats: 
+  Output render format:  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1694  UpdateStreamFormats: 0 input streams; not all mono
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1706  UpdateStreamFormats: 
+  Input render format:  0 ch,      0 Hz, lpcm (0x00000029) 32-bit little-endian float, deinterleaved
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1776  UpdateStreamFormats: AUHAL(0x104c45f30) Calling PropertyChanged() for kAudioUnitProperty_StreamFormat, Scope:Output, Bus:Output
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1782  UpdateStreamFormats: AUHAL(0x104c45f30) Calling PropertyChanged() for kAudioUnitProperty_StreamFormat, Scope:Input, Bus:Input
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1792  UpdateStreamFormats: <-
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:900   SelectDevice: (0x104c45f30) removing 0 device listeners from device 0
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:900   SelectDevice: (0x104c45f30) removing 0 device delegate listeners from device 0
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:916   SelectDevice: <- (0x104c45f30)
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is DISABLED
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:ddagg]        AggregateDevice.mm:887   Creating DefaultDeviceAggregate
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:ddagg]        AggregateDevice.mm:914   fetched default output device, ID = 112
+2026-08-06 13:59:46.151 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:ddagg]        AggregateDevice.mm:914   fetched default input device, ID = 119
+2026-08-06 13:59:46.171 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:ddagg]        AggregateDevice.mm:688   Built valid aggregate 208
+2026-08-06 13:59:46.171 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.173 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        ACv2Workarounds.mm:51    com.alphasight.moss.capture: fix84702776_86723525_86479548_89800354_SinglePacketDesc: false
+2026-08-06 13:59:46.173 Df MOSSCaptureApp[78178:19fd42c] [com.apple.audio.caulk:alloc] Registered notify signal com.apple.caulk.alloc.audiodump (0)
+2026-08-06 13:59:46.173 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x752d0a5b0, from  2 ch,  44100 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.173 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.176 Df MOSSCaptureApp[78178:19fd42c] [com.apple.xpc:connection] [0x7530f83c0] activating connection: mach=true listener=false peer=false name=com.apple.audioanalyticsd
+2026-08-06 13:59:46.177 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.177 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.178 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x752d0a5b0, from  2 ch,  48000 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.178 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x752d0a5b0: The in-process GetProperty call returned 1886547824 for property 1886546285 with size 8.
+2026-08-06 13:59:46.178 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.178 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0a5b0: The in-process SetProperty call returned 1886547824 for property 1936876385 with size 4.
+2026-08-06 13:59:46.178 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0a5b0: The in-process SetProperty call returned 1886547824 for property 1936876401 with size 4.
+2026-08-06 13:59:46.178 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0a5b0: The in-process SetProperty call returned 1886547824 for property 1886547309 with size 4.
+2026-08-06 13:59:46.179 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.179 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x752d0acd0, from  2 ch,  44100 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x752d0acd0, from  2 ch,  48000 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x752d0acd0: The in-process GetProperty call returned 1886547824 for property 1886546285 with size 8.
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0acd0: The in-process SetProperty call returned 1886547824 for property 1936876385 with size 4.
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0acd0: The in-process SetProperty call returned 1886547824 for property 1936876401 with size 4.
+2026-08-06 13:59:46.180 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0acd0: The in-process SetProperty call returned 1886547824 for property 1886547309 with size 4.
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x752d0ac70, from  2 ch,  48000 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x752d0ac70: The in-process GetProperty call returned 1886547824 for property 1886546285 with size 8.
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:1898  SetStreamUsage: Output stream enables: Stream 0 is ENABLED
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0ac70: The in-process SetProperty call returned 1886547824 for property 1936876385 with size 4.
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0ac70: The in-process SetProperty call returned 1886547824 for property 1936876401 with size 4.
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd43c] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x752d0ac70: The in-process SetProperty call returned 1886547824 for property 1886547309 with size 4.
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x752d0ac70: The in-process GetProperty call returned 1886547824 for property 1886546285 with size 8.
+2026-08-06 13:59:46.181 Df MOSSCaptureApp[78178:19fd42c] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1182  Engine@0x104c36ce0: start, was running 0
+2026-08-06 13:59:46.184 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:as_client]   AVAudioSession_MacOS.mm:1021  initForMacOS
+2026-08-06 13:59:46.184 Df MOSSCaptureApp[78178:19fd42c] [com.apple.xpc:connection] [0x7530f8640] activating connection: mach=true listener=false peer=false name=com.apple.audio.AudioSession
+2026-08-06 13:59:46.185 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:as_client]     SessionCore_Create.mm:99    Created session 0x75306d280 with ID: 0x21048c
+2026-08-06 13:59:46.185 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Started  Output {BuiltInSpeakerDevice, 0xa}
+2026-08-06 13:59:46.186 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [0, 1]. BT device UIDS: {(
+)}
+2026-08-06 13:59:46.186 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:46.716 Df MOSSCaptureApp[53886:19fd3c3] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0xb30de13e0, from  1 ch,  48000 Hz, Float32 (actually:  1 ch,  48000 Hz, Float32) to  1 ch,  16000 Hz, Float32 (actually:  1 ch,  16000 Hz, Float32)
+2026-08-06 13:59:47.505 Df MOSSCaptureApp[78178:19fd42c] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1237  Engine@0x104c36ce0: stop, was running 1
+2026-08-06 13:59:47.505 Df MOSSCaptureApp[78178:19fd42c] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1220  Engine@0x104c36ce0: pause, was running 1
+2026-08-06 13:59:47.509 Df MOSSCaptureApp[78178:19fd43d] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Stopped  Output {BuiltInSpeakerDevice, 0xa}
+2026-08-06 13:59:47.509 Df MOSSCaptureApp[78178:19fd43d] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [0, 0]. BT device UIDS: {(
+)}
+2026-08-06 13:59:47.509 Df MOSSCaptureApp[78178:19fd43d] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:47.516 Df MOSSCaptureApp[78178:19fd42c] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1237  Engine@0x104c36ce0: stop, was running 0
+2026-08-06 13:59:47.516 Df MOSSCaptureApp[78178:19fd42c] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1220  Engine@0x104c36ce0: pause, was running 0
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:473   ~AUHAL: (0x104c45f30) Selecting device 0 from destructor
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:629   SelectDevice: -> (0x104c45f30)
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:681   SelectDevice: (0x104c45f30) not already running
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:687   SelectDevice: (0x104c45f30) disconnecting device 112
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:751   SelectDevice: (0x104c45f30) destroying ioproc 0xa for device 112
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Stopped  Output {BuiltInSpeakerDevice, 0xa}
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:162   <-- setPlayState IOState: [0, 0]. BT device UIDS: {(
+)} Server update was not required.
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:853   SelectDevice: (0x104c45f30) nothing to setup
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:863   SelectDevice: (0x104c45f30) adding 0 device listeners to device 0
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:863   SelectDevice: (0x104c45f30) adding 0 device delegate listeners to device 0
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:900   SelectDevice: (0x104c45f30) removing 7 device listeners from device 112
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:900   SelectDevice: (0x104c45f30) removing 0 device delegate listeners from device 112
+2026-08-06 13:59:47.520 Df MOSSCaptureApp[78178:19fd42c] [com.apple.coreaudio:AUHAL]                 AUHAL.cpp:916   SelectDevice: <- (0x104c45f30)
+2026-08-06 13:59:47.733 Df MOSSCaptureApp[53886:19d74c0] [com.apple.coreaudio:AMCP]          HALC_ProxyIOContext.cpp:1594  HALC_ProxyIOContext::IOWorkLoop: ending the transport, stopping the io thread
+2026-08-06 13:59:47.736 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Stopped  Input {moss.permission-probe.F55BF9A8-1DEE-4EBA-AC3F-9D394B08D8B0, 0xa}
+2026-08-06 13:59:47.740 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [2, 0]. BT device UIDS: {(
+)}
+2026-08-06 13:59:47.740 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:47.740 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Stopped  Input {moss.permission-probe.F55BF9A8-1DEE-4EBA-AC3F-9D394B08D8B0, 0xa}
+2026-08-06 13:59:47.741 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:162   <-- setPlayState IOState: [2, 0]. BT device UIDS: {(
+)} Server update was not required.
+2026-08-06 13:59:47.760 Df MOSSCaptureApp[53886:19d74c0] [com.apple.coreaudio:AMCP]          HALC_ProxyIOContext.cpp:1594  HALC_ProxyIOContext::IOWorkLoop: ending the transport, stopping the io thread
+2026-08-06 13:59:47.762 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Stopped  Input {moss.permission-probe.3C558197-8F64-4968-97F7-0050A3A4ECD4, 0xa}
+2026-08-06 13:59:47.768 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [1, 0]. BT device UIDS: {(
+)}
+2026-08-06 13:59:47.768 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:47.768 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Stopped  Input {moss.permission-probe.3C558197-8F64-4968-97F7-0050A3A4ECD4, 0xa}
+2026-08-06 13:59:47.768 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:162   <-- setPlayState IOState: [1, 0]. BT device UIDS: {(
+)} Server update was not required.
+2026-08-06 13:59:47.826 E  MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:AMCP]                    HALObject.cpp:723   HALObject::AddPropertyListener: object hasn't been initialized
+2026-08-06 13:59:47.832 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:131   --> setPlayState Started  Input {moss.capture.aggregate.4146A4C1-7E7D-4610-A7A3-9658B73ACBA2, 0xa}
+2026-08-06 13:59:47.834 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:124   Sent updated IOState to server: [2, 0]. BT device UIDS: {(
+)}
+2026-08-06 13:59:47.834 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:as_client] SessionCore_macOS_Legacy.mm:167   <-- setPlayState Server update was required.
+2026-08-06 13:59:48.216 Df MOSSCaptureApp[53886:19fd3e6] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0xb30de1080, from  1 ch,  48000 Hz, Float32 (actually:  1 ch,  48000 Hz, Float32) to  1 ch,  16000 Hz, Float32 (actually:  1 ch,  16000 Hz, Float32)

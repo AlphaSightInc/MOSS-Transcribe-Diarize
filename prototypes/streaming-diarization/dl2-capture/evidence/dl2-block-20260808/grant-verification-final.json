@@ -1,0 +1,21 @@
+{
+  "schema": "moss-dl2-block-grant-verification.v2",
+  "verified_at_et": "2026-08-08T22:34:08-04:00",
+  "grant_id": "dl2-block-20260808",
+  "grant_sha256": "16d2151f38d69ed2a639388823c301115bbc8e6d458da5d2e79ef300ef9dfee9",
+  "authorized_shapes_in_order": ["CAL-HP", "S06", "S05"],
+  "single_use_per_shape": true,
+  "decision_deadline_et": "2026-08-08T23:59:00-04:00",
+  "hard_delete_deadline_et": "2026-08-09T23:59:00-04:00",
+  "program_cap_bytes": 2147483648,
+  "device_reverify_each_preflight": true,
+  "required_default_input": {
+    "name": "MacBook Pro Microphone",
+    "uid": "BuiltInMicrophoneDevice"
+  },
+  "required_default_output_name_contains": "AirPods Pro",
+  "live_preflight": "PASS_CORRECTED_DEVICE_STATE_IDLE",
+  "capture_started": false,
+  "pairing_attempted_by_harness": false,
+  "verdict": "READY_AWAITING_OPERATOR_PAIRING"
+}

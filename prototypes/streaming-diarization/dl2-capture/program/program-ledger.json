@@ -1,0 +1,108 @@
+{
+  "captured_bytes_total": 198126630,
+  "schema": "moss-dl2-program-ledger.v1",
+  "sessions": [
+    {
+      "acceptance_case": false,
+      "outcome": "harness_assertion_failure",
+      "raw_bytes": 254722,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T17:21:59Z",
+      "session_id": "659da76b2d244d8593b012cbcb55a94c",
+      "shape_id": "PROVISION_CANARY"
+    },
+    {
+      "acceptance_case": false,
+      "outcome": "preflight_abort_missing_system_lane",
+      "raw_bytes": 12800,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T17:47:35Z",
+      "session_id": "699ce1bdda834c24b60b355ed0754718",
+      "shape_id": "S01"
+    },
+    {
+      "acceptance_case": false,
+      "outcome": "preflight_abort_harness_state_vocabulary",
+      "raw_bytes": 6400,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T17:52:48Z",
+      "session_id": "4340eee60d8940458faa934984642c1d",
+      "shape_id": "S01"
+    },
+    {
+      "pulled_at_utc": "2026-08-06T18:07:14Z",
+      "raw_bytes": 42735380,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-09T02:03:20Z",
+      "session_id": "00f8a46e99b44f1b867088de48860348",
+      "shape_id": "S01"
+    },
+    {
+      "attempt_label": "S01b",
+      "pulled_at_utc": "2026-08-06T19:05:05Z",
+      "raw_bytes": 21824428,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T19:05:38Z",
+      "session_id": "b3ddcda9517947ba89a2fc5f9e8cacdb",
+      "shape_id": "S01"
+    },
+    {
+      "attempt_label": "CAL-HP-20260808",
+      "pulled_at_utc": "2026-08-09T02:09:06Z",
+      "raw_bytes": 6678888,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-09T02:10:57Z",
+      "session_id": "387e851938aa4a5c95615b0b9fcec726",
+      "shape_id": "CAL-HP"
+    },
+    {
+      "attempt_label": "CAL-MIC-20260808",
+      "pulled_at_utc": "2026-08-09T02:16:08Z",
+      "raw_bytes": 4904046,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-09T02:18:09Z",
+      "session_id": "046e5969ef1642d2a5be606d0943056a",
+      "shape_id": "CAL-MIC"
+    },
+    {
+      "attempt_label": "CAL-HP-BLOCK-20260808",
+      "grant_id": "dl2-block-20260808",
+      "pulled_at_utc": "2026-08-09T02:39:39Z",
+      "raw_bytes": 6326564,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-09T04:03:21Z",
+      "session_id": "79a72cdb46df4c3e8a1fe1857b9836e8",
+      "shape_id": "CAL-HP"
+    },
+    {
+      "attempt_label": "S06-BLOCK-20260808",
+      "grant_id": "dl2-block-20260808",
+      "pulled_at_utc": "2026-08-09T02:53:36Z",
+      "raw_bytes": 28192088,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-09T04:03:22Z",
+      "session_id": "52f4856ab04a469b92f72fc5ea199d44",
+      "shape_id": "S06"
+    },
+    {
+      "attempt_label": "S06R-BLOCK-20260808",
+      "grant_id": "dl2-block-20260808",
+      "pulled_at_utc": "2026-08-09T03:14:25Z",
+      "raw_bytes": 21197570,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-09T04:03:22Z",
+      "session_id": "7515d518db0a4488a8e6b26eae04fe66",
+      "shape_id": "S06R"
+    },
+    {
+      "attempt_label": "S05-BLOCK-20260808",
+      "grant_id": "dl2-block-20260808",
+      "pulled_at_utc": "2026-08-09T03:37:49Z",
+      "raw_bytes": 65993744,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-09T04:03:23Z",
+      "session_id": "40422fb135a146579d013d663652bd56",
+      "shape_id": "S05"
+    }
+  ]
+}

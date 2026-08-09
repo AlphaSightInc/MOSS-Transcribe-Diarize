@@ -1,0 +1,20 @@
+COMMAND: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_capture_harness.py
+EXPECTED: new harness absent; safety suite cannot import implementation
+EXIT: 1
+test_capture_harness (unittest.loader._FailedTest) ... ERROR
+
+======================================================================
+ERROR: test_capture_harness (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_capture_harness
+Traceback (most recent call last):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/test_capture_harness.py", line 11, in <module>
+    from capture_harness import HarnessRefusal, validate_grant, validate_tape_dir
+ModuleNotFoundError: No module named 'capture_harness'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

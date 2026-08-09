@@ -1,0 +1,10 @@
+root=/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/40422fb135a146579d013d663652bd56 mode=700 owner=devcontainers:devcontainers
+8ef9bf81f47cf06e549e913c75ccf24b7cabc6c9a69409b5c2497e7ebfcf271e  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/40422fb135a146579d013d663652bd56/index.json
+bb3ac9ce4b897022bea71dd3c93048c85a6e3c323a5597787379ea8c64c3e8ae  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/40422fb135a146579d013d663652bd56/microphone.pcm
+27ff4e6935e000732585bb9957c3244d41e7b624e97167e27e8860c84ff06314  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/40422fb135a146579d013d663652bd56/mixed.pcm
+a5262c588abfe044b92efeab6a0f5a3336d313f19ef65a1595a459536ec3a7e0  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/40422fb135a146579d013d663652bd56/system.pcm
+service:moss-live-web.service	active/enabled
+service:moss-web.service	active/enabled
+service:moss-vllm.service	active/enabled
+deployed_sha	9089b33210401111865da7abc160ab0bcb4aa266
+deployed_dirty_count	0

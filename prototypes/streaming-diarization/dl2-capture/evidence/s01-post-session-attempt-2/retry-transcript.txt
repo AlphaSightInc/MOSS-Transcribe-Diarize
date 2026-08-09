@@ -1,0 +1,1 @@
+REFUSED batch_job_failed:53b6388b3fca:window 0 (0-150s) failed: vLLM transcription returned zero parsed segments for /tmp/mtd-window-c0wt1qgt/window-0000.wav.

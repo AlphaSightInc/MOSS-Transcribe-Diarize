@@ -1,0 +1,34 @@
+{
+  "schema": "moss-dl2-s01-attempt2-capture-stats.v1",
+  "session_id": "00f8a46e99b44f1b867088de48860348",
+  "total_bytes": 42735380,
+  "tracks": {
+    "microphone": {
+      "bytes": 14266356,
+      "frames_written": 892,
+      "sample_count": 7133178,
+      "duplicate_frames": 2,
+      "gap_count": 148,
+      "overlapped_samples": 174821,
+      "rebases": 0
+    },
+    "mixed": {
+      "bytes": 14253514,
+      "frames_written": 1329,
+      "sample_count": 7126757,
+      "duplicate_frames": 0,
+      "gap_count": 607,
+      "overlapped_samples": 0,
+      "rebases": 0
+    },
+    "system": {
+      "bytes": 14215510,
+      "frames_written": 889,
+      "sample_count": 7107755,
+      "duplicate_frames": 0,
+      "gap_count": 222,
+      "overlapped_samples": 222,
+      "rebases": 0
+    }
+  }
+}

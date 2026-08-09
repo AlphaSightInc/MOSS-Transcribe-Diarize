@@ -1,0 +1,89 @@
+execution_context=gui/501
+launch_agent_label=com.alphasight.moss.keeper-gate.75920.1786249335222390000
+bootstrap_output=
+launch_state:
+gui/501/com.alphasight.moss.keeper-gate.75920.1786249335222390000 = {
+	active count = 1
+	path = /private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-keeper-gui-vcgnx_ky/com.alphasight.moss.keeper-gate.75920.1786249335222390000.plist
+	type = LaunchAgent
+	state = xpcproxy
+
+	program = /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python
+	arguments = {
+		/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python
+		-m
+		pytest
+		tests
+		-q
+		-p
+		no:cacheprovider
+	}
+
+	working directory = /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep
+
+	stdout path = /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-keeper-gui-vcgnx_ky/stdout.txt
+	stderr path = /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-keeper-gui-vcgnx_ky/stderr.txt
+	inherited environment = {
+		SSH_AUTH_SOCK => /var/run/com.apple.launchd.LFB9jFnKqA/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		OSLogRateLimit => 64
+		PYTHONDONTWRITEBYTECODE => 1
+		PATH => /usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+		XPC_SERVICE_NAME => com.alphasight.moss.keeper-gate.75920.1786249335222390000
+	}
+
+	domain = gui/501 [103674]
+	asid = 103674
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	pid = 75997
+	immediate reason = speculative
+	forks = 0
+	execs = 0
+	initialized = 0
+	trampolined = 0
+	started suspended = 0
+	proxy started suspended = 0
+	checked allocations = 0 (queried = 0)
+	checked allocations reason = no host
+	checked allocations flags = 0x0
+	last exit code = (never exited)
+
+	resource coalition = {
+		ID = 248674
+		type = resource
+		state = active
+		active count = 1
+		name = com.alphasight.moss.keeper-gate.75920.1786249335222390000
+	}
+
+	jetsam coalition = {
+		ID = 248675
+		type = jetsam
+		state = active
+		active count = 1
+		name = com.alphasight.moss.keeper-gate.75920.1786249335222390000
+	}
+
+	spawn type = daemon (3)
+	jetsam priority = 40
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = runatload | inferred program
+}
+
+stdout:
+
+stderr:
+

@@ -1,0 +1,6 @@
+42bb28de812210c89c8b8fe1b4a73aad400d30e7d6251a028b57c1fac850b5e0  canary-snapshot-events-post-pair-v1.txt
+21021883204aec7d407d6d4ffc99b5ecf680513a8883ca1634cad85426bf6794  post-pair-canary-server-state.txt
+814a4465bb1901e28340bf43b558f6e71a5e799354e6057dbaeda7c515160c35  post-pair-canary-tape-hashes.txt
+12cdd761fb87729638e3774a7270765adc2cdefdd063558ea935cf56c5d28442  post-pair-canary-cleanup.txt
+e34d8d02aa2a9a3922bddb8abcae253a26169a6fd7e3b96691100987bde6d7c0  post-pair-canary-program-ledger.json
+b10c18d08641c57095d28d2a828da69c17bd793dfa56957565cf84c26ec531da  post-pair-canary-failure.json

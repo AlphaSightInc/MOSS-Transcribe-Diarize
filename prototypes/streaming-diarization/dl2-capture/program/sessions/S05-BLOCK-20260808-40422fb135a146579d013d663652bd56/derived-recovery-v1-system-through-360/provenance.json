@@ -1,0 +1,196 @@
+{
+  "audit_row_count": 324,
+  "batch_api": "http://ga0-alienware-rtx4070ti.local:7860",
+  "bleed_rate": {
+    "bleeded_speech_seconds": null,
+    "formula": "bleeded_speech_seconds / mic_speech_seconds",
+    "mic_speech_seconds": null,
+    "percent_rounded_1dp": null,
+    "status": "pending_human_audit",
+    "true_local_speech_seconds": null,
+    "value": null
+  },
+  "blind": true,
+  "deployment_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "ended_at_utc": "2026-08-09T03:49:10Z",
+  "external_stop_deviation": {
+    "authorized_recovery": true,
+    "kind": "external_stop_after_controller_loss",
+    "observed_at_utc": "2026-08-09T03:37:47Z",
+    "outbox_retained_frames": 0,
+    "published_frame_count": 2747,
+    "stop_command_reissued": false
+  },
+  "golden_reference_opened": false,
+  "postflight": {
+    "active_jobs": [],
+    "checked_at_utc": "2026-08-09T03:49:09Z",
+    "runtime": {
+      "ffmpeg": {
+        "available": true,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe"
+      },
+      "inference": {
+        "decoding": "greedy",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "temperature": 1.0
+      },
+      "model": {
+        "backend": "vllm",
+        "base_url": "http://127.0.0.1:8000/v1",
+        "device": "vllm-api",
+        "dtype": "remote",
+        "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "processor": {},
+        "speaker_identity": {
+          "availability": {
+            "available": false,
+            "reason": "disabled"
+          },
+          "config": {
+            "tier_a": {
+              "min_overlap_dice": 0.75,
+              "min_overlap_support_seconds": 2.0,
+              "mutual_margin_seconds": 1.0
+            },
+            "tier_b": {
+              "enabled": false,
+              "margin": 0.2,
+              "max_segments_per_node": 3,
+              "min_segment_seconds": 2.0,
+              "similarity": 0.7
+            }
+          },
+          "provider": {
+            "device": "cpu",
+            "embedding_dimension": 256,
+            "frontend_version": "wespeaker-onnx-fbank-v1",
+            "provider": "wespeaker_resnet152_lm",
+            "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+          },
+          "schema_version": 2
+        },
+        "windowing": {
+          "stride_seconds": 120,
+          "window_seconds": 150
+        }
+      }
+    }
+  },
+  "preflight": {
+    "active_jobs": [],
+    "checked_at_utc": "2026-08-09T03:48:47Z",
+    "runtime": {
+      "ffmpeg": {
+        "available": true,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe"
+      },
+      "inference": {
+        "decoding": "greedy",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "temperature": 1.0
+      },
+      "model": {
+        "backend": "vllm",
+        "base_url": "http://127.0.0.1:8000/v1",
+        "device": "vllm-api",
+        "dtype": "remote",
+        "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "processor": {},
+        "speaker_identity": {
+          "availability": {
+            "available": false,
+            "reason": "disabled"
+          },
+          "config": {
+            "tier_a": {
+              "min_overlap_dice": 0.75,
+              "min_overlap_support_seconds": 2.0,
+              "mutual_margin_seconds": 1.0
+            },
+            "tier_b": {
+              "enabled": false,
+              "margin": 0.2,
+              "max_segments_per_node": 3,
+              "min_segment_seconds": 2.0,
+              "similarity": 0.7
+            }
+          },
+          "provider": {
+            "device": "cpu",
+            "embedding_dimension": 256,
+            "frontend_version": "wespeaker-onnx-fbank-v1",
+            "provider": "wespeaker_resnet152_lm",
+            "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+          },
+          "schema_version": 2
+        },
+        "windowing": {
+          "stride_seconds": 120,
+          "window_seconds": 150
+        }
+      }
+    }
+  },
+  "recovery_plan_path": "derived/recovery/recovery-plan.json",
+  "recovery_plan_sha256": "acb13bd3c23412e0a1c75ec7a3008c377bd67946f0bb5e94ecee7d5dc21bfd5b",
+  "schema": "moss-dl2-post-session-recovery.v1",
+  "session_id": "40422fb135a146579d013d663652bd56",
+  "shape_id": "S05",
+  "started_at_utc": "2026-08-09T03:48:47Z",
+  "target_listen_row_count": 301,
+  "tracks": [
+    {
+      "segment_count": 56,
+      "speaker_labels": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/system/job-terminal.json",
+      "terminal_sha256": "d96bda44c34535e8acdd3ffb3316130def348bad2a4eae82e699755156b4e0b1",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/system/asr-text.txt",
+      "text_sha256": "30d71a5c1bd05c1d683b014ecec86fb5f00a93c27259e7ad86f23913461a2353",
+      "track": "system",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/system/asr-transcript.json",
+      "transcript_sha256": "db18ffdabb4f3edb9825f7558bf732fc300ff1655bfe8e89da16b82af423c0a5"
+    },
+    {
+      "segment_count": 27,
+      "speaker_labels": [
+        "S01"
+      ],
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/microphone/job-terminal.json",
+      "terminal_sha256": "fa87553b030eab828e18dcea21c2bf890140ef98ad9352c0c688a6890b331059",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/microphone/asr-text.txt",
+      "text_sha256": "8356a13d7038b33738cc3af9f536102cffbde5888ff4590fe2d17443b9e03166",
+      "track": "microphone",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/microphone/asr-transcript.json",
+      "transcript_sha256": "0754c0f3f7300222091e5a41c83a9298c58650dfb27c9056902439b78c323b16"
+    },
+    {
+      "segment_count": 94,
+      "speaker_labels": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/mixed/job-terminal.json",
+      "terminal_sha256": "249113eba7d027ee93ab0094a9cddfaeb1c07b7ff96d1d75d7039a6071d6ae5f",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/mixed/asr-text.txt",
+      "text_sha256": "aea002c25c237f8b47c6e4c3b738279164d53f9b2f9a66be7bc5a9f010fcf096",
+      "track": "mixed",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/asr/mixed/asr-transcript.json",
+      "transcript_sha256": "83bea8734512b44dcc108c58d8435378acd3cfcb638a5371c364acca8e48871f"
+    }
+  ],
+  "trailing_dead_air": "excluded under frozen recovery plan after named production batch refusal"
+}

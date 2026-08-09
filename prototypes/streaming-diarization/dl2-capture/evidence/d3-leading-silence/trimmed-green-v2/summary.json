@@ -1,0 +1,109 @@
+{
+  "accepted_control": {
+    "generated_tokens": 521,
+    "job_id": "77bc16ec2ae6",
+    "segment_count": 17
+  },
+  "batch": {
+    "audio_sha256": "08c7bfb82c9b7918b4952a76a67edd42f34f79a0a83499252965f7c2c2346a70",
+    "ended_at_utc": "2026-08-07T01:09:06Z",
+    "job_id": "89db0ff8c31e",
+    "leading_silence": {
+      "detector": "ffmpeg silencedetect",
+      "detector_argv": [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostats",
+        "-i",
+        "evidence/d3-leading-silence/fixtures/leading-210s.wav",
+        "-af",
+        "silencedetect=noise=-35dB:d=2.0",
+        "-f",
+        "null",
+        "-"
+      ],
+      "leading_silence_end_seconds": 210.0,
+      "minimum_seconds": 2.0,
+      "offset_seconds": 210.0,
+      "preroll_seconds": 0.0,
+      "sample_offset": 3360000,
+      "sample_rate": 16000,
+      "selected_sample_count": 960000,
+      "selected_sha256": "08c7bfb82c9b7918b4952a76a67edd42f34f79a0a83499252965f7c2c2346a70",
+      "source_sample_count": 4320000,
+      "threshold_db": -35,
+      "trimmed": true
+    },
+    "operator_declared_non_speech": false,
+    "original_audio_sha256": "81b2e09c35acdf95fd334c88df7e3612c0f290f8d1c6ad8c872bda159b37079f",
+    "sample_offset": 3360000,
+    "segment_count": 17,
+    "segments_api_argv": [
+      "curl",
+      "-fsS",
+      "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/89db0ff8c31e/segments"
+    ],
+    "started_at_utc": "2026-08-07T01:09:01Z",
+    "status_api_argv": [
+      "curl",
+      "-fsS",
+      "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/89db0ff8c31e"
+    ],
+    "submit_api_argv": [
+      "/usr/bin/curl",
+      "-fsS",
+      "--max-time",
+      "1800",
+      "-X",
+      "POST",
+      "-F",
+      "file=@evidence/d3-leading-silence/trimmed-green-v2/leading-210s-trimmed.wav;type=audio/wav",
+      "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+    ],
+    "terminal_path": "evidence/d3-leading-silence/trimmed-green-v2/asr/control/job-terminal.json",
+    "terminal_sha256": "67a5d02bc0b75da9d253426278d6646e7148f82b5ee509a0d3f7d1869b7cd6dd",
+    "text_path": "evidence/d3-leading-silence/trimmed-green-v2/asr/control/asr-text.txt",
+    "text_sha256": "d66a0ca5a8506c751b3ccae73381830d3159c52fbc183025ebd2292bb2fa9877",
+    "timestamp_offset_seconds": 210.0,
+    "track": "control",
+    "transcript_path": "evidence/d3-leading-silence/trimmed-green-v2/asr/control/asr-transcript.json",
+    "transcript_sha256": "f622aecd5b5759611c51dc7c0de8dae4596f4e8d7aad7adbbc7adf11ee1ac6ff",
+    "wall_seconds": 5.293064
+  },
+  "generated_tokens": 521,
+  "mapped_first_segment_start": 210.57,
+  "mapped_last_segment_end": 269.97,
+  "regression_pass": true,
+  "schema": "moss-dl2-d3-leading-silence-green.v1",
+  "segment_count": 17,
+  "selected_path": "evidence/d3-leading-silence/trimmed-green-v2/leading-210s-trimmed.wav",
+  "selected_sha256": "08c7bfb82c9b7918b4952a76a67edd42f34f79a0a83499252965f7c2c2346a70",
+  "source_path": "evidence/d3-leading-silence/fixtures/leading-210s.wav",
+  "source_sha256": "81b2e09c35acdf95fd334c88df7e3612c0f290f8d1c6ad8c872bda159b37079f",
+  "trim": {
+    "detector": "ffmpeg silencedetect",
+    "detector_argv": [
+      "ffmpeg",
+      "-hide_banner",
+      "-nostats",
+      "-i",
+      "evidence/d3-leading-silence/fixtures/leading-210s.wav",
+      "-af",
+      "silencedetect=noise=-35dB:d=2.0",
+      "-f",
+      "null",
+      "-"
+    ],
+    "leading_silence_end_seconds": 210.0,
+    "minimum_seconds": 2.0,
+    "offset_seconds": 210.0,
+    "preroll_seconds": 0.0,
+    "sample_offset": 3360000,
+    "sample_rate": 16000,
+    "selected_sample_count": 960000,
+    "selected_sha256": "08c7bfb82c9b7918b4952a76a67edd42f34f79a0a83499252965f7c2c2346a70",
+    "source_sample_count": 4320000,
+    "threshold_db": -35,
+    "trimmed": true
+  }
+}

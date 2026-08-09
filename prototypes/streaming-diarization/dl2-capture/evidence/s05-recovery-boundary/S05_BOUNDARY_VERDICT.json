@@ -1,0 +1,162 @@
+{
+  "asr": {
+    "microphone": {
+      "segment_count": 27,
+      "speaker_labels": [
+        "S01"
+      ],
+      "transcript_sha256": "0754c0f3f7300222091e5a41c83a9298c58650dfb27c9056902439b78c323b16"
+    },
+    "mixed": {
+      "segment_count": 94,
+      "speaker_labels": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "transcript_sha256": "83bea8734512b44dcc108c58d8435378acd3cfcb638a5371c364acca8e48871f"
+    },
+    "system": {
+      "segment_count": 64,
+      "speaker_labels": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "transcript_sha256": "11dd13d5ef43efbe2f6a9aa81482ed0e595de837d1864504fcb0160912946c53"
+    }
+  },
+  "audit_packet": {
+    "audit_html_path": "derived/audit-packet/audit-rows.html",
+    "audit_html_sha256": "1f60f00690b2b435b3e87afea8c06459ce4a5e08891a4f44249328fac4fec9e3",
+    "audit_rows_path": "derived/audit-packet/audit-rows.json",
+    "audit_rows_sha256": "877b79f60cb8d0873f078ade743b5f534e7e18827ac1547046dfacdf6d44a195",
+    "provenance_path": "derived/provenance.json",
+    "provenance_sha256": "76aaa6fca53c2d82f10ba8da6c1ca6c8b4afbba5e1f8c661b43a90f9fdbe84d3",
+    "seal_path": "derived/DERIVED_EVIDENCE_V2.sha256",
+    "seal_sha256": "dffb7df6a9cae10fb13778e5c9e50f902481baa0b1a311585eaac7c020ab4c99"
+  },
+  "block_close_started": false,
+  "capture_beyond_s05": false,
+  "card_tape_seconds": [
+    268.57,
+    418.64
+  ],
+  "evaluated_at_utc": "2026-08-09T03:56:41Z",
+  "evidence_manifests": [
+    {
+      "failures": [],
+      "passes": true,
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/DERIVED_EVIDENCE_V2.sha256",
+      "rows": 20,
+      "sha256": "dffb7df6a9cae10fb13778e5c9e50f902481baa0b1a311585eaac7c020ab4c99"
+    },
+    {
+      "failures": [],
+      "passes": true,
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived/s05-verdict/S05_VERDICT_EVIDENCE.sha256",
+      "rows": 1,
+      "sha256": "93a3ceb7ce5332b8d30f5da57be94d0cadfab1471c5c008ae2d0f99c58c5f9eb"
+    },
+    {
+      "failures": [],
+      "passes": true,
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived-recovery-v1-system-through-360/DERIVED_EVIDENCE.sha256",
+      "rows": 17,
+      "sha256": "3359a6f7a52d0c2fa492bc8603ce0d26e5190156e6596614e4d294d5035a8a7b"
+    },
+    {
+      "failures": [],
+      "passes": true,
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56/derived-attempt-card-60-360-partial/PARTIAL_ATTEMPT_EVIDENCE.sha256",
+      "rows": 3,
+      "sha256": "1a6ac1d81433511b9cdcd734975e7bd9d0200231a902cc054105aab5ed5a4d63"
+    }
+  ],
+  "external_stop_recovery": {
+    "authorized_recovery": true,
+    "kind": "external_stop_after_controller_loss",
+    "observed_at_utc": "2026-08-09T03:37:47Z",
+    "outbox_retained_frames": 0,
+    "published_frame_count": 2747,
+    "stop_command_reissued": false
+  },
+  "future_rail": "Controller heartbeat watchdog: auto-stop a live capture after more than 120 seconds without authenticated controller heartbeat; seal watchdog stop reason and final lane/outbox status.",
+  "longest_contiguous_seconds": {
+    "both": 48.302313,
+    "neither": 0.0,
+    "remote_only": 41.26,
+    "solo": 43.594063
+  },
+  "program_cap": {
+    "cap_bytes": 2147483648,
+    "captured_bytes_total": 198126630,
+    "remaining_bytes": 1949357018,
+    "retained_raw_bytes": 121709966,
+    "retained_session_count": 4
+  },
+  "prototype_tests": {
+    "count": 23,
+    "passes": true,
+    "transcript_sha256": "0988077d8c199dd248bbe50e06bea9172f34bd85132ac5e03dab3935e0be52a9"
+  },
+  "raw_retention": {
+    "cleanup_command": "python3 capture_harness.py cleanup --session-dir <session-dir>",
+    "reason": "operator_authorized_until_sprint_close",
+    "retain": true,
+    "retain_until_et": "2026-08-09T23:59:00-04:00",
+    "shape_id": "S05"
+  },
+  "schema": "moss-dl2-s05-finish-verdict-boundary.v1",
+  "session_id": "40422fb135a146579d013d663652bd56",
+  "tape": {
+    "outbox_retained_frames": 0,
+    "published_frames": 2747,
+    "total_bytes": 65993744,
+    "tracks": {
+      "microphone": {
+        "bytes": 21911724,
+        "matches_manifest": true,
+        "sample_count": 10955862,
+        "sha256": "bb3ac9ce4b897022bea71dd3c93048c85a6e3c323a5597787379ea8c64c3e8ae"
+      },
+      "mixed": {
+        "bytes": 22061922,
+        "matches_manifest": true,
+        "sample_count": 11030961,
+        "sha256": "27ff4e6935e000732585bb9957c3244d41e7b624e97167e27e8860c84ff06314"
+      },
+      "system": {
+        "bytes": 22020098,
+        "matches_manifest": true,
+        "sample_count": 11010049,
+        "sha256": "a5262c588abfe044b92efeab6a0f5a3336d313f19ef65a1595a459536ec3a7e0"
+      }
+    }
+  },
+  "timeline_gate": {
+    "minimum_seconds_each": 15.0,
+    "passes": true,
+    "required_types": [
+      "solo",
+      "remote_only",
+      "both"
+    ]
+  },
+  "trailing_dead_air": {
+    "ends_at_external_stop_by_lane_seconds": {
+      "microphone": 684.741375,
+      "mixed": 689.4350625,
+      "system": 688.1280625
+    },
+    "excluded_from_content_gate": true,
+    "starts_after_card_tape_seconds": 418.64
+  },
+  "type_totals_seconds": {
+    "both": 49.89825,
+    "neither": 0.0,
+    "remote_only": 41.26,
+    "solo": 58.91175
+  },
+  "verdict": "PASS_USABLE_AS_IS_RAW_RETAINED"
+}

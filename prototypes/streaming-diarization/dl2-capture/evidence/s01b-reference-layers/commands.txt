@@ -1,0 +1,21 @@
+WORKDIR=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture
+
+# Copy integrity
+shasum -a 256 <three control-repo sources> <three session-dir copies>
+cmp -s <source> <copy>  # repeated for TRUE, BLEED, attestation
+
+# Red first
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_post_session.py
+# exit 1: ImportError for missing bleed_rate_for_packet
+
+# Green full prototype tests
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_post_session.py test_capture_harness.py
+# 11/11 PASS
+
+# Reference build and F2-A verifier
+PYTHONDONTWRITEBYTECODE=1 python3 verify_s01b_reference.py
+# 62/62 PASS
+
+# Final checks
+shasum -a 256 -c S01B_REFERENCE_EVIDENCE.sha256
+git -C /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep diff --check

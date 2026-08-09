@@ -1,0 +1,6 @@
+cwd=/mnt/c/Users/GYAUO
+drwxrwxrwx 1 devcontainers devcontainers 512 Aug  5 21:57 /mnt/d
+drwxrwxrwx 1 devcontainers devcontainers 512 Jul 29 12:18 /mnt/d/Coding
+drwxrwxrwx 1 devcontainers devcontainers 512 Jul 29 18:15 /mnt/d/Coding/MOSS-Transcribe-Diarize
+drwxrwxrwx 1 devcontainers devcontainers 512 Aug  6 14:14 /mnt/d/Coding/MOSS-Transcribe-Diarize/runs
+/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/53b6388b3fca

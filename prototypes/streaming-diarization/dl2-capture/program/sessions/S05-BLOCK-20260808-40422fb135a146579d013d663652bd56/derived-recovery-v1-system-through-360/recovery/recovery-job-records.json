@@ -1,0 +1,380 @@
+{
+  "jobs": [
+    {
+      "clamped_segment_count": 0,
+      "job_id": "b5b8093aa988",
+      "mapped_segment_count": 27,
+      "mode": "compact_disjoint_signal_bearing_intervals",
+      "piecewise_tape_map": [
+        {
+          "compact_end_seconds": 37.0,
+          "compact_start_seconds": 0.0,
+          "index": 0,
+          "tape_end_seconds": 135.0,
+          "tape_start_seconds": 98.0
+        },
+        {
+          "compact_end_seconds": 84.5,
+          "compact_start_seconds": 37.5,
+          "index": 1,
+          "tape_end_seconds": 245.0,
+          "tape_start_seconds": 198.0
+        },
+        {
+          "compact_end_seconds": 152.0,
+          "compact_start_seconds": 85.0,
+          "index": 2,
+          "tape_end_seconds": 325.0,
+          "tape_start_seconds": 258.0
+        },
+        {
+          "compact_end_seconds": 229.5,
+          "compact_start_seconds": 152.5,
+          "index": 3,
+          "tape_end_seconds": 425.0,
+          "tape_start_seconds": 348.0
+        }
+      ],
+      "raw_segment_count": 27,
+      "reused_completed_job": true,
+      "selected_sha256": "3a72ed564bf45b4b7f2a1dc0c3ea73f60ad8e2820a19c772bb8e27ce2bedd2d9",
+      "submit_api_argv": null,
+      "terminal": {
+        "checkpoint_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/checkpoint",
+        "checkpoint_state": "complete",
+        "completed_windows": 2,
+        "created_at": 1786247271.256901,
+        "decoding": "greedy",
+        "elapsed_sec": 3.7611156820203178,
+        "error": null,
+        "files": {
+          "ass": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/subtitle.ass",
+          "identity_resolution": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/identity-resolution.json",
+          "mp4": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/output.mp4",
+          "raw_transcript": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/raw_transcript.txt",
+          "segments": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/segments.json",
+          "srt": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/subtitle.srt"
+        },
+        "generated_tokens": 757,
+        "id": "b5b8093aa988",
+        "identity_summary": {
+          "accepted_edges": 1,
+          "false_accepted_edges": 0,
+          "fragmented_recurring_speakers": 0,
+          "schema_version": 2,
+          "tier_a_accepted": 1,
+          "tier_b_accepted": 0,
+          "tier_b_status": "disabled"
+        },
+        "inference": {
+          "decoding": "greedy",
+          "max_length": 16384,
+          "max_new_tokens": 12000,
+          "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+          "temperature": null
+        },
+        "inference_prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "input_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988/input.wav",
+        "job_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/b5b8093aa988",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "media_name": "microphone-compact.wav",
+        "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "possibly_truncated": false,
+        "progress": 0.95,
+        "prompt_len": 6773,
+        "resume_attempts": 0,
+        "source_sha256": "3a72ed564bf45b4b7f2a1dc0c3ea73f60ad8e2820a19c772bb8e27ce2bedd2d9",
+        "status": "waiting_review",
+        "subtitle_style": {},
+        "temperature": null,
+        "updated_at": 1786247275.427096,
+        "usage": {
+          "completed_windows": 2,
+          "elapsed_sec": 3.7611156820203178,
+          "generated_tokens": 757,
+          "max_new_tokens": 12000,
+          "possibly_truncated": false,
+          "prompt_tokens": 6773,
+          "window_count": 2
+        },
+        "window_count": 2
+      },
+      "track": "microphone"
+    },
+    {
+      "interval_seconds": [
+        60.0,
+        210.0
+      ],
+      "job_id": "70c5a875724b",
+      "owned_segment_count": 43,
+      "ownership_seconds": [
+        60.0,
+        195.0
+      ],
+      "raw_segment_count": 46,
+      "selection": {
+        "end_seconds": 210.0,
+        "sample_rate": 16000,
+        "selected_frames": 2400000,
+        "selected_sha256": "a7aa56714ceed067a74b79bc0adeb50de3fb4a20095362230837691a8d99fdb8",
+        "source_frames": 11030961,
+        "start_seconds": 60.0
+      },
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-s05-recovery-o_rkaevk/mixed-60-210.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "terminal": {
+        "checkpoint_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/checkpoint",
+        "checkpoint_state": "complete",
+        "completed_windows": 2,
+        "created_at": 1786247328.328029,
+        "decoding": "greedy",
+        "elapsed_sec": 7.125975917966571,
+        "error": null,
+        "files": {
+          "ass": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/subtitle.ass",
+          "identity_resolution": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/identity-resolution.json",
+          "mp4": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/output.mp4",
+          "raw_transcript": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/raw_transcript.txt",
+          "segments": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/segments.json",
+          "srt": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/subtitle.srt"
+        },
+        "generated_tokens": 1594,
+        "id": "70c5a875724b",
+        "identity_summary": {
+          "accepted_edges": 2,
+          "false_accepted_edges": 0,
+          "fragmented_recurring_speakers": 0,
+          "schema_version": 2,
+          "tier_a_accepted": 2,
+          "tier_b_accepted": 0,
+          "tier_b_status": "disabled"
+        },
+        "inference": {
+          "decoding": "greedy",
+          "max_length": 16384,
+          "max_new_tokens": 12000,
+          "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+          "temperature": null
+        },
+        "inference_prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "input_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b/input.wav",
+        "job_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/70c5a875724b",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "media_name": "mixed-60-210.wav",
+        "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "possibly_truncated": false,
+        "progress": 0.95,
+        "prompt_len": 4753,
+        "resume_attempts": 0,
+        "source_sha256": "a7aa56714ceed067a74b79bc0adeb50de3fb4a20095362230837691a8d99fdb8",
+        "status": "waiting_review",
+        "subtitle_style": {},
+        "temperature": null,
+        "updated_at": 1786247335.9890387,
+        "usage": {
+          "completed_windows": 2,
+          "elapsed_sec": 7.125975917966571,
+          "generated_tokens": 1594,
+          "max_new_tokens": 12000,
+          "possibly_truncated": false,
+          "prompt_tokens": 4753,
+          "window_count": 2
+        },
+        "window_count": 2
+      },
+      "track": "mixed"
+    },
+    {
+      "interval_seconds": [
+        180.0,
+        330.0
+      ],
+      "job_id": "aef361f40129",
+      "owned_segment_count": 22,
+      "ownership_seconds": [
+        195.0,
+        315.0
+      ],
+      "raw_segment_count": 32,
+      "selection": {
+        "end_seconds": 330.0,
+        "sample_rate": 16000,
+        "selected_frames": 2400000,
+        "selected_sha256": "bd6cac1ab0ac723a4f112af0973315ff47000f9fc408b7e8e1aa2071b18c3cbd",
+        "source_frames": 11030961,
+        "start_seconds": 180.0
+      },
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-s05-recovery-o_rkaevk/mixed-180-330.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "terminal": {
+        "checkpoint_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/checkpoint",
+        "checkpoint_state": "complete",
+        "completed_windows": 2,
+        "created_at": 1786247336.7434494,
+        "decoding": "greedy",
+        "elapsed_sec": 5.102749546000268,
+        "error": null,
+        "files": {
+          "ass": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/subtitle.ass",
+          "identity_resolution": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/identity-resolution.json",
+          "mp4": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/output.mp4",
+          "raw_transcript": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/raw_transcript.txt",
+          "segments": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/segments.json",
+          "srt": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/subtitle.srt"
+        },
+        "generated_tokens": 1185,
+        "id": "aef361f40129",
+        "identity_summary": {
+          "accepted_edges": 2,
+          "false_accepted_edges": 0,
+          "fragmented_recurring_speakers": 1,
+          "schema_version": 2,
+          "tier_a_accepted": 2,
+          "tier_b_accepted": 0,
+          "tier_b_status": "disabled"
+        },
+        "inference": {
+          "decoding": "greedy",
+          "max_length": 16384,
+          "max_new_tokens": 12000,
+          "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+          "temperature": null
+        },
+        "inference_prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "input_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129/input.wav",
+        "job_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/aef361f40129",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "media_name": "mixed-180-330.wav",
+        "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "possibly_truncated": false,
+        "progress": 0.95,
+        "prompt_len": 4753,
+        "resume_attempts": 0,
+        "source_sha256": "bd6cac1ab0ac723a4f112af0973315ff47000f9fc408b7e8e1aa2071b18c3cbd",
+        "status": "waiting_review",
+        "subtitle_style": {},
+        "temperature": null,
+        "updated_at": 1786247342.230117,
+        "usage": {
+          "completed_windows": 2,
+          "elapsed_sec": 5.102749546000268,
+          "generated_tokens": 1185,
+          "max_new_tokens": 12000,
+          "possibly_truncated": false,
+          "prompt_tokens": 4753,
+          "window_count": 2
+        },
+        "window_count": 2
+      },
+      "track": "mixed"
+    },
+    {
+      "interval_seconds": [
+        300.0,
+        420.0
+      ],
+      "job_id": "dfcd473af2f8",
+      "owned_segment_count": 29,
+      "ownership_seconds": [
+        315.0,
+        420.0
+      ],
+      "raw_segment_count": 34,
+      "selection": {
+        "end_seconds": 420.0,
+        "sample_rate": 16000,
+        "selected_frames": 1920000,
+        "selected_sha256": "ae54cfd8673007ff10a9a8fe1c670b25c63128a0d47466bd5f825e41b4ae4e8a",
+        "source_frames": 11030961,
+        "start_seconds": 300.0
+      },
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-s05-recovery-o_rkaevk/mixed-300-420.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "terminal": {
+        "checkpoint_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/checkpoint",
+        "checkpoint_state": "complete",
+        "completed_windows": 1,
+        "created_at": 1786247344.3574755,
+        "decoding": "greedy",
+        "elapsed_sec": 4.246178953035269,
+        "error": null,
+        "files": {
+          "ass": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/subtitle.ass",
+          "identity_resolution": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/identity-resolution.json",
+          "mp4": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/output.mp4",
+          "raw_transcript": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/raw_transcript.txt",
+          "segments": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/segments.json",
+          "srt": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/subtitle.srt"
+        },
+        "generated_tokens": 937,
+        "id": "dfcd473af2f8",
+        "identity_summary": null,
+        "inference": {
+          "decoding": "greedy",
+          "max_length": 16384,
+          "max_new_tokens": 12000,
+          "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+          "temperature": null
+        },
+        "inference_prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "input_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8/input.wav",
+        "job_dir": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/dfcd473af2f8",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "media_name": "mixed-300-420.wav",
+        "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "possibly_truncated": false,
+        "progress": 0.95,
+        "prompt_len": 3138,
+        "resume_attempts": 0,
+        "source_sha256": "ae54cfd8673007ff10a9a8fe1c670b25c63128a0d47466bd5f825e41b4ae4e8a",
+        "status": "waiting_review",
+        "subtitle_style": {},
+        "temperature": null,
+        "updated_at": 1786247348.8479128,
+        "usage": {
+          "completed_windows": 1,
+          "elapsed_sec": 4.246178953035269,
+          "generated_tokens": 937,
+          "max_new_tokens": 12000,
+          "possibly_truncated": false,
+          "prompt_tokens": 3138,
+          "window_count": 1
+        },
+        "window_count": 1
+      },
+      "track": "mixed"
+    }
+  ]
+}

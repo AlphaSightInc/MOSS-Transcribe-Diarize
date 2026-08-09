@@ -1,0 +1,13 @@
+{
+  "deployed_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "live_env_sha256": "b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313",
+  "live_session_active": false,
+  "live_unit_sha256": "090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056",
+  "operator_anchor_et": "2026-08-05T23:05:00-04:00",
+  "overall": "PASS_SAFE_TO_PROVISION",
+  "recorded_at_utc": "2026-08-06T03:10:33Z",
+  "retention_declared": false,
+  "schema": "moss-dl2-provision-before.v1",
+  "services_active_enabled": true,
+  "vllm_pid": 1899
+}

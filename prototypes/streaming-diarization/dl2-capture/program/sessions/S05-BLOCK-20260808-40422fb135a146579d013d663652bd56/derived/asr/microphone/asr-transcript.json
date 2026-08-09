@@ -1,0 +1,193 @@
+{
+  "segments": [
+    {
+      "end": 271.94,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 268.57,
+      "text": "S05 Pilot Microphone Lane."
+    },
+    {
+      "end": 276.34,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 272.62,
+      "text": "S05 Pilot Microphone Lane."
+    },
+    {
+      "end": 282.84,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 277.58,
+      "text": "Now, the audio is not being played in my AirPods."
+    },
+    {
+      "end": 285.68,
+      "id": "seg_0004",
+      "speaker": "S01",
+      "start": 283.33,
+      "text": "But I am speaking freely."
+    },
+    {
+      "end": 290.44,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 286.28,
+      "text": "And I am going to speak halfway. Keep talking."
+    },
+    {
+      "end": 301.94,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 291.21,
+      "text": "So, this is a microphone lane without a two male podcast interview playing in my ear."
+    },
+    {
+      "end": 303.61,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 301.97,
+      "text": "That is not happening."
+    },
+    {
+      "end": 307.01,
+      "id": "seg_0008",
+      "speaker": "S01",
+      "start": 304.94,
+      "text": "I do not know."
+    },
+    {
+      "end": 311.02,
+      "id": "seg_0009",
+      "speaker": "S01",
+      "start": 309.58,
+      "text": "Click on video."
+    },
+    {
+      "end": 313.76,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 312.46,
+      "text": "And I'm going to stay silent."
+    },
+    {
+      "end": 360.71,
+      "id": "seg_0011",
+      "speaker": "S01",
+      "start": 355.02,
+      "text": "Okay, I'm going to keep video playing and talk over it."
+    },
+    {
+      "end": 362.91,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 361.48,
+      "text": "Let's do that."
+    },
+    {
+      "end": 367.21,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 363.18,
+      "text": "I'm actually doing continuous."
+    },
+    {
+      "end": 369.66,
+      "id": "seg_0014",
+      "speaker": "S01",
+      "start": 368.54,
+      "text": "Doing that."
+    },
+    {
+      "end": 375.31,
+      "id": "seg_0015",
+      "speaker": "S01",
+      "start": 371.44,
+      "text": "Oh, I see what is going to do, it's actually."
+    },
+    {
+      "end": 382.25,
+      "id": "seg_0016",
+      "speaker": "S01",
+      "start": 376.28,
+      "text": "It's actually trying different window configurations."
+    },
+    {
+      "end": 386.91,
+      "id": "seg_0017",
+      "speaker": "S01",
+      "start": 383.45,
+      "text": "I don't know why they're doing this way."
+    },
+    {
+      "end": 389.31,
+      "id": "seg_0018",
+      "speaker": "S01",
+      "start": 388.38,
+      "text": "Alright."
+    },
+    {
+      "end": 392.45,
+      "id": "seg_0019",
+      "speaker": "S01",
+      "start": 391.64,
+      "text": "Alright."
+    },
+    {
+      "end": 395.45,
+      "id": "seg_0020",
+      "speaker": "S01",
+      "start": 394.72,
+      "text": "Alright."
+    },
+    {
+      "end": 397.54,
+      "id": "seg_0021",
+      "speaker": "S01",
+      "start": 396.51,
+      "text": "I have this one."
+    },
+    {
+      "end": 401.28,
+      "id": "seg_0022",
+      "speaker": "S01",
+      "start": 399.08,
+      "text": "Second overlap, brief pause."
+    },
+    {
+      "end": 405.34,
+      "id": "seg_0023",
+      "speaker": "S01",
+      "start": 403.92,
+      "text": "Pause video."
+    },
+    {
+      "end": 407.88,
+      "id": "seg_0024",
+      "speaker": "S01",
+      "start": 406.12,
+      "text": "S zero five closing."
+    },
+    {
+      "end": 410.78,
+      "id": "seg_0025",
+      "speaker": "S01",
+      "start": 408.71,
+      "text": "S zero five closing."
+    },
+    {
+      "end": 415.34,
+      "id": "seg_0026",
+      "speaker": "S01",
+      "start": 412.71,
+      "text": "Stop X zero five."
+    },
+    {
+      "end": 418.64,
+      "id": "seg_0027",
+      "speaker": "S01",
+      "start": 416.51,
+      "text": "Stop S zero five."
+    }
+  ]
+}

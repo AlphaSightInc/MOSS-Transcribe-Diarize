@@ -1,0 +1,3 @@
+COMMAND	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_capture_harness.py
+RESULT	7 tests; PASS
+PROVED	bounded SECONDS+3 poll; production capturing predicate; old running predicate absent; failure trap stops before RECORD

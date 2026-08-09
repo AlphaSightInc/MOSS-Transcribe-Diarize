@@ -1,0 +1,41 @@
+{
+  "schema": "moss-dl2-session-block-prep.v1",
+  "verdict": "PREPARED_AWAITING_GO_AND_FRESH_PAIRING",
+  "recording_performed": false,
+  "capture_authority_added": false,
+  "cards": {
+    "path": "operator-session-block-20260806.md",
+    "shapes": [
+      "CAL-HP",
+      "S06",
+      "S05"
+    ]
+  },
+  "cal_hp_prediction": "headphones yield full-level interview speech on the digital system lane and room-noise-only on the microphone lane",
+  "raw_retention": {
+    "shape_ids": [
+      "CAL-HP",
+      "S06",
+      "S05"
+    ],
+    "retain_until_et": "2026-08-06T23:05:00-04:00",
+    "ttl_seconds": 86400,
+    "program_cap_bytes": 2147483648,
+    "cleanup_command": "python3 capture_harness.py cleanup --session-dir <session-dir>",
+    "overdue_raw_blocks_future_preflight": true
+  },
+  "live_preflight": {
+    "status": "PASS_READ_ONLY",
+    "tailscale_peer_active": true,
+    "tailscale_ping_pass": true,
+    "ssh_ga0_at_m4mbp_resolves": false,
+    "hostkey_checked_tailscale_fallback": true,
+    "capture_running": false,
+    "capture_lanes": "system stopped; microphone stopped",
+    "outbox_retained_frames": 0,
+    "services": "moss-live-web, moss-web, moss-vllm active/enabled",
+    "deployed_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+    "deployed_dirty_count": 0,
+    "required_before_record": "explicit supervisor GO and operator fresh pairing"
+  }
+}

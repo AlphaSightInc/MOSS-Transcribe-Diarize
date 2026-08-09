@@ -1,0 +1,53 @@
+{
+  "segments": [
+    {
+      "end": 5.12,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 0.12,
+      "text": "Speak normally on whatever I saw from the screen."
+    },
+    {
+      "end": 12.28,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 6.28,
+      "text": "And whatever, starting now, speak normally for about thirty seconds."
+    },
+    {
+      "end": 20.34,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 12.74,
+      "text": "Then remain silent until I say stopped, keep YouTube paused, which is for sure the case."
+    },
+    {
+      "end": 26.52,
+      "id": "seg_0004",
+      "speaker": "S01",
+      "start": 21.02,
+      "text": "And I'm going to read again, starting now, speak normally for about thirty seconds."
+    },
+    {
+      "end": 30.62,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 26.98,
+      "text": "Then remain silent until I say stopped."
+    },
+    {
+      "end": 34.28,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 31.64,
+      "text": "Keep YouTube paused."
+    },
+    {
+      "end": 37.04,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 35.14,
+      "text": "I am going to stop here."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "captured_bytes_total": 96000,
+  "schema": "moss-dl2-program-ledger.v1",
+  "sessions": [
+    {
+      "raw_bytes": 96000,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T02:03:38Z",
+      "session_id": "dry-run-session"
+    }
+  ]
+}

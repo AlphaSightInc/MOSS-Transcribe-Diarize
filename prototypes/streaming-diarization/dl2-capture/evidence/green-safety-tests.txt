@@ -1,0 +1,14 @@
+COMMAND: python3 -m unittest -v test_capture_harness.py
+EXIT: 0
+--- STDOUT ---
+--- STDERR ---
+test_complete_three_track_tape_passes (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_grant_bounds_refuse_cap_over_2_gib (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_grant_bounds_refuse_ttl_over_24_hours (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_missing_lane_is_named (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_program_accounting_refuses_projected_overrun (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.003s
+
+OK

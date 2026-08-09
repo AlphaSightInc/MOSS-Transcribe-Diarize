@@ -1,0 +1,68 @@
+{
+  "schema": "moss-dl2-retention-grant.v1",
+  "grant_id": "dl2-block-20260808",
+  "supersedes_grant_id": "cal-hp-microphone-test-20260808",
+  "authorized_scope": "CAL-HP headphone gate, S06, single retry S06R, then S05; test or consented content only",
+  "authorized_at_et": "2026-08-08T22:26:54-04:00",
+  "decision_deadline_et": "2026-08-08T23:59:00-04:00",
+  "block_close_et": "2026-08-08T23:59:00-04:00",
+  "shape_authorizations": [
+    {
+      "shape_id": "CAL-HP",
+      "single_use": true
+    },
+    {
+      "shape_id": "S06",
+      "single_use": true
+    },
+    {
+      "shape_id": "S06R",
+      "single_use": true
+    },
+    {
+      "shape_id": "S05",
+      "single_use": true
+    }
+  ],
+  "device_requirements": {
+    "default_input_name": "MacBook Pro Microphone",
+    "default_input_uid": "BuiltInMicrophoneDevice",
+    "default_output_name_contains": "AirPods Pro",
+    "reverify_each_preflight": true,
+    "operator_note": "macOS may auto-switch input to AirPods whenever AirPods connect or reconnect; manually reset Sound > Input to MacBook Pro Microphone before every pairing/preflight"
+  },
+  "raw_delete_deadline_et": "2026-08-09T23:59:00-04:00",
+  "ttl_seconds": 86400,
+  "program_cap_bytes": 2147483648,
+  "retention_root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+  "cleanup_rule": "Retain authorized block raw through block close for cross-lane work; clean at block close after derived artifacts are sealed; hard-delete no later than 2026-08-09T23:59:00-04:00",
+  "raw_retention_amendment": {
+    "authorized": true,
+    "authorized_on": "2026-08-08",
+    "basis": "supervisor-authorized dl2-block-20260808 under delegated operator live directive",
+    "shape_ids": [
+      "CAL-HP",
+      "S06",
+      "S06R",
+      "S05"
+    ],
+    "block_close_et": "2026-08-08T23:59:00-04:00",
+    "retain_until_et": "2026-08-09T23:59:00-04:00",
+    "cleanup_command": "python3 capture_harness.py cleanup --session-dir <session-dir>",
+    "capture_authority_added": true
+  },
+  "grant_amendments": [
+    {
+      "amendment_id": "dl2-block-20260808-s06r",
+      "authorized_on": "2026-08-08",
+      "basis": "supervisor accepted exact-zero S06 as a solo/enrollment specimen and authorized one playback-corrected S06 retry",
+      "shape_id": "S06R",
+      "single_use": true,
+      "requires_playback_fix_before_pairing": true,
+      "capture_authority_added": true
+    }
+  ],
+  "service_mutation_authorized": false,
+  "volume_mutation_authorized": false,
+  "tcc_mutation_authorized": false
+}

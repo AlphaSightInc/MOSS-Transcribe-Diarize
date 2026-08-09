@@ -1,0 +1,46 @@
+{
+  "attempt1_readiness_race_seal_sha256": "4eea726c06752b869b0f0b09d185b1479b30dd0e854baf4c0b8fdd7932644add",
+  "before_env_sha256": "b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313",
+  "before_invocation_sha256": "0de9fe38e621367e9391db513bfae07d516150ac05fceea2302a17f5384fb9b2",
+  "before_unit_sha256": "090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056",
+  "capture_idle_after": {
+    "lanes": [
+      {
+        "lane": "system",
+        "state": "stopped"
+      },
+      {
+        "lane": "microphone",
+        "state": "stopped"
+      }
+    ],
+    "ok": true,
+    "outboxRetainedFrames": 0,
+    "publishedFrameCount": 2747,
+    "running": false
+  },
+  "completed_at_utc": "2026-08-09T04:07:29Z",
+  "contract_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/provisioning-20260805T2305/deprovision-contract.json",
+  "contract_sha256": "d6a08d2894a57c1bcc34f7bad81bc36f56c581b84ee37efc7e299dd64da094a2",
+  "control_snapshot_consumed_by_contract": true,
+  "deployed_tree_clean": true,
+  "deprovision_command_rerun": false,
+  "descriptor_ready_poll_attempt": 1,
+  "moss_live_web_restarted": true,
+  "moss_vllm_restarted": false,
+  "moss_web_restarted": false,
+  "raw_cleanup_evidence_sha256": "39ccd638acb9612b7f0958d9da291ac64b890749f04eeaa07010350c9bd0006f",
+  "restored_env_sha256": "b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313",
+  "restored_invocation_sha256": "0de9fe38e621367e9391db513bfae07d516150ac05fceea2302a17f5384fb9b2",
+  "restored_unit_sha256": "090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056",
+  "retention_flags_remaining": 0,
+  "retention_root_removed": true,
+  "schema": "moss-dl2-deprovision-verdict.v1",
+  "services": {
+    "moss-live-web.service": "active/enabled/886111",
+    "moss-vllm.service": "active/enabled/1899",
+    "moss-web.service": "active/enabled/1905"
+  },
+  "source_revision": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "verdict": "PASS_EXACT_PRE_SPRINT_PROFILE_RESTORED"
+}

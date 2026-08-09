@@ -1,0 +1,20 @@
+{
+  "schema": "moss-dl2-s06r-authorization.v1",
+  "grant_id": "dl2-block-20260808",
+  "amendment_id": "dl2-block-20260808-s06r",
+  "authorized_on": "2026-08-08",
+  "shape_id": "S06R",
+  "retry_of": "S06",
+  "single_use": true,
+  "requires_playback_fix_before_pairing": true,
+  "capture_held": true,
+  "prior_grant_snapshot_path": "program/grant-history/dl2-block-20260808-v1.json",
+  "prior_grant_sha256": "16d2151f38d69ed2a639388823c301115bbc8e6d458da5d2e79ef300ef9dfee9",
+  "amended_grant_sha256": "8b909ee00f0b03294b66d2f9e76269b2c4300f3f2e778755a5c3b539d1ec7b0e",
+  "session_blueprint_sha256": "f3f2c597a42b4123c96a2e16169f0e5217931ce8ec8d1268eaf75414adde3927",
+  "ruling_path": "docs/handoffs/rulings/ruling-dl2-s06r-20260808.txt",
+  "ruling_sha256": "b5f6b4082b9bf8ed862c686ca9e796dc45a8bf539421fbc1b54e523f9831a838",
+  "single_use_test": "test_s06r_amendment_is_distinct_and_single_use",
+  "test_suite": "PASS 15/15",
+  "verdict": "AUTHORIZED_AWAITING_PLAYBACK_FIX_AND_FRESH_PAIRING"
+}

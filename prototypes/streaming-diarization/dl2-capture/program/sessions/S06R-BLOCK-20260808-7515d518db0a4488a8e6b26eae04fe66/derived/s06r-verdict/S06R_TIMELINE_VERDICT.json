@@ -1,0 +1,284 @@
+{
+  "activity_method": {
+    "duration_gate_accounting": "cumulative duration within the card; longest contiguous duration also reported",
+    "microphone": "ASR speech segments grouped across gaps no greater than 5s; isolated post-card segment excluded by 150s cutoff",
+    "system": "playback-active except contiguous exact-zero PCM runs of at least 0.25s"
+  },
+  "card_t0_basis": "first microphone ASR cue: S zero six R cross lane counter example",
+  "card_t0_tape_seconds": 12.091125,
+  "evaluated_at_utc": "2026-08-09T03:18:42Z",
+  "gate": {
+    "contiguity_required": false,
+    "minimum_seconds_each": 15.0,
+    "passes": true,
+    "required_types": [
+      "recording_only",
+      "live_only",
+      "both"
+    ]
+  },
+  "longest_contiguous_seconds": {
+    "both": 44.301,
+    "live_only": 6.115313,
+    "neither": 2.412937,
+    "recording_only": 53.292375
+  },
+  "microphone_activity_groups_tape_seconds": [
+    [
+      12.091125,
+      32.071125
+    ],
+    [
+      88.111125,
+      143.901125
+    ]
+  ],
+  "microphone_post_card_note": "one isolated S02 segment at 220.451-220.901s is outside the card cutoff and is not counted as live activity",
+  "per_lane": {
+    "microphone": {
+      "levels": {
+        "duration_seconds": 221.541375,
+        "peak_dbfs": -11.637228,
+        "rms_dbfs": -39.404347,
+        "sha256": "de57b5f8c035828367c86b59262450867112ab6e1e096398ddb24a89edf57fd6"
+      },
+      "segment_count": 16,
+      "speaker_labels": [
+        "S01",
+        "S02"
+      ],
+      "transcript_sha256": "a7ad9ea434d72d1fe30fec74d6821f2f2a19d3639978df9c122a11127356f303"
+    },
+    "mixed": {
+      "levels": {
+        "duration_seconds": 221.085375,
+        "peak_dbfs": -17.64165,
+        "rms_dbfs": -43.173622,
+        "sha256": "a49b19b1f7b148b6fbafd3b3f9bedea3a7b3e184b0d4974f103270ee64fb7ba2"
+      },
+      "segment_count": 64,
+      "speaker_labels": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05"
+      ],
+      "transcript_sha256": "d8e5dcb1fc56bc3c02cfde15093772ef3b2dc51115b316aad5496066ab26abe5"
+    },
+    "system": {
+      "levels": {
+        "duration_seconds": 219.7973125,
+        "peak_dbfs": -17.229321,
+        "rms_dbfs": -41.190152,
+        "sha256": "4611499d665b80412d95bf3622c45b69ae25873ecd01a0e17d228c5a391493d5"
+      },
+      "segment_count": 4,
+      "speaker_labels": [
+        "S01"
+      ],
+      "transcript_sha256": "af70ec797d6c4ce542db3de71bfbabc2ebfe9e107d4b09143c93f93ca3b71b9f"
+    }
+  },
+  "schema": "moss-dl2-s06r-timeline-verdict.v1",
+  "session_id": "7515d518db0a4488a8e6b26eae04fe66",
+  "system_exact_zero_runs_tape_seconds": [
+    [
+      27.0529375,
+      32.4058125
+    ],
+    [
+      85.6981875,
+      93.4848125
+    ],
+    [
+      137.7858125,
+      219.7973125
+    ]
+  ],
+  "type_totals_seconds": {
+    "both": 59.262812,
+    "live_only": 16.507189,
+    "neither": 2.747625,
+    "recording_only": 53.292375
+  },
+  "verdict": "USABLE_AS_IS",
+  "window_table": [
+    {
+      "card_relative_seconds": [
+        0.0,
+        20.0
+      ],
+      "dominant_type": "both",
+      "pieces": [
+        {
+          "card_relative_end": 14.961812,
+          "card_relative_start": 0.0,
+          "duration_seconds": 14.961812,
+          "end": 27.0529375,
+          "start": 12.091125,
+          "type": "both"
+        },
+        {
+          "card_relative_end": 19.98,
+          "card_relative_start": 14.961812,
+          "duration_seconds": 5.018188,
+          "end": 32.071125,
+          "start": 27.0529375,
+          "type": "live_only"
+        },
+        {
+          "card_relative_end": 20.0,
+          "card_relative_start": 19.98,
+          "duration_seconds": 0.02,
+          "end": 32.091125,
+          "start": 32.071125,
+          "type": "neither"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 14.961812,
+        "live_only": 5.018188,
+        "neither": 0.02,
+        "recording_only": 0.0
+      },
+      "window": "initial"
+    },
+    {
+      "card_relative_seconds": [
+        20.0,
+        55.0
+      ],
+      "dominant_type": "recording_only",
+      "pieces": [
+        {
+          "card_relative_end": 20.314688,
+          "card_relative_start": 20.0,
+          "duration_seconds": 0.314688,
+          "end": 32.4058125,
+          "start": 32.091125,
+          "type": "neither"
+        },
+        {
+          "card_relative_end": 55.0,
+          "card_relative_start": 20.314688,
+          "duration_seconds": 34.685313,
+          "end": 67.091125,
+          "start": 32.4058125,
+          "type": "recording_only"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 0.0,
+        "live_only": 0.0,
+        "neither": 0.314688,
+        "recording_only": 34.685313
+      },
+      "window": "recording_only_planned"
+    },
+    {
+      "card_relative_seconds": [
+        55.0,
+        85.0
+      ],
+      "dominant_type": "recording_only",
+      "pieces": [
+        {
+          "card_relative_end": 73.607062,
+          "card_relative_start": 55.0,
+          "duration_seconds": 18.607062,
+          "end": 85.6981875,
+          "start": 67.091125,
+          "type": "recording_only"
+        },
+        {
+          "card_relative_end": 76.02,
+          "card_relative_start": 73.607062,
+          "duration_seconds": 2.412937,
+          "end": 88.111125,
+          "start": 85.6981875,
+          "type": "neither"
+        },
+        {
+          "card_relative_end": 81.393687,
+          "card_relative_start": 76.02,
+          "duration_seconds": 5.373688,
+          "end": 93.4848125,
+          "start": 88.111125,
+          "type": "live_only"
+        },
+        {
+          "card_relative_end": 85.0,
+          "card_relative_start": 81.393687,
+          "duration_seconds": 3.606313,
+          "end": 97.091125,
+          "start": 93.4848125,
+          "type": "both"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 3.606313,
+        "live_only": 5.373688,
+        "neither": 2.412937,
+        "recording_only": 18.607062
+      },
+      "window": "live_only_planned"
+    },
+    {
+      "card_relative_seconds": [
+        85.0,
+        125.0
+      ],
+      "dominant_type": "both",
+      "pieces": [
+        {
+          "card_relative_end": 125.0,
+          "card_relative_start": 85.0,
+          "duration_seconds": 40.0,
+          "end": 137.091125,
+          "start": 97.091125,
+          "type": "both"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 40.0,
+        "live_only": 0.0,
+        "neither": 0.0,
+        "recording_only": 0.0
+      },
+      "window": "both_planned"
+    },
+    {
+      "card_relative_seconds": [
+        125.0,
+        131.81
+      ],
+      "dominant_type": "live_only",
+      "pieces": [
+        {
+          "card_relative_end": 125.694687,
+          "card_relative_start": 125.0,
+          "duration_seconds": 0.694687,
+          "end": 137.7858125,
+          "start": 137.091125,
+          "type": "both"
+        },
+        {
+          "card_relative_end": 131.81,
+          "card_relative_start": 125.694687,
+          "duration_seconds": 6.115313,
+          "end": 143.901125,
+          "start": 137.7858125,
+          "type": "live_only"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 0.694687,
+        "live_only": 6.115313,
+        "neither": 0.0,
+        "recording_only": 0.0
+      },
+      "window": "closing"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+selected interval: 260s to track end
+{
+    "format": {
+        "filename": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/microphone.wav",
+        "duration": "445.823625",
+        "size": "14266400"
+    }
+}
+[Parsed_volumedetect_0 @ 0xaf101c9c0] mean_volume: -41.1 dB
+[Parsed_volumedetect_0 @ 0xaf101c9c0] max_volume: -16.9 dB
+{
+    "format": {
+        "filename": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/mixed.wav",
+        "duration": "445.422313",
+        "size": "14253558"
+    }
+}
+[Parsed_volumedetect_0 @ 0xbfec149c0] mean_volume: -47.0 dB
+[Parsed_volumedetect_0 @ 0xbfec149c0] max_volume: -23.8 dB
+{
+    "format": {
+        "filename": "program/sessions/S01-00f8a46e99b44f1b867088de48860348/audio/system.wav",
+        "duration": "444.234688",
+        "size": "14215554"
+    }
+}
+[Parsed_volumedetect_0 @ 0xa53009140] mean_volume: -91.0 dB
+[Parsed_volumedetect_0 @ 0xa53009140] max_volume: -91.0 dB

@@ -1,0 +1,7 @@
+S06R block session, 2026-08-08 ET
+Audibility pre-check passed before pairing; s06r-self-voice.wav was playing in AirPods at begin.
+Operator completed the visible supervisor-driven S06R card.
+Deviation: recording likely remained playing during the initial designed live-only segment, producing both-at-once.
+Operator believes the later live-only 55-85s window was correctly paused.
+Classification windows, card-relative and approximate: 0-20, 20-55, 55-85, 85-125, then closing.
+Usable rule: at least 15s each of recording-only, live-only, and both; extra both-time is not a defect.

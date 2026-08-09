@@ -1,0 +1,375 @@
+{
+  "segments": [
+    {
+      "end": 15.609563,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 14.069562,
+      "text": "S zero six."
+    },
+    {
+      "end": 16.299563,
+      "id": "seg_0002",
+      "speaker": "S02",
+      "start": 15.709563,
+      "text": "Cross."
+    },
+    {
+      "end": 18.229563,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 16.269562,
+      "text": "Playing counter example."
+    },
+    {
+      "end": 20.799563,
+      "id": "seg_0004",
+      "speaker": "S02",
+      "start": 18.669563,
+      "text": "My own voice remote."
+    },
+    {
+      "end": 22.549563,
+      "id": "seg_0005",
+      "speaker": "S02",
+      "start": 21.469563,
+      "text": "Recording."
+    },
+    {
+      "end": 24.169563,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 22.599563,
+      "text": "Stays paused."
+    },
+    {
+      "end": 27.769562,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 25.029563,
+      "text": "Again, S zero six."
+    },
+    {
+      "end": 32.399563,
+      "id": "seg_0008",
+      "speaker": "S01",
+      "start": 28.249563,
+      "text": "The countdown pain is live in window three."
+    },
+    {
+      "end": 33.909562,
+      "id": "seg_0009",
+      "speaker": "S01",
+      "start": 33.109563,
+      "text": "Open."
+    },
+    {
+      "end": 36.309562,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 34.899563,
+      "text": "Go silent."
+    },
+    {
+      "end": 39.709563,
+      "id": "seg_0011",
+      "speaker": "S01",
+      "start": 37.239562,
+      "text": "Confirm you hear your own voice."
+    },
+    {
+      "end": 42.829563,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 40.269562,
+      "text": "In AirPod, not yet."
+    },
+    {
+      "end": 45.399563,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 43.599562,
+      "text": "Say, what?"
+    },
+    {
+      "end": 48.799563,
+      "id": "seg_0014",
+      "speaker": "S02",
+      "start": 45.999563,
+      "text": "Follow it, open with announcement, then it walks you through."
+    },
+    {
+      "end": 49.199562,
+      "id": "seg_0015",
+      "speaker": "S02",
+      "start": 48.629563,
+      "text": "Through the."
+    },
+    {
+      "end": 53.209563,
+      "id": "seg_0016",
+      "speaker": "S01",
+      "start": 49.169563,
+      "text": "Recording only, live only, and forty second, both at second."
+    },
+    {
+      "end": 54.469563,
+      "id": "seg_0017",
+      "speaker": "S01",
+      "start": 53.699562,
+      "text": "Say."
+    },
+    {
+      "end": 55.739563,
+      "id": "seg_0018",
+      "speaker": "S02",
+      "start": 54.569563,
+      "text": "Whatever."
+    },
+    {
+      "end": 57.729563,
+      "id": "seg_0019",
+      "speaker": "S01",
+      "start": 55.869563,
+      "text": "As the final Q and."
+    },
+    {
+      "end": 58.269562,
+      "id": "seg_0020",
+      "speaker": "S02",
+      "start": 57.709563,
+      "text": "Tell."
+    },
+    {
+      "end": 59.999563,
+      "id": "seg_0021",
+      "speaker": "S01",
+      "start": 58.929563,
+      "text": "Okay, nope."
+    },
+    {
+      "end": 61.399563,
+      "id": "seg_0022",
+      "speaker": "S02",
+      "start": 60.799563,
+      "text": "Play your."
+    },
+    {
+      "end": 61.909562,
+      "id": "seg_0023",
+      "speaker": "S01",
+      "start": 61.229563,
+      "text": "Your own."
+    },
+    {
+      "end": 65.709563,
+      "id": "seg_0024",
+      "speaker": "S01",
+      "start": 64.509563,
+      "text": "Speak live."
+    },
+    {
+      "end": 67.329562,
+      "id": "seg_0025",
+      "speaker": "S02",
+      "start": 66.709563,
+      "text": "Speak."
+    },
+    {
+      "end": 68.669562,
+      "id": "seg_0026",
+      "speaker": "S01",
+      "start": 67.229563,
+      "text": "Live again."
+    },
+    {
+      "end": 72.769562,
+      "id": "seg_0027",
+      "speaker": "S01",
+      "start": 70.409562,
+      "text": "Okay, I can see, I can, I've."
+    },
+    {
+      "end": 73.599563,
+      "id": "seg_0028",
+      "speaker": "S02",
+      "start": 72.709563,
+      "text": "Been talking to you."
+    },
+    {
+      "end": 74.909562,
+      "id": "seg_0029",
+      "speaker": "S01",
+      "start": 74.169562,
+      "text": "Um."
+    },
+    {
+      "end": 76.709563,
+      "id": "seg_0030",
+      "speaker": "S02",
+      "start": 75.649563,
+      "text": "Talk freely."
+    },
+    {
+      "end": 79.229563,
+      "id": "seg_0031",
+      "speaker": "S01",
+      "start": 77.799563,
+      "text": "Different than the recording."
+    },
+    {
+      "end": 84.529562,
+      "id": "seg_0032",
+      "speaker": "S01",
+      "start": 80.169562,
+      "text": "Ah, I'm going to talk freely, it says pause recording."
+    },
+    {
+      "end": 85.529562,
+      "id": "seg_0033",
+      "speaker": "S02",
+      "start": 84.529562,
+      "text": "Speak live."
+    },
+    {
+      "end": 90.599563,
+      "id": "seg_0034",
+      "speaker": "S01",
+      "start": 85.599563,
+      "text": "For thirty second, talk freely, different content than the recording."
+    },
+    {
+      "end": 94.069563,
+      "id": "seg_0035",
+      "speaker": "S01",
+      "start": 92.369563,
+      "text": "A funny thing, I didn't hear."
+    },
+    {
+      "end": 96.929563,
+      "id": "seg_0036",
+      "speaker": "S01",
+      "start": 95.099563,
+      "text": "Any of the audio."
+    },
+    {
+      "end": 97.569563,
+      "id": "seg_0037",
+      "speaker": "S02",
+      "start": 96.929563,
+      "text": "Playing."
+    },
+    {
+      "end": 99.799563,
+      "id": "seg_0038",
+      "speaker": "S01",
+      "start": 97.569563,
+      "text": "My own voice playing, I don't think so."
+    },
+    {
+      "end": 102.929563,
+      "id": "seg_0039",
+      "speaker": "S01",
+      "start": 100.799563,
+      "text": "I wonder if that is."
+    },
+    {
+      "end": 103.469563,
+      "id": "seg_0040",
+      "speaker": "S02",
+      "start": 102.629563,
+      "text": "Is done."
+    },
+    {
+      "end": 106.629563,
+      "id": "seg_0041",
+      "speaker": "S02",
+      "start": 105.799563,
+      "text": "Okay."
+    },
+    {
+      "end": 111.799563,
+      "id": "seg_0042",
+      "speaker": "S01",
+      "start": 106.599563,
+      "text": "Both at once, you are live plus you are recorded, the key segment."
+    },
+    {
+      "end": 114.129563,
+      "id": "seg_0043",
+      "speaker": "S01",
+      "start": 112.299563,
+      "text": "Playing recording and keep talking."
+    },
+    {
+      "end": 116.129563,
+      "id": "seg_0044",
+      "speaker": "S02",
+      "start": 114.629563,
+      "text": "I've been always talking."
+    },
+    {
+      "end": 121.529562,
+      "id": "seg_0045",
+      "speaker": "S01",
+      "start": 116.799563,
+      "text": "No effort, and effortless, effortful."
+    },
+    {
+      "end": 122.999562,
+      "id": "seg_0046",
+      "speaker": "S01",
+      "start": 122.069563,
+      "text": "Device."
+    },
+    {
+      "end": 124.899563,
+      "id": "seg_0047",
+      "speaker": "S01",
+      "start": 124.129563,
+      "text": "Check."
+    },
+    {
+      "end": 129.369563,
+      "id": "seg_0048",
+      "speaker": "S01",
+      "start": 125.569563,
+      "text": "The key segment, playing recording and keep talking."
+    },
+    {
+      "end": 133.569562,
+      "id": "seg_0049",
+      "speaker": "S01",
+      "start": 130.329563,
+      "text": "Um, I don't know if that's right, record fired."
+    },
+    {
+      "end": 137.499562,
+      "id": "seg_0050",
+      "speaker": "S01",
+      "start": 134.269563,
+      "text": "Say, S zero six closing."
+    },
+    {
+      "end": 140.769563,
+      "id": "seg_0051",
+      "speaker": "S01",
+      "start": 138.429563,
+      "text": "S zero six closing."
+    },
+    {
+      "end": 145.469562,
+      "id": "seg_0052",
+      "speaker": "S01",
+      "start": 142.609562,
+      "text": "Stop X zero six."
+    },
+    {
+      "end": 148.779562,
+      "id": "seg_0053",
+      "speaker": "S01",
+      "start": 145.949562,
+      "text": "Stop S zero six."
+    }
+  ]
+}

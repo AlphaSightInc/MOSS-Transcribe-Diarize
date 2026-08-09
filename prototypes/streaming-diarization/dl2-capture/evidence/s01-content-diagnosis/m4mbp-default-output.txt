@@ -1,0 +1,14 @@
+observed_at_m4mbp=2026-08-06T14:33:29-0400
+process_pid=53886
+process_ppid=1
+process_started=Thu Aug 6 12:13:17 2026
+process_path=/Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp
+default_output_device_id=112
+default_output_uid=BuiltInSpeakerDevice
+default_output_name=MacBook Pro Speakers
+default_output_nominal_sample_rate_hz=48000
+default_input_name=MacBook Pro Microphone
+default_input_nominal_sample_rate_hz=48000
+
+Read-only CoreAudio query used AudioObjectGetPropertyData for dOut, uid , lnam, and nsrt.
+system_profiler independently reported MacBook Pro Speakers as default output at 48000 Hz.

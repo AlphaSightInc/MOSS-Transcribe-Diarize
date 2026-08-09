@@ -1,0 +1,20 @@
+{
+  "schema": "moss-dl2-s05-system-prefix-supplement.v1",
+  "session_id": "40422fb135a146579d013d663652bd56",
+  "source_job_id": "5a6131a3ec23",
+  "source_job_result": "failed later at silent window 4; committed prefix records are independently checksummed",
+  "read_only_checkpoint_root": "/mnt/d/Coding/MOSS-Transcribe-Diarize/runs/5a6131a3ec23/checkpoint",
+  "records": [
+    {
+      "name": "w000002-240000000-390000000.json",
+      "sha256": "62dc46399f2ddb212d834b42858396833fe581287ce9af4439af0f50e2ec9731",
+      "keep_midpoint_tape_seconds": [360.0, 375.0]
+    },
+    {
+      "name": "w000003-360000000-510000000.json",
+      "sha256": "a2ac82b2c639c52382d0678cb73acc5a1e4ad75c5210c2381527f50975ff1e6c",
+      "keep_midpoint_tape_seconds": [375.0, 420.0]
+    }
+  ],
+  "rule": "Parse with the production transcript parser; shift by each committed window start; keep only the declared midpoint ownership interval. No inference rerun."
+}

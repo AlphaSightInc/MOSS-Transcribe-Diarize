@@ -1,0 +1,26 @@
+{
+  "schema": "moss-dl2-s06-solo-d2-addendum.v1",
+  "session_id": "52f4856ab04a469b92f72fc5ea199d44",
+  "source_transcript": "derived/asr/microphone/asr-transcript.json",
+  "source_transcript_sha256": "87bcfc3ab5fb3d5cf256e6ac41fd6d37492175fd89c3783255529273b626c108",
+  "analysis_interval_seconds": [15.712438, 149.912437],
+  "segment_count": 22,
+  "speaker_labels": ["S01"],
+  "speaker_label_count": 1,
+  "label_switches": [],
+  "label_switch_count": 0,
+  "nearest_gap_at_label_switch_seconds": null,
+  "inter_segment_gap_count": 21,
+  "gaps_at_or_above_10_seconds": 0,
+  "largest_gaps": [
+    {"after": "seg_0009", "before": "seg_0010", "after_end": 63.592437, "before_start": 66.152438, "gap_seconds": 2.560001},
+    {"after": "seg_0015", "before": "seg_0016", "after_end": 105.052438, "before_start": 107.422438, "gap_seconds": 2.37},
+    {"after": "seg_0020", "before": "seg_0021", "after_end": 142.412438, "before_start": 144.242437, "gap_seconds": 1.829999},
+    {"after": "seg_0013", "before": "seg_0014", "after_end": 92.252437, "before_start": 94.042438, "gap_seconds": 1.790001},
+    {"after": "seg_0010", "before": "seg_0011", "after_end": 70.352438, "before_start": 72.052437, "gap_seconds": 1.699999}
+  ],
+  "d2_hypothesis": "gap greater than 10 seconds plus register drop can trigger a new speaker birth",
+  "d2_result": "SUPPORTIVE_NOT_DECISIVE: continuous single-operator speech with maximum observed gap 2.560001 seconds yielded exactly one speaker label and zero switches",
+  "specimen_classification": "OPERATOR_SOLO_ENROLLMENT",
+  "cross_lane_acceptance_evidence": false
+}

@@ -1,0 +1,13 @@
+LOCAL_ET	2026-08-06T13:46:25-0400
+M4_ET	2026-08-06T13:46:26-0400
+PROCESS	53886 Thu Aug  6 12:13:17 2026     01:33:09 /Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp
+STATUS	{"ok":true,"lanes":[{"state":"stopped","lane":"system"},{"lane":"microphone","state":"stopped"}],"publishedFrameCount":1,"outboxRetainedFrames":0,"running":false}
+SERVER_ET	2026-08-06T13:46:26-0400
+SERVICE	moss-live-web.service	active	377978
+SERVICE	moss-web.service	active	1905
+SERVICE	moss-vllm.service	active	1899
+SESSION_ID	699ce1bdda834c24b60b355ed0754718
+PAIRING_HTTP	200
+HEARTBEAT_HTTP	200
+FRAME_HTTP	200
+STOP_HTTP	200

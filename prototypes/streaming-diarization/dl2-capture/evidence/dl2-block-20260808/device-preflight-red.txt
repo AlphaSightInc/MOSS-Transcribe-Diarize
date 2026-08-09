@@ -1,0 +1,6 @@
+COMMAND: python3 -m unittest -v test_capture_harness.CaptureHarnessSafetyTests.test_block_device_gate_refuses_airpods_input
+EXIT: 1
+test_block_device_gate_refuses_airpods_input ... ERROR
+AttributeError: module 'capture_harness' has no attribute 'assert_block_audio_devices'
+Ran 1 test in 0.000s
+FAILED (errors=1)

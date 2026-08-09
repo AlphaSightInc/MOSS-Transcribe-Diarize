@@ -1,0 +1,123 @@
+{
+  "segments": [
+    {
+      "end": 3.36,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 0.08,
+      "text": "Some related to what I'm doing, I honestly might remove it."
+    },
+    {
+      "end": 7.92,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 3.39,
+      "text": "A simple note about running build desktop, which I might be able to remove as well."
+    },
+    {
+      "end": 11.04,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 7.95,
+      "text": "And this one other one about how I like talking to Codex."
+    },
+    {
+      "end": 15.92,
+      "id": "seg_0004",
+      "speaker": "S01",
+      "start": 11.07,
+      "text": "But none of those flows I showed you about testing, about code quality, end up in here."
+    },
+    {
+      "end": 20.22,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 15.95,
+      "text": "And that's because with the latest batch of models from both Claude and Codex,"
+    },
+    {
+      "end": 22.98,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 20.25,
+      "text": "especially Codex with GPT 5.6,"
+    },
+    {
+      "end": 26.74,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 23.01,
+      "text": "these models are trained to discover skills in your project"
+    },
+    {
+      "end": 30.92,
+      "id": "seg_0008",
+      "speaker": "S01",
+      "start": 26.77,
+      "text": "and apply them at the correct times without having to manually slash specify"
+    },
+    {
+      "end": 32.88,
+      "id": "seg_0009",
+      "speaker": "S01",
+      "start": 30.95,
+      "text": "every little thing that you want to run."
+    },
+    {
+      "end": 37.18,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 32.9,
+      "text": "I like to think of this sort of like a program that gets written just in time,"
+    },
+    {
+      "end": 42.22,
+      "id": "seg_0011",
+      "speaker": "S01",
+      "start": 37.21,
+      "text": "where all of your skills could be thought of like functions that the agent is available to call."
+    },
+    {
+      "end": 46.3,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 42.25,
+      "text": "In my case, I have a function to review decisions before it makes them,"
+    },
+    {
+      "end": 50.38,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 46.33,
+      "text": "to simplify and refine its code, and also to test its desktop app."
+    },
+    {
+      "end": 53.44,
+      "id": "seg_0014",
+      "speaker": "S01",
+      "start": 50.41,
+      "text": "And before, when I was using earlier versions of the models,"
+    },
+    {
+      "end": 58.92,
+      "id": "seg_0015",
+      "speaker": "S01",
+      "start": 53.47,
+      "text": "I had to put all of these function calls directly in my prompt."
+    },
+    {
+      "end": 61.76,
+      "id": "seg_0016",
+      "speaker": "S01",
+      "start": 58.95,
+      "text": "Otherwise, the agent wouldn't really know to include it."
+    },
+    {
+      "end": 65.28,
+      "id": "seg_0017",
+      "speaker": "S01",
+      "start": 61.79,
+      "text": "In other words, I was writing a mini computer program."
+    }
+  ]
+}

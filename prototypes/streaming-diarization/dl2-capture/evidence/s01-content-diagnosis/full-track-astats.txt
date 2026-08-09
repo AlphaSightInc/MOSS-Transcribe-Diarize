@@ -1,0 +1,9 @@
+microphone [Parsed_astats_0 @ 0x7370092c0] DC offset: -0.000003
+microphone [Parsed_astats_0 @ 0x7370092c0] Peak level dB: -8.659489
+microphone [Parsed_astats_0 @ 0x7370092c0] RMS level dB: -37.893583
+mixed [Parsed_astats_0 @ 0xb5f0092c0] DC offset: -0.000003
+mixed [Parsed_astats_0 @ 0xb5f0092c0] Peak level dB: -10.484212
+mixed [Parsed_astats_0 @ 0xb5f0092c0] RMS level dB: -27.975776
+system [Parsed_astats_0 @ 0x97d01c9c0] DC offset: -0.000006
+system [Parsed_astats_0 @ 0x97d01c9c0] Peak level dB: -4.317280
+system [Parsed_astats_0 @ 0x97d01c9c0] RMS level dB: -22.021638

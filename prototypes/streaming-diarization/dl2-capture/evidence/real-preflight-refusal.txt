@@ -1,0 +1,5 @@
+COMMAND: python3 capture_harness.py preflight --program-root program --projected-bytes 256000000
+EXIT: 2
+--- STDOUT ---
+REFUSED preflight_refused:retention_not_declared
+--- STDERR ---

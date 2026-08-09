@@ -1,0 +1,1 @@
+{'start_seconds': 260.0, 'source_frames': 7126757, 'selected_frames': 2966757, 'sample_rate': 16000, 'selected_sha256': '791ff1447d2baeccd38c3015b4a4d9b17ace436a6bc7a6bcaab5edd95f347a83'}

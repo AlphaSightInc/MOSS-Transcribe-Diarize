@@ -1,0 +1,15 @@
+COMMAND: ssh gyauo@ga0-alienware-rtx4070ti.local wsl.exe -d Ubuntu -- bash -s
+EXIT: 0
+--- STDOUT ---
+UTC	2026-08-06T03:20:57Z
+SERVICE:moss-live-web.service	active	377978
+SERVICE:moss-web.service	active	1905
+SERVICE:moss-vllm.service	active	1899
+HELPER_LOG
+Aug 05 23:11:47 Ga0-Alienware-RTX4070Ti bash[377978]: INFO:     100.64.0.4:55276 - "POST /api/live/sessions/cdb72d743b874554be48266232667bf7/heartbeat HTTP/1.1" 403 Forbidden
+Aug 05 23:12:15 Ga0-Alienware-RTX4070Ti bash[377978]: INFO:     100.64.0.4:55277 - "POST /api/live/sessions/cdb72d743b874554be48266232667bf7/heartbeat HTTP/1.1" 403 Forbidden
+AUTH_META	mode=600 uid=1000 gid=1000 bytes=4823 mtime=2026-08-03 13:48:47.110875268 -0400
+AUTH_SHA	8702c1a011e726032d46cfa34120a74d9d6f5c68c10f6253dd8d4d1adb00e037
+AUTH_SCHEMA	{"keys":["devices","schema_version"],"device_count":20}
+ROOT_ENTRIES	0
+--- STDERR ---

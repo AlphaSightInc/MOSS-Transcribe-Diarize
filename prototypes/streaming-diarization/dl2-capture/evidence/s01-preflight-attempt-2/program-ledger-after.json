@@ -1,0 +1,33 @@
+{
+  "schema": "moss-dl2-program-ledger.v1",
+  "captured_bytes_total": 273922,
+  "sessions": [
+    {
+      "session_id": "659da76b2d244d8593b012cbcb55a94c",
+      "shape_id": "PROVISION_CANARY",
+      "raw_bytes": 254722,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T17:21:59Z",
+      "acceptance_case": false,
+      "outcome": "harness_assertion_failure"
+    },
+    {
+      "session_id": "699ce1bdda834c24b60b355ed0754718",
+      "shape_id": "S01",
+      "raw_bytes": 12800,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T17:47:35Z",
+      "acceptance_case": false,
+      "outcome": "preflight_abort_missing_system_lane"
+    },
+    {
+      "session_id": "4340eee60d8940458faa934984642c1d",
+      "shape_id": "S01",
+      "raw_bytes": 6400,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T17:52:48Z",
+      "acceptance_case": false,
+      "outcome": "preflight_abort_harness_state_vocabulary"
+    }
+  ]
+}

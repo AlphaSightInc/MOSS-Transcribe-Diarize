@@ -1,0 +1,73 @@
+COMMAND: ssh gyauo@ga0-alienware-rtx4070ti.local wsl.exe -d Ubuntu -- bash -s
+EXIT: 0
+--- STDOUT ---
+UTC	2026-08-06T03:10:33Z
+SERVICE:moss-live-web.service	active/enabled	1902
+SERVICE:moss-web.service	active/enabled	1905
+SERVICE:moss-vllm.service	active/enabled	1899
+--- SHOW ---
+ExecStart={ path=/bin/bash ; argv[]=/bin/bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/start-web.sh ; ignore_errors=no ; start_time=[Mon 2026-08-03 14:11:09 EDT] ; stop_time=[n/a] ; pid=1902 ; code=(null) ; status=0/0 }
+EnvironmentFiles=/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss.env (ignore_errors=yes)
+EnvironmentFiles=/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env (ignore_errors=no)
+FragmentPath=/home/devcontainers/.config/systemd/user/moss-live-web.service
+DropInPaths=
+ActiveEnterTimestamp=Mon 2026-08-03 14:11:09 EDT
+--- UNIT EXACT ---
+[Unit]
+Description=MOSS Transcribe Diarize live web app (TLS)
+After=network-online.target moss-vllm.service
+Wants=network-online.target moss-vllm.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss.env
+EnvironmentFile=/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env
+ExecStart=/bin/bash /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/start-web.sh
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
+--- UNIT SHA ---
+090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056  /home/devcontainers/.config/systemd/user/moss-live-web.service
+--- INVOCATION EXACT ARGV ---
+/home/devcontainers/.local/share/moss-transcribe-diarize/venv/bin/python
+/home/devcontainers/.local/share/moss-transcribe-diarize/venv/bin/mtd-subtitle-web
+--backend
+vllm
+--model
+/home/devcontainers/.local/share/moss-transcribe-diarize/model
+--vllm-base-url
+http://127.0.0.1:8000/v1
+--vllm-model
+OpenMOSS-Team/MOSS-Transcribe-Diarize
+--vllm-timeout
+1800
+--runs-dir
+/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs
+--host
+0.0.0.0
+--port
+7861
+--max-len
+16384
+--max-new-tokens
+12000
+--live
+--live-provider-manifest
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json
+--live-auth-state
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live-auth.json
+--live-tls-certfile
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live.crt
+--live-tls-keyfile
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live.key
+--live-helper-lease-seconds
+30
+--- ENV HASH/METADATA/RETENTION ---
+/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env mode=777 uid=1000 gid=1000 bytes=820
+b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313  /mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env
+--- DEPLOYMENT ---
+9089b33210401111865da7abc160ab0bcb4aa266
+--- STDERR ---

@@ -1,0 +1,4 @@
+COMMAND: ssh ga0@m4mbp bash -s
+EXIT: 1
+--- STDOUT ---
+--- STDERR ---

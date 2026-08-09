@@ -1,0 +1,58 @@
+COMMAND: ssh gyauo@ga0-alienware-rtx4070ti.local wsl.exe -d Ubuntu -- bash -s
+EXIT: 0
+--- STDOUT ---
+UTC	2026-08-06T03:10:34Z
+SERVICE:moss-live-web.service	active/enabled	377978
+SERVICE:moss-web.service	active/enabled	1905
+SERVICE:moss-vllm.service	active/enabled	1899
+--- EFFECTIVE INVOCATION ---
+/home/devcontainers/.local/share/moss-transcribe-diarize/venv/bin/python
+/home/devcontainers/.local/share/moss-transcribe-diarize/venv/bin/mtd-subtitle-web
+--backend
+vllm
+--model
+/home/devcontainers/.local/share/moss-transcribe-diarize/model
+--vllm-base-url
+http://127.0.0.1:8000/v1
+--vllm-model
+OpenMOSS-Team/MOSS-Transcribe-Diarize
+--vllm-timeout
+1800
+--runs-dir
+/mnt/d/Coding/MOSS-Transcribe-Diarize/live-runs
+--host
+0.0.0.0
+--port
+7861
+--max-len
+16384
+--max-new-tokens
+12000
+--live
+--live-provider-manifest
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json
+--live-auth-state
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live-auth.json
+--live-tls-certfile
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live.crt
+--live-tls-keyfile
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/live.key
+--live-helper-lease-seconds
+30
+--live-retention-root
+/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint
+--live-retention-max-bytes
+2147483648
+--live-retention-ttl-seconds
+86400
+--- RETENTION ENV ---
+MOSS_LIVE_RETENTION_ROOT=/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint
+MOSS_LIVE_RETENTION_MAX_BYTES=2147483648
+MOSS_LIVE_RETENTION_TTL_SECONDS=86400
+--- ROOT ---
+path=/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint mode=700 uid=1000 gid=1000 bytes=4096
+--- PROVIDER SOURCE ---
+9089b33210401111865da7abc160ab0bcb4aa266
+--- DEPLOYMENT ---
+9089b33210401111865da7abc160ab0bcb4aa266
+--- STDERR ---

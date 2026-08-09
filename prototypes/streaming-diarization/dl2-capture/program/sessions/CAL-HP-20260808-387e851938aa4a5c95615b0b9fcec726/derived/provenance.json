@@ -1,0 +1,442 @@
+{
+  "audit_row_count": 101,
+  "batch_api": "http://ga0-alienware-rtx4070ti.local:7860",
+  "bleed_rate": {
+    "bleeded_speech_seconds": null,
+    "formula": "bleeded_speech_seconds / mic_speech_seconds",
+    "mic_speech_seconds": null,
+    "percent_rounded_1dp": null,
+    "status": "pending_human_audit",
+    "true_local_speech_seconds": null,
+    "value": null
+  },
+  "blind": true,
+  "content_note": null,
+  "deployment_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "ended_at_utc": "2026-08-09T02:09:44Z",
+  "golden_reference_opened": false,
+  "interval_selection": {
+    "automatic_leading_silence": {
+      "minimum_seconds": 2.0,
+      "preroll_seconds": 0.0,
+      "threshold_db": -35
+    },
+    "end": "track end",
+    "same_interval_all_tracks": true,
+    "start_seconds": 0.0,
+    "tracks": {
+      "microphone": {
+        "leading_silence": {
+          "detector": "ffmpeg silencedetect",
+          "detector_argv": [
+            "ffmpeg",
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/microphone.wav",
+            "-af",
+            "silencedetect=noise=-35dB:d=2.0",
+            "-f",
+            "null",
+            "-"
+          ],
+          "leading_silence_end_seconds": null,
+          "minimum_seconds": 2.0,
+          "offset_seconds": 0.0,
+          "preroll_seconds": 0.0,
+          "sample_offset": 0,
+          "sample_rate": 16000,
+          "selected_sample_count": 1130958,
+          "source_sample_count": 1130958,
+          "threshold_db": -35,
+          "trimmed": false
+        },
+        "manual": null,
+        "timestamp_offset_seconds": 0.0,
+        "total_sample_offset": 0
+      },
+      "mixed": {
+        "leading_silence": {
+          "detector": "ffmpeg silencedetect",
+          "detector_argv": [
+            "ffmpeg",
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/mixed.wav",
+            "-af",
+            "silencedetect=noise=-35dB:d=2.0",
+            "-f",
+            "null",
+            "-"
+          ],
+          "leading_silence_end_seconds": null,
+          "minimum_seconds": 2.0,
+          "offset_seconds": 0.0,
+          "preroll_seconds": 0.0,
+          "sample_offset": 0,
+          "sample_rate": 16000,
+          "selected_sample_count": 1104443,
+          "source_sample_count": 1104443,
+          "threshold_db": -35,
+          "trimmed": false
+        },
+        "manual": null,
+        "timestamp_offset_seconds": 0.0,
+        "total_sample_offset": 0
+      },
+      "system": {
+        "leading_silence": {
+          "detector": "ffmpeg silencedetect",
+          "detector_argv": [
+            "ffmpeg",
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/system.wav",
+            "-af",
+            "silencedetect=noise=-35dB:d=2.0",
+            "-f",
+            "null",
+            "-"
+          ],
+          "leading_silence_end_seconds": null,
+          "minimum_seconds": 2.0,
+          "offset_seconds": 0.0,
+          "preroll_seconds": 0.0,
+          "sample_offset": 0,
+          "sample_rate": 16000,
+          "selected_sample_count": 1104043,
+          "source_sample_count": 1104043,
+          "threshold_db": -35,
+          "trimmed": false
+        },
+        "manual": null,
+        "timestamp_offset_seconds": 0.0,
+        "total_sample_offset": 0
+      }
+    }
+  },
+  "mock": false,
+  "operator_declared_non_speech_tracks": [],
+  "postflight": {
+    "active_jobs": [],
+    "checked_at_utc": "2026-08-09T02:09:44Z",
+    "runtime": {
+      "ffmpeg": {
+        "available": true,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe"
+      },
+      "inference": {
+        "decoding": "greedy",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "temperature": 1.0
+      },
+      "model": {
+        "backend": "vllm",
+        "base_url": "http://127.0.0.1:8000/v1",
+        "device": "vllm-api",
+        "dtype": "remote",
+        "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "processor": {},
+        "speaker_identity": {
+          "availability": {
+            "available": false,
+            "reason": "disabled"
+          },
+          "config": {
+            "tier_a": {
+              "min_overlap_dice": 0.75,
+              "min_overlap_support_seconds": 2.0,
+              "mutual_margin_seconds": 1.0
+            },
+            "tier_b": {
+              "enabled": false,
+              "margin": 0.2,
+              "max_segments_per_node": 3,
+              "min_segment_seconds": 2.0,
+              "similarity": 0.7
+            }
+          },
+          "provider": {
+            "device": "cpu",
+            "embedding_dimension": 256,
+            "frontend_version": "wespeaker-onnx-fbank-v1",
+            "provider": "wespeaker_resnet152_lm",
+            "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+          },
+          "schema_version": 2
+        },
+        "windowing": {
+          "stride_seconds": 120,
+          "window_seconds": 150
+        }
+      }
+    }
+  },
+  "preflight": {
+    "active_jobs": [],
+    "checked_at_utc": "2026-08-09T02:09:27Z",
+    "runtime": {
+      "ffmpeg": {
+        "available": true,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe"
+      },
+      "inference": {
+        "decoding": "greedy",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+        "temperature": 1.0
+      },
+      "model": {
+        "backend": "vllm",
+        "base_url": "http://127.0.0.1:8000/v1",
+        "device": "vllm-api",
+        "dtype": "remote",
+        "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "processor": {},
+        "speaker_identity": {
+          "availability": {
+            "available": false,
+            "reason": "disabled"
+          },
+          "config": {
+            "tier_a": {
+              "min_overlap_dice": 0.75,
+              "min_overlap_support_seconds": 2.0,
+              "mutual_margin_seconds": 1.0
+            },
+            "tier_b": {
+              "enabled": false,
+              "margin": 0.2,
+              "max_segments_per_node": 3,
+              "min_segment_seconds": 2.0,
+              "similarity": 0.7
+            }
+          },
+          "provider": {
+            "device": "cpu",
+            "embedding_dimension": 256,
+            "frontend_version": "wespeaker-onnx-fbank-v1",
+            "provider": "wespeaker_resnet152_lm",
+            "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+          },
+          "schema_version": 2
+        },
+        "windowing": {
+          "stride_seconds": 120,
+          "window_seconds": 150
+        }
+      }
+    }
+  },
+  "schema": "moss-dl2-post-session.v1",
+  "session_id": "387e851938aa4a5c95615b0b9fcec726",
+  "shape_id": "CAL-HP",
+  "started_at_utc": "2026-08-09T02:09:27Z",
+  "target_listen_row_count": 91,
+  "tracks": [
+    {
+      "audio_sha256": "928aff0f5c63bf2ee14d109692d666e9ef89fd0e377e63e9e387d49a625239c6",
+      "ended_at_utc": "2026-08-09T02:09:33Z",
+      "job_id": "4d65c5cb9ba1",
+      "leading_silence": {
+        "detector": "ffmpeg silencedetect",
+        "detector_argv": [
+          "ffmpeg",
+          "-hide_banner",
+          "-nostats",
+          "-i",
+          "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/system.wav",
+          "-af",
+          "silencedetect=noise=-35dB:d=2.0",
+          "-f",
+          "null",
+          "-"
+        ],
+        "leading_silence_end_seconds": null,
+        "minimum_seconds": 2.0,
+        "offset_seconds": 0.0,
+        "preroll_seconds": 0.0,
+        "sample_offset": 0,
+        "sample_rate": 16000,
+        "selected_sample_count": 1104043,
+        "source_sample_count": 1104043,
+        "threshold_db": -35,
+        "trimmed": false
+      },
+      "operator_declared_non_speech": false,
+      "original_audio_sha256": "928aff0f5c63bf2ee14d109692d666e9ef89fd0e377e63e9e387d49a625239c6",
+      "sample_offset": 0,
+      "segment_count": 20,
+      "segments_api_argv": [
+        "curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/4d65c5cb9ba1/segments"
+      ],
+      "started_at_utc": "2026-08-09T02:09:28Z",
+      "status_api_argv": [
+        "curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/4d65c5cb9ba1"
+      ],
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/system.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/system/job-terminal.json",
+      "terminal_sha256": "91a081a61b083aefa6e7512ee5c7f1b5ac3a240a4237854477038277860646c5",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/system/asr-text.txt",
+      "text_sha256": "ae86a1fc2e77a45bc5e7828eda5ea53826ef71aa8622338251dbd6b2d978fd2e",
+      "timestamp_offset_seconds": 0.0,
+      "track": "system",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/system/asr-transcript.json",
+      "transcript_sha256": "4bdcac23531a45a02d3f03be9c0d8621f7cd556a45634044a93051b47de14f2f",
+      "wall_seconds": 5.352796
+    },
+    {
+      "audio_sha256": "cafce670242bad21483ef495e1c0ce319dcdc9a5480c42d3230a7367e9ac2002",
+      "ended_at_utc": "2026-08-09T02:09:38Z",
+      "job_id": "d5a2bbad948a",
+      "leading_silence": {
+        "detector": "ffmpeg silencedetect",
+        "detector_argv": [
+          "ffmpeg",
+          "-hide_banner",
+          "-nostats",
+          "-i",
+          "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/microphone.wav",
+          "-af",
+          "silencedetect=noise=-35dB:d=2.0",
+          "-f",
+          "null",
+          "-"
+        ],
+        "leading_silence_end_seconds": null,
+        "minimum_seconds": 2.0,
+        "offset_seconds": 0.0,
+        "preroll_seconds": 0.0,
+        "sample_offset": 0,
+        "sample_rate": 16000,
+        "selected_sample_count": 1130958,
+        "source_sample_count": 1130958,
+        "threshold_db": -35,
+        "trimmed": false
+      },
+      "operator_declared_non_speech": false,
+      "original_audio_sha256": "cafce670242bad21483ef495e1c0ce319dcdc9a5480c42d3230a7367e9ac2002",
+      "sample_offset": 0,
+      "segment_count": 18,
+      "segments_api_argv": [
+        "curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/d5a2bbad948a/segments"
+      ],
+      "started_at_utc": "2026-08-09T02:09:33Z",
+      "status_api_argv": [
+        "curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/d5a2bbad948a"
+      ],
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/microphone.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/microphone/job-terminal.json",
+      "terminal_sha256": "e8cbde1b50fe5e430bdc7e5dbca47ef7ed4b61e381f977b506df9bfcadbdaa2c",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/microphone/asr-text.txt",
+      "text_sha256": "6580ab8db012385e40a85adeebc1abb2545e4b3cc07cdb72cd59b5795a0c401f",
+      "timestamp_offset_seconds": 0.0,
+      "track": "microphone",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/microphone/asr-transcript.json",
+      "transcript_sha256": "2b53d707f27341dd89fd95450ac763dc072f5fec875c8ff69fc02972959a141c",
+      "wall_seconds": 5.310945
+    },
+    {
+      "audio_sha256": "fee84870f07585766b3ef0ec8fb4397b90e03ee1afaaaa633d70947065cb86e9",
+      "ended_at_utc": "2026-08-09T02:09:44Z",
+      "job_id": "fb371219ea68",
+      "leading_silence": {
+        "detector": "ffmpeg silencedetect",
+        "detector_argv": [
+          "ffmpeg",
+          "-hide_banner",
+          "-nostats",
+          "-i",
+          "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/mixed.wav",
+          "-af",
+          "silencedetect=noise=-35dB:d=2.0",
+          "-f",
+          "null",
+          "-"
+        ],
+        "leading_silence_end_seconds": null,
+        "minimum_seconds": 2.0,
+        "offset_seconds": 0.0,
+        "preroll_seconds": 0.0,
+        "sample_offset": 0,
+        "sample_rate": 16000,
+        "selected_sample_count": 1104443,
+        "source_sample_count": 1104443,
+        "threshold_db": -35,
+        "trimmed": false
+      },
+      "operator_declared_non_speech": false,
+      "original_audio_sha256": "fee84870f07585766b3ef0ec8fb4397b90e03ee1afaaaa633d70947065cb86e9",
+      "sample_offset": 0,
+      "segment_count": 19,
+      "segments_api_argv": [
+        "curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/fb371219ea68/segments"
+      ],
+      "started_at_utc": "2026-08-09T02:09:38Z",
+      "status_api_argv": [
+        "curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/fb371219ea68"
+      ],
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/audio/mixed.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/mixed/job-terminal.json",
+      "terminal_sha256": "4633b15e144255496b5a34b29cf4713a25b77c4f1aa1b6852de1be054b3508f0",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/mixed/asr-text.txt",
+      "text_sha256": "48e514094ae4c75424772d81850c0a4eff024d28975fc55c313c3483665828da",
+      "timestamp_offset_seconds": 0.0,
+      "track": "mixed",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/program/sessions/CAL-HP-20260808-387e851938aa4a5c95615b0b9fcec726/derived/asr/mixed/asr-transcript.json",
+      "transcript_sha256": "a4e93bcf7d556c2bf7ca9b00fcae28357ed70ef67ee450e609e1fe8782d115d8",
+      "wall_seconds": 5.284069
+    }
+  ]
+}

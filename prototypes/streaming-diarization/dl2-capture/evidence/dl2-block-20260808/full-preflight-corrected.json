@@ -1,0 +1,50 @@
+{
+  "audio_devices": {
+    "checked_at_utc": "2026-08-09T02:33:54Z",
+    "default_input": {
+      "audio_device_id": 118,
+      "name": "MacBook Pro Microphone",
+      "uid": "BuiltInMicrophoneDevice"
+    },
+    "default_output": {
+      "audio_device_id": 140,
+      "name": "G@0 AirPods Pro #2",
+      "uid": "A4-C6-F0-D9-8F-14:output"
+    },
+    "raw_stdout": "INPUT\t118\tMacBook Pro Microphone\tBuiltInMicrophoneDevice\nOUTPUT\t140\tG@0 AirPods Pro #2\tA4-C6-F0-D9-8F-14:output\n"
+  },
+  "capture": {
+    "capture_cli_sha256": "90080e9f72ffd9dab1d4d4a03c84966eacfd9ca6e9af99dfe50dde3f9f8b7232",
+    "checked_at_utc": "2026-08-09T02:33:53Z",
+    "raw_stdout": "STATUS\t{\"ok\":true,\"lanes\":[{\"state\":\"stopped\",\"lane\":\"system\"},{\"lane\":\"microphone\",\"state\":\"stopped\"}],\"running\":false,\"publishedFrameCount\":206,\"outboxRetainedFrames\":0}\nTOPOLOGY\toutput_volume=50;output_muted=false\nCLI_SHA\t90080e9f72ffd9dab1d4d4a03c84966eacfd9ca6e9af99dfe50dde3f9f8b7232\n",
+    "status": {
+      "lanes": [
+        {"lane": "system", "state": "stopped"},
+        {"lane": "microphone", "state": "stopped"}
+      ],
+      "ok": true,
+      "outboxRetainedFrames": 0,
+      "publishedFrameCount": 206,
+      "running": false
+    },
+    "topology_read_only": "output_volume=50;output_muted=false"
+  },
+  "ok": true,
+  "server": {
+    "checked_at_utc": "2026-08-09T02:33:52Z",
+    "deployed_dirty_count": 0,
+    "deployed_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+    "raw_stdout": "service:moss-live-web.service\tactive/enabled\nservice:moss-web.service\tactive/enabled\nservice:moss-vllm.service\tactive/enabled\nmain_pid\t377978\ndeployed_sha\t9089b33210401111865da7abc160ab0bcb4aa266\ndeployed_dirty_count\t0\nflag:--live-retention-root\t/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint\nflag:--live-retention-max-bytes\t2147483648\nflag:--live-retention-ttl-seconds\t86400\n",
+    "retention": {
+      "max_bytes_per_session": 2147483648,
+      "root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+      "ttl_seconds": 86400
+    },
+    "services": {
+      "moss-live-web.service": "active/enabled",
+      "moss-vllm.service": "active/enabled",
+      "moss-web.service": "active/enabled"
+    },
+    "verdict": "PASS_HEALTHY_DECLARED_WITHIN_GRANT"
+  }
+}

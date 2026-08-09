@@ -1,0 +1,15 @@
+{
+  "schema": "moss-dl2-program-ledger.v1",
+  "captured_bytes_total": 254722,
+  "sessions": [
+    {
+      "session_id": "659da76b2d244d8593b012cbcb55a94c",
+      "shape_id": "PROVISION_CANARY",
+      "raw_bytes": 254722,
+      "raw_deleted": true,
+      "raw_deleted_at_utc": "2026-08-06T17:21:59Z",
+      "acceptance_case": false,
+      "outcome": "harness_assertion_failure"
+    }
+  ]
+}

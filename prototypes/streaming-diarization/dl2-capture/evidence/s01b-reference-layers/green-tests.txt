@@ -1,0 +1,19 @@
+test_audited_bleed_rate_is_emitted (test_post_session.PostSessionAuditMetadataTests) ... ok
+test_full_future_packet_emits_pending_bleed_rate (test_post_session.PostSessionAuditMetadataTests) ... ok
+test_future_packet_marks_bleed_rate_pending_until_human_audit (test_post_session.PostSessionAuditMetadataTests) ... ok
+test_begin_embeds_descriptor_hard_abort_before_speech (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_complete_three_track_tape_passes (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_grant_bounds_refuse_cap_over_2_gib (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_grant_bounds_refuse_ttl_over_24_hours (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_missing_lane_is_named (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_post_decision_pilot_is_single_shape_single_use (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_post_decision_retry_requires_exact_one_use_label (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+test_program_accounting_refuses_projected_overrun (test_capture_harness.CaptureHarnessSafetyTests) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.014s
+
+OK
+{"ok": true, "session_dir": "<temporary>/sessions/S01-session-a", "session_id": "session-a", "shape": "S01", "descriptor_preflight": "PASS_BEFORE_OPERATOR_SPEECH", "operator_cue": "RECORD"}
+
+exit=0

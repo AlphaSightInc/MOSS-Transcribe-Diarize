@@ -1,0 +1,12 @@
+source=m4mbp unified log for MOSSCaptureApp PID 53886
+
+2026-08-06 13:59:46.151 permission-probe default output device ID=112
+2026-08-06 13:59:46.151 permission-probe default input device ID=119
+2026-08-06 13:59:46.151 permission-probe output stream=2ch 48000Hz Float32 interleaved
+2026-08-06 13:59:47.832 production input started=moss.capture.aggregate.4146A4C1-7E7D-4610-A7A3-9658B73ACBA2
+2026-08-06 13:59:48.216 production converter=1ch 48000Hz Float32 -> 1ch 16000Hz Float32
+2026-08-06 14:07:12.080 production input stopped cleanly=moss.capture.aggregate.4146A4C1-7E7D-4610-A7A3-9658B73ACBA2
+
+No production tap stop, format change, nominal-rate change, route change, overload, or
+MOSSCaptureApp tap failure appears between production start and clean stop. The test-helper
+warnings beginning at 14:09 are post-session unit-test output and are excluded.

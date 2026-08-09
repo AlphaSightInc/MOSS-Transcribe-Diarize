@@ -1,0 +1,33 @@
+{
+  "schema": "moss-dl2-device-verification.v1",
+  "checked_at_et": "2026-08-08T22:29:24-04:00",
+  "host": "ga0@m4mbp",
+  "access": {
+    "direct_result": "DNS_REFUSED",
+    "fallback_address": "100.64.0.4",
+    "fallback_address_range": "100.64.0.0/10",
+    "host_key_alias": "m4mbp",
+    "host_key_verification_bypassed": false
+  },
+  "source": "CoreAudio default-device properties read by /usr/bin/swift; cross-checked against system_profiler SPAudioDataType -json",
+  "default_input": {
+    "audio_device_id": 146,
+    "name": "G@0 AirPods Pro #2",
+    "uid": "A4-C6-F0-D9-8F-14:input",
+    "sample_rate_hz": 24000,
+    "transport": "bluetooth"
+  },
+  "default_output": {
+    "audio_device_id": 140,
+    "name": "G@0 AirPods Pro #2",
+    "uid": "A4-C6-F0-D9-8F-14:output",
+    "sample_rate_hz": 24000,
+    "transport": "bluetooth"
+  },
+  "required_input": "MacBook Pro Microphone",
+  "required_output_class": "AirPods Pro",
+  "input_gate": "FAIL_AIRPODS_INPUT",
+  "output_gate": "PASS_AIRPODS_OUTPUT",
+  "capture_authorized": false,
+  "verdict": "ABORT_CAL_HP_BEFORE_PAIRING"
+}

@@ -1,0 +1,14 @@
+{
+  "capture_stop_reissued": false,
+  "ended_at_utc": "2026-08-09T03:49:10Z",
+  "external_stop_deviation_preserved": true,
+  "full_track_failure_preserved": true,
+  "partial_attempt_path": "derived-attempt-card-60-360-partial",
+  "partial_attempt_seal_sha256": "1a6ac1d81433511b9cdcd734975e7bd9d0200231a902cc054105aab5ed5a4d63",
+  "plan_sha256": "d419e57d075cf2822765518c80f9e7a1b7a3c7fd325bc08c87580eae6012126b",
+  "schema": "moss-dl2-s05-post-session-recovery-verdict.v1",
+  "session_id": "40422fb135a146579d013d663652bd56",
+  "started_at_utc": "2026-08-09T03:48:47Z",
+  "trailing_dead_air_excluded": true,
+  "verdict": "PASS_RECOVERED_CARD_INTERVAL"
+}

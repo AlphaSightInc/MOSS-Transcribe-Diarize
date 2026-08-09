@@ -1,0 +1,22 @@
+query_start=2026-08-06T13:59:40-0400
+query_end=2026-08-06T14:07:20-0400
+source=macOS unified log; Safari/WebKit Media and MediaRemote
+playing_updates_before_pause=27
+playing_updates_after_pause=0
+paused_updates_after_pause=5
+
+2026-08-06 14:01:53.703 Safari[7735] WebContent[75847] MediaSessionManagerCocoa::updateNowPlayingInfo isPlaying=true now=423.893292719269
+2026-08-06 14:01:59.044 Safari[7735] WebContent[75847] HTMLMediaElement::pause
+2026-08-06 14:01:59.044 Safari[7735] WebContent[75847] MediaSessionManagerCocoa::updateNowPlayingInfo isPlaying=false now=429.2349032200892
+2026-08-06 14:01:59.044 mediaremoted[342] Safari playback state Playing -> Paused
+2026-08-06 14:04:13.173 Safari[7735] WebContent[75847] MediaSessionManagerCocoa::updateNowPlayingInfo isPlaying=false now=429.2349032200892
+2026-08-06 14:05:38.002 Safari[7735] WebContent[75847] MediaSessionManagerCocoa::updateNowPlayingInfo isPlaying=false now=429.2349032200892
+2026-08-06 14:07:15.793 Safari[7735] WebContent[75847] MediaSessionManagerCocoa::updateNowPlayingInfo isPlaying=false now=429.2349032200892
+
+tape_start_from_index=2026-08-06T13:59:49.228762-0400
+tape_silence_onset=2026-08-06T14:02:00.611512-0400
+browser_pause_to_tape_silence_delta_seconds=1.567513
+
+Interpretation: the browser's explicit pause precedes the retained system track's permanent
+silence by one capture/buffering interval. No Safari Playing update exists after that pause
+through capture stop.
