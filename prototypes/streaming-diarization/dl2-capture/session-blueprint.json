@@ -1,0 +1,48 @@
+{
+  "schema": "moss-dl2-session-blueprint.v1",
+  "sprint": {
+    "authoritative_start_et": "2026-08-05T21:50:00-04:00",
+    "decision_deadline_et": "2026-08-06T07:50:00-04:00",
+    "duration_hours": 10
+  },
+  "sessions": [
+    {
+      "shape_id": "CAL-HP",
+      "blueprint_number": 0,
+      "priority": 0,
+      "capture_minutes": 1,
+      "setup_minutes": 2,
+      "cumulative_minutes": 3,
+      "shape": "headphone structural-bleed calibration",
+      "operator_cues": [
+        "operator wears headphones and remains silent",
+        "interview speech plays continuously on system output",
+        "supervisor stops automatically at 60 seconds"
+      ],
+      "prediction": "system lane full-level interview speech; microphone lane room-noise-only"
+    },
+    {
+      "shape_id": "CAL-MIC",
+      "blueprint_number": 0,
+      "priority": 0,
+      "capture_minutes": 1,
+      "setup_minutes": 1,
+      "cumulative_minutes": 2,
+      "shape": "built-in microphone capture and ASR calibration",
+      "operator_cues": [
+        "all system playback remains paused",
+        "operator speaks normally on the built-in microphone",
+        "include several seconds of silence before closing"
+      ],
+      "prediction": "microphone lane contains operator speech; system lane contains no intelligible speech"
+    },
+    {"shape_id": "S01", "blueprint_number": 1, "priority": 1, "capture_minutes": 10, "setup_minutes": 5, "cumulative_minutes": 15, "shape": "operator solo microphone plus one remote speaker", "operator_cues": ["remote speaker on system lane", "operator speaks on microphone lane", "include two short overlaps"]},
+    {"shape_id": "S03", "blueprint_number": 3, "priority": 2, "capture_minutes": 15, "setup_minutes": 5, "cumulative_minutes": 35, "shape": "operator microphone plus two remote speakers", "operator_cues": ["two remote voices alternate on system lane", "operator speaks and overlaps twice"]},
+    {"shape_id": "S05", "blueprint_number": 5, "priority": 3, "capture_minutes": 15, "setup_minutes": 5, "cumulative_minutes": 55, "shape": "same-gender operator and remote pairing", "operator_cues": ["choose a remote voice matching operator gender", "include alternating and overlapping turns"]},
+    {"shape_id": "S06", "blueprint_number": 6, "priority": 4, "capture_minutes": 10, "setup_minutes": 5, "cumulative_minutes": 70, "shape": "same speaker across lanes counterexample", "operator_cues": ["operator speaks live on microphone", "play operator's consented recorded voice on system", "include a lane transition and overlap"]},
+    {"shape_id": "S06R", "blueprint_number": 6, "priority": 4, "capture_minutes": 10, "setup_minutes": 5, "cumulative_minutes": 70, "shape": "single playback-corrected retry of same speaker across lanes counterexample", "operator_cues": ["confirm self-recording is audible in AirPods before pairing, then pause", "operator speaks live on microphone", "play operator's consented recorded voice on system", "include a lane transition and overlap"], "retry_of": "S06", "single_use": true},
+    {"shape_id": "S08", "blueprint_number": 8, "priority": 5, "capture_minutes": 30, "setup_minutes": 5, "cumulative_minutes": 105, "shape": "production-shaped long meeting", "operator_cues": ["realistic agenda and turn lengths", "at least two system speakers", "natural crosstalk"]},
+    {"shape_id": "S09", "blueprint_number": 9, "priority": 6, "capture_minutes": 5, "setup_minutes": 5, "cumulative_minutes": 115, "shape": "missing-lane control", "operator_cues": ["operator mutes microphone using normal app control", "record exact mute/unmute cues"]},
+    {"shape_id": "S10", "blueprint_number": 10, "priority": 7, "capture_minutes": 5, "setup_minutes": 5, "cumulative_minutes": 125, "shape": "wrong-lane control", "operator_cues": ["swap source routing using normal app controls", "record exact switch cues"]}
+  ]
+}
