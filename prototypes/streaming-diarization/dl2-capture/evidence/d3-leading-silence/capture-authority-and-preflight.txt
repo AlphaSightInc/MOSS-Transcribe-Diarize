@@ -1,0 +1,33 @@
+Offline capture-authority check at 2026-08-06T21:15:00-04:00:
+CAL-HP REFUSED post_decision_capture_not_authorized:CAL-HP
+S06 REFUSED post_decision_capture_not_authorized:S06
+S05 REFUSED post_decision_capture_not_authorized:S05
+
+Read-only network checks:
+tailscale status: m4mbp 100.64.0.4 active; direct 192.168.1.154:1038
+tailscale ping --c 1 m4mbp: pong in 76ms
+ssh ga0@m4mbp: could not resolve hostname m4mbp
+ssh ga0@m4mbp.tailnet.aisight.us: could not resolve hostname
+raw-IP SSH was not used because host-key verification refused and no host-key bypass is authorized.
+
+Harness preflight:
+REFUSED command_failed:exit=255:argv=['ssh', 'ga0@m4mbp', 'bash -s']:stderr=ssh: Could not resolve hostname m4mbp: nodename nor servname provided, or not known
+
+Bounded host-key-checked fallback, red first:
+test_capture_script_uses_hostkey_checked_tailscale_fallback_on_dns_failure ... ERROR
+HarnessRefusal: command_failed:exit=255 ... Could not resolve hostname m4mbp
+
+Green implementation resolves the active peer with `tailscale ip -4 m4mbp`, requires exactly
+one IPv4 address inside 100.64.0.0/10, and retries as `ssh -o HostName=<ip>
+-o HostKeyAlias=m4mbp ga0@m4mbp`; host-key checking remains enforced.
+
+Final read-only harness preflight at 2026-08-07T01:17:18Z–01:17:19Z:
+PASS
+- m4mbp capture running=false; system=stopped; microphone=stopped; outbox=0
+- capture CLI SHA-256 90080e9f72ffd9dab1d4d4a03c84966eacfd9ca6e9af99dfe50dde3f9f8b7232
+- moss-live-web, moss-web, moss-vllm active/enabled
+- deployed SHA 9089b33210401111865da7abc160ab0bcb4aa266; dirty count 0
+- retention root /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint
+- TTL 86400; cap 2147483648
+
+No pairing, start, capture, service mutation, TCC action, volume action, or recording occurred.

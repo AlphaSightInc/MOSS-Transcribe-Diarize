@@ -1,0 +1,116 @@
+{
+  "segments": [
+    {
+      "end": 17.701125,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 12.091125,
+      "text": "S zero six R cross lane counter example, my own voice remote."
+    },
+    {
+      "end": 21.401125,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 18.611125,
+      "text": "Recording stays paused."
+    },
+    {
+      "end": 27.821125,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 24.141125,
+      "text": "Countdown pace up follow it, the first cue paused the recording."
+    },
+    {
+      "end": 32.071125,
+      "id": "seg_0004",
+      "speaker": "S01",
+      "start": 29.571125,
+      "text": "And as you announce, then recording."
+    },
+    {
+      "end": 91.241125,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 88.111125,
+      "text": "Okay, now pause recording, speak alive."
+    },
+    {
+      "end": 94.681125,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 93.601125,
+      "text": "Play recording."
+    },
+    {
+      "end": 98.241125,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 95.601125,
+      "text": "And keep talking, both at once."
+    },
+    {
+      "end": 102.501125,
+      "id": "seg_0008",
+      "speaker": "S01",
+      "start": 99.001125,
+      "text": "You live, plus you record, the key segment."
+    },
+    {
+      "end": 107.521125,
+      "id": "seg_0009",
+      "speaker": "S01",
+      "start": 103.391125,
+      "text": "I think I might have a different segment."
+    },
+    {
+      "end": 111.271125,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 108.231125,
+      "text": "I think done, but uh."
+    },
+    {
+      "end": 120.271125,
+      "id": "seg_0011",
+      "speaker": "S01",
+      "start": 112.301125,
+      "text": "Um, I think the first segment was playing."
+    },
+    {
+      "end": 126.801125,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 120.721125,
+      "text": "Both recording and my live voice."
+    },
+    {
+      "end": 134.141125,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 128.081125,
+      "text": "Later, I noticed it, my S zero six R closing."
+    },
+    {
+      "end": 137.601125,
+      "id": "seg_0014",
+      "speaker": "S01",
+      "start": 135.081125,
+      "text": "S zero six R closing."
+    },
+    {
+      "end": 143.901125,
+      "id": "seg_0015",
+      "speaker": "S01",
+      "start": 140.291125,
+      "text": "S zero R, stop, S zero six R."
+    },
+    {
+      "end": 220.901125,
+      "id": "seg_0016",
+      "speaker": "S02",
+      "start": 220.451125,
+      "text": "\u55ef\u3002"
+    }
+  ]
+}

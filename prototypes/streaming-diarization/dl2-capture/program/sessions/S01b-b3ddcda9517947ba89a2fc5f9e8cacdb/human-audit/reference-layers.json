@@ -1,0 +1,56 @@
+{
+  "schema": "moss-dl2-reference-layers.v1",
+  "session_id": "b3ddcda9517947ba89a2fc5f9e8cacdb",
+  "shape_id": "S01",
+  "attempt_label": "S01b",
+  "audit_date": "2026-08-06",
+  "attestation": {
+    "path": "human-audit/s01b-mic-split-20260806.md",
+    "sha256": "aa23df7439879a8e52de3d561d48d0894a27e5ce030b6c40f1b4c7ba0f8c97e7"
+  },
+  "source_asr": {
+    "microphone_path": "derived/asr/microphone/asr-transcript.json",
+    "microphone_sha256": "89e68e7c281e7ef8df4da5f6d23723e238d7fc91ca74b927655814fe4e485330",
+    "system_path": "derived/asr/system/asr-transcript.json",
+    "system_sha256": "d1bc27dd8347cc2d9a5f8077804cd269f16134ab0df33bfe2fd8f2346978a7f9"
+  },
+  "partition": {
+    "source_segment_count": 27,
+    "true_rows": 12,
+    "bleed_rows": 15,
+    "covered_rows": 27,
+    "overlap_rows": 0,
+    "verified_clean": true
+  },
+  "true_layer": {
+    "source_path": "human-audit/s01b-mic-TRUE.md",
+    "source_sha256": "ab66bb9e359222e6e0e3839e3a0ad4d6df2a2aaaaffe2f2bec48256e80231355",
+    "reference_path": "human-audit/microphone-true-reference.jsonl",
+    "reference_sha256": "863b09004e5d786d4f6af56cae549d489bdc9bd2349d647fd183f2908b5995d2",
+    "speaker": "Operator",
+    "source_asr_speakers_collapsed": [
+      "S02",
+      "S03"
+    ],
+    "speech_seconds": 75.27
+  },
+  "bleed_layer": {
+    "source_path": "human-audit/s01b-mic-BLEED.md",
+    "source_sha256": "5fe3aaa74899ac7ce372de7861a88958be90caff3c1437a31ef55fb3c8371311",
+    "reference_path": "human-audit/microphone-bleed-reference.jsonl",
+    "reference_sha256": "6b55fc6c32df7256cb6dd09553a96bf3fb02ec96756cc5f46efa8e57f2cef203",
+    "ownership": "remote_system_lane",
+    "system_speaker_mapping": "maximum temporal overlap with sealed system-lane ASR segments",
+    "system_speaker_labels_are_runtime_asr_ids": true,
+    "speech_seconds": 66.79
+  },
+  "bleed_rate": {
+    "status": "human_audited",
+    "bleeded_speech_seconds": 66.79,
+    "true_local_speech_seconds": 75.27,
+    "mic_speech_seconds": 142.06,
+    "value": 0.47015345628607635,
+    "percent_rounded_1dp": 47.0,
+    "formula": "bleeded_speech_seconds / mic_speech_seconds"
+  }
+}

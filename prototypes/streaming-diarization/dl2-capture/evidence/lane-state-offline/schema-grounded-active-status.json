@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "running": true,
+  "lanes": [
+    {
+      "lane": "system",
+      "state": "capturing"
+    },
+    {
+      "lane": "microphone",
+      "state": "capturing"
+    }
+  ],
+  "publishedFrameCount": 2,
+  "outboxRetainedFrames": 0
+}

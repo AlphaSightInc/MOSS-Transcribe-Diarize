@@ -1,0 +1,14 @@
+# S05 recovery commands (worktree cwd unless noted)
+python3 capture_harness.py finish --external-stop-recovery --session-dir program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56 --operator-log program/s05-block-operator-log.txt
+python3 post_session.py program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56
+# named failure: full system job 5a6131a3ec23 refused at silent window 4 (480-630s)
+python3 recover_s05_post_session.py program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56 --plan program/s05-recovery-intervals.json
+# named failure: V1 mic short-slice job 4b52d5ca5d47 returned zero parsed segments
+python3 recover_s05_post_session.py program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56 --plan program/s05-recovery-intervals-v2.json
+# mic completed as b5b8093aa988; local Python 3.9 zip(strict=True) stopped before mixed submission
+python3 recover_s05_post_session.py program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56 --plan program/s05-recovery-intervals-v3.json
+python3.12 supplement_s05_system_prefix.py program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56 --plan program/s05-system-prefix-supplement.json
+python3 analyze_s05_timeline.py program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_capture_harness.py test_post_session.py
+# first boundary verifier invocation replaced PATH and could not find ffmpeg; preserved as s05-recovery-boundary-attempt-1-env-path-failure
+python3 verify_s05_boundary.py program/sessions/S05-BLOCK-20260808-40422fb135a146579d013d663652bd56 --output evidence/s05-recovery-boundary

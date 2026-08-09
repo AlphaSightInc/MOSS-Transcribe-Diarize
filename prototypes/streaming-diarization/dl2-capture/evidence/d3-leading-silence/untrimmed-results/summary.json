@@ -1,0 +1,152 @@
+{
+  "accepted_control": {
+    "generated_tokens": 521,
+    "job_id": "77bc16ec2ae6",
+    "segment_count": 17
+  },
+  "ended_at_utc": "2026-08-07T01:03:59Z",
+  "results": [
+    {
+      "completed_windows": 1,
+      "elapsed_sec": 3.0283063339884393,
+      "error": null,
+      "fixture_sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea",
+      "generated_tokens": 544,
+      "job_id": "e50d68c85d17",
+      "max_segment_end": 89.97,
+      "possibly_truncated": false,
+      "prepend_seconds": 30,
+      "segment_count": 18,
+      "segments_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/e50d68c85d17/segments"
+      ],
+      "source_sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea",
+      "status": "waiting_review",
+      "status_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/e50d68c85d17"
+      ],
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@evidence/d3-leading-silence/fixtures/leading-030s.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "window_count": 1
+    },
+    {
+      "completed_windows": 1,
+      "elapsed_sec": 2.6806494659977034,
+      "error": null,
+      "fixture_sha256": "7663f1d175d7e3133ecf5e92c516486d5ee0b6bfa843511c637105ad9ae71153",
+      "generated_tokens": 558,
+      "job_id": "5748ed7aed51",
+      "max_segment_end": 119.97,
+      "possibly_truncated": false,
+      "prepend_seconds": 60,
+      "segment_count": 18,
+      "segments_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/5748ed7aed51/segments"
+      ],
+      "source_sha256": "7663f1d175d7e3133ecf5e92c516486d5ee0b6bfa843511c637105ad9ae71153",
+      "status": "waiting_review",
+      "status_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/5748ed7aed51"
+      ],
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@evidence/d3-leading-silence/fixtures/leading-060s.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "window_count": 1
+    },
+    {
+      "completed_windows": 2,
+      "elapsed_sec": 3.9532906349631958,
+      "error": null,
+      "fixture_sha256": "4a968206a0f698608da0eed3c7d463be08557a7d3a9a8f1e08858f53ddf09525",
+      "generated_tokens": 824,
+      "job_id": "8db7e73e02aa",
+      "max_segment_end": 179.97,
+      "possibly_truncated": false,
+      "prepend_seconds": 120,
+      "segment_count": 17,
+      "segments_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/8db7e73e02aa/segments"
+      ],
+      "source_sha256": "4a968206a0f698608da0eed3c7d463be08557a7d3a9a8f1e08858f53ddf09525",
+      "status": "waiting_review",
+      "status_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/8db7e73e02aa"
+      ],
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@evidence/d3-leading-silence/fixtures/leading-120s.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "window_count": 2
+    },
+    {
+      "completed_windows": null,
+      "elapsed_sec": null,
+      "error": "window 0 (0-150s) failed: vLLM transcription returned zero parsed segments for /tmp/mtd-window-lrbgab2b/window-0000.wav.",
+      "fixture_sha256": "81b2e09c35acdf95fd334c88df7e3612c0f290f8d1c6ad8c872bda159b37079f",
+      "generated_tokens": 13,
+      "job_id": "af798077de78",
+      "max_segment_end": null,
+      "possibly_truncated": null,
+      "prepend_seconds": 210,
+      "segment_count": 0,
+      "segments_api_argv": [],
+      "source_sha256": "81b2e09c35acdf95fd334c88df7e3612c0f290f8d1c6ad8c872bda159b37079f",
+      "status": "failed",
+      "status_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs/af798077de78"
+      ],
+      "submit_api_argv": [
+        "/usr/bin/curl",
+        "-fsS",
+        "--max-time",
+        "1800",
+        "-X",
+        "POST",
+        "-F",
+        "file=@evidence/d3-leading-silence/fixtures/leading-210s.wav;type=audio/wav",
+        "http://ga0-alienware-rtx4070ti.local:7860/api/jobs"
+      ],
+      "window_count": null
+    }
+  ],
+  "schema": "moss-dl2-d3-leading-silence-results.v1",
+  "started_at_utc": "2026-08-07T01:03:37Z"
+}

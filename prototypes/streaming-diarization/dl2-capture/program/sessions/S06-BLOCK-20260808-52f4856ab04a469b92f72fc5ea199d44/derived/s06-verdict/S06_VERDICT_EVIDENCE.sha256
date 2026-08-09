@@ -1,0 +1,8 @@
+8b49f1c5525292b3df10741d433bce655b1e4b918f4a0aa372c7f21a148165c6  S06_TIMELINE_VERDICT.json
+ce69c70cc50cdc1c1c93c3e6c7880423ec7cb33e6742124e3710f11343d2f32c  ../asr/microphone/asr-text.txt
+87bcfc3ab5fb3d5cf256e6ac41fd6d37492175fd89c3783255529273b626c108  ../asr/microphone/asr-transcript.json
+e29a87172537a81f42d851adfdf65e4730e5b40f03d0af8d7b1b11d3beb5adb7  ../asr/microphone/job-terminal.json
+368d435b84c9b6e7fe5e8b07b2abad5c6cf5d6d192295dac4e8fab045827611f  ../asr/mixed/asr-text.txt
+24e350a81ac1011f3127f2d118edc0a46ac8ff338127ea3b1518fcbd7ca832d4  ../asr/mixed/asr-transcript.json
+619bc802ae35ac30fabdcf3090ec8b1d831bd9d0e816dfd2ba1c84e42012cb56  ../asr/mixed/job-terminal.json
+35a86384068131f300d43ba78a31f63b675f808773693db71d554fa5ef4afee1  ../../operator-cue-log.txt

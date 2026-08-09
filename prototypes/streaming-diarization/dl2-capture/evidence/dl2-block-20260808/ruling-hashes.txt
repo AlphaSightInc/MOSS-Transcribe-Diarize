@@ -1,0 +1,3 @@
+db64ba8e4b69c549a17efb1fe5064ef73857ab74d5323239aa15bd9fb15883c2  docs/handoffs/rulings/ruling-dl2-block-20260808.txt
+33f1c94e5fcb135f17e19918cf0e5371b42f97f706ad223e5822c3e871485dd4  docs/handoffs/rulings/ruling-dl2-block-20260808-implementation.txt
+4f0fc45c2ec9c171d5d7a142b2937a786880b10675fe3c21565b36ba215f3294  docs/handoffs/rulings/ruling-dl2-block-20260808-device-correction.txt

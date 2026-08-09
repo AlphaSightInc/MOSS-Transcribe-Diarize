@@ -1,0 +1,13 @@
+LOCAL_ET	2026-08-06T13:51:26-0400
+M4_ET	2026-08-06T13:51:27-0400
+STATUS	{"outboxRetainedFrames":0,"ok":true,"lanes":[{"state":"stopped","lane":"system"},{"lane":"microphone","state":"stopped"}],"publishedFrameCount":1,"running":false}
+SERVER_ET	2026-08-06T13:51:28-0400
+SERVICE	moss-live-web.service	active	377978
+SERVICE	moss-web.service	active	1905
+SERVICE	moss-vllm.service	active	1899
+SESSION_ID	4340eee60d8940458faa934984642c1d
+PAIRING_HTTP	200
+HEARTBEAT_HTTP	200
+FRAME_HTTP	200
+STOP_HTTP	200
+OPERATOR_INPUT	background music playing on system lane; operator silent

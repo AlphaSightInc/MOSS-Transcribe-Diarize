@@ -1,0 +1,58 @@
+{
+  "base_commit": "f0c092a720cb49dde30d63ccdaece3afc3da2213",
+  "generated_at_utc": "2026-08-09T04:17:30.370957Z",
+  "results": [
+    {
+      "command": [
+        "swift",
+        "test",
+        "--package-path",
+        "macos/MOSSCapture"
+      ],
+      "duration_seconds": 4.738,
+      "ended_at_utc": "2026-08-09T04:16:27.116362Z",
+      "exit_code": 0,
+      "log": "swift-test.txt",
+      "log_sha256": "faef325f263516943c92fd59092eb3757f684977ae23a10213e04f2e89c197a3",
+      "name": "swift-test",
+      "started_at_utc": "2026-08-09T04:16:22.377817Z"
+    },
+    {
+      "command": [
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "duration_seconds": 63.24,
+      "ended_at_utc": "2026-08-09T04:17:30.356725Z",
+      "exit_code": 1,
+      "log": "python-pytest.txt",
+      "log_sha256": "3e01d4e67c6fbc670dcfb096e6a714c281796aea3937806e715572ed9cf943de",
+      "name": "python-pytest",
+      "started_at_utc": "2026-08-09T04:16:27.116475Z"
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep",
+        "diff",
+        "--check"
+      ],
+      "duration_seconds": 0.014,
+      "ended_at_utc": "2026-08-09T04:17:30.370898Z",
+      "exit_code": 0,
+      "log": "git-diff-check.txt",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "git-diff-check",
+      "started_at_utc": "2026-08-09T04:17:30.357043Z"
+    }
+  ],
+  "schema_version": 1,
+  "verdict": "FAIL",
+  "worktree": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep"
+}

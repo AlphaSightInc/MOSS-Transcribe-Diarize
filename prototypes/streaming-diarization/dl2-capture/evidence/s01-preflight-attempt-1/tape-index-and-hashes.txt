@@ -1,0 +1,7 @@
+INDEX	{"created_at":1786038343.8293352,"degradation":null,"ended_at":1786038373.387395,"max_bytes":2147483648,"sample_rate":16000,"session_id":"699ce1bdda834c24b60b355ed0754718","total_bytes":12800,"tracks":{"microphone":{"bytes":6400,"duplicate_frames":0,"file":"microphone.pcm","frames_written":1,"gaps":[],"origin_timestamp_ns":924751516182666,"overlapped_samples":0,"rebases":0,"sample_count":3200},"mixed":{"bytes":6400,"duplicate_frames":0,"file":"mixed.pcm","frames_written":1,"gaps":[],"origin_timestamp_ns":924751516182666,"overlapped_samples":0,"rebases":0,"sample_count":3200},"system":{"bytes":0,"duplicate_frames":0,"file":"system.pcm","frames_written":0,"gaps":[],"origin_timestamp_ns":null,"overlapped_samples":0,"rebases":0,"sample_count":0}},"updated_at":1786038372.9688632,"version":1}
+HASHES
+21e32a77938ba5bf217fac2424437f7bd0feccdb2d35b22773757095ab3b2896  index.json
+c6d97f8adc183a873bf025cde3637e4edeec089f9680c192c78522c703aaed44  microphone.pcm
+16021195d671560a00c786f5a1a2e4c52ff558f74048f0da7189ba446ac5ff5b  mixed.pcm
+SYSTEM_PCM	absent; index declares 0 bytes and 0 frames
+TOTAL_BYTES	12800

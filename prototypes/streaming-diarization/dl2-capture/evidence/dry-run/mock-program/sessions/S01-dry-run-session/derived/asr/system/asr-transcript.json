@@ -1,0 +1,11 @@
+{
+  "segments": [
+    {
+      "end": 1.0,
+      "id": "s1",
+      "speaker": "S01",
+      "start": 0.0,
+      "text": "remote hello"
+    }
+  ]
+}

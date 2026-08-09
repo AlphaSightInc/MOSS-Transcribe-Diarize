@@ -1,0 +1,13 @@
+{
+  "id": "2879dd7a5f38",
+  "status": "failed",
+  "media_name": "system.wav",
+  "error": "window 1 (120-270s) failed: vLLM transcription returned empty transcript text for /tmp/mtd-window-y22sdudm/window-0001.wav.",
+  "source_sha256": "2eaa2123c5aa7490b2c20e81b2028225861c825b6961266848e9e56e0cddff03",
+  "generated_tokens": 12001,
+  "max_new_tokens": 12000,
+  "possibly_truncated": true,
+  "checkpoint_state": "failed",
+  "resume_attempts": 0,
+  "active_jobs_after": 0
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "moss-dl2-s01-post-session-attempt2-verdict.v1",
+  "session_id": "00f8a46e99b44f1b867088de48860348",
+  "verdict": "BLOCKED_ASR_ZERO_PARSED_SEGMENTS",
+  "retry_budget_exhausted": true,
+  "retry_interval_seconds": {"start": 260.0, "end": "track end", "same_for_all_tracks": true},
+  "system_lane": {
+    "operator_content": "music only; no speech",
+    "asr_handling": "explicitly skipped as operator-declared non-speech",
+    "observed_selected_interval_mean_db": -91.0,
+    "observed_selected_interval_max_db": -91.0
+  },
+  "failed_track": "microphone",
+  "batch_job_id": "53b6388b3fca",
+  "batch_error": "window 0 (0-150s) failed: vLLM transcription returned zero parsed segments",
+  "batch_generated_tokens": 59,
+  "microphone_selected_interval_signal": {"mean_db": -41.1, "max_db": -16.9},
+  "raw_retained_pending_resolution": true,
+  "raw_ttl_deadline_operator_time": "2026-08-06 23:05 EDT",
+  "audit_packet_emitted": false,
+  "golden_reference_opened": false,
+  "service_or_host_changes": false
+}

@@ -1,0 +1,11 @@
+S01 compressed operator cue log
+Cue source: supervisor split-pane script; all relative timestamps approximate +/-5 seconds.
+Operator silent during preflight; same-machine system music played until RECORD.
+T0+10s SPEAK for 45s; opened with "S01 pilot, microphone lane"; video paused.
+T0+55s SILENT for 45s; play video.
+T0+100s OVERLAP for 30s; talk over video.
+T0+130s SECOND OVERLAP for 20s.
+T0+150s WIND DOWN; pause video; say "S01 closing."
+T0+158s say "stop S01"; then remain still.
+CONTENT NOTE: system lane contained MUSIC ONLY, no speech. Near-empty system ASR is expected
+and is a property of this pilot, not a capture or pipeline failure. Later sessions use interview speech.

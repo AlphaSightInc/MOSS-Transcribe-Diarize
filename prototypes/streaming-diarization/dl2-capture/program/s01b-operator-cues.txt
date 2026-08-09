@@ -1,0 +1,8 @@
+S01b compressed operator cue log
+Cue source: supervisor visible countdown launched immediately after RECORD.
+Shape: S01 (operator microphone plus one remote speaker).
+Attempt label: S01b.
+Remote source: interview speech, playing during silent preflight.
+Operator: silent during preflight, then followed the S01 card through microphone-only,
+system-only, overlap, second-overlap, wind-down, and spoken "stop S01b" cues.
+Cue timestamps are relative to the visible countdown and approximate +/-5 seconds.

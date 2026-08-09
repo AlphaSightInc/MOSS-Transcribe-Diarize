@@ -1,0 +1,6 @@
+COMMAND: ssh ga0@m4mbp bash -s
+EXIT: 0
+--- STDOUT ---
+STATUS	{"ok":true,"publishedFrameCount":325,"running":false,"outboxRetainedFrames":0,"lanes":[{"lane":"system","state":"stopped"},{"lane":"microphone","state":"stopped"}]}
+printf90080e9f72ffd9dab1d4d4a03c84966eacfd9ca6e9af99dfe50dde3f9f8b7232
+--- STDERR ---

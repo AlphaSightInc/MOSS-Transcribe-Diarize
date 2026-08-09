@@ -1,0 +1,662 @@
+{
+  "segments": [
+    {
+      "end": 63.15,
+      "id": "seg_0001",
+      "speaker": "S01",
+      "start": 60.04,
+      "text": "Have a taste that's universal in all countries."
+    },
+    {
+      "end": 68.15,
+      "id": "seg_0002",
+      "speaker": "S01",
+      "start": 63.18,
+      "text": "Now conveniently for you, all humans do require large amounts of water every day to live."
+    },
+    {
+      "end": 69.81,
+      "id": "seg_0003",
+      "speaker": "S01",
+      "start": 68.18,
+      "text": "So it is a giant market."
+    },
+    {
+      "end": 71.71,
+      "id": "seg_0004",
+      "speaker": "S02",
+      "start": 71.31,
+      "text": "Yes."
+    },
+    {
+      "end": 73.51,
+      "id": "seg_0005",
+      "speaker": "S01",
+      "start": 71.74,
+      "text": "But you're not going to fully replace water."
+    },
+    {
+      "end": 76.34,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 73.54,
+      "text": "It's just going to be kind of a small fraction of the time."
+    },
+    {
+      "end": 81.88,
+      "id": "seg_0007",
+      "speaker": "S01",
+      "start": 76.37,
+      "text": "So onto the beverage itself, you're going to want to optimize it to maximize the rewards"
+    },
+    {
+      "end": 86.99,
+      "id": "seg_0008",
+      "speaker": "S01",
+      "start": 81.91,
+      "text": "of ingesting it, as refreshing as possible in any climate."
+    },
+    {
+      "end": 89.42,
+      "id": "seg_0009",
+      "speaker": "S01",
+      "start": 87.02,
+      "text": "Now, you're going to want to do a bunch of other stuff, too."
+    },
+    {
+      "end": 92.4,
+      "id": "seg_0010",
+      "speaker": "S01",
+      "start": 89.45,
+      "text": "You want to fill it with calories to give energy."
+    },
+    {
+      "end": 96.95,
+      "id": "seg_0011",
+      "speaker": "S01",
+      "start": 92.43,
+      "text": "You want the flavor, texture, and aroma that makes it pleasurable to consume."
+    },
+    {
+      "end": 101.18,
+      "id": "seg_0012",
+      "speaker": "S01",
+      "start": 96.98,
+      "text": "And you should throw in some brain stimulants like caffeine and sugar."
+    },
+    {
+      "end": 103.88,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 101.21,
+      "text": "That's sort of the ideal product mix."
+    },
+    {
+      "end": 105.25,
+      "id": "seg_0014",
+      "speaker": "S02",
+      "start": 103.91,
+      "text": "Among other things, yeah."
+    },
+    {
+      "end": 108.44,
+      "id": "seg_0015",
+      "speaker": "S01",
+      "start": 105.28,
+      "text": "Now, you don't want competitors to swoop in for a free ride on the market you just"
+    },
+    {
+      "end": 114.78,
+      "id": "seg_0016",
+      "speaker": "S01",
+      "start": 108.47,
+      "text": "created, so you should make sure your product, the real thing, is available everywhere, anytime"
+    },
+    {
+      "end": 115.88,
+      "id": "seg_0017",
+      "speaker": "S01",
+      "start": 114.81,
+      "text": "someone asks for it."
+    },
+    {
+      "end": 117.12,
+      "id": "seg_0018",
+      "speaker": "S02",
+      "start": 115.91,
+      "text": "I see what you did there."
+    },
+    {
+      "end": 121.28,
+      "id": "seg_0019",
+      "speaker": "S01",
+      "start": 117.15,
+      "text": "At a very low price, so there's really not an opportunity for competitors to ever"
+    },
+    {
+      "end": 122.45,
+      "id": "seg_0020",
+      "speaker": "S01",
+      "start": 121.31,
+      "text": "fill the vacuum."
+    },
+    {
+      "end": 126.62,
+      "id": "seg_0021",
+      "speaker": "S01",
+      "start": 122.48,
+      "text": "There's never a reason for anyone to reach for anything other than your product."
+    },
+    {
+      "end": 127.31,
+      "id": "seg_0022",
+      "speaker": "S02",
+      "start": 126.65,
+      "text": "Always."
+    },
+    {
+      "end": 128.98,
+      "id": "seg_0023",
+      "speaker": "S01",
+      "start": 127.34,
+      "text": "Always, David."
+    },
+    {
+      "end": 132.98,
+      "id": "seg_0024",
+      "speaker": "S01",
+      "start": 129.01,
+      "text": "And since everyone is not thinking about beverages all the time, like you probably"
+    },
+    {
+      "end": 137.41,
+      "id": "seg_0025",
+      "speaker": "S01",
+      "start": 133.01,
+      "text": "are as the proprietor of this business, you're going to want to associate your beverage"
+    },
+    {
+      "end": 139.86,
+      "id": "seg_0026",
+      "speaker": "S01",
+      "start": 137.44,
+      "text": "with all the things that they are thinking about."
+    },
+    {
+      "end": 146.88,
+      "id": "seg_0027",
+      "speaker": "S01",
+      "start": 139.89,
+      "text": "The good life, family, your sports heroes, beautiful people, Christmas, I mean, happiness"
+    },
+    {
+      "end": 147.88,
+      "id": "seg_0028",
+      "speaker": "S01",
+      "start": 146.91,
+      "text": "generally."
+    },
+    {
+      "end": 153.38,
+      "id": "seg_0029",
+      "speaker": "S01",
+      "start": 147.91,
+      "text": "You are going to want to have a Pavlovian association between your drink and happiness."
+    },
+    {
+      "end": 157.98,
+      "id": "seg_0030",
+      "speaker": "S01",
+      "start": 153.41,
+      "text": "And you're going to want to spend huge amounts of money blanketing the entire world with"
+    },
+    {
+      "end": 159.28,
+      "id": "seg_0031",
+      "speaker": "S01",
+      "start": 158.01,
+      "text": "this messaging."
+    },
+    {
+      "end": 163.45,
+      "id": "seg_0032",
+      "speaker": "S01",
+      "start": 159.31,
+      "text": "Now, to build something this valuable, you also can't have a big, expensive bottling"
+    },
+    {
+      "end": 165.15,
+      "id": "seg_0033",
+      "speaker": "S01",
+      "start": 163.48,
+      "text": "and distribution operation."
+    },
+    {
+      "end": 169.0,
+      "id": "seg_0034",
+      "speaker": "S01",
+      "start": 165.18,
+      "text": "So you're going to need to figure out some clever way to get someone else's capital"
+    },
+    {
+      "end": 174.5,
+      "id": "seg_0035",
+      "speaker": "S01",
+      "start": 169.03,
+      "text": "and employees for that while still maintaining the control that your brand requires."
+    },
+    {
+      "end": 178.81,
+      "id": "seg_0036",
+      "speaker": "S01",
+      "start": 174.53,
+      "text": "I mean, ideally, it would be great if you could serve the entire world with just a few"
+    },
+    {
+      "end": 180.88,
+      "id": "seg_0037",
+      "speaker": "S01",
+      "start": 178.84,
+      "text": "of your own production facilities."
+    },
+    {
+      "end": 182.1,
+      "id": "seg_0038",
+      "speaker": "S02",
+      "start": 180.91,
+      "text": "That would be pretty great."
+    },
+    {
+      "end": 182.98,
+      "id": "seg_0039",
+      "speaker": "S01",
+      "start": 182.13,
+      "text": "Yes."
+    },
+    {
+      "end": 189.05,
+      "id": "seg_0040",
+      "speaker": "S01",
+      "start": 183.01,
+      "text": "And the last thing, you must never, under any circumstances, change the formula or"
+    },
+    {
+      "end": 190.13,
+      "id": "seg_0041",
+      "speaker": "S01",
+      "start": 189.08,
+      "text": "flavor."
+    },
+    {
+      "end": 191.13,
+      "id": "seg_0042",
+      "speaker": "S02",
+      "start": 190.16,
+      "text": "Ooh."
+    },
+    {
+      "end": 194.44,
+      "id": "seg_0043",
+      "speaker": "S02",
+      "start": 192.97,
+      "text": "We were doing great there."
+    },
+    {
+      "end": 200.31,
+      "id": "seg_0006",
+      "speaker": "S01",
+      "start": 195.78,
+      "text": "But, you know, this might be why Coca-Cola is not a $2 trillion company today."
+    },
+    {
+      "end": 208.68,
+      "id": "seg_0007",
+      "speaker": "S02",
+      "start": 200.73,
+      "text": "Well, we'll debate that at the end of the episode. Listeners, of course, this playbook is almost exactly what the Coca-Cola Company has done."
+    },
+    {
+      "end": 215.72,
+      "id": "seg_0008",
+      "speaker": "S02",
+      "start": 208.89,
+      "text": "And they've done it over the course of 140 years. It has its roots all the way back in the Civil War."
+    },
+    {
+      "end": 220.47,
+      "id": "seg_0009",
+      "speaker": "S02",
+      "start": 215.76,
+      "text": "It grew up through the rise of the automobile, through the Great Depression, through two world wars."
+    },
+    {
+      "end": 225.42,
+      "id": "seg_0010",
+      "speaker": "S02",
+      "start": 220.71,
+      "text": "It seamlessly and shamelessly integrated into the hippie culture of the 70s."
+    },
+    {
+      "end": 230.82,
+      "id": "seg_0011",
+      "speaker": "S02",
+      "start": 225.66,
+      "text": "And then, of course, it had the epic cola wars of the 80s and onward."
+    },
+    {
+      "end": 235.62,
+      "id": "seg_0012",
+      "speaker": "S02",
+      "start": 230.97,
+      "text": "And David, I would say this episode, perhaps more than any other that we've covered, is about America."
+    },
+    {
+      "end": 242.01,
+      "id": "seg_0013",
+      "speaker": "S01",
+      "start": 236.1,
+      "text": "Well, it's about America and then America inserting itself everywhere else in the rest."
+    },
+    {
+      "end": 249.66,
+      "id": "seg_0014",
+      "speaker": "S02",
+      "start": 247.17,
+      "text": "You need to know is you're not going to get there with something generic."
+    },
+    {
+      "end": 253.8,
+      "id": "seg_0015",
+      "speaker": "S02",
+      "start": 249.72,
+      "text": "So you have to build a brand that grows into a strong, protected trademark."
+    },
+    {
+      "end": 259.77,
+      "id": "seg_0016",
+      "speaker": "S02",
+      "start": 254.31,
+      "text": "And to reach that scale, it must be global, so it has to have a taste that's universal in all countries."
+    },
+    {
+      "end": 264.36,
+      "id": "seg_0017",
+      "speaker": "S02",
+      "start": 260.06,
+      "text": "Now, conveniently for you, all humans do require large amounts of water every day to"
+    },
+    {
+      "end": 271.41,
+      "id": "seg_0018",
+      "speaker": "S03",
+      "start": 268.17,
+      "text": "S05 Pilot Microphone Lane."
+    },
+    {
+      "end": 275.85,
+      "id": "seg_0019",
+      "speaker": "S03",
+      "start": 272.25,
+      "text": "S05 Pilot Microphone Lane."
+    },
+    {
+      "end": 285.12,
+      "id": "seg_0020",
+      "speaker": "S03",
+      "start": 277.17,
+      "text": "Now, the audio is not being played in my AirPod, but I am speaking freely."
+    },
+    {
+      "end": 289.95,
+      "id": "seg_0021",
+      "speaker": "S03",
+      "start": 285.87,
+      "text": "And I am going to speak halfway. Keep talking."
+    },
+    {
+      "end": 301.47,
+      "id": "seg_0022",
+      "speaker": "S03",
+      "start": 290.82,
+      "text": "So this is a microphone lane without a two male podcast interview playing in my ear."
+    },
+    {
+      "end": 303.06,
+      "id": "seg_0023",
+      "speaker": "S03",
+      "start": 301.56,
+      "text": "That is not happening."
+    },
+    {
+      "end": 306.54,
+      "id": "seg_0024",
+      "speaker": "S03",
+      "start": 304.53,
+      "text": "I do not know."
+    },
+    {
+      "end": 310.5,
+      "id": "seg_0025",
+      "speaker": "S03",
+      "start": 309.18,
+      "text": "Click on video."
+    },
+    {
+      "end": 313.22,
+      "id": "seg_0026",
+      "speaker": "S03",
+      "start": 312.09,
+      "text": "And I'm going to stay silent."
+    },
+    {
+      "end": 315.72,
+      "id": "seg_0027",
+      "speaker": "S02",
+      "start": 313.44,
+      "text": "Live. So it is a giant market."
+    },
+    {
+      "end": 317.58,
+      "id": "seg_0006",
+      "speaker": "S03",
+      "start": 317.22,
+      "text": "Yes."
+    },
+    {
+      "end": 319.41,
+      "id": "seg_0007",
+      "speaker": "S02",
+      "start": 317.61,
+      "text": "But you're not going to fully replace water."
+    },
+    {
+      "end": 321.81,
+      "id": "seg_0008",
+      "speaker": "S02",
+      "start": 319.44,
+      "text": "It's just going to be kind of a small fraction of the time."
+    },
+    {
+      "end": 328.74,
+      "id": "seg_0009",
+      "speaker": "S02",
+      "start": 322.26,
+      "text": "So, onto the beverage itself, you're going to want to optimize it to maximize the rewards of ingesting it."
+    },
+    {
+      "end": 332.22,
+      "id": "seg_0010",
+      "speaker": "S02",
+      "start": 329.1,
+      "text": "As refreshing as possible in any climate."
+    },
+    {
+      "end": 335.31,
+      "id": "seg_0011",
+      "speaker": "S02",
+      "start": 332.9,
+      "text": "Now, you're going to want to do a bunch of other stuff, too."
+    },
+    {
+      "end": 338.15,
+      "id": "seg_0012",
+      "speaker": "S02",
+      "start": 335.34,
+      "text": "You want to fill it with calories to give energy."
+    },
+    {
+      "end": 342.48,
+      "id": "seg_0013",
+      "speaker": "S02",
+      "start": 338.28,
+      "text": "You want the flavor, texture, and aroma that makes it pleasurable to consume."
+    },
+    {
+      "end": 346.65,
+      "id": "seg_0014",
+      "speaker": "S02",
+      "start": 342.84,
+      "text": "And you should throw in some brain stimulants, like caffeine and sugar."
+    },
+    {
+      "end": 349.71,
+      "id": "seg_0015",
+      "speaker": "S02",
+      "start": 347.04,
+      "text": "That's sort of the ideal product mix."
+    },
+    {
+      "end": 351.06,
+      "id": "seg_0016",
+      "speaker": "S03",
+      "start": 349.77,
+      "text": "Among other things, yeah."
+    },
+    {
+      "end": 354.84,
+      "id": "seg_0017",
+      "speaker": "S02",
+      "start": 351.15,
+      "text": "Now, you don't want competitors to swoop in for a free ride on the market you just created."
+    },
+    {
+      "end": 359.97,
+      "id": "seg_0018",
+      "speaker": "S02",
+      "start": 355.23,
+      "text": "So you should make sure your product, the real thing, is available everywhere."
+    },
+    {
+      "end": 361.68,
+      "id": "seg_0019",
+      "speaker": "S02",
+      "start": 360.15,
+      "text": "Anytime someone asks for it."
+    },
+    {
+      "end": 362.82,
+      "id": "seg_0020",
+      "speaker": "S03",
+      "start": 361.83,
+      "text": "I see what you did there."
+    },
+    {
+      "end": 368.13,
+      "id": "seg_0021",
+      "speaker": "S02",
+      "start": 363.03,
+      "text": "At a very low price, so there's really not an opportunity for competitors to ever fill the vacuum."
+    },
+    {
+      "end": 372.33,
+      "id": "seg_0022",
+      "speaker": "S02",
+      "start": 368.31,
+      "text": "There's never a reason for anyone to reach for anything other than your product."
+    },
+    {
+      "end": 372.98,
+      "id": "seg_0023",
+      "speaker": "S03",
+      "start": 372.51,
+      "text": "Always."
+    },
+    {
+      "end": 374.16,
+      "id": "seg_0024",
+      "speaker": "S02",
+      "start": 373.23,
+      "text": "Always, David."
+    },
+    {
+      "end": 380.64,
+      "id": "seg_0025",
+      "speaker": "S02",
+      "start": 374.91,
+      "text": "And since everyone is not thinking about beverages all the time, like you probably are as the proprietor of this business,"
+    },
+    {
+      "end": 385.44,
+      "id": "seg_0026",
+      "speaker": "S02",
+      "start": 381.03,
+      "text": "you're going to want to associate your beverage with all the things that they are thinking about."
+    },
+    {
+      "end": 391.86,
+      "id": "seg_0027",
+      "speaker": "S02",
+      "start": 385.77,
+      "text": "The good life, family, your sports heroes, beautiful people, Christmas."
+    },
+    {
+      "end": 393.63,
+      "id": "seg_0028",
+      "speaker": "S02",
+      "start": 391.95,
+      "text": "I mean, happiness generally."
+    },
+    {
+      "end": 398.91,
+      "id": "seg_0029",
+      "speaker": "S02",
+      "start": 393.78,
+      "text": "You are going to want to have a Pavlovian association between your drink and happiness."
+    },
+    {
+      "end": 404.61,
+      "id": "seg_0030",
+      "speaker": "S02",
+      "start": 399.27,
+      "text": "And you're going to want to spend huge amounts of money blanketing the entire world with this messaging."
+    },
+    {
+      "end": 407.37,
+      "id": "seg_0031",
+      "speaker": "S01",
+      "start": 405.75,
+      "text": "S zero five closing."
+    },
+    {
+      "end": 410.25,
+      "id": "seg_0032",
+      "speaker": "S01",
+      "start": 408.33,
+      "text": "S zero five closing."
+    },
+    {
+      "end": 414.81,
+      "id": "seg_0033",
+      "speaker": "S01",
+      "start": 412.32,
+      "text": "Stop X zero five."
+    },
+    {
+      "end": 418.11,
+      "id": "seg_0034",
+      "speaker": "S01",
+      "start": 416.16,
+      "text": "Stop S zero five."
+    }
+  ]
+}

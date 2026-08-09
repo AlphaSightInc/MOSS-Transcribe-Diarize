@@ -1,0 +1,29 @@
+{
+  "microphone": [
+    {
+      "end": 0.75,
+      "id": "m1",
+      "speaker": "S01",
+      "start": 0.25,
+      "text": "local hello"
+    }
+  ],
+  "mixed": [
+    {
+      "end": 1.0,
+      "id": "x1",
+      "speaker": "S01",
+      "start": 0.0,
+      "text": "remote hello local hello"
+    }
+  ],
+  "system": [
+    {
+      "end": 1.0,
+      "id": "s1",
+      "speaker": "S01",
+      "start": 0.0,
+      "text": "remote hello"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+COMMAND: python3 -m unittest -v test_capture_harness.py
+EXIT: 0
+test_begin_embeds_descriptor_hard_abort_before_speech ... ok
+test_block_device_gate_accepts_builtin_input_and_airpods_output ... ok
+test_block_device_gate_refuses_airpods_input ... ok
+test_block_grant_is_single_use_per_shape_and_grant ... ok
+test_block_grant_refuses_shape_outside_scope ... ok
+test_capture_script_uses_hostkey_checked_tailscale_fallback_on_dns_failure ... ok
+test_complete_three_track_tape_passes ... ok
+test_grant_bounds_refuse_cap_over_2_gib ... ok
+test_grant_bounds_refuse_ttl_over_24_hours ... ok
+test_missing_lane_is_named ... ok
+test_overdue_retained_raw_blocks_new_preflight ... ok
+test_post_decision_pilot_is_single_shape_single_use ... ok
+test_post_decision_retry_requires_exact_one_use_label ... ok
+test_program_accounting_refuses_projected_overrun ... ok
+Ran 14 tests in 0.006s
+OK
+
+COMMAND: python3 -m unittest -v test_post_session.py
+EXIT: 0
+test_210s_leading_silence_is_trimmed_with_exact_sample_offset ... ok
+test_audited_bleed_rate_is_emitted ... ok
+test_full_future_packet_emits_pending_bleed_rate ... ok
+test_full_pipeline_records_and_applies_leading_silence_sample_offset ... ok
+test_fully_silent_operator_declared_track_skips_leading_silence_trim ... ok
+test_future_packet_marks_bleed_rate_pending_until_human_audit ... ok
+test_tonight_raw_retention_is_scoped_and_deadline_bounded ... ok
+Ran 7 tests in 0.249s
+OK

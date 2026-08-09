@@ -1,0 +1,31 @@
+All remote probes were read-only and used: ssh ga0@m4mbp 'bash -s'.
+
+1. Process/launch context:
+   ps -p 53886 -o pid=,ppid=,user=,lstart=,command=
+
+2. Current devices/rates:
+   system_profiler SPAudioDataType -json
+   PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 - <<'PY'
+   # ctypes CoreAudio AudioObjectGetPropertyData: dOut, uid , lnam, nsrt
+   PY
+
+3. Safari state timeline:
+   /usr/bin/log show --start '2026-08-06 13:59:40' \
+     --end '2026-08-06 14:07:20' --style compact --info --debug \
+     --predicate '((process == "Safari") OR (subsystem == "com.apple.amp.mediaremote"))'
+   Filter: updateNowPlayingInfo, HTMLMediaElement play/pause, MediaRemote Playing/Paused.
+
+4. MOSSCapture/CoreAudio timeline:
+   /usr/bin/log show --start '2026-08-06 13:59:40' \
+     --end '2026-08-06 14:07:20' --style compact --info --debug \
+     --predicate '(process == "MOSSCaptureApp") OR (process == "coreaudiod") OR (process == "audiomxd")'
+   Filter: tap, aggregate, converter, format, sample rate, route, overload, error, stop/start.
+
+5. Status surface:
+   ~/.local/bin/mtd-capture status
+
+6. Source/F4b comparison:
+   nl -ba macos/MOSSCapture/Sources/MOSSCaptureCore/SystemAudioTap.swift
+   nl -ba macos/MOSSCapture/Sources/MOSSCaptureCore/SystemAudioPermissionProbe.swift
+   nl -ba scripts/ralph-afk/live-canary.sh
+   Read f4b-remediation-20260803/f1/run{1,2}/{driver.log,phases.tsv}.

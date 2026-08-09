@@ -1,0 +1,49 @@
+{
+  "schema": "moss-dl2-s01b-boundary.v1",
+  "verdict": "PASS_AUDIT_READY_RAW_DELETED",
+  "session_id": "b3ddcda9517947ba89a2fc5f9e8cacdb",
+  "attempt_label": "S01b",
+  "shape_id": "S01",
+  "capture_window_authority": "POST_DECISION_SINGLE_USE_RETRY",
+  "content": "interview speech on system lane; operator microphone; overlap card",
+  "started_at_utc": "2026-08-06T19:01:17Z",
+  "ended_at_utc": "2026-08-06T19:05:05Z",
+  "descriptor_revision": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "lanes_ready_before_record": ["system", "microphone"],
+  "published_frames": 910,
+  "outbox_retained_frames": 0,
+  "raw": {
+    "total_bytes": 21824428,
+    "system_bytes": 7244802,
+    "microphone_bytes": 7296800,
+    "mixed_bytes": 7282826,
+    "system_pcm_sha256": "7b12a4ee2666b3a164a9bd58b4933377b26acbd920899e3b1ce87fb4da74eba2",
+    "microphone_pcm_sha256": "14dc33865a233cc918878da3bdedd35cb9a1cd23a2604f1e21fcb4ab4da6d8cf",
+    "mixed_pcm_sha256": "bfc063833893f837bb60ce1054e6ac67e9b80ee9cc4deeff2e67b4023a64aa38",
+    "remote_deleted": true,
+    "local_deleted": true,
+    "deleted_at_utc": "2026-08-06T19:05:38Z"
+  },
+  "program_cap": {
+    "captured_bytes_total": 64833730,
+    "cap_bytes": 2147483648
+  },
+  "asr": {
+    "system": {"job_id": "6ea91248199e", "status": "waiting_review", "segments": 25, "generated_tokens": 891, "wall_seconds": 5.361295},
+    "microphone": {"job_id": "ab14a93967c1", "status": "waiting_review", "segments": 27, "generated_tokens": 1096, "wall_seconds": 7.678317},
+    "mixed": {"job_id": "96ddff94daba", "status": "waiting_review", "segments": 46, "generated_tokens": 1387, "wall_seconds": 7.659156}
+  },
+  "audit_packet": {
+    "rows": 146,
+    "target_listen_rows": 142,
+    "html_sha256": "6f3a49ea02b4613acc6cc9cb1acd082c6e314a68f683c210a8b6a6d60de0a791",
+    "json_sha256": "d209b8df7da6b0d8932943449ee0ca3b71a1d1e5a22769a6cc42b5ae081db3ee"
+  },
+  "safety": {
+    "services_healthy_after": true,
+    "service_changed_by_harness": false,
+    "tcc_changed_by_harness": false,
+    "volume_changed_by_harness": false,
+    "retry_reuse_refusal": "post_decision_retry_already_used:S01b"
+  }
+}

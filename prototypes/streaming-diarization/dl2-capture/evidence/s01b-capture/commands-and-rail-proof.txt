@@ -1,0 +1,28 @@
+BEGIN:
+PYTHONDONTWRITEBYTECODE=1 python3 capture_harness.py begin \
+  --program-root program --shape S01 --attempt-label S01b \
+  --operator-present --consented-content
+RESULT: PASS; both lanes capturing; descriptor 9089b332; RECORD.
+
+FINISH:
+PYTHONDONTWRITEBYTECODE=1 python3 capture_harness.py finish \
+  --session-dir program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb \
+  --operator-log program/s01b-operator-cues.txt
+RESULT: PASS; pulled_pending_asr; raw_bytes=21824428.
+
+POST SESSION:
+PYTHONDONTWRITEBYTECODE=1 python3 post_session.py \
+  program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb
+RESULT: PASS; audit rows=146; target listen=142; local and remote raw deleted.
+
+ONE-USE RETRY RAIL:
+RED before support: TypeError, validate_capture_window did not accept attempt_label.
+GREEN: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest test_capture_harness.py
+RESULT: 8 tests OK.
+POST-RUN NEGATIVE PROOF: identical S01b begin command
+RESULT: REFUSED post_decision_retry_already_used:S01b; exit 2 before remote preflight.
+
+DERIVED SEAL:
+cd program/sessions/S01b-b3ddcda9517947ba89a2fc5f9e8cacdb/derived
+shasum -a 256 -c DERIVED_EVIDENCE.sha256
+RESULT: 12/12 OK.

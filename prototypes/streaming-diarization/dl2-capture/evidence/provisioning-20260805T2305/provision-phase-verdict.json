@@ -1,0 +1,12 @@
+{
+  "canary_pending": true,
+  "cap_bytes": 2147483648,
+  "created_at_utc": "2026-08-06T03:10:37Z",
+  "effective_flags_verified": true,
+  "overall": "PROVISIONED_PENDING_CANARY",
+  "root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+  "schema": "moss-dl2-provision-phase.v1",
+  "source_revision": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "ttl_seconds": 86400,
+  "vllm_pid_unchanged": true
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "moss-dl2-block-grant-verification.v1",
+  "verified_at_et": "2026-08-08T22:29:24-04:00",
+  "grant_id": "dl2-block-20260808",
+  "grant_sha256": "116d20fd6d03e464fb123f7b42ea723aaf7fc82255acf3a39cf2d526cb4de762",
+  "ruling_path": "docs/handoffs/rulings/ruling-dl2-block-20260808.txt",
+  "ruling_sha256": "db64ba8e4b69c549a17efb1fe5064ef73857ab74d5323239aa15bd9fb15883c2",
+  "authorized_shapes_in_order": ["CAL-HP", "S06", "S05"],
+  "single_use_per_shape": true,
+  "content_scope": "test or consented content only",
+  "decision_deadline_et": "2026-08-08T23:59:00-04:00",
+  "block_close_et": "2026-08-08T23:59:00-04:00",
+  "ttl_seconds": 86400,
+  "hard_delete_deadline_et": "2026-08-09T23:59:00-04:00",
+  "program_cap_bytes": 2147483648,
+  "captured_bytes_total_before_block": 76416664,
+  "program_ledger_sha256_before_block": "ca550c895f14cab16517fb3131045ecd66ddb98efab29573889f12a7dd6fa90f",
+  "capture_started": false,
+  "pairing_attempted": false,
+  "verdict": "GRANT_REFRESHED_CAPTURE_HELD"
+}

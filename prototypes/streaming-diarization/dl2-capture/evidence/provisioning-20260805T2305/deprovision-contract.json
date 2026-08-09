@@ -1,0 +1,14 @@
+{
+  "before_env_sha256": "b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313",
+  "before_unit_sha256": "090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056",
+  "control_path": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint-control-20260805T2305",
+  "env_path": "/mnt/d/Coding/MOSS-Transcribe-Diarize/ops/moss-live.env",
+  "provisioned_env_sha256": "474711f5636a61f6515f29cb1bb63996f8b85f838d65c05736f613807e6d8aeb",
+  "restore_command": "python3 deprovision_retention.py",
+  "retention_root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+  "schema": "moss-dl2-deprovision-contract.v1",
+  "server": "gyauo@ga0-alienware-rtx4070ti.local",
+  "server_shell": "wsl.exe -d Ubuntu -- bash -s",
+  "unit_path": "/home/devcontainers/.config/systemd/user/moss-live-web.service",
+  "vllm_pid_at_provisioning": 1899
+}

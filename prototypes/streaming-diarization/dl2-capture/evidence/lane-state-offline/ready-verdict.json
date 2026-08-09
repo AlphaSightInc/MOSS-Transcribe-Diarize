@@ -1,0 +1,21 @@
+{
+  "schema": "moss-dl2-lane-state-fix-ready-verdict.v1",
+  "fixture_claim": "production-schema-grounded active status; not captured attempt bytes",
+  "old_running_count": 0,
+  "red_old_predicate": "PASS_EXPECTED_FAILURE",
+  "new_capturing_count": 2,
+  "green_new_predicate": "PASS",
+  "startup_poll_bound_seconds": 3,
+  "required_active_state": "capturing",
+  "timeout_auto_stops_before_operator_speech": true,
+  "live_validation": "pending S01 fresh pair; authoritative",
+  "capture_harness_sha256": "9f387873fb0586248ddc5e2620d76683df1a6e0e11e52e30f67701ec8d81ddf1",
+  "test_capture_harness_sha256": "428aa2f9db00ca32dc5167f4058681ab7a879e044ba9fa9e0f9159a469cc34db",
+  "operator_checklist_sha256": "b6884275e4222d2d18de93410406084c4fb4b7c02e6e2aae2cbdfe4efdb0cd9f",
+  "test_count": 7,
+  "tests": "PASS",
+  "readiness_preflight": "PASS",
+  "recording_started": false,
+  "ready_to_retry": true,
+  "overall": "READY_TO_PAIR_AND_RETRY_S01"
+}

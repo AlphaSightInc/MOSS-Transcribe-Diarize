@@ -1,0 +1,21 @@
+{
+  "blocker": "deployed live service has no --live-retention-* declaration; retention is startup-scoped and service changes are forbidden",
+  "capture_idle_both_lanes_stopped": true,
+  "clock_correction": "earlier 01:30 EDT anchor was operator-rejected; local date agrees with corrected 21:50 ET anchor",
+  "created_at_utc": "2026-08-06T02:03:40Z",
+  "harness_dry_run_ready": true,
+  "host_state_modified": false,
+  "hour_10_deadline_et": "2026-08-06T07:50:00-04:00",
+  "live_session_started": false,
+  "mock_end_to_end_pass": true,
+  "overall": "DRY_RUN_READY_REAL_PILOT_BLOCKED",
+  "product_code_modified": false,
+  "raw_delete_deadline_et": "2026-08-06T21:50:00-04:00",
+  "ready_to_record": false,
+  "required_external_action": "deployment owner must establish the already-authorized retention declaration or authorize an in-scope service change; harness itself will not do so",
+  "retention_preflight_named_refusal_pass": true,
+  "safety_tests_pass": true,
+  "schema": "moss-dl2-prep-readiness.v1",
+  "service_healthy": true,
+  "sprint_anchor_et": "2026-08-05T21:50:00-04:00"
+}

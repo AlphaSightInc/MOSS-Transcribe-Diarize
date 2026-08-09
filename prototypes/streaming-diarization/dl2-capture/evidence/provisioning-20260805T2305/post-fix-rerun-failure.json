@@ -1,0 +1,22 @@
+{
+  "schema": "moss-dl2-post-fix-rerun-failure.v1",
+  "observed_at_et": "2026-08-06T13:25:43-04:00",
+  "session_id": "659da76b2d244d8593b012cbcb55a94c",
+  "authorized_json_path_fix_applied": true,
+  "complete_provisioning_sha256": "e9942139d730a7a23b947489418a0a7bd8d1c3553a9b7d27cf49e0aea897bc4a",
+  "source_revision_json_path": ".snapshot.descriptor.source_revision",
+  "versioned_transcript": "canary-snapshot-events-post-fix-v2.txt",
+  "canary_exit_code": 70,
+  "failure_stage": "capture start heartbeat before snapshot assertion",
+  "heartbeat_http_status": 403,
+  "capture_refusal": "sessionDisowned",
+  "published_frame_count": 0,
+  "raw_tape_created": false,
+  "retention_root_entries": 0,
+  "root_cause": "the prior accepted canary stop released server session access; the Mac persisted that now-closed session id, so an identical rerun cannot start without minting a fresh session",
+  "server_stop_binding": "moss_transcribe_diarize/app/live_transport.py:399-405",
+  "client_persisted_session_binding": "macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureSecurity.swift:1048-1063",
+  "required_operator_action": "fresh pair to mint and persist a new session before any further canary",
+  "ready_to_record": false,
+  "overall": "BLOCKED_FRESH_SESSION_REQUIRED"
+}

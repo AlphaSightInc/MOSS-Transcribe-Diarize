@@ -1,0 +1,78 @@
+{
+  "audit_row_count": 3,
+  "batch_api": "http://ga0-alienware-rtx4070ti.local:7860",
+  "blind": true,
+  "deployment_sha": "9089b33210401111865da7abc160ab0bcb4aa266",
+  "ended_at_utc": "2026-08-06T02:03:38Z",
+  "golden_reference_opened": false,
+  "mock": true,
+  "postflight": {
+    "checked_at_utc": "2026-08-06T02:03:38Z",
+    "mock": true
+  },
+  "preflight": {
+    "checked_at_utc": "2026-08-06T02:03:38Z",
+    "mock": true
+  },
+  "schema": "moss-dl2-post-session.v1",
+  "session_id": "dry-run-session",
+  "shape_id": "S01",
+  "started_at_utc": "2026-08-06T02:03:38Z",
+  "target_listen_row_count": 3,
+  "tracks": [
+    {
+      "audio_sha256": "6b7403bcf957e43c1f7a261055b39f4a87ea1410b6f108b2f9a0c7d97aa6e5f0",
+      "ended_at_utc": "2026-08-06T02:03:38Z",
+      "job_id": "mock-system",
+      "segment_count": 1,
+      "segments_api_argv": null,
+      "started_at_utc": "2026-08-06T02:03:38Z",
+      "status_api_argv": null,
+      "submit_api_argv": null,
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/system/job-terminal.json",
+      "terminal_sha256": "035e3e05c2a270e1f429cf80b078738f8defcfe3709a6b44592b1cb6edfe1df6",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/system/asr-text.txt",
+      "text_sha256": "6b7c0fcf7eb530bb45baee793d94cdc6e27da641a60b9a46a68dc231dba129bd",
+      "track": "system",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/system/asr-transcript.json",
+      "transcript_sha256": "1127a6a9e8fe6fc93fed34f735c10626ad81d6a1be1d3590e2b0270b06a0a016",
+      "wall_seconds": 0.000711
+    },
+    {
+      "audio_sha256": "6b7403bcf957e43c1f7a261055b39f4a87ea1410b6f108b2f9a0c7d97aa6e5f0",
+      "ended_at_utc": "2026-08-06T02:03:38Z",
+      "job_id": "mock-microphone",
+      "segment_count": 1,
+      "segments_api_argv": null,
+      "started_at_utc": "2026-08-06T02:03:38Z",
+      "status_api_argv": null,
+      "submit_api_argv": null,
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/microphone/job-terminal.json",
+      "terminal_sha256": "5df2d0aa6080ad9fbd2274f3746338669f6182e7b56e84a5fb019b602bfcced3",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/microphone/asr-text.txt",
+      "text_sha256": "d77281d43f11a5360d954cdf3529f3100bcd3aed733de71351b3f618d380a3f0",
+      "track": "microphone",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/microphone/asr-transcript.json",
+      "transcript_sha256": "a2db57dd8de45a6365868e8d4ba05af0eafdd5f9157415fbbf5a4ac1aa6f9fe1",
+      "wall_seconds": 0.000698
+    },
+    {
+      "audio_sha256": "6b7403bcf957e43c1f7a261055b39f4a87ea1410b6f108b2f9a0c7d97aa6e5f0",
+      "ended_at_utc": "2026-08-06T02:03:38Z",
+      "job_id": "mock-mixed",
+      "segment_count": 1,
+      "segments_api_argv": null,
+      "started_at_utc": "2026-08-06T02:03:38Z",
+      "status_api_argv": null,
+      "submit_api_argv": null,
+      "terminal_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/mixed/job-terminal.json",
+      "terminal_sha256": "3240f6de178a768c41cfebd811856cbfb12c644347b8d89ef5419276bfc42180",
+      "text_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/mixed/asr-text.txt",
+      "text_sha256": "93655a0e544d07869c044bb104144ef5bd93ead1ac743a0d7778465cc3632451",
+      "track": "mixed",
+      "transcript_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/derived/asr/mixed/asr-transcript.json",
+      "transcript_sha256": "06b4bf52723d5a7f2f2b2b65af9c88675fef09f32b61478fb67d0e494c750d46",
+      "wall_seconds": 0.000622
+    }
+  ]
+}

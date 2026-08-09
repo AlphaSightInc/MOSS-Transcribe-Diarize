@@ -1,0 +1,127 @@
+.............................................................ss... [  7%]
+................................... [ 11%]
+.............................................. [ 16%]
+........................................................................ [ 25%]
+......s................................................................. [ 33%]
+........................................................................ [ 41%]
+........................................................................ [ 50%]
+.................................................................... [ 58%]
+...................................................................... [ 66%]
+................................................................. [ 73%]
+..s..................................................................... [ 81%]
+............................................F........................... [ 90%]
+..................................................................... [ 98%]
+................                                                         [100%]
+=================================== FAILURES ===================================
+____ test_built_macos_app_finishes_launch_and_honors_application_terminate _____
+
+    def test_built_macos_app_finishes_launch_and_honors_application_terminate():
+        if platform.system() != "Darwin":
+            pytest.skip("macOS Launch Services lifecycle is Darwin-only.")
+        if shutil.which("open") is None or shutil.which("swift") is None:
+            pytest.fail("open and swift are required for the Launch Services lifecycle tracer.")
+    
+        lab = _lab_bundle()
+        pid: int | None = None
+        with tempfile.TemporaryDirectory(prefix="mtd5-lifecycle-", dir="/tmp") as tmp:
+            tmp_path = Path(tmp)
+            socket_path = tmp_path / "control.sock"
+            store_path = tmp_path / "secrets.json"
+            launched = subprocess.run(
+                [
+                    "open",
+                    "-n",
+                    "-g",
+                    "--env",
+                    f"MOSS_CAPTURE_CONTROL_SOCKET={socket_path}",
+                    "--env",
+                    f"MOSS_CAPTURE_SECRET_STORE_PATH={store_path}",
+                    "--env",
+                    "MOSS_CAPTURE_SKIP_LAUNCH=1",
+                    str(lab.bundle),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                timeout=TIMEOUT,
+            )
+            assert launched.returncode == 0, (
+                f"Launch Services could not open the lab app: "
+                f"stdout={launched.stdout!r} stderr={launched.stderr!r}"
+            )
+            try:
+                deadline = time.monotonic() + TIMEOUT
+                while time.monotonic() < deadline and not socket_path.exists():
+                    time.sleep(0.05)
+                assert socket_path.exists(), "Launch Services app did not bind its control socket"
+    
+                control_secret = _read_store(store_path)["local-control-secret"]
+                request_body = json.dumps(
+                    {"secret": control_secret, "request": {"command": "status"}},
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+                    client.settimeout(2.0)
+                    client.connect(str(socket_path))
+                    pid = struct.unpack("i", client.getsockopt(0, 0x002, 4))[0]
+                    client.sendall(struct.pack(">I", len(request_body)) + request_body)
+                    response_length = struct.unpack(">I", _recv_exact(client, 4))[0]
+                    response = json.loads(_recv_exact(client, response_length).decode("utf-8"))
+                assert response["ok"] is True
+                assert response["running"] is False
+    
+                program = """
+    import AppKit
+    import Foundation
+    
+    let pid = pid_t(CommandLine.arguments[1])!
+    guard let app = NSRunningApplication(processIdentifier: pid) else {
+        Foundation.exit(2)
+    }
+    let finished = app.isFinishedLaunching
+    let terminateAccepted = app.terminate()
+    print("finishedLaunching=\\(finished)")
+    print("terminateAccepted=\\(terminateAccepted)")
+    guard finished else {
+        Foundation.exit(3)
+    }
+    guard terminateAccepted else {
+        Foundation.exit(4)
+    }
+    """.strip()
+                lifecycle = subprocess.run(
+                    ["swift", "-e", program, str(pid)],
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                    timeout=BUILD_TIMEOUT,
+                )
+>               assert lifecycle.returncode == 0, (
+                    f"app did not finish Launch Services launch or accept termination: "
+                    f"stdout={lifecycle.stdout!r} stderr={lifecycle.stderr!r}"
+                )
+E               AssertionError: app did not finish Launch Services launch or accept termination: stdout='' stderr=''
+E               assert 2 == 0
+E                +  where 2 = CompletedProcess(args=['swift', '-e', 'import AppKit\nimport Foundation\n\nlet pid = pid_t(CommandLine.arguments[1])!\...n.exit(3)\n}\nguard terminateAccepted else {\n    Foundation.exit(4)\n}', '74127'], returncode=2, stdout='', stderr='').returncode
+
+tests/test_macos_uds_tracer.py:222: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate
+1 failed, 862 passed, 4 skipped, 4 warnings, 373 subtests passed in 62.59s (0:01:02)

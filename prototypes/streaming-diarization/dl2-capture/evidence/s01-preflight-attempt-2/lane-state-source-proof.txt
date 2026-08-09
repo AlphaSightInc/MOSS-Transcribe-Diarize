@@ -1,0 +1,6 @@
+HARNESS_BINDING	capture_harness.py:338 requires lane state == "running"
+PRODUCT_VOCABULARY	CaptureController.swift:13-22 defines capturing,recovering,stopped,degraded,failed; no "running"
+PRODUCT_ACTIVE_TRANSITION	NativeLaneHealth.swift:219-222 sets admitted lane state to "capturing"
+PRODUCT_STARTUP_TRANSITION	NativeDualCaptureSource.swift:297-318 maps a started/stopped lane to "recovering" until facts arrive
+ACCEPTED_CANARY_WAIT	complete_provisioning.py:88-93 waits 3 seconds and checks lane membership, not impossible state "running"
+VERDICT	HARNESS_STATE_VOCABULARY_DEFECT

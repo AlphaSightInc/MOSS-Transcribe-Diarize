@@ -1,0 +1,5 @@
+{
+  "program_cap_bytes": 2147483648,
+  "retention_root": "/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint",
+  "ttl_seconds": 86400
+}

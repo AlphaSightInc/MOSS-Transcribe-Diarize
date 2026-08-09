@@ -1,0 +1,9 @@
+SESSION_ID	659da76b2d244d8593b012cbcb55a94c
+INDEX	{"created_at":1786036632.9619932,"degradation":null,"ended_at":1786036704.903675,"max_bytes":2147483648,"sample_rate":16000,"session_id":"659da76b2d244d8593b012cbcb55a94c","total_bytes":254722,"tracks":{"microphone":{"bytes":107862,"duplicate_frames":1,"file":"microphone.pcm","frames_written":7,"gaps":[{"end_sample":47531,"sample_count":704,"start_sample":46827}],"origin_timestamp_ns":923079667510416,"overlapped_samples":1173,"rebases":0,"sample_count":53931},"mixed":{"bytes":93270,"duplicate_frames":0,"file":"mixed.pcm","frames_written":7,"gaps":[{"end_sample":27174,"sample_count":1,"start_sample":27173},{"end_sample":40235,"sample_count":1,"start_sample":40234}],"origin_timestamp_ns":923080123501458,"overlapped_samples":0,"rebases":0,"sample_count":46635},"system":{"bytes":53590,"duplicate_frames":0,"file":"system.pcm","frames_written":4,"gaps":[{"end_sample":16001,"sample_count":1,"start_sample":16000}],"origin_timestamp_ns":923081321841250,"overlapped_samples":1,"rebases":0,"sample_count":26795}},"updated_at":1786036703.219049,"version":1}
+HASHES
+fbf739636d2f59ab59fe9561663a2b1c5d7b0ecdf0173d949f376a0e6515fe38  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/659da76b2d244d8593b012cbcb55a94c/index.json
+f6de391aaf84928a7eaa846fca97add1c9157131e76a14affff9538e67fad687  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/659da76b2d244d8593b012cbcb55a94c/microphone.pcm
+f81578bace02e79e1919894903e1232a3f52aef51a19a0196f81d21e164ae65b  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/659da76b2d244d8593b012cbcb55a94c/mixed.pcm
+9efbe1c81d0e3a9596480fce6810cccfa36cf7e7d624c76480c724f7fa4a05b1  /home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint/659da76b2d244d8593b012cbcb55a94c/system.pcm
+TOTAL_BYTES	254722
+ROOT_ENTRIES_BEFORE	5

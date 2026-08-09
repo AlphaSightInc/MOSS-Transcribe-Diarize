@@ -1,0 +1,7 @@
+COMMAND: sh -c date; date -u; TZ=America/New_York date '+%Y-%m-%dT%H:%M:%S%z %Z'
+EXIT: 0
+--- STDOUT ---
+Wed Aug  5 23:10:32 EDT 2026
+Thu Aug  6 03:10:32 UTC 2026
+2026-08-05T23:10:32-0400 EDT
+--- STDERR ---

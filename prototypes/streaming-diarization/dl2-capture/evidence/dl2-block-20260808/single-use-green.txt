@@ -1,0 +1,21 @@
+COMMAND: python3 -m unittest -v test_capture_harness.py
+EXIT: 0
+test_begin_embeds_descriptor_hard_abort_before_speech ... ok
+test_block_grant_is_single_use_per_shape_and_grant ... ok
+test_block_grant_refuses_shape_outside_scope ... ok
+test_capture_script_uses_hostkey_checked_tailscale_fallback_on_dns_failure ... ok
+test_complete_three_track_tape_passes ... ok
+test_grant_bounds_refuse_cap_over_2_gib ... ok
+test_grant_bounds_refuse_ttl_over_24_hours ... ok
+test_missing_lane_is_named ... ok
+test_overdue_retained_raw_blocks_new_preflight ... ok
+test_post_decision_pilot_is_single_shape_single_use ... ok
+test_post_decision_retry_requires_exact_one_use_label ... ok
+test_program_accounting_refuses_projected_overrun ... ok
+
+Ran 12 tests in 0.006s
+OK
+
+COMMAND: python3 -m json.tool program/grant.json; exact contract assertions
+EXIT: 0
+GRANT_CONTRACT PASS

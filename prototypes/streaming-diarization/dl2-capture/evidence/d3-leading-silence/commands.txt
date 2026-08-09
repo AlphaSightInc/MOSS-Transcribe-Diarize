@@ -1,0 +1,17 @@
+WORKDIR=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture
+
+PYTHONDONTWRITEBYTECODE=1 python3 d3_leading_silence_probe.py prepare --source /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/audio.wav --output evidence/d3-leading-silence/fixtures
+
+PYTHONDONTWRITEBYTECODE=1 python3 d3_leading_silence_probe.py measure --fixtures evidence/d3-leading-silence/fixtures --output evidence/d3-leading-silence/untrimmed-results
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_post_session.PostSessionAuditMetadataTests.test_210s_leading_silence_is_trimmed_with_exact_sample_offset
+
+PYTHONDONTWRITEBYTECODE=1 python3 d3_leading_silence_probe.py green --source evidence/d3-leading-silence/fixtures/leading-210s.wav --output evidence/d3-leading-silence/trimmed-green
+
+PYTHONDONTWRITEBYTECODE=1 python3 d3_leading_silence_probe.py green --source evidence/d3-leading-silence/fixtures/leading-210s.wav --output evidence/d3-leading-silence/trimmed-green-v2
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_post_session.py test_capture_harness.py
+
+PYTHONDONTWRITEBYTECODE=1 python3 capture_harness.py preflight --program-root program --projected-bytes 256000000
+
+git -C /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep diff --check

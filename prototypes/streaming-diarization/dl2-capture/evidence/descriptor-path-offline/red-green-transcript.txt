@@ -1,0 +1,7 @@
+COMMAND_OLD	jq -r .descriptor.source_revision_//_empty schema-grounded-snapshot.json
+OLD_VALUE	
+RED_EXPECTED_OLD_PATH_EMPTY	PASS
+COMMAND_NEW	jq -r .snapshot.descriptor.source_revision_//_empty schema-grounded-snapshot.json
+NEW_VALUE	9089b33210401111865da7abc160ab0bcb4aa266
+GREEN_EXPECTED_REVISION_MATCH	PASS
+OVERALL	PASS

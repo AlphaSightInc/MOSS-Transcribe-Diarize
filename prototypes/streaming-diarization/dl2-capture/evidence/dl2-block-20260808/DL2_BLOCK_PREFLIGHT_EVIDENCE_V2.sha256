@@ -1,0 +1,12 @@
+8c5e00d9f02bd15b67d6d149cbcda8bfb82749e7315e922f775b51e863c41d63  DL2_BLOCK_PREFLIGHT_EVIDENCE.sha256
+049c957cd3f83492ad4391672b71830a5ca13938fb699a3272b43ef42f5c5c88  device-preflight-red.txt
+cbd83e350780c40f55137ad6b36edc03fead6252257c78338153e744a9f36311  device-preflight-green.txt
+2f4dc7cff9c32bf037118d4ac6e249195837e13c26788c112c772d531e5dc2d4  full-preflight-corrected.json
+02eb9a2a0218dbaf28d3d0eadbb47e127fdffe3bf2494b7f703a59ce3afd84ba  grant-verification-final.json
+9d0bbd21f3ebacbe813e7e579dc3157b5582645317431e8ea1dca153607d2b87  ruling-hashes.txt
+16d2151f38d69ed2a639388823c301115bbc8e6d458da5d2e79ef300ef9dfee9  ../../program/grant.json
+7f42f3549e854cdd7c88147ce40eb8c9e10996a9e6bbe56e67b65eedf3fa8188  ../../capture_harness.py
+daae0647ccc453d8ca393fa2566be2f5137c5a25ade6863c0a194630fc6b3784  ../../test_capture_harness.py
+a7ceef53293a98f1eb3caf58c3aec310a954cfe26fe032d06e1197546fcafb1e  ../../operator-session-block-20260806.md
+2b60acac429329b5b578c99cae1230ade60469fad7fd346d6d64a0ec478098b2  ../../operator-checklist.md
+b8bbd5d9d0b94c3ee514bfd657ac512fa411ed8fd82fe9e23ce3251ed8fdb69c  ../../../NOTES.md

@@ -1,0 +1,13 @@
+COMMAND: ssh gyauo@ga0-alienware-rtx4070ti.local wsl.exe -d Ubuntu -- bash -s
+EXIT: 0
+--- STDOUT ---
+utc	2026-08-06T02:03:39Z
+service:moss-live-web.service	active/enabled
+service:moss-web.service	active/enabled
+service:moss-vllm.service	active/enabled
+live_pid	1902
+deployed_sha	9089b33210401111865da7abc160ab0bcb4aa266
+deployed_dirty_count	0
+retention_flags	
+
+--- STDERR ---

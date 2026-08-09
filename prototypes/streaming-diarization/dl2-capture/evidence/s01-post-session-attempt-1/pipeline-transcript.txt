@@ -1,0 +1,6 @@
+COMMAND	PYTHONDONTWRITEBYTECODE=1 python3 post_session.py program/sessions/S01-00f8a46e99b44f1b867088de48860348
+EXIT	2
+STDOUT	REFUSED batch_job_failed:2879dd7a5f38:window 1 (120-270s) failed: vLLM transcription returned empty transcript text for /tmp/mtd-window-y22sdudm/window-0001.wav.
+TRACK	system
+SOURCE_SHA256	2eaa2123c5aa7490b2c20e81b2028225861c825b6961266848e9e56e0cddff03
+BATCH_ACTIVE_AFTER	0

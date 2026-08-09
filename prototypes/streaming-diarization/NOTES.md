@@ -2061,3 +2061,453 @@ same-speaker-cross-lane and missing/wrong-lane controls, human-audited identity/
 overlap/crosstalk truth, preregistered dev/validation/single-open long-hard holdout splits,
 and D8-safe same-frame gates. The inventory and byte seal live under
 `l15/evidence/dl1-inventory/`; DL2 remains a separate authorization.
+
+### DL2-PREP sprint harness dry-run boundary (`dl2-capture`, 2026-08-05)
+
+**VERDICT: HARNESS DRY-RUN READY; REAL PILOT BLOCKED FAIL-CLOSED.** Authoritative sprint
+window is 2026-08-05 21:50 ET through 2026-08-06 07:50 ET. The 24-hour program raw-audio
+deadline is 2026-08-06 21:50 ET; derived outputs trigger earlier immediate deletion. At the
+operator's clock correction, `date`, `date -u`, and explicit New York rendering observed
+2026-08-05 22:03:38 EDT / 2026-08-06 02:03:38 UTC. There was no host-clock skew; the earlier
+~01:30 EDT sprint anchor was a narrative interpretation error and is retired. Raw clock proof:
+`dl2-capture/evidence/clock-observation.txt` SHA-256
+`b63a16b2baf91bc94059a21d8d0a52f995ab5738ebabf76f954a365615915af9`.
+
+Red-first was restricted to the two directed rails. The absent implementation failed import;
+green proves TTL/cap refusal, cumulative-cap refusal, named missing-microphone refusal, and the
+three-track path (5/5). The mock one-command pipeline passed pull-shape validation, blind ASR for
+system/microphone/mixed, audit-row HTML generation, derived hashing, and raw cleanup. Evidence:
+`dl2-capture/evidence/DL2_PREP_EVIDENCE.sha256` SHA-256
+`ea3c12a99d0d8fdbd547749c66fc0385bb0ef89b5fe2afceec7af1d673241833` (25/25 OK);
+readiness verdict SHA-256
+`8ca788c4c14e4e6910b31343aa2aa49d12439e059a081b661d585cb6b6413364`.
+
+Read-only live preflight found all three user services active/enabled, deployed SHA
+`9089b33210401111865da7abc160ab0bcb4aa266`, clean deployed tree, and capture idle with both
+lanes stopped. It also proved the live process has no `--live-retention-*` arguments. Product
+retention is service-startup-scoped (`web_cli.py`), not session-scoped (`create_live_session`
+has no retention request field). Because this task forbids service/manifest/host changes, the
+harness named-refuses `retention_not_declared` (exit 2) and did not start a meeting. The pilot
+requires the deployment owner to establish the already-authorized declaration or separately
+authorize the service change; the harness will not bypass this boundary.
+
+### DL2 retention provisioning — canary control point (`dl2-capture`, 2026-08-05)
+
+Operator explicitly authorized provisioning at 2026-08-05 23:05 ET. Local clock observed
+23:05:10 EDT / 03:05:10 UTC, agreeing with that anchor; the 24-hour raw deadline is therefore
+2026-08-06 23:05 ET. Before mutation: capture stopped with both lanes stopped, three services
+active/enabled, deployed tree clean at `9089b332`, no retention flags, live env SHA-256
+`b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313`, and vLLM PID 1899.
+
+The supported live profile now effectively declares the granted root
+`/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint`, per-session
+cap 2147483648 bytes, and TTL 86400 seconds. Root is ext4 mode 0700, uid/gid 1000, empty.
+Only `moss-live-web.service` restarted; `moss-vllm` remains PID 1899; provider source revision
+remains `9089b332`. Exact env/unit/invocation rollback bytes live in the mode-0600 remote
+control directory named by `deprovision-contract.json`; `python3 deprovision_retention.py`
+is the hash-guarded restoration command.
+
+The post-restart canary correctly stopped before claiming READY: the capture client retained
+its pre-restart session reference and `start` returned exit 70 / HTTP 403
+`sessionDisowned`. Normal `stop` returned `notRunning`; capture is stopped, no canary session
+or tape exists, and the retention root remains empty. Per the no-app-action boundary, the
+operator must quit and reopen MOSS Capture before the identical snapshot/events canary reruns.
+Block evidence manifest SHA-256:
+`700e4cec2989b5ba41c559ea0d323635e1c5e6dd51021a588473e3d3ab1aa36f` (7/7 OK).
+
+Read-only relaunch diagnosis: the operator's launch action did not replace the hidden app
+process. `MOSSCaptureApp` remains PID 57184, started 2026-08-03 13:44:15 ET. No helper
+heartbeat/lease reached the server after the two old-session 403s at 23:11:47/23:12:15.
+TLS completed, TCC access calls returned without a pending prompt, auth state remained present,
+and no crash report or tape appeared. Re-pairing is not indicated. Operator action is to use
+Activity Monitor to quit PID 57184 (Force Quit only if Quit does not end it), then open
+`/Applications/MOSSCapture.app` once. Diagnosis evidence SHA-256:
+`b61c16ab963006812c746614f0bfd159acc56b4aef3c587479fcba9525330454` (3/3 OK).
+
+### DL2 fresh-process canary — pairing required (`dl2-capture`, 2026-08-06)
+
+**VERDICT: BLOCKED_FRESH_PAIRING_REQUIRED; NOT READY TO RECORD.** The supervisor-verified
+fresh process is PID 53886, started 2026-08-06 12:13:17 ET. At the probe, orchestrator and
+m4mbp clocks both read 12:14:15 ET and the server read 12:14:16 ET: observed cross-host skew
+was at most one second. This records the operator's observation that the m4mbp clock showed
+Aug 6 12:13 at relaunch without treating it as material clock drift.
+
+The immediate canary again exited 70. Server logs show the fresh client reached TLS but sent
+the heartbeat for stale persisted session `cdb72d743b874554be48266232667bf7`; the server
+rejected it 403. Post-attempt state is stopped on both lanes with
+`sessionRefusal=sessionDisowned`; no accepted helper heartbeat, helper lease, session, tape,
+or retention-root entry exists. Source tracing shows startup loads the prior session id from
+Keychain (`CaptureSecurity.swift:1048-1063`), whereas the documented `mtd-capture pair` flow
+creates and stores a fresh server session (`CaptureSecurity.swift:986-1015,1237-1255`;
+`LOCAL_DEPLOYMENT.md:725-737`). This is not a pending TCC or volume action. Recovery requires
+operator-only fresh pairing; its one-use payload must never enter an argv, file, log, or agent
+output. No service, host, TCC, volume, deployed-tree, or retention configuration change was
+made during this diagnosis.
+
+Failure evidence:
+`dl2-capture/evidence/provisioning-20260805T2305/FRESH_RELAUNCH_CANARY_FAILURE_EVIDENCE.sha256`.
+
+### DL2 post-pair canary — harness assertion defect (`dl2-capture`, 2026-08-06)
+
+**VERDICT: BLOCKED_CANARY_HARNESS_ASSERTION_PATH; NOT READY TO RECORD.** Operator pairing
+created session `659da76b2d244d8593b012cbcb55a94c`. The immediate canary proved accepted helper
+heartbeats, an active capture lease, both running lanes, 11 published frames, and HTTP 200 for
+both snapshot and events. Stop returned HTTP 200; both lanes are stopped afterward. All three
+retention tracks were created. The deployed descriptor remains source revision `9089b332` and
+all services remain active with vLLM PID 1899 unchanged.
+
+The canary process nevertheless exited 1 at its prototype-only source-revision assertion.
+`complete_provisioning.py:112-113` queries `.descriptor.source_revision`; the product response
+shape is `{snapshot: LiveServiceSnapshot, ...}` (`live_transport.py:703-717`), so the actual
+field is `.snapshot.descriptor.source_revision`. Thus live pairing/capture/snapshot/events did
+not fail; the harness asserted the wrong JSON path. One frame POST returned HTTP 400 amid
+successful neighboring frame POSTs and is preserved as an observation; it did not strand the
+outbox or prevent all three tapes, but it remains visible for the next canary.
+
+The failed canary produced 254,722 raw bytes. Index and per-track hashes were pulled and sealed,
+the cap ledger was updated, then the remote session directory was hash-guardedly deleted;
+retention-root entries are zero. The existing runner overwrote the prior sealed transcript path
+before failing; the new bytes were moved into the versioned `post-pair-v1` evidence name and
+the original exit-70 bytes were restored exactly (SHA-256 `25052621...`) so the historical
+`PROVISIONING_BLOCK_EVIDENCE.sha256` remains 7/7 valid. No retry or harness fix was attempted.
+
+### DL2 corrected-canary rerun — fresh session required (`dl2-capture`, 2026-08-06)
+
+Supervisor authorized the one-line `.snapshot.descriptor.source_revision` correction and a
+versioned transcript. Both were applied. The identical rerun did not reach that assertion:
+`start` exited 70 after the heartbeat for session `659da76b2d244d8593b012cbcb55a94c`
+returned HTTP 403. This is the lifecycle consequence of the prior diagnostic canary's accepted
+clean stop: the server stop path releases session access (`live_transport.py:399-405`), while
+the Mac start path reloads the persisted session id (`CaptureSecurity.swift:1048-1063`).
+The session is therefore single-use across a completed stop. Capture remains stopped, published
+zero frames, created no new tape, and the retention root remains empty. A new operator pairing
+must mint the next session before the corrected canary can execute. No further retry occurred.
+
+### DL2 S01 folded preflight — READY (`dl2-capture`, 2026-08-06)
+
+Supervisor ruled that no standalone canary v3 should consume another single-use session. The
+offline proof uses an explicitly schema-grounded minimal envelope, not fabricated captured
+bytes: `live_transport.py:703-717` supplies the `{snapshot: ...}` response envelope,
+`live_service_runtime.py:241-257` supplies the nested descriptor, and the sealed v2 server-state
+artifact supplies deployed revision `9089b332`. The old `.descriptor.source_revision` path
+returns empty (red); `.snapshot.descriptor.source_revision` returns the pinned revision (green).
+
+S01 `begin` now starts with a fail-closed silent phase: it requires two running lanes, a valid
+handoff, pinned TLS leaf, snapshot HTTP 200, and the deployed revision at the corrected path.
+Any failure exits with a named `live_preflight_abort:*` error and the trap stops the session
+before the operator receives the **RECORD** cue. Seven harness tests pass. Read-only live
+preflight passes with capture idle, all services active/enabled, clean deployed SHA `9089b332`,
+and retention root/cap/TTL exactly within grant. The post-hour-10 ruling is encoded narrowly as
+one single-use S01 pilot; it does not authorize S03 or any other post-decision session.
+
+**VERDICT: READY_TO_RECORD_AFTER_ONE_FRESH_PAIR.** Recording has not started. Evidence:
+`dl2-capture/evidence/descriptor-path-offline/S01_READY_EVIDENCE.sha256`.
+
+### DL2 S01 preflight attempt 1 — missing system lane (`dl2-capture`, 2026-08-06)
+
+**VERDICT: BLOCKED_PREFLIGHT_SYSTEM_LANE_NOT_EMITTING; OPERATOR NEVER SPOKE.** Fresh session
+`699ce1bdda834c24b60b355ed0754718` paired and accepted its heartbeat. The hard lane predicate
+then named-refused `live_preflight_abort:missing_lane`; its trap sent a clean stop (HTTP 200)
+before the descriptor request or **RECORD** cue. Post-state is stopped, zero outbox frames, all
+services healthy, and vLLM PID 1899 unchanged.
+
+The card/preflight combination caused the failure: the operator correctly kept remote playback
+paused, while the preflight required both lanes already emitting. The resulting tape index has
+one microphone frame and one mixed frame (6,400 bytes each), but zero system frames/bytes and no
+system PCM file. Thus the rail caught a real absent system feed; it was not a descriptor failure.
+The 12,800 bytes were hash-sealed, cap-accounted as a non-acceptance preflight abort, and deleted
+locally/remotely; retention-root entries are zero. A retry requires another fresh session and a
+short consented system-lane playback during the silent preflight, then the remote source can
+reset for timer zero. No retry was attempted. Evidence:
+`dl2-capture/evidence/s01-preflight-attempt-1/S01_PREFLIGHT_FAILURE_EVIDENCE.sha256`.
+
+### DL2 S01 preflight attempt 2 — state-vocabulary defect (`dl2-capture`, 2026-08-06)
+
+**VERDICT: BLOCKED_PREFLIGHT_INSTRUMENT_STATE_VOCABULARY; OPERATOR NEVER SPOKE.** Fresh
+session `4340eee60d8940458faa934984642c1d` ran with operator-confirmed background music on the
+system output. It still named-refused `missing_lane` immediately and clean-stopped before the
+descriptor request or **RECORD** cue. This refutes attempt 1's paused-playback hypothesis as the
+sole cause.
+
+Source inspection identifies the instrument defect: `capture_harness.py` required lane state
+`running`, but product `CaptureLaneStates` contains only `capturing`, `recovering`, `stopped`,
+`degraded`, and `failed`; an admitted active lane becomes `capturing`. The harness therefore
+asked for an impossible state and aborted before allowing startup to settle. The accepted
+provisioning canary had waited three seconds and did not impose this invalid vocabulary check.
+A correct prospective rail is a bounded startup wait followed by both lanes in `capturing`,
+with timeout/failure still hard-aborting before speech. No fix or retry was attempted.
+
+The 6,400-byte abort tape was hash-sealed, cap-accounted as non-acceptance evidence, and deleted;
+retention-root entries are zero and services remain healthy. Evidence:
+`dl2-capture/evidence/s01-preflight-attempt-2/S01_PREFLIGHT_FAILURE_V2_EVIDENCE.sha256`.
+
+### DL2 S01 lane-state instrument fix — READY (`dl2-capture`, 2026-08-06)
+
+Supervisor approved a production-schema-grounded active-status fixture after the absence of
+sealed pre-abort attempt bytes was disclosed. The fixture is explicitly not a captured status:
+it derives `capturing` from `CaptureLaneStates`, the admitted transition, and the production
+status shape. Against it, the old `running` predicate selects zero lanes (red) and the new
+`capturing` predicate selects both lanes (green).
+
+S01 `begin` now polls for at most three seconds for both system and microphone to reach
+`capturing`. Timeout or any non-ready terminal state still triggers the existing trap, cleanly
+stopping before **RECORD**. Seven tests pass; the card keeps consented system music flowing
+during silent preflight and resets the timer only after **RECORD**. Final read-only preflight
+shows capture idle, outbox empty, all services active/enabled, clean deployed SHA `9089b332`,
+and exact granted retention settings. **VERDICT: READY_TO_PAIR_AND_RETRY_S01.** Evidence:
+`dl2-capture/evidence/lane-state-offline/LANE_STATE_FIX_READY_EVIDENCE.sha256`.
+
+### DL2 S01 post-session ASR interval preregistration (`dl2-capture`, 2026-08-06)
+
+The full system-track batch job `2879dd7a5f38` failed on window 120–270s with empty transcript
+text after reaching its token cap. Capture duration is ~444–446s because the session remained
+live through setup and interactive cue preparation; the directed countdown/card occupies the
+final ~160s. Before any retry, one aligned interval is preregistered for all three tracks:
+`260.0s → track end`, retaining ~25s pre-roll and the complete directed card. Timestamps are
+shifted back by +260s in outputs. Selection uses only the known cue schedule and durations—no
+ASR text, reference, speaker label, or lane-specific tuning. Retry budget: one.
+
+### DL2 S01 finish + post-session result (`dl2-capture`, 2026-08-06)
+
+S01 `00f8a46e99b44f1b867088de48860348` stopped cleanly after the supervisor's
+visible split-pane cue script. Cue timestamps are approximate (±5s): T0+10s microphone speech,
+T0+55s silent operator with video, T0+100s overlap, T0+130s second overlap, T0+150s wind-down,
+and T0+158s spoken stop. The system source was **music only**, not speech; an empty system-lane
+ASR is therefore a pilot-content property, not an ASR failure claim. Future sessions use
+interview speech. The invisible background-terminal cue behavior is also recorded: future cues
+must use the plan/message stream or a supervisor-created visible split.
+
+Finish passed: both lanes stopped, outbox zero, 1,781 published frames, services healthy, and
+vLLM unchanged. Pulled raw totals 42,735,380 bytes. The program cap ledger totals 43,009,302
+bytes including prior failed preflights. Per-track tape stats are sealed in
+`dl2-capture/evidence/s01-post-session-attempt-2/capture-stats.json`.
+
+The first full-system batch attempt failed on a music-only empty-text window. The single
+preregistered aligned retry (`260s → end`) explicitly skipped the operator-declared non-speech
+system track, then failed on microphone batch job `53b6388b3fca`: window 0 returned 59 tokens
+but zero parsed segments. The selected microphone signal is non-empty (-41.1 dB mean, -16.9 dB
+max), so this is a parser/model-output failure rather than an empty captured file. Retry budget
+is exhausted; no interval or prompt was changed, mixed was not submitted, and no audit packet
+was emitted. Raw remains retained pending a supervisor ruling, within the 24-hour TTL deadline.
+**VERDICT: BLOCKED_ASR_ZERO_PARSED_SEGMENTS.** Evidence:
+`dl2-capture/evidence/s01-post-session-attempt-2/S01_POST_SESSION_ATTEMPT2_EVIDENCE.sha256`.
+
+### DL2 S01 content diagnosis (`dl2-capture`, 2026-08-06)
+
+Supervisor authorized diagnostic-only ASR outside the preregistered retry budget and ordered all
+S01 raw retained locally and remotely through the 23:05 EDT TTL. Remote and local PCM/index
+hashes match; nothing was deleted.
+
+Pinned 1-minute control job `77bc16ec2ae6` passed with 17 parsed segments. Exact microphone and
+mixed diagnostic jobs `cbf557969083` and `85b2a792dc6c` both repeated the 59-token/zero-segment
+failure. Direct microphone output contains only timestamp/speaker markers and no words. Thus the
+batch service is healthy and the refusal is caused by S01 audio content, not service drift.
+
+System TCC AudioCapture and Microphone records are authorized (`auth_value=2`), current output is
+MacBook Pro Speakers (`BuiltInSpeakerDevice`, 48 kHz), and the production tap is global rather
+than device-bound. S01 itself proves the tap worked: loud system audio is present through
+131.38275s. Safari then logs an explicit pause at 14:01:59.044 EDT and no later Playing state;
+the retained track becomes silent at 14:02:00.612, 1.568s later, and stays silent while frames
+continue. **ROOT CAUSE: SOURCE_PLAYBACK_PAUSED_NOT_CAPTURE_TAP_FAILURE.** H1 stale binding, H2
+format/rate zeroing, and H3 browser/process exclusion are refuted. F4b used the same deployment,
+machine, devices, and GUI app, and captured fresh `say` processes again after a 25s quiet interval.
+No app/service/TCC/device fix is required: operator must press Play and confirm Safari remains
+Playing during every system-bearing phase. The current default input is MacBook Pro Microphone;
+its S01 signal is low and nearly stationary rather than speech-dominant, yielding timestamp-only
+ASR. This diagnosis grants no new session authority. **VERDICT: CONTENT_DIAGNOSED.** Evidence:
+`dl2-capture/evidence/s01-content-diagnosis/S01_CONTENT_DIAGNOSIS_EVIDENCE.sha256`.
+
+### DL2 S01b accepted retry capture (`dl2-capture`, 2026-08-06)
+
+Operator explicitly authorized one S01b retry after S01 diagnosis and paired session
+`b3ddcda9517947ba89a2fc5f9e8cacdb`. The retry was encoded as an exact one-use authorization:
+attempt label `S01b`, shape `S01`; the original S01 single-use record was not weakened. Red first,
+the old validator rejected the new label API; green, 8/8 harness tests passed. After completion,
+the identical S01b begin command named-refuses `post_decision_retry_already_used:S01b` before any
+remote preflight.
+
+Live preflight passed before RECORD with both lanes `capturing`, interview speech playing on the
+system lane, and descriptor revision `9089b332`. Capture stopped cleanly after the visible S01b
+card: 910 published frames, outbox zero, 21,824,428 raw bytes (system 7,244,802; microphone
+7,296,800; mixed 7,282,826). Services remained healthy; no service, TCC, or volume mutation.
+
+The full-track post-session pipeline passed all three batch jobs: system `6ea91248199e`/25
+segments, microphone `ab14a93967c1`/27, mixed `96ddff94daba`/46. It emitted 146 audit rows,
+142 target-listen rows, verified the 12-file derived seal, then deleted local and remote raw per
+the grant. Program cap ledger is 64,833,730 / 2,147,483,648 bytes. **VERDICT:
+PASS_AUDIT_READY_RAW_DELETED.** Evidence:
+`dl2-capture/evidence/s01b-capture/S01B_EVIDENCE.sha256`.
+
+### DL2 S01b human-audited TRUE/BLEED reference layers (`dl2-capture`, 2026-08-06)
+
+**VERDICT: PASS_REFERENCE_LAYERS_BUILT.** The operator's participant audit partitions all
+27 microphone ASR rows without overlap: 12 TRUE/local rows (75.27s) and 15 BLEED/remote rows
+(66.79s). The TRUE golden layer collapses batch labels S02+S03 to the single real local
+speaker `Operator`. BLEED rows are remote-owned contamination and map to sealed system-lane
+ASR speaker IDs by maximum temporal overlap. The resulting semantic bleed rate is
+66.79 / 142.06 = 0.470153 (47.0%). Attestation SHA-256:
+`aa23df7439879a8e52de3d561d48d0894a27e5ce030b6c40f1b4c7ba0f8c97e7`.
+
+**Motivating observation — over-birth:** the single operator voice split into S02 and S03 on
+this approximately four-minute specimen. This reproduces the motivating identity-fragmentation
+class in a small, grounded case; it is an observation, not a candidate result.
+
+The still-unfrozen F2-A skeleton is amended legally before preregistration: naive microphone
+lane ownership is refuted by the 47.0% specimen. The candidate must use runtime cross-lane
+voiceprint matches to flag matching microphone clusters as bleed, suppress/reassign their
+evidence to the system speaker, and treat only residual microphone clusters as local. Future
+audit packets always emit `bleed_rate`: `pending_human_audit` until adjudication, then the
+audited numerator, denominator, and rate. The original blind derived packet remains byte-stable;
+the session manifest alone is versioned with the authorized human-audit pins. Evidence:
+`dl2-capture/evidence/s01b-reference-layers/S01B_REFERENCE_EVIDENCE.sha256`.
+
+### DL2 S01b D1–D3 diagnosis and next-session preparation (`dl2-capture`, 2026-08-06)
+
+Supervisor-closed findings are binding: **D1**, S01b microphone bleed is raw room acoustics;
+the deployed macOS capture path has no voice-processing/AEC. **D2**, the operator's batch S03
+birth occurs only after the 12s gap in the quiet wind-down; loud overlap remains S02. The next
+session therefore explicitly probes gap >10s plus register drop.
+
+**D3 VERDICT: CONFIRMED_HARD_FIRST_WINDOW_SILENCE_CLIFF_FIXED.** Exact-zero prefixes were
+prepended to the pinned 60s Jamie Dimon control while its decoded speech samples stayed
+byte-identical. Results were 30s=`544 tokens/18 segments`, 60s=`558/18`, 120s=`824/17`, and
+210s=`13/0`, failed. Thus the predicted gradual degradation is refuted: the failure is a hard
+window cliff. With 210s leading silence, window 0 (0–150s) is all silence; zero parsed segments
+fail-stop the job before later speech.
+
+`post_session.py` now detects only leading silence (`-35dB`, at least 2.0s), trims it before
+submission, records the integer sample offset per track, and maps ASR timestamps back to tape
+time. The first 250ms-preroll implementation restored parsing (`537/18`) but failed the stronger
+predeclared exact-control check; that dead end is sealed. The bounded v2 correction removed the
+remaining synthetic preroll without changing detector, model, source, or gate. Job
+`89db0ff8c31e` exactly reproduced `521 tokens/17 segments`; offset 3,360,000 samples maps output
+to 210.57–269.97s. Sixteen prototype tests pass.
+
+S06, S05, and new CAL-HP cue scripts are prepared but add **no capture authority**. CAL-HP's
+prediction is digital system speech plus microphone room noise while the silent operator wears
+headphones. Raw for those three shapes is operator-authorized only until 23:05 EDT; derived
+artifacts seal immediately, cleanup is explicit, and overdue raw blocks later preflight. MagicDNS
+did not resolve `m4mbp`; a red-first fallback now resolves only the active Tailscale peer, requires
+its CGNAT address, preserves `ga0@m4mbp` plus `HostKeyAlias=m4mbp`, and never bypasses host-key
+checking. Final read-only preflight passes: capture idle/outbox zero, all services active, clean
+deployed SHA `9089b332`, exact TTL/cap. Recording still requires explicit GO + fresh pairing; none
+occurred here.
+Evidence: `dl2-capture/evidence/d3-leading-silence/D3_EVIDENCE.sha256`.
+
+### DL2 block grant refresh and device gate (`dl2-capture`, 2026-08-08)
+
+**VERDICT: ABORT_CAL_HP_BEFORE_PAIRING.** Supervisor grant
+`dl2-block-20260808` authorizes one use each of CAL-HP, S06, and S05, in that
+order, for test/consented content only. Decision/block close is 23:59 EDT;
+raw is retained through block close for declared analysis, cleanup runs after
+derived artifacts seal, and 2026-08-09 23:59 EDT is the 24-hour hard-delete
+backstop. Program cap remains 2 GiB. Harness enforcement was red first (2/2
+expected failures), then green (12/12): unlisted shapes and a second same-grant
+use now hard-refuse; session manifests and ledger rows bind `grant_id`.
+
+Before pairing, read-only CoreAudio properties showed default input **G@0
+AirPods Pro #2** (`A4-C6-F0-D9-8F-14:input`) and default output **G@0 AirPods
+Pro #2** (`A4-C6-F0-D9-8F-14:output`). Built-in MacBook Pro Microphone is
+present but not default. The input gate therefore fails exactly as ruled. No
+pairing or capture was attempted; ledger remains byte-stable at
+`ca550c895f14cab16517fb3131045ecd66ddb98efab29573889f12a7dd6fa90f`.
+
+**DEVICE CORRECTION ADDENDUM:** Operator then manually reset Sound > Input to
+MacBook Pro Microphone while leaving AirPods as output. CoreAudio recheck:
+input `MacBook Pro Microphone` / `BuiltInMicrophoneDevice`; output `G@0 AirPods
+Pro #2` / `A4-C6-F0-D9-8F-14:output`. Full read-only preflight passed at
+2026-08-08 22:33 EDT: capture idle, outbox zero, services healthy, deployed
+tree clean at `9089b332`, effective retention 24h/2GiB. macOS input auto-switch
+on AirPods connect is now a required operator-card reset, and every block
+`preflight` and `begin` re-verifies devices with a named pre-capture refusal.
+No pairing or capture occurred. **VERDICT: READY_AWAITING_OPERATOR_PAIRING.**
+
+### DL2 S05 external-stop recovery — finish/verdict boundary (`dl2-capture`, 2026-08-08)
+
+**VERDICT: PASS_USABLE_AS_IS_RAW_RETAINED.** Session
+`40422fb135a146579d013d663652bd56` was already externally stopped after the
+original controller died. Recovery verified `running=false`, both lanes
+stopped, 2,747 published frames, and outbox zero; the harness did not issue a
+second stop. Pulled raw totals 65,993,744 bytes: system 22,020,098,
+microphone 21,911,724, mixed 22,061,922. Local and remote hashes match.
+
+The standard full-system ASR preserved four valid prefix windows, then named-
+refused on trailing dead air at window 4 (480–630s). That failure and the V1
+short-mic zero-segment dead end remain sealed. Recovery reused completed job
+`9b14263b6738`, compacted the predeclared mic signal intervals under a sealed
+piecewise tape-time map (`b5b8093aa988`), ran the three frozen mixed windows,
+and reused the read-only committed full-system prefix records through 403s;
+no failed arm or inference result was rerun. The audit packet contains 344
+rows. Derived seal SHA-256: `dffb7df6a9cae10fb13778e5c9e50f902481baa0b1a311585eaac7c020ab4c99`.
+
+Blind ASR aligns the card to tape 268.57–418.64s. PCM/ASR classification finds
+58.912s solo, 41.260s remote-only, and 49.898s overlap; longest contiguous
+durations are 43.594s, 41.260s, and 48.302s. All exceed the predeclared 15s
+usability floor. Post-card dead air through the external stop is explicitly
+excluded. S05 verdict SHA-256:
+`065d40edd74797c6210b2b09d66f497cacbc99c55bc932699ff8e6f443a16b3d`.
+
+Raw remains local and remote through the block-close boundary under grant
+`dl2-block-20260808`; no cleanup/deprovision/commit has started. Program ledger
+is 198,126,630 / 2,147,483,648 bytes; four retained sessions total 121,709,966
+bytes. Prototype suite: 23/23 PASS. Boundary evidence SHA-256:
+`d214158b75e0bf9ead580f43437914e8b2e947bc8bec552d9ea8028ec158ee6b`.
+Future rail: authenticated controller heartbeat; auto-stop and seal state if a
+live controller heartbeat is absent for more than 120 seconds.
+
+### DL2 capture-program block close (`dl2-capture`, 2026-08-09)
+
+**VERDICT: PASS_CAPTURE_PROGRAM_CLOSED.** Before deletion, all four retained
+block sessions passed six authoritative derived/verdict seals with zero non-OK.
+CAL-HP is explicitly a calibration-gate artifact (silent microphone; no standard
+three-lane packet). S06 is explicitly a solo/enrollment diagnostic (exact-zero
+system lane; no standard three-lane packet). S06R and S05 have full three-lane
+audit packets. The deletion inventory records every local WAV/PCM/index and
+remote PCM/index path, byte count, and SHA-256.
+
+Grant cleanup removed raw/audio locally and raw/index remotely for CAL-HP
+`79a72cdb...`, S06 `52f4856a...`, S06R `7515d518...`, and S05
+`40422fb1...`. The retention root was empty afterward; every program-ledger row
+is `raw_deleted=true`; cumulative accounting remains 198,126,630 bytes and
+retained count is zero. Inventory SHA-256:
+`631e179ff655f2223f07ab0ee57a563756c9ed0a83b0debe9b5f665b6596a42c`.
+Cleanup evidence SHA-256:
+`39ccd638acb9612b7f0958d9da291ac64b890749f04eeaa07010350c9bd0006f`.
+
+The sealed deprovision contract restored the exact pre-sprint profile: env
+`b1753223...3313`, unit `090b7d98...056`, and invocation
+`0de9fe38...b9b2`. Only `moss-live-web` restarted; `moss-web` and `moss-vllm`
+PIDs remained unchanged. Descriptor source revision is `9089b332`; all services
+are active/enabled; deployed tree is clean; retention flags are absent; retention
+root and rollback-control directory are removed; capture is stopped/outbox zero.
+The first wrapper validation raced HTTP readiness after the successful restore
+and is sealed; the command was not rerun. A bounded readiness poll then passed.
+Deprovision evidence SHA-256:
+`79ce6994d3221fc2a5a53064aeabcef1561e8708d0c71f9b4de204bfcc5359cb`.
+
+**Designed, not implemented:** next capture block should require an authenticated
+controller heartbeat and issue one watchdog stop after more than 120 seconds of
+controller loss, sealing its reason and final lane/frame/outbox state. This is a
+future rail only and adds no authority to the closed program.
+
+Final integrity audit: **PASS_WITH_DISCLOSED_HISTORICAL_DRIFT**. All terminal
+session/block-close authority manifests pass; no unclassified missing or changed
+row remains. Across 47 manifests / 429 rows: 396 current hashes pass, seven raw
+rows are absent under a session-manifest-authorized cleanup, and 26 historical
+rows point to mutable harness/config/ledger/NOTES files changed later in the
+capture lifecycle. Those old seals are preserved unchanged. Because this is the
+first harness commit, the 26 earlier byte versions have no owning commit; that
+record limitation is explicit for independent review. Evidence:
+`dl2-capture/evidence/block-close-integrity-20260809/`.
+
+Keeper gates: Swift 200/200 PASS; Python 863 passed / 4 skipped / 373
+subtests PASS; `git diff --check` PASS. The four skips reconcile to the two
+Python-3.10-only compatibility contracts and two operator-owned real-corpus
+fixtures absent from this clean worktree. Two direct SSH-context Python runs
+are preserved as FAIL history: only the Launch Services lifecycle tracer failed
+because the app process had no GUI audit-session ASN. A GUI-domain diagnostic
+passed that exact test, and the unchanged full pytest command then passed under
+a temporary `gui/501` LaunchAgent. One intermediate GUI runner attempt is also
+sealed; it exposed and fixed a poll bug (`xpcproxy` is active, not terminal).
+No product/test bytes or acceptance expectations changed. Authoritative gate
+evidence: `dl2-capture/evidence/keeper-closing-20260809/`.

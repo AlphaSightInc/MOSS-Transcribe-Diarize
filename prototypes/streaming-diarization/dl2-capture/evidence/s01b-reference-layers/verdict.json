@@ -1,0 +1,49 @@
+{
+  "schema": "moss-dl2-s01b-reference-verdict.v1",
+  "verdict": "PASS_REFERENCE_LAYERS_BUILT",
+  "session_id": "b3ddcda9517947ba89a2fc5f9e8cacdb",
+  "attempt_label": "S01b",
+  "shape_id": "S01",
+  "operator_attestation_sha256": "aa23df7439879a8e52de3d561d48d0894a27e5ce030b6c40f1b4c7ba0f8c97e7",
+  "partition": {
+    "true_rows": 12,
+    "bleed_rows": 15,
+    "covered_rows": 27,
+    "source_rows": 27,
+    "clean": true
+  },
+  "bleed_rate": {
+    "bleeded_speech_seconds": 66.79,
+    "true_local_speech_seconds": 75.27,
+    "mic_speech_seconds": 142.06,
+    "value": 0.47015345628607635,
+    "percent_rounded_1dp": 47.0
+  },
+  "identity_truth": {
+    "local_reference_speaker": "Operator",
+    "collapsed_batch_labels": [
+      "S02",
+      "S03"
+    ],
+    "bleed_ownership": "remote_system_lane",
+    "bleed_mapping": "maximum temporal overlap to sealed system-lane ASR speaker IDs"
+  },
+  "future_packet_emission": {
+    "implemented": true,
+    "unaudited_status": "pending_human_audit",
+    "tests": "3/3 PASS; full harness 11/11 PASS"
+  },
+  "f2a": {
+    "status": "UNFROZEN_SKELETON_DO_NOT_RUN",
+    "bleed_aware": true,
+    "naive_lane_ownership": "REFUTED_BY_S01b"
+  },
+  "historical_s01b_seal": {
+    "manifest": "evidence/s01b-capture/S01B_EVIDENCE.sha256",
+    "status": "one expected superseded row after authorized session-manifest augmentation",
+    "original_session_manifest_sha256": "c47a25dc00693fdda1cf261edfe778aa9ac3092b825a853d094dce0c8ca08d10",
+    "augmented_session_manifest_sha256": "ae5ba219f54478e8a1125b2b741a12bb36bd1a292999d03f4389ae7b159340ef",
+    "sealed_derived_artifacts_modified": false,
+    "derived_seal_sha256": "b547125e5148d74606010d4101d9a1f287055a8df15d85c07053dffa25cfd100"
+  }
+}

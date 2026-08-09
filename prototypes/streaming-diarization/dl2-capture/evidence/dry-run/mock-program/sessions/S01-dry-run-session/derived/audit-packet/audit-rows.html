@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8"><title>DL2 audit dry-run-session</title>
+<style>body{font:14px system-ui;margin:24px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px;vertical-align:top}.listen{background:#fff1d6}.agree{background:#e9f7ed}</style>
+<h1>Blind ASR lane triangulation — dry-run-session</h1>
+<p>LISTEN rows are ASR disagreements or simultaneous lane speech. This packet contains no golden reference.</p>
+<table><thead><tr><th>#</th><th>time</th><th>system</th><th>microphone</th><th>mixed</th><th>audit</th></tr></thead><tbody><tr class='listen'><td>1</td><td>0.000–0.250</td><td>remote hello</td><td></td><td>remote hello local hello</td><td>LISTEN</td></tr>
+<tr class='listen'><td>2</td><td>0.250–0.750</td><td>remote hello</td><td>local hello</td><td>remote hello local hello</td><td>LISTEN</td></tr>
+<tr class='listen'><td>3</td><td>0.750–1.000</td><td>remote hello</td><td></td><td>remote hello local hello</td><td>LISTEN</td></tr></tbody></table>

@@ -1,0 +1,21 @@
+{
+  "schema": "moss-dl2-lane-state-fixture-provenance.v1",
+  "fixture_kind": "production-schema-grounded active capture status",
+  "not_claimed": "not captured attempt-2 pre-abort status bytes",
+  "state_vocabulary_binding": {
+    "path": "macos/MOSSCapture/Sources/MOSSCaptureCore/CaptureController.swift",
+    "lines": "3-22",
+    "sha256": "f53c416c08d8ea27a98196a4c8e5f0435206fea6228d85002ba232578db8c4bd"
+  },
+  "admitted_transition_binding": {
+    "path": "macos/MOSSCapture/Sources/MOSSCaptureCore/NativeLaneHealth.swift",
+    "lines": "211-225",
+    "sha256": "54d5a8cdb4703d7b69d43f27ed5af4711c3a3d01085ccd9c962ffb060834866f"
+  },
+  "status_shape_binding": {
+    "path": "macos/MOSSCapture/Sources/MOSSCaptureCore/NativeDualCaptureSource.swift",
+    "lines": "297-319",
+    "sha256": "cb70f092387abb6a9a6adb6cc3cdc44214b3535284630cb8f354a27122efb84e"
+  },
+  "supervisor_authorization": "2026-08-06 schema-grounded active fixture approved after post-stop attempt-2 status limitation was disclosed"
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "moss-dl2-descriptor-path-fixture-provenance.v1",
+  "fixture_kind": "schema-grounded-minimal-response-envelope",
+  "not_claimed": "not captured v2 response bytes",
+  "response_envelope_binding": {
+    "path": "moss_transcribe_diarize/app/live_transport.py",
+    "lines": "703-717",
+    "sha256": "6e08e578bc7522ffe12ed6312664ca996aee2b4a1436620bf7f2fe15626defde"
+  },
+  "snapshot_descriptor_binding": {
+    "path": "moss_transcribe_diarize/app/live_service_runtime.py",
+    "lines": "241-257",
+    "sha256": "225c7298fe4203777421a5d506ab8fada0d56fead4e75435d505cd4cf322eb8c"
+  },
+  "sealed_deployed_revision_binding": {
+    "path": "prototypes/streaming-diarization/dl2-capture/evidence/provisioning-20260805T2305/post-pair-canary-server-state.txt",
+    "sha256": "21021883204aec7d407d6d4ffc99b5ecf680513a8883ca1634cad85426bf6794",
+    "owning_manifest": "prototypes/streaming-diarization/dl2-capture/evidence/provisioning-20260805T2305/POST_PAIR_CANARY_FAILURE_EVIDENCE.sha256",
+    "owning_manifest_sha256": "b03e922baf2be311e3acf8aabc2ae673c9e4e340e517358e4c0caa5ea3a826bc",
+    "source_revision": "9089b33210401111865da7abc160ab0bcb4aa266"
+  },
+  "supervisor_authorization": "2026-08-06 schema-grounded fixture approved after exact-byte payload absence was disclosed"
+}

@@ -1,0 +1,16 @@
+UTC	2026-08-09T04:05:37Z
+SERVICE:moss-live-web.service	active/enabled/377978
+SERVICE:moss-web.service	active/enabled/1905
+SERVICE:moss-vllm.service	active/enabled/1899
+ENV_HASH	474711f5636a61f6515f29cb1bb63996f8b85f838d65c05736f613807e6d8aeb
+UNIT_HASH	090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056
+SNAPSHOT_ENV_HASH	b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313
+SNAPSHOT_UNIT_HASH	090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056
+SNAPSHOT_INVOCATION_HASH	0de9fe38e621367e9391db513bfae07d516150ac05fceea2302a17f5384fb9b2
+CURRENT_INVOCATION_HASH	914edcbb551068250ffb489aaf889f4cda63594c25971e57aae1125f34600155
+ROOT_ENTRIES	0
+RETENTION_ENV_LINES	3
+RETENTION_ARG_LINES	3
+DESCRIPTOR	{"source_revision":"9089b33210401111865da7abc160ab0bcb4aa266","provider_name":"moss-rtx-webrtc-wespeaker","provider_revision":"webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112","provider_manifest_hash":"71bbedd63a10c83b211b646039fc342863f3c149609c17ed6439218b819f8ca1","config_hashes":{"endpoint_config_hash":"9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222","identity_config_hash":"4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89","decoder_config_hash":"20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c","combined_config_hash":"431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"},"bounds":{"max_frame_samples":16000,"max_queue_depth":16,"max_retained_samples":960000,"max_identity_speakers":16,"max_events":1000,"hard_cap_samples":40000,"stop_drain_deadline_seconds":5.0},"schema_version":1,"live_protocol_version":"moss-live-service.v1","live_protocol":{"protocol":"moss-live-service.v2","min_protocol_version":2,"max_protocol_version":2,"capabilities":{"lanes":true,"binary":false,"idempotent_frames":true,"resumable":true}},"sample_rate":16000,"frame_samples":8000,"feature_enabled":true}
+DEPLOYED_SHA	9089b33210401111865da7abc160ab0bcb4aa266
+DEPLOYED_DIRTY_COUNT	0

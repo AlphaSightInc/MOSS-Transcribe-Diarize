@@ -1,0 +1,269 @@
+{
+  "activity_method": {
+    "duration_gate_accounting": "cumulative content within the card; longest contiguous duration also reported",
+    "microphone": "blind ASR speech segments grouped across gaps no greater than 5s",
+    "system": "playback-active except contiguous exact-zero PCM runs of at least 0.25s"
+  },
+  "card_duration_seconds": 150.07,
+  "card_end_tape_seconds": 418.64,
+  "card_t0_basis": "first blind microphone ASR cue: S05 Pilot Microphone Lane",
+  "card_t0_tape_seconds": 268.57,
+  "evaluated_at_utc": "2026-08-09T03:53:31Z",
+  "gate": {
+    "minimum_seconds_each": 15.0,
+    "passes": true,
+    "required_types": [
+      "solo",
+      "remote_only",
+      "both"
+    ]
+  },
+  "longest_contiguous_seconds": {
+    "both": 48.302313,
+    "neither": 0.0,
+    "remote_only": 41.26,
+    "solo": 43.594063
+  },
+  "microphone_activity_groups_tape_seconds": [
+    [
+      268.57,
+      313.76
+    ],
+    [
+      355.02,
+      418.64
+    ]
+  ],
+  "operator_timing_note": "supervisor card timing was approximate; blind ASR cue/content plus PCM state provide tape alignment",
+  "per_lane": {
+    "microphone": {
+      "levels": {
+        "duration_seconds": 684.741375,
+        "peak_dbfs": -10.020268,
+        "rms_dbfs": -41.203566,
+        "sha256": "4ea92e0a2abfa611ca8bb9e99d443b9efbf7da47415854c6edd9c9c305b9925a"
+      },
+      "segment_count": 27,
+      "speaker_labels": [
+        "S01"
+      ],
+      "transcript_sha256": "0754c0f3f7300222091e5a41c83a9298c58650dfb27c9056902439b78c323b16"
+    },
+    "mixed": {
+      "levels": {
+        "duration_seconds": 689.4350625,
+        "peak_dbfs": -14.937717,
+        "rms_dbfs": -36.151825,
+        "sha256": "b83f3736f99a0ef9564cd7f3687b781267d0cbc891564d9d9a7fa0b61c62e280"
+      },
+      "segment_count": 94,
+      "speaker_labels": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "transcript_sha256": "83bea8734512b44dcc108c58d8435378acd3cfcb638a5371c364acca8e48871f"
+    },
+    "system": {
+      "levels": {
+        "duration_seconds": 688.1280625,
+        "peak_dbfs": -8.948252,
+        "rms_dbfs": -30.406036,
+        "sha256": "a5d0931cecff00b9f88ea7fd1e058597b0585512608247bd422dee14d232852b"
+      },
+      "segment_count": 64,
+      "speaker_labels": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "transcript_sha256": "11dd13d5ef43efbe2f6a9aa81482ed0e595de837d1864504fcb0160912946c53"
+    }
+  },
+  "schema": "moss-dl2-s05-timeline-verdict.v1",
+  "session_id": "40422fb135a146579d013d663652bd56",
+  "system_exact_zero_runs_tape_seconds": [
+    [
+      12.9118125,
+      13.22175
+    ],
+    [
+      32.4705,
+      32.810375
+    ],
+    [
+      179.2678125,
+      179.582
+    ],
+    [
+      180.5146875,
+      180.8159375
+    ],
+    [
+      234.3945,
+      234.7639375
+    ],
+    [
+      240.7115,
+      245.900125
+    ],
+    [
+      263.1080625,
+      312.1640625
+    ],
+    [
+      403.3223125,
+      688.1280625
+    ]
+  ],
+  "trailing_dead_air": {
+    "ends_at_external_stop_by_lane_seconds": {
+      "microphone": 684.741375,
+      "mixed": 689.4350625,
+      "system": 688.1280625
+    },
+    "excluded_from_content_gate": true,
+    "starts_after_card_tape_seconds": 418.64
+  },
+  "type_totals_seconds": {
+    "both": 49.89825,
+    "neither": 0.0,
+    "remote_only": 41.26,
+    "solo": 58.91175
+  },
+  "verdict": "USABLE_AS_IS",
+  "window_table": [
+    {
+      "card_relative_seconds": [
+        0.0,
+        45.0
+      ],
+      "dominant_type": "solo",
+      "expected_type": "solo",
+      "pieces": [
+        {
+          "card_relative_end": 43.594063,
+          "card_relative_start": 0.0,
+          "duration_seconds": 43.594063,
+          "end": 312.1640625,
+          "start": 268.57,
+          "type": "solo"
+        },
+        {
+          "card_relative_end": 45.0,
+          "card_relative_start": 43.594063,
+          "duration_seconds": 1.405937,
+          "end": 313.57,
+          "start": 312.1640625,
+          "type": "both"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 1.405937,
+        "neither": 0.0,
+        "remote_only": 0.0,
+        "solo": 43.594063
+      },
+      "window": "solo_planned"
+    },
+    {
+      "card_relative_seconds": [
+        45.0,
+        90.0
+      ],
+      "dominant_type": "remote_only",
+      "expected_type": "remote_only",
+      "pieces": [
+        {
+          "card_relative_end": 45.19,
+          "card_relative_start": 45.0,
+          "duration_seconds": 0.19,
+          "end": 313.76,
+          "start": 313.57,
+          "type": "both"
+        },
+        {
+          "card_relative_end": 86.45,
+          "card_relative_start": 45.19,
+          "duration_seconds": 41.26,
+          "end": 355.02,
+          "start": 313.76,
+          "type": "remote_only"
+        },
+        {
+          "card_relative_end": 90.0,
+          "card_relative_start": 86.45,
+          "duration_seconds": 3.55,
+          "end": 358.57,
+          "start": 355.02,
+          "type": "both"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 3.74,
+        "neither": 0.0,
+        "remote_only": 41.26,
+        "solo": 0.0
+      },
+      "window": "remote_only_planned"
+    },
+    {
+      "card_relative_seconds": [
+        90.0,
+        140.0
+      ],
+      "dominant_type": "both",
+      "expected_type": "both",
+      "pieces": [
+        {
+          "card_relative_end": 134.752313,
+          "card_relative_start": 90.0,
+          "duration_seconds": 44.752313,
+          "end": 403.3223125,
+          "start": 358.57,
+          "type": "both"
+        },
+        {
+          "card_relative_end": 140.0,
+          "card_relative_start": 134.752313,
+          "duration_seconds": 5.247687,
+          "end": 408.57,
+          "start": 403.3223125,
+          "type": "solo"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 44.752313,
+        "neither": 0.0,
+        "remote_only": 0.0,
+        "solo": 5.247687
+      },
+      "window": "overlap_30_plus_20_planned"
+    },
+    {
+      "card_relative_seconds": [
+        140.0,
+        150.07
+      ],
+      "dominant_type": "solo",
+      "expected_type": null,
+      "pieces": [
+        {
+          "card_relative_end": 150.07,
+          "card_relative_start": 140.0,
+          "duration_seconds": 10.07,
+          "end": 418.64,
+          "start": 408.57,
+          "type": "solo"
+        }
+      ],
+      "type_durations_seconds": {
+        "both": 0.0,
+        "neither": 0.0,
+        "remote_only": 0.0,
+        "solo": 10.07
+      },
+      "window": "closing"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+COMMAND: ssh ga0@m4mbp bash -s
+EXIT: 0
+--- STDOUT ---
+UTC	2026-08-06T03:20:55Z
+STATUS	{"outboxRetainedFrames":0,"ok":true,"sessionRefusal":"sessionDisowned","running":false,"publishedFrameCount":0,"lanes":[{"lane":"system","state":"stopped"},{"state":"stopped","lane":"microphone"}]}
+PROCESS
+57184     1 Mon Aug  3 13:44:15 2026     02-09:36:40 /Applications/MO /Applications/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp
+LAUNCHCTL
+		   57184      - 	application.com.alphasight.moss.capture.215729095.215729100
+FOCUSED_LOG
+2026-08-05 23:11:46.486 A  MOSSCaptureApp[57184:133d413] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:11:46.486 A  MOSSCaptureApp[57184:133d413] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:11:46.525 Df MOSSCaptureApp[57184:133d413] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1182  Engine@0xa68480170: start, was running 0
+2026-08-05 23:11:46.528 A  MOSSCaptureApp[57184:1895a51] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:11:46.551 A  MOSSCaptureApp[83435:1895a77] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:11:46.598 A  MOSSCaptureApp[57184:1895a63] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:11:46.615 Df MOSSCaptureApp[57184:1895a63] [com.apple.CFNetwork:Default] Connection 15: TLS handshake complete
+2026-08-05 23:11:46.616 Df MOSSCaptureApp[57184:1895a51] [com.apple.CFNetwork:Default] Task <F2C9BF03-7479-45D9-A403-F1BB48422806>.<2306> sent request, body S 440
+2026-08-05 23:11:46.637 Df MOSSCaptureApp[83435:1895a77] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1182  Engine@0x10065ad70: start, was running 0
+2026-08-05 23:11:46.640 Df MOSSCaptureApp[57184:1895a6e] [com.apple.CFNetwork:Default] Task <F2C9BF03-7479-45D9-A403-F1BB48422806>.<2306> received response, status 403 content K
+2026-08-05 23:11:46.640 Df MOSSCaptureApp[57184:133d413] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1237  Engine@0xa68480170: stop, was running 1
+2026-08-05 23:12:14.834 A  MOSSCaptureApp[57184:133d413] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:12:14.834 A  MOSSCaptureApp[57184:133d413] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:12:14.879 Df MOSSCaptureApp[57184:133d413] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1182  Engine@0xa68480170: start, was running 0
+2026-08-05 23:12:14.881 A  MOSSCaptureApp[57184:1895da5] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:12:14.901 A  MOSSCaptureApp[83540:1895dae] (TCC) TCCAccessRequest() IPC
+2026-08-05 23:12:14.936 Df MOSSCaptureApp[57184:1895da1] [com.apple.CFNetwork:Default] Connection 16: TLS handshake complete
+2026-08-05 23:12:14.936 Df MOSSCaptureApp[57184:1895da1] [com.apple.CFNetwork:Default] Task <20E8B479-B673-4E89-AE7C-5FBAF533D886>.<2307> sent request, body S 440
+2026-08-05 23:12:14.943 Df MOSSCaptureApp[57184:1895da5] [com.apple.CFNetwork:Default] Task <20E8B479-B673-4E89-AE7C-5FBAF533D886>.<2307> received response, status 403 content K
+2026-08-05 23:12:14.943 Df MOSSCaptureApp[57184:133d413] [com.apple.avfaudio:avae]          AVAudioEngine.mm:1237  Engine@0xa68480170: stop, was running 1
+2026-08-05 23:12:14.944 A  MOSSCaptureApp[57184:1895da2] (TCC) TCCAccessRequest() IPC
+CRASH_REPORTS
+--- STDERR ---

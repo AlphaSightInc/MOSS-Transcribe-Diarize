@@ -1,0 +1,31 @@
+{
+  "schema": "moss-dl2-s05-post-session-recovery-plan.v2",
+  "session_id": "40422fb135a146579d013d663652bd56",
+  "supersedes_plan_sha256": "5d981307ff7e0ea6d0a6fb4d48a134411b3bd2bdcaf0171ff08f33cff878e9c2",
+  "reason": "V1's first 37-second mic slice produced a named zero-segment refusal. Keep the exact frozen signal selection but concatenate all four intervals into one model input, with a sealed piecewise tape-time map.",
+  "frozen_before_recovery_runs": true,
+  "system": {
+    "mode": "reuse_completed_batch_result",
+    "job_id": "9b14263b6738",
+    "tape_interval_seconds": [60.0, 360.0],
+    "selection_basis": "Already-completed, untruncated production batch result covering the operator-reported card."
+  },
+  "microphone": {
+    "mode": "compact_disjoint_signal_bearing_intervals",
+    "selection_basis": "Identical frozen V1 intervals; presentation-only repair after the short-input parser refusal.",
+    "intervals_seconds": [[98.0, 135.0], [198.0, 245.0], [258.0, 325.0], [348.0, 425.0]],
+    "separator_silence_seconds": 0.5,
+    "timestamp_rule": "piecewise map to tape time; clamp seam-crossing segments into the source interval"
+  },
+  "mixed": {
+    "mode": "production_overlap_windows_with_midpoint_ownership",
+    "selection_basis": "Frozen production-style 150-second windows spanning the card and excluding trailing dead air.",
+    "intervals_seconds": [[60.0, 210.0], [180.0, 330.0], [300.0, 420.0]],
+    "ownership_seconds": [[60.0, 195.0], [195.0, 315.0], [315.0, 420.0]]
+  },
+  "failed_arms_never_retried": [
+    {"job_id": "5a6131a3ec23", "arm": "full system tape"},
+    {"job_id": "9ed7158abbbc", "arm": "microphone 60-360 with leading-silence trim"},
+    {"job_id": "4b52d5ca5d47", "arm": "V1 microphone 98-135 short slice"}
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "evaluated_at_utc": "2026-08-09T02:44:16Z",
+  "levels": {
+    "microphone": {
+      "bytes": 2146776,
+      "duration_seconds": 67.085375,
+      "peak_dbfs": -31.588518,
+      "rms_dbfs": -57.404588,
+      "rms_peak_dbfs": -41.917409,
+      "sha256": "4573681af7b7c6143e671182d3206e5940e59e10f38580cb8a3fd9000f41abd6"
+    },
+    "mixed": {
+      "bytes": 2090574,
+      "duration_seconds": 65.329063,
+      "peak_dbfs": -9.768269,
+      "rms_dbfs": -28.02655,
+      "rms_peak_dbfs": -17.983298,
+      "sha256": "de803d8d9fbb918cb9b2badd811d1906ca6fec580cd96b48d5ba9236ea4f4446"
+    },
+    "system": {
+      "bytes": 2089346,
+      "duration_seconds": 65.290688,
+      "peak_dbfs": -3.416959,
+      "rms_dbfs": -21.893702,
+      "rms_peak_dbfs": -11.919041,
+      "sha256": "bb06144abc84932cab5834975ff5f4a0296a2b921e2e1c8064386a2619c3a06e"
+    }
+  },
+  "microphone_batch": {
+    "error": "vLLM transcription returned zero parsed segments for /mnt/d/Coding/MOSS-Transcribe-Diarize/runs/7e6ea1024a5e/input.wav.",
+    "generated_tokens": 34,
+    "interpretation": "zero parsed speech; no intelligible YouTube speech detected by deployed batch ASR",
+    "job_id": "7e6ea1024a5e",
+    "job_json_sha256_on_server": "420eaafec56428221d640c42a3aff5c4e9b0e9a4cc141866b9ead296b108739d",
+    "raw_transcript_persisted": false,
+    "source_sha256": "dd7be02d9fbe150e1dc3f312cd8cbbc0e82fb9060e222e5766e1af0c90641f5a",
+    "status": "failed"
+  },
+  "microphone_intelligible_youtube_speech_absent": true,
+  "operator_observation": "operator silent; YouTube interview continuously playing through AirPods Pro",
+  "schema": "moss-dl2-cal-hp-gate.v1",
+  "segment_counts": {
+    "microphone": 0,
+    "mixed": 17,
+    "system": 18
+  },
+  "session_id": "79a72cdb46df4c3e8a1fe1857b9836e8",
+  "shape_id": "CAL-HP",
+  "standard_pipeline": {
+    "mixed_job_id": "b983a463b256",
+    "refusal": "batch_job_failed:7e6ea1024a5e:vLLM transcription returned zero parsed segments",
+    "rerun_capture": false,
+    "status": "named_refusal_on_silent_microphone_then_diagnostic_continuation",
+    "system_job_id": "505ac7d24c2a"
+  },
+  "strict_rule": "PASS only if system lane has interview speech and microphone lane has no intelligible YouTube speech",
+  "system_minus_microphone_rms_db": 35.510886,
+  "system_speech_present": true,
+  "verdict": "PASS"
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "moss-dl2-s01-content-diagnosis.v2",
+  "session_id": "00f8a46e99b44f1b867088de48860348",
+  "diagnostic_only": true,
+  "recording_authorized": false,
+  "raw_retention": {
+    "ruling": "retain local and remote through TTL",
+    "ttl_deadline_operator_time": "2026-08-06 23:05 EDT",
+    "local_present": true,
+    "remote_present": true,
+    "remote_hashes_match_local": true,
+    "deleted": false
+  },
+  "batch_service_control": {
+    "case": "1m-acquired-jamie-dimon",
+    "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+    "job_id": "77bc16ec2ae6",
+    "status": "waiting_review",
+    "generated_tokens": 521,
+    "parsed_segments": 17,
+    "verdict": "PASS_BATCH_SERVICE_PARSE_HEALTHY"
+  },
+  "s01_diagnostic_jobs": {
+    "microphone": {
+      "job_id": "cbf557969083",
+      "input_sha256": "c40dba3ddbeda6613bd2d4b8adeb83154f08c7f47f0176d1a1e64378b32400ea",
+      "status": "failed",
+      "generated_tokens": 59,
+      "parsed_segments": 0,
+      "raw_model_text": "[101.98][S01][102.98][104.78][S01][105.78][106.24][S01][107.24]",
+      "raw_text_interpretation": "timestamp and speaker markers only; zero lexical text"
+    },
+    "mixed": {
+      "job_id": "85b2a792dc6c",
+      "input_sha256": "791ff1447d2baeccd38c3015b4a4d9b17ace436a6bc7a6bcaab5edd95f347a83",
+      "status": "failed",
+      "generated_tokens": 59,
+      "parsed_segments": 0
+    },
+    "verdict": "S01_AUDIO_NOT_BATCH_SERVICE_DRIFT"
+  },
+  "system_lane": {
+    "current_default_output": "MacBook Pro Speakers",
+    "current_default_output_uid": "BuiltInSpeakerDevice",
+    "current_default_output_sample_rate_hz": 48000,
+    "tap_binding": "global process tap feeding a tap-only private aggregate; not bound to a physical output device",
+    "tcc_audio_capture_auth_value": 2,
+    "tcc_microphone_auth_value": 2,
+    "tcc_interpretation": "authorized",
+    "capture_started": true,
+    "audible_signal_until_seconds": 131.38275,
+    "silence_from_seconds": 131.38275,
+    "silence_to_seconds": 444.234688,
+    "frames_continued_during_silence": true,
+    "browser_pause_at_et": "2026-08-06T14:01:59.044-04:00",
+    "tape_silence_at_et": "2026-08-06T14:02:00.611512-04:00",
+    "pause_to_silence_delta_seconds": 1.567513,
+    "browser_playing_updates_after_pause": 0,
+    "root_cause": "Safari source playback paused and did not resume before capture stop",
+    "verdict": "SOURCE_PLAYBACK_PAUSED_NOT_CAPTURE_TAP_FAILURE",
+    "minimal_action": "Press Play in Safari before each system-bearing phase and confirm it remains Playing; no app or service change"
+  },
+  "microphone_lane": {
+    "current_default_input": "MacBook Pro Microphone",
+    "selected_interval_mean_db": -41.1,
+    "selected_interval_max_db": -16.9,
+    "profile": "near-steady low-level signal rather than speech-dominant dynamics",
+    "mixed_relation_after_system_silence": "mixed follows microphone at approximately 6 dB attenuation",
+    "verdict": "NO_INTELLIGIBLE_LEXICAL_CONTENT_FOR_PROJECT_ASR",
+    "remaining_uncertainty": "wrong/distant input versus operator speech not reaching the current default microphone"
+  },
+  "next_session_authority": "NOT_GRANTED_BY_THIS_DIAGNOSIS"
+}

@@ -1,0 +1,39 @@
+{
+  "rows": [
+    {
+      "duration": 0.25,
+      "end": 0.25,
+      "microphone_text": "",
+      "mixed_agrees_with_a_lane": false,
+      "mixed_text": "remote hello local hello",
+      "row": 1,
+      "start": 0.0,
+      "system_text": "remote hello",
+      "target_listen": true
+    },
+    {
+      "duration": 0.5,
+      "end": 0.75,
+      "microphone_text": "local hello",
+      "mixed_agrees_with_a_lane": false,
+      "mixed_text": "remote hello local hello",
+      "row": 2,
+      "start": 0.25,
+      "system_text": "remote hello",
+      "target_listen": true
+    },
+    {
+      "duration": 0.25,
+      "end": 1.0,
+      "microphone_text": "",
+      "mixed_agrees_with_a_lane": false,
+      "mixed_text": "remote hello local hello",
+      "row": 3,
+      "start": 0.75,
+      "system_text": "remote hello",
+      "target_listen": true
+    }
+  ],
+  "schema": "moss-dl2-audit-rows.v1",
+  "session_id": "dry-run-session"
+}

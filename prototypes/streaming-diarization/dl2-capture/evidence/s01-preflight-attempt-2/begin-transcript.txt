@@ -1,0 +1,4 @@
+COMMAND	PYTHONDONTWRITEBYTECODE=1 python3 capture_harness.py begin --program-root program --shape S01 --operator-present --consented-content
+EXIT	2
+STDOUT	REFUSED command_failed:exit=78:argv=['ssh', 'ga0@m4mbp', 'bash -s']:stderr=live_preflight_abort:missing_lane
+STDERR	

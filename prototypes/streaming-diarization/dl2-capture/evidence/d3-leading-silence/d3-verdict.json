@@ -1,0 +1,85 @@
+{
+  "schema": "moss-dl2-d3-leading-silence-verdict.v1",
+  "verdict": "CONFIRMED_HARD_FIRST_WINDOW_SILENCE_CLIFF_FIXED",
+  "scope": "offline production batch API; no recording",
+  "source": {
+    "case_id": "1m-acquired-jamie-dimon",
+    "sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+    "accepted_control": {
+      "job_id": "77bc16ec2ae6",
+      "generated_tokens": 521,
+      "segment_count": 17
+    }
+  },
+  "untrimmed_results": [
+    {
+      "prepend_seconds": 30,
+      "job_id": "e50d68c85d17",
+      "status": "waiting_review",
+      "generated_tokens": 544,
+      "segment_count": 18
+    },
+    {
+      "prepend_seconds": 60,
+      "job_id": "5748ed7aed51",
+      "status": "waiting_review",
+      "generated_tokens": 558,
+      "segment_count": 18
+    },
+    {
+      "prepend_seconds": 120,
+      "job_id": "8db7e73e02aa",
+      "status": "waiting_review",
+      "generated_tokens": 824,
+      "segment_count": 17
+    },
+    {
+      "prepend_seconds": 210,
+      "job_id": "af798077de78",
+      "status": "failed",
+      "generated_tokens": 13,
+      "segment_count": 0,
+      "error": "window 0 (0-150s) failed: vLLM transcription returned zero parsed segments"
+    }
+  ],
+  "diagnosis": {
+    "original_monotonic_degradation_prediction": "REFUTED",
+    "confirmed_mechanism": "a fully silent first 150-second batch window returns zero parsed segments and fail-stops the whole job before later speech; shorter prefixes remain parseable",
+    "format_hypothesis": "REFUTED: every fixture has an exact-zero prefix and a byte-identical decoded speech suffix",
+    "s01_class_reproduced": true
+  },
+  "fix_v1_dead_end": {
+    "job_id": "d855dddaf74d",
+    "preroll_seconds": 0.25,
+    "generated_tokens": 537,
+    "segment_count": 18,
+    "functional_parse_restored": true,
+    "strict_control_equivalence": false,
+    "disposition": "sealed; superseded by bounded v2 input-equivalence correction"
+  },
+  "fix_v2": {
+    "detector": "ffmpeg silencedetect=-35dB:d=2.0; leading start <=0.05s only",
+    "preroll_seconds": 0.0,
+    "job_id": "89db0ff8c31e",
+    "sample_offset": 3360000,
+    "sample_rate": 16000,
+    "timestamp_offset_seconds": 210.0,
+    "generated_tokens": 521,
+    "segment_count": 17,
+    "mapped_first_segment_start": 210.57,
+    "mapped_last_segment_end": 269.97,
+    "exact_control_counts": true,
+    "regression_pass": true
+  },
+  "implementation": {
+    "path": "post_session.py",
+    "submission_path_uses_trim": true,
+    "sample_offset_preserved_per_track": true,
+    "timestamps_remapped_to_tape_time": true,
+    "product_code_modified": false
+  },
+  "tests": {
+    "passed": 16,
+    "failed": 0
+  }
+}

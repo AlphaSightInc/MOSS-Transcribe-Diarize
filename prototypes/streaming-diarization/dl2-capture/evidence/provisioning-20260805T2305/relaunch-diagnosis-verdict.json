@@ -1,0 +1,22 @@
+{
+  "cause": "operator launch action targeted the already-running LSUIElement; old PID survived and retained the disowned session",
+  "helper_lease_acquired_after_report": false,
+  "latest_server_helper_events": [
+    "2026-08-05T23:11:47-04:00 heartbeat 403 old session cdb72d743b874554be48266232667bf7",
+    "2026-08-05T23:12:15-04:00 heartbeat 403 old session cdb72d743b874554be48266232667bf7"
+  ],
+  "operator_action": "Activity Monitor: search MOSSCaptureApp, select PID 57184, click Stop, choose Quit (Force Quit only if it remains); then open /Applications/MOSSCapture.app once",
+  "overall": "WAITING_FOR_ACTUAL_PROCESS_RELAUNCH",
+  "pairing_required_now": false,
+  "pairing_state_file_present_unchanged": true,
+  "process_pid": 57184,
+  "process_relaunched_after_operator_report": false,
+  "process_running": true,
+  "process_started_local": "2026-08-03T13:44:15-04:00",
+  "raw_tape_created": false,
+  "recorded_at_utc": "2026-08-06T03:20:00Z",
+  "retention_root_entries": 0,
+  "schema": "moss-dl2-relaunch-diagnosis.v1",
+  "tcc_request_completed_without_visible_pending_prompt": true,
+  "tls_connection_working": true
+}

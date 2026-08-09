@@ -1,0 +1,24 @@
+{
+  "schema": "moss-dl2-s01-asr-interval-preregistration.v1",
+  "recorded_before_retry": true,
+  "reason": "full capture contains approximately 285 seconds of pre-card setup/music; the batch windowed runner refuses an empty-text music window",
+  "selection": {
+    "start_seconds": 260.0,
+    "end": "track end",
+    "same_interval_all_tracks": true,
+    "timestamp_offset_seconds": 260.0
+  },
+  "basis": "known 160-second operator countdown/card at capture tail plus approximately 25 seconds pre-roll; no transcript, reference, speaker label, or lane-specific signal used",
+  "original_durations_seconds": {
+    "system": 444.234688,
+    "microphone": 445.823625,
+    "mixed": 445.422313
+  },
+  "original_audio_sha256": {
+    "system": "2eaa2123c5aa7490b2c20e81b2028225861c825b6961266848e9e56e0cddff03",
+    "microphone": "29978db914f8ffd2eae9f46c84e908037499ebbf7fd3889f3a2be8615cca77e1",
+    "mixed": "83a8a88bf8aebc5fcc73f45dee7903ff91077b850798384588cdbf85b131f4df"
+  },
+  "golden_reference_used": false,
+  "retry_limit": 1
+}

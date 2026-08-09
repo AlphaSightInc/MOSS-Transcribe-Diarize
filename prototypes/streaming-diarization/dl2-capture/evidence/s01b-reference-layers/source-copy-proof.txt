@@ -1,0 +1,14 @@
+CONTROL SOURCE SHA-256
+ab66bb9e359222e6e0e3839e3a0ad4d6df2a2aaaaffe2f2bec48256e80231355  docs/handoffs/s01b-mic-TRUE.md
+5fe3aaa74899ac7ce372de7861a88958be90caff3c1437a31ef55fb3c8371311  docs/handoffs/s01b-mic-BLEED.md
+aa23df7439879a8e52de3d561d48d0894a27e5ce030b6c40f1b4c7ba0f8c97e7  docs/handoffs/human-audit/s01b-mic-split-20260806.md
+
+TARGET SHA-256
+ab66bb9e359222e6e0e3839e3a0ad4d6df2a2aaaaffe2f2bec48256e80231355  human-audit/s01b-mic-TRUE.md
+5fe3aaa74899ac7ce372de7861a88958be90caff3c1437a31ef55fb3c8371311  human-audit/s01b-mic-BLEED.md
+aa23df7439879a8e52de3d561d48d0894a27e5ce030b6c40f1b4c7ba0f8c97e7  human-audit/s01b-mic-split-20260806.md
+
+cmp results:
+TRUE_BYTE_EXACT
+BLEED_BYTE_EXACT
+ATTESTATION_BYTE_EXACT

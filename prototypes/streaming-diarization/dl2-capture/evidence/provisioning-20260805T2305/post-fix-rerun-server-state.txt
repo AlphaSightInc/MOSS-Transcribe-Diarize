@@ -1,0 +1,5 @@
+STATUS	{"sessionRefusal":"sessionDisowned","outboxRetainedFrames":0,"running":false,"lanes":[{"state":"stopped","lane":"system"},{"lane":"microphone","state":"stopped"}],"ok":true,"publishedFrameCount":0}
+SERVER_ET	2026-08-06T13:25:55-0400
+LOGS
+Aug 06 13:25:43 Ga0-Alienware-RTX4070Ti bash[377978]: INFO:     100.64.0.4:55480 - "POST /api/live/sessions/659da76b2d244d8593b012cbcb55a94c/heartbeat HTTP/1.1" 403 Forbidden
+ROOT_ENTRIES	0

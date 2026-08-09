@@ -1,0 +1,12 @@
+COMMAND: ssh gyauo@ga0-alienware-rtx4070ti.local wsl.exe -d Ubuntu -- bash -s
+EXIT: 0
+--- STDOUT ---
+before_env_sha256	b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313
+provisioned_env_sha256	474711f5636a61f6515f29cb1bb63996f8b85f838d65c05736f613807e6d8aeb
+backup_env_sha256	b1753223f7fe9054a2c078b37f059b4bac70967e46e52143bb11f9d147a23313
+backup_unit_sha256	090b7d98d93158881a748cadde3fc566734a5aebb893ee369da77d18d3fed056
+backup_invocation_sha256	0de9fe38e621367e9391db513bfae07d516150ac05fceea2302a17f5384fb9b2
+root_stat	path=/home/devcontainers/.local/share/moss-transcribe-diarize/live/dl2-capture-sprint mode=700 uid=1000 gid=1000
+live_pid	377978
+vllm_pid	1899
+--- STDERR ---

@@ -1,0 +1,22 @@
+{
+  "schema": "moss-dl2-fresh-relaunch-canary-failure.v1",
+  "observed_at_et": "2026-08-06T12:14:27-04:00",
+  "m4mbp_process_pid": 53886,
+  "m4mbp_process_started_et": "2026-08-06T12:13:17-04:00",
+  "cross_host_clock_skew_seconds_max": 1,
+  "canary_exit_code": 70,
+  "capture_running_after": false,
+  "capture_refusal": "sessionDisowned",
+  "heartbeat_session_id": "cdb72d743b874554be48266232667bf7",
+  "heartbeat_http_status": 403,
+  "helper_lease_acquired": false,
+  "raw_tape_created": false,
+  "retention_root_entries": 0,
+  "cause": "fresh app loaded the stale persisted session id from Keychain; start uses that stored session and cannot create a replacement session",
+  "source_binding": "CaptureSecurity.swift:1048-1063",
+  "documented_recovery": "issue a fresh loopback pairing payload and run mtd-capture pair; pairing creates and stores a new server session",
+  "recovery_binding": "CaptureSecurity.swift:986-1015,1237-1255; LOCAL_DEPLOYMENT.md:725-737",
+  "pairing_payload_secret_handling": "operator only; never argv, file, log, or agent output",
+  "overall": "BLOCKED_FRESH_PAIRING_REQUIRED",
+  "ready_to_record": false
+}

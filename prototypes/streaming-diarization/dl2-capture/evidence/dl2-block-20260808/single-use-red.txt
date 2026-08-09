@@ -1,0 +1,13 @@
+COMMAND: python3 -m unittest -v test_capture_harness.CaptureHarnessSafetyTests.test_block_grant_refuses_shape_outside_scope test_capture_harness.CaptureHarnessSafetyTests.test_block_grant_is_single_use_per_shape_and_grant
+EXIT: 1
+test_block_grant_refuses_shape_outside_scope (test_capture_harness.CaptureHarnessSafetyTests) ... FAIL
+test_block_grant_is_single_use_per_shape_and_grant (test_capture_harness.CaptureHarnessSafetyTests) ... FAIL
+
+FAIL: test_block_grant_refuses_shape_outside_scope
+AssertionError: HarnessRefusal not raised
+
+FAIL: test_block_grant_is_single_use_per_shape_and_grant
+AssertionError: 'SPRINT_WINDOW' != 'GRANT_SINGLE_USE_SHAPE'
+
+Ran 2 tests in 0.000s
+FAILED (failures=2)

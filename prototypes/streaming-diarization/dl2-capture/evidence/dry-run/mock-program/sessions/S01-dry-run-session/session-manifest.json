@@ -1,0 +1,55 @@
+{
+  "derived": {
+    "audit_html_path": "derived/audit-packet/audit-rows.html",
+    "audit_html_sha256": "d3b22b3fc6536b30e97a78d597be334ce70b6479eb75937f2140103083efc88e",
+    "audit_rows_path": "derived/audit-packet/audit-rows.json",
+    "audit_rows_sha256": "4bd5615602720df53ab4f85272fb80897d2d252ec00ed326d7bc92eba766e0be",
+    "provenance_path": "derived/provenance.json",
+    "provenance_sha256": "5275c7f70431587f36b89ec7a1977c8b7ef055ada7dbe52bf3df032cb011149d",
+    "seal_path": "derived/DERIVED_EVIDENCE.sha256",
+    "seal_sha256": "088ecd451fa70752e73ad28ae262502c1df42e5537924ee0acbd30c0ec29f25a"
+  },
+  "raw_cleanup": {
+    "at_utc": "2026-08-06T02:03:38Z",
+    "local_removed": [
+      "raw",
+      "audio"
+    ],
+    "mock": true,
+    "remote_deleted": false
+  },
+  "schema": "moss-dl2-capture-session.v1",
+  "session_id": "dry-run-session",
+  "shape": {
+    "shape_id": "S01"
+  },
+  "state": "audit_ready_raw_deleted",
+  "tape": {
+    "degradation": null,
+    "ended_at": 1.0,
+    "index_sha256": "7cf6e0d51163de3f56c05a6786a317ab3cca32590649db11c7f4d6bb4e60aa14",
+    "sample_rate": 16000,
+    "session_id": "dry-run-session",
+    "total_bytes": 96000,
+    "tracks": {
+      "microphone": {
+        "bytes": 32000,
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/raw/microphone.pcm",
+        "sample_count": 16000,
+        "sha256": "2c6e8068bfa061128f2f04911c26b57f9e002219a485156b5b50ab67d2854cc9"
+      },
+      "mixed": {
+        "bytes": 32000,
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/raw/mixed.pcm",
+        "sample_count": 16000,
+        "sha256": "2c6e8068bfa061128f2f04911c26b57f9e002219a485156b5b50ab67d2854cc9"
+      },
+      "system": {
+        "bytes": 32000,
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-dl2-prep/prototypes/streaming-diarization/dl2-capture/evidence/dry-run/mock-program/sessions/S01-dry-run-session/raw/system.pcm",
+        "sample_count": 16000,
+        "sha256": "2c6e8068bfa061128f2f04911c26b57f9e002219a485156b5b50ab67d2854cc9"
+      }
+    }
+  }
+}

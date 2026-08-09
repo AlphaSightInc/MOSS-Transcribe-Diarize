@@ -1,0 +1,2 @@
+c40dba3ddbeda6613bd2d4b8adeb83154f08c7f47f0176d1a1e64378b32400ea  /tmp/moss-s01-diagnostic-asr-20260806/microphone.wav
+791ff1447d2baeccd38c3015b4a4d9b17ace436a6bc7a6bcaab5edd95f347a83  /tmp/moss-s01-diagnostic-asr-20260806/mixed.wav

@@ -1,0 +1,18 @@
+{
+  "schema": "moss-dl2-d3-fix-clarification.v1",
+  "recorded_before_v2": true,
+  "fix_v1": {
+    "detector": "-35dB for 2.0 seconds",
+    "preroll_seconds": 0.25,
+    "job_id": "d855dddaf74d",
+    "result": "FUNCTIONAL_PASS_STRICT_EQUIVALENCE_FAIL",
+    "before": "13 tokens, 0 segments, failed",
+    "after": "537 tokens, 18 segments, waiting_review",
+    "strict_expected": "521 tokens, 17 segments"
+  },
+  "cause": "the 250ms preroll intentionally retained 4000 exact-zero samples, so the selected decoded input was not identical to the accepted control and retained the already-measured segmentation perturbation",
+  "bounded_v2_change": "set preroll to zero; detector threshold, minimum duration, eligibility, source audio, batch model, and all acceptance checks remain unchanged",
+  "proof_before_run": "trimming exactly 210 seconds yields decoded PCM frames identical to the accepted control",
+  "acceptance": "exact 521 generated tokens, 17 parsed segments, and timestamps restored by sample_offset=3360000",
+  "classification": "instrument refinement to remove known synthetic silence, not tolerance or gate adjustment"
+}

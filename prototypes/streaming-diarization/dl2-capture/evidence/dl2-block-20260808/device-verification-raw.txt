@@ -1,0 +1,18 @@
+COMMAND 1: ssh ga0@m4mbp 'system_profiler SPAudioDataType -json; ...'
+EXIT: 255
+ssh: Could not resolve hostname m4mbp: nodename nor servname provided, or not known
+
+COMMAND 2: tailscale ip -4 m4mbp
+EXIT: 0
+100.64.0.4
+
+COMMAND 3: ssh -o HostName=100.64.0.4 -o HostKeyAlias=m4mbp ga0@m4mbp 'system_profiler SPAudioDataType -json'
+EXIT: 0
+system_profiler default input: G@0 AirPods Pro #2; 24000 Hz; Bluetooth
+system_profiler default output: G@0 AirPods Pro #2; 24000 Hz; Bluetooth
+system_profiler built-in input present but not default: MacBook Pro Microphone; 48000 Hz; Built-in
+
+COMMAND 4: ssh -o HostName=100.64.0.4 -o HostKeyAlias=m4mbp ga0@m4mbp '/usr/bin/swift -' < CoreAudio read-only property probe
+EXIT: 0
+INPUT	146	G@0 AirPods Pro #2	A4-C6-F0-D9-8F-14:input
+OUTPUT	140	G@0 AirPods Pro #2	A4-C6-F0-D9-8F-14:output

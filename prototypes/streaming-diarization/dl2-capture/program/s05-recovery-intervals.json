@@ -1,0 +1,27 @@
+{
+  "schema": "moss-dl2-s05-post-session-recovery-plan.v1",
+  "session_id": "40422fb135a146579d013d663652bd56",
+  "reason": "The controller died after the card. The external stop left about 7 minutes of trailing dead air; the standard batch job preserved four valid prefix windows, then refused on a silent window. Recover only the card-bearing interval without re-running a failed arm.",
+  "frozen_before_recovery_runs": true,
+  "system": {
+    "mode": "reuse_completed_batch_result",
+    "job_id": "9b14263b6738",
+    "tape_interval_seconds": [60.0, 360.0],
+    "selection_basis": "Already-completed, untruncated production batch result covering the operator-reported card."
+  },
+  "microphone": {
+    "mode": "disjoint_signal_bearing_intervals",
+    "selection_basis": "Frozen from 10-second PCM RMS telemetry before ASR: speech rises above the room-noise floor in these four groups.",
+    "intervals_seconds": [[98.0, 135.0], [198.0, 245.0], [258.0, 325.0], [348.0, 425.0]]
+  },
+  "mixed": {
+    "mode": "production_overlap_windows_with_midpoint_ownership",
+    "selection_basis": "Frozen production-style 150-second windows spanning the card and excluding trailing dead air.",
+    "intervals_seconds": [[60.0, 210.0], [180.0, 330.0], [300.0, 420.0]],
+    "ownership_seconds": [[60.0, 195.0], [195.0, 315.0], [315.0, 420.0]]
+  },
+  "failed_arms_never_retried": [
+    {"job_id": "5a6131a3ec23", "arm": "full system tape"},
+    {"job_id": "9ed7158abbbc", "arm": "microphone 60-360 with leading-silence trim"}
+  ]
+}

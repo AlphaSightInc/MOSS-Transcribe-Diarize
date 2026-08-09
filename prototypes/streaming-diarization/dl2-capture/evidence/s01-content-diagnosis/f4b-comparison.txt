@@ -1,0 +1,27 @@
+deployment_source_revision=9089b33210401111865da7abc160ab0bcb4aa266
+machine=m4mbp
+default_output=MacBook Pro Speakers
+default_input=MacBook Pro Microphone
+launch_context=GUI LaunchServices open -a /Applications/MOSSCapture.app; installed signed bundle
+
+F4b run1:
+  program-a=1785779217.454..1785779247.458 system
+  silent room-window=1785779247.477..1785779272.525 microphone
+  program-c=1785779272.531..1785779285.038 system
+  final both lanes=capturing
+  source=live-canary.sh uses a fresh `say` process for every utterance
+
+F4b run2:
+  program-a=1785779375.127..1785779405.141 system
+  program-c=1785779430.214..1785779442.719 system
+
+The global tap captured newly created `say` processes and resumed system content after a
+25-second no-system-content interval in both runs. This directly refutes a static process-list
+scope and a generic failure-to-resume-after-silence mechanism. S01 differs at the content
+source: Safari explicitly entered Paused and emitted no subsequent Playing state before stop.
+
+Owning evidence hashes:
+9a341f456aa5664fb4ec8ca1d56c018677c9f2c20f9eae77f5299132a3b7c6f0  f1/run1/driver.log
+98c3e5eb86646f17fec2ebf0dcc08b05ad535c0b9f3d0bc9742ebf15f68678f  f1/run1/phases.tsv
+d3c76362d3ae7308b6f6aa85a26ecaa22af392f45e7060086f952d8ba5f87178  f1/run2/driver.log
+cde5bece7a77d10e93fe3817a631c9dcaba90e70a01477997705c9db12f243b4  f1/run2/phases.tsv
