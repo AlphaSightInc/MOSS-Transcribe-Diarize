@@ -24,6 +24,7 @@ from .live_identity_album import (
     ALBUM_EXEMPLARS_PER_SPEAKER,
     FingerprintAlbum,
     cosine_similarity,
+    duration_weighted_centroid,
 )
 from .live_identity_sweep import LiveIdentitySweeper, SweepRevision
 from .live_service_runtime import (
@@ -122,6 +123,15 @@ class LiveProviderBundleRuntime:
             inter_op_threads=_required_int(payload, "inter_op_threads"),
             embedding_dimension=None if embedding_dimension is None else _positive_int(embedding_dimension, "embedding_dimension"),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class LiveSpeakerJournalObservation:
+    speaker_label: str
+    centroid: tuple[float, ...]
+    sample_seconds: float
+    embedder_id: str
+    embedder_state_sha: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -690,6 +700,30 @@ class WeSpeakerLiveEvidenceProvider:
         self._reconcile_committed_vectors(base_snapshot)
         if self._sweeper is not None:
             self._sweeper.sweep_now()
+
+    def journal_observations(self) -> tuple[LiveSpeakerJournalObservation, ...]:
+        """Project the completed album into immutable, encoder-pinned observations."""
+
+        if self._album is None:
+            return ()
+        spec = self.encoder.spec
+        embedder_id = f"{spec.provider}:{spec.revision}"
+        observations: list[LiveSpeakerJournalObservation] = []
+        for speaker_label in self._album.speakers():
+            support = self._album.reference_support(speaker_label)
+            centroid = duration_weighted_centroid(support)
+            if centroid is None:
+                continue
+            observations.append(
+                LiveSpeakerJournalObservation(
+                    speaker_label=speaker_label,
+                    centroid=centroid,
+                    sample_seconds=sum(item.duration_sec for item in support),
+                    embedder_id=embedder_id,
+                    embedder_state_sha=spec.state_sha256,
+                )
+            )
+        return tuple(observations)
 
     def take_identity_revision(self) -> SweepRevision | None:
         """The newest unpublished sweep result, or `None` when this stack cannot sweep.

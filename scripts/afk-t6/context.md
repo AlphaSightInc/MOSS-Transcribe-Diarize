@@ -1,7 +1,8 @@
 # Context — Phase 1 ticket #6
 
-Iteration 3. Acceptance criteria and a reproducible local validation baseline are captured. The
-first provider-side journal contract is red; no journal implementation exists yet.
+Iteration 4. Acceptance criteria and a reproducible local validation baseline are captured. The
+provider now exposes immutable, encoder-pinned observations from the completed album; no journal
+writer or runtime lifecycle integration exists yet.
 
 ## Where things stand
 
@@ -81,16 +82,17 @@ bash -n scripts/afk-t6/ralph-afk.sh
   shared-token authorization, v2 lane semantics, and compatibility mixing. That iteration-2
   baseline predates the journal contract and no application implementation exists yet. Raw JUnit:
   `evidence/phase1/t6/iteration-2-live-subset.xml`.
-- First journal contract: expected RED. The session-end provider owns both the completed album and
-  pinned encoder spec, but has no `journal_observations()` handoff yet. The focused node reaches
-  finalized two-speaker album state, then fails only with `AttributeError` at that missing method.
-  Raw JUnit: `evidence/phase1/t6/iteration-3-journal-contract-red.xml`.
+- Provider observation projection: GREEN. `journal_observations()` deterministically emits one
+  frozen record per album speaker with the duration-weighted centroid, summed support seconds,
+  provider/revision embedder id, and state SHA. The focused contract passes 1/1 and the full
+  provider-bundle suite passes 45/45. Raw JUnit:
+  `evidence/phase1/t6/iteration-4-journal-projection.xml` and
+  `evidence/phase1/t6/iteration-4-provider-bundle.xml`.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Make the red provider contract green with the smallest immutable observation projection:
-   deterministic speaker label, duration-weighted centroid, summed sample seconds, and encoder
-   provider/revision plus state SHA. Do not write files or alter runtime lifecycle in that slice.
-2. Then compose those observations into a non-terminal append-only writer at clean session stop,
+1. Compose provider observations into a non-terminal append-only writer at clean session stop,
    adding session id, created-at, and echo mode at the runtime/transport boundary.
+2. Pin path configuration and default-on vector journaling without changing ADR-0003's default-off
+   raw-audio retention posture.
