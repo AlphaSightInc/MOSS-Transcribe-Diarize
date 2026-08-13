@@ -1,2 +1,12 @@
 
 [loop 20260813-055952-98200] start budget=40 agent=codex branch=afk/t2-shared-token-auth
+
+Iteration 1 — contract + baseline discovery
+- Target: read binding charter/T-01/issue #2, capture its seven criteria, establish real local gates.
+- Files: `scripts/afk-t2/context.md`, `scripts/afk-t2/progress.txt`, `evidence/phase1/t2/iteration-01-*.xml`.
+- Validation: focused live set + launcher syntax PASS (65 tests, 351 subtests); prepared `tests/`
+  baseline 862 passed/4 skipped/1 deterministic out-of-ticket macOS lifecycle failure; root
+  discovery additionally lacks real-corpus cache. Raw results: `evidence/phase1/t2/iteration-01-*.xml`.
+- Learned: `.venv` command is stale here; use pyenv Python 3.12.10 and build both Swift products.
+  Historical cross-read 403 is not a gate; charter G5 transcript-routing integrity remains.
+- Next: audit `LiveAccessRegistry` config seam and add the smallest test-first shared-token slice.
