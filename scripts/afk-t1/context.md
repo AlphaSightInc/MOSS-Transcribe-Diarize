@@ -1,7 +1,7 @@
 # Context — Phase 1 ticket #1
 
-Iteration 3. Descriptor-driven browser framing is measured against the stub; no real-service or
-model behavior measured yet.
+Iteration 4. Descriptor-driven browser framing and exact v2 frame keys are measured against the
+stub; no real-service or model behavior measured yet.
 
 ## Where things stand
 
@@ -17,6 +17,9 @@ model behavior measured yet.
 - Chrome stub proof with deliberately nonhistorical 3,200-sample frames produced 19 frames/lane,
   exact 200 ms capture-clock deltas, zero gaps, and matching descriptor geometry. This is contract
   wiring evidence only; it does not satisfy the real-service acceptance gate.
+- The harness now sends exactly the nine v2 frame keys. Its strict stub observed one exact key set
+  across 75 frames/lane, rejected injected `client_visibility` with HTTP 400, and received cadence
+  telemetry separately for all 150 frames. This remains stub-only contract evidence.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -68,6 +71,11 @@ Criterion 1 implementation status: descriptor-driven geometry is complete in the
 but the acceptance item stays open until the same behavior is evidenced against a locally-run real
 service. Raw stub-only evidence: `evidence/phase1/t1/iteration-03-descriptor-geometry.json`.
 
+Criterion 3 implementation status: exact nine-key frame construction and strict unknown-key
+rejection are complete in the kept harness. The acceptance item stays open until exercised through
+the locally-run production route. Raw stub-only evidence:
+`evidence/phase1/t1/iteration-04-nine-v2-keys.json`.
+
 ### Binding proof interpretation
 
 - PRD + charter supersede the issue body's older remote/display procedure without deleting any
@@ -108,9 +116,7 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Remove the three prototype telemetry fields from frame bodies and prove the browser sends
-   exactly the nine v2 keys; retain cadence telemetry out-of-band.
-2. Advance the harness from `/frames` to locally-owned real session/lane routes without touching
+1. Advance the harness from `/frames` to locally-owned real session/lane routes without touching
    the read-only remote host.
-3. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

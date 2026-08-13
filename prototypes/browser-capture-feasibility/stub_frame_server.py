@@ -35,6 +35,19 @@ DESCRIPTOR = {
     },
     "negotiation": {"selected_protocol_version": 2},
 }
+FRAME_KEYS = frozenset(
+    {
+        "lane",
+        "sequence",
+        "capture_timestamp_ns",
+        "device_epoch",
+        "pcm_base64",
+        "sample_count",
+        "sample_rate",
+        "silent",
+        "discontinuity",
+    }
+)
 TONE_PAGE = """<!doctype html><meta charset=utf-8><title>997 Hz tone</title>
 <body style="font:16px system-ui;padding:2rem">
 <h1>997 Hz test tone</h1><button id=b style="font-size:1.5rem">Play tone</button>
@@ -44,7 +57,14 @@ o.connect(g).connect(c.destination);o.start();await c.resume();
 document.body.style.background='#cfc';document.title='997 Hz PLAYING'};</script>"""
 
 STATE_LOCK = threading.Lock()
-STATE: dict = {"lanes": {}, "phases": [], "probes": [], "started_wall": time.time()}
+STATE: dict = {
+    "lanes": {},
+    "telemetry": {},
+    "frame_rejections": [],
+    "phases": [],
+    "probes": [],
+    "started_wall": time.time(),
+}
 
 
 def lane_state(lane: str) -> dict:
@@ -65,7 +85,7 @@ def lane_state(lane: str) -> dict:
             "goertzel_440": [],
             "ts_ns": [],
             "arrival_wall": [],
-            "visibility": [],
+            "frame_key_sets": {},
             "decode_errors": [],
         },
     )
@@ -84,6 +104,14 @@ def goertzel_ratio(samples: list[float], freq: float, rate: float) -> float:
 
 
 def ingest_frame(body: dict) -> tuple[int, dict]:
+    actual_keys = set(body)
+    if actual_keys != FRAME_KEYS:
+        missing = sorted(FRAME_KEYS - actual_keys)
+        unknown = sorted(actual_keys - FRAME_KEYS)
+        rejection = {"missing": missing, "unknown": unknown}
+        with STATE_LOCK:
+            STATE["frame_rejections"].append(rejection)
+        return 400, {"error": "invalid frame fields", **rejection}
     lane = body.get("lane")
     if lane not in ("system", "microphone"):
         return 400, {"error": f"bad lane {lane!r}"}
@@ -108,7 +136,8 @@ def ingest_frame(body: dict) -> tuple[int, dict]:
         st["goertzel_440"].append(round(goertzel_ratio(floats, 440.0, SAMPLE_RATE), 4))
         st["ts_ns"].append(int(body.get("capture_timestamp_ns", -1)))
         st["arrival_wall"].append(time.time())
-        st["visibility"].append(body.get("client_visibility", "?"))
+        key_set = ",".join(sorted(actual_keys))
+        st["frame_key_sets"][key_set] = st["frame_key_sets"].get(key_set, 0) + 1
         if n != body.get("sample_count"):
             st["decode_errors"].append(f"decoded {n} != declared {body.get('sample_count')}")
     return 200, {"accepted": True, "lane": lane, "sequence": body.get("sequence")}
@@ -124,14 +153,25 @@ def percentile(sorted_vals: list[float], p: float) -> float:
 def analyze() -> dict:
     with STATE_LOCK:
         snap = json.loads(json.dumps(STATE))  # deep copy of plain data
-    out = {"phases": snap["phases"], "probes": snap["probes"], "lanes": {}, "checks": {}}
+    out = {
+        "phases": snap["phases"],
+        "probes": snap["probes"],
+        "frame_contract": {
+            "expected_keys": sorted(FRAME_KEYS),
+            "rejections": snap["frame_rejections"],
+        },
+        "lanes": {},
+        "checks": {},
+    }
     for lane, st in snap["lanes"].items():
         seqs = [s for s in st["sequences"] if s is not None]
         gaps = sum(1 for a, b in zip(seqs, seqs[1:]) if b != a + 1)
         ts = st["ts_ns"]
         ts_deltas = sorted(b - a for a, b in zip(ts, ts[1:]))
         arr = st["arrival_wall"]
-        arr_deltas = list(zip(st["visibility"][1:], (b - a for a, b in zip(arr, arr[1:]))))
+        telemetry = snap["telemetry"].get(lane, {})
+        visibility = [telemetry.get(str(sequence), {}).get("client_visibility", "?") for sequence in seqs]
+        arr_deltas = list(zip(visibility[1:], (b - a for a, b in zip(arr, arr[1:]))))
         by_vis: dict[str, list[float]] = {}
         for vis, d in arr_deltas:
             by_vis.setdefault(vis, []).append(d)
@@ -160,6 +200,8 @@ def analyze() -> dict:
             "goertzel_440_mean": round(sum(g440) / len(g440), 4) if g440 else None,
             "ts_delta_ns_min_max": [ts_deltas[0], ts_deltas[-1]] if ts_deltas else None,
             "arrival_cadence_by_visibility": cadence,
+            "frame_key_sets": st["frame_key_sets"],
+            "out_of_band_telemetry_frames": len(telemetry),
             "decode_errors": st["decode_errors"][:5],
         }
     lanes = out["lanes"]
@@ -186,6 +228,13 @@ def analyze() -> dict:
         expected_delta_ns = FRAME_SAMPLES * 1_000_000_000 // SAMPLE_RATE
         checks["capture_clock_matches_descriptor"] = all(
             l["ts_delta_ns_min_max"] == [expected_delta_ns, expected_delta_ns] for l in (sys_l, mic_l)
+        )
+        expected_key_set = ",".join(sorted(FRAME_KEYS))
+        checks["exact_nine_frame_keys"] = all(
+            set(l["frame_key_sets"]) == {expected_key_set} for l in (sys_l, mic_l)
+        )
+        checks["out_of_band_telemetry_complete"] = all(
+            l["out_of_band_telemetry_frames"] == l["frames"] for l in (sys_l, mic_l)
         )
         hidden = [l["arrival_cadence_by_visibility"].get("hidden") for l in (sys_l, mic_l)]
         checks["hidden_tab_cadence_ok"] = all(h and h["p95_ms"] < 1500 for h in hidden) if all(hidden) else "no hidden phase measured"
@@ -229,6 +278,14 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/frames":
             code, resp = ingest_frame(body)
             return self._send(code, json.dumps(resp).encode(), "application/json")
+        if self.path == "/telemetry":
+            lane = body.get("lane")
+            sequence = body.get("sequence")
+            if lane not in ("system", "microphone") or not isinstance(sequence, int):
+                return self._send(400, b'{"error":"bad telemetry identity"}', "application/json")
+            with STATE_LOCK:
+                STATE["telemetry"].setdefault(lane, {})[str(sequence)] = body
+            return self._send(200, b"{}", "application/json")
         if self.path == "/phase":
             with STATE_LOCK:
                 STATE["phases"].append({"t": round(time.time() - STATE["started_wall"], 2), **body})
@@ -243,6 +300,8 @@ class Handler(BaseHTTPRequestHandler):
             prior = analyze()
             with STATE_LOCK:
                 STATE["lanes"].clear()
+                STATE["telemetry"].clear()
+                STATE["frame_rejections"].clear()
                 STATE["phases"].clear()
                 STATE["started_wall"] = time.time()
             return self._send(200, json.dumps({"reset": True, "cleared": prior}).encode(), "application/json")

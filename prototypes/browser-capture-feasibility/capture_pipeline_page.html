@@ -158,8 +158,9 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
     if (meter) meter.style.width = Math.min(240, r * 900) + "px";
     const stat = document.getElementById("s_" + lane);
     if (stat) stat.textContent = `rms=${r.toFixed(4)} seq=${st.seq} sent=${st.sent}`;
+    const sequence = st.seq++;
     const body = {
-      lane, sequence: st.seq++,
+      lane, sequence,
       capture_timestamp_ns: Math.round((m.startFrame / config.sampleRate) * 1e9),
       device_epoch: st.epoch,
       pcm_base64: pcm16b64(m.samples),
@@ -167,11 +168,18 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
       sample_rate: config.sampleRate,
       silent: r < 1e-4,
       discontinuity: false,
-      // prototype-only extras (stub server records them; not part of the v2 contract):
-      client_visibility: document.visibilityState,
-      client_wall_ms: Date.now(),
-      quanta: m.quanta,
     };
+    // Prototype measurement stays out of the strict nine-key frame contract.
+    fetch("/telemetry", {
+      method: "POST", cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lane, sequence,
+        client_visibility: document.visibilityState,
+        client_wall_ms: Date.now(),
+        quanta: m.quanta,
+      }),
+    }).catch(() => {});
     try {
       const resp = await fetch("/frames", {
         method: "POST", cache: "no-store",
