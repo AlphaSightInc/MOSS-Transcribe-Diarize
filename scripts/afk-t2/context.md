@@ -1,10 +1,10 @@
 # Context — Phase 1 ticket #2
 
-Iteration 1. Issue contract captured; local validation baseline measured.
+Iteration 2. Configuration seam audited; smallest test-first backend slice identified.
 
 ## Where things stand
 
-- Branch: `afk/t2-shared-token-auth`, currently at `e3cd276`. Worktree 2 of 6
+- Branch: `afk/t2-shared-token-auth`; iteration-1 baseline is `76a86b8`. Worktree 2 of 6
   (treehouse pool).
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
@@ -77,9 +77,32 @@ Iteration-1 baseline:
   ticket-specific prototype/mutation gates explicitly.
 - Raw JUnit: `evidence/phase1/t2/iteration-01-*.xml`.
 
+## Iteration-2 auth seam audit
+
+- Current gap, measured: an unpaired bearer is rejected as `LiveAccessUnauthorized: invalid bearer
+  authority`; neither `LiveAccessRegistry`, `create_app`, the CLI, nor the deployment profile has a
+  shared-token configuration input. Raw probe:
+  `evidence/phase1/t2/iteration-02-auth-seam-probe.json`.
+- Existing gate remains green unchanged: `tests/test_live_auth.py` plus the API credential-leak/query
+  test pass **14 tests and 26 subtests**. Raw JUnit:
+  `evidence/phase1/t2/iteration-02-existing-auth-gate.xml`.
+- Smallest authority slice: configure one shared capture principal at registry construction, then
+  reuse `_capture_for_digest`, `authorize`, `bind_session`, and every route check unchanged. Because
+  every shared-token request resolves to that one principal, the existing owner check permits reads
+  of every shared-mode session while server-issued session ids keep routing individually.
+- The configured principal must be memory-only. Removing shared-token config on restart must remove
+  its authority; `_persist()` must not turn the configured mode into a durable paired device.
+- First RED nodes: configured token creates two sessions without `/pairings`; that token can read
+  each by its own session id; wrong/missing tokens remain 401; restart without config rejects the
+  shared token; the existing pairing-only test stays unmodified and green when config is absent.
+- Deployment forwarding is a later slice: pass an operator-owned secret-file path from
+  `ops/moss-live.env` through `ops/start-web.sh` and the CLI. Do not place the bearer itself in the
+  environment profile, command line, logs, query string, or tracked files.
+
 ## Ranked candidates
 
-1. Audit the existing `LiveAccessRegistry` configuration seam and auth tests; identify the
-   smallest test-first vertical slice for configured shared-token session creation.
-2. Implement that vertical slice without changing pairing-mode behavior or authority logic.
+1. Implement the RED/GREEN registry + `create_app` slice above without changing pairing-mode
+   behavior or branching route authority logic.
+2. Add the secret-file CLI/deployment forwarding slice, with tracked config containing only a path.
 3. Identify and run the existing auth mutation battery unchanged.
+4. Add reviewer-facing posture and explicit historical-403 evidence after behavior is proven.

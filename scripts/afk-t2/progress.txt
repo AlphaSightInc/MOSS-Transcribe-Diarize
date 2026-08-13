@@ -10,3 +10,19 @@ Iteration 1 — contract + baseline discovery
 - Learned: `.venv` command is stale here; use pyenv Python 3.12.10 and build both Swift products.
   Historical cross-read 403 is not a gate; charter G5 transcript-routing integrity remains.
 - Next: audit `LiveAccessRegistry` config seam and add the smallest test-first shared-token slice.
+
+Iteration 2 — shared-token configuration-seam audit
+- Target: highest-ranked candidate 1; locate the authority/config path and specify the smallest
+  test-first session-creation slice before production code.
+- Files: `scripts/afk-t2/context.md`, `scripts/afk-t2/progress.txt`,
+  `evidence/phase1/t2/iteration-02-*`.
+- Validation: existing registry gate plus API credential-leak/query test PASS: 14 tests, 26 subtests;
+  raw JUnit `iteration-02-existing-auth-gate.xml`. Process-only random-bearer probe confirms the
+  current gap and missing constructor/CLI/deployment inputs; raw JSON `iteration-02-auth-seam-probe.json`.
+- Learned: registry construction is the only needed authority seam. A config-only capture principal
+  can reuse authorization, ownership, binding, and routing unchanged, but must never persist or it
+  would survive removal of shared-token config. Deployment should forward a secret-file path, never
+  the bearer in argv or the environment profile.
+- Next: RED/GREEN the registry + `create_app` slice: no-pairing create, two individually addressed
+  sessions readable by the shared principal, wrong/missing bearer refusal, config-removal restart,
+  and unchanged pairing-mode behavior.
