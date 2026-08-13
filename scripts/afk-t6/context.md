@@ -1,7 +1,7 @@
 # Context — Phase 1 ticket #6
 
-Iteration 2. Acceptance criteria and a reproducible local validation baseline are captured; no
-journal implementation exists yet.
+Iteration 3. Acceptance criteria and a reproducible local validation baseline are captured. The
+first provider-side journal contract is red; no journal implementation exists yet.
 
 ## Where things stand
 
@@ -9,7 +9,7 @@ journal implementation exists yet.
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
-- Issue #6 is OPEN and remains blocked by OPEN issue #1 (checked 2026-08-13).
+- Issue #6 is OPEN and remains blocked by OPEN issue #1 (rechecked 2026-08-13).
 - This worktree has no `.venv`; use the host's pyenv Python 3.12.10 / pytest 9.0.2.
 - The full suite requires both Swift products to be built first. After those builds, the current
   baseline is 862 passed / 4 skipped / 373 subtests plus one persistent out-of-ticket failure:
@@ -78,12 +78,19 @@ bash -n scripts/afk-t6/ralph-afk.sh
   pre-existing/out-of-ticket failure above. Raw JUnit:
   `evidence/phase1/t6/iteration-2-full-suite-after-build.xml`.
 - Ticket-relevant live subset: 65 passed / 351 subtests. It covers HTTP live routes and lifecycle,
-  shared-token authorization, v2 lane semantics, and compatibility mixing; it does not yet cover
-  vector journaling because that code and its tests do not exist. Raw JUnit:
+  shared-token authorization, v2 lane semantics, and compatibility mixing. That iteration-2
+  baseline predates the journal contract and no application implementation exists yet. Raw JUnit:
   `evidence/phase1/t6/iteration-2-live-subset.xml`.
+- First journal contract: expected RED. The session-end provider owns both the completed album and
+  pinned encoder spec, but has no `journal_observations()` handoff yet. The focused node reaches
+  finalized two-speaker album state, then fails only with `AttributeError` at that missing method.
+  Raw JUnit: `evidence/phase1/t6/iteration-3-journal-contract-red.xml`.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Smallest vertical slice toward criterion 1: identify the album/session-end composition seam,
-   then add a failing contract test before production code.
+1. Make the red provider contract green with the smallest immutable observation projection:
+   deterministic speaker label, duration-weighted centroid, summed sample seconds, and encoder
+   provider/revision plus state SHA. Do not write files or alter runtime lifecycle in that slice.
+2. Then compose those observations into a non-terminal append-only writer at clean session stop,
+   adding session id, created-at, and echo mode at the runtime/transport boundary.

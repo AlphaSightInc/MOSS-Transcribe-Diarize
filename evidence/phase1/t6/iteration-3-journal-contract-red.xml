@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.615" timestamp="2026-08-13T02:14:26.678988-04:00" hostname="MacStudio.local"><testcase classname="tests.test_live_provider_bundle" name="test_session_end_exposes_one_journal_observation_per_album_speaker" time="0.025"><failure message="AttributeError: 'WeSpeakerLiveEvidenceProvider' object has no attribute 'journal_observations'">def test_session_end_exposes_one_journal_observation_per_album_speaker():
+        """The provider owns the only composition seam with both vectors and encoder identity.
+    
+        Runtime stop already asks this provider to settle its final span. After that call the
+        album is complete, so the same provider must expose journal-ready observations without
+        making the runtime reach through its private collaborators or re-derive centroids.
+        """
+    
+        album = FingerprintAlbum(admission_seconds=1.0)
+        album.observe(
+            canonical_speaker="speaker-0001",
+            vector=(1.0, 0.0),
+            duration_sec=2.0,
+            span_id=1,
+        )
+        album.observe(
+            canonical_speaker="speaker-0001",
+            vector=(0.0, 1.0),
+            duration_sec=1.0,
+            span_id=2,
+        )
+        album.observe(
+            canonical_speaker="speaker-0002",
+            vector=(0.0, 1.0),
+            duration_sec=3.0,
+            span_id=3,
+        )
+        encoder = _ScriptedEncoder([])
+        encoder.spec = SimpleNamespace(
+            provider="wespeaker_resnet152_lm",
+            revision="test-revision",
+            state_sha256="ab" * 32,
+        )
+        provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album)
+    
+        provider.finalize_identity(
+            base_snapshot=LiveIdentitySnapshot(
+                version=3,
+                canonical_speakers=("speaker-0001", "speaker-0002"),
+            )
+        )
+&gt;       observations = provider.journal_observations()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'WeSpeakerLiveEvidenceProvider' object has no attribute 'journal_observations'
+
+tests/test_live_provider_bundle.py:1147: AttributeError</failure></testcase></testsuite></testsuites>

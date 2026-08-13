@@ -1103,6 +1103,60 @@ def test_the_session_end_finalize_labels_the_last_spans_evidence_before_it_sweep
     ] == [(2, "S01", "speaker-0001", LABELLED)]
 
 
+def test_session_end_exposes_one_journal_observation_per_album_speaker():
+    """The provider owns the only composition seam with both vectors and encoder identity.
+
+    Runtime stop already asks this provider to settle its final span. After that call the
+    album is complete, so the same provider must expose journal-ready observations without
+    making the runtime reach through its private collaborators or re-derive centroids.
+    """
+
+    album = FingerprintAlbum(admission_seconds=1.0)
+    album.observe(
+        canonical_speaker="speaker-0001",
+        vector=(1.0, 0.0),
+        duration_sec=2.0,
+        span_id=1,
+    )
+    album.observe(
+        canonical_speaker="speaker-0001",
+        vector=(0.0, 1.0),
+        duration_sec=1.0,
+        span_id=2,
+    )
+    album.observe(
+        canonical_speaker="speaker-0002",
+        vector=(0.0, 1.0),
+        duration_sec=3.0,
+        span_id=3,
+    )
+    encoder = _ScriptedEncoder([])
+    encoder.spec = SimpleNamespace(
+        provider="wespeaker_resnet152_lm",
+        revision="test-revision",
+        state_sha256="ab" * 32,
+    )
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=album)
+
+    provider.finalize_identity(
+        base_snapshot=LiveIdentitySnapshot(
+            version=3,
+            canonical_speakers=("speaker-0001", "speaker-0002"),
+        )
+    )
+    observations = provider.journal_observations()
+
+    assert [item.speaker_label for item in observations] == ["speaker-0001", "speaker-0002"]
+    assert observations[0].centroid == pytest.approx((2 / 5**0.5, 1 / 5**0.5))
+    assert observations[0].sample_seconds == pytest.approx(3.0)
+    assert observations[1].centroid == pytest.approx((0.0, 1.0))
+    assert observations[1].sample_seconds == pytest.approx(3.0)
+    assert {item.embedder_id for item in observations} == {
+        "wespeaker_resnet152_lm:test-revision"
+    }
+    assert {item.embedder_state_sha for item in observations} == {"ab" * 32}
+
+
 def test_a_provider_that_cannot_sweep_still_settles_its_last_span():
     """The reconcile is not the sweep's errand; it is how the meeting's evidence ends up true.
 
