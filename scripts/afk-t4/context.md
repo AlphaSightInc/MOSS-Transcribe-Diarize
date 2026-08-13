@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #4
 
-Iteration 0. Nothing measured yet by this loop.
+Iteration 1. Issue contract and local validation baseline measured.
 
 ## Where things stand
 
@@ -8,6 +8,21 @@ Iteration 0. Nothing measured yet by this loop.
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
+
+## Issue #4 acceptance checklist (verbatim scope)
+
+- [ ] Reference `vite.config.ts`, `tsconfig.json`, `package.json`, and four bundled `woff2` font
+  families lifted verbatim.
+- [ ] `/` serves the new app; `/static/**` serves the bundle; `/static/app.js` is stable.
+- [ ] Inline Subtitle Studio moves to `/studio`, byte-unchanged.
+- [ ] `/live` remains an unadvertised operator diagnostic.
+- [ ] Fonts are self-hosted; no page makes a CDN request.
+- [ ] Built bundle is committed; deploy needs no Node toolchain.
+- [ ] Development uses `vite build --watch` behind FastAPI; no second-origin Vite dev server.
+- [ ] Typecheck and transferred reference component tests run in local validation.
+- [ ] Provider-manifest `source_revision` is re-finalized for the host.
+
+Scope boundary: shell and serving only. Transcript rendering belongs to #7.
 
 ## Read these first (do not re-derive)
 
@@ -30,18 +45,35 @@ Iteration 0. Nothing measured yet by this loop.
 - `setInterval` in a backgrounded tab collapses to ~1/min. Worklet port messages do not.
 - `source_revision` comes from the provider manifest and must be re-finalized per host.
 
-## Validation commands
-
-Establish these in iteration 1 and record what each actually covers:
+## Validation baseline (iteration 1)
 
 ```bash
-.venv/bin/pytest -q                      # full suite; baseline ~418 passed / 2 skipped
-.venv/bin/pytest -q tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q \
+  tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py -p no:cacheprovider
+# PASS: 65 passed, 351 subtests in 7.33 s. Covers current live HTTP/auth/mixer contracts;
+# does not cover the frontend, static routes, browser behavior, or real capture.
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+# ENVIRONMENT-BLOCKED: 964 passed, 4 skipped, 4 failed, 11 errors, 383 subtests in 124.97 s.
+# Missing prerequisites: built Swift products and the real benchmark harness_cache.npz archive.
+# Two macOS UDS tracer failures also occurred after the missing-product setup errors; re-evaluate
+# only after building both Swift products. This command covers the whole collected Python suite.
+
 bash -n scripts/afk-t4/ralph-afk.sh
+# PASS. Syntax only; it does not execute the loop.
 ```
+
+The prescribed `.venv/bin/pytest` path does not exist in this treehouse worktree. The repo's
+verified pyenv Python 3.12.10 has pytest 9.0.2 and the needed Python dependencies, so use
+`python3 -m pytest` here. Do not count the full suite green until its documented local artifacts
+exist and the command passes.
 
 ## Ranked candidates
 
-1. Read the charter and the issue. Record the acceptance criteria as a checklist here.
-2. Establish and record a working validation command set.
-3. Smallest vertical slice toward criterion 1.
+1. Lift the three reference build-config files and four font families verbatim; prove source and
+   target checksums match.
+2. Lift the smallest reference shell/component set needed to build, without transcript rendering.
+3. Add FastAPI serving cutover with route regression tests for `/`, `/studio`, `/static/**`, and
+   retained `/live`.
+4. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
+   before merge.

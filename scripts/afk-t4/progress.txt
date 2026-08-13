@@ -1,2 +1,16 @@
 
 [loop 20260813-055952-98216] start budget=40 agent=codex branch=afk/t4-frontend-shell
+
+Iteration 1 — issue contract + validation baseline
+- Target: highest-ranked candidate; read binding charter/T-09/issue #4 and record its nine exact
+  acceptance criteria without changing product code.
+- Files: `scripts/afk-t4/context.md`, `scripts/afk-t4/progress.txt`.
+- Validation: focused live suite PASS (65 passed + 351 subtests, 7.33 s); loop shell syntax PASS;
+  full suite ENVIRONMENT-BLOCKED (964 passed, 4 skipped, 4 failed, 11 errors, 383 subtests,
+  124.97 s) by absent Swift products and real benchmark archive; prescribed `.venv` is absent,
+  verified pyenv Python 3.12.10/pytest 9.0.2 used instead.
+- Evidence: issue `https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4`,
+  `docs/phase1-afk-charter.md`, `.wayfinder/tickets/T-09-serving-cutover-and-origin.md`, command
+  output in iteration transcript.
+- Learned: ticket is nine serving/shell gates; transcript rendering is explicitly #7. Next: copy
+  reference configs/fonts verbatim and verify source/target hashes.
