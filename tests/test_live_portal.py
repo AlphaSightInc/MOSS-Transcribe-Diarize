@@ -187,7 +187,7 @@ class LivePortalRouteTest(unittest.TestCase):
             self.assertIn('id="livePortal"', portal.text)
             self.assertEqual(_live_api_routes(app), EXPECTED_LIVE_API)
 
-    def test_live_portal_document_uses_manual_memory_only_authority_shell(self):
+    def test_live_portal_document_uses_memory_only_authority_shell(self):
         from fastapi.testclient import TestClient
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -195,6 +195,8 @@ class LivePortalRouteTest(unittest.TestCase):
             html = TestClient(app).get("/live").text
             lower = html.lower()
 
+            self.assertIn('id="sharedToken"', html)
+            self.assertIn('id="startButton"', html)
             self.assertIn('id="sessionId"', html)
             self.assertIn('id="viewToken"', html)
             self.assertIn('type="password"', html)
@@ -221,12 +223,36 @@ class LivePortalRouteTest(unittest.TestCase):
             self.assertEqual(
                 set(re.findall(r"""/api/live/[^\s"'`]+""", html)),
                 {
+                    "/api/live/sessions",
                     "/api/live/sessions/${encodeURIComponent(sessionId)}/snapshot?since_version=${snapshotVersion}",
                     "/api/live/sessions/${encodeURIComponent(sessionId)}/events?since_seq=${eventSequence}",
                     "/api/live/sessions/${encodeURIComponent(sessionId)}/stop",
                     "/api/live/sessions/${encodeURIComponent(sessionId)}/abort",
                 },
             )
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_shared_token_starts_an_individually_addressed_session_from_page_memory(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        probe = _run_shared_start_contract_probe(html)
+
+        start_request, snapshot_request, events_request = probe["requests"]
+        self.assertEqual(start_request["method"], "POST")
+        self.assertEqual(start_request["url"], "/api/live/sessions")
+        self.assertEqual(start_request["headers"]["Authorization"], "Bearer shared-page-secret")
+        self.assertIsNone(start_request["body"])
+        self.assertIn("/api/live/sessions/shared-session%2Falpha/snapshot", snapshot_request["url"])
+        self.assertIn("/api/live/sessions/shared-session%2Falpha/events", events_request["url"])
+        for request in probe["requests"]:
+            self.assertEqual(request["headers"]["Authorization"], "Bearer shared-page-secret")
+            self.assertNotIn("shared-page-secret", request["url"])
+        self.assertFalse(any("pairing" in request["url"] for request in probe["requests"]))
+        self.assertEqual(probe["tokenInputAfterStart"], "")
+        self.assertEqual(probe["storageWrites"], [])
 
     def test_live_portal_stop_deadline_drains_real_pending_work(self):
         from moss_transcribe_diarize.app.server import create_app
@@ -895,6 +921,24 @@ async function runHappy() {{
   console.log(JSON.stringify(result));
 }}
 
+async function runSharedStart() {{
+  const env = installPortal([
+    {{ payload: {{ id: "shared-session/alpha", view_token: "unused-view-token" }} }},
+    {{ payload: snapshots.active2 }},
+    {{ payload: {{ events: [] }} }},
+  ]);
+  env.nodes.sharedToken.value = "shared-page-secret";
+  env.nodes.startButton.listeners.click();
+  await env.flush();
+  const tokenInputAfterStart = env.nodes.sharedToken.value;
+  await env.runNextTimer();
+  console.log(JSON.stringify({{
+    requests: env.requests,
+    tokenInputAfterStart,
+    storageWrites: env.storageWrites,
+  }}));
+}}
+
 async function runRetry() {{
   const env = installPortal([
     {{ payload: {{ snapshot: {{ session: {{ status: "nonsense", version: 5, committed: [], provisional: null }} }} }} }},
@@ -1112,6 +1156,7 @@ async function runEventRetention() {{
 
 const scenarios = {{
   happy: runHappy,
+  sharedStart: runSharedStart,
   retry: runRetry,
   labelRevision: runLabelRevision,
   controlFailure: runControlFailure,
@@ -1142,6 +1187,10 @@ scenarios[scenario]().catch((error) => {{
 
 def _run_browser_contract_probe(html: str) -> dict:
     return _run_node_probe(html, "happy")
+
+
+def _run_shared_start_contract_probe(html: str) -> dict:
+    return _run_node_probe(html, "sharedStart")
 
 
 def _run_retry_contract_probe(html: str) -> dict:

@@ -68,3 +68,15 @@ Iteration 5 — unchanged auth mutation-battery audit
   the criterion met or rewrite “unmodified” locally.
 - Next: implement and prove browser page-memory-only token handling; leave the mutation criterion
   blocked for supervisor direction.
+
+Iteration 6 — browser page-memory shared-token start
+- Target: highest-ranked candidate 1; let a fresh `/live` page create a server-issued session with
+  a shared bearer while retaining the existing manual view path.
+- Files: `moss_transcribe_diarize/app/live_portal.py`, `tests/test_live_portal.py`,
+  `scripts/afk-t2/{context.md,progress.txt}`, `evidence/phase1/t2/iteration-06-browser-page-memory.xml`.
+- Validation: portal + focused live set PASS: 85 tests, 357 subtests; `git diff --check` PASS.
+- Learned: the browser can reuse the shared bearer through the unchanged authority path; the token
+  stays in closure memory, leaves the password input immediately, and enters only Authorization
+  headers. No pairing request, query/body token, cookie, `localStorage`, or `sessionStorage`.
+- Next: add reviewer-facing single-trust-domain posture and explicit historical-403 evidence; keep
+  the unchanged mutation-battery criterion blocked for supervisor direction.

@@ -118,6 +118,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
     </header>
     <main>
       <aside>
+        <label for="sharedToken">Shared bearer token</label>
+        <input id="sharedToken" type="password" autocomplete="off" />
+        <button id="startButton" class="primary" type="button">Start session</button>
         <label for="sessionId">Session ID</label>
         <input id="sessionId" type="text" autocomplete="off" />
         <label for="viewToken">View token</label>
@@ -154,12 +157,15 @@ LIVE_PORTAL_HTML = """<!doctype html>
       const stopDrainDeadlineSeconds = 5.0;
       const maxRenderedEvents = 200;
       const endpoints = {
+        start: "/api/live/sessions",
         snapshot: (sessionId, snapshotVersion) => `/api/live/sessions/${encodeURIComponent(sessionId)}/snapshot?since_version=${snapshotVersion}`,
         events: (sessionId, eventSequence) => `/api/live/sessions/${encodeURIComponent(sessionId)}/events?since_seq=${eventSequence}`,
         stop: (sessionId) => `/api/live/sessions/${encodeURIComponent(sessionId)}/stop`,
         abort: (sessionId) => `/api/live/sessions/${encodeURIComponent(sessionId)}/abort`,
       };
       const nodes = {
+        sharedToken: document.getElementById("sharedToken"),
+        start: document.getElementById("startButton"),
         sessionId: document.getElementById("sessionId"),
         viewToken: document.getElementById("viewToken"),
         connect: document.getElementById("connectButton"),
@@ -182,6 +188,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         inFlight: false,
         retryIndex: 0,
         retryTimer: 0,
+        startController: null,
         pollController: null,
         controlController: null,
         renderedEvents: new Set(),
@@ -207,9 +214,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
         setText(nodes.serverState, value);
       }
 
-      function authHeaders() {
+      function authHeaders(token = state.viewToken) {
         return {
-          "Authorization": `Bearer ${state.viewToken}`,
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         };
       }
@@ -225,7 +232,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
           clearTimeout(state.retryTimer);
           state.retryTimer = 0;
         }
-        for (const key of ["pollController", "controlController"]) {
+        for (const key of ["startController", "pollController", "controlController"]) {
           if (state[key]) {
             state[key].abort();
             state[key] = null;
@@ -234,6 +241,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
       }
 
       function setControls(connected) {
+        nodes.start.disabled = connected;
         nodes.connect.disabled = connected;
         nodes.disconnect.disabled = !connected;
         nodes.stop.disabled = !connected;
@@ -247,6 +255,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.eventSequence = 0;
         state.renderedEvents.clear();
         state.renderedEventOrder = [];
+        nodes.sharedToken.value = "";
         nodes.sessionId.value = "";
         nodes.viewToken.value = "";
       }
@@ -329,6 +338,66 @@ LIVE_PORTAL_HTML = """<!doctype html>
 
       async function fetchControlJson(url, options, generation, controller) {
         return fetchTimedJson(url, options, generation, controller, controlRequestTimeoutMs);
+      }
+
+      function activateAuthority(sessionId, token) {
+        state.sessionId = sessionId;
+        state.viewToken = token;
+        state.connected = Boolean(state.sessionId && state.viewToken);
+        state.generation += 1;
+        state.retryIndex = 0;
+        state.snapshotVersion = 0;
+        state.eventSequence = 0;
+        state.renderedEvents.clear();
+        state.renderedEventOrder = [];
+        setText(nodes.events, "");
+        setText(nodes.transcript, "");
+        setControls(state.connected);
+        if (state.connected) {
+          setLocalState("reconnecting");
+          setText(nodes.statusDetail, "Waiting for first server snapshot.");
+          schedulePoll(0);
+        }
+      }
+
+      async function startSession() {
+        const token = nodes.sharedToken.value;
+        disconnect();
+        if (!token) {
+          return;
+        }
+        const generation = state.generation;
+        const controller = new AbortController();
+        state.startController = controller;
+        nodes.start.disabled = true;
+        nodes.connect.disabled = true;
+        setText(nodes.statusDetail, "Starting session.");
+        try {
+          const response = await fetch(endpoints.start, {
+            method: "POST",
+            cache: "no-store",
+            credentials: "same-origin",
+            signal: controller.signal,
+            headers: authHeaders(token),
+          });
+          const payload = await readJson(response);
+          if (generation !== state.generation) {
+            throw new DOMException("stale live portal generation", "AbortError");
+          }
+          if (!payload || typeof payload.id !== "string" || !payload.id) {
+            throw new Error("malformed session response");
+          }
+          activateAuthority(payload.id, token);
+        } catch (error) {
+          if (error.name !== "AbortError" && generation === state.generation) {
+            setText(nodes.statusDetail, `Start failed: ${error.message || "request failed"}`);
+          }
+        } finally {
+          if (state.startController === controller) {
+            state.startController = null;
+          }
+          setControls(state.connected);
+        }
       }
 
       function line(label, value) {
@@ -618,29 +687,12 @@ LIVE_PORTAL_HTML = """<!doctype html>
         }
       }
 
+      nodes.start.addEventListener("click", () => void startSession());
       nodes.connect.addEventListener("click", () => {
         const nextSessionId = nodes.sessionId.value.trim();
         const nextViewToken = nodes.viewToken.value;
         disconnect();
-        state.sessionId = nextSessionId;
-        state.viewToken = nextViewToken;
-        nodes.sessionId.value = "";
-        nodes.viewToken.value = "";
-        state.connected = Boolean(state.sessionId && state.viewToken);
-        state.generation += 1;
-        state.retryIndex = 0;
-        state.snapshotVersion = 0;
-        state.eventSequence = 0;
-        state.renderedEvents.clear();
-        state.renderedEventOrder = [];
-        setText(nodes.events, "");
-        setText(nodes.transcript, "");
-        setControls(state.connected);
-        if (state.connected) {
-          setLocalState("reconnecting");
-          setText(nodes.statusDetail, "Waiting for first server snapshot.");
-          schedulePoll(0);
-        }
+        activateAuthority(nextSessionId, nextViewToken);
       });
       nodes.disconnect.addEventListener("click", disconnect);
       nodes.stop.addEventListener("click", () => {
@@ -648,7 +700,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         void control("stop");
       });
       nodes.abort.addEventListener("click", () => void control("abort"));
-      window.addEventListener("pagehide", clearAuthority);
+      window.addEventListener("pagehide", disconnect);
 
       window.mossLivePortal = { endpoints, renderedEventBounds };
     })();

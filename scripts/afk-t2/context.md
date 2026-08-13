@@ -1,6 +1,7 @@
 # Context — Phase 1 ticket #2
 
-Iteration 5. Shared-token authority reaches the service through a path-only deployment config;
+Iteration 6. Shared-token authority reaches the service through a path-only deployment config and
+the live portal can create a server-issued session while keeping the bearer in page memory only;
 the historical auth mutation battery is not runnable unchanged on the current pre-ticket baseline.
 
 ## Where things stand
@@ -19,13 +20,13 @@ the historical auth mutation battery is not runnable unchanged on the current pr
 
 ## Acceptance checklist — issue #2 (verbatim meaning, no extra gates)
 
-- [ ] Server accepts a shared bearer token supplied by config; a fresh browser needs no pairing
+- [x] Server accepts a shared bearer token supplied by config; a fresh browser needs no pairing
   exchange.
-- [ ] Existing pairing flow continues unchanged when the shared token is not configured.
+- [x] Existing pairing flow continues unchanged when the shared token is not configured.
 - [ ] Existing auth gate and mutation batteries pass unmodified.
-- [ ] Token stays in page memory only: never a query parameter and never `localStorage`.
+- [x] Token stays in page memory only: never a query parameter and never `localStorage`.
 - [ ] Reviewer-facing documentation states that any token holder can read any session.
-- [ ] Session ownership and routing still resolve per server-issued session id, so sessions remain
+- [x] Session ownership and routing still resolve per server-issued session id, so sessions remain
   individually addressable.
 - [ ] Evidence explicitly records that historical `403` cross-read isolation is no longer an
   acceptance criterion under this single-trust-domain posture.
@@ -143,10 +144,23 @@ Iteration-1 baseline:
   harness-drift blocker, not evidence of a shared-token mutant surviving. Updating the harness
   would violate issue #2's explicit “unmodified” criterion and is therefore not this ticket's fix.
 
+## Iteration-6 browser page-memory slice
+
+- `/live` now accepts a bearer and creates a session through `POST /api/live/sessions`; no pairing
+  route is involved. It polls the returned server-issued session id with the same bearer and keeps
+  the existing manual session/view-token path intact.
+- The bearer is cleared from the password input immediately, exists only in the closure's in-memory
+  state for the active page, and is cleared on disconnect, terminal state, or `pagehide`. Requests
+  send it only in `Authorization`; it never enters a URL, body, cookie, `localStorage`, or
+  `sessionStorage`.
+- Portal plus focused live validation passes **85 tests and 357 subtests**. Raw JUnit:
+  `evidence/phase1/t2/iteration-06-browser-page-memory.xml`.
+- Scope limit: the Node browser-contract probe proves page behavior and request construction; it
+  does not claim attended display capture. Historical cross-read `403` remains explicitly not an
+  acceptance gate; G5 transcript-routing integrity remains.
+
 ## Ranked candidates
 
-1. Implement and prove browser page-memory-only token handling: no query parameter or
-   `localStorage`, while the token survives for the current page lifetime only.
-2. Add reviewer-facing posture and explicit historical-403 evidence after behavior is proven.
-3. Resolve the unchanged mutation-battery acceptance blocker through supervisor direction: the
+1. Add reviewer-facing posture and explicit historical-403 evidence now that behavior is proven.
+2. Resolve the unchanged mutation-battery acceptance blocker through supervisor direction: the
    historical runner has two pre-ticket stale seams, and changing either is not “unmodified.”
