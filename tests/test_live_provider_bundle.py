@@ -337,13 +337,36 @@ def test_bundle_runtime_factory_builds_audio_dependent_vad_and_live_identity_evi
     assert ("assignments", "S01->speaker-0001") in second.proposed_snapshot.diagnostics
 
 
-def test_bundle_runtime_factory_installs_the_declared_vector_journal(tmp_path):
+def test_bundle_runtime_factory_journals_completed_provider_observations(tmp_path):
     config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
-    journal = LiveVectorJournal(tmp_path / "speaker-vectors.jsonl")
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    journal = LiveVectorJournal(journal_path)
 
     runtime = build_live_runtime_factory(config, FakeRunner(), vector_journal=journal)()
+    created = runtime.create(echo_mode="headphones")
+    runtime.accept_frame(
+        created.session_id,
+        AudioFrame(sequence=0, pcm=_tone(160), sample_count=160, sample_rate=16000),
+    )
+
+    stopped = asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+    row = json.loads(journal_path.read_text(encoding="utf-8"))
 
     assert runtime._vector_journal is journal
+    assert stopped.session.status == "closed"
+    assert row == {
+        "session_id": created.session_id,
+        "speaker_label": "speaker-0001",
+        "centroid": [0.6, 0.8],
+        "sample_seconds": 0.01,
+        "embedder_id": "wespeaker_resnet152_lm:test-revision",
+        "embedder_state_sha": _sha256_bytes(b"offline identity provider state"),
+        "created_at": row["created_at"],
+        "echo_mode": "headphones",
+    }
+    assert isinstance(row["created_at"], float)
+    assert runtime.events(created.session_id)[-2].kind == "vector_journal_appended"
+    assert runtime.events(created.session_id)[-2].payload == {"written": 1, "refusals": {}}
 
 
 def test_bundle_factory_constructs_silero_from_declared_import_and_asset(tmp_path):

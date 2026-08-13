@@ -12,6 +12,8 @@
   for stored session audio").
 - Required before: ADR-0002 implementation **step 2**, the tape recorder. This record is that
   step's stated precondition — a decision in writing, before any code.
+- Addendum (2026-08-13): T-12 separately resolved persistence of the derived live-album
+  centroid. The distinction and its still-open consent boundary are recorded below.
 
 ## Context
 
@@ -108,6 +110,21 @@ snapshot, event, or portal response. No audio in any evidence directory pulled o
 under the batch `runs/` tree, ever. And the secret half of the PRD clause — tokens and pairing
 payloads — is untouched by any of this and keeps its absolute reading.
 
+### 2026-08-13 addendum — the vector journal is not raw-audio retention
+
+T-12 resolves the previously open album-persistence question narrowly: on clean session end the
+service writes each speaker's duration-weighted album centroid to a local, append-only,
+session-keyed vector journal. Vector journaling defaults **on**; raw-audio retention remains
+**off** unless ADR-0003's separate tape configuration is declared. The journal is not a voice
+bank: it has no enrollment, naming, matching, CRUD, or UI.
+
+A speaker embedding is biometric data. Enabling this journal for the guarded LAN/tailnet posture
+is **not** a consent decision for meeting participants and supplies no deletion or
+right-to-remove mechanism. Any rollout beyond that guarded deployment requires an explicit
+consent decision and an explicit deletion/right-to-remove ruling **before the journal ships**.
+Until then, the absence of journal CRUD must not be interpreted as a policy that removal is
+unnecessary or unsupported by the eventual product.
+
 ## Consequences
 
 - ADR-0002 step 2 is unblocked, with a shape it must implement rather than a permission it may
@@ -131,10 +148,11 @@ payloads — is untouched by any of this and keeps its absolute reading.
 - **The tape's on-disk format and gap-manifest schema.** ADR-0002 §Decision 1 and
   `docs/design-streaming-diarization.md` §3.2 already fix raw PCM plus a JSON index with WAV
   rendered on demand, teed at the mixer's sealed-interval commit. Not re-opened here.
-- **Whether the album may outlive a meeting.** An exemplar embedding is derived data, not raw
-  audio, and the PRD's clause does not reach it — but a cross-meeting persistent album is
-  explicitly product-and-privacy fog in ADR-0002 §8 and stays closed. Today the album is per
-  session and in memory; this record changes nothing about that.
+- **A cross-meeting voice bank or its consent/removal policy.** T-12 now permits only the derived,
+  session-keyed journal described in the addendum. The in-memory album still dies with the
+  session, and turning journal rows into enrollment, identity matching, naming, CRUD, or UI
+  remains undecided Phase 2 work. Rollout beyond the guarded LAN/tailnet remains blocked on the
+  explicit consent and deletion/right-to-remove ruling above.
 - **The numeric TTL and cap for any deployment.** By D3 and D5 those are stated by the deployment,
   and a default would be a guess wearing a contract's clothes.
 - **Re-ASR of the tape.** Forbidden by ADR-0002 (sweeps are diarization only); nothing here

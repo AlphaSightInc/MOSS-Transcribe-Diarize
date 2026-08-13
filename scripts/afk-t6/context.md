@@ -1,10 +1,13 @@
 # Context — Phase 1 ticket #6
 
-Iteration 7. Acceptance criteria and a reproducible local validation baseline are captured. The
+Iteration 8. Acceptance criteria and a reproducible local validation baseline are captured. The
 provider exposes immutable, encoder-pinned observations from the completed album. The measured
 single-process writer runs after exact clean-stop accounting and never on abort. Live deployment
 wiring now makes the journal default-on at an operator-configurable path outside the checkout;
-raw-audio retention remains default-off. The consent/right-to-remove documentation remains open.
+raw-audio retention remains default-off. ADR-0003 now states the derived-vector distinction and
+the explicit consent/right-to-remove gate. A configured production factory has also been exercised
+end to end from an accepted audio frame through the real provider/coordinator/runtime path to the
+complete journal row.
 
 ## Where things stand
 
@@ -22,15 +25,15 @@ raw-audio retention remains default-off. The consent/right-to-remove documentati
 
 ## Acceptance checklist — issue #6 (binding)
 
-- [ ] At session end, append one record per speaker containing `session_id`, `speaker_label`,
+- [x] At session end, append one record per speaker containing `session_id`, `speaker_label`,
   `centroid`, `sample_seconds`, `embedder_id`, `embedder_state_sha`, `created_at`, and
   `echo_mode`.
-- [ ] Every row contains both `embedder_id` and `embedder_state_sha`.
-- [ ] Records are keyed by session, never by device; Phase 1 has no `device_id`.
+- [x] Every row contains both `embedder_id` and `embedder_state_sha`.
+- [x] Records are keyed by session, never by device; Phase 1 has no `device_id`.
 - [x] Vector journaling defaults ON while raw-audio retention remains OFF.
 - [x] The journal path is operator-configurable and outside the checkout.
-- [ ] A refused or unusable observation is declined by name and never aborts the session.
-- [ ] Documentation states that the journal is not a consent decision and that rollout beyond
+- [x] A refused or unusable observation is declined by name and never aborts the session.
+- [x] Documentation states that the journal is not a consent decision and that rollout beyond
   the guarded LAN requires an explicit consent and right-to-remove ruling first.
 
 Source: <https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/6>, read live on
@@ -113,9 +116,23 @@ bash -n scripts/afk-t6/ralph-afk.sh
   191 passed / 351 subtests. Raw JUnit:
   `evidence/phase1/t6/iteration-7-default-on-journal-wiring.xml`. This does not prove a filled-in
   host profile, multi-process writes, or power-loss survival.
+- Production-factory journal path: GREEN. A configured bundle accepted an audio frame, used the
+  concrete `WeSpeakerLiveEvidenceProvider`, completed a clean stop, and wrote the full
+  session-keyed row through the production coordinator/runtime/writer path; the provider-bundle
+  suite passes 46/46. Raw JUnit:
+  `evidence/phase1/t6/iteration-8-provider-journal-e2e.xml`. The deterministic test replaces the
+  external VAD and encoder adapter, so it does not prove the pinned ONNX model, multiple real
+  voices, a filled-in host profile, multi-process writes, or power-loss survival.
+- Consent boundary: documented in ADR-0003. Derived centroid journaling is explicitly separate
+  from default-off raw-audio retention, is not a consent decision, provides no removal mechanism,
+  and cannot roll out beyond the guarded LAN/tailnet without explicit consent and
+  deletion/right-to-remove rulings.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Add the required consent/right-to-remove documentation and prove the configured production
-   factory uses the real completed provider observations rather than stub evidence.
+1. Acquire the shared merge lock, merge current `dev` into this branch, and run the full validation
+   set on the merged result. Preserve the known out-of-ticket Launch Services failure separately.
+2. If the merged result is green under the ticket gate, fast-forward `dev`, push this branch to
+   `private`, and comment criterion-by-criterion evidence plus explicit test limitations on issue
+   #6. Do not close the issue.
