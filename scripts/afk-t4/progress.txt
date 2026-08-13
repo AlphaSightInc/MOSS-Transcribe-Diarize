@@ -142,3 +142,17 @@ Iteration 10 — exact operator finalization handoff
 - Learned: no loop-authorized work remains. Host finalization is the sole unchecked criterion and
   requires an authorized write plus raw host evidence. Next: supervisor/operator runs the handed-off
   command and attaches stdout plus finalized SHA/source revision; loop must not touch the host.
+
+Iteration 11 — three-iteration blocker escalation
+- Target: highest-ranked candidate; check for authorized host-finalization evidence and apply the
+  charter's stop/escalation rule after three consecutive blocker-ending iterations.
+- Files: `evidence/phase1/t4/iteration-11-blocker-escalation.txt`,
+  `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: live `gh issue view` found issue #4 OPEN with only the three prior loop comments and
+  no operator evidence; actor guard resolved `yugao-aisight`; escalation comment creation and
+  read-back PASS as the fourth/latest comment at `2026-08-13T07:00:41Z`.
+- Evidence: `evidence/phase1/t4/iteration-11-blocker-escalation.txt`; issue comment
+  `https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4#issuecomment-5277116813`.
+- Learned: the only unchecked criterion remains authority-blocked; the required supervisor request
+  is now posted. Next: resume only when raw host stdout plus finalized SHA/source revision arrives;
+  do not touch the read-only host, rerun local substitutes, or close the issue.

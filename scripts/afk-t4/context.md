@@ -1,12 +1,14 @@
 # Context — Phase 1 ticket #4
 
-Iteration 10. The ticket branch contains current `dev`, and the complete focused ticket set passes
+Iteration 11. The ticket branch contains current `dev`, and the complete focused ticket set passes
 on that merged result. The branch is published at `private/afk/t4-frontend-shell`; issue #4 has a
 criterion-by-criterion evidence comment with explicit non-coverage and both unrelated full-suite
 exceptions. The issue remains open. Authorized host manifest finalization is the only unchecked
 ticket criterion and remains outside this loop's read-only host authority. The loop posted the
 exact fail-closed operator command and requested raw host evidence at issue comment
-`#issuecomment-5277087183`; no further loop-authorized implementation work remains.
+`#issuecomment-5277087183`. No evidence appeared by iteration 11. The charter's three-consecutive-
+iteration blocker threshold is now reached, and the loop escalated to the supervisor/operator at
+`#issuecomment-5277116813`; no further loop-authorized implementation work remains.
 
 ## Where things stand
 
@@ -42,6 +44,10 @@ exact fail-closed operator command and requested raw host evidence at issue comm
   Issue comment `#issuecomment-5277087183` hands the operator the non-dry-run command guarded by an
   exact-HEAD check and asks for raw stdout plus the finalized SHA/source revision. The loop did not
   access or mutate the host.
+- Iteration 11 found no operator evidence after that handoff. It reached the charter's three-
+  consecutive-iteration blocker threshold, posted the required supervisor escalation as
+  `#issuecomment-5277116813`, and read it back under the guarded `yugao-aisight` actor. Raw evidence
+  is `evidence/phase1/t4/iteration-11-blocker-escalation.txt`.
 - Both Swift products build, and the hash-pinned 92-unit archived Alphabet cache is provisioned
   from the local L2 Stage-0 corpus. The full Python collection runs without setup errors: 980
   passed, 2 skipped, 2 failed, and 475 subtests passed. One failure is the expected L15 product
@@ -176,9 +182,10 @@ not finalize the host manifest or add browser/deployment/attended-capture eviden
 ## Ranked candidates
 
 1. **BLOCKED on authorized operator input:** await raw host finalization evidence requested in
-   issue comment `#issuecomment-5277087183`. Do not repeat the dry-run, mutate the read-only host,
-   close the issue, or substitute local fixture evidence for the host-owned manifest.
+   issue comment `#issuecomment-5277087183` and escalated after the three-iteration threshold in
+   `#issuecomment-5277116813`. Do not repeat the dry-run, mutate the read-only host, close the issue,
+   or substitute local fixture evidence for the host-owned manifest.
 
-No safe loop-authorized implementation candidate remains. If the operator evidence is still absent,
-record the unchanged blocker without redoing work; apply the charter's three-consecutive-iteration
-stop rule only when its actual threshold is reached.
+No safe loop-authorized implementation candidate remains. The charter's stop threshold has been
+reached and the required supervisor comment has been posted. Resume only if authorized raw host
+evidence appears; otherwise record the unchanged external-input blocker without redoing work.
