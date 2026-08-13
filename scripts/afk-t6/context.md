@@ -1,14 +1,16 @@
 # Context — Phase 1 ticket #6
 
-Iteration 9. Acceptance criteria and a reproducible local validation baseline are captured. The
+Iteration 10. Acceptance criteria and a reproducible local validation baseline are captured. The
 provider exposes immutable, encoder-pinned observations from the completed album. The measured
 single-process writer runs after exact clean-stop accounting and never on abort. Live deployment
 wiring now makes the journal default-on at an operator-configurable path outside the checkout;
 raw-audio retention remains default-off. ADR-0003 now states the derived-vector distinction and
 the explicit consent/right-to-remove gate. A configured production factory has also been exercised
 end to end from an accepted audio frame through the real provider/coordinator/runtime path to the
-complete journal row. The first post-implementation full gate found two ticket-local tests that
-still encode the pre-journal factory/environment contract; `dev` was not advanced.
+complete journal row. The two ticket-local tests exposed by the first post-implementation full gate
+now assert the concrete journal dependency and required environment-to-CLI path. Their focused and
+ticket regression gates pass; the merged full gate still needs to be rerun and `dev` was not
+advanced.
 
 ## Where things stand
 
@@ -137,16 +139,19 @@ bash -n scripts/afk-t6/ralph-afk.sh
   subtests. Raw JUnit: `evidence/phase1/t6/iteration-9-full-suite-after-merge.xml` and
   `evidence/phase1/t6/iteration-9-live-subset-after-merge.xml`. The shared lock was released and
   `dev` was not advanced.
+- Stale ticket-contract fixture repair: GREEN. The CLI factory fake now requires and inspects the
+  concrete `LiveVectorJournal`, and the shell-adapter fixture supplies and asserts the required
+  outside-checkout journal path. Both formerly failing nodes pass 2/2; the combined
+  speaker-provider/deployment/provider-bundle/runtime/live regression passes 238 tests / 351
+  subtests. Raw JUnit: `evidence/phase1/t6/iteration-10-stale-contract-fixtures.xml` and
+  `evidence/phase1/t6/iteration-10-ticket-regression.xml`. This is not a replacement for the merged
+  full gate.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Repair the two stale ticket-local regression tests without weakening their assertions: make the
-   factory fake capture and assert the concrete journal dependency, and provide/assert the required
-   operator journal path in the `start-web.sh` environment-adapter fixture. Run those exact nodes,
-   then the ticket-relevant set.
-2. Reacquire the shared merge lock, merge current `dev`, and rerun the full validation set. Preserve
+1. Reacquire the shared merge lock, merge current `dev`, and rerun the full validation set. Preserve
    the known out-of-ticket Launch Services failure separately.
-3. If the merged result is green under the ticket gate, fast-forward `dev`, push this branch to
+2. If the merged result is green under the ticket gate, fast-forward `dev`, push this branch to
    `private`, and comment criterion-by-criterion evidence plus explicit test limitations on issue
    #6. Do not close the issue.

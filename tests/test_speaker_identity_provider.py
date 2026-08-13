@@ -724,9 +724,10 @@ def test_web_cli_live_startup_rejects_non_positive_helper_lease(tmp_path):
             _live_startup_config(SimpleNamespace(**values, live_helper_lease_seconds=lease))
 
 
-def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch):
+def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch, tmp_path):
     from moss_transcribe_diarize.app import live_provider_bundle
     from moss_transcribe_diarize.app.web_cli import _live_runtime_factory
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
 
     assert _live_runtime_factory(SimpleNamespace(live=False, live_provider_manifest=None)) is None
 
@@ -741,8 +742,8 @@ def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch):
             calls.append(("manifest", path))
             return "config"
 
-    def build_factory(config, runner):
-        calls.append(("build", config, runner))
+    def build_factory(config, runner, *, vector_journal):
+        calls.append(("build", config, runner, vector_journal))
         return "factory"
 
     monkeypatch.setattr(live_provider_bundle, "LiveProviderBundleConfig", Config)
@@ -758,12 +759,15 @@ def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch):
         vllm_timeout=600.0,
         device="cpu",
         dtype="float32",
+        live_vector_journal_path=str(tmp_path / "speaker-vectors.jsonl"),
     )
 
     assert _live_runtime_factory(args) == "factory"
     assert calls[0] == ("manifest", "/provider/live-provider.json")
     assert calls[1][0:2] == ("build", "config")
     assert hasattr(calls[1][2], "transcribe")
+    assert isinstance(calls[1][3], LiveVectorJournal)
+    assert calls[1][3].path == (tmp_path / "speaker-vectors.jsonl").resolve()
 
 
 def test_start_web_is_the_single_environment_adapter(tmp_path):
@@ -797,6 +801,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "MOSS_LIVE_TLS_CERTFILE": "/provider/live.crt",
         "MOSS_LIVE_TLS_KEYFILE": "/provider/live.key",
         "MOSS_LIVE_HELPER_LEASE_SECONDS": "30",
+        "MOSS_LIVE_VECTOR_JOURNAL_PATH": str(tmp_path / "speaker-vectors.jsonl"),
         # Live mode is a second service beside the plaintext batch one, so it must state its
         # own listener and job directory. See tests/test_live_service_deployment.py.
         "MOSS_WEB_PORT": "7861",
@@ -813,7 +818,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
 
     assert enabled.returncode == 0, enabled.stderr
     enabled_args = capture_path.read_text(encoding="utf-8").splitlines()
-    assert enabled_args[-16:] == [
+    assert enabled_args[-18:] == [
         "--speaker-identity-tier-b",
         "--speaker-identity-state",
         "/provider/state.pt",
@@ -830,6 +835,8 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "/provider/live.key",
         "--live-helper-lease-seconds",
         "30",
+        "--live-vector-journal-path",
+        str(tmp_path / "speaker-vectors.jsonl"),
     ]
 
     disabled = subprocess.run(
