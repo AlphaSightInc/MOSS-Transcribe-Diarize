@@ -1,0 +1,2 @@
+
+[loop 20260813-055952-98208] start budget=40 agent=codex branch=afk/t3-bounded-dispatcher
