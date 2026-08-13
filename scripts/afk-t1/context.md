@@ -1,10 +1,10 @@
 # Context — Phase 1 ticket #1
 
-Iteration 8. Chrome now creates a locally-owned production session, sends both lanes through the
+Iteration 9. Chrome now creates a locally-owned production session, sends both lanes through the
 real v2 ingress route, polls/renders production reads, renews the production helper lease from the
 worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
-audio with an explicitly synthetic system lane. The provider remains deterministic/fake; no real
-model behavior yet.
+audio with an explicitly synthetic system lane. The exact local MOSS snapshot now passes a direct
+production-`ModelRunner` smoke, but the browser service still uses the deterministic fake provider.
 
 ## Where things stand
 
@@ -45,6 +45,10 @@ model behavior yet.
   Its microphone frame-RMS envelope matched the source over 959 frames at 0.99957 correlation
   (MAE 0.00085), proving real fixture samples rather than mere track presence. The provider was
   still `api-fake`, so this does not satisfy the model/transcript gate.
+- The immutable MOSS snapshot at revision `e8681d68...` is now fully cached locally (1.833 GB;
+  weight SHA-256 `9a0ceb4a...07026c4`). Production `ModelRunner` on CPU/float32 transcribed the
+  known 60 s fixture in 29.066 s and emitted 538 tokens with four speaker ids. This direct smoke
+  proves local model admission only; it does not exercise the live runtime, routes, or browser.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -162,10 +166,9 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Replace the deterministic local runtime with a locally-owned real provider/model, then rerun
-   the now-proven fake-device microphone + synthetic-system path and require rendered text with at
-   least two speaker ids. The local HF MOSS cache currently contains config only, so provision and
-   direct-smoke the exact model snapshot before wiring it into the live probe; never send inference
-   traffic to the read-only remote host.
+1. Replace the deterministic browser-probe runtime with the now-proven local real model and an
+   admitted local provider bundle, then rerun fake-device microphone + synthetic-system capture
+   and require rendered text with at least two speaker ids. Preserve the direct-smoke revision and
+   weight hash; never send inference traffic to the read-only remote host.
 2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

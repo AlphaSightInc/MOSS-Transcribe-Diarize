@@ -151,6 +151,29 @@ frame measurements: `evidence/phase1/t1/iteration-08-fake-mic-production-routes.
 The server provider was still the deterministic `api-fake`; its rendered text is not model output.
 Therefore neither real transcription nor the two-speaker-id gate passed in this measurement.
 
+## Local production-model admission — PASSED 2026-08-13
+
+Question: can this host load the exact immutable MOSS snapshot through the production
+`ModelRunner` and emit a non-empty diarized transcript with at least two speaker ids from the
+known acceptance fixture?
+
+One-command probe:
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=1 python3 \
+  prototypes/browser-capture-feasibility/direct_model_smoke.py \
+  --model <snapshot-directory> --audio <multi-speaker-wav>
+```
+
+Revision `e8681d68e7042738ffca8ac8212bc8fcb1131ab8` (1,833,163,202 snapshot bytes;
+weight SHA-256 `9a0ceb4a...07026c4`) loaded through the production runner. The 60 s fixture produced
+538 tokens and four distinct speaker ids in 29.066 s inference / 30.663 s wall time. Although
+PyTorch reports MPS available, production `device=auto` resolved to CPU with float32.
+
+Verdict: this host can run the exact real model fast enough for the next live-path experiment.
+This does not exercise the live runtime, provider bundle, HTTP routes, Chrome, or rendered output,
+so G1 remains open. Raw output: `evidence/phase1/t1/iteration-09-direct-model-smoke.json`.
+
 ## Safari attended diagnostic — 2026-08-09
 
 Safari 26.5 captured the Bose QC Ultra microphone successfully: 110 HTTP-200 frames,
