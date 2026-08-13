@@ -1,2 +1,3 @@
 
 [loop 20260813-060026-1222] start budget=40 agent=codex branch=afk/t1-gate2-canary
+[iteration 1] Target: capture issue #1's exact acceptance gate and binding proof interpretation. Files: scripts/afk-t1/context.md, scripts/afk-t1/progress.txt. Validation: live `gh issue view` acceptance-count comparison + `git diff --check` PASS (10 issue items = 10 context items). Evidence: https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/1; docs/phase1-afk-charter.md §§4,6-7; .wayfinder/tickets/T-01,T-02,T-06,T-11. Learned: criteria stay intact, while PRD/charter require local real-service proof, fake-device mic audio, synthetic system frames, no-text-crossing semantics, and worklet-driven lease-safe cadence. Next: establish and record the validation command set.

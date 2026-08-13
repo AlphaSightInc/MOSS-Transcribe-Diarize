@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #1
 
-Iteration 0. Nothing measured yet by this loop.
+Iteration 1. Issue #1 acceptance gate captured; no product behavior measured yet.
 
 ## Where things stand
 
@@ -30,9 +30,44 @@ Iteration 0. Nothing measured yet by this loop.
 - `setInterval` in a backgrounded tab collapses to ~1/min. Worklet port messages do not.
 - `source_revision` comes from the provider manifest and must be re-finalized per host.
 
+## Issue #1 acceptance checklist
+
+Source: live issue body read 2026-08-13. All criteria remain open.
+
+- [ ] Read `/api/live/descriptor` at start; honor `frame_samples`, `sample_rate`, and bounds;
+  no hardcoded frame geometry.
+- [ ] Post both `microphone` and `system` lanes to the deployed service, origin including the
+  explicit port `:7861`.
+- [ ] Send exactly the nine v2 frame keys; server rejects unknown keys; telemetry never rides in
+  a frame.
+- [ ] Drive frame POSTs from worklet port messages, never timers; a backgrounded-tab run matches
+  foreground cadence.
+- [ ] A known two-speaker fixture played in the selected tab produces transcript text with
+  distinct generic speaker ids.
+- [ ] Poll `/snapshot` and `/events` per T-02; render committed spans plus provisional tail; only
+  advance cursors after render.
+- [ ] A second simultaneous browser runs its own session and sees only its own transcript text.
+- [ ] Both sessions stop cleanly; revoke only test credentials.
+- [ ] Record p50/p95 commit-to-render latency, dropped/discontinuous frames, 429 counts, GPU
+  memory/utilization, and queue depth.
+- [ ] Judge the verdict from raw artifacts, never track presence or a claimed pass.
+
+### Binding proof interpretation
+
+- PRD + charter supersede the issue body's older remote/display procedure without deleting any
+  acceptance criterion: run a locally-owned real service; the remote host stays read-only.
+- Automated real-audio proof is the `microphone` lane, using Chrome's fake media device with a
+  known two-speaker WAV. Exercise `system` synthetically through the same production routes and
+  label it explicitly as not proving display capture. Real two-lane display proof remains the
+  attended checklist only.
+- Criterion 7 means transcript text never crosses between the two session render paths. Under the
+  accepted single-trust-domain posture, cross-session reads need not return `403`.
+- G7 additionally requires background cadence not to trip `live_helper_lease_seconds`; heartbeat
+  work must share the worklet-driven path.
+
 ## Validation commands
 
-Establish these in iteration 1 and record what each actually covers:
+Establish these in the next iteration and record what each actually covers:
 
 ```bash
 .venv/bin/pytest -q                      # full suite; baseline ~418 passed / 2 skipped
@@ -42,6 +77,5 @@ bash -n scripts/afk-t1/ralph-afk.sh
 
 ## Ranked candidates
 
-1. Read the charter and the issue. Record the acceptance criteria as a checklist here.
-2. Establish and record a working validation command set.
-3. Smallest vertical slice toward criterion 1.
+1. Establish and record a working validation command set.
+2. Smallest vertical slice toward criterion 1.
