@@ -1,0 +1,2 @@
+
+[loop 20260813-060026-1222] start budget=40 agent=codex branch=afk/t1-gate2-canary
