@@ -35,6 +35,8 @@ DESCRIPTOR = {
     },
     "negotiation": {"selected_protocol_version": 2},
 }
+STUB_CAPTURE_BEARER = "prototype-stub-capture-bearer"
+STUB_SESSION_ID = "prototype-stub-session"
 FRAME_KEYS = frozenset(
     {
         "lane",
@@ -58,6 +60,7 @@ document.body.style.background='#cfc';document.title='997 Hz PLAYING'};</script>
 
 STATE_LOCK = threading.Lock()
 STATE: dict = {
+    "session_creates": 0,
     "lanes": {},
     "telemetry": {},
     "frame_rejections": [],
@@ -262,8 +265,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, (HERE / "framer_worklet.js").read_bytes(), "text/javascript; charset=utf-8")
         elif path == "/tone":
             self._send(200, TONE_PAGE.encode(), "text/html; charset=utf-8")
-        elif path == "/verdict":
+        elif path == "/prototype/verdict":
             self._send(200, json.dumps(analyze(), indent=2).encode(), "application/json")
+        elif path == "/prototype/bootstrap":
+            self._send(200, json.dumps({"capture_bearer": STUB_CAPTURE_BEARER}).encode(), "application/json")
         elif path == "/api/live/descriptor":
             self._send(200, json.dumps(DESCRIPTOR).encode(), "application/json")
         else:
@@ -275,10 +280,23 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(n) or b"{}")
         except json.JSONDecodeError:
             return self._send(400, b'{"error":"bad json"}', "application/json")
-        if self.path == "/frames":
+        if self.path == "/api/live/sessions":
+            if self.headers.get("Authorization") != f"Bearer {STUB_CAPTURE_BEARER}":
+                return self._send(401, b'{"error":"missing bearer"}', "application/json")
+            with STATE_LOCK:
+                STATE["session_creates"] += 1
+            response = {
+                "id": STUB_SESSION_ID,
+                "view_token": "prototype-stub-view-bearer",
+                "descriptor": DESCRIPTOR["descriptor"],
+            }
+            return self._send(200, json.dumps(response).encode(), "application/json")
+        if self.path == f"/api/live/sessions/{STUB_SESSION_ID}/frames":
+            if self.headers.get("Authorization") != f"Bearer {STUB_CAPTURE_BEARER}":
+                return self._send(401, b'{"error":"missing bearer"}', "application/json")
             code, resp = ingest_frame(body)
             return self._send(code, json.dumps(resp).encode(), "application/json")
-        if self.path == "/telemetry":
+        if self.path == "/prototype/telemetry":
             lane = body.get("lane")
             sequence = body.get("sequence")
             if lane not in ("system", "microphone") or not isinstance(sequence, int):
@@ -286,15 +304,15 @@ class Handler(BaseHTTPRequestHandler):
             with STATE_LOCK:
                 STATE["telemetry"].setdefault(lane, {})[str(sequence)] = body
             return self._send(200, b"{}", "application/json")
-        if self.path == "/phase":
+        if self.path == "/prototype/phase":
             with STATE_LOCK:
                 STATE["phases"].append({"t": round(time.time() - STATE["started_wall"], 2), **body})
             return self._send(200, b"{}", "application/json")
-        if self.path == "/probes":
+        if self.path == "/prototype/probes":
             with STATE_LOCK:
                 STATE["probes"] = body.get("probes", [])
             return self._send(200, b"{}", "application/json")
-        if self.path == "/reset":
+        if self.path == "/prototype/reset":
             # Echo the verdict being discarded so a mis-ordered reset (after a run,
             # before reading /verdict) cannot silently destroy the evidence.
             prior = analyze()

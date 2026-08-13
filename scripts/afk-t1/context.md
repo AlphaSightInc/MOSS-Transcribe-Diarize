@@ -1,7 +1,7 @@
 # Context — Phase 1 ticket #1
 
-Iteration 4. Descriptor-driven browser framing and exact v2 frame keys are measured against the
-stub; no real-service or model behavior measured yet.
+Iteration 5. Chrome now creates a locally-owned production session and sends both lanes through
+the real v2 ingress route. The provider remains deterministic/fake; no real model behavior yet.
 
 ## Where things stand
 
@@ -20,6 +20,13 @@ stub; no real-service or model behavior measured yet.
 - The harness now sends exactly the nine v2 frame keys. Its strict stub observed one exact key set
   across 75 frames/lane, rejected injected `client_visibility` with HTTP 400, and received cadence
   telemetry separately for all 150 frames. This remains stub-only contract evidence.
+- Capture credentials stay in closure memory: an operator can paste one into the password field,
+  while the loopback-only production-route probe supplies an ephemeral no-store credential without
+  printing or persisting it. The page creates a server-issued session only after both lane meters
+  are non-zero, then uses `/api/live/sessions/{id}/frames`; the historical `/frames` path is gone.
+- Chrome 151 + locally-run `create_app` accepted 329 consecutive descriptor-sized frames per lane
+  (sequences 0–328, all HTTP 200, zero failed samples, no terminal failure). This proves the real
+  auth/session/v2/mixer/runtime route stack with a deterministic fake provider, not model inference.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -47,9 +54,10 @@ stub; no real-service or model behavior measured yet.
 
 ## Issue #1 acceptance checklist
 
-Source: live issue body read 2026-08-13. All criteria remain open.
+Source: live issue body read 2026-08-13. Criterion 1 now has local production-route evidence;
+the tracker issue remains open for supervisor closure.
 
-- [ ] Read `/api/live/descriptor` at start; honor `frame_samples`, `sample_rate`, and bounds;
+- [x] Read `/api/live/descriptor` at start; honor `frame_samples`, `sample_rate`, and bounds;
   no hardcoded frame geometry.
 - [ ] Post both `microphone` and `system` lanes to the deployed service, origin including the
   explicit port `:7861`.
@@ -67,14 +75,19 @@ Source: live issue body read 2026-08-13. All criteria remain open.
   memory/utilization, and queue depth.
 - [ ] Judge the verdict from raw artifacts, never track presence or a claimed pass.
 
-Criterion 1 implementation status: descriptor-driven geometry is complete in the kept harness,
-but the acceptance item stays open until the same behavior is evidenced against a locally-run real
-service. Raw stub-only evidence: `evidence/phase1/t1/iteration-03-descriptor-geometry.json`.
+Criterion 1 is satisfied on the locally-owned production route: Chrome used the returned
+1,000/16,000 geometry, the production server accepted 329 exact frames/lane, and its v2 snapshots
+reported 329,000 accepted samples/lane. Raw evidence:
+`evidence/phase1/t1/iteration-05-production-routes.json`. This says nothing about model behavior.
 
-Criterion 3 implementation status: exact nine-key frame construction and strict unknown-key
-rejection are complete in the kept harness. The acceptance item stays open until exercised through
-the locally-run production route. Raw stub-only evidence:
+Criterion 3 implementation status: the locally-run production route accepted the exact nine-key
+bodies, but the explicit unknown-key rejection probe remains stub-only. Keep the item open until
+that rejection is captured on the production route. Raw stub rejection evidence:
 `evidence/phase1/t1/iteration-04-nine-v2-keys.json`.
+
+Production-route transport evidence: `evidence/phase1/t1/iteration-05-production-routes.json`.
+It proves session creation and accepted strict-v2 lane frames only; it explicitly excludes real
+inference, transcript polling/rendering, clean stop, concurrency, background lease, and display.
 
 ### Binding proof interpretation
 
@@ -116,7 +129,10 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Advance the harness from `/frames` to locally-owned real session/lane routes without touching
-   the read-only remote host.
-2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+1. Poll production `/snapshot` and `/events` with the returned view bearer; render committed spans
+   plus provisional tail and advance each cursor only after render per T-02.
+2. Add worklet-driven helper heartbeat and measure background cadence against the local lease.
+3. Drive the microphone lane from Chrome's fake-audio device with a known two-speaker WAV against
+   a locally-owned real provider/model; never send inference traffic to the read-only remote host.
+4. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

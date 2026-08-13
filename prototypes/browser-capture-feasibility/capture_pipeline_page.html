@@ -40,7 +40,10 @@
 <section>
   <h2>Synthetic two-lane pipeline (no permissions needed)</h2>
   <p>48 kHz oscillator sources → cross-context MediaStream → descriptor-rate capture context →
-     worklet framer → PCM16 frames → POST. system=997 Hz, microphone=440 Hz.</p>
+     worklet framer → PCM16 frames → production session route. system=997 Hz,
+     microphone=440 Hz.</p>
+  <p><label>Capture bearer <input id="captureBearer" type="password" autocomplete="off"
+     placeholder="required outside the loopback probe" size="42" /></label></p>
   <button id="startSynth">Start synthetic</button>
   <button id="stopSynth" disabled>Stop synthetic</button>
   <button id="resetStub" title="Clear recorded server data only; active audio lanes keep running">Reset recorded data (lanes keep running)</button>
@@ -71,6 +74,9 @@ const log = (el, s) => { el.textContent += s + "\n"; };
 let ctx = null;            // shared descriptor-rate capture context
 let lanes = {};            // lane -> {node, seq, epoch, sent, errors, src, extraCtx, streamTracks}
 let descriptorPromise = null;
+let liveSession = null;     // server-issued id + credentials, closure memory only
+let sessionPromise = null;
+let sessionFailed = false;
 
 function positiveInteger(value, field) {
   if (!Number.isInteger(value) || value <= 0) throw new Error(`${field} must be a positive integer`);
@@ -99,6 +105,58 @@ function captureDescriptor() {
     return Object.freeze({ sampleRate, frameSamples, bounds: Object.freeze({ ...descriptor.bounds }) });
   });
   return descriptorPromise;
+}
+
+async function captureBearer() {
+  const input = document.getElementById("captureBearer");
+  const manual = input.value.trim();
+  input.value = "";
+  if (manual) return manual;
+  // The deterministic loopback probe supplies an ephemeral credential here. A real
+  // service has no such route and requires the operator-provided bearer above.
+  const response = await fetch("/prototype/bootstrap", { cache: "no-store" });
+  if (!response.ok) throw new Error("capture bearer is required");
+  const payload = await response.json();
+  if (typeof payload.capture_bearer !== "string" || !payload.capture_bearer) {
+    throw new Error("prototype bootstrap did not supply a capture bearer");
+  }
+  return payload.capture_bearer;
+}
+
+async function captureSession(outEl) {
+  if (liveSession) return liveSession;
+  if (sessionPromise) return sessionPromise;
+  sessionPromise = (async () => {
+    const config = await captureDescriptor();
+    const bearer = await captureBearer();
+    const response = await fetch("/api/live/sessions", {
+      method: "POST", cache: "no-store",
+      headers: { "Authorization": `Bearer ${bearer}` },
+    });
+    if (!response.ok) throw new Error(`session create failed: HTTP ${response.status}`);
+    const payload = await response.json();
+    if (typeof payload.id !== "string" || !payload.id) throw new Error("session response is missing id");
+    if (!payload.descriptor || payload.descriptor.sample_rate !== config.sampleRate
+        || payload.descriptor.frame_samples !== config.frameSamples) {
+      throw new Error("session descriptor differs from the preflight descriptor");
+    }
+    liveSession = Object.freeze({
+      id: payload.id,
+      captureBearer: bearer,
+      viewBearer: payload.view_token,
+    });
+    log(outEl, `session created: ${payload.id}`);
+    return liveSession;
+  })();
+  try {
+    return await sessionPromise;
+  } finally {
+    sessionPromise = null;
+  }
+}
+
+function bothLanesHaveSignal() {
+  return ["system", "microphone"].every((lane) => lanes[lane] && lanes[lane].hasSignal);
 }
 
 async function captureContext() {
@@ -148,7 +206,7 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
   // unambiguously active; zero gain prevents audible playback/echo.
   const mute = c.createGain(); mute.gain.value = 0;
   src.connect(node).connect(mute).connect(c.destination);
-  const st = lanes[lane] = { node, seq: 0, epoch: 1, sent: 0, http: {}, errors: 0,
+  const st = lanes[lane] = { node, seq: 0, epoch: 1, sent: 0, http: {}, errors: 0, hasSignal: false,
                              src, mute, extraCtx, tracks: mediaStream.getTracks() };
   node.port.onmessage = async (ev) => {
     const m = ev.data;
@@ -158,6 +216,20 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
     if (meter) meter.style.width = Math.min(240, r * 900) + "px";
     const stat = document.getElementById("s_" + lane);
     if (stat) stat.textContent = `rms=${r.toFixed(4)} seq=${st.seq} sent=${st.sent}`;
+    st.hasSignal ||= r >= 1e-4;
+    if (!liveSession && !sessionFailed) {
+      if (bothLanesHaveSignal()) {
+        try { await captureSession(outEl); }
+        catch (e) {
+          sessionFailed = true;
+          st.errors++;
+          log(outEl, "session FAILED: " + e.message + " (stop and retry manually)");
+        }
+      }
+      // Preflight audio is metered but never admitted. Wire sequence begins only
+      // after both lanes are non-silent and the server returns its session id.
+      return;
+    }
     const sequence = st.seq++;
     const body = {
       lane, sequence,
@@ -170,7 +242,7 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
       discontinuity: false,
     };
     // Prototype measurement stays out of the strict nine-key frame contract.
-    fetch("/telemetry", {
+    fetch("/prototype/telemetry", {
       method: "POST", cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -181,9 +253,12 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
       }),
     }).catch(() => {});
     try {
-      const resp = await fetch("/frames", {
+      const resp = await fetch(`/api/live/sessions/${encodeURIComponent(liveSession.id)}/frames`, {
         method: "POST", cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${liveSession.captureBearer}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(body),
       });
       st.http[resp.status] = (st.http[resp.status] || 0) + 1;
@@ -222,6 +297,7 @@ document.getElementById("startSynth").onclick = async () => {
     log(synthOut, "REFUSED: stop the active real/synthetic capture before starting synthetic mode");
     return;
   }
+  sessionFailed = false;
   document.getElementById("startSynth").disabled = true;
   try {
     await captureContext();
@@ -229,7 +305,7 @@ document.getElementById("startSynth").onclick = async () => {
     await synthLane("system", 997);
     await synthLane("microphone", 440);
     document.getElementById("stopSynth").disabled = false;
-    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-started", wall_ms: Date.now() }) });
+    await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-started", wall_ms: Date.now() }) });
     log(synthOut, `started; contextRate=${ctx.sampleRate} state=${ctx.state}`);
   } catch (e) {
     detachAll(synthOut);
@@ -242,7 +318,7 @@ document.getElementById("startSynth").onclick = async () => {
 document.getElementById("stopSynth").onclick = async () => {
   document.getElementById("stopSynth").disabled = true;
   detachAll(synthOut);
-  await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-stopped", wall_ms: Date.now() }) });
+  await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-stopped", wall_ms: Date.now() }) });
   document.getElementById("startSynth").disabled = false;
 };
 
@@ -253,6 +329,7 @@ document.getElementById("startMic").onclick = async () => {
       log(realOut, "REFUSED: microphone lane already active — stop capture first");
       return;
     }
+    if (!Object.keys(lanes).length) sessionFailed = false;
     // Resume inside the click gesture BEFORE the permission prompt: a slow "Allow"
     // can outlive transient activation, which would leave the context suspended.
     await captureContext();
@@ -266,7 +343,7 @@ document.getElementById("startMic").onclick = async () => {
     await attachLane("microphone", mic, realOut);
     log(realOut, `mic attached (context ${ctx.state})`);
     document.getElementById("stopReal").disabled = false;
-    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-mic-started", wall_ms: Date.now() }) });
+    await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-mic-started", wall_ms: Date.now() }) });
   } catch (e) { log(realOut, "mic FAILED: " + e.name + ": " + e.message); }
 };
 
@@ -310,27 +387,27 @@ document.getElementById("startDisplay").onclick = async () => {
     st.tracks = display.getTracks(); // stop video too on stop
     await ctx.resume();
     document.getElementById("stopReal").disabled = false;
-    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-display-started", wall_ms: Date.now() }) });
+    await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-display-started", wall_ms: Date.now() }) });
   } catch (e) { log(realOut, "display FAILED: " + e.name + ": " + e.message); }
 };
 
 document.getElementById("stopReal").onclick = () => {
   detachAll(realOut);
   document.getElementById("stopReal").disabled = true;
-  fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-stopped", wall_ms: Date.now() }) });
+  fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-stopped", wall_ms: Date.now() }) });
 };
 
 function wireTrackEvents(t, tag) {
   for (const ev of ["mute", "unmute", "ended"]) {
     t.addEventListener(ev, () => {
       log(realOut, `track event: ${tag} ${ev} @ ${new Date().toISOString()}`);
-      fetch("/phase", { method: "POST", body: JSON.stringify({ phase: `track-${tag}-${ev}`, wall_ms: Date.now() }) });
+      fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: `track-${tag}-${ev}`, wall_ms: Date.now() }) });
     });
   }
 }
 
 document.getElementById("resetStub").onclick = async () => {
-  const r = await fetch("/reset", { method: "POST", body: "{}" });
+  const r = await fetch("/prototype/reset", { method: "POST", body: "{}" });
   const j = await r.json().catch(() => ({}));
   synthOut.textContent = ""; realOut.textContent = "";
   const cleared = j.cleared || {};
@@ -341,12 +418,13 @@ document.getElementById("resetStub").onclick = async () => {
 
 // ---------- visibility reporting ----------
 document.addEventListener("visibilitychange", () => {
-  fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "visibility-" + document.visibilityState, wall_ms: Date.now() }) });
+  fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "visibility-" + document.visibilityState, wall_ms: Date.now() }) });
 });
 
 // ---------- auto probes ----------
 (async () => {
   const out = [];
+  const autoStart = new URLSearchParams(location.search).has("autostart");
   out.push("userAgent: " + navigator.userAgent);
   try {
     const config = await captureDescriptor();
@@ -356,25 +434,31 @@ document.addEventListener("visibilitychange", () => {
   } catch (e) { out.push("descriptor/capture context FAILED: " + e.message); }
   out.push("getSupportedConstraints: " + JSON.stringify(navigator.mediaDevices.getSupportedConstraints()));
   // Post what we have immediately so a hanging gesture probe can't suppress it.
-  fetch("/probes", { method: "POST", body: JSON.stringify({ probes: [...out, "(gesture probe pending)"] }) });
-  // Must run OUTSIDE any user gesture: spec requires transient activation, so this
-  // should reject with InvalidStateError without showing any chooser UI.
-  setTimeout(async () => {
-    try {
-      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      out.push("getDisplayMedia without gesture: UNEXPECTEDLY RESOLVED tracks=" + s.getTracks().map(t => t.kind).join(","));
-      for (const t of s.getTracks()) t.stop();
-    } catch (e) {
-      out.push(`getDisplayMedia without gesture: rejected ${e.name} ("${e.message}")`);
-    }
-    probeOut.textContent = out.join("\n");
-    fetch("/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
-  }, 100);
+  fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: [...out, "(gesture probe pending)"] }) });
+  if (autoStart) {
+    out.push("getDisplayMedia without gesture: skipped in autonomous mode (launcher activation can open chooser)");
+    fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
+  } else {
+    // Must run OUTSIDE any user gesture: spec requires transient activation, so this
+    // should reject. Command-line navigation can itself carry activation, which is why
+    // autonomous runs skip this attended diagnostic instead of risking a blocked chooser.
+    setTimeout(async () => {
+      try {
+        const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        out.push("getDisplayMedia without gesture: UNEXPECTEDLY RESOLVED tracks=" + s.getTracks().map(t => t.kind).join(","));
+        for (const t of s.getTracks()) t.stop();
+      } catch (e) {
+        out.push(`getDisplayMedia without gesture: rejected ${e.name} ("${e.message}")`);
+      }
+      probeOut.textContent = out.join("\n");
+      fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
+    }, 100);
+  }
   probeOut.textContent = out.join("\n") + "\n(gesture probe pending…)";
   // Autonomous mode: /?autostart=1 starts the synthetic pipeline without a click.
   // Requires launching Chrome with --autoplay-policy=no-user-gesture-required
   // (autoplay policy only; capture-permission behavior is not affected).
-  if (new URLSearchParams(location.search).has("autostart")) {
+  if (autoStart) {
     setTimeout(() => document.getElementById("startSynth").click(), 400);
   }
 })();

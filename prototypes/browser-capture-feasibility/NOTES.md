@@ -60,7 +60,28 @@ The page now reads `frame_samples`, `sample_rate`, and `bounds.max_frame_samples
 3,200-sample frames so a browser run exposes either historical 8,000/16,000-frame fallback. Frame
 bodies now contain exactly the nine v2 keys and the stub rejects missing or unknown keys. Prototype
 cadence fields (`client_visibility`, `client_wall_ms`, `quanta`) travel separately through
-`/telemetry`; the harness still does not create a real session or reach a model.
+`/prototype/telemetry`.
+
+## Production-route probe — PASSED 2026-08-13
+
+Question: can Chrome create a server-issued session and send the same descriptor-driven frames
+through the real `create_app` auth, session, strict-v2, mixer, and runtime routes instead of the
+historical `/frames` stub?
+
+Run `PYTHONDONTWRITEBYTECODE=1 python3
+prototypes/browser-capture-feasibility/production_route_server.py`, then open
+`http://127.0.0.1:8899/capture-harness?autostart=1` in Chrome with autoplay enabled. The runner
+uses the production app and a deterministic fake provider; its ephemeral bearer stays in closure
+memory and is never printed or persisted.
+
+Chrome 151 created `api-session` only after both synthetic lanes metered non-zero. It sent 329
+frames per lane through `/api/live/sessions/api-session/frames`: all HTTP 200, sequences 0–328,
+exactly 1,000 samples per descriptor frame, 329,000 accepted samples per lane, zero failed samples,
+and no terminal runtime failure. Raw state: `evidence/phase1/t1/iteration-05-production-routes.json`.
+
+This proves browser-to-production-route wiring, not the ticket's model gate. The provider and
+transcript are deterministic fakes; no two-speaker WAV, real inference, snapshot/events renderer,
+clean stop, concurrency, background lease, or real display capture was exercised.
 
 ## Safari attended diagnostic — 2026-08-09
 
