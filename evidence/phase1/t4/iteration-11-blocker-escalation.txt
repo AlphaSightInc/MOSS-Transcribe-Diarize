@@ -1,0 +1,45 @@
+Iteration 11 — authorized-host blocker escalation
+Timestamp: 2026-08-13T07:00:41Z
+
+Command:
+  gh auth switch --user yugao-aisight
+  ACTOR=$(gh api user --jq .login)
+  test "$ACTOR" = yugao-aisight
+
+Result:
+  actor=yugao-aisight
+
+Pre-comment issue inspection:
+  issue state: OPEN
+  existing comment count: 3
+  latest existing comment: https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4#issuecomment-5277087183
+  operator evidence after the handoff: absent
+
+Mutation authorized by docs/phase1-afk-charter.md section 8 after three consecutive
+blocker-ending iterations (9-11): ask the supervisor/operator for the missing input.
+
+Created comment:
+  https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4#issuecomment-5277116813
+
+Read-back command:
+  gh issue view 4 --repo aiSight-us/MOSS-Transcribe-Diarize --json state,comments \
+    --jq '{state,comment_count:(.comments|length),latest:(.comments[-1]|{author:.author.login,createdAt,url,body})}'
+
+Read-back result:
+  issue state: OPEN
+  comment count: 4
+  latest author: yugao-aisight
+  latest createdAt: 2026-08-13T07:00:41Z
+  latest URL: https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4#issuecomment-5277116813
+  latest body:
+    Iteration 11 blocker escalation (three consecutive blocker-ending iterations: 9-11).
+
+    Acceptance criterion 9 remains blocked on authorized operator input. No raw host
+    finalization stdout, finalized manifest SHA-256, or finalized source_revision has been
+    attached since the exact fail-closed command was provided in issue comment 5277087183.
+
+    Supervisor/operator action required: run that command on the reviewed host checkout and
+    attach the requested raw evidence. This loop will not mutate the read-only host, substitute
+    local fixture evidence, or close the issue.
+
+No host access, deployment, restart, manifest write, or issue close was performed.
