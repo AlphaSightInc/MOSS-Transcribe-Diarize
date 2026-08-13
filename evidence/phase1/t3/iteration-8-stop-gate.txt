@@ -1,0 +1,90 @@
+Iteration 8 three-strike stop gate — 2026-08-13T06:51:26Z
+
+Question
+Did the resource-isolated local MOSS/vLLM measurement blocker clear for iteration 8, or must
+the charter's three-consecutive-iterations stop-and-comment rule fire?
+
+Host and installed runtimes
+$ sw_vers
+ProductName: macOS
+ProductVersion: 26.5.1
+BuildVersion: 25F80
+
+$ sysctl -n hw.memsize hw.ncpu hw.optional.arm64
+274877906944
+28
+1
+
+$ for tool_name in docker podman colima limactl nerdctl finch orbctl container; do ...; done
+docker    /usr/local/bin/docker
+podman    missing
+colima    missing
+limactl   missing
+nerdctl   missing
+finch     missing
+orbctl    missing
+container missing
+
+$ python3 -c "import importlib.util; print('vllm_spec=', importlib.util.find_spec('vllm'))"
+vllm_spec= None
+
+Docker state
+$ docker context ls
+NAME              DESCRIPTION                               DOCKER ENDPOINT
+default           Current DOCKER_HOST based configuration   unix:///var/run/docker.sock
+desktop-linux *   Docker Desktop                            unix:///Users/gao/.docker/run/docker.sock
+
+$ docker info --format 'Name={{.Name}} CPUs={{.NCPU}} Memory={{.MemTotal}} Architecture={{.Architecture}} Driver={{.Driver}} ContainersRunning={{.ContainersRunning}} ContainersPaused={{.ContainersPaused}} ContainersStopped={{.ContainersStopped}}'
+Name=docker-desktop CPUs=24 Memory=8214302720 Architecture=aarch64 Driver=overlayfs ContainersRunning=16 ContainersPaused=0 ContainersStopped=0
+
+$ docker stats --no-stream --format '{{.Name}} {{.MemUsage}}'
+kg_llm-elasticsearch 2.319GiB / 7.65GiB
+omni-search-mcp 42.9MiB / 7.65GiB
+omni-search-omni-search-1 60.71MiB / 7.65GiB
+camofox 249.6MiB / 7.65GiB
+openclaw-firecrawl-api-1 1.531GiB / 7.65GiB
+omni-search-bb-browser-1 845.4MiB / 7.65GiB
+openclaw-firecrawl-redis-1 5.215MiB / 7.65GiB
+openclaw-firecrawl-rabbitmq-1 213.3MiB / 7.65GiB
+openclaw-firecrawl-playwright-service-1 96.8MiB / 4GiB
+openclaw-firecrawl-nuq-postgres-1 117.1MiB / 7.65GiB
+omni-search-nodriver-service-1 43.66MiB / 7.65GiB
+omni-search-crawl4ai-1 144.2MiB / 7.65GiB
+omni-search-searxng-1 157.3MiB / 7.65GiB
+kg_llm-redis 38.68MiB / 7.65GiB
+kg_llm-postgres 29.05MiB / 7.65GiB
+kg_llm-qdrant 618.4MiB / 7.65GiB
+
+MOSS cache completeness
+$ find /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize -maxdepth 3 -type f -print
+/Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/blobs/87f0b37e0048e8b10b914cfa0dbfe887f96fab01
+/Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/refs/main
+
+$ du -sh /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize
+8.0K    /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize
+
+Frozen-gate validation
+$ python3 prototypes/streaming-diarization/concurrency/validate_preregistration.py
+sha256=b6fbe1f5dc60c0f0a20128026eefa8bc369a456927fe267cf94aa2a8b2865d52
+PASS: concurrency gates and measurement contract are frozen before measurement
+
+Issue escalation
+$ gh auth switch --user yugao-aisight
+$ gh api user --jq .login
+yugao-aisight
+$ gh api repos/aiSight-us/MOSS-Transcribe-Diarize/issues/3/comments --method POST ...
+https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/3#issuecomment-5277031654
+
+Verdict
+BLOCKED, STOP GATE REACHED. The same blocker persisted in iterations 6, 7, and 8. Docker is still
+the only local Linux runtime; its shared 8.2 GB VM is occupied by 16 unrelated containers. Host
+Python has no vLLM and the MOSS cache is only 8 KB, with no model weights. Iteration 6 already
+proved a real startup cannot reach health or required metrics in this environment. Starting a new
+model container, resizing/restarting Docker, or installing another runtime would risk unrelated
+workloads or require operator authority. The remote 4070 remains read-only. No service, container,
+or remote endpoint was started or mutated in this iteration.
+
+Per docs/phase1-afk-charter.md section 8, the loop stopped thrashing and asked the supervisor for
+an operator-approved Docker maintenance/resize window or another resource-isolated local runtime.
+No safe autonomous candidate remains: the production dispatcher bound cannot be selected or
+implemented before the qualifying measurement.

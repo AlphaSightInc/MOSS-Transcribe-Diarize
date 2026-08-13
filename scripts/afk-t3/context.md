@@ -1,11 +1,12 @@
 # Context — Phase 1 ticket #3
 
-Iteration 7. The live issue acceptance contract and validation baseline are captured below. Numeric
+Iteration 8. The live issue acceptance contract and validation baseline are captured below. Numeric
 latency/memory gates and their measurement semantics are frozen before measurement. A controlled
 scheduler probe characterizes fairness and isolation, and the v2 canonical-queue overflow path is
 now retryable and session-local. A local ARM64 vLLM image recognizes MOSS, but the shared 8.2 GB
-Docker VM cannot safely host the qualifying run. Real dispatcher latency and memory have not been
-measured.
+Docker VM cannot safely host the qualifying run. The blocker persisted for iterations 6–8, so the
+charter's stop-and-comment rule fired. Real dispatcher latency and memory have not been measured,
+and all remaining work now waits on supervisor/operator input.
 
 ## Where things stand
 
@@ -112,11 +113,15 @@ attempt never reached health or metrics, and Docker's API became unresponsive be
 weights downloaded. Restarting or resizing Docker would disrupt unrelated workloads and was not
 attempted. Iteration 7 confirmed Docker is again responsive but still has 16 unrelated containers,
 only 665 MB available, and effectively exhausted swap. No second container runtime or host vLLM is
-installed, and the MOSS cache contains only its 2.3 KiB config. The preregistration remains valid,
-but a real qualifying run is not currently available. Raw evidence:
+installed, and the MOSS cache still contains no weights. Iteration 8 independently confirmed the
+same state. This is the third consecutive blocked iteration, so charter §8 required stopping and
+commenting on issue #3. The preregistration remains valid, but a real qualifying run is not
+currently available. Raw evidence:
 `evidence/phase1/t3/iteration-3-gate-preregistration.txt`,
 `evidence/phase1/t3/iteration-6-local-vllm-smoke.txt`, and
-`evidence/phase1/t3/iteration-7-resource-isolation-audit.txt`.
+`evidence/phase1/t3/iteration-7-resource-isolation-audit.txt`, and
+`evidence/phase1/t3/iteration-8-stop-gate.txt`. Supervisor escalation:
+<https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/3#issuecomment-5277031654>.
 
 ## Controlled scheduler evidence
 
@@ -153,11 +158,11 @@ Raw evidence: `evidence/phase1/t3/iteration-5-v2-backpressure.txt`.
 
 ## Ranked candidates
 
-1. Establish a resource-isolated local MOSS/vLLM measurement path. The ARM64 engine and model
-   registration are proven, but the shared 8.2 GB Docker VM is unsafe for the qualifying run and
-   no alternative local runtime is installed. This blocker has held for iterations 6 and 7. One
-   more blocked iteration triggers the charter's stop-and-comment rule. Next safe action requires
-   an operator-approved Docker maintenance window or another isolated local runtime with enough
-   memory; do not substitute the read-only remote service.
-2. Smallest evidence-backed vertical slice toward the bounded dispatcher, only after prototype
-   measurements choose the bound.
+No safe autonomous candidate remains.
+
+1. **Blocked on supervisor/operator input:** provide an operator-approved Docker maintenance and
+   resize window, or another resource-isolated local runtime with enough memory and the required
+   vLLM metrics. Do not substitute the read-only remote service.
+2. After that input, run the preregistered real 1/2/4/8 matrix and 600 s soak, select the largest
+   passing bound, then implement the smallest bounded-dispatcher vertical slice. No implementation
+   is authorized by evidence before that measurement.

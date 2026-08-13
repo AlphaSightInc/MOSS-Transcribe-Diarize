@@ -83,3 +83,18 @@ MOSS Hugging Face cache contains only the 2.3 KiB configuration blob rather than
 No service was started and no shared workload was changed. A qualifying run still needs an
 operator-approved Docker maintenance window or another resource-isolated local runtime. Raw
 result: `evidence/phase1/t3/iteration-7-resource-isolation-audit.txt`.
+
+## Three-strike stop gate — 2026-08-13
+
+**VERDICT: BLOCKED — supervisor input required; no safe autonomous candidate remains.**
+
+Iteration 8 independently found the same local-runtime blocker as iterations 6 and 7: Docker is
+the only installed Linux runtime, its shared 8.2 GB VM still carries 16 unrelated containers,
+host Python has no vLLM, and the MOSS cache contains no model weights. The charter's
+three-consecutive-blocked-iterations rule therefore fired. Issue #3 was updated with the exact
+blocker and a request for an operator-approved Docker maintenance/resize window or another
+resource-isolated local runtime.
+
+No dispatcher bound was guessed or implemented. The controlled results remain non-gating, and the
+real G4/G5 measurement remains a prerequisite. Raw result:
+`evidence/phase1/t3/iteration-8-stop-gate.txt`.
