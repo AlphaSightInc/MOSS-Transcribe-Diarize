@@ -53,3 +53,20 @@ and an identical retained-v2-frame retry succeeds after one dispatch frees capac
 uses the real HTTP transport, v2 ingress, mixer, runtime, arbiter, and manual scheduler; its decoder
 and speech observations remain controlled, so it proves queue transactionality rather than G4/G5.
 Raw result: `evidence/phase1/t3/iteration-5-v2-backpressure.txt`.
+
+## Local ARM64 vLLM smoke — 2026-08-13
+
+**VERDICT: PARTIAL, NON-GATING — engine and MOSS registration pass; serving and metrics remain
+blocked by the shared Docker VM.**
+
+The official `vllm/vllm-openai-cpu:latest-arm64` image (digest
+`sha256:e6745d7ba6610f637c6f22fc06cd730342e50245b6c46767235600483adfbbde`) runs vLLM `0.27.1`
+and registers both `MossAudioModel` and `MossTranscribeDiarizeForConditionalGeneration`. This
+retires the claim that no local vLLM engine is available.
+
+The real startup attempt did not reach `/health`, `/v1/models`, or `/metrics`. Docker Desktop's
+shared ARM64 VM exposes only 8.2 GB and already hosts unrelated workloads; its API became
+unresponsive before checkpoint weights downloaded. The agent did not restart or reconfigure
+Docker because doing so would disrupt those workloads. No decoder request or required vLLM metric
+was measured, so G4/G5 remain unsatisfied. Raw result:
+`evidence/phase1/t3/iteration-6-local-vllm-smoke.txt`.

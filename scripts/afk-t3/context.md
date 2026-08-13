@@ -1,9 +1,11 @@
 # Context — Phase 1 ticket #3
 
-Iteration 5. The live issue acceptance contract and validation baseline are captured below. Numeric
+Iteration 6. The live issue acceptance contract and validation baseline are captured below. Numeric
 latency/memory gates and their measurement semantics are frozen before measurement. A controlled
 scheduler probe characterizes fairness and isolation, and the v2 canonical-queue overflow path is
-now retryable and session-local. Real dispatcher latency and memory have not been measured.
+now retryable and session-local. A local ARM64 vLLM image recognizes MOSS, but the shared 8.2 GB
+Docker VM could not reach service health or metrics. Real dispatcher latency and memory have not
+been measured.
 
 ## Where things stand
 
@@ -103,11 +105,14 @@ Machine-readable preregistration:
   **600 s** soak. The 8-meeting run proves overload/cross-session/independent-429 behavior and does
   not relax normal-load latency.
 
-Local capability inspection found an M3 Ultra with 256 GiB unified memory and usable Torch MPS,
-but no local `vllm` executable/module, no cached MOSS model in the standard locations, and no local
-MOSS endpoint (`127.0.0.1:8000/v1/models` returns 502; LM Studio on 1234 advertises unrelated
-models). Therefore the preregistration is valid, but a real qualifying run is not currently
-available. Raw evidence: `evidence/phase1/t3/iteration-3-gate-preregistration.txt`.
+Local capability inspection found an M3 Ultra with 256 GiB unified memory and usable Torch MPS.
+Iteration 6 found an official ARM64 CPU vLLM `0.27.1` image that registers the MOSS architecture,
+but its shared Docker VM exposes only 8.2 GB and already hosts unrelated workloads. A real startup
+attempt never reached health or metrics, and Docker's API became unresponsive before checkpoint
+weights downloaded. Restarting or resizing Docker would disrupt unrelated workloads and was not
+attempted. The preregistration remains valid, but a real qualifying run is not currently available.
+Raw evidence: `evidence/phase1/t3/iteration-3-gate-preregistration.txt` and
+`evidence/phase1/t3/iteration-6-local-vllm-smoke.txt`.
 
 ## Controlled scheduler evidence
 
@@ -144,7 +149,9 @@ Raw evidence: `evidence/phase1/t3/iteration-5-v2-backpressure.txt`.
 
 ## Ranked candidates
 
-1. Establish a real local MOSS/vLLM measurement path; without local vLLM active/queued metrics, G4
-   cannot qualify. Do not substitute the read-only remote service.
+1. Establish a resource-isolated local MOSS/vLLM measurement path. The ARM64 engine and model
+   registration are proven, but the shared 8.2 GB Docker VM is unsafe for the qualifying run.
+   Next safe probe requires an operator-approved Docker maintenance window or another isolated
+   local runtime with enough memory; do not substitute the read-only remote service.
 2. Smallest evidence-backed vertical slice toward the bounded dispatcher, only after prototype
    measurements choose the bound.

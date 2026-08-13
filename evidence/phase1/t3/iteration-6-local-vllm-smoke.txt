@@ -1,0 +1,114 @@
+Iteration 6 local vLLM smoke — 2026-08-13
+
+Question
+Can this host supply a real local vLLM engine for the ticket #3 measurement, without using the
+read-only remote 4070 service?
+
+Image existence and identity
+$ docker manifest inspect vllm/vllm-openai-cpu:latest-arm64
+PASS: manifest exists.
+
+$ docker pull vllm/vllm-openai-cpu:latest-arm64
+Digest: sha256:e6745d7ba6610f637c6f22fc06cd730342e50245b6c46767235600483adfbbde
+Status: Downloaded newer image for vllm/vllm-openai-cpu:latest-arm64
+docker.io/vllm/vllm-openai-cpu:latest-arm64
+
+$ docker image inspect vllm/vllm-openai-cpu:latest-arm64 --format '{{json .}}' | jq \
+    '{Id,Created,Size,Config:{Entrypoint:.Config.Entrypoint,Cmd:.Config.Cmd,Labels:.Config.Labels}}'
+{
+  "Id": "sha256:e6745d7ba6610f637c6f22fc06cd730342e50245b6c46767235600483adfbbde",
+  "Created": "2026-08-11T09:14:37.142096937Z",
+  "Size": 870921749,
+  "Config": {
+    "Entrypoint": ["vllm", "serve"],
+    "Cmd": null,
+    "Labels": {
+      "ai.vllm.build.cpu-arm-bf16": "false",
+      "ai.vllm.build.cpu-x86": "0",
+      "ai.vllm.build.python-version": "3.12",
+      "ai.vllm.build.target-arch": "arm64",
+      "org.opencontainers.image.description": "vLLM inference engine for CPU platforms",
+      "org.opencontainers.image.source": "https://github.com/vllm-project/vllm",
+      "org.opencontainers.image.title": "vLLM CPU",
+      "org.opencontainers.image.vendor": "vLLM Project",
+      "org.opencontainers.image.version": "22.04"
+    }
+  }
+}
+
+Engine and model registration
+$ docker run --rm --entrypoint python vllm/vllm-openai-cpu:latest-arm64 -c \
+    "import vllm; print('vllm', vllm.__version__); from vllm.model_executor.models.registry \
+    import ModelRegistry; names=sorted(str(k) for k in ModelRegistry.get_supported_archs()); \
+    print('moss_archs', [n for n in names if 'Moss' in n or 'MOSS' in n]); \
+    print('arch_count',len(names))"
+vllm 0.27.1
+INFO 08-13 06:36:31 [importing.py:88] Triton not installed or not compatible; certain GPU-related functions will not be available.
+moss_archs ['MossAudioModel', 'MossTranscribeDiarizeForConditionalGeneration']
+arch_count 367
+
+Local Docker capacity before startup
+$ docker info --format 'CPUs={{.NCPU}} Memory={{.MemTotal}} Architecture={{.Architecture}} Driver={{.Driver}}'
+CPUs=24 Memory=8214302720 Architecture=aarch64 Driver=overlayfs
+
+The VM already hosted 18 running containers. They were not stopped, restarted, or modified.
+
+Public checkpoint metadata
+$ curl -fsSL https://huggingface.co/api/models/OpenMOSS-Team/MOSS-Transcribe-Diarize | \
+    jq '{id,private,gated,usedStorage}'
+{
+  "id": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+  "private": false,
+  "gated": false,
+  "usedStorage": 3657073722
+}
+
+$ curl -fsSL \
+    https://huggingface.co/OpenMOSS-Team/MOSS-Transcribe-Diarize/resolve/main/model.safetensors.index.json | \
+    jq '{metadata,weight_map_count:(.weight_map|length)}'
+{
+  "metadata": {"total_size": 1817026560},
+  "weight_map_count": 683
+}
+
+Real engine startup attempt
+$ docker run --rm -d --name moss-t3-vllm-iter6 --shm-size=2g \
+    -p 127.0.0.1:18003:8000 \
+    -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+    -e VLLM_CPU_KVCACHE_SPACE=1 \
+    vllm/vllm-openai-cpu:latest-arm64 \
+    OpenMOSS-Team/MOSS-Transcribe-Diarize \
+    --trust-remote-code --dtype=float16 --max-model-len=16384
+e4eeb58bbd66680bc10a0a464798a0db18988e5fe130defef6b92add9420f055
+
+Observed startup result
+- Container creation and start succeeded.
+- The Hugging Face cache acquired only the 2.3 KiB model config and main revision ref; no weights
+  arrived before the Docker API stopped responding.
+- http://127.0.0.1:18003/health, /v1/models, and /metrics never returned a response.
+- Docker's Unix-socket /_ping and the targeted stop request both timed out with zero bytes.
+- No OOM-kill line appeared in the Docker VM console log during the observation window.
+- Targeted stop was attempted for this container only. The first request timed out while Docker's
+  API was unresponsive. After the API recovered, the same container was stopped; `--rm` removed it
+  and a name-filtered `docker ps -a` returned no match. Docker Desktop was not restarted.
+
+$ curl --max-time 5 --unix-socket "$HOME/.docker/run/docker.sock" http://localhost/_ping
+curl: (28) Operation timed out after 5007 milliseconds with 0 bytes received
+
+$ curl --max-time 20 -X POST --unix-socket "$HOME/.docker/run/docker.sock" \
+    'http://localhost/v1.52/containers/moss-t3-vllm-iter6/stop?t=10'
+curl: (28) Operation timed out after 20008 milliseconds with 0 bytes received
+
+$ if curl --max-time 3 -fsS --unix-socket "$HOME/.docker/run/docker.sock" \
+    http://localhost/_ping >/dev/null 2>&1; then \
+    docker stop --time 5 moss-t3-vllm-iter6 >/dev/null 2>&1 || true; \
+    docker ps -a --filter name=moss-t3-vllm-iter6 --format '{{.Names}} {{.Status}}'; fi
+[no output: no matching container remained]
+
+Verdict
+PARTIAL, NON-GATING. The host has a real ARM64 vLLM 0.27.1 image that registers the MOSS
+architecture, so iteration 3's engine-availability blocker is narrower than first measured.
+No real decoder request or vLLM metric was obtained. The shared 8.2 GB Docker VM is not a safe
+qualification environment while unrelated containers occupy it, and reconfiguring/restarting
+Docker requires an operator-approved maintenance window. Do not infer a dispatcher bound from
+this smoke result.
