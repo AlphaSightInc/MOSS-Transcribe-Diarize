@@ -1,0 +1,184 @@
+{
+  "schema": "moss.phase1.t1.lease-safe-stop.v1",
+  "question": "Can the real-model Chrome probe stop through the production route while worklet-driven heartbeats remain active, then detach only after exact drain completes?",
+  "scope": {
+    "service": "locally-owned production routes on loopback",
+    "microphone": "Chrome getUserMedia fake-device WAV",
+    "system": "synthetic oscillator through the same production route",
+    "model_runtime": "manifest-admitted provider bundle plus production ModelRunner",
+    "real_display_capture": false,
+    "remote_inference_or_mutation": false
+  },
+  "fixture": {
+    "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+    "duration_seconds": 60.0,
+    "reference_speaker_count": 3
+  },
+  "model": {
+    "snapshot_revision": "e8681d68e7042738ffca8ac8212bc8fcb1131ab8",
+    "weight_sha256": "9a0ceb4ab7330357db3ff583dba8d83625d5b733b00e1d55d6970e11b07026c4",
+    "resolved_device": "cpu",
+    "resolved_dtype": "torch.float32"
+  },
+  "provider": {
+    "name": "moss-rtx-webrtc-wespeaker",
+    "source_revision": "1a6dc1abf964d541b83161dd239ff2ac14db736d",
+    "manifest_hash": "b69af39c06e37df1e31f76d76c71b98659a394c7fb98d5c3f7ba5859bb41879c",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+  },
+  "descriptor": {
+    "sample_rate": 16000,
+    "frame_samples": 8000,
+    "live_helper_lease_seconds": 2.0
+  },
+  "session": {
+    "id": "d5f794a0816f4c699e3d9eb7888dafd5",
+    "pre_stop_observation": {
+      "runtime_status": "active",
+      "accepted_samples": 1744000,
+      "accounted_samples": 1680000,
+      "pending_work_items": 1,
+      "pending_span_ids": [
+        42
+      ]
+    },
+    "stop_request": {
+      "deadline_seconds": 30,
+      "requested_wall_ms": 1786607897634
+    },
+    "stop_response": {
+      "http_status": 200,
+      "received_wall_ms": 1786607900354,
+      "drain_duration_ms": 2720,
+      "runtime": {
+        "status": "closed",
+        "accepted_samples": 1912000,
+        "accounted_samples": 1912000,
+        "pending_work_items": 0
+      },
+      "v2": {
+        "status": "closed",
+        "lanes": {
+          "microphone": {
+            "next_sequence": 239,
+            "accepted_samples": 1912000,
+            "accounted_samples": 1912000,
+            "failed_samples": 0,
+            "retained_samples": 0
+          },
+          "system": {
+            "next_sequence": 239,
+            "accepted_samples": 1912000,
+            "accounted_samples": 1912000,
+            "failed_samples": 0,
+            "retained_samples": 0
+          }
+        }
+      }
+    },
+    "capture_detached_wall_ms": 1786607900355,
+    "capture_detached_after_stop_response": true
+  },
+  "worklet_activity": {
+    "heartbeat_count_total": 245,
+    "heartbeats_during_stop": {
+      "count": 6,
+      "sequence_min": 239,
+      "sequence_max": 244,
+      "http_status_counts": {
+        "200": 6
+      },
+      "raw": [
+        {
+          "sequence": 239,
+          "trigger_frame_sequence": 239,
+          "started_wall_ms": 1786607897706,
+          "completed_wall_ms": 1786607897708,
+          "status": 200
+        },
+        {
+          "sequence": 240,
+          "trigger_frame_sequence": 240,
+          "started_wall_ms": 1786607898203,
+          "completed_wall_ms": 1786607898205,
+          "status": 200
+        },
+        {
+          "sequence": 241,
+          "trigger_frame_sequence": 241,
+          "started_wall_ms": 1786607898706,
+          "completed_wall_ms": 1786607898709,
+          "status": 200
+        },
+        {
+          "sequence": 242,
+          "trigger_frame_sequence": 242,
+          "started_wall_ms": 1786607899203,
+          "completed_wall_ms": 1786607899206,
+          "status": 200
+        },
+        {
+          "sequence": 243,
+          "trigger_frame_sequence": 243,
+          "started_wall_ms": 1786607899706,
+          "completed_wall_ms": 1786607899709,
+          "status": 200
+        },
+        {
+          "sequence": 244,
+          "trigger_frame_sequence": 244,
+          "started_wall_ms": 1786607900203,
+          "completed_wall_ms": 1786607900205,
+          "status": 200
+        }
+      ]
+    },
+    "frames_per_lane": {
+      "accepted": 239,
+      "terminal_409_after_stop_started": 6,
+      "fetch_errors": 0
+    }
+  },
+  "browser_read_path": {
+    "polls": 471,
+    "snapshot_version": 287,
+    "event_sequence": 429,
+    "rendered_transcript_characters": 3066
+  },
+  "raw_phase_order": [
+    {
+      "phase": "stop-requested",
+      "wall_ms": 1786607897634
+    },
+    {
+      "phase": "stop-response",
+      "wall_ms": 1786607900354,
+      "http_status": 200,
+      "runtime_status": "closed",
+      "accepted_samples": 1912000,
+      "accounted_samples": 1912000,
+      "pending_work_items": 0,
+      "v2_status": "closed"
+    },
+    {
+      "phase": "capture-detached",
+      "wall_ms": 1786607900355
+    }
+  ],
+  "browser_log": [
+    "session stopped cleanly: accepted=accounted=1912000",
+    "microphone: sent=245 http={\"200\":239,\"409\":6} fetchErrors=0",
+    "system: sent=245 http={\"200\":239,\"409\":6} fetchErrors=0"
+  ],
+  "verdict": {
+    "stop_http_200": true,
+    "runtime_closed_with_exact_accounting": true,
+    "v2_closed_with_exact_lane_accounting": true,
+    "pending_work_items_zero": true,
+    "heartbeat_sustained_for_drain_longer_than_lease": true,
+    "detach_after_drain_response": true,
+    "real_display_capture": false,
+    "both_simultaneous_sessions_stop_cleanly": false,
+    "overall_ticket_complete": false
+  }
+}

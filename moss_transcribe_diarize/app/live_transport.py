@@ -9,6 +9,7 @@ from typing import Any
 
 from starlette.requests import Request
 
+from .live_arbiter import InferenceArbiterBackpressure
 from .live_auth import (
     CapturePrincipal,
     LiveAccessError,
@@ -244,6 +245,7 @@ def attach_live_routes(
                     v2_session,
                     runtime,
                     final=False,
+                    retryable_backpressure=True,
                 )
                 _tape_mixed(tapes, session_id, mixed)
                 snapshot = runtime.snapshot(session_id)
@@ -274,7 +276,7 @@ def attach_live_routes(
             conflict["snapshot"] = _snapshot_payload(runtime, session_id)
             conflict["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
             return JSONResponse(conflict, status_code=status)
-        except LiveSessionBackpressure as exc:
+        except (InferenceArbiterBackpressure, LiveSessionBackpressure) as exc:
             return JSONResponse(
                 {"detail": str(exc), "snapshot": _snapshot_payload(runtime, session_id)},
                 status_code=429,

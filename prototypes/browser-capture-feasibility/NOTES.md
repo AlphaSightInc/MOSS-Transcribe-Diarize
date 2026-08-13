@@ -55,10 +55,228 @@ pick up `/reset`).
 
 ## Contract caveat vs the real server
 
-The stub accepts prototype-only extra fields (`client_visibility`, `client_wall_ms`,
-`quanta`). The deployed v2 contract rejects unknown keys — strip extras before pointing
-this page at the real service, and read `frame_samples`/`sample_rate` from
-`/api/live/descriptor` instead of hardcoding 8000/16000 (they are deploy-manifest values).
+The page now reads `frame_samples`, `sample_rate`, and `bounds.max_frame_samples` from
+`/api/live/descriptor` before creating its capture context. The stub deliberately advertises
+3,200-sample frames so a browser run exposes either historical 8,000/16,000-frame fallback. Frame
+bodies now contain exactly the nine v2 keys and the stub rejects missing or unknown keys. Prototype
+cadence fields (`client_visibility`, `client_wall_ms`, `quanta`) travel separately through
+`/prototype/telemetry`.
+
+## Production-route probe — PASSED 2026-08-13
+
+Question: can Chrome create a server-issued session and send the same descriptor-driven frames
+through the real `create_app` auth, session, strict-v2, mixer, and runtime routes instead of the
+historical `/frames` stub?
+
+Run `PYTHONDONTWRITEBYTECODE=1 python3
+prototypes/browser-capture-feasibility/production_route_server.py`, then open
+`http://127.0.0.1:8899/capture-harness?autostart=1` in Chrome with autoplay enabled. The runner
+uses the production app and a deterministic fake provider; its ephemeral bearer stays in closure
+memory and is never printed or persisted.
+
+Chrome 151 created `api-session` only after both synthetic lanes metered non-zero. It sent 329
+frames per lane through `/api/live/sessions/api-session/frames`: all HTTP 200, sequences 0–328,
+exactly 1,000 samples per descriptor frame, 329,000 accepted samples per lane, zero failed samples,
+and no terminal runtime failure. Raw state: `evidence/phase1/t1/iteration-05-production-routes.json`.
+
+This proves browser-to-production-route wiring, not the ticket's model gate. The provider and
+transcript are deterministic fakes; no two-speaker WAV, real inference, clean stop, concurrency,
+background lease, or real display capture was exercised.
+
+## Production-route strict-key rejection — PASSED 2026-08-13
+
+Question: does the locally-run production v2 frame route reject a telemetry field without
+consuming the lane sequence, while the browser's ordinary nine-key frames remain admissible?
+
+Run the production-route probe above and open
+`http://127.0.0.1:8899/capture-harness?autostart=1&probe_unknown_frame_key=1` in Chrome. The opt-in
+probe sent the nine v2 fields plus `client_visibility` to the authenticated production frame
+route. It returned HTTP 400 naming the unknown field. Both lanes then admitted valid sequence 0
+and advanced to sequence 177 with zero failed samples, proving the rejection did not mutate lane
+state. Cadence telemetry continued over `/prototype/telemetry`, outside frame bodies.
+
+Verdict: the production route, not only the strict stub, enforces the exact nine-key body. This
+uses the deterministic provider and does not prove inference or display capture. Raw evidence:
+`evidence/phase1/t1/iteration-15-production-unknown-key.json`.
+
+## Production read-path probe — PASSED 2026-08-13
+
+Question: can Chrome use the server-returned view bearer to poll the production `/snapshot` and
+`/events` routes, render committed text plus a provisional tail, and retain both cursors when a
+render fails?
+
+The same server command above plus
+`http://127.0.0.1:8899/capture-harness?autostart=1&fail_render_once=1` ran the deterministic
+provider through the production routes. The runtime supplied committed `S01` text. Because this
+runtime has no provisional inference scheduler, a clearly labelled snapshot wrapper supplied only
+the synthetic `S02` provisional tail used to exercise that render branch.
+
+The injected pre-render failure requested cursor `0/0` and retained `0/0`. The next production
+poll repeated `0/0`, rendered six commits plus the provisional tail and 31 event rows, then advanced
+to snapshot/event cursors `13/31`. Raw state:
+`evidence/phase1/t1/iteration-06-production-read-path.json`.
+
+Verdict: render-then-advance works across both production read routes. This does not prove real
+model inference or a real provisional inference publisher.
+
+## Worklet-driven background heartbeat — PASSED 2026-08-13
+
+Question: can either live lane drive the production helper heartbeat route from worklet frame
+messages, without a timer, while a hidden Chrome tab renews a deliberately short local lease?
+
+The harness serializes and coalesces heartbeat POSTs across both lane handlers and sends one
+strict `moss-live-helper-health.v1` body per descriptor frame interval. Chrome's DevTools target
+API activated a blank sibling tab, leaving the capture target hidden for 12.000 s against a
+2.0 s local helper lease, then reactivated it.
+
+All 417 heartbeat POSTs returned HTTP 200 with zero heartbeat sequence gaps. Hidden heartbeat
+p50/p95/max was 64/64/65 ms versus visible 64/65/70 ms; both production frame lanes had hidden
+p95 65 ms, matching visible p95 65 ms. The production v2 session remained active with both lanes
+healthy after 6.0 lease periods hidden. Raw measurement:
+`evidence/phase1/t1/iteration-07-background-heartbeat.json`.
+
+This proves the synthetic Chrome background-cadence and local production lease seams. It does
+not prove real model inference, microphone input, or real display capture.
+
+## Automated fake-device microphone seam
+
+Question: can the acceptance fixture enter through Chrome's real `getUserMedia()` microphone
+path while the system lane is explicitly synthetic, without automating display capture?
+
+Launch Chrome with `--use-fake-device-for-media-stream`,
+`--use-file-for-fake-audio-capture=<known-two-speaker.wav>`,
+`--use-fake-ui-for-media-stream`, and open
+`/capture-harness?autostart_mic_canary=1`. The page starts the microphone through
+`getUserMedia()` and supplies only the system lane from its 997 Hz oscillator. It records the
+microphone track label/settings and the two source APIs separately in prototype telemetry; the
+host fixture path remains outside the page and evidence.
+
+This is the automatable G1/G2 source shape. A run against the deterministic provider proves only
+the Chrome microphone-to-production-route seam; the gate remains open until the same path renders
+real model transcript text with at least two speaker ids.
+
+Measured 2026-08-13 with Chrome 151 and a 60 s, 16 kHz fixture whose reference contains three
+speakers and three switches. The browser exposed `Fake Default Audio Input` at 44.1 kHz stereo,
+then the production capture graph resampled it to the descriptor's 16 kHz / 1,000-sample frames.
+Across 1,254 frames per lane there were zero sequence gaps, 1,254,000 accepted samples per lane,
+zero failed samples, and no terminal failure. The microphone frame-RMS envelope matched the source
+WAV over 959 frames at correlation 0.99957 (mean absolute error 0.00085); this proves the fixture,
+not merely an extant fake track, reached `getUserMedia()` and the production ingress route. Raw
+frame measurements: `evidence/phase1/t1/iteration-08-fake-mic-production-routes.json`.
+
+The server provider was still the deterministic `api-fake`; its rendered text is not model output.
+Therefore neither real transcription nor the two-speaker-id gate passed in this measurement.
+
+## Local production-model admission — PASSED 2026-08-13
+
+Question: can this host load the exact immutable MOSS snapshot through the production
+`ModelRunner` and emit a non-empty diarized transcript with at least two speaker ids from the
+known acceptance fixture?
+
+One-command probe:
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=1 python3 \
+  prototypes/browser-capture-feasibility/direct_model_smoke.py \
+  --model <snapshot-directory> --audio <multi-speaker-wav>
+```
+
+Revision `e8681d68e7042738ffca8ac8212bc8fcb1131ab8` (1,833,163,202 snapshot bytes;
+weight SHA-256 `9a0ceb4a...07026c4`) loaded through the production runner. The 60 s fixture produced
+538 tokens and four distinct speaker ids in 29.066 s inference / 30.663 s wall time. Although
+PyTorch reports MPS available, production `device=auto` resolved to CPU with float32.
+
+Verdict: this host can run the exact real model fast enough for the next live-path experiment.
+This does not exercise the live runtime, provider bundle, HTTP routes, Chrome, or rendered output,
+so G1 remains open. Raw output: `evidence/phase1/t1/iteration-09-direct-model-smoke.json`.
+
+## Real model through Chrome/live routes — PASSED, teardown still open 2026-08-13
+
+Question: can Chrome fake-device microphone audio traverse the production v2 routes, the
+manifest-admitted live provider bundle, and the local production `ModelRunner`, then return to the
+same browser as diarized text with at least two speaker ids?
+
+One-command server:
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=1 python3 production_route_server.py \
+  --model <snapshot-directory> --live-provider-manifest <host-finalized-manifest>
+```
+
+Chrome sent 236 descriptor-sized frames on each lane (sequences 0–235, zero gaps, all HTTP 200)
+and 236 worklet-driven heartbeats (all HTTP 200). The runtime accepted 1,888,000 samples, exactly
+236 × the manifest's 8,000-sample frame geometry. Before teardown it committed 46 real-model spans
+and Chrome rendered four distinct model ids, S01–S04. The system lane was a synthetic oscillator;
+this does not prove display capture.
+
+Verdict: the browser → production routes → provider bundle → real model → production reads → same
+browser G1 path passes. Clean stop does not: the probe detached its lanes before asking the runtime
+to drain, which also stopped worklet heartbeats. The 2 s prototype helper lease expired during the
+real-model drain, so stop returned 429 with two pending items and the runtime aborted. Keep the
+ticket open and make stop-before-detach/lease-safe drain the next probe. Raw evidence:
+`evidence/phase1/t1/iteration-10-real-model-browser.json`.
+
+## Lease-safe real-model stop — PASSED 2026-08-13
+
+Question: can the production stop route drain genuine pending model work while worklet-driven
+heartbeats remain active, then detach capture only after the server returns exact closed
+accounting?
+
+Run the real-model server command above, launch the same fake-device Chrome canary with
+`stop_deadline_seconds=30`, and invoke `stopCapture(realOut)` while the production snapshot reports
+pending work. The stop request began with one pending work item. It took 2.720 s, longer than the
+2.0 s helper lease; six worklet-driven heartbeats crossed that interval and all returned 200.
+Stop returned HTTP 200 with the runtime and both v2 lanes closed at 1,912,000 accepted/accounted
+samples and zero pending work. The page detached capture 1 ms after recording the stop response.
+Six frames per lane raced after terminal stop began and correctly returned 409; none were admitted.
+
+Verdict: stop-before-detach fixes the measured lease expiry without extending the lease. This is
+one real-model browser session only; the issue's two-simultaneous-session clean-stop criterion
+remains open. Raw evidence: `evidence/phase1/t1/iteration-11-lease-safe-stop.json`.
+
+## Concurrent real-model browsers — isolation/latency PASSED, teardown RED 2026-08-13
+
+Question: can two independent Chrome processes stream distinct fake-microphone fixtures at once,
+render only their own real-model transcript, record commit-to-render latency, and stop cleanly?
+
+Two server-issued sessions ran simultaneously. Client A rendered 2,256 characters with S00–S03
+and its JP Morgan marker but no football marker. Client B rendered 1,123 characters with S00–S07
+and its football marker but no JP Morgan marker. Across 53 canonical commits, commit-to-render was
+152 ms p50 / 247 ms p95 / 260 ms max. Both clients had zero sequence gaps, dropped frames,
+discontinuities, or fetch errors. The local model resolved to CPU/float32, so GPU memory and
+utilization are recorded as not applicable rather than invented.
+
+Teardown failed. Continued looping ingress filled the configured 16-item per-session queues
+(17 pending including in-flight work). Client B observed 238 v2-frame 429s; one
+`InferenceArbiterBackpressure` escaped the frame route as ASGI 500 and terminalized its runtime
+instead of remaining non-terminal. Client A's awaited stop crossed the browser automation timeout
+and was retried, producing a conflicting 409; its original drain then returned 429. Client B also
+returned 429. Both stopped
+view tokens became 401, and the sole prototype capture credential was revoked HTTP 200 and then
+rejected for reuse HTTP 401.
+
+Verdict: simultaneous rendered-text isolation and latency measurement pass, but the two-clean-stop
+criterion remains open. First fix the proven 500/terminal backpressure mapping with a regression;
+then stop each one-pass fixture before saturation and trigger each drain exactly once without
+awaiting through the automation timeout. Raw evidence:
+`evidence/phase1/t1/iteration-12-concurrent-browser-probe.json`.
+
+## Bounded concurrent clean stop — PASSED 2026-08-13
+
+Question: after the v2 backpressure fix, can two bounded one-pass Chrome sources retain the
+passing isolation/latency result and each issue exactly one clean drain before queue saturation?
+
+Both independent Chrome processes used the same distinct 60 s fixtures with the fake-audio
+`%noloop` suffix. Each rendered its own marker and multiple speaker ids with no cross-marker.
+Across 43 commits, commit-to-render latency was 150/246/263 ms p50/p95/max; no pre-stop frame
+returned 429 or 500, and telemetry had zero sequence gaps. Each non-reentrant fire-and-monitor
+trigger produced exactly one stop request. The drains completed in 44.062 s and 41.402 s with
+HTTP 200, closed runtime/v2 state, exact accepted/accounted samples, zero pending work, and
+revoked view credentials. The sole test capture credential was then revoked and rejected on reuse.
+
+Verdict: the two-simultaneous-session clean-stop criterion now passes on the locally-owned real
+model route. System lanes remained synthetic, so this still does not prove display capture. Raw
+evidence: `evidence/phase1/t1/iteration-14-concurrent-clean-stop.json`.
 
 ## Safari attended diagnostic — 2026-08-09
 

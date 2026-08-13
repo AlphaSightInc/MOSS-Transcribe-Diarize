@@ -1,0 +1,95 @@
+{
+  "scope": "real production create_app routes with deterministic fake provider; no model inference",
+  "browser": "HeadlessChrome/151.0.0.0",
+  "page": "http://127.0.0.1:8899/capture-harness?autostart=1",
+  "routes": {
+    "descriptor": "/api/live/descriptor?client_min_protocol_version=2&client_max_protocol_version=2",
+    "session_create": "/api/live/sessions",
+    "v2_frames": "/api/live/sessions/api-session/frames",
+    "historical_stub_frames_used": false
+  },
+  "descriptor": {
+    "provider_name": "api-fake",
+    "protocol": "moss-live-service.v2",
+    "sample_rate": 16000,
+    "frame_samples": 1000,
+    "max_frame_samples": 6400
+  },
+  "client": {
+    "session_id": "api-session",
+    "context_rate": 16000,
+    "context_state": "running",
+    "base_latency_seconds": 0.008,
+    "lanes": {
+      "system": {
+        "sent": 329,
+        "http_status_counts": {"200": 329},
+        "fetch_errors": 0,
+        "rms_last": 0.3536
+      },
+      "microphone": {
+        "sent": 329,
+        "http_status_counts": {"200": 329},
+        "fetch_errors": 0,
+        "rms_last": 0.3535
+      }
+    }
+  },
+  "server": {
+    "lanes": {
+      "system": {
+        "next_sequence": 329,
+        "accepted_samples": 329000,
+        "accounted_samples": 328000,
+        "failed_samples": 0,
+        "retained_samples": 1000,
+        "current_device_epoch": 1,
+        "health": "active",
+        "failure_code": null
+      },
+      "microphone": {
+        "next_sequence": 329,
+        "accepted_samples": 329000,
+        "accounted_samples": 328000,
+        "failed_samples": 0,
+        "retained_samples": 1000,
+        "current_device_epoch": 1,
+        "health": "active",
+        "failure_code": null
+      }
+    },
+    "runtime": {
+      "status": "active",
+      "accepted_samples": 328000,
+      "accounted_samples": 328000,
+      "pending_work_items": 0,
+      "terminal_failure": null
+    }
+  },
+  "telemetry": {
+    "system_frames": 329,
+    "microphone_frames": 329,
+    "system_sequence_first_last": [0, 328],
+    "microphone_sequence_first_last": [0, 328]
+  },
+  "checks": {
+    "server_issued_session": true,
+    "both_lanes_reached_production_v2_route": true,
+    "all_frame_posts_http_200": true,
+    "no_sequence_gaps": true,
+    "all_frames_match_descriptor": true,
+    "zero_failed_samples": true,
+    "no_terminal_failure": true,
+    "credentials_absent_from_artifact": true
+  },
+  "not_proved": [
+    "real model inference",
+    "known two-speaker microphone fixture",
+    "distinct speaker ids",
+    "snapshot/events rendering",
+    "clean stop",
+    "two-session text integrity",
+    "background helper lease",
+    "real display capture"
+  ]
+}

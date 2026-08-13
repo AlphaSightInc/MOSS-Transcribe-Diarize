@@ -1,0 +1,34 @@
+{
+  "scope": "prototype stub contract test only; not real-service or acceptance-gate evidence",
+  "browser": "Chrome/151.0.0.0",
+  "descriptor": {
+    "sample_rate": 16000,
+    "frame_samples": 3200,
+    "max_frame_samples": 6400
+  },
+  "lanes": {
+    "microphone": {
+      "frames": 19,
+      "sample_counts": {"3200": 19},
+      "sample_rates": {"16000": 19},
+      "ts_delta_ns_min_max": [200000000, 200000000]
+    },
+    "system": {
+      "frames": 19,
+      "sample_counts": {"3200": 19},
+      "sample_rates": {"16000": 19},
+      "ts_delta_ns_min_max": [200000000, 200000000]
+    }
+  },
+  "checks": {
+    "both_lanes_present": true,
+    "no_seq_gaps": true,
+    "all_frames_match_descriptor": true,
+    "system_is_997hz": true,
+    "microphone_is_440hz": true,
+    "sine_amplitude_sane": true,
+    "capture_clock_matches_descriptor": true,
+    "hidden_tab_cadence_ok": "no hidden phase measured",
+    "no_decode_errors": true
+  }
+}

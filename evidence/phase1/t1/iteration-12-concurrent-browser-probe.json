@@ -1,0 +1,603 @@
+{
+  "schema": "moss.phase1.t1.concurrent-browser-probe.v1",
+  "question": "Can two simultaneous Chrome fake-microphone clients render only their own real-model transcript and then stop cleanly with per-session metrics?",
+  "scope": {
+    "service": "locally-owned production routes on loopback",
+    "browsers": "two independent headless Chrome 151 processes and profiles",
+    "microphone": "distinct Chrome getUserMedia fake-device WAV per browser",
+    "system": "synthetic oscillator per browser through the same production routes",
+    "model_runtime": "manifest-admitted provider bundle plus production ModelRunner",
+    "real_display_capture": false,
+    "remote_inference_or_mutation": false
+  },
+  "fixtures": {
+    "client-a": {
+      "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+      "duration_seconds": 60,
+      "reference_speaker_count": 3
+    },
+    "client-b": {
+      "audio_sha256": "d2505e3bb048bd7645fffdd8b5afc4b34d1511990ce6771366243e02869f3be3",
+      "duration_seconds": 60
+    }
+  },
+  "model": {
+    "snapshot_revision": "e8681d68e7042738ffca8ac8212bc8fcb1131ab8",
+    "weight_sha256": "9a0ceb4ab7330357db3ff583dba8d83625d5b733b00e1d55d6970e11b07026c4",
+    "resolved_device": "cpu",
+    "resolved_dtype": "torch.float32"
+  },
+  "provider": {
+    "name": "moss-rtx-webrtc-wespeaker",
+    "revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "source_revision": "7f700183c01241975379694740913db85fa6326e",
+    "manifest_hash": "934e4fef315ef5eb80af293dbb48ff2aac896893e6fd47ed8e9007452a613278",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+  },
+  "descriptor": {
+    "sample_rate": 16000,
+    "frame_samples": 8000,
+    "max_queue_depth": 16,
+    "live_helper_lease_seconds": 2
+  },
+  "sessions": {
+    "client-a": {
+      "session_id": "da144c870aea4adb83ff96300af68a73",
+      "frames": {
+        "microphone": {
+          "telemetry_count": 258,
+          "sequence_min": 0,
+          "sequence_max": 257,
+          "sequence_gaps": [],
+          "http_status_counts": {
+            "200": 197,
+            "409": 61
+          },
+          "fetch_errors": 0
+        },
+        "system": {
+          "telemetry_count": 258,
+          "sequence_min": 0,
+          "sequence_max": 257,
+          "sequence_gaps": [],
+          "http_status_counts": {
+            "200": 197,
+            "409": 61
+          },
+          "fetch_errors": 0
+        }
+      },
+      "render": {
+        "characters": 2256,
+        "sha256": "d84339f3b58bbad2d3675813000388f1911f0f1e52924360a9b92cadacb02f95",
+        "speaker_ids": [
+          "S00",
+          "S01",
+          "S02",
+          "S03"
+        ],
+        "own_marker": "JP Morgan",
+        "own_marker_present": true,
+        "other_marker": "football",
+        "other_marker_present": false
+      },
+      "commit_to_render": {
+        "count": 34,
+        "p50_ms": 158,
+        "p95_ms": 248,
+        "max_ms": 260,
+        "max_observed_pending_work_items": 17,
+        "raw": [
+          {
+            "span_id": 0,
+            "committed_wall_ns": 1786608635981910000,
+            "first_rendered_wall_ms": 1786608636108,
+            "latency_ms": 127
+          },
+          {
+            "span_id": 1,
+            "committed_wall_ns": 1786608638123568000,
+            "first_rendered_wall_ms": 1786608638178,
+            "latency_ms": 55
+          },
+          {
+            "span_id": 2,
+            "committed_wall_ns": 1786608640333653000,
+            "first_rendered_wall_ms": 1786608640497,
+            "latency_ms": 164
+          },
+          {
+            "span_id": 3,
+            "committed_wall_ns": 1786608642421432000,
+            "first_rendered_wall_ms": 1786608642587,
+            "latency_ms": 166
+          },
+          {
+            "span_id": 4,
+            "committed_wall_ns": 1786608644449149000,
+            "first_rendered_wall_ms": 1786608644659,
+            "latency_ms": 210
+          },
+          {
+            "span_id": 5,
+            "committed_wall_ns": 1786608647067775000,
+            "first_rendered_wall_ms": 1786608647250,
+            "latency_ms": 183
+          },
+          {
+            "span_id": 6,
+            "committed_wall_ns": 1786608652229278000,
+            "first_rendered_wall_ms": 1786608652423,
+            "latency_ms": 194
+          },
+          {
+            "span_id": 7,
+            "committed_wall_ns": 1786608657131004000,
+            "first_rendered_wall_ms": 1786608657391,
+            "latency_ms": 260
+          },
+          {
+            "span_id": 8,
+            "committed_wall_ns": 1786608662165674000,
+            "first_rendered_wall_ms": 1786608662323,
+            "latency_ms": 158
+          },
+          {
+            "span_id": 9,
+            "committed_wall_ns": 1786608666695241000,
+            "first_rendered_wall_ms": 1786608666728,
+            "latency_ms": 33
+          },
+          {
+            "span_id": 10,
+            "committed_wall_ns": 1786608671958775000,
+            "first_rendered_wall_ms": 1786608672205,
+            "latency_ms": 247
+          },
+          {
+            "span_id": 11,
+            "committed_wall_ns": 1786608676235051000,
+            "first_rendered_wall_ms": 1786608676388,
+            "latency_ms": 153
+          },
+          {
+            "span_id": 12,
+            "committed_wall_ns": 1786608681310328000,
+            "first_rendered_wall_ms": 1786608681343,
+            "latency_ms": 33
+          },
+          {
+            "span_id": 13,
+            "committed_wall_ns": 1786608685760930000,
+            "first_rendered_wall_ms": 1786608685784,
+            "latency_ms": 24
+          },
+          {
+            "span_id": 14,
+            "committed_wall_ns": 1786608689654193000,
+            "first_rendered_wall_ms": 1786608689693,
+            "latency_ms": 39
+          },
+          {
+            "span_id": 15,
+            "committed_wall_ns": 1786608693920887000,
+            "first_rendered_wall_ms": 1786608694147,
+            "latency_ms": 227
+          },
+          {
+            "span_id": 16,
+            "committed_wall_ns": 1786608698370064000,
+            "first_rendered_wall_ms": 1786608698618,
+            "latency_ms": 248
+          },
+          {
+            "span_id": 17,
+            "committed_wall_ns": 1786608703153243000,
+            "first_rendered_wall_ms": 1786608703297,
+            "latency_ms": 144
+          },
+          {
+            "span_id": 18,
+            "committed_wall_ns": 1786608707902918000,
+            "first_rendered_wall_ms": 1786608708001,
+            "latency_ms": 99
+          },
+          {
+            "span_id": 19,
+            "committed_wall_ns": 1786608711777117000,
+            "first_rendered_wall_ms": 1786608711909,
+            "latency_ms": 132
+          },
+          {
+            "span_id": 20,
+            "committed_wall_ns": 1786608715605041000,
+            "first_rendered_wall_ms": 1786608715835,
+            "latency_ms": 230
+          },
+          {
+            "span_id": 21,
+            "committed_wall_ns": 1786608719776351000,
+            "first_rendered_wall_ms": 1786608719983,
+            "latency_ms": 207
+          },
+          {
+            "span_id": 22,
+            "committed_wall_ns": 1786608724553236000,
+            "first_rendered_wall_ms": 1786608724703,
+            "latency_ms": 150
+          },
+          {
+            "span_id": 23,
+            "committed_wall_ns": 1786608729555152000,
+            "first_rendered_wall_ms": 1786608729672,
+            "latency_ms": 117
+          },
+          {
+            "span_id": 24,
+            "committed_wall_ns": 1786608734488677000,
+            "first_rendered_wall_ms": 1786608734606,
+            "latency_ms": 118
+          },
+          {
+            "span_id": 25,
+            "committed_wall_ns": 1786608736803293000,
+            "first_rendered_wall_ms": 1786608736935,
+            "latency_ms": 132
+          },
+          {
+            "span_id": 26,
+            "committed_wall_ns": 1786608739177792000,
+            "first_rendered_wall_ms": 1786608739329,
+            "latency_ms": 152
+          },
+          {
+            "span_id": 27,
+            "committed_wall_ns": 1786608741440612000,
+            "first_rendered_wall_ms": 1786608741673,
+            "latency_ms": 233
+          },
+          {
+            "span_id": 28,
+            "committed_wall_ns": 1786608743653833000,
+            "first_rendered_wall_ms": 1786608743824,
+            "latency_ms": 171
+          },
+          {
+            "span_id": 29,
+            "committed_wall_ns": 1786608745982422000,
+            "first_rendered_wall_ms": 1786608746179,
+            "latency_ms": 197
+          },
+          {
+            "span_id": 30,
+            "committed_wall_ns": 1786608748657498000,
+            "first_rendered_wall_ms": 1786608748857,
+            "latency_ms": 200
+          },
+          {
+            "span_id": 31,
+            "committed_wall_ns": 1786608751344040000,
+            "first_rendered_wall_ms": 1786608751468,
+            "latency_ms": 124
+          },
+          {
+            "span_id": 32,
+            "committed_wall_ns": 1786608753945625000,
+            "first_rendered_wall_ms": 1786608754157,
+            "latency_ms": 212
+          },
+          {
+            "span_id": 33,
+            "committed_wall_ns": 1786608756704291000,
+            "first_rendered_wall_ms": 1786608756876,
+            "latency_ms": 172
+          }
+        ]
+      }
+    },
+    "client-b": {
+      "session_id": "d1b7df2b667740d19aefa3341952538b",
+      "frames": {
+        "microphone": {
+          "telemetry_count": 334,
+          "sequence_min": 0,
+          "sequence_max": 333,
+          "sequence_gaps": [],
+          "http_status_counts": {
+            "200": 181,
+            "409": 34,
+            "429": 119
+          },
+          "fetch_errors": 0
+        },
+        "system": {
+          "telemetry_count": 334,
+          "sequence_min": 0,
+          "sequence_max": 333,
+          "sequence_gaps": [],
+          "http_status_counts": {
+            "200": 180,
+            "409": 34,
+            "429": 119,
+            "500": 1
+          },
+          "fetch_errors": 0
+        }
+      },
+      "render": {
+        "characters": 1123,
+        "sha256": "fa8d94d6fb67fcd7b7fc8301f8404e67ff8c74cfe211d9b8f3cea74ded186239",
+        "speaker_ids": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07"
+        ],
+        "own_marker": "football",
+        "own_marker_present": true,
+        "other_marker": "JP Morgan",
+        "other_marker_present": false
+      },
+      "commit_to_render": {
+        "count": 19,
+        "p50_ms": 106,
+        "p95_ms": 231,
+        "max_ms": 231,
+        "max_observed_pending_work_items": 17,
+        "raw": [
+          {
+            "span_id": 0,
+            "committed_wall_ns": 1786608649945068000,
+            "first_rendered_wall_ms": 1786608650041,
+            "latency_ms": 96
+          },
+          {
+            "span_id": 1,
+            "committed_wall_ns": 1786608654901471000,
+            "first_rendered_wall_ms": 1786608654968,
+            "latency_ms": 67
+          },
+          {
+            "span_id": 2,
+            "committed_wall_ns": 1786608659964421000,
+            "first_rendered_wall_ms": 1786608660178,
+            "latency_ms": 214
+          },
+          {
+            "span_id": 3,
+            "committed_wall_ns": 1786608664335507000,
+            "first_rendered_wall_ms": 1786608664338,
+            "latency_ms": 3
+          },
+          {
+            "span_id": 4,
+            "committed_wall_ns": 1786608669493279000,
+            "first_rendered_wall_ms": 1786608669564,
+            "latency_ms": 71
+          },
+          {
+            "span_id": 5,
+            "committed_wall_ns": 1786608673852605000,
+            "first_rendered_wall_ms": 1786608674003,
+            "latency_ms": 151
+          },
+          {
+            "span_id": 6,
+            "committed_wall_ns": 1786608679116136000,
+            "first_rendered_wall_ms": 1786608679222,
+            "latency_ms": 106
+          },
+          {
+            "span_id": 7,
+            "committed_wall_ns": 1786608683433223000,
+            "first_rendered_wall_ms": 1786608683624,
+            "latency_ms": 191
+          },
+          {
+            "span_id": 8,
+            "committed_wall_ns": 1786608687530390000,
+            "first_rendered_wall_ms": 1786608687550,
+            "latency_ms": 20
+          },
+          {
+            "span_id": 9,
+            "committed_wall_ns": 1786608691818715000,
+            "first_rendered_wall_ms": 1786608691997,
+            "latency_ms": 179
+          },
+          {
+            "span_id": 10,
+            "committed_wall_ns": 1786608696480317000,
+            "first_rendered_wall_ms": 1786608696698,
+            "latency_ms": 218
+          },
+          {
+            "span_id": 11,
+            "committed_wall_ns": 1786608700513971000,
+            "first_rendered_wall_ms": 1786608700592,
+            "latency_ms": 79
+          },
+          {
+            "span_id": 12,
+            "committed_wall_ns": 1786608705210311000,
+            "first_rendered_wall_ms": 1786608705283,
+            "latency_ms": 73
+          },
+          {
+            "span_id": 13,
+            "committed_wall_ns": 1786608709898489000,
+            "first_rendered_wall_ms": 1786608709979,
+            "latency_ms": 81
+          },
+          {
+            "span_id": 14,
+            "committed_wall_ns": 1786608713396786000,
+            "first_rendered_wall_ms": 1786608713627,
+            "latency_ms": 231
+          },
+          {
+            "span_id": 15,
+            "committed_wall_ns": 1786608717632279000,
+            "first_rendered_wall_ms": 1786608717777,
+            "latency_ms": 145
+          },
+          {
+            "span_id": 16,
+            "committed_wall_ns": 1786608721920394000,
+            "first_rendered_wall_ms": 1786608721948,
+            "latency_ms": 28
+          },
+          {
+            "span_id": 17,
+            "committed_wall_ns": 1786608726693782000,
+            "first_rendered_wall_ms": 1786608726914,
+            "latency_ms": 221
+          },
+          {
+            "span_id": 18,
+            "committed_wall_ns": 1786608732442239000,
+            "first_rendered_wall_ms": 1786608732643,
+            "latency_ms": 201
+          }
+        ]
+      }
+    }
+  },
+  "combined_metrics": {
+    "rendered_commit_count": 53,
+    "commit_to_render_p50_ms": 152,
+    "commit_to_render_p95_ms": 247,
+    "commit_to_render_max_ms": 260,
+    "max_observed_pending_work_items": 17,
+    "frame_429_count": 238,
+    "unexpected_frame_500_count": 1,
+    "sequence_gaps": 0,
+    "reported_dropped_frames": 0,
+    "reported_discontinuities": 0,
+    "gpu": {
+      "backend": "mps",
+      "model_resolved_to_gpu": false,
+      "memory_bytes": null,
+      "utilization_percent": null,
+      "reason": "production ModelRunner resolved to CPU/float32; GPU metrics are not applicable on this local proof host"
+    }
+  },
+  "raw_teardown_phases": [
+    {
+      "phase": "stop-requested",
+      "session_id": "da144c870aea4adb83ff96300af68a73",
+      "deadline_seconds": 45,
+      "wall_ms": 1786608728084
+    },
+    {
+      "phase": "stop-requested",
+      "session_id": "da144c870aea4adb83ff96300af68a73",
+      "deadline_seconds": 45,
+      "wall_ms": 1786608758287
+    },
+    {
+      "phase": "stop-response",
+      "session_id": "da144c870aea4adb83ff96300af68a73",
+      "http_status": 409,
+      "post_stop_view_http_status": 200,
+      "wall_ms": 1786608758378
+    },
+    {
+      "phase": "capture-detached",
+      "session_id": "da144c870aea4adb83ff96300af68a73",
+      "wall_ms": 1786608758379
+    },
+    {
+      "phase": "stop-response",
+      "session_id": "da144c870aea4adb83ff96300af68a73",
+      "http_status": 429,
+      "runtime_status": "aborted",
+      "accepted_samples": 1576000,
+      "accounted_samples": 1400000,
+      "pending_work_items": 5,
+      "post_stop_view_http_status": 401,
+      "wall_ms": 1786608760381
+    },
+    {
+      "phase": "capture-detached",
+      "session_id": "da144c870aea4adb83ff96300af68a73",
+      "wall_ms": 1786608760381
+    },
+    {
+      "phase": "stop-requested",
+      "session_id": "d1b7df2b667740d19aefa3341952538b",
+      "deadline_seconds": 45,
+      "wall_ms": 1786608809274
+    },
+    {
+      "phase": "stop-response",
+      "session_id": "d1b7df2b667740d19aefa3341952538b",
+      "http_status": 429,
+      "runtime_status": "active",
+      "accepted_samples": 1440000,
+      "accounted_samples": 760000,
+      "pending_work_items": 16,
+      "post_stop_view_http_status": 401,
+      "wall_ms": 1786608809412
+    },
+    {
+      "phase": "capture-detached",
+      "session_id": "d1b7df2b667740d19aefa3341952538b",
+      "wall_ms": 1786608809413
+    }
+  ],
+  "credential_cleanup": {
+    "phase": "test-credential-revoked",
+    "device_id": "browser-route-probe",
+    "revoke_http_status": 200,
+    "revoke_session_ids": [],
+    "reuse_create_http_status": 401,
+    "wall_ms": 1786608841704
+  },
+  "verdict": {
+    "two_simultaneous_server_issued_sessions": true,
+    "distinct_real_model_transcripts_rendered": true,
+    "no_cross_session_marker_in_rendered_text": true,
+    "commit_to_render_latency_recorded": true,
+    "exact_frame_geometry_and_zero_sequence_gaps": true,
+    "per_session_backpressure_observed": true,
+    "both_sessions_stopped_cleanly": false,
+    "stopped_views_revoked": true,
+    "only_test_capture_credential_revoked": true,
+    "overall_ticket_complete": false
+  },
+  "failure_analysis": {
+    "observed": "continued looping ingress filled the 16-item per-session queues while the single decoder drained round-robin; one InferenceArbiterBackpressure escaped the v2 frame route as ASGI 500 and terminalized client B, while client A stop was retried by an automation timeout and conflicted; both stop paths returned 429 instead of exact closed accounting",
+    "unexpected_frame_500": {
+      "http_status": 500,
+      "exception_type": "moss_transcribe_diarize.app.live_arbiter.InferenceArbiterBackpressure",
+      "message": "live canonical queue is full.",
+      "production_path": [
+        "live_transport.accept_live_frame",
+        "live_mixer.admit_available",
+        "live_service_runtime.accept_frame",
+        "live_coordinator._queue_canonical",
+        "live_arbiter.submit_live_canonical"
+      ]
+    },
+    "client_a_last_stop": {
+      "http_status": 429,
+      "runtime_status": "aborted",
+      "accepted_samples": 1576000,
+      "accounted_samples": 1400000,
+      "pending_work_items": 5
+    },
+    "client_b_stop": {
+      "http_status": 429,
+      "runtime_status": "active",
+      "accepted_samples": 1440000,
+      "accounted_samples": 760000,
+      "pending_work_items": 16
+    },
+    "next_probe": "first regression-test and map InferenceArbiterBackpressure to the charter-required non-terminal v2 429; then bound each source to one fixture pass, trigger each stop exactly once without awaiting through the browser automation timeout, and coordinate drains before queue saturation"
+  }
+}

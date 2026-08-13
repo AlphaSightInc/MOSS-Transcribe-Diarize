@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- PROTOTYPE — throwaway harness answering: does the doc's recommended lane design
-     (one 16 kHz AudioContext, AudioWorklet 8000-sample framer, PCM16 JSON frames,
-     0.5 s POST cadence, per-lane sequence/epoch) actually behave as specified in
+     (one descriptor-rate AudioContext, descriptor-sized AudioWorklet framing, PCM16 JSON
+     frames, worklet-driven POST cadence, per-lane sequence/epoch) actually behave as specified in
      real Chrome, including with 48 kHz source streams and in a background tab?
      Also doubles as the attended Gate-1 harness (real mic + display capture). -->
 <html>
@@ -39,8 +39,11 @@
 
 <section>
   <h2>Synthetic two-lane pipeline (no permissions needed)</h2>
-  <p>48 kHz oscillator sources → cross-context MediaStream → 16 kHz capture context →
-     worklet framer → PCM16 frames → POST. system=997 Hz, microphone=440 Hz.</p>
+  <p>48 kHz oscillator sources → cross-context MediaStream → descriptor-rate capture context →
+     worklet framer → PCM16 frames → production session route. system=997 Hz,
+     microphone=440 Hz.</p>
+  <p><label>Capture bearer <input id="captureBearer" type="password" autocomplete="off"
+     placeholder="required outside the loopback probe" size="42" /></label></p>
   <button id="startSynth">Start synthetic</button>
   <button id="stopSynth" disabled>Stop synthetic</button>
   <button id="resetStub" title="Clear recorded server data only; active audio lanes keep running">Reset recorded data (lanes keep running)</button>
@@ -62,19 +65,410 @@
   <pre id="realOut"></pre>
 </section>
 
+<section>
+  <h2>Production read path</h2>
+  <p>Authenticated <code>/snapshot</code> + <code>/events</code> polling. Snapshot and event
+     cursors move only after the corresponding DOM render succeeds.</p>
+  <div><b>Transcript</b></div>
+  <pre id="transcriptOut"></pre>
+  <div><b>Events</b></div>
+  <pre id="eventOut"></pre>
+  <div><b>Poll state</b></div>
+  <pre id="pollOut">waiting for a session</pre>
+</section>
+
 <script>
-const FRAME_SAMPLES = 8000, RATE = 16000;
 const probeOut = document.getElementById("probeOut");
 const synthOut = document.getElementById("synthOut");
 const realOut = document.getElementById("realOut");
+const transcriptOut = document.getElementById("transcriptOut");
+const eventOut = document.getElementById("eventOut");
+const pollOut = document.getElementById("pollOut");
 const log = (el, s) => { el.textContent += s + "\n"; };
+const prototypeClientId = new URLSearchParams(location.search).get("client_id") || crypto.randomUUID();
+const prototypeRecord = (record) => ({
+  ...record,
+  client_id: prototypeClientId,
+  session_id: liveSession ? liveSession.id : (record.session_id || null),
+});
+const stopDrainDeadlineSeconds = (() => {
+  const raw = new URLSearchParams(location.search).get("stop_deadline_seconds") || "5";
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) throw new Error("stop_deadline_seconds must be positive");
+  return value;
+})();
 
-let ctx = null;            // shared 16 kHz capture context
+let ctx = null;            // shared descriptor-rate capture context
 let lanes = {};            // lane -> {node, seq, epoch, sent, errors, src, extraCtx, streamTracks}
+let descriptorPromise = null;
+let liveSession = null;     // server-issued id + credentials, closure memory only
+let sessionPromise = null;
+let sessionFailed = false;
+let heartbeatPending = null;
+let heartbeatInFlight = false;
+let heartbeatSequence = 0;
+let heartbeatSentMonotonicNs = 0;
+let heartbeatNextStartFrame = 0;
+const helperInstanceId = `browser-${crypto.randomUUID()}`;
+let pollTimer = null;
+let pollInFlight = false;
+const forceOneRenderFailure = new URLSearchParams(location.search).has("fail_render_once");
+const probeUnknownFrameKey = new URLSearchParams(location.search).has("probe_unknown_frame_key");
+const readState = {
+  snapshotVersion: 0,
+  eventSequence: 0,
+  polls: 0,
+  renderFailures: 0,
+  faultInjected: false,
+  events: [],
+  maxPendingWorkItems: 0,
+};
+
+function positiveInteger(value, field) {
+  if (!Number.isInteger(value) || value <= 0) throw new Error(`${field} must be a positive integer`);
+  return value;
+}
+
+function captureDescriptor() {
+  if (descriptorPromise) return descriptorPromise;
+  descriptorPromise = fetch(
+    "/api/live/descriptor?client_min_protocol_version=2&client_max_protocol_version=2",
+    { cache: "no-store" },
+  ).then(async (response) => {
+    if (!response.ok) throw new Error(`descriptor request failed: HTTP ${response.status}`);
+    const payload = await response.json();
+    const descriptor = payload.descriptor;
+    if (!descriptor || typeof descriptor !== "object") throw new Error("descriptor response is missing descriptor");
+    const sampleRate = positiveInteger(descriptor.sample_rate, "descriptor.sample_rate");
+    const frameSamples = positiveInteger(descriptor.frame_samples, "descriptor.frame_samples");
+    const maxFrameSamples = positiveInteger(
+      descriptor.bounds && descriptor.bounds.max_frame_samples,
+      "descriptor.bounds.max_frame_samples",
+    );
+    if (frameSamples > maxFrameSamples) {
+      throw new Error("descriptor.frame_samples exceeds descriptor.bounds.max_frame_samples");
+    }
+    return Object.freeze({ sampleRate, frameSamples, bounds: Object.freeze({ ...descriptor.bounds }) });
+  });
+  return descriptorPromise;
+}
+
+async function captureBearer() {
+  const input = document.getElementById("captureBearer");
+  const manual = input.value.trim();
+  input.value = "";
+  if (manual) return manual;
+  // The deterministic loopback probe supplies an ephemeral credential here. A real
+  // service has no such route and requires the operator-provided bearer above.
+  const response = await fetch("/prototype/bootstrap", { cache: "no-store" });
+  if (!response.ok) throw new Error("capture bearer is required");
+  const payload = await response.json();
+  if (typeof payload.capture_bearer !== "string" || !payload.capture_bearer) {
+    throw new Error("prototype bootstrap did not supply a capture bearer");
+  }
+  return payload.capture_bearer;
+}
+
+async function captureSession(outEl) {
+  if (liveSession) return liveSession;
+  if (sessionPromise) return sessionPromise;
+  sessionPromise = (async () => {
+    const config = await captureDescriptor();
+    const bearer = await captureBearer();
+    const response = await fetch("/api/live/sessions", {
+      method: "POST", cache: "no-store",
+      headers: { "Authorization": `Bearer ${bearer}` },
+    });
+    if (!response.ok) throw new Error(`session create failed: HTTP ${response.status}`);
+    const payload = await response.json();
+    if (typeof payload.id !== "string" || !payload.id) throw new Error("session response is missing id");
+    if (!payload.descriptor || payload.descriptor.sample_rate !== config.sampleRate
+        || payload.descriptor.frame_samples !== config.frameSamples) {
+      throw new Error("session descriptor differs from the preflight descriptor");
+    }
+    const session = Object.freeze({
+      id: payload.id,
+      captureBearer: bearer,
+      viewBearer: payload.view_token,
+    });
+    if (probeUnknownFrameKey) await runUnknownFrameKeyProbe(session, config);
+    liveSession = session;
+    log(outEl, `session created: ${payload.id}`);
+    scheduleReadPoll(0);
+    return liveSession;
+  })();
+  try {
+    return await sessionPromise;
+  } finally {
+    sessionPromise = null;
+  }
+}
+
+async function runUnknownFrameKeyProbe(session, config) {
+  const body = {
+    lane: "microphone",
+    sequence: 0,
+    capture_timestamp_ns: 0,
+    device_epoch: 1,
+    pcm_base64: pcm16b64(new Float32Array(config.frameSamples)),
+    sample_count: config.frameSamples,
+    sample_rate: config.sampleRate,
+    silent: true,
+    discontinuity: false,
+    client_visibility: document.visibilityState,
+  };
+  const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/frames`, {
+    method: "POST", cache: "no-store",
+    headers: {
+      "Authorization": `Bearer ${session.captureBearer}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const responseBody = await response.json().catch(() => null);
+  await fetch("/prototype/contract-probe", {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      probe: "unknown_frame_key",
+      route: `/api/live/sessions/${session.id}/frames`,
+      request_keys: Object.keys(body).sort(),
+      unknown_key: "client_visibility",
+      http_status: response.status,
+      response: responseBody,
+    }),
+  });
+  if (response.status !== 400) {
+    throw new Error(`unknown frame key probe expected HTTP 400, got ${response.status}`);
+  }
+}
+
+function readHeaders() {
+  return { "Authorization": `Bearer ${liveSession.viewBearer}` };
+}
+
+function renderSnapshot(payload) {
+  const snapshot = payload && payload.snapshot;
+  if (!snapshot) return null;
+  const session = snapshot.session;
+  if (!session || !Number.isInteger(session.version) || !Array.isArray(session.committed)) {
+    throw new Error("malformed production snapshot");
+  }
+  if (forceOneRenderFailure && !readState.faultInjected && session.committed.length) {
+    readState.faultInjected = true;
+    throw new Error("injected pre-render failure");
+  }
+  const rows = session.committed
+    .map((item) => item.revised_transcript || item.transcript)
+    .filter(Boolean);
+  if (session.provisional && session.provisional.transcript) {
+    rows.push(session.provisional.transcript);
+  }
+  transcriptOut.textContent = rows.join("\n\n");
+  readState.maxPendingWorkItems = Math.max(
+    readState.maxPendingWorkItems,
+    Number.isInteger(snapshot.pending_work_items) ? snapshot.pending_work_items : 0,
+  );
+  return {
+    version: session.version,
+    committedCount: session.committed.length,
+    committedSpanIds: session.committed.map((item) => item.span_id),
+    pendingWorkItems: snapshot.pending_work_items,
+    provisionalRendered: Boolean(session.provisional && session.provisional.transcript),
+  };
+}
+
+function renderEvents(payload) {
+  if (!payload || !Array.isArray(payload.events)) throw new Error("malformed production events");
+  let highest = null;
+  for (const event of payload.events) {
+    if (!Number.isInteger(event.seq) || event.seq <= readState.eventSequence) continue;
+    readState.events.push(`seq=${event.seq} kind=${event.kind} snapshot=${event.snapshot_version}`);
+    highest = highest === null ? event.seq : Math.max(highest, event.seq);
+  }
+  readState.events = readState.events.slice(-200);
+  eventOut.textContent = readState.events.join("\n");
+  return highest;
+}
+
+async function reportReadState(record) {
+  await fetch("/prototype/render-state", {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(prototypeRecord(record)),
+  }).catch(() => {});
+}
+
+function scheduleReadPoll(delayMs) {
+  if (pollTimer !== null) return;
+  pollTimer = setTimeout(() => {
+    pollTimer = null;
+    void pollReadPath();
+  }, delayMs);
+}
+
+async function pollReadPath() {
+  if (!liveSession || pollInFlight) return;
+  pollInFlight = true;
+  const requested = {
+    snapshotVersion: readState.snapshotVersion,
+    eventSequence: readState.eventSequence,
+  };
+  readState.polls++;
+  try {
+    const sessionId = encodeURIComponent(liveSession.id);
+    const [snapshotResponse, eventsResponse] = await Promise.all([
+      fetch(`/api/live/sessions/${sessionId}/snapshot?since_version=${requested.snapshotVersion}`, {
+        cache: "no-store", headers: readHeaders(),
+      }),
+      fetch(`/api/live/sessions/${sessionId}/events?since_seq=${requested.eventSequence}`, {
+        cache: "no-store", headers: readHeaders(),
+      }),
+    ]);
+    if (!snapshotResponse.ok || !eventsResponse.ok) {
+      throw new Error(`read HTTP snapshot=${snapshotResponse.status} events=${eventsResponse.status}`);
+    }
+    const [snapshotPayload, eventsPayload] = await Promise.all([
+      snapshotResponse.json(), eventsResponse.json(),
+    ]);
+    // T-02 discipline: both DOM mutations happen before either cursor advances.
+    const renderedSnapshot = renderSnapshot(snapshotPayload);
+    const renderedEventSequence = renderEvents(eventsPayload);
+    if (renderedSnapshot) readState.snapshotVersion = renderedSnapshot.version;
+    if (renderedEventSequence !== null) readState.eventSequence = renderedEventSequence;
+    const record = {
+      outcome: "rendered",
+      requested,
+      advanced: {
+        snapshotVersion: readState.snapshotVersion,
+        eventSequence: readState.eventSequence,
+      },
+      committedCount: renderedSnapshot ? renderedSnapshot.committedCount : null,
+      committed_span_ids: renderedSnapshot ? renderedSnapshot.committedSpanIds : [],
+      pending_work_items: renderedSnapshot ? renderedSnapshot.pendingWorkItems : null,
+      rendered_wall_ms: Date.now(),
+      provisionalRendered: renderedSnapshot ? renderedSnapshot.provisionalRendered : null,
+      transcriptText: transcriptOut.textContent,
+      renderedEventRows: readState.events.length,
+    };
+    pollOut.textContent = JSON.stringify({ ...readState, last: record }, null, 2);
+    await reportReadState(record);
+  } catch (error) {
+    readState.renderFailures++;
+    const record = {
+      outcome: "failed-before-cursor-advance",
+      error: error.message,
+      requested,
+      retained: {
+        snapshotVersion: readState.snapshotVersion,
+        eventSequence: readState.eventSequence,
+      },
+    };
+    pollOut.textContent = JSON.stringify({ ...readState, last: record }, null, 2);
+    await reportReadState(record);
+  } finally {
+    pollInFlight = false;
+    if (liveSession) scheduleReadPoll(250);
+  }
+}
+
+function bothLanesHaveSignal() {
+  return ["system", "microphone"].every((lane) => lanes[lane] && lanes[lane].hasSignal);
+}
+
+function heartbeatLane(lane) {
+  const st = lanes[lane];
+  return {
+    state: "capturing",
+    device_epoch: st ? st.epoch : 0,
+    dropped_frames: 0,
+    discontinuities: 0,
+    failure_code: null,
+  };
+}
+
+async function reportHeartbeat(record) {
+  await fetch("/prototype/heartbeat-telemetry", {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(prototypeRecord(record)),
+  }).catch(() => {});
+}
+
+function scheduleHeartbeat(trigger) {
+  if (!liveSession) return;
+  if (trigger.startFrame < heartbeatNextStartFrame) return;
+  heartbeatNextStartFrame = trigger.startFrame + trigger.frameSamples;
+  // Coalesce worklet messages while one POST is in flight. Either live lane can
+  // keep the helper lease alive; no timer or visibility callback drives this path.
+  heartbeatPending = trigger;
+  if (heartbeatInFlight) return;
+  heartbeatInFlight = true;
+  void (async () => {
+    try {
+      while (heartbeatPending && liveSession) {
+        const current = heartbeatPending;
+        heartbeatPending = null;
+        const sequence = heartbeatSequence++;
+        heartbeatSentMonotonicNs = Math.max(
+          heartbeatSentMonotonicNs + 1,
+          Math.round(performance.now() * 1e6),
+        );
+        const body = {
+          schema: "moss-live-helper-health.v1",
+          instance_id: helperInstanceId,
+          sequence,
+          sent_monotonic_ns: heartbeatSentMonotonicNs,
+          helper_version: "browser-capture-prototype",
+          state: "capturing",
+          lanes: {
+            system: heartbeatLane("system"),
+            microphone: heartbeatLane("microphone"),
+          },
+        };
+        const startedWallMs = Date.now();
+        let status = 0;
+        let error = null;
+        try {
+          const response = await fetch(
+            `/api/live/sessions/${encodeURIComponent(liveSession.id)}/heartbeat`,
+            {
+              method: "POST", cache: "no-store",
+              headers: {
+                "Authorization": `Bearer ${liveSession.captureBearer}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(body),
+            },
+          );
+          status = response.status;
+          if (!response.ok) error = (await response.text()).slice(0, 240);
+        } catch (caught) {
+          error = caught.message;
+        }
+        void reportHeartbeat({
+          sequence,
+          status,
+          error,
+          trigger_lane: current.lane,
+          trigger_frame_sequence: current.frameSequence,
+          client_visibility: current.visibility,
+          started_wall_ms: startedWallMs,
+          completed_wall_ms: Date.now(),
+        });
+      }
+    } finally {
+      heartbeatInFlight = false;
+      if (heartbeatPending && liveSession) scheduleHeartbeat(heartbeatPending);
+    }
+  })();
+}
 
 async function captureContext() {
   if (ctx) return ctx;
-  ctx = new AudioContext({ sampleRate: RATE });
+  const config = await captureDescriptor();
+  if (ctx) return ctx;
+  ctx = new AudioContext({ sampleRate: config.sampleRate });
   await ctx.audioWorklet.addModule("/framer_worklet.js");
   return ctx;
 }
@@ -106,17 +500,18 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
     log(outEl, `REFUSED: lane "${lane}" already active — stop the current run first`);
     throw new Error("lane busy: " + lane);
   }
+  const config = await captureDescriptor();
   const c = await captureContext();
   const src = c.createMediaStreamSource(mediaStream);
   const node = new AudioWorkletNode(c, "lane-framer", {
     numberOfInputs: 1, numberOfOutputs: 1,
-    processorOptions: { lane, frameSamples: FRAME_SAMPLES },
+    processorOptions: { lane, frameSamples: config.frameSamples },
   });
   // Keep the graph attached to the destination (silently) so the context is
   // unambiguously active; zero gain prevents audible playback/echo.
   const mute = c.createGain(); mute.gain.value = 0;
   src.connect(node).connect(mute).connect(c.destination);
-  const st = lanes[lane] = { node, seq: 0, epoch: 1, sent: 0, http: {}, errors: 0,
+  const st = lanes[lane] = { node, seq: 0, epoch: 1, sent: 0, http: {}, errors: 0, hasSignal: false,
                              src, mute, extraCtx, tracks: mediaStream.getTracks() };
   node.port.onmessage = async (ev) => {
     const m = ev.data;
@@ -126,24 +521,57 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
     if (meter) meter.style.width = Math.min(240, r * 900) + "px";
     const stat = document.getElementById("s_" + lane);
     if (stat) stat.textContent = `rms=${r.toFixed(4)} seq=${st.seq} sent=${st.sent}`;
+    st.hasSignal ||= r >= 1e-4;
+    if (!liveSession && !sessionFailed) {
+      if (bothLanesHaveSignal()) {
+        try { await captureSession(outEl); }
+        catch (e) {
+          sessionFailed = true;
+          st.errors++;
+          log(outEl, "session FAILED: " + e.message + " (stop and retry manually)");
+        }
+      }
+      // Preflight audio is metered but never admitted. Wire sequence begins only
+      // after both lanes are non-silent and the server returns its session id.
+      return;
+    }
+    const sequence = st.seq++;
+    scheduleHeartbeat({
+      lane,
+      frameSequence: sequence,
+      startFrame: m.startFrame,
+      frameSamples: config.frameSamples,
+      visibility: document.visibilityState,
+    });
     const body = {
-      lane, sequence: st.seq++,
-      capture_timestamp_ns: Math.round((m.startFrame / RATE) * 1e9),
+      lane, sequence,
+      capture_timestamp_ns: Math.round((m.startFrame / config.sampleRate) * 1e9),
       device_epoch: st.epoch,
       pcm_base64: pcm16b64(m.samples),
       sample_count: m.samples.length,
-      sample_rate: RATE,
+      sample_rate: config.sampleRate,
       silent: r < 1e-4,
       discontinuity: false,
-      // prototype-only extras (stub server records them; not part of the v2 contract):
-      client_visibility: document.visibilityState,
-      client_wall_ms: Date.now(),
-      quanta: m.quanta,
     };
+    // Prototype measurement stays out of the strict nine-key frame contract.
+    fetch("/prototype/telemetry", {
+      method: "POST", cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(prototypeRecord({
+        lane, sequence,
+        client_rms: r,
+        client_visibility: document.visibilityState,
+        client_wall_ms: Date.now(),
+        quanta: m.quanta,
+      })),
+    }).catch(() => {});
     try {
-      const resp = await fetch("/frames", {
+      const resp = await fetch(`/api/live/sessions/${encodeURIComponent(liveSession.id)}/frames`, {
         method: "POST", cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${liveSession.captureBearer}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(body),
       });
       st.http[resp.status] = (st.http[resp.status] || 0) + 1;
@@ -161,6 +589,83 @@ function detachAll(outEl) {
     log(outEl, `${lane}: sent=${st.sent} http=${JSON.stringify(st.http)} fetchErrors=${st.errors}`);
   }
   lanes = {};
+}
+
+async function stopCapture(outEl) {
+  if (!liveSession) {
+    detachAll(outEl);
+    return null;
+  }
+  const session = liveSession;
+  const startedWallMs = Date.now();
+  await fetch("/prototype/phase", {
+    method: "POST",
+    body: JSON.stringify({
+      phase: "stop-requested",
+      session_id: session.id,
+      deadline_seconds: stopDrainDeadlineSeconds,
+      wall_ms: startedWallMs,
+    }),
+  });
+  try {
+    const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/stop`, {
+      method: "POST", cache: "no-store",
+      headers: {
+        "Authorization": `Bearer ${session.captureBearer}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ deadline: stopDrainDeadlineSeconds }),
+    });
+    const payload = await response.json();
+    const runtime = payload.snapshot && payload.snapshot.session;
+    const v2 = payload.v2_session;
+    const revokedViewResponse = await fetch(
+      `/api/live/sessions/${encodeURIComponent(session.id)}/snapshot`,
+      { cache: "no-store", headers: { "Authorization": `Bearer ${session.viewBearer}` } },
+    );
+    await fetch("/prototype/phase", {
+      method: "POST",
+      body: JSON.stringify({
+        phase: "stop-response",
+        session_id: session.id,
+        http_status: response.status,
+        runtime_status: runtime && runtime.status,
+        accepted_samples: runtime && runtime.accepted_samples,
+        accounted_samples: runtime && runtime.accounted_samples,
+        pending_work_items: payload.snapshot && payload.snapshot.pending_work_items,
+        v2_status: v2 && v2.status,
+        post_stop_view_http_status: revokedViewResponse.status,
+        wall_ms: Date.now(),
+      }),
+    });
+    if (!response.ok) throw new Error(`session stop failed: HTTP ${response.status}`);
+    if (revokedViewResponse.status !== 401) {
+      throw new Error(`stopped session view remained readable: HTTP ${revokedViewResponse.status}`);
+    }
+    if (!runtime || runtime.status !== "closed"
+        || runtime.accepted_samples !== runtime.accounted_samples
+        || payload.snapshot.pending_work_items !== 0) {
+      throw new Error("session stop returned without exact closed runtime accounting");
+    }
+    if (!v2 || v2.status !== "closed"
+        || Object.values(v2.lanes).some((lane) => lane.accepted_samples !== lane.accounted_samples)) {
+      throw new Error("session stop returned without exact closed v2 accounting");
+    }
+    log(outEl, `session stopped cleanly: accepted=accounted=${runtime.accepted_samples}`);
+    return payload;
+  } finally {
+    liveSession = null;
+    if (pollTimer !== null) { clearTimeout(pollTimer); pollTimer = null; }
+    detachAll(outEl);
+    await fetch("/prototype/phase", {
+      method: "POST",
+      body: JSON.stringify({
+        phase: "capture-detached",
+        session_id: session.id,
+        wall_ms: Date.now(),
+      }),
+    });
+  }
 }
 
 // ---------- synthetic mode ----------
@@ -182,6 +687,7 @@ document.getElementById("startSynth").onclick = async () => {
     log(synthOut, "REFUSED: stop the active real/synthetic capture before starting synthetic mode");
     return;
   }
+  sessionFailed = false;
   document.getElementById("startSynth").disabled = true;
   try {
     await captureContext();
@@ -189,7 +695,7 @@ document.getElementById("startSynth").onclick = async () => {
     await synthLane("system", 997);
     await synthLane("microphone", 440);
     document.getElementById("stopSynth").disabled = false;
-    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-started", wall_ms: Date.now() }) });
+    await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-started", wall_ms: Date.now() }) });
     log(synthOut, `started; contextRate=${ctx.sampleRate} state=${ctx.state}`);
   } catch (e) {
     detachAll(synthOut);
@@ -201,34 +707,64 @@ document.getElementById("startSynth").onclick = async () => {
 
 document.getElementById("stopSynth").onclick = async () => {
   document.getElementById("stopSynth").disabled = true;
-  detachAll(synthOut);
-  await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-stopped", wall_ms: Date.now() }) });
+  try { await stopCapture(synthOut); }
+  catch (e) { log(synthOut, "stop FAILED: " + e.message); }
+  await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-stopped", wall_ms: Date.now() }) });
   document.getElementById("startSynth").disabled = false;
 };
 
 // ---------- real capture (attended) ----------
+async function startMicrophoneCapture() {
+  if (lanes.microphone) throw new Error("microphone lane already active — stop capture first");
+  if (!Object.keys(lanes).length) sessionFailed = false;
+  // Resume inside the click gesture BEFORE the permission prompt: a slow "Allow"
+  // can outlive transient activation, which would leave the context suspended.
+  await captureContext();
+  await ctx.resume();
+  const mic = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+  });
+  const t = mic.getAudioTracks()[0];
+  const settings = t.getSettings();
+  log(realOut, "mic track: " + t.label + " settings=" + JSON.stringify(settings));
+  wireTrackEvents(t, "microphone");
+  await attachLane("microphone", mic, realOut);
+  log(realOut, `mic attached (context ${ctx.state})`);
+  document.getElementById("stopReal").disabled = false;
+  await fetch("/prototype/phase", {
+    method: "POST",
+    body: JSON.stringify({
+      phase: "real-mic-started",
+      wall_ms: Date.now(),
+      source_api: "getUserMedia",
+      track_label: t.label,
+      track_settings: settings,
+    }),
+  });
+}
+
 document.getElementById("startMic").onclick = async () => {
   try {
-    if (lanes.microphone) {
-      log(realOut, "REFUSED: microphone lane already active — stop capture first");
-      return;
-    }
-    // Resume inside the click gesture BEFORE the permission prompt: a slow "Allow"
-    // can outlive transient activation, which would leave the context suspended.
-    await captureContext();
-    await ctx.resume();
-    const mic = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-    });
-    const t = mic.getAudioTracks()[0];
-    log(realOut, "mic track: " + t.label + " settings=" + JSON.stringify(t.getSettings()));
-    wireTrackEvents(t, "microphone");
-    await attachLane("microphone", mic, realOut);
-    log(realOut, `mic attached (context ${ctx.state})`);
-    document.getElementById("stopReal").disabled = false;
-    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-mic-started", wall_ms: Date.now() }) });
+    await startMicrophoneCapture();
   } catch (e) { log(realOut, "mic FAILED: " + e.name + ": " + e.message); }
 };
+
+async function startAutomatedMicCanary() {
+  if (Object.keys(lanes).length) throw new Error("capture lanes already active");
+  // G1's automatable path: real getUserMedia drives microphone while an oscillator
+  // exercises system synthetically through the same production routes. Chrome's
+  // launcher supplies the fake-device WAV; this page never learns its host path.
+  await startMicrophoneCapture();
+  await synthLane("system", 997);
+  await fetch("/prototype/phase", {
+    method: "POST",
+    body: JSON.stringify({
+      phase: "automated-mic-plus-synthetic-system-started",
+      wall_ms: Date.now(),
+    }),
+  });
+  log(realOut, "automated canary: microphone=getUserMedia; system=synthetic oscillator");
+}
 
 document.getElementById("startDisplay").onclick = async () => {
   try {
@@ -270,27 +806,28 @@ document.getElementById("startDisplay").onclick = async () => {
     st.tracks = display.getTracks(); // stop video too on stop
     await ctx.resume();
     document.getElementById("stopReal").disabled = false;
-    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-display-started", wall_ms: Date.now() }) });
+    await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-display-started", wall_ms: Date.now() }) });
   } catch (e) { log(realOut, "display FAILED: " + e.name + ": " + e.message); }
 };
 
-document.getElementById("stopReal").onclick = () => {
-  detachAll(realOut);
+document.getElementById("stopReal").onclick = async () => {
   document.getElementById("stopReal").disabled = true;
-  fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-stopped", wall_ms: Date.now() }) });
+  try { await stopCapture(realOut); }
+  catch (e) { log(realOut, "stop FAILED: " + e.message); }
+  await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-stopped", wall_ms: Date.now() }) });
 };
 
 function wireTrackEvents(t, tag) {
   for (const ev of ["mute", "unmute", "ended"]) {
     t.addEventListener(ev, () => {
       log(realOut, `track event: ${tag} ${ev} @ ${new Date().toISOString()}`);
-      fetch("/phase", { method: "POST", body: JSON.stringify({ phase: `track-${tag}-${ev}`, wall_ms: Date.now() }) });
+      fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: `track-${tag}-${ev}`, wall_ms: Date.now() }) });
     });
   }
 }
 
 document.getElementById("resetStub").onclick = async () => {
-  const r = await fetch("/reset", { method: "POST", body: "{}" });
+  const r = await fetch("/prototype/reset", { method: "POST", body: "{}" });
   const j = await r.json().catch(() => ({}));
   synthOut.textContent = ""; realOut.textContent = "";
   const cleared = j.cleared || {};
@@ -301,39 +838,57 @@ document.getElementById("resetStub").onclick = async () => {
 
 // ---------- visibility reporting ----------
 document.addEventListener("visibilitychange", () => {
-  fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "visibility-" + document.visibilityState, wall_ms: Date.now() }) });
+  fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "visibility-" + document.visibilityState, wall_ms: Date.now() }) });
 });
 
 // ---------- auto probes ----------
 (async () => {
   const out = [];
+  const query = new URLSearchParams(location.search);
+  const autoStart = query.has("autostart");
+  const autoMicCanary = query.has("autostart_mic_canary");
   out.push("userAgent: " + navigator.userAgent);
   try {
+    const config = await captureDescriptor();
+    out.push(`descriptor: sample_rate=${config.sampleRate} frame_samples=${config.frameSamples} max_frame_samples=${config.bounds.max_frame_samples}`);
     const c = await captureContext();
-    out.push(`AudioContext({sampleRate:16000}): rate=${c.sampleRate} state=${c.state} baseLatency=${c.baseLatency}`);
-  } catch (e) { out.push("AudioContext(16k) FAILED: " + e.message); }
+    out.push(`AudioContext({sampleRate:${config.sampleRate}}): rate=${c.sampleRate} state=${c.state} baseLatency=${c.baseLatency}`);
+  } catch (e) { out.push("descriptor/capture context FAILED: " + e.message); }
   out.push("getSupportedConstraints: " + JSON.stringify(navigator.mediaDevices.getSupportedConstraints()));
   // Post what we have immediately so a hanging gesture probe can't suppress it.
-  fetch("/probes", { method: "POST", body: JSON.stringify({ probes: [...out, "(gesture probe pending)"] }) });
-  // Must run OUTSIDE any user gesture: spec requires transient activation, so this
-  // should reject with InvalidStateError without showing any chooser UI.
-  setTimeout(async () => {
-    try {
-      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      out.push("getDisplayMedia without gesture: UNEXPECTEDLY RESOLVED tracks=" + s.getTracks().map(t => t.kind).join(","));
-      for (const t of s.getTracks()) t.stop();
-    } catch (e) {
-      out.push(`getDisplayMedia without gesture: rejected ${e.name} ("${e.message}")`);
-    }
-    probeOut.textContent = out.join("\n");
-    fetch("/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
-  }, 100);
+  fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: [...out, "(gesture probe pending)"] }) });
+  if (autoStart || autoMicCanary) {
+    out.push("getDisplayMedia without gesture: skipped in autonomous mode (launcher activation can open chooser)");
+    fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
+  } else {
+    // Must run OUTSIDE any user gesture: spec requires transient activation, so this
+    // should reject. Command-line navigation can itself carry activation, which is why
+    // autonomous runs skip this attended diagnostic instead of risking a blocked chooser.
+    setTimeout(async () => {
+      try {
+        const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        out.push("getDisplayMedia without gesture: UNEXPECTEDLY RESOLVED tracks=" + s.getTracks().map(t => t.kind).join(","));
+        for (const t of s.getTracks()) t.stop();
+      } catch (e) {
+        out.push(`getDisplayMedia without gesture: rejected ${e.name} ("${e.message}")`);
+      }
+      probeOut.textContent = out.join("\n");
+      fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
+    }, 100);
+  }
   probeOut.textContent = out.join("\n") + "\n(gesture probe pending…)";
   // Autonomous mode: /?autostart=1 starts the synthetic pipeline without a click.
   // Requires launching Chrome with --autoplay-policy=no-user-gesture-required
   // (autoplay policy only; capture-permission behavior is not affected).
-  if (new URLSearchParams(location.search).has("autostart")) {
+  if (autoStart) {
     setTimeout(() => document.getElementById("startSynth").click(), 400);
+  } else if (autoMicCanary) {
+    setTimeout(() => {
+      void startAutomatedMicCanary().catch((e) => {
+        detachAll(realOut);
+        log(realOut, "automated mic canary FAILED: " + e.name + ": " + e.message);
+      });
+    }, 400);
   }
 })();
 </script>

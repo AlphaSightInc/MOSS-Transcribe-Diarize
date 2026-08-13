@@ -22,6 +22,34 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PORT = 8899
+SAMPLE_RATE = 16_000
+# Deliberately differs from the historical 8k/16k frame sizes so browser
+# evidence fails if the page falls back to either old frame-size constant.
+FRAME_SAMPLES = 3_200
+MAX_FRAME_SAMPLES = 6_400
+DESCRIPTOR = {
+    "descriptor": {
+        "sample_rate": SAMPLE_RATE,
+        "frame_samples": FRAME_SAMPLES,
+        "bounds": {"max_frame_samples": MAX_FRAME_SAMPLES},
+    },
+    "negotiation": {"selected_protocol_version": 2},
+}
+STUB_CAPTURE_BEARER = "prototype-stub-capture-bearer"
+STUB_SESSION_ID = "prototype-stub-session"
+FRAME_KEYS = frozenset(
+    {
+        "lane",
+        "sequence",
+        "capture_timestamp_ns",
+        "device_epoch",
+        "pcm_base64",
+        "sample_count",
+        "sample_rate",
+        "silent",
+        "discontinuity",
+    }
+)
 TONE_PAGE = """<!doctype html><meta charset=utf-8><title>997 Hz tone</title>
 <body style="font:16px system-ui;padding:2rem">
 <h1>997 Hz test tone</h1><button id=b style="font-size:1.5rem">Play tone</button>
@@ -31,7 +59,15 @@ o.connect(g).connect(c.destination);o.start();await c.resume();
 document.body.style.background='#cfc';document.title='997 Hz PLAYING'};</script>"""
 
 STATE_LOCK = threading.Lock()
-STATE: dict = {"lanes": {}, "phases": [], "probes": [], "started_wall": time.time()}
+STATE: dict = {
+    "session_creates": 0,
+    "lanes": {},
+    "telemetry": {},
+    "frame_rejections": [],
+    "phases": [],
+    "probes": [],
+    "started_wall": time.time(),
+}
 
 
 def lane_state(lane: str) -> dict:
@@ -52,7 +88,7 @@ def lane_state(lane: str) -> dict:
             "goertzel_440": [],
             "ts_ns": [],
             "arrival_wall": [],
-            "visibility": [],
+            "frame_key_sets": {},
             "decode_errors": [],
         },
     )
@@ -71,6 +107,14 @@ def goertzel_ratio(samples: list[float], freq: float, rate: float) -> float:
 
 
 def ingest_frame(body: dict) -> tuple[int, dict]:
+    actual_keys = set(body)
+    if actual_keys != FRAME_KEYS:
+        missing = sorted(FRAME_KEYS - actual_keys)
+        unknown = sorted(actual_keys - FRAME_KEYS)
+        rejection = {"missing": missing, "unknown": unknown}
+        with STATE_LOCK:
+            STATE["frame_rejections"].append(rejection)
+        return 400, {"error": "invalid frame fields", **rejection}
     lane = body.get("lane")
     if lane not in ("system", "microphone"):
         return 400, {"error": f"bad lane {lane!r}"}
@@ -91,11 +135,12 @@ def ingest_frame(body: dict) -> tuple[int, dict]:
         st["pcm_min"] = min(st["pcm_min"], min(ints)) if ints else st["pcm_min"]
         st["pcm_max"] = max(st["pcm_max"], max(ints)) if ints else st["pcm_max"]
         st["rms"].append(round(rms, 5))
-        st["goertzel_997"].append(round(goertzel_ratio(floats, 997.0, 16000.0), 4))
-        st["goertzel_440"].append(round(goertzel_ratio(floats, 440.0, 16000.0), 4))
+        st["goertzel_997"].append(round(goertzel_ratio(floats, 997.0, SAMPLE_RATE), 4))
+        st["goertzel_440"].append(round(goertzel_ratio(floats, 440.0, SAMPLE_RATE), 4))
         st["ts_ns"].append(int(body.get("capture_timestamp_ns", -1)))
         st["arrival_wall"].append(time.time())
-        st["visibility"].append(body.get("client_visibility", "?"))
+        key_set = ",".join(sorted(actual_keys))
+        st["frame_key_sets"][key_set] = st["frame_key_sets"].get(key_set, 0) + 1
         if n != body.get("sample_count"):
             st["decode_errors"].append(f"decoded {n} != declared {body.get('sample_count')}")
     return 200, {"accepted": True, "lane": lane, "sequence": body.get("sequence")}
@@ -111,14 +156,25 @@ def percentile(sorted_vals: list[float], p: float) -> float:
 def analyze() -> dict:
     with STATE_LOCK:
         snap = json.loads(json.dumps(STATE))  # deep copy of plain data
-    out = {"phases": snap["phases"], "probes": snap["probes"], "lanes": {}, "checks": {}}
+    out = {
+        "phases": snap["phases"],
+        "probes": snap["probes"],
+        "frame_contract": {
+            "expected_keys": sorted(FRAME_KEYS),
+            "rejections": snap["frame_rejections"],
+        },
+        "lanes": {},
+        "checks": {},
+    }
     for lane, st in snap["lanes"].items():
         seqs = [s for s in st["sequences"] if s is not None]
         gaps = sum(1 for a, b in zip(seqs, seqs[1:]) if b != a + 1)
         ts = st["ts_ns"]
         ts_deltas = sorted(b - a for a, b in zip(ts, ts[1:]))
         arr = st["arrival_wall"]
-        arr_deltas = list(zip(st["visibility"][1:], (b - a for a, b in zip(arr, arr[1:]))))
+        telemetry = snap["telemetry"].get(lane, {})
+        visibility = [telemetry.get(str(sequence), {}).get("client_visibility", "?") for sequence in seqs]
+        arr_deltas = list(zip(visibility[1:], (b - a for a, b in zip(arr, arr[1:]))))
         by_vis: dict[str, list[float]] = {}
         for vis, d in arr_deltas:
             by_vis.setdefault(vis, []).append(d)
@@ -147,6 +203,8 @@ def analyze() -> dict:
             "goertzel_440_mean": round(sum(g440) / len(g440), 4) if g440 else None,
             "ts_delta_ns_min_max": [ts_deltas[0], ts_deltas[-1]] if ts_deltas else None,
             "arrival_cadence_by_visibility": cadence,
+            "frame_key_sets": st["frame_key_sets"],
+            "out_of_band_telemetry_frames": len(telemetry),
             "decode_errors": st["decode_errors"][:5],
         }
     lanes = out["lanes"]
@@ -155,13 +213,12 @@ def analyze() -> dict:
     checks["both_lanes_present"] = bool(sys_l and mic_l)
     if sys_l and mic_l:
         checks["no_seq_gaps"] = sys_l["seq_gaps"] == 0 and mic_l["seq_gaps"] == 0
-        checks["all_frames_8000_at_16k"] = (
-            set(sys_l["sample_counts"]) == {"8000"} == set(mic_l["sample_counts"])
-            and set(sys_l["sample_rates"]) == {"16000"} == set(mic_l["sample_rates"])
+        checks["all_frames_match_descriptor"] = (
+            set(sys_l["sample_counts"]) == {str(FRAME_SAMPLES)} == set(mic_l["sample_counts"])
+            and set(sys_l["sample_rates"]) == {str(SAMPLE_RATE)} == set(mic_l["sample_rates"])
         )
-        # 997 Hz sits half-bin off a 2 Hz grid (8000 samples @ 16 kHz), so worst-case
-        # scalloping loss puts its single-bin Goertzel ratio near 0.4; use a dominance
-        # test rather than an absolute-purity threshold.
+        # A descriptor-selected frame can put 997 Hz between DFT bins, so use a
+        # dominance test rather than an absolute-purity threshold.
         checks["system_is_997hz"] = (sys_l["goertzel_997_mean"] or 0) > 0.25 and (
             (sys_l["goertzel_997_mean"] or 0) > 10 * (sys_l["goertzel_440_mean"] or 0)
         )
@@ -171,8 +228,16 @@ def analyze() -> dict:
         checks["sine_amplitude_sane"] = all(
             l["rms_mean"] and 0.25 < l["rms_mean"] < 0.45 for l in (sys_l, mic_l)
         )
-        checks["capture_clock_exact_500ms"] = all(
-            l["ts_delta_ns_min_max"] == [500_000_000, 500_000_000] for l in (sys_l, mic_l)
+        expected_delta_ns = FRAME_SAMPLES * 1_000_000_000 // SAMPLE_RATE
+        checks["capture_clock_matches_descriptor"] = all(
+            l["ts_delta_ns_min_max"] == [expected_delta_ns, expected_delta_ns] for l in (sys_l, mic_l)
+        )
+        expected_key_set = ",".join(sorted(FRAME_KEYS))
+        checks["exact_nine_frame_keys"] = all(
+            set(l["frame_key_sets"]) == {expected_key_set} for l in (sys_l, mic_l)
+        )
+        checks["out_of_band_telemetry_complete"] = all(
+            l["out_of_band_telemetry_frames"] == l["frames"] for l in (sys_l, mic_l)
         )
         hidden = [l["arrival_cadence_by_visibility"].get("hidden") for l in (sys_l, mic_l)]
         checks["hidden_tab_cadence_ok"] = all(h and h["p95_ms"] < 1500 for h in hidden) if all(hidden) else "no hidden phase measured"
@@ -200,8 +265,12 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, (HERE / "framer_worklet.js").read_bytes(), "text/javascript; charset=utf-8")
         elif path == "/tone":
             self._send(200, TONE_PAGE.encode(), "text/html; charset=utf-8")
-        elif path == "/verdict":
+        elif path == "/prototype/verdict":
             self._send(200, json.dumps(analyze(), indent=2).encode(), "application/json")
+        elif path == "/prototype/bootstrap":
+            self._send(200, json.dumps({"capture_bearer": STUB_CAPTURE_BEARER}).encode(), "application/json")
+        elif path == "/api/live/descriptor":
+            self._send(200, json.dumps(DESCRIPTOR).encode(), "application/json")
         else:
             self._send(404, b"{}", "application/json")
 
@@ -211,23 +280,46 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(n) or b"{}")
         except json.JSONDecodeError:
             return self._send(400, b'{"error":"bad json"}', "application/json")
-        if self.path == "/frames":
+        if self.path == "/api/live/sessions":
+            if self.headers.get("Authorization") != f"Bearer {STUB_CAPTURE_BEARER}":
+                return self._send(401, b'{"error":"missing bearer"}', "application/json")
+            with STATE_LOCK:
+                STATE["session_creates"] += 1
+            response = {
+                "id": STUB_SESSION_ID,
+                "view_token": "prototype-stub-view-bearer",
+                "descriptor": DESCRIPTOR["descriptor"],
+            }
+            return self._send(200, json.dumps(response).encode(), "application/json")
+        if self.path == f"/api/live/sessions/{STUB_SESSION_ID}/frames":
+            if self.headers.get("Authorization") != f"Bearer {STUB_CAPTURE_BEARER}":
+                return self._send(401, b'{"error":"missing bearer"}', "application/json")
             code, resp = ingest_frame(body)
             return self._send(code, json.dumps(resp).encode(), "application/json")
-        if self.path == "/phase":
+        if self.path == "/prototype/telemetry":
+            lane = body.get("lane")
+            sequence = body.get("sequence")
+            if lane not in ("system", "microphone") or not isinstance(sequence, int):
+                return self._send(400, b'{"error":"bad telemetry identity"}', "application/json")
+            with STATE_LOCK:
+                STATE["telemetry"].setdefault(lane, {})[str(sequence)] = body
+            return self._send(200, b"{}", "application/json")
+        if self.path == "/prototype/phase":
             with STATE_LOCK:
                 STATE["phases"].append({"t": round(time.time() - STATE["started_wall"], 2), **body})
             return self._send(200, b"{}", "application/json")
-        if self.path == "/probes":
+        if self.path == "/prototype/probes":
             with STATE_LOCK:
                 STATE["probes"] = body.get("probes", [])
             return self._send(200, b"{}", "application/json")
-        if self.path == "/reset":
+        if self.path == "/prototype/reset":
             # Echo the verdict being discarded so a mis-ordered reset (after a run,
             # before reading /verdict) cannot silently destroy the evidence.
             prior = analyze()
             with STATE_LOCK:
                 STATE["lanes"].clear()
+                STATE["telemetry"].clear()
+                STATE["frame_rejections"].clear()
                 STATE["phases"].clear()
                 STATE["started_wall"] = time.time()
             return self._send(200, json.dumps({"reset": True, "cleared": prior}).encode(), "application/json")

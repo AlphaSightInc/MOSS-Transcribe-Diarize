@@ -1,0 +1,77 @@
+{
+  "scope": "real production routes with deterministic fake provider; committed text is runtime output; provisional text is an explicit read-path fixture; no model inference",
+  "browser": "HeadlessChrome/151.0.0.0",
+  "descriptor": {
+    "provider_name": "api-fake",
+    "sample_rate": 16000,
+    "frame_samples": 1000
+  },
+  "production_routes": {
+    "session_id": "api-session",
+    "snapshot": "/api/live/sessions/api-session/snapshot",
+    "events": "/api/live/sessions/api-session/events"
+  },
+  "server_state": {
+    "status": "active",
+    "version": 311,
+    "committed_count": 155,
+    "first_committed": {
+      "span_id": 0,
+      "start_sample": 0,
+      "end_sample": 1000,
+      "transcript": "[0][S01]stable[0.0625]",
+      "prefix_hash": "5829851eb505781ebef0a3cdbcc6f5cd31b60dcb18d3f695f947c25eb55e7ae6",
+      "identity_snapshot_version": 1,
+      "revised_transcript": null
+    },
+    "provisional_fixture": {
+      "generation": 1,
+      "start_sample": 155000,
+      "end_sample": 156000,
+      "transcript": "[0][S02]synthetic provisional tail[0.25]"
+    }
+  },
+  "render_trace": [
+    {
+      "outcome": "rendered",
+      "requested": {"snapshotVersion": 0, "eventSequence": 0},
+      "advanced": {"snapshotVersion": 0, "eventSequence": 0},
+      "committedCount": null,
+      "provisionalRendered": null,
+      "transcriptText": "",
+      "renderedEventRows": 0
+    },
+    {
+      "outcome": "failed-before-cursor-advance",
+      "error": "injected pre-render failure",
+      "requested": {"snapshotVersion": 0, "eventSequence": 0},
+      "retained": {"snapshotVersion": 0, "eventSequence": 0}
+    },
+    {
+      "outcome": "rendered",
+      "requested": {"snapshotVersion": 0, "eventSequence": 0},
+      "advanced": {"snapshotVersion": 13, "eventSequence": 31},
+      "committedCount": 6,
+      "provisionalRendered": true,
+      "transcriptText": "[0][S01]stable[0.0625]\n\n[0][S01]stable[0.0625]\n\n[0][S01]stable[0.0625]\n\n[0][S01]stable[0.0625]\n\n[0][S01]stable[0.0625]\n\n[0][S01]stable[0.0625]\n\n[0][S02]synthetic provisional tail[0.25]",
+      "renderedEventRows": 31
+    }
+  ],
+  "checks": {
+    "returned_view_bearer_used": true,
+    "injected_failure_retained_both_cursors": true,
+    "retry_reused_both_cursors": true,
+    "committed_and_provisional_rendered": true,
+    "events_rendered": true
+  },
+  "not_proved": [
+    "real model inference",
+    "real provisional inference",
+    "known two-speaker microphone fixture",
+    "distinct speaker ids",
+    "clean stop",
+    "two-session text integrity",
+    "background helper lease",
+    "real display capture"
+  ]
+}

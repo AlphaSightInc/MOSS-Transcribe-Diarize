@@ -1,0 +1,104 @@
+{
+  "scope": "Chrome synthetic lanes through production frame and heartbeat routes; no model inference and no real display capture",
+  "live_helper_lease_seconds": 2.0,
+  "session_active_after_hidden_phase": true,
+  "heartbeat_summary": {
+    "total": 417,
+    "http_status_counts": {"200": 417},
+    "sequence_gaps": [],
+    "hidden": {
+      "count": 193,
+      "duration_ms": 12000,
+      "delta_ms": {"p50": 64, "p95": 64, "max": 65}
+    },
+    "visible": {
+      "count": 224,
+      "duration_ms": 13870,
+      "delta_ms": {"p50": 64, "p95": 65, "max": 70}
+    },
+    "hidden_max_delta_below_lease": true
+  },
+  "hidden_frame_cadence": {
+    "system": {
+      "count": 193,
+      "duration_ms": 12002,
+      "delta_ms": {"p50": 64, "p95": 65, "max": 66}
+    },
+    "microphone": {
+      "count": 193,
+      "duration_ms": 12001,
+      "delta_ms": {"p50": 64, "p95": 65, "max": 65}
+    }
+  },
+  "visible_frame_cadence": {
+    "system": {
+      "count": 224,
+      "duration_ms": 13870,
+      "delta_ms": {"p50": 64, "p95": 65, "max": 68}
+    },
+    "microphone": {
+      "count": 224,
+      "duration_ms": 13870,
+      "delta_ms": {"p50": 64, "p95": 65, "max": 69}
+    }
+  },
+  "v2_session": {
+    "status": "active",
+    "terminal_reason": null,
+    "lanes": {
+      "system": {
+        "lane": "system",
+        "next_sequence": 417,
+        "accepted_samples": 417000,
+        "accounted_samples": 416000,
+        "failed_samples": 0,
+        "retained_samples": 1000,
+        "current_device_epoch": 1,
+        "pruned_through_sequence": 288,
+        "health": "active",
+        "failure_code": null
+      },
+      "microphone": {
+        "lane": "microphone",
+        "next_sequence": 417,
+        "accepted_samples": 417000,
+        "accounted_samples": 416000,
+        "failed_samples": 0,
+        "retained_samples": 1000,
+        "current_device_epoch": 1,
+        "pruned_through_sequence": 288,
+        "health": "active",
+        "failure_code": null
+      }
+    }
+  },
+  "helper_presence": {
+    "schema": "moss-live-helper-health.v1",
+    "instance_id": "browser-8692832e-c682-4692-ba12-af1d4c0463ec",
+    "sequence": 416,
+    "sent_monotonic_ns": 26860000000,
+    "last_seen_monotonic_ns": 2124913018686291,
+    "helper_version": "browser-capture-prototype",
+    "state": "capturing",
+    "lanes": {
+      "microphone": {
+        "state": "capturing",
+        "device_epoch": 1,
+        "dropped_frames": 0,
+        "discontinuities": 0,
+        "failure_code": null
+      },
+      "system": {
+        "state": "capturing",
+        "device_epoch": 1,
+        "dropped_frames": 0,
+        "discontinuities": 0,
+        "failure_code": null
+      }
+    }
+  },
+  "visibility_phases": [
+    {"phase": "visibility-hidden", "wall_ms": 1786604846788},
+    {"phase": "visibility-visible", "wall_ms": 1786604858851}
+  ]
+}

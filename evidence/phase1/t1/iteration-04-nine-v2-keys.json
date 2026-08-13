@@ -1,0 +1,57 @@
+{
+  "scope": "prototype stub contract test only; not real-service or acceptance-gate evidence",
+  "browser": "HeadlessChrome/151.0.0.0",
+  "frame_contract": {
+    "expected_keys": [
+      "capture_timestamp_ns",
+      "device_epoch",
+      "discontinuity",
+      "lane",
+      "pcm_base64",
+      "sample_count",
+      "sample_rate",
+      "sequence",
+      "silent"
+    ],
+    "accepted_key_sets": {
+      "system": {
+        "capture_timestamp_ns,device_epoch,discontinuity,lane,pcm_base64,sample_count,sample_rate,sequence,silent": 75
+      },
+      "microphone": {
+        "capture_timestamp_ns,device_epoch,discontinuity,lane,pcm_base64,sample_count,sample_rate,sequence,silent": 75
+      }
+    },
+    "unknown_key_probe": {
+      "http_status": 400,
+      "response": {
+        "error": "invalid frame fields",
+        "missing": [],
+        "unknown": ["client_visibility"]
+      }
+    }
+  },
+  "lanes": {
+    "system": {
+      "frames": 75,
+      "sequence_first_last": [0, 74],
+      "sequence_gaps": 0,
+      "out_of_band_telemetry_frames": 75
+    },
+    "microphone": {
+      "frames": 75,
+      "sequence_first_last": [0, 74],
+      "sequence_gaps": 0,
+      "out_of_band_telemetry_frames": 75
+    }
+  },
+  "checks": {
+    "both_lanes_present": true,
+    "no_seq_gaps": true,
+    "all_frames_match_descriptor": true,
+    "capture_clock_matches_descriptor": true,
+    "exact_nine_frame_keys": true,
+    "out_of_band_telemetry_complete": true,
+    "unknown_frame_key_rejected": true,
+    "no_decode_errors": true
+  }
+}

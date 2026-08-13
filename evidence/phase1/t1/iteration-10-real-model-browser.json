@@ -1,0 +1,98 @@
+{
+  "schema": "moss.phase1.t1.real-model-browser.v1",
+  "question": "Can Chrome fake-device microphone audio traverse the production v2 routes, manifest-admitted provider bundle, and local production ModelRunner, then render diarized text with at least two generic speaker ids?",
+  "scope": {
+    "service": "locally-owned production routes on loopback",
+    "microphone": "Chrome getUserMedia fake-device WAV",
+    "system": "synthetic oscillator through the same production route",
+    "real_display_capture": false,
+    "remote_inference_or_mutation": false
+  },
+  "fixture": {
+    "audio_sha256": "441a8177fc455f85af4832adf3befb53241ac45fbfc1832f7ef9e6c4a41f550a",
+    "duration_seconds": 60.0,
+    "reference_sha256": "325c83712849262ebe7c6e513a9be495d6d6bf5230e70f174243f66ee691e01d",
+    "reference_speaker_count": 3
+  },
+  "model": {
+    "snapshot_revision": "e8681d68e7042738ffca8ac8212bc8fcb1131ab8",
+    "weight_sha256": "9a0ceb4ab7330357db3ff583dba8d83625d5b733b00e1d55d6970e11b07026c4",
+    "runner": "moss_transcribe_diarize.app.model_runner.ModelRunner",
+    "resolved_device": "cpu",
+    "resolved_dtype": "torch.float32"
+  },
+  "provider": {
+    "name": "moss-rtx-webrtc-wespeaker",
+    "revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "manifest_hash": "af293596bdefb95e917675972102526f004a9043551fc9df95f5455c69cc5ad4",
+    "identity_asset_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+    "golden_input_sha256": "d101dd44a5976c466d254df218f4e28b60091aba00b1ce2e9110a677ac0e60aa",
+    "mac_arm64_golden_output_sha256": "c0c36de90d8e8ea5176e905a5d16e8a1c465bfba84bf0c4ee098380c0bfe9311",
+    "config_hashes": {
+      "endpoint": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+      "identity": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89",
+      "decoder": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+      "combined": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+    }
+  },
+  "descriptor": {
+    "sample_rate": 16000,
+    "frame_samples": 8000,
+    "max_frame_samples": 16000,
+    "hard_cap_samples": 40000,
+    "max_queue_depth": 16
+  },
+  "raw_capture": {
+    "microphone": {
+      "frame_count": 236,
+      "sequence_min": 0,
+      "sequence_max": 235,
+      "sequence_gaps": [],
+      "http_status_counts": {"200": 236}
+    },
+    "system": {
+      "frame_count": 236,
+      "sequence_min": 0,
+      "sequence_max": 235,
+      "sequence_gaps": [],
+      "http_status_counts": {"200": 236}
+    },
+    "heartbeat_count": 236,
+    "heartbeat_http_status_counts": {"200": 236},
+    "accepted_samples": 1888000,
+    "accepted_samples_equal_frame_geometry": true
+  },
+  "raw_render": {
+    "committed_span_count_before_teardown": 46,
+    "committed_samples_before_teardown": 1840000,
+    "distinct_model_speaker_ids": ["S01", "S02", "S03", "S04"],
+    "canonical_speakers": ["speaker-0001", "speaker-0002", "speaker-0003", "speaker-0004"],
+    "representative_rendered_spans": [
+      "[0.11][S01]Yes, the same JP Morgan, which[2.43]",
+      "[0.26][S02]And as you all know from the episodes over the last couple of years,[2.48]",
+      "[0.12][S03]You guys dressed up for me.[1.48][1.51][S00](laughing).[2.45]",
+      "[0.96][S04]You dressed up for us too.[2.43]"
+    ]
+  },
+  "teardown": {
+    "stop_http_status": 429,
+    "runtime_status": "aborted",
+    "failure_kind": "transport_pacing",
+    "failure_code": "aborted",
+    "failure_reason": "helper_lease_expired",
+    "accepted_samples": 1888000,
+    "accounted_samples": 1840000,
+    "pending_work_items": 2,
+    "interpretation": "Capture/model/render passed before teardown. Detaching lanes stopped worklet heartbeats before the real-model stop drain completed, so clean stop remains open."
+  },
+  "verdict": {
+    "chrome_microphone_to_real_model_to_browser_render": true,
+    "at_least_two_distinct_speaker_ids_rendered": true,
+    "exact_descriptor_frame_geometry": true,
+    "zero_sequence_gaps": true,
+    "synthetic_system_to_production_routes": true,
+    "real_display_capture": false,
+    "clean_stop": false,
+    "overall_ticket_complete": false
+  }
+}
