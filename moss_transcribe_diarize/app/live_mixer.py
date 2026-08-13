@@ -104,6 +104,7 @@ class LiveCompatibilityMixer:
         source: LiveV2Session,
         runtime,
         final: bool = False,
+        retryable_backpressure: bool = False,
     ) -> LiveMixResult | None:
         if not isinstance(session_id, str) or not session_id:
             raise ValueError("session_id must be a non-empty string.")
@@ -111,12 +112,21 @@ class LiveCompatibilityMixer:
             raise ValueError("source must be LiveV2Session.")
         if not isinstance(final, bool):
             raise ValueError("final must be a boolean.")
+        if not isinstance(retryable_backpressure, bool):
+            raise ValueError("retryable_backpressure must be a boolean.")
 
         with self._lock:
             staged = self._stage(session_id, source, runtime, final=final)
             if staged is None:
                 return None
-            accepted = runtime.accept_frame(session_id, staged.frame)
+            if retryable_backpressure:
+                accepted = runtime.accept_frame(
+                    session_id,
+                    staged.frame,
+                    retryable_backpressure=True,
+                )
+            else:
+                accepted = runtime.accept_frame(session_id, staged.frame)
             self._cursor_ns = staged.diagnostics.end_timestamp_ns
             source.account_through(staged.diagnostics.source_watermarks)
             return LiveMixResult(

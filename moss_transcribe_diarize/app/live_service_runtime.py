@@ -457,10 +457,24 @@ class LiveServiceRuntime:
             snapshot = self._snapshot(state)
             return LiveServiceCreateResult(session_id=session_id, descriptor=self.descriptor, snapshot=snapshot)
 
-    def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
+    def accept_frame(
+        self,
+        session_id: str,
+        frame: AudioFrame,
+        *,
+        retryable_backpressure: bool = False,
+    ) -> LiveServiceFrameResult:
         with self._lock:
             state = self._get(session_id)
             self._raise_terminal(state)
+            if retryable_backpressure:
+                queued = state.arbiter.snapshot().live_canonical
+                limit = state.arbiter.max_live_canonical_items
+                if limit is not None and queued >= limit:
+                    # Coordinator admission mutates the mono session and endpoint before
+                    # canonical queueing. Refuse a retryable v2 mix before those mutations
+                    # so the retained lane frames can be replayed after the queue drains.
+                    raise InferenceArbiterBackpressure("live canonical queue is full.")
             try:
                 result = state.coordinator.accept_frame(frame)
             except Exception as exc:

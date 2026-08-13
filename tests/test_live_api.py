@@ -22,6 +22,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
     LiveServiceRuntime,
+    _ManualCanonicalPumpScheduler,
     hash_config,
 )
 from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE
@@ -785,6 +786,73 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["accounted_samples"], 4000)
             self.assertEqual(snapshot["v2_session"]["lanes"]["system"]["retained_samples"], 4000)
             self.assertEqual(snapshot["v2_session"]["lanes"]["microphone"]["retained_samples"], 4000)
+
+    def test_v2_arbiter_backpressure_is_nonterminal_and_retryable(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            scheduler = _ManualCanonicalPumpScheduler()
+            runtime = make_live_runtime(
+                max_retained_samples=40_000,
+                max_frame_samples=4_000,
+                max_queue_depth=1,
+                speech=(True, True),
+            )
+            runtime._canonical_scheduler = scheduler
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: runtime,
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            for sequence in range(2):
+                for lane in ("system", "microphone"):
+                    accepted = client.post(
+                        frames_url,
+                        json=v2_frame_payload(sequence, 4_000, lane=lane),
+                    )
+                    self.assertEqual(accepted.status_code, 200)
+
+            before = client.get(f"/api/live/sessions/{session_id}/snapshot").json()
+            self.assertEqual(before["snapshot"]["pending_work_items"], 1)
+            self.assertEqual(before["snapshot"]["session"]["next_frame_sequence"], 1)
+            self.assertEqual(
+                client.post(
+                    frames_url,
+                    json=v2_frame_payload(2, 4_000, lane="system"),
+                ).status_code,
+                200,
+            )
+
+            backpressure = client.post(
+                frames_url,
+                json=v2_frame_payload(2, 4_000, lane="microphone"),
+            )
+
+            self.assertEqual(backpressure.status_code, 429)
+            self.assertEqual(backpressure.json()["detail"], "live canonical queue is full.")
+            self.assertIsNone(backpressure.json()["snapshot"]["terminal_failure"])
+            self.assertEqual(
+                backpressure.json()["snapshot"]["session"]["next_frame_sequence"],
+                1,
+            )
+            self.assertTrue(scheduler.run_one())
+
+            retried = client.post(
+                frames_url,
+                json=v2_frame_payload(2, 4_000, lane="microphone"),
+            )
+
+            self.assertEqual(retried.status_code, 200)
+            self.assertEqual(retried.json()["ack"]["sequence"], 2)
+            after = client.get(f"/api/live/sessions/{session_id}/snapshot").json()
+            self.assertIsNone(after["snapshot"]["terminal_failure"])
+            self.assertEqual(after["snapshot"]["session"]["next_frame_sequence"], 2)
 
     def test_v2_one_lane_stall_keeps_survivor_flowing_and_stop_drains_bounded(self):
         from moss_transcribe_diarize.app.server import create_app

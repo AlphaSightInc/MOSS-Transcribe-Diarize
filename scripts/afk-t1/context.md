@@ -1,12 +1,13 @@
 # Context — Phase 1 ticket #1
 
-Iteration 12. Chrome now creates locally-owned production sessions, sends both lanes through the
+Iteration 13. Chrome now creates locally-owned production sessions, sends both lanes through the
 real v2 ingress route, polls/renders production reads, renews the production helper lease from the
 worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
 audio with an explicitly synthetic system lane. The kept server can select a manifest-admitted
 real provider/model, and the page stops lease-safely before detaching. Two simultaneous real-model
-browsers rendered isolated transcripts and produced latency/backpressure metrics, but their drains
-failed after queues saturated; two-session clean stop remains open.
+browsers rendered isolated transcripts and produced latency/backpressure metrics. Full canonical
+queues now return retryable v2 HTTP 429 without mutating or terminalizing the mono runtime, but the
+measured concurrent drains still failed; two-session clean stop remains open.
 
 ## Where things stand
 
@@ -15,7 +16,7 @@ failed after queues saturated; two-session clean stop remains open.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
 - This worktree has no `.venv`; pyenv Python 3.12.10 + pytest 9.0.2 is the working runner.
-- Focused live API/auth/mixer baseline is green: 65 passed + 351 subtests.
+- Focused live API/auth/mixer baseline is green: 66 passed + 351 subtests.
 - The kept browser harness fetches `/api/live/descriptor` before creating its `AudioContext`,
   rejects invalid/non-positive geometry and `frame_samples > bounds.max_frame_samples`, and uses
   the response for context rate, worklet size, capture timestamps, and frame `sample_rate`.
@@ -76,6 +77,11 @@ failed after queues saturated; two-session clean stop remains open.
   timeout and was retried, producing a conflicting 409; both original stop paths
   returned 429 without exact accounting. Both view tokens became 401, and the only test capture
   credential was revoked HTTP 200 and rejected for reuse HTTP 401.
+- The v2 route now preflights a full canonical queue under the runtime lock before mono/endpoint
+  mutation and maps `InferenceArbiterBackpressure` to HTTP 429. A deterministic route regression
+  filled a one-item queue, observed non-terminal 429 with unchanged mono sequence, drained one item,
+  and accepted the identical retained-lane retry with HTTP 200. Legacy mono terminal semantics are
+  unchanged. This fixes the iteration-12 ASGI 500; it does not prove the concurrent stop gate.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -188,7 +194,7 @@ Working command set for this worktree:
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider \
   tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
-# PASS: 65 passed, 351 subtests; contract/auth/mixer only, no browser or real model.
+# PASS: 66 passed, 351 subtests; contract/auth/mixer only, no browser or real model.
 
 PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
 # BASELINE RED: 978 passed, 4 skipped, 475 subtests, 1 failed at
@@ -208,14 +214,11 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Add a focused regression and map `InferenceArbiterBackpressure` on the v2 frame path to the
-   charter-required non-terminal HTTP 429. The concurrent run captured the uncaught ASGI 500 and
-   terminal runtime; do not weaken the queue or treat the 500 as expected.
-2. Repeat the concurrent run with a bounded one-pass source and a non-reentrant, fire-and-monitor
+1. Repeat the concurrent run with a bounded one-pass source and a non-reentrant, fire-and-monitor
    stop trigger: begin each drain before its queue saturates, issue exactly one request per session,
    and require both HTTP 200 with exact closed runtime/v2 accounting. Preserve the passing isolation
    and latency checks.
-3. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
+2. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
    evidence remains stub-only.
-4. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+3. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.
