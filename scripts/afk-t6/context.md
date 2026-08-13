@@ -1,6 +1,7 @@
 # Context — Phase 1 ticket #6
 
-Iteration 1. Acceptance criteria captured from live issue #6; no implementation measured yet.
+Iteration 2. Acceptance criteria and a reproducible local validation baseline are captured; no
+journal implementation exists yet.
 
 ## Where things stand
 
@@ -9,6 +10,12 @@ Iteration 1. Acceptance criteria captured from live issue #6; no implementation 
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
 - Issue #6 is OPEN and remains blocked by OPEN issue #1 (checked 2026-08-13).
+- This worktree has no `.venv`; use the host's pyenv Python 3.12.10 / pytest 9.0.2.
+- The full suite requires both Swift products to be built first. After those builds, the current
+  baseline is 862 passed / 4 skipped / 373 subtests plus one persistent out-of-ticket failure:
+  `tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate`
+  exits 2 because `NSRunningApplication(processIdentifier:)` cannot resolve the just-launched PID.
+  Do not fix it under ticket #6; keep it visible in every full-gate result.
 
 ## Acceptance checklist — issue #6 (binding)
 
@@ -50,15 +57,33 @@ centroids; CRUD, enrollment, naming, matching, UI, and D-7 are out of scope.
 
 ## Validation commands
 
-Establish these in iteration 1 and record what each actually covers:
+Build the local Swift prerequisites once per clean worktree:
 
 ```bash
-.venv/bin/pytest -q                      # full suite; baseline ~418 passed / 2 skipped
-.venv/bin/pytest -q tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+swift build --package-path macos/MOSSCapture --product mtd-capture
+swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
+```
+
+Then run:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest \
+  tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py \
+  -q -p no:cacheprovider
 bash -n scripts/afk-t6/ralph-afk.sh
 ```
 
+- Full gate, after Swift builds: 862 passed / 4 skipped / 373 subtests and the one named
+  pre-existing/out-of-ticket failure above. Raw JUnit:
+  `evidence/phase1/t6/iteration-2-full-suite-after-build.xml`.
+- Ticket-relevant live subset: 65 passed / 351 subtests. It covers HTTP live routes and lifecycle,
+  shared-token authorization, v2 lane semantics, and compatibility mixing; it does not yet cover
+  vector journaling because that code and its tests do not exist. Raw JUnit:
+  `evidence/phase1/t6/iteration-2-live-subset.xml`.
+- Loop script syntax: PASS.
+
 ## Ranked candidates
 
-1. Establish and record a working validation command set.
-2. Smallest vertical slice toward criterion 1.
+1. Smallest vertical slice toward criterion 1: identify the album/session-end composition seam,
+   then add a failing contract test before production code.
