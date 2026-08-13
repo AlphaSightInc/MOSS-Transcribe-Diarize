@@ -108,7 +108,14 @@ class _Runtime:
             )
         )
 
-    def accept_frame(self, _session_id: str, frame):
+    def accept_frame(
+        self,
+        _session_id: str,
+        frame,
+        *,
+        retryable_queue_backpressure: bool = False,
+    ):
+        assert retryable_queue_backpressure is True
         if self.reject:
             raise RuntimeError("reject mono admission")
         self.frames.append(frame)

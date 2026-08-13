@@ -45,3 +45,11 @@ identity, speech observations, and scheduler release were controlled, and no vLL
   this path does not yet provide the required first-response, non-terminal 429 behavior.
 
 Raw result: `evidence/phase1/t3/iteration-4-controlled-dispatcher.json`.
+
+Iteration 5 repaired the production v2 HTTP path exposed by this historical run. Canonical-queue
+capacity is now checked under the per-session runtime lock before mono admission: the first refusal
+is a retryable typed 429, leaves the mono session non-terminal and unconsumed, does not block a peer,
+and an identical retained-v2-frame retry succeeds after one dispatch frees capacity. The regression
+uses the real HTTP transport, v2 ingress, mixer, runtime, arbiter, and manual scheduler; its decoder
+and speech observations remain controlled, so it proves queue transactionality rather than G4/G5.
+Raw result: `evidence/phase1/t3/iteration-5-v2-backpressure.txt`.

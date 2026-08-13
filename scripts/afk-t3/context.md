@@ -1,9 +1,9 @@
 # Context — Phase 1 ticket #3
 
-Iteration 4. The live issue acceptance contract and validation baseline are captured below. Numeric
+Iteration 5. The live issue acceptance contract and validation baseline are captured below. Numeric
 latency/memory gates and their measurement semantics are frozen before measurement. A controlled
-scheduler probe now characterizes fairness, isolation, and queue overflow, but real dispatcher
-latency and memory have not been measured.
+scheduler probe characterizes fairness and isolation, and the v2 canonical-queue overflow path is
+now retryable and session-local. Real dispatcher latency and memory have not been measured.
 
 ## Where things stand
 
@@ -123,19 +123,28 @@ metrics make every result explicitly non-gating.
   session. HTTP reconnect and resumable transport remain untested.
 - One stalled session reached exactly 16 pending items while its peer accepted a frame, confirming
   the queue object and capacity are per session.
-- Required backpressure behavior fails: the first overflow raises raw
-  `InferenceArbiterBackpressure` and terminalizes that session. Only a subsequent retry raises
-  typed transport pacing that maps to 429. This is neither a correct first 429 response nor
-  non-terminal retry behavior.
+- The historical run exposed that first overflow raised raw `InferenceArbiterBackpressure` and
+  terminalized the session. Iteration 5 repaired this at the production v2 transport/mixer/runtime
+  seam; the iteration-4 artifact remains the before-fix evidence.
 
 Raw evidence: `evidence/phase1/t3/iteration-4-controlled-dispatcher.json`.
 
+## V2 canonical-queue backpressure repair
+
+Canonical queue capacity is checked under the session runtime lock before v2 mono admission. A
+full queue now returns a typed retryable 429 on the first response without advancing the mono frame
+sequence or recording a terminal failure. The retained v2 frame can be retried identically after a
+dispatch frees capacity. A second session continues accepting independently. Legacy mono admission
+does not opt into this non-terminal policy.
+
+The regression traverses HTTP, v2 ingress, the compatibility mixer, runtime, per-session arbiter,
+and a controlled manual scheduler. It proves transactionality and per-session isolation but uses a
+controlled decoder and speech observations, so it does not satisfy real G4/G5 evidence.
+Raw evidence: `evidence/phase1/t3/iteration-5-v2-backpressure.txt`.
+
 ## Ranked candidates
 
-1. Make canonical-queue overflow return a typed, non-terminal first-response 429 without consuming
-   or terminalizing the affected session; regression-test that a saturated session can retry while
-   a peer continues independently.
-2. Establish a real local MOSS/vLLM measurement path; without local vLLM active/queued metrics, G4
+1. Establish a real local MOSS/vLLM measurement path; without local vLLM active/queued metrics, G4
    cannot qualify. Do not substitute the read-only remote service.
-3. Smallest evidence-backed vertical slice toward the bounded dispatcher, only after prototype
+2. Smallest evidence-backed vertical slice toward the bounded dispatcher, only after prototype
    measurements choose the bound.

@@ -457,10 +457,32 @@ class LiveServiceRuntime:
             snapshot = self._snapshot(state)
             return LiveServiceCreateResult(session_id=session_id, descriptor=self.descriptor, snapshot=snapshot)
 
-    def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
+    def accept_frame(
+        self,
+        session_id: str,
+        frame: AudioFrame,
+        *,
+        retryable_queue_backpressure: bool = False,
+    ) -> LiveServiceFrameResult:
         with self._lock:
             state = self._get(session_id)
             self._raise_terminal(state)
+            queue_depth = state.arbiter.snapshot().live_canonical
+            # V2 retains the staged lane frame for an identical retry. Refuse before mono
+            # admission mutates the session; legacy mono leaves this terminal policy disabled.
+            if (
+                retryable_queue_backpressure
+                and queue_depth >= state.descriptor.bounds.max_queue_depth
+            ):
+                raise LiveServiceTransportPacingFailure(
+                    "live canonical queue is full.",
+                    code="canonical_queue_full",
+                    retryable=True,
+                    detail={
+                        "queue_depth": queue_depth,
+                        "max_queue_depth": state.descriptor.bounds.max_queue_depth,
+                    },
+                )
             try:
                 result = state.coordinator.accept_frame(frame)
             except Exception as exc:

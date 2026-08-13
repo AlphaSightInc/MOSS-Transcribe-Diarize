@@ -116,7 +116,11 @@ class LiveCompatibilityMixer:
             staged = self._stage(session_id, source, runtime, final=final)
             if staged is None:
                 return None
-            accepted = runtime.accept_frame(session_id, staged.frame)
+            accepted = runtime.accept_frame(
+                session_id,
+                staged.frame,
+                retryable_queue_backpressure=True,
+            )
             self._cursor_ns = staged.diagnostics.end_timestamp_ns
             source.account_through(staged.diagnostics.source_watermarks)
             return LiveMixResult(
