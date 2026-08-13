@@ -65,10 +65,25 @@
   <pre id="realOut"></pre>
 </section>
 
+<section>
+  <h2>Production read path</h2>
+  <p>Authenticated <code>/snapshot</code> + <code>/events</code> polling. Snapshot and event
+     cursors move only after the corresponding DOM render succeeds.</p>
+  <div><b>Transcript</b></div>
+  <pre id="transcriptOut"></pre>
+  <div><b>Events</b></div>
+  <pre id="eventOut"></pre>
+  <div><b>Poll state</b></div>
+  <pre id="pollOut">waiting for a session</pre>
+</section>
+
 <script>
 const probeOut = document.getElementById("probeOut");
 const synthOut = document.getElementById("synthOut");
 const realOut = document.getElementById("realOut");
+const transcriptOut = document.getElementById("transcriptOut");
+const eventOut = document.getElementById("eventOut");
+const pollOut = document.getElementById("pollOut");
 const log = (el, s) => { el.textContent += s + "\n"; };
 
 let ctx = null;            // shared descriptor-rate capture context
@@ -77,6 +92,17 @@ let descriptorPromise = null;
 let liveSession = null;     // server-issued id + credentials, closure memory only
 let sessionPromise = null;
 let sessionFailed = false;
+let pollTimer = null;
+let pollInFlight = false;
+const forceOneRenderFailure = new URLSearchParams(location.search).has("fail_render_once");
+const readState = {
+  snapshotVersion: 0,
+  eventSequence: 0,
+  polls: 0,
+  renderFailures: 0,
+  faultInjected: false,
+  events: [],
+};
 
 function positiveInteger(value, field) {
   if (!Number.isInteger(value) || value <= 0) throw new Error(`${field} must be a positive integer`);
@@ -146,12 +172,133 @@ async function captureSession(outEl) {
       viewBearer: payload.view_token,
     });
     log(outEl, `session created: ${payload.id}`);
+    scheduleReadPoll(0);
     return liveSession;
   })();
   try {
     return await sessionPromise;
   } finally {
     sessionPromise = null;
+  }
+}
+
+function readHeaders() {
+  return { "Authorization": `Bearer ${liveSession.viewBearer}` };
+}
+
+function renderSnapshot(payload) {
+  const snapshot = payload && payload.snapshot;
+  if (!snapshot) return null;
+  const session = snapshot.session;
+  if (!session || !Number.isInteger(session.version) || !Array.isArray(session.committed)) {
+    throw new Error("malformed production snapshot");
+  }
+  if (forceOneRenderFailure && !readState.faultInjected && session.committed.length) {
+    readState.faultInjected = true;
+    throw new Error("injected pre-render failure");
+  }
+  const rows = session.committed
+    .map((item) => item.revised_transcript || item.transcript)
+    .filter(Boolean);
+  if (session.provisional && session.provisional.transcript) {
+    rows.push(session.provisional.transcript);
+  }
+  transcriptOut.textContent = rows.join("\n\n");
+  return {
+    version: session.version,
+    committedCount: session.committed.length,
+    provisionalRendered: Boolean(session.provisional && session.provisional.transcript),
+  };
+}
+
+function renderEvents(payload) {
+  if (!payload || !Array.isArray(payload.events)) throw new Error("malformed production events");
+  let highest = null;
+  for (const event of payload.events) {
+    if (!Number.isInteger(event.seq) || event.seq <= readState.eventSequence) continue;
+    readState.events.push(`seq=${event.seq} kind=${event.kind} snapshot=${event.snapshot_version}`);
+    highest = highest === null ? event.seq : Math.max(highest, event.seq);
+  }
+  readState.events = readState.events.slice(-200);
+  eventOut.textContent = readState.events.join("\n");
+  return highest;
+}
+
+async function reportReadState(record) {
+  await fetch("/prototype/render-state", {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(record),
+  }).catch(() => {});
+}
+
+function scheduleReadPoll(delayMs) {
+  if (pollTimer !== null) return;
+  pollTimer = setTimeout(() => {
+    pollTimer = null;
+    void pollReadPath();
+  }, delayMs);
+}
+
+async function pollReadPath() {
+  if (!liveSession || pollInFlight) return;
+  pollInFlight = true;
+  const requested = {
+    snapshotVersion: readState.snapshotVersion,
+    eventSequence: readState.eventSequence,
+  };
+  readState.polls++;
+  try {
+    const sessionId = encodeURIComponent(liveSession.id);
+    const [snapshotResponse, eventsResponse] = await Promise.all([
+      fetch(`/api/live/sessions/${sessionId}/snapshot?since_version=${requested.snapshotVersion}`, {
+        cache: "no-store", headers: readHeaders(),
+      }),
+      fetch(`/api/live/sessions/${sessionId}/events?since_seq=${requested.eventSequence}`, {
+        cache: "no-store", headers: readHeaders(),
+      }),
+    ]);
+    if (!snapshotResponse.ok || !eventsResponse.ok) {
+      throw new Error(`read HTTP snapshot=${snapshotResponse.status} events=${eventsResponse.status}`);
+    }
+    const [snapshotPayload, eventsPayload] = await Promise.all([
+      snapshotResponse.json(), eventsResponse.json(),
+    ]);
+    // T-02 discipline: both DOM mutations happen before either cursor advances.
+    const renderedSnapshot = renderSnapshot(snapshotPayload);
+    const renderedEventSequence = renderEvents(eventsPayload);
+    if (renderedSnapshot) readState.snapshotVersion = renderedSnapshot.version;
+    if (renderedEventSequence !== null) readState.eventSequence = renderedEventSequence;
+    const record = {
+      outcome: "rendered",
+      requested,
+      advanced: {
+        snapshotVersion: readState.snapshotVersion,
+        eventSequence: readState.eventSequence,
+      },
+      committedCount: renderedSnapshot ? renderedSnapshot.committedCount : null,
+      provisionalRendered: renderedSnapshot ? renderedSnapshot.provisionalRendered : null,
+      transcriptText: transcriptOut.textContent,
+      renderedEventRows: readState.events.length,
+    };
+    pollOut.textContent = JSON.stringify({ ...readState, last: record }, null, 2);
+    await reportReadState(record);
+  } catch (error) {
+    readState.renderFailures++;
+    const record = {
+      outcome: "failed-before-cursor-advance",
+      error: error.message,
+      requested,
+      retained: {
+        snapshotVersion: readState.snapshotVersion,
+        eventSequence: readState.eventSequence,
+      },
+    };
+    pollOut.textContent = JSON.stringify({ ...readState, last: record }, null, 2);
+    await reportReadState(record);
+  } finally {
+    pollInFlight = false;
+    if (liveSession) scheduleReadPoll(250);
   }
 }
 

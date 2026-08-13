@@ -1,7 +1,8 @@
 # Context — Phase 1 ticket #1
 
-Iteration 5. Chrome now creates a locally-owned production session and sends both lanes through
-the real v2 ingress route. The provider remains deterministic/fake; no real model behavior yet.
+Iteration 6. Chrome now creates a locally-owned production session, sends both lanes through the
+real v2 ingress route, and polls/renders the production snapshot/events routes with independent
+render-then-advance cursors. The provider remains deterministic/fake; no real model behavior yet.
 
 ## Where things stand
 
@@ -27,6 +28,10 @@ the real v2 ingress route. The provider remains deterministic/fake; no real mode
 - Chrome 151 + locally-run `create_app` accepted 329 consecutive descriptor-sized frames per lane
   (sequences 0–328, all HTTP 200, zero failed samples, no terminal failure). This proves the real
   auth/session/v2/mixer/runtime route stack with a deterministic fake provider, not model inference.
+- The returned view bearer now drives 250 ms production `/snapshot` + `/events` polls. An injected
+  pre-render failure retained both cursors at 0/0; retry repeated 0/0, rendered six deterministic
+  commits plus a clearly labelled synthetic provisional fixture and 31 event rows, then advanced
+  to 13/31. The provisional fixture proves renderer wiring only, not provisional inference.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -67,7 +72,7 @@ the tracker issue remains open for supervisor closure.
   foreground cadence.
 - [ ] A known two-speaker fixture played in the selected tab produces transcript text with
   distinct generic speaker ids.
-- [ ] Poll `/snapshot` and `/events` per T-02; render committed spans plus provisional tail; only
+- [x] Poll `/snapshot` and `/events` per T-02; render committed spans plus provisional tail; only
   advance cursors after render.
 - [ ] A second simultaneous browser runs its own session and sees only its own transcript text.
 - [ ] Both sessions stop cleanly; revoke only test credentials.
@@ -88,6 +93,11 @@ that rejection is captured on the production route. Raw stub rejection evidence:
 Production-route transport evidence: `evidence/phase1/t1/iteration-05-production-routes.json`.
 It proves session creation and accepted strict-v2 lane frames only; it explicitly excludes real
 inference, transcript polling/rendering, clean stop, concurrency, background lease, and display.
+
+Production-route read evidence: `evidence/phase1/t1/iteration-06-production-read-path.json`.
+It proves authenticated snapshot/event polling, committed/runtime text rendering, explicit-fixture
+provisional rendering, and cursor retention across a failed render. It excludes real model and
+real provisional inference.
 
 ### Binding proof interpretation
 
@@ -129,10 +139,8 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Poll production `/snapshot` and `/events` with the returned view bearer; render committed spans
-   plus provisional tail and advance each cursor only after render per T-02.
-2. Add worklet-driven helper heartbeat and measure background cadence against the local lease.
-3. Drive the microphone lane from Chrome's fake-audio device with a known two-speaker WAV against
+1. Add worklet-driven helper heartbeat and measure background cadence against the local lease.
+2. Drive the microphone lane from Chrome's fake-audio device with a known two-speaker WAV against
    a locally-owned real provider/model; never send inference traffic to the read-only remote host.
-4. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+3. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

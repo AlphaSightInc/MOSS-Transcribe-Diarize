@@ -80,8 +80,28 @@ exactly 1,000 samples per descriptor frame, 329,000 accepted samples per lane, z
 and no terminal runtime failure. Raw state: `evidence/phase1/t1/iteration-05-production-routes.json`.
 
 This proves browser-to-production-route wiring, not the ticket's model gate. The provider and
-transcript are deterministic fakes; no two-speaker WAV, real inference, snapshot/events renderer,
-clean stop, concurrency, background lease, or real display capture was exercised.
+transcript are deterministic fakes; no two-speaker WAV, real inference, clean stop, concurrency,
+background lease, or real display capture was exercised.
+
+## Production read-path probe — PASSED 2026-08-13
+
+Question: can Chrome use the server-returned view bearer to poll the production `/snapshot` and
+`/events` routes, render committed text plus a provisional tail, and retain both cursors when a
+render fails?
+
+The same server command above plus
+`http://127.0.0.1:8899/capture-harness?autostart=1&fail_render_once=1` ran the deterministic
+provider through the production routes. The runtime supplied committed `S01` text. Because this
+runtime has no provisional inference scheduler, a clearly labelled snapshot wrapper supplied only
+the synthetic `S02` provisional tail used to exercise that render branch.
+
+The injected pre-render failure requested cursor `0/0` and retained `0/0`. The next production
+poll repeated `0/0`, rendered six commits plus the provisional tail and 31 event rows, then advanced
+to snapshot/event cursors `13/31`. Raw state:
+`evidence/phase1/t1/iteration-06-production-read-path.json`.
+
+Verdict: render-then-advance works across both production read routes. This does not prove real
+model inference or a real provisional inference publisher.
 
 ## Safari attended diagnostic — 2026-08-09
 
