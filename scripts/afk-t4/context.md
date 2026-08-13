@@ -1,14 +1,15 @@
 # Context — Phase 1 ticket #4
 
-Iteration 8. The ticket branch contains current `dev`: under the shared merge lock, `git merge
---no-edit dev` reported already up to date and ancestry verification passed. The complete focused
-ticket set passes on that result. Two unrelated full-suite guards remain red from iteration 7 and
-were neither weakened nor repaired. Publication, the criterion-by-criterion issue comment, and
-authorized host manifest finalization remain open.
+Iteration 9. The ticket branch contains current `dev`, and the complete focused ticket set passes
+on that merged result. The branch is published at `private/afk/t4-frontend-shell`; issue #4 has a
+criterion-by-criterion evidence comment with explicit non-coverage and both unrelated full-suite
+exceptions. The issue remains open. Authorized host manifest finalization is the only unchecked
+ticket criterion and remains outside this loop's read-only host authority.
 
 ## Where things stand
 
 - Branch: `afk/t4-*`, cut from `dev` at `a05a7f6`. Worktree 4 of 6 (treehouse pool).
+- Published branch: `https://github.com/aiSight-us/MOSS-Transcribe-Diarize/tree/afk/t4-frontend-shell`.
 - Current `dev` (`8fec841`) is an ancestor of the validated ticket result (`e8c8c4f`); the required
   merge was therefore a no-op. Iteration 8 ran all ticket-focused gates while holding the shared
   merge lock.
@@ -167,8 +168,5 @@ not finalize the host manifest or add browser/deployment/attended-capture eviden
 
 ## Ranked candidates
 
-1. Publish per the serialized merge protocol, then post the criterion-by-criterion issue comment
-   linking the branch and raw evidence, including explicit non-coverage and both full-suite
-   exceptions. Do not close the issue.
-2. Hand the reviewed published SHA and corrected finalization command to the authorized operator.
+1. Hand the reviewed published SHA and corrected finalization command to the authorized operator.
    Do not mutate the read-only host; completion stays blocked until host finalization is evidenced.

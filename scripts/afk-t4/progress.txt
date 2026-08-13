@@ -116,3 +116,15 @@ Iteration 8 — current-dev merge and focused validation
   (`e8c8c4f`), so no merge commit was needed. Iteration-7 full-suite exceptions remain explicit.
   Next: publish under the merge protocol, comment criterion-by-criterion evidence and non-coverage,
   then hand the published SHA to the authorized manifest operator without mutating the host.
+
+Iteration 9 — serialized publication and issue evidence
+- Target: highest-ranked candidate; publish the merged ticket branch under the shared lock and add
+  the required criterion-by-criterion evidence comment without closing issue #4.
+- Files: `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: current `dev` merge and ancestry PASS; exact final commit focused ticket suite PASS;
+  local `dev` fast-forward and private branch push PASS; issue comment created as `yugao-aisight`.
+- Evidence: `evidence/phase1/t4/iteration-02-reference-transfer.txt` through
+  `iteration-08-merged-validation.txt`; published `private/afk/t4-frontend-shell`; issue #4 comment.
+- Learned: eight local acceptance criteria are evidenced and published. Host provider-manifest
+  finalization remains the sole unchecked criterion and requires the authorized operator. Next:
+  hand off the published SHA and corrected command; do not mutate the read-only host.
