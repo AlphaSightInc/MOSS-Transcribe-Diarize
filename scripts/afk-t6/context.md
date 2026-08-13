@@ -1,8 +1,9 @@
 # Context — Phase 1 ticket #6
 
-Iteration 4. Acceptance criteria and a reproducible local validation baseline are captured. The
-provider now exposes immutable, encoder-pinned observations from the completed album; no journal
-writer or runtime lifecycle integration exists yet.
+Iteration 5. Acceptance criteria and a reproducible local validation baseline are captured. The
+provider exposes immutable, encoder-pinned observations from the completed album. The required
+single-process append mechanism is now measured; no production writer or runtime lifecycle
+integration exists yet.
 
 ## Where things stand
 
@@ -88,11 +89,17 @@ bash -n scripts/afk-t6/ralph-afk.sh
   provider-bundle suite passes 45/45. Raw JUnit:
   `evidence/phase1/t6/iteration-4-journal-projection.xml` and
   `evidence/phase1/t6/iteration-4-provider-bundle.xml`.
+- Journal append prototype: PASS. Under 32 concurrent session-end calls, a process lock around a
+  pre-encoded batch plus `O_APPEND`, write-all, and `fsync` produced 512/512 parseable rows in
+  contiguous session batches; all 32 non-finite observations were named-refused and every file
+  row was mode `0600`, session-keyed, and encoder-pinned. Raw measurement:
+  `evidence/phase1/t6/iteration-5-journal-prototype.json`. This does not yet prove production
+  lifecycle integration, operator path configuration, multi-process writes, or power loss.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Compose provider observations into a non-terminal append-only writer at clean session stop,
-   adding session id, created-at, and echo mode at the runtime/transport boundary.
+1. Implement the measured single-process writer and compose provider observations into it at clean
+   session stop, adding session id, created-at, and echo mode at the runtime/transport boundary.
 2. Pin path configuration and default-on vector journaling without changing ADR-0003's default-off
    raw-audio retention posture.

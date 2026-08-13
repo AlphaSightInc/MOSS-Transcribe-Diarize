@@ -1,0 +1,71 @@
+{
+  "append_latency_ms": {
+    "max": 41.424792259931564,
+    "median": 34.70056224614382,
+    "min": 24.596708826720715
+  },
+  "checks": {
+    "all_required_fields_exact": true,
+    "all_rows_parseable": true,
+    "all_session_batches_contiguous": true,
+    "centroids_finite_and_full_width": true,
+    "embedder_identity_on_every_row": true,
+    "no_device_key": true,
+    "one_fsync_per_session": true,
+    "one_named_refusal_per_session": true,
+    "private_file_mode": true
+  },
+  "concurrent_workers": 32,
+  "dimensions": 256,
+  "journal_bytes": 1049513,
+  "journal_rows": 512,
+  "journal_sha256": "5978a1deed19731befab97af9c64e3976b82881a08e6e413743eaba9b9084de7",
+  "limits": [
+    "One process only; the product forbids multiple Uvicorn workers.",
+    "Successful fsync is observed, not a simulated power-loss test.",
+    "This probe does not configure the operator journal path or integrate session stop."
+  ],
+  "mechanism": "process lock + pre-encoded batch + O_APPEND + write-all + fsync",
+  "named_refusals": {
+    "centroid_non_finite": 32
+  },
+  "question": "Can one service process durably append complete session-keyed JSONL batches under concurrent clean stops and decline an unusable observation by name?",
+  "session_batch_order": [
+    "probe-session-0031",
+    "probe-session-0000",
+    "probe-session-0001",
+    "probe-session-0002",
+    "probe-session-0003",
+    "probe-session-0005",
+    "probe-session-0007",
+    "probe-session-0008",
+    "probe-session-0006",
+    "probe-session-0016",
+    "probe-session-0010",
+    "probe-session-0004",
+    "probe-session-0013",
+    "probe-session-0014",
+    "probe-session-0021",
+    "probe-session-0009",
+    "probe-session-0019",
+    "probe-session-0025",
+    "probe-session-0022",
+    "probe-session-0018",
+    "probe-session-0011",
+    "probe-session-0015",
+    "probe-session-0029",
+    "probe-session-0024",
+    "probe-session-0020",
+    "probe-session-0017",
+    "probe-session-0027",
+    "probe-session-0030",
+    "probe-session-0028",
+    "probe-session-0012",
+    "probe-session-0023",
+    "probe-session-0026"
+  ],
+  "sessions": 32,
+  "speakers_per_session": 16,
+  "total_elapsed_ms": 61.58579187467694,
+  "verdict": "PASS"
+}

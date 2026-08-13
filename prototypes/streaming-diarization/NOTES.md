@@ -6,6 +6,25 @@ see it).
 
 ## Questions and verdicts
 
+### Session-end vector journal (`proto_vector_journal.py`, 2026-08-13)
+
+Question: can one service process append complete per-session JSONL batches durably, without
+interleaving concurrent clean stops, while declining an unusable observation by name instead
+of losing the usable speakers beside it?
+
+Command: `python3 prototypes/streaming-diarization/proto_vector_journal.py --json-output evidence/phase1/t6/iteration-5-journal-prototype.json`
+
+**VERDICT: PASS.** 32 concurrent session-end calls, each holding 16 usable 256-dimensional
+centroids plus one non-finite observation, produced 512/512 parseable rows in contiguous
+session batches (1,049,513 bytes). Every row had exactly the ticket's eight required fields,
+both embedder identity fields, no `device_id`, and mode `0600`; all 32 unusable observations
+were declined as `centroid_non_finite`. Each session append completed `fsync`. The measured
+mechanism is a per-process lock around one pre-encoded session batch opened with `O_APPEND`, a
+write-all loop, and `fsync`; maximum append latency was 41.4 ms in this local run. This proves
+the single-process mechanism selected by the product architecture. It does not simulate power
+loss, configure the operator path, or integrate the clean-stop lifecycle; those remain
+production work.
+
 ### Speaker-reference v2 correction packet (`speaker-reference-v2/`)
 
 The former top-level packet now lives under this standing bench. Its independent-ASR acoustic
