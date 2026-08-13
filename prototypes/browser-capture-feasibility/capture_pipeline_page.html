@@ -85,6 +85,12 @@ const transcriptOut = document.getElementById("transcriptOut");
 const eventOut = document.getElementById("eventOut");
 const pollOut = document.getElementById("pollOut");
 const log = (el, s) => { el.textContent += s + "\n"; };
+const prototypeClientId = new URLSearchParams(location.search).get("client_id") || crypto.randomUUID();
+const prototypeRecord = (record) => ({
+  ...record,
+  client_id: prototypeClientId,
+  session_id: liveSession ? liveSession.id : (record.session_id || null),
+});
 const stopDrainDeadlineSeconds = (() => {
   const raw = new URLSearchParams(location.search).get("stop_deadline_seconds") || "5";
   const value = Number(raw);
@@ -114,6 +120,7 @@ const readState = {
   renderFailures: 0,
   faultInjected: false,
   events: [],
+  maxPendingWorkItems: 0,
 };
 
 function positiveInteger(value, field) {
@@ -216,9 +223,15 @@ function renderSnapshot(payload) {
     rows.push(session.provisional.transcript);
   }
   transcriptOut.textContent = rows.join("\n\n");
+  readState.maxPendingWorkItems = Math.max(
+    readState.maxPendingWorkItems,
+    Number.isInteger(snapshot.pending_work_items) ? snapshot.pending_work_items : 0,
+  );
   return {
     version: session.version,
     committedCount: session.committed.length,
+    committedSpanIds: session.committed.map((item) => item.span_id),
+    pendingWorkItems: snapshot.pending_work_items,
     provisionalRendered: Boolean(session.provisional && session.provisional.transcript),
   };
 }
@@ -240,7 +253,7 @@ async function reportReadState(record) {
   await fetch("/prototype/render-state", {
     method: "POST", cache: "no-store",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(record),
+    body: JSON.stringify(prototypeRecord(record)),
   }).catch(() => {});
 }
 
@@ -289,6 +302,9 @@ async function pollReadPath() {
         eventSequence: readState.eventSequence,
       },
       committedCount: renderedSnapshot ? renderedSnapshot.committedCount : null,
+      committed_span_ids: renderedSnapshot ? renderedSnapshot.committedSpanIds : [],
+      pending_work_items: renderedSnapshot ? renderedSnapshot.pendingWorkItems : null,
+      rendered_wall_ms: Date.now(),
       provisionalRendered: renderedSnapshot ? renderedSnapshot.provisionalRendered : null,
       transcriptText: transcriptOut.textContent,
       renderedEventRows: readState.events.length,
@@ -333,7 +349,7 @@ async function reportHeartbeat(record) {
   await fetch("/prototype/heartbeat-telemetry", {
     method: "POST", cache: "no-store",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(record),
+    body: JSON.stringify(prototypeRecord(record)),
   }).catch(() => {});
 }
 
@@ -499,13 +515,13 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
     fetch("/prototype/telemetry", {
       method: "POST", cache: "no-store",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON.stringify(prototypeRecord({
         lane, sequence,
         client_rms: r,
         client_visibility: document.visibilityState,
         client_wall_ms: Date.now(),
         quanta: m.quanta,
-      }),
+      })),
     }).catch(() => {});
     try {
       const resp = await fetch(`/api/live/sessions/${encodeURIComponent(liveSession.id)}/frames`, {
@@ -561,6 +577,10 @@ async function stopCapture(outEl) {
     const payload = await response.json();
     const runtime = payload.snapshot && payload.snapshot.session;
     const v2 = payload.v2_session;
+    const revokedViewResponse = await fetch(
+      `/api/live/sessions/${encodeURIComponent(session.id)}/snapshot`,
+      { cache: "no-store", headers: { "Authorization": `Bearer ${session.viewBearer}` } },
+    );
     await fetch("/prototype/phase", {
       method: "POST",
       body: JSON.stringify({
@@ -572,10 +592,14 @@ async function stopCapture(outEl) {
         accounted_samples: runtime && runtime.accounted_samples,
         pending_work_items: payload.snapshot && payload.snapshot.pending_work_items,
         v2_status: v2 && v2.status,
+        post_stop_view_http_status: revokedViewResponse.status,
         wall_ms: Date.now(),
       }),
     });
     if (!response.ok) throw new Error(`session stop failed: HTTP ${response.status}`);
+    if (revokedViewResponse.status !== 401) {
+      throw new Error(`stopped session view remained readable: HTTP ${revokedViewResponse.status}`);
+    }
     if (!runtime || runtime.status !== "closed"
         || runtime.accepted_samples !== runtime.accounted_samples
         || payload.snapshot.pending_work_items !== 0) {

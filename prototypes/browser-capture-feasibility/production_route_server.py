@@ -24,6 +24,7 @@ import math
 import sys
 import tempfile
 import threading
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -105,6 +106,65 @@ def _visibility_cadence(records: list[dict], visibility: str, *, time_key: str) 
     }
 
 
+def _instrument_commit_times(runtime, commit_wall_ns: dict[tuple[str, int], int], lock: threading.Lock):
+    """Timestamp canonical publication at the real runtime event seam."""
+    record_event = runtime._record_event
+
+    def measured_record_event(state, kind, payload):
+        record_event(state, kind, payload)
+        if kind == "canonical_processed" and payload.get("submitted"):
+            with lock:
+                commit_wall_ns.setdefault(
+                    (state.session_id, int(payload["span_id"])),
+                    time.time_ns(),
+                )
+
+    runtime._record_event = measured_record_event
+    return runtime
+
+
+def _commit_to_render_summary(
+    session_id: str,
+    telemetry: dict,
+    commit_wall_ns: dict[tuple[str, int], int],
+) -> dict:
+    first_render_ms: dict[int, int] = {}
+    queue_depths: list[int] = []
+    for render in telemetry["renders"]:
+        if render.get("session_id") != session_id or render.get("outcome") != "rendered":
+            continue
+        rendered_wall_ms = render.get("rendered_wall_ms")
+        if not isinstance(rendered_wall_ms, int):
+            continue
+        for span_id in render.get("committed_span_ids", []):
+            if isinstance(span_id, int):
+                first_render_ms.setdefault(span_id, rendered_wall_ms)
+        pending = render.get("pending_work_items")
+        if isinstance(pending, int):
+            queue_depths.append(pending)
+    raw = []
+    for (committed_session_id, span_id), committed_ns in commit_wall_ns.items():
+        if committed_session_id != session_id or span_id not in first_render_ms:
+            continue
+        raw.append(
+            {
+                "span_id": span_id,
+                "committed_wall_ns": committed_ns,
+                "first_rendered_wall_ms": first_render_ms[span_id],
+                "latency_ms": max(0, first_render_ms[span_id] - committed_ns // 1_000_000),
+            }
+        )
+    latencies = [record["latency_ms"] for record in raw]
+    return {
+        "count": len(raw),
+        "p50_ms": _percentile(latencies, 0.50),
+        "p95_ms": _percentile(latencies, 0.95),
+        "max_ms": max(latencies) if latencies else None,
+        "max_observed_pending_work_items": max(queue_depths) if queue_depths else None,
+        "raw": sorted(raw, key=lambda record: record["span_id"]),
+    }
+
+
 def build_app(
     *,
     model_path: Path | None = None,
@@ -114,6 +174,8 @@ def build_app(
 
     helpers = _test_live_api_module()
     scratch = tempfile.TemporaryDirectory(prefix="moss-browser-route-probe-")
+    measurement_lock = threading.Lock()
+    commit_wall_ns: dict[tuple[str, int], int] = {}
     registry = LiveAccessRegistry(
         state_path=Path(scratch.name) / "live-auth.json",
         server_cert_sha256="ab" * 32,
@@ -126,13 +188,15 @@ def build_app(
         now=1.0,
     )
     if model_path is None and live_provider_manifest is None:
-        runtime_factory = lambda: _ReadPathFixtureRuntime(
-            helpers.make_live_runtime(
+        def runtime_factory():
+            runtime = helpers.make_live_runtime(
                 max_retained_samples=320_000,
                 max_frame_samples=6_400,
                 speech=(True, False) * 10_000,
             )
-        )
+            _instrument_commit_times(runtime, commit_wall_ns, measurement_lock)
+            return _ReadPathFixtureRuntime(runtime)
+
         provider_scope = (
             "real production routes with deterministic fake provider; committed text is runtime output; "
             "provisional text is an explicit read-path fixture; no model inference"
@@ -146,7 +210,13 @@ def build_app(
 
         config = LiveProviderBundleConfig.from_manifest(live_provider_manifest)
         runner = ModelRunner(model_path, device="auto", dtype="bf16")
-        runtime_factory = build_live_runtime_factory(config, runner)
+        base_runtime_factory = build_live_runtime_factory(config, runner)
+
+        def runtime_factory():
+            return _instrument_commit_times(
+                base_runtime_factory(), commit_wall_ns, measurement_lock
+            )
+
         provider_scope = (
             "real production routes with manifest-admitted live provider bundle and local "
             "production ModelRunner; system lane is synthetic and does not prove display capture"
@@ -165,6 +235,7 @@ def build_app(
     app.state.prototype_scratch = scratch
     app.state.prototype_capture_bearer = credential.device_token
     app.state.prototype_provider_scope = provider_scope
+    app.state.prototype_commit_wall_ns = commit_wall_ns
     app.state.prototype_telemetry = {
         "lanes": {},
         "phases": [],
@@ -185,18 +256,27 @@ def build_app(
     @app.get("/prototype/bootstrap")
     def prototype_bootstrap():
         return JSONResponse(
-            {"capture_bearer": app.state.prototype_capture_bearer},
+            {
+                "capture_bearer": app.state.prototype_capture_bearer,
+                "device_id": credential.device_id,
+            },
             headers={"Cache-Control": "no-store"},
         )
 
     @app.post("/prototype/telemetry")
     async def prototype_telemetry(request: Request):
         body = await request.json()
-        lane, sequence = body.get("lane"), body.get("sequence")
-        if lane not in ("system", "microphone") or not isinstance(sequence, int):
+        lane, sequence, client_id = body.get("lane"), body.get("sequence"), body.get("client_id")
+        if (
+            lane not in ("system", "microphone")
+            or not isinstance(sequence, int)
+            or not isinstance(client_id, str)
+            or not client_id
+        ):
             return JSONResponse({"error": "bad telemetry identity"}, status_code=400)
         with app.state.prototype_lock:
-            app.state.prototype_telemetry["lanes"].setdefault(lane, {})[str(sequence)] = body
+            key = f"{client_id}:{sequence}"
+            app.state.prototype_telemetry["lanes"].setdefault(lane, {})[key] = body
         return {}
 
     @app.post("/prototype/phase")
@@ -231,6 +311,8 @@ def build_app(
     def prototype_verdict(session_id: str = "api-session"):
         with app.state.prototype_lock:
             telemetry = json.loads(json.dumps(app.state.prototype_telemetry))
+        with measurement_lock:
+            commit_times = dict(app.state.prototype_commit_wall_ns)
         try:
             v2 = app.state.live_v2_sessions.get(session_id).snapshot().to_dict()
             runtime = app.state.live_runtime.snapshot(session_id).to_dict()
@@ -245,6 +327,7 @@ def build_app(
             "v2_session": v2,
             "runtime_snapshot": runtime,
             "helper_presence": None if helper_presence is None else helper_presence.to_dict(),
+            "commit_to_render": _commit_to_render_summary(session_id, telemetry, commit_times),
             "telemetry": telemetry,
         }
 

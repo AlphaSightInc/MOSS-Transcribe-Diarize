@@ -218,6 +218,33 @@ Verdict: stop-before-detach fixes the measured lease expiry without extending th
 one real-model browser session only; the issue's two-simultaneous-session clean-stop criterion
 remains open. Raw evidence: `evidence/phase1/t1/iteration-11-lease-safe-stop.json`.
 
+## Concurrent real-model browsers — isolation/latency PASSED, teardown RED 2026-08-13
+
+Question: can two independent Chrome processes stream distinct fake-microphone fixtures at once,
+render only their own real-model transcript, record commit-to-render latency, and stop cleanly?
+
+Two server-issued sessions ran simultaneously. Client A rendered 2,256 characters with S00–S03
+and its JP Morgan marker but no football marker. Client B rendered 1,123 characters with S00–S07
+and its football marker but no JP Morgan marker. Across 53 canonical commits, commit-to-render was
+152 ms p50 / 247 ms p95 / 260 ms max. Both clients had zero sequence gaps, dropped frames,
+discontinuities, or fetch errors. The local model resolved to CPU/float32, so GPU memory and
+utilization are recorded as not applicable rather than invented.
+
+Teardown failed. Continued looping ingress filled the configured 16-item per-session queues
+(17 pending including in-flight work). Client B observed 238 v2-frame 429s; one
+`InferenceArbiterBackpressure` escaped the frame route as ASGI 500 and terminalized its runtime
+instead of remaining non-terminal. Client A's awaited stop crossed the browser automation timeout
+and was retried, producing a conflicting 409; its original drain then returned 429. Client B also
+returned 429. Both stopped
+view tokens became 401, and the sole prototype capture credential was revoked HTTP 200 and then
+rejected for reuse HTTP 401.
+
+Verdict: simultaneous rendered-text isolation and latency measurement pass, but the two-clean-stop
+criterion remains open. First fix the proven 500/terminal backpressure mapping with a regression;
+then stop each one-pass fixture before saturation and trigger each drain exactly once without
+awaiting through the automation timeout. Raw evidence:
+`evidence/phase1/t1/iteration-12-concurrent-browser-probe.json`.
+
 ## Safari attended diagnostic — 2026-08-09
 
 Safari 26.5 captured the Bose QC Ultra microphone successfully: 110 HTTP-200 frames,

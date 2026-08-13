@@ -1,11 +1,12 @@
 # Context — Phase 1 ticket #1
 
-Iteration 11. Chrome now creates a locally-owned production session, sends both lanes through the
+Iteration 12. Chrome now creates locally-owned production sessions, sends both lanes through the
 real v2 ingress route, polls/renders production reads, renews the production helper lease from the
 worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
 audio with an explicitly synthetic system lane. The kept server can select a manifest-admitted
-real provider/model, and the page now stops lease-safely before detaching. One real-model session
-closed with exact accounting; simultaneous two-session stop/isolation remains open.
+real provider/model, and the page stops lease-safely before detaching. Two simultaneous real-model
+browsers rendered isolated transcripts and produced latency/backpressure metrics, but their drains
+failed after queues saturated; two-session clean stop remains open.
 
 ## Where things stand
 
@@ -64,6 +65,17 @@ closed with exact accounting; simultaneous two-session stop/isolation remains op
   pending work and took 2.720 s, longer than the 2 s helper lease; six in-drain heartbeats returned
   200. Runtime and both v2 lanes closed at 1,912,000 accepted/accounted samples with zero pending
   work. This proves one clean session only, not the two-session acceptance item.
+- Two independent Chrome processes then streamed different 60 s fixtures into separate server-issued
+  sessions. Client A rendered 2,256 characters with its JP Morgan marker and not B's football marker;
+  B rendered 1,123 characters with its football marker and not A's. Across 53 commits, combined
+  commit-to-render was 152/247/260 ms p50/p95/max. Both clients had zero sequence gaps, reported
+  drops/discontinuities, or fetch errors. This satisfies rendered-text isolation, not clean stop.
+- The concurrent teardown is red. Continued looping ingress reached 17 pending items against the
+  configured 16-item queue. B observed 238 v2 429s; one `InferenceArbiterBackpressure` escaped the
+  frame route as ASGI 500 and terminalized its runtime. A's awaited stop crossed the automation
+  timeout and was retried, producing a conflicting 409; both original stop paths
+  returned 429 without exact accounting. Both view tokens became 401, and the only test capture
+  credential was revoked HTTP 200 and rejected for reuse HTTP 401.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -106,7 +118,7 @@ the tracker issue remains open for supervisor closure.
   distinct generic speaker ids.
 - [x] Poll `/snapshot` and `/events` per T-02; render committed spans plus provisional tail; only
   advance cursors after render.
-- [ ] A second simultaneous browser runs its own session and sees only its own transcript text.
+- [x] A second simultaneous browser runs its own session and sees only its own transcript text.
 - [ ] Both sessions stop cleanly; revoke only test credentials.
 - [ ] Record p50/p95 commit-to-render latency, dropped/discontinuous frames, 429 counts, GPU
   memory/utilization, and queue depth.
@@ -151,6 +163,11 @@ real-model browser session kept six HTTP-200 worklet heartbeats alive through a 
 drain, received exact closed runtime/v2 accounting, and detached only after the response. It does
 not satisfy the two-simultaneous-session criterion.
 
+Concurrent-browser evidence: `evidence/phase1/t1/iteration-12-concurrent-browser-probe.json`. It
+proves two distinct real-model render paths did not cross and records per-session latency, queue,
+frame-status, sequence, drop/discontinuity, and CPU/GPU-applicability facts. It also preserves the
+failed teardown: queue saturation, 238 frame 429s, one 500, a duplicate-stop 409, and two 429 stops.
+
 ### Binding proof interpretation
 
 - PRD + charter supersede the issue body's older remote/display procedure without deleting any
@@ -191,9 +208,14 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Run two simultaneous browsers, prove their rendered text never crosses, and
-   capture per-session stop/revocation evidence plus remaining latency/queue/429 metrics.
-2. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
+1. Add a focused regression and map `InferenceArbiterBackpressure` on the v2 frame path to the
+   charter-required non-terminal HTTP 429. The concurrent run captured the uncaught ASGI 500 and
+   terminal runtime; do not weaken the queue or treat the 500 as expected.
+2. Repeat the concurrent run with a bounded one-pass source and a non-reentrant, fire-and-monitor
+   stop trigger: begin each drain before its queue saturates, issue exactly one request per session,
+   and require both HTTP 200 with exact closed runtime/v2 accounting. Preserve the passing isolation
+   and latency checks.
+3. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
    evidence remains stub-only.
-3. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+4. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.
