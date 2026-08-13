@@ -1,0 +1,2 @@
+
+[loop 20260813-055952-98200] start budget=40 agent=codex branch=afk/t2-shared-token-auth
