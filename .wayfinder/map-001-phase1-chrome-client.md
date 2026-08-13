@@ -87,6 +87,14 @@ route steps; no ticket holds them.
   `/` new app, `/studio` unchanged, `/live` **kept as operator diagnostic**; bundle committed;
   **`vite build --watch`, no dev server** (same-origin is load-bearing for capture); origin always
   carries `:7861`; A-010 closes as superseded.
+- [Poll contract — MOSS snapshot/events mapped onto the reference event model](tickets/T-02-poll-contract-event-model.md) —
+  **only 5 of the reference's 9 events are reachable**; the four `llm_*`/`speaker_renamed` are
+  declared unreachable, not left dangling. One `CanonicalCommit` → many `TranscriptItem`s via
+  `TranscriptStreamParser`. Provisional tail parsed and merged into the list; corrections shown
+  **silently** (`revised_transcript ?? transcript`); `speaker_entity_id` = album canonical id;
+  `prefix_hash` carried but unverified. **`CapturePhase`/`CaptureLaneCode` become client-side
+  facts** — the browser owns capture now, so the reference's macOS lane codes are dropped for a
+  browser vocabulary. Snapshot is a full replacement keyed by `version`, so replay is a no-op.
 - [Voice-bank persistence](tickets/T-12-voice-bank-persistence-does-not-exist.md) —
   Phase 1 **journals vectors, does not build the bank**: album centroid appended at session end,
   session-keyed (T-01 removed `device_id`), stamped with pinned-embedder identity. Journaling

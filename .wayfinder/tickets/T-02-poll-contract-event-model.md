@@ -3,8 +3,8 @@ id: T-02
 map: map-001-phase1-chrome-client
 title: Poll contract — MOSS snapshot/events mapped onto the reference event model
 type: grilling
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked_by: []
 ---
 
@@ -83,3 +83,108 @@ reattaching client reclaims its own decode slot instead of stranding it.
 Open consequence for the mapping work: `sessionStorage` (not `localStorage`) is deliberate —
 it dies with the tab, so a shared-token deployment does not leave capture authority sitting in
 a browser profile indefinitely.
+
+## Resolution (2026-08-13)
+
+### Operator rulings this session
+
+| Fork | Ruling |
+|---|---|
+| Live tail | **Parse the provisional string into segments and merge into the transcript list**, styled distinctly, marked stale when superseded. |
+| Corrections | **Show corrected text silently.** No trace of the original in the UI. |
+| `speaker_entity_id` | **Album canonical speaker id**, with the `Sxx` label as display text. |
+| `prefix_hash` | **Carried in the contract, not verified** in Phase 1. |
+
+### Q1 — the 9 reference events
+
+Only **five** are reachable in Phase 1. The other four are declared unreachable rather than
+left dangling in the type union; the poller must never synthesize them.
+
+| Reference event | Phase 1 | Source |
+|---|---|---|
+| `session_state` | **reachable** | `/snapshot` → `LiveSnapshot.status` + `failure_reason`; `mode` is client-known |
+| `transcript_update` | **reachable** | `/snapshot` → `committed[]` + `provisional`, `seq` from the event stream |
+| `transcript_relabeled` | **reachable** | `label_revision_version` increment, or `revised_transcript` appearing; metadata `operation: "post_cluster_relabel"` |
+| `refinement_complete` | **reachable** | `identity_finalized` event + its `identity_revision_*` counters |
+| `stop_progress` | **reachable** | `stop` / stop-drain events. `llm_state` is **always null** in Phase 1 |
+| `speaker_renamed` | **UNREACHABLE** | no rename endpoint exists; Phase 2 |
+| `llm_status` | **UNREACHABLE** | no LLM layer; Phase 2 |
+| `llm_format_update` | **UNREACHABLE** | no LLM layer; Phase 2 |
+| `llm_summary_update` | **UNREACHABLE** | no LLM layer; Phase 2 |
+
+MOSS's own vocabulary (`span_frozen`, `identity_commit`, `identity_finalized`,
+`identity_commit_failed`, `stop`, `stop_accounting_mismatch`, `aborted`, `failure`) is
+**internal**. It is consumed by the poller and never reaches `dispatchWsEvent()`.
+
+### Q2 — `TranscriptItem` field mapping
+
+One `CanonicalCommit` yields **many** items: its `transcript` is `[start][Sxx]text[end]` and
+parses through `TranscriptStreamParser` into `TranscriptSegment(start, end, speaker, text)`.
+
+| Field | Source |
+|---|---|
+| `start` / `end` | parsed segment times, offset by the span's `start_sample / sample_rate` if span-relative — **verify against a real span before implementing** |
+| `text` | `revised_transcript ?? transcript`, parsed (silent-correction ruling) |
+| `speaker` | `Sxx` label from the parse — display text |
+| `speaker_entity_id` | **album canonical speaker id** from `LiveIdentitySnapshot.canonical_speakers` |
+| `display_name` | Phase 1: equals `speaker`. Rename is Phase 2 |
+| `state` | `provisional` (from the suffix) → `confirmed` (committed, sweep pending) → `final` (committed, finalization landed) |
+| `provisional_stale` | true when the item's `ProvisionalSuffix.generation` has been superseded |
+| `segment_id` | `f"{span_id}:{index}"`; provisional uses `f"prov:{generation}:{index}"` |
+| `confidence` | `null` — MOSS exposes none |
+| `refinement_status` | `online_preview` while provisional; `confirmed` once final. `tentative_refined` unused |
+| `preview_speaker`, `deep_refinement_speaker`, `deep_refinement_changed` | **always null** — reference two-pass concepts with no MOSS analogue, and the silent-correction ruling forbids surfacing the changed flag |
+
+**Stable keys are load-bearing.** Committed items key on `span_id:index`, which never moves.
+Provisional items re-parse wholesale each generation, so they key on
+`generation:index` and are expected to be replaced, not diffed. Without this the merged-list
+ruling produces DOM churn on every provisional generation.
+
+**Known consequence of combining the two rulings** (merged provisional list + silent
+corrections): the list can rewrite from two independent causes. `provisional_stale` styling
+covers the first; the second is silent by decision. Accepted deliberately for reference
+fidelity — flagged here so it is not rediscovered as a bug.
+
+### Q3 — lifecycle mapping, and a finding
+
+`SessionLifecycle` maps from `LiveSnapshot.status` plus `failure_reason`.
+
+**`CapturePhase` and `CaptureLaneCode` are now CLIENT-side facts, not server ones.** In the
+reference the server owned capture and reported them; under C6 the browser owns capture. The
+reference's lane codes are macOS-host-specific (`local_mic_start_timeout`, `unsafe_device`,
+`system_audio_no_callbacks`) and are **dropped**. Phase 1 defines a browser vocabulary instead:
+permission denied, surface supplied no audio track, track ended, sustained clipping, context
+suspended. Per the lane-health ruling these render only as the single plain-language status
+line; the raw codes never appear in the UI.
+
+Everything MOSS knows that the UI does not show — per-lane accepted/failed/retained samples,
+device epoch, replay-prune watermark, queue depth, 429 backpressure — stays in `/live` and logs.
+
+### Q4 — the two cursors
+
+- `/snapshot?since_version` is **authoritative state**: status, committed[], provisional,
+  identity, `label_revision_version`. It is a full replacement, not a delta.
+- `/events?since_seq` is **discrete happenings**: drives `stop_progress`,
+  `refinement_complete`, and the relabel trigger.
+- Cadence per C3: **250 ms while capturing, 2 s while finalizing/idle.**
+- **Advance each cursor only after render** — the existing `/live` portal's discipline; keep it.
+- Status handling: `404` session gone → terminal, clear reattach stash. `409` terminal → stop
+  polling and surface. `429` on the frame path is **non-terminal backpressure** (retry, never
+  terminal) — the legacy mono path's 429 *is* terminal, so Phase 1 must only ever send v2 lane
+  frames.
+
+### Q5 / lane health / reload
+
+Settled earlier this session; see "Operator rulings recorded 2026-08-13" above.
+
+### Q6 — idempotency
+
+Replay-safe by construction: `/snapshot` is a **full state replacement keyed by `version`**, so
+re-applying it is a no-op, and `/events` dedupes on `seq`. No client-side dedupe is required
+beyond ignoring events with `seq <=` the last rendered one. This is why C3 called the cursors
+stronger than the reference's cursor-less WS, and it is what makes the reattach ruling cheap.
+
+### `prefix_hash`
+
+Carried through the contract, **not verified** in Phase 1. Keeps the field available and adds no
+failure mode the user cannot act on. Revisit if a Phase 2 durable transcript needs integrity proof.
