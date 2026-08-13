@@ -1,0 +1,341 @@
+<!doctype html>
+<!-- PROTOTYPE — throwaway harness answering: does the doc's recommended lane design
+     (one 16 kHz AudioContext, AudioWorklet 8000-sample framer, PCM16 JSON frames,
+     0.5 s POST cadence, per-lane sequence/epoch) actually behave as specified in
+     real Chrome, including with 48 kHz source streams and in a background tab?
+     Also doubles as the attended Gate-1 harness (real mic + display capture). -->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>MOSS browser-capture prototype</title>
+  <style>
+    body { font: 14px/1.4 system-ui, sans-serif; margin: 1.5rem; max-width: 60rem; }
+    section { border: 1px solid #bbb; border-radius: 6px; padding: .8rem 1rem; margin: .8rem 0; }
+    h2 { font-size: 1rem; margin: 0 0 .5rem; }
+    pre { background: #f4f4f4; padding: .5rem; overflow-x: auto; font-size: 12px; }
+    .meter { display: inline-block; width: 240px; height: 12px; background: #eee; vertical-align: middle; }
+    .meter > i { display: block; height: 100%; background: #2a7; width: 0; }
+    button { margin-right: .5rem; }
+    .bad { color: #b00; } .good { color: #071; }
+  </style>
+</head>
+<body>
+<h1>MOSS browser-capture prototype <small>(throwaway)</small></h1>
+<div id="browserWarn" style="display:none;background:#fdd;border:2px solid #b00;padding:.6rem 1rem;font-weight:bold">
+  ⚠ This is NOT Google Chrome. The two-lane MVP and Gate 1 require Chrome — Safari can
+  capture the local microphone (measured) but supplies no tab/window/system audio track.
+  Open <code>http://127.0.0.1:8899/</code> in Google Chrome for meeting-audio capture.
+</div>
+<script>
+  if (!/Chrome\//.test(navigator.userAgent) || /Edg\//.test(navigator.userAgent)) {
+    document.getElementById("browserWarn").style.display = "block";
+  }
+</script>
+
+<section id="probes">
+  <h2>Environment probes (auto)</h2>
+  <pre id="probeOut">running…</pre>
+</section>
+
+<section>
+  <h2>Synthetic two-lane pipeline (no permissions needed)</h2>
+  <p>48 kHz oscillator sources → cross-context MediaStream → 16 kHz capture context →
+     worklet framer → PCM16 frames → POST. system=997 Hz, microphone=440 Hz.</p>
+  <button id="startSynth">Start synthetic</button>
+  <button id="stopSynth" disabled>Stop synthetic</button>
+  <button id="resetStub" title="Clear recorded server data only; active audio lanes keep running">Reset recorded data (lanes keep running)</button>
+  <div>system <span class="meter"><i id="m_system"></i></span> <span id="s_system"></span></div>
+  <div>microphone <span class="meter"><i id="m_microphone"></i></span> <span id="s_microphone"></span></div>
+  <pre id="synthOut"></pre>
+</section>
+
+<section>
+  <h2>Real capture (attended Gate-1 harness)</h2>
+  <p>Click <b>Start mic</b>, allow. Click <b>Start display</b>, pick the tone tab
+     (<a href="/tone" target="_blank">open 997 Hz tone tab</a>) or window/screen, and tick
+     <b>share tab/system audio</b>. Lanes stream to the same stub server.
+     <i>Levels show on the system/microphone meter bars in the synthetic section above —
+     they are shared per lane. Speak into the mic and expect the microphone bar to move.</i></p>
+  <button id="startMic">Start mic</button>
+  <button id="startDisplay">Start display</button>
+  <button id="stopReal" disabled>Stop real capture</button>
+  <pre id="realOut"></pre>
+</section>
+
+<script>
+const FRAME_SAMPLES = 8000, RATE = 16000;
+const probeOut = document.getElementById("probeOut");
+const synthOut = document.getElementById("synthOut");
+const realOut = document.getElementById("realOut");
+const log = (el, s) => { el.textContent += s + "\n"; };
+
+let ctx = null;            // shared 16 kHz capture context
+let lanes = {};            // lane -> {node, seq, epoch, sent, errors, src, extraCtx, streamTracks}
+
+async function captureContext() {
+  if (ctx) return ctx;
+  ctx = new AudioContext({ sampleRate: RATE });
+  await ctx.audioWorklet.addModule("/framer_worklet.js");
+  return ctx;
+}
+
+function pcm16b64(f32) {
+  const dv = new DataView(new ArrayBuffer(f32.length * 2));
+  for (let i = 0; i < f32.length; i++) {
+    let v = Math.max(-1, Math.min(1, f32[i]));
+    dv.setInt16(i * 2, Math.round(v * 32767), true); // force little-endian
+  }
+  let bin = "";
+  const u8 = new Uint8Array(dv.buffer);
+  for (let i = 0; i < u8.length; i += 0x8000)
+    bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function rms(f32) {
+  let s = 0;
+  for (let i = 0; i < f32.length; i++) s += f32[i] * f32[i];
+  return Math.sqrt(s / f32.length);
+}
+
+async function attachLane(lane, mediaStream, outEl, extraCtx) {
+  if (lanes[lane]) {
+    // Refuse double-attach: a second stream on the same lane name would overwrite
+    // this bookkeeping and leave the first worklet streaming unstoppably (observed
+    // when synthetic mode was started while real capture was live).
+    log(outEl, `REFUSED: lane "${lane}" already active — stop the current run first`);
+    throw new Error("lane busy: " + lane);
+  }
+  const c = await captureContext();
+  const src = c.createMediaStreamSource(mediaStream);
+  const node = new AudioWorkletNode(c, "lane-framer", {
+    numberOfInputs: 1, numberOfOutputs: 1,
+    processorOptions: { lane, frameSamples: FRAME_SAMPLES },
+  });
+  // Keep the graph attached to the destination (silently) so the context is
+  // unambiguously active; zero gain prevents audible playback/echo.
+  const mute = c.createGain(); mute.gain.value = 0;
+  src.connect(node).connect(mute).connect(c.destination);
+  const st = lanes[lane] = { node, seq: 0, epoch: 1, sent: 0, http: {}, errors: 0,
+                             src, mute, extraCtx, tracks: mediaStream.getTracks() };
+  node.port.onmessage = async (ev) => {
+    const m = ev.data;
+    if (m.type !== "frame") return;
+    const r = rms(m.samples);
+    const meter = document.getElementById("m_" + lane);
+    if (meter) meter.style.width = Math.min(240, r * 900) + "px";
+    const stat = document.getElementById("s_" + lane);
+    if (stat) stat.textContent = `rms=${r.toFixed(4)} seq=${st.seq} sent=${st.sent}`;
+    const body = {
+      lane, sequence: st.seq++,
+      capture_timestamp_ns: Math.round((m.startFrame / RATE) * 1e9),
+      device_epoch: st.epoch,
+      pcm_base64: pcm16b64(m.samples),
+      sample_count: m.samples.length,
+      sample_rate: RATE,
+      silent: r < 1e-4,
+      discontinuity: false,
+      // prototype-only extras (stub server records them; not part of the v2 contract):
+      client_visibility: document.visibilityState,
+      client_wall_ms: Date.now(),
+      quanta: m.quanta,
+    };
+    try {
+      const resp = await fetch("/frames", {
+        method: "POST", cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      st.http[resp.status] = (st.http[resp.status] || 0) + 1;
+      st.sent++;
+    } catch (e) { st.errors++; }
+  };
+  return st;
+}
+
+function detachAll(outEl) {
+  for (const [lane, st] of Object.entries(lanes)) {
+    try { st.node.port.onmessage = null; st.src.disconnect(); st.node.disconnect(); } catch {}
+    for (const t of st.tracks) { try { t.stop(); } catch {} }
+    if (st.extraCtx) st.extraCtx.close();
+    log(outEl, `${lane}: sent=${st.sent} http=${JSON.stringify(st.http)} fetchErrors=${st.errors}`);
+  }
+  lanes = {};
+}
+
+// ---------- synthetic mode ----------
+async function synthLane(lane, freq) {
+  // Generate at 48 kHz in a separate context to force the same cross-rate
+  // MediaStream resample path a real 48 kHz mic/display track exercises.
+  const gen = new AudioContext({ sampleRate: 48000 });
+  const osc = gen.createOscillator(); osc.frequency.value = freq;
+  const gain = gen.createGain(); gain.gain.value = 0.5;
+  const dest = gen.createMediaStreamDestination();
+  osc.connect(gain).connect(dest); osc.start();
+  const st = await attachLane(lane, dest.stream, synthOut, gen);
+  st.osc = osc;
+  return st;
+}
+
+document.getElementById("startSynth").onclick = async () => {
+  if (Object.keys(lanes).length) {
+    log(synthOut, "REFUSED: stop the active real/synthetic capture before starting synthetic mode");
+    return;
+  }
+  document.getElementById("startSynth").disabled = true;
+  try {
+    await captureContext();
+    await ctx.resume();
+    await synthLane("system", 997);
+    await synthLane("microphone", 440);
+    document.getElementById("stopSynth").disabled = false;
+    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-started", wall_ms: Date.now() }) });
+    log(synthOut, `started; contextRate=${ctx.sampleRate} state=${ctx.state}`);
+  } catch (e) {
+    detachAll(synthOut);
+    document.getElementById("startSynth").disabled = false;
+    document.getElementById("stopSynth").disabled = true;
+    log(synthOut, "synthetic FAILED: " + e.name + ": " + e.message);
+  }
+};
+
+document.getElementById("stopSynth").onclick = async () => {
+  document.getElementById("stopSynth").disabled = true;
+  detachAll(synthOut);
+  await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-stopped", wall_ms: Date.now() }) });
+  document.getElementById("startSynth").disabled = false;
+};
+
+// ---------- real capture (attended) ----------
+document.getElementById("startMic").onclick = async () => {
+  try {
+    if (lanes.microphone) {
+      log(realOut, "REFUSED: microphone lane already active — stop capture first");
+      return;
+    }
+    // Resume inside the click gesture BEFORE the permission prompt: a slow "Allow"
+    // can outlive transient activation, which would leave the context suspended.
+    await captureContext();
+    await ctx.resume();
+    const mic = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+    const t = mic.getAudioTracks()[0];
+    log(realOut, "mic track: " + t.label + " settings=" + JSON.stringify(t.getSettings()));
+    wireTrackEvents(t, "microphone");
+    await attachLane("microphone", mic, realOut);
+    log(realOut, `mic attached (context ${ctx.state})`);
+    document.getElementById("stopReal").disabled = false;
+    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-mic-started", wall_ms: Date.now() }) });
+  } catch (e) { log(realOut, "mic FAILED: " + e.name + ": " + e.message); }
+};
+
+document.getElementById("startDisplay").onclick = async () => {
+  try {
+    if (lanes.system) {
+      log(realOut, "REFUSED: system lane already active — stop capture first");
+      return;
+    }
+    // Corrected per W3C/MDN: systemAudio / windowAudio / monitorTypeSurfaces are
+    // TOP-LEVEL DisplayMediaStreamOptions members, not audio constraints.
+    // This MUST be the first permission API invoked by the click handler. Safari
+    // invalidates transient activation if worklet/context setup is awaited first.
+    const display = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: { restrictOwnAudio: false, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      systemAudio: "include",
+      windowAudio: "system",
+      selfBrowserSurface: "include",
+      surfaceSwitching: "exclude",
+      monitorTypeSurfaces: "include",
+    });
+    await captureContext();
+    await ctx.resume();
+    // The certified two-lane flow starts mic/context first. Log state here to catch
+    // regressions, but a "running" context does not prove a suspended post-picker
+    // context was resumed; display-first bootstrap remains a separate experiment.
+    const vids = display.getVideoTracks(), auds = display.getAudioTracks();
+    log(realOut, `display tracks: video=${vids.length} audio=${auds.length} (context ${ctx.state})`);
+    for (const t of [...vids, ...auds]) {
+      log(realOut, `  [${t.kind}] ${t.label} settings=${JSON.stringify(t.getSettings())}`);
+      wireTrackEvents(t, "system-" + t.kind);
+    }
+    if (!auds.length) {
+      log(realOut, "NO AUDIO TRACK — selected surface/browser supplied video only");
+      for (const t of display.getTracks()) t.stop();
+      return;
+    }
+    const audioOnly = new MediaStream([auds[0]]);
+    const st = await attachLane("system", audioOnly, realOut);
+    st.tracks = display.getTracks(); // stop video too on stop
+    await ctx.resume();
+    document.getElementById("stopReal").disabled = false;
+    await fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-display-started", wall_ms: Date.now() }) });
+  } catch (e) { log(realOut, "display FAILED: " + e.name + ": " + e.message); }
+};
+
+document.getElementById("stopReal").onclick = () => {
+  detachAll(realOut);
+  document.getElementById("stopReal").disabled = true;
+  fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "real-stopped", wall_ms: Date.now() }) });
+};
+
+function wireTrackEvents(t, tag) {
+  for (const ev of ["mute", "unmute", "ended"]) {
+    t.addEventListener(ev, () => {
+      log(realOut, `track event: ${tag} ${ev} @ ${new Date().toISOString()}`);
+      fetch("/phase", { method: "POST", body: JSON.stringify({ phase: `track-${tag}-${ev}`, wall_ms: Date.now() }) });
+    });
+  }
+}
+
+document.getElementById("resetStub").onclick = async () => {
+  const r = await fetch("/reset", { method: "POST", body: "{}" });
+  const j = await r.json().catch(() => ({}));
+  synthOut.textContent = ""; realOut.textContent = "";
+  const cleared = j.cleared || {};
+  const frames = Object.fromEntries(Object.entries(cleared.lanes || {}).map(([k, v]) => [k, v.frames]));
+  log(synthOut, "stub state cleared; discarded lane frames: " + JSON.stringify(frames)
+      + " checks: " + JSON.stringify(cleared.checks || {}));
+};
+
+// ---------- visibility reporting ----------
+document.addEventListener("visibilitychange", () => {
+  fetch("/phase", { method: "POST", body: JSON.stringify({ phase: "visibility-" + document.visibilityState, wall_ms: Date.now() }) });
+});
+
+// ---------- auto probes ----------
+(async () => {
+  const out = [];
+  out.push("userAgent: " + navigator.userAgent);
+  try {
+    const c = await captureContext();
+    out.push(`AudioContext({sampleRate:16000}): rate=${c.sampleRate} state=${c.state} baseLatency=${c.baseLatency}`);
+  } catch (e) { out.push("AudioContext(16k) FAILED: " + e.message); }
+  out.push("getSupportedConstraints: " + JSON.stringify(navigator.mediaDevices.getSupportedConstraints()));
+  // Post what we have immediately so a hanging gesture probe can't suppress it.
+  fetch("/probes", { method: "POST", body: JSON.stringify({ probes: [...out, "(gesture probe pending)"] }) });
+  // Must run OUTSIDE any user gesture: spec requires transient activation, so this
+  // should reject with InvalidStateError without showing any chooser UI.
+  setTimeout(async () => {
+    try {
+      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      out.push("getDisplayMedia without gesture: UNEXPECTEDLY RESOLVED tracks=" + s.getTracks().map(t => t.kind).join(","));
+      for (const t of s.getTracks()) t.stop();
+    } catch (e) {
+      out.push(`getDisplayMedia without gesture: rejected ${e.name} ("${e.message}")`);
+    }
+    probeOut.textContent = out.join("\n");
+    fetch("/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
+  }, 100);
+  probeOut.textContent = out.join("\n") + "\n(gesture probe pending…)";
+  // Autonomous mode: /?autostart=1 starts the synthetic pipeline without a click.
+  // Requires launching Chrome with --autoplay-policy=no-user-gesture-required
+  // (autoplay policy only; capture-permission behavior is not affected).
+  if (new URLSearchParams(location.search).has("autostart")) {
+    setTimeout(() => document.getElementById("startSynth").click(), 400);
+  }
+})();
+</script>
+</body>
+</html>

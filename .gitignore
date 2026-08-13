@@ -5,6 +5,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# macOS Finder metadata.
+.DS_Store
+
 # Local model artifacts.
 pretrained/
 outputs/
