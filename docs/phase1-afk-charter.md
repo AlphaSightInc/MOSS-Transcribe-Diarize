@@ -23,7 +23,10 @@ the closed decision tickets). Read your ticket's referenced wayfinder tickets be
 
 ## 2. Merge protocol — self-merge, but serialized
 
-Agents rebase onto `dev` and merge when green (operator ruling). One guard is mandatory:
+Agents integrate `dev` into their branch and fast-forward `dev` when green (operator ruling).
+**Merges only — `prompt.md` forbids rebasing and that rule stands.** `dev` is deliberately not
+checked out in any worktree, which is what makes `git push . HEAD:dev` work. Two guards are
+mandatory:
 
 **Acquire the merge lock before touching `dev`.** The lock is a single file in the shared git
 directory, so all worktrees see it:
@@ -34,14 +37,15 @@ LOCK="$(git rev-parse --git-common-dir)/afk-merge.lock"
 if ! ( set -o noclobber; echo "$$ ticket-N $(date -u +%FT%TZ)" > "$LOCK" ) 2>/dev/null; then
   echo "merge lock held by: $(cat "$LOCK")"; exit 1   # wait and retry, do not steal
 fi
-# ... rebase onto dev, run validation, merge, push your branch ...
+# git merge --no-edit dev ; validate the MERGED result ; git push . HEAD:dev ; git push private HEAD:<branch>
 rm -f "$LOCK"                                          # ALWAYS release
 ```
 
 Rules:
 - Never steal or delete a lock you did not create. If a lock looks stale (>30 min), comment on
   your issue and let the supervisor break it.
-- **Validation must pass on the rebased result, not just on your branch**, before you merge.
+- **Validation must pass on the merged result, not just on your branch**, before you fast-forward `dev`.
+- Do not check `dev` out in a worktree.
 - If your merge breaks `dev`, revert your merge immediately — do not attempt a forward fix while
   holding the lock.
 - `dev` at `pre-afk-20260813` is the safety tag. `dev-backup-20260812` also exists.
@@ -51,7 +55,7 @@ Rules:
 A ticket is done when **all** hold:
 
 1. Every acceptance criterion on the GitHub issue is satisfied.
-2. Validation passes on the branch **rebased onto current `dev`**.
+2. Validation passes on the branch **after merging current `dev` into it**.
 3. Evidence exists as **raw artifacts** (command output, logs, measurement files), not prose
    claims — committed under `evidence/phase1/<ticket-n>/`.
 4. A comment on the issue links the branch and states, criterion by criterion, what proves it.
