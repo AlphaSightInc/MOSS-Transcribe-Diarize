@@ -76,7 +76,22 @@ route steps; no ticket holds them.
 
 <!-- one line per closed ticket: enough to judge relevance, then open the ticket for detail -->
 
-_(none yet — charting session only)_
+- [Shared-token trust posture and client identity](tickets/T-01-shared-token-trust-posture.md) —
+  **single trust domain accepted**: anyone on the LAN may read any transcript. No client-asserted
+  `device_id` (security theatre). Kills the `403` isolation criterion for T-11 and makes pairing
+  a Phase 2 precondition for the voice bank.
+- [Where the Phase 1 spec lands and how the AFK loop consumes it](tickets/T-03-spec-landing-and-afk-handoff.md) —
+  **several ADRs under `docs/adr/`**, continuing the 0001–0003 sequence; `.wayfinder/` is
+  committed and git-tracked; planning artifacts live with the code.
+- [Serving cutover — new app at /, Studio at /studio, one origin](tickets/T-09-serving-cutover-and-origin.md) —
+  `/` new app, `/studio` unchanged, `/live` **kept as operator diagnostic**; bundle committed;
+  **`vite build --watch`, no dev server** (same-origin is load-bearing for capture); origin always
+  carries `:7861`; A-010 closes as superseded.
+- [Voice-bank persistence](tickets/T-12-voice-bank-persistence-does-not-exist.md) —
+  Phase 1 **journals vectors, does not build the bank**: album centroid appended at session end,
+  session-keyed (T-01 removed `device_id`), stamped with pinned-embedder identity. Journaling
+  defaults **ON**; raw-audio retention stays **OFF** — ADR-0003's posture deliberately not
+  inherited. Biometric-consent decision remains **open** for any rollout beyond the LAN.
 
 ## Not yet specified
 
@@ -87,11 +102,14 @@ In scope for Phase 1, not yet sharp enough to ticket:
   and the inference host is itself a Windows machine, so it can be tested attended on
   existing hardware. Unclear whether Phase 1 *requires* a passing Windows run or merely
   must not preclude one. Sharpen once the capture-page spec exists.
-- **Reload/recovery mid-capture.** Phase 1 has no session history, so a browser refresh
-  during capture may orphan a live server session. Whether Phase 1 offers reattach, a
-  clean abort, or accepts the loss depends on what the poll/state contract carries.
 - **Operator observability.** How an operator sees N active sessions, per-session queue
-  depth, and 429 backpressure. Shape depends on the concurrency-dispatcher outcome.
+  depth, and 429 backpressure. Shape depends on the concurrency-dispatcher outcome. Narrowed
+  2026-08-13: the product UI shows none of it (two meters + one status line), so this is purely
+  an operator-surface question — `/live` and logs are the current answer.
+- **Biometric consent for banked voiceprints beyond the LAN.** T-12 rules journaling ON for the
+  guarded tailnet deployment and explicitly does **not** settle consent, deletion, or
+  right-to-remove for participants who never agreed to enrollment. Sharpens into a ticket if
+  the deployment widens past the operator's own meetings.
 - **TLS posture beyond the tailnet.** The MVP deliberately keeps a self-signed cert with a
   one-time same-origin interstitial click-through. The trigger and target for graduating to
   a trusted certificate is undecided.

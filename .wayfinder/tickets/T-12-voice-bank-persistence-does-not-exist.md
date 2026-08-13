@@ -3,8 +3,8 @@ id: T-12
 map: map-001-phase1-chrome-client
 title: Voice-bank persistence — Phase 2's store does not exist and Phase 1 does not create one
 type: grilling
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked_by: []
 ---
 
@@ -79,3 +79,62 @@ audio is gone is impossible.
 
 This does **not** ask to build the voice bank in Phase 1. It asks whether Phase 1 may ship
 without deciding whether it is *discarding* the thing Phase 2 is specified to manage.
+
+## Resolution
+
+**Journal the vectors; do not build the bank. (Operator deferred to implementer, 2026-08-13.)**
+
+Phase 1 **banks**, but the narrowest possible thing: at session end, write each speaker's
+duration-weighted live-album centroid to a local append-only journal. It does **not** build
+CRUD, enrollment, naming, matching, or any UI. Those stay Phase 2.
+
+### Why bank rather than discard
+
+The cost asymmetry decides it. Writing ~200 floats per speaker at stop is a single small writer
+with no audio retention and no new grant. Re-deriving a voiceprint once the audio is gone is
+impossible. The DL2 sprint already ran this experiment: raw audio hit a TTL before any vector was
+banked, every acoustic asset was lost, and F2-A became unrunnable. Phase 1 ships capture at
+product scale, so discarding repeats that loss at larger scale.
+
+### What T-01 changed about this
+
+T-01 accepted a single trust domain and rejected client-asserted `device_id`. **There is
+therefore no per-client key in Phase 1.** C9's `device_id`-keyed bank cannot be built as
+specified, and this ticket cannot pretend otherwise. Consequences:
+
+- The Phase 1 artifact is a **session-keyed vector journal**, not a voice bank: append-only
+  records of `{session_id, speaker_label, centroid, sample_seconds, embedder_id,
+  embedder_state_sha, created_at, echo_mode}`.
+- **Phase 2 must re-enable pairing before it can key or merge the journal into a real bank.**
+  Recorded as a Phase 2 precondition, not an enhancement.
+- Record `embedder_id` + `embedder_state_sha` on every row. Without the pinned-encoder identity,
+  banked vectors are uncomparable after any embedder change and the journal is worthless.
+
+### Retention posture — deliberately NOT inherited from ADR-0003
+
+ADR-0003's opt-in retention governs **raw audio**: large, TTL'd, reconstructible into speech,
+and deliberately deprovisioned in production on 2026-08-09. A derived centroid is a different
+risk class — a few hundred floats, not invertible to intelligible audio. Conflating the two
+would either lose the data (default-off, the exact failure this ticket warns about) or reopen
+TTL/byte-cap/consent for no reason.
+
+Ruling: **vector journaling defaults ON; raw-audio retention stays OFF.** State the distinction
+explicitly in the ADR so no reviewer assumes ADR-0003's posture transfers.
+
+### The limit of this ruling — flagged, not hidden
+
+A speaker embedding is **biometric data**, materially different from a transcript. This ruling
+is scoped to a LAN/tailnet deployment recording the operator's own meetings, consistent with
+T-01's accepted posture. It is **not** a consent decision for participants who never agreed to
+enrollment.
+
+**Any rollout beyond the guarded LAN/tailnet requires an explicit consent and
+deletion/right-to-remove decision before the journal ships.** That is the deferred
+production-readiness §7 policy item and it remains open. Do not treat this resolution as having
+closed it.
+
+### Not in scope here
+
+D-7 (`0983339` on `ralph/dl2-postreview-rails`) is **not** a Phase 1 precondition — the
+live-album path is chosen instead. D-7's rail is therefore research-only and must be scoped that
+way so nobody assumes product coverage it does not provide.

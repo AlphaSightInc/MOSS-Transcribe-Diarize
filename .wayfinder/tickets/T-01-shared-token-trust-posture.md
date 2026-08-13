@@ -3,8 +3,8 @@ id: T-01
 map: map-001-phase1-chrome-client
 title: Shared-token trust posture and client identity
 type: grilling
-status: open
-assignee:
+status: closed
+assignee: operator+claude
 blocked_by: []
 ---
 
@@ -47,3 +47,30 @@ Ground truth: `moss_transcribe_diarize/app/live_auth.py`;
 §"Authentication/onboarding constraints" (note its warning that `localStorage` is
 XSS-exposed and not equivalent to Keychain/DPAPI, and that the current server rejects
 query-only tokens).
+
+## Resolution
+
+**Single trust domain, accepted and stated (operator, 2026-08-13).**
+
+Phase 1 ships one shared bearer token from server config. Every client resolves to the same
+device principal, so cross-session reads are permitted: any holder of the token can read any
+session's transcript. The operator's ruling: *"it's fine, everyone on the LAN sees the
+transcript."*
+
+This is recorded as the **security posture**, not an oversight:
+
+- The deployment is LAN/tailnet-only behind a guarded network boundary.
+- The token is already shared, so a client-asserted `device_id` would provide no real
+  confidentiality — it would look like security without being security. Rejected for that reason.
+- `LiveAccessRegistry` therefore needs a *configuration mode*, not new authority logic. Keep its
+  15/15 gates and 33/33 killed mutations intact; do not rewrite the authority path.
+
+**Consequences that other tickets must honour:**
+
+- The historical `403` cross-read isolation result **cannot** be a Phase 1 acceptance criterion.
+  T-11 must restate its isolation gate accordingly rather than carrying forward a criterion this
+  posture makes unsatisfiable.
+- Phase 2's `device_id`-keyed voice bank (C9) has **no key** under this posture. Re-enabling
+  pairing is a Phase 2 precondition for the bank, not an optional enhancement. Recorded on T-12.
+- Sessions remain individually addressable by server-issued id; routing is unchanged. What is
+  gone is *enforcement*, not addressing.

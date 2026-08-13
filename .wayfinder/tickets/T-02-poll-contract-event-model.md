@@ -49,3 +49,37 @@ Ground truth: `frontend/src/api/ws.ts` + `frontend/src/api/types.ts` (reference)
 `_v2_snapshot_payload`, `live_events`); `moss_transcribe_diarize/app/live_service_runtime.py`;
 `moss_transcribe_diarize/app/live_portal.py` (the existing polling client, including its
 render-then-advance discipline and bounded retry/cancellation/stop-drain/poll-timeout).
+
+## Operator rulings recorded 2026-08-13 (ticket stays OPEN for the mechanical mapping)
+
+Three of this ticket's questions are now settled by operator decision. The remaining work —
+questions 1, 2, 3 and 6, the event/type mapping itself — is mechanical and needs no further
+operator input.
+
+**Q5, retro-sweep arrival — minimal effort.** No blocking, no dedicated finalization screen.
+The adaptive poller already drops to 2 s in the finalizing/idle phase per C3, so this costs
+nothing new: keep polling, let relabels land, drive the reference's existing `finalizing` flag.
+Export stays available **at all times**, marked *provisional attribution* until finalization
+lands. The user is never held hostage to the tab, and is never silently handed a transcript
+whose speaker labels are about to change. Rationale: MVP feasibility is the near-term goal, so
+buy correctness-of-disclosure rather than correctness-of-timing.
+
+**Lane health — two meters plus one plain-language status line; everything else hidden.**
+MOSS's per-lane accepted/failed/retained samples, device epoch, replay-prune watermark, stable
+failure codes, queue depth, and 429 backpressure do **not** surface in the product UI. The two
+meters are already required by the capture preflight, so they carry no extra design cost. The
+status line renders plain language — "Meeting audio stopped", "Server catching up" — mapped from
+the stable failure codes. Full diagnostics stay in `/live` (kept per T-09) and server logs, where
+the operator already looks. This keeps C2's visual discipline without discarding the facts.
+
+**Reload mid-capture — sessionStorage stash and reattach.** Stash session id + token in
+`sessionStorage`; on load, attempt reattach and resume the poller from its existing cursors.
+This is unusually cheap here because MOSS's `since_seq` / `since_version` cursors already make
+resume a native operation rather than a new mechanism — the reason C3 called polling stronger
+than the reference's cursor-less WS. Survives an accidental refresh; does not survive a tab
+close. This also removes the orphaned-session concern from the map's *Not yet specified*: a
+reattaching client reclaims its own decode slot instead of stranding it.
+
+Open consequence for the mapping work: `sessionStorage` (not `localStorage`) is deliberate —
+it dies with the tab, so a shared-token deployment does not leave capture authority sitting in
+a browser profile indefinitely.

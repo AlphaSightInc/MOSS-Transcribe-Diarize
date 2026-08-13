@@ -3,8 +3,8 @@ id: T-03
 map: map-001-phase1-chrome-client
 title: Where the Phase 1 spec lands and how the AFK loop consumes it
 type: grilling
-status: open
-assignee:
+status: closed
+assignee: operator+claude
 blocked_by: []
 ---
 
@@ -50,3 +50,22 @@ Resolve:
 
 Ground truth: this repo's `MISSION.md`, `POLICY.md`, `OPERATOR_GUIDE.md`, `roles/`,
 `scripts/check-prd-conformance.py`; target repo `docs/adr/`, `AGENTS.md`.
+
+## Resolution
+
+**Several ADRs under `docs/adr/`; `.wayfinder/` committed and git-tracked (operator, 2026-08-13).**
+
+- **Artifact form:** the spec lands as **multiple ADRs** in the target repo's existing
+  `docs/adr/` sequence (continuing after 0001/0002/0003), not one monolith. Each ADR is
+  independently reviewable and independently revisable.
+- **`.wayfinder/` is committed and tracked**, so the map and its tickets version with the code.
+  This settles question 7: it is neither gitignored nor untracked drift. The control plane's
+  `target_status_digest` / `target_dirty` fields should be refreshed from this commit rather
+  than read as drift.
+- Planning artifacts for this effort live **with the code**, not in the control plane. The
+  control plane keeps loop state, ledgers, evidence, and review decisions.
+
+**Still to be settled by the ADR-writing session** (mechanical, no further operator input needed):
+the exact ADR boundaries and numbering, PRD conformance shape, and how many IDEAs this enters
+the loop as. Proposed split, one ADR each: browser capture client; polled session delivery;
+Phase 1 auth posture; frontend serving/fidelity rule.
