@@ -829,7 +829,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
 
     assert enabled.returncode == 0, enabled.stderr
     enabled_args = capture_path.read_text(encoding="utf-8").splitlines()
-    assert enabled_args[-18:] == [
+    assert enabled_args[-20:] == [
         "--speaker-identity-tier-b",
         "--speaker-identity-state",
         "/provider/state.pt",

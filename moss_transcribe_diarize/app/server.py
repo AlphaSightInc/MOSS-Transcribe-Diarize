@@ -67,8 +67,16 @@ def create_app(
         raise RuntimeError("Install fastapi, uvicorn, and python-multipart to run the local web app.") from exc
 
     app = FastAPI(title="MOSS Subtitle Studio")
+    # StaticFiles(check_dir=True) raises RuntimeError at *construction* time, before any
+    # route is registered -- so an absent ProjectResources/ took down /studio, /live and
+    # every /api/** route, not just the frontend. pyproject ships no package-data and no
+    # MANIFEST.in, so any non-editable install (`pip install .` then `mtd-subtitle-web`)
+    # has no ProjectResources/ at all. Mount only when the directory is really there; the
+    # frontend routes below degrade to a 503 that names the fix.
     frontend_dir = Path(__file__).resolve().parents[2] / "ProjectResources" / "Frontend"
-    app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+    frontend_available = (frontend_dir / "index.html").is_file()
+    if frontend_available:
+        app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
     if backend == "vllm":
         if not vllm_base_url:
             raise ValueError("--vllm-base-url is required when backend='vllm'.")
@@ -134,6 +142,16 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     def index():
+        if not frontend_available:
+            # Name the fix rather than 500 on a missing file. /studio and /api/** still work.
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Frontend bundle is not installed. Expected "
+                    f"{frontend_dir / 'index.html'}. Run `npm --prefix frontend run build` "
+                    "from a repository checkout, or use /studio."
+                ),
+            )
         return FileResponse(
             frontend_dir / "index.html",
             media_type="text/html",

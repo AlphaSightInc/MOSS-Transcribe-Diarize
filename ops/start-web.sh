@@ -61,7 +61,13 @@ case "${MOSS_LIVE_ENABLED:-0}" in
     : "${MOSS_LIVE_TLS_CERTFILE:?MOSS_LIVE_TLS_CERTFILE is required when live mode is enabled}"
     : "${MOSS_LIVE_TLS_KEYFILE:?MOSS_LIVE_TLS_KEYFILE is required when live mode is enabled}"
     : "${MOSS_LIVE_HELPER_LEASE_SECONDS:?MOSS_LIVE_HELPER_LEASE_SECONDS is required when live mode is enabled}"
-    : "${MOSS_LIVE_VECTOR_JOURNAL_PATH:?MOSS_LIVE_VECTOR_JOURNAL_PATH is required when live mode is enabled}"
+    # Deliberately NOT `:?`. The deployed host's ops/moss-live.env is host-local and
+    # predates this key, so requiring it would exit 2 on the next restart of a service
+    # that was running fine -- an outage caused by an added default-on feature. Fall back
+    # to the same default web_cli uses, so "journaling defaults ON" is true of the
+    # deployment and not only of the library. The absolute-path and outside-checkout
+    # guards below still apply to whatever value is used.
+    : "${MOSS_LIVE_VECTOR_JOURNAL_PATH:=${HOME}/.local/share/moss-transcribe-diarize/live/speaker-vectors.jsonl}"
     : "${MOSS_WEB_PORT:?MOSS_WEB_PORT is required when live mode is enabled}"
     : "${MOSS_RUNS_DIR:?MOSS_RUNS_DIR is required when live mode is enabled}"
     if [ "${web_port}" = "${BATCH_PORT}" ]; then

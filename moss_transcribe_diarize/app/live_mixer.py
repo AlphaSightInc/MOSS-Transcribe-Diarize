@@ -104,7 +104,11 @@ class LiveCompatibilityMixer:
         source: LiveV2Session,
         runtime,
         final: bool = False,
-        retryable_backpressure: bool = False,
+        # This mixer serves ONLY the v2 lane path (LiveCompatibilityMixerRegistry is
+        # constructed once, for v2, in live_transport). On that path queue backpressure is
+        # non-terminal: the staged lane frame is retained for an identical retry. Legacy
+        # mono never reaches this mixer, so the default is True rather than False.
+        retryable_backpressure: bool = True,
     ) -> LiveMixResult | None:
         if not isinstance(session_id, str) or not session_id:
             raise ValueError("session_id must be a non-empty string.")

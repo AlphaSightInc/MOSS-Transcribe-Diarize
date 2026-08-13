@@ -178,10 +178,20 @@ def test_live_profile_example_yields_the_complete_tls_invocation(home: Path) -> 
 
 def test_every_live_profile_variable_is_required(home: Path) -> None:
     """Dropping any one live-profile key refuses the start and names the missing key."""
+    # MOSS_LIVE_VECTOR_JOURNAL_PATH is deliberately NOT in this set. The deployed host's
+    # ops/moss-live.env is host-local and predates the key, so requiring it would exit 2 on
+    # the next restart of a service that was running fine -- an outage introduced by adding
+    # a default-on feature. It now falls back to the same default web_cli uses; see
+    # test_live_profile_without_a_vector_journal_path_falls_back_to_the_default.
     required = [
         key
         for key in LIVE_ENV_EXAMPLE
-        if key not in {"MOSS_LIVE_ENABLED", "MOSS_LIVE_SHARED_TOKEN_FILE"}
+        if key
+        not in {
+            "MOSS_LIVE_ENABLED",
+            "MOSS_LIVE_SHARED_TOKEN_FILE",
+            "MOSS_LIVE_VECTOR_JOURNAL_PATH",
+        }
     ]
     assert set(required) == {
         "MOSS_WEB_PORT",
@@ -191,7 +201,6 @@ def test_every_live_profile_variable_is_required(home: Path) -> None:
         "MOSS_LIVE_TLS_CERTFILE",
         "MOSS_LIVE_TLS_KEYFILE",
         "MOSS_LIVE_HELPER_LEASE_SECONDS",
-        "MOSS_LIVE_VECTOR_JOURNAL_PATH",
     }
     for key in required:
         partial = {name: value for name, value in LIVE_ENV_EXAMPLE.items() if name != key}
@@ -199,6 +208,25 @@ def test_every_live_profile_variable_is_required(home: Path) -> None:
         assert result.returncode != 0, f"{key} was not required"
         assert key in result.stderr
         assert result.stdout == ""
+
+
+def test_live_profile_without_a_vector_journal_path_falls_back_to_the_default(home: Path) -> None:
+    """An env file that predates the journal key must still start, journaling to the default.
+
+    Regression guard: making this key mandatory took the deployed live service down on its
+    next restart, because the host's env file is host-local and had no such key.
+    """
+    env = dict(LIVE_ENV_EXAMPLE)
+    del env["MOSS_LIVE_VECTOR_JOURNAL_PATH"]
+    result = run_adapter(home, env)
+    assert result.returncode == 0, result.stderr
+    argv = argv_of(result)
+    assert "--live-vector-journal-path" in argv
+    journal_path = argv[argv.index("--live-vector-journal-path") + 1]
+    assert journal_path.endswith(
+        "/.local/share/moss-transcribe-diarize/live/speaker-vectors.jsonl"
+    ), journal_path
+    assert journal_path.startswith("/"), "default journal path must be absolute"
 
 
 def test_live_profile_without_a_shared_token_file_keeps_pairing_mode(home: Path) -> None:

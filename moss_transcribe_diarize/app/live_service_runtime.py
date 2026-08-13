@@ -438,9 +438,14 @@ class LiveServiceRuntime:
         self._in_flight_session_ids: set[str] = set()
 
     def create(self, *, echo_mode: str | None = None) -> LiveServiceCreateResult:
+        # `echo_mode` is a T-06 browser-preflight concept (headphones vs speakers). No
+        # client that exists today sends it -- not the shipping macOS capture app
+        # (CaptureSecurity.postSession posts no body), not live_service_replay, not the
+        # replay integration harness. Requiring it whenever journaling is enabled turned
+        # every `POST /api/live/sessions` into a 400 in the default `--live` deployment,
+        # i.e. a total live-capture outage. Journaling an honest "unspecified" is strictly
+        # better than refusing the session: the row records what was actually known.
         if echo_mode is None:
-            if self._vector_journal is not None:
-                raise ValueError("echo_mode is required when vector journaling is enabled.")
             echo_mode = "unspecified"
         elif not isinstance(echo_mode, str) or echo_mode not in {"headphones", "speakers"}:
             raise ValueError("echo_mode must be headphones or speakers.")
@@ -501,6 +506,32 @@ class LiveServiceRuntime:
                 )
             try:
                 result = state.coordinator.accept_frame(frame)
+            except InferenceArbiterBackpressure as exc:
+                # The preflight above reserves exactly one slot, but a single frame can
+                # freeze several spans (leading-silence close + hard-cap boundary in the
+                # same frame), and each frozen span queues its own canonical item. The
+                # overflow therefore escapes the preflight and used to land in the generic
+                # handler below, which terminalizes the session -- while _failure_status
+                # still maps it to 429, the status the charter defines as "retry". The
+                # client then retried forever against a dead session.
+                #
+                # A queue that is momentarily full is not a session fault, so on the v2
+                # lane path this stays non-terminal. Spans already queued before the
+                # overflow remain queued and drain normally; the v2 layer retains the lane
+                # frame and replays its prior ack on an identical retry.
+                if retryable_queue_backpressure:
+                    raise LiveServiceTransportPacingFailure(
+                        str(exc) or "live canonical queue is full.",
+                        code="canonical_queue_full",
+                        retryable=True,
+                        detail={
+                            "queue_depth": state.arbiter.snapshot().live_canonical,
+                            "max_queue_depth": state.descriptor.bounds.max_queue_depth,
+                            "overflow": "multi_span_frame",
+                        },
+                    ) from exc
+                self._fail(state, self._failure_from_exception(exc))
+                raise
             except Exception as exc:
                 self._fail(state, self._failure_from_exception(exc))
                 raise
@@ -565,15 +596,34 @@ class LiveServiceRuntime:
         with self._lock:
             state = self._get(session_id)
         try:
-            with self._lock:
-                self._raise_terminal(state)
-                queued = state.coordinator.stop_endpoint()
-                for item_id in queued:
-                    self._record_event(state, "canonical_queued", {"item_id": item_id, "reason": "stop"})
-                if self._has_unresolved_work_locked(state) and loop.time() >= end_time:
-                    raise TimeoutError("live service stop deadline expired with unresolved work.")
-                if queued:
-                    self._mark_ready_locked(state)
+            # `stop_endpoint` submits the final open partition and had no capacity
+            # preflight, so stopping while the canonical queue was full raised straight
+            # into the handler below and terminalized the session -- losing the tail span
+            # on the most ordinary path there is (a user clicking Stop under load).
+            # A full queue at stop is a pacing condition, not a session fault: drain and
+            # retry within the caller's deadline, and only then time out.
+            while True:
+                with self._lock:
+                    self._raise_terminal(state)
+                    try:
+                        queued = state.coordinator.stop_endpoint()
+                    except InferenceArbiterBackpressure:
+                        queued = None
+                    if queued is not None:
+                        for item_id in queued:
+                            self._record_event(
+                                state, "canonical_queued", {"item_id": item_id, "reason": "stop"}
+                            )
+                        if self._has_unresolved_work_locked(state) and loop.time() >= end_time:
+                            raise TimeoutError("live service stop deadline expired with unresolved work.")
+                        if queued:
+                            self._mark_ready_locked(state)
+                        break
+                if loop.time() >= end_time:
+                    raise TimeoutError(
+                        "live service stop deadline expired with a full canonical queue."
+                    )
+                await self._wait_for_drain(state, end_time=end_time)
             await self._wait_for_drain(state, end_time=end_time)
             with self._lock:
                 self._finalize_identity_locked(state)

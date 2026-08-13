@@ -1127,16 +1127,34 @@ def test_clean_stop_journals_completed_identity_and_names_unusable_speaker(tmp_p
     assert "speaker_label=speaker-refused reason=centroid_non_finite" in caplog.text
 
 
-def test_journaling_session_requires_the_settled_echo_choice(tmp_path):
+def test_journaling_session_accepts_a_bodyless_create_and_records_it_as_unspecified(tmp_path):
+    """A client that sends no echo choice must still get a session.
+
+    This previously asserted the opposite -- that journaling made `echo_mode` mandatory.
+    That contract was a total live-capture outage: `echo_mode` is a browser-preflight
+    concept from an unbuilt page, and no client that exists sends it (the shipping macOS
+    capture app posts no body at all), so every `POST /api/live/sessions` returned 400 in
+    the default `--live` deployment. Journaling an honest "unspecified" is strictly better
+    than refusing the meeting.
+    """
     from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
 
-    runtime = _runtime(
-        speech=(),
-        vector_journal=LiveVectorJournal(tmp_path / "speaker-vectors.jsonl"),
-    )
+    def journaling_runtime(name):
+        return _runtime(
+            speech=(),
+            vector_journal=LiveVectorJournal(tmp_path / f"{name}.jsonl"),
+        )
 
-    with pytest.raises(ValueError, match="echo_mode is required"):
-        runtime.create()
+    runtime = journaling_runtime("bodyless")
+    created = runtime.create()
+    assert created.session_id
+    assert runtime._sessions[created.session_id].echo_mode == "unspecified"
+
+    # An explicitly supplied value is still validated, so a real preflight cannot smuggle
+    # an unknown mode past the journal.
+    assert journaling_runtime("explicit").create(echo_mode="headphones").session_id
+    with pytest.raises(ValueError, match="echo_mode must be headphones or speakers"):
+        journaling_runtime("invalid").create(echo_mode="bogus")
 
 
 def test_abort_never_writes_completed_identity_observations(tmp_path):
