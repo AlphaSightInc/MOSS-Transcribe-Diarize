@@ -100,22 +100,31 @@ Capture conversion becomes shared code only after real native helpers prove a
 repeated production behavior that belongs behind the same OS-neutral seam.
 
 One server-side `LiveAccessRegistry` owns live-only access at the same disabled
-HTTP seam. It admits only direct private peers, requires TLS for non-loopback
-live requests, issues loopback-only certificate-bound pairing payloads, persists
-only capture-authority digests and revocation facts, binds live session
-ownership to the capture device, grants separate short-lived view authority, and
-releases authority on terminal session paths. FastAPI extracts direct peer,
-scheme, and bearer headers; Uvicorn supplies the configured TLS certificate and
-key with proxy headers disabled. Batch routes remain outside this authority.
+HTTP seam. It admits only direct private peers and requires TLS for non-loopback
+live requests. With no shared-token config it retains the existing pairing
+flow: loopback-only certificate-bound pairing payloads resolve to distinct
+capture principals. A configured shared bearer instead resolves every holder to
+one process-only capture principal and is never persisted to auth state. This is
+an explicit single trust domain: any token holder can read any live session.
+Server-issued session ids still provide individual addressing and transcript
+routing, but they do not provide read isolation between holders of the shared
+token. Consequently, the historical cross-read `403` result is not an
+acceptance criterion; cross-session transcript integrity remains required.
+FastAPI extracts direct peer, scheme, and bearer headers; Uvicorn supplies the
+configured TLS certificate and key with proxy headers disabled. Batch routes
+remain outside this authority.
 
 The server-hosted live portal is a separate, default-off `/live` document
 attached only when live routes are enabled. It owns no live backend API and acts
-only as a browser-local pull adapter to the existing same-origin `snapshot`,
-`events`, `stop`, and `abort` operations. Operators manually enter the session
-id and view token; the view token remains in page memory and `Authorization`
-headers only. Browser cursors advance only after successful parse and render,
-replayed events render once, bounded retry remains single-flight, and terminal
-`closed`, `failed`, or `aborted` state stops polling and clears authority.
+as a browser-local adapter to the existing same-origin session, `snapshot`,
+`events`, `stop`, and `abort` operations. A fresh page may enter the configured
+shared bearer to create a server-issued session without pairing, or an operator
+may manually enter an existing session id and view token. Either token remains
+in page memory and `Authorization` headers only; it is never placed in a query
+parameter or browser storage. Browser cursors advance only after successful
+parse and render, replayed events render once, bounded retry remains
+single-flight, and terminal `closed`, `failed`, or `aborted` state stops polling
+and clears authority.
 
 IDEA-044 keeps the macOS client on the existing JSON/HTTP contract. The shipped
 client exchanges `mtd1.<secret>.<64-hex-pin>` at `POST /api/live/pairings`,
@@ -429,7 +438,8 @@ full state are recorded in `prototypes/capture-layout-policy/NOTES.md`.
 - Device revocation is explicit operator control that invalidates capture and
   view authority and releases owned live state. It is not helper-loss detection
   or an inactivity heartbeat.
-- The `/live` portal is an L-tier manual operations view. It does not create,
+- The `/live` portal is an L-tier manual operations view. In shared-token mode
+  it creates an individually addressed session without pairing; it does not
   feed, pair, exchange, revoke, list sessions, contact a helper or localhost
   bridge, persist secrets, expose history or artifacts, or automate secure
   helper-to-browser bootstrap.

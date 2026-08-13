@@ -1,8 +1,10 @@
 # Context — Phase 1 ticket #2
 
-Iteration 6. Shared-token authority reaches the service through a path-only deployment config and
-the live portal can create a server-issued session while keeping the bearer in page memory only;
-the historical auth mutation battery is not runnable unchanged on the current pre-ticket baseline.
+Iteration 7. Shared-token authority reaches the service through a path-only deployment config and
+the live portal can create a server-issued session while keeping the bearer in page memory only.
+The reviewer-facing ADR states the single-trust-domain posture and the retired historical `403`
+criterion; the historical auth mutation battery is not runnable unchanged on the pre-ticket
+baseline.
 
 ## Where things stand
 
@@ -25,10 +27,10 @@ the historical auth mutation battery is not runnable unchanged on the current pr
 - [x] Existing pairing flow continues unchanged when the shared token is not configured.
 - [ ] Existing auth gate and mutation batteries pass unmodified.
 - [x] Token stays in page memory only: never a query parameter and never `localStorage`.
-- [ ] Reviewer-facing documentation states that any token holder can read any session.
+- [x] Reviewer-facing documentation states that any token holder can read any session.
 - [x] Session ownership and routing still resolve per server-issued session id, so sessions remain
   individually addressable.
-- [ ] Evidence explicitly records that historical `403` cross-read isolation is no longer an
+- [x] Evidence explicitly records that historical `403` cross-read isolation is no longer an
   acceptance criterion under this single-trust-domain posture.
 
 Charter G5 still applies: transcript text must never cross sessions. T-01 removes cross-read
@@ -159,8 +161,19 @@ Iteration-1 baseline:
   does not claim attended display capture. Historical cross-read `403` remains explicitly not an
   acceptance gate; G5 transcript-routing integrity remains.
 
+## Iteration-7 reviewer posture + cross-read evidence
+
+- ADR-0001 now states that all configured-token holders resolve to one process-only principal and
+  can read every live session. It distinguishes shared read authority from server-issued session
+  addressing and required cross-session transcript integrity.
+- The production-route test creates two distinct sessions with one configured bearer and reads
+  both by their own server-issued ids; the registry test independently proves the same principal
+  authorizes each session. Focused validation passes **2 tests and 4 subtests**. Raw JUnit:
+  `evidence/phase1/t2/iteration-07-single-trust-domain.xml`.
+- ADR-0001 records explicitly that the historical cross-read `403` result is not an acceptance
+  criterion. This evidence does not test G5 transcript payload isolation under concurrency.
+
 ## Ranked candidates
 
-1. Add reviewer-facing posture and explicit historical-403 evidence now that behavior is proven.
-2. Resolve the unchanged mutation-battery acceptance blocker through supervisor direction: the
+1. Resolve the unchanged mutation-battery acceptance blocker through supervisor direction: the
    historical runner has two pre-ticket stale seams, and changing either is not “unmodified.”

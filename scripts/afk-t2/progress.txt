@@ -80,3 +80,18 @@ Iteration 6 — browser page-memory shared-token start
   headers. No pairing request, query/body token, cookie, `localStorage`, or `sessionStorage`.
 - Next: add reviewer-facing single-trust-domain posture and explicit historical-403 evidence; keep
   the unchanged mutation-battery criterion blocked for supervisor direction.
+
+Iteration 7 — reviewer posture and cross-read evidence
+- Target: highest-ranked candidate 1; state the accepted single-trust-domain posture where
+  reviewers read it and record direct production-route evidence for shared reads plus individual
+  session addressing.
+- Files: `docs/adr/0001-live-v2-json-http-contract.md`, `tests/test_live_api.py`,
+  `scripts/afk-t2/{context.md,progress.txt}`, and
+  `evidence/phase1/t2/iteration-07-single-trust-domain.xml`.
+- Validation: focused API + registry authority tests PASS: 2 tests, 4 subtests; ADR posture search
+  and `git diff --check` PASS. Raw JUnit at the evidence path above.
+- Learned: one configured principal can read two distinct server-issued session ids through the
+  production routes; this deliberately retires cross-read `403` while preserving addressing. The
+  test does not prove G5 transcript payload isolation under concurrency.
+- Next: obtain supervisor direction on the sole unchecked criterion: the unchanged historical
+  mutation battery cannot run to completion on two pre-ticket stale seams.
