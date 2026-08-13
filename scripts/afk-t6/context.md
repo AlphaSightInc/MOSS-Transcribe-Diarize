@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #6
 
-Iteration 11. Acceptance criteria and a reproducible local validation baseline are captured. The
+Iteration 12. Acceptance criteria and a reproducible local validation baseline are captured. The
 provider exposes immutable, encoder-pinned observations from the completed album. The measured
 single-process writer runs after exact clean-stop accounting and never on abort. Live deployment
 wiring now makes the journal default-on at an operator-configurable path outside the checkout;
@@ -9,12 +9,14 @@ the explicit consent/right-to-remove gate. A configured production factory has a
 end to end from an accepted audio frame through the real provider/coordinator/runtime path to the
 complete journal row. After merging current `dev`, both Swift products build and all 871 in-scope
 tests plus 373 subtests pass. The only full-suite failure is the established out-of-ticket Launch
-Services lifecycle node. Raw merged evidence is committed locally; `dev` publication, private
-branch push, and the criterion-by-criterion issue comment remain.
+Services lifecycle node. Raw merged evidence is committed, local `dev` is fast-forwarded, the
+ticket branch is published to `private`, and issue #6 has the required criterion-by-criterion
+evidence and explicit coverage limits. Ticket work is complete; the supervisor retains issue
+closure authority, and issue #6 remains open behind open issue #1.
 
 ## Where things stand
 
-- Branch: `afk/t6-*`, cut from `dev` at `a05a7f6`. Worktree 6 of 6 (treehouse pool).
+- Branch: `afk/t6-vector-journal`, published to `private`. Worktree 6 of 6 (treehouse pool).
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
@@ -153,11 +155,15 @@ bash -n scripts/afk-t6/ralph-afk.sh
   `evidence/phase1/t6/iteration-11-full-suite-after-merge.xml` and
   `evidence/phase1/t6/iteration-11-live-subset-after-merge.xml`. Loop syntax and `git diff --check`
   also pass.
+- Publication: GREEN. Under the shared merge lock, `dev` at `9a1d70e` was confirmed as an
+  ancestor of validated commit `db75ba8`; local `dev` was fast-forwarded and
+  `afk/t6-vector-journal` was pushed to `private`. Issue comment
+  <https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/6#issuecomment-5277120540> links the
+  branch, maps all seven criteria to evidence, and discloses real-ONNX, real-voice, multi-process,
+  power-loss, filled-host-profile, deployment, and unrelated Launch Services coverage limits.
+  The comment was authored by `yugao-aisight`; issues #6 and #1 remain open.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Reacquire the shared merge lock. If `dev` is still an ancestor of the validated commit,
-   fast-forward `dev`; otherwise merge current `dev` and rerun the full gate first. Push this branch
-   to `private`, then comment criterion-by-criterion evidence plus explicit test limitations on
-   issue #6. Do not close the issue.
+No ticket-local work remains. Do not close issue #6; wait for the supervisor and blocking issue #1.
