@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import sys
 import tempfile
 import threading
@@ -29,6 +30,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
 PORT = 8899
+LIVE_HELPER_LEASE_SECONDS = 2.0
 sys.path.insert(0, str(REPO_ROOT))
 
 from moss_transcribe_diarize.app.live_auth import LiveAccessRegistry, LivePeer
@@ -77,6 +79,32 @@ def _test_live_api_module():
     return module
 
 
+def _percentile(values: list[int], fraction: float) -> int | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    return ordered[math.ceil(fraction * len(ordered)) - 1]
+
+
+def _visibility_cadence(records: list[dict], visibility: str, *, time_key: str) -> dict:
+    selected = [record for record in records if record.get("client_visibility") == visibility]
+    adjacent_deltas = [
+        right[time_key] - left[time_key]
+        for left, right in zip(records, records[1:])
+        if left.get("client_visibility") == visibility
+        and right.get("client_visibility") == visibility
+    ]
+    return {
+        "count": len(selected),
+        "duration_ms": sum(adjacent_deltas),
+        "delta_ms": {
+            "p50": _percentile(adjacent_deltas, 0.50),
+            "p95": _percentile(adjacent_deltas, 0.95),
+            "max": max(adjacent_deltas) if adjacent_deltas else None,
+        },
+    }
+
+
 def build_app():
     from fastapi.responses import FileResponse, JSONResponse
 
@@ -98,7 +126,7 @@ def build_app():
         runs_dir=Path(scratch.name) / "runs",
         live_enabled=True,
         live_access_registry=registry,
-        live_helper_lease_seconds=30.0,
+        live_helper_lease_seconds=LIVE_HELPER_LEASE_SECONDS,
         live_runtime_factory=lambda: _ReadPathFixtureRuntime(
             helpers.make_live_runtime(
                 max_retained_samples=320_000,
@@ -109,7 +137,13 @@ def build_app():
     )
     app.state.prototype_scratch = scratch
     app.state.prototype_capture_bearer = credential.device_token
-    app.state.prototype_telemetry = {"lanes": {}, "phases": [], "probes": [], "renders": []}
+    app.state.prototype_telemetry = {
+        "lanes": {},
+        "phases": [],
+        "probes": [],
+        "renders": [],
+        "heartbeats": [],
+    }
     app.state.prototype_lock = threading.Lock()
 
     @app.get("/capture-harness")
@@ -144,6 +178,13 @@ def build_app():
             app.state.prototype_telemetry["phases"].append(body)
         return {}
 
+    @app.post("/prototype/heartbeat-telemetry")
+    async def prototype_heartbeat_telemetry(request: Request):
+        body = await request.json()
+        with app.state.prototype_lock:
+            app.state.prototype_telemetry["heartbeats"].append(body)
+        return {}
+
     @app.post("/prototype/probes")
     async def prototype_probes(request: Request):
         body = await request.json()
@@ -168,16 +209,106 @@ def build_app():
             runtime = app.state.live_runtime.snapshot(session_id).to_dict()
         except KeyError:
             v2 = runtime = None
+        helper_presence = app.state.live_helper_presence.snapshot(session_id)
         return {
             "scope": (
                 "real production routes with deterministic fake provider; committed text is runtime output; "
                 "provisional text is an explicit read-path fixture; no model inference"
             ),
             "session_id": session_id if v2 is not None else None,
+            "live_helper_lease_seconds": LIVE_HELPER_LEASE_SECONDS,
             "descriptor": app.state.live_runtime.descriptor.to_dict(),
             "v2_session": v2,
             "runtime_snapshot": runtime,
+            "helper_presence": None if helper_presence is None else helper_presence.to_dict(),
             "telemetry": telemetry,
+        }
+
+    @app.get("/prototype/g7-verdict")
+    def prototype_g7_verdict():
+        session_id = "api-session"
+        with app.state.prototype_lock:
+            telemetry = json.loads(json.dumps(app.state.prototype_telemetry))
+        heartbeats = telemetry["heartbeats"]
+        hidden_heartbeats = [
+            record for record in heartbeats if record.get("client_visibility") == "hidden"
+        ]
+        hidden_frames = {
+            lane: [
+                record
+                for record in records.values()
+                if record.get("client_visibility") == "hidden"
+            ]
+            for lane, records in telemetry["lanes"].items()
+        }
+        try:
+            v2 = app.state.live_v2_sessions.get(session_id).snapshot().to_dict()
+        except KeyError:
+            v2 = None
+        helper_presence = app.state.live_helper_presence.snapshot(session_id)
+        heartbeat_sequences = [record["sequence"] for record in heartbeats]
+        heartbeat_gaps = [
+            [left, right]
+            for left, right in zip(heartbeat_sequences, heartbeat_sequences[1:])
+            if right != left + 1
+        ]
+        hidden_cadence = _visibility_cadence(
+            heartbeats,
+            "hidden",
+            time_key="started_wall_ms",
+        )
+        visible_cadence = _visibility_cadence(
+            heartbeats,
+            "visible",
+            time_key="started_wall_ms",
+        )
+        hidden_max_delta = hidden_cadence["delta_ms"]["max"]
+        return {
+            "scope": (
+                "Chrome synthetic lanes through production frame and heartbeat routes; "
+                "no model inference and no real display capture"
+            ),
+            "live_helper_lease_seconds": LIVE_HELPER_LEASE_SECONDS,
+            "session_active_after_hidden_phase": v2 is not None and v2["status"] == "active",
+            "heartbeat_summary": {
+                "total": len(heartbeats),
+                "http_status_counts": {
+                    str(status): sum(record["status"] == status for record in heartbeats)
+                    for status in sorted({record["status"] for record in heartbeats})
+                },
+                "sequence_gaps": heartbeat_gaps,
+                "hidden": hidden_cadence,
+                "visible": visible_cadence,
+                "hidden_max_delta_below_lease": (
+                    hidden_max_delta is not None
+                    and hidden_max_delta < LIVE_HELPER_LEASE_SECONDS * 1_000
+                ),
+            },
+            "hidden_frame_cadence": {
+                lane: _visibility_cadence(
+                    list(telemetry["lanes"][lane].values()),
+                    "hidden",
+                    time_key="client_wall_ms",
+                )
+                for lane in hidden_frames
+            },
+            "visible_frame_cadence": {
+                lane: _visibility_cadence(
+                    list(records.values()),
+                    "visible",
+                    time_key="client_wall_ms",
+                )
+                for lane, records in telemetry["lanes"].items()
+            },
+            "v2_session": v2,
+            "helper_presence": None if helper_presence is None else helper_presence.to_dict(),
+            "visibility_phases": [
+                phase
+                for phase in telemetry["phases"]
+                if str(phase.get("phase", "")).startswith("visibility-")
+            ],
+            "raw_hidden_heartbeats": hidden_heartbeats,
+            "raw_hidden_frames": hidden_frames,
         }
 
     @app.post("/prototype/reset")

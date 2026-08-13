@@ -103,6 +103,25 @@ to snapshot/event cursors `13/31`. Raw state:
 Verdict: render-then-advance works across both production read routes. This does not prove real
 model inference or a real provisional inference publisher.
 
+## Worklet-driven background heartbeat — PASSED 2026-08-13
+
+Question: can either live lane drive the production helper heartbeat route from worklet frame
+messages, without a timer, while a hidden Chrome tab renews a deliberately short local lease?
+
+The harness serializes and coalesces heartbeat POSTs across both lane handlers and sends one
+strict `moss-live-helper-health.v1` body per descriptor frame interval. Chrome's DevTools target
+API activated a blank sibling tab, leaving the capture target hidden for 12.000 s against a
+2.0 s local helper lease, then reactivated it.
+
+All 417 heartbeat POSTs returned HTTP 200 with zero heartbeat sequence gaps. Hidden heartbeat
+p50/p95/max was 64/64/65 ms versus visible 64/65/70 ms; both production frame lanes had hidden
+p95 65 ms, matching visible p95 65 ms. The production v2 session remained active with both lanes
+healthy after 6.0 lease periods hidden. Raw measurement:
+`evidence/phase1/t1/iteration-07-background-heartbeat.json`.
+
+This proves the synthetic Chrome background-cadence and local production lease seams. It does
+not prove real model inference, microphone input, or real display capture.
+
 ## Safari attended diagnostic — 2026-08-09
 
 Safari 26.5 captured the Bose QC Ultra microphone successfully: 110 HTTP-200 frames,

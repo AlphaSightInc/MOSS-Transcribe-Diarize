@@ -1,8 +1,9 @@
 # Context — Phase 1 ticket #1
 
-Iteration 6. Chrome now creates a locally-owned production session, sends both lanes through the
-real v2 ingress route, and polls/renders the production snapshot/events routes with independent
-render-then-advance cursors. The provider remains deterministic/fake; no real model behavior yet.
+Iteration 7. Chrome now creates a locally-owned production session, sends both lanes through the
+real v2 ingress route, polls/renders production reads, and renews the production helper lease from
+the worklet frame path while hidden. The provider remains deterministic/fake; no real model
+behavior yet.
 
 ## Where things stand
 
@@ -32,6 +33,11 @@ render-then-advance cursors. The provider remains deterministic/fake; no real mo
   pre-render failure retained both cursors at 0/0; retry repeated 0/0, rendered six deterministic
   commits plus a clearly labelled synthetic provisional fixture and 31 event rows, then advanced
   to 13/31. The provisional fixture proves renderer wiring only, not provisional inference.
+- Worklet frame messages now serialize/coalesce strict production helper heartbeats across both
+  lanes; no timer or visibility callback drives them. With Chrome hidden for 12.000 s against a
+  2.0 s local lease, all 417 heartbeats returned 200 with zero sequence gaps. Hidden heartbeat
+  p50/p95/max 64/64/65 ms matched visible 64/65/70 ms; both frame lanes had 65 ms hidden and
+  visible p95, and the session remained active.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -68,8 +74,8 @@ the tracker issue remains open for supervisor closure.
   explicit port `:7861`.
 - [ ] Send exactly the nine v2 frame keys; server rejects unknown keys; telemetry never rides in
   a frame.
-- [ ] Drive frame POSTs from worklet port messages, never timers; a backgrounded-tab run matches
-  foreground cadence.
+- [x] Drive frame POSTs from worklet port messages, never timers; a backgrounded-tab run matches
+  foreground cadence. Helper heartbeats share that path and do not trip the lease.
 - [ ] A known two-speaker fixture played in the selected tab produces transcript text with
   distinct generic speaker ids.
 - [x] Poll `/snapshot` and `/events` per T-02; render committed spans plus provisional tail; only
@@ -98,6 +104,10 @@ Production-route read evidence: `evidence/phase1/t1/iteration-06-production-read
 It proves authenticated snapshot/event polling, committed/runtime text rendering, explicit-fixture
 provisional rendering, and cursor retention across a failed render. It excludes real model and
 real provisional inference.
+
+Background/lease evidence: `evidence/phase1/t1/iteration-07-background-heartbeat.json`. It proves
+synthetic worklet-driven frames and strict helper heartbeats stayed live for 6.0 local lease
+periods in a hidden Chrome tab. It excludes real microphone, display capture, and model inference.
 
 ### Binding proof interpretation
 
@@ -139,8 +149,7 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Add worklet-driven helper heartbeat and measure background cadence against the local lease.
-2. Drive the microphone lane from Chrome's fake-audio device with a known two-speaker WAV against
+1. Drive the microphone lane from Chrome's fake-audio device with a known two-speaker WAV against
    a locally-owned real provider/model; never send inference traffic to the read-only remote host.
-3. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

@@ -92,6 +92,12 @@ let descriptorPromise = null;
 let liveSession = null;     // server-issued id + credentials, closure memory only
 let sessionPromise = null;
 let sessionFailed = false;
+let heartbeatPending = null;
+let heartbeatInFlight = false;
+let heartbeatSequence = 0;
+let heartbeatSentMonotonicNs = 0;
+let heartbeatNextStartFrame = 0;
+const helperInstanceId = `browser-${crypto.randomUUID()}`;
 let pollTimer = null;
 let pollInFlight = false;
 const forceOneRenderFailure = new URLSearchParams(location.search).has("fail_render_once");
@@ -306,6 +312,94 @@ function bothLanesHaveSignal() {
   return ["system", "microphone"].every((lane) => lanes[lane] && lanes[lane].hasSignal);
 }
 
+function heartbeatLane(lane) {
+  const st = lanes[lane];
+  return {
+    state: "capturing",
+    device_epoch: st ? st.epoch : 0,
+    dropped_frames: 0,
+    discontinuities: 0,
+    failure_code: null,
+  };
+}
+
+async function reportHeartbeat(record) {
+  await fetch("/prototype/heartbeat-telemetry", {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(record),
+  }).catch(() => {});
+}
+
+function scheduleHeartbeat(trigger) {
+  if (!liveSession) return;
+  if (trigger.startFrame < heartbeatNextStartFrame) return;
+  heartbeatNextStartFrame = trigger.startFrame + trigger.frameSamples;
+  // Coalesce worklet messages while one POST is in flight. Either live lane can
+  // keep the helper lease alive; no timer or visibility callback drives this path.
+  heartbeatPending = trigger;
+  if (heartbeatInFlight) return;
+  heartbeatInFlight = true;
+  void (async () => {
+    try {
+      while (heartbeatPending && liveSession) {
+        const current = heartbeatPending;
+        heartbeatPending = null;
+        const sequence = heartbeatSequence++;
+        heartbeatSentMonotonicNs = Math.max(
+          heartbeatSentMonotonicNs + 1,
+          Math.round(performance.now() * 1e6),
+        );
+        const body = {
+          schema: "moss-live-helper-health.v1",
+          instance_id: helperInstanceId,
+          sequence,
+          sent_monotonic_ns: heartbeatSentMonotonicNs,
+          helper_version: "browser-capture-prototype",
+          state: "capturing",
+          lanes: {
+            system: heartbeatLane("system"),
+            microphone: heartbeatLane("microphone"),
+          },
+        };
+        const startedWallMs = Date.now();
+        let status = 0;
+        let error = null;
+        try {
+          const response = await fetch(
+            `/api/live/sessions/${encodeURIComponent(liveSession.id)}/heartbeat`,
+            {
+              method: "POST", cache: "no-store",
+              headers: {
+                "Authorization": `Bearer ${liveSession.captureBearer}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(body),
+            },
+          );
+          status = response.status;
+          if (!response.ok) error = (await response.text()).slice(0, 240);
+        } catch (caught) {
+          error = caught.message;
+        }
+        void reportHeartbeat({
+          sequence,
+          status,
+          error,
+          trigger_lane: current.lane,
+          trigger_frame_sequence: current.frameSequence,
+          client_visibility: current.visibility,
+          started_wall_ms: startedWallMs,
+          completed_wall_ms: Date.now(),
+        });
+      }
+    } finally {
+      heartbeatInFlight = false;
+      if (heartbeatPending && liveSession) scheduleHeartbeat(heartbeatPending);
+    }
+  })();
+}
+
 async function captureContext() {
   if (ctx) return ctx;
   const config = await captureDescriptor();
@@ -378,6 +472,13 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
       return;
     }
     const sequence = st.seq++;
+    scheduleHeartbeat({
+      lane,
+      frameSequence: sequence,
+      startFrame: m.startFrame,
+      frameSamples: config.frameSamples,
+      visibility: document.visibilityState,
+    });
     const body = {
       lane, sequence,
       capture_timestamp_ns: Math.round((m.startFrame / config.sampleRate) * 1e9),
