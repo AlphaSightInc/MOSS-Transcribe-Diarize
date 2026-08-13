@@ -1,10 +1,12 @@
 # Context — Phase 1 ticket #4
 
-Iteration 9. The ticket branch contains current `dev`, and the complete focused ticket set passes
+Iteration 10. The ticket branch contains current `dev`, and the complete focused ticket set passes
 on that merged result. The branch is published at `private/afk/t4-frontend-shell`; issue #4 has a
 criterion-by-criterion evidence comment with explicit non-coverage and both unrelated full-suite
 exceptions. The issue remains open. Authorized host manifest finalization is the only unchecked
-ticket criterion and remains outside this loop's read-only host authority.
+ticket criterion and remains outside this loop's read-only host authority. The loop posted the
+exact fail-closed operator command and requested raw host evidence at issue comment
+`#issuecomment-5277087183`; no further loop-authorized implementation work remains.
 
 ## Where things stand
 
@@ -35,6 +37,11 @@ ticket criterion and remains outside this loop's read-only host authority.
   The corrected command dry-runs against a host-shaped provisional fixture, stamps a checkout SHA,
   regenerates and admission-checks hashes, and leaves both input and output untouched. Actual host
   finalization remains authorized-operator work; the remote host is read-only to this loop.
+- The published branch resolves to `9a1d70e54153e380e9802fbb446bbcd3f5e44ed8`. The exact operator
+  arguments dry-run successfully at that revision and the focused finalizer suite passes 26/26.
+  Issue comment `#issuecomment-5277087183` hands the operator the non-dry-run command guarded by an
+  exact-HEAD check and asks for raw stdout plus the finalized SHA/source revision. The loop did not
+  access or mutate the host.
 - Both Swift products build, and the hash-pinned 92-unit archived Alphabet cache is provisioned
   from the local L2 Stage-0 corpus. The full Python collection runs without setup errors: 980
   passed, 2 skipped, 2 failed, and 475 subtests passed. One failure is the expected L15 product
@@ -168,5 +175,10 @@ not finalize the host manifest or add browser/deployment/attended-capture eviden
 
 ## Ranked candidates
 
-1. Hand the reviewed published SHA and corrected finalization command to the authorized operator.
-   Do not mutate the read-only host; completion stays blocked until host finalization is evidenced.
+1. **BLOCKED on authorized operator input:** await raw host finalization evidence requested in
+   issue comment `#issuecomment-5277087183`. Do not repeat the dry-run, mutate the read-only host,
+   close the issue, or substitute local fixture evidence for the host-owned manifest.
+
+No safe loop-authorized implementation candidate remains. If the operator evidence is still absent,
+record the unchanged blocker without redoing work; apply the charter's three-consecutive-iteration
+stop rule only when its actual threshold is reached.

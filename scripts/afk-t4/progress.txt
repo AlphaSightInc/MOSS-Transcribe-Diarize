@@ -128,3 +128,17 @@ Iteration 9 — serialized publication and issue evidence
 - Learned: eight local acceptance criteria are evidenced and published. Host provider-manifest
   finalization remains the sole unchecked criterion and requires the authorized operator. Next:
   hand off the published SHA and corrected command; do not mutate the read-only host.
+
+Iteration 10 — exact operator finalization handoff
+- Target: highest-ranked candidate; validate the exact published revision and hand the authorized
+  operator a fail-closed host finalization command without touching the read-only host.
+- Files: `evidence/phase1/t4/iteration-10-operator-handoff.txt`,
+  `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: private branch resolves to `9a1d70e54153e380e9802fbb446bbcd3f5e44ed8`; exact-argument
+  host-shaped dry-run PASS with unchanged input/no output; finalizer tests PASS (26/26);
+  `git diff --check` PASS; actor-guarded issue comment published and read back.
+- Evidence: `evidence/phase1/t4/iteration-10-operator-handoff.txt`; issue comment
+  `https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4#issuecomment-5277087183`.
+- Learned: no loop-authorized work remains. Host finalization is the sole unchecked criterion and
+  requires an authorized write plus raw host evidence. Next: supervisor/operator runs the handed-off
+  command and attaches stdout plus finalized SHA/source revision; loop must not touch the host.
