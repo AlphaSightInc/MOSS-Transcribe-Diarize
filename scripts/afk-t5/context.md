@@ -1,8 +1,8 @@
 # Context — Phase 1 ticket #5
 
-Iteration 7. Server-owned status and background-worklet lease mechanics are measured; client
-integration remains blocked by ticket #1, and its first committed production-session flow now
-confirms a binding preflight-authority contradiction requiring a supervisor decision.
+Iteration 8. Server-owned status and background-worklet lease mechanics are measured. The loop
+has reached the charter's stop gate after three consecutive client-integration blockers: ticket
+#1 has not landed, and the preflight-authority contradiction has no owning answer.
 
 ## Where things stand
 
@@ -182,13 +182,25 @@ supervisor has been asked for an owning contract decision.
 - Supervisor decision requested on issue #5 at comment `#issuecomment-5277007717`. Raw evidence:
   `evidence/phase1/t5/iteration-7-preflight-authority-blocker.txt`.
 
-## Ranked candidates
+## Iteration 8 terminal blocked verdict
 
-1. Wait for the owning answer on the silent-preflight/session-ordering contradiction and for
-   ticket #1 to land on `dev`; do not poll or re-comment until either state changes.
-2. After both unblock, implement raw-fact browser heartbeats from worklet messages plus line-only
-   UI rendering, then repeat iteration 5's G7 probe through ticket #1's product client and a local
-   production-provider service; only that non-stub run can satisfy the issue criterion.
-3. Before the final merge gate, obtain the owning decision for L1 baseline re-certification and
-   run the lifecycle node from a GUI-visible test-runner session; both are now evidenced blockers,
-   not missing local prerequisites.
+- At `2026-08-13T06:51:47Z`, issue #5 had no owner/supervisor reply after the blocker request;
+  issue #1 remained open, local and `private/dev` remained at `8fec841`, and no private
+  `afk/t1-*` branch existed.
+- This is the third consecutive iteration blocked on ticket #1's unlanded client/session flow.
+  Per charter section 8, the loop stops instead of polling or coding around the dependency.
+- Every remaining ticket-local acceptance item needs ticket #1's product client. The silent-mic
+  item additionally needs an owning pre-session authority decision. Final validation also needs
+  separately owned L1 re-certification and a GUI-visible lifecycle runner.
+- Those inputs cannot be produced within this loop's authority. The existing issue comment is
+  the supervisor request; no redundant comment was posted. Raw evidence:
+  `evidence/phase1/t5/iteration-8-terminal-blocker.txt`.
+
+## Blocked continuation gates
+
+1. Owner chooses a pre-session server-authored status path or explicitly revises the preflight
+   session-ordering contract.
+2. Ticket #1 lands its product client/session flow on `dev`.
+3. Then implement raw-fact worklet heartbeats and line-only rendering, and repeat G7 through the
+   product client plus a local production-provider service.
+4. Before final merge, obtain L1 baseline re-certification and a GUI-visible lifecycle test run.
