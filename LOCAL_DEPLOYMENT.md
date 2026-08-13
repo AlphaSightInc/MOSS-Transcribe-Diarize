@@ -738,7 +738,8 @@ python3 ops/finalize-live-provider-manifest.py \
   --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
   --source-revision "$(git rev-parse HEAD)" \
   --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 \
-  --min-match-score 0.35 --min-match-margin 0.1
+  --min-match-score 0.35 --min-match-margin 0.1 \
+  --album-admission-seconds 2.0 --birth-min-seconds 1.0
 ```
 
 Recalibrating the matcher changes `identity_config_hash` and therefore

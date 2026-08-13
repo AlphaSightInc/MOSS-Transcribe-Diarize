@@ -1,7 +1,8 @@
 # Context — Phase 1 ticket #4
 
-Iteration 5. The supported frontend development loop is now documented and measured: Vite watch
-writes the production bundle while FastAPI serves the same-origin result.
+Iteration 6. The provider-manifest finalization path is now locally audited and documented with
+all required flags; the host-owned manifest still must be finalized with the reviewed post-merge
+SHA by an authorized operator.
 
 ## Where things stand
 
@@ -23,6 +24,12 @@ writes the production bundle while FastAPI serves the same-origin result.
   A measured watch rebuild completed in 25 ms and the running FastAPI service returned the exact
   committed bytes at `/` and `/static/app.js`. Root `.gitignore` excludes the installed
   `frontend/node_modules/` development dependency tree.
+- The documented provider-manifest command now supplies all required identity-policy flags. Its
+  prior form omitted `--album-admission-seconds` and `--birth-min-seconds` and exited before work.
+  The corrected command dry-runs against a host-shaped provisional fixture, stamps a checkout SHA,
+  regenerates and admission-checks hashes, and leaves both input and output untouched. Actual host
+  finalization remains post-merge operator work: the final SHA does not exist yet and the remote
+  host is read-only to this loop.
 - Target typecheck and its shell test pass. Both reference component suites pass at the oracle;
   neither is imported because `TranscriptPane` belongs to #7 and `LlmSettingsModal` is out of
   Phase 1. The verbatim target `package.json` therefore remains unchanged.
@@ -123,9 +130,18 @@ their components were intentionally not copied: transcript implementation/render
 LLM modal is out of Phase 1. This evidence does not cover browser pixels, capture, deployment, or
 the remote host.
 
+## Provider-manifest evidence (iteration 6)
+
+`evidence/phase1/t4/iteration-06-provider-manifest-finalization.txt` records the old documented
+command failing on two omitted required flags, then the corrected tracked command succeeding under
+`--dry-run` with the checkout's 40-character SHA. It records regenerated config/manifest hashes,
+runtime descriptor admission, unchanged input SHA-256, absent output, and 26/26 focused tests.
+This proves post-merge finalization is mechanically ready without pre-merge host mutation; it does
+not finalize or inspect the host-owned manifest, deploy, or mutate the remote.
+
 ## Ranked candidates
 
-1. Audit the provider-manifest finalization path and produce local, non-mutating evidence that the
-   final host revision can be re-finalized after merge without touching the read-only remote host.
-2. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
+1. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
    before merge.
+2. After merged-result validation, publish per protocol and hand the reviewed merge SHA plus the
+   corrected finalization command to the authorized operator. Do not mutate the read-only host.

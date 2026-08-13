@@ -70,3 +70,16 @@ Iteration 5 — same-origin frontend development loop
   `LlmSettingsModal` is out of Phase 1, so copying either would violate ticket #4's shell-only
   boundary. Next: audit provider-manifest finalization and prove the post-merge host revision can
   be finalized locally without mutating the read-only remote host.
+
+Iteration 6 — provider-manifest finalization handoff
+- Target: highest-ranked candidate; audit and prove the host finalization path locally without
+  touching the read-only remote host.
+- Files: `LOCAL_DEPLOYMENT.md`, `evidence/phase1/t4/iteration-06-provider-manifest-finalization.txt`,
+  `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: the prior documented command reproduced argparse exit 2; corrected command dry-run
+  PASS with checkout SHA, regenerated/admitted hashes, unchanged input, and no output; focused
+  finalizer suite PASS (26 tests); `git diff --check` PASS.
+- Evidence: `evidence/phase1/t4/iteration-06-provider-manifest-finalization.txt`.
+- Learned: documentation omitted two required identity-policy flags. Local mechanics are ready,
+  but the host-owned manifest must use the reviewed post-merge SHA and requires operator authority.
+  Next: restore full-suite Swift/corpus prerequisites and rerun baseline before merge.

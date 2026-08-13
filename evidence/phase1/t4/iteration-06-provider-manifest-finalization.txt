@@ -1,0 +1,97 @@
+COMMAND
+python3 - <<'PY'
+import hashlib, runpy, subprocess, sys, tempfile
+from pathlib import Path
+repo = Path.cwd()
+helper = runpy.run_path("tests/test_live_manifest_finalizer.py")
+revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+with tempfile.TemporaryDirectory(prefix="moss-t4-finalize-") as raw_tmp:
+    tmp = Path(raw_tmp)
+    source = helper["_write_provisional"](tmp)
+    output = tmp / "live-provider-manifest.json"
+    before = hashlib.sha256(source.read_bytes()).hexdigest()
+    common = [sys.executable, "ops/finalize-live-provider-manifest.py",
+        "--input", str(source), "--output", str(output), "--source-revision", revision,
+        "--hard-cap-samples", "40000", "--max-retained-samples", "960000",
+        "--frame-samples", "8000", "--min-match-score", "0.35",
+        "--min-match-margin", "0.1"]
+    old = subprocess.run(common, cwd=repo, text=True, capture_output=True, check=False)
+    print(f"SOURCE_REVISION={revision}")
+    print(f"INPUT_SHA256_BEFORE={before}")
+    print(f"OLD_DOCUMENTED_COMMAND_EXIT={old.returncode}")
+    print(old.stderr.strip())
+    assert old.returncode == 2 and not output.exists()
+    corrected = common + ["--album-admission-seconds", "2.0",
+        "--birth-min-seconds", "1.0", "--dry-run"]
+    result = subprocess.run(corrected, cwd=repo, text=True, capture_output=True, check=False)
+    print(result.stdout.strip())
+    after = hashlib.sha256(source.read_bytes()).hexdigest()
+    print(f"CORRECTED_DRY_RUN_EXIT={result.returncode}")
+    print(f"OUTPUT_EXISTS_AFTER_DRY_RUN={'yes' if output.exists() else 'no'}")
+    print(f"INPUT_SHA256_AFTER={after}")
+    assert result.returncode == 0 and not output.exists() and before == after
+PY
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_live_manifest_finalizer.py -p no:cacheprovider
+git diff --check
+
+SOURCE_REVISION=58a67db78f60c6ab387b0bad31828ddd9248a671
+INPUT_SHA256_BEFORE=05698687e15343b4a8e217f892c02f3538fbff67c798c2ff7216a27838517cb1
+OLD_DOCUMENTED_COMMAND_EXIT=2
+usage: finalize-live-provider-manifest.py [-h] --input INPUT --output OUTPUT
+                                          --source-revision SOURCE_REVISION
+                                          --hard-cap-samples HARD_CAP_SAMPLES
+                                          --max-retained-samples
+                                          MAX_RETAINED_SAMPLES --frame-samples
+                                          FRAME_SAMPLES --min-match-score
+                                          MIN_MATCH_SCORE --min-match-margin
+                                          MIN_MATCH_MARGIN
+                                          --album-admission-seconds
+                                          ALBUM_ADMISSION_SECONDS
+                                          --birth-min-seconds
+                                          BIRTH_MIN_SECONDS [--dry-run]
+finalize-live-provider-manifest.py: error: the following arguments are required: --album-admission-seconds, --birth-min-seconds
+CORRECTED_DRY_RUN_ARGUMENTS=--source-revision 58a67db78f60c6ab387b0bad31828ddd9248a671 --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 --min-match-score 0.35 --min-match-margin 0.1 --album-admission-seconds 2.0 --birth-min-seconds 1.0 --dry-run
+plan: set source_revision=58a67db78f60c6ab387b0bad31828ddd9248a671
+plan: set endpoint_config.hard_cap_samples=40000
+plan: set identity_config.min_match_score=0.35
+plan: set identity_config.min_match_margin=0.1
+plan: set identity_provider.album_admission_seconds=2.0
+plan: set identity_provider.birth_min_seconds=1.0
+plan: set bounds_config.hard_cap_samples=40000
+plan: set bounds_config.max_retained_samples=960000
+plan: set bounds_config.frame_samples=8000
+plan: regenerate config_hashes
+evidence: frame_samples=8000
+evidence: frame_seconds=0.5
+evidence: hard_cap_samples=40000
+evidence: hard_cap_seconds=2.5
+evidence: max_retained_samples=960000
+evidence: max_retained_seconds=60.0
+evidence: reconnect_burst_samples=240000
+evidence: retention_headroom_seconds=42.5
+evidence: decoder_headroom_samples=80000
+evidence: replay_ack_headroom_frames=196
+evidence: identity_max_speakers=16
+evidence: identity_min_match_score=0.35
+evidence: identity_min_match_margin=0.1
+evidence: identity_album_admission_seconds=2.0
+evidence: identity_birth_min_seconds=1.0
+evidence: descriptor_frame_samples=8000
+evidence: descriptor_sample_rate=16000
+evidence: bounds_config_hash=bb7e098d370e94a25fca10a7c56d3bca8a38e9b768a89633acedf54ff40d1c11
+evidence: combined_config_hash=431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265
+evidence: provider_manifest_hash=8a3d9f58cf97ecd73ac1dbcebc3fd7c0b06b7f572e1d81d9fb0bd499787760ba
+evidence: source_revision=58a67db78f60c6ab387b0bad31828ddd9248a671
+CORRECTED_DRY_RUN_EXIT=0
+OUTPUT_EXISTS_AFTER_DRY_RUN=no
+INPUT_SHA256_AFTER=05698687e15343b4a8e217f892c02f3538fbff67c798c2ff7216a27838517cb1
+
+..........................                                               [100%]
+26 passed, 2 warnings in 7.42s
+
+git diff --check: PASS
+
+LIMITS
+- The provisional input is the repository's host-shaped test fixture, not the host-owned file.
+- --dry-run proves finalization mechanics and non-mutation only; it does not deploy or mutate the read-only remote host.
+- The final source_revision must be the reviewed post-merge SHA, which does not exist yet.
