@@ -1,0 +1,2 @@
+
+[loop 20260813-055953-98237] start budget=40 agent=codex branch=afk/t6-vector-journal
