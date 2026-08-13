@@ -1,2 +1,3 @@
 
 [loop 20260813-055952-98208] start budget=40 agent=codex branch=afk/t3-bounded-dispatcher
+iteration 1 — target: capture issue #3 acceptance contract; files: scripts/afk-t3/context.md, scripts/afk-t3/progress.txt; validation: git diff --check plus live gh issue checklist count comparison — PASS (7 issue items, 7 context items); evidence: live issue #3, docs/phase1-afk-charter.md, .wayfinder/tickets/T-04-gate3-bounded-inference-concurrency.md; learned: G4/G5 qualify the seven ticket criteria, stub evidence cannot satisfy real gates, and the remote 4070 remains read-only; next: establish the working validation command set and record exact baseline results.

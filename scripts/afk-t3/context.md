@@ -1,6 +1,7 @@
 # Context — Phase 1 ticket #3
 
-Iteration 0. Nothing measured yet by this loop.
+Iteration 1. The live issue acceptance contract is captured below. Nothing has been measured yet
+by this loop.
 
 ## Where things stand
 
@@ -30,6 +31,31 @@ Iteration 0. Nothing measured yet by this loop.
 - `setInterval` in a backgrounded tab collapses to ~1/min. Worklet port messages do not.
 - `source_revision` comes from the provider manifest and must be re-finalized per host.
 
+## Issue #3 acceptance checklist
+
+Authoritative source: <https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/3>, read live
+on 2026-08-13. These seven items are the ticket gate; do not add or substitute criteria.
+
+- [ ] State numeric latency and memory gates before measuring; do not choose them afterward.
+- [ ] Measure dispatcher concurrency 1, 2, and 4 with real 0.5 s ingress and real speech spans,
+  not synthetic frames.
+- [ ] At 1, 2, 4, and 8 simultaneous meetings, record real-time factor, p95 transcript lag,
+  fairness across sessions, per-session queue depth, GPU OOM/errors, and vLLM active/queued
+  request counts.
+- [ ] Choose the largest concurrency under both gates and implement it as a bounded dispatcher.
+- [ ] Regression-test cross-session markers under overload and across reconnect; no session may
+  receive another session's text.
+- [ ] Confirm the 16-item queue bound is per session and decode lag yields 429 backpressure
+  independently per client.
+- [ ] Introduce no additional Uvicorn workers; process-local state makes them unsafe here.
+
+Charter G4 additionally defines how the measured criterion is accepted: sustain the chosen bound
+for at least 10 minutes, keep p95 transcript lag under the predeclared gate, provide fair
+round-robin service, avoid OOM, and observe 429 per session rather than globally. G5 defines the
+cross-session criterion: text never crosses under overload or reconnect. Stub evidence cannot
+satisfy any real gate. The remote 4070 host remains read-only; qualifying runs must use a locally
+started service.
+
 ## Validation commands
 
 Establish these in iteration 1 and record what each actually covers:
@@ -42,6 +68,7 @@ bash -n scripts/afk-t3/ralph-afk.sh
 
 ## Ranked candidates
 
-1. Read the charter and the issue. Record the acceptance criteria as a checklist here.
-2. Establish and record a working validation command set.
-3. Smallest vertical slice toward criterion 1.
+1. Establish and record a working validation command set.
+2. Predeclare numeric latency and memory gates, then extend the standing bench with the smallest
+   production-path probe needed to measure them.
+3. Smallest evidence-backed vertical slice toward the bounded dispatcher.
