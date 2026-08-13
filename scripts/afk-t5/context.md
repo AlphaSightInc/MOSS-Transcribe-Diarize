@@ -1,7 +1,8 @@
 # Context — Phase 1 ticket #5
 
-Iteration 6. Server-owned status and background-worklet lease mechanics are measured; client
-integration remains blocked by ticket #1, which is active locally but has not landed on `dev`.
+Iteration 7. Server-owned status and background-worklet lease mechanics are measured; client
+integration remains blocked by ticket #1, and its first committed production-session flow now
+confirms a binding preflight-authority contradiction requiring a supervisor decision.
 
 ## Where things stand
 
@@ -131,8 +132,10 @@ bash -n scripts/afk-t5/ralph-afk.sh
 
 Open integration seam: the charter creates a server session only after both preflight meters are
 non-zero, while issue #5 requires a server-authored silent-microphone preflight line and the
-existing heartbeat is session-scoped. Do not invent a pre-session browser judgment. Resolve this
-with ticket #1's actual client/session flow before the client half.
+existing heartbeat is session-scoped. Ticket #1 commit `0bdff41` now implements that exact
+ordering, so a silent microphone prevents creation of the only current server resource able to
+author and deliver the line. Do not invent a browser judgment or create a session early. The
+supervisor has been asked for an owning contract decision.
 
 ## Iteration 5 G7 mechanism verdict
 
@@ -164,13 +167,27 @@ with ticket #1's actual client/session flow before the client half.
   `dev` integration contract.
 - Raw gate evidence: `evidence/phase1/t5/iteration-6-dependency-gate.txt`.
 
+## Iteration 7 preflight-authority blocker
+
+- At `2026-08-13T06:48:38Z`, issue #1 remained open, local and `private/dev` remained at
+  `8fec841`, and no `afk/t1-*` branch was published to `private`.
+- Ticket #1 advanced cleanly to commit `0bdff41`. Its production-route client meters both lanes
+  locally, creates a session only after both report signal, and admits no preflight audio.
+- Ticket #5's server-authored line is derived from session-keyed helper presence and returned in
+  that session's snapshot. It cannot author or deliver the silent-microphone preflight line when
+  the required session does not yet exist.
+- A client-authored line would violate C11 and issue #5; earlier session creation would violate
+  charter section 4. No product change is authorized until the owner chooses a pre-session
+  server path or revises the ordering contract.
+- Supervisor decision requested on issue #5 at comment `#issuecomment-5277007717`. Raw evidence:
+  `evidence/phase1/t5/iteration-7-preflight-authority-blocker.txt`.
+
 ## Ranked candidates
 
-1. Recheck issue #1 and `private/dev`. Once its actual client/session flow lands on `dev`, resolve
-   the preflight/session ordering seam and implement raw-fact browser heartbeats from worklet
-   messages plus line-only UI rendering; do not integrate ticket #1's unpublished work or invent
-   a pre-session client verdict.
-2. Repeat iteration 5's passing G7 mechanism probe through ticket #1's product client and a local
+1. Wait for the owning answer on the silent-preflight/session-ordering contradiction and for
+   ticket #1 to land on `dev`; do not poll or re-comment until either state changes.
+2. After both unblock, implement raw-fact browser heartbeats from worklet messages plus line-only
+   UI rendering, then repeat iteration 5's G7 probe through ticket #1's product client and a local
    production-provider service; only that non-stub run can satisfy the issue criterion.
 3. Before the final merge gate, obtain the owning decision for L1 baseline re-certification and
    run the lifecycle node from a GUI-visible test-runner session; both are now evidenced blockers,
