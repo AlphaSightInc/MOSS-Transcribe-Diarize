@@ -54,3 +54,19 @@ Iteration 4 — FastAPI serving cutover
 - Learned: module-relative `ProjectResources/Frontend` mounting preserves checkout deployment while
   avoiding process-cwd dependence; the existing `/live` battery stays green. Next: document and
   validate `vite build --watch`, then transfer only ticket-4 reference component tests.
+
+Iteration 5 — same-origin frontend development loop
+- Target: highest-ranked candidate; document and measure `vite build --watch` writing the bundle
+  while a locally-run FastAPI process serves it, then run the applicable target/oracle tests.
+- Files: `.gitignore`, `LOCAL_DEPLOYMENT.md`,
+  `evidence/phase1/t4/iteration-05-watch-and-component-tests.txt`, and
+  `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: clean `npm ci` PASS; Vite watch initial build PASS and touched-source rebuild PASS
+  (25 ms); local FastAPI `/` and `/static/app.js` PASS with served hashes exactly matching disk;
+  target typecheck PASS; target shell Vitest 1/1 PASS; oracle component Vitest 9/9 PASS;
+  `package.json` remains byte-identical to the oracle.
+- Evidence: `evidence/phase1/t4/iteration-05-watch-and-component-tests.txt`.
+- Learned: the oracle has only two component test suites: `TranscriptPane` is ticket #7 and
+  `LlmSettingsModal` is out of Phase 1, so copying either would violate ticket #4's shell-only
+  boundary. Next: audit provider-manifest finalization and prove the post-merge host revision can
+  be finalized locally without mutating the read-only remote host.

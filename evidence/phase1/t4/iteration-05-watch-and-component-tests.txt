@@ -1,0 +1,93 @@
+Iteration 5 raw validation — FastAPI-backed Vite watch and component tests
+
+$ npm --prefix frontend ci
+
+added 157 packages, and audited 158 packages in 1s
+
+41 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+$ npm --prefix frontend run build -- --watch
+
+> livetranscribe-frontend@0.0.0 build
+> vite build --watch
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+vite v8.2.1 building client environment for production...
+
+watching for file changes...
+
+build started...
+✓ 8 modules transformed.
+rendering chunks (1)...
+computing gzip size...
+../ProjectResources/Frontend/index.html   0.78 kB │ gzip: 0.38 kB
+../ProjectResources/Frontend/styles.css  47.24 kB │ gzip: 9.57 kB
+../ProjectResources/Frontend/app.js      13.58 kB │ gzip: 5.43 kB │ map: 33.75 kB
+
+built in 269ms.
+
+$ touch frontend/src/App.tsx
+
+build started...
+✓ 8 modules transformed.
+rendering chunks (1)...
+computing gzip size...
+../ProjectResources/Frontend/index.html   0.78 kB │ gzip: 0.38 kB
+../ProjectResources/Frontend/styles.css  47.24 kB │ gzip: 9.57 kB
+../ProjectResources/Frontend/app.js      13.58 kB │ gzip: 5.43 kB │ map: 33.75 kB
+
+built in 25ms.
+
+$ python3 -m moss_transcribe_diarize.app.web_cli --backend vllm --model unused-local-model --vllm-base-url http://127.0.0.1:1/v1 --vllm-model unused-local-model --runs-dir <temporary-directory> --host 127.0.0.1 --port 17864
+INFO:     Started server process [60905]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:17864 (Press CTRL+C to quit)
+INFO:     127.0.0.1:51846 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51847 - "GET /static/app.js HTTP/1.1" 200 OK
+
+$ curl --fail --silent --show-error http://127.0.0.1:17864/ | shasum -a 256
+6762009f874665affca7b74f5167863a160dbed8a0579b5b8763c6a47cdacc3e  -
+$ curl --fail --silent --show-error http://127.0.0.1:17864/static/app.js | shasum -a 256
+a0d035374ef782c5ae26fbecd88d6b131c5b3808ed06029be574398cb5ba5c6c  -
+$ shasum -a 256 ProjectResources/Frontend/index.html ProjectResources/Frontend/app.js
+6762009f874665affca7b74f5167863a160dbed8a0579b5b8763c6a47cdacc3e  ProjectResources/Frontend/index.html
+a0d035374ef782c5ae26fbecd88d6b131c5b3808ed06029be574398cb5ba5c6c  ProjectResources/Frontend/app.js
+
+$ npm --prefix frontend run typecheck
+
+> livetranscribe-frontend@0.0.0 typecheck
+> tsc --noEmit
+
+$ npm --prefix frontend test -- --run
+
+> livetranscribe-frontend@0.0.0 test
+> vitest --passWithNoTests --run
+
+RUN  v4.1.10 frontend
+
+Test Files  1 passed (1)
+Tests       1 passed (1)
+
+$ npm --prefix /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend test -- --run src/components/TranscriptPane.test.tsx src/components/LlmSettingsModal.test.tsx
+
+> livetranscribe-frontend@0.0.0 test
+> vitest --passWithNoTests --run src/components/TranscriptPane.test.tsx src/components/LlmSettingsModal.test.tsx
+
+RUN  v4.1.4 /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend
+
+Test Files  2 passed (2)
+Tests       9 passed (9)
+
+$ cmp -s frontend/package.json /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/package.json
+PASS package.json remains byte-identical
+
+Coverage boundary: the target test covers the inert ticket-4 shell. The two oracle component
+suites run against the reference checkout; TranscriptPane implementation/rendering belongs to
+ticket #7, and LlmSettingsModal is out of Phase 1, so neither component or test was copied here.
+This validation does not cover browser pixels, capture, deployment, or the remote host.
