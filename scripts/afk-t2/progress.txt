@@ -53,3 +53,18 @@ Iteration 4 — secret-file CLI/deployment forwarding
   process memory at startup. Omitting the path produces `None` and keeps pairing mode unchanged.
   Historical cross-read 403 remains explicitly not an acceptance gate; G5 routing still applies.
 - Next: identify and run the existing auth mutation battery unchanged.
+
+Iteration 5 — unchanged auth mutation-battery audit
+- Target: highest-ranked candidate 1; locate and rerun the A-025 33-row auth mutation battery
+  byte-for-byte against an isolated clone of this branch.
+- Files: `scripts/afk-t2/{context.md,progress.txt}` and
+  `evidence/phase1/t2/iteration-05-auth-mutation-battery/`.
+- Validation: source/copy harness SHA-256 pairs match; re-review controls U/A/C/B/S/L3/D PASS but
+  R fails before mutation on missing `live_helper_lease_seconds`; original runner kills M01–M16
+  (19 rows including variants) then aborts at stale M17 anchor count=0. Both clones restore clean.
+- Learned: the unchanged battery cannot produce 33/33 on the current baseline because helper-lease
+  config (`1f17def6`) and lifecycle-derived view authority (`4445a49`) both postdate its July
+  anchors and predate this ticket. This is harness drift, not a shared-token survivor; do not claim
+  the criterion met or rewrite “unmodified” locally.
+- Next: implement and prove browser page-memory-only token handling; leave the mutation criterion
+  blocked for supervisor direction.

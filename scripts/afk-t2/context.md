@@ -1,6 +1,7 @@
 # Context — Phase 1 ticket #2
 
-Iteration 4. Shared-token authority now reaches the service through a path-only deployment config.
+Iteration 5. Shared-token authority reaches the service through a path-only deployment config;
+the historical auth mutation battery is not runnable unchanged on the current pre-ticket baseline.
 
 ## Where things stand
 
@@ -125,9 +126,27 @@ Iteration-1 baseline:
 - Scope limit: this does not prove browser page-memory handling, the unchanged auth mutation
   battery, or G5 transcript-routing integrity. Historical cross-read `403` is still not a gate.
 
+## Iteration-5 unchanged mutation-battery audit
+
+- The exact A-025 reviewer harnesses were copied byte-for-byte and run only against isolated clones
+  of this branch at `65e46b1`; source/copy SHA-256 pairs match. The working tree and both clones
+  remained unmodified apart from generated evidence.
+- The safer re-review runner's unmutated controls `U`, `A`, `C`, `B`, `S`, `L3`, and `D` pass. Its
+  `R` control fails before any mutation because the July spike does not supply the required
+  `live_helper_lease_seconds`; that requirement predates this ticket (`1f17def6`). The harness
+  correctly aborts rather than counting false kills.
+- The original unchanged 33-row harness kills M01 through M16 (**19 rows**, including the `b`
+  variants), then aborts at M17 because its old view-expiry anchor has count zero. Session-lifecycle
+  view authority replaced that anchor before this ticket (`4445a49`). No survivor result exists;
+  **do not claim 33/33** from this partial run.
+- Raw evidence: `evidence/phase1/t2/iteration-05-auth-mutation-battery/`. This is a historical
+  harness-drift blocker, not evidence of a shared-token mutant surviving. Updating the harness
+  would violate issue #2's explicit “unmodified” criterion and is therefore not this ticket's fix.
+
 ## Ranked candidates
 
-1. Identify and run the existing auth mutation battery unchanged.
-2. Implement and prove browser page-memory-only token handling: no query parameter or
+1. Implement and prove browser page-memory-only token handling: no query parameter or
    `localStorage`, while the token survives for the current page lifetime only.
-3. Add reviewer-facing posture and explicit historical-403 evidence after behavior is proven.
+2. Add reviewer-facing posture and explicit historical-403 evidence after behavior is proven.
+3. Resolve the unchanged mutation-battery acceptance blocker through supervisor direction: the
+   historical runner has two pre-ticket stale seams, and changing either is not “unmodified.”

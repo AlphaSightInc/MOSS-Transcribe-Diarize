@@ -1,0 +1,48 @@
+{
+  "U": {
+    "exit": 0,
+    "tail": [
+      "sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute"
+    ]
+  },
+  "A": {
+    "exit": 0,
+    "tail": [
+      "sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute"
+    ]
+  },
+  "C": {
+    "exit": 0,
+    "tail": [
+      "sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute"
+    ]
+  },
+  "B": {
+    "exit": 0,
+    "tail": [
+      "sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute"
+    ]
+  },
+  "S": {
+    "exit": 0,
+    "tail": [
+      "sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute"
+    ]
+  },
+  "L3": {
+    "exit": 0,
+    "tail": [
+      "sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute"
+    ]
+  },
+  "R": {
+    "exit": 1,
+    "tail": [
+      "ValueError: live_helper_lease_seconds is required when live mode is enabled."
+    ]
+  },
+  "D": {
+    "exit": 0,
+    "tail": []
+  }
+}
