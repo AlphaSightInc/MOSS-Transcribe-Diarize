@@ -238,6 +238,7 @@ def build_app(
     app.state.prototype_commit_wall_ns = commit_wall_ns
     app.state.prototype_telemetry = {
         "lanes": {},
+        "contract_probes": [],
         "phases": [],
         "probes": [],
         "renders": [],
@@ -284,6 +285,13 @@ def build_app(
         body = await request.json()
         with app.state.prototype_lock:
             app.state.prototype_telemetry["phases"].append(body)
+        return {}
+
+    @app.post("/prototype/contract-probe")
+    async def prototype_contract_probe(request: Request):
+        body = await request.json()
+        with app.state.prototype_lock:
+            app.state.prototype_telemetry["contract_probes"].append(body)
         return {}
 
     @app.post("/prototype/heartbeat-telemetry")

@@ -83,6 +83,22 @@ This proves browser-to-production-route wiring, not the ticket's model gate. The
 transcript are deterministic fakes; no two-speaker WAV, real inference, clean stop, concurrency,
 background lease, or real display capture was exercised.
 
+## Production-route strict-key rejection — PASSED 2026-08-13
+
+Question: does the locally-run production v2 frame route reject a telemetry field without
+consuming the lane sequence, while the browser's ordinary nine-key frames remain admissible?
+
+Run the production-route probe above and open
+`http://127.0.0.1:8899/capture-harness?autostart=1&probe_unknown_frame_key=1` in Chrome. The opt-in
+probe sent the nine v2 fields plus `client_visibility` to the authenticated production frame
+route. It returned HTTP 400 naming the unknown field. Both lanes then admitted valid sequence 0
+and advanced to sequence 177 with zero failed samples, proving the rejection did not mutate lane
+state. Cadence telemetry continued over `/prototype/telemetry`, outside frame bodies.
+
+Verdict: the production route, not only the strict stub, enforces the exact nine-key body. This
+uses the deterministic provider and does not prove inference or display capture. Raw evidence:
+`evidence/phase1/t1/iteration-15-production-unknown-key.json`.
+
 ## Production read-path probe — PASSED 2026-08-13
 
 Question: can Chrome use the server-returned view bearer to poll the production `/snapshot` and

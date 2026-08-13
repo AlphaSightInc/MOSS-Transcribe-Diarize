@@ -113,6 +113,7 @@ const helperInstanceId = `browser-${crypto.randomUUID()}`;
 let pollTimer = null;
 let pollInFlight = false;
 const forceOneRenderFailure = new URLSearchParams(location.search).has("fail_render_once");
+const probeUnknownFrameKey = new URLSearchParams(location.search).has("probe_unknown_frame_key");
 const readState = {
   snapshotVersion: 0,
   eventSequence: 0,
@@ -185,11 +186,13 @@ async function captureSession(outEl) {
         || payload.descriptor.frame_samples !== config.frameSamples) {
       throw new Error("session descriptor differs from the preflight descriptor");
     }
-    liveSession = Object.freeze({
+    const session = Object.freeze({
       id: payload.id,
       captureBearer: bearer,
       viewBearer: payload.view_token,
     });
+    if (probeUnknownFrameKey) await runUnknownFrameKeyProbe(session, config);
+    liveSession = session;
     log(outEl, `session created: ${payload.id}`);
     scheduleReadPoll(0);
     return liveSession;
@@ -198,6 +201,45 @@ async function captureSession(outEl) {
     return await sessionPromise;
   } finally {
     sessionPromise = null;
+  }
+}
+
+async function runUnknownFrameKeyProbe(session, config) {
+  const body = {
+    lane: "microphone",
+    sequence: 0,
+    capture_timestamp_ns: 0,
+    device_epoch: 1,
+    pcm_base64: pcm16b64(new Float32Array(config.frameSamples)),
+    sample_count: config.frameSamples,
+    sample_rate: config.sampleRate,
+    silent: true,
+    discontinuity: false,
+    client_visibility: document.visibilityState,
+  };
+  const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/frames`, {
+    method: "POST", cache: "no-store",
+    headers: {
+      "Authorization": `Bearer ${session.captureBearer}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const responseBody = await response.json().catch(() => null);
+  await fetch("/prototype/contract-probe", {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      probe: "unknown_frame_key",
+      route: `/api/live/sessions/${session.id}/frames`,
+      request_keys: Object.keys(body).sort(),
+      unknown_key: "client_visibility",
+      http_status: response.status,
+      response: responseBody,
+    }),
+  });
+  if (response.status !== 400) {
+    throw new Error(`unknown frame key probe expected HTTP 400, got ${response.status}`);
   }
 }
 

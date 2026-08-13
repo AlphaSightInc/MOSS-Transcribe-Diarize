@@ -1,0 +1,71 @@
+{
+  "scope": "Chrome against locally-run production create_app routes with deterministic fake provider; contract rejection only",
+  "browser": "Google Chrome 151.0.7922.110",
+  "page": "http://127.0.0.1:8899/capture-harness?autostart=1&probe_unknown_frame_key=1",
+  "descriptor": {
+    "protocol": "moss-live-service.v2",
+    "sample_rate": 16000,
+    "frame_samples": 1000
+  },
+  "contract_probe": {
+    "route": "/api/live/sessions/api-session/frames",
+    "valid_frame_keys": [
+      "capture_timestamp_ns",
+      "device_epoch",
+      "discontinuity",
+      "lane",
+      "pcm_base64",
+      "sample_count",
+      "sample_rate",
+      "sequence",
+      "silent"
+    ],
+    "injected_unknown_key": "client_visibility",
+    "request_keys": [
+      "capture_timestamp_ns",
+      "client_visibility",
+      "device_epoch",
+      "discontinuity",
+      "lane",
+      "pcm_base64",
+      "sample_count",
+      "sample_rate",
+      "sequence",
+      "silent"
+    ],
+    "http_status": 400,
+    "response": {
+      "detail": "v2 frame has invalid fields (unknown fields: client_visibility)."
+    }
+  },
+  "production_state_after_probe": {
+    "system": {
+      "first_valid_sequence": 0,
+      "next_sequence": 177,
+      "accepted_samples": 177000,
+      "failed_samples": 0,
+      "health": "active"
+    },
+    "microphone": {
+      "first_valid_sequence": 0,
+      "next_sequence": 177,
+      "accepted_samples": 177000,
+      "failed_samples": 0,
+      "health": "active"
+    }
+  },
+  "checks": {
+    "valid_frame_contract_has_exactly_nine_keys": true,
+    "telemetry_key_is_absent_from_valid_frame_contract": true,
+    "unknown_key_probe_http_400": true,
+    "server_names_unknown_key": true,
+    "rejection_did_not_consume_sequence_zero": true,
+    "both_valid_lanes_reached_production_route_after_rejection": true,
+    "zero_failed_samples": true
+  },
+  "not_proved": [
+    "real model inference",
+    "real display capture",
+    "remote deployed-service mutation"
+  ]
+}

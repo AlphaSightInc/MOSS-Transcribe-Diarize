@@ -1,13 +1,14 @@
 # Context — Phase 1 ticket #1
 
-Iteration 14. Chrome now creates locally-owned production sessions, sends both lanes through the
+Iteration 15. Chrome now creates locally-owned production sessions, sends both lanes through the
 real v2 ingress route, polls/renders production reads, renews the production helper lease from the
 worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
 audio with an explicitly synthetic system lane. The kept server can select a manifest-admitted
 real provider/model, and the page stops lease-safely before detaching. Two simultaneous real-model
 browsers rendered isolated transcripts, produced latency/backpressure metrics, and now both stop
 cleanly from one non-reentrant request apiece. Full canonical queues return retryable v2 HTTP 429
-without mutating or terminalizing the mono runtime.
+without mutating or terminalizing the mono runtime. The production v2 route now has raw Chrome
+evidence that an unknown telemetry field is rejected without consuming sequence state.
 
 ## Where things stand
 
@@ -33,6 +34,10 @@ without mutating or terminalizing the mono runtime.
 - Chrome 151 + locally-run `create_app` accepted 329 consecutive descriptor-sized frames per lane
   (sequences 0–328, all HTTP 200, zero failed samples, no terminal failure). This proves the real
   auth/session/v2/mixer/runtime route stack with a deterministic fake provider, not model inference.
+- An opt-in Chrome negative probe sent the nine v2 fields plus `client_visibility` to that same
+  authenticated production frame route. It returned HTTP 400 naming the unknown field; both lanes
+  then admitted valid sequence 0 and advanced to 177 with zero failed samples. Telemetry remained
+  on `/prototype/telemetry`, outside frame bodies.
 - The returned view bearer now drives 250 ms production `/snapshot` + `/events` polls. An injected
   pre-render failure retained both cursors at 0/0; retry repeated 0/0, rendered six deterministic
   commits plus a clearly labelled synthetic provisional fixture and 31 event rows, then advanced
@@ -116,7 +121,7 @@ the tracker issue remains open for supervisor closure.
   no hardcoded frame geometry.
 - [ ] Post both `microphone` and `system` lanes to the deployed service, origin including the
   explicit port `:7861`.
-- [ ] Send exactly the nine v2 frame keys; server rejects unknown keys; telemetry never rides in
+- [x] Send exactly the nine v2 frame keys; server rejects unknown keys; telemetry never rides in
   a frame.
 - [x] Drive frame POSTs from worklet port messages, never timers; a backgrounded-tab run matches
   foreground cadence. Helper heartbeats share that path and do not trip the lease.
@@ -135,10 +140,11 @@ Criterion 1 is satisfied on the locally-owned production route: Chrome used the 
 reported 329,000 accepted samples/lane. Raw evidence:
 `evidence/phase1/t1/iteration-05-production-routes.json`. This says nothing about model behavior.
 
-Criterion 3 implementation status: the locally-run production route accepted the exact nine-key
-bodies, but the explicit unknown-key rejection probe remains stub-only. Keep the item open until
-that rejection is captured on the production route. Raw stub rejection evidence:
-`evidence/phase1/t1/iteration-04-nine-v2-keys.json`.
+Criterion 3 is satisfied on the locally-run production route. Chrome sent an authenticated frame
+with the nine v2 fields plus `client_visibility`; the server returned HTTP 400 naming the unknown
+field, then accepted valid sequence 0 on both lanes with zero failed samples. Cadence telemetry
+remained on the prototype telemetry route. Raw evidence:
+`evidence/phase1/t1/iteration-15-production-unknown-key.json`.
 
 Production-route transport evidence: `evidence/phase1/t1/iteration-05-production-routes.json`.
 It proves session creation and accepted strict-v2 lane frames only; it explicitly excludes real
@@ -220,7 +226,5 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
-   evidence remains stub-only.
-2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+1. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.
