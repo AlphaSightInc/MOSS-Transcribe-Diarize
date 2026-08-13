@@ -1,10 +1,11 @@
 # Context — Phase 1 ticket #1
 
-Iteration 9. Chrome now creates a locally-owned production session, sends both lanes through the
+Iteration 10. Chrome now creates a locally-owned production session, sends both lanes through the
 real v2 ingress route, polls/renders production reads, renews the production helper lease from the
 worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
-audio with an explicitly synthetic system lane. The exact local MOSS snapshot now passes a direct
-production-`ModelRunner` smoke, but the browser service still uses the deterministic fake provider.
+audio with an explicitly synthetic system lane. The kept server can now select a manifest-admitted
+real provider/model: Chrome rendered 46 real-model commits with S01–S04. Clean stop remains open
+because detaching the worklet before drain expired the 2 s prototype helper lease.
 
 ## Where things stand
 
@@ -49,6 +50,19 @@ production-`ModelRunner` smoke, but the browser service still uses the determini
   weight SHA-256 `9a0ceb4a...07026c4`). Production `ModelRunner` on CPU/float32 transcribed the
   known 60 s fixture in 29.066 s and emitted 538 tokens with four speaker ids. This direct smoke
   proves local model admission only; it does not exercise the live runtime, routes, or browser.
+- The kept production-route server now accepts paired `--model` and `--live-provider-manifest`
+  inputs while preserving its deterministic default. A locally finalized copy of the deployed,
+  measured WebRTC/WeSpeaker bundle passed production preflight on Mac ARM64; its pinned asset and
+  config hashes stayed fixed, while the bit-exact host golden output was regenerated locally.
+- Chrome fake-device microphone plus synthetic system then sent 236 exact 8,000-sample frames per
+  lane (sequences 0–235, zero gaps, all HTTP 200) through the real model runtime. The runtime
+  accepted 1,888,000 samples; before teardown it committed 46 spans, and the browser rendered
+  model ids S01–S04 plus four canonical speaker identities. This satisfies automated G1's real
+  model/render requirement and still does not prove display capture.
+- Teardown is red: the probe detached the lanes before requesting stop, which stopped the
+  worklet-driven heartbeat. The 2 s prototype helper lease expired while two real-model items were
+  draining; stop returned 429 and the runtime aborted with 1,888,000 accepted versus 1,840,000
+  accounted samples. Clean stop remains open; do not reinterpret this as a passing stop.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -87,7 +101,7 @@ the tracker issue remains open for supervisor closure.
   a frame.
 - [x] Drive frame POSTs from worklet port messages, never timers; a backgrounded-tab run matches
   foreground cadence. Helper heartbeats share that path and do not trip the lease.
-- [ ] A known two-speaker fixture played in the selected tab produces transcript text with
+- [x] A known two-speaker fixture played in the selected tab produces transcript text with
   distinct generic speaker ids.
 - [x] Poll `/snapshot` and `/events` per T-02; render committed spans plus provisional tail; only
   advance cursors after render.
@@ -125,6 +139,11 @@ Fake-microphone ingress evidence:
 and cadence telemetry, production v2 state, fixture/reference hashes, and the source-envelope
 correlation. It proves Chrome fake-device audio reached `getUserMedia()` and the production ingress
 route while system stayed synthetic. It excludes model inference and real display capture.
+
+Real-model browser evidence: `evidence/phase1/t1/iteration-10-real-model-browser.json`. It proves
+the fake-device microphone and synthetic system lanes reached the manifest-admitted local provider
+and production `ModelRunner`, and Chrome rendered 46 commits with S01–S04. It explicitly records
+that real display capture is unproved and teardown failed after the worklet heartbeat was detached.
 
 ### Binding proof interpretation
 
@@ -166,9 +185,12 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Replace the deterministic browser-probe runtime with the now-proven local real model and an
-   admitted local provider bundle, then rerun fake-device microphone + synthetic-system capture
-   and require rendered text with at least two speaker ids. Preserve the direct-smoke revision and
-   weight hash; never send inference traffic to the read-only remote host.
-2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+1. Make the real-model probe stop lease-safely: request production stop while the worklet-driven
+   heartbeat remains active, detach only after the drain response, and require HTTP 200 with equal
+   accepted/accounted samples and no pending work. Do not extend the lease merely to hide ordering.
+2. After clean stop, run two simultaneous browsers, prove their rendered text never crosses, and
+   capture per-session stop/revocation evidence plus remaining latency/queue/429 metrics.
+3. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
+   evidence remains stub-only.
+4. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

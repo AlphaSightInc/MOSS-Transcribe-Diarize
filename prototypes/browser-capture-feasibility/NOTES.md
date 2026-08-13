@@ -174,6 +174,32 @@ Verdict: this host can run the exact real model fast enough for the next live-pa
 This does not exercise the live runtime, provider bundle, HTTP routes, Chrome, or rendered output,
 so G1 remains open. Raw output: `evidence/phase1/t1/iteration-09-direct-model-smoke.json`.
 
+## Real model through Chrome/live routes — PASSED, teardown still open 2026-08-13
+
+Question: can Chrome fake-device microphone audio traverse the production v2 routes, the
+manifest-admitted live provider bundle, and the local production `ModelRunner`, then return to the
+same browser as diarized text with at least two speaker ids?
+
+One-command server:
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=1 python3 production_route_server.py \
+  --model <snapshot-directory> --live-provider-manifest <host-finalized-manifest>
+```
+
+Chrome sent 236 descriptor-sized frames on each lane (sequences 0–235, zero gaps, all HTTP 200)
+and 236 worklet-driven heartbeats (all HTTP 200). The runtime accepted 1,888,000 samples, exactly
+236 × the manifest's 8,000-sample frame geometry. Before teardown it committed 46 real-model spans
+and Chrome rendered four distinct model ids, S01–S04. The system lane was a synthetic oscillator;
+this does not prove display capture.
+
+Verdict: the browser → production routes → provider bundle → real model → production reads → same
+browser G1 path passes. Clean stop does not: the probe detached its lanes before asking the runtime
+to drain, which also stopped worklet heartbeats. The 2 s prototype helper lease expired during the
+real-model drain, so stop returned 429 with two pending items and the runtime aborted. Keep the
+ticket open and make stop-before-detach/lease-safe drain the next probe. Raw evidence:
+`evidence/phase1/t1/iteration-10-real-model-browser.json`.
+
 ## Safari attended diagnostic — 2026-08-09
 
 Safari 26.5 captured the Bose QC Ultra microphone successfully: 110 HTTP-200 frames,

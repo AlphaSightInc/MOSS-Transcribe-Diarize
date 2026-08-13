@@ -3,21 +3,21 @@
 
 Question: can real Chrome create a production live session, admit exact v2
 two-lane frames, and poll/render its production snapshot and event streams with
-render-then-advance cursors?
+render-then-advance cursors, including through a manifest-admitted real model?
 
 Run: PYTHONDONTWRITEBYTECODE=1 python3 \
   prototypes/browser-capture-feasibility/production_route_server.py
 Then open http://127.0.0.1:8899/capture-harness?autostart=1 in Chrome.
 
-The provider is deterministic and does not run a model. Its committed text is real
-runtime output; a labelled provisional fixture exercises only that renderer branch.
-This proves the browser, FastAPI route, auth, descriptor, v2 session, mixer, runtime
-ingress, and authenticated read seams only.
+By default the provider is deterministic and does not run a model. Pass both
+``--model`` and ``--live-provider-manifest`` to exercise the production ModelRunner
+through the manifest-admitted live provider bundle instead.
 The ephemeral capture credential is available only from a loopback prototype route
 and is never printed or persisted.
 """
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import math
@@ -105,7 +105,11 @@ def _visibility_cadence(records: list[dict], visibility: str, *, time_key: str) 
     }
 
 
-def build_app():
+def build_app(
+    *,
+    model_path: Path | None = None,
+    live_provider_manifest: Path | None = None,
+):
     from fastapi.responses import FileResponse, JSONResponse
 
     helpers = _test_live_api_module()
@@ -121,22 +125,46 @@ def build_app():
         device_id="browser-route-probe",
         now=1.0,
     )
+    if model_path is None and live_provider_manifest is None:
+        runtime_factory = lambda: _ReadPathFixtureRuntime(
+            helpers.make_live_runtime(
+                max_retained_samples=320_000,
+                max_frame_samples=6_400,
+                speech=(True, False) * 10_000,
+            )
+        )
+        provider_scope = (
+            "real production routes with deterministic fake provider; committed text is runtime output; "
+            "provisional text is an explicit read-path fixture; no model inference"
+        )
+    elif model_path is not None and live_provider_manifest is not None:
+        from moss_transcribe_diarize.app.live_provider_bundle import (
+            LiveProviderBundleConfig,
+            build_live_runtime_factory,
+        )
+        from moss_transcribe_diarize.app.model_runner import ModelRunner
+
+        config = LiveProviderBundleConfig.from_manifest(live_provider_manifest)
+        runner = ModelRunner(model_path, device="auto", dtype="bf16")
+        runtime_factory = build_live_runtime_factory(config, runner)
+        provider_scope = (
+            "real production routes with manifest-admitted live provider bundle and local "
+            "production ModelRunner; system lane is synthetic and does not prove display capture"
+        )
+    else:
+        raise ValueError("--model and --live-provider-manifest must be supplied together")
+
     app = create_app(
         model_path="fake-model",
         runs_dir=Path(scratch.name) / "runs",
         live_enabled=True,
         live_access_registry=registry,
         live_helper_lease_seconds=LIVE_HELPER_LEASE_SECONDS,
-        live_runtime_factory=lambda: _ReadPathFixtureRuntime(
-            helpers.make_live_runtime(
-                max_retained_samples=320_000,
-                max_frame_samples=6_400,
-                speech=(True, False) * 10_000,
-            )
-        ),
+        live_runtime_factory=runtime_factory,
     )
     app.state.prototype_scratch = scratch
     app.state.prototype_capture_bearer = credential.device_token
+    app.state.prototype_provider_scope = provider_scope
     app.state.prototype_telemetry = {
         "lanes": {},
         "phases": [],
@@ -200,8 +228,7 @@ def build_app():
         return {}
 
     @app.get("/prototype/verdict")
-    def prototype_verdict():
-        session_id = "api-session"
+    def prototype_verdict(session_id: str = "api-session"):
         with app.state.prototype_lock:
             telemetry = json.loads(json.dumps(app.state.prototype_telemetry))
         try:
@@ -211,10 +238,7 @@ def build_app():
             v2 = runtime = None
         helper_presence = app.state.live_helper_presence.snapshot(session_id)
         return {
-            "scope": (
-                "real production routes with deterministic fake provider; committed text is runtime output; "
-                "provisional text is an explicit read-path fixture; no model inference"
-            ),
+            "scope": app.state.prototype_provider_scope,
             "session_id": session_id if v2 is not None else None,
             "live_helper_lease_seconds": LIVE_HELPER_LEASE_SECONDS,
             "descriptor": app.state.live_runtime.descriptor.to_dict(),
@@ -225,8 +249,7 @@ def build_app():
         }
 
     @app.get("/prototype/g7-verdict")
-    def prototype_g7_verdict():
-        session_id = "api-session"
+    def prototype_g7_verdict(session_id: str = "api-session"):
         with app.state.prototype_lock:
             telemetry = json.loads(json.dumps(app.state.prototype_telemetry))
         heartbeats = telemetry["heartbeats"]
@@ -264,10 +287,7 @@ def build_app():
         )
         hidden_max_delta = hidden_cadence["delta_ms"]["max"]
         return {
-            "scope": (
-                "Chrome synthetic lanes through production frame and heartbeat routes; "
-                "no model inference and no real display capture"
-            ),
+            "scope": app.state.prototype_provider_scope,
             "live_helper_lease_seconds": LIVE_HELPER_LEASE_SECONDS,
             "session_active_after_hidden_phase": v2 is not None and v2["status"] == "active",
             "heartbeat_summary": {
@@ -324,7 +344,14 @@ def build_app():
 def main() -> None:
     import uvicorn
 
-    app = build_app()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=Path)
+    parser.add_argument("--live-provider-manifest", type=Path)
+    args = parser.parse_args()
+    app = build_app(
+        model_path=args.model,
+        live_provider_manifest=args.live_provider_manifest,
+    )
     print(f"PROTOTYPE production routes listening on http://127.0.0.1:{PORT}/capture-harness")
     uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="warning", proxy_headers=False)
 
