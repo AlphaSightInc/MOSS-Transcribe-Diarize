@@ -245,6 +245,23 @@ then stop each one-pass fixture before saturation and trigger each drain exactly
 awaiting through the automation timeout. Raw evidence:
 `evidence/phase1/t1/iteration-12-concurrent-browser-probe.json`.
 
+## Bounded concurrent clean stop — PASSED 2026-08-13
+
+Question: after the v2 backpressure fix, can two bounded one-pass Chrome sources retain the
+passing isolation/latency result and each issue exactly one clean drain before queue saturation?
+
+Both independent Chrome processes used the same distinct 60 s fixtures with the fake-audio
+`%noloop` suffix. Each rendered its own marker and multiple speaker ids with no cross-marker.
+Across 43 commits, commit-to-render latency was 150/246/263 ms p50/p95/max; no pre-stop frame
+returned 429 or 500, and telemetry had zero sequence gaps. Each non-reentrant fire-and-monitor
+trigger produced exactly one stop request. The drains completed in 44.062 s and 41.402 s with
+HTTP 200, closed runtime/v2 state, exact accepted/accounted samples, zero pending work, and
+revoked view credentials. The sole test capture credential was then revoked and rejected on reuse.
+
+Verdict: the two-simultaneous-session clean-stop criterion now passes on the locally-owned real
+model route. System lanes remained synthetic, so this still does not prove display capture. Raw
+evidence: `evidence/phase1/t1/iteration-14-concurrent-clean-stop.json`.
+
 ## Safari attended diagnostic — 2026-08-09
 
 Safari 26.5 captured the Bose QC Ultra microphone successfully: 110 HTTP-200 frames,
