@@ -1,10 +1,10 @@
 # Context — Phase 1 ticket #5
 
-Iteration 2. Existing helper-health seam measured; browser vocabulary and next server slice chosen.
+Iteration 3. Server-owned capture status is implemented and validated; client integration remains.
 
 ## Where things stand
 
-- Branch: `afk/t5-*`, cut from `dev` at `a05a7f6`. Worktree 5 of 6 (treehouse pool).
+- Branch: `afk/t5-capture-health`, cut from `dev` at `8fec841`. Worktree 5 of 6 (treehouse pool).
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
@@ -13,7 +13,7 @@ Iteration 2. Existing helper-health seam measured; browser vocabulary and next s
 
 ## Acceptance checklist — issue #5 (authoritative)
 
-- [ ] Extend `HelperLaneHealth.failure_code` additively with browser conditions; one vocabulary
+- [x] Extend `HelperLaneHealth.failure_code` additively with browser conditions; one vocabulary
   shared by native and browser helpers, no browser-side enum.
 - [ ] Browser reports raw facts only; no client capture-health judgment or state machine.
 - [ ] Snapshot publishes one server-authored `capture_phase` and one plain-language status line;
@@ -91,6 +91,22 @@ bash -n scripts/afk-t5/ralph-afk.sh
 - Raw probe: `evidence/phase1/t5/iteration-2-helper-vocabulary-probe.txt`; durable verdict:
   `prototypes/browser-capture-feasibility/NOTES.md`.
 
+## Iteration 3 server projection
+
+- `live_capture_status.py` owns the seven browser strings and projects existing helper presence
+  into reference-compatible `starting` / `recording` / `failed` phases plus one status line.
+- Snapshot responses now publish top-level `capture_phase` and `status_line`. Raw
+  `helper_presence` remains unchanged for `/live` diagnostics and logs.
+- Failed facts deterministically outrank degraded facts. One failed lane with a live peer remains
+  `recording`; its line says the peer continues. Known browser facts get actionable copy, while
+  unregistered future/native codes get a generic line and remain accepted by the open parser.
+- Silent-microphone copy names Chrome's `Settings > Privacy and security > Site settings >
+  Microphone` remedy. This proves the server wording, not the still-blocked preflight delivery.
+- Prototype + focused result: **83 passed, 351 subtests**. Raw artifact:
+  `evidence/phase1/t5/iteration-3-capture-status-projection.txt`; durable verdicts:
+  `prototypes/streaming-diarization/NOTES.md` and
+  `prototypes/browser-capture-feasibility/NOTES.md`.
+
 Open integration seam: the charter creates a server session only after both preflight meters are
 non-zero, while issue #5 requires a server-authored silent-microphone preflight line and the
 existing heartbeat is session-scoped. Do not invent a pre-session browser judgment. Resolve this
@@ -98,12 +114,10 @@ with ticket #1's actual client/session flow before the client half.
 
 ## Ranked candidates
 
-1. Implement the smallest server vertical slice: one server-owned capture-status projection over
-   the existing helper presence, with the seven measured browser codes and stable native/fallback
-   behavior, published as `capture_phase` plus one plain-language `status_line` in snapshots.
-   Focused tests must prove failed/degraded facts, one-lane continuation, and additive unknown-code
-   compatibility; keep raw `helper_presence` for `/live` diagnostics.
-2. Restore the full-suite prerequisites (Swift products and real-corpus cache), investigate the
+1. Restore the full-suite prerequisites (Swift products and real-corpus cache), investigate the
    macOS lifecycle baseline failure, then rerun the full command before the merge gate.
-3. Recheck issue #1/dev and resolve the preflight/session-ordering seam before beginning the
-   browser/client half.
+2. Recheck issue #1/dev. Once its actual client/session flow lands, resolve the preflight/session
+   ordering seam and implement raw-fact browser heartbeats from worklet messages plus line-only UI
+   rendering; do not invent a pre-session client verdict.
+3. Measure G7 in a real backgrounded Chrome tab against a locally run service. The existing
+   hidden-tab frame result supports the design but does not prove heartbeat lease survival.

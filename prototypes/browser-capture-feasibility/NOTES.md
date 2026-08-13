@@ -144,3 +144,14 @@ status mapping on this existing path, using observation-shaped browser codes:
 `browser_audio_context_suspended`, `browser_sustained_clipping`, and
 `browser_microphone_silent`. Failed versus degraded remains the existing `state` field;
 no browser-only health schema or coordinator is justified.
+
+## Server capture-status projection — 2026-08-13
+
+The measured vocabulary above is now absorbed by the server projection in
+`moss_transcribe_diarize/app/live_capture_status.py`. Snapshot responses publish exactly one
+`capture_phase` and one `status_line` while retaining raw `helper_presence` for `/live`
+diagnostics. Failed facts outrank degraded facts deterministically; a single failed lane stays
+`recording` when its peer remains usable; unknown additive codes receive generic server copy.
+The silent-microphone line names Chrome's Settings > Privacy and security > Site settings >
+Microphone remedy. The focused production-path suite passed 83 tests and 351 subtests; raw output
+is `evidence/phase1/t5/iteration-3-capture-status-projection.txt`.

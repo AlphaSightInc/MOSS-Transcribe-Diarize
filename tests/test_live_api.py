@@ -1328,6 +1328,12 @@ class LiveApiTest(unittest.TestCase):
                 "permission_denied",
             )
             self.assertIn(session_id, app.state.live_v2_sessions)
+            status = client.get(f"/api/live/sessions/{session_id}/snapshot").json()
+            self.assertEqual(status["capture_phase"], "recording")
+            self.assertEqual(
+                status["status_line"],
+                "Microphone capture failed. The session is continuing.",
+            )
 
     def test_a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_survives(self):
         """F3's soak sequence, on the lane that failed rather than on its peer.
