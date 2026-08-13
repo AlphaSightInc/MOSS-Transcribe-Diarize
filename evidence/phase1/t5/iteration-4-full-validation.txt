@@ -1,0 +1,166 @@
+.........................................F.............................. [  7%]
+.......................................... [ 11%]
+...............................................................ss. [ 18%]
+................................................................................. [ 26%]
+........................................................................ [ 33%]
+.................s...................................................... [ 40%]
+........................................................................ [ 48%]
+........................................................................ [ 55%]
+.................................................................... [ 62%]
+........................................................................ [ 69%]
+............................................................... [ 75%]
+.............s.......................................................... [ 83%]
+.......................................................F................ [ 90%]
+........................................................................ [ 97%]
+........................                                              [100%]
+=================================== FAILURES ===================================
+_ BaselineContractTests.test_a2_instrument_is_hash_pinned_and_production_bound _
+
+self = <test_l1_baseline.BaselineContractTests testMethod=test_a2_instrument_is_hash_pinned_and_production_bound>
+
+    def test_a2_instrument_is_hash_pinned_and_production_bound(self) -> None:
+>       instrument = load_a2_instrument(self.spec)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+prototypes/streaming-diarization/l15/test_l1_baseline.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+spec = {'a2_instrument': {'path': 'prototypes/streaming-diarization/l2-stage0/run_l1_control.py', 'sha256': '5f7ca3851f742911...jamie-dimon', '1m-acquired-jamie-dimon', '5m-acquired-jamie-dimon', '5m-acquired-nfl', '5m-lex-bill-ackman', ...], ...}
+
+    def load_a2_instrument(spec: dict[str, Any]) -> ModuleType:
+        binding = spec["a2_instrument"]
+        path = resolve(binding["path"])
+        actual = sha256_file(path)
+        if actual != binding["sha256"]:
+            raise BaselineError("l15_a2_instrument_hash_mismatch", actual)
+        product_diff = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(REPO),
+                "diff",
+                "--quiet",
+                spec["production_source_commit"],
+                "HEAD",
+                "--",
+                "moss_transcribe_diarize",
+            ],
+            check=False,
+        )
+        if product_diff.returncode != 0:
+>           raise BaselineError("l15_product_tree_drift", spec["production_source_commit"])
+E           run_l1_baseline.BaselineError: l15_product_tree_drift: 9089b33210401111865da7abc160ab0bcb4aa266
+
+prototypes/streaming-diarization/l15/run_l1_baseline.py:74: BaselineError
+____ test_built_macos_app_finishes_launch_and_honors_application_terminate _____
+
+    def test_built_macos_app_finishes_launch_and_honors_application_terminate():
+        if platform.system() != "Darwin":
+            pytest.skip("macOS Launch Services lifecycle is Darwin-only.")
+        if shutil.which("open") is None or shutil.which("swift") is None:
+            pytest.fail("open and swift are required for the Launch Services lifecycle tracer.")
+    
+        lab = _lab_bundle()
+        pid: int | None = None
+        with tempfile.TemporaryDirectory(prefix="mtd5-lifecycle-", dir="/tmp") as tmp:
+            tmp_path = Path(tmp)
+            socket_path = tmp_path / "control.sock"
+            store_path = tmp_path / "secrets.json"
+            launched = subprocess.run(
+                [
+                    "open",
+                    "-n",
+                    "-g",
+                    "--env",
+                    f"MOSS_CAPTURE_CONTROL_SOCKET={socket_path}",
+                    "--env",
+                    f"MOSS_CAPTURE_SECRET_STORE_PATH={store_path}",
+                    "--env",
+                    "MOSS_CAPTURE_SKIP_LAUNCH=1",
+                    str(lab.bundle),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                timeout=TIMEOUT,
+            )
+            assert launched.returncode == 0, (
+                f"Launch Services could not open the lab app: "
+                f"stdout={launched.stdout!r} stderr={launched.stderr!r}"
+            )
+            try:
+                deadline = time.monotonic() + TIMEOUT
+                while time.monotonic() < deadline and not socket_path.exists():
+                    time.sleep(0.05)
+                assert socket_path.exists(), "Launch Services app did not bind its control socket"
+    
+                control_secret = _read_store(store_path)["local-control-secret"]
+                request_body = json.dumps(
+                    {"secret": control_secret, "request": {"command": "status"}},
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+                    client.settimeout(2.0)
+                    client.connect(str(socket_path))
+                    pid = struct.unpack("i", client.getsockopt(0, 0x002, 4))[0]
+                    client.sendall(struct.pack(">I", len(request_body)) + request_body)
+                    response_length = struct.unpack(">I", _recv_exact(client, 4))[0]
+                    response = json.loads(_recv_exact(client, response_length).decode("utf-8"))
+                assert response["ok"] is True
+                assert response["running"] is False
+    
+                program = """
+    import AppKit
+    import Foundation
+    
+    let pid = pid_t(CommandLine.arguments[1])!
+    guard let app = NSRunningApplication(processIdentifier: pid) else {
+        Foundation.exit(2)
+    }
+    let finished = app.isFinishedLaunching
+    let terminateAccepted = app.terminate()
+    print("finishedLaunching=\\(finished)")
+    print("terminateAccepted=\\(terminateAccepted)")
+    guard finished else {
+        Foundation.exit(3)
+    }
+    guard terminateAccepted else {
+        Foundation.exit(4)
+    }
+    """.strip()
+                lifecycle = subprocess.run(
+                    ["swift", "-e", program, str(pid)],
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                    timeout=BUILD_TIMEOUT,
+                )
+>               assert lifecycle.returncode == 0, (
+                    f"app did not finish Launch Services launch or accept termination: "
+                    f"stdout={lifecycle.stdout!r} stderr={lifecycle.stderr!r}"
+                )
+E               AssertionError: app did not finish Launch Services launch or accept termination: stdout='' stderr=''
+E               assert 2 == 0
+E                +  where 2 = CompletedProcess(args=['swift', '-e', 'import AppKit\nimport Foundation\n\nlet pid = pid_t(CommandLine.arguments[1])!\...n.exit(3)\n}\nguard terminateAccepted else {\n    Foundation.exit(4)\n}', '66386'], returncode=2, stdout='', stderr='').returncode
+
+tests/test_macos_uds_tracer.py:222: AssertionError
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_live_service_replay.py::LiveServiceReplayContractTest::test_http_adapter_crosses_real_loopback_live_routes
+  /Users/gao/.pyenv/versions/3.12.10/lib/python3.12/site-packages/websockets/legacy/__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+    warnings.warn(  # deprecated in 14.0 - 2024-11-09
+
+tests/test_live_service_replay.py::LiveServiceReplayContractTest::test_http_adapter_crosses_real_loopback_live_routes
+  /Users/gao/.pyenv/versions/3.12.10/lib/python3.12/site-packages/uvicorn/protocols/websockets/websockets_impl.py:16: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+    from websockets.server import WebSocketServerProtocol
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED prototypes/streaming-diarization/l15/test_l1_baseline.py::BaselineContractTests::test_a2_instrument_is_hash_pinned_and_production_bound
+FAILED tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate
+2 failed, 986 passed, 4 skipped, 4 warnings, 475 subtests passed in 109.50s (0:01:49)
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

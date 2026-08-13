@@ -1,0 +1,9 @@
+open_rc=0
+peer_pid=67489 status_ok=True
+ps=67489     1 67489 S    00:00 /Users/gao/.tree /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/5/MOSS-Transcribe-Diarize/macos/MOSSCapture/.build/idea044-lab/MOSSCapture.app/Contents/MacOS/MOSSCaptureApp
+lsappinfo_rc=0 output='"pid"=[ NULL ]'
+nsrunning_rc=0 output='nil'
+oslog=2026-08-13 02:29:28.406 Df MOSSCaptureApp[67489:5216326] [com.apple.processmanager:front-35286506] CHECKIN: pid=67489
+oslog=2026-08-13 02:29:28.409 Df MOSSCaptureApp[67489:5216326] [com.apple.processmanager:front-35286506] CHECKEDIN: pid=67489 asn=0x0-0x12429417 foreground=0
+oslog=2026-08-13 02:29:28.411 Df MOSSCaptureApp[67489:5216326] [com.apple.processmanager:front-35286506] Registered, pid=67489 ASN=0x0,0x12429417
+oslog=2026-08-13 02:29:28.440 Df MOSSCaptureApp[67489:5216326] [com.apple.processmanager:front-35286506] SignalReady: pid=67489 asn=0x0-0x12429417

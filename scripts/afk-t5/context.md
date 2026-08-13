@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #5
 
-Iteration 3. Server-owned capture status is implemented and validated; client integration remains.
+Iteration 4. Server-owned capture status is implemented and validated; client integration remains.
 
 ## Where things stand
 
@@ -61,15 +61,36 @@ bash -n scripts/afk-t5/ralph-afk.sh
 
 - `.venv/bin/pytest` is not available in this fresh worktree (exit 127). Host `python3` is
   pyenv 3.12.10 with pytest importable, so the commands above are the working entrypoints.
-- Full discovery baseline: **965 passed, 4 skipped, 3 failed, 11 errors, 383 subtests**.
-  Red prerequisites are missing real-corpus `harness_cache.npz`, unbuilt `mtd-capture` and
-  `MOSSCaptureApp` Swift products, plus one macOS Launch Services lifecycle failure. Resolve
-  these before claiming G10; no ticket #5 code existed when measured.
+- Full discovery after restoring ignored prerequisites: **986 passed, 4 skipped, 2 failed,
+  475 subtests**. Raw result: `evidence/phase1/t5/iteration-4-full-validation.txt`.
+  The two reds are not ticket #5 behavior: the L1 frozen-baseline guard detects this branch's
+  product-tree additions relative to certified commit `9089b332...`, and the unchanged macOS
+  Launch Services lifecycle lookup cannot resolve the launched app from this test-runner session.
+  Do not weaken either gate; baseline re-certification and GUI-session execution need their owners.
 - Focused live API/auth/mixer baseline: **65 passed, 351 subtests**. Covers existing live HTTP
   contract/auth/mixer behavior; does not cover browser capture, background throttling, or issue
   #5's new failure vocabulary/status rendering.
 - Loop shell syntax: **PASS**. Covers parsing only.
 - Raw result: `evidence/phase1/t5/iteration-1-validation.txt`.
+
+## Iteration 4 validation-prerequisite verdict
+
+- Built ignored local `MOSSCaptureApp` and `mtd-capture` Swift products. Restored the ignored
+  `acquired_alphabet` legacy cache/reference pair at their repository-pinned SHA-256 values
+  `fd13bacb...f3947be5` / `28dc9a5b...bdc0759`; its focused suite is now **8 passed,
+  94 subtests**. Raw artifact: `evidence/phase1/t5/iteration-4-prerequisites.txt`.
+- The lifecycle failure is reproducible, but the product reaches `applicationDidFinishLaunching`
+  (the UDS server is started only there), answers a real status request, and macOS logs the same
+  PID as `CHECKEDIN`, `Registered`, and `SignalReady`. `lsappinfo` and the Swift
+  `NSRunningApplication` lookup from the test process nevertheless return no application. This
+  isolates an execution-session lookup blocker rather than an app-start failure. Raw artifact:
+  `evidence/phase1/t5/iteration-4-lifecycle-probe.txt`.
+- The L1 failure is the rail's intended behavior: `load_a2_instrument()` rejects any
+  `moss_transcribe_diarize/` diff from its frozen certified source commit. Ticket #5 necessarily
+  adds product files, so making full discovery green requires separately authorized baseline
+  re-certification, not a ticket-local workaround.
+- Findings were recorded on issue #5 as comment `#issuecomment-5276809001` by authenticated actor
+  `yugao-aisight`. No remote service or unrelated product code was changed.
 
 ## Iteration 2 seam verdict
 
@@ -114,10 +135,11 @@ with ticket #1's actual client/session flow before the client half.
 
 ## Ranked candidates
 
-1. Restore the full-suite prerequisites (Swift products and real-corpus cache), investigate the
-   macOS lifecycle baseline failure, then rerun the full command before the merge gate.
-2. Recheck issue #1/dev. Once its actual client/session flow lands, resolve the preflight/session
+1. Recheck issue #1/dev. Once its actual client/session flow lands, resolve the preflight/session
    ordering seam and implement raw-fact browser heartbeats from worklet messages plus line-only UI
    rendering; do not invent a pre-session client verdict.
-3. Measure G7 in a real backgrounded Chrome tab against a locally run service. The existing
+2. Measure G7 in a real backgrounded Chrome tab against a locally run service. The existing
    hidden-tab frame result supports the design but does not prove heartbeat lease survival.
+3. Before the final merge gate, obtain the owning decision for L1 baseline re-certification and
+   run the lifecycle node from a GUI-visible test-runner session; both are now evidenced blockers,
+   not missing local prerequisites.
