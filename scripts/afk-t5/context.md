@@ -1,7 +1,7 @@
 # Context — Phase 1 ticket #5
 
-Iteration 5. Server-owned status and background-worklet lease mechanics are measured; client
-integration remains blocked by ticket #1.
+Iteration 6. Server-owned status and background-worklet lease mechanics are measured; client
+integration remains blocked by ticket #1, which is active locally but has not landed on `dev`.
 
 ## Where things stand
 
@@ -151,11 +151,25 @@ with ticket #1's actual client/session flow before the client half.
   service. Raw artifact: `evidence/phase1/t5/iteration-5-g7-worklet-lease.txt`; durable verdict:
   `prototypes/browser-capture-feasibility/NOTES.md`.
 
+## Iteration 6 dependency-gate verdict
+
+- At `2026-08-13T06:46:10Z`, live issue #1 remained open, `private/dev` and local `dev` both
+  remained at `8fec841`, and no `afk/t1-*` branch was published to `private`.
+- The local `afk/t1-gate2-canary` worktree had four committed iterations through descriptor-driven
+  geometry and exact v2 frame keys. Its own context labels both proofs stub-only.
+- Ticket #1's next production-route slice was present only as uncommitted work in its worktree.
+  Reading that state established liveness; this ticket did not edit, validate, or depend on it.
+- Therefore there is still no landed client/session flow to merge or test. Integrating the local
+  branch now would couple ticket #5 to incomplete, unpublished work and violate the serialized
+  `dev` integration contract.
+- Raw gate evidence: `evidence/phase1/t5/iteration-6-dependency-gate.txt`.
+
 ## Ranked candidates
 
-1. Recheck issue #1/dev. Once its actual client/session flow lands, resolve the preflight/session
-   ordering seam and implement raw-fact browser heartbeats from worklet messages plus line-only UI
-   rendering; do not invent a pre-session client verdict.
+1. Recheck issue #1 and `private/dev`. Once its actual client/session flow lands on `dev`, resolve
+   the preflight/session ordering seam and implement raw-fact browser heartbeats from worklet
+   messages plus line-only UI rendering; do not integrate ticket #1's unpublished work or invent
+   a pre-session client verdict.
 2. Repeat iteration 5's passing G7 mechanism probe through ticket #1's product client and a local
    production-provider service; only that non-stub run can satisfy the issue criterion.
 3. Before the final merge gate, obtain the owning decision for L1 baseline re-certification and

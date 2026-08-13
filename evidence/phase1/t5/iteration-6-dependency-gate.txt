@@ -1,0 +1,33 @@
+Captured: 2026-08-13T06:46:10Z
+
+$ git rev-parse dev
+8fec84168d18a2d3e1f14273f706e776a7dd808a
+
+$ git ls-remote private refs/heads/dev 'refs/heads/afk/t1-*'
+8fec84168d18a2d3e1f14273f706e776a7dd808a	refs/heads/dev
+
+$ gh api user --jq .login
+yugao-aisight
+
+$ gh issue view 1 --repo aiSight-us/MOSS-Transcribe-Diarize --json state,updatedAt --jq '[.state,.updatedAt] | @tsv'
+OPEN	2026-08-13T06:16:03Z
+
+$ gh issue view 5 --repo aiSight-us/MOSS-Transcribe-Diarize --json state,updatedAt --jq '[.state,.updatedAt] | @tsv'
+OPEN	2026-08-13T06:30:09Z
+
+$ git log -1 --format='%H %s' afk/t1-gate2-canary
+667a85131b7ed9a5cc078f5693630d9a7c6a87a2 ralph: iteration 4 - exact v2 frame keys
+
+$ git -C /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize status --short --branch
+## afk/t1-gate2-canary
+ M prototypes/browser-capture-feasibility/NOTES.md
+ M prototypes/browser-capture-feasibility/capture_pipeline_page.html
+ M prototypes/browser-capture-feasibility/stub_frame_server.py
+?? evidence/phase1/t1/iteration-05-production-routes.json
+?? prototypes/browser-capture-feasibility/production_route_server.py
+
+$ git show afk/t1-gate2-canary:scripts/afk-t1/context.md | sed -n '1,3p'
+# Context — Phase 1 ticket #1
+
+Iteration 4. Descriptor-driven browser framing and exact v2 frame keys are measured against the
+stub; no real-service or model behavior measured yet.
