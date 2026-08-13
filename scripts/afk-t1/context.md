@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #1
 
-Iteration 1. Issue #1 acceptance gate captured; no product behavior measured yet.
+Iteration 2. Validation baseline established; no product behavior measured yet.
 
 ## Where things stand
 
@@ -8,6 +8,11 @@ Iteration 1. Issue #1 acceptance gate captured; no product behavior measured yet
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
+- This worktree has no `.venv`; pyenv Python 3.12.10 + pytest 9.0.2 is the working runner.
+- Focused live API/auth/mixer baseline is green: 65 passed + 351 subtests.
+- Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
+  978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
+  `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
 
 ## Read these first (do not re-derive)
 
@@ -67,15 +72,31 @@ Source: live issue body read 2026-08-13. All criteria remain open.
 
 ## Validation commands
 
-Establish these in the next iteration and record what each actually covers:
+Working command set for this worktree:
 
 ```bash
-.venv/bin/pytest -q                      # full suite; baseline ~418 passed / 2 skipped
-.venv/bin/pytest -q tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider \
+  tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+# PASS: 65 passed, 351 subtests; contract/auth/mixer only, no browser or real model.
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+# BASELINE RED: 978 passed, 4 skipped, 475 subtests, 1 failed at
+# tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate
+
 bash -n scripts/afk-t1/ralph-afk.sh
+# PASS; shell syntax only.
 ```
+
+Full-suite local prerequisites are ignored artifacts, not product changes:
+
+- Build both Swift products: `swift build --package-path macos/MOSSCapture --product
+  MOSSCaptureApp` and the same command with `--product mtd-capture`.
+- Restore the archived `acquired_alphabet` cache/reference pair. Required SHA-256 values are
+  `fd13bacb...f3947be5` and `28dc9a5b...bdc0759`; the exact full pins live in
+  `run_legacy_anchor_fidelity.py` and `tests/fixtures/live_identity_real_corpus/`.
 
 ## Ranked candidates
 
-1. Establish and record a working validation command set.
-2. Smallest vertical slice toward criterion 1.
+1. Smallest vertical slice toward criterion 1: descriptor read with no hardcoded geometry.
+2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+   fix it under ticket #1.
