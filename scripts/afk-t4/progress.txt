@@ -156,3 +156,5 @@ Iteration 11 — three-iteration blocker escalation
 - Learned: the only unchecked criterion remains authority-blocked; the required supervisor request
   is now posted. Next: resume only when raw host stdout plus finalized SHA/source revision arrives;
   do not touch the read-only host, rerun local substitutes, or close the issue.
+
+[loop 20260813-055952-98216] complete at iteration 11
