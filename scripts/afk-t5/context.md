@@ -1,6 +1,7 @@
 # Context — Phase 1 ticket #5
 
-Iteration 4. Server-owned capture status is implemented and validated; client integration remains.
+Iteration 5. Server-owned status and background-worklet lease mechanics are measured; client
+integration remains blocked by ticket #1.
 
 ## Where things stand
 
@@ -133,13 +134,30 @@ non-zero, while issue #5 requires a server-authored silent-microphone preflight 
 existing heartbeat is session-scoped. Do not invent a pre-session browser judgment. Resolve this
 with ticket #1's actual client/session flow before the client half.
 
+## Iteration 5 G7 mechanism verdict
+
+- Ticket #1 remains open and `dev` remains at `8fec841`; no client/session flow is available to
+  integrate.
+- A headed isolated Chrome 151 tab stayed hidden for **65.01 s** while two descriptor-driven
+  worklets delivered 130 ticks per lane. The microphone worklet drove serialized browser
+  heartbeats; the page/worklet contained no `setInterval` or `setTimeout`.
+- The locally run production heartbeat route accepted all **136/136** requests. During the hidden
+  interval, server arrival p50/p95/max was **497.69/506.82/507.35 ms**. A deliberately strict
+  **2 s** lease remained live; runtime status stayed `active`, the v2 session remained present,
+  and no terminal failure occurred.
+- This proves the worklet-to-production-lease mechanism, not issue acceptance: the local service
+  used the repository test runtime provider and synthetic 48 kHz sources. Keep the G7 checkbox
+  open until ticket #1's product client repeats the run against a local production-provider
+  service. Raw artifact: `evidence/phase1/t5/iteration-5-g7-worklet-lease.txt`; durable verdict:
+  `prototypes/browser-capture-feasibility/NOTES.md`.
+
 ## Ranked candidates
 
 1. Recheck issue #1/dev. Once its actual client/session flow lands, resolve the preflight/session
    ordering seam and implement raw-fact browser heartbeats from worklet messages plus line-only UI
    rendering; do not invent a pre-session client verdict.
-2. Measure G7 in a real backgrounded Chrome tab against a locally run service. The existing
-   hidden-tab frame result supports the design but does not prove heartbeat lease survival.
+2. Repeat iteration 5's passing G7 mechanism probe through ticket #1's product client and a local
+   production-provider service; only that non-stub run can satisfy the issue criterion.
 3. Before the final merge gate, obtain the owning decision for L1 baseline re-certification and
    run the lifecycle node from a GUI-visible test-runner session; both are now evidenced blockers,
    not missing local prerequisites.

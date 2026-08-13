@@ -1,0 +1,80 @@
+Command:
+PYTHONDONTWRITEBYTECODE=1 python3 prototypes/browser-capture-feasibility/probe_g7_worklet_lease.py
+
+Exit: 0
+
+{
+  "browser": {
+    "context_state": "running",
+    "error": null,
+    "heartbeat_attempts_total": 134,
+    "heartbeat_hidden_interval_ms": {
+      "max": 507.30000019073486,
+      "p50": 497.7999999523163,
+      "p95": 506.7999999523163
+    },
+    "heartbeat_response_statuses": {
+      "200": 134
+    },
+    "hidden_heartbeat_responses": 130,
+    "microphone_hidden_interval_ms": {
+      "max": 507.2999999523163,
+      "p50": 497.60000014305115,
+      "p95": 506.7000000476837
+    },
+    "microphone_hidden_ticks": 130,
+    "system_hidden_interval_ms": {
+      "max": 507.2999999523163,
+      "p50": 497.60000014305115,
+      "p95": 506.69999980926514
+    },
+    "system_hidden_ticks": 130,
+    "visibility_transitions": [
+      {
+        "at": 208.29999995231628,
+        "state": "visible"
+      },
+      {
+        "at": 2472.5,
+        "state": "hidden"
+      }
+    ]
+  },
+  "question": "Do worklet-driven browser heartbeats keep the real server lease alive in a hidden Chrome tab?",
+  "scope": {
+    "automated_display_capture": false,
+    "background_seconds": 65.01,
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "browser_mode": "headed isolated Chrome profile",
+    "descriptor_frame_samples": 8000,
+    "descriptor_sample_rate": 16000,
+    "expected_worklet_message_ms": 500.0,
+    "hidden_state_at_measurement_end": "hidden",
+    "lease_seconds": 2.0,
+    "page_timer_identifiers": [],
+    "server": "locally-run create_app with production live routes and test runtime provider",
+    "source": "two synthetic 48 kHz oscillator MediaStreams"
+  },
+  "server": {
+    "heartbeat_requests_total": 136,
+    "heartbeat_statuses": {
+      "200": 136
+    },
+    "hidden_arrival_interval_ms": {
+      "max": 507.348458,
+      "p50": 497.688042,
+      "p95": 506.823083
+    },
+    "hidden_heartbeat_requests": 130,
+    "last_presence_sequence": 135,
+    "lease_alive": true,
+    "runtime_status": "active",
+    "terminal_failure": null,
+    "v2_session_alive": true
+  },
+  "verdict": {
+    "full_g7_gate": false,
+    "limitation": "Real Chrome and the production heartbeat/lease path were exercised, but the local service used the repository test runtime provider and synthetic sources; this is mechanism evidence, not the issue acceptance gate's final product-client run.",
+    "mechanism_pass": true
+  }
+}

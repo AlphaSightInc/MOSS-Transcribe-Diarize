@@ -155,3 +155,27 @@ diagnostics. Failed facts outrank degraded facts deterministically; a single fai
 The silent-microphone line names Chrome's Settings > Privacy and security > Site settings >
 Microphone remedy. The focused production-path suite passed 83 tests and 351 subtests; raw output
 is `evidence/phase1/t5/iteration-3-capture-status-projection.txt`.
+
+## G7 worklet-driven lease probe — 2026-08-13
+
+**Question:** does a heartbeat triggered only by descriptor-sized AudioWorklet frame messages
+keep the production server lease alive when Chrome remains backgrounded for longer than one
+minute?
+
+**Method:** a throwaway probe served a local `create_app(live_enabled=True)` instance with the
+production heartbeat route and lease coordinator, plus a headed isolated Chrome 151 profile. Two
+synthetic 48 kHz MediaStreams traversed a 16 kHz AudioContext and descriptor-driven worklets. The
+microphone worklet message serialized one heartbeat; the page and worklet contained neither
+`setInterval` nor `setTimeout`. A second tab held the foreground for 65.01 s. The probe used a
+strict 2 s lease. Its script was deleted after capture.
+
+**Verdict:** mechanism **passed**. While `document.visibilityState` stayed `hidden`, both worklets
+delivered 130 frames each. The server accepted 130 hidden-tab heartbeats with arrival p50/p95/max
+497.69/506.82/507.35 ms; all 136 total heartbeat requests returned 200. The runtime remained
+`active`, its v2 session remained present, and no terminal failure occurred.
+
+This is not final G7 acceptance. Chrome and the production heartbeat/lease path were real, but
+the local service used the repository test runtime provider and synthetic sources because ticket
+#1's product client has not landed. Repeat this measurement through that client and its local
+production-provider service before checking the issue criterion. Raw output:
+`evidence/phase1/t5/iteration-5-g7-worklet-lease.txt`.
