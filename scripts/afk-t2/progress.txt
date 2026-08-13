@@ -95,3 +95,16 @@ Iteration 7 — reviewer posture and cross-read evidence
   test does not prove G5 transcript payload isolation under concurrency.
 - Next: obtain supervisor direction on the sole unchecked criterion: the unchanged historical
   mutation battery cannot run to completion on two pre-ticket stale seams.
+
+Iteration 8 — escalate stale mutation-battery gate
+- Target: highest-ranked candidate 1; request supervisor adjudication of the sole unchecked
+  criterion without changing production behavior or rewriting an “unmodified” historical runner.
+- Files: `scripts/afk-t2/{context.md,progress.txt}` and
+  `evidence/phase1/t2/iteration-08-supervisor-{escalation.md,comment.json}`.
+- Validation: live GitHub fetch confirms comment `5276977876`, author `yugao-aisight`, exact blocker
+  claims, and decision request; repository search finds no newer repo-owned mutation runner;
+  `git diff --check` PASS.
+- Learned: issue #2 had no prior comments or current runner to resolve the two pre-ticket stale
+  seams locally. Compatibility hacks or local harness edits would not satisfy “passes unmodified.”
+- Next: await the supervisor response; then run the identified harness unchanged or record an
+  approved rebaseline before modifying any runner.

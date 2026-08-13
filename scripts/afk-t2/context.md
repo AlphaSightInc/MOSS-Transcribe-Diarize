@@ -1,10 +1,10 @@
 # Context — Phase 1 ticket #2
 
-Iteration 7. Shared-token authority reaches the service through a path-only deployment config and
+Iteration 8. Shared-token authority reaches the service through a path-only deployment config and
 the live portal can create a server-issued session while keeping the bearer in page memory only.
 The reviewer-facing ADR states the single-trust-domain posture and the retired historical `403`
-criterion; the historical auth mutation battery is not runnable unchanged on the pre-ticket
-baseline.
+criterion. The historical auth mutation battery is not runnable unchanged on the pre-ticket
+baseline; issue comment `#issuecomment-5276977876` requests the supervisor's gate ruling.
 
 ## Where things stand
 
@@ -173,7 +173,19 @@ Iteration-1 baseline:
 - ADR-0001 records explicitly that the historical cross-read `403` result is not an acceptance
   criterion. This evidence does not test G5 transcript payload isolation under concurrency.
 
+## Iteration-8 mutation-gate escalation
+
+- No current repository-owned mutation runner exists. The only executable batteries found are the
+  two unchanged historical A-025 harnesses already measured in iteration 5; tracked repo material
+  contains reviewer mutation contracts and ordinary tests, not a replacement runner.
+- Issue comment `https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/2#issuecomment-5276977876`
+  gives the exact pre-ticket failure evidence and asks the supervisor either to identify the
+  authoritative unchanged harness or approve a rebaselined replacement.
+- Raw comment response: `evidence/phase1/t2/iteration-08-supervisor-comment.json`. No production
+  code, historical harness, acceptance criterion, merge state, or remote branch changed.
+
 ## Ranked candidates
 
-1. Resolve the unchanged mutation-battery acceptance blocker through supervisor direction: the
-   historical runner has two pre-ticket stale seams, and changing either is not “unmodified.”
+1. Await supervisor response on issue #2. If a current authoritative harness is identified, run it
+   byte-for-byte unchanged. If a rebaseline is approved, record that ruling before changing a
+   runner. Do not add unrelated compatibility behavior while direction is pending.
