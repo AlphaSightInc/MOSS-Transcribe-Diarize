@@ -64,13 +64,14 @@ route steps; no ticket holds them.
 | C1 | **Destination = locked spec**, handed to the AFK loop. Wayfinder does not build. |
 | C2 | **UI fidelity = same pixels, drop controls that cannot work.** Do not reinterpret host-local affordances, and do not add a superset. Reference controls with no remote meaning (output-volume, native file/folder pickers, server-side device enumeration, export-to-folder, server-side mic mute) are **removed**, not re-plumbed. |
 | C3 | **Transport = keep MOSS polling.** No WebSocket. Frontend's `api/ws.ts` is replaced by a poller feeding the identical `dispatchWsEvent()` seam; `state/`, `components/`, `lib/` are untouched. Cadence is **adaptive: 250 ms while capturing, 2 s while finalizing/idle.** MOSS's `/events?since_seq` + `/snapshot?since_version` cursors are strictly stronger than the reference's cursor-less WS. |
-| C4 | **Concurrency target = 2–4 concurrent live sessions, measured.** Gate 3 is in scope. |
+| C4 | **Concurrency target = 2–4 concurrent live sessions, measured.** Gate 3 is in scope. The GPU on `ga0-alienware-rtx4070ti` is available **without scheduling limitation** (operator, 2026-08-13), so T-04 has no GPU-window constraint. |
 | C5 | **Phase 1 auth = one shared bearer token from server config; no pairing.** Consequence to be specified in *Shared-token trust posture and client identity*, not assumed. |
 | C6 | **Phase 1 lanes = both** (microphone + display/system audio), with the preflight flow the research doc requires. |
 | C7 | **Routing:** new app at `/`; existing Subtitle Studio moves to `/studio` unchanged; Phase 1 file mode runs through a thin adapter over the certified `/api/jobs` pipeline. |
 | C8 | **Toolchain:** lift the reference's own `vite.config.ts` / `tsconfig.json` / `package.json` / bundled fonts **verbatim** so its CSS and components build byte-identically. Reuse only A-010's server-side static-serving pattern. A-010 stays unmerged and closes as superseded. |
 | C9 | **Voice bank (Phase 2) is keyed on `device_id`.** Phase 1 must therefore not destroy device identity even though it drops pairing — this is what makes C5's consequence load-bearing. |
 | C10 | **LLM API key = one operator key in server config.** Browser stores only prefs. The LLM settings modal itself is **out of Phase 1** (inert without an LLM layer) and returns in Phase 2. |
+| C11 | **Client-side judgment is minimized; the server is authoritative for capture health.** Client-side *processing* is already at its floor — capture APIs are browser-only and the worklet is required to obtain samples at all; server-side resampling would cost ~512 kB/s versus ~85 kB/s for two lanes and re-litigate ADR-0001. What is removable is client *decision-making*, so the browser reports raw facts via `HelperHeartbeat` and renders the server's verdict. Zero-install and Chrome/macOS+Windows parity are already satisfied by the browser platform itself and are not arguments for moving work server-side. |
 
 ## Decisions so far
 
@@ -92,9 +93,12 @@ route steps; no ticket holds them.
   declared unreachable, not left dangling. One `CanonicalCommit` → many `TranscriptItem`s via
   `TranscriptStreamParser`. Provisional tail parsed and merged into the list; corrections shown
   **silently** (`revised_transcript ?? transcript`); `speaker_entity_id` = album canonical id;
-  `prefix_hash` carried but unverified. **`CapturePhase`/`CaptureLaneCode` become client-side
-  facts** — the browser owns capture now, so the reference's macOS lane codes are dropped for a
-  browser vocabulary. Snapshot is a full replacement keyed by `version`, so replay is a no-op.
+  `prefix_hash` carried but unverified. Snapshot is a full replacement keyed by `version`, so
+  replay is a no-op. **Capture health is SERVER-authoritative** (corrected 2026-08-13): the
+  browser is just another "helper" posting `HelperHeartbeat`; the server fuses browser-only
+  facts with frame facts and publishes one status line. Trap recorded: heartbeats must be
+  worklet-driven, since a backgrounded tab throttles timers to ~1/min and can trip the helper
+  lease on a healthy session.
 - [Voice-bank persistence](tickets/T-12-voice-bank-persistence-does-not-exist.md) —
   Phase 1 **journals vectors, does not build the bank**: album centroid appended at session end,
   session-keyed (T-01 removed `device_id`), stamped with pinned-embedder identity. Journaling

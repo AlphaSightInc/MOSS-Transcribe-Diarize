@@ -188,3 +188,54 @@ stronger than the reference's cursor-less WS, and it is what makes the reattach 
 
 Carried through the contract, **not verified** in Phase 1. Keeps the field available and adds no
 failure mode the user cannot act on. Revisit if a Phase 2 durable transcript needs integrity proof.
+
+## CORRECTION to Q3 (2026-08-13) — capture health is SERVER-authoritative
+
+The Q3 ruling above said `CapturePhase` / `CaptureLaneCode` become client-side facts. **That is
+superseded.** Operator constraint — minimize client-side *judgment* for cross-platform
+consistency — plus an existing mechanism make server authority correct.
+
+### The mechanism already exists and is tested
+
+Built for the native macOS helper, and a browser client is simply another helper:
+
+- `POST /api/live/sessions/{session_id}/heartbeat`, authorized action `"heartbeat"`
+- `HelperHeartbeat`, schema `moss-live-helper-health.v1`: overall `state` plus per-lane
+  `HelperLaneHealth { state, failure_code, ... }`. Validation is strict — a `failed` lane
+  requires a non-empty `failure_code`.
+- `HelperPresenceRegistry.observe()` → `HelperPresenceSnapshot`
+- `LiveHelperFailureCoordinator.observe()` — **the server-side failure decision**
+- `_helper_presence_payload()` already rides in the snapshot response
+
+### The division of labour
+
+| Observable only by the client | Observable only by the server |
+|---|---|
+| permission denied; picker cancelled; surface supplied no audio track; track `ended`; `AudioContext` suspended; sustained clipping | frame arrival/absence; sequence gaps; per-lane accepted/failed/retained accounting; silence across time; backpressure; whether the mixer can seal its frontier |
+
+Neither is sufficient alone. The client cannot distinguish "my frames are not arriving"
+(network) from "I am not sending" (capture dead). The server cannot distinguish permission
+denied from not-yet-started from network loss — all three present as absence of frames.
+
+**Ruling:** the client **reports** browser-only facts in the heartbeat and makes no judgment.
+The server **fuses** them with its own frame facts, owns the vocabulary, and publishes one
+`capture_phase` plus one plain-language status line in the snapshot. The client **renders** that
+string. This is what the lane-health ruling (two meters + one status line) already implies.
+
+### Consequences
+
+1. The reference's macOS-specific `CaptureLaneCode` values are still dropped. The replacement
+   vocabulary is **server-owned**, additive to `HelperLaneHealth.failure_code`, and shared by the
+   native helper and the browser — not a separate browser-side enum.
+2. **Sub-question for the capture-page spec (T-06):** do browser conditions fit the existing
+   `HelperState` / `failure_code` vocabulary, or does it need additive extension? Extend
+   additively; do not fork a parallel vocabulary.
+3. **Trap — heartbeat cadence must not be timer-driven.** `live_helper_lease_seconds` is
+   required config and abandonment is judged against it. A backgrounded tab throttles
+   `setInterval` to as little as **once per minute**, which can trip the lease and kill a
+   *healthy* session. Frame POSTs avoid this only because they are driven by worklet port
+   messages (measured: hidden-tab p95 506.5 ms vs foreground 508.1 ms). **Heartbeats must ride
+   the same worklet-driven path**, or the lease must exceed the worst-case throttle. Carry this
+   into T-06 and into the Phase 1 acceptance gates.
+4. Client logic reduces to: detect, name, report, render. No client-side state machine for
+   capture health.
