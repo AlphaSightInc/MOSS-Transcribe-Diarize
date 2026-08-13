@@ -108,3 +108,17 @@ Iteration 8 — escalate stale mutation-battery gate
   seams locally. Compatibility hacks or local harness edits would not satisfy “passes unmodified.”
 - Next: await the supervisor response; then run the identified harness unchanged or record an
   approved rebaseline before modifying any runner.
+
+Iteration 9 — confirm external mutation-gate blocker
+- Target: highest-ranked candidate 1; recheck issue #2 for the supervisor ruling required to
+  resolve the sole unchecked acceptance criterion.
+- Files: `scripts/afk-t2/{context.md,progress.txt}` and
+  `evidence/phase1/t2/iteration-09-supervisor-response-check.json`.
+- Validation: live `gh api repos/aiSight-us/MOSS-Transcribe-Diarize/issues/2/comments --paginate`
+  at `2026-08-13T06:48:56Z` returns exactly one comment, the iteration-8 escalation; JSON parse and
+  `git diff --check` PASS.
+- Learned: no supervisor response, authoritative current harness, or rebaseline approval exists.
+  The mutation criterion and all downstream merge/full-validation/final-comment/push work are
+  blocked on input this loop cannot obtain without violating the issue or ticket scope.
+- Next: supervisor must identify a current harness or approve rebaselining; resume with that exact
+  ruling and do not alter production compatibility or historical runners meanwhile.

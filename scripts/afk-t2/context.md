@@ -1,10 +1,11 @@
 # Context — Phase 1 ticket #2
 
-Iteration 8. Shared-token authority reaches the service through a path-only deployment config and
+Iteration 9. Shared-token authority reaches the service through a path-only deployment config and
 the live portal can create a server-issued session while keeping the bearer in page memory only.
 The reviewer-facing ADR states the single-trust-domain posture and the retired historical `403`
 criterion. The historical auth mutation battery is not runnable unchanged on the pre-ticket
-baseline; issue comment `#issuecomment-5276977876` requests the supervisor's gate ruling.
+baseline; issue comment `#issuecomment-5276977876` requests the supervisor's gate ruling. A live
+issue fetch at `2026-08-13T06:48:56Z` found no supervisor response.
 
 ## Where things stand
 
@@ -184,8 +185,19 @@ Iteration-1 baseline:
 - Raw comment response: `evidence/phase1/t2/iteration-08-supervisor-comment.json`. No production
   code, historical harness, acceptance criterion, merge state, or remote branch changed.
 
+## Iteration-9 external stop gate
+
+- A live issue fetch found exactly one comment: this branch's iteration-8 escalation. No supervisor
+  response, authoritative current harness, or rebaseline approval is available. Raw API output:
+  `evidence/phase1/t2/iteration-09-supervisor-response-check.json`.
+- The unchecked mutation criterion requires authority this loop cannot supply. Changing a stale
+  harness would violate “unmodified”; adding compatibility behavior would be out of ticket scope.
+- Every remaining definition-of-done action is downstream-blocked: merge/full validation cannot
+  establish acceptance while the gate is unresolved, and final issue evidence plus branch push are
+  intentionally deferred until the merged result has passed all authoritative gates.
+
 ## Ranked candidates
 
-1. Await supervisor response on issue #2. If a current authoritative harness is identified, run it
+1. **BLOCKED on supervisor input.** If a current authoritative harness is identified, run it
    byte-for-byte unchanged. If a rebaseline is approved, record that ruling before changing a
    runner. Do not add unrelated compatibility behavior while direction is pending.
