@@ -1,11 +1,11 @@
 # Context — Phase 1 ticket #1
 
-Iteration 10. Chrome now creates a locally-owned production session, sends both lanes through the
+Iteration 11. Chrome now creates a locally-owned production session, sends both lanes through the
 real v2 ingress route, polls/renders production reads, renews the production helper lease from the
 worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
-audio with an explicitly synthetic system lane. The kept server can now select a manifest-admitted
-real provider/model: Chrome rendered 46 real-model commits with S01–S04. Clean stop remains open
-because detaching the worklet before drain expired the 2 s prototype helper lease.
+audio with an explicitly synthetic system lane. The kept server can select a manifest-admitted
+real provider/model, and the page now stops lease-safely before detaching. One real-model session
+closed with exact accounting; simultaneous two-session stop/isolation remains open.
 
 ## Where things stand
 
@@ -59,10 +59,11 @@ because detaching the worklet before drain expired the 2 s prototype helper leas
   accepted 1,888,000 samples; before teardown it committed 46 spans, and the browser rendered
   model ids S01–S04 plus four canonical speaker identities. This satisfies automated G1's real
   model/render requirement and still does not prove display capture.
-- Teardown is red: the probe detached the lanes before requesting stop, which stopped the
-  worklet-driven heartbeat. The 2 s prototype helper lease expired while two real-model items were
-  draining; stop returned 429 and the runtime aborted with 1,888,000 accepted versus 1,840,000
-  accounted samples. Clean stop remains open; do not reinterpret this as a passing stop.
+- The stop path now requests production drain while capture and the worklet heartbeat remain live,
+  validates HTTP 200 plus exact runtime/v2 accounting, then detaches. A real-model stop began with
+  pending work and took 2.720 s, longer than the 2 s helper lease; six in-drain heartbeats returned
+  200. Runtime and both v2 lanes closed at 1,912,000 accepted/accounted samples with zero pending
+  work. This proves one clean session only, not the two-session acceptance item.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -145,6 +146,11 @@ the fake-device microphone and synthetic system lanes reached the manifest-admit
 and production `ModelRunner`, and Chrome rendered 46 commits with S01–S04. It explicitly records
 that real display capture is unproved and teardown failed after the worklet heartbeat was detached.
 
+Lease-safe stop evidence: `evidence/phase1/t1/iteration-11-lease-safe-stop.json`. It proves one
+real-model browser session kept six HTTP-200 worklet heartbeats alive through a 2.720 s production
+drain, received exact closed runtime/v2 accounting, and detached only after the response. It does
+not satisfy the two-simultaneous-session criterion.
+
 ### Binding proof interpretation
 
 - PRD + charter supersede the issue body's older remote/display procedure without deleting any
@@ -185,12 +191,9 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Make the real-model probe stop lease-safely: request production stop while the worklet-driven
-   heartbeat remains active, detach only after the drain response, and require HTTP 200 with equal
-   accepted/accounted samples and no pending work. Do not extend the lease merely to hide ordering.
-2. After clean stop, run two simultaneous browsers, prove their rendered text never crosses, and
+1. Run two simultaneous browsers, prove their rendered text never crosses, and
    capture per-session stop/revocation evidence plus remaining latency/queue/429 metrics.
-3. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
+2. Capture explicit unknown-key rejection on the locally-owned production route; current rejection
    evidence remains stub-only.
-4. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+3. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

@@ -85,6 +85,12 @@ const transcriptOut = document.getElementById("transcriptOut");
 const eventOut = document.getElementById("eventOut");
 const pollOut = document.getElementById("pollOut");
 const log = (el, s) => { el.textContent += s + "\n"; };
+const stopDrainDeadlineSeconds = (() => {
+  const raw = new URLSearchParams(location.search).get("stop_deadline_seconds") || "5";
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) throw new Error("stop_deadline_seconds must be positive");
+  return value;
+})();
 
 let ctx = null;            // shared descriptor-rate capture context
 let lanes = {};            // lane -> {node, seq, epoch, sent, errors, src, extraCtx, streamTracks}
@@ -527,6 +533,75 @@ function detachAll(outEl) {
   lanes = {};
 }
 
+async function stopCapture(outEl) {
+  if (!liveSession) {
+    detachAll(outEl);
+    return null;
+  }
+  const session = liveSession;
+  const startedWallMs = Date.now();
+  await fetch("/prototype/phase", {
+    method: "POST",
+    body: JSON.stringify({
+      phase: "stop-requested",
+      session_id: session.id,
+      deadline_seconds: stopDrainDeadlineSeconds,
+      wall_ms: startedWallMs,
+    }),
+  });
+  try {
+    const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/stop`, {
+      method: "POST", cache: "no-store",
+      headers: {
+        "Authorization": `Bearer ${session.captureBearer}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ deadline: stopDrainDeadlineSeconds }),
+    });
+    const payload = await response.json();
+    const runtime = payload.snapshot && payload.snapshot.session;
+    const v2 = payload.v2_session;
+    await fetch("/prototype/phase", {
+      method: "POST",
+      body: JSON.stringify({
+        phase: "stop-response",
+        session_id: session.id,
+        http_status: response.status,
+        runtime_status: runtime && runtime.status,
+        accepted_samples: runtime && runtime.accepted_samples,
+        accounted_samples: runtime && runtime.accounted_samples,
+        pending_work_items: payload.snapshot && payload.snapshot.pending_work_items,
+        v2_status: v2 && v2.status,
+        wall_ms: Date.now(),
+      }),
+    });
+    if (!response.ok) throw new Error(`session stop failed: HTTP ${response.status}`);
+    if (!runtime || runtime.status !== "closed"
+        || runtime.accepted_samples !== runtime.accounted_samples
+        || payload.snapshot.pending_work_items !== 0) {
+      throw new Error("session stop returned without exact closed runtime accounting");
+    }
+    if (!v2 || v2.status !== "closed"
+        || Object.values(v2.lanes).some((lane) => lane.accepted_samples !== lane.accounted_samples)) {
+      throw new Error("session stop returned without exact closed v2 accounting");
+    }
+    log(outEl, `session stopped cleanly: accepted=accounted=${runtime.accepted_samples}`);
+    return payload;
+  } finally {
+    liveSession = null;
+    if (pollTimer !== null) { clearTimeout(pollTimer); pollTimer = null; }
+    detachAll(outEl);
+    await fetch("/prototype/phase", {
+      method: "POST",
+      body: JSON.stringify({
+        phase: "capture-detached",
+        session_id: session.id,
+        wall_ms: Date.now(),
+      }),
+    });
+  }
+}
+
 // ---------- synthetic mode ----------
 async function synthLane(lane, freq) {
   // Generate at 48 kHz in a separate context to force the same cross-rate
@@ -566,7 +641,8 @@ document.getElementById("startSynth").onclick = async () => {
 
 document.getElementById("stopSynth").onclick = async () => {
   document.getElementById("stopSynth").disabled = true;
-  detachAll(synthOut);
+  try { await stopCapture(synthOut); }
+  catch (e) { log(synthOut, "stop FAILED: " + e.message); }
   await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "synthetic-stopped", wall_ms: Date.now() }) });
   document.getElementById("startSynth").disabled = false;
 };
@@ -668,10 +744,11 @@ document.getElementById("startDisplay").onclick = async () => {
   } catch (e) { log(realOut, "display FAILED: " + e.name + ": " + e.message); }
 };
 
-document.getElementById("stopReal").onclick = () => {
-  detachAll(realOut);
+document.getElementById("stopReal").onclick = async () => {
   document.getElementById("stopReal").disabled = true;
-  fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-stopped", wall_ms: Date.now() }) });
+  try { await stopCapture(realOut); }
+  catch (e) { log(realOut, "stop FAILED: " + e.message); }
+  await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-stopped", wall_ms: Date.now() }) });
 };
 
 function wireTrackEvents(t, tag) {

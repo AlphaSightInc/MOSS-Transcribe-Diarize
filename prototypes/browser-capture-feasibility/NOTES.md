@@ -200,6 +200,24 @@ real-model drain, so stop returned 429 with two pending items and the runtime ab
 ticket open and make stop-before-detach/lease-safe drain the next probe. Raw evidence:
 `evidence/phase1/t1/iteration-10-real-model-browser.json`.
 
+## Lease-safe real-model stop — PASSED 2026-08-13
+
+Question: can the production stop route drain genuine pending model work while worklet-driven
+heartbeats remain active, then detach capture only after the server returns exact closed
+accounting?
+
+Run the real-model server command above, launch the same fake-device Chrome canary with
+`stop_deadline_seconds=30`, and invoke `stopCapture(realOut)` while the production snapshot reports
+pending work. The stop request began with one pending work item. It took 2.720 s, longer than the
+2.0 s helper lease; six worklet-driven heartbeats crossed that interval and all returned 200.
+Stop returned HTTP 200 with the runtime and both v2 lanes closed at 1,912,000 accepted/accounted
+samples and zero pending work. The page detached capture 1 ms after recording the stop response.
+Six frames per lane raced after terminal stop began and correctly returned 409; none were admitted.
+
+Verdict: stop-before-detach fixes the measured lease expiry without extending the lease. This is
+one real-model browser session only; the issue's two-simultaneous-session clean-stop criterion
+remains open. Raw evidence: `evidence/phase1/t1/iteration-11-lease-safe-stop.json`.
+
 ## Safari attended diagnostic — 2026-08-09
 
 Safari 26.5 captured the Bose QC Ultra microphone successfully: 110 HTTP-200 frames,
