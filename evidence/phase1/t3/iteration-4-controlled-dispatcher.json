@@ -1,0 +1,208 @@
+{
+  "audio": {
+    "duration_seconds": 59.584,
+    "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav",
+    "sample_count": 953344,
+    "sample_rate": 16000,
+    "sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d"
+  },
+  "fairness_cases": [
+    {
+      "all_work_drained": true,
+      "completed_dispatches_by_session": {
+        "fairness-1-0": 4
+      },
+      "dispatch_order": [
+        "fairness-1-0",
+        "fairness-1-0",
+        "fairness-1-0",
+        "fairness-1-0"
+      ],
+      "ingress_cadence_seconds": 0.5,
+      "marker_isolation": true,
+      "maximum_prefix_dispatch_skew": 0,
+      "maximum_queue_depth_by_session": {
+        "fairness-1-0": 4
+      },
+      "meetings": 1,
+      "real_pcm_frame_seconds": 0.5,
+      "spans_per_session": 4
+    },
+    {
+      "all_work_drained": true,
+      "completed_dispatches_by_session": {
+        "fairness-2-0": 4,
+        "fairness-2-1": 4
+      },
+      "dispatch_order": [
+        "fairness-2-0",
+        "fairness-2-1",
+        "fairness-2-0",
+        "fairness-2-1",
+        "fairness-2-0",
+        "fairness-2-1",
+        "fairness-2-0",
+        "fairness-2-1"
+      ],
+      "ingress_cadence_seconds": 0.5,
+      "marker_isolation": true,
+      "maximum_prefix_dispatch_skew": 1,
+      "maximum_queue_depth_by_session": {
+        "fairness-2-0": 4,
+        "fairness-2-1": 4
+      },
+      "meetings": 2,
+      "real_pcm_frame_seconds": 0.5,
+      "spans_per_session": 4
+    },
+    {
+      "all_work_drained": true,
+      "completed_dispatches_by_session": {
+        "fairness-4-0": 4,
+        "fairness-4-1": 4,
+        "fairness-4-2": 4,
+        "fairness-4-3": 4
+      },
+      "dispatch_order": [
+        "fairness-4-0",
+        "fairness-4-1",
+        "fairness-4-2",
+        "fairness-4-3",
+        "fairness-4-0",
+        "fairness-4-1",
+        "fairness-4-2",
+        "fairness-4-3",
+        "fairness-4-0",
+        "fairness-4-1",
+        "fairness-4-2",
+        "fairness-4-3",
+        "fairness-4-0",
+        "fairness-4-1",
+        "fairness-4-2",
+        "fairness-4-3"
+      ],
+      "ingress_cadence_seconds": 0.5,
+      "marker_isolation": true,
+      "maximum_prefix_dispatch_skew": 1,
+      "maximum_queue_depth_by_session": {
+        "fairness-4-0": 4,
+        "fairness-4-1": 4,
+        "fairness-4-2": 4,
+        "fairness-4-3": 4
+      },
+      "meetings": 4,
+      "real_pcm_frame_seconds": 0.5,
+      "spans_per_session": 4
+    },
+    {
+      "all_work_drained": true,
+      "completed_dispatches_by_session": {
+        "fairness-8-0": 4,
+        "fairness-8-1": 4,
+        "fairness-8-2": 4,
+        "fairness-8-3": 4,
+        "fairness-8-4": 4,
+        "fairness-8-5": 4,
+        "fairness-8-6": 4,
+        "fairness-8-7": 4
+      },
+      "dispatch_order": [
+        "fairness-8-0",
+        "fairness-8-1",
+        "fairness-8-2",
+        "fairness-8-3",
+        "fairness-8-4",
+        "fairness-8-5",
+        "fairness-8-6",
+        "fairness-8-7",
+        "fairness-8-0",
+        "fairness-8-1",
+        "fairness-8-2",
+        "fairness-8-3",
+        "fairness-8-4",
+        "fairness-8-5",
+        "fairness-8-6",
+        "fairness-8-7",
+        "fairness-8-0",
+        "fairness-8-1",
+        "fairness-8-2",
+        "fairness-8-3",
+        "fairness-8-4",
+        "fairness-8-5",
+        "fairness-8-6",
+        "fairness-8-7",
+        "fairness-8-0",
+        "fairness-8-1",
+        "fairness-8-2",
+        "fairness-8-3",
+        "fairness-8-4",
+        "fairness-8-5",
+        "fairness-8-6",
+        "fairness-8-7"
+      ],
+      "ingress_cadence_seconds": 0.5,
+      "marker_isolation": true,
+      "maximum_prefix_dispatch_skew": 1,
+      "maximum_queue_depth_by_session": {
+        "fairness-8-0": 4,
+        "fairness-8-1": 4,
+        "fairness-8-2": 4,
+        "fairness-8-3": 4,
+        "fairness-8-4": 4,
+        "fairness-8-5": 4,
+        "fairness-8-6": 4,
+        "fairness-8-7": 4
+      },
+      "meetings": 8,
+      "real_pcm_frame_seconds": 0.5,
+      "spans_per_session": 4
+    }
+  ],
+  "non_gating_reasons": [
+    "controlled marker decoder, not the real MOSS decoder",
+    "forced speech observations, not the production VAD",
+    "manual scheduler release, not a locally started HTTP service",
+    "no vLLM active/queued or GPU-cache metrics",
+    "queue-isolation phase is accelerated rather than wall-clock paced"
+  ],
+  "preregistration_sha256": "b6fbe1f5dc60c0f0a20128026eefa8bc369a456927fe267cf94aa2a8b2865d52",
+  "qualifies_g4_or_g5": false,
+  "queue_isolation": {
+    "configured_queue_bound": 16,
+    "correct_nonterminal_429_semantics_observed": false,
+    "first_overflow_exception": "InferenceArbiterBackpressure",
+    "first_overflow_is_raw_arbiter_backpressure": true,
+    "peer_frame_accepted": true,
+    "peer_pending_work_items": 0,
+    "peer_session_terminal": false,
+    "retry_exception": "LiveServiceTransportPacingFailure",
+    "retry_failure_kind": "transport_pacing",
+    "retry_http_status": 429,
+    "saturated_pending_work_items": 16,
+    "saturated_session_terminal": true
+  },
+  "reconnect_marker_isolation": {
+    "original_excludes_replacement_marker": true,
+    "replacement_excludes_original_marker": true,
+    "scope": "replacement runtime session only; no HTTP reconnect or resumable transport",
+    "session_ids": [
+      "original-session",
+      "replacement-session"
+    ],
+    "transcripts": {
+      "original-session": [
+        "[0][S01]marker-original-session-span-0[2.5]"
+      ],
+      "replacement-session": [
+        "[0][S01]marker-replacement-session-span-0[2.5]"
+      ]
+    }
+  },
+  "schema": "moss-controlled-dispatcher-prototype.v1",
+  "verdict": {
+    "all_markers_isolated": true,
+    "correct_nonterminal_429_semantics_observed": false,
+    "fairness_skew_within_frozen_gate": true,
+    "queue_capacity_is_session_local": true
+  }
+}

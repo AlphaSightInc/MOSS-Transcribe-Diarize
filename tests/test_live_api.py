@@ -204,6 +204,7 @@ def make_live_runtime(
     session_id: str = "api-session",
     session_ids: tuple[str, ...] | None = None,
     decoder_factory=ApiDecoder,
+    canonical_scheduler=None,
 ) -> LiveServiceRuntime:
     descriptor = LiveServiceDescriptor(
         source_revision="eda5e69faf0e0251383029295f7e8875a2a1a4f6",
@@ -236,6 +237,7 @@ def make_live_runtime(
         decoder_factory=decoder_factory,
         identity_preparer_factory=ApiIdentity,
         session_id_factory=lambda: next(ids),
+        _canonical_scheduler=canonical_scheduler,
     )
 
 
@@ -1319,6 +1321,71 @@ class LiveApiTest(unittest.TestCase):
             snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot").json()["snapshot"]["session"]
             self.assertEqual(snapshot["accepted_samples"], 0)
             self.assertEqual(snapshot["next_frame_sequence"], 0)
+
+    def test_v2_canonical_queue_backpressure_is_retryable_and_session_local(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        scheduler = _ManualCanonicalPumpScheduler()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=10_000,
+                    max_frame_samples=1_000,
+                    max_queue_depth=1,
+                    speech=(True, False, True),
+                    session_ids=("saturated-session", "peer-session"),
+                    canonical_scheduler=scheduler,
+                ),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            saturated_id = client.post("/api/live/sessions").json()["id"]
+            peer_id = client.post("/api/live/sessions").json()["id"]
+            saturated_url = f"/api/live/sessions/{saturated_id}/frames"
+            peer_url = f"/api/live/sessions/{peer_id}/frames"
+
+            for sequence in range(4):
+                accepted = client.post(
+                    saturated_url,
+                    json=v2_frame_payload(sequence, 1_000, lane="system"),
+                )
+                self.assertEqual(accepted.status_code, 200)
+
+            rejected_payload = v2_frame_payload(4, 1_000, lane="system")
+            first_rejection = client.post(saturated_url, json=rejected_payload)
+            identical_retry = client.post(saturated_url, json=rejected_payload)
+
+            self.assertEqual(first_rejection.status_code, 429)
+            self.assertEqual(identical_retry.status_code, 429)
+            self.assertEqual(first_rejection.json()["failure"]["kind"], "transport_pacing")
+            self.assertTrue(first_rejection.json()["failure"]["retryable"])
+            self.assertIsNone(first_rejection.json()["snapshot"]["terminal_failure"])
+            self.assertEqual(
+                first_rejection.json()["snapshot"]["session"]["next_frame_sequence"],
+                2,
+            )
+
+            for sequence in range(3):
+                peer_result = client.post(
+                    peer_url,
+                    json=v2_frame_payload(sequence, 1_000, lane="system"),
+                )
+                self.assertEqual(peer_result.status_code, 200)
+            peer_snapshot = client.get(f"/api/live/sessions/{peer_id}/snapshot").json()["snapshot"]
+            self.assertIsNone(peer_snapshot["terminal_failure"])
+            self.assertEqual(peer_snapshot["session"]["next_frame_sequence"], 1)
+
+            self.assertTrue(scheduler.run_one())
+            recovered = client.post(saturated_url, json=rejected_payload)
+            self.assertEqual(recovered.status_code, 200)
+            saturated_snapshot = client.get(
+                f"/api/live/sessions/{saturated_id}/snapshot"
+            ).json()["snapshot"]
+            self.assertIsNone(saturated_snapshot["terminal_failure"])
+            self.assertEqual(saturated_snapshot["session"]["next_frame_sequence"], 3)
 
     def test_v2_stop_gap_seals_a_never_observed_lane_and_closes_cleanly(self):
         from fastapi.testclient import TestClient

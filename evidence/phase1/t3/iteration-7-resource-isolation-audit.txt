@@ -1,0 +1,85 @@
+Iteration 7 resource-isolation audit — 2026-08-13
+
+Question
+Did iteration 6's local-runtime blocker clear without restarting, resizing, or disrupting the
+shared Docker Desktop VM?
+
+Host and installed runtimes
+$ sw_vers
+ProductName: macOS
+ProductVersion: 26.5.1
+BuildVersion: 25F80
+
+$ sysctl -n hw.memsize hw.ncpu hw.optional.arm64
+274877906944
+28
+1
+
+$ for tool in docker podman colima limactl nerdctl finch orbctl container; do ...; done
+docker  /usr/local/bin/docker
+podman  missing
+colima  missing
+limactl missing
+nerdctl missing
+finch   missing
+orbctl  missing
+container       missing
+
+$ python3 -c "import importlib.util; print(importlib.util.find_spec('vllm'))"
+None
+
+Docker state
+$ docker context ls
+NAME              DESCRIPTION                               DOCKER ENDPOINT                             ERROR
+default           Current DOCKER_HOST based configuration   unix:///var/run/docker.sock
+desktop-linux *   Docker Desktop                            unix:///Users/gao/.docker/run/docker.sock
+
+$ docker info --format 'Name={{.Name}} CPUs={{.NCPU}} Memory={{.MemTotal}} Architecture={{.Architecture}} Driver={{.Driver}} ContainersRunning={{.ContainersRunning}} ContainersPaused={{.ContainersPaused}} ContainersStopped={{.ContainersStopped}}'
+Name=docker-desktop CPUs=24 Memory=8214302720 Architecture=aarch64 Driver=overlayfs ContainersRunning=16 ContainersPaused=0 ContainersStopped=0
+
+$ docker stats --no-stream --format '{{.Name}} {{.MemUsage}}'
+kg_llm-elasticsearch 2.328GiB / 7.65GiB
+omni-search-mcp 37.16MiB / 7.65GiB
+omni-search-omni-search-1 53.62MiB / 7.65GiB
+camofox 290.6MiB / 7.65GiB
+openclaw-firecrawl-api-1 1.543GiB / 7.65GiB
+omni-search-bb-browser-1 846.1MiB / 7.65GiB
+openclaw-firecrawl-redis-1 4.449MiB / 7.65GiB
+openclaw-firecrawl-rabbitmq-1 215.5MiB / 7.65GiB
+openclaw-firecrawl-playwright-service-1 95.75MiB / 4GiB
+openclaw-firecrawl-nuq-postgres-1 114.2MiB / 7.65GiB
+omni-search-nodriver-service-1 35.41MiB / 7.65GiB
+omni-search-crawl4ai-1 145.3MiB / 7.65GiB
+omni-search-searxng-1 158MiB / 7.65GiB
+kg_llm-redis 38.39MiB / 7.65GiB
+kg_llm-postgres 30.59MiB / 7.65GiB
+kg_llm-qdrant 612.4MiB / 7.65GiB
+
+$ docker run --rm --entrypoint sh vllm/vllm-openai-cpu:latest-arm64 -c \
+    'free -b; printf "cgroup.max="; cat /sys/fs/cgroup/memory.max; printf "cgroup.current="; cat /sys/fs/cgroup/memory.current'
+               total        used        free      shared  buff/cache   available
+Mem:      8214302720  7208521728   132071424   132714496   873709568   664690688
+Swap:     1073737728  1073451008      286720
+cgroup.max=max
+cgroup.current=16404480
+
+MOSS cache completeness
+$ find "$HOME/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize" \
+    -maxdepth 3 -type f -print
+$HOME/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/blobs/87f0b37e0048e8b10b914cfa0dbfe887f96fab01
+$HOME/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/refs/main
+
+$ du -sh "$HOME/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize"
+8.0K    /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize
+
+$ stat -f '%z' "$HOME/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/blobs/87f0b37e0048e8b10b914cfa0dbfe887f96fab01"
+2335
+
+Verdict
+BLOCKED, NON-GATING. Docker is responsive again, but it remains the only installed Linux
+container runtime, is still limited to 8.2 GB, and currently has only 665 MB available with its
+1 GiB swap effectively exhausted while 16 unrelated containers run. The apparent MOSS cache is
+only the 2.3 KiB configuration blob; no model weights are cached. Host Python has no vLLM module.
+Starting another model container would risk those unrelated workloads and cannot supply an
+isolated qualifying environment. No service was started, no Docker setting changed, and no
+existing container or remote service was mutated.

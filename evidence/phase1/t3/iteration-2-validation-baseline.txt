@@ -1,0 +1,59 @@
+Phase 1 ticket #3 — iteration 2 validation baseline
+Recorded UTC: 2026-08-13T06:07:29Z
+Branch: afk/t3-bounded-dispatcher
+
+$ .venv/bin/pytest -q tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+zsh:1: no such file or directory: .venv/bin/pytest
+exit 127
+
+$ python3 --version
+Python 3.12.10
+$ python3 -c 'import sys, pytest; print(sys.executable); print(pytest.__version__)'
+/Users/gao/.pyenv/versions/3.12.10/bin/python3
+9.0.2
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py -q -p no:cacheprovider
+65 passed, 2 warnings, 351 subtests passed in 7.26s
+exit 0
+
+$ bash -n scripts/afk-t3/ralph-afk.sh
+exit 0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider -rs
+1 failed, 851 passed, 4 skipped, 4 warnings, 11 errors, 373 subtests passed in 97.62s
+All 11 setup errors reported missing mtd-capture or MOSSCaptureApp build products. The one failure
+was tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate:
+NSRunningApplication(processIdentifier:) returned nil after the launched app had bound its UDS
+socket and answered status.
+exit 1
+
+$ swift build --package-path macos/MOSSCapture --product mtd-capture
+Build of product 'mtd-capture' complete! (0.14s)
+exit 0
+$ swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
+Build of product 'MOSSCaptureApp' complete! (0.13s)
+exit 0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_live_integration.py tests/test_macos_packaging_tools.py tests/test_macos_uds_tracer.py -q -p no:cacheprovider -rs
+1 failed, 19 passed, 2 warnings in 26.01s
+Only tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate failed.
+exit 1
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_macos_uds_tracer.py -q -p no:cacheprovider -rs
+1 failed, 5 passed in 18.75s
+Failure: NSRunningApplication(processIdentifier:) returned nil (Swift probe exit 2) after the UDS
+status exchange. This isolated rerun proves the failure is independent of full-suite ordering.
+exit 1
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider -rs --ignore=tests/test_macos_uds_tracer.py
+SKIPPED [1] tests/test_large_upload.py:155: Python 3.10 compatibility contract
+SKIPPED [1] tests/test_large_upload.py:175: Python 3.10 compatibility contract
+SKIPPED [1] tests/test_live_identity_real_corpus.py:60: operator-owned real identity corpus is not provisioned
+SKIPPED [1] tests/test_live_speaker_accuracy.py:44: real F-cert corpus is not provisioned in this clean worktree
+857 passed, 4 skipped, 4 warnings, 373 subtests passed in 70.68s
+exit 0
+
+Coverage boundary: the green broad command intentionally excludes exactly one separately-run
+module to establish the rest-of-tree baseline. The isolated module remains red and mandatory;
+this artifact does not claim the complete suite passes and does not satisfy ticket #3's G4/G5
+real-service gates.

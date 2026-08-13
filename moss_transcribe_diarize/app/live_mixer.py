@@ -119,14 +119,15 @@ class LiveCompatibilityMixer:
             staged = self._stage(session_id, source, runtime, final=final)
             if staged is None:
                 return None
-            if retryable_backpressure:
-                accepted = runtime.accept_frame(
-                    session_id,
-                    staged.frame,
-                    retryable_backpressure=True,
-                )
-            else:
-                accepted = runtime.accept_frame(session_id, staged.frame)
+            # The v2 lane path declares retryability at the call site (ticket 1's design);
+            # the runtime enforces it against the deploy-manifest queue bound and raises a
+            # typed retryable pacing failure (ticket 3's design). Legacy mono callers omit
+            # the flag and keep terminal backpressure.
+            accepted = runtime.accept_frame(
+                session_id,
+                staged.frame,
+                retryable_queue_backpressure=retryable_backpressure,
+            )
             self._cursor_ns = staged.diagnostics.end_timestamp_ns
             source.account_through(staged.diagnostics.source_watermarks)
             return LiveMixResult(
