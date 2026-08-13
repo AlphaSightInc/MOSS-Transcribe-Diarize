@@ -1,13 +1,14 @@
 # Context — Phase 1 ticket #6
 
-Iteration 8. Acceptance criteria and a reproducible local validation baseline are captured. The
+Iteration 9. Acceptance criteria and a reproducible local validation baseline are captured. The
 provider exposes immutable, encoder-pinned observations from the completed album. The measured
 single-process writer runs after exact clean-stop accounting and never on abort. Live deployment
 wiring now makes the journal default-on at an operator-configurable path outside the checkout;
 raw-audio retention remains default-off. ADR-0003 now states the derived-vector distinction and
 the explicit consent/right-to-remove gate. A configured production factory has also been exercised
 end to end from an accepted audio frame through the real provider/coordinator/runtime path to the
-complete journal row.
+complete journal row. The first post-implementation full gate found two ticket-local tests that
+still encode the pre-journal factory/environment contract; `dev` was not advanced.
 
 ## Where things stand
 
@@ -127,12 +128,25 @@ bash -n scripts/afk-t6/ralph-afk.sh
   from default-off raw-audio retention, is not a consent decision, provides no removal mechanism,
   and cannot roll out beyond the guarded LAN/tailnet without explicit consent and
   deletion/right-to-remove rulings.
+- Post-implementation merged full gate: RED. `dev` was already an ancestor, both Swift products
+  built, and pytest reached 868 passed / 4 skipped / 373 subtests, but two ticket-local regression
+  tests still encode the old contract: one fake `build_live_runtime_factory` rejects the new
+  `vector_journal` keyword, and one live `start-web.sh` fixture omits the now-required
+  `MOSS_LIVE_VECTOR_JOURNAL_PATH`. The only other failure is the established out-of-ticket Launch
+  Services failure. The narrower live route/auth/mixer subset remains green at 65 passed / 351
+  subtests. Raw JUnit: `evidence/phase1/t6/iteration-9-full-suite-after-merge.xml` and
+  `evidence/phase1/t6/iteration-9-live-subset-after-merge.xml`. The shared lock was released and
+  `dev` was not advanced.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Acquire the shared merge lock, merge current `dev` into this branch, and run the full validation
-   set on the merged result. Preserve the known out-of-ticket Launch Services failure separately.
-2. If the merged result is green under the ticket gate, fast-forward `dev`, push this branch to
+1. Repair the two stale ticket-local regression tests without weakening their assertions: make the
+   factory fake capture and assert the concrete journal dependency, and provide/assert the required
+   operator journal path in the `start-web.sh` environment-adapter fixture. Run those exact nodes,
+   then the ticket-relevant set.
+2. Reacquire the shared merge lock, merge current `dev`, and rerun the full validation set. Preserve
+   the known out-of-ticket Launch Services failure separately.
+3. If the merged result is green under the ticket gate, fast-forward `dev`, push this branch to
    `private`, and comment criterion-by-criterion evidence plus explicit test limitations on issue
    #6. Do not close the issue.
