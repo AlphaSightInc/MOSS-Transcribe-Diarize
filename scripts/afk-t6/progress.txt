@@ -1,2 +1,3 @@
 
 [loop 20260813-055953-98237] start budget=40 agent=codex branch=afk/t6-vector-journal
+iteration 1 — target: capture issue #6's binding acceptance gate; files: scripts/afk-t6/context.md, scripts/afk-t6/progress.txt; validation: git diff --check (PASS); evidence: live issue https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/6 and .wayfinder/tickets/T-12-voice-bank-persistence-does-not-exist.md; learned: seven criteria, issue #6 OPEN and blocked by OPEN #1, journal only (not voice bank/D-7); next: establish the validation baseline.
