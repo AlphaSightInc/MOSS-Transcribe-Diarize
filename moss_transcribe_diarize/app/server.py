@@ -61,10 +61,13 @@ def create_app(
     try:
         from fastapi import FastAPI, HTTPException, Request
         from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+        from fastapi.staticfiles import StaticFiles
     except ImportError as exc:
         raise RuntimeError("Install fastapi, uvicorn, and python-multipart to run the local web app.") from exc
 
     app = FastAPI(title="MOSS Subtitle Studio")
+    frontend_dir = Path(__file__).resolve().parents[2] / "ProjectResources" / "Frontend"
+    app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
     if backend == "vllm":
         if not vllm_base_url:
             raise ValueError("--vllm-base-url is required when backend='vllm'.")
@@ -129,6 +132,14 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     def index():
+        return FileResponse(
+            frontend_dir / "index.html",
+            media_type="text/html",
+            headers={"Cache-Control": "no-store"},
+        )
+
+    @app.get("/studio", response_class=HTMLResponse)
+    def studio():
         return HTMLResponse(INDEX_HTML, headers={"Cache-Control": "no-store"})
 
     @app.get("/favicon.svg")

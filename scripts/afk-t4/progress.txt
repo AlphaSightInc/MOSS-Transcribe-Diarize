@@ -41,3 +41,16 @@ Iteration 3 — minimal reference shell + production bundle
   slice is the exact entry/style assets plus an inert shell. The reference lockfile is stale and
   cannot be copied as a clean-install contract; the regenerated target lock is green. Next:
   FastAPI route cutover and route regressions for `/`, `/studio`, `/static/**`, and retained `/live`.
+
+Iteration 4 — FastAPI serving cutover
+- Target: highest-ranked candidate; serve the committed shell at `/`, move byte-unchanged Subtitle
+  Studio to `/studio`, mount `/static/**`, and preserve unadvertised `/live` behavior.
+- Files: `moss_transcribe_diarize/app/server.py`, `tests/{test_app_api.py,test_live_portal.py}`,
+  `evidence/phase1/t4/iteration-04-serving-cutover.txt`, `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_app_api.py
+  tests/test_live_portal.py -p no:cacheprovider` PASS (39 passed + 10 subtests, 6.00 s);
+  `git diff --check` PASS; exact served-byte hashes recorded.
+- Evidence: `evidence/phase1/t4/iteration-04-serving-cutover.txt`.
+- Learned: module-relative `ProjectResources/Frontend` mounting preserves checkout deployment while
+  avoiding process-cwd dependence; the existing `/live` battery stays green. Next: document and
+  validate `vite build --watch`, then transfer only ticket-4 reference component tests.

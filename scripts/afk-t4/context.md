@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #4
 
-Iteration 3. Minimal reference-design shell source and committed production bundle added.
+Iteration 4. FastAPI now serves the reference shell and preserves both legacy diagnostics.
 
 ## Where things stand
 
@@ -13,17 +13,19 @@ Iteration 3. Minimal reference-design shell source and committed production bund
 - `frontend/src/App.tsx` is an inert three-column shell: no API calls, transcript data, `/live`
   link, capture behavior, or file behavior. Those remain in their assigned tickets.
 - `ProjectResources/Frontend/` is a committed production build with stable `/static/app.js`,
-  stylesheet, source map, logo, and all fonts. `/` still serves the inline Subtitle Studio.
-- Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
+  stylesheet, source map, logo, and all fonts. FastAPI serves its `index.html` at `/` and mounts
+  the directory at `/static` using a checkout-relative path independent of process cwd.
+- The byte-unchanged inline Subtitle Studio is at `/studio`. `/live` remains default-off and is
+  still enabled only via `create_app(live_enabled=True, ...)`; the new shell does not link to it.
 
 ## Issue #4 acceptance checklist (verbatim scope)
 
 - [x] Reference `vite.config.ts`, `tsconfig.json`, `package.json`, and four bundled `woff2` font
   families lifted verbatim.
-- [ ] `/` serves the new app; `/static/**` serves the bundle; `/static/app.js` is stable.
-- [ ] Inline Subtitle Studio moves to `/studio`, byte-unchanged.
-- [ ] `/live` remains an unadvertised operator diagnostic.
-- [ ] Fonts are self-hosted; no page makes a CDN request.
+- [x] `/` serves the new app; `/static/**` serves the bundle; `/static/app.js` is stable.
+- [x] Inline Subtitle Studio moves to `/studio`, byte-unchanged.
+- [x] `/live` remains an unadvertised operator diagnostic.
+- [x] Fonts are self-hosted; no page makes a CDN request.
 - [x] Built bundle is committed; deploy needs no Node toolchain.
 - [ ] Development uses `vite build --watch` behind FastAPI; no second-origin Vite dev server.
 - [ ] Typecheck and transferred reference component tests run in local validation.
@@ -92,11 +94,21 @@ Vite warns that the verbatim config's `__dirname` will be unsupported by a futur
 loader; the current build passes. This does not prove FastAPI serving, the reference project's full
 component test suite, or browser rendering.
 
+## Serving cutover evidence (iteration 4)
+
+`evidence/phase1/t4/iteration-04-serving-cutover.txt` records 39 passing app/portal tests plus 10
+passing subtests. FastAPI responses match the committed bytes for `/`, `/static/app.js`, and a
+nested font; `/studio` matches the pre-cutover SHA-256
+`aaa308fa135e8e29ed1d96e9b9417952959c9c0218f783ddd4b62ff249a6e43d`. The full `/live` portal
+suite remains green, and the root shell contains no `/live` link. Combined with iteration 3's
+built-resource scan, this proves the served page and CSS use only same-origin assets. It does not
+prove browser rendering, attended display capture, deployment, or remote-host state.
+
 ## Ranked candidates
 
-1. Add FastAPI serving cutover with route regression tests for `/`, `/studio`, `/static/**`, and
-   retained `/live`.
-2. Add the documented `vite build --watch` development command and transfer/run only the reference
+1. Add the documented `vite build --watch` development command and transfer/run only the reference
    component tests belonging to ticket #4's shell scope.
+2. Audit the provider-manifest finalization path and produce local, non-mutating evidence that the
+   final host revision can be re-finalized after merge without touching the read-only remote host.
 3. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
    before merge.
