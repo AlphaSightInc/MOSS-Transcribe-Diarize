@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #1
 
-Iteration 15. Chrome now creates locally-owned production sessions, sends both lanes through the
+Iteration 16. Chrome now creates locally-owned production sessions, sends both lanes through the
 real v2 ingress route, polls/renders production reads, renews the production helper lease from the
 worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
 audio with an explicitly synthetic system lane. The kept server can select a manifest-admitted
@@ -88,8 +88,9 @@ evidence that an unknown telemetry field is rejected without consuming sequence 
   zero 429s, 500s, sequence gaps, drops, discontinuities, or fetch errors. This satisfies the
   two-session clean-stop and metric-recording items on the locally-owned route.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
-  978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
-  `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
+  978 passed, 4 skipped, 475 subtests, 1 failed. Iteration 16 reproduced that node alone: the app
+  bound/responded over UDS, then `NSRunningApplication(processIdentifier:)` returned nil and the
+  Swift probe exited 2. Do not waive or fix it under ticket #1.
 
 ## Read these first (do not re-derive)
 
@@ -226,5 +227,5 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
-   fix it under ticket #1.
+1. Wait for the unrelated macOS lifecycle failure to be corrected outside ticket #1; then merge
+   current `dev`, run the full validation set, and continue the serialized self-merge protocol.
