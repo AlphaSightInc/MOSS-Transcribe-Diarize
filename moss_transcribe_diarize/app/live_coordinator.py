@@ -428,6 +428,10 @@ class LiveCoordinator:
             identity_revision_refusals=_merged_refusals(revision.outcome.refusals, extra),
         )
 
+    def journal_observations(self):
+        observations = getattr(self.identity_preparer, "journal_observations", None)
+        return () if observations is None else tuple(observations())
+
     def _publish_identity_revision(self) -> _AppliedRevision:
         """Apply any retrospective correction to the transcript a reader is being shown.
 

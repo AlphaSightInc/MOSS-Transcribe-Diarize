@@ -176,7 +176,7 @@ def attach_live_routes(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.post("/api/live/sessions")
-    def create_live_session(request: Request):
+    async def create_live_session(request: Request):
         try:
             decision = access.authorize(
                 _peer_from_request(request),
@@ -189,7 +189,11 @@ def attach_live_routes(
                 raise HTTPException(status_code=403, detail="capture authority is required.")
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
-        created = runtime.create()
+        payload = await _optional_json(request)
+        try:
+            created = runtime.create(echo_mode=payload.get("echo_mode"))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         try:
             view = access.bind_session(decision.principal, created.session_id, now=_request_now())
             v2_sessions.create(created.session_id)

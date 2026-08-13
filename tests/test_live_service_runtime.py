@@ -4,10 +4,12 @@ import asyncio
 import concurrent.futures
 import dataclasses
 import inspect
+import json
 import threading
 import time
 import unittest
 from dataclasses import dataclass
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -331,6 +333,8 @@ def _runtime(
     descriptor: LiveServiceDescriptor | None = None,
     session_ids: tuple[str, ...] = ("session-1",),
     scheduler: _ManualCanonicalPumpScheduler | None = None,
+    vector_journal=None,
+    wall_time=None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
     return LiveServiceRuntime(
@@ -343,6 +347,8 @@ def _runtime(
         identity_preparer_factory=lambda: identity or PreparingIdentity(),
         session_id_factory=lambda: next(ids),
         _canonical_scheduler=scheduler,
+        vector_journal=vector_journal,
+        wall_time=wall_time,
     )
 
 
@@ -1003,6 +1009,27 @@ class FinalizingIdentity(PreparingIdentity):
         self.finalized.append(base_snapshot)
 
 
+@dataclass
+class JournalingIdentity(FinalizingIdentity):
+    def journal_observations(self):
+        return (
+            SimpleNamespace(
+                speaker_label="speaker-0001",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+            SimpleNamespace(
+                speaker_label="speaker-refused",
+                centroid=(float("nan"),),
+                sample_seconds=1.0,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        )
+
+
 def test_a_clean_stop_settles_identity_after_the_drain_and_before_the_session_closes():
     """The stop response is what a reader is handed, so the correction belongs inside it.
 
@@ -1060,3 +1087,73 @@ def test_an_abort_does_not_sweep_a_session_no_reader_could_see():
 
     assert identity.finalized == []
     assert "identity_finalized" not in [event.kind for event in runtime.events(created.session_id)]
+
+
+def test_clean_stop_journals_completed_identity_and_names_unusable_speaker(tmp_path, caplog):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    identity = JournalingIdentity()
+    runtime = _runtime(
+        speech=(True, False),
+        identity=identity,
+        vector_journal=LiveVectorJournal(journal_path),
+        wall_time=lambda: 1_800_000_006.0,
+    )
+    created = runtime.create(echo_mode="speakers")
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+
+    stopped = asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+
+    assert stopped.session.status == "closed"
+    assert json.loads(journal_path.read_text(encoding="utf-8")) == {
+        "session_id": created.session_id,
+        "speaker_label": "speaker-0001",
+        "centroid": [0.25, 0.75],
+        "sample_seconds": 2.5,
+        "embedder_id": "wespeaker:test-revision",
+        "embedder_state_sha": "ab" * 32,
+        "created_at": 1_800_000_006.0,
+        "echo_mode": "speakers",
+    }
+    assert journal_path.stat().st_mode & 0o777 == 0o600
+    journal_event = [event for event in runtime.events(created.session_id) if event.kind == "vector_journal_appended"]
+    assert len(journal_event) == 1
+    assert journal_event[0].payload == {
+        "written": 1,
+        "refusals": {"speaker-refused": "centroid_non_finite"},
+    }
+    assert "speaker_label=speaker-refused reason=centroid_non_finite" in caplog.text
+
+
+def test_journaling_session_requires_the_settled_echo_choice(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    runtime = _runtime(
+        speech=(),
+        vector_journal=LiveVectorJournal(tmp_path / "speaker-vectors.jsonl"),
+    )
+
+    with pytest.raises(ValueError, match="echo_mode is required"):
+        runtime.create()
+
+
+def test_abort_never_writes_completed_identity_observations(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    identity = JournalingIdentity()
+    runtime = _runtime(
+        speech=(True, False),
+        identity=identity,
+        vector_journal=LiveVectorJournal(journal_path),
+    )
+    created = runtime.create(echo_mode="headphones")
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+
+    asyncio.run(runtime.abort(created.session_id, "operator"))
+
+    assert not journal_path.exists()
+    assert "vector_journal_appended" not in [event.kind for event in runtime.events(created.session_id)]

@@ -4,7 +4,9 @@ import asyncio
 import hashlib
 import inspect
 import json
+import logging
 import threading
+import time
 import uuid
 from collections import deque
 from dataclasses import asdict, dataclass, field
@@ -31,10 +33,12 @@ from .live_session import (
     LiveSessionFailed,
     LiveSnapshot,
 )
+from .live_vector_journal import LiveVectorJournal
 
 
 LIVE_SERVICE_SCHEMA_VERSION = 1
 LIVE_PROTOCOL_VERSION = "moss-live-service.v1"
+_VECTOR_JOURNAL_LOG = logging.getLogger("moss_transcribe_diarize.live.vector_journal")
 
 
 class LiveServiceFailureKind(str, Enum):
@@ -384,6 +388,7 @@ class _ManualCanonicalPumpScheduler:
 @dataclass(slots=True)
 class _RuntimeSession:
     session_id: str
+    echo_mode: str
     descriptor: LiveServiceDescriptor
     session: LiveSession
     coordinator: LiveCoordinator
@@ -414,6 +419,8 @@ class LiveServiceRuntime:
         identity_preparer_factory: Callable[[], LiveIdentityPreparer],
         session_id_factory: Callable[[], str] | None = None,
         _canonical_scheduler: _CanonicalPumpScheduler | None = None,
+        vector_journal: LiveVectorJournal | None = None,
+        wall_time: Callable[[], float] | None = None,
     ):
         self.descriptor = descriptor
         self._endpoint_policy_factory = endpoint_policy_factory
@@ -422,13 +429,21 @@ class LiveServiceRuntime:
         self._identity_preparer_factory = identity_preparer_factory
         self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
         self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
+        self._vector_journal = vector_journal
+        self._wall_time = wall_time or time.time
         self._sessions: dict[str, _RuntimeSession] = {}
         self._lock = threading.RLock()
         self._ready_session_ids: deque[str] = deque()
         self._ready_session_set: set[str] = set()
         self._in_flight_session_ids: set[str] = set()
 
-    def create(self) -> LiveServiceCreateResult:
+    def create(self, *, echo_mode: str | None = None) -> LiveServiceCreateResult:
+        if echo_mode is None:
+            if self._vector_journal is not None:
+                raise ValueError("echo_mode is required when vector journaling is enabled.")
+            echo_mode = "unspecified"
+        elif not isinstance(echo_mode, str) or echo_mode not in {"headphones", "speakers"}:
+            raise ValueError("echo_mode must be headphones or speakers.")
         with self._lock:
             session_id = self._new_session_id()
             endpoint_policy = self._endpoint_policy_factory()
@@ -446,6 +461,7 @@ class LiveServiceRuntime:
             )
             state = _RuntimeSession(
                 session_id=session_id,
+                echo_mode=echo_mode,
                 descriptor=self.descriptor,
                 session=session,
                 coordinator=coordinator,
@@ -557,8 +573,47 @@ class LiveServiceRuntime:
                 ).failure
                 self._fail(state, failure)
                 raise LiveServiceIntegrityFailure(failure.message, code=failure.code)
+        journal_event = self._append_vector_journal(state)
+        with self._lock:
+            if journal_event is not None:
+                kind, payload = journal_event
+                self._record_event(state, kind, payload)
             self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
             return self._snapshot(state)
+
+    def _append_vector_journal(
+        self,
+        state: _RuntimeSession,
+    ) -> tuple[str, dict[str, object]] | None:
+        if self._vector_journal is None:
+            return None
+        try:
+            result = self._vector_journal.append_session(
+                session_id=state.session_id,
+                echo_mode=state.echo_mode,
+                created_at=self._wall_time(),
+                observations=state.coordinator.journal_observations(),
+            )
+        except Exception as exc:
+            _VECTOR_JOURNAL_LOG.warning(
+                "vector journal append failed: session_id=%s reason=%s",
+                state.session_id,
+                exc.__class__.__name__,
+            )
+            return "vector_journal_failed", {"reason": exc.__class__.__name__}
+        for refusal in result.refusals:
+            _VECTOR_JOURNAL_LOG.warning(
+                "vector journal observation refused: session_id=%s speaker_label=%s reason=%s",
+                state.session_id,
+                refusal.speaker_label,
+                refusal.reason,
+            )
+        return "vector_journal_appended", {
+            "written": result.written,
+            "refusals": {
+                refusal.speaker_label: refusal.reason for refusal in result.refusals
+            },
+        }
 
     async def abort(
         self,

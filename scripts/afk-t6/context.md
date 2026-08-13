@@ -1,9 +1,9 @@
 # Context — Phase 1 ticket #6
 
-Iteration 5. Acceptance criteria and a reproducible local validation baseline are captured. The
-provider exposes immutable, encoder-pinned observations from the completed album. The required
-single-process append mechanism is now measured; no production writer or runtime lifecycle
-integration exists yet.
+Iteration 6. Acceptance criteria and a reproducible local validation baseline are captured. The
+provider exposes immutable, encoder-pinned observations from the completed album. The measured
+single-process writer now runs after exact clean-stop accounting and never on abort; deployment
+path configuration and default-on wiring do not exist yet.
 
 ## Where things stand
 
@@ -95,11 +95,20 @@ bash -n scripts/afk-t6/ralph-afk.sh
   row was mode `0600`, session-keyed, and encoder-pinned. Raw measurement:
   `evidence/phase1/t6/iteration-5-journal-prototype.json`. This does not yet prove production
   lifecycle integration, operator path configuration, multi-process writes, or power loss.
+- Production lifecycle: GREEN. The concrete JSONL writer pre-encodes a session batch, appends it
+  under a process lock with write-all and `fsync`, and creates a mode-`0600` file. Runtime clean
+  stop adds session id, stop time, and the session's settled echo choice after identity finalization
+  and exact accepted/accounted equality. A non-finite speaker is omitted, named in the runtime
+  event and host warning, and does not abort the clean stop; abort writes nothing. The combined
+  runtime/provider/live subset passes 141 tests / 351 subtests. Raw JUnit:
+  `evidence/phase1/t6/iteration-6-journal-and-live-subset.xml`. This does not prove default-on
+  deployment wiring, an operator-configurable path outside the checkout, multi-process writes, or
+  power-loss survival.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Implement the measured single-process writer and compose provider observations into it at clean
-   session stop, adding session id, created-at, and echo mode at the runtime/transport boundary.
-2. Pin path configuration and default-on vector journaling without changing ADR-0003's default-off
-   raw-audio retention posture.
+1. Pin an operator-configurable path outside the checkout and wire vector journaling ON by default
+   for live deployments, without changing ADR-0003's default-OFF raw-audio retention posture.
+2. Add the required consent/right-to-remove documentation and prove the configured production
+   factory uses the real completed provider observations rather than stub evidence.

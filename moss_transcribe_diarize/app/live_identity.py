@@ -192,6 +192,12 @@ class BoundedCausalIdentityPreparer:
         if finalize is not None:
             finalize(base_snapshot=base_snapshot)
 
+    def journal_observations(self):
+        """Expose completed evidence-provider observations without owning their shape."""
+
+        observations = getattr(self.evidence_provider, "journal_observations", None)
+        return () if observations is None else tuple(observations())
+
     def _deferred_births(
         self,
         *,
