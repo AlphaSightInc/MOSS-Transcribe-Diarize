@@ -1,0 +1,28 @@
+Iteration 1 pre-change validation baseline
+Date: 2026-08-13
+
+$ .venv/bin/pytest -q
+zsh:1: no such file or directory: .venv/bin/pytest
+EXIT 127
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+3 failed, 965 passed, 4 skipped, 4 warnings, 11 errors, 383 subtests passed in 129.75s (0:02:09)
+EXIT 1
+
+Failure/error causes printed by pytest:
+- prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz missing (2 failures)
+- macos/MOSSCapture Swift products mtd-capture and MOSSCaptureApp missing (11 setup errors)
+- tests/test_macos_uds_tracer.py Launch Services lifecycle probe returned 2 (1 failure)
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+................................... [ 53%]
+..............................                 [100%]
+65 passed, 2 warnings, 351 subtests passed in 6.53s
+EXIT 0
+
+$ bash -n scripts/afk-t5/ralph-afk.sh
+EXIT 0
+
+Coverage limits: the focused suite proves existing live API, auth, and mixer behavior only. It
+does not exercise browser capture, background-tab cadence, new browser failure codes, or status
+rendering. The full-suite result is a pre-change environment baseline, not ticket #5 evidence.

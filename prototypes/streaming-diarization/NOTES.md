@@ -2530,3 +2530,16 @@ a temporary `gui/501` LaunchAgent. One intermediate GUI runner attempt is also
 sealed; it exposed and fixed a poll bug (`xpcproxy` is active, not terminal).
 No product/test bytes or acceptance expectations changed. Authoritative gate
 evidence: `dl2-capture/evidence/keeper-closing-20260809/`.
+
+### Server capture-status projection (`proto_capture_status_projection.py`, 2026-08-13)
+
+**Question:** can existing `HelperPresenceSnapshot` facts produce one deterministic,
+server-authored phase and status line without breaking single-lane continuation or future
+additive failure codes?
+
+**VERDICT: PASS, ABSORBED.** Seven browser facts, healthy/no-heartbeat states, a failed system
+lane with a live microphone peer, and an unregistered future code all projected deterministically.
+The surviving-lane case stayed `recording`; known codes produced actionable copy; the unknown code
+used a generic line without exposing the raw code or rejecting the heartbeat. The production
+implementation is `live_capture_status.py`; the throwaway probe was deleted. Raw state and focused
+validation: `evidence/phase1/t5/iteration-3-capture-status-projection.txt`.

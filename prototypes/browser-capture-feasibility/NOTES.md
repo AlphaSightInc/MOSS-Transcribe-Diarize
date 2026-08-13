@@ -327,3 +327,73 @@ audio track for either a shared window or full screen on this Mac.
 window, monitor. The certified two-lane startup is mic-first; a display-first/system-only
 suspended-context bootstrap remains a separate, non-MVP experiment. Remaining required
 work: Gate 2 (4070 canary), Gate 3 (bounded concurrency), Gate 4 (Windows).
+
+## Server helper-vocabulary probe — 2026-08-13
+
+**Question:** can browser-only capture facts extend the existing
+`moss-live-helper-health.v1` `failure_code` field without a parallel browser enum or
+health path, and what semantics does the production coordinator apply?
+
+**Method:** a throwaway Python probe passed one native reference code, seven proposed
+browser codes, and one unregistered sentinel through the production
+`HelperHeartbeat.from_dict` → `HelperPresenceRegistry.observe` →
+`LiveHelperFailureCoordinator.observe` path. One command:
+
+```bash
+PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 prototypes/browser-capture-feasibility/probe_helper_failure_vocabulary.py
+```
+
+The throwaway script was deleted after its output was captured at
+`evidence/phase1/t5/iteration-2-helper-vocabulary-probe.txt`.
+
+**Verdict:** the existing string field and coordinator are already the correct shared,
+additive transport. All codes survived unchanged. A `failed` fact invoked
+`LiveV2Session.fail_lane` only for its named lane and kept the lease/peer alive; a
+`degraded` fact remained in helper presence without failing a lane. The unregistered
+sentinel also survived, so the parser deliberately enforces stable non-empty shape, not
+a closed code allowlist. Do not tighten it and break additive helper/version
+compatibility.
+
+The smallest production extension is therefore a server-owned named vocabulary and
+status mapping on this existing path, using observation-shaped browser codes:
+`browser_microphone_permission_denied`, `browser_capture_request_rejected` (not
+`picker_cancelled`, because Chrome's rejection name is ambiguous),
+`browser_surface_audio_missing`, `browser_track_ended`,
+`browser_audio_context_suspended`, `browser_sustained_clipping`, and
+`browser_microphone_silent`. Failed versus degraded remains the existing `state` field;
+no browser-only health schema or coordinator is justified.
+
+## Server capture-status projection — 2026-08-13
+
+The measured vocabulary above is now absorbed by the server projection in
+`moss_transcribe_diarize/app/live_capture_status.py`. Snapshot responses publish exactly one
+`capture_phase` and one `status_line` while retaining raw `helper_presence` for `/live`
+diagnostics. Failed facts outrank degraded facts deterministically; a single failed lane stays
+`recording` when its peer remains usable; unknown additive codes receive generic server copy.
+The silent-microphone line names Chrome's Settings > Privacy and security > Site settings >
+Microphone remedy. The focused production-path suite passed 83 tests and 351 subtests; raw output
+is `evidence/phase1/t5/iteration-3-capture-status-projection.txt`.
+
+## G7 worklet-driven lease probe — 2026-08-13
+
+**Question:** does a heartbeat triggered only by descriptor-sized AudioWorklet frame messages
+keep the production server lease alive when Chrome remains backgrounded for longer than one
+minute?
+
+**Method:** a throwaway probe served a local `create_app(live_enabled=True)` instance with the
+production heartbeat route and lease coordinator, plus a headed isolated Chrome 151 profile. Two
+synthetic 48 kHz MediaStreams traversed a 16 kHz AudioContext and descriptor-driven worklets. The
+microphone worklet message serialized one heartbeat; the page and worklet contained neither
+`setInterval` nor `setTimeout`. A second tab held the foreground for 65.01 s. The probe used a
+strict 2 s lease. Its script was deleted after capture.
+
+**Verdict:** mechanism **passed**. While `document.visibilityState` stayed `hidden`, both worklets
+delivered 130 frames each. The server accepted 130 hidden-tab heartbeats with arrival p50/p95/max
+497.69/506.82/507.35 ms; all 136 total heartbeat requests returned 200. The runtime remained
+`active`, its v2 session remained present, and no terminal failure occurred.
+
+This is not final G7 acceptance. Chrome and the production heartbeat/lease path were real, but
+the local service used the repository test runtime provider and synthetic sources because ticket
+#1's product client has not landed. Repeat this measurement through that client and its local
+production-provider service before checking the issue criterion. Raw output:
+`evidence/phase1/t5/iteration-5-g7-worklet-lease.txt`.

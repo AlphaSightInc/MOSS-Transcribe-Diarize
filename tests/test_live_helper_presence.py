@@ -46,7 +46,7 @@ def heartbeat_payload(
         "sent_monotonic_ns": sent_monotonic_ns,
         "helper_version": "0.1.0",
         "state": state,
-        "lanes": {"system": lane, "microphone": lane},
+        "lanes": {"system": dict(lane), "microphone": dict(lane)},
     }
 
 
@@ -174,14 +174,19 @@ def test_helper_heartbeat_route_is_capture_owned_and_visible_in_authorized_snaps
             f"/api/live/sessions/{session_id}/heartbeat",
             json=heartbeat_payload(instance_id="helper-boot-a"),
         )
+        advanced_payload = heartbeat_payload(
+            instance_id="helper-boot-a",
+            sequence=2,
+            sent_monotonic_ns=30,
+            state="degraded",
+        )
+        advanced_payload["lanes"]["microphone"].update(
+            state="degraded",
+            failure_code="browser_sustained_clipping",
+        )
         advanced = client.post(
             f"/api/live/sessions/{session_id}/heartbeat",
-            json=heartbeat_payload(
-                instance_id="helper-boot-a",
-                sequence=2,
-                sent_monotonic_ns=30,
-                state="degraded",
-            ),
+            json=advanced_payload,
         )
         view_denied = view_client.post(
             f"/api/live/sessions/{session_id}/heartbeat",
@@ -204,6 +209,10 @@ def test_helper_heartbeat_route_is_capture_owned_and_visible_in_authorized_snaps
         assert advanced.json()["helper_presence"]["last_seen_monotonic_ns"] == 1_000
         assert snapshot.status_code == 200
         assert snapshot.json()["helper_presence"] == advanced.json()["helper_presence"]
+        assert snapshot.json()["capture_phase"] == "recording"
+        assert snapshot.json()["status_line"] == (
+            "Microphone audio is too loud and may sound distorted."
+        )
 
 
 @pytest.mark.skipif(not FASTAPI_AVAILABLE, reason="fastapi is not installed")

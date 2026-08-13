@@ -1,0 +1,20 @@
+fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5  prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz
+28dc9a5b80098db58a261b4bfa73e2975acac31ef36e7e8f057c514d8bdc0759  prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/reference.jsonl
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'MOSSCaptureApp' complete! (0.14s)
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'mtd-capture' complete! (0.10s)
+........                                           [100%]
+=============================== warnings summary ===============================
+prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py::LegacyIngestTest::test_all_92_archived_units_render_into_parseable_preparations
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py::LegacyIngestTest::test_all_92_archived_units_render_into_parseable_preparations
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 2 warnings, 94 subtests passed in 3.96s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

@@ -1,0 +1,77 @@
+Ticket #5 iteration 7 — preflight authority blocker
+Captured: 2026-08-13T06:48:38Z
+
+$ gh api user --jq .login
+yugao-aisight
+
+$ gh issue view 1 --repo aiSight-us/MOSS-Transcribe-Diarize --json state,updatedAt --jq .
+{"state":"OPEN","updatedAt":"2026-08-13T06:16:03Z"}
+
+$ git ls-remote private refs/heads/dev 'refs/heads/afk/t1-*'
+8fec84168d18a2d3e1f14273f706e776a7dd808a refs/heads/dev
+
+$ git rev-parse dev private/dev afk/t1-gate2-canary
+8fec84168d18a2d3e1f14273f706e776a7dd808a
+8fec84168d18a2d3e1f14273f706e776a7dd808a
+0bdff41f60c2618eba726b3df36a98e4ec83457a
+
+$ git -C <ticket-1-worktree> status --porcelain=v1
+
+$ git -C <ticket-1-worktree> log --oneline 8fec841..HEAD
+0bdff41 ralph: iteration 5 - production live routes
+667a851 ralph: iteration 4 - exact v2 frame keys
+6aad1ae ralph: iteration 3 - descriptor-driven geometry
+a5e071d ralph: iteration 2 - validation baseline
+a2259a3 ralph: iteration 1 - capture ticket gate
+838a30c ralph: run 20260813-060026-1222 start
+0e20ac6 afk: install ticket-1 ralph loop in scripts/afk-t1
+
+Ticket #1 committed production-flow excerpt
+(`prototypes/browser-capture-feasibility/capture_pipeline_page.html` at 0bdff41):
+
+158 function bothLanesHaveSignal() {
+159   return ["system", "microphone"].every((lane) => lanes[lane] && lanes[lane].hasSignal);
+160 }
+
+219     st.hasSignal ||= r >= 1e-4;
+220     if (!liveSession && !sessionFailed) {
+221       if (bothLanesHaveSignal()) {
+222         try { await captureSession(outEl); }
+223         catch (e) {
+224           sessionFailed = true;
+225           st.errors++;
+226           log(outEl, "session FAILED: " + e.message + " (stop and retry manually)");
+227         }
+228       }
+229       // Preflight audio is metered but never admitted. Wire sequence begins only
+230       // after both lanes are non-silent and the server returns its session id.
+231       return;
+232     }
+
+Ticket #5 production projection excerpt
+(`moss_transcribe_diarize/app/live_transport.py` on afk/t5-capture-health):
+
+713     presence = helper_presence.snapshot(session_id)
+714     return {
+715         **snapshot,
+716         "v2_session": None if v2_session is None else v2_session.snapshot().to_dict(),
+717         "mixer": None if mixer is None else mixer.snapshot().to_dict(),
+718         "helper_presence": None if presence is None else presence.to_dict(),
+719         **project_live_capture_status(presence).to_dict(),
+720     }
+
+Gate result: BLOCKED on an owning contract decision.
+
+The binding charter requires both preflight meters to be non-zero before session creation.
+Ticket #1's now-committed production flow implements exactly that ordering. Ticket #5's
+server-authored line is projected from session-keyed helper presence into a session snapshot.
+Therefore a silent microphone prevents creation of the only server resource that can author and
+deliver the required silent-microphone preflight line. Calling the condition on the client would
+violate C11 and issue #5; creating a session earlier would violate charter section 4. No product
+change was made pending the supervisor's owning decision.
+
+$ git diff --check
+PASS (no output)
+
+$ bash -n scripts/afk-t5/ralph-afk.sh
+PASS (no output)

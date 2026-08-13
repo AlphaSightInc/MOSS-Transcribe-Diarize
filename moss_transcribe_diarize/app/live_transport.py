@@ -16,6 +16,7 @@ from .live_auth import (
     LiveAccessRegistry,
     LivePeer,
 )
+from .live_capture_status import project_live_capture_status
 from .live_ingest import (
     LiveV2EpochDiscontinuityRequiredError,
     LiveV2LaneCapacityError,
@@ -715,11 +716,13 @@ def _snapshot_response(
     since_version: int | None = None,
 ) -> dict[str, Any]:
     snapshot = runtime.snapshot(session_id, since_version=since_version)
+    presence = helper_presence.snapshot(session_id)
     return {
         "snapshot": None if snapshot is None else snapshot.to_dict(),
         "unchanged": snapshot is None,
         "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
-        "helper_presence": _helper_presence_payload(helper_presence, session_id),
+        "helper_presence": None if presence is None else presence.to_dict(),
+        **project_live_capture_status(presence).to_dict(),
     }
 
 
@@ -739,14 +742,6 @@ def _v2_snapshot_payload(
         return v2_sessions.get(session_id).snapshot().to_dict()
     except KeyError:
         return None
-
-
-def _helper_presence_payload(
-    helper_presence: HelperPresenceRegistry,
-    session_id: str,
-) -> dict[str, Any] | None:
-    snapshot = helper_presence.snapshot(session_id)
-    return None if snapshot is None else snapshot.to_dict()
 
 
 def _failure_status(exc: LiveServiceError) -> int:

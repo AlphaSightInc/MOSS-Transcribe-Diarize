@@ -1,0 +1,39 @@
+PROTOTYPE COMMAND: PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 prototypes/streaming-diarization/proto_capture_status_projection.py
+QUESTION: can helper facts author one deterministic capture status
+{"case": "no-heartbeat", "input": null, "projection": {"capture_phase": "starting", "status_line": "Waiting for audio capture to start."}}
+{"case": "healthy", "input": {"helper_version": "prototype", "instance_id": "projection-prototype", "lanes": {"microphone": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": null, "state": "capturing"}, "system": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": null, "state": "capturing"}}, "last_seen_monotonic_ns": 100, "schema": "moss-live-helper-health.v1", "sent_monotonic_ns": 1, "sequence": 1, "state": "capturing"}, "projection": {"capture_phase": "recording", "status_line": "Capturing microphone and shared audio."}}
+{"case": "permission-denied", "input": {"helper_version": "prototype", "instance_id": "projection-prototype", "lanes": {"microphone": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": "browser_microphone_permission_denied", "state": "failed"}, "system": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": null, "state": "capturing"}}, "last_seen_monotonic_ns": 100, "schema": "moss-live-helper-health.v1", "sent_monotonic_ns": 1, "sequence": 1, "state": "failed"}, "projection": {"capture_phase": "failed", "status_line": "Microphone access was denied. Allow microphone access in Chrome and try again."}}
+{"case": "one-lane-ended", "input": {"helper_version": "prototype", "instance_id": "projection-prototype", "lanes": {"microphone": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": null, "state": "capturing"}, "system": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": "browser_track_ended", "state": "failed"}}, "last_seen_monotonic_ns": 100, "schema": "moss-live-helper-health.v1", "sent_monotonic_ns": 1, "sequence": 1, "state": "capturing"}, "projection": {"capture_phase": "recording", "status_line": "Shared audio stopped. Continuing with microphone audio."}}
+{"case": "clipping", "input": {"helper_version": "prototype", "instance_id": "projection-prototype", "lanes": {"microphone": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": "browser_sustained_clipping", "state": "degraded"}, "system": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": null, "state": "capturing"}}, "last_seen_monotonic_ns": 100, "schema": "moss-live-helper-health.v1", "sent_monotonic_ns": 1, "sequence": 1, "state": "degraded"}, "projection": {"capture_phase": "recording", "status_line": "Microphone audio is too loud and may sound distorted."}}
+{"case": "silent-microphone", "input": {"helper_version": "prototype", "instance_id": "projection-prototype", "lanes": {"microphone": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": "browser_microphone_silent", "state": "failed"}, "system": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": null, "state": "capturing"}}, "last_seen_monotonic_ns": 100, "schema": "moss-live-helper-health.v1", "sent_monotonic_ns": 1, "sequence": 1, "state": "failed"}, "projection": {"capture_phase": "failed", "status_line": "No microphone sound was detected. In Chrome, open Settings > Privacy and security > Site settings > Microphone and select the correct default input."}}
+{"case": "unknown-additive-code", "input": {"helper_version": "prototype", "instance_id": "projection-prototype", "lanes": {"microphone": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": null, "state": "capturing"}, "system": {"device_epoch": 0, "discontinuities": 0, "dropped_frames": 0, "failure_code": "future_helper_fact", "state": "failed"}}, "last_seen_monotonic_ns": 100, "schema": "moss-live-helper-health.v1", "sent_monotonic_ns": 1, "sequence": 1, "state": "capturing"}, "projection": {"capture_phase": "recording", "status_line": "Shared audio capture failed. The session is continuing."}}
+VERDICT: PASS deterministic projection, one-lane continuation, actionable known codes, additive unknown fallback
+PROTOTYPE EXIT: 0
+VALIDATION COMMAND: PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_live_capture_status.py tests/test_live_helper_presence.py tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+................................................................................. [ 97%]
+..                                                                       [100%]
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+83 passed, 2 warnings, 351 subtests passed in 6.41s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+VALIDATION EXIT: 0
+FINAL VALIDATION COMMAND: PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_live_capture_status.py tests/test_live_helper_presence.py tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+................................................................................. [ 97%]
+..                                                                       [100%]
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+83 passed, 2 warnings, 351 subtests passed in 6.31s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+FINAL VALIDATION EXIT: 0
