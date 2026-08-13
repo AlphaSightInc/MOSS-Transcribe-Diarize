@@ -1,0 +1,54 @@
+ITERATION 07 — FULL-SUITE PREREQUISITES AND BASELINE
+2026-08-13 America/New_York
+
+$ swift build --package-path macos/MOSSCapture --product mtd-capture
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'mtd-capture' complete! (0.15s)
+
+$ swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'MOSSCaptureApp' complete! (0.10s)
+
+$ swift build --package-path macos/MOSSCapture --show-bin-path
+/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/4/MOSS-Transcribe-Diarize/macos/MOSSCapture/.build/arm64-apple-macosx/debug
+
+Both mtd-capture and MOSSCaptureApp at that path were executable arm64 Mach-O files.
+
+The ignored bench path prototypes/streaming-diarization/data/real was linked locally to:
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-l2-stage0/prototypes/streaming-diarization/data/real
+
+$ shasum -a 256 prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz
+fd13bacb3ee8397354c0ae55a8b9534db9df56b13dce73c0b956d7cdf3947be5  prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz
+
+The canonical checkout's newer cache was rejected as the archived-test prerequisite:
+327f33283422b0664911585d2a60e7490979e9c71152ec967cf0d042979aa68a
+It produced 55 units where test_legacy_ingest.py requires the hash-pinned 92-unit archive.
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py::LegacyIngestTest::test_all_92_archived_units_render_into_parseable_preparations -p no:cacheprovider
+. [100%]
+1 passed, 2 warnings, 92 subtests passed in 5.21s
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider --junitxml=evidence/phase1/t4/iteration-07-full-pytest.xml
+FAILED prototypes/streaming-diarization/l15/test_l1_baseline.py::BaselineContractTests::test_a2_instrument_is_hash_pinned_and_production_bound
+FAILED tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate
+2 failed, 980 passed, 2 skipped, 4 warnings, 475 subtests passed in 130.98s (0:02:10)
+
+Failure 1 exact exception:
+run_l1_baseline.BaselineError: l15_product_tree_drift: 9089b33210401111865da7abc160ab0bcb4aa266
+
+$ git diff --stat 9089b33210401111865da7abc160ab0bcb4aa266 HEAD -- moss_transcribe_diarize
+ moss_transcribe_diarize/app/server.py | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+Failure 2 exact lifecycle result, reproduced once focused and once in the corrected full run:
+AssertionError: app did not finish Launch Services launch or accept termination: stdout='' stderr=''
+assert 2 == 0
+
+The complete machine-readable pytest report is iteration-07-full-pytest.xml. It records 1,459
+tests (pytest nodes plus subtests), zero errors, two failures, two skips, and 130.963 seconds.
+
+Out-of-scope failure disclosure posted without closing or changing issue state:
+https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4#issuecomment-5276956691

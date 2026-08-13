@@ -841,12 +841,12 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(runtime.status_code, 200)
             self.assertEqual(runtime.json()["inference"]["max_length"], 16384)
 
-    def test_index_omits_static_context_default(self):
+    def test_studio_omits_static_context_default(self):
         from fastapi.testclient import TestClient
 
         with tempfile.TemporaryDirectory() as tmpdir:
             client = TestClient(self.make_vllm_app(tmpdir))
-            response = client.get("/")
+            response = client.get("/studio")
             self.assertEqual(response.status_code, 200)
             self.assertNotIn('id="maxLen" type="number" min="1" step="1" value=', response.text)
 

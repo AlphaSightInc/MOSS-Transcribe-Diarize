@@ -147,7 +147,7 @@ def _paired_live_client(app) -> AuthorizedLiveClient:
 
 
 class LivePortalRouteTest(unittest.TestCase):
-    def test_live_portal_is_absent_by_default_and_batch_root_is_byte_exact(self):
+    def test_frontend_routes_preserve_studio_and_keep_live_absent_by_default(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
 
@@ -156,12 +156,41 @@ class LivePortalRouteTest(unittest.TestCase):
             client = TestClient(app)
 
             portal = client.get("/live")
-            batch = client.get("/")
+            shell = client.get("/")
+            studio = client.get("/studio")
 
             self.assertEqual(portal.status_code, 404)
-            self.assertEqual(batch.status_code, 200)
-            self.assertEqual(batch.headers.get("cache-control"), "no-store")
-            self.assertEqual(hashlib.sha256(batch.content).hexdigest(), BASE_INDEX_SHA256)
+            self.assertEqual(shell.status_code, 200)
+            self.assertEqual(shell.headers.get("cache-control"), "no-store")
+            self.assertEqual(
+                shell.content,
+                (REPO_ROOT / "ProjectResources/Frontend/index.html").read_bytes(),
+            )
+            self.assertNotIn('href="/live"', shell.text)
+            self.assertEqual(studio.status_code, 200)
+            self.assertEqual(studio.headers.get("cache-control"), "no-store")
+            self.assertEqual(hashlib.sha256(studio.content).hexdigest(), BASE_INDEX_SHA256)
+
+    def test_static_mount_serves_stable_entrypoint_and_nested_font_byte_exact(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = TestClient(create_app(model_path="fake-model", runs_dir=tmpdir))
+
+            app_js = client.get("/static/app.js")
+            font = client.get("/static/fonts/Inter-400.woff2")
+
+            self.assertEqual(app_js.status_code, 200)
+            self.assertEqual(
+                app_js.content,
+                (REPO_ROOT / "ProjectResources/Frontend/app.js").read_bytes(),
+            )
+            self.assertEqual(font.status_code, 200)
+            self.assertEqual(
+                font.content,
+                (REPO_ROOT / "ProjectResources/Frontend/fonts/Inter-400.woff2").read_bytes(),
+            )
 
     def test_live_portal_is_enabled_no_store_and_does_not_add_live_api_routes(self):
         from fastapi.testclient import TestClient

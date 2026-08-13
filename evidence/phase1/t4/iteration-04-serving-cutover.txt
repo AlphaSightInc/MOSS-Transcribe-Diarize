@@ -1,0 +1,36 @@
+Iteration 4: FastAPI serving cutover
+====================================
+
+Command:
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_app_api.py tests/test_live_portal.py -p no:cacheprovider
+
+Result:
+.......................................                        [100%]
+39 passed, 2 warnings, 10 subtests passed in 6.00s
+
+Coverage boundary:
+- Proves route responses through FastAPI TestClient, including exact response bytes for `/`,
+  `/studio`, `/static/app.js`, and `/static/fonts/Inter-400.woff2`.
+- Exercises the retained `/live` portal suite and its existing mutation battery.
+- Does not prove browser rendering, attended display capture, deployment, or remote-host state.
+
+Command:
+git diff --check
+
+Result:
+PASS (no output)
+
+Command:
+shasum -a 256 ProjectResources/Frontend/index.html ProjectResources/Frontend/app.js ProjectResources/Frontend/fonts/Inter-400.woff2
+
+Result:
+6762009f874665affca7b74f5167863a160dbed8a0579b5b8763c6a47cdacc3e  ProjectResources/Frontend/index.html
+a0d035374ef782c5ae26fbecd88d6b131c5b3808ed06029be574398cb5ba5c6c  ProjectResources/Frontend/app.js
+8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc  ProjectResources/Frontend/fonts/Inter-400.woff2
+
+Direct FastAPI response probe (live disabled):
+/ 200 text/html; charset=utf-8 no-store 6762009f874665affca7b74f5167863a160dbed8a0579b5b8763c6a47cdacc3e
+/studio 200 text/html; charset=utf-8 no-store aaa308fa135e8e29ed1d96e9b9417952959c9c0218f783ddd4b62ff249a6e43d
+/static/app.js 200 text/javascript; charset=utf-8 None a0d035374ef782c5ae26fbecd88d6b131c5b3808ed06029be574398cb5ba5c6c
+/static/fonts/Inter-400.woff2 200 font/woff2 None 8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc
+/live 404 application/json None 37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d

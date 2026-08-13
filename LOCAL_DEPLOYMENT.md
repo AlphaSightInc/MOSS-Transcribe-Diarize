@@ -47,6 +47,43 @@ The Tailscale IP remains stable for this node. This tailnet's control plane does
 not currently implement Tailscale Serve, so the service uses the node IP and
 port rather than a Tailscale-provisioned HTTPS URL.
 
+## Frontend development
+
+Install the pinned frontend dependencies once, then keep a production build
+watch running from the repository root:
+
+```bash
+npm --prefix frontend ci
+npm --prefix frontend run build -- --watch
+```
+
+The Vite config writes directly to the committed
+`ProjectResources/Frontend/` bundle. In a second terminal, start FastAPI with
+the normal `mtd-subtitle-web` command and open `/` on that FastAPI origin. For
+example, the non-live local service command from the repository root is:
+
+```bash
+python -m moss_transcribe_diarize.app.web_cli \
+  --backend vllm \
+  --model /path/to/model \
+  --vllm-model served-model \
+  --vllm-base-url http://127.0.0.1:8000/v1 \
+  --host 127.0.0.1 \
+  --port 7860
+```
+
+For capture work, use the reviewed TLS live profile on its FastAPI origin,
+including explicit port `:7861`. Do not run or open the Vite development server
+on port 5173: it is a second origin and does not exercise the production serving
+path, secure-context permission identity, or one-time TLS interstitial.
+
+Before committing a rebuilt bundle, run:
+
+```bash
+npm --prefix frontend run typecheck
+npm --prefix frontend test -- --run
+```
+
 ## Service operations
 
 Run these commands from PowerShell:
@@ -701,7 +738,8 @@ python3 ops/finalize-live-provider-manifest.py \
   --output "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
   --source-revision "$(git rev-parse HEAD)" \
   --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 \
-  --min-match-score 0.35 --min-match-margin 0.1
+  --min-match-score 0.35 --min-match-margin 0.1 \
+  --album-admission-seconds 2.0 --birth-min-seconds 1.0
 ```
 
 Recalibrating the matcher changes `identity_config_hash` and therefore
