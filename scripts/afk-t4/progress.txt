@@ -100,3 +100,19 @@ Iteration 7 — full-suite prerequisite restoration
 - Learned: the canonical checkout's newer `327f3328...` 55-unit cache is not the archived test
   input; the required 92-unit cache is `fd13bacb...`. Setup errors are eliminated. Next: acquire
   the merge lock, merge current `dev`, and run ticket-specific validation on the merged result.
+
+Iteration 8 — current-dev merge and focused validation
+- Target: highest-ranked candidate; hold the shared merge lock, merge current `dev`, and validate
+  the ticket-specific frontend, serving, manifest-finalizer, and focused live surfaces.
+- Files: `evidence/phase1/t4/iteration-08-merged-validation.txt`,
+  `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: `git merge --no-edit dev` reports already up to date and `dev` ancestry PASS; clean
+  frontend install/typecheck/test/build PASS with deterministic committed output; target Vitest
+  1/1 and oracle Vitest 9/9 PASS; reference configs/fonts byte identity PASS; combined focused
+  Python suite PASS (130 tests + 361 subtests); manifest dry-run PASS at tested SHA with unchanged
+  input and absent output.
+- Evidence: `evidence/phase1/t4/iteration-08-merged-validation.txt`.
+- Learned: current `dev` (`8fec841`) was already incorporated in the validated ticket result
+  (`e8c8c4f`), so no merge commit was needed. Iteration-7 full-suite exceptions remain explicit.
+  Next: publish under the merge protocol, comment criterion-by-criterion evidence and non-coverage,
+  then hand the published SHA to the authorized manifest operator without mutating the host.

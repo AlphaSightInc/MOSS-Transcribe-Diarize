@@ -1,14 +1,17 @@
 # Context — Phase 1 ticket #4
 
-Iteration 7. Full-suite prerequisites are restored locally and the collection now reaches 980
-passes. Two unrelated guards remain red: L15 intentionally refuses product-tree drift from its
-pinned source commit, and the pre-existing macOS Launch Services lifecycle tracer cannot resolve
-the live app PID. Neither is a ticket-4 product defect. The host-owned provider manifest still
-must be finalized with the reviewed post-merge SHA by an authorized operator.
+Iteration 8. The ticket branch contains current `dev`: under the shared merge lock, `git merge
+--no-edit dev` reported already up to date and ancestry verification passed. The complete focused
+ticket set passes on that result. Two unrelated full-suite guards remain red from iteration 7 and
+were neither weakened nor repaired. Publication, the criterion-by-criterion issue comment, and
+authorized host manifest finalization remain open.
 
 ## Where things stand
 
 - Branch: `afk/t4-*`, cut from `dev` at `a05a7f6`. Worktree 4 of 6 (treehouse pool).
+- Current `dev` (`8fec841`) is an ancestor of the validated ticket result (`e8c8c4f`); the required
+  merge was therefore a no-op. Iteration 8 ran all ticket-focused gates while holding the shared
+  merge lock.
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - `frontend/` holds the reference's three build-config files, entry HTML, entrypoint, complete
   stylesheet, font license, logo, and all 11 `woff2` files. All transferred reference files are
@@ -30,8 +33,7 @@ must be finalized with the reviewed post-merge SHA by an authorized operator.
   prior form omitted `--album-admission-seconds` and `--birth-min-seconds` and exited before work.
   The corrected command dry-runs against a host-shaped provisional fixture, stamps a checkout SHA,
   regenerates and admission-checks hashes, and leaves both input and output untouched. Actual host
-  finalization remains post-merge operator work: the final SHA does not exist yet and the remote
-  host is read-only to this loop.
+  finalization remains authorized-operator work; the remote host is read-only to this loop.
 - Both Swift products build, and the hash-pinned 92-unit archived Alphabet cache is provisioned
   from the local L2 Stage-0 corpus. The full Python collection runs without setup errors: 980
   passed, 2 skipped, 2 failed, and 475 subtests passed. One failure is the expected L15 product
@@ -154,10 +156,19 @@ does not make the full suite green; it distinguishes its two remaining non-ticke
 the setup errors that blocked iteration 1. The required out-of-scope disclosure is issue comment
 `#issuecomment-5276956691`; it does not claim completion or change issue state.
 
+## Merged-result evidence (iteration 8)
+
+`evidence/phase1/t4/iteration-08-merged-validation.txt` records lock acquisition, the required
+no-op merge, and proof that `dev` is an ancestor of the tested ticket result. Clean frontend install,
+typecheck, target test, deterministic build, reference byte checks, and oracle tests all pass. The
+combined serving/live/manifest suite passes 130 tests plus 361 subtests, and a host-shaped manifest
+dry-run stamps the tested 40-character SHA without changing its input or creating output. This does
+not finalize the host manifest or add browser/deployment/attended-capture evidence.
+
 ## Ranked candidates
 
-1. Acquire the shared merge lock, merge current `dev` into this branch, and run the ticket-specific
-   frontend, serving, manifest-finalizer, and focused live validation on the merged result. Carry
-   the two documented full-suite exceptions explicitly; do not weaken or repair out-of-scope gates.
-2. After merged-result validation, publish per protocol and hand the reviewed merge SHA plus the
-   corrected finalization command to the authorized operator. Do not mutate the read-only host.
+1. Publish per the serialized merge protocol, then post the criterion-by-criterion issue comment
+   linking the branch and raw evidence, including explicit non-coverage and both full-suite
+   exceptions. Do not close the issue.
+2. Hand the reviewed published SHA and corrected finalization command to the authorized operator.
+   Do not mutate the read-only host; completion stays blocked until host finalization is evidenced.
