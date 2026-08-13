@@ -1,0 +1,70 @@
+{
+  "schema": "moss-live-concurrency-preregistration.v1",
+  "ticket": 3,
+  "preregistered_at": "2026-08-13",
+  "run_started": false,
+  "question": "What is the largest dispatcher concurrency in 1, 2, or 4 that keeps live transcript lag and memory below the frozen gates?",
+  "production_path": {
+    "service": "one locally-started FastAPI process with live routes enabled",
+    "decoder": "the real MOSS decoder through the production LiveServiceRuntime path",
+    "ingress_cadence_seconds": 0.5,
+    "audio": "real human speech replayed at wall-clock rate",
+    "frame_geometry": "read from /api/live/descriptor",
+    "stub_results_qualify": false,
+    "remote_service_mutation_allowed": false,
+    "additional_uvicorn_workers_allowed": false
+  },
+  "matrix": {
+    "dispatcher_concurrency": [
+      1,
+      2,
+      4
+    ],
+    "simultaneous_meetings": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "screening_warmup_seconds": 30,
+    "screening_measurement_seconds": 120,
+    "chosen_bound_soak_seconds": 600
+  },
+  "gates": {
+    "latency": {
+      "maximum_per_session_p95_transcript_lag_seconds": 10.0,
+      "quantile_method": "linear Type-7",
+      "aggregation": "compute each session independently; the run value is the maximum session p95",
+      "rationale": "with the deployed 2.5-second span cap, this leaves 7.5 seconds for queueing, decode, publish, and the included observer poll while remaining a live transcript"
+    },
+    "memory": {
+      "maximum_vllm_gpu_cache_usage_fraction": 0.95,
+      "maximum_process_tree_rss_increase_bytes_over_warm_idle": 4294967296,
+      "maximum_oom_or_accelerator_error_count": 0,
+      "missing_vllm_metrics_qualify": false,
+      "rationale": "retain 5 percent of vLLM cache headroom and reject per-session model duplication larger than 4 GiB above the warmed shared-model baseline"
+    },
+    "fairness": {
+      "maximum_dispatch_count_skew_for_continuously_ready_sessions": 1
+    }
+  },
+  "metric_definitions": {
+    "transcript_lag_seconds": "observer monotonic time of canonical_processed minus the replay-clock time of that span's end_sample; the 250 ms event-poll interval remains included",
+    "real_time_factor": "sum canonical_decode_elapsed_sec divided by sum frozen_span_duration_sec",
+    "queue_depth": "per-session pending_work_items sampled on every frame response and every event poll",
+    "fairness": "full canonical_started order; among sessions continuously ready during a completed round, maximum dispatch-count minus minimum dispatch-count",
+    "vllm_active_and_queued": "raw locally-run vLLM metrics exposition plus the active and queued request series sampled at least once per second",
+    "memory": "peak locally-started service and inference process-tree RSS minus warmed-idle RSS, plus peak vLLM GPU-cache-usage fraction",
+    "errors": "all non-success frame responses, terminal failures, GPU OOMs, and accelerator errors retained verbatim"
+  },
+  "selection_rule": {
+    "candidate_set": [
+      1,
+      2,
+      4
+    ],
+    "rule": "choose the largest candidate whose candidate-count meeting run and 10-minute soak pass latency, memory, fairness, zero-OOM, and cross-session integrity gates",
+    "eight_meeting_role": "overload evidence only; it must retain cross-session integrity and demonstrate independent per-session 429 backpressure, but its latency does not select the normal bound",
+    "gate_changes_after_first_measurement_allowed": false
+  }
+}

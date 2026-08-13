@@ -1,7 +1,8 @@
 # Context — Phase 1 ticket #3
 
-Iteration 2. The live issue acceptance contract and a working validation baseline are captured
-below. Dispatcher latency and memory have not been measured yet.
+Iteration 3. The live issue acceptance contract and validation baseline are captured below. Numeric
+latency/memory gates and their measurement semantics are now frozen before measurement. Dispatcher
+latency and memory have not been measured yet.
 
 ## Where things stand
 
@@ -84,8 +85,36 @@ status reply. This is outside ticket #3, has not been fixed or ignored as a comp
 prevents claiming the full suite green. Raw command evidence:
 `evidence/phase1/t3/iteration-2-validation-baseline.txt`.
 
+## Frozen measurement gates
+
+Machine-readable preregistration:
+`prototypes/streaming-diarization/concurrency/preregistration.json`, SHA-256
+`b6fbe1f5dc60c0f0a20128026eefa8bc369a456927fe267cf94aa2a8b2865d52`.
+
+- Latency: maximum per-session Type-7 p95 transcript lag **10.0 s**. Lag starts at the real-time
+  replay clock for the span's `end_sample` and ends when the matching production
+  `canonical_processed` event is observed; the 250 ms poll delay stays included.
+- Memory: peak vLLM GPU-cache usage **≤0.95**, locally-started service/inference process-tree RSS
+  growth over warmed idle **≤4 GiB**, and **zero** OOM/accelerator errors. Missing vLLM metrics
+  fail qualification; they are never interpreted as zero.
+- Fairness: completed-dispatch count skew across continuously ready sessions **≤1**.
+- Selection: largest dispatcher concurrency in `{1,2,4}` that passes its same-count run and a
+  **600 s** soak. The 8-meeting run proves overload/cross-session/independent-429 behavior and does
+  not relax normal-load latency.
+
+Local capability inspection found an M3 Ultra with 256 GiB unified memory and usable Torch MPS,
+but no local `vllm` executable/module, no cached MOSS model in the standard locations, and no local
+MOSS endpoint (`127.0.0.1:8000/v1/models` returns 502; LM Studio on 1234 advertises unrelated
+models). Therefore the preregistration is valid, but a real qualifying run is not currently
+available. Raw evidence: `evidence/phase1/t3/iteration-3-gate-preregistration.txt`.
+
 ## Ranked candidates
 
-1. Predeclare numeric latency and memory gates, then extend the standing bench with the smallest
-   production-path probe needed to measure them.
-2. Smallest evidence-backed vertical slice toward the bounded dispatcher.
+1. Add the smallest hash-pinned concurrency runner to the standing bench and measure dispatcher
+   fairness, per-session queue depth, independent 429 behavior, and cross-session markers with a
+   controlled decoder. Label the result non-gating unless a real local MOSS/vLLM path becomes
+   available.
+2. Establish a real local MOSS/vLLM measurement path; without local vLLM active/queued metrics, G4
+   cannot qualify. Do not substitute the read-only remote service.
+3. Smallest evidence-backed vertical slice toward the bounded dispatcher, only after prototype
+   measurements choose the bound.

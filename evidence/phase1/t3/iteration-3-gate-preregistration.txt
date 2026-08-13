@@ -1,0 +1,71 @@
+Iteration 3 — gate preregistration and local capability inspection
+Date: 2026-08-13
+
+$ uname -m
+arm64
+
+$ sysctl -n hw.memsize
+274877906944
+
+$ system_profiler SPDisplaysDataType | sed -n '1,8p'
+Graphics/Displays:
+
+    Apple M3 Ultra:
+
+      Chipset Model: Apple M3 Ultra
+      Type: GPU
+      Bus: Built-In
+      Total Number of Cores: 60
+
+$ python3 - <<'PY'
+import importlib.util
+import platform
+import torch
+print("platform_machine", platform.machine())
+print("torch_version", torch.__version__)
+print("mps_built", torch.backends.mps.is_built())
+print("mps_available", torch.backends.mps.is_available())
+print("vllm_module", bool(importlib.util.find_spec("vllm")))
+PY
+platform_machine arm64
+torch_version 2.10.0
+mps_built True
+mps_available True
+vllm_module False
+
+$ command -v vllm
+[no stdout; exit 1]
+
+$ du -sh "$HOME/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize" 2>/dev/null
+[no stdout; path absent]
+
+$ du -sh "$HOME/.local/share/moss-transcribe-diarize/model" 2>/dev/null
+[no stdout; path absent]
+
+$ curl -fsS --max-time 5 http://127.0.0.1:8000/v1/models
+curl: (22) The requested URL returned error: 502
+
+$ curl -fsS --max-time 5 http://127.0.0.1:1234/v1/models | python3 -m json.tool
+{
+    "data": [
+        {
+            "id": "qwen/qwen3.6-35b-a3b",
+            "object": "model",
+            "owned_by": "organization_owner"
+        },
+        {
+            "id": "qwen3-embedding-4b",
+            "object": "model",
+            "owned_by": "organization_owner"
+        }
+    ],
+    "object": "list"
+}
+
+$ python3 prototypes/streaming-diarization/concurrency/validate_preregistration.py | tail -2
+sha256=b6fbe1f5dc60c0f0a20128026eefa8bc369a456927fe267cf94aa2a8b2865d52
+PASS: concurrency gates and measurement contract are frozen before measurement
+
+Capability verdict: this host can run Torch on MPS, but no local MOSS model or vLLM runtime/metrics
+endpoint is currently available. No real dispatcher measurement was attempted. Stub evidence remains
+non-gating by contract.
