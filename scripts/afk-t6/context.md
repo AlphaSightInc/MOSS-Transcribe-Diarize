@@ -1,16 +1,16 @@
 # Context — Phase 1 ticket #6
 
-Iteration 10. Acceptance criteria and a reproducible local validation baseline are captured. The
+Iteration 11. Acceptance criteria and a reproducible local validation baseline are captured. The
 provider exposes immutable, encoder-pinned observations from the completed album. The measured
 single-process writer runs after exact clean-stop accounting and never on abort. Live deployment
 wiring now makes the journal default-on at an operator-configurable path outside the checkout;
 raw-audio retention remains default-off. ADR-0003 now states the derived-vector distinction and
 the explicit consent/right-to-remove gate. A configured production factory has also been exercised
 end to end from an accepted audio frame through the real provider/coordinator/runtime path to the
-complete journal row. The two ticket-local tests exposed by the first post-implementation full gate
-now assert the concrete journal dependency and required environment-to-CLI path. Their focused and
-ticket regression gates pass; the merged full gate still needs to be rerun and `dev` was not
-advanced.
+complete journal row. After merging current `dev`, both Swift products build and all 871 in-scope
+tests plus 373 subtests pass. The only full-suite failure is the established out-of-ticket Launch
+Services lifecycle node. Raw merged evidence is committed locally; `dev` publication, private
+branch push, and the criterion-by-criterion issue comment remain.
 
 ## Where things stand
 
@@ -146,12 +146,18 @@ bash -n scripts/afk-t6/ralph-afk.sh
   subtests. Raw JUnit: `evidence/phase1/t6/iteration-10-stale-contract-fixtures.xml` and
   `evidence/phase1/t6/iteration-10-ticket-regression.xml`. This is not a replacement for the merged
   full gate.
+- Current-dev merged gate: GREEN for ticket #6. The shared lock serialized merge of `dev` at
+  `9a1d70e`; both Swift products built; pytest reached 871 passed / 4 skipped / 373 subtests with
+  only the established out-of-ticket Launch Services failure; and the live route/auth/mixer subset
+  passed 65 tests / 351 subtests. Raw JUnit:
+  `evidence/phase1/t6/iteration-11-full-suite-after-merge.xml` and
+  `evidence/phase1/t6/iteration-11-live-subset-after-merge.xml`. Loop syntax and `git diff --check`
+  also pass.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Reacquire the shared merge lock, merge current `dev`, and rerun the full validation set. Preserve
-   the known out-of-ticket Launch Services failure separately.
-2. If the merged result is green under the ticket gate, fast-forward `dev`, push this branch to
-   `private`, and comment criterion-by-criterion evidence plus explicit test limitations on issue
-   #6. Do not close the issue.
+1. Reacquire the shared merge lock. If `dev` is still an ancestor of the validated commit,
+   fast-forward `dev`; otherwise merge current `dev` and rerun the full gate first. Push this branch
+   to `private`, then comment criterion-by-criterion evidence plus explicit test limitations on
+   issue #6. Do not close the issue.
