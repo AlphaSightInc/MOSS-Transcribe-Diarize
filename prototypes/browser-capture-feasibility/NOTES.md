@@ -55,10 +55,11 @@ pick up `/reset`).
 
 ## Contract caveat vs the real server
 
-The stub accepts prototype-only extra fields (`client_visibility`, `client_wall_ms`,
-`quanta`). The deployed v2 contract rejects unknown keys — strip extras before pointing
-this page at the real service, and read `frame_samples`/`sample_rate` from
-`/api/live/descriptor` instead of hardcoding 8000/16000 (they are deploy-manifest values).
+The page now reads `frame_samples`, `sample_rate`, and `bounds.max_frame_samples` from
+`/api/live/descriptor` before creating its capture context. The stub deliberately advertises
+3,200-sample frames so a browser run exposes either historical 8,000/16,000-frame fallback. It still
+accepts prototype-only extra fields (`client_visibility`, `client_wall_ms`, `quanta`) for
+measurement, so it is not yet a production-service harness.
 
 ## Safari attended diagnostic — 2026-08-09
 

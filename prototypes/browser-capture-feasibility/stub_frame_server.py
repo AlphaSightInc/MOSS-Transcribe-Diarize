@@ -22,6 +22,19 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PORT = 8899
+SAMPLE_RATE = 16_000
+# Deliberately differs from the historical 8k/16k frame sizes so browser
+# evidence fails if the page falls back to either old frame-size constant.
+FRAME_SAMPLES = 3_200
+MAX_FRAME_SAMPLES = 6_400
+DESCRIPTOR = {
+    "descriptor": {
+        "sample_rate": SAMPLE_RATE,
+        "frame_samples": FRAME_SAMPLES,
+        "bounds": {"max_frame_samples": MAX_FRAME_SAMPLES},
+    },
+    "negotiation": {"selected_protocol_version": 2},
+}
 TONE_PAGE = """<!doctype html><meta charset=utf-8><title>997 Hz tone</title>
 <body style="font:16px system-ui;padding:2rem">
 <h1>997 Hz test tone</h1><button id=b style="font-size:1.5rem">Play tone</button>
@@ -91,8 +104,8 @@ def ingest_frame(body: dict) -> tuple[int, dict]:
         st["pcm_min"] = min(st["pcm_min"], min(ints)) if ints else st["pcm_min"]
         st["pcm_max"] = max(st["pcm_max"], max(ints)) if ints else st["pcm_max"]
         st["rms"].append(round(rms, 5))
-        st["goertzel_997"].append(round(goertzel_ratio(floats, 997.0, 16000.0), 4))
-        st["goertzel_440"].append(round(goertzel_ratio(floats, 440.0, 16000.0), 4))
+        st["goertzel_997"].append(round(goertzel_ratio(floats, 997.0, SAMPLE_RATE), 4))
+        st["goertzel_440"].append(round(goertzel_ratio(floats, 440.0, SAMPLE_RATE), 4))
         st["ts_ns"].append(int(body.get("capture_timestamp_ns", -1)))
         st["arrival_wall"].append(time.time())
         st["visibility"].append(body.get("client_visibility", "?"))
@@ -155,13 +168,12 @@ def analyze() -> dict:
     checks["both_lanes_present"] = bool(sys_l and mic_l)
     if sys_l and mic_l:
         checks["no_seq_gaps"] = sys_l["seq_gaps"] == 0 and mic_l["seq_gaps"] == 0
-        checks["all_frames_8000_at_16k"] = (
-            set(sys_l["sample_counts"]) == {"8000"} == set(mic_l["sample_counts"])
-            and set(sys_l["sample_rates"]) == {"16000"} == set(mic_l["sample_rates"])
+        checks["all_frames_match_descriptor"] = (
+            set(sys_l["sample_counts"]) == {str(FRAME_SAMPLES)} == set(mic_l["sample_counts"])
+            and set(sys_l["sample_rates"]) == {str(SAMPLE_RATE)} == set(mic_l["sample_rates"])
         )
-        # 997 Hz sits half-bin off a 2 Hz grid (8000 samples @ 16 kHz), so worst-case
-        # scalloping loss puts its single-bin Goertzel ratio near 0.4; use a dominance
-        # test rather than an absolute-purity threshold.
+        # A descriptor-selected frame can put 997 Hz between DFT bins, so use a
+        # dominance test rather than an absolute-purity threshold.
         checks["system_is_997hz"] = (sys_l["goertzel_997_mean"] or 0) > 0.25 and (
             (sys_l["goertzel_997_mean"] or 0) > 10 * (sys_l["goertzel_440_mean"] or 0)
         )
@@ -171,8 +183,9 @@ def analyze() -> dict:
         checks["sine_amplitude_sane"] = all(
             l["rms_mean"] and 0.25 < l["rms_mean"] < 0.45 for l in (sys_l, mic_l)
         )
-        checks["capture_clock_exact_500ms"] = all(
-            l["ts_delta_ns_min_max"] == [500_000_000, 500_000_000] for l in (sys_l, mic_l)
+        expected_delta_ns = FRAME_SAMPLES * 1_000_000_000 // SAMPLE_RATE
+        checks["capture_clock_matches_descriptor"] = all(
+            l["ts_delta_ns_min_max"] == [expected_delta_ns, expected_delta_ns] for l in (sys_l, mic_l)
         )
         hidden = [l["arrival_cadence_by_visibility"].get("hidden") for l in (sys_l, mic_l)]
         checks["hidden_tab_cadence_ok"] = all(h and h["p95_ms"] < 1500 for h in hidden) if all(hidden) else "no hidden phase measured"
@@ -202,6 +215,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, TONE_PAGE.encode(), "text/html; charset=utf-8")
         elif path == "/verdict":
             self._send(200, json.dumps(analyze(), indent=2).encode(), "application/json")
+        elif path == "/api/live/descriptor":
+            self._send(200, json.dumps(DESCRIPTOR).encode(), "application/json")
         else:
             self._send(404, b"{}", "application/json")
 

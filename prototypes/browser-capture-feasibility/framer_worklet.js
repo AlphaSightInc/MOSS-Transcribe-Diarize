@@ -1,5 +1,5 @@
 // PROTOTYPE — throwaway. Lane framer: aggregate 128-sample render quanta into
-// exact 8000-sample mono frames at context rate (16 kHz), per the MOSS v2 contract.
+// descriptor-sized mono frames at the descriptor's context rate, per the MOSS v2 contract.
 // Frames are pushed to the main thread via port messages (no timers involved),
 // so background-tab timer throttling cannot stall the send cadence.
 
@@ -7,10 +7,10 @@ class LaneFramer extends AudioWorkletProcessor {
   constructor(options) {
     super();
     this.lane = options.processorOptions.lane;
-    this.frameSamples = options.processorOptions.frameSamples; // 8000
+    this.frameSamples = options.processorOptions.frameSamples;
     this.buf = new Float32Array(this.frameSamples);
     this.fill = 0;
-    // 8000 samples = 62.5 quanta, so frame boundaries land mid-quantum; deriving
+    // Frame boundaries may land mid-quantum, so deriving
     // start times from currentFrame at fill time would jitter by up to 128
     // samples. Anchor once at the first delivered sample and advance
     // arithmetically instead — exact and monotonic.

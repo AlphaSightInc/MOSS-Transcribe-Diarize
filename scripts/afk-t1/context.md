@@ -1,6 +1,7 @@
 # Context — Phase 1 ticket #1
 
-Iteration 2. Validation baseline established; no product behavior measured yet.
+Iteration 3. Descriptor-driven browser framing is measured against the stub; no real-service or
+model behavior measured yet.
 
 ## Where things stand
 
@@ -10,6 +11,12 @@ Iteration 2. Validation baseline established; no product behavior measured yet.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
 - This worktree has no `.venv`; pyenv Python 3.12.10 + pytest 9.0.2 is the working runner.
 - Focused live API/auth/mixer baseline is green: 65 passed + 351 subtests.
+- The kept browser harness fetches `/api/live/descriptor` before creating its `AudioContext`,
+  rejects invalid/non-positive geometry and `frame_samples > bounds.max_frame_samples`, and uses
+  the response for context rate, worklet size, capture timestamps, and frame `sample_rate`.
+- Chrome stub proof with deliberately nonhistorical 3,200-sample frames produced 19 frames/lane,
+  exact 200 ms capture-clock deltas, zero gaps, and matching descriptor geometry. This is contract
+  wiring evidence only; it does not satisfy the real-service acceptance gate.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -57,6 +64,10 @@ Source: live issue body read 2026-08-13. All criteria remain open.
   memory/utilization, and queue depth.
 - [ ] Judge the verdict from raw artifacts, never track presence or a claimed pass.
 
+Criterion 1 implementation status: descriptor-driven geometry is complete in the kept harness,
+but the acceptance item stays open until the same behavior is evidenced against a locally-run real
+service. Raw stub-only evidence: `evidence/phase1/t1/iteration-03-descriptor-geometry.json`.
+
 ### Binding proof interpretation
 
 - PRD + charter supersede the issue body's older remote/display procedure without deleting any
@@ -97,6 +108,9 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Smallest vertical slice toward criterion 1: descriptor read with no hardcoded geometry.
-2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
+1. Remove the three prototype telemetry fields from frame bodies and prove the browser sends
+   exactly the nine v2 keys; retain cadence telemetry out-of-band.
+2. Advance the harness from `/frames` to locally-owned real session/lane routes without touching
+   the read-only remote host.
+3. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.
