@@ -99,6 +99,15 @@ route steps; no ticket holds them.
   facts with frame facts and publishes one status line. Trap recorded: heartbeats must be
   worklet-driven, since a backgrounded tab throttles timers to ~1/min and can trip the helper
   lease on a healthy session.
+- [Reference UI control triage — what survives Phase 1](tickets/T-05-reference-ui-control-triage.md) —
+  **Phase 1 pixels = the reference's own right-collapsed state**: three-column grid preserved,
+  `HistoryPanel` column becomes the designed inert 48 px rail, so **no geometry is invented**.
+  Mode control drops to `Live | File`. Mic picker, both mutes' server paths, output volume, native
+  pickers, export-to-folder, `SummaryView` and `LlmSettingsModal` all dropped — but **local mic
+  mute is kept** as `track.enabled=false` (Chrome offers no per-tab mute, so dropping it removes an
+  ability rather than a control). Preflight is a modal reusing `LlmSettingsModal` styling. Trap:
+  dropping the mic picker leaves **no in-app remedy** for a wrong Chrome default, so the preflight
+  status line must name the fix.
 - [Voice-bank persistence](tickets/T-12-voice-bank-persistence-does-not-exist.md) —
   Phase 1 **journals vectors, does not build the bank**: album centroid appended at session end,
   session-keyed (T-01 removed `device_id`), stamped with pinned-embedder identity. Journaling
@@ -153,3 +162,22 @@ not a resumption of this one.
   lanes, so Chrome-only is the correct Phase 1 scope. Revisit only on a WebKit release
   claiming display-audio support.
 - **Multi-process / horizontal scale-out.** Excluded by C4 and by process-local state.
+
+## Implementation tracker
+
+Decision tickets live here in `.wayfinder/`. **Implementation tickets live on a private tracker:**
+<https://github.com/aiSight-us/MOSS-Transcribe-Diarize> (org `aiSight-us`, created 2026-08-13).
+Separate from the product repo because that repo is a fork of the upstream open-source project.
+
+| # | Ticket | Blocked by |
+|---|---|---|
+| 1 | Gate 2 canary: real Chrome audio to diarized transcript in the browser | — |
+| 2 | Shared-token auth mode for remote browsers (single trust domain) | — |
+| 3 | Bounded inference dispatcher for 2–4 concurrent live sessions | — |
+| 4 | Serve the reference frontend shell at `/` with Subtitle Studio at `/studio` | — |
+| 5 | Server-authoritative capture health for browser clients | 1 |
+| 6 | Journal speaker vectors at session end | 1 |
+| 7 | Live diarized transcript renders in the reference transcript pane | 1, 4 |
+
+Not yet written — they need their decision tickets closed first:
+**file mode through the new UI** (needs T-07) and **live transcript export** (needs T-08).
