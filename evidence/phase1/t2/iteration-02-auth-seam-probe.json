@@ -1,0 +1,19 @@
+{
+  "cli_declares_shared_token_flag": false,
+  "create_app_live_auth_parameters": [
+    "live_auth_state_path"
+  ],
+  "current_unpaired_configured_bearer": {
+    "exception": "LiveAccessUnauthorized",
+    "message": "invalid bearer authority."
+  },
+  "deployment_declares_shared_token_key": false,
+  "focused_existing_gate": "14 passed, 26 subtests passed",
+  "question": "Where is the smallest configuration seam for shared-token session creation?",
+  "registry_constructor_parameters": [
+    "state_path",
+    "server_cert_sha256",
+    "secret_factory"
+  ],
+  "verdict": "registry construction is the authority seam; CLI, create_app, and deployment config need forwarding"
+}

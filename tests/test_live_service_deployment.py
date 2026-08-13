@@ -65,6 +65,7 @@ LIVE_FLAGS = (
     "--live",
     "--live-provider-manifest",
     "--live-auth-state",
+    "--live-shared-token-file",
     "--live-tls-certfile",
     "--live-tls-keyfile",
     "--live-helper-lease-seconds",
@@ -167,6 +168,7 @@ def test_live_profile_example_yields_the_complete_tls_invocation(home: Path) -> 
         "--live",
         "--live-provider-manifest", LIVE_ENV_EXAMPLE["MOSS_LIVE_PROVIDER_MANIFEST"],
         "--live-auth-state", LIVE_ENV_EXAMPLE["MOSS_LIVE_AUTH_STATE"],
+        "--live-shared-token-file", LIVE_ENV_EXAMPLE["MOSS_LIVE_SHARED_TOKEN_FILE"],
         "--live-tls-certfile", LIVE_ENV_EXAMPLE["MOSS_LIVE_TLS_CERTFILE"],
         "--live-tls-keyfile", LIVE_ENV_EXAMPLE["MOSS_LIVE_TLS_KEYFILE"],
         "--live-helper-lease-seconds", LIVE_ENV_EXAMPLE["MOSS_LIVE_HELPER_LEASE_SECONDS"],
@@ -176,7 +178,11 @@ def test_live_profile_example_yields_the_complete_tls_invocation(home: Path) -> 
 
 def test_every_live_profile_variable_is_required(home: Path) -> None:
     """Dropping any one live-profile key refuses the start and names the missing key."""
-    required = [key for key in LIVE_ENV_EXAMPLE if key != "MOSS_LIVE_ENABLED"]
+    required = [
+        key
+        for key in LIVE_ENV_EXAMPLE
+        if key not in {"MOSS_LIVE_ENABLED", "MOSS_LIVE_SHARED_TOKEN_FILE"}
+    ]
     assert set(required) == {
         "MOSS_WEB_PORT",
         "MOSS_RUNS_DIR",
@@ -195,6 +201,13 @@ def test_every_live_profile_variable_is_required(home: Path) -> None:
         assert result.stdout == ""
 
 
+def test_live_profile_without_a_shared_token_file_keeps_pairing_mode(home: Path) -> None:
+    env = dict(LIVE_ENV_EXAMPLE)
+    del env["MOSS_LIVE_SHARED_TOKEN_FILE"]
+    argv = argv_of(run_adapter(home, env))
+    assert "--live-shared-token-file" not in argv
+
+
 def test_disabled_live_mode_generates_no_live_flag_whatever_else_is_set(home: Path) -> None:
     """`MOSS_LIVE_ENABLED=0` is the whole switch: no live path can leak into the argv."""
     env = dict(LIVE_ENV_EXAMPLE)
@@ -207,6 +220,7 @@ def test_disabled_live_mode_generates_no_live_flag_whatever_else_is_set(home: Pa
         LIVE_ENV_EXAMPLE["MOSS_LIVE_AUTH_STATE"],
         LIVE_ENV_EXAMPLE["MOSS_LIVE_PROVIDER_MANIFEST"],
         LIVE_ENV_EXAMPLE["MOSS_LIVE_VECTOR_JOURNAL_PATH"],
+        LIVE_ENV_EXAMPLE["MOSS_LIVE_SHARED_TOKEN_FILE"],
     ):
         assert value not in argv
 
@@ -274,6 +288,7 @@ def test_live_profile_example_is_a_template_not_a_host_file() -> None:
     for key in (
         "MOSS_LIVE_PROVIDER_MANIFEST",
         "MOSS_LIVE_AUTH_STATE",
+        "MOSS_LIVE_SHARED_TOKEN_FILE",
         "MOSS_LIVE_TLS_CERTFILE",
         "MOSS_LIVE_TLS_KEYFILE",
     ):
@@ -393,6 +408,50 @@ def cli_args(monkeypatch: pytest.MonkeyPatch, *argv: str):
 
     monkeypatch.setattr("sys.argv", ["mtd-subtitle-web", *argv])
     return web_cli, web_cli.parse_args()
+
+
+def test_the_cli_reads_the_shared_token_from_one_line_only(
+    monkeypatch, tmp_path: Path
+) -> None:
+    token_file = tmp_path / "shared-token"
+    token_file.write_text("process-only-secret\n", encoding="utf-8")
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--live-shared-token-file", str(token_file),
+    )
+    assert web_cli._live_shared_token(args) == "process-only-secret"
+
+
+def test_the_cli_keeps_pairing_mode_when_no_shared_token_file_is_declared(monkeypatch) -> None:
+    web_cli, args = cli_args(monkeypatch, "--live")
+    assert web_cli._live_shared_token(args) is None
+
+
+@pytest.mark.parametrize("contents", ["", "first\nsecond\n"])
+def test_the_cli_refuses_an_empty_or_multiline_shared_token_file(
+    monkeypatch, tmp_path: Path, contents: str
+) -> None:
+    token_file = tmp_path / "shared-token"
+    token_file.write_text(contents, encoding="utf-8")
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--live-shared-token-file", str(token_file),
+    )
+    with pytest.raises(SystemExit, match="exactly one non-empty line"):
+        web_cli._live_shared_token(args)
+
+
+def test_the_cli_refuses_a_shared_token_file_outside_live_mode(
+    monkeypatch, tmp_path: Path
+) -> None:
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live-shared-token-file", str(tmp_path / "shared-token"),
+    )
+    with pytest.raises(SystemExit, match="requires --live"):
+        web_cli._live_shared_token(args)
 
 
 def test_the_cli_builds_no_store_when_no_root_is_declared(monkeypatch) -> None:

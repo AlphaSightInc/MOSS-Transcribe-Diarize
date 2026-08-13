@@ -535,6 +535,7 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     monkeypatch.setenv("MOSS_LIVE_ENABLED", "1")
     monkeypatch.setenv("MOSS_LIVE_PROVIDER_MANIFEST", "/env/live-provider.json")
     monkeypatch.setenv("MOSS_LIVE_AUTH_STATE", "/env/live-auth.json")
+    monkeypatch.setenv("MOSS_LIVE_SHARED_TOKEN_FILE", "/env/shared-token")
     monkeypatch.setenv("MOSS_LIVE_TLS_CERTFILE", "/env/live.crt")
     monkeypatch.setenv("MOSS_LIVE_TLS_KEYFILE", "/env/live.key")
     monkeypatch.setenv("MOSS_LIVE_HELPER_LEASE_SECONDS", "30")
@@ -548,6 +549,7 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert disabled.live is False
     assert disabled.live_provider_manifest is None
     assert disabled.live_auth_state is None
+    assert disabled.live_shared_token_file is None
     assert disabled.live_tls_certfile is None
     assert disabled.live_tls_keyfile is None
     assert disabled.live_helper_lease_seconds is None
@@ -567,6 +569,8 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
             "/cli/live-provider.json",
             "--live-auth-state",
             "/cli/live-auth.json",
+            "--live-shared-token-file",
+            "/cli/shared-token",
             "--live-tls-certfile",
             "/cli/live.crt",
             "--live-tls-keyfile",
@@ -583,6 +587,7 @@ def test_web_cli_enablement_uses_explicit_cli_arguments_only(monkeypatch):
     assert enabled.live is True
     assert enabled.live_provider_manifest == "/cli/live-provider.json"
     assert enabled.live_auth_state == "/cli/live-auth.json"
+    assert enabled.live_shared_token_file == "/cli/shared-token"
     assert enabled.live_tls_certfile == "/cli/live.crt"
     assert enabled.live_tls_keyfile == "/cli/live.key"
     assert enabled.live_helper_lease_seconds == 30.0
@@ -596,6 +601,8 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
     keyfile = tmp_path / "live.key"
     keyfile.write_text("private key placeholder", encoding="utf-8")
     state = tmp_path / "live-auth.json"
+    shared_token_file = tmp_path / "shared-token"
+    shared_token_file.write_text("process-only-secret\n", encoding="utf-8")
     calls = {}
 
     def create_app(**kwargs):
@@ -615,6 +622,8 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
             str(tmp_path / "live-provider.json"),
             "--live-auth-state",
             str(state),
+            "--live-shared-token-file",
+            str(shared_token_file),
             "--live-tls-certfile",
             str(certfile),
             "--live-tls-keyfile",
@@ -631,6 +640,7 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
 
     assert calls["create_app"]["live_runtime_factory"] == "runtime-factory"
     assert calls["create_app"]["live_auth_state_path"] == state
+    assert calls["create_app"]["live_shared_token"] == "process-only-secret"
     assert calls["create_app"]["live_server_cert_sha256"] == hashlib.sha256(b"configured leaf cert").hexdigest()
     assert calls["create_app"]["live_helper_lease_seconds"] == 30.0
     assert calls["uvicorn"] == (
@@ -798,6 +808,7 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "MOSS_LIVE_ENABLED": "1",
         "MOSS_LIVE_PROVIDER_MANIFEST": "/provider/live-provider.json",
         "MOSS_LIVE_AUTH_STATE": "/provider/live-auth.json",
+        "MOSS_LIVE_SHARED_TOKEN_FILE": "/provider/shared-token",
         "MOSS_LIVE_TLS_CERTFILE": "/provider/live.crt",
         "MOSS_LIVE_TLS_KEYFILE": "/provider/live.key",
         "MOSS_LIVE_HELPER_LEASE_SECONDS": "30",
@@ -829,6 +840,8 @@ def test_start_web_is_the_single_environment_adapter(tmp_path):
         "/provider/live-provider.json",
         "--live-auth-state",
         "/provider/live-auth.json",
+        "--live-shared-token-file",
+        "/provider/shared-token",
         "--live-tls-certfile",
         "/provider/live.crt",
         "--live-tls-keyfile",

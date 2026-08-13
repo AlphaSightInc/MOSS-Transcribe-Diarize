@@ -1,0 +1,26 @@
+M01: killed=True gates=[('U', 1)]
+M02: killed=True gates=[('U', 1)]
+M03: killed=True gates=[('U', 1)]
+M04: killed=True gates=[('U', 0), ('A', 1)]
+M04b: killed=True gates=[('U', 0), ('A', 1)]
+M05: killed=True gates=[('U', 1)]
+M06: killed=True gates=[('U', 1)]
+M07: killed=True gates=[('U', 1)]
+M08: killed=True gates=[('U', 1)]
+M09: killed=True gates=[('U', 1)]
+M09b: killed=True gates=[('U', 1)]
+M10: killed=True gates=[('U', 1)]
+M11: killed=True gates=[('U', 1)]
+M12: killed=True gates=[('U', 0), ('A', 1)]
+M12b: killed=True gates=[('U', 0), ('A', 1)]
+M13: killed=True gates=[('U', 1)]
+M14: killed=True gates=[('U', 1)]
+M15: killed=True gates=[('U', 1)]
+M16: killed=True gates=[('U', 1)]
+Traceback (most recent call last):
+  File "/tmp/A-025-mut/mutation-harness.py", line 547, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/A-025-mut/mutation-harness.py", line 507, in main
+    raise RuntimeError(f"{row_id}: anchor not unique in {rel} (count={text.count(old)})")
+RuntimeError: M17: anchor not unique in moss_transcribe_diarize/app/live_auth.py (count=0)

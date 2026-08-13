@@ -46,6 +46,10 @@ def parse_args() -> argparse.Namespace:
         help="Private live access registry state file required when --live is enabled.",
     )
     parser.add_argument(
+        "--live-shared-token-file",
+        help="Optional one-line shared bearer token file for live browser access.",
+    )
+    parser.add_argument(
         "--live-tls-certfile",
         help="TLS certificate file required when --live is enabled.",
     )
@@ -209,6 +213,23 @@ def _live_startup_config(args: argparse.Namespace) -> dict[str, object]:
     }
 
 
+def _live_shared_token(args: argparse.Namespace) -> str | None:
+    if not args.live_shared_token_file:
+        return None
+    if not args.live:
+        raise SystemExit("--live-shared-token-file requires --live.")
+    token_file = Path(args.live_shared_token_file).expanduser()
+    try:
+        lines = token_file.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise SystemExit(
+            f"--live-shared-token-file could not be read: {token_file}: {exc.strerror}"
+        ) from exc
+    if len(lines) != 1 or not lines[0]:
+        raise SystemExit("--live-shared-token-file must contain exactly one non-empty line.")
+    return lines[0]
+
+
 def _live_tape_store(args: argparse.Namespace):
     """Build the retention store this deployment declared, or None (ADR-0003 D2).
 
@@ -284,6 +305,7 @@ def main() -> None:
     args = parse_args()
     live_runtime_factory = _live_runtime_factory(args)
     live_startup = _live_startup_config(args)
+    live_shared_token = _live_shared_token(args)
     live_tape_store = _live_tape_store(args)
     app = create_app(
         model_path=Path(args.model).expanduser(),
@@ -307,6 +329,7 @@ def main() -> None:
         live_runtime_factory=live_runtime_factory,
         live_auth_state_path=live_startup["live_auth_state_path"],
         live_server_cert_sha256=live_startup["live_server_cert_sha256"],
+        live_shared_token=live_shared_token,
         live_helper_lease_seconds=live_startup["live_helper_lease_seconds"],
         live_tape_store=live_tape_store,
     )

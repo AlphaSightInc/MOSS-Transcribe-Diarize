@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-032-live-auth/repro.py", line 291, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/0.AISIGHT_LOOP/moss-transcribe-diarize/spikes/idea-032-live-auth/repro.py", line 119, in main
+    app = create_app(**candidate_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/A-025-rr/repo/moss_transcribe_diarize/app/server.py", line 106, in create_app
+    raise ValueError("live_helper_lease_seconds is required when live mode is enabled.")
+ValueError: live_helper_lease_seconds is required when live mode is enabled.

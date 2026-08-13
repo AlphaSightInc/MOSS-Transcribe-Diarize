@@ -1,0 +1,9 @@
+control U: exit=0
+control A: exit=0
+control C: exit=0
+control B: exit=0
+control S: exit=0
+control L3: exit=0
+control R: exit=1
+control D: exit=0
+CONTROL FAILED — battery aborted
