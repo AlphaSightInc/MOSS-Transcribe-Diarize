@@ -1,7 +1,7 @@
 # Context — Phase 1 ticket #3
 
-Iteration 1. The live issue acceptance contract is captured below. Nothing has been measured yet
-by this loop.
+Iteration 2. The live issue acceptance contract and a working validation baseline are captured
+below. Dispatcher latency and memory have not been measured yet.
 
 ## Where things stand
 
@@ -58,17 +58,34 @@ started service.
 
 ## Validation commands
 
-Establish these in iteration 1 and record what each actually covers:
+This clean worktree has no `.venv`; use the repo-supported pyenv Python 3.12.10 environment where
+pytest 9.0.2 and project dependencies are already importable. Build both Swift products before
+the broad Python suite because integration and packaging nodes deliberately reuse them.
 
 ```bash
-.venv/bin/pytest -q                      # full suite; baseline ~418 passed / 2 skipped
-.venv/bin/pytest -q tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py
+swift build --package-path macos/MOSSCapture --product mtd-capture
+swift build --package-path macos/MOSSCapture --product MOSSCaptureApp
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest \
+  tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py \
+  -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests -q -p no:cacheprovider -rs \
+  --ignore=tests/test_macos_uds_tracer.py
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_macos_uds_tracer.py \
+  -q -p no:cacheprovider -rs
 bash -n scripts/afk-t3/ralph-afk.sh
 ```
 
+Iteration-2 baseline: focused ticket-adjacent suite **65 passed + 351 subtests**; broad suite
+excluding only the separately-run lifecycle tracer **857 passed / 4 skipped + 373 subtests**;
+shell syntax and both Swift builds pass. The lifecycle tracer is a mandatory unresolved baseline
+gate: isolated execution reproducibly yields **1 failed / 5 passed** because
+`NSRunningApplication(processIdentifier:)` cannot resolve the just-launched lab app after its UDS
+status reply. This is outside ticket #3, has not been fixed or ignored as a completion gate, and
+prevents claiming the full suite green. Raw command evidence:
+`evidence/phase1/t3/iteration-2-validation-baseline.txt`.
+
 ## Ranked candidates
 
-1. Establish and record a working validation command set.
-2. Predeclare numeric latency and memory gates, then extend the standing bench with the smallest
+1. Predeclare numeric latency and memory gates, then extend the standing bench with the smallest
    production-path probe needed to measure them.
-3. Smallest evidence-backed vertical slice toward the bounded dispatcher.
+2. Smallest evidence-backed vertical slice toward the bounded dispatcher.
