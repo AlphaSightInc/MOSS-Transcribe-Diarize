@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #2
 
-Iteration 3. Registry + `create_app` shared-token slice implemented and focused green.
+Iteration 4. Shared-token authority now reaches the service through a path-only deployment config.
 
 ## Where things stand
 
@@ -12,8 +12,9 @@ Iteration 3. Registry + `create_app` shared-token slice implemented and focused 
 - `LiveAccessRegistry(shared_token=...)` installs one process-only capture principal in the existing
   device table. `authorize`, ownership checks, session binding, and route authority stay unchanged;
   persistence omits only that configured principal.
-- `create_app(live_shared_token=...)` forwards the in-memory value when it constructs the registry.
-  CLI and deployment secret-file forwarding do not exist yet.
+- `ops/moss-live.env.example` declares only a shared-token file path for the host-local profile;
+  `ops/start-web.sh` forwards only that path. The CLI reads exactly one non-empty line into memory
+  and passes it to `create_app`. Omitting the path keeps the existing pairing mode.
 
 ## Acceptance checklist — issue #2 (verbatim meaning, no extra gates)
 
@@ -84,7 +85,7 @@ Iteration-1 baseline:
 
 ## Iteration-2 auth seam audit
 
-- Current gap, measured: an unpaired bearer is rejected as `LiveAccessUnauthorized: invalid bearer
+- Gap measured at iteration 2: an unpaired bearer was rejected as `LiveAccessUnauthorized: invalid bearer
   authority`; neither `LiveAccessRegistry`, `create_app`, the CLI, nor the deployment profile has a
   shared-token configuration input. Raw probe:
   `evidence/phase1/t2/iteration-02-auth-seam-probe.json`.
@@ -100,9 +101,6 @@ Iteration-1 baseline:
 - First RED nodes: configured token creates two sessions without `/pairings`; that token can read
   each by its own session id; wrong/missing tokens remain 401; restart without config rejects the
   shared token; the existing pairing-only test stays unmodified and green when config is absent.
-- Deployment forwarding is a later slice: pass an operator-owned secret-file path from
-  `ops/moss-live.env` through `ops/start-web.sh` and the CLI. Do not place the bearer itself in the
-  environment profile, command line, logs, query string, or tracked files.
 
 ## Iteration-3 registry + app slice
 
@@ -112,13 +110,24 @@ Iteration-1 baseline:
   without shared config rejects the shared bearer while the paired credential still works.
 - The existing pairing/auth tests were not rewritten. The full focused live set passes **68 tests
   and 353 subtests**. Raw JUnit: `evidence/phase1/t2/iteration-03-shared-token-slice.xml`.
-- Scope limit: this proves registry and direct `create_app` configuration only. It does not prove
-  CLI/deployment secret-file loading, browser memory-only handling, the mutation battery, or G5.
+- Scope limit at iteration 3: this proved registry and direct `create_app` configuration only.
 - Historical cross-read `403` isolation remains explicitly out of scope as an acceptance gate under
   T-01. Per-session addressing remains tested; charter G5 transcript-routing integrity remains.
 
+## Iteration-4 secret-file deployment slice
+
+- The tracked live profile contains a placeholder path, never a bearer. The adapter puts only that
+  path in argv; the CLI reads the token into process memory and passes it to the existing app seam.
+- A missing declaration produces no shared-token flag and returns `None`, preserving pairing mode.
+  Empty or multiline files and a shared-token file outside `--live` are refused before startup.
+- Deployment/CLI plus focused live validation passes **167 tests and 353 subtests**. Raw JUnit:
+  `evidence/phase1/t2/iteration-04-secret-file-forwarding.xml`.
+- Scope limit: this does not prove browser page-memory handling, the unchanged auth mutation
+  battery, or G5 transcript-routing integrity. Historical cross-read `403` is still not a gate.
+
 ## Ranked candidates
 
-1. Add the secret-file CLI/deployment forwarding slice, with tracked config containing only a path.
-2. Identify and run the existing auth mutation battery unchanged.
+1. Identify and run the existing auth mutation battery unchanged.
+2. Implement and prove browser page-memory-only token handling: no query parameter or
+   `localStorage`, while the token survives for the current page lifetime only.
 3. Add reviewer-facing posture and explicit historical-403 evidence after behavior is proven.

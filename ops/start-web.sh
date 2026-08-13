@@ -75,6 +75,15 @@ case "${MOSS_LIVE_ENABLED:-0}" in
       --live
       --live-provider-manifest "${MOSS_LIVE_PROVIDER_MANIFEST}"
       --live-auth-state "${MOSS_LIVE_AUTH_STATE}"
+    )
+    if [ "${MOSS_LIVE_SHARED_TOKEN_FILE+set}" = set ] && [ -z "${MOSS_LIVE_SHARED_TOKEN_FILE}" ]; then
+      echo "MOSS_LIVE_SHARED_TOKEN_FILE must not be empty; remove the key to keep pairing mode" >&2
+      exit 2
+    fi
+    if [ -n "${MOSS_LIVE_SHARED_TOKEN_FILE-}" ]; then
+      live_args+=(--live-shared-token-file "${MOSS_LIVE_SHARED_TOKEN_FILE}")
+    fi
+    live_args+=(
       --live-tls-certfile "${MOSS_LIVE_TLS_CERTFILE}"
       --live-tls-keyfile "${MOSS_LIVE_TLS_KEYFILE}"
       --live-helper-lease-seconds "${MOSS_LIVE_HELPER_LEASE_SECONDS}"

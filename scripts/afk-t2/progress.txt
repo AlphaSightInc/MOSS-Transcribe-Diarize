@@ -40,3 +40,16 @@ Iteration 3 — registry + `create_app` shared-token slice
   config removal revoke it while paired credentials still survive. Historical cross-read 403 is
   not an acceptance gate; G5 transcript-routing integrity remains.
 - Next: add secret-file CLI/deployment forwarding; tracked config must contain only the path.
+
+Iteration 4 — secret-file CLI/deployment forwarding
+- Target: highest-ranked candidate 1; carry an operator-owned token-file path through the tracked
+  live profile and adapter, then read the bearer into process memory at the CLI/app seam.
+- Files: `moss_transcribe_diarize/app/web_cli.py`, `ops/{start-web.sh,moss-live.env.example}`,
+  `tests/{test_live_service_deployment.py,test_speaker_identity_provider.py}`,
+  `scripts/afk-t2/{context.md,progress.txt}`, `evidence/phase1/t2/iteration-04-*.xml`.
+- Validation: deployment/CLI plus focused live set PASS: 167 tests, 353 subtests; raw JUnit
+  `iteration-04-secret-file-forwarding.xml`; both shell syntax checks and `git diff --check` PASS.
+- Learned: argv and the tracked profile need only the path; one exact non-empty line can enter
+  process memory at startup. Omitting the path produces `None` and keeps pairing mode unchanged.
+  Historical cross-read 403 remains explicitly not an acceptance gate; G5 routing still applies.
+- Next: identify and run the existing auth mutation battery unchanged.
