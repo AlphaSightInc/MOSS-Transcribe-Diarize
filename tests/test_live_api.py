@@ -307,6 +307,29 @@ class LiveApiTest(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "live_helper_lease_seconds must be positive"):
                         create_app(**required, live_helper_lease_seconds=value)
 
+    def test_configured_shared_token_creates_a_session_without_pairing(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                live_shared_token="configured-token",
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = AuthorizedLiveClient(app, "configured-token")
+
+            created = client.post("/api/live/sessions")
+
+            self.assertEqual(created.status_code, 200)
+            session_id = created.json()["id"]
+            self.assertEqual(
+                client.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
+                200,
+            )
+
     def test_forwarding_headers_cannot_grant_loopback_admin_authority(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app

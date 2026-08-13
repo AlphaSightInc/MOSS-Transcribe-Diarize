@@ -26,3 +26,17 @@ Iteration 2 — shared-token configuration-seam audit
 - Next: RED/GREEN the registry + `create_app` slice: no-pairing create, two individually addressed
   sessions readable by the shared principal, wrong/missing bearer refusal, config-removal restart,
   and unchanged pairing-mode behavior.
+
+Iteration 3 — registry + `create_app` shared-token slice
+- Target: highest-ranked candidate 1; add one process-only configured principal while reusing the
+  existing capture authority, ownership, binding, and route checks.
+- Files: `moss_transcribe_diarize/app/live_auth.py`, `moss_transcribe_diarize/app/server.py`,
+  `tests/test_live_auth.py`, `tests/test_live_api.py`, `scripts/afk-t2/{context.md,progress.txt}`,
+  `evidence/phase1/t2/iteration-03-shared-token-slice.xml`.
+- Validation: full focused live set PASS: 68 tests, 353 subtests; raw JUnit at the evidence path
+  above; loop launcher syntax and `git diff --check` PASS.
+- Learned: inserting the configured principal into the existing device table preserves authority
+  behavior without route branches; excluding that one in-memory object from persistence makes
+  config removal revoke it while paired credentials still survive. Historical cross-read 403 is
+  not an acceptance gate; G5 transcript-routing integrity remains.
+- Next: add secret-file CLI/deployment forwarding; tracked config must contain only the path.

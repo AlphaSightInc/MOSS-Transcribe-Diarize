@@ -50,6 +50,7 @@ def create_app(
     live_runtime_factory: Callable[[], LiveServiceRuntime] | None = None,
     live_auth_state_path: str | Path | None = None,
     live_server_cert_sha256: str | None = None,
+    live_shared_token: str | None = None,
     live_helper_lease_seconds: float | None = None,
     live_access_registry: LiveAccessRegistry | None = None,
     # ADR-0003 D2: retention is opt-in, so the store arrives already declared or not at
@@ -111,6 +112,7 @@ def create_app(
             live_access_registry = LiveAccessRegistry(
                 state_path=live_auth_state_path,
                 server_cert_sha256=live_server_cert_sha256,
+                shared_token=live_shared_token,
             )
         live_runtime = live_runtime_factory()
         app.state.live_runtime = live_runtime

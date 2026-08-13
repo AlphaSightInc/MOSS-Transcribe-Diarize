@@ -14,6 +14,7 @@ PAIRING_TTL_SECONDS = 300
 VIEW_ABSOLUTE_CAP_SECONDS = 12 * 60 * 60
 PAIRING_PAYLOAD_PREFIX = "mtd1"
 SECRET_BYTES = 32
+_SHARED_TOKEN_DEVICE_ID = "shared-token"
 
 CAPTURE_ACTIONS = frozenset({"create", "frame", "heartbeat", "snapshot", "events", "stop", "abort"})
 VIEW_ACTIONS = frozenset({"snapshot", "events", "stop", "abort"})
@@ -164,6 +165,7 @@ class LiveAccessRegistry:
         state_path: str | Path,
         server_cert_sha256: str,
         secret_factory: SecretFactory | None = None,
+        shared_token: str | None = None,
     ) -> None:
         self._state_path = Path(state_path)
         self._server_cert_sha256 = _normalize_cert_sha256(server_cert_sha256)
@@ -173,6 +175,17 @@ class LiveAccessRegistry:
         self._sessions: dict[str, _SessionState] = {}
         self._session_status: SessionStatusResolver | None = None
         self._load()
+        self._shared_capture = (
+            _DeviceState(
+                device_id=_SHARED_TOKEN_DEVICE_ID,
+                token_digest=_digest(shared_token),
+                paired_at=None,
+            )
+            if shared_token is not None
+            else None
+        )
+        if self._shared_capture is not None:
+            self._devices[self._shared_capture.device_id] = self._shared_capture
 
     def bind_session_lifecycle(self, session_status: SessionStatusResolver) -> None:
         """Wire the live session lifecycle that view authority is derived from.
@@ -417,6 +430,7 @@ class LiveAccessRegistry:
                     "revoked_at": device.revoked_at,
                 }
                 for device_id, device in sorted(self._devices.items())
+                if device is not self._shared_capture
             },
         }
         tmp_path = self._state_path.with_name(f".{self._state_path.name}.{os.getpid()}.tmp")

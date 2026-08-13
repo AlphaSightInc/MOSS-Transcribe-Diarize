@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #2
 
-Iteration 2. Configuration seam audited; smallest test-first backend slice identified.
+Iteration 3. Registry + `create_app` shared-token slice implemented and focused green.
 
 ## Where things stand
 
@@ -9,6 +9,11 @@ Iteration 2. Configuration seam audited; smallest test-first backend slice ident
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
 - Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
+- `LiveAccessRegistry(shared_token=...)` installs one process-only capture principal in the existing
+  device table. `authorize`, ownership checks, session binding, and route authority stay unchanged;
+  persistence omits only that configured principal.
+- `create_app(live_shared_token=...)` forwards the in-memory value when it constructs the registry.
+  CLI and deployment secret-file forwarding do not exist yet.
 
 ## Acceptance checklist — issue #2 (verbatim meaning, no extra gates)
 
@@ -99,10 +104,21 @@ Iteration-1 baseline:
   `ops/moss-live.env` through `ops/start-web.sh` and the CLI. Do not place the bearer itself in the
   environment profile, command line, logs, query string, or tracked files.
 
+## Iteration-3 registry + app slice
+
+- Shared config now admits a fresh bearer without a pairing exchange. The same principal creates
+  and addresses two distinct server-issued session ids; wrong and missing bearers remain 401.
+- The configured principal is memory-only: after a normal pairing forces state persistence, restart
+  without shared config rejects the shared bearer while the paired credential still works.
+- The existing pairing/auth tests were not rewritten. The full focused live set passes **68 tests
+  and 353 subtests**. Raw JUnit: `evidence/phase1/t2/iteration-03-shared-token-slice.xml`.
+- Scope limit: this proves registry and direct `create_app` configuration only. It does not prove
+  CLI/deployment secret-file loading, browser memory-only handling, the mutation battery, or G5.
+- Historical cross-read `403` isolation remains explicitly out of scope as an acceptance gate under
+  T-01. Per-session addressing remains tested; charter G5 transcript-routing integrity remains.
+
 ## Ranked candidates
 
-1. Implement the RED/GREEN registry + `create_app` slice above without changing pairing-mode
-   behavior or branching route authority logic.
-2. Add the secret-file CLI/deployment forwarding slice, with tracked config containing only a path.
-3. Identify and run the existing auth mutation battery unchanged.
-4. Add reviewer-facing posture and explicit historical-403 evidence after behavior is proven.
+1. Add the secret-file CLI/deployment forwarding slice, with tracked config containing only a path.
+2. Identify and run the existing auth mutation battery unchanged.
+3. Add reviewer-facing posture and explicit historical-403 evidence after behavior is proven.

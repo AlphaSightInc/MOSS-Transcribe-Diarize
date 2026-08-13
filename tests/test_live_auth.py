@@ -53,6 +53,46 @@ class ScriptedSessionLifecycle:
 
 
 class LiveAccessRegistryTest(unittest.TestCase):
+    def test_configured_shared_token_uses_capture_authority_for_each_session(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            registry, _lifecycle = self._live_registry(tmpdir, shared_token="configured-token")
+
+            owner = registry.authorize(LAN_TLS, "configured-token", "create", None, now=1.0)
+            self.assertIsInstance(owner.principal, CapturePrincipal)
+            registry.bind_session(owner.principal, "session-1", now=2.0)
+            registry.bind_session(owner.principal, "session-2", now=3.0)
+
+            for session_id in ("session-1", "session-2"):
+                with self.subTest(session_id=session_id):
+                    decision = registry.authorize(
+                        LAN_TLS,
+                        "configured-token",
+                        "snapshot",
+                        session_id,
+                        now=4.0,
+                    )
+                    self.assertEqual(decision.session_id, session_id)
+                    self.assertEqual(decision.principal, owner.principal)
+
+            with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
+                registry.authorize(LAN_TLS, "wrong", "snapshot", "session-1", now=4.0)
+            with self.assertRaisesRegex(LiveAccessUnauthorized, "missing"):
+                registry.authorize(LAN_TLS, None, "snapshot", "session-1", now=4.0)
+
+    def test_configured_shared_token_is_removed_with_config_while_pairing_persists(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            registry = self._registry(tmpdir, shared_token="configured-token")
+            paired = self._pair(registry, "paired-device", now=1.0)
+
+            restarted = self._registry(tmpdir)
+
+            with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
+                restarted.authorize(LAN_TLS, "configured-token", "create", None, now=2.0)
+            self.assertEqual(
+                restarted.authorize(LAN_TLS, paired.device_token, "create", None, now=2.0).principal,
+                CapturePrincipal("paired-device"),
+            )
+
     def test_peer_admission_uses_direct_address_and_tls_policy(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             registry = self._registry(tmpdir)
@@ -366,20 +406,35 @@ class LiveAccessRegistryTest(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode, 0)
 
-    def _registry(self, tmpdir: str, secret_factory=None, lifecycle=None) -> LiveAccessRegistry:
+    def _registry(
+        self,
+        tmpdir: str,
+        secret_factory=None,
+        lifecycle=None,
+        shared_token: str | None = None,
+    ) -> LiveAccessRegistry:
         registry = LiveAccessRegistry(
             state_path=Path(tmpdir) / "live-auth.json",
             server_cert_sha256=FINGERPRINT,
             secret_factory=secret_factory,
+            shared_token=shared_token,
         )
         if lifecycle is not None:
             registry.bind_session_lifecycle(lifecycle)
         return registry
 
-    def _live_registry(self, tmpdir: str, secret_factory=None):
+    def _live_registry(self, tmpdir: str, secret_factory=None, shared_token: str | None = None):
         """A registry wired to a lifecycle that reports every session active."""
         lifecycle = ScriptedSessionLifecycle()
-        return self._registry(tmpdir, secret_factory=secret_factory, lifecycle=lifecycle), lifecycle
+        return (
+            self._registry(
+                tmpdir,
+                secret_factory=secret_factory,
+                lifecycle=lifecycle,
+                shared_token=shared_token,
+            ),
+            lifecycle,
+        )
 
     def _pair(self, registry: LiveAccessRegistry, device_id: str, *, now: float):
         issued = registry.issue_pairing(LOOPBACK, now=now)
