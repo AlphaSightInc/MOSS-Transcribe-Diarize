@@ -68,6 +68,7 @@ LIVE_FLAGS = (
     "--live-tls-certfile",
     "--live-tls-keyfile",
     "--live-helper-lease-seconds",
+    "--live-vector-journal-path",
 )
 
 
@@ -169,6 +170,7 @@ def test_live_profile_example_yields_the_complete_tls_invocation(home: Path) -> 
         "--live-tls-certfile", LIVE_ENV_EXAMPLE["MOSS_LIVE_TLS_CERTFILE"],
         "--live-tls-keyfile", LIVE_ENV_EXAMPLE["MOSS_LIVE_TLS_KEYFILE"],
         "--live-helper-lease-seconds", LIVE_ENV_EXAMPLE["MOSS_LIVE_HELPER_LEASE_SECONDS"],
+        "--live-vector-journal-path", LIVE_ENV_EXAMPLE["MOSS_LIVE_VECTOR_JOURNAL_PATH"],
     ]
 
 
@@ -183,6 +185,7 @@ def test_every_live_profile_variable_is_required(home: Path) -> None:
         "MOSS_LIVE_TLS_CERTFILE",
         "MOSS_LIVE_TLS_KEYFILE",
         "MOSS_LIVE_HELPER_LEASE_SECONDS",
+        "MOSS_LIVE_VECTOR_JOURNAL_PATH",
     }
     for key in required:
         partial = {name: value for name, value in LIVE_ENV_EXAMPLE.items() if name != key}
@@ -203,6 +206,7 @@ def test_disabled_live_mode_generates_no_live_flag_whatever_else_is_set(home: Pa
         LIVE_ENV_EXAMPLE["MOSS_LIVE_TLS_KEYFILE"],
         LIVE_ENV_EXAMPLE["MOSS_LIVE_AUTH_STATE"],
         LIVE_ENV_EXAMPLE["MOSS_LIVE_PROVIDER_MANIFEST"],
+        LIVE_ENV_EXAMPLE["MOSS_LIVE_VECTOR_JOURNAL_PATH"],
     ):
         assert value not in argv
 
@@ -274,6 +278,7 @@ def test_live_profile_example_is_a_template_not_a_host_file() -> None:
         "MOSS_LIVE_TLS_KEYFILE",
     ):
         assert LIVE_ENV_EXAMPLE[key].startswith("REPLACE_WITH_")
+    assert LIVE_ENV_EXAMPLE["MOSS_LIVE_VECTOR_JOURNAL_PATH"].startswith("/REPLACE_WITH_")
     # The filled-in file is host-local and must never be committable.
     ignored = subprocess.run(
         ["git", "check-ignore", "-q", "ops/moss-live.env"],
@@ -393,6 +398,39 @@ def cli_args(monkeypatch: pytest.MonkeyPatch, *argv: str):
 def test_the_cli_builds_no_store_when_no_root_is_declared(monkeypatch) -> None:
     web_cli, args = cli_args(monkeypatch, "--live")
     assert web_cli._live_tape_store(args) is None
+
+
+def test_live_vector_journaling_defaults_on_and_accepts_an_outside_override(
+    monkeypatch, tmp_path: Path
+) -> None:
+    web_cli, disabled = cli_args(monkeypatch)
+    assert web_cli._live_vector_journal(disabled) is None
+
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path / "home"))
+    web_cli, enabled = cli_args(monkeypatch, "--live")
+    journal = web_cli._live_vector_journal(enabled)
+    assert journal is not None
+    assert journal.path == (
+        tmp_path
+        / "home/.local/share/moss-transcribe-diarize/live/speaker-vectors.jsonl"
+    ).resolve()
+
+    override = tmp_path / "operator" / "vectors.jsonl"
+    web_cli, enabled = cli_args(
+        monkeypatch, "--live", "--live-vector-journal-path", str(override)
+    )
+    assert web_cli._live_vector_journal(enabled).path == override.resolve()
+
+
+@pytest.mark.parametrize("path", ["relative.jsonl", DEPLOYMENT_ROOT + "/speaker-vectors.jsonl"])
+def test_live_vector_journal_path_must_be_absolute_and_outside_the_checkout(
+    monkeypatch, path: str
+) -> None:
+    web_cli, args = cli_args(
+        monkeypatch, "--live", "--live-vector-journal-path", path
+    )
+    with pytest.raises(ValueError, match="outside the repository checkout|absolute path"):
+        web_cli._live_vector_journal(args, checkout_root=Path(DEPLOYMENT_ROOT))
 
 
 def test_the_cli_declares_the_store_the_deployment_stated(monkeypatch, tmp_path: Path) -> None:

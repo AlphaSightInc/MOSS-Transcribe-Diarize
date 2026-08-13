@@ -60,6 +60,13 @@ def parse_args() -> argparse.Namespace:
         help="Strictly positive helper lease required when --live is enabled.",
     )
     parser.add_argument(
+        "--live-vector-journal-path",
+        help=(
+            "Absolute path outside the checkout for the default-on live speaker-vector "
+            "journal. Defaults under the service user's local data directory."
+        ),
+    )
+    parser.add_argument(
         "--live-retention-root",
         help=(
             "Absolute directory this deployment declares for live session audio retention "
@@ -135,7 +142,37 @@ def _live_runtime_factory(args: argparse.Namespace):
     from .live_provider_bundle import LiveProviderBundleConfig, build_live_runtime_factory
 
     config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
-    return build_live_runtime_factory(config, _LiveCliRunnerProxy(args))
+    return build_live_runtime_factory(
+        config,
+        _LiveCliRunnerProxy(args),
+        vector_journal=_live_vector_journal(args),
+    )
+
+
+def _live_vector_journal(
+    args: argparse.Namespace,
+    *,
+    checkout_root: Path | None = None,
+):
+    if not args.live:
+        return None
+    from .live_vector_journal import LiveVectorJournal
+
+    stated_path = getattr(args, "live_vector_journal_path", None)
+    path = (
+        Path(stated_path)
+        if stated_path
+        else Path.home()
+        / ".local/share/moss-transcribe-diarize/live/speaker-vectors.jsonl"
+    )
+    return LiveVectorJournal.declared(
+        path,
+        checkout_root=(
+            Path(__file__).resolve().parents[2]
+            if checkout_root is None
+            else checkout_root
+        ),
+    )
 
 
 def _live_startup_config(args: argparse.Namespace) -> dict[str, object]:

@@ -1,9 +1,10 @@
 # Context — Phase 1 ticket #6
 
-Iteration 6. Acceptance criteria and a reproducible local validation baseline are captured. The
+Iteration 7. Acceptance criteria and a reproducible local validation baseline are captured. The
 provider exposes immutable, encoder-pinned observations from the completed album. The measured
-single-process writer now runs after exact clean-stop accounting and never on abort; deployment
-path configuration and default-on wiring do not exist yet.
+single-process writer runs after exact clean-stop accounting and never on abort. Live deployment
+wiring now makes the journal default-on at an operator-configurable path outside the checkout;
+raw-audio retention remains default-off. The consent/right-to-remove documentation remains open.
 
 ## Where things stand
 
@@ -26,8 +27,8 @@ path configuration and default-on wiring do not exist yet.
   `echo_mode`.
 - [ ] Every row contains both `embedder_id` and `embedder_state_sha`.
 - [ ] Records are keyed by session, never by device; Phase 1 has no `device_id`.
-- [ ] Vector journaling defaults ON while raw-audio retention remains OFF.
-- [ ] The journal path is operator-configurable and outside the checkout.
+- [x] Vector journaling defaults ON while raw-audio retention remains OFF.
+- [x] The journal path is operator-configurable and outside the checkout.
 - [ ] A refused or unusable observation is declined by name and never aborts the session.
 - [ ] Documentation states that the journal is not a consent decision and that rollout beyond
   the guarded LAN requires an explicit consent and right-to-remove ruling first.
@@ -104,11 +105,17 @@ bash -n scripts/afk-t6/ralph-afk.sh
   `evidence/phase1/t6/iteration-6-journal-and-live-subset.xml`. This does not prove default-on
   deployment wiring, an operator-configurable path outside the checkout, multi-process writes, or
   power-loss survival.
+- Deployment wiring: GREEN. Direct `--live` construction installs a journal under the service
+  user's local data directory by default. The tracked live profile requires an explicit
+  `MOSS_LIVE_VECTOR_JOURNAL_PATH`, passes it through the adapter and CLI into the real provider
+  runtime factory, and rejects relative or checkout-contained paths. The same tracked profile
+  still declares no `MOSS_LIVE_RETENTION_*` keys. Deployment/provider/runtime/live regression:
+  191 passed / 351 subtests. Raw JUnit:
+  `evidence/phase1/t6/iteration-7-default-on-journal-wiring.xml`. This does not prove a filled-in
+  host profile, multi-process writes, or power-loss survival.
 - Loop script syntax: PASS.
 
 ## Ranked candidates
 
-1. Pin an operator-configurable path outside the checkout and wire vector journaling ON by default
-   for live deployments, without changing ADR-0003's default-OFF raw-audio retention posture.
-2. Add the required consent/right-to-remove documentation and prove the configured production
+1. Add the required consent/right-to-remove documentation and prove the configured production
    factory uses the real completed provider observations rather than stub evidence.

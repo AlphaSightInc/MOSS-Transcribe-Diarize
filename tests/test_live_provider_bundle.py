@@ -35,6 +35,7 @@ from moss_transcribe_diarize.app.live_provider_bundle import (
 )
 from moss_transcribe_diarize.app.live_service_runtime import hash_config
 from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, LiveIdentitySnapshot
+from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
 from moss_transcribe_diarize.app.speaker_identity import TierBPreflight
 
 
@@ -334,6 +335,15 @@ def test_bundle_runtime_factory_builds_audio_dependent_vad_and_live_identity_evi
     assert first.proposed_snapshot.canonical_speakers == ("speaker-0001",)
     assert second.proposed_snapshot.canonical_speakers == ("speaker-0001",)
     assert ("assignments", "S01->speaker-0001") in second.proposed_snapshot.diagnostics
+
+
+def test_bundle_runtime_factory_installs_the_declared_vector_journal(tmp_path):
+    config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
+    journal = LiveVectorJournal(tmp_path / "speaker-vectors.jsonl")
+
+    runtime = build_live_runtime_factory(config, FakeRunner(), vector_journal=journal)()
+
+    assert runtime._vector_journal is journal
 
 
 def test_bundle_factory_constructs_silero_from_declared_import_and_asset(tmp_path):

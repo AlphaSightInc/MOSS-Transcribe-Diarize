@@ -36,6 +36,25 @@ class LiveVectorJournal:
         self.path = Path(path)
         self._lock = threading.Lock()
 
+    @classmethod
+    def declared(
+        cls,
+        path: str | Path,
+        *,
+        checkout_root: str | Path,
+    ) -> "LiveVectorJournal":
+        candidate = Path(path).expanduser()
+        if not candidate.is_absolute():
+            raise ValueError(f"vector journal must be an absolute path: {candidate}")
+        resolved = candidate.resolve()
+        checkout = Path(checkout_root).expanduser().resolve()
+        if resolved == checkout or resolved.is_relative_to(checkout):
+            raise ValueError(
+                f"vector journal must be outside the repository checkout: {resolved}"
+            )
+        resolved.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        return cls(resolved)
+
     def append_session(
         self,
         *,

@@ -42,6 +42,7 @@ from .live_session import (
     LiveIdentitySnapshot,
     PCM16_BYTES_PER_SAMPLE,
 )
+from .live_vector_journal import LiveVectorJournal
 from .speaker_identity import TierBAssetSpec, WeSpeakerResNet152LmAdapter
 
 
@@ -265,6 +266,8 @@ class LiveProviderBundleConfig:
 def build_live_runtime_factory(
     config: LiveProviderBundleConfig,
     runner: Any,
+    *,
+    vector_journal: LiveVectorJournal | None = None,
 ) -> Callable[[], LiveServiceRuntime]:
     preflight = config.preflight()
     if not preflight.available:
@@ -305,6 +308,7 @@ def build_live_runtime_factory(
                 max_samples=_positive_int(config.decoder_config.get("max_samples"), "decoder_config.max_samples"),
             ),
             identity_preparer_factory=lambda: _identity_preparer(config, encoder=identity_encoder),
+            vector_journal=vector_journal,
         )
 
     return factory

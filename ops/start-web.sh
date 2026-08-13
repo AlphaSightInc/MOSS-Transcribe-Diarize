@@ -61,6 +61,7 @@ case "${MOSS_LIVE_ENABLED:-0}" in
     : "${MOSS_LIVE_TLS_CERTFILE:?MOSS_LIVE_TLS_CERTFILE is required when live mode is enabled}"
     : "${MOSS_LIVE_TLS_KEYFILE:?MOSS_LIVE_TLS_KEYFILE is required when live mode is enabled}"
     : "${MOSS_LIVE_HELPER_LEASE_SECONDS:?MOSS_LIVE_HELPER_LEASE_SECONDS is required when live mode is enabled}"
+    : "${MOSS_LIVE_VECTOR_JOURNAL_PATH:?MOSS_LIVE_VECTOR_JOURNAL_PATH is required when live mode is enabled}"
     : "${MOSS_WEB_PORT:?MOSS_WEB_PORT is required when live mode is enabled}"
     : "${MOSS_RUNS_DIR:?MOSS_RUNS_DIR is required when live mode is enabled}"
     if [ "${web_port}" = "${BATCH_PORT}" ]; then
@@ -71,6 +72,19 @@ case "${MOSS_LIVE_ENABLED:-0}" in
       echo "MOSS_RUNS_DIR must not be the batch runs directory ${BATCH_RUNS_DIR} when live mode is enabled" >&2
       exit 2
     fi
+    case "${MOSS_LIVE_VECTOR_JOURNAL_PATH}" in
+      /*) ;;
+      *)
+        echo "MOSS_LIVE_VECTOR_JOURNAL_PATH must be an absolute path" >&2
+        exit 2
+        ;;
+    esac
+    case "${MOSS_LIVE_VECTOR_JOURNAL_PATH}" in
+      "${PROJECT_DIR}" | "${PROJECT_DIR}"/*)
+        echo "MOSS_LIVE_VECTOR_JOURNAL_PATH must be outside the repository checkout" >&2
+        exit 2
+        ;;
+    esac
     live_args+=(
       --live
       --live-provider-manifest "${MOSS_LIVE_PROVIDER_MANIFEST}"
@@ -78,6 +92,7 @@ case "${MOSS_LIVE_ENABLED:-0}" in
       --live-tls-certfile "${MOSS_LIVE_TLS_CERTFILE}"
       --live-tls-keyfile "${MOSS_LIVE_TLS_KEYFILE}"
       --live-helper-lease-seconds "${MOSS_LIVE_HELPER_LEASE_SECONDS}"
+      --live-vector-journal-path "${MOSS_LIVE_VECTOR_JOURNAL_PATH}"
     )
     # Live session audio retention (ADR-0003 D2): opt-in, and off unless this profile
     # declares a root. A profile that sets the key to nothing is a typo, not a request for
