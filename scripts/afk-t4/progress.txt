@@ -83,3 +83,20 @@ Iteration 6 — provider-manifest finalization handoff
 - Learned: documentation omitted two required identity-policy flags. Local mechanics are ready,
   but the host-owned manifest must use the reviewed post-merge SHA and requires operator authority.
   Next: restore full-suite Swift/corpus prerequisites and rerun baseline before merge.
+
+Iteration 7 — full-suite prerequisite restoration
+- Target: highest-ranked candidate; restore the ignored Swift/corpus prerequisites and rerun the
+  complete Python baseline without changing ticket or unrelated product code.
+- Files: `evidence/phase1/t4/iteration-07-{full-suite-prerequisites.txt,full-pytest.xml}`,
+  `scripts/afk-t4/{context.md,progress.txt}`. Local-only ignored setup: both Swift products and a
+  `data/real` link to the hash-pinned L2 Stage-0 corpus.
+- Validation: separate Swift builds PASS; archived cache SHA `fd13bacb...`; focused legacy ingest
+  PASS (1 test + 92 subtests); full pytest reaches 980 passed, 2 skipped, 2 failed, 475 subtests,
+  zero errors in 130.98 s. Failures: expected L15 product-tree drift refusal and a persistent
+  out-of-scope macOS Launch Services lifecycle tracer; focused tracer retry also failed.
+- Evidence: `evidence/phase1/t4/iteration-07-full-suite-prerequisites.txt` and raw JUnit
+  `evidence/phase1/t4/iteration-07-full-pytest.xml`; out-of-scope disclosure at issue comment
+  `#issuecomment-5276956691` (issue left open).
+- Learned: the canonical checkout's newer `327f3328...` 55-unit cache is not the archived test
+  input; the required 92-unit cache is `fd13bacb...`. Setup errors are eliminated. Next: acquire
+  the merge lock, merge current `dev`, and run ticket-specific validation on the merged result.

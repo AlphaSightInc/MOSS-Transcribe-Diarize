@@ -1,8 +1,10 @@
 # Context — Phase 1 ticket #4
 
-Iteration 6. The provider-manifest finalization path is now locally audited and documented with
-all required flags; the host-owned manifest still must be finalized with the reviewed post-merge
-SHA by an authorized operator.
+Iteration 7. Full-suite prerequisites are restored locally and the collection now reaches 980
+passes. Two unrelated guards remain red: L15 intentionally refuses product-tree drift from its
+pinned source commit, and the pre-existing macOS Launch Services lifecycle tracer cannot resolve
+the live app PID. Neither is a ticket-4 product defect. The host-owned provider manifest still
+must be finalized with the reviewed post-merge SHA by an authorized operator.
 
 ## Where things stand
 
@@ -30,6 +32,12 @@ SHA by an authorized operator.
   regenerates and admission-checks hashes, and leaves both input and output untouched. Actual host
   finalization remains post-merge operator work: the final SHA does not exist yet and the remote
   host is read-only to this loop.
+- Both Swift products build, and the hash-pinned 92-unit archived Alphabet cache is provisioned
+  from the local L2 Stage-0 corpus. The full Python collection runs without setup errors: 980
+  passed, 2 skipped, 2 failed, and 475 subtests passed. One failure is the expected L15 product
+  drift refusal because ticket #4 changes `server.py` after its pinned source commit. The other is
+  the same out-of-scope macOS lifecycle tracer failure seen in iteration 1; a focused retry also
+  failed because `NSRunningApplication(processIdentifier:)` returned nil for the socket peer PID.
 - Target typecheck and its shell test pass. Both reference component suites pass at the oracle;
   neither is imported because `TranscriptPane` belongs to #7 and `LlmSettingsModal` is out of
   Phase 1. The verbatim target `package.json` therefore remains unchanged.
@@ -70,28 +78,25 @@ Scope boundary: shell and serving only. Transcript rendering belongs to #7.
 - `setInterval` in a backgrounded tab collapses to ~1/min. Worklet port messages do not.
 - `source_revision` comes from the provider manifest and must be re-finalized per host.
 
-## Validation baseline (iteration 1)
+## Full-suite baseline (iteration 7)
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q \
-  tests/test_live_api.py tests/test_live_auth.py tests/test_live_mixer.py -p no:cacheprovider
-# PASS: 65 passed, 351 subtests in 7.33 s. Covers current live HTTP/auth/mixer contracts;
-# does not cover the frontend, static routes, browser behavior, or real capture.
-
 PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
-# ENVIRONMENT-BLOCKED: 964 passed, 4 skipped, 4 failed, 11 errors, 383 subtests in 124.97 s.
-# Missing prerequisites: built Swift products and the real benchmark harness_cache.npz archive.
-# Two macOS UDS tracer failures also occurred after the missing-product setup errors; re-evaluate
-# only after building both Swift products. This command covers the whole collected Python suite.
+# 980 passed, 2 skipped, 2 failed, 475 subtests in 130.98 s. Zero setup errors.
+# Expected L15 drift refusal: its frozen baseline rejects every product-tree change after
+# 9089b332, including ticket #4's server route cutover. Persistent out-of-scope failure:
+# test_built_macos_app_finishes_launch_and_honors_application_terminate cannot resolve the socket
+# peer PID through NSRunningApplication; a focused rerun also failed. Do not weaken either gate.
 
 bash -n scripts/afk-t4/ralph-afk.sh
 # PASS. Syntax only; it does not execute the loop.
 ```
 
 The prescribed `.venv/bin/pytest` path does not exist in this treehouse worktree. The repo's
-verified pyenv Python 3.12.10 has pytest 9.0.2 and the needed Python dependencies, so use
-`python3 -m pytest` here. Do not count the full suite green until its documented local artifacts
-exist and the command passes.
+verified pyenv Python 3.12.10 has pytest 9.0.2 and the needed Python dependencies. Both Swift
+products were built separately. The ignored `data/real` link uses the L2 Stage-0 corpus with the
+required archived cache SHA-256 `fd13bacb...`; the canonical checkout's newer `327f3328...` cache
+has 55 units and is not a valid substitute for the 92-unit legacy-ingest contract.
 
 ## Reference transfer evidence (iteration 2)
 
@@ -139,9 +144,20 @@ runtime descriptor admission, unchanged input SHA-256, absent output, and 26/26 
 This proves post-merge finalization is mechanically ready without pre-merge host mutation; it does
 not finalize or inspect the host-owned manifest, deploy, or mutate the remote.
 
+## Full-suite prerequisite evidence (iteration 7)
+
+`evidence/phase1/t4/iteration-07-full-suite-prerequisites.txt` records both separate Swift product
+builds, the correct archived-corpus hash, the restored 92-unit focused test, and the final full
+suite result. `iteration-07-full-pytest.xml` is the raw JUnit report for all 1,459 reported test
+and subtest nodes: 980 passed plus 475 passing subtests, 2 skipped, 2 failed, zero errors. The run
+does not make the full suite green; it distinguishes its two remaining non-ticket failures from
+the setup errors that blocked iteration 1. The required out-of-scope disclosure is issue comment
+`#issuecomment-5276956691`; it does not claim completion or change issue state.
+
 ## Ranked candidates
 
-1. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
-   before merge.
+1. Acquire the shared merge lock, merge current `dev` into this branch, and run the ticket-specific
+   frontend, serving, manifest-finalizer, and focused live validation on the merged result. Carry
+   the two documented full-suite exceptions explicitly; do not weaken or repair out-of-scope gates.
 2. After merged-result validation, publish per protocol and hand the reviewed merge SHA plus the
    corrected finalization command to the authorized operator. Do not mutate the read-only host.
