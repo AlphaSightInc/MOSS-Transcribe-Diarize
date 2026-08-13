@@ -1,17 +1,18 @@
 # Context — Phase 1 ticket #4
 
-Iteration 1. Issue contract and local validation baseline measured.
+Iteration 2. Reference build configuration and four complete font families transferred verbatim.
 
 ## Where things stand
 
 - Branch: `afk/t4-*`, cut from `dev` at `a05a7f6`. Worktree 4 of 6 (treehouse pool).
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
-- Target repo `frontend/` is empty. `/` currently serves the inline Subtitle Studio.
+- `frontend/` now holds the reference's three build-config files and all 11 `woff2` files across
+  Inter, Source Serif 4, IBM Plex Mono, and Fraunces. `/` still serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
 
 ## Issue #4 acceptance checklist (verbatim scope)
 
-- [ ] Reference `vite.config.ts`, `tsconfig.json`, `package.json`, and four bundled `woff2` font
+- [x] Reference `vite.config.ts`, `tsconfig.json`, `package.json`, and four bundled `woff2` font
   families lifted verbatim.
 - [ ] `/` serves the new app; `/static/**` serves the bundle; `/static/app.js` is stable.
 - [ ] Inline Subtitle Studio moves to `/studio`, byte-unchanged.
@@ -68,12 +69,16 @@ verified pyenv Python 3.12.10 has pytest 9.0.2 and the needed Python dependencie
 `python3 -m pytest` here. Do not count the full suite green until its documented local artifacts
 exist and the command passes.
 
+## Reference transfer evidence (iteration 2)
+
+`cmp -s` passed for all 14 transferred files, and source/target SHA-256 values match line-for-line
+in `evidence/phase1/t4/iteration-02-reference-transfer.txt`. This proves byte identity only; it
+does not prove that the frontend builds or that pages load the fonts without CDN requests.
+
 ## Ranked candidates
 
-1. Lift the three reference build-config files and four font families verbatim; prove source and
-   target checksums match.
-2. Lift the smallest reference shell/component set needed to build, without transcript rendering.
-3. Add FastAPI serving cutover with route regression tests for `/`, `/studio`, `/static/**`, and
+1. Lift the smallest reference shell/component set needed to build, without transcript rendering.
+2. Add FastAPI serving cutover with route regression tests for `/`, `/studio`, `/static/**`, and
    retained `/live`.
-4. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
+3. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
    before merge.

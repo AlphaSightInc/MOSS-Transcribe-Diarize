@@ -14,3 +14,14 @@ Iteration 1 — issue contract + validation baseline
   output in iteration transcript.
 - Learned: ticket is nine serving/shell gates; transcript rendering is explicitly #7. Next: copy
   reference configs/fonts verbatim and verify source/target hashes.
+
+Iteration 2 — verbatim reference configs + fonts
+- Target: highest-ranked candidate; lift the three build configs and every bundled `woff2` file
+  belonging to the four required families, without adding shell or serving behavior.
+- Files: `frontend/{vite.config.ts,tsconfig.json,package.json}`, `frontend/public/fonts/*.woff2`,
+  `evidence/phase1/t4/iteration-02-reference-transfer.txt`, `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: `cmp -s` plus `shasum -a 256` over all 14 source/target pairs PASS; every pair has
+  identical SHA-256. Evidence: `evidence/phase1/t4/iteration-02-reference-transfer.txt`.
+- Learned: the four families comprise 11 font files. Byte transfer is complete but build and CDN
+  behavior remain untested. Next: lift the smallest reference shell/component set needed to build,
+  excluding transcript rendering reserved for #7.
