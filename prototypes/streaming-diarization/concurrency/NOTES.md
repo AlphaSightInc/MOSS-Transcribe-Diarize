@@ -70,3 +70,16 @@ unresponsive before checkpoint weights downloaded. The agent did not restart or 
 Docker because doing so would disrupt those workloads. No decoder request or required vLLM metric
 was measured, so G4/G5 remain unsatisfied. Raw result:
 `evidence/phase1/t3/iteration-6-local-vllm-smoke.txt`.
+
+## Resource-isolation recheck — 2026-08-13
+
+**VERDICT: BLOCKED, NON-GATING — no safe isolated local runtime is currently available.**
+
+Docker recovered after iteration 6, but it is still the host's only installed Linux container
+runtime. Its shared VM remains limited to 8.2 GB; 16 unrelated containers leave only 665 MB
+available and its 1 GiB swap is effectively exhausted. Host Python has no vLLM module, and the
+MOSS Hugging Face cache contains only the 2.3 KiB configuration blob rather than model weights.
+
+No service was started and no shared workload was changed. A qualifying run still needs an
+operator-approved Docker maintenance window or another resource-isolated local runtime. Raw
+result: `evidence/phase1/t3/iteration-7-resource-isolation-audit.txt`.
