@@ -179,5 +179,10 @@ Separate from the product repo because that repo is a fork of the upstream open-
 | 6 | Journal speaker vectors at session end | 1 |
 | 7 | Live diarized transcript renders in the reference transcript pane | 1, 4 |
 
-Not yet written — they need their decision tickets closed first:
-**file mode through the new UI** (needs T-07) and **live transcript export** (needs T-08).
+| 8 | File mode through the new UI, via a client-side adapter over `/api/jobs` | 4, 7 |
+| 9 | Live transcript export to file (md, txt, json) | 7 |
+
+**All 12 decision tickets are closed (2026-08-13). The map has reached its destination.**
+The binding contract for the AFK fleet is `docs/phase1-afk-charter.md` — authority and limits,
+the T-06 capture/preflight spec, the T-10 fidelity method, the T-11 acceptance gates G1–G10, the
+merge protocol, and the attended checklist left for the operator.

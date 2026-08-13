@@ -3,8 +3,8 @@ id: T-06
 map: map-001-phase1-chrome-client
 title: Browser capture page spec, including the two-lane preflight
 type: prototype
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked_by: [T-01, T-05]
 ---
 
@@ -71,3 +71,15 @@ Resolve what is **not** yet settled:
 Deliver a spec, and extend the kept harness at `prototypes/browser-capture-feasibility/`
 rather than starting a new one. Note its current gaps: it posts prototype extras to a local
 stub and hardcodes 8000/16000 instead of reading the descriptor.
+
+## Resolution (2026-08-13) — ruled by the supervisor on the operator's behalf
+
+The operator delegated overnight decision authority. This ticket is resolved in
+**`docs/phase1-afk-charter.md` §4** — capture page + preflight spec.
+
+It lives there rather than here because it is **binding on the AFK fleet**: every ralph-afk agent
+reads that charter as its contract, and a decision split between two documents would drift. The
+charter is committed to `dev` before any worktree is created, so all six agents see the same text.
+
+Do not re-litigate. If new evidence contradicts it, bring numbers and update the charter in the
+same change.

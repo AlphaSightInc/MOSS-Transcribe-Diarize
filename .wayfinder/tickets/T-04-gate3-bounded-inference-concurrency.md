@@ -3,8 +3,8 @@ id: T-04
 map: map-001-phase1-chrome-client
 title: Gate 3 — bounded inference concurrency for 2-4 live sessions
 type: prototype
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked_by: []
 ---
 
@@ -48,3 +48,18 @@ Ground truth: `moss_transcribe_diarize/app/live_service_runtime.py`
 (`_TransientCanonicalPumpScheduler`); `docs/research-chrome-capture-mvp-2026-08-03.md`
 §"Real multi-client bottleneck" and §"Gate 3"; `prototypes/streaming-diarization/README.md`
 and `NOTES.md`.
+
+## Resolution (2026-08-13) — graduated to implementation
+
+The decision this ticket held was *how the bound gets chosen*, and that is settled: **by
+measurement, gates stated as numbers before the run**. The measurement and the resulting
+dispatcher are now implementation ticket **#3** on the private tracker
+(`aiSight-us/MOSS-Transcribe-Diarize`), whose acceptance criteria carry the full method.
+
+Operator ruling 2026-08-13: the GPU on `ga0-alienware-rtx4070ti` is available **without
+scheduling limitation**, so there is no GPU-window constraint. However the AFK charter makes that
+host **read-only** for overnight agents, so #3 measures against a locally-run service.
+
+Gate G4 in `docs/phase1-afk-charter.md` §6 is the acceptance bar: the chosen bound sustained
+≥10 minutes, p95 lag under the stated gate, fair round-robin, no OOM, and 429 backpressure
+appearing per session rather than globally.

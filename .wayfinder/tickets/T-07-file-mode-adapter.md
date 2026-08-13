@@ -3,8 +3,8 @@ id: T-07
 map: map-001-phase1-chrome-client
 title: File-mode adapter over the certified /api/jobs pipeline
 type: grilling
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked_by: [T-02]
 ---
 
@@ -46,3 +46,30 @@ Resolve:
 Ground truth: `moss_transcribe_diarize/app/server.py` lines ~163–365;
 `moss_transcribe_diarize/app/jobs.py`; reference `frontend/src/api/rest.ts`
 (`startFileSession`, `getBatchStatus`) and `frontend/src/api/types.ts`.
+
+## Resolution (2026-08-13) — ruled by the supervisor on the operator's behalf
+
+1. **The adapter is CLIENT-side. No new server endpoints.** T-02 already builds a poller that
+   synthesizes reference-shaped events from MOSS's native surfaces; file mode reuses that seam by
+   speaking `/api/jobs` directly and synthesizing the same `session_state` / `transcript_update`
+   events. Adding server-side session-shaped wrappers around jobs would duplicate a translation
+   layer that already has to exist.
+2. **State mapping:** job state → `SessionLifecycle` (`queued`→`starting`, `running`→`recording`,
+   `done`→`completed`, `failed`→`failed`). Job progress drives `progress_pct`. Job states with no
+   reference equivalent collapse to the nearest; none are invented.
+3. **Segments → `TranscriptItem`** using the identical shape T-02 fixed, so one `TranscriptPane`
+   renders live and file output. `state` is always `final` for file mode — there is no provisional
+   tail. `segment_id` is the job's segment index.
+4. **Upload:** existing multipart `POST /api/jobs`. `_admit_upload_request`, the 408 receive-idle
+   timeout, and chunked `_read_upload_chunk` already exist and are kept. Client shows byte
+   progress. **No resume in Phase 1** — a failed upload retries whole; state that limit in the UI.
+   Respect the `runs_dir` admission bound; surface "server busy" rather than queueing client-side.
+5. **Lifetime:** artifacts persist until explicitly deleted via the existing
+   `DELETE /api/jobs/{id}`. Phase 1 adds no TTL and no auto-cleanup.
+6. **Studio handoff:** none built, but a file uploaded through the new UI lands in the same
+   `runs_dir` and is therefore already visible in `/studio` for subtitle editing and burn-in. Note
+   this as a free benefit; do not build a bridge.
+7. **Auth — job routes get the shared token.** They are unauthenticated today. T-01's single trust
+   domain accepted shared *reads*; it did not accept unauthenticated *writes*. Upload consumes
+   disk and GPU, so an open upload endpoint on the tailnet is a materially worse exposure than
+   shared transcript reads. Apply the same shared bearer to the job routes.

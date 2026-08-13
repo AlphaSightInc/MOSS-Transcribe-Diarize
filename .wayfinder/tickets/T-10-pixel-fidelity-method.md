@@ -3,8 +3,8 @@ id: T-10
 map: map-001-phase1-chrome-client
 title: How pixel fidelity is proved
 type: prototype
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked_by: [T-05]
 ---
 
@@ -44,3 +44,15 @@ stayed green.
 
 Ground truth: reference `README.md` §Quick Start / `scripts/run_app.sh`,
 `frontend/src/styles/index.css`, `frontend/public/fonts/`; T-05's control-disposition table.
+
+## Resolution (2026-08-13) — ruled by the supervisor on the operator's behalf
+
+The operator delegated overnight decision authority. This ticket is resolved in
+**`docs/phase1-afk-charter.md` §5** — fidelity method: headless screenshot diff, ≤2% tolerance, declared exemptions.
+
+It lives there rather than here because it is **binding on the AFK fleet**: every ralph-afk agent
+reads that charter as its contract, and a decision split between two documents would drift. The
+charter is committed to `dev` before any worktree is created, so all six agents see the same text.
+
+Do not re-litigate. If new evidence contradicts it, bring numbers and update the charter in the
+same change.
