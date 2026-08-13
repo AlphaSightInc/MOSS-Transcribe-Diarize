@@ -109,3 +109,38 @@ audio track for either a shared window or full screen on this Mac.
 window, monitor. The certified two-lane startup is mic-first; a display-first/system-only
 suspended-context bootstrap remains a separate, non-MVP experiment. Remaining required
 work: Gate 2 (4070 canary), Gate 3 (bounded concurrency), Gate 4 (Windows).
+
+## Server helper-vocabulary probe — 2026-08-13
+
+**Question:** can browser-only capture facts extend the existing
+`moss-live-helper-health.v1` `failure_code` field without a parallel browser enum or
+health path, and what semantics does the production coordinator apply?
+
+**Method:** a throwaway Python probe passed one native reference code, seven proposed
+browser codes, and one unregistered sentinel through the production
+`HelperHeartbeat.from_dict` → `HelperPresenceRegistry.observe` →
+`LiveHelperFailureCoordinator.observe` path. One command:
+
+```bash
+PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 prototypes/browser-capture-feasibility/probe_helper_failure_vocabulary.py
+```
+
+The throwaway script was deleted after its output was captured at
+`evidence/phase1/t5/iteration-2-helper-vocabulary-probe.txt`.
+
+**Verdict:** the existing string field and coordinator are already the correct shared,
+additive transport. All codes survived unchanged. A `failed` fact invoked
+`LiveV2Session.fail_lane` only for its named lane and kept the lease/peer alive; a
+`degraded` fact remained in helper presence without failing a lane. The unregistered
+sentinel also survived, so the parser deliberately enforces stable non-empty shape, not
+a closed code allowlist. Do not tighten it and break additive helper/version
+compatibility.
+
+The smallest production extension is therefore a server-owned named vocabulary and
+status mapping on this existing path, using observation-shaped browser codes:
+`browser_microphone_permission_denied`, `browser_capture_request_rejected` (not
+`picker_cancelled`, because Chrome's rejection name is ambiguous),
+`browser_surface_audio_missing`, `browser_track_ended`,
+`browser_audio_context_suspended`, `browser_sustained_clipping`, and
+`browser_microphone_silent`. Failed versus degraded remains the existing `state` field;
+no browser-only health schema or coordinator is justified.

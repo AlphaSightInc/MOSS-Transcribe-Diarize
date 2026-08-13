@@ -1,6 +1,6 @@
 # Context — Phase 1 ticket #5
 
-Iteration 1. Issue contract inventoried; pre-change validation baseline measured.
+Iteration 2. Existing helper-health seam measured; browser vocabulary and next server slice chosen.
 
 ## Where things stand
 
@@ -71,10 +71,39 @@ bash -n scripts/afk-t5/ralph-afk.sh
 - Loop shell syntax: **PASS**. Covers parsing only.
 - Raw result: `evidence/phase1/t5/iteration-1-validation.txt`.
 
+## Iteration 2 seam verdict
+
+- `HelperLaneHealth.failure_code` is one additive, cross-helper string field. The production
+  parser enforces non-empty shape but intentionally does not use a closed allowlist.
+- A production-path probe passed a native reference code, seven proposed browser codes, and an
+  unregistered sentinel through `HelperHeartbeat` → `HelperPresenceRegistry` →
+  `LiveHelperFailureCoordinator`. Every value survived unchanged.
+- A `failed` browser fact calls `LiveV2Session.fail_lane` only for the named lane and keeps the
+  lease/peer live. A `degraded` fact remains observational and does not fail a lane.
+- Use these observation-shaped browser values on the shared field:
+  `browser_microphone_permission_denied`, `browser_capture_request_rejected`,
+  `browser_surface_audio_missing`, `browser_track_ended`,
+  `browser_audio_context_suspended`, `browser_sustained_clipping`, and
+  `browser_microphone_silent`. Do not call an ambiguous Chrome rejection
+  `picker_cancelled`.
+- Do not add a parallel browser enum/schema/coordinator or tighten the parser into an allowlist.
+  Server authority belongs in the named status projection that interprets these additive facts.
+- Raw probe: `evidence/phase1/t5/iteration-2-helper-vocabulary-probe.txt`; durable verdict:
+  `prototypes/browser-capture-feasibility/NOTES.md`.
+
+Open integration seam: the charter creates a server session only after both preflight meters are
+non-zero, while issue #5 requires a server-authored silent-microphone preflight line and the
+existing heartbeat is session-scoped. Do not invent a pre-session browser judgment. Resolve this
+with ticket #1's actual client/session flow before the client half.
+
 ## Ranked candidates
 
-1. Inventory current `HelperLaneHealth.failure_code`, snapshot, and failure-coordinator seams;
-   choose the smallest server-side vertical slice for acceptance criterion 1.
+1. Implement the smallest server vertical slice: one server-owned capture-status projection over
+   the existing helper presence, with the seven measured browser codes and stable native/fallback
+   behavior, published as `capture_phase` plus one plain-language `status_line` in snapshots.
+   Focused tests must prove failed/degraded facts, one-lane continuation, and additive unknown-code
+   compatibility; keep raw `helper_presence` for `/live` diagnostics.
 2. Restore the full-suite prerequisites (Swift products and real-corpus cache), investigate the
    macOS lifecycle baseline failure, then rerun the full command before the merge gate.
-3. Recheck issue #1/dev before beginning the browser/client half.
+3. Recheck issue #1/dev and resolve the preflight/session-ordering seam before beginning the
+   browser/client half.
