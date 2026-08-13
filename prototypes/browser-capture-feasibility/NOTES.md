@@ -122,6 +122,35 @@ healthy after 6.0 lease periods hidden. Raw measurement:
 This proves the synthetic Chrome background-cadence and local production lease seams. It does
 not prove real model inference, microphone input, or real display capture.
 
+## Automated fake-device microphone seam
+
+Question: can the acceptance fixture enter through Chrome's real `getUserMedia()` microphone
+path while the system lane is explicitly synthetic, without automating display capture?
+
+Launch Chrome with `--use-fake-device-for-media-stream`,
+`--use-file-for-fake-audio-capture=<known-two-speaker.wav>`,
+`--use-fake-ui-for-media-stream`, and open
+`/capture-harness?autostart_mic_canary=1`. The page starts the microphone through
+`getUserMedia()` and supplies only the system lane from its 997 Hz oscillator. It records the
+microphone track label/settings and the two source APIs separately in prototype telemetry; the
+host fixture path remains outside the page and evidence.
+
+This is the automatable G1/G2 source shape. A run against the deterministic provider proves only
+the Chrome microphone-to-production-route seam; the gate remains open until the same path renders
+real model transcript text with at least two speaker ids.
+
+Measured 2026-08-13 with Chrome 151 and a 60 s, 16 kHz fixture whose reference contains three
+speakers and three switches. The browser exposed `Fake Default Audio Input` at 44.1 kHz stereo,
+then the production capture graph resampled it to the descriptor's 16 kHz / 1,000-sample frames.
+Across 1,254 frames per lane there were zero sequence gaps, 1,254,000 accepted samples per lane,
+zero failed samples, and no terminal failure. The microphone frame-RMS envelope matched the source
+WAV over 959 frames at correlation 0.99957 (mean absolute error 0.00085); this proves the fixture,
+not merely an extant fake track, reached `getUserMedia()` and the production ingress route. Raw
+frame measurements: `evidence/phase1/t1/iteration-08-fake-mic-production-routes.json`.
+
+The server provider was still the deterministic `api-fake`; its rendered text is not model output.
+Therefore neither real transcription nor the two-speaker-id gate passed in this measurement.
+
 ## Safari attended diagnostic — 2026-08-09
 
 Safari 26.5 captured the Bose QC Ultra microphone successfully: 110 HTTP-200 frames,

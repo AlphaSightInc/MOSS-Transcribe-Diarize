@@ -1,9 +1,10 @@
 # Context — Phase 1 ticket #1
 
-Iteration 7. Chrome now creates a locally-owned production session, sends both lanes through the
-real v2 ingress route, polls/renders production reads, and renews the production helper lease from
-the worklet frame path while hidden. The provider remains deterministic/fake; no real model
-behavior yet.
+Iteration 8. Chrome now creates a locally-owned production session, sends both lanes through the
+real v2 ingress route, polls/renders production reads, renews the production helper lease from the
+worklet frame path while hidden, and can autonomously pair fake-device `getUserMedia()` microphone
+audio with an explicitly synthetic system lane. The provider remains deterministic/fake; no real
+model behavior yet.
 
 ## Where things stand
 
@@ -38,6 +39,12 @@ behavior yet.
   2.0 s local lease, all 417 heartbeats returned 200 with zero sequence gaps. Hidden heartbeat
   p50/p95/max 64/64/65 ms matched visible 64/65/70 ms; both frame lanes had 65 ms hidden and
   visible p95, and the session remained active.
+- Chrome's fake-device microphone path now composes with a synthetic system lane without invoking
+  display capture. A known 60 s fixture with three reference speakers entered through
+  `getUserMedia()`; 1,254 frames/lane crossed the production route with zero gaps or failed samples.
+  Its microphone frame-RMS envelope matched the source over 959 frames at 0.99957 correlation
+  (MAE 0.00085), proving real fixture samples rather than mere track presence. The provider was
+  still `api-fake`, so this does not satisfy the model/transcript gate.
 - Full Python collection is red on one unchanged-`dev` macOS Launch Services lifecycle node:
   978 passed, 4 skipped, 475 subtests, 1 failed. The app binds/responds over UDS, then
   `NSRunningApplication(processIdentifier:)` returns nil. Do not waive or fix it under ticket #1.
@@ -109,6 +116,12 @@ Background/lease evidence: `evidence/phase1/t1/iteration-07-background-heartbeat
 synthetic worklet-driven frames and strict helper heartbeats stayed live for 6.0 local lease
 periods in a hidden Chrome tab. It excludes real microphone, display capture, and model inference.
 
+Fake-microphone ingress evidence:
+`evidence/phase1/t1/iteration-08-fake-mic-production-routes.json`. It preserves raw per-frame RMS
+and cadence telemetry, production v2 state, fixture/reference hashes, and the source-envelope
+correlation. It proves Chrome fake-device audio reached `getUserMedia()` and the production ingress
+route while system stayed synthetic. It excludes model inference and real display capture.
+
 ### Binding proof interpretation
 
 - PRD + charter supersede the issue body's older remote/display procedure without deleting any
@@ -149,7 +162,10 @@ Full-suite local prerequisites are ignored artifacts, not product changes:
 
 ## Ranked candidates
 
-1. Drive the microphone lane from Chrome's fake-audio device with a known two-speaker WAV against
-   a locally-owned real provider/model; never send inference traffic to the read-only remote host.
+1. Replace the deterministic local runtime with a locally-owned real provider/model, then rerun
+   the now-proven fake-device microphone + synthetic-system path and require rendered text with at
+   least two speaker ids. The local HF MOSS cache currently contains config only, so provision and
+   direct-smoke the exact model snapshot before wiring it into the live probe; never send inference
+   traffic to the read-only remote host.
 2. Preserve the unrelated full-suite lifecycle failure as a visible baseline blocker; do not
    fix it under ticket #1.

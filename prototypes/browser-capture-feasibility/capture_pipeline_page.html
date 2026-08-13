@@ -495,6 +495,7 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         lane, sequence,
+        client_rms: r,
         client_visibility: document.visibilityState,
         client_wall_ms: Date.now(),
         quanta: m.quanta,
@@ -571,29 +572,57 @@ document.getElementById("stopSynth").onclick = async () => {
 };
 
 // ---------- real capture (attended) ----------
+async function startMicrophoneCapture() {
+  if (lanes.microphone) throw new Error("microphone lane already active — stop capture first");
+  if (!Object.keys(lanes).length) sessionFailed = false;
+  // Resume inside the click gesture BEFORE the permission prompt: a slow "Allow"
+  // can outlive transient activation, which would leave the context suspended.
+  await captureContext();
+  await ctx.resume();
+  const mic = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+  });
+  const t = mic.getAudioTracks()[0];
+  const settings = t.getSettings();
+  log(realOut, "mic track: " + t.label + " settings=" + JSON.stringify(settings));
+  wireTrackEvents(t, "microphone");
+  await attachLane("microphone", mic, realOut);
+  log(realOut, `mic attached (context ${ctx.state})`);
+  document.getElementById("stopReal").disabled = false;
+  await fetch("/prototype/phase", {
+    method: "POST",
+    body: JSON.stringify({
+      phase: "real-mic-started",
+      wall_ms: Date.now(),
+      source_api: "getUserMedia",
+      track_label: t.label,
+      track_settings: settings,
+    }),
+  });
+}
+
 document.getElementById("startMic").onclick = async () => {
   try {
-    if (lanes.microphone) {
-      log(realOut, "REFUSED: microphone lane already active — stop capture first");
-      return;
-    }
-    if (!Object.keys(lanes).length) sessionFailed = false;
-    // Resume inside the click gesture BEFORE the permission prompt: a slow "Allow"
-    // can outlive transient activation, which would leave the context suspended.
-    await captureContext();
-    await ctx.resume();
-    const mic = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-    });
-    const t = mic.getAudioTracks()[0];
-    log(realOut, "mic track: " + t.label + " settings=" + JSON.stringify(t.getSettings()));
-    wireTrackEvents(t, "microphone");
-    await attachLane("microphone", mic, realOut);
-    log(realOut, `mic attached (context ${ctx.state})`);
-    document.getElementById("stopReal").disabled = false;
-    await fetch("/prototype/phase", { method: "POST", body: JSON.stringify({ phase: "real-mic-started", wall_ms: Date.now() }) });
+    await startMicrophoneCapture();
   } catch (e) { log(realOut, "mic FAILED: " + e.name + ": " + e.message); }
 };
+
+async function startAutomatedMicCanary() {
+  if (Object.keys(lanes).length) throw new Error("capture lanes already active");
+  // G1's automatable path: real getUserMedia drives microphone while an oscillator
+  // exercises system synthetically through the same production routes. Chrome's
+  // launcher supplies the fake-device WAV; this page never learns its host path.
+  await startMicrophoneCapture();
+  await synthLane("system", 997);
+  await fetch("/prototype/phase", {
+    method: "POST",
+    body: JSON.stringify({
+      phase: "automated-mic-plus-synthetic-system-started",
+      wall_ms: Date.now(),
+    }),
+  });
+  log(realOut, "automated canary: microphone=getUserMedia; system=synthetic oscillator");
+}
 
 document.getElementById("startDisplay").onclick = async () => {
   try {
@@ -672,7 +701,9 @@ document.addEventListener("visibilitychange", () => {
 // ---------- auto probes ----------
 (async () => {
   const out = [];
-  const autoStart = new URLSearchParams(location.search).has("autostart");
+  const query = new URLSearchParams(location.search);
+  const autoStart = query.has("autostart");
+  const autoMicCanary = query.has("autostart_mic_canary");
   out.push("userAgent: " + navigator.userAgent);
   try {
     const config = await captureDescriptor();
@@ -683,7 +714,7 @@ document.addEventListener("visibilitychange", () => {
   out.push("getSupportedConstraints: " + JSON.stringify(navigator.mediaDevices.getSupportedConstraints()));
   // Post what we have immediately so a hanging gesture probe can't suppress it.
   fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: [...out, "(gesture probe pending)"] }) });
-  if (autoStart) {
+  if (autoStart || autoMicCanary) {
     out.push("getDisplayMedia without gesture: skipped in autonomous mode (launcher activation can open chooser)");
     fetch("/prototype/probes", { method: "POST", body: JSON.stringify({ probes: out }) });
   } else {
@@ -708,6 +739,13 @@ document.addEventListener("visibilitychange", () => {
   // (autoplay policy only; capture-permission behavior is not affected).
   if (autoStart) {
     setTimeout(() => document.getElementById("startSynth").click(), 400);
+  } else if (autoMicCanary) {
+    setTimeout(() => {
+      void startAutomatedMicCanary().catch((e) => {
+        detachAll(realOut);
+        log(realOut, "automated mic canary FAILED: " + e.name + ": " + e.message);
+      });
+    }, 400);
   }
 })();
 </script>
