@@ -25,3 +25,19 @@ Iteration 2 — verbatim reference configs + fonts
 - Learned: the four families comprise 11 font files. Byte transfer is complete but build and CDN
   behavior remain untested. Next: lift the smallest reference shell/component set needed to build,
   excluding transcript rendering reserved for #7.
+
+Iteration 3 — minimal reference shell + production bundle
+- Target: highest-ranked candidate; transfer only the reference shell/build inputs needed for a
+  real build, while excluding transcript, capture, file, history, and LLM behavior.
+- Files: `frontend/{index.html,package-lock.json,src/**,public/{logo-mark.svg,fonts/LICENSE-OFL.txt}}`,
+  `ProjectResources/Frontend/**`, `evidence/phase1/t4/iteration-03-reference-shell.txt`, and
+  `scripts/afk-t4/{context.md,progress.txt}`.
+- Validation: regenerated the stale reference lock and clean `npm ci` PASS; six new reference
+  inputs byte-identical; `npm --prefix frontend run typecheck` PASS; focused Vitest PASS (1/1);
+  `npm --prefix frontend run build` PASS (Vite 8.2.1, 8 modules); built-resource scan PASS with
+  stable `/static/app.js`, 11 same-origin font URLs, no network URL or local source-map path.
+- Evidence: `evidence/phase1/t4/iteration-03-reference-shell.txt`.
+- Learned: the reference `App.tsx` couples shell to transcript/API behavior, so the safe ticket-4
+  slice is the exact entry/style assets plus an inert shell. The reference lockfile is stale and
+  cannot be copied as a clean-install contract; the regenerated target lock is green. Next:
+  FastAPI route cutover and route regressions for `/`, `/studio`, `/static/**`, and retained `/live`.

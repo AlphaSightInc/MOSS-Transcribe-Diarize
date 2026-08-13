@@ -1,0 +1,114 @@
+Iteration 3 validation evidence
+
+$ npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
+exit=0
+added 157 packages in 2s
+
+$ npm --prefix frontend ls --depth=0
+exit=0
+livetranscribe-frontend@0.0.0 /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/4/MOSS-Transcribe-Diarize/frontend
+├── @preact/preset-vite@2.10.6
+├── @preact/signals@2.11.0
+├── @types/node@25.9.5
+├── jsdom@29.1.1
+├── preact@10.29.8
+├── typescript@6.0.3
+├── vite@8.2.1
+└── vitest@4.1.10
+
+$ for src in /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/index.html /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/src/main.tsx /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/src/vite-env.d.ts /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/src/styles/index.css /Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/public/fonts/LICENSE-OFL.txt /Users/gao/Desktop/AI_Projects/LiveTranscribe/ProjectResources/Frontend/logo-mark.svg; do case "$src" in */frontend/index.html) dst=frontend/index.html;; */src/main.tsx) dst=frontend/src/main.tsx;; */src/vite-env.d.ts) dst=frontend/src/vite-env.d.ts;; */src/styles/index.css) dst=frontend/src/styles/index.css;; */public/fonts/LICENSE-OFL.txt) dst=frontend/public/fonts/LICENSE-OFL.txt;; */ProjectResources/Frontend/logo-mark.svg) dst=frontend/public/logo-mark.svg;; esac; if cmp -s "$src" "$dst"; then echo "PASS $dst"; else echo "FAIL $dst"; exit 1; fi; done
+exit=0
+PASS frontend/index.html
+PASS frontend/src/main.tsx
+PASS frontend/src/vite-env.d.ts
+PASS frontend/src/styles/index.css
+PASS frontend/public/fonts/LICENSE-OFL.txt
+PASS frontend/public/logo-mark.svg
+
+$ npm --prefix frontend run typecheck
+exit=0
+
+> livetranscribe-frontend@0.0.0 typecheck
+> tsc --noEmit
+
+$ npm --prefix frontend test -- --run
+exit=0
+
+> livetranscribe-frontend@0.0.0 test
+> vitest --passWithNoTests --run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.10 /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/4/MOSS-Transcribe-Diarize/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  02:17:47
+   Duration  365ms (transform 15ms, setup 0ms, import 21ms, tests 11ms, environment 241ms)
+
+$ npm --prefix frontend run build
+exit=0
+
+> livetranscribe-frontend@0.0.0 build
+> vite build
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+vite v8.2.1 building client environment for production...
+transforming...✓ 8 modules transformed.
+rendering chunks...
+computing gzip size...
+../ProjectResources/Frontend/index.html   0.78 kB │ gzip: 0.38 kB
+../ProjectResources/Frontend/styles.css  47.24 kB │ gzip: 9.57 kB
+../ProjectResources/Frontend/app.js      13.58 kB │ gzip: 5.43 kB │ map: 33.75 kB
+
+✓ built in 327ms
+
+$ find ProjectResources/Frontend -maxdepth 2 -type f -print | sort
+shasum -a 256 frontend/package-lock.json ProjectResources/Frontend/index.html ProjectResources/Frontend/app.js ProjectResources/Frontend/styles.css
+rg -n '/static/(app\.js|styles\.css|logo-mark\.svg)' ProjectResources/Frontend/index.html
+rg -o 'url\([^)]*\)' ProjectResources/Frontend/styles.css | sort -u
+if rg -n 'https?://|url\(\s*//' ProjectResources/Frontend/styles.css ProjectResources/Frontend/index.html; then exit 1; else echo 'PASS no network resource references in built page'; fi
+if rg -n '/Users/gao|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|pairing-payload' ProjectResources/Frontend/app.js.map; then exit 1; else echo 'PASS source map has no local path or secret marker'; fi
+exit=0
+ProjectResources/Frontend/app.js
+ProjectResources/Frontend/app.js.map
+ProjectResources/Frontend/fonts/Fraunces-600.woff2
+ProjectResources/Frontend/fonts/Fraunces-700.woff2
+ProjectResources/Frontend/fonts/IBMPlexMono-400.woff2
+ProjectResources/Frontend/fonts/IBMPlexMono-500.woff2
+ProjectResources/Frontend/fonts/Inter-400.woff2
+ProjectResources/Frontend/fonts/Inter-500.woff2
+ProjectResources/Frontend/fonts/Inter-600.woff2
+ProjectResources/Frontend/fonts/Inter-700.woff2
+ProjectResources/Frontend/fonts/LICENSE-OFL.txt
+ProjectResources/Frontend/fonts/SourceSerif4-400.woff2
+ProjectResources/Frontend/fonts/SourceSerif4-500.woff2
+ProjectResources/Frontend/fonts/SourceSerif4-600.woff2
+ProjectResources/Frontend/index.html
+ProjectResources/Frontend/logo-mark.svg
+ProjectResources/Frontend/styles.css
+3c27f7fd65851f2016938f86cec0e0587d39781d228b00168b2b1af3e8311f67  frontend/package-lock.json
+6762009f874665affca7b74f5167863a160dbed8a0579b5b8763c6a47cdacc3e  ProjectResources/Frontend/index.html
+a0d035374ef782c5ae26fbecd88d6b131c5b3808ed06029be574398cb5ba5c6c  ProjectResources/Frontend/app.js
+d5bca07f92270275ea59073879f58b02035a06cd6db9ce2b6666cf66e88aa8bf  ProjectResources/Frontend/styles.css
+7:    <link rel="icon" href="/static/logo-mark.svg" type="image/svg+xml" />
+8:    <script type="module" crossorigin src="/static/app.js"></script>
+9:    <link rel="stylesheet" crossorigin href="/static/styles.css">
+url(/static/fonts/Fraunces-600.woff2)
+url(/static/fonts/Fraunces-700.woff2)
+url(/static/fonts/IBMPlexMono-400.woff2)
+url(/static/fonts/IBMPlexMono-500.woff2)
+url(/static/fonts/Inter-400.woff2)
+url(/static/fonts/Inter-500.woff2)
+url(/static/fonts/Inter-600.woff2)
+url(/static/fonts/Inter-700.woff2)
+url(/static/fonts/SourceSerif4-400.woff2)
+url(/static/fonts/SourceSerif4-500.woff2)
+url(/static/fonts/SourceSerif4-600.woff2)
+PASS no network resource references in built page
+PASS source map has no local path or secret marker

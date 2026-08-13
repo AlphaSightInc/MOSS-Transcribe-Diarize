@@ -1,13 +1,19 @@
 # Context — Phase 1 ticket #4
 
-Iteration 2. Reference build configuration and four complete font families transferred verbatim.
+Iteration 3. Minimal reference-design shell source and committed production bundle added.
 
 ## Where things stand
 
 - Branch: `afk/t4-*`, cut from `dev` at `a05a7f6`. Worktree 4 of 6 (treehouse pool).
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
-- `frontend/` now holds the reference's three build-config files and all 11 `woff2` files across
-  Inter, Source Serif 4, IBM Plex Mono, and Fraunces. `/` still serves the inline Subtitle Studio.
+- `frontend/` holds the reference's three build-config files, entry HTML, entrypoint, complete
+  stylesheet, font license, logo, and all 11 `woff2` files. All transferred reference files are
+  byte-identical. The reference lockfile was stale (`npm ci` rejected missing transitive entries),
+  so the target lockfile was regenerated from the verbatim `package.json` and clean-install passes.
+- `frontend/src/App.tsx` is an inert three-column shell: no API calls, transcript data, `/live`
+  link, capture behavior, or file behavior. Those remain in their assigned tickets.
+- `ProjectResources/Frontend/` is a committed production build with stable `/static/app.js`,
+  stylesheet, source map, logo, and all fonts. `/` still serves the inline Subtitle Studio.
 - Live routes are default-off and enabled via `create_app(live_enabled=True, ...)`.
 
 ## Issue #4 acceptance checklist (verbatim scope)
@@ -18,7 +24,7 @@ Iteration 2. Reference build configuration and four complete font families trans
 - [ ] Inline Subtitle Studio moves to `/studio`, byte-unchanged.
 - [ ] `/live` remains an unadvertised operator diagnostic.
 - [ ] Fonts are self-hosted; no page makes a CDN request.
-- [ ] Built bundle is committed; deploy needs no Node toolchain.
+- [x] Built bundle is committed; deploy needs no Node toolchain.
 - [ ] Development uses `vite build --watch` behind FastAPI; no second-origin Vite dev server.
 - [ ] Typecheck and transferred reference component tests run in local validation.
 - [ ] Provider-manifest `source_revision` is re-finalized for the host.
@@ -75,10 +81,22 @@ exist and the command passes.
 in `evidence/phase1/t4/iteration-02-reference-transfer.txt`. This proves byte identity only; it
 does not prove that the frontend builds or that pages load the fonts without CDN requests.
 
+## Reference shell evidence (iteration 3)
+
+`evidence/phase1/t4/iteration-03-reference-shell.txt` records a clean `npm ci`, byte-identity checks
+for the six newly transferred reference files, successful typecheck, one focused shell component
+test, and a successful Vite production build. The built HTML points to `/static/app.js`,
+`/static/styles.css`, and `/static/logo-mark.svg`; built CSS points to all 11 `/static/fonts/**`
+assets. A built-page scan found no network resource reference or local path in the source map.
+Vite warns that the verbatim config's `__dirname` will be unsupported by a future native config
+loader; the current build passes. This does not prove FastAPI serving, the reference project's full
+component test suite, or browser rendering.
+
 ## Ranked candidates
 
-1. Lift the smallest reference shell/component set needed to build, without transcript rendering.
-2. Add FastAPI serving cutover with route regression tests for `/`, `/studio`, `/static/**`, and
+1. Add FastAPI serving cutover with route regression tests for `/`, `/studio`, `/static/**`, and
    retained `/live`.
+2. Add the documented `vite build --watch` development command and transfer/run only the reference
+   component tests belonging to ticket #4's shell scope.
 3. Restore full-suite prerequisites (Swift products plus real benchmark corpus) and rerun baseline
    before merge.
