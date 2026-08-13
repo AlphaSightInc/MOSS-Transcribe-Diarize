@@ -1,8 +1,9 @@
 # Context — Phase 1 ticket #3
 
-Iteration 3. The live issue acceptance contract and validation baseline are captured below. Numeric
-latency/memory gates and their measurement semantics are now frozen before measurement. Dispatcher
-latency and memory have not been measured yet.
+Iteration 4. The live issue acceptance contract and validation baseline are captured below. Numeric
+latency/memory gates and their measurement semantics are frozen before measurement. A controlled
+scheduler probe now characterizes fairness, isolation, and queue overflow, but real dispatcher
+latency and memory have not been measured.
 
 ## Where things stand
 
@@ -108,12 +109,32 @@ MOSS endpoint (`127.0.0.1:8000/v1/models` returns 502; LM Studio on 1234 adverti
 models). Therefore the preregistration is valid, but a real qualifying run is not currently
 available. Raw evidence: `evidence/phase1/t3/iteration-3-gate-preregistration.txt`.
 
+## Controlled scheduler evidence
+
+`prototypes/streaming-diarization/concurrency/proto_controlled_dispatcher.py` hash-pins the frozen
+preregistration and a 59.584 s real human-speech WAV. It replays real PCM at a 0.5 s wall-clock
+cadence through `LiveServiceRuntime` and its production round-robin drain, with controlled speech
+observations, decoder, identity, and scheduler release. These controls and the absence of vLLM
+metrics make every result explicitly non-gating.
+
+- 1/2/4/8 meetings each completed four dispatches per session; maximum prefix count skew was
+  `0/1/1/1`, satisfying the frozen mechanical fairness gate.
+- Controlled transcript markers stayed within their session, including a replacement runtime
+  session. HTTP reconnect and resumable transport remain untested.
+- One stalled session reached exactly 16 pending items while its peer accepted a frame, confirming
+  the queue object and capacity are per session.
+- Required backpressure behavior fails: the first overflow raises raw
+  `InferenceArbiterBackpressure` and terminalizes that session. Only a subsequent retry raises
+  typed transport pacing that maps to 429. This is neither a correct first 429 response nor
+  non-terminal retry behavior.
+
+Raw evidence: `evidence/phase1/t3/iteration-4-controlled-dispatcher.json`.
+
 ## Ranked candidates
 
-1. Add the smallest hash-pinned concurrency runner to the standing bench and measure dispatcher
-   fairness, per-session queue depth, independent 429 behavior, and cross-session markers with a
-   controlled decoder. Label the result non-gating unless a real local MOSS/vLLM path becomes
-   available.
+1. Make canonical-queue overflow return a typed, non-terminal first-response 429 without consuming
+   or terminalizing the affected session; regression-test that a saturated session can retry while
+   a peer continues independently.
 2. Establish a real local MOSS/vLLM measurement path; without local vLLM active/queued metrics, G4
    cannot qualify. Do not substitute the read-only remote service.
 3. Smallest evidence-backed vertical slice toward the bounded dispatcher, only after prototype

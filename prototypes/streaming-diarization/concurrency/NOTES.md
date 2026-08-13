@@ -24,3 +24,24 @@ but no local `vllm` executable/module, no cached MOSS model, and no responding l
 The running LM Studio endpoint advertises unrelated models. Therefore this preregistration passes,
 but a real qualifying measurement remains unavailable until a local MOSS/vLLM path exists. A later
 stub run may measure dispatcher mechanics only and cannot satisfy G4/G5.
+
+## Controlled scheduler probe — 2026-08-13
+
+**VERDICT: PARTIAL — fairness, marker isolation, and per-session capacity pass; required
+non-terminal 429 semantics fail. This run does not qualify G4 or G5.**
+
+`proto_controlled_dispatcher.py` replayed the hash-pinned 59.584 s human-speech fixture in real
+0.5 s wall-clock frames through `LiveServiceRuntime` and its production round-robin drain. Decode,
+identity, speech observations, and scheduler release were controlled, and no vLLM metrics existed.
+
+- At 1, 2, 4, and 8 meetings, every session completed four dispatches. Maximum prefix dispatch
+  skew was respectively `0, 1, 1, 1`, within the frozen `<=1` fairness gate.
+- All session markers remained isolated, including a replacement runtime session. This does not
+  exercise HTTP reconnect or resumable transport.
+- Holding decode filled one session to exactly 16 pending items while its peer still accepted a
+  frame, proving the queue instance and capacity are session-local on this path.
+- The first overflow raised raw `InferenceArbiterBackpressure` and marked the saturated session
+  terminal. Only the following retry raised typed transport pacing that maps to HTTP 429. Therefore
+  this path does not yet provide the required first-response, non-terminal 429 behavior.
+
+Raw result: `evidence/phase1/t3/iteration-4-controlled-dispatcher.json`.
