@@ -1,17 +1,21 @@
 # Context — x1-frame-drop
 
-Iteration 5.
+Iteration 6.
 
 Branch `afk3/x1-frame-drop` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
 (binding) and the closed decisions in `.wayfinder/tickets/` before your first change.
 
-## Known pre-existing test failures — not yours
+## Current branch-validation baseline — not x1 work
 
-`l2-stage0/test_legacy_ingest.py` (55 != 92) and four `test_macos_uds_tracer.py` tests fail
-identically at `pre-afk-20260813`. `l15/test_l1_baseline.py` fails with `l15_product_tree_drift`:
-that guard correctly refuses to run when the product tree moved — **do not edit its pin**, that
-would falsify a measurement baseline.
+The iteration-6 full-suite run has three failures: the L15 baseline intentionally refuses the
+product-tree drift from `9089b332`, and two Darwin-only macOS lifecycle/UDS tests fail
+(`test_built_macos_app_finishes_launch_and_honors_application_terminate` and
+`test_built_macos_app_cli_cross_real_uds_and_private_tls_server`). All remaining tests passed:
+`1007 passed, 4 skipped, 479 subtests passed`. Neither `tests/test_macos_uds_tracer.py` nor the
+L15 baseline paths differ from `pre-afk-20260813...HEAD`; x1 must not edit their pins or tests to
+manufacture a green suite. The strict all-suite exit is therefore an external baseline blocker,
+not an x1 regression.
 
 ## Validation
 
@@ -28,8 +32,12 @@ python3 scripts/afk-guardrails/preflight.py x1-frame-drop
   `frame_samples=8000`, joins strict-v2 admissions, and preserves its raw arrays.
 - [x] A forced 409 exercises `recreateSession`, drains sends before resetting sequence state,
   resumes cleanly, and leaves a failed-recreate button usable.
-- [ ] All claims have committed, re-runnable probes and raw artifacts under
-  `evidence/phase1/x1-frame-drop/`; branch validation runs after merging current `dev`.
+- [x] All three claims have committed, re-runnable probes and raw artifacts under
+  `evidence/phase1/x1-frame-drop/`; `preflight.py x1-frame-drop` confirms their citations and
+  ownership. `iteration-6` also verified those six probe/artifact paths are tracked.
+- [ ] Strict all-suite validation exits green after merging current `dev`: `dev` is already an
+  ancestor (0 behind / 11 branch commits), but `pytest -q` exits 1 only on the inherited baseline
+  failures above. Do not mask them with exclusions; needs their owning work, not an x1 change.
 
 ## G7 production-geometry result
 
@@ -47,9 +55,11 @@ also passed again against the added route instrumentation using temporary output
 
 ## Current integration state
 
-`dev` (`23afb6d`) is already an ancestor of this branch through merge `ccd906d`; preflight
-passed at iteration 1. Re-check the merged-result requirement after product work, before any
-completion claim.
+`dev` (`23afb6d`) is already an ancestor of this branch through merge `ccd906d` (verified again
+at iteration 6: `git rev-list --left-right --count dev...HEAD` = `0 11`), so the required
+merged-result is current `HEAD`; no merge is necessary. The full-suite command at that head was
+`1007 passed, 4 skipped, 479 subtests passed` plus the three inherited failures documented above.
+`python3 scripts/afk-guardrails/preflight.py x1-frame-drop` remains `PREFLIGHT OK`.
 
 The PRD's literal `sendPaused || sendInFlight` predecessor is on the unmerged
 `afk2/f1-canary-fixes` line, not this checkout. The checked-out page instead starts every frame
@@ -86,7 +96,6 @@ worklet cadence or a real provider, and they do not satisfy the required 8000-fr
 
 ## Ranked candidates
 
-1. Before a completion claim, merge current `dev` and run branch validation on the merged result;
-   retain the known baseline failures rather than changing their pins. At iteration 5, `dev`
-   (`23afb6d`) remains an ancestor of this branch, but this must be rechecked immediately before
-   that one final integration iteration.
+1. Blocked outside x1: restore the inherited L15/macOS baseline suite to a green exit, then rerun
+   the exact full-suite command on this unchanged merged head. Do not change those out-of-scope
+   tests, their pins, or test selection from this ticket.
