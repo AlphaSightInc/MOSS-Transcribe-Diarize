@@ -18,9 +18,15 @@ slice now replaces the stub; the full port remains open.
 - `frontend/src/components/SegmentedControl.tsx` is ported from the reference with
   only unused disabled-option support removed. The current shell is still 165 lines
   against the reference App's 1773, so this is not a fidelity completion claim.
+- The reference transcript model is now ported in `frontend/src/lib/` with its
+  Phase-1 `TranscriptItem` contract and a deliberately small transcript signal state.
+  It retains stable item ids, committed/provisional ordering, turn merging,
+  generic-label normalization, and match highlighting. The state exposes both event
+  upsert and full snapshot replacement: T-02 requires the poller to use replacement
+  for `/snapshot`, not event upsert.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
-  Vitest: 2 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
+  Vitest: 6 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
   not a failure.
 
 ## Read before your first change
@@ -78,9 +84,10 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
 
 ## Ranked candidates
 
-1. Port the reference transcript data path: its transcript/state/lib modules and component tests,
-   deleting LLM, summary, voiceprint, and rename surfaces rather than leaving dead controls.
-   Preserve generic speaker labels and search behavior.
+1. Port the reference `TranscriptPane` and its meaningful component tests, removing LLM,
+   summary, voiceprint, title/speaker rename, and display-mode controls rather than leaving
+   dead controls. Bind it to the ported transcript signal state while preserving generic labels,
+   search, and provisional-row rendering.
 2. Replace reference `api/ws.ts` with the T-02 poller through the unchanged
    `dispatchWsEvent()` seam, then bind the transcript shell to that state. Do not invent server
    routes or a client-side capture-health policy.
