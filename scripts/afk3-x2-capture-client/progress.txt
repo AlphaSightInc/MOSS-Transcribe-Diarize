@@ -4,3 +4,5 @@
 [loop 20260814-181406-44132] preflight failed before iteration 1
 
 [loop 20260814-181455-47607] start budget=40 agent=codex branch=afk3/x2-capture-client
+
+[iteration 1] target=record the binding x2-capture-client acceptance checklist; files=scripts/afk3-x2-capture-client/context.md,scripts/afk3-x2-capture-client/progress.txt; validation=python3 scripts/afk-guardrails/preflight.py x2-capture-client => PREFLIGHT OK; evidence=PRD, docs/phase1-afk-charter.md section 4, .wayfinder/tickets/T-06-browser-capture-page-spec.md; learned=the ordered per-lane 429 semantics and worklet-only heartbeat are hard requirements, while attended display capture is explicitly outside client-unit-test proof; next=merge current dev then map client/test seams for the serialized-post slice.
