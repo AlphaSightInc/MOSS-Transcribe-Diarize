@@ -1,0 +1,2 @@
+
+[loop 20260814-181406-44129] start budget=40 agent=codex branch=afk3/x1-frame-drop
