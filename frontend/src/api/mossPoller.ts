@@ -53,6 +53,12 @@ interface SnapshotRender {
   event: Extract<WsEvent, { type: "transcript_update" }>;
   relabelEvent: Extract<WsEvent, { type: "transcript_relabeled" }> | null;
   provisional: MossProvisionalSuffix | null;
+  /**
+   * Only the rows derived from the snapshot's *current* provisional generation. The
+   * superseded rows this render also emits (marked stale) are deliberately excluded: carrying
+   * them forward is what made every generation's ghost accumulate without bound.
+   */
+  provisionalItems: TranscriptItem[];
   revisedSpanIds: number[];
 }
 
@@ -153,18 +159,30 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
 
       const runtimeEvents = parseRuntimeEvents(eventsPayload);
       const newEvents = dedupeNewRuntimeEvents(runtimeEvents, eventSequence);
-      const highestEventSequence = newEvents.reduce(
+      const snapshot = parseSnapshot(snapshotPayload);
+
+      // `/snapshot` and `/events` are fetched in parallel, so an event can arrive in a round
+      // where the snapshot came back `unchanged`. An event that cannot be rendered without a
+      // snapshot is deferred, never dropped: the cursor must not advance past it, and no later
+      // event may be consumed ahead of it. Re-requesting the snapshot from version 0 guarantees
+      // the next round carries one, so a deferral always resolves instead of latching.
+      const deferralIndex = snapshot
+        ? -1
+        : newEvents.findIndex((event) => eventNeedsSnapshot(event.kind));
+      const consumedEvents = deferralIndex === -1 ? newEvents : newEvents.slice(0, deferralIndex);
+      const consumedSequence = consumedEvents.reduce(
         (highest, event) => Math.max(highest, event.seq),
         eventSequence
       );
-      const finalizationArrived = newEvents.some((event) => event.kind === "identity_finalized");
-      const snapshot = parseSnapshot(snapshotPayload);
+      const finalizationArrived = consumedEvents.some(
+        (event) => event.kind === "identity_finalized"
+      );
 
       if (snapshot) {
         const isFinalized = finalizationSeen || finalizationArrived;
         const renderedSnapshot = renderSnapshot(
           snapshot,
-          highestEventSequence,
+          consumedSequence,
           isFinalized,
           lastLabelRevisionVersion,
           revisedSpanIds,
@@ -186,7 +204,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
         priorProvisional = renderedSnapshot.provisional
           ? {
               generation: renderedSnapshot.provisional.generation,
-              items: renderedSnapshot.event.items.filter((item) => item.state === "provisional")
+              items: renderedSnapshot.provisionalItems
             }
           : null;
         lastLabelRevisionVersion = snapshot.labelRevisionVersion;
@@ -196,14 +214,17 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
         snapshotVersion = snapshot.version;
       }
 
-      for (const event of newEvents) {
+      for (const event of consumedEvents) {
         const referenceEvent = mapRuntimeEvent(event, snapshot, isFinalizationKnown(finalizationSeen, finalizationArrived));
         if (referenceEvent) {
           dispatch(referenceEvent);
         }
       }
       finalizationSeen ||= finalizationArrived;
-      eventSequence = highestEventSequence;
+      eventSequence = consumedSequence;
+      if (deferralIndex !== -1) {
+        snapshotVersion = 0;
+      }
 
       if (snapshot && TERMINAL_STATUSES.has(snapshot.status)) {
         const message = snapshot.failureReason ?? `Session ${snapshot.status}.`;
@@ -312,9 +333,13 @@ function renderSnapshot(
         }
       )
     : [];
+  // A newer generation REPLACES the preview it supersedes; it never appears beside it. The
+  // reference marks a preview stale in place (`operation: "stale"`, lane `provisional`) and
+  // keeps no dimmed copy of superseded text — emitting both rendered the same words twice, once
+  // dim and once bright, and every superseded generation accumulated without bound.
+  // Stale rows are therefore emitted only while there is no current preview to replace them.
   const staleProvisional =
-    previousProvisional &&
-    (!provisional || previousProvisional.generation !== provisional.generation)
+    !provisional && previousProvisional
       ? previousProvisional.items.map((item) => ({ ...item, provisional_stale: true }))
       : [];
   const items = [...committed, ...staleProvisional, ...currentProvisional];
@@ -347,6 +372,7 @@ function renderSnapshot(
         }
       : null,
     provisional,
+    provisionalItems: currentProvisional,
     revisedSpanIds: snapshot.committed
       .filter((commit) => commit.revisedTranscript !== null)
       .map((commit) => commit.spanId)
@@ -635,6 +661,14 @@ function errorMessage(error: unknown): string {
 
 function isFinalizationKnown(previouslySeen: boolean, arrivedNow: boolean): boolean {
   return previouslySeen || arrivedNow;
+}
+
+/**
+ * `identity_finalized` renders the committed transcript, so it cannot be translated into a
+ * reference event without a snapshot. Every other reachable kind renders from the event alone.
+ */
+function eventNeedsSnapshot(kind: string): boolean {
+  return kind === "identity_finalized";
 }
 
 function fail(label: string): never {
