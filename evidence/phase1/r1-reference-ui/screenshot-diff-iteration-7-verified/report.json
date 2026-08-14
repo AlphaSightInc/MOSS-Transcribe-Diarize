@@ -1,0 +1,161 @@
+{
+  "probe": "tests/reference_ui_screenshot_diff.py",
+  "reference_frontend": "/Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend",
+  "candidate_frontend": "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/frontend",
+  "fixture": "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/tests/fixtures/reference_ui_screenshot_fixture.json",
+  "config": "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/tests/fixtures/reference_ui_screenshot_diff.json",
+  "thresholds": {
+    "max_different_pixel_percent": 2.0,
+    "max_largest_region_percent": 1.0,
+    "connectivity": 4
+  },
+  "viewports": [
+    {
+      "reference_screenshot": "reference-1440x900.png",
+      "candidate_screenshot": "candidate-1440x900.png",
+      "difference_mask": "difference-mask-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "raw_differing_pixels_before_exemptions": 398690,
+      "differing_pixels_after_exemptions": 353626,
+      "different_pixel_percent": 27.285956790123457,
+      "largest_four_connected_region_pixels": 225716,
+      "largest_four_connected_region_percent": 17.41635802469136,
+      "exemptions": [
+        {
+          "id": "right-column-rail",
+          "reference_selector": ".history-panel",
+          "candidate_selector": ".history-panel",
+          "reference_box": {
+            "x": 1374.0,
+            "y": 69.5,
+            "width": 48.0,
+            "height": 812.5
+          },
+          "candidate_box": {
+            "x": 1374.0,
+            "y": 69.5,
+            "width": 48.0,
+            "height": 812.5
+          },
+          "masked_union_box": {
+            "left": 1374,
+            "top": 69,
+            "right": 1423,
+            "bottom": 883
+          }
+        },
+        {
+          "id": "mode-segmented-control",
+          "reference_selector": "[role='tablist'][aria-label='Session mode']",
+          "candidate_selector": "[role='tablist'][aria-label='Session mode']",
+          "reference_box": {
+            "x": 31.0,
+            "y": 164.0,
+            "width": 254.0,
+            "height": 41.5
+          },
+          "candidate_box": {
+            "x": 31.0,
+            "y": 179.375,
+            "width": 254.0,
+            "height": 41.5
+          },
+          "masked_union_box": {
+            "left": 31,
+            "top": 164,
+            "right": 286,
+            "bottom": 221
+          }
+        }
+      ],
+      "passed": false,
+      "fixture": {
+        "reference": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "LiveTranscribe\n\u270e\n# Speakers\nA\nS01\nS02\nTranscript\nSummary\nFind\nCopy\nAuto-scroll\nFormatted\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        },
+        "candidate": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "Live transcript\nS01\nS02\nFind\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        }
+      }
+    },
+    {
+      "reference_screenshot": "reference-1280x800.png",
+      "candidate_screenshot": "candidate-1280x800.png",
+      "difference_mask": "difference-mask-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "raw_differing_pixels_before_exemptions": 350115,
+      "differing_pixels_after_exemptions": 305837,
+      "different_pixel_percent": 29.86689453125,
+      "largest_four_connected_region_pixels": 229870,
+      "largest_four_connected_region_percent": 22.4482421875,
+      "exemptions": [
+        {
+          "id": "right-column-rail",
+          "reference_selector": ".history-panel",
+          "candidate_selector": ".history-panel",
+          "reference_box": {
+            "x": 1207.765625,
+            "y": 69.5,
+            "width": 54.234375,
+            "height": 712.5
+          },
+          "candidate_box": {
+            "x": 1214.0,
+            "y": 69.5,
+            "width": 48.0,
+            "height": 712.5
+          },
+          "masked_union_box": {
+            "left": 1207,
+            "top": 69,
+            "right": 1263,
+            "bottom": 783
+          }
+        },
+        {
+          "id": "mode-segmented-control",
+          "reference_selector": "[role='tablist'][aria-label='Session mode']",
+          "candidate_selector": "[role='tablist'][aria-label='Session mode']",
+          "reference_box": {
+            "x": 31.0,
+            "y": 164.0,
+            "width": 214.0,
+            "height": 41.5
+          },
+          "candidate_box": {
+            "x": 31.0,
+            "y": 179.375,
+            "width": 214.0,
+            "height": 41.5
+          },
+          "masked_union_box": {
+            "left": 31,
+            "top": 164,
+            "right": 246,
+            "bottom": 221
+          }
+        }
+      ],
+      "passed": false,
+      "fixture": {
+        "reference": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "LiveTranscribe\n\u270e\n# Speakers\nA\nS01\nS02\nTranscript\nSummary\nFind\nCopy\nAuto-scroll\nFormatted\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        },
+        "candidate": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "Live transcript\nS01\nS02\nFind\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        }
+      }
+    }
+  ],
+  "passed": false
+}
