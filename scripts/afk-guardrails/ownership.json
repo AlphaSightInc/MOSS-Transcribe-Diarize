@@ -32,7 +32,8 @@
     "owns": [
       "frontend/src/capture/",
       "frontend/public/worklets/",
-      "moss_transcribe_diarize/app/live_capture_status.py"
+      "moss_transcribe_diarize/app/live_capture_status.py",
+      "moss_transcribe_diarize/app/live_transport.py"
     ],
     "reads": [
       "prototypes/browser-capture-feasibility/",
@@ -45,7 +46,8 @@
     ],
     "blocked_by": [
       "r1-reference-ui"
-    ]
+    ],
+    "_integration_note": "Owns the live_transport.py call site so it can wire project_live_capture_status. Ticket 3's dispatcher work in live_service_runtime.py is parked, so there is no contention. Frontend App integration remains r1's; r2 exports a client for r1 to mount."
   },
   "r3-dispatcher": {
     "title": "Bounded inference dispatcher, measured",
