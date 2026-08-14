@@ -1,6 +1,6 @@
 # Context — x3-capture-health
 
-Iteration 6.
+Iteration 7.
 
 Branch `afk3/x3-capture-health` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -24,7 +24,7 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
 
 - [x] Route passes its `HelperPresenceSnapshot` and typed v2 session snapshot to the server-side
   projection; the production `/snapshot` path, not only a direct unit call, exercises the fusion.
-- [ ] Projection distinguishes `starting`, `awaiting_audio`, `recording`, and `failed`, using
+- [x] Projection distinguishes `starting`, `awaiting_audio`, `recording`, and `failed`, using
   server-observable frame recency, sequence gaps, lane accounting, sustained silence,
   backpressure, and reported lane health.
 - [ ] The real route probe proves that each unhealthy case avoids the healthy recording claim:
@@ -32,7 +32,7 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
   and a server-reported failed lane.
 - [ ] Terminal stop/failure preserves a client-readable server-authored reason, including a
   microphone-permission denial.
-- [ ] `.venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py` passes, and
+- [x] `.venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py` passes, and
   the committed re-runnable route probe plus raw output live under
   `evidence/phase1/x3-capture-health/`.
 - [ ] The focused gate remains green after merging current `dev`; `progress.txt` identifies what
@@ -93,7 +93,18 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    probe are `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json` and its
    adjacent probe; `docs/design-capture-health-observation-contract.md` records the decision.
    Terminal-readable failure remains constrained by x6-owned `live_service_runtime.py`.
-7. **Next — apply the measured projection policy:** make `project_live_capture_status()` evaluate
-   the recorded descriptor-derived conditions with an injectable projection clock, then add real
-   `/snapshot` route regressions proving stale, silent, sequence-wedged, and backpressured lanes
-   no longer return the healthy recording claim. Preserve the observed accepted-frame recovery.
+7. **Done (iteration 7):** `LiveCaptureHealthPolicy` derives four descriptor frame periods from
+   the live runtime's `frame_samples` and `sample_rate`, plus four classified rejections. The
+   production snapshot route supplies it to the projection. A deterministic route regression
+   uses the same injected server-monotonic clock as the observation registry and proves stale
+   arrival, four descriptor-frame silence, four sequence rejects, and four retryable capacity
+   rejects each replace the healthy copy; a subsequent accepted frame restores it. The refreshed
+   rerunnable threshold probe asserts the live stale response and records it in
+   `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json` (2,063.594 ms
+   observed age against the 2,000 ms descriptor-derived threshold). Focused validation passed:
+   53 tests / 327 subtests; preflight passed. Terminal-readable failure remains x6-owned.
+8. **Next — make the raw route evidence criterion-complete:** extend the committed probe (or add
+   an adjacent one) to emit and assert the five PRD statuses through `/snapshot`: missing system
+   audio, stale post-frame arrival, sustained silence, sustained sequence rejection, retryable
+   backpressure, and server-reported failed lane. Keep the existing route regressions; do not
+   change product policy. Terminal readability remains blocked on x6.

@@ -1,6 +1,6 @@
 # Capture-health observation contract
 
-Status: metadata carrier implemented; threshold verdict recorded, projection policy pending.
+Status: metadata carrier and measured projection policy implemented.
 
 ## Problem demonstrated
 
@@ -61,8 +61,13 @@ The Chrome worklet harness is the browser-cadence source: visible p95 508.1 ms, 
 | Retryable backpressure | 4 consecutive outcomes | Does not flag one retry, but detects sustained refusal | Peer-lane drain plus accepted retry resets to zero |
 
 The evidence is `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json`,
-written by its committed adjacent probe. The next projection change must use these
-descriptor-derived values and inject projection time for a deterministic stale-age regression.
+written by its committed adjacent probe. `LiveCaptureHealthPolicy` now derives the two
+duration/sample thresholds from the runtime descriptor: four `frame_samples` periods at its
+`sample_rate`; rejection thresholds remain four classified outcomes. The projection accepts an
+injectable server-monotonic clock, evaluates only active lanes which have accepted audio, and
+returns a server-authored non-healthy line for sustained sequence rejection, backpressure,
+silence, or an expired accepted arrival. A successful accepted frame still resets the relevant
+transient counters and refreshes the server arrival time.
 
 Terminal reason reachability remains x6-owned in `live_service_runtime.py`; this carrier does
 not change terminal cleanup or authorization behaviour.

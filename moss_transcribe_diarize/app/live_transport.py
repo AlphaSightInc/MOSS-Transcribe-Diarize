@@ -17,6 +17,7 @@ from .live_auth import (
     LivePeer,
 )
 from .live_capture_status import (
+    LiveCaptureHealthPolicy,
     LiveCaptureObservationRegistry,
     project_live_capture_status,
 )
@@ -745,6 +746,10 @@ def _snapshot_response(
             presence,
             v2_session=v2_session,
             observations=observations,
+            policy=LiveCaptureHealthPolicy(
+                frame_samples=runtime.descriptor.frame_samples,
+                sample_rate=runtime.descriptor.sample_rate,
+            ),
         ).to_dict(),
     }
 

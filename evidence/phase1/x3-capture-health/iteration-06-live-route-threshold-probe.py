@@ -183,8 +183,11 @@ def _normal_cadence_and_stall() -> dict[str, object]:
     assert stale_age_ns >= STALE_AFTER_NS
     snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot")
     assert snapshot.status_code == 200, snapshot.text
+    status = snapshot.json()
+    assert status["capture_phase"] == "recording"
+    assert status["status_line"] == "Microphone audio has stopped arriving. Check capture and try again."
     return {
-        "v2_lanes_after_cadence": snapshot.json()["v2_session"]["lanes"],
+        "v2_lanes_after_cadence": status["v2_session"]["lanes"],
         "arrival_intervals_ms": intervals_ms,
         "combined_interval_ms": {
             "count": len(flattened),
@@ -197,9 +200,9 @@ def _normal_cadence_and_stall() -> dict[str, object]:
             "server_observed_age_ms": round(stale_age_ns / 1_000_000, 3),
             "stale_after_ms": STALE_AFTER_NS // 1_000_000,
             "pre_stall_monotonic_ns": before_stall,
-            "current_unfused_route_status": {
-                "capture_phase": snapshot.json()["capture_phase"],
-                "status_line": snapshot.json()["status_line"],
+            "fused_route_status": {
+                "capture_phase": status["capture_phase"],
+                "status_line": status["status_line"],
             },
         },
     }
@@ -323,9 +326,10 @@ def _run_probe() -> dict[str, object]:
                 "are the same 2,000 ms. Four consecutive classified rejections avoid treating one retry "
                 "as sustained while remaining far below the PRD's measured 58-rejection wedge."
             ),
-            "next_change": (
-                "Apply these descriptor-derived thresholds in project_live_capture_status, with injectable "
-                "projection time and real-route regressions for stale, silence, sequence, and backpressure."
+            "projection_policy": (
+                "Applied in project_live_capture_status with descriptor-derived timing and an injectable "
+                "server-monotonic clock; the focused route regression covers stale, silence, sequence, "
+                "backpressure, and accepted-frame recovery."
             ),
         },
     }

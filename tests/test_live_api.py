@@ -11,6 +11,7 @@ import time
 import unittest
 from dataclasses import dataclass
 from pathlib import Path
+from unittest.mock import patch
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_auth import VIEW_ABSOLUTE_CAP_SECONDS
@@ -148,6 +149,14 @@ class _FakeTimer:
         return handle
 
 
+class _MutableMonotonicClock:
+    def __init__(self, value_ns: int = 0) -> None:
+        self.value_ns = value_ns
+
+    def __call__(self) -> int:
+        return self.value_ns
+
+
 def _digest(label: str) -> str:
     return hash_config({"label": label})
 
@@ -200,6 +209,7 @@ def make_live_runtime(
     *,
     max_retained_samples: int = 8,
     max_frame_samples: int = LIVE_SAMPLE_RATE,
+    frame_samples: int = 1000,
     max_queue_depth: int = 2,
     speech: tuple[bool, ...] = (),
     session_id: str = "api-session",
@@ -226,7 +236,7 @@ def make_live_runtime(
             # Same value as the endpoint policy below: one span cap, declared twice.
             hard_cap_samples=4000,
         ),
-        frame_samples=1000,
+        frame_samples=frame_samples,
     )
     ids = iter(session_ids or (session_id,))
     return LiveServiceRuntime(
@@ -272,6 +282,110 @@ class LiveApiTest(unittest.TestCase):
         )
         self.assertEqual(paired.status_code, 200)
         return AuthorizedLiveClient(app, paired.json()["device_token"])
+
+    def test_snapshot_projects_measured_server_observations_and_recovers_after_acceptance(self):
+        """The production route, not a hand-built observation, owns every policy condition."""
+        from moss_transcribe_diarize.app.server import create_app
+
+        frame_samples = 8_000
+        clock = _MutableMonotonicClock()
+        with patch("moss_transcribe_diarize.app.live_capture_status.time.monotonic_ns", clock):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                app = create_app(
+                    model_path="fake-model",
+                    runs_dir=tmpdir,
+                    live_enabled=True,
+                    live_runtime_factory=lambda: make_live_runtime(
+                        max_retained_samples=frame_samples * 2,
+                        max_frame_samples=frame_samples,
+                        frame_samples=frame_samples,
+                        session_ids=("stale", "silent", "sequence", "backpressure"),
+                    ),
+                    **self._live_auth_kwargs(tmpdir),
+                )
+                client = self._paired_client(app)
+
+                def start_session(sequence: int) -> str:
+                    created = client.post("/api/live/sessions")
+                    self.assertEqual(created.status_code, 200)
+                    session_id = created.json()["id"]
+                    heartbeat = client.post(
+                        f"/api/live/sessions/{session_id}/heartbeat",
+                        json=helper_heartbeat_payload(sequence=sequence),
+                    )
+                    self.assertEqual(heartbeat.status_code, 200)
+                    return session_id
+
+                def post_frame(session_id: str, lane: str, sequence: int, *, silent: bool = False):
+                    return client.post(
+                        f"/api/live/sessions/{session_id}/frames",
+                        json=v2_frame_payload(sequence, frame_samples, lane=lane, silent=silent),
+                    )
+
+                def status(session_id: str) -> dict:
+                    response = client.get(f"/api/live/sessions/{session_id}/snapshot")
+                    self.assertEqual(response.status_code, 200)
+                    return response.json()
+
+                def assert_healthy(session_id: str) -> None:
+                    snapshot = status(session_id)
+                    self.assertEqual(
+                        snapshot["capture_phase"],
+                        "recording",
+                    )
+                    self.assertEqual(
+                        snapshot["status_line"],
+                        "Capturing microphone and shared audio.",
+                    )
+
+                stale = start_session(0)
+                self.assertEqual(post_frame(stale, "microphone", 0).status_code, 200)
+                self.assertEqual(post_frame(stale, "system", 0).status_code, 200)
+                clock.value_ns = 2_000_000_000
+                self.assertEqual(
+                    status(stale)["status_line"],
+                    "Microphone audio has stopped arriving. Check capture and try again.",
+                )
+                self.assertEqual(post_frame(stale, "microphone", 1).status_code, 200)
+                self.assertEqual(post_frame(stale, "system", 1).status_code, 200)
+                assert_healthy(stale)
+
+                silent = start_session(1)
+                for sequence in range(4):
+                    self.assertEqual(post_frame(silent, "microphone", sequence, silent=True).status_code, 200)
+                    self.assertEqual(post_frame(silent, "system", sequence).status_code, 200)
+                self.assertEqual(
+                    status(silent)["status_line"],
+                    "No microphone sound is being detected.",
+                )
+                self.assertEqual(post_frame(silent, "microphone", 4).status_code, 200)
+                assert_healthy(silent)
+
+                sequence_gap = start_session(2)
+                self.assertEqual(post_frame(sequence_gap, "microphone", 0).status_code, 200)
+                self.assertEqual(post_frame(sequence_gap, "system", 0).status_code, 200)
+                for _ in range(4):
+                    self.assertEqual(post_frame(sequence_gap, "microphone", 2).status_code, 409)
+                self.assertEqual(
+                    status(sequence_gap)["status_line"],
+                    "Microphone audio frames are out of sequence. Reconnecting capture.",
+                )
+                self.assertEqual(post_frame(sequence_gap, "microphone", 1).status_code, 200)
+                assert_healthy(sequence_gap)
+
+                backpressure = start_session(3)
+                self.assertEqual(post_frame(backpressure, "microphone", 0).status_code, 200)
+                self.assertEqual(post_frame(backpressure, "microphone", 1).status_code, 200)
+                self.assertEqual(post_frame(backpressure, "system", 0).status_code, 200)
+                for _ in range(4):
+                    self.assertEqual(post_frame(backpressure, "microphone", 2).status_code, 429)
+                self.assertEqual(
+                    status(backpressure)["status_line"],
+                    "Server is catching up on microphone audio.",
+                )
+                self.assertEqual(post_frame(backpressure, "system", 1).status_code, 200)
+                self.assertEqual(post_frame(backpressure, "microphone", 2).status_code, 200)
+                assert_healthy(backpressure)
 
     def test_live_routes_are_absent_by_default_and_runtime_is_unchanged(self):
         from fastapi.testclient import TestClient

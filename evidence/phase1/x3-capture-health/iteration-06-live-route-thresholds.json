@@ -28,34 +28,34 @@
   "local_production_route_measurement": {
     "arrival_intervals_ms": {
       "microphone": [
-        507.368,
-        515.387,
-        514.976,
-        514.787,
-        511.346
+        503.651,
+        515.391,
+        511.957,
+        514.298,
+        511.969
       ],
       "system": [
-        507.633,
-        515.205,
-        514.909,
-        514.727,
-        511.739
+        504.068,
+        514.814,
+        512.161,
+        514.206,
+        512.491
       ]
     },
     "combined_interval_ms": {
       "count": 10,
-      "max": 515.387,
-      "p50": 514.727,
-      "p95": 515.387
+      "max": 515.391,
+      "p50": 512.161,
+      "p95": 515.391
     },
     "stall": {
-      "current_unfused_route_status": {
+      "fused_route_status": {
         "capture_phase": "recording",
-        "status_line": "Capturing microphone and shared audio."
+        "status_line": "Microphone audio has stopped arriving. Check capture and try again."
       },
-      "pre_stall_monotonic_ns": 2253100469290125,
+      "pre_stall_monotonic_ns": 2253630949648625,
       "requested_seconds": 2.05,
-      "server_observed_age_ms": 2063.57,
+      "server_observed_age_ms": 2063.594,
       "stale_after_ms": 2000
     },
     "v2_lanes_after_cadence": {
@@ -86,7 +86,7 @@
     }
   },
   "policy_verdict": {
-    "next_change": "Apply these descriptor-derived thresholds in project_live_capture_status, with injectable projection time and real-route regressions for stale, silence, sequence, and backpressure.",
+    "projection_policy": "Applied in project_live_capture_status with descriptor-derived timing and an injectable server-monotonic clock; the focused route regression covers stale, silence, sequence, backpressure, and accepted-frame recovery.",
     "rationale": "Four descriptor frame periods are 2,000 ms: about 3.9 times the measured hidden-tab p95 of 506.5 ms, while the route probe demonstrates a real post-frame stall beyond that age and exact recovery after the next accepted frame. Four 8,000-sample silent frames are the same 2,000 ms. Four consecutive classified rejections avoid treating one retry as sustained while remaining far below the PRD's measured 58-rejection wedge.",
     "stale_after_server_arrival_ms": 2000,
     "sustained_backpressure_rejections": 4,

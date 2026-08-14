@@ -13,6 +13,10 @@ from .live_v2_session import LiveV2SessionSnapshot
 
 CapturePhase = Literal["starting", "awaiting_audio", "recording", "failed"]
 
+_NANOSECONDS_PER_SECOND = 1_000_000_000
+_CAPTURE_HEALTH_FRAME_PERIODS = 4
+_SUSTAINED_REJECTION_OUTCOMES = 4
+
 _FAILURE_STATUS_LINES: dict[str, str | dict[str, str]] = {
     "browser_microphone_permission_denied": (
         "Microphone access was denied. Allow microphone access in Chrome and try again."
@@ -79,6 +83,40 @@ class LiveCaptureObservationSnapshot:
     """Immutable session observation copy for the status projection."""
 
     lanes: Mapping[LiveLane, LiveCaptureLaneObservation]
+
+
+@dataclass(frozen=True, slots=True)
+class LiveCaptureHealthPolicy:
+    """Descriptor-derived server thresholds selected by the measured route probe."""
+
+    frame_samples: int
+    sample_rate: int
+    frame_periods: int = _CAPTURE_HEALTH_FRAME_PERIODS
+    sustained_rejection_outcomes: int = _SUSTAINED_REJECTION_OUTCOMES
+
+    def __post_init__(self) -> None:
+        for name, value in (
+            ("frame_samples", self.frame_samples),
+            ("sample_rate", self.sample_rate),
+            ("frame_periods", self.frame_periods),
+            ("sustained_rejection_outcomes", self.sustained_rejection_outcomes),
+        ):
+            if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer.")
+
+    @property
+    def stale_after_monotonic_ns(self) -> int:
+        return (
+            self.frame_samples
+            * self.frame_periods
+            * _NANOSECONDS_PER_SECOND
+            + self.sample_rate
+            - 1
+        ) // self.sample_rate
+
+    @property
+    def sustained_silence_samples(self) -> int:
+        return self.frame_samples * self.frame_periods
 
 
 @dataclass(slots=True)
@@ -213,6 +251,8 @@ def project_live_capture_status(
     *,
     v2_session: LiveV2SessionSnapshot | None = None,
     observations: LiveCaptureObservationSnapshot | None = None,
+    policy: LiveCaptureHealthPolicy | None = None,
+    monotonic_ns: Callable[[], int] | None = None,
 ) -> LiveCaptureStatus:
     """Fuse helper and v2 server facts into the client-facing capture judgment.
 
@@ -220,11 +260,6 @@ def project_live_capture_status(
     Known codes get actionable copy here; future native or browser codes use a stable generic
     fallback instead of being rejected or leaked into the UI.
     """
-
-    # Observation thresholds are deliberately not selected yet. Accept the immutable
-    # server-side snapshot at the projection seam so the later policy cannot regress to a
-    # client clock or retained frames.
-    del observations
 
     if presence is None:
         return LiveCaptureStatus("starting", "Waiting for audio capture to start.")
@@ -274,6 +309,16 @@ def project_live_capture_status(
                 label = "microphone audio" if lane == "microphone" else "shared audio"
                 return LiveCaptureStatus(phase, f"Waiting for {label} to arrive.")
             return LiveCaptureStatus(phase, "Waiting for microphone and shared audio to arrive.")
+        if phase == "recording" and presence.state == "capturing":
+            observation_issue = _server_observation_issue(
+                v2_session=v2_session,
+                observations=observations,
+                policy=policy,
+                monotonic_ns=monotonic_ns,
+            )
+            if observation_issue is not None:
+                lane, condition = observation_issue
+                return LiveCaptureStatus(phase, _observation_status_line(lane, condition))
         return LiveCaptureStatus(phase, _HELPER_STATUS_LINES[presence.state])
 
     not_failed, lane, code = sorted_issues[0]
@@ -290,3 +335,55 @@ def project_live_capture_status(
 def _capture_session_id(value: str) -> None:
     if not isinstance(value, str) or not value:
         raise ValueError("session_id must be a non-empty string.")
+
+
+def _server_observation_issue(
+    *,
+    v2_session: LiveV2SessionSnapshot | None,
+    observations: LiveCaptureObservationSnapshot | None,
+    policy: LiveCaptureHealthPolicy | None,
+    monotonic_ns: Callable[[], int] | None,
+) -> tuple[LiveLane, str] | None:
+    if v2_session is None or observations is None or policy is None:
+        return None
+    now = _monotonic_now(monotonic_ns or time.monotonic_ns)
+    for lane in sorted(v2_session.lanes, key=lambda value: value.value):
+        lane_snapshot = v2_session.lanes[lane]
+        observation = observations.lanes.get(lane)
+        if (
+            observation is None
+            or lane_snapshot.health == "failed"
+            or lane_snapshot.accepted_samples == 0
+        ):
+            continue
+        if observation.consecutive_sequence_rejections >= policy.sustained_rejection_outcomes:
+            return lane, "sequence"
+        if observation.consecutive_backpressure_rejections >= policy.sustained_rejection_outcomes:
+            return lane, "backpressure"
+        if observation.consecutive_silent_samples >= policy.sustained_silence_samples:
+            return lane, "silence"
+        arrival = observation.last_server_arrival_monotonic_ns
+        if arrival is not None and now >= arrival and now - arrival >= policy.stale_after_monotonic_ns:
+            return lane, "stale"
+    return None
+
+
+def _observation_status_line(lane: LiveLane, condition: str) -> str:
+    label = "Microphone audio" if lane == LiveLane.MICROPHONE else "Shared audio"
+    source_label = "microphone" if lane == LiveLane.MICROPHONE else "shared audio"
+    if condition == "sequence":
+        return f"{label} frames are out of sequence. Reconnecting capture."
+    if condition == "backpressure":
+        return f"Server is catching up on {label.lower()}."
+    if condition == "silence":
+        return f"No {source_label} sound is being detected."
+    if condition == "stale":
+        return f"{label} has stopped arriving. Check capture and try again."
+    raise ValueError(f"unknown capture observation condition: {condition}")
+
+
+def _monotonic_now(clock: Callable[[], int]) -> int:
+    value = clock()
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise ValueError("monotonic_ns must return a non-negative integer.")
+    return value
