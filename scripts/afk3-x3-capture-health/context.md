@@ -1,6 +1,6 @@
 # Context — x3-capture-health
 
-Iteration 3.
+Iteration 4.
 
 Branch `afk3/x3-capture-health` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -65,10 +65,20 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    preflight passed. Plain `.venv/bin/pytest` resolves the desktop checkout through this shared
    virtualenv, so it cannot validate this worktree without `PYTHONPATH=.`. This slice does not
    provide recency, sustained-silence, rejection/backpressure, or terminal-reason evidence.
-4. **Next — prototype the missing observation contract before changing production policy:** the
-   current v2 snapshot retains cumulative lane accounting and health only; it does not retain a
-   server arrival clock, rejected-frame/backpressure history, or silence-over-time summary. The
-   required recency/silence/reject rules therefore need a measured prototype and an ownership-safe
-   observation-carrier proposal before thresholds or projection claims are added. Terminal
-   reason reachability is separately constrained by `live_service_runtime.py`, owned by x6; do
-   not edit it from this ticket.
+4. **Done (iteration 4):** the committed `LiveV2Session` probe exercises the production
+   `accept -> snapshot/account_through` path. It proves that silent and voiced frames have equal
+   snapshots, a snapshot remains equal after 27 ms of measured server-monotonic elapsed time,
+   and repeated `LiveV2OutOfOrderFrameError` / `LiveV2LaneCapacityError` outcomes leave their
+   snapshots equal. Accounting releases the sole silent retained frame. The raw JSON is
+   `evidence/phase1/x3-capture-health/iteration-04-observation-contract.json`; its rerunnable
+   probe and verdict are beside it. `docs/design-capture-health-observation-contract.md` proposes
+   an x3-owned metadata-only registry: server arrival time, consecutive silent samples,
+   consecutive sequence rejections, consecutive backpressure rejections, and the last rejection
+   time. It deliberately contains no threshold or user-copy policy. Preflight passed.
+5. **Next — implement only the measured observation carrier:** create/remove the typed registry
+   with the v2 session in `live_transport.py`, update it after accepted and classified rejected
+   frame outcomes, and supply its immutable snapshot to the projection using an injectable
+   monotonic clock. Add direct and real-route tests for counter reset/lifecycle. Do not choose a
+   stale/silence/rejection threshold until a separate cadence-and-recovery prototype records it.
+   Terminal reason reachability remains constrained by x6-owned `live_service_runtime.py`; do not
+   edit it from this ticket.
