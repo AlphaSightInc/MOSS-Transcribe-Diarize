@@ -1,6 +1,6 @@
 # Context — r1-reference-ui
 
-Iteration 7. The binding acceptance checklist has been reconciled against the
+Iteration 8. The binding acceptance checklist has been reconciled against the
 PRD, charter, T-02, T-05, T-07, and T-10. The first visible reference-shell
 slice and reduced transcript component now replace the stub; the full port remains open.
 
@@ -59,12 +59,21 @@ slice and reduced transcript component now replace the stub; the full port remai
   `27.2860%` differing pixels / `17.4164%` largest region at 1440x900 and `29.8669%` /
   `22.4482%` at 1280x800, versus the charter's `2%` / `1%` limits. Raw output:
   `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-7-verified/`.
-- This measurement exposes a blocking contract tension, not a reason to expand the gate: the
-  reference still visibly renders host-only microphone/source/mute/export surfaces, while T-05
-  requires Phase 1 to drop them, and charter §5 does not exempt those regions. The remaining
-  port also omits retained reference surface, so the present branch is materially short of the
-  pixel gate regardless. Do not add an undeclared mask; supervisor clarification is required
-  before a final fidelity pass can be judged possible under both rulings.
+- **BLOCKED — supervisor fidelity ruling required.** Iteration 8 re-audited the committed
+  screenshot report and its exact config: only the right rail and the mode control are masked.
+  Yet T-05/C2 require the reference's host-only microphone/source/mute/export surfaces to be
+  dropped. T-10's original question calls T-05's dropped controls legitimate exemptions, while
+  the binding charter §5 omits them. The report proves both real transcript components rendered
+  the shared fixture, then fails at 27.2860% / 17.4164% (1440x900) and 29.8669% / 22.4482%
+  (1280x800), versus 2% / 1%. The still-missing retained reference surface independently keeps
+  the branch far from the gate, but that future work cannot resolve this rules collision. Do not
+  add an undeclared mask or reintroduce dropped controls. Supervisor must choose one explicit
+  canonical rule: (a) amend charter §5 with declared T-05 dropped-control exemption selectors,
+  (b) revise T-05/C2 to retain those reference controls, or (c) approve a different canonical
+  Phase-1 visual oracle. Evidence and re-runnable probe:
+  `tests/reference_ui_screenshot_diff.py`,
+  `tests/fixtures/reference_ui_screenshot_diff.json`, and
+  `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-7-verified/report.json`.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
   Vitest: 12 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
@@ -125,13 +134,12 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
 
 ## Ranked candidates
 
-1. Escalate the measured T-05/charter §5 mismatch: the reference's required-to-drop host-only
-   left-panel regions are not declared diff exemptions. Do not change mask configuration or
-   claim a pass without a supervisor ruling; after resolution, use the committed probe to guide
-   the next retained-reference surface port.
-2. Port the remaining retained reference surface (starting with the Topbar/ControlPanel layout)
-   only under that ruling, preserving excluded controls as excluded rather than inventing a
-   broader exemption.
+1. **BLOCKED on the explicit supervisor fidelity ruling above.** Do not change the mask,
+   reintroduce excluded controls, or claim the screenshot gate can pass until that rule selects
+   the canonical oracle/exemptions.
+2. After that ruling, port the remaining retained reference surface (starting with the
+   Topbar/ControlPanel layout), preserving excluded controls as excluded and using the committed
+   probe to measure only the authorized oracle.
 3. Port the generic `ToastLayer` only when a live/file adapter instantiates the poller and gives
    its error/terminal callbacks a real caller; do not add a local substitute toast state or a
    no-op trigger.
