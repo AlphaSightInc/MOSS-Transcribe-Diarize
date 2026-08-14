@@ -16,6 +16,9 @@ export const sessionMode = signal<SessionMode>("live");
 export const sessionState = signal("idle");
 export const sessionStatus = signal<SessionLifecycle>("idle");
 export const sessionError = signal<string | null>(null);
+// Titles are Phase 2, but the transcript pane renders one and falls back to "LiveTranscribe";
+// the signal exists so that fallback is the only reason it is ever empty.
+export const sessionTitle = signal("");
 export const sessionStatusLine = signal<string | null>(null);
 
 export function applySessionStateEvent(

@@ -112,8 +112,14 @@ A pixel gate nobody can run is worse than an honest one.
   region larger than 1 % of viewport area. A 0-pixel bar is unachievable (antialiasing, subpixel
   text) and demanding it makes the gate meaningless.
 - **Exempt regions**, declared in the diff config, not silently ignored: the right-column rail,
-  the mode segmented control (two segments vs four), and the preflight modal (no reference pixels
-  exist).
+  the mode segmented control (two segments vs four), the preflight modal (no reference pixels
+  exist), and the transcript pane's `.tr-legend-right` Transcript|Summary toggle.
+
+  The last was added 2026-08-14 while porting the pane. It is the same class as the other two:
+  `SummaryView` is a ruled Phase 2 deletion (C10), so the toggle is a control that cannot work,
+  and C2 forbids shipping it disabled. Every other difference in the transcript panel is **not**
+  exempt — adversarial review measured that panel at 48.8 % of all differing pixels, so the
+  exemption is deliberately narrow: it covers the toggle's own box, nothing else in the pane.
 - **Where reference pixels do not exist** (preflight, token entry): the standard is the
   reference's own CSS custom properties, type scale, spacing, and four bundled font families
   reused verbatim. Reviewed by the supervisor, not gated numerically.
