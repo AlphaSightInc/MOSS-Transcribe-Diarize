@@ -1,3 +1,52 @@
+/**
+ * Browser capture client for the live v2 lane path.
+ *
+ * ## Mounting it
+ *
+ * The order below is not a suggestion. Chrome requires the microphone before the
+ * display chooser, `getDisplayMedia()` must be called synchronously inside the click
+ * handler that authorised it, and the server session must not exist until both lanes
+ * have proved they carry signal.
+ *
+ *   const client = new CaptureClient({ captureBearer, helperVersion, onMeter, ... });
+ *   await client.prepare();                      // descriptor + AudioContext + worklet
+ *   await client.startMicrophone(useEchoCancel); // speakers -> true, headphones -> false
+ *   // ... in the display button's own click handler, with no await before it:
+ *   const stream = await client.requestDisplayMedia();
+ *   await client.attachDisplayMedia(stream);
+ *   // ... both meters must read non-zero; `createSession` refuses otherwise:
+ *   const session = await client.createSession();
+ *   // ... capture now runs on its own, driven by worklet frames. Then:
+ *   await client.stop(deadlineSeconds);
+ *
+ * Nothing is polled and nothing is timed. Frames, heartbeats and retries are all driven
+ * by AudioWorklet port messages. This file contains no interval or delay timer of any
+ * kind, and a committed test greps the source and fails if one appears -- including one
+ * merely named in a comment, which is why this sentence spells none of them out.
+ *
+ * ## What the caller must handle
+ *
+ * - `onMeter(lane, rms)` fires once per worklet frame per lane. Both meters must be
+ *   non-zero before `createSession()` will succeed; that is the preflight gate.
+ * - `onPreSessionFailure(failure)` fires for the three failures that happen before a
+ *   session exists, so there is no authenticated heartbeat to carry them. The client
+ *   has already torn its capture graph down when this fires; the caller owns the retry
+ *   UI, and the retry is a fresh `startMicrophone` on a new user gesture.
+ * - `onTransportError(route, error)` is advisory. The client has already decided what to
+ *   do about the response by the time this fires.
+ * - A frame 409 that is not a sequence conflict clears the session and returns the client
+ *   to a state where `createSession()` can be called again WITHOUT rebuilding the audio
+ *   graph. A 400 is a client bug: the client stops capture locally and does not retry.
+ * - `replaceLane(lane, stream, tracks)` is the only way `device_epoch` ever advances. It
+ *   is for a lane that is still live (a user-chosen device switch). A lane whose track
+ *   has ended is already reported `failed` and sealed by the server, and needs a new
+ *   session instead.
+ *
+ * Lane health reaches the operator only through the heartbeat, and the server turns it
+ * into one `capture_phase` + one `status_line` on the snapshot route. The caller renders
+ * that string; it does not need to know these codes -- except for the three pre-session
+ * ones, which never reach the server and so have no server-side copy.
+ */
 export const V2_FRAME_KEYS = [
   "lane",
   "sequence",

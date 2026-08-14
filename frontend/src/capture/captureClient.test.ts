@@ -807,7 +807,7 @@ describe("browser capture frame contract", () => {
   it("never reports a metered condition as `failed`, which would seal the lane server-side", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const { client } = await eventLaneClient();
+    const { client, microphone } = await eventLaneClient();
 
     // Both lanes in their worst metered state at once. If either reported `failed`,
     // LiveHelperFailureCoordinator would call fail_lane on it; if both did, the whole
@@ -826,8 +826,9 @@ describe("browser capture frame contract", () => {
       expect(body.lanes.microphone.state).not.toBe("failed");
     }
 
-    // A really-gone track still latches failed, and outranks the metered reason.
-    (client as any).markLaneFailed("microphone", "browser_track_ended");
+    // A really-gone track still latches failed, and outranks the metered reason. Driven
+    // by the real event, not by calling the transition.
+    microphone.dispatchEvent(new Event("ended"));
     await vi.waitFor(() => expect(heartbeatBodies(fetchSpy).at(-1)!.lanes.microphone.state).toBe("failed"));
     expect(heartbeatBodies(fetchSpy).at(-1)!.lanes.microphone.failure_code).toBe(
       "browser_track_ended",
