@@ -1,0 +1,23 @@
+$ npm --prefix frontend test -- --reporter=verbose App.test.tsx
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --reporter=verbose App.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.10 /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/frontend
+
+ ✓ src/App.test.tsx > App shell > renders the phase-one shell with an inert collapsed rail 15ms
+stdout | src/App.test.tsx > App shell > records source-tree counts and rendered collapsed-rail evidence
+REFERENCE_UI_COUNTS {"reference":{"files":67,"lines":17964},"current":{"files":20,"lines":5873}}
+REFERENCE_UI_RENDERED_RAIL {"dataRightCollapsed":"true","historyRailPresent":true,"historyRailInteractive":false,"historyBodyPresent":false}
+
+ ✓ src/App.test.tsx > App shell > keeps only Live and File modes, and the File tab exposes browser file selection 114ms
+ ✓ src/App.test.tsx > App shell > records source-tree counts and rendered collapsed-rail evidence 72ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  23:34:43
+   Duration  654ms (transform 59ms, setup 0ms, import 78ms, tests 202ms, environment 275ms)

@@ -43,9 +43,15 @@ slice and reduced transcript component now replace the stub; the full port remai
   change, and render-before-cursor advancement. There is deliberately no application caller
   yet: r2 owns live session creation/capture and must instantiate this adapter, including the
   ruled sessionStorage reattach contract.
+- `frontend/src/App.test.tsx` is now the committed, rerunnable source/rail evidence probe.
+  It measured the reference source tree at 67 files / 17,964 lines and the current tree at
+  20 files / 5,873 lines, so it records an explicit remaining fidelity gap rather than treating
+  the current slice as complete. It also renders the real `App` and proves the rail has
+  `data-right-collapsed="true"`, no history body, and no interactive control. Its captured raw
+  output is `evidence/phase1/r1-reference-ui/reference-ui-probe-iteration-6.txt`.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
-  Vitest: 11 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
+  Vitest: 12 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
   not a failure.
 
 ## Read before your first change
@@ -103,8 +109,9 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
 
 ## Ranked candidates
 
-1. Add committed, re-runnable counts and rendered-rail artifacts after the concrete component
-   port; then implement the charter's screenshot-diff probe against the reference bundle.
+1. Implement the charter's committed, rerunnable two-viewport screenshot-diff probe against the
+   reference bundle, with its identical transcript fixture and declared exempt regions. The
+   counts/rail artifact is already committed; do not substitute it for the pixel gate.
 2. Port the generic `ToastLayer` only when a live/file adapter instantiates the poller and gives
    its error/terminal callbacks a real caller; do not add a local substitute toast state or a
    no-op trigger.
