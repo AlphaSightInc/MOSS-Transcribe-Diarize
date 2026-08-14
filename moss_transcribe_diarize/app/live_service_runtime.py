@@ -40,6 +40,21 @@ LIVE_SERVICE_SCHEMA_VERSION = 1
 LIVE_PROTOCOL_VERSION = "moss-live-service.v1"
 _VECTOR_JOURNAL_LOG = logging.getLogger("moss_transcribe_diarize.live.vector_journal")
 
+# THE TERMINAL CONTRACT, in one place so it can be tested rather than remembered.
+#
+# `LiveServiceSnapshot.session.status` is the single field a client has to read to know a
+# meeting is over. A client that stops polling on exactly these values -- and on nothing
+# else -- stops on every way a live session can end: a clean stop, an explicit abort, the
+# session's own failure, and the runtime terminal failures (provider error, helper lease
+# expiry, stop-deadline overrun) that the session object itself is never told about.
+# `snapshot.terminal_failure` says *why*; it is detail, not the signal to stop.
+#
+# Two things make that true and both are load-bearing: `_snapshot` projects a runtime
+# terminal failure onto `status`, and `snapshot(since_version=...)` refuses to suppress a
+# terminal snapshot as "unchanged" -- terminality does not move the version counter, so a
+# gate that hid it would leave a caught-up reader polling a dead session forever.
+LIVE_TERMINAL_SESSION_STATUSES = frozenset({"closed", "aborted", "failed"})
+
 
 class LiveServiceFailureKind(str, Enum):
     INTEGRITY = "integrity"
@@ -589,7 +604,19 @@ class LiveServiceRuntime:
         with self._lock:
             state = self._get(session_id)
             snapshot = self._snapshot(state)
-            if since_version is not None and snapshot.session.version <= since_version:
+            if (
+                since_version is not None
+                and snapshot.session.version <= since_version
+                # Terminality is fenced *outside* the session's version counter: `_fail`
+                # records the failure on the runtime while the session object -- which owns
+                # `version` -- is never asked to transition, so the version a polling reader
+                # already holds does not move when the meeting dies. Suppressing the body as
+                # "unchanged" therefore withholds the one fact that ends the poll, and the
+                # reader keeps asking a dead session for updates forever. That was the
+                # observed outage shape, so the version gate must never hide it: a terminal
+                # snapshot is always delivered, and the reader stops on the next read.
+                and state.terminal_failure is None
+            ):
                 return None
             return snapshot
 
@@ -794,8 +821,15 @@ class LiveServiceRuntime:
         # A runtime failure fences the session before the lower-level session object always
         # gets a chance to transition itself.  The public snapshot is the client contract,
         # so it must report that terminal state immediately instead of advertising "active"
-        # beside a terminal_failure record.  An explicit abort retains its distinct status.
-        if state.terminal_failure is not None and session.status != "aborted":
+        # beside a terminal_failure record.
+        #
+        # It only projects over a status that is still *running*.  A session that already
+        # reached an end of its own -- closed, aborted, failed -- has the authoritative
+        # account of how the meeting finished, and a teardown that lands after it (the
+        # helper lease expiring minutes after a clean stop aborts the mono runtime) must
+        # not rewrite "closed" into "failed" and tell an operator a finished meeting died.
+        # The failure itself is still on the same snapshot, as `terminal_failure`.
+        if state.terminal_failure is not None and session.status not in LIVE_TERMINAL_SESSION_STATUSES:
             session = replace(
                 session,
                 status="failed",

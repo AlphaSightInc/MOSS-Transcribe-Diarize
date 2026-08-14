@@ -18,6 +18,7 @@ from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPo
 from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW, LiveLane
 from moss_transcribe_diarize.app.live_helper_presence import HELPER_HEALTH_SCHEMA
 from moss_transcribe_diarize.app.live_service_runtime import (
+    LIVE_TERMINAL_SESSION_STATUSES,
     LiveServiceBounds,
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
@@ -512,6 +513,88 @@ class LiveApiTest(unittest.TestCase):
             event_payloads = events.json()["events"]
             self.assertEqual([event["seq"] for event in event_payloads], [1, 2, 3])
             self.assertEqual(event_payloads[-1]["kind"], "terminal_failure")
+
+    def test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read(self):
+        """Drive a real session to terminal failure and poll it the way a viewer does.
+
+        The viewer is the party this contract exists for, and it does not issue bare
+        `/snapshot` requests: it carries the version and sequence cursors it last rendered,
+        exactly as `live_portal.py` does. Asserting on `since_version=0` proves nothing
+        here, because 0 is the one cursor the version gate can never suppress -- it is
+        below every version a session that accepted a frame has ever had. This test holds
+        the cursor the viewer actually holds.
+
+        Failing-before: with the version gate applied to terminal snapshots, every poll
+        after the failure answered `{"snapshot": null, "unchanged": true}` forever, so the
+        viewer kept showing "active" over a frozen transcript and never stopped polling.
+        """
+
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            def poll(version_cursor: int, sequence_cursor: int) -> tuple[dict, list[int]]:
+                snapshot = client.get(
+                    f"/api/live/sessions/{session_id}/snapshot?since_version={version_cursor}"
+                )
+                events = client.get(
+                    f"/api/live/sessions/{session_id}/events?since_seq={sequence_cursor}"
+                )
+                self.assertEqual(snapshot.status_code, 200)
+                self.assertEqual(events.status_code, 200)
+                return snapshot.json(), [event["seq"] for event in events.json()["events"]]
+
+            # A fresh viewer has rendered nothing, so its event cursor is the one slot
+            # below the first sequence. seq 0 is `session_created` and it is delivered
+            # here -- once. On the next poll the cursor sits on it and the viewer filters
+            # the repeat itself, which is what an inclusive endpoint requires.
+            version_cursor, sequence_cursor = 0, -1
+            body, delivered = poll(version_cursor, sequence_cursor)
+            self.assertEqual(delivered, [0])
+            first_delivery = list(delivered)
+            sequence_cursor = max(delivered)
+
+            client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
+            client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 2))
+
+            body, delivered = poll(version_cursor, sequence_cursor)
+            self.assertFalse(body["unchanged"])
+            self.assertEqual(body["snapshot"]["session"]["status"], "active")
+            self.assertNotIn(0, [seq for seq in delivered if seq not in first_delivery])
+            self.assertEqual(delivered.count(0), 1, "seq 0 is re-served but only ever once")
+            version_cursor = body["snapshot"]["session"]["version"]
+            sequence_cursor = max(delivered)
+
+            # The viewer is now fully caught up: this is the state the outage happened in.
+            body, _ = poll(version_cursor, sequence_cursor)
+            self.assertTrue(body["unchanged"])
+
+            refused = client.post(
+                f"/api/live/sessions/{session_id}/frames", json=frame_payload(2, 1)
+            )
+            self.assertEqual(refused.status_code, 429)
+
+            # One read, on the cursor the viewer already held, and it knows.
+            body, delivered = poll(version_cursor, sequence_cursor)
+            self.assertFalse(body["unchanged"])
+            session = body["snapshot"]["session"]
+            self.assertEqual(session["status"], "failed")
+            self.assertTrue(session["failure_reason"])
+            self.assertEqual(
+                body["snapshot"]["terminal_failure"]["code"], "backpressure_or_deadline"
+            )
+            # A client that gates only on `status` -- reading no events, no
+            # `terminal_failure`, nothing else -- stops here.
+            self.assertIn(session["status"], LIVE_TERMINAL_SESSION_STATUSES)
 
     def test_stop_timeout_and_abort_return_terminal_failure_semantics(self):
         from fastapi.testclient import TestClient

@@ -1175,3 +1175,110 @@ def test_abort_never_writes_completed_identity_observations(tmp_path):
 
     assert not journal_path.exists()
     assert "vector_journal_appended" not in [event.kind for event in runtime.events(created.session_id)]
+
+
+def _runtime_driven_to_terminal_failure() -> tuple[LiveServiceRuntime, str, int]:
+    """A session killed the way a provider kills one: mid-meeting, with no clean stop.
+
+    Retention backpressure is used because it is the cheapest deterministic path onto
+    `_fail` that never asks the session object to transition -- which is the property
+    under test. `stop(deadline=0)` would not do: `LiveSession.stop` bumps the version on
+    its way to "closing", so it hides the gap this test exists to hold open.
+    """
+
+    runtime = _runtime(
+        speech=(True, False, True, False),
+        descriptor=_descriptor(max_retained_samples=2000),
+    )
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+    runtime.accept_frame(created.session_id, _frame(1))
+    version_the_reader_holds = runtime.snapshot(created.session_id).session.version
+    with pytest.raises(Exception):
+        runtime.accept_frame(created.session_id, _frame(2))
+    return runtime, created.session_id, version_the_reader_holds
+
+
+def test_a_terminal_failure_reaches_a_reader_that_already_holds_the_current_version():
+    """A dead meeting must not hide behind `since_version`.
+
+    `_fail` fences the session on the runtime and never asks the session object -- which
+    owns `version` -- to transition, so the version a caught-up reader holds does not move
+    when the meeting dies. A reader polling `since_version=<what it last rendered>` was
+    therefore told "unchanged" for the rest of the meeting: it showed "active" beside a
+    frozen transcript and kept polling a session that was already over. Projecting the
+    status onto the snapshot body is not enough on its own, because the body is never sent.
+    """
+
+    runtime, session_id, cursor = _runtime_driven_to_terminal_failure()
+
+    fenced = runtime.snapshot(session_id)
+    assert fenced.terminal_failure is not None
+    # The premise: nothing bumped the counter the gate compares against.
+    assert fenced.session.version == cursor
+
+    delivered = runtime.snapshot(session_id, since_version=cursor)
+    assert delivered is not None, "the version gate withheld the end of the meeting"
+    assert delivered.session.status == "failed"
+    assert delivered.session.failure_reason
+    assert delivered.terminal_failure is not None
+    # And it keeps being delivered: a reader that polled once more must not be told
+    # "unchanged" on the read it would have used to stop.
+    assert runtime.snapshot(session_id, since_version=delivered.session.version) is not None
+
+
+def test_a_healthy_session_still_answers_unchanged_to_a_caught_up_reader():
+    """The bypass above is scoped to terminality, not a blanket removal of the gate."""
+
+    runtime = _runtime(speech=(True,))
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+    cursor = runtime.snapshot(created.session_id).session.version
+
+    assert runtime.snapshot(created.session_id, since_version=cursor) is None
+    assert runtime.snapshot(created.session_id, since_version=cursor - 1) is not None
+
+
+def test_a_terminal_failure_does_not_relabel_a_session_that_already_ended():
+    """A teardown that lands after a clean close must not rewrite how the meeting ended.
+
+    `abort` on an already-closed session records a runtime terminal failure -- that is the
+    helper-lease-expiry path, which aborts the mono runtime after the fact -- while the
+    session object correctly stays "closed". Projecting "failed" over it would tell an
+    operator a meeting that finished cleanly had died.
+    """
+
+    runtime = _runtime(speech=(True, False))
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+    runtime.accept_frame(created.session_id, _frame(1))
+    closed = asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+    assert closed.session.status == "closed"
+    assert closed.terminal_failure is None
+
+    late = asyncio.run(runtime.abort(created.session_id, "helper_lease_expired"))
+
+    assert late.terminal_failure is not None, "the late teardown is still recorded"
+    assert late.session.status == "closed"
+    assert runtime.snapshot(created.session_id).session.status == "closed"
+
+
+def test_events_accepts_the_cursor_before_the_first_event_and_refuses_anything_lower():
+    """`/events` is inclusive, so "nothing rendered yet" needs a cursor below seq 0.
+
+    A reader that starts at 0 asks for `seq >= 0` and then has to discard seq 0 as
+    already-seen, so `session_created` is fetched and thrown away for the life of the
+    session and never reaches the reader at all. -1 is the one cursor that means "no
+    event rendered"; -2 and below are still nonsense and must be refused rather than
+    silently treated as 0.
+    """
+
+    runtime = _runtime(speech=(True,))
+    created = runtime.create()
+
+    assert [event.seq for event in runtime.events(created.session_id, since_seq=-1)] == [0]
+    assert [event.kind for event in runtime.events(created.session_id, since_seq=-1)] == ["session_created"]
+    # Inclusive: a reader that has rendered seq 0 re-fetches it and must filter it itself.
+    assert [event.seq for event in runtime.events(created.session_id, since_seq=0)] == [0]
+    with pytest.raises(ValueError, match="at least -1"):
+        runtime.events(created.session_id, since_seq=-2)
