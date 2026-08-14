@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 2.
+Iteration 3.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -42,5 +42,30 @@ python3 scripts/afk-guardrails/preflight.py x2-capture-client
 `dev` (`23afb6d`) is already an ancestor of this branch; iteration 2 re-validated the merged
 state with `PREFLIGHT OK`. No merge is pending.
 
-1. Map the capture-client API and test seams, then implement the smallest serialized-post
-   vertical slice with branch-specific tests.
+The ranked candidate's assumed baseline is absent from the current branch, not merely untested:
+
+- `git ls-tree -r HEAD -- frontend/src/capture frontend/public/worklets` and the same query on
+  `dev` return no files. `frontend/src/App.tsx` remains the static shell and imports no capture
+  client.
+- The exact core described as "keep" in this PRD exists only on unmerged
+  `afk2/r2-capture-client`: `c602f4a` adds `captureClient.ts`, its focused test, and
+  `lane-framer.js`; `218ebfb` adds its clean-stop path. That branch's client still contains the
+  defects named by this ticket (`void this.postFrame(...)`, fire-and-forget frames, all non-OK
+  responses dropped, requested descriptor rate in frame metadata, and `level > 0`).
+- `afk3/x1-frame-drop`, `afk3/x3-capture-health`, and `dev` also contain no capture-client files;
+  there is no concurrent owned implementation to extend. The server's current frame route
+  confirms the PRD's response distinction: `LiveV2LaneCapacityError` becomes a structured 429
+  before admission, while queue backpressure is a failure-less 429 after `v2_session.accept`.
+
+This invalidates the prior candidate as phrased: there is no client API or test seam in this
+branch to modify. It is a context repair, not an acceptance claim.
+
+## Ranked candidates
+
+1. Reintroduce only the owned r2 capture baseline (`frontend/src/capture/captureClient.ts`, its
+   test, and `frontend/public/worklets/lane-framer.js`) into this branch, without r2's loop state
+   or out-of-scope server files; include the first serialized-post / capacity-429 regression
+   slice rather than importing its known faulty behaviour untested.
+2. Then add the remaining 429/409/400 branches and browser-health/lane-restart behaviours in
+   separately validated vertical slices. Do not touch `App.tsx`; its integration remains owned by
+   the orchestrator.
