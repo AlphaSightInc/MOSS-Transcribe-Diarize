@@ -5,6 +5,7 @@ import concurrent.futures
 import dataclasses
 import inspect
 import json
+import os
 import threading
 import time
 import unittest
@@ -1125,6 +1126,82 @@ def test_clean_stop_journals_completed_identity_and_names_unusable_speaker(tmp_p
         "refusals": {"speaker-refused": "centroid_non_finite"},
     }
     assert "speaker_label=speaker-refused reason=centroid_non_finite" in caplog.text
+
+
+def test_declared_journal_repairs_preexisting_loose_directory_and_file(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        JOURNAL_FILE_MODE,
+        LiveVectorJournal,
+    )
+
+    directory = tmp_path / "private-journal"
+    directory.mkdir()
+    os.chmod(directory, 0o777)
+    journal_path = directory / "speaker-vectors.jsonl"
+    journal_path.write_text('{"preexisting":true}\n', encoding="utf-8")
+    os.chmod(journal_path, 0o644)
+
+    journal = LiveVectorJournal.declared(
+        journal_path,
+        checkout_root=tmp_path / "checkout",
+    )
+    assert directory.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+    assert journal_path.stat().st_mode & 0o777 == JOURNAL_FILE_MODE
+
+    result = journal.append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_007.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-0002",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    rows = journal_path.read_text(encoding="utf-8").splitlines()
+
+    assert result.written == 1
+    assert journal_path.stat().st_mode & 0o777 == JOURNAL_FILE_MODE
+    assert json.loads(rows[0]) == {"preexisting": True}
+    assert json.loads(rows[1])["session_id"] == "completed-session"
+
+
+def test_declared_journal_refuses_a_nonsticky_writable_ancestor(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    loose_ancestor = tmp_path / "loose-ancestor"
+    loose_ancestor.mkdir()
+    os.chmod(loose_ancestor, 0o777)
+    journal_path = loose_ancestor / "new-journal" / "speaker-vectors.jsonl"
+
+    with pytest.raises(ValueError, match="ancestor is group- or world-writable"):
+        LiveVectorJournal.declared(journal_path, checkout_root=tmp_path / "checkout")
+
+    assert not journal_path.parent.exists()
+
+
+def test_declared_journal_creates_private_intermediate_directories(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        LiveVectorJournal,
+    )
+
+    root = tmp_path / "private-root"
+    root.mkdir(mode=JOURNAL_DIRECTORY_MODE)
+    intermediate = root / "intermediate"
+    journal = LiveVectorJournal.declared(
+        intermediate / "live" / "speaker-vectors.jsonl",
+        checkout_root=tmp_path / "checkout",
+    )
+
+    assert intermediate.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+    assert journal.path.parent.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
 
 
 def test_journaling_session_accepts_a_bodyless_create_and_records_it_as_unspecified(tmp_path):

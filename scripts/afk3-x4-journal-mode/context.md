@@ -1,10 +1,14 @@
 # Context — x4-journal-mode
 
-Iteration 1.
+Iteration 2.
 
 Branch `afk3/x4-journal-mode` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
 (binding) and the closed decisions in `.wayfinder/tickets/` before your first change.
+
+`dev` (`23afb6d`) is already an ancestor of this branch, so the former merge candidate needed no
+merge. The branch source does not yet contain the PRD's assumed post-F6 journal fields or torn-tail
+recovery; later candidates must work from this checked-out state, not assume those fixes landed.
 
 ## Known pre-existing test failures — not yours
 
@@ -12,6 +16,11 @@ review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-af
 identically at `pre-afk-20260813`. `l15/test_l1_baseline.py` fails with `l15_product_tree_drift`:
 that guard correctly refuses to run when the product tree moved — **do not edit its pin**, that
 would falsify a measurement baseline.
+
+The bare `.venv/bin/pytest` imports
+`/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize`, not this worktree.
+Use `PYTHONPATH=. .venv/bin/pytest ...` for worktree evidence; repairing that external environment
+is outside this ticket.
 
 ## Validation
 
@@ -22,9 +31,10 @@ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
 
 ## Acceptance checklist (PRD gate, recorded 2026-08-14)
 
-- [ ] Private storage: repair or refuse an existing loose journal leaf file, repair the
-  journal leaf directory, and refuse or repair a loose ancestor.  Prove the pre-existing
-  loose-file and loose-directory cases with committed probes.
+- [x] Private storage: repair a pre-existing loose journal leaf file and leaf directory;
+  refuse a non-sticky group/world-writable ancestor; create every intermediate directory at
+  `0700`. Proven by the committed `test_declared_journal_*` probes in
+  `tests/test_live_service_runtime.py`. Final raw-artifact capture remains open.
 - [ ] Per-observation resilience: validate `exemplar_count` and `provisional`; a missing
   Protocol attribute must become that speaker's named refusal without losing valid rows from
   the same session.  Prove it with a committed probe.
@@ -44,7 +54,17 @@ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
 Iteration 1 outcome: candidate "record the PRD gate" is complete.  This checklist is the
 controlling scope for later changes; it makes no product-fix or test-pass claim.
 
+Iteration 2 outcome: storage-mode enforcement is complete. `LiveVectorJournal.declared()` repairs
+existing leaf directory/file modes and rejects a peer-writable ancestor; `append_session()` reasserts
+`0600` through its open file descriptor. This does not cover a hostile actor changing the path after
+declaration, nor filesystems that report successful mode changes while later violating them.
+
 ## Ranked candidates
-1. Merge `dev` in, confirm preflight OK.
-2. Smallest vertical slice toward the fix — storage-mode enforcement plus its focused proof.
-3. Close the observation-contract and reader-contract gaps, each with the required probes.
+1. Close the observation contract from the checked-out baseline: add and validate
+   `exemplar_count`/`provisional`, and turn a missing attribute into a per-speaker named refusal
+   without losing valid rows from the same session.
+2. Establish and document the reader contract, including refusal-only torn-tail recovery and the
+   truncation-race no-leading-blank property.
+3. Document and test capped-bank provenance/eviction semantics, including why `provisional` remains.
+4. After all functional criteria pass, capture committed raw artifacts and run the final two-suite
+   gate against the worktree, then record criterion-by-criterion coverage limits.
