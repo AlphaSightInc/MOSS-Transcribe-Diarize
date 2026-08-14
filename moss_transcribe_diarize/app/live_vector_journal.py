@@ -257,7 +257,7 @@ def _terminate_torn_tail(descriptor: int) -> bool:
 
 
 def _prepare_private_directory(directory: Path) -> None:
-    """Create a private leaf and reject unsafe existing ancestors.
+    """Create a private leaf; repair the ancestors we own and refuse the rest.
 
     The journal leaf is always 0700. Directories created on the way to it are
     individually chmoded because ``mkdir(..., parents=True)`` otherwise leaves
