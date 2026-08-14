@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 0.
+Iteration 2.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -39,6 +39,8 @@ python3 scripts/afk-guardrails/preflight.py x2-capture-client
 
 ## Ranked candidates
 
-1. Merge `dev` in and confirm the capture-client preflight remains OK.
-2. Map the capture-client API and test seams, then implement the smallest serialized-post
+`dev` (`23afb6d`) is already an ancestor of this branch; iteration 2 re-validated the merged
+state with `PREFLIGHT OK`. No merge is pending.
+
+1. Map the capture-client API and test seams, then implement the smallest serialized-post
    vertical slice with branch-specific tests.
