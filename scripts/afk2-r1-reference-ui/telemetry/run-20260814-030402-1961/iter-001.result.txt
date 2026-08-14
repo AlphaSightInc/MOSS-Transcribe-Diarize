@@ -1,0 +1,6 @@
+Iteration 1 committed: `5d7016a ralph: iteration 1 - record reference UI acceptance`.
+
+- Added binding acceptance checklist and next candidate.
+- Preflight + diff check: pass.
+- No blocker; product port not started.
+

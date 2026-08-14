@@ -1,0 +1,6 @@
+Iteration 6 committed: `354769e ralph: iteration 6 - record UI evidence`.
+
+- Added rerunnable count + DOM rail probe and raw artifact.
+- Gate passed: typecheck, 12/12 Vitest, preflight.
+- Still incomplete: full port and two-viewport pixel-diff gate.
+

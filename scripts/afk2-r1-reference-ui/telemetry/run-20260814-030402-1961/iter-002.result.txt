@@ -1,0 +1,7 @@
+Iteration 2 committed: `b3077a8 ralph: iteration 2 - reference shell slice`.
+
+- Real three-column shell; inert `data-right-collapsed="true"` History rail.
+- Reference-derived Live/File selector, transcript Find, browser file selection.
+- Tests now assert rail and mode behavior.
+
+Validated: typecheck, Vitest 2/2, r1 preflight, clean diff. Next: transcript/state/lib port and T-02 poller binding.

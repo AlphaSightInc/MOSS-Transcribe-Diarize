@@ -1,0 +1,4 @@
+Committed `bd5a8b2`.
+
+Probe stable; gate still RED: 11.52–11.56% / 17.04–17.10%. Blocked on supervisor fidelity ruling.
+
