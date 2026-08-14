@@ -1,0 +1,7 @@
+Committed `131c2a1` — lane continuity.
+
+- Replacement/restart bumps lane epoch; first successor is discontinuous.
+- Strict-route Chrome probe: PASS, 5 frames, epochs 0→2.
+- Focused epoch tests: 2 PASS. Preflight: PASS.
+- Next: >5-minute G7 raw-array run.
+

@@ -1,0 +1,5 @@
+Iteration 14 committed: `c0f7749`.
+
+Blocked awaiting independent review; no newer `dev` or reviewer comment. Preflight + diff check passed.
+
+<promise>COMPLETE</promise>

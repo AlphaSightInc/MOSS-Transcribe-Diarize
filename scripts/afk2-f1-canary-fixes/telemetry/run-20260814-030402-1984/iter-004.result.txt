@@ -1,0 +1,3 @@
+Implemented and committed `f8f9d6e` — F1 page error dispatcher/manual recovery controls.
+
+Validated: JS syntax, real Chrome F2 regression, preflight. F1 branch behavior still unproven in browser; next: committed real-route dispatcher probe + raw evidence.

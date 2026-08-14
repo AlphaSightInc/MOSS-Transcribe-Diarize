@@ -1,0 +1,5 @@
+Committed `a5f3cc9` — browser F1 dispatcher proof.
+
+PASS: real-route Chrome 429/400/409 paths; preflight + page syntax.  
+Next: device epoch/discontinuity lane continuity. Not complete.
+

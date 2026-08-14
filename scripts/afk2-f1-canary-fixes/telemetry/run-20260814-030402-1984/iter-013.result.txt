@@ -1,0 +1,5 @@
+Iteration 13 committed: `4778b54` (clean tree).
+
+Fresh F1/F2/lane/G7 artifacts pass; G7: 309.930s hidden, 6,679 admitted frames, 3,815 heartbeat 200s. Reviewer request: [issue comment](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/1#issuecomment-5289793609).
+
+Awaiting independent review; no merge/self-certification.

@@ -1,0 +1,5 @@
+Iteration 1 complete.
+
+- Recorded binding F1/F2/G7/lane criteria; next: seq-0 cursor fix + production-route probe.
+- Preflight: PASS.
+- Commit: `69a350a ralph: iteration 1 - record canary acceptance checklist`

@@ -1,0 +1,8 @@
+Iteration 8 recorded/pushed: `afk2/f1-canary-fixes` at `70d547e`; no `dev` merge.
+
+- Merged current `dev`; F1/F2/lane/G7 reruns passed. G7: 309.494 s hidden, 620 raw frames/lane, 620 heartbeats, max 507 ms < 2 s lease.
+- Posted [non-closing evidence/review comment](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/1#issuecomment-5289446878).
+- Blocked: required `.venv` absent; fallback baseline has 3 unrelated failures. Await independent review.
+
+[Context](scripts/afk2-f1-canary-fixes/context.md) and [progress](scripts/afk2-f1-canary-fixes/progress.txt) updated; worktree clean.
+

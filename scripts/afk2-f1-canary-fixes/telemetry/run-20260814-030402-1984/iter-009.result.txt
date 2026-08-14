@@ -1,0 +1,10 @@
+Iteration 9 committed: `4ebbb81` — review blockers recorded.
+
+Review rejected authorization:
+
+- P0: G7 can pass without frame delivery.
+- P1: overlapping 429s can strand a lane.
+- P2: 429 probe hard-codes geometry.
+
+Focused reruns + 309.488s G7 run passed mechanically; guardrail passed. Next: repair P0 only.
+

@@ -1,0 +1,6 @@
+Iteration 7 committed: `5638392`.
+
+G7 passed: 309.490s hidden; 620 frames/lane; 620 hidden heartbeats; max 507ms under 2s lease. Evidence: [artifact](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/4/MOSS-Transcribe-Diarize/evidence/phase1/f1-canary-fixes/g7-hidden-tab-iteration7.json).
+
+Preflight and artifact assertions passed; tree clean. Remaining: merge current `dev`, validate, issue comment.
+

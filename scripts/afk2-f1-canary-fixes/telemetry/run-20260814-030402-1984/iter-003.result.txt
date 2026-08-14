@@ -1,0 +1,4 @@
+Iteration 3 committed: `4c1b551`.
+
+Passed F1 real-route 429 probe + preflight. Open: browser dispatcher/retry and 400/409 handling.
+
