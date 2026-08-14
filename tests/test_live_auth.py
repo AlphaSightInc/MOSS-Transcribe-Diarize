@@ -132,12 +132,15 @@ class LiveAccessRegistryTest(unittest.TestCase):
             state_text = state_path.read_text(encoding="utf-8")
             state = json.loads(state_text)
 
+            # The bearer itself never reaches disk. Its digest does, and only while
+            # revoked: that is what binds the marker to the token it killed, and a revoked
+            # device is refused by `_capture_for_digest` before the digest is ever read, so
+            # the stored value can deny and can never grant.
             self.assertNotIn(shared_token, state_text)
-            self.assertNotIn(live_auth._digest(shared_token), state_text)
             self.assertEqual(
                 state["devices"][principal.device_id],
                 {
-                    "token_digest": None,
+                    "token_digest": live_auth._digest(shared_token),
                     "paired_at": None,
                     "revoked": True,
                     "revoked_at": 1.5,
@@ -149,6 +152,93 @@ class LiveAccessRegistryTest(unittest.TestCase):
             restarted = self._registry(tmpdir, shared_token=shared_token)
             with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
                 restarted.authorize(LAN_TLS, shared_token, "create", None, now=3.0)
+
+    def test_revoking_the_shared_principal_does_not_brick_the_next_configured_token(self):
+        """Revoke-then-rotate is the operator's response to a leak; it must work.
+
+        A durable revocation that is not bound to a bearer is permanent -- the synthetic
+        principal's device_id is a constant and no route can un-revoke it -- so the correct
+        incident response (kill the leaked token, put a fresh one in the token file,
+        restart) produced a service that answered 401 to every client forever.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            leaked = "leaked-shared-token"
+            registry = self._registry(tmpdir, shared_token=leaked)
+            principal = registry.authorize(LAN_TLS, leaked, "create", None, now=1.0).principal
+            registry.revoke_device(LOOPBACK, principal.device_id, now=1.5)
+
+            rotated = self._registry(tmpdir, shared_token="rotated-shared-token")
+
+            self.assertEqual(
+                rotated.authorize(LAN_TLS, "rotated-shared-token", "create", None, now=2.0).principal,
+                CapturePrincipal("shared-token"),
+            )
+            with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
+                rotated.authorize(LAN_TLS, leaked, "create", None, now=2.0)
+
+    def test_a_digest_free_revocation_marker_fails_closed_and_is_rebound_on_load(self):
+        """State written before markers carried a digest cannot name its bearer.
+
+        It must not silently un-revoke, so it applies to whatever is configured now; and it
+        is rewritten in bound form so the operator's rotation recovery works from then on.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            state_path = Path(tmpdir) / "live-auth.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "devices": {
+                            "shared-token": {
+                                "token_digest": None,
+                                "paired_at": None,
+                                "revoked": True,
+                                "revoked_at": 1.5,
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            registry = self._registry(tmpdir, shared_token="configured-token")
+
+            with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
+                registry.authorize(LAN_TLS, "configured-token", "create", None, now=2.0)
+            rebound = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                rebound["devices"]["shared-token"]["token_digest"],
+                live_auth._digest("configured-token"),
+            )
+
+            rotated = self._registry(tmpdir, shared_token="rotated-token")
+            self.assertEqual(
+                rotated.authorize(LAN_TLS, "rotated-token", "create", None, now=3.0).principal,
+                CapturePrincipal("shared-token"),
+            )
+
+    def test_configured_shared_token_is_canonicalized_like_every_presented_bearer(self):
+        """`authorize()` strips the presented bearer, so configuration must strip too.
+
+        Stripping one side only produced a deployment nobody could authenticate against:
+        the stored digest covered padding that the wire had already removed.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            registry = self._registry(tmpdir, shared_token="  padded-token\n")
+
+            for presented in ("padded-token", "  padded-token\n", "\tpadded-token "):
+                with self.subTest(presented=presented):
+                    self.assertEqual(
+                        registry.authorize(LAN_TLS, presented, "create", None, now=1.0).principal,
+                        CapturePrincipal("shared-token"),
+                    )
+
+    def test_a_whitespace_only_configured_shared_token_is_refused_at_construction(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for blank in (" ", "\t", "\n", ""):
+                with self.subTest(blank=repr(blank)):
+                    with self.assertRaisesRegex(ValueError, "must not be blank"):
+                        self._registry(tmpdir, shared_token=blank)
 
     def test_peer_admission_uses_direct_address_and_tls_policy(self):
         with tempfile.TemporaryDirectory() as tmpdir:
