@@ -1,0 +1,109 @@
+# x2-capture-client — adversarial review, artifact 1: defect reproduction
+# Re-run everything below from the repository root.
+
+## Why a frozen fixture exists at all
+
+`dev` (f6353eb) contains NO `frontend/src/capture/` and no `frontend/public/worklets/`:
+
+    $ git ls-tree -r dev --name-only -- frontend/src/capture frontend/public/worklets
+    (no output)
+
+The PRD's line numbers (`captureClient.ts:388`, `:468-477`, `:153`, `:375`) refer to
+`afk2/r2-capture-client` (7af566a), which is unmerged. "Before" is therefore not a state
+this branch can be diffed against in place; it has to be carried. It is carried verbatim
+at `frontend/src/capture/prebranch/preBranchCaptureClient.ts` and pinned by a probe.
+
+## Probe 1 — the frozen "before" client is really the pre-branch client
+
+    $ /opt/homebrew/bin/python3 evidence/phase1/x2-capture-client/probes/verify_prebranch_fixture_probe.py
+    PROBE OK  frontend/src/capture/prebranch/preBranchCaptureClient.ts is byte-identical to
+    afk2/r2-capture-client (7af566a):frontend/src/capture/captureClient.ts — 483 lines
+
+Mutation check (one constant changed in the fixture, then reverted):
+
+    PROBE FAIL  frozen pre-branch fixture no longer matches the git object
+      first divergence at body line 63
+        frozen   'const SILENCE_RMS = 1e-9;'
+        original 'const SILENCE_RMS = 1e-4;'
+
+## Probe 2 — the server's real frame-outcome contract, measured not asserted
+
+    $ /opt/homebrew/bin/python3 evidence/phase1/x2-capture-client/probes/measure_frame_outcome_contract_probe.py
+
+Loads the production `LiveLaneIngress` off disk, drives one scenario per reachable
+outcome, and reads `snapshot(lane).next_sequence` either side of every `accept`:
+
+    {"consumed": true,  "failure_code": null,                                "next_sequence_after": 1, "next_sequence_before": 0, "scenario": "in_order_first_frame",                  "status": 200}
+    {"consumed": false, "failure_code": null,                                "next_sequence_after": 1, "next_sequence_before": 1, "scenario": "replay_of_acked_sequence",              "status": 200}
+    {"consumed": false, "failure_code": "v2_out_of_order_frame",             "next_sequence_after": 0, "next_sequence_before": 0, "scenario": "sequence_ahead_of_expected",            "status": 409}
+    {"consumed": false, "failure_code": "v2_epoch_discontinuity_required",   "next_sequence_after": 1, "next_sequence_before": 1, "scenario": "epoch_advance_without_discontinuity",   "status": 409}
+    {"consumed": true,  "failure_code": null,                                "next_sequence_after": 2, "next_sequence_before": 1, "scenario": "epoch_advance_with_discontinuity",      "status": 200}
+    {"consumed": false, "failure_code": "v2_stale_device_epoch",             "next_sequence_after": 1, "next_sequence_before": 1, "scenario": "stale_device_epoch",                    "status": 409}
+    {"consumed": false, "failure_code": "v2_lane_retention_capacity_reached","next_sequence_after": 2, "next_sequence_before": 2, "scenario": "lane_retention_capacity_reached",       "status": 429}
+    {"consumed": true,  "failure_code": null,                                "next_sequence_after": 3, "next_sequence_before": 2, "scenario": "resent_after_capacity_released",        "status": 200}
+    {"consumed": false, "failure_code": "v2_lane_retention_capacity_reached","next_sequence_after": 0, "next_sequence_before": 0, "scenario": "single_frame_exceeds_lane_budget",      "status": 429}
+    {"consumed": false, "failure_code": "v2_pruned_replay",                  "next_sequence_after": 4, "next_sequence_before": 4, "scenario": "pruned_replay",                         "status": 409}
+    {"accept_precedes_admit_precedes_backpressure_handler": true,
+     "backpressure_429_body_has_no_failure_key": true,
+     "consumed": true, "failure_code": null, "scenario": "queue_backpressure_after_accept", "status": 429}
+
+    PROBE OK  10 measured ingress scenarios + 1 structural transport check agree with
+    frontend/src/capture/laneIngressContract.ts
+
+This settles the PRD's subtle point from the server rather than from the client's
+comments: the lane-capacity 429 does NOT consume the sequence (resend), the queue
+backpressure 429 does (do not resend), and the latter carries no `failure` key at all.
+
+Mutation check (flip one cell of the committed client-side table, then revert):
+
+    PROBE FAIL
+      - lane_retention_capacity_reached: server consumed=False, client table says consumed=True
+
+## Probe 3 — failing-before / passing-after, in the gate
+
+    $ /opt/homebrew/bin/npm --prefix frontend test -- src/capture/preBranchDefects.test.ts
+    Test Files  1 passed (1)
+         Tests  19 passed (19)
+
+Each PRD defect is one pre-branch test asserting the broken behaviour concretely and one
+current-client test asserting the correct contract, both through the same harness and the
+same measured server fake:
+
+  defect 1  capacity 429   pre-branch posts [0,1,2,3,4,5] and the server admits 2 of them,
+                           statuses [200,200,429,409,409,409] — one 429 wedged the lane.
+                           current posts [0,1,2,2,3], statuses [200,200,429,200,200], 0 x 409.
+  defect 1  queue 429      current posts [0,1] with statuses [429,200] and droppedFrames=1;
+                           resending here would arrive as 0 against an expected 1 and 409.
+  defect 1  serialization  pre-branch has 2 posts in flight at once; released out of order the
+                           server receives [1,0] -> [409,200] and admits 1 frame.
+                           current has exactly 1 in flight; server receives [0,1] -> [200,200].
+  defect 1  409 resync     current: [409] then, on the next worklet frame, [0,4,5]/[409,200,200].
+  defect 2  clean stop     pre-branch stop() issues only /stop. current issues /heartbeat with
+                           state "stopped" then /stop.
+  defect 2  track ended    pre-branch reports state "capturing"/failure_code null and keeps
+                           posting the dead lane (server admits it). current reports
+                           "failed"/"browser_track_ended", leaves the peer "capturing", and
+                           stops posting that lane.
+  defect 3  lane loss      pre-branch has no replaceLane at all; every frame carries
+                           device_epoch 1 / discontinuity false and the server's
+                           current_device_epoch never moves. current: epoch 2 + discontinuity
+                           true, accepted; the same bump WITHOUT discontinuity is rejected
+                           409 v2_epoch_discontinuity_required (so the flag is load-bearing).
+  defect 4  sample rate    context 48000 / descriptor 16000: pre-branch ships sample_rate 16000
+                           and capture_timestamp_ns 500000 ns; current ships 48000 and
+                           166667 ns.
+  defect 5  preflight gate 5e-5 dither: pre-branch creates a session on silence; current
+                           refuses, and still admits a real 0.5 signal afterwards.
+
+## Gate at this point
+
+    $ /opt/homebrew/bin/npm --prefix frontend run typecheck   -> clean
+    $ /opt/homebrew/bin/npm --prefix frontend test            -> 3 files, 39 tests passed
+    $ /opt/homebrew/bin/python3 scripts/afk-guardrails/preflight.py x2-capture-client
+      PREFLIGHT OK [x2-capture-client]
+
+## What this artifact does NOT show
+
+No real browser, no attended display-capture picker, no live server. The server fake is
+pinned to the production ingress by probe 2, but it is still a fake: it does not exercise
+FastAPI routing, auth, the mixer, or the tape.
