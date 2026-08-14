@@ -734,8 +734,22 @@ def _snapshot_response(
     *,
     since_version: int | None = None,
 ) -> dict[str, Any]:
-    snapshot = runtime.snapshot(session_id, since_version=since_version)
-    terminal_session_status, terminal_lane_failures = _terminal_capture_facts(snapshot)
+    # The capture judgment is read from the session as it *is*, then the caller's cursor is
+    # applied to the transported snapshot. Deriving the terminal reason from the cursor-gated
+    # result instead loses it on the very next poll: the portal polls
+    # `/snapshot?since_version=<version>` (live_portal.py) and, once teardown has released
+    # helper presence, a cursor-suppressed snapshot left the projection with no facts at all
+    # and it answered "starting" / "Waiting for audio capture to start." for a session that
+    # had already died. One terminal read followed by silence is not a readable reason.
+    current = runtime.snapshot(session_id)
+    snapshot = (
+        None
+        if current is not None
+        and since_version is not None
+        and current.session.version <= since_version
+        else current
+    )
+    terminal_session_status, terminal_lane_failures = _terminal_capture_facts(current)
     presence = helper_presence.snapshot(session_id)
     v2_session = _v2_snapshot(v2_sessions, session_id)
     observations = _capture_observation_snapshot(capture_observations, session_id)

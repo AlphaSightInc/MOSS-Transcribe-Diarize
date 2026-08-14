@@ -1924,6 +1924,58 @@ class LiveApiTest(unittest.TestCase):
             self.assertNotIn("view_token", rendered)
             self.assertNotIn("device_token", rendered)
 
+    def test_terminal_capture_reason_survives_the_polling_clients_since_version_tick(self):
+        """The portal polls `/snapshot?since_version=<version>`; the reason must not evaporate.
+
+        Deriving the terminal facts from the cursor-gated snapshot made the readable reason a
+        one-shot: the next poll carried the version it had just been given, the runtime
+        suppressed the snapshot as unchanged, helper presence was already released by
+        teardown, and the projection answered `starting` / "Waiting for audio capture to
+        start." for a session that had died. That is worse than the 403 it replaced -- it is
+        a confident wrong answer -- so the cursor may suppress the transported snapshot but
+        never the capture judgment.
+        """
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            terminal = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(
+                    state="failed",
+                    failed_lane="microphone",
+                    failure_code="browser_microphone_permission_denied",
+                ),
+            )
+            self.assertEqual(terminal.status_code, 200)
+
+            first = client.get(f"/api/live/sessions/{session_id}/snapshot")
+            self.assertEqual(first.status_code, 200)
+            version = first.json()["snapshot"]["session"]["version"]
+
+            repoll = client.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version={version}"
+            )
+            self.assertEqual(repoll.status_code, 200)
+            # The cursor still does its job: no snapshot body is re-sent.
+            self.assertTrue(repoll.json()["unchanged"])
+            self.assertIsNone(repoll.json()["snapshot"])
+            # But the server-authored reason is still there, tick after tick.
+            self.assertEqual(repoll.json()["capture_phase"], "failed")
+            self.assertEqual(
+                repoll.json()["status_line"],
+                "Microphone access was denied. Allow microphone access in Chrome and try again.",
+            )
+
     def test_stale_lease_callback_after_renewal_does_not_abort_live_session(self):
         from moss_transcribe_diarize.app.server import create_app
 
