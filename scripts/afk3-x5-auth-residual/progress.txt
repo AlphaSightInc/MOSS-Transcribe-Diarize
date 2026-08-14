@@ -4,3 +4,5 @@
 [loop 20260814-181407-44141] preflight failed before iteration 1
 
 [loop 20260814-181455-47637] start budget=40 agent=codex branch=afk3/x5-auth-residual
+
+[iteration 1] target=record binding auth acceptance checklist and reconcile base; files=scripts/afk3-x5-auth-residual/context.md,scripts/afk3-x5-auth-residual/progress.txt; validation=`git merge-base --is-ancestor dev HEAD` -> 0 and `python3 scripts/afk-guardrails/preflight.py x5-auth-residual` -> PREFLIGHT OK; evidence=none (working-memory-only iteration); learned=dev is already merged via b8aaa13 and the shared-token posture is intentionally one trust domain, so durable operator revocation is the remaining security boundary; next=trace persistence and add a failing restart-durability probe before source edits.
