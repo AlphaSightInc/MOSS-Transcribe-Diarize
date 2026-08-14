@@ -1,2 +1,4 @@
 
 [loop 20260814-181407-44141] start budget=40 agent=codex branch=afk3/x5-auth-residual
+
+[loop 20260814-181407-44141] preflight failed before iteration 1
