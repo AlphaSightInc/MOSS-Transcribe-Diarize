@@ -1,0 +1,2 @@
+
+[loop 20260814-181407-44138] start budget=40 agent=codex branch=afk3/x4-journal-mode
