@@ -69,5 +69,21 @@ returns a server-authored non-healthy line for sustained sequence rejection, bac
 silence, or an expired accepted arrival. A successful accepted frame still resets the relevant
 transient counters and refreshes the server arrival time.
 
-Terminal reason reachability remains x6-owned in `live_service_runtime.py`; this carrier does
-not change terminal cleanup or authorization behaviour.
+## Terminal reason readback observation
+
+Iteration 9's committed local-route probe captures the terminal-helper path that the ordinary
+snapshot projection cannot see after cleanup. A helper heartbeat reports the server-owned
+`browser_microphone_permission_denied` code, then the helper-failure coordinator records it in
+the runtime's terminal detail, aborts the mono runtime, and releases helper, v2, mixer, tape,
+and access state. The persisted runtime snapshot says `aborted` / `helper_failed` and still
+contains the typed microphone code, but the next authenticated `/snapshot` returns only `403`
+for the former capture credential (and `401` for the former view credential). Neither response
+contains `capture_phase`, a plain-language status line, or the permission reason.
+
+The raw output is
+`evidence/phase1/x3-capture-health/iteration-09-terminal-reason.json`, written by its committed
+adjacent probe. This refutes the earlier assumption that x6's terminal-runtime snapshot work
+settles x3 terminal readability: x6 is not yet reconciled into `dev`, and its explicit-abort
+distinction does not preserve access after the helper path releases it. Terminal reason
+reachability remains an open x3 acceptance item; the next change must choose and prove one
+server-authored terminal response contract without exposing credentials.

@@ -1,0 +1,74 @@
+{
+  "post_terminal_snapshot": {
+    "capture_credential": {
+      "body": {
+        "detail": "session is not owned by this device."
+      },
+      "http_status": 403
+    },
+    "view_credential": {
+      "body": {
+        "detail": "invalid bearer authority."
+      },
+      "http_status": 401
+    }
+  },
+  "question": "After a terminal helper heartbeat reports microphone permission denial, can either session credential read a server-authored reason through /snapshot?",
+  "runtime_after_teardown": {
+    "microphone_failure_code": "browser_microphone_permission_denied",
+    "session_status": "aborted",
+    "terminal_failure_code": "aborted",
+    "terminal_failure_kind": "transport_pacing",
+    "terminal_failure_message": "helper_failed"
+  },
+  "scope": {
+    "credentials_omitted": true,
+    "not_covered": "This deterministic local route probe does not exercise a browser permission prompt or production deployment.",
+    "route": "local create_app -> paired credentials -> session -> terminal helper heartbeat -> snapshot"
+  },
+  "terminal_heartbeat": {
+    "contains_server_capture_projection": {
+      "capture_phase": false,
+      "status_line": false
+    },
+    "reported_failed_lane": "microphone",
+    "reported_failure_code": "browser_microphone_permission_denied",
+    "reported_helper_state": "failed",
+    "response": {
+      "body": {
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-a",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": "browser_microphone_permission_denied",
+              "state": "failed"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2254448343639125,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 10,
+          "sequence": 0,
+          "state": "failed"
+        }
+      },
+      "http_status": 200
+    }
+  },
+  "verdict": {
+    "next_step": "Implement one authorized terminal-reason response contract before cleanup makes the snapshot route unreadable, then prove the microphone-denial route returns that server-authored contract without exposing credentials.",
+    "server_retains_typed_reason": true,
+    "snapshot_returns_server_authored_reason_to_capture_credential": false,
+    "snapshot_returns_server_authored_reason_to_view_credential": false
+  }
+}

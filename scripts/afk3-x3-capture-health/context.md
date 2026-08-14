@@ -1,6 +1,6 @@
 # Context — x3-capture-health
 
-Iteration 7.
+Iteration 9.
 
 Branch `afk3/x3-capture-health` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -111,7 +111,19 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    Raw output is `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json`.
    No product policy changed. The focused gate passed (53 tests, 327 subtests) and preflight
    passed after the evidence refresh; terminal readability remains x6-owned.
-9. **Next — wait for x6 terminal visibility, then merge and validate:** x3 cannot change
-   `live_service_runtime.py`; after x6 supplies readable terminal failure/stop evidence, merge
-   current `dev` into this branch and run the focused gate on that merged result. Do not claim
-   completion until both terminal readability and post-merge validation have raw evidence.
+9. **Done (iteration 9):** the committed local-route probe sends a terminal helper heartbeat
+   reporting `browser_microphone_permission_denied`, then requests `/snapshot` using both the
+   former capture and view credentials. The runtime retains `aborted` / `helper_failed` plus the
+   typed microphone code, but cleanup has released access: the capture credential receives only
+   `403 session is not owned by this device`, and the view credential only `401 invalid bearer
+   authority`. Neither response has the server's capture phase or plain-language status. Raw
+   output is `evidence/phase1/x3-capture-health/iteration-09-terminal-reason.json`; the committed
+   probe and NOTES are adjacent. x6 completed a separate runtime-terminal snapshot fix on
+   `afk3/x6-terminal-visibility`, but it is not in `dev` and does not solve this helper-abort plus
+   access-release path.
+10. **Next — implement and prove one terminal-reason response contract:** the PRD permits
+    preserving terminal readability or returning the server-authored reason on the 403. Use the
+    iteration-09 route fact to choose the narrowest transport contract, add a real-route
+    regression for microphone denial, and ensure its response contains no credential material.
+    Then wait for reviewer reconciliation of x6/current `dev`, merge only `dev`, and rerun the
+    focused gate on that merged result.
