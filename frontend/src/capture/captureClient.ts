@@ -34,6 +34,14 @@ export type CaptureSession = Readonly<{
   viewToken: string;
 }>;
 
+type HelperState = "starting" | "capturing" | "degraded" | "recovering" | "failed" | "stopped";
+
+type BrowserFailureCode =
+  | "browser_track_ended"
+  | "browser_audio_context_suspended";
+
+type LaneHealthState = "capturing" | "degraded" | "failed";
+
 export type CaptureClientOptions = Readonly<{
   captureBearer: string;
   helperVersion: string;
@@ -53,6 +61,7 @@ type LaneState = {
   framer: AudioWorkletNode;
   mute: GainNode;
   tracks: MediaStreamTrack[];
+  trackEndedListeners: Array<Readonly<{ track: MediaStreamTrack; listener: () => void }>>;
   frameQueue: WorkletFrame[];
   postInFlight: boolean;
   sequence: number;
@@ -60,6 +69,8 @@ type LaneState = {
   discontinuity: boolean;
   discontinuities: number;
   droppedFrames: number;
+  health: LaneHealthState;
+  failureCode: BrowserFailureCode | null;
 };
 
 const SILENCE_RMS = 1e-4;
@@ -202,12 +213,15 @@ export class CaptureClient {
   private session: CaptureSession | null = null;
   private readonly lanes = new Map<CaptureLane, LaneState>();
   private readonly laneHasSignal = new Set<CaptureLane>();
-  private heartbeatPending: WorkletFrame | null = null;
-  private heartbeatInFlight = false;
+  private heartbeatPending: HelperState | null = null;
+  private heartbeatFlush: Promise<void> | null = null;
   private heartbeatSequence = 0;
   private heartbeatMonotonicNs = 0;
   private heartbeatNextStartFrame = 0;
+  private contextSuspended = false;
+  private stopping = false;
   private readonly instanceId = `browser-${crypto.randomUUID()}`;
+  private readonly onContextStateChange = () => this.handleContextStateChange();
 
   constructor(private readonly options: CaptureClientOptions) {}
 
@@ -293,6 +307,8 @@ export class CaptureClient {
       await this.close();
       return;
     }
+    this.stopping = true;
+    await this.scheduleHeartbeat("stopped");
     await stopCaptureSession(session, this.options.captureBearer, deadlineSeconds);
     await this.close();
   }
@@ -300,6 +316,9 @@ export class CaptureClient {
   async close(): Promise<void> {
     for (const state of this.lanes.values()) {
       state.framer.port.onmessage = null;
+      for (const { track, listener } of state.trackEndedListeners) {
+        track.removeEventListener("ended", listener);
+      }
       state.source.disconnect();
       state.framer.disconnect();
       state.mute.disconnect();
@@ -309,11 +328,16 @@ export class CaptureClient {
     this.laneHasSignal.clear();
     this.session = null;
     this.heartbeatPending = null;
+    this.contextSuspended = false;
+    this.stopping = false;
     const context = this.context;
     this.context = null;
     this.preparation = null;
     this.descriptor = null;
-    if (context) await context.close();
+    if (context) {
+      context.removeEventListener("statechange", this.onContextStateChange);
+      await context.close();
+    }
   }
 
   private async prepareContext(): Promise<AudioContext> {
@@ -326,6 +350,7 @@ export class CaptureClient {
       this.descriptor = parseCaptureDescriptor(await response.json());
       const context = new AudioContext({ sampleRate: this.descriptor.sampleRate });
       await context.audioWorklet.addModule("/worklets/lane-framer.js");
+      context.addEventListener("statechange", this.onContextStateChange);
       this.context = context;
       return context;
     } catch (error) {
@@ -361,6 +386,7 @@ export class CaptureClient {
       framer,
       mute,
       tracks,
+      trackEndedListeners: [],
       frameQueue: [],
       postInFlight: false,
       sequence: 0,
@@ -368,7 +394,14 @@ export class CaptureClient {
       discontinuity: false,
       discontinuities: 0,
       droppedFrames: 0,
+      health: "capturing",
+      failureCode: null,
     };
+    for (const track of tracks) {
+      const listener = () => this.markLaneFailed(lane, "browser_track_ended");
+      track.addEventListener("ended", listener);
+      state.trackEndedListeners.push({ track, listener });
+    }
     this.lanes.set(lane, state);
     framer.port.onmessage = (event: MessageEvent<unknown>) => {
       const frame = event.data as Partial<WorkletFrame>;
@@ -392,7 +425,7 @@ export class CaptureClient {
     const level = rms(workletFrame.samples);
     if (level > 0) this.laneHasSignal.add(lane);
     this.options.onMeter?.(lane, level);
-    if (!this.session) return;
+    if (!this.session || this.stopping || state.health === "failed") return;
 
     this.queueHeartbeat(workletFrame);
     state.frameQueue.push(workletFrame);
@@ -402,7 +435,7 @@ export class CaptureClient {
   private async flushFrameQueue(state: LaneState): Promise<void> {
     state.postInFlight = true;
     try {
-      while (state.frameQueue.length > 0 && this.session) {
+      while (state.frameQueue.length > 0 && this.session && state.health !== "failed") {
         const descriptor = this.descriptor;
         if (!descriptor) return;
         const workletFrame = state.frameQueue[0];
@@ -508,18 +541,29 @@ export class CaptureClient {
   }
 
   private queueHeartbeat(workletFrame: WorkletFrame): void {
+    if (this.stopping) return;
     if (workletFrame.startFrame < this.heartbeatNextStartFrame) return;
     const descriptor = this.descriptor;
     if (!descriptor) return;
     this.heartbeatNextStartFrame = workletFrame.startFrame + descriptor.frameSamples;
-    this.heartbeatPending = workletFrame;
-    if (!this.heartbeatInFlight) void this.flushHeartbeat();
+    void this.scheduleHeartbeat(this.heartbeatState());
+  }
+
+  private scheduleHeartbeat(state: HelperState): Promise<void> {
+    if (!this.session || (this.stopping && state !== "stopped")) return Promise.resolve();
+    if (this.heartbeatPending !== "stopped") this.heartbeatPending = state;
+    if (!this.heartbeatFlush) {
+      this.heartbeatFlush = this.flushHeartbeat().finally(() => {
+        this.heartbeatFlush = null;
+      });
+    }
+    return this.heartbeatFlush;
   }
 
   private async flushHeartbeat(): Promise<void> {
-    this.heartbeatInFlight = true;
     try {
       while (this.heartbeatPending && this.session) {
+        const state = this.heartbeatPending;
         this.heartbeatPending = null;
         const session = this.session;
         const sentMonotonicNs = Math.max(
@@ -542,10 +586,10 @@ export class CaptureClient {
               sequence: this.heartbeatSequence,
               sent_monotonic_ns: sentMonotonicNs,
               helper_version: this.options.helperVersion,
-              state: "capturing",
+              state,
               lanes: {
-                system: this.heartbeatLane("system"),
-                microphone: this.heartbeatLane("microphone"),
+                system: this.heartbeatLane("system", state),
+                microphone: this.heartbeatLane("microphone", state),
               },
             }),
           },
@@ -555,21 +599,64 @@ export class CaptureClient {
       }
     } catch (caught) {
       this.reportTransportError("heartbeat", caught);
-    } finally {
-      this.heartbeatInFlight = false;
-      if (this.heartbeatPending && this.session) void this.flushHeartbeat();
     }
   }
 
-  private heartbeatLane(lane: CaptureLane) {
+  private heartbeatState(): HelperState {
+    const states = [...this.lanes.values()];
+    if (states.length > 0 && states.every((state) => state.health === "failed")) return "failed";
+    if (this.contextSuspended || states.some((state) => state.health === "degraded")) {
+      return "degraded";
+    }
+    return "capturing";
+  }
+
+  private heartbeatLane(lane: CaptureLane, heartbeatState: HelperState) {
     const state = this.lanes.get(lane);
+    if (heartbeatState === "stopped") {
+      return {
+        state: "stopped",
+        device_epoch: state?.deviceEpoch ?? 0,
+        dropped_frames: state?.droppedFrames ?? 0,
+        discontinuities: state?.discontinuities ?? 0,
+        failure_code: null,
+      };
+    }
+    if (this.contextSuspended && state?.health !== "failed") {
+      return {
+        state: "degraded",
+        device_epoch: state?.deviceEpoch ?? 0,
+        dropped_frames: state?.droppedFrames ?? 0,
+        discontinuities: state?.discontinuities ?? 0,
+        failure_code: "browser_audio_context_suspended",
+      };
+    }
     return {
-      state: "capturing",
+      state: state?.health ?? "capturing",
       device_epoch: state?.deviceEpoch ?? 0,
       dropped_frames: state?.droppedFrames ?? 0,
       discontinuities: state?.discontinuities ?? 0,
-      failure_code: null,
+      failure_code: state?.failureCode ?? null,
     };
+  }
+
+  private handleContextStateChange(): void {
+    const context = this.context;
+    if (!context) return;
+    const wasSuspended = this.contextSuspended;
+    this.contextSuspended = context.state !== "running" && context.state !== "closed";
+    if (this.contextSuspended !== wasSuspended) {
+      void this.scheduleHeartbeat(this.heartbeatState());
+    }
+  }
+
+  private markLaneFailed(lane: CaptureLane, failureCode: BrowserFailureCode): void {
+    const state = this.lanes.get(lane);
+    if (!state || state.health === "failed") return;
+    state.health = "failed";
+    state.failureCode = failureCode;
+    state.frameQueue.length = 0;
+    void this.scheduleHeartbeat(this.heartbeatState());
   }
 
   private reportTransportError(route: "frame" | "heartbeat", caught: unknown): void {

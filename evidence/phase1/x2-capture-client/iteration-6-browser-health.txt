@@ -1,0 +1,23 @@
+$ npm --prefix frontend test -- src/capture/captureClient.test.ts
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run src/capture/captureClient.test.ts
+
+ RUN  v4.1.10 frontend
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+
+$ npm --prefix frontend run typecheck
+
+> livetranscribe-frontend@0.0.0 typecheck
+> tsc --noEmit
+
+$ python3 scripts/afk-guardrails/preflight.py x2-capture-client
+PREFLIGHT OK [x2-capture-client] prerequisites present, ownership clean, no banned patterns
+
+Probe: frontend/src/capture/captureClient.test.ts
+The focused test executes a final stopped heartbeat before the authenticated stop request,
+dispatches an ended MediaStreamTrack event, dispatches an AudioContext statechange event, and
+rejects setInterval/setTimeout in captureClient.ts. It does not exercise real browser media input
+or a server instance.

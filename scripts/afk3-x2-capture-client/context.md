@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 5.
+Iteration 6.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -59,10 +59,29 @@ stop. Validation: `npm --prefix frontend test -- src/capture/captureClient.test.
 `npm --prefix frontend run typecheck` (pass), and `python3 scripts/afk-guardrails/preflight.py
 x2-capture-client` (`PREFLIGHT OK`).
 
+Iteration 6 introduced a serialized heartbeat state path without timers. A real `ended` event on
+any retained media track fails only that lane with `browser_track_ended`, clears its unsent frames,
+and immediately reports health while the peer remains capturing. A real `AudioContext`
+`statechange` reports `browser_audio_context_suspended` as degraded on both active lanes and clears
+that fact once the context returns to running. `stop()` now serializes one final `stopped`
+heartbeat before the authenticated stop request; cleanup unregisters both kinds of listeners.
+Focused tests dispatch both browser events, assert the stopped heartbeat precedes `/stop`, and
+reject `setInterval`/`setTimeout` in the client. Validation: `npm --prefix frontend test --
+src/capture/captureClient.test.ts` (14 passed), `npm --prefix frontend run typecheck` (pass), and
+`python3 scripts/afk-guardrails/preflight.py x2-capture-client` (`PREFLIGHT OK`). Raw output:
+`evidence/phase1/x2-capture-client/iteration-6-browser-health.txt`.
+
+The remaining browser codes are deliberately still open. Permission/display-request/surface-audio
+failures occur before a session exists, while the authenticated heartbeat route requires one;
+their clean API/reporting seam needs to be designed without inventing a server session. Sustained
+clip and mic-silence detection also needs the required threshold prototype before production code.
+
 ## Ranked candidates
 
-1. Add real browser-health state/failure reporting and a final `stopped` heartbeat, with a test
-   that rejects timer-based heartbeats.
+1. Resolve and implement the remaining browser-failure sources: expose pre-session
+   permission/display/surface failures through the clean client API without creating a server
+   session, then prototype sustained clipping and microphone-silence thresholds before adding
+   their heartbeat facts.
 2. Add lane replacement/restart semantics: actual context sample rate in frames, thresholded
    preflight signal, epoch increment, and marked discontinuity. Do not touch `App.tsx`; mounting
    remains orchestrator-owned.

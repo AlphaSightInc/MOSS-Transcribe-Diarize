@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 
 import {
   CaptureClient,
@@ -14,6 +15,7 @@ type TestLaneState = {
   framer: { port: { onmessage: unknown }; disconnect: () => void };
   mute: { disconnect: () => void };
   tracks: { stop: () => void }[];
+  trackEndedListeners: Array<{ track: EventTarget; listener: () => void }>;
   frameQueue: unknown[];
   postInFlight: boolean;
   sequence: number;
@@ -21,6 +23,8 @@ type TestLaneState = {
   discontinuity: boolean;
   discontinuities: number;
   droppedFrames: number;
+  health: "capturing" | "degraded" | "failed";
+  failureCode: string | null;
 };
 
 type ActiveClient = {
@@ -28,6 +32,7 @@ type ActiveClient = {
   session: { id: string; viewToken: string } | null;
   heartbeatNextStartFrame: number;
   lanes: Map<string, TestLaneState>;
+  stop: (deadlineSeconds: number) => Promise<void>;
   onWorkletFrame: (
     lane: "microphone",
     frame: { type: "frame"; lane: "microphone"; samples: Float32Array; startFrame: number },
@@ -42,6 +47,7 @@ function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
     framer: { port: { onmessage: null }, disconnect: vi.fn() },
     mute: { disconnect: vi.fn() },
     tracks: [],
+    trackEndedListeners: [],
     frameQueue: [],
     postInFlight: false,
     sequence: 0,
@@ -49,6 +55,8 @@ function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
     discontinuity: false,
     discontinuities: 0,
     droppedFrames: 0,
+    health: "capturing",
+    failureCode: null,
   };
   active.descriptor = { sampleRate: 4, frameSamples: 2 };
   active.session = { id: "session", viewToken: "view-only" };
@@ -70,6 +78,52 @@ function postedSequences(fetchSpy: ReturnType<typeof vi.fn>): number[] {
   return fetchSpy.mock.calls.map(([, request]) =>
     JSON.parse((request as RequestInit).body as string).sequence,
   );
+}
+
+type EventLaneClient = {
+  context: AudioContext | null;
+  descriptor: { sampleRate: number; frameSamples: number } | null;
+  session: { id: string; viewToken: string } | null;
+  attachLane: (lane: "microphone" | "system", stream: MediaStream, tracks: MediaStreamTrack[]) => Promise<void>;
+};
+
+class FakeAudioWorkletNode {
+  readonly port: { onmessage: unknown } = { onmessage: null };
+
+  connect(target: unknown): unknown {
+    return target;
+  }
+
+  disconnect = vi.fn();
+}
+
+function fakeTrack(): MediaStreamTrack {
+  return Object.assign(new EventTarget(), { stop: vi.fn() }) as unknown as MediaStreamTrack;
+}
+
+async function eventLaneClient(): Promise<{ client: EventLaneClient; microphone: MediaStreamTrack }> {
+  vi.stubGlobal("AudioWorkletNode", FakeAudioWorkletNode);
+  const source = { connect: (target: unknown) => target, disconnect: vi.fn() };
+  const mute = {
+    gain: { value: 1 },
+    connect: (target: unknown) => target,
+    disconnect: vi.fn(),
+  };
+  const context = Object.assign(new EventTarget(), {
+    state: "running",
+    destination: {},
+    createMediaStreamSource: () => source,
+    createGain: () => mute,
+  }) as unknown as AudioContext;
+  const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+  const active = client as unknown as EventLaneClient;
+  active.context = context;
+  active.descriptor = { sampleRate: 4, frameSamples: 2 };
+  active.session = { id: "session", viewToken: "view-only" };
+  const microphone = fakeTrack();
+  await active.attachLane("microphone", {} as MediaStream, [microphone]);
+  await active.attachLane("system", {} as MediaStream, [fakeTrack()]);
+  return { client: active, microphone };
 }
 
 describe("browser capture frame contract", () => {
@@ -149,8 +203,8 @@ describe("browser capture frame contract", () => {
 
     await client.stop(1.25);
 
-    expect(fetchSpy).toHaveBeenCalledOnce();
-    expect(fetchSpy).toHaveBeenCalledWith(
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenLastCalledWith(
       "/api/live/sessions/session%2Fwith%20space/stop",
       {
         method: "POST",
@@ -173,6 +227,90 @@ describe("browser capture frame contract", () => {
       stopCaptureSession({ id: "session", viewToken: "view" }, "capture-token", -1),
     ).rejects.toThrow("stop deadline must be a non-negative finite number");
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("posts a final stopped heartbeat before stopping and rejects timer-based heartbeats", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+    const active = client as unknown as ActiveClient;
+    active.session = { id: "session/with space", viewToken: "view-only" };
+
+    await active.stop(0);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    const [heartbeatUrl, heartbeatRequest] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(heartbeatUrl).toBe("/api/live/sessions/session%2Fwith%20space/heartbeat");
+    expect(JSON.parse(heartbeatRequest.body as string)).toMatchObject({
+      state: "stopped",
+      lanes: {
+        microphone: { state: "stopped", failure_code: null },
+        system: { state: "stopped", failure_code: null },
+      },
+    });
+    expect(fetchSpy.mock.calls[1][0]).toBe("/api/live/sessions/session%2Fwith%20space/stop");
+
+    const source = readFileSync(new URL("./captureClient.ts", import.meta.url), "utf8");
+    expect(source).not.toMatch(/\b(?:setInterval|setTimeout)\b/);
+  });
+
+  it("reports a real track ended event as a failed lane while its peer keeps capture alive", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { microphone } = await eventLaneClient();
+
+    microphone.dispatchEvent(new Event("ended"));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledOnce());
+
+    const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body).toMatchObject({
+      state: "capturing",
+      lanes: {
+        microphone: { state: "failed", failure_code: "browser_track_ended" },
+        system: { state: "capturing", failure_code: null },
+      },
+    });
+  });
+
+  it("reports a suspended AudioContext from its real statechange event", async () => {
+    class FakeAudioContext extends EventTarget {
+      sampleRate = 4;
+      state: AudioContextState = "running";
+      destination = {} as AudioDestinationNode;
+      audioWorklet = { addModule: vi.fn().mockResolvedValue(undefined) } as AudioWorklet;
+      close = vi.fn().mockResolvedValue(undefined);
+    }
+
+    vi.stubGlobal("AudioContext", FakeAudioContext);
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        descriptor: {
+          sample_rate: 4,
+          frame_samples: 2,
+          bounds: { max_frame_samples: 2 },
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+    const active = client as unknown as { session: { id: string; viewToken: string } | null };
+    const context = (await client.prepare()) as unknown as FakeAudioContext;
+    active.session = { id: "session", viewToken: "view-only" };
+
+    context.state = "suspended";
+    context.dispatchEvent(new Event("statechange"));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+
+    const body = JSON.parse((fetchSpy.mock.calls[1][1] as RequestInit).body as string);
+    expect(body).toMatchObject({
+      state: "degraded",
+      lanes: {
+        microphone: { state: "degraded", failure_code: "browser_audio_context_suspended" },
+        system: { state: "degraded", failure_code: "browser_audio_context_suspended" },
+      },
+    });
   });
 
   it("serializes worklet frame POSTs within a lane", async () => {
