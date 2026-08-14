@@ -1,6 +1,6 @@
 # Context — x1-frame-drop
 
-Iteration 4.
+Iteration 5.
 
 Branch `afk3/x1-frame-drop` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -24,12 +24,26 @@ python3 scripts/afk-guardrails/preflight.py x1-frame-drop
 
 - [x] Slow-POST probe proves captured frames are queued rather than silently discarded, and has a
   direct elapsed-time vs admitted-frame assertion that fails on regression.
-- [ ] G7 runs hidden for more than five minutes at descriptor-enforced
+- [x] G7 runs hidden for more than five minutes at descriptor-enforced
   `frame_samples=8000`, joins strict-v2 admissions, and preserves its raw arrays.
 - [x] A forced 409 exercises `recreateSession`, drains sends before resetting sequence state,
   resumes cleanly, and leaves a failed-recreate button usable.
 - [ ] All claims have committed, re-runnable probes and raw artifacts under
   `evidence/phase1/x1-frame-drop/`; branch validation runs after merging current `dev`.
+
+## G7 production-geometry result
+
+`probe_g7_hidden_tab.py` requires `--frame-samples`, configures that only on its local runtime,
+and verifies that the page then receives the same geometry from `/api/live/descriptor`. Its route
+middleware retains only HTTP-200 strict-v2 frame admissions and joins those records to post-ACK
+worklet telemetry by lane plus wire sequence. The 310 s run at 8,000 / 16,000 geometry had 620
+hidden route admissions on each lane over 309.491/309.492 s: both exactly equalled the elapsed
+cadence expectation. All 621 heartbeat POSTs were 200; hidden p50/p95/max was 498/505/507 ms,
+below the 2 s helper lease. Raw arrays: `evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json`.
+
+This deterministic local production-route result does not cover real-provider inference, physical
+microphone input, or attended display capture. The pre-existing slow-POST and forced-409 probes
+also passed again against the added route instrumentation using temporary outputs.
 
 ## Current integration state
 
@@ -72,7 +86,7 @@ worklet cadence or a real provider, and they do not satisfy the required 8000-fr
 
 ## Ranked candidates
 
-1. Restore G7's required `--frame-samples 8000` argument and run the hidden-tab strict-v2
-   admission join for more than five minutes, preserving raw arrays.
-2. Before a completion claim, merge current `dev` and run branch validation on the merged result;
-   retain the known baseline failures rather than changing their pins.
+1. Before a completion claim, merge current `dev` and run branch validation on the merged result;
+   retain the known baseline failures rather than changing their pins. At iteration 5, `dev`
+   (`23afb6d`) remains an ancestor of this branch, but this must be rechecked immediately before
+   that one final integration iteration.

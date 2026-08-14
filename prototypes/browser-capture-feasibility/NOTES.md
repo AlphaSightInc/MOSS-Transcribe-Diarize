@@ -476,3 +476,32 @@ microphone frame before reset; the forced failed create left the button enabled.
 The page retains the descriptor-bounded PCM FIFO but clears its old wire sequence only after the
 drain. This is deterministic local-route evidence, not a real-provider, worklet-cadence, or G7
 measurement. Raw state: `evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json`.
+
+## X1 G7 hidden-tab strict-v2 admission at production geometry — 2026-08-14
+
+**Question:** once Chrome's capture page has been hidden beyond the five-minute intensive-
+throttling threshold, does it retain real strict-v2 route admission at the production 8,000-sample
+geometry while the worklet-driven heartbeat stays inside the helper lease?
+
+**Method:** `probe_g7_hidden_tab.py` configures its local deterministic runtime through the
+required `--frame-samples` argument, but the page still obtains that geometry only from
+`/api/live/descriptor`. The route records only HTTP-200 strict-v2 frame admissions and joins each
+to post-ACK worklet telemetry by lane and wire sequence. The probe backgrounds the actual capture
+target using a DevTools-created sibling, retains the full hidden admission/heartbeat arrays, and
+compares admitted frames directly to elapsed worklet cadence.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/browser-capture-feasibility/probe_g7_hidden_tab.py \
+  --frame-samples 8000 \
+  --hidden-seconds 310 \
+  --output evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json
+```
+
+**Verdict:** passed. The descriptor advertised 16 kHz / 8,000-sample frames. Chrome remained
+hidden for 309.491 s, with 620 successful strict-v2 admissions on each lane; each lane's admitted
+count exactly matched its elapsed-cadence expectation. All 621 heartbeat POSTs returned 200, with
+hidden p50/p95/max 498/505/507 ms below the 2 s lease. This uses local production HTTP routes,
+the deterministic provider, and synthetic 48 kHz sources; it does not prove model inference,
+physical microphone input, or attended display capture. Raw arrays:
+`evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json`.
