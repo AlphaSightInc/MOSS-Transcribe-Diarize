@@ -93,6 +93,35 @@ class LiveAccessRegistryTest(unittest.TestCase):
                 CapturePrincipal("paired-device"),
             )
 
+    def test_configured_shared_token_revocation_survives_restart_without_persisting_bearer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            shared_token = "configured-token"
+            registry = self._registry(tmpdir, shared_token=shared_token)
+            principal = registry.authorize(LAN_TLS, shared_token, "create", None, now=1.0).principal
+
+            registry.revoke_device(LOOPBACK, principal.device_id, now=1.5)
+            state_path = Path(tmpdir) / "live-auth.json"
+            state_text = state_path.read_text(encoding="utf-8")
+            state = json.loads(state_text)
+
+            self.assertNotIn(shared_token, state_text)
+            self.assertNotIn(live_auth._digest(shared_token), state_text)
+            self.assertEqual(
+                state["devices"][principal.device_id],
+                {
+                    "token_digest": None,
+                    "paired_at": None,
+                    "revoked": True,
+                    "revoked_at": 1.5,
+                },
+            )
+            with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
+                registry.authorize(LAN_TLS, shared_token, "create", None, now=2.0)
+
+            restarted = self._registry(tmpdir, shared_token=shared_token)
+            with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
+                restarted.authorize(LAN_TLS, shared_token, "create", None, now=3.0)
+
     def test_peer_admission_uses_direct_address_and_tls_policy(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             registry = self._registry(tmpdir)

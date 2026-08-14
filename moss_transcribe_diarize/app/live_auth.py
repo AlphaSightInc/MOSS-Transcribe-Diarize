@@ -175,11 +175,14 @@ class LiveAccessRegistry:
         self._sessions: dict[str, _SessionState] = {}
         self._session_status: SessionStatusResolver | None = None
         self._load()
+        persisted_shared = self._devices.get(_SHARED_TOKEN_DEVICE_ID)
         self._shared_capture = (
             _DeviceState(
                 device_id=_SHARED_TOKEN_DEVICE_ID,
                 token_digest=_digest(shared_token),
                 paired_at=None,
+                revoked=persisted_shared.revoked if persisted_shared is not None else False,
+                revoked_at=persisted_shared.revoked_at if persisted_shared is not None else None,
             )
             if shared_token is not None
             else None
@@ -437,13 +440,16 @@ class LiveAccessRegistry:
             "schema_version": 1,
             "devices": {
                 device_id: {
-                    "token_digest": device.token_digest,
+                    # The configured shared bearer remains configuration-only. Its
+                    # revocation marker must survive restart, but persisting the
+                    # bearer or a durable verifier for it would weaken that boundary.
+                    "token_digest": None if device is self._shared_capture else device.token_digest,
                     "paired_at": device.paired_at,
                     "revoked": device.revoked,
                     "revoked_at": device.revoked_at,
                 }
                 for device_id, device in sorted(self._devices.items())
-                if device is not self._shared_capture
+                if device is not self._shared_capture or device.revoked
             },
         }
         tmp_path = self._state_path.with_name(f".{self._state_path.name}.{os.getpid()}.tmp")

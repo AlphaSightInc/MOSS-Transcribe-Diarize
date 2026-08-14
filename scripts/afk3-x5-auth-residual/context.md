@@ -1,6 +1,6 @@
 # Context — x5-auth-residual
 
-Iteration 1.
+Iteration 3.
 
 Branch `afk3/x5-auth-residual` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -16,7 +16,9 @@ would falsify a measurement baseline.
 ## Validation
 
 ```bash
-.venv/bin/pytest -q          # ~1006 pass, 2 skip, 387 subtests
+# `.venv/bin/pytest` is an absolute launcher from the original checkout. Prefix
+# `PYTHONPATH="$PWD"` so it validates this worktree's source.
+env PYTHONPATH="$PWD" .venv/bin/pytest -q tests/test_live_auth.py tests/test_live_api.py tests/test_live_service_deployment.py tests/test_speaker_identity_provider.py
 python3 scripts/afk-guardrails/preflight.py x5-auth-residual
 ```
 
@@ -24,9 +26,9 @@ python3 scripts/afk-guardrails/preflight.py x5-auth-residual
 
 - [ ] Merge current `dev` into this branch before final validation; do not re-implement or
   revert its reserved-`device_id`, whitespace-token, or token-file-permission fixes.
-- [ ] Make shared-principal revocation durable across a fresh registry start, or refuse the
-  revocation before reporting success. Commit a re-runnable restart-durability probe and raw
-  output under `evidence/phase1/x5-auth-residual/`.
+- [x] Shared-principal revocation survives a fresh registry start. The revocation marker persists
+  without the configured bearer or its digest; `iteration-3-shared-revocation-restart.json` is the
+  committed raw probe output.
 - [ ] Replace the process-wide `hmac.compare_digest` mock assertion with a test that exercises
   the real constant-time comparison property without brittle exact call ordering.
 - [ ] Verify padded tokens are normalized through the comparison path, not only when the token
@@ -44,10 +46,12 @@ that relation and `PREFLIGHT OK`. The Phase 1 posture remains a single shared-to
 this ticket hardens operator revocation rather than restoring client-asserted identity.
 
 ## Ranked candidates
-1. **Confirmed:** `probe_shared_revocation_restart.py` produces committed raw evidence that
-   loopback revocation succeeds in-process but is neither persisted nor retained by a fresh
-   registry (`true/false/false`). Make the shared-principal revocation durable without persisting
-   its raw bearer, then rerun this probe green.
-2. Inspect the token comparison path and replace the fragile constant-time test with a
+1. Inspect the token comparison path and replace the fragile constant-time test with a
    feature-binding property test.
-3. Build a locally-run Uvicorn wire probe for reserved-id and whitespace-token behavior.
+2. Build a locally-run Uvicorn wire probe for reserved-id and whitespace-token behavior.
+
+## Completed this run
+
+- Shared-principal revocation now persists a digest-free revoked record and restores that state
+  when configured again. Focused gate: 159 passed / 355 subtests. The committed restart probe now
+  records `true/true/true` for in-process rejection, persisted marker, and fresh-start rejection.
