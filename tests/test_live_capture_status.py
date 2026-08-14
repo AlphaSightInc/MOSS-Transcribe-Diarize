@@ -4,6 +4,7 @@ import pytest
 
 from moss_transcribe_diarize.app.live_capture_status import (
     BROWSER_CAPTURE_FAILURE_CODES,
+    LiveCaptureObservationRegistry,
     project_live_capture_status,
 )
 from moss_transcribe_diarize.app.live_helper_presence import (
@@ -11,6 +12,21 @@ from moss_transcribe_diarize.app.live_helper_presence import (
     HelperHeartbeat,
     HelperPresenceRegistry,
 )
+from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2Frame
+
+
+def _observation_frame(*, sequence: int, silent: bool, sample_count: int) -> LiveV2Frame:
+    return LiveV2Frame(
+        lane=LiveLane.MICROPHONE,
+        sequence=sequence,
+        capture_timestamp_ns=0,
+        device_epoch=0,
+        silent=silent,
+        discontinuity=False,
+        sample_rate=1,
+        sample_count=sample_count,
+        pcm=b"\0\0" * sample_count,
+    )
 
 
 def _presence(
@@ -146,3 +162,40 @@ def test_single_failed_lane_keeps_recording_and_unknown_codes_use_additive_fallb
         "capture_phase": "recording",
         "status_line": "Shared audio capture failed. The session is continuing.",
     }
+
+
+def test_observation_registry_resets_transient_counters_only_after_accepted_audio():
+    clock_values = iter((10, 20, 30, 40))
+    registry = LiveCaptureObservationRegistry(monotonic_ns=lambda: next(clock_values))
+    registry.create("session")
+
+    registry.observe_accepted(
+        "session",
+        _observation_frame(sequence=0, silent=True, sample_count=3),
+    )
+    registry.observe_sequence_rejection("session", LiveLane.MICROPHONE)
+    registry.observe_backpressure_rejection("session", LiveLane.MICROPHONE)
+    before_recovery = registry.snapshot("session").lanes[LiveLane.MICROPHONE]
+
+    assert before_recovery.last_server_arrival_monotonic_ns == 10
+    assert before_recovery.consecutive_silent_samples == 3
+    assert before_recovery.consecutive_sequence_rejections == 1
+    assert before_recovery.consecutive_backpressure_rejections == 1
+    assert before_recovery.last_rejection_monotonic_ns == 30
+
+    registry.observe_accepted(
+        "session",
+        _observation_frame(sequence=1, silent=False, sample_count=5),
+    )
+    recovered = registry.snapshot("session").lanes[LiveLane.MICROPHONE]
+
+    assert recovered.last_server_arrival_monotonic_ns == 40
+    assert recovered.consecutive_silent_samples == 0
+    assert recovered.consecutive_sequence_rejections == 0
+    assert recovered.consecutive_backpressure_rejections == 0
+    assert recovered.last_rejection_monotonic_ns == 30
+
+    registry.release("session")
+    assert "session" not in registry
+    with pytest.raises(KeyError):
+        registry.snapshot("session")

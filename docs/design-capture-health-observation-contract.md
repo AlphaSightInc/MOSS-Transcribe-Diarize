@@ -1,6 +1,6 @@
 # Capture-health observation contract
 
-Status: prototype finding, not yet a production policy.
+Status: metadata carrier implemented; user-facing policy remains deferred.
 
 ## Problem demonstrated
 
@@ -14,11 +14,12 @@ per-lane capacity rejections.
 Therefore `project_live_capture_status()` must not infer any of those conditions from the
 current snapshot fields.
 
-## Minimal carrier proposal
+## Minimal carrier
 
-Keep a session-scoped, metadata-only capture-observation registry in
-`live_capture_status.py`; mutate it at the v2 frame route in `live_transport.py`. Those two
-paths are owned by x3. Do not store PCM, client-provided timestamps, or retained frame objects.
+`LiveCaptureObservationRegistry` is session-scoped and metadata-only in
+`live_capture_status.py`; the v2 frame route in `live_transport.py` mutates it after classified
+ingress outcomes. Those two paths are owned by x3. It stores no PCM, client-provided timestamps,
+or retained frame objects.
 
 Each lane records only:
 
@@ -30,14 +31,16 @@ Each lane records only:
 | `consecutive_backpressure_rejections` | v2 retryable 429 | a successful v2 acceptance | distinguishes server saturation from a sequence conflict |
 | `last_rejection_monotonic_ns` | either v2 rejection above | never except session removal | lets later policy require a recent condition |
 
-The snapshot projection receives a typed immutable copy of this record and its clock. It derives
-age there, not from the browser's `capture_timestamp_ns`. Lane accounting and reported lane health
-continue to come from `LiveV2SessionSnapshot`; browser-only facts continue to come from helper
-presence, as ruled in `.wayfinder/tickets/T-02-poll-contract-event-model.md`.
+The registry accepts an injectable server-monotonic clock and the snapshot projection receives a
+typed immutable copy of the record. A later measured policy must derive age there, never from the
+browser's `capture_timestamp_ns`. Lane accounting and reported lane health continue to come from
+`LiveV2SessionSnapshot`; browser-only facts continue to come from helper presence, as ruled in
+`.wayfinder/tickets/T-02-poll-contract-event-model.md`.
 
-The route must create the record with a v2 session, update it only after the corresponding
-accept/rejection outcome is known, return it in `/snapshot`, and remove it with the v2 session.
-That lifecycle pairing prevents stale observations from leaking across session ids.
+The route creates the record with its v2 session, updates it only after the corresponding
+accept/rejection outcome is known, and passes it to `/snapshot` projection. A lifecycle facade
+releases or expires the observation with the v2 session, including helper-lease expiry, which
+prevents stale observations from leaking across session ids.
 
 ## Deliberately deferred policy
 

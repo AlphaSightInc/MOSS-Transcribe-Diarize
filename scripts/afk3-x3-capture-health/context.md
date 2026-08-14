@@ -1,6 +1,6 @@
 # Context — x3-capture-health
 
-Iteration 4.
+Iteration 5.
 
 Branch `afk3/x3-capture-health` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -75,10 +75,17 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    an x3-owned metadata-only registry: server arrival time, consecutive silent samples,
    consecutive sequence rejections, consecutive backpressure rejections, and the last rejection
    time. It deliberately contains no threshold or user-copy policy. Preflight passed.
-5. **Next — implement only the measured observation carrier:** create/remove the typed registry
-   with the v2 session in `live_transport.py`, update it after accepted and classified rejected
-   frame outcomes, and supply its immutable snapshot to the projection using an injectable
-   monotonic clock. Add direct and real-route tests for counter reset/lifecycle. Do not choose a
-   stale/silence/rejection threshold until a separate cadence-and-recovery prototype records it.
-   Terminal reason reachability remains constrained by x6-owned `live_service_runtime.py`; do not
-   edit it from this ticket.
+5. **Done (iteration 5):** `LiveCaptureObservationRegistry` now records the measured missing
+   facts with an injectable server-monotonic clock: last accepted arrival, consecutive silent
+   samples, consecutive sequence and retryable-backpressure rejects, and last rejection. The
+   v2 route writes only after accepted / classified outcomes; a lifecycle facade releases the
+   observation whenever the v2 session is released or helper expiry calls `expire`. Direct and
+   real-route tests prove reset after accepted voiced audio, abort cleanup, and helper-lease
+   cleanup. The focused gate passed: 52 tests, 327 subtests; preflight passed. No threshold or
+   user-facing status policy changed.
+6. **Next — measure cadence and recovery before policy:** extend the standing browser-capture or
+   streaming-diarization bench to measure normal frame cadence, a genuine post-frame stall,
+   sustained silence, sequence-gap recovery, and retryable-backpressure recovery on the live
+   route. Record the timing/count distributions and a threshold verdict before making the
+   projection call any condition unhealthy. Terminal-readable failure remains constrained by
+   x6-owned `live_service_runtime.py`; do not edit it from this ticket.

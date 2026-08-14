@@ -16,7 +16,10 @@ from .live_auth import (
     LiveAccessRegistry,
     LivePeer,
 )
-from .live_capture_status import project_live_capture_status
+from .live_capture_status import (
+    LiveCaptureObservationRegistry,
+    project_live_capture_status,
+)
 from .live_ingest import (
     LiveV2EpochDiscontinuityRequiredError,
     LiveV2LaneCapacityError,
@@ -75,9 +78,11 @@ def attach_live_routes(
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
 
-    v2_sessions = LiveV2SessionRegistry(
+    raw_v2_sessions = LiveV2SessionRegistry(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
     )
+    capture_observations = LiveCaptureObservationRegistry()
+    v2_sessions = _ObservedLiveV2SessionRegistry(raw_v2_sessions, capture_observations)
     v2_mixers = LiveCompatibilityMixerRegistry(
         max_output_samples=runtime.descriptor.bounds.max_frame_samples
     )
@@ -96,6 +101,7 @@ def attach_live_routes(
         abort_mono=runtime.abort,
     )
     app.state.live_v2_sessions = v2_sessions
+    app.state.live_capture_observations = capture_observations
     app.state.live_v2_mixers = v2_mixers
     app.state.live_tapes = tapes
     app.state.live_helper_presence = helper_presence
@@ -244,6 +250,7 @@ def attach_live_routes(
                     raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
                 v2_session = v2_sessions.get(session_id)
                 ack = v2_session.accept(frame.v2_frame)
+                capture_observations.observe_accepted(session_id, frame.v2_frame)
                 tapes.append_lane_frame(session_id, frame.v2_frame)
                 mixed = v2_mixers.get(session_id).admit_available(
                     session_id,
@@ -277,6 +284,10 @@ def attach_live_routes(
             LiveV2PrunedReplayError,
             LiveV2StaleDeviceEpochError,
         ) as exc:
+            if isinstance(exc, LiveV2OutOfOrderFrameError):
+                capture_observations.observe_sequence_rejection(session_id, exc.lane)
+            elif isinstance(exc, LiveV2LaneCapacityError):
+                capture_observations.observe_backpressure_rejection(session_id, exc.lane)
             status, conflict = live_v2_ingress_failure_response(exc)
             conflict["snapshot"] = _snapshot_payload(runtime, session_id)
             conflict["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
@@ -323,6 +334,7 @@ def attach_live_routes(
             return _snapshot_response(
                 runtime,
                 v2_sessions,
+                capture_observations,
                 helper_presence,
                 session_id,
                 since_version=since_version,
@@ -713,7 +725,8 @@ def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:
 
 def _snapshot_response(
     runtime: LiveServiceRuntime,
-    v2_sessions: LiveV2SessionRegistry,
+    v2_sessions: "_ObservedLiveV2SessionRegistry",
+    capture_observations: LiveCaptureObservationRegistry,
     helper_presence: HelperPresenceRegistry,
     session_id: str,
     *,
@@ -722,12 +735,17 @@ def _snapshot_response(
     snapshot = runtime.snapshot(session_id, since_version=since_version)
     presence = helper_presence.snapshot(session_id)
     v2_session = _v2_snapshot(v2_sessions, session_id)
+    observations = _capture_observation_snapshot(capture_observations, session_id)
     return {
         "snapshot": None if snapshot is None else snapshot.to_dict(),
         "unchanged": snapshot is None,
         "v2_session": None if v2_session is None else v2_session.to_dict(),
         "helper_presence": None if presence is None else presence.to_dict(),
-        **project_live_capture_status(presence, v2_session=v2_session).to_dict(),
+        **project_live_capture_status(
+            presence,
+            v2_session=v2_session,
+            observations=observations,
+        ).to_dict(),
     }
 
 
@@ -740,7 +758,7 @@ def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str,
 
 
 def _v2_snapshot_payload(
-    v2_sessions: LiveV2SessionRegistry,
+    v2_sessions: "_ObservedLiveV2SessionRegistry",
     session_id: str,
 ) -> dict[str, Any] | None:
     snapshot = _v2_snapshot(v2_sessions, session_id)
@@ -748,13 +766,67 @@ def _v2_snapshot_payload(
 
 
 def _v2_snapshot(
-    v2_sessions: LiveV2SessionRegistry,
+    v2_sessions: "_ObservedLiveV2SessionRegistry",
     session_id: str,
 ) -> LiveV2SessionSnapshot | None:
     try:
         return v2_sessions.get(session_id).snapshot()
     except KeyError:
         return None
+
+
+def _capture_observation_snapshot(
+    capture_observations: LiveCaptureObservationRegistry,
+    session_id: str,
+):
+    try:
+        return capture_observations.snapshot(session_id)
+    except KeyError:
+        return None
+
+
+class _ObservedLiveV2SessionRegistry:
+    """Pair v2-session lifetime with capture-health observation lifetime."""
+
+    def __init__(
+        self,
+        sessions: LiveV2SessionRegistry,
+        observations: LiveCaptureObservationRegistry,
+    ) -> None:
+        self._sessions = sessions
+        self._observations = observations
+
+    def __contains__(self, session_id: object) -> bool:
+        return session_id in self._sessions
+
+    def contains(self, session_id: str) -> bool:
+        return self._sessions.contains(session_id)
+
+    def create(self, session_id: str):
+        session = self._sessions.create(session_id)
+        try:
+            self._observations.create(session_id)
+        except Exception:
+            self._sessions.release(session_id)
+            raise
+        return session
+
+    def get(self, session_id: str):
+        return self._sessions.get(session_id)
+
+    def release(self, session_id: str):
+        session = self._sessions.release(session_id)
+        self._observations.release(session_id)
+        return session
+
+    def expire(self, session_id: str, reason: str, *, lane_failure_codes=None):
+        snapshot = self._sessions.expire(
+            session_id,
+            reason,
+            lane_failure_codes=lane_failure_codes,
+        )
+        self._observations.release(session_id)
+        return snapshot
 
 
 def _failure_status(exc: LiveServiceError) -> int:

@@ -82,6 +82,7 @@ def v2_frame_payload(
     lane: str = "system",
     sample_rate: int = LIVE_SAMPLE_RATE,
     capture_timestamp_ns: int | None = None,
+    silent: bool = False,
 ) -> dict:
     if capture_timestamp_ns is None:
         capture_timestamp_ns = sequence * samples * 1_000_000_000 // sample_rate
@@ -89,7 +90,7 @@ def v2_frame_payload(
         "lane": lane,
         "capture_timestamp_ns": capture_timestamp_ns,
         "device_epoch": 0,
-        "silent": False,
+        "silent": silent,
         "discontinuity": False,
     }
 
@@ -1557,6 +1558,65 @@ class LiveApiTest(unittest.TestCase):
                 "Shared audio capture failed. The session is continuing.",
             )
 
+    def test_v2_frame_route_tracks_and_releases_capture_observations(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            self.assertIn(session_id, app.state.live_capture_observations)
+            self.assertEqual(
+                client.post(
+                    frames_url,
+                    json=v2_frame_payload(0, 2, lane="microphone", silent=True),
+                ).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 2, lane="microphone")).status_code,
+                409,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 2, lane="microphone")).status_code,
+                409,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(1, 2, lane="microphone")).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 9, lane="microphone")).status_code,
+                429,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 2, lane="microphone")).status_code,
+                200,
+            )
+
+            observation = app.state.live_capture_observations.snapshot(session_id).lanes[
+                LiveLane.MICROPHONE
+            ]
+            self.assertIsNotNone(observation.last_server_arrival_monotonic_ns)
+            self.assertEqual(observation.consecutive_silent_samples, 0)
+            self.assertEqual(observation.consecutive_sequence_rejections, 0)
+            self.assertEqual(observation.consecutive_backpressure_rejections, 0)
+            self.assertIsNotNone(observation.last_rejection_monotonic_ns)
+
+            self.assertEqual(
+                client.post(f"/api/live/sessions/{session_id}/abort", json={"reason": "test"}).status_code,
+                200,
+            )
+            self.assertNotIn(session_id, app.state.live_capture_observations)
+
     def test_a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_survives(self):
         """F3's soak sequence, on the lane that failed rather than on its peer.
 
@@ -1694,6 +1754,7 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(heartbeat.status_code, 200)
             self.assertEqual(late_frame.status_code, 403)
             self.assertNotIn(session_id, app.state.live_v2_sessions)
+            self.assertNotIn(session_id, app.state.live_capture_observations)
             with self.assertRaises(KeyError):
                 app.state.live_v2_mixers.get(session_id)
             self.assertIsNone(app.state.live_helper_presence.snapshot(session_id))
