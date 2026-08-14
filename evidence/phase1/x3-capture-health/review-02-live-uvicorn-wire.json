@@ -1,0 +1,118 @@
+{
+  "all_checks_passed": true,
+  "checks": [
+    {
+      "check": "control-still-reports-healthy",
+      "detail": "a fusion that never emits the healthy line is not a fix",
+      "passed": true
+    },
+    {
+      "check": "1-system-lane-never-sent-a-frame-drops-healthy-claim",
+      "detail": "http=200 phase=awaiting_audio line='Waiting for shared audio to arrive.'",
+      "passed": true
+    },
+    {
+      "check": "2-one-frame-each-then-nothing-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='Microphone audio has stopped arriving. Check capture and try again.'",
+      "passed": true
+    },
+    {
+      "check": "3-sustained-silent-microphone-frames-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='No microphone sound is being detected.'",
+      "passed": true
+    },
+    {
+      "check": "4-sequence-gap-58-consecutive-rejects-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='Microphone audio frames are out of sequence. Reconnecting capture.'",
+      "passed": true
+    },
+    {
+      "check": "5-server-lane-health-failed-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='The shared surface has no audio. Choose a Chrome tab and enable Share tab audio.'",
+      "passed": true
+    },
+    {
+      "check": "6-microphone-denied-terminal-yields-a-readable-reason",
+      "detail": "http=200 phase=failed line='Microphone access was denied. Allow microphone access in Chrome and try again.'",
+      "passed": true
+    },
+    {
+      "check": "7-terminal-repoll-with-since-version-yields-a-readable-reason",
+      "detail": "http=200 phase=failed line='Microphone access was denied. Allow microphone access in Chrome and try again.'",
+      "passed": true
+    }
+  ],
+  "question": "Over a real TLS socket served by our own uvicorn -- no TestClient -- does each PRD capture scenario stop claiming healthy recording, does a healthy session still claim it, and does a microphone-denied session stay readable across a since_version poll?",
+  "scope": {
+    "not_covered": "no browser, no permission prompt, no deployed host, self-signed certificate with verification disabled on the client side",
+    "server": "our own process; no request is issued to any deployed MOSS host",
+    "transport": "httpx over TLS to a locally started uvicorn on 192.168.68.29:60592"
+  },
+  "wire_rows": [
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": true,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-control/snapshot",
+      "scenario": "0-healthy-control",
+      "status_line": "Capturing microphone and shared audio."
+    },
+    {
+      "capture_phase": "awaiting_audio",
+      "claims_healthy_recording": false,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-missing-system/snapshot",
+      "scenario": "1-system-lane-never-sent-a-frame",
+      "status_line": "Waiting for shared audio to arrive."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": false,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-stale/snapshot after a 0.45s wall-clock stall",
+      "scenario": "2-one-frame-each-then-nothing",
+      "status_line": "Microphone audio has stopped arriving. Check capture and try again."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": false,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-silent/snapshot after 260 silent=true microphone frames",
+      "scenario": "3-sustained-silent-microphone-frames",
+      "status_line": "No microphone sound is being detected."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": false,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-sequence/snapshot after 58 out-of-sequence rejects",
+      "scenario": "4-sequence-gap-58-consecutive-rejects",
+      "status_line": "Microphone audio frames are out of sequence. Reconnecting capture."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": false,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-server-lane-failed/snapshot after the system lane failed server-side",
+      "scenario": "5-server-lane-health-failed",
+      "status_line": "The shared surface has no audio. Choose a Chrome tab and enable Share tab audio.",
+      "v2_system_health": "failed"
+    },
+    {
+      "capture_phase": "failed",
+      "claims_healthy_recording": false,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-terminal-denied/snapshot after a terminal mic-denied heartbeat",
+      "scenario": "6-microphone-denied-terminal",
+      "status_line": "Microphone access was denied. Allow microphone access in Chrome and try again."
+    },
+    {
+      "capture_phase": "failed",
+      "claims_healthy_recording": false,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/wire-terminal-denied/snapshot?since_version=1",
+      "scenario": "7-terminal-repoll-with-since-version",
+      "status_line": "Microphone access was denied. Allow microphone access in Chrome and try again."
+    }
+  ]
+}
