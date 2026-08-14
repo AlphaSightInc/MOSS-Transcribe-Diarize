@@ -1,0 +1,237 @@
+# x2-capture-client — adversarial review, artifact 2: what was still broken, and the repairs
+# Re-run everything below from the repository root.
+
+Two defects survived the loop's self-reported COMPLETE. One it escalated and left
+unbuilt; one it introduced.
+
+================================================================================
+REPAIR 1 — the heartbeat scheduler silently drops a heartbeat (introduced by the branch)
+================================================================================
+
+## The defect
+
+`scheduleHeartbeat` cleared its in-flight marker from a `.finally()` attached to the
+promise it returned:
+
+    this.heartbeatFlush = this.flushHeartbeat().finally(() => { this.heartbeatFlush = null; });
+
+`flushHeartbeat`'s drain loop can therefore have already stopped while `heartbeatFlush`
+is still non-null, because the `.finally()` callback runs a microtask later. A
+`scheduleHeartbeat` landing in that window sets `heartbeatPending` and starts nothing.
+Nobody ever sends it.
+
+The pre-branch client did not have this hole -- it re-checked inside `finally`:
+
+    } finally {
+      this.heartbeatInFlight = false;
+      if (this.heartbeatPending && this.session) void this.flushHeartbeat();
+    }
+
+so this is a regression the branch introduced while rewriting the scheduler.
+
+## Reproduction (before the fix)
+
+Scanning microtask offsets between two schedules, with a client whose session is set and
+whose fetch resolves immediately:
+
+    offset 0  heartbeatFlush=true   sent: ["degraded", "capturing"]
+    offset 1  heartbeatFlush=true   sent: ["degraded"]              <-- LOST
+    offset 2  heartbeatFlush=false  sent: ["degraded", "capturing"]
+    offset 3+ heartbeatFlush=false  sent: ["degraded", "capturing"]
+
+## Why it matters
+
+The worst case is `stop()`, which does `await this.scheduleHeartbeat("stopped")`. Landing
+in that window returns the already-settled previous flush promise, so `stop()` proceeds
+to the authenticated stop route having never sent the `stopped` heartbeat -- which is
+precisely the one server-side behaviour PRD defect 2 exists to enable ("Audio capture
+stopped."). The periodic path self-heals within one frame period; the final one does not.
+
+It also silently drops lane-failure and lane-recovery news, which is how a sealed lane or
+a cleared warning fails to reach the operator.
+
+## The fix
+
+`frontend/src/capture/captureClient.ts` -- a `heartbeatFlushing` boolean set
+synchronously at schedule time and cleared in `flushHeartbeat`'s own `finally`, i.e. in
+the same synchronous step the drain loop exits in. No window exists between the loop
+stopping and the marker clearing.
+
+## Failing-before / passing-after
+
+Two committed regression tests in `frontend/src/capture/captureClient.test.ts`:
+
+  - "sends a heartbeat scheduled at any microtask offset after the previous one"
+  - "still posts the final stopped heartbeat when stop() lands in that window"
+
+Reverting only the scheduler to its pre-fix shape and re-running the gate:
+
+    $ npm --prefix frontend test
+      × sends a heartbeat scheduled at any microtask offset after the previous one
+      × still posts the final stopped heartbeat when stop() lands in that window
+      × reports sustained full-scale audio as a degraded lane, and clears it on recovery
+      × names the silent-microphone remedy only for the microphone lane
+      Tests  4 failed | 40 passed (44)
+
+    (fix restored)
+      Tests  44 passed (44)
+
+================================================================================
+REPAIR 2 — two of the seven browser codes were never built
+================================================================================
+
+## The state as received
+
+The branch shipped `browser_track_ended` and `browser_audio_context_suspended`, surfaced
+`browser_microphone_permission_denied`, `browser_capture_request_rejected` and
+`browser_surface_audio_missing` through a pre-session callback, and stopped there.
+`browser_sustained_clipping` and `browser_microphone_silent` were escalated at iteration
+8 as blocked on "a real-browser sustained-clipping/microphone-silence threshold
+measurement" owned by `prototypes/browser-capture-feasibility/`, which x2 does not own.
+
+That blocker does not hold up. The charter rules both behaviours binding
+(`docs/phase1-afk-charter.md` section 4: "Clipping. Meter and warn on sustained
+full-scale"; "Silent mic lane -> the status line must name how to change Chrome's default
+input"), the server already carries the copy for both, and the measurement needs no
+browser at all: it needs real 16 kHz audio framed at the descriptor geometry, which is
+already in the tree and readable. Nothing about it required editing another ticket's
+files.
+
+## Measurement first (AGENTS.md: prototype and measure before implementing)
+
+    $ /opt/homebrew/bin/python3 \
+        evidence/phase1/x2-capture-client/probes/measure_capture_health_thresholds_probe.py
+
+Corpora: `prototypes/streaming-diarization/l15/exploratory/f2-dual-lane/source/{local,remote}.wav`
+(59.6 s of real two-party meeting audio, one file per lane) and
+`prototypes/streaming-diarization/dl2-capture/evidence/d3-leading-silence/fixtures/leading-060s.wav`
+(120 s carrying 60 s of real leading silence). Every statistic is computed on the value
+the server receives, i.e. after the client's own `Math.round(clamp(x) * 32767)` encoding.
+
+    == Q1/Q2: real speech at rising gain, per 500 ms frame ==
+      corpus       gain    peak  rms max  clip frac max  longest clipped run
+      local.wav       1    5659   0.0331       0.000000                    0
+      local.wav       2   11318   0.0662       0.000000                    0
+      local.wav       4   22635   0.1324       0.000000                    0
+      local.wav       8   32767   0.2648       0.000500                    0
+      local.wav      16   32767   0.5297       0.070875                    4
+      local.wav      32   32767   1.0593       0.348750                   39
+      remote.wav      1   27821   0.1834       0.000000                    0
+      remote.wav      2   32767   0.3669       0.028250                    2
+      remote.wav      4   32767   0.7338       0.147125                   19
+      remote.wav      8   32767   1.4675       0.447875                   29
+      remote.wav     16   32767   2.9351       0.662875                   38
+      remote.wav     32   32767   5.8702       0.815375                   50
+
+    == Q2 lower bound: transient overload on real speech must NOT warn ==
+      burst frames  burst seconds  clipped run   warns?
+                 1            0.5            1    False
+                 2              1            2    False
+                 3            1.5            3    False
+                 4              2            4     True
+                 5            2.5            5     True
+                 6              3            6     True
+
+    == Q3: silent-run structure of real speech vs a lane that is really silent ==
+      corpus                frames  silent  longest silent run
+      local.wav                119       0                   0
+      remote.wav               119       3                   3
+      leading-060s.wav         240     121                 120
+
+    == synthetic controls ==
+      signal                                            rms  clip frac  silent?  clip warn?
+      digital silence                               0.00000    0.00000     True       False
+      5e-5 dither (the PRD's no-op-gate example)     0.00005    0.00000     True       False
+      full-scale square (the loopback lane)          1.00000    1.00000    False        True
+      0.98 sine, hot but unclipped                   0.69296    0.00000    False       False
+
+Real captured speech produces ZERO full-scale samples across 238 frames. Real speech
+pauses run at most 3 frames below the silence floor; a lane that genuinely delivers
+nothing runs 120+.
+
+Thresholds chosen from that, and now compiled into the client:
+
+    CLIPPED_SAMPLE_MAGNITUDE   32766.5/32767  (i.e. the encoder emits exactly +/-32767)
+    CLIPPED_FRAME_FRACTION     0.01           (1% of a frame at full scale)
+    SUSTAINED_CLIPPING_FRAMES  4              (2.0 s)
+    SILENT_MICROPHONE_FRAMES   20             (10.0 s, microphone lane only)
+
+The probe is the standing gate on those four numbers, not decoration. Mutation sweep:
+
+    SUSTAINED_CLIPPING_FRAMES = 1  -> PROBE FAIL: a 0.5 s overload on real speech would be
+                                     reported as sustained clipping; that is a transient
+    SUSTAINED_CLIPPING_FRAMES = 8  -> PROBE FAIL: local.wav at gain 16 pins the encoder for
+                                     4 consecutive frames but would not warn;
+                                     3 s of continuous full-scale audio would never warn
+    CLIPPED_FRAME_FRACTION = 0.5   -> PROBE FAIL: local.wav at gain 32 ... would not warn
+    SILENT_MICROPHONE_FRAMES = 2   -> PROBE FAIL: remote.wav has a 3-frame natural pause and
+                                     would be reported as a silent microphone
+    SILENT_MICROPHONE_FRAMES = 200 -> PROBE FAIL: leading-060s.wav carries 120 consecutive
+                                     genuinely silent frames ... a dead lane would never be
+                                     reported
+
+## The safety property that decided the design
+
+Both conditions ride `state: "degraded"`, never `"failed"`.
+`LiveHelperFailureCoordinator.observe` calls `LiveV2Session.fail_lane` for every lane a
+heartbeat reports as `failed`, permanently sealing it, and `_terminal_reason` tears the
+whole session down when both lanes are failed. Reporting "your microphone is too loud" as
+`failed` would end the meeting. `prototypes/browser-capture-feasibility/NOTES.md`
+measured the same thing directly: "a `degraded` fact remained in helper presence without
+failing a lane".
+
+Both conditions are also recoverable -- they clear themselves when the audio recovers,
+unlike the `failed` latch.
+
+## Vocabulary check
+
+    $ /opt/homebrew/bin/python3 \
+        evidence/phase1/x2-capture-client/probes/check_browser_code_vocabulary_probe.py
+    server (moss_transcribe_diarize/app/live_capture_status.py): 7 codes
+      browser_audio_context_suspended            client=True  asserted-in-tests=True
+      browser_capture_request_rejected           client=True  asserted-in-tests=True
+      browser_microphone_permission_denied       client=True  asserted-in-tests=True
+      browser_microphone_silent                  client=True  asserted-in-tests=True
+      browser_surface_audio_missing              client=True  asserted-in-tests=True
+      browser_sustained_clipping                 client=True  asserted-in-tests=True
+      browser_track_ended                        client=True  asserted-in-tests=True
+    PROBE OK  all 7 server browser codes are emittable and asserted
+
+Mutation check (rename one code in the client, then revert):
+
+    PROBE FAIL
+      - the client emits ['browser_mic_silent'], which the server has no copy for; it
+        would fall through to the generic status line
+
+## Failing-before / passing-after
+
+Three committed tests in `frontend/src/capture/captureClient.test.ts`, all driven through
+the real worklet port rather than by calling the detector:
+
+  - "reports sustained full-scale audio as a degraded lane, and clears it on recovery"
+    (3 clipped frames stay quiet; the 4th degrades the lane; a clean frame clears it)
+  - "names the silent-microphone remedy only for the microphone lane"
+    (40 silent system frames stay quiet; 19 silent mic frames stay quiet; the 20th
+    degrades the mic lane; a clean frame clears it)
+  - "never reports a metered condition as `failed`, which would seal the lane
+    server-side" (both lanes in their worst metered state at once, never `failed`; a real
+    ended track still latches `failed` and outranks the metered reason)
+
+All three fail on the branch as received, because the two codes did not exist.
+
+================================================================================
+Gate after the repairs
+================================================================================
+
+    $ npm --prefix frontend run typecheck
+    (clean)
+
+    $ npm --prefix frontend test
+    Test Files  3 passed (3)
+         Tests  44 passed (44)
+
+    $ /opt/homebrew/bin/python3 scripts/afk-guardrails/preflight.py x2-capture-client
+    PREFLIGHT OK [x2-capture-client] prerequisites present, ownership clean, no banned patterns
+
+Test count by file: captureClient.test.ts 24 (19 as received + 5 added),
+preBranchDefects.test.ts 19 (new), App.test.tsx 1 (untouched, orchestrator's).

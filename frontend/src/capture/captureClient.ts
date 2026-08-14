@@ -36,9 +36,28 @@ export type CaptureSession = Readonly<{
 
 type HelperState = "starting" | "capturing" | "degraded" | "recovering" | "failed" | "stopped";
 
-type BrowserFailureCode =
-  | "browser_track_ended"
-  | "browser_audio_context_suspended";
+/** Terminal for the lane: the server seals a lane it is told is `failed`. */
+type BrowserFailureCode = "browser_track_ended";
+
+/**
+ * Non-terminal lane conditions. These ride `state: "degraded"`, never `"failed"`.
+ *
+ * That distinction is load-bearing rather than cosmetic:
+ * `LiveHelperFailureCoordinator.observe` calls `LiveV2Session.fail_lane` for every lane
+ * a heartbeat reports as `failed`, which permanently seals it, and a heartbeat whose
+ * lanes are all `failed` tears the whole session down. "Your microphone is too loud"
+ * must not end a meeting.
+ */
+type BrowserDegradedCode =
+  | "browser_audio_context_suspended"
+  | "browser_sustained_clipping"
+  | "browser_microphone_silent";
+
+/** Every `browser_*` code this client can put on the wire. */
+export type BrowserCaptureCode =
+  | BrowserFailureCode
+  | BrowserDegradedCode
+  | PreSessionCaptureFailure["code"];
 
 /**
  * A capture-start failure observed before a server session exists.
@@ -91,10 +110,33 @@ type LaneState = {
   droppedFrames: number;
   health: LaneHealthState;
   failureCode: BrowserFailureCode | null;
+  degradedCode: BrowserDegradedCode | null;
+  clippedFrameRun: number;
+  silentFrameRun: number;
 };
 
 const SILENCE_RMS = 1e-4;
 const LANE_CAPACITY_FAILURE_CODE = "v2_lane_retention_capacity_reached";
+
+/**
+ * Capture-health thresholds. Measured, not chosen -- re-run
+ * `evidence/phase1/x2-capture-client/probes/measure_capture_health_thresholds_probe.py`,
+ * which frames the tree's real 16 kHz meeting audio at the production descriptor
+ * geometry and fails if these numbers stop separating the corpora.
+ *
+ * At native gain that corpus produces ZERO full-scale samples across 238 frames; gained
+ * until the encoder pins, it produces runs of 19-50 clipped frames. Real speech pauses
+ * run at most 3 frames below the silence floor, while a lane that genuinely delivers
+ * nothing runs 120+.
+ */
+/** A sample is clipped only if `pcm16Base64` will encode it to exactly +/-32767. */
+const CLIPPED_SAMPLE_MAGNITUDE = 32766.5 / 32767;
+/** Share of a frame's samples at full scale before the frame counts as clipped. */
+const CLIPPED_FRAME_FRACTION = 0.01;
+/** Consecutive clipped frames that make it "sustained" (4 x 500 ms = 2 s). */
+const SUSTAINED_CLIPPING_FRAMES = 4;
+/** Consecutive silent microphone frames before naming the Chrome input remedy (10 s). */
+const SILENT_MICROPHONE_FRAMES = 20;
 
 type FramePostResult =
   | "accepted"
@@ -181,6 +223,21 @@ export function rms(samples: Float32Array): number {
   return Math.sqrt(sum / samples.length);
 }
 
+/**
+ * Share of a frame that will reach the server pinned at full scale.
+ *
+ * Measured on the encoded value rather than on some float headroom figure, because
+ * full-scale PCM is exactly what the attended run observed on the loopback lane
+ * (`docs/research-chrome-capture-mvp-2026-08-03.md`).
+ */
+export function clippedFraction(samples: Float32Array): number {
+  let clipped = 0;
+  for (const sample of samples) {
+    if (Math.abs(sample) >= CLIPPED_SAMPLE_MAGNITUDE) clipped += 1;
+  }
+  return clipped / samples.length;
+}
+
 export function makeV2Frame(
   lane: CaptureLane,
   sequence: number,
@@ -243,6 +300,7 @@ export class CaptureClient {
   private readonly laneHasSignal = new Set<CaptureLane>();
   private heartbeatPending: HelperState | null = null;
   private heartbeatFlush: Promise<void> | null = null;
+  private heartbeatFlushing = false;
   private heartbeatSequence = 0;
   private heartbeatMonotonicNs = 0;
   private heartbeatNextStartFrame = 0;
@@ -345,6 +403,11 @@ export class CaptureClient {
     state.discontinuities += 1;
     state.health = "capturing";
     state.failureCode = null;
+    // A new source starts with a clean health history; the old device's clipping or
+    // silence says nothing about this one.
+    state.degradedCode = null;
+    state.clippedFrameRun = 0;
+    state.silentFrameRun = 0;
     this.observeLaneTracks(lane, state);
     this.observeLaneFrames(lane, state);
   }
@@ -483,6 +546,9 @@ export class CaptureClient {
       droppedFrames: 0,
       health: "capturing",
       failureCode: null,
+      degradedCode: null,
+      clippedFrameRun: 0,
+      silentFrameRun: 0,
     };
     this.observeLaneTracks(lane, state);
     this.lanes.set(lane, state);
@@ -531,6 +597,9 @@ export class CaptureClient {
     const level = rms(workletFrame.samples);
     if (level >= SILENCE_RMS) this.laneHasSignal.add(lane);
     this.options.onMeter?.(lane, level);
+    // Health is metered before the delivery gate so a lane that is clipping or dead
+    // during preflight is already in that state when the first heartbeat goes out.
+    this.meterLaneHealth(lane, state, level, workletFrame.samples);
     if (!this.session || this.stopping || state.health === "failed") return;
 
     this.queueHeartbeat(workletFrame);
@@ -666,12 +735,18 @@ export class CaptureClient {
   private scheduleHeartbeat(state: HelperState): Promise<void> {
     if (!this.session || (this.stopping && state !== "stopped")) return Promise.resolve();
     if (this.heartbeatPending !== "stopped") this.heartbeatPending = state;
-    if (!this.heartbeatFlush) {
-      this.heartbeatFlush = this.flushHeartbeat().finally(() => {
-        this.heartbeatFlush = null;
-      });
+    // `heartbeatFlushing` is cleared inside the flush itself, in the same synchronous
+    // step the drain loop exits in. Clearing it from a `.finally()` on the returned
+    // promise instead leaves a one-microtask window in which the loop has already
+    // stopped but the flag still says a flush is running: a schedule landing there sets
+    // `heartbeatPending` and starts nothing, and that heartbeat is never sent. The
+    // worst case is `stop()`, which awaits this and would otherwise walk past its final
+    // `stopped` heartbeat -- the one fact the server turns into "Audio capture stopped."
+    if (!this.heartbeatFlushing) {
+      this.heartbeatFlushing = true;
+      this.heartbeatFlush = this.flushHeartbeat();
     }
-    return this.heartbeatFlush;
+    return this.heartbeatFlush ?? Promise.resolve();
   }
 
   private async flushHeartbeat(): Promise<void> {
@@ -713,6 +788,8 @@ export class CaptureClient {
       }
     } catch (caught) {
       this.reportTransportError("heartbeat", caught);
+    } finally {
+      this.heartbeatFlushing = false;
     }
   }
 
@@ -750,7 +827,9 @@ export class CaptureClient {
       device_epoch: state?.deviceEpoch ?? 0,
       dropped_frames: state?.droppedFrames ?? 0,
       discontinuities: state?.discontinuities ?? 0,
-      failure_code: state?.failureCode ?? null,
+      // A sealed lane's reason outranks a recoverable one; the server's projection sorts
+      // failed lanes ahead of degraded ones for exactly the same reason.
+      failure_code: state?.failureCode ?? state?.degradedCode ?? null,
     };
   }
 
@@ -769,7 +848,46 @@ export class CaptureClient {
     if (!state || state.health === "failed") return;
     state.health = "failed";
     state.failureCode = failureCode;
+    state.degradedCode = null;
     state.frameQueue.length = 0;
+    void this.scheduleHeartbeat(this.heartbeatState());
+  }
+
+  /**
+   * Turn worklet frames into the two metered lane conditions the charter requires.
+   *
+   * Both are *recoverable*: they set `degraded`, and they clear themselves when the
+   * audio recovers. Neither may ever set `failed`, which the server treats as a
+   * permanent seal on the lane.
+   *
+   * Silence is only ever reported for the microphone. A quiet system lane is the
+   * normal state of a meeting where nobody is sharing sound, and the server's copy for
+   * `browser_microphone_silent` names a Chrome microphone setting.
+   */
+  private meterLaneHealth(
+    lane: CaptureLane,
+    state: LaneState,
+    level: number,
+    samples: Float32Array,
+  ): void {
+    if (state.health === "failed") return;
+
+    state.clippedFrameRun =
+      clippedFraction(samples) >= CLIPPED_FRAME_FRACTION ? state.clippedFrameRun + 1 : 0;
+    state.silentFrameRun = level < SILENCE_RMS ? state.silentFrameRun + 1 : 0;
+
+    let degraded: BrowserDegradedCode | null = null;
+    if (state.clippedFrameRun >= SUSTAINED_CLIPPING_FRAMES) {
+      degraded = "browser_sustained_clipping";
+    } else if (lane === "microphone" && state.silentFrameRun >= SILENT_MICROPHONE_FRAMES) {
+      degraded = "browser_microphone_silent";
+    }
+    if (degraded === state.degradedCode) return;
+
+    state.degradedCode = degraded;
+    state.health = degraded === null ? "capturing" : "degraded";
+    // A condition that just started or just cleared is news; send it now rather than
+    // waiting for the next rate-limited worklet heartbeat.
     void this.scheduleHeartbeat(this.heartbeatState());
   }
 

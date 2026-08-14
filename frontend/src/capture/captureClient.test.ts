@@ -13,6 +13,9 @@ import {
 } from "./captureClient";
 
 type TestLaneState = {
+  clippedFrameRun: number;
+  silentFrameRun: number;
+  degradedCode: string | null;
   source: { disconnect: () => void };
   framer: { port: { onmessage: unknown }; disconnect: () => void };
   mute: { disconnect: () => void };
@@ -58,6 +61,9 @@ function testLaneState(): TestLaneState {
     droppedFrames: 0,
     health: "capturing",
     failureCode: null,
+    degradedCode: null,
+    clippedFrameRun: 0,
+    silentFrameRun: 0,
   };
 }
 
@@ -172,6 +178,37 @@ function deliverWorkletFrame(state: TestLaneState, frame: ReturnType<typeof work
   const onmessage = state.framer.port.onmessage as ((event: MessageEvent<unknown>) => void) | null;
   if (!onmessage) throw new Error("lane worklet is not accepting frames");
   onmessage({ data: frame } as MessageEvent<unknown>);
+}
+
+/** Push `count` frames of `samples` into a lane through its real worklet port. */
+function deliverSamples(
+  client: EventLaneClient,
+  lane: CaptureLane,
+  samples: () => Float32Array,
+  count: number,
+  startAt = 0,
+): void {
+  const state = client.lanes.get(lane);
+  if (!state) throw new Error(`missing ${lane} lane`);
+  for (let index = 0; index < count; index += 1) {
+    deliverWorkletFrame(state, {
+      type: "frame",
+      lane,
+      samples: samples(),
+      startFrame: (startAt + index) * 2,
+    } as ReturnType<typeof workletFrame>);
+  }
+}
+
+/** Both samples encode to full scale, so the whole frame is clipped. */
+const fullScale = () => new Float32Array([1, -1]);
+const clean = () => new Float32Array([0.5, -0.5]);
+const silent = () => new Float32Array([0, 0]);
+
+function heartbeatBodies(fetchSpy: ReturnType<typeof vi.fn>): Array<Record<string, any>> {
+  return fetchSpy.mock.calls
+    .filter(([url]) => String(url).endsWith("/heartbeat"))
+    .map(([, request]) => JSON.parse((request as RequestInit).body as string));
 }
 
 describe("browser capture frame contract", () => {
@@ -652,6 +689,149 @@ describe("browser capture frame contract", () => {
     expect(client.session).toBeNull();
     expect(lane.sequence).toBe(0);
     expect(lane.frameQueue).toHaveLength(0);
+  });
+
+  it("sends a heartbeat scheduled at any microtask offset after the previous one", async () => {
+    // Regression: clearing the in-flight flag from a `.finally()` on the returned
+    // promise leaves a one-microtask window where the drain loop has stopped but the
+    // flag still says it is running. A schedule landing there was silently dropped.
+    const dropped: number[] = [];
+    for (let turns = 0; turns < 6; turns += 1) {
+      const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+      vi.stubGlobal("fetch", fetchSpy);
+      const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+      const active = client as unknown as {
+        session: { id: string; viewToken: string } | null;
+        scheduleHeartbeat: (state: string) => Promise<void>;
+      };
+      active.session = { id: "session", viewToken: "view-only" };
+
+      void active.scheduleHeartbeat("degraded");
+      for (let turn = 0; turn < turns; turn += 1) await Promise.resolve();
+      void active.scheduleHeartbeat("capturing");
+      await vi.waitFor(() => expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(1));
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      const states = heartbeatBodies(fetchSpy).map((body) => body.state);
+      if (!states.includes("capturing")) dropped.push(turns);
+      vi.unstubAllGlobals();
+    }
+    expect(dropped).toEqual([]);
+  });
+
+  it("still posts the final stopped heartbeat when stop() lands in that window", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+    const active = client as unknown as {
+      session: { id: string; viewToken: string } | null;
+      scheduleHeartbeat: (state: string) => Promise<void>;
+    };
+    active.session = { id: "session", viewToken: "view-only" };
+
+    void active.scheduleHeartbeat("capturing");
+    await Promise.resolve(); // the exact offset that used to swallow the next schedule
+    await client.stop(0);
+
+    const urls = fetchSpy.mock.calls.map(([url]) => String(url));
+    expect(urls.at(-1)).toBe("/api/live/sessions/session/stop");
+    expect(heartbeatBodies(fetchSpy).map((body) => body.state)).toContain("stopped");
+    // Sequence numbers must still be strictly increasing; the server rejects a regression.
+    const sequences = heartbeatBodies(fetchSpy).map((body) => body.sequence);
+    expect(sequences).toEqual([...sequences].sort((a, b) => a - b));
+    expect(new Set(sequences).size).toBe(sequences.length);
+  });
+
+  it("reports sustained full-scale audio as a degraded lane, and clears it on recovery", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+
+    // Three clipped frames is 1.5 s: a transient, below the measured sustained window.
+    deliverSamples(client, "system", fullScale, 3);
+    await vi.waitFor(() => expect(client.lanes.get("system")?.clippedFrameRun).toBe(3));
+    expect(heartbeatBodies(fetchSpy)).toHaveLength(0);
+
+    // The fourth crosses it.
+    deliverSamples(client, "system", fullScale, 1, 3);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(1));
+    expect(heartbeatBodies(fetchSpy)[0]).toMatchObject({
+      state: "degraded",
+      lanes: {
+        system: { state: "degraded", failure_code: "browser_sustained_clipping" },
+        microphone: { state: "capturing", failure_code: null },
+      },
+    });
+
+    // Recoverable, unlike a failed lane: clean audio clears it.
+    deliverSamples(client, "system", clean, 1, 4);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(2));
+    expect(heartbeatBodies(fetchSpy)[1]).toMatchObject({
+      state: "capturing",
+      lanes: { system: { state: "capturing", failure_code: null } },
+    });
+  });
+
+  it("names the silent-microphone remedy only for the microphone lane", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+
+    // A quiet system lane is the normal state of a meeting nobody is sharing sound into.
+    deliverSamples(client, "system", silent, 40);
+    await vi.waitFor(() => expect(client.lanes.get("system")?.silentFrameRun).toBe(40));
+    expect(heartbeatBodies(fetchSpy)).toHaveLength(0);
+
+    deliverSamples(client, "microphone", silent, 19);
+    await vi.waitFor(() => expect(client.lanes.get("microphone")?.silentFrameRun).toBe(19));
+    expect(heartbeatBodies(fetchSpy)).toHaveLength(0);
+
+    deliverSamples(client, "microphone", silent, 1, 19);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(1));
+    expect(heartbeatBodies(fetchSpy)[0]).toMatchObject({
+      state: "degraded",
+      lanes: {
+        microphone: { state: "degraded", failure_code: "browser_microphone_silent" },
+        system: { state: "capturing", failure_code: null },
+      },
+    });
+
+    deliverSamples(client, "microphone", clean, 1, 20);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(2));
+    expect(heartbeatBodies(fetchSpy)[1].lanes.microphone).toMatchObject({
+      state: "capturing",
+      failure_code: null,
+    });
+  });
+
+  it("never reports a metered condition as `failed`, which would seal the lane server-side", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+
+    // Both lanes in their worst metered state at once. If either reported `failed`,
+    // LiveHelperFailureCoordinator would call fail_lane on it; if both did, the whole
+    // session would be torn down as helper_all_lanes_failed.
+    deliverSamples(client, "system", fullScale, 8);
+    deliverSamples(client, "microphone", silent, 24);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy).length).toBeGreaterThanOrEqual(2));
+
+    const latest = heartbeatBodies(fetchSpy).at(-1)!;
+    expect(latest.state).toBe("degraded");
+    expect(latest.lanes.system.state).toBe("degraded");
+    expect(latest.lanes.microphone.state).toBe("degraded");
+    for (const body of heartbeatBodies(fetchSpy)) {
+      expect(body.state).not.toBe("failed");
+      expect(body.lanes.system.state).not.toBe("failed");
+      expect(body.lanes.microphone.state).not.toBe("failed");
+    }
+
+    // A really-gone track still latches failed, and outranks the metered reason.
+    (client as any).markLaneFailed("microphone", "browser_track_ended");
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy).at(-1)!.lanes.microphone.state).toBe("failed"));
+    expect(heartbeatBodies(fetchSpy).at(-1)!.lanes.microphone.failure_code).toBe(
+      "browser_track_ended",
+    );
   });
 
   it("stops local capture instead of sending another frame after a malformed-frame 400", async () => {
