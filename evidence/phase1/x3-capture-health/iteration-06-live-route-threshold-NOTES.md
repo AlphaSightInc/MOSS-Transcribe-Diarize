@@ -12,10 +12,13 @@ PYTHONPATH=. .venv/bin/python evidence/phase1/x3-capture-health/iteration-06-liv
 ```
 
 The probe creates local `create_app` instances, pairs normally, and exercises the authenticated
-v2 frame, helper-heartbeat, and snapshot routes. It records server-monotonic arrival times after
-accepted frames, a real post-frame wait, four silent descriptor frames, four classified sequence
-rejections, and four classified retention-capacity rejections. It then proves recovery only by a
-subsequent accepted route frame (and, for capacity, the real peer-lane mixer drain first).
+v2 frame, helper-heartbeat, and snapshot routes. Its raw `server_fused_route_status_matrix`
+asserts the six non-healthy route outcomes: missing shared audio, stale post-frame arrival,
+sustained silence, sustained sequence rejection, retryable backpressure, and a server-reported
+failed lane while the helper still says it is capturing. It records server-monotonic arrival times
+after accepted frames, a real post-frame wait, four silent descriptor frames, four classified
+sequence rejections, and four classified retention-capacity rejections. It then proves recovery
+only by a subsequent accepted route frame (and, for capacity, the real peer-lane mixer drain first).
 
 Verdict: at the measured descriptor geometry of 8,000 samples / 16 kHz, use 2,000 ms of absent
 server arrival, 32,000 consecutive silent samples, or four consecutive classified rejection

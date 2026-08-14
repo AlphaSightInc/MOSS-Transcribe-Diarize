@@ -35,6 +35,7 @@ SUSTAINED_SILENT_SAMPLES = 4 * FRAME_SAMPLES
 SUSTAINED_REJECTION_COUNT = 4
 ROUTE_STALL_SECONDS = 2.05
 LANES = ("microphone", "system")
+HEALTHY_RECORDING_STATUS_LINE = "Capturing microphone and shared audio."
 
 
 def _test_helpers():
@@ -152,6 +153,31 @@ def _observation(app, session_id: str, lane: str):
     return app.state.live_capture_observations.snapshot(session_id).lanes[LiveLane(lane)]
 
 
+def _assert_unhealthy_snapshot(
+    response,
+    *,
+    capture_phase: str,
+    status_line: str,
+) -> dict[str, object]:
+    """Assert the real snapshot no longer makes the healthy recording claim."""
+
+    assert response.status_code == 200, response.text
+    snapshot = response.json()
+    assert snapshot["capture_phase"] == capture_phase
+    assert snapshot["status_line"] == status_line
+    healthy_recording_claim = (
+        snapshot["capture_phase"] == "recording"
+        and snapshot["status_line"] == HEALTHY_RECORDING_STATUS_LINE
+    )
+    assert not healthy_recording_claim
+    return {
+        "snapshot_http_status": response.status_code,
+        "capture_phase": snapshot["capture_phase"],
+        "status_line": snapshot["status_line"],
+        "healthy_recording_claim": healthy_recording_claim,
+    }
+
+
 def _percentile(values: list[float], fraction: float) -> float:
     ordered = sorted(values)
     return ordered[math.ceil(len(ordered) * fraction) - 1]
@@ -182,10 +208,12 @@ def _normal_cadence_and_stall() -> dict[str, object]:
     stale_age_ns = time.monotonic_ns() - max(values[-1] for values in arrivals.values())
     assert stale_age_ns >= STALE_AFTER_NS
     snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot")
-    assert snapshot.status_code == 200, snapshot.text
+    stale_status = _assert_unhealthy_snapshot(
+        snapshot,
+        capture_phase="recording",
+        status_line="Microphone audio has stopped arriving. Check capture and try again.",
+    )
     status = snapshot.json()
-    assert status["capture_phase"] == "recording"
-    assert status["status_line"] == "Microphone audio has stopped arriving. Check capture and try again."
     return {
         "v2_lanes_after_cadence": status["v2_session"]["lanes"],
         "arrival_intervals_ms": intervals_ms,
@@ -200,10 +228,7 @@ def _normal_cadence_and_stall() -> dict[str, object]:
             "server_observed_age_ms": round(stale_age_ns / 1_000_000, 3),
             "stale_after_ms": STALE_AFTER_NS // 1_000_000,
             "pre_stall_monotonic_ns": before_stall,
-            "fused_route_status": {
-                "capture_phase": status["capture_phase"],
-                "status_line": status["status_line"],
-            },
+            "fused_route_status": stale_status,
         },
     }
 
@@ -217,6 +242,11 @@ def _silence_and_sequence_recovery() -> dict[str, object]:
         assert microphone.status_code == system.status_code == 200
     silent_before_recovery = _observation(app, session_id, "microphone")
     assert silent_before_recovery.consecutive_silent_samples == SUSTAINED_SILENT_SAMPLES
+    silent_status = _assert_unhealthy_snapshot(
+        client.get(f"/api/live/sessions/{session_id}/snapshot"),
+        capture_phase="recording",
+        status_line="No microphone sound is being detected.",
+    )
 
     microphone_recovery = _post(
         client,
@@ -243,6 +273,11 @@ def _silence_and_sequence_recovery() -> dict[str, object]:
     assert [response.status_code for response in rejects] == [409] * SUSTAINED_REJECTION_COUNT
     sequence_before_recovery = _observation(app, sequence_id, "microphone")
     assert sequence_before_recovery.consecutive_sequence_rejections == SUSTAINED_REJECTION_COUNT
+    sequence_status = _assert_unhealthy_snapshot(
+        client.get(f"/api/live/sessions/{sequence_id}/snapshot"),
+        capture_phase="recording",
+        status_line="Microphone audio frames are out of sequence. Reconnecting capture.",
+    )
     accepted = _post(client, sequence_id, lane="microphone", sequence=1)
     assert accepted.status_code == 200, accepted.text
     sequence_after_recovery = _observation(app, sequence_id, "microphone")
@@ -252,26 +287,35 @@ def _silence_and_sequence_recovery() -> dict[str, object]:
             "accepted_silent_frames": SUSTAINED_REJECTION_COUNT,
             "consecutive_silent_samples_before_recovery": silent_before_recovery.consecutive_silent_samples,
             "consecutive_silent_samples_after_voiced_route_accept": silent_after_recovery.consecutive_silent_samples,
+            "fused_route_status": silent_status,
         },
         "sequence_gap": {
             "rejected_route_statuses": [response.status_code for response in rejects],
             "consecutive_rejections_before_recovery": sequence_before_recovery.consecutive_sequence_rejections,
             "consecutive_rejections_after_correct_route_accept": sequence_after_recovery.consecutive_sequence_rejections,
+            "fused_route_status": sequence_status,
         },
     }
 
 
 def _backpressure_recovery() -> dict[str, object]:
-    # The mixer seals a frame from its successor. Keep two frames per lane so the peer can
-    # advance that frontier and release the first retained microphone frame after the refusal.
+    # The mixer seals a microphone frame from its successor. The first system frame makes both
+    # lanes active before snapshotting the refusal; the second advances the frontier and releases
+    # the retained microphone frame before the successful retry.
     app, helpers = _app(max_retained_samples=FRAME_SAMPLES * 2)
     client, session_id = _start_session(app, helpers)
     assert _post(client, session_id, lane="microphone", sequence=0).status_code == 200
     assert _post(client, session_id, lane="microphone", sequence=1).status_code == 200
+    assert _post(client, session_id, lane="system", sequence=0).status_code == 200
     rejects = [_post(client, session_id, lane="microphone", sequence=2) for _ in range(SUSTAINED_REJECTION_COUNT)]
     assert [response.status_code for response in rejects] == [429] * SUSTAINED_REJECTION_COUNT
     before_recovery = _observation(app, session_id, "microphone")
     assert before_recovery.consecutive_backpressure_rejections == SUSTAINED_REJECTION_COUNT
+    backpressure_status = _assert_unhealthy_snapshot(
+        client.get(f"/api/live/sessions/{session_id}/snapshot"),
+        capture_phase="recording",
+        status_line="Server is catching up on microphone audio.",
+    )
     # The peer lane lets the production mixer account its retained microphone frame.
     assert _post(client, session_id, lane="system", sequence=0).status_code == 200
     assert _post(client, session_id, lane="system", sequence=1).status_code == 200
@@ -283,6 +327,47 @@ def _backpressure_recovery() -> dict[str, object]:
         "rejected_route_statuses": [response.status_code for response in rejects],
         "consecutive_rejections_before_recovery": before_recovery.consecutive_backpressure_rejections,
         "consecutive_rejections_after_peer_drain_and_route_accept": after_recovery.consecutive_backpressure_rejections,
+        "fused_route_status": backpressure_status,
+    }
+
+
+def _lane_accounting_statuses() -> dict[str, object]:
+    """Exercise server-only lane accounting and health through the snapshot route."""
+
+    app, helpers = _app(max_retained_samples=FRAME_SAMPLES * 16)
+    client, session_id = _start_session(app, helpers)
+    assert _post(client, session_id, lane="microphone", sequence=0).status_code == 200
+    missing_system = client.get(f"/api/live/sessions/{session_id}/snapshot")
+    missing_status = _assert_unhealthy_snapshot(
+        missing_system,
+        capture_phase="awaiting_audio",
+        status_line="Waiting for shared audio to arrive.",
+    )
+    missing_payload = missing_system.json()
+    assert missing_payload["v2_session"]["lanes"]["system"]["accepted_samples"] == 0
+
+    assert _post(client, session_id, lane="system", sequence=0).status_code == 200
+    from moss_transcribe_diarize.app.live_lane_contract import LiveLane
+
+    app.state.live_v2_sessions.get(session_id).fail_lane(LiveLane.SYSTEM, "server_lane_failure")
+    failed_lane = client.get(f"/api/live/sessions/{session_id}/snapshot")
+    failed_status = _assert_unhealthy_snapshot(
+        failed_lane,
+        capture_phase="recording",
+        status_line="Shared audio capture failed. The session is continuing.",
+    )
+    failed_payload = failed_lane.json()
+    assert failed_payload["helper_presence"]["lanes"]["system"]["state"] == "capturing"
+    assert failed_payload["v2_session"]["lanes"]["system"]["health"] == "failed"
+    return {
+        "missing_system_audio": missing_status
+        | {"v2_system_accepted_samples": missing_payload["v2_session"]["lanes"]["system"]["accepted_samples"]},
+        "server_reported_failed_lane": failed_status
+        | {
+            "helper_system_state": failed_payload["helper_presence"]["lanes"]["system"]["state"],
+            "v2_system_health": failed_payload["v2_session"]["lanes"]["system"]["health"],
+            "v2_system_failure_code": failed_payload["v2_session"]["lanes"]["system"]["failure_code"],
+        },
     }
 
 
@@ -290,6 +375,7 @@ def _run_probe() -> dict[str, object]:
     normal = _normal_cadence_and_stall()
     recovery = _silence_and_sequence_recovery()
     backpressure = _backpressure_recovery()
+    lane_accounting = _lane_accounting_statuses()
     return {
         "question": (
             "What server-observable cadence, stale-age, silence, and rejection recovery facts "
@@ -313,6 +399,14 @@ def _run_probe() -> dict[str, object]:
         "local_production_route_measurement": normal,
         "recovery_measurement": recovery,
         "backpressure_recovery_measurement": backpressure,
+        "server_fused_route_status_matrix": {
+            "missing_system_audio": lane_accounting["missing_system_audio"],
+            "stale_post_frame_arrival": normal["stall"]["fused_route_status"],
+            "sustained_silence": recovery["sustained_silence"]["fused_route_status"],
+            "sustained_sequence_rejections": recovery["sequence_gap"]["fused_route_status"],
+            "sustained_backpressure_rejections": backpressure["fused_route_status"],
+            "server_reported_failed_lane": lane_accounting["server_reported_failed_lane"],
+        },
         "policy_verdict": {
             "stale_after_server_arrival_ms": STALE_AFTER_NS // 1_000_000,
             "sustained_silence_samples": SUSTAINED_SILENT_SAMPLES,
@@ -328,8 +422,8 @@ def _run_probe() -> dict[str, object]:
             ),
             "projection_policy": (
                 "Applied in project_live_capture_status with descriptor-derived timing and an injectable "
-                "server-monotonic clock; the focused route regression covers stale, silence, sequence, "
-                "backpressure, and accepted-frame recovery."
+                "server-monotonic clock; the focused route regression and this raw route-status matrix "
+                "cover stale, silence, sequence, backpressure, lane accounting, and accepted-frame recovery."
             ),
         },
     }

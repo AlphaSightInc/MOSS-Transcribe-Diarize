@@ -27,9 +27,9 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
 - [x] Projection distinguishes `starting`, `awaiting_audio`, `recording`, and `failed`, using
   server-observable frame recency, sequence gaps, lane accounting, sustained silence,
   backpressure, and reported lane health.
-- [ ] The real route probe proves that each unhealthy case avoids the healthy recording claim:
+- [x] The real route probe proves that each unhealthy case avoids the healthy recording claim:
   missing system lane, stale post-frame arrival, all-silent frames, sustained sequence rejects,
-  and a server-reported failed lane.
+  retryable backpressure, and a server-reported failed lane.
 - [ ] Terminal stop/failure preserves a client-readable server-authored reason, including a
   microphone-permission denial.
 - [x] `.venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py` passes, and
@@ -103,8 +103,15 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json` (2,063.594 ms
    observed age against the 2,000 ms descriptor-derived threshold). Focused validation passed:
    53 tests / 327 subtests; preflight passed. Terminal-readable failure remains x6-owned.
-8. **Next — make the raw route evidence criterion-complete:** extend the committed probe (or add
-   an adjacent one) to emit and assert the five PRD statuses through `/snapshot`: missing system
-   audio, stale post-frame arrival, sustained silence, sustained sequence rejection, retryable
-   backpressure, and server-reported failed lane. Keep the existing route regressions; do not
-   change product policy. Terminal readability remains blocked on x6.
+8. **Done (iteration 8):** the rerunnable local `create_app` probe now emits and asserts a
+   `server_fused_route_status_matrix` through authenticated `/snapshot`: missing system audio,
+   stale arrival, sustained silence, sustained sequence rejection, retryable backpressure, and
+   server-reported lane failure. Every row says `healthy_recording_claim: false`; the final row
+   additionally proves the helper still says `capturing` while the v2 system lane says `failed`.
+   Raw output is `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json`.
+   No product policy changed. The focused gate passed (53 tests, 327 subtests) and preflight
+   passed after the evidence refresh; terminal readability remains x6-owned.
+9. **Next — wait for x6 terminal visibility, then merge and validate:** x3 cannot change
+   `live_service_runtime.py`; after x6 supplies readable terminal failure/stop evidence, merge
+   current `dev` into this branch and run the focused gate on that merged result. Do not claim
+   completion until both terminal readability and post-merge validation have raw evidence.

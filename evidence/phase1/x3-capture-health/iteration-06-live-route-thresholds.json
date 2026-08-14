@@ -2,6 +2,12 @@
   "backpressure_recovery_measurement": {
     "consecutive_rejections_after_peer_drain_and_route_accept": 0,
     "consecutive_rejections_before_recovery": 4,
+    "fused_route_status": {
+      "capture_phase": "recording",
+      "healthy_recording_claim": false,
+      "snapshot_http_status": 200,
+      "status_line": "Server is catching up on microphone audio."
+    },
     "rejected_route_statuses": [
       429,
       429,
@@ -28,34 +34,36 @@
   "local_production_route_measurement": {
     "arrival_intervals_ms": {
       "microphone": [
-        503.651,
-        515.391,
-        511.957,
-        514.298,
-        511.969
+        507.123,
+        514.8,
+        515.103,
+        512.402,
+        511.124
       ],
       "system": [
-        504.068,
-        514.814,
-        512.161,
-        514.206,
-        512.491
+        507.201,
+        515.08,
+        515.042,
+        512.377,
+        511.834
       ]
     },
     "combined_interval_ms": {
       "count": 10,
-      "max": 515.391,
-      "p50": 512.161,
-      "p95": 515.391
+      "max": 515.103,
+      "p50": 512.377,
+      "p95": 515.103
     },
     "stall": {
       "fused_route_status": {
         "capture_phase": "recording",
+        "healthy_recording_claim": false,
+        "snapshot_http_status": 200,
         "status_line": "Microphone audio has stopped arriving. Check capture and try again."
       },
-      "pre_stall_monotonic_ns": 2253630949648625,
+      "pre_stall_monotonic_ns": 2254067332709833,
       "requested_seconds": 2.05,
-      "server_observed_age_ms": 2063.594,
+      "server_observed_age_ms": 2064.064,
       "stale_after_ms": 2000
     },
     "v2_lanes_after_cadence": {
@@ -86,7 +94,7 @@
     }
   },
   "policy_verdict": {
-    "projection_policy": "Applied in project_live_capture_status with descriptor-derived timing and an injectable server-monotonic clock; the focused route regression covers stale, silence, sequence, backpressure, and accepted-frame recovery.",
+    "projection_policy": "Applied in project_live_capture_status with descriptor-derived timing and an injectable server-monotonic clock; the focused route regression and this raw route-status matrix cover stale, silence, sequence, backpressure, lane accounting, and accepted-frame recovery.",
     "rationale": "Four descriptor frame periods are 2,000 ms: about 3.9 times the measured hidden-tab p95 of 506.5 ms, while the route probe demonstrates a real post-frame stall beyond that age and exact recovery after the next accepted frame. Four 8,000-sample silent frames are the same 2,000 ms. Four consecutive classified rejections avoid treating one retry as sustained while remaining far below the PRD's measured 58-rejection wedge.",
     "stale_after_server_arrival_ms": 2000,
     "sustained_backpressure_rejections": 4,
@@ -99,6 +107,12 @@
     "sequence_gap": {
       "consecutive_rejections_after_correct_route_accept": 0,
       "consecutive_rejections_before_recovery": 4,
+      "fused_route_status": {
+        "capture_phase": "recording",
+        "healthy_recording_claim": false,
+        "snapshot_http_status": 200,
+        "status_line": "Microphone audio frames are out of sequence. Reconnecting capture."
+      },
       "rejected_route_statuses": [
         409,
         409,
@@ -109,11 +123,59 @@
     "sustained_silence": {
       "accepted_silent_frames": 4,
       "consecutive_silent_samples_after_voiced_route_accept": 0,
-      "consecutive_silent_samples_before_recovery": 32000
+      "consecutive_silent_samples_before_recovery": 32000,
+      "fused_route_status": {
+        "capture_phase": "recording",
+        "healthy_recording_claim": false,
+        "snapshot_http_status": 200,
+        "status_line": "No microphone sound is being detected."
+      }
     }
   },
   "scope": {
     "not_covered": "This uses a deterministic local runtime and TestClient, not a browser. Chrome 151 worklet cadence is an already-committed baseline below; terminal readability remains x6-owned.",
     "route": "local create_app -> authenticated v2 frame/heartbeat/snapshot routes -> LiveCaptureObservationRegistry"
+  },
+  "server_fused_route_status_matrix": {
+    "missing_system_audio": {
+      "capture_phase": "awaiting_audio",
+      "healthy_recording_claim": false,
+      "snapshot_http_status": 200,
+      "status_line": "Waiting for shared audio to arrive.",
+      "v2_system_accepted_samples": 0
+    },
+    "server_reported_failed_lane": {
+      "capture_phase": "recording",
+      "healthy_recording_claim": false,
+      "helper_system_state": "capturing",
+      "snapshot_http_status": 200,
+      "status_line": "Shared audio capture failed. The session is continuing.",
+      "v2_system_failure_code": "server_lane_failure",
+      "v2_system_health": "failed"
+    },
+    "stale_post_frame_arrival": {
+      "capture_phase": "recording",
+      "healthy_recording_claim": false,
+      "snapshot_http_status": 200,
+      "status_line": "Microphone audio has stopped arriving. Check capture and try again."
+    },
+    "sustained_backpressure_rejections": {
+      "capture_phase": "recording",
+      "healthy_recording_claim": false,
+      "snapshot_http_status": 200,
+      "status_line": "Server is catching up on microphone audio."
+    },
+    "sustained_sequence_rejections": {
+      "capture_phase": "recording",
+      "healthy_recording_claim": false,
+      "snapshot_http_status": 200,
+      "status_line": "Microphone audio frames are out of sequence. Reconnecting capture."
+    },
+    "sustained_silence": {
+      "capture_phase": "recording",
+      "healthy_recording_claim": false,
+      "snapshot_http_status": 200,
+      "status_line": "No microphone sound is being detected."
+    }
   }
 }
