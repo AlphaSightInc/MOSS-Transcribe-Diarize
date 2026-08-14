@@ -1,2 +1,4 @@
 
 [loop 20260814-030315-98829] start budget=40 agent=codex branch=afk2/r1-reference-ui
+
+[loop 20260814-030315-98829] preflight failed before iteration 1
