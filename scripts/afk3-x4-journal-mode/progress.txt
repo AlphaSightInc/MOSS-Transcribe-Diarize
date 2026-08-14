@@ -4,3 +4,5 @@
 [loop 20260814-181407-44138] preflight failed before iteration 1
 
 [loop 20260814-181455-47624] start budget=40 agent=codex branch=afk3/x4-journal-mode
+
+[iteration 1] target=recorded the x4 PRD gate as a durable acceptance checklist; files=scripts/afk3-x4-journal-mode/context.md,scripts/afk3-x4-journal-mode/progress.txt; validation=`python3 scripts/afk-guardrails/preflight.py x4-journal-mode` => PREFLIGHT OK and `git diff --check` => clean; evidence=scripts/afk3-x4-journal-mode/context.md (checklist), this entry; learned=the next isolated work item is merging current dev and re-running preflight before changing the privacy-sensitive journal writer; next=merge dev, then take the storage-mode enforcement vertical slice with its focused proof.
