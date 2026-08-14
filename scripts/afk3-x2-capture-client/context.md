@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 3.
+Iteration 4.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -37,35 +37,31 @@ python3 scripts/afk-guardrails/preflight.py x2-capture-client
   rerunnable evidence under `evidence/phase1/x2-capture-client/`. The client does not prove
   attended display capture or server/inference behavior.
 
-## Ranked candidates
+## Current implementation evidence
 
-`dev` (`23afb6d`) is already an ancestor of this branch; iteration 2 re-validated the merged
-state with `PREFLIGHT OK`. No merge is pending.
+`dev` (`23afb6d`) remains an ancestor of this branch; no merge is pending. The owned r2 baseline
+has now been restored from `afk2/r2-capture-client` without its loop state or server files:
+`frontend/src/capture/captureClient.ts`, its focused test, and
+`frontend/public/worklets/lane-framer.js`. `App.tsx` remains untouched and still does not mount
+the client, per ownership.
 
-The ranked candidate's assumed baseline is absent from the current branch, not merely untested:
-
-- `git ls-tree -r HEAD -- frontend/src/capture frontend/public/worklets` and the same query on
-  `dev` return no files. `frontend/src/App.tsx` remains the static shell and imports no capture
-  client.
-- The exact core described as "keep" in this PRD exists only on unmerged
-  `afk2/r2-capture-client`: `c602f4a` adds `captureClient.ts`, its focused test, and
-  `lane-framer.js`; `218ebfb` adds its clean-stop path. That branch's client still contains the
-  defects named by this ticket (`void this.postFrame(...)`, fire-and-forget frames, all non-OK
-  responses dropped, requested descriptor rate in frame metadata, and `level > 0`).
-- `afk3/x1-frame-drop`, `afk3/x3-capture-health`, and `dev` also contain no capture-client files;
-  there is no concurrent owned implementation to extend. The server's current frame route
-  confirms the PRD's response distinction: `LiveV2LaneCapacityError` becomes a structured 429
-  before admission, while queue backpressure is a failure-less 429 after `v2_session.accept`.
-
-This invalidates the prior candidate as phrased: there is no client API or test seam in this
-branch to modify. It is a context repair, not an acceptance claim.
+Iteration 4 replaced the baseline fire-and-forget frame POST with an independent queue per lane.
+Frames obtain their sequence only at the serial queue head. A structured 429 with
+`failure.code == v2_lane_retention_capacity_reached` stays at that head, so the next worklet-port
+frame retries the identical body before a later frame can post. Other failures retain the
+baseline's drop-and-report behaviour for now. The focused production-path tests prove both one
+in-flight post per lane and capacity bodies `[0, 0, 1]`; they would fail if serialization or the
+unconsumed retry were removed. Validation: `npm --prefix frontend test --
+src/capture/captureClient.test.ts` (7 passed), `npm --prefix frontend run typecheck` (pass), and
+`python3 scripts/afk-guardrails/preflight.py x2-capture-client` (`PREFLIGHT OK`).
 
 ## Ranked candidates
 
-1. Reintroduce only the owned r2 capture baseline (`frontend/src/capture/captureClient.ts`, its
-   test, and `frontend/public/worklets/lane-framer.js`) into this branch, without r2's loop state
-   or out-of-scope server files; include the first serialized-post / capacity-429 regression
-   slice rather than importing its known faulty behaviour untested.
-2. Then add the remaining 429/409/400 branches and browser-health/lane-restart behaviours in
-   separately validated vertical slices. Do not touch `App.tsx`; its integration remains owned by
-   the orchestrator.
+1. Add the remaining frame-taxonomy vertical slice: explicitly prove the consumed queue-429 and
+   failure-less 429 advance rather than retry, resync/recreate after 409, and stop capture on 400.
+   Preserve the per-lane worklet-driven queue and do not introduce timers.
+2. Add real browser-health state/failure reporting and a final `stopped` heartbeat, with a test
+   that rejects timer-based heartbeats.
+3. Add lane replacement/restart semantics: actual context sample rate in frames, thresholded
+   preflight signal, epoch increment, and marked discontinuity. Do not touch `App.tsx`; mounting
+   remains orchestrator-owned.
