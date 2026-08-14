@@ -112,16 +112,20 @@ POST is followed by another `(epoch=2, discontinuity=true)` frame. Validation:
 
 The top threshold-prototype candidate is blocked by ownership, not missing methodology:
 `prototypes/browser-capture-feasibility/` is `x2` read-only and owned by `f1-canary-fixes` /`x1-frame-drop`.
-Do not modify it from this branch. The `>= 1e-4` preflight threshold is already an explicit PRD
-contract; sustained clipping and microphone-silence policy remain unimplemented until that owner
-records the required real-browser threshold measurement.
+Do not modify it from this branch. Iteration 10 rechecked all current local owner refs
+(`afk2/f1-canary-fixes` at `f436826`, `private/afk2/f1-canary-fixes` at `70d547e`, and
+`afk3/x1-frame-drop` at `c804ff8`): none contains a committed sustained-clipping or
+microphone-silence threshold measurement. The `>= 1e-4` preflight threshold is already an explicit
+PRD contract; sustained clipping and microphone-silence policy remain unimplemented until an owner
+commits the required real-browser measurement or transfers the harness. This is the third consecutive
+blocked iteration; `.wayfinder/README.md` confirms this project has no configured remote issue tracker,
+so the required escalation is recorded in `progress.txt` rather than sent externally.
 
 ## Ranked candidates
 
-1. **Blocked on ownership:** extend the browser-capture feasibility bench to measure
-   sustained-clipping and microphone-silence thresholds, then add the two heartbeat facts. This
-   requires a transfer or a committed measurement from the harness owner; do not bypass the
-   read-only boundary.
+1. **Blocked on owner input (escalated):** supply a committed real-browser measurement defining
+   sustained-clipping and microphone-silence thresholds, or transfer the harness. Then add the two
+   meter-derived heartbeat facts. Do not bypass the read-only boundary.
 2. No further owned implementation is unblocked. When the threshold measurement arrives, add the
    two meter-derived heartbeat facts and then merge the then-current `dev` before the full frontend
    gate. Do not touch `App.tsx`; mounting remains orchestrator-owned.
