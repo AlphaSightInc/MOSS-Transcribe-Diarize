@@ -1,6 +1,6 @@
 # Context — x4-journal-mode
 
-Iteration 4.
+Iteration 6.
 
 Branch `afk3/x4-journal-mode` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -60,12 +60,15 @@ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
   default `k=10` bank through 40 equal-duration admissions; it proves the journal observation
   retains only spans 31--40, records `50.0` seconds rather than the `200.0` admitted seconds,
   and marks the admitted-bank centroid non-provisional. Final raw-artifact capture remains open.
-- [ ] Required final evidence: `.venv/bin/pytest -q tests/test_live_service_runtime.py
-  tests/test_live_api.py`, a green guardrail preflight, and committed raw artifacts plus their
-  re-runnable probes under `evidence/phase1/x4-journal-mode/`.
-- [ ] Before declaring done: validate after merging current `dev` into this branch; record
-  criterion-by-criterion proof and stated coverage limits in `progress.txt`.  Do not emit a
-  completion promise without that recorded evidence.
+- [x] Required final evidence: the committed
+  `evidence/phase1/x4-journal-mode/run-final-gate.sh` uses `PYTHONPATH=.` to force this worktree
+  (the bare venv imports the Desktop checkout), checks `dev` ancestry, runs the required
+  runtime/API suite, the provenance probe, and preflight. Its raw output is committed as
+  `evidence/phase1/x4-journal-mode/final-gate.txt`: 77 passed, 327 subtests passed; 1 provenance
+  probe passed; preflight passed. The one FastAPI/httpx deprecation warning is non-failing.
+- [x] Before declaring done: at capture time, `dev` was `23afb6d` and already an ancestor of
+  this branch at `61c7f04`, so no merge commit was needed. The final probe records that fact and
+  its gate result; `progress.txt` records criterion-by-criterion coverage and limits.
 
 Iteration 1 outcome: candidate "record the PRD gate" is complete.  This checklist is the
 controlling scope for later changes; it makes no product-fix or test-pass claim.
@@ -90,7 +93,13 @@ consumer contract for its current capped bank and source tier, and the provider-
 the default bank evicts older equal-duration evidence rather than reporting a meeting-long total.
 This focused proof does not substitute for the final runtime/API gate or raw-artifact capture.
 
+Iteration 6 outcome: final evidence capture is complete. The worktree gate and the extra
+provider provenance probe passed with `dev` already merged. The raw artifact cites its committed
+rerunnable shell probe. The tests do not defend against ongoing hostile path mutation/truncation,
+do not turn retained forensic bytes into valid records, and do not establish consent/deletion
+policy beyond the guarded LAN/tailnet ruling.
+
 ## Ranked candidates
-1. Capture committed raw artifacts and run the final runtime/API gate against the worktree, then
-   record criterion-by-criterion coverage limits. Before any completion claim, merge current `dev`
-   into this branch and repeat the relevant validation on that merged result.
+
+No open x4-journal-mode work remains. Do not make further product changes without a new finding
+or a newer `dev` revision requiring the final probe to be rerun.

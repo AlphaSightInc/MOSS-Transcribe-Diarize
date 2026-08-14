@@ -1,0 +1,19 @@
+$ evidence/phase1/x4-journal-mode/run-final-gate.sh
+dev=23afb6d24c201e495c10b0536fec2837f2ba558d
+head=61c7f04590b931d2ccb710307e65c4cf4407761a
+dev_is_ancestor_of_head=true
+$ PYTHONPATH=. .venv/bin/pytest -q tests/test_live_service_runtime.py tests/test_live_api.py
+................................................................. [ 84%]
+............                             [100%]
+=============================== warnings summary ===============================
+tests/test_live_api.py::LiveApiTest::test_a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+77 passed, 1 warning, 327 subtests passed in 5.61s
+$ PYTHONPATH=. .venv/bin/pytest -q tests/test_live_provider_bundle.py::test_session_end_journal_observation_describes_the_current_capped_album_bank
+.                                                                        [100%]
+1 passed in 2.28s
+$ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
+PREFLIGHT OK [x4-journal-mode] prerequisites present, ownership clean, no banned patterns
