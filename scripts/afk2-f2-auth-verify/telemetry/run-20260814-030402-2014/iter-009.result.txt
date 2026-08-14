@@ -1,0 +1,6 @@
+Iteration 9 committed: `a349e54`.
+
+- Added rerunnable authority-diff probe + raw artifact; PASS.
+- Preflight/Python compile/diff check PASS.
+- Blocked: `.venv/bin/pytest` absent; `dev` still unmerged.
+

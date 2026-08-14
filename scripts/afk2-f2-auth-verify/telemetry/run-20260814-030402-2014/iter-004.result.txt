@@ -1,0 +1,6 @@
+Committed `572a6ac` — shared token now has route-level frame-write regression proof.
+
+Validation: focused API test `2 passed`; preflight PASS.
+
+Still incomplete: required `.venv` gate unavailable; must merge current `dev` before exact gate.
+

@@ -1,0 +1,5 @@
+Committed `aef1e13` — constant-time capture/view lookup probe + raw XML.
+
+Validation: 1 passed; preflight + diff check pass.
+
+Still blocked: worktree `.venv` absent; merged-`dev` gate and issue comment pending.

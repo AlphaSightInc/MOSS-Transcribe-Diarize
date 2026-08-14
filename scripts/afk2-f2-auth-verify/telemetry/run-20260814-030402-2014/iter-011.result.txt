@@ -1,0 +1,5 @@
+Committed `b7f19d7`.
+
+Blocked: required `.venv/bin/pytest` absent (exit 127); fresh raw evidence committed. Preflight/diff check pass. Operator must supply `.venv`, then merge `dev` and run exact gate.
+
+<promise>COMPLETE</promise>

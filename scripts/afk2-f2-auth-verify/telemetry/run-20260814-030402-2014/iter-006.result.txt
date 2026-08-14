@@ -1,0 +1,6 @@
+Committed `e1170ff` — header-only/no-echo proof.
+
+- Focused API probe: `1 passed`, query-only token rejected; issued creds absent from captured stdout/stderr. [artifact](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize/evidence/phase1/f2-auth-verify/iteration-6-header-only-no-echo.xml)
+- Preflight passes; worktree clean.
+- Still blocked: required `.venv/bin/pytest` absent; merge current `dev` before exact gate.
+
