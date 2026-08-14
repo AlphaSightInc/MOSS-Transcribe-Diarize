@@ -40,6 +40,20 @@ type BrowserFailureCode =
   | "browser_track_ended"
   | "browser_audio_context_suspended";
 
+/**
+ * A capture-start failure observed before a server session exists.
+ *
+ * The caller owns the UI retry action. These facts intentionally do not use
+ * the authenticated heartbeat route because there is no session to report to.
+ */
+export type PreSessionCaptureFailure = Readonly<{
+  lane: CaptureLane;
+  code:
+    | "browser_microphone_permission_denied"
+    | "browser_capture_request_rejected"
+    | "browser_surface_audio_missing";
+}>;
+
 type LaneHealthState = "capturing" | "degraded" | "failed";
 
 export type CaptureClientOptions = Readonly<{
@@ -47,6 +61,7 @@ export type CaptureClientOptions = Readonly<{
   helperVersion: string;
   onMeter?: (lane: CaptureLane, rms: number) => void;
   onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
+  onPreSessionFailure?: (failure: PreSessionCaptureFailure) => void;
 }>;
 
 type WorkletFrame = Readonly<{
@@ -238,13 +253,19 @@ export class CaptureClient {
     const context = await this.prepare();
     await context.resume();
     if (context.state !== "running") throw new Error("capture AudioContext did not start");
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation,
-        noiseSuppression: false,
-        autoGainControl: false,
-      },
-    });
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+    } catch (error) {
+      await this.failBeforeSession("microphone", "browser_microphone_permission_denied");
+      throw error;
+    }
     await this.attachLane("microphone", stream, stream.getTracks());
   }
 
@@ -253,7 +274,10 @@ export class CaptureClient {
   requestDisplayMedia(): Promise<MediaStream> {
     if (!this.lanes.has("microphone")) throw new Error("start microphone before display capture");
     if (this.context?.state !== "running") throw new Error("capture AudioContext is not running");
-    return navigator.mediaDevices.getDisplayMedia(DISPLAY_MEDIA_OPTIONS);
+    return navigator.mediaDevices.getDisplayMedia(DISPLAY_MEDIA_OPTIONS).catch(async (error) => {
+      await this.failBeforeSession("system", "browser_capture_request_rejected");
+      throw error;
+    });
   }
 
   async attachDisplayMedia(stream: MediaStream): Promise<void> {
@@ -261,6 +285,7 @@ export class CaptureClient {
     const audioTrack = stream.getAudioTracks()[0];
     if (!audioTrack) {
       stream.getTracks().forEach((track) => track.stop());
+      await this.failBeforeSession("system", "browser_surface_audio_missing");
       throw new Error("selected display surface supplied no audio track");
     }
     await this.attachLane("system", new MediaStream([audioTrack]), stream.getTracks());
@@ -363,6 +388,17 @@ export class CaptureClient {
     await this.prepare();
     if (!this.descriptor) throw new Error("capture descriptor is unavailable");
     return this.descriptor;
+  }
+
+  private async failBeforeSession(
+    lane: CaptureLane,
+    code: PreSessionCaptureFailure["code"],
+  ): Promise<void> {
+    try {
+      this.options.onPreSessionFailure?.({ lane, code });
+    } finally {
+      await this.close();
+    }
   }
 
   private async attachLane(

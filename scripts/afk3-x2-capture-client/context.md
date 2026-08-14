@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 6.
+Iteration 7.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -71,17 +71,23 @@ src/capture/captureClient.test.ts` (14 passed), `npm --prefix frontend run typec
 `python3 scripts/afk-guardrails/preflight.py x2-capture-client` (`PREFLIGHT OK`). Raw output:
 `evidence/phase1/x2-capture-client/iteration-6-browser-health.txt`.
 
-The remaining browser codes are deliberately still open. Permission/display-request/surface-audio
-failures occur before a session exists, while the authenticated heartbeat route requires one;
-their clean API/reporting seam needs to be designed without inventing a server session. Sustained
-clip and mic-silence detection also needs the required threshold prototype before production code.
+Iteration 7 exposes the three pre-session browser facts without inventing a server session.
+`onPreSessionFailure` reports rejected microphone requests as
+`browser_microphone_permission_denied`, rejected display requests as
+`browser_capture_request_rejected`, and a selected surface without audio as
+`browser_surface_audio_missing`. Each path tears down local capture and leaves retry to the caller;
+the focused test proves the callback facts and zero fetches. This is intentionally a local UI seam:
+the authenticated heartbeat route has no session to address. Raw output:
+`evidence/phase1/x2-capture-client/iteration-7-pre-session-failures.txt`.
+
+Sustained clip and mic-silence detection remain open and require the threshold prototype before
+production code.
 
 ## Ranked candidates
 
-1. Resolve and implement the remaining browser-failure sources: expose pre-session
-   permission/display/surface failures through the clean client API without creating a server
-   session, then prototype sustained clipping and microphone-silence thresholds before adding
-   their heartbeat facts.
+1. Extend the existing browser-capture feasibility bench to measure sustained-clipping and
+   microphone-silence thresholds, record its verdict in `NOTES.md`, then add the two remaining
+   heartbeat facts with non-vacuous tests.
 2. Add lane replacement/restart semantics: actual context sample rate in frames, thresholded
    preflight signal, epoch increment, and marked discontinuity. Do not touch `App.tsx`; mounting
    remains orchestrator-owned.

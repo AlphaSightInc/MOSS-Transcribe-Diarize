@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import {
   CaptureClient,
+  type PreSessionCaptureFailure,
   V2_FRAME_KEYS,
   makeV2Frame,
   parseCaptureDescriptor,
@@ -39,10 +40,8 @@ type ActiveClient = {
   ) => void;
 };
 
-function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
-  const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
-  const active = client as unknown as ActiveClient;
-  const lane: TestLaneState = {
+function testLaneState(): TestLaneState {
+  return {
     source: { disconnect: vi.fn() },
     framer: { port: { onmessage: null }, disconnect: vi.fn() },
     mute: { disconnect: vi.fn() },
@@ -58,11 +57,46 @@ function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
     health: "capturing",
     failureCode: null,
   };
+}
+
+function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
+  const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+  const active = client as unknown as ActiveClient;
+  const lane = testLaneState();
   active.descriptor = { sampleRate: 4, frameSamples: 2 };
   active.session = { id: "session", viewToken: "view-only" };
   active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
   active.lanes.set("microphone", lane);
   return { client: active, lane };
+}
+
+type PreSessionClient = {
+  context: AudioContext | null;
+  descriptor: { sampleRate: number; frameSamples: number } | null;
+  lanes: Map<string, TestLaneState>;
+  startMicrophone: (echoCancellation: boolean) => Promise<void>;
+  requestDisplayMedia: () => Promise<MediaStream>;
+  attachDisplayMedia: (stream: MediaStream) => Promise<void>;
+};
+
+function preSessionClient(onPreSessionFailure: (failure: PreSessionCaptureFailure) => void): {
+  client: PreSessionClient;
+  context: { close: ReturnType<typeof vi.fn> };
+} {
+  const context = Object.assign(new EventTarget(), {
+    state: "running" as AudioContextState,
+    resume: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  });
+  const client = new CaptureClient({
+    captureBearer: "capture-token",
+    helperVersion: "test",
+    onPreSessionFailure,
+  });
+  const active = client as unknown as PreSessionClient;
+  active.context = context as unknown as AudioContext;
+  active.descriptor = { sampleRate: 4, frameSamples: 2 };
+  return { client: active, context };
 }
 
 function workletFrame(startFrame: number) {
@@ -311,6 +345,57 @@ describe("browser capture frame contract", () => {
         system: { state: "degraded", failure_code: "browser_audio_context_suspended" },
       },
     });
+  });
+
+  it("reports and tears down real pre-session capture failures without a heartbeat", async () => {
+    const onPreSessionFailure = vi.fn<(failure: PreSessionCaptureFailure) => void>();
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const microphoneError = new DOMException("denied", "NotAllowedError");
+    const microphone = preSessionClient(onPreSessionFailure);
+    vi.stubGlobal("navigator", {
+      mediaDevices: { getUserMedia: vi.fn().mockRejectedValue(microphoneError) },
+    });
+
+    await expect(microphone.client.startMicrophone(false)).rejects.toBe(microphoneError);
+    expect(microphone.context.close).toHaveBeenCalledOnce();
+
+    const displayError = new DOMException("dismissed", "NotAllowedError");
+    const display = preSessionClient(onPreSessionFailure);
+    display.client.lanes.set("microphone", testLaneState());
+    vi.stubGlobal("navigator", {
+      mediaDevices: { getDisplayMedia: vi.fn().mockRejectedValue(displayError) },
+    });
+
+    await expect(display.client.requestDisplayMedia()).rejects.toBe(displayError);
+    expect(display.context.close).toHaveBeenCalledOnce();
+
+    const missingAudio = preSessionClient(onPreSessionFailure);
+    missingAudio.client.lanes.set("microphone", testLaneState());
+    const videoTrack = { stop: vi.fn() } as unknown as MediaStreamTrack;
+    const noAudioSurface = {
+      getAudioTracks: () => [],
+      getTracks: () => [videoTrack],
+    } as unknown as MediaStream;
+
+    await expect(missingAudio.client.attachDisplayMedia(noAudioSurface)).rejects.toThrow(
+      "selected display surface supplied no audio track",
+    );
+    expect(videoTrack.stop).toHaveBeenCalledOnce();
+    expect(missingAudio.context.close).toHaveBeenCalledOnce();
+    expect(onPreSessionFailure).toHaveBeenNthCalledWith(1, {
+      lane: "microphone",
+      code: "browser_microphone_permission_denied",
+    });
+    expect(onPreSessionFailure).toHaveBeenNthCalledWith(2, {
+      lane: "system",
+      code: "browser_capture_request_rejected",
+    });
+    expect(onPreSessionFailure).toHaveBeenNthCalledWith(3, {
+      lane: "system",
+      code: "browser_surface_audio_missing",
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("serializes worklet frame POSTs within a lane", async () => {
