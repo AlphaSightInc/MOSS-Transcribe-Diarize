@@ -1,6 +1,6 @@
 # Context — x4-journal-mode
 
-Iteration 2.
+Iteration 4.
 
 Branch `afk3/x4-journal-mode` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -47,9 +47,12 @@ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
   same batch persist. Proven by
   `test_journal_refuses_bad_contract_rows_without_dropping_valid_observations` plus the provider
   and runtime row-shape probes. Final raw-artifact capture remains open.
-- [ ] Reader contract: document that consumers skip blank and malformed forensic lines, and
-  test a journal containing one of those lines.  Recovery must also cover a refusal-only
-  session and a truncation race without creating a leading blank line.
+- [x] Reader contract: `docs/adr/0003-live-session-audio-retention.md` now requires readers to
+  skip blank/malformed forensic lines while leaving them on disk. `LiveVectorJournal.read_rows()`
+  implements that contract; `test_journal_terminates_a_refusal_only_torn_tail_and_reader_skips_it`
+  covers a refusal-only recovery, blank and malformed lines, and a later valid row;
+  `test_journal_truncation_race_does_not_create_a_leading_blank` covers the empty-truncate race.
+  Final raw-artifact capture remains open.
 - [ ] Provenance semantics: document that `exemplar_count` is the current capped centroid-bank
   size, not total admitted speech; pin its eviction behavior in a test.  Keep `provisional`
   only with a documented distinction from `exemplar_count == 0`.
@@ -72,9 +75,13 @@ Iteration 3 outcome: the observation contract is complete. The provider supplies
 provenance fields, the journal validates their types and reads all structural fields before
 serialization, and one incomplete/invalid observation no longer aborts the complete batch.
 
+Iteration 4 outcome: reader/recovery contract is complete. An existing journal is opened even for
+a refusal-only session so a previous unterminated forensic line gains a durable separator;
+readers return only complete JSON objects and leave blank/malformed bytes untouched. A read that
+loses its last byte to truncation adds no leading newline. This does not solve continuous hostile
+truncation or make forensic lines valid records.
+
 ## Ranked candidates
-1. Establish and document the reader contract, including refusal-only torn-tail recovery and the
-   truncation-race no-leading-blank property.
-2. Document and test capped-bank provenance/eviction semantics, including why `provisional` remains.
-3. After all functional criteria pass, capture committed raw artifacts and run the final two-suite
+1. Document and test capped-bank provenance/eviction semantics, including why `provisional` remains.
+2. After all functional criteria pass, capture committed raw artifacts and run the final two-suite
    gate against the worktree, then record criterion-by-criterion coverage limits.

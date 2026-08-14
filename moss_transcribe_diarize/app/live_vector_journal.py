@@ -99,28 +99,50 @@ class LiveVectorJournal:
                 }
             )
 
-        if rows:
-            payload = b"".join(
-                (
-                    json.dumps(row, allow_nan=False, separators=(",", ":"), sort_keys=True)
-                    + "\n"
-                ).encode("utf-8")
-                for row in rows
-            )
+        payload = b"".join(
+            (
+                json.dumps(row, allow_nan=False, separators=(",", ":"), sort_keys=True)
+                + "\n"
+            ).encode("utf-8")
+            for row in rows
+        )
+        if payload or self.path.is_file():
             with self._lock:
                 descriptor = os.open(
                     self.path,
-                    os.O_APPEND | os.O_CREAT | os.O_WRONLY,
+                    os.O_APPEND | os.O_CREAT | os.O_RDWR,
                     JOURNAL_FILE_MODE,
                 )
                 try:
                     _enforce_file_mode(descriptor)
-                    _write_all(descriptor, payload)
-                    os.fsync(descriptor)
+                    recovered = _terminate_torn_tail(descriptor)
+                    if payload:
+                        _write_all(descriptor, payload)
+                    if recovered or payload:
+                        os.fsync(descriptor)
                 finally:
                     os.close(descriptor)
 
         return LiveVectorJournalAppendResult(written=len(rows), refusals=tuple(refusals))
+
+    def read_rows(self) -> tuple[dict[str, object], ...]:
+        """Return complete JSON-object rows while preserving forensic lines on disk."""
+
+        try:
+            lines = self.path.read_bytes().splitlines()
+        except FileNotFoundError:
+            return ()
+        rows: list[dict[str, object]] = []
+        for line in lines:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            if isinstance(row, dict):
+                rows.append(row)
+        return tuple(rows)
 
 
 def _observation_values(
@@ -195,6 +217,24 @@ def _write_all(descriptor: int, payload: bytes) -> None:
         if written <= 0:
             raise OSError("vector journal append made no progress")
         view = view[written:]
+
+
+def _terminate_torn_tail(descriptor: int) -> bool:
+    """Terminate a prior partial JSONL line without manufacturing a blank file."""
+
+    size = os.fstat(descriptor).st_size
+    if not size:
+        return False
+    os.lseek(descriptor, size - 1, os.SEEK_SET)
+    last_byte = os.read(descriptor, 1)
+    if not last_byte:
+        # A concurrent truncation can make the old offset past EOF. In
+        # particular, do not turn an empty file into a leading blank line.
+        return False
+    if last_byte == b"\n":
+        return False
+    _write_all(descriptor, b"\n")
+    return True
 
 
 def _prepare_private_directory(directory: Path) -> None:

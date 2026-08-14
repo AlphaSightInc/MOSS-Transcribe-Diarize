@@ -125,6 +125,19 @@ consent decision and an explicit deletion/right-to-remove ruling **before the jo
 Until then, the absence of journal CRUD must not be interpreted as a policy that removal is
 unnecessary or unsupported by the eventual product.
 
+### 2026-08-14 addendum — vector-journal reader contract
+
+The append-only journal preserves a previous unterminated record as a forensic line: before a
+later append it terminates that byte sequence with one newline rather than deleting or repairing
+it. This recovery also runs for a refusal-only completed session when the journal already exists;
+otherwise an invalid observation could leave the next real row glued to a torn predecessor.
+
+Consumers use `LiveVectorJournal.read_rows()` (or reproduce its contract): return only complete
+JSON-object lines; skip blank lines and lines that cannot be decoded as UTF-8 JSON; never mutate
+or silently discard those forensic bytes. A reader may validate the returned row schema for its
+own purpose, but malformed-line tolerance is mandatory so one crash artifact cannot hide later
+valid sessions. Missing journal files read as no rows; filesystem access failures still surface.
+
 ## Consequences
 
 - ADR-0002 step 2 is unblocked, with a shape it must implement rather than a permission it may

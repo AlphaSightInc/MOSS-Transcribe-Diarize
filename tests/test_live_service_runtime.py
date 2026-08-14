@@ -1201,6 +1201,105 @@ def test_journal_refuses_bad_contract_rows_without_dropping_valid_observations(t
     }
 
 
+def test_journal_terminates_a_refusal_only_torn_tail_and_reader_skips_it(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    torn_prefix = b'{"session_id":"failed-before-fsync","speaker_label":"speaker-0001"'
+    journal_path.write_bytes(torn_prefix)
+    journal = LiveVectorJournal(journal_path)
+
+    refused = journal.append_session(
+        session_id="refusal-only-session",
+        echo_mode="headphones",
+        created_at=1_800_000_008.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-refused",
+                centroid=(),
+                sample_seconds=1.0,
+                exemplar_count=0,
+                provisional=True,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    assert refused.written == 0
+    assert journal_path.read_bytes() == torn_prefix + b"\n"
+    journal_path.write_bytes(torn_prefix + b"\n\n")
+
+    written = journal.append_session(
+        session_id="next-clean-session",
+        echo_mode="headphones",
+        created_at=1_800_000_009.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-0002",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=2,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    assert written.written == 1
+    assert journal.read_rows() == (
+        {
+            "session_id": "next-clean-session",
+            "speaker_label": "speaker-0002",
+            "centroid": [0.25, 0.75],
+            "sample_seconds": 2.5,
+            "exemplar_count": 2,
+            "provisional": False,
+            "embedder_id": "wespeaker:test-revision",
+            "embedder_state_sha": "ab" * 32,
+            "created_at": 1_800_000_009.0,
+            "echo_mode": "headphones",
+        },
+    )
+
+
+def test_journal_truncation_race_does_not_create_a_leading_blank(tmp_path, monkeypatch):
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    journal_path.write_bytes(b'{"session_id":"about-to-truncate"')
+    real_read = live_vector_journal.os.read
+
+    def truncate_before_read(descriptor, size):
+        os.ftruncate(descriptor, 0)
+        return real_read(descriptor, size)
+
+    monkeypatch.setattr(live_vector_journal.os, "read", truncate_before_read)
+    result = live_vector_journal.LiveVectorJournal(journal_path).append_session(
+        session_id="next-clean-session",
+        echo_mode="headphones",
+        created_at=1_800_000_010.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-0003",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=2,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    journal_bytes = journal_path.read_bytes()
+
+    assert result.written == 1
+    assert journal_bytes.startswith(b"{")
+    assert json.loads(journal_bytes)["session_id"] == "next-clean-session"
+
+
 def test_declared_journal_repairs_preexisting_loose_directory_and_file(tmp_path):
     from moss_transcribe_diarize.app.live_vector_journal import (
         JOURNAL_DIRECTORY_MODE,
