@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import ipaddress
 import json
 import os
@@ -393,13 +394,17 @@ class LiveAccessRegistry:
 
     def _capture_for_digest(self, token_digest: str) -> _DeviceState | None:
         for device in self._devices.values():
-            if device.token_digest == token_digest and not device.revoked:
+            if (
+                device.token_digest is not None
+                and hmac.compare_digest(device.token_digest, token_digest)
+                and not device.revoked
+            ):
                 return device
         return None
 
     def _view_for_digest(self, token_digest: str, *, now: float) -> ViewPrincipal | None:
         for session_id, session in self._sessions.items():
-            if session.view_token_digest != token_digest:
+            if not hmac.compare_digest(session.view_token_digest, token_digest):
                 continue
             if session.view_revoked or now >= session.view_expires_at:
                 return None

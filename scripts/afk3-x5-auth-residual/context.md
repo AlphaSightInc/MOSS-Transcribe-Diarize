@@ -1,6 +1,6 @@
 # Context — x5-auth-residual
 
-Iteration 3.
+Iteration 4.
 
 Branch `afk3/x5-auth-residual` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -29,8 +29,9 @@ python3 scripts/afk-guardrails/preflight.py x5-auth-residual
 - [x] Shared-principal revocation survives a fresh registry start. The revocation marker persists
   without the configured bearer or its digest; `iteration-3-shared-revocation-restart.json` is the
   committed raw probe output.
-- [ ] Replace the process-wide `hmac.compare_digest` mock assertion with a test that exercises
-  the real constant-time comparison property without brittle exact call ordering.
+- [x] Capture and view bearer lookups use `hmac.compare_digest`; the regression test injects
+  digest values that reject ordinary equality, so replacing either comparison with `==` fails
+  through real `authorize()` calls without mocking process-wide stdlib state.
 - [ ] Verify padded tokens are normalized through the comparison path, not only when the token
   file is read.
 - [ ] Commit a locally-run Uvicorn probe proving the reserved-id and whitespace-token fixes on
@@ -46,8 +47,8 @@ that relation and `PREFLIGHT OK`. The Phase 1 posture remains a single shared-to
 this ticket hardens operator revocation rather than restoring client-asserted identity.
 
 ## Ranked candidates
-1. Inspect the token comparison path and replace the fragile constant-time test with a
-   feature-binding property test.
+1. Verify padded tokens are normalized through the full comparison path, not only on token-file
+   read.
 2. Build a locally-run Uvicorn wire probe for reserved-id and whitespace-token behavior.
 
 ## Completed this run
@@ -55,3 +56,8 @@ this ticket hardens operator revocation rather than restoring client-asserted id
 - Shared-principal revocation now persists a digest-free revoked record and restores that state
   when configured again. Focused gate: 159 passed / 355 subtests. The committed restart probe now
   records `true/true/true` for in-process rejection, persisted marker, and fresh-start rejection.
+- The current merged `dev` did not contain the prior F2 constant-time branch work, so both
+  digest lookup paths now use `hmac.compare_digest`. The 17-test auth file passes; the new
+  `EqualityTrap` regression exercises the real capture and view paths and fails if either falls
+  back to ordinary equality. It intentionally does not attempt an unreliable wall-clock timing
+  measurement.

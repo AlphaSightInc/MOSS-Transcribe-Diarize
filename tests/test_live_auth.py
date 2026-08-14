@@ -52,7 +52,35 @@ class ScriptedSessionLifecycle:
         return self.statuses.get(session_id, self.default)
 
 
+class EqualityTrap(str):
+    """A digest stand-in that rejects ordinary equality but accepts compare_digest."""
+
+    def __eq__(self, other: object) -> bool:
+        raise AssertionError("bearer lookup used ordinary equality")
+
+    def __ne__(self, other: object) -> bool:
+        raise AssertionError("bearer lookup used ordinary equality")
+
+
 class LiveAccessRegistryTest(unittest.TestCase):
+    def test_bearer_digest_lookup_uses_constant_time_comparison_for_capture_and_view(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            registry, _lifecycle = self._live_registry(tmpdir)
+            capture = self._pair(registry, "mac-1", now=1.0)
+            registry._devices[capture.device_id].token_digest = EqualityTrap(
+                live_auth._digest(capture.device_token)
+            )
+
+            owner = registry.authorize(LAN_TLS, capture.device_token, "create", None, now=2.0)
+            self.assertEqual(owner.principal, CapturePrincipal("mac-1"))
+            view = registry.bind_session(owner.principal, "session-1", now=3.0)
+            registry._sessions[view.session_id].view_token_digest = EqualityTrap(
+                live_auth._digest(view.view_token)
+            )
+
+            decision = registry.authorize(LAN_TLS, view.view_token, "snapshot", view.session_id, now=4.0)
+            self.assertEqual(decision.principal.session_id, view.session_id)
+
     def test_configured_shared_token_uses_capture_authority_for_each_session(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             registry, _lifecycle = self._live_registry(tmpdir, shared_token="configured-token")
