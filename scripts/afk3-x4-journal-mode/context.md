@@ -53,9 +53,13 @@ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
   covers a refusal-only recovery, blank and malformed lines, and a later valid row;
   `test_journal_truncation_race_does_not_create_a_leading_blank` covers the empty-truncate race.
   Final raw-artifact capture remains open.
-- [ ] Provenance semantics: document that `exemplar_count` is the current capped centroid-bank
-  size, not total admitted speech; pin its eviction behavior in a test.  Keep `provisional`
-  only with a documented distinction from `exemplar_count == 0`.
+- [x] Provenance semantics: `docs/adr/0003-live-session-audio-retention.md` now defines
+  `exemplar_count` and `sample_seconds` as current capped centroid-bank provenance, not meeting
+  totals, and states `provisional`'s source-tier meaning plus its current writer invariant.
+  `test_session_end_journal_observation_describes_the_current_capped_album_bank` forces the
+  default `k=10` bank through 40 equal-duration admissions; it proves the journal observation
+  retains only spans 31--40, records `50.0` seconds rather than the `200.0` admitted seconds,
+  and marks the admitted-bank centroid non-provisional. Final raw-artifact capture remains open.
 - [ ] Required final evidence: `.venv/bin/pytest -q tests/test_live_service_runtime.py
   tests/test_live_api.py`, a green guardrail preflight, and committed raw artifacts plus their
   re-runnable probes under `evidence/phase1/x4-journal-mode/`.
@@ -81,7 +85,12 @@ readers return only complete JSON objects and leave blank/malformed bytes untouc
 loses its last byte to truncation adds no leading newline. This does not solve continuous hostile
 truncation or make forensic lines valid records.
 
+Iteration 5 outcome: centroid provenance semantics are complete. A journal row now has an explicit
+consumer contract for its current capped bank and source tier, and the provider-path probe verifies
+the default bank evicts older equal-duration evidence rather than reporting a meeting-long total.
+This focused proof does not substitute for the final runtime/API gate or raw-artifact capture.
+
 ## Ranked candidates
-1. Document and test capped-bank provenance/eviction semantics, including why `provisional` remains.
-2. After all functional criteria pass, capture committed raw artifacts and run the final two-suite
-   gate against the worktree, then record criterion-by-criterion coverage limits.
+1. Capture committed raw artifacts and run the final runtime/API gate against the worktree, then
+   record criterion-by-criterion coverage limits. Before any completion claim, merge current `dev`
+   into this branch and repeat the relevant validation on that merged result.

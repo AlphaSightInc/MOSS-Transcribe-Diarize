@@ -138,6 +138,24 @@ or silently discard those forensic bytes. A reader may validate the returned row
 own purpose, but malformed-line tolerance is mandatory so one crash artifact cannot hide later
 valid sessions. Missing journal files read as no rows; filesystem access failures still surface.
 
+### 2026-08-14 addendum — vector-journal centroid provenance
+
+`exemplar_count` and `sample_seconds` describe the **current admitted bank that produced the
+stored centroid**, not all speech or all admissions seen during the meeting. The count is the
+current bank size, capped at the declared `k` (10 by the default album); the seconds are the sum
+of that bank's retained exemplars. On a full bank, a candidate shorter than its weakest exemplar
+is declined; otherwise it replaces the shortest exemplar, with the oldest tied span replaced
+first. A speaker can therefore have contributed 200 admitted seconds while a default row
+truthfully says `exemplar_count=10` and `sample_seconds=50.0` for its ten retained five-second
+exemplars. Consumers must not interpret either field as a lifetime total.
+
+`provisional` records which quality tier supplied the centroid: `true` means the sole
+sub-admission stand-in supplied it and there are no admitted exemplars; `false` means the
+admitted bank supplied it. The current writer therefore has the invariant
+`provisional == (exemplar_count == 0)` for every written row. The Boolean remains deliberate:
+it names the centroid's source tier directly, rather than requiring consumers to infer that
+semantic from the bounded-bank representation.
+
 ## Consequences
 
 - ADR-0002 step 2 is unblocked, with a shape it must implement rather than a permission it may
