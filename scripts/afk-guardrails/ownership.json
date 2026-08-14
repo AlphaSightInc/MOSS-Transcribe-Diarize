@@ -25,7 +25,8 @@
     "blocks": [
       "r2-capture-client",
       "r3-dispatcher"
-    ]
+    ],
+    "_supervisor": "Ported by the orchestrator directly. x2 owns frontend/src/capture/."
   },
   "r2-capture-client": {
     "title": "Browser capture client and server-fused capture health",
@@ -111,6 +112,64 @@
     ],
     "reads": [
       "all"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
+  },
+  "x1-frame-drop": {
+    "title": "P0: stop discarding captured audio; re-run G7 at production geometry",
+    "owns": [
+      "prototypes/browser-capture-feasibility/"
+    ],
+    "prerequisites": [
+      "capture_harness"
+    ],
+    "blocked_by": []
+  },
+  "x2-capture-client": {
+    "title": "Correct the capture client: error taxonomy, epoch, discontinuity, meters",
+    "owns": [
+      "frontend/src/capture/",
+      "frontend/public/worklets/"
+    ],
+    "prerequisites": [
+      "node_toolchain"
+    ],
+    "blocked_by": [],
+    "_note": "Supervisor owns the rest of frontend/src/ and does the App mounting. Export a clean API."
+  },
+  "x3-capture-health": {
+    "title": "Make capture health genuinely server-fused and reachable",
+    "owns": [
+      "moss_transcribe_diarize/app/live_capture_status.py",
+      "moss_transcribe_diarize/app/live_transport.py"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
+  },
+  "x4-journal-mode": {
+    "title": "Close the journal file-mode hole and validate the observation contract",
+    "owns": [
+      "moss_transcribe_diarize/app/live_vector_journal.py",
+      "moss_transcribe_diarize/app/live_provider_bundle.py"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
+  },
+  "x5-auth-residual": {
+    "title": "Finish the auth hardening: durable revocation, real timing test",
+    "owns": [
+      "moss_transcribe_diarize/app/live_auth.py",
+      "moss_transcribe_diarize/app/web_cli.py"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
+  },
+  "x6-terminal-visibility": {
+    "title": "A terminally-failed session must not render as healthy",
+    "owns": [
+      "moss_transcribe_diarize/app/live_service_runtime.py",
+      "moss_transcribe_diarize/app/live_portal.py"
     ],
     "prerequisites": [],
     "blocked_by": []
