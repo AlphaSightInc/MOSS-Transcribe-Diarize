@@ -1,6 +1,6 @@
 # Context — x3-capture-health
 
-Iteration 2.
+Iteration 3.
 
 Branch `afk3/x3-capture-health` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -22,8 +22,8 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
 
 ## Acceptance checklist
 
-- [ ] Route passes its `HelperPresenceSnapshot` to the server-side projection; the production
-  `/snapshot` path, not only a direct unit call, exercises the fusion.
+- [x] Route passes its `HelperPresenceSnapshot` and typed v2 session snapshot to the server-side
+  projection; the production `/snapshot` path, not only a direct unit call, exercises the fusion.
 - [ ] Projection distinguishes `starting`, `awaiting_audio`, `recording`, and `failed`, using
   server-observable frame recency, sequence gaps, lane accounting, sustained silence,
   backpressure, and reported lane health.
@@ -53,11 +53,22 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    false-healthy outcome for a failed microphone lane. Frame arrival time, cumulative sequence
    rejects/backpressure, and sustained-silence facts are not retained in either snapshot: a
    `LiveV2Frame` carries `silent` and a client capture timestamp only while it remains retained.
-3. **Next — smallest threshold-free production slice:** pass the typed v2 snapshot into the
-   projection on the real `/snapshot` route. Add route regressions for (a) a helper reporting
-   capture while one lane has accepted zero server frames, which must be `awaiting_audio` rather
-   than healthy recording, and (b) a server v2 lane with `health="failed"`, which must not be
-   healthy recording even if the helper heartbeat has not named it. This establishes the real
-   route seam and uses only existing server facts. Do not claim frame recency, sustained silence,
-   accumulated sequence rejects, or backpressure until a measured observation carrier exists;
-   any threshold for those needs the required prototype first.
+3. **Done (iteration 3):** `_snapshot_response()` now obtains one typed
+   `LiveV2SessionSnapshot`, serializes it, and passes that same object to
+   `project_live_capture_status()`. The real-route regression sends a normal helper heartbeat and
+   microphone frame while the system lane has accepted zero frames; `/snapshot` reports
+   `awaiting_audio` and names shared audio. It then fails the server v2 system lane while the
+   helper still calls it `capturing`; `/snapshot` keeps the non-terminal meeting `recording` but
+   replaces the healthy copy with the server-authored lane failure. Worktree-backed validation:
+   `PYTHONPATH=. .venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py`
+   passed (50 tests, 327 subtests); the linked helper-presence assertion passed (9 tests), and
+   preflight passed. Plain `.venv/bin/pytest` resolves the desktop checkout through this shared
+   virtualenv, so it cannot validate this worktree without `PYTHONPATH=.`. This slice does not
+   provide recency, sustained-silence, rejection/backpressure, or terminal-reason evidence.
+4. **Next — prototype the missing observation contract before changing production policy:** the
+   current v2 snapshot retains cumulative lane accounting and health only; it does not retain a
+   server arrival clock, rejected-frame/backpressure history, or silence-over-time summary. The
+   required recency/silence/reject rules therefore need a measured prototype and an ownership-safe
+   observation-carrier proposal before thresholds or projection claims are added. Terminal
+   reason reachability is separately constrained by `live_service_runtime.py`, owned by x6; do
+   not edit it from this ticket.

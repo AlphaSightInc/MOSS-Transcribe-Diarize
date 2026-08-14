@@ -1499,6 +1499,64 @@ class LiveApiTest(unittest.TestCase):
                 "Microphone capture failed. The session is continuing.",
             )
 
+    def test_snapshot_fuses_v2_arrival_and_server_lane_failure_with_helper_presence(self):
+        """The route, rather than a direct projection call, owns these server-only facts."""
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            heartbeat = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(),
+            )
+            microphone = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(0, 2, lane="microphone"),
+            )
+            missing_system = client.get(f"/api/live/sessions/{session_id}/snapshot")
+
+            self.assertEqual(heartbeat.status_code, 200)
+            self.assertEqual(microphone.status_code, 200)
+            self.assertEqual(missing_system.status_code, 200)
+            self.assertEqual(
+                missing_system.json()["capture_phase"],
+                "awaiting_audio",
+            )
+            self.assertEqual(
+                missing_system.json()["status_line"],
+                "Waiting for shared audio to arrive.",
+            )
+
+            self.assertEqual(
+                client.post(
+                    f"/api/live/sessions/{session_id}/frames",
+                    json=v2_frame_payload(0, 2, lane="system"),
+                ).status_code,
+                200,
+            )
+            app.state.live_v2_sessions.get(session_id).fail_lane(
+                LiveLane.SYSTEM,
+                "server_lane_failure",
+            )
+            server_failed = client.get(f"/api/live/sessions/{session_id}/snapshot")
+
+            self.assertEqual(server_failed.status_code, 200)
+            self.assertEqual(server_failed.json()["helper_presence"]["lanes"]["system"]["state"], "capturing")
+            self.assertEqual(server_failed.json()["v2_session"]["lanes"]["system"]["health"], "failed")
+            self.assertEqual(server_failed.json()["capture_phase"], "recording")
+            self.assertEqual(
+                server_failed.json()["status_line"],
+                "Shared audio capture failed. The session is continuing.",
+            )
+
     def test_a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_survives(self):
         """F3's soak sequence, on the lane that failed rather than on its peer.
 

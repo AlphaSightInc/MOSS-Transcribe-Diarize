@@ -57,7 +57,11 @@ from .live_session import (
     LiveSessionFailed,
 )
 from .live_tape import LiveSessionTapeRecorder, LiveSessionTapeStore
-from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
+from .live_v2_session import (
+    LiveV2SessionRegistry,
+    LiveV2SessionSnapshot,
+    LiveV2SessionTerminalError,
+)
 
 
 def attach_live_routes(
@@ -717,12 +721,13 @@ def _snapshot_response(
 ) -> dict[str, Any]:
     snapshot = runtime.snapshot(session_id, since_version=since_version)
     presence = helper_presence.snapshot(session_id)
+    v2_session = _v2_snapshot(v2_sessions, session_id)
     return {
         "snapshot": None if snapshot is None else snapshot.to_dict(),
         "unchanged": snapshot is None,
-        "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
+        "v2_session": None if v2_session is None else v2_session.to_dict(),
         "helper_presence": None if presence is None else presence.to_dict(),
-        **project_live_capture_status(presence).to_dict(),
+        **project_live_capture_status(presence, v2_session=v2_session).to_dict(),
     }
 
 
@@ -738,8 +743,16 @@ def _v2_snapshot_payload(
     v2_sessions: LiveV2SessionRegistry,
     session_id: str,
 ) -> dict[str, Any] | None:
+    snapshot = _v2_snapshot(v2_sessions, session_id)
+    return None if snapshot is None else snapshot.to_dict()
+
+
+def _v2_snapshot(
+    v2_sessions: LiveV2SessionRegistry,
+    session_id: str,
+) -> LiveV2SessionSnapshot | None:
     try:
-        return v2_sessions.get(session_id).snapshot().to_dict()
+        return v2_sessions.get(session_id).snapshot()
     except KeyError:
         return None
 

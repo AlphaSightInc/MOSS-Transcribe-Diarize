@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from typing import Literal
 
 from .live_helper_presence import HelperPresenceSnapshot
+from .live_v2_session import LiveV2SessionSnapshot
 
 
-CapturePhase = Literal["starting", "recording", "failed"]
+CapturePhase = Literal["starting", "awaiting_audio", "recording", "failed"]
 
 _FAILURE_STATUS_LINES: dict[str, str | dict[str, str]] = {
     "browser_microphone_permission_denied": (
@@ -60,8 +61,10 @@ class LiveCaptureStatus:
 
 def project_live_capture_status(
     presence: HelperPresenceSnapshot | None,
+    *,
+    v2_session: LiveV2SessionSnapshot | None = None,
 ) -> LiveCaptureStatus:
-    """Turn helper facts into the only capture judgment exposed to product clients.
+    """Fuse helper and v2 server facts into the client-facing capture judgment.
 
     Failure codes intentionally remain an open string vocabulary at the heartbeat parser.
     Known codes get actionable copy here; future native or browser codes use a stable generic
@@ -71,34 +74,59 @@ def project_live_capture_status(
     if presence is None:
         return LiveCaptureStatus("starting", "Waiting for audio capture to start.")
 
-    failed_lanes = [
+    failed_lanes = {
         lane for lane, health in presence.lanes.items() if health.state == "failed"
-    ]
-    if presence.state in {"failed", "stopped"} or len(failed_lanes) == len(presence.lanes):
+    }
+    issues = {
+        lane: (health.state, health.failure_code)
+        for lane, health in presence.lanes.items()
+        if health.failure_code is not None
+    }
+    awaiting_lanes: list[str] = []
+    if v2_session is not None:
+        for lane, snapshot in v2_session.lanes.items():
+            lane_name = lane.value
+            if snapshot.health == "failed":
+                failed_lanes.add(lane_name)
+                reported = issues.get(lane_name)
+                issues[lane_name] = (
+                    "failed",
+                    snapshot.failure_code if reported is None else reported[1],
+                )
+            elif snapshot.accepted_samples == 0:
+                awaiting_lanes.append(lane_name)
+
+    if (
+        presence.state in {"failed", "stopped"}
+        or v2_session is not None and v2_session.status == "failed"
+        or len(failed_lanes) == len(presence.lanes)
+    ):
         phase: CapturePhase = "failed"
     elif presence.state in {"starting", "recovering"}:
         phase = "starting"
+    elif awaiting_lanes:
+        phase = "awaiting_audio"
     else:
         phase = "recording"
 
-    issues = sorted(
-        (
-            health.state != "failed",
-            lane,
-            health.failure_code,
-        )
-        for lane, health in presence.lanes.items()
-        if health.failure_code is not None
+    sorted_issues = sorted(
+        (state != "failed", lane, code) for lane, (state, code) in issues.items()
     )
-    if not issues:
+    if not sorted_issues:
+        if phase == "awaiting_audio":
+            if len(awaiting_lanes) == 1:
+                lane = awaiting_lanes[0]
+                label = "microphone audio" if lane == "microphone" else "shared audio"
+                return LiveCaptureStatus(phase, f"Waiting for {label} to arrive.")
+            return LiveCaptureStatus(phase, "Waiting for microphone and shared audio to arrive.")
         return LiveCaptureStatus(phase, _HELPER_STATUS_LINES[presence.state])
 
-    _degraded, lane, code = issues[0]
+    not_failed, lane, code = sorted_issues[0]
     status_line = _FAILURE_STATUS_LINES.get(code)
     if isinstance(status_line, dict):
         status_line = status_line[lane]
     if status_line is None:
         label = "Microphone" if lane == "microphone" else "Shared audio"
-        condition = "failed" if presence.lanes[lane].state == "failed" else "is degraded"
+        condition = "is degraded" if not_failed else "failed"
         status_line = f"{label} capture {condition}. The session is continuing."
     return LiveCaptureStatus(phase, status_line)
