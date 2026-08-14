@@ -4,3 +4,5 @@
 [loop 20260814-181407-44135] preflight failed before iteration 1
 
 [loop 20260814-181455-47615] start budget=40 agent=codex branch=afk3/x3-capture-health
+
+[loop 20260814-181455-47615] iteration=1 target=record the binding x3 acceptance checklist; files=scripts/afk3-x3-capture-health/context.md,scripts/afk3-x3-capture-health/progress.txt; validation="python3 scripts/afk-guardrails/preflight.py x3-capture-health && git diff --check" => PREFLIGHT OK / clean; evidence=context.md#Acceptance-checklist plus command output; learned=dev was already merged at 9704074 and the initial preflight only validates guardrails, not product behaviour; next=inspect projection, route, and focused tests for the smallest server-fusion slice.
