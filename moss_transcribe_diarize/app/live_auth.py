@@ -224,6 +224,19 @@ class LiveAccessRegistry:
         self._admit_peer(peer)
         if peer.is_loopback or peer.scheme != "https":
             raise LiveAccessForbidden("pairing exchange requires a non-loopback TLS peer.")
+        # `device_id` arrives straight off the wire, unvalidated, and is used as the key into
+        # `self._devices` -- the same namespace the synthetic shared-token principal occupies.
+        # Pairing with the reserved id therefore overwrote that principal, which both denied
+        # service to every shared-token client (the operator's own token started returning 401)
+        # and handed the pairing holder capture authority -- including frame writes -- over the
+        # operator's in-flight session. Minting a pairing code is the intended onboarding flow
+        # and needs no credential from a loopback caller, so the payload is not a secret an
+        # attacker must first steal. An empty id is refused for the same reason: it is a
+        # namespace, not a free-form label.
+        if not device_id or not device_id.strip():
+            raise LiveAccessUnauthorized("device_id is required.")
+        if device_id == _SHARED_TOKEN_DEVICE_ID:
+            raise LiveAccessForbidden("device_id is reserved.")
         secret, cert_sha256 = self._parse_pairing_payload(payload)
         if cert_sha256 != self._server_cert_sha256:
             raise LiveAccessUnauthorized("pairing payload is not bound to this certificate.")

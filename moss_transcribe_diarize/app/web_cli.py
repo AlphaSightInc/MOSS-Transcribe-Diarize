@@ -225,9 +225,23 @@ def _live_shared_token(args: argparse.Namespace) -> str | None:
         raise SystemExit(
             f"--live-shared-token-file could not be read: {token_file}: {exc.strerror}"
         ) from exc
-    if len(lines) != 1 or not lines[0]:
+    if len(lines) != 1:
         raise SystemExit("--live-shared-token-file must contain exactly one non-empty line.")
-    return lines[0]
+    # `not lines[0]` refuses "" but accepts " ": a whitespace-only file yielded a one-character
+    # token, so a printf slip or a trimmed secrets-manager value produced a deployment that
+    # looked configured and handed full capture authority to anyone who tried a space. Strip
+    # first, then require content, and use the stripped value so padding cannot silently
+    # produce a token that never matches what the operator thinks they configured.
+    token = lines[0].strip()
+    if not token:
+        raise SystemExit("--live-shared-token-file must contain exactly one non-empty line.")
+    mode = token_file.stat().st_mode & 0o077
+    if mode:
+        raise SystemExit(
+            f"--live-shared-token-file must not be group- or world-accessible: {token_file} "
+            f"has mode {oct(token_file.stat().st_mode & 0o777)}; run chmod 600 on it."
+        )
+    return token
 
 
 def _live_tape_store(args: argparse.Namespace):

@@ -443,6 +443,7 @@ def test_the_cli_reads_the_shared_token_from_one_line_only(
 ) -> None:
     token_file = tmp_path / "shared-token"
     token_file.write_text("process-only-secret\n", encoding="utf-8")
+    token_file.chmod(0o600)  # a shared secret must not be group/world readable
     web_cli, args = cli_args(
         monkeypatch,
         "--live",
@@ -462,6 +463,7 @@ def test_the_cli_refuses_an_empty_or_multiline_shared_token_file(
 ) -> None:
     token_file = tmp_path / "shared-token"
     token_file.write_text(contents, encoding="utf-8")
+    token_file.chmod(0o600)
     web_cli, args = cli_args(
         monkeypatch,
         "--live",

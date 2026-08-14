@@ -603,6 +603,7 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
     state = tmp_path / "live-auth.json"
     shared_token_file = tmp_path / "shared-token"
     shared_token_file.write_text("process-only-secret\n", encoding="utf-8")
+    shared_token_file.chmod(0o600)
     calls = {}
 
     def create_app(**kwargs):

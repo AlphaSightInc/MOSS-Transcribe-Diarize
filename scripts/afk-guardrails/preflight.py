@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -154,21 +155,38 @@ def check_forbidden() -> list[str]:
         if p.is_file() and needle in p.read_text(encoding="utf-8", errors="replace"):
             out.append(f"{rel} contains {needle!r}: {why}")
 
-    # A probe script that produced a committed artifact must remain runnable. Ticket 5's
-    # G7 evidence survived while its probe was deleted, so nobody could re-run the gate.
+    # A probe script that produced a committed artifact must remain runnable. Ticket 5's G7
+    # evidence survived while its probe was deleted, so nobody could re-run the gate.
+    #
+    # The first version of this check globbed *.json and read only a top-level "probe" key. An
+    # adversarial review found it missed three real violations -- all cited in .txt artifacts --
+    # and silently swallowed unparseable files, so it reported OK across fourteen iterations
+    # while three cited probes were absent. Scan every artifact as text instead, and treat an
+    # unreadable one as a violation rather than a pass.
     ev = REPO / "evidence" / "phase1"
-    if ev.is_dir():
-        for artifact in ev.rglob("*.json"):
-            try:
-                blob = json.loads(artifact.read_text(encoding="utf-8"))
-            except Exception:
+    if not ev.is_dir():
+        return out
+    known: set[str] = set()
+    for path in REPO.rglob("*.py"):
+        if ".git" not in path.parts and ".venv" not in path.parts:
+            known.add(path.name)
+    cited = re.compile(r"[\w./-]*\b(?:probe|proto)[\w./-]*\.py\b")
+    for artifact in sorted(ev.rglob("*")):
+        if not artifact.is_file() or artifact.suffix not in {".json", ".txt", ".md"}:
+            continue
+        try:
+            text = artifact.read_text(encoding="utf-8", errors="strict")
+        except Exception as exc:
+            out.append(f"{artifact.relative_to(REPO)} is unreadable ({exc}); cannot verify probes")
+            continue
+        for ref in set(cited.findall(text)):
+            name = ref.rsplit("/", 1)[-1]
+            if (REPO / ref).exists() or name in known:
                 continue
-            probe = blob.get("probe") or blob.get("probe_script")
-            if probe and not (REPO / str(probe)).exists():
-                out.append(
-                    f"{artifact.relative_to(REPO)} cites probe {probe!r} which is not in the "
-                    "tree; a gate whose probe was deleted cannot be re-run"
-                )
+            out.append(
+                f"{artifact.relative_to(REPO)} cites probe {ref!r} which is not in the tree; "
+                "a gate whose probe was deleted cannot be re-run by anyone"
+            )
     return out
 
 
