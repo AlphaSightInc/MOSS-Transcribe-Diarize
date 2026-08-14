@@ -1,6 +1,6 @@
 # Context — r1-reference-ui
 
-Iteration 5. The binding acceptance checklist has been reconciled against the
+Iteration 7. The binding acceptance checklist has been reconciled against the
 PRD, charter, T-02, T-05, T-07, and T-10. The first visible reference-shell
 slice and reduced transcript component now replace the stub; the full port remains open.
 
@@ -49,6 +49,22 @@ slice and reduced transcript component now replace the stub; the full port remai
   the current slice as complete. It also renders the real `App` and proves the rail has
   `data-right-collapsed="true"`, no history body, and no interactive control. Its captured raw
   output is `evidence/phase1/r1-reference-ui/reference-ui-probe-iteration-6.txt`.
+- `tests/reference_ui_screenshot_diff.py` is now the committed charter §5 probe. It serves the
+  reference and candidate source trees locally in the same headless Chromium process, injects
+  `tests/fixtures/reference_ui_screenshot_fixture.json` through each real `state/session.ts`,
+  and records screenshots, masks, selectors, and metrics for 1440x900 and 1280x800. Its config
+  declares only the ruled exemptions: the collapsed right rail and the two-versus-reference mode
+  control. The valid run has no Vite/API errors and confirms the same provisional-tail fixture
+  text rendered in both actual transcript components. It fails honestly:
+  `27.2860%` differing pixels / `17.4164%` largest region at 1440x900 and `29.8669%` /
+  `22.4482%` at 1280x800, versus the charter's `2%` / `1%` limits. Raw output:
+  `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-7-verified/`.
+- This measurement exposes a blocking contract tension, not a reason to expand the gate: the
+  reference still visibly renders host-only microphone/source/mute/export surfaces, while T-05
+  requires Phase 1 to drop them, and charter §5 does not exempt those regions. The remaining
+  port also omits retained reference surface, so the present branch is materially short of the
+  pixel gate regardless. Do not add an undeclared mask; supervisor clarification is required
+  before a final fidelity pass can be judged possible under both rulings.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
   Vitest: 12 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
@@ -109,12 +125,16 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
 
 ## Ranked candidates
 
-1. Implement the charter's committed, rerunnable two-viewport screenshot-diff probe against the
-   reference bundle, with its identical transcript fixture and declared exempt regions. The
-   counts/rail artifact is already committed; do not substitute it for the pixel gate.
-2. Port the generic `ToastLayer` only when a live/file adapter instantiates the poller and gives
+1. Escalate the measured T-05/charter §5 mismatch: the reference's required-to-drop host-only
+   left-panel regions are not declared diff exemptions. Do not change mask configuration or
+   claim a pass without a supervisor ruling; after resolution, use the committed probe to guide
+   the next retained-reference surface port.
+2. Port the remaining retained reference surface (starting with the Topbar/ControlPanel layout)
+   only under that ruling, preserving excluded controls as excluded rather than inventing a
+   broader exemption.
+3. Port the generic `ToastLayer` only when a live/file adapter instantiates the poller and gives
    its error/terminal callbacks a real caller; do not add a local substitute toast state or a
    no-op trigger.
-3. When r2 provides session creation, wire its live client to `createMossSessionPoller()` and
+4. When r2 provides session creation, wire its live client to `createMossSessionPoller()` and
    retain the T-02 sessionStorage reattach contract; do not invent a second poller or capture
    health state machine here.

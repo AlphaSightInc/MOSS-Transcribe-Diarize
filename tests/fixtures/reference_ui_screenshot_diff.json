@@ -1,0 +1,21 @@
+{
+  "viewports": [
+    { "width": 1440, "height": 900 },
+    { "width": 1280, "height": 800 }
+  ],
+  "max_different_pixel_percent": 2.0,
+  "max_largest_region_percent": 1.0,
+  "connectivity": 4,
+  "exemptions": [
+    {
+      "id": "right-column-rail",
+      "reference_selector": ".history-panel",
+      "candidate_selector": ".history-panel"
+    },
+    {
+      "id": "mode-segmented-control",
+      "reference_selector": "[role='tablist'][aria-label='Session mode']",
+      "candidate_selector": "[role='tablist'][aria-label='Session mode']"
+    }
+  ]
+}
