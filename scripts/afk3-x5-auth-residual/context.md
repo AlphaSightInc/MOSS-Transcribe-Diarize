@@ -1,6 +1,6 @@
 # Context — x5-auth-residual
 
-Iteration 5.
+Iteration 6.
 
 Branch `afk3/x5-auth-residual` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -35,8 +35,10 @@ python3 scripts/afk-guardrails/preflight.py x5-auth-residual
 - [x] Padded bearer values normalize at the registry comparison boundary; the route-level
   regression sends a padded `Authorization` header and receives capture authority for the
   configured token.
-- [ ] Commit a locally-run Uvicorn probe proving the reserved-id and whitespace-token fixes on
-  the real wire; TestClient alone is insufficient for the single-space case.
+- [x] A locally-run Uvicorn/TLS HTTP/1.1 probe proves the reserved-id and whitespace-token
+  fixes on the real wire. `iteration-6-uvicorn-wire-auth.json` records reserved pairing 403,
+  a persisted pre-fix reserved-id bearer 401, raw `Bearer ` 401, and whitespace token-file
+  refusal before startup.
 - [ ] Pass `.venv/bin/pytest -q tests/test_live_auth.py tests/test_live_api.py
   tests/test_live_service_deployment.py tests/test_speaker_identity_provider.py` after merging
   `dev`, with committed raw artifacts and a criterion-by-criterion `progress.txt` summary.
@@ -48,7 +50,8 @@ that relation and `PREFLIGHT OK`. The Phase 1 posture remains a single shared-to
 this ticket hardens operator revocation rather than restoring client-asserted identity.
 
 ## Ranked candidates
-1. Build a locally-run Uvicorn wire probe for reserved-id and whitespace-token behavior.
+1. Merge current `dev` if it has advanced, then run the required four-file pytest gate and
+   preflight on that merged result; record the criterion-by-criterion final outcome.
 
 ## Completed this run
 
@@ -63,3 +66,8 @@ this ticket hardens operator revocation rather than restoring client-asserted id
 - `LiveAccessRegistry.authorize()` now strips bearer padding immediately before its digest lookup,
   matching the token-file canonicalization. The route-level regression proves a padded shared
   bearer succeeds; the focused auth/API selection passed 3 tests and preflight remained green.
+- `probe_uvicorn_wire_auth.py` starts local Uvicorn with TLS and a fake live runtime, then uses
+  real loopback and dynamically selected private-peer connections. It proves a fresh reserved
+  pairing is refused, a pre-fix persisted `shared-token` credential is no longer authoritative,
+  and h11-parsed whitespace bearer input reaches a 401. It does not claim production deployment
+  verification or general TLS-client coverage.
