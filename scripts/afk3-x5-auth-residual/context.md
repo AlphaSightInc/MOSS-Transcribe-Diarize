@@ -1,6 +1,6 @@
 # Context — x5-auth-residual
 
-Iteration 4.
+Iteration 5.
 
 Branch `afk3/x5-auth-residual` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -32,8 +32,9 @@ python3 scripts/afk-guardrails/preflight.py x5-auth-residual
 - [x] Capture and view bearer lookups use `hmac.compare_digest`; the regression test injects
   digest values that reject ordinary equality, so replacing either comparison with `==` fails
   through real `authorize()` calls without mocking process-wide stdlib state.
-- [ ] Verify padded tokens are normalized through the comparison path, not only when the token
-  file is read.
+- [x] Padded bearer values normalize at the registry comparison boundary; the route-level
+  regression sends a padded `Authorization` header and receives capture authority for the
+  configured token.
 - [ ] Commit a locally-run Uvicorn probe proving the reserved-id and whitespace-token fixes on
   the real wire; TestClient alone is insufficient for the single-space case.
 - [ ] Pass `.venv/bin/pytest -q tests/test_live_auth.py tests/test_live_api.py
@@ -47,9 +48,7 @@ that relation and `PREFLIGHT OK`. The Phase 1 posture remains a single shared-to
 this ticket hardens operator revocation rather than restoring client-asserted identity.
 
 ## Ranked candidates
-1. Verify padded tokens are normalized through the full comparison path, not only on token-file
-   read.
-2. Build a locally-run Uvicorn wire probe for reserved-id and whitespace-token behavior.
+1. Build a locally-run Uvicorn wire probe for reserved-id and whitespace-token behavior.
 
 ## Completed this run
 
@@ -61,3 +60,6 @@ this ticket hardens operator revocation rather than restoring client-asserted id
   `EqualityTrap` regression exercises the real capture and view paths and fails if either falls
   back to ordinary equality. It intentionally does not attempt an unreliable wall-clock timing
   measurement.
+- `LiveAccessRegistry.authorize()` now strips bearer padding immediately before its digest lookup,
+  matching the token-file canonicalization. The route-level regression proves a padded shared
+  bearer succeeds; the focused auth/API selection passed 3 tests and preflight remained green.

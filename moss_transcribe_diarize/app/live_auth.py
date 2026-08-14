@@ -280,6 +280,10 @@ class LiveAccessRegistry:
                 action=action,
                 session_id=None,
             )
+        # Token files are canonicalized on load. Apply the same canonical form to the
+        # presented HTTP credential before hashing so harmless header padding cannot
+        # turn the configured token into a different bearer.
+        bearer = bearer.strip() if bearer else ""
         if not bearer:
             raise LiveAccessUnauthorized("missing bearer authority.")
         digest = _digest(bearer)
