@@ -161,6 +161,13 @@ def _assert_unhealthy_snapshot(
 ) -> dict[str, object]:
     """Assert the real snapshot no longer makes the healthy recording claim."""
 
+    # The two exact-equality assertions below already decide `healthy_recording_claim`, so
+    # asserting it afterwards cannot fail -- it is a restatement, not a measurement. What can
+    # fail, and is worth guarding, is the *expectation* being defanged into the healthy pair
+    # by a later edit, which would leave the whole matrix asserting nothing.
+    assert not (
+        capture_phase == "recording" and status_line == HEALTHY_RECORDING_STATUS_LINE
+    ), "this helper must be handed an unhealthy expectation, or the matrix proves nothing"
     assert response.status_code == 200, response.text
     snapshot = response.json()
     assert snapshot["capture_phase"] == capture_phase
@@ -169,7 +176,6 @@ def _assert_unhealthy_snapshot(
         snapshot["capture_phase"] == "recording"
         and snapshot["status_line"] == HEALTHY_RECORDING_STATUS_LINE
     )
-    assert not healthy_recording_claim
     return {
         "snapshot_http_status": response.status_code,
         "capture_phase": snapshot["capture_phase"],

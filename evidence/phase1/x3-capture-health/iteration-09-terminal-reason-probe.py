@@ -108,20 +108,40 @@ def _run_probe() -> dict[str, Any]:
             f"/api/live/sessions/{session_id}/snapshot",
             headers=view_headers,
         )
+        # Reproduce the *mechanism* iteration 9 measured, rather than pinning the status code
+        # the tree happened to return that day. `release_session` is the exact call the
+        # pre-branch terminal cleanup made (live_helper_failure._release_registries and the
+        # stop/abort routes). Making the probe perform it keeps this artifact re-runnable
+        # after the fix and proves the causal link the fix depends on: it is the access
+        # release, not the teardown of media state, that destroys the server's reason.
+        app.state.live_access_registry.release_session(session_id)
+        released_capture_snapshot = client.get(
+            f"/api/live/sessions/{session_id}/snapshot",
+            headers=capture_headers,
+        )
 
     heartbeat_payload = terminal_heartbeat.json()
     capture_payload = capture_snapshot.json()
     view_payload = view_snapshot.json()
+    released_payload = released_capture_snapshot.json()
     terminal_failure = runtime_snapshot["terminal_failure"]
     assert runtime_snapshot["session"]["status"] == "aborted"
     assert terminal_failure["message"] == "helper_failed"
     assert terminal_failure["detail"]["lane_failures"]["microphone"] == MICROPHONE_PERMISSION_DENIED
-    assert capture_snapshot.status_code == 403
+    # Current tree: the owning capture credential reads the reason.
+    assert capture_snapshot.status_code == 200, capture_snapshot.text
+    assert capture_payload["capture_phase"] == "failed"
+    assert "Microphone access was denied" in capture_payload["status_line"]
+    # Pre-branch mechanism, reproduced: with the access binding released there is nothing to
+    # read, and no server string of any kind survives.
+    assert released_capture_snapshot.status_code == 403
+    assert "capture_phase" not in released_payload
+    assert "status_line" not in released_payload
+    assert MICROPHONE_PERMISSION_DENIED not in json.dumps(released_payload, sort_keys=True)
+    # The view grant dies through the runtime lifecycle either way.
     assert view_snapshot.status_code == 401
-    for payload in (capture_payload, view_payload):
-        assert "capture_phase" not in payload
-        assert "status_line" not in payload
-        assert MICROPHONE_PERMISSION_DENIED not in json.dumps(payload, sort_keys=True)
+    assert "capture_phase" not in view_payload
+    assert MICROPHONE_PERMISSION_DENIED not in json.dumps(view_payload, sort_keys=True)
 
     return {
         "question": (
@@ -132,6 +152,12 @@ def _run_probe() -> dict[str, Any]:
             "route": "local create_app -> paired credentials -> session -> terminal helper heartbeat -> snapshot",
             "credentials_omitted": True,
             "not_covered": "This deterministic local route probe does not exercise a browser permission prompt or production deployment.",
+            "rerun_note": (
+                "Rewritten during adversarial review. The original form asserted the 403 the "
+                "pre-fix tree returned, so it crashed once iteration 10 landed and could no "
+                "longer regenerate its own artifact. It now performs the pre-branch access "
+                "release itself, so both the defect and the fix are reproduced on every run."
+            ),
         },
         "terminal_heartbeat": {
             "reported_helper_state": "failed",
@@ -153,15 +179,20 @@ def _run_probe() -> dict[str, Any]:
         "post_terminal_snapshot": {
             "capture_credential": _response(capture_snapshot),
             "view_credential": _response(view_snapshot),
+            "capture_credential_after_pre_branch_access_release": _response(
+                released_capture_snapshot
+            ),
         },
         "verdict": {
             "server_retains_typed_reason": True,
-            "snapshot_returns_server_authored_reason_to_capture_credential": False,
+            "snapshot_returns_server_authored_reason_to_capture_credential": True,
             "snapshot_returns_server_authored_reason_to_view_credential": False,
-            "next_step": (
-                "Implement one authorized terminal-reason response contract before cleanup makes "
-                "the snapshot route unreadable, then prove the microphone-denial route returns that "
-                "server-authored contract without exposing credentials."
+            "pre_branch_access_release_destroys_the_reason": True,
+            "conclusion": (
+                "The access release performed by the pre-branch terminal cleanup is the single "
+                "cause of the unreadable outcome: with it, the owning credential gets 403 and no "
+                "server string at all; without it, the same route returns the typed "
+                "microphone-denial reason and still exposes no credential."
             ),
         },
     }
