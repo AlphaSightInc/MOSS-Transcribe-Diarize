@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import {
   CaptureClient,
+  type CaptureLane,
   type PreSessionCaptureFailure,
   V2_FRAME_KEYS,
   makeV2Frame,
@@ -29,14 +30,15 @@ type TestLaneState = {
 };
 
 type ActiveClient = {
+  context: AudioContext | null;
   descriptor: { sampleRate: number; frameSamples: number } | null;
   session: { id: string; viewToken: string } | null;
   heartbeatNextStartFrame: number;
   lanes: Map<string, TestLaneState>;
   stop: (deadlineSeconds: number) => Promise<void>;
   onWorkletFrame: (
-    lane: "microphone",
-    frame: { type: "frame"; lane: "microphone"; samples: Float32Array; startFrame: number },
+    lane: CaptureLane,
+    frame: { type: "frame"; lane: CaptureLane; samples: Float32Array; startFrame: number },
   ) => void;
 };
 
@@ -63,6 +65,7 @@ function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
   const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
   const active = client as unknown as ActiveClient;
   const lane = testLaneState();
+  active.context = { sampleRate: 4 } as AudioContext;
   active.descriptor = { sampleRate: 4, frameSamples: 2 };
   active.session = { id: "session", viewToken: "view-only" };
   active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
@@ -181,6 +184,7 @@ describe("browser capture frame contract", () => {
       4,
       new Float32Array([1, -1, 0, 0.5]),
       descriptor,
+      48_000,
     );
 
     expect(Object.keys(frame).sort()).toEqual([...V2_FRAME_KEYS].sort());
@@ -190,8 +194,8 @@ describe("browser capture frame contract", () => {
       device_epoch: 2,
       discontinuity: true,
       sample_count: 4,
-      sample_rate: 24_000,
-      capture_timestamp_ns: 166_667,
+      sample_rate: 48_000,
+      capture_timestamp_ns: 83_333,
     });
     expect(Array.from(new Int16Array(Uint8Array.from(atob(frame.pcm_base64), (byte) => byte.charCodeAt(0)).buffer))).toEqual([
       32767,
@@ -211,7 +215,7 @@ describe("browser capture frame contract", () => {
     });
 
     expect(() =>
-      makeV2Frame("microphone", 0, 1, false, 0, new Float32Array(3), descriptor),
+      makeV2Frame("microphone", 0, 1, false, 0, new Float32Array(3), descriptor, 16_000),
     ).toThrow("worklet frame does not match descriptor.frame_samples");
   });
 
@@ -221,6 +225,59 @@ describe("browser capture frame contract", () => {
     );
 
     expect(Array.from(new Int16Array(bytes.buffer))).toEqual([-32767, 32767]);
+  });
+
+  it("labels a frame and its clock with the actual AudioContext rate", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = activeFrameClient();
+    client.context = { sampleRate: 8 } as AudioContext;
+
+    client.onWorkletFrame("microphone", workletFrame(2));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledOnce());
+
+    const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body).toMatchObject({ sample_rate: 8, capture_timestamp_ns: 250_000_000 });
+  });
+
+  it("requires signal above the declared preflight noise floor before creating a session", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: "session",
+        view_token: "view-only",
+        descriptor: { sample_rate: 4, frame_samples: 2 },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = activeFrameClient();
+    client.session = null;
+    client.lanes.set("system", testLaneState());
+
+    client.onWorkletFrame("microphone", {
+      ...workletFrame(0),
+      samples: new Float32Array([5e-5, -5e-5]),
+    });
+    client.onWorkletFrame("system", {
+      ...workletFrame(0),
+      lane: "system",
+      samples: new Float32Array([0.5, -0.5]),
+    });
+
+    await expect((client as unknown as CaptureClient).createSession()).rejects.toThrow(
+      "both capture lanes must have non-zero signal before session creation",
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    client.onWorkletFrame("microphone", {
+      ...workletFrame(2),
+      samples: new Float32Array([2e-4, -2e-4]),
+    });
+    await expect((client as unknown as CaptureClient).createSession()).resolves.toMatchObject({
+      id: "session",
+    });
+    expect(fetchSpy).toHaveBeenCalledOnce();
   });
 
   it("stops through the authenticated server route before local capture teardown", async () => {

@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 7.
+Iteration 8.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -83,11 +83,29 @@ the authenticated heartbeat route has no session to address. Raw output:
 Sustained clip and mic-silence detection remain open and require the threshold prototype before
 production code.
 
+Iteration 8 closes the owned descriptor-versus-context metadata and preflight-noise-floor slice.
+`makeV2Frame()` now receives the live `AudioContext.sampleRate`, so both `sample_rate` and
+`capture_timestamp_ns` describe the clock that actually produced the worklet frame instead of the
+requested descriptor rate. The focused test forces descriptor rate 4 versus context rate 8 and
+proves wire values `8` / `250000000`. The preflight gate now requires RMS `>= 1e-4`; the focused
+test proves 5e-5 dither cannot create a session, while 2e-4 signal can. Validation: `npm --prefix
+frontend test -- src/capture/captureClient.test.ts` (17 passed), `npm --prefix frontend run
+typecheck` (pass), `git diff --check`, and `python3 scripts/afk-guardrails/preflight.py
+x2-capture-client` (`PREFLIGHT OK`). Raw output:
+`evidence/phase1/x2-capture-client/iteration-8-rate-and-preflight.txt`.
+
+The top threshold-prototype candidate is blocked by ownership, not missing methodology:
+`prototypes/browser-capture-feasibility/` is `x2` read-only and owned by `f1-canary-fixes` /`x1-frame-drop`.
+Do not modify it from this branch. The `>= 1e-4` preflight threshold is already an explicit PRD
+contract; sustained clipping and microphone-silence policy remain unimplemented until that owner
+records the required real-browser threshold measurement.
+
 ## Ranked candidates
 
-1. Extend the existing browser-capture feasibility bench to measure sustained-clipping and
-   microphone-silence thresholds, record its verdict in `NOTES.md`, then add the two remaining
-   heartbeat facts with non-vacuous tests.
-2. Add lane replacement/restart semantics: actual context sample rate in frames, thresholded
-   preflight signal, epoch increment, and marked discontinuity. Do not touch `App.tsx`; mounting
-   remains orchestrator-owned.
+1. **Blocked on ownership:** extend the browser-capture feasibility bench to measure
+   sustained-clipping and microphone-silence thresholds, then add the two heartbeat facts. This
+   requires a transfer or a committed measurement from the harness owner; do not bypass the
+   read-only boundary.
+2. Add the remaining lane replacement/restart semantics: epoch increment and first-frame
+   discontinuity. Actual context sample-rate metadata and thresholded preflight signal are done.
+   Do not touch `App.tsx`; mounting remains orchestrator-owned.

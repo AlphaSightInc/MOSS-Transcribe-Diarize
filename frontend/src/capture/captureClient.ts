@@ -178,18 +178,20 @@ export function makeV2Frame(
   startFrame: number,
   samples: Float32Array,
   descriptor: CaptureDescriptor,
+  captureSampleRate: number,
 ): V2Frame {
   if (samples.length !== descriptor.frameSamples) {
     throw new Error("worklet frame does not match descriptor.frame_samples");
   }
+  positiveInteger(captureSampleRate, "AudioContext.sampleRate");
   return {
     lane,
     sequence,
-    capture_timestamp_ns: Math.round((startFrame / descriptor.sampleRate) * 1e9),
+    capture_timestamp_ns: Math.round((startFrame / captureSampleRate) * 1e9),
     device_epoch: deviceEpoch,
     pcm_base64: pcm16Base64(samples),
     sample_count: samples.length,
-    sample_rate: descriptor.sampleRate,
+    sample_rate: captureSampleRate,
     silent: rms(samples) < SILENCE_RMS,
     discontinuity,
   };
@@ -459,7 +461,7 @@ export class CaptureClient {
     if (!state || !descriptor) return;
 
     const level = rms(workletFrame.samples);
-    if (level > 0) this.laneHasSignal.add(lane);
+    if (level >= SILENCE_RMS) this.laneHasSignal.add(lane);
     this.options.onMeter?.(lane, level);
     if (!this.session || this.stopping || state.health === "failed") return;
 
@@ -473,7 +475,8 @@ export class CaptureClient {
     try {
       while (state.frameQueue.length > 0 && this.session && state.health !== "failed") {
         const descriptor = this.descriptor;
-        if (!descriptor) return;
+        const context = this.context;
+        if (!descriptor || !context) return;
         const workletFrame = state.frameQueue[0];
         const frame = makeV2Frame(
           workletFrame.lane,
@@ -483,6 +486,7 @@ export class CaptureClient {
           workletFrame.startFrame,
           workletFrame.samples,
           descriptor,
+          context.sampleRate,
         );
         const result = await this.postFrame(frame, state);
         if (result === "retry" || result === "recreate" || result === "stopped") return;
