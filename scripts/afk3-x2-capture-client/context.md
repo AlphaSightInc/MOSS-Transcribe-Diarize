@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 4.
+Iteration 5.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -45,23 +45,24 @@ has now been restored from `afk2/r2-capture-client` without its loop state or se
 `frontend/public/worklets/lane-framer.js`. `App.tsx` remains untouched and still does not mount
 the client, per ownership.
 
-Iteration 4 replaced the baseline fire-and-forget frame POST with an independent queue per lane.
-Frames obtain their sequence only at the serial queue head. A structured 429 with
+Iterations 4–5 replaced the baseline fire-and-forget frame POST with an independent queue per
+lane. Frames obtain their sequence only at the serial queue head. A structured 429 with
 `failure.code == v2_lane_retention_capacity_reached` stays at that head, so the next worklet-port
-frame retries the identical body before a later frame can post. Other failures retain the
-baseline's drop-and-report behaviour for now. The focused production-path tests prove both one
-in-flight post per lane and capacity bodies `[0, 0, 1]`; they would fail if serialization or the
-unconsumed retry were removed. Validation: `npm --prefix frontend test --
-src/capture/captureClient.test.ts` (7 passed), `npm --prefix frontend run typecheck` (pass), and
-`python3 scripts/afk-guardrails/preflight.py x2-capture-client` (`PREFLIGHT OK`).
+frame retries the identical body before a later frame can post. A failure-less 429 is the
+post-admission queue-backpressure response, so it advances the sequence and records one dropped
+frame. A machine-readable out-of-order 409 sets the head to the server's non-negative
+`expected_sequence` and retains it for the next worklet-driven retry; another 409 clears local
+delivery state for caller-driven `createSession()` recreation. A 400 closes local capture. The
+focused production-path tests prove one-in-flight ordering, capacity bodies `[0, 0, 1]`, consumed
+429 bodies `[0, 1]`, 409 resync bodies `[0, 5, 6]`, terminal-recreation clearing, and 400 local
+stop. Validation: `npm --prefix frontend test -- src/capture/captureClient.test.ts` (11 passed),
+`npm --prefix frontend run typecheck` (pass), and `python3 scripts/afk-guardrails/preflight.py
+x2-capture-client` (`PREFLIGHT OK`).
 
 ## Ranked candidates
 
-1. Add the remaining frame-taxonomy vertical slice: explicitly prove the consumed queue-429 and
-   failure-less 429 advance rather than retry, resync/recreate after 409, and stop capture on 400.
-   Preserve the per-lane worklet-driven queue and do not introduce timers.
-2. Add real browser-health state/failure reporting and a final `stopped` heartbeat, with a test
+1. Add real browser-health state/failure reporting and a final `stopped` heartbeat, with a test
    that rejects timer-based heartbeats.
-3. Add lane replacement/restart semantics: actual context sample rate in frames, thresholded
+2. Add lane replacement/restart semantics: actual context sample rate in frames, thresholded
    preflight signal, epoch increment, and marked discontinuity. Do not touch `App.tsx`; mounting
    remains orchestrator-owned.

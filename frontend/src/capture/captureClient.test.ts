@@ -10,6 +10,10 @@ import {
 } from "./captureClient";
 
 type TestLaneState = {
+  source: { disconnect: () => void };
+  framer: { port: { onmessage: unknown }; disconnect: () => void };
+  mute: { disconnect: () => void };
+  tracks: { stop: () => void }[];
   frameQueue: unknown[];
   postInFlight: boolean;
   sequence: number;
@@ -34,6 +38,10 @@ function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
   const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
   const active = client as unknown as ActiveClient;
   const lane: TestLaneState = {
+    source: { disconnect: vi.fn() },
+    framer: { port: { onmessage: null }, disconnect: vi.fn() },
+    mute: { disconnect: vi.fn() },
+    tracks: [],
     frameQueue: [],
     postInFlight: false,
     sequence: 0,
@@ -212,5 +220,85 @@ describe("browser capture frame contract", () => {
 
     expect(postedSequences(fetchSpy)).toEqual([0, 0, 1]);
     expect(lane.droppedFrames).toBe(0);
+  });
+
+  it("advances after a consumed failure-less queue 429 instead of retrying it", async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({ detail: "inference queue is full" }),
+      })
+      .mockResolvedValueOnce({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient();
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+    expect(lane.sequence).toBe(1);
+    expect(lane.frameQueue).toHaveLength(0);
+    expect(lane.droppedFrames).toBe(1);
+
+    client.onWorkletFrame("microphone", workletFrame(2));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+
+    expect(postedSequences(fetchSpy)).toEqual([0, 1]);
+  });
+
+  it("resyncs the queue head to the server's expected sequence after an out-of-order 409", async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({
+          failure: { code: "v2_out_of_order_frame", expected_sequence: 5 },
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient();
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+    expect(lane.sequence).toBe(5);
+    expect(lane.frameQueue).toHaveLength(1);
+
+    client.onWorkletFrame("microphone", workletFrame(2));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(3));
+
+    expect(postedSequences(fetchSpy)).toEqual([0, 5, 6]);
+  });
+
+  it("clears local session delivery state after a terminal 409 so the caller can recreate it", async () => {
+    const fetchSpy = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ failure: { code: "v2_stop_accounting_mismatch" } }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient();
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+
+    expect(client.session).toBeNull();
+    expect(lane.sequence).toBe(0);
+    expect(lane.frameQueue).toHaveLength(0);
+  });
+
+  it("stops local capture instead of sending another frame after a malformed-frame 400", async () => {
+    const fetchSpy = vi.fn().mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = activeFrameClient();
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(client.session).toBeNull());
+
+    expect(client.lanes).toHaveLength(0);
+    client.onWorkletFrame("microphone", workletFrame(2));
+    expect(fetchSpy).toHaveBeenCalledOnce();
   });
 });

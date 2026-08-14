@@ -65,7 +65,12 @@ type LaneState = {
 const SILENCE_RMS = 1e-4;
 const LANE_CAPACITY_FAILURE_CODE = "v2_lane_retention_capacity_reached";
 
-type FramePostResult = "accepted" | "retry" | "dropped";
+type FramePostResult = "accepted" | "retry" | "dropped" | "recreate" | "stopped";
+
+type FrameFailure = Readonly<{
+  code: string | null;
+  expectedSequence: number | null;
+}>;
 
 const DISPLAY_AUDIO_CONSTRAINTS: MediaTrackConstraints & { restrictOwnAudio: boolean } = {
   restrictOwnAudio: false,
@@ -247,6 +252,12 @@ export class CaptureClient {
     await this.attachLane("system", new MediaStream([audioTrack]), stream.getTracks());
   }
 
+  /**
+   * Create a server session after both lanes have proved they carry signal.
+   *
+   * A terminal frame conflict clears only the delivery state, so callers can
+   * invoke this again without rebuilding the browser's capture graph.
+   */
   async createSession(): Promise<CaptureSession> {
     if (this.session) return this.session;
     if (!this.laneHasSignal.has("microphone") || !this.laneHasSignal.has("system")) {
@@ -404,8 +415,8 @@ export class CaptureClient {
           workletFrame.samples,
           descriptor,
         );
-        const result = await this.postFrame(frame);
-        if (result === "retry") return;
+        const result = await this.postFrame(frame, state);
+        if (result === "retry" || result === "recreate" || result === "stopped") return;
 
         state.frameQueue.shift();
         state.sequence += 1;
@@ -417,7 +428,7 @@ export class CaptureClient {
     }
   }
 
-  private async postFrame(frame: V2Frame): Promise<FramePostResult> {
+  private async postFrame(frame: V2Frame, state: LaneState): Promise<FramePostResult> {
     const session = this.session;
     if (!session) return "dropped";
     try {
@@ -431,29 +442,68 @@ export class CaptureClient {
         body: JSON.stringify(frame),
       });
       if (response.ok) return "accepted";
-      if (
-        response.status === 429 &&
-        (await this.frameFailureCode(response)) === LANE_CAPACITY_FAILURE_CODE
-      ) {
+      const failure = await this.frameFailure(response);
+      if (response.status === 429 && failure.code === LANE_CAPACITY_FAILURE_CODE) {
         return "retry";
       }
-      throw new Error(`frame POST failed: HTTP ${response.status}`);
+      if (
+        response.status === 409 &&
+        failure.code === "v2_out_of_order_frame" &&
+        failure.expectedSequence !== null
+      ) {
+        state.sequence = failure.expectedSequence;
+        return "retry";
+      }
+      const error = new Error(`frame POST failed: HTTP ${response.status}`);
+      if (response.status === 409) {
+        this.resetSessionForRecreation();
+        this.reportTransportError("frame", error);
+        return "recreate";
+      }
+      if (response.status === 400) {
+        this.reportTransportError("frame", error);
+        void this.close().catch((closeError) => this.reportTransportError("frame", closeError));
+        return "stopped";
+      }
+      throw error;
     } catch (caught) {
       this.reportTransportError("frame", caught);
       return "dropped";
     }
   }
 
-  private async frameFailureCode(response: Response): Promise<string | null> {
+  private async frameFailure(response: Response): Promise<FrameFailure> {
     try {
       const payload = await response.json();
-      if (payload === null || typeof payload !== "object" || Array.isArray(payload)) return null;
+      if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+        return { code: null, expectedSequence: null };
+      }
       const failure = (payload as Record<string, unknown>).failure;
-      if (failure === null || typeof failure !== "object" || Array.isArray(failure)) return null;
-      const code = (failure as Record<string, unknown>).code;
-      return typeof code === "string" ? code : null;
+      if (failure === null || typeof failure !== "object" || Array.isArray(failure)) {
+        return { code: null, expectedSequence: null };
+      }
+      const fields = failure as Record<string, unknown>;
+      return {
+        code: typeof fields.code === "string" ? fields.code : null,
+        expectedSequence:
+          Number.isInteger(fields.expected_sequence) && (fields.expected_sequence as number) >= 0
+            ? (fields.expected_sequence as number)
+            : null,
+      };
     } catch {
-      return null;
+      return { code: null, expectedSequence: null };
+    }
+  }
+
+  private resetSessionForRecreation(): void {
+    this.session = null;
+    this.heartbeatPending = null;
+    this.heartbeatSequence = 0;
+    this.heartbeatMonotonicNs = 0;
+    this.heartbeatNextStartFrame = 0;
+    for (const state of this.lanes.values()) {
+      state.frameQueue.length = 0;
+      state.sequence = 0;
     }
   }
 
