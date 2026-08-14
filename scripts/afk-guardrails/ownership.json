@@ -8,7 +8,6 @@
     "'owns' is a list of path prefixes the ticket may create or modify.",
     "'reads' is advisory only and is not enforced."
   ],
-
   "r1-reference-ui": {
     "title": "Port the reference frontend for real",
     "owns": [
@@ -19,10 +18,15 @@
     "reads": [
       "/Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/"
     ],
-    "prerequisites": ["reference_repo", "node_toolchain"],
-    "blocks": ["r2-capture-client", "r3-dispatcher"]
+    "prerequisites": [
+      "reference_repo",
+      "node_toolchain"
+    ],
+    "blocks": [
+      "r2-capture-client",
+      "r3-dispatcher"
+    ]
   },
-
   "r2-capture-client": {
     "title": "Browser capture client and server-fused capture health",
     "owns": [
@@ -34,10 +38,15 @@
       "prototypes/browser-capture-feasibility/",
       "moss_transcribe_diarize/app/live_helper_presence.py"
     ],
-    "prerequisites": ["reference_repo", "node_toolchain", "capture_harness"],
-    "blocked_by": ["r1-reference-ui"]
+    "prerequisites": [
+      "reference_repo",
+      "node_toolchain",
+      "capture_harness"
+    ],
+    "blocked_by": [
+      "r1-reference-ui"
+    ]
   },
-
   "r3-dispatcher": {
     "title": "Bounded inference dispatcher, measured",
     "owns": [
@@ -48,7 +57,48 @@
       "moss_transcribe_diarize/app/live_arbiter.py",
       "moss_transcribe_diarize/app/live_coordinator.py"
     ],
-    "prerequisites": ["model_runtime"],
+    "prerequisites": [
+      "model_runtime"
+    ],
+    "blocked_by": []
+  },
+  "f1-canary-fixes": {
+    "title": "Repair the canary client: error taxonomy, event cursor, real G7",
+    "owns": [
+      "prototypes/browser-capture-feasibility/"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/live_transport.py",
+      "moss_transcribe_diarize/app/live_ingest.py"
+    ],
+    "prerequisites": [
+      "capture_harness"
+    ],
+    "blocked_by": []
+  },
+  "f6-journal-hardening": {
+    "title": "Make the vector journal crash-safe and its refusals visible",
+    "owns": [
+      "moss_transcribe_diarize/app/live_vector_journal.py",
+      "moss_transcribe_diarize/app/live_provider_bundle.py"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/live_tape.py",
+      "moss_transcribe_diarize/app/live_identity_album.py"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
+  },
+  "f2-auth-verify": {
+    "title": "Independently verify and harden the shared-token auth path",
+    "owns": [
+      "moss_transcribe_diarize/app/live_auth.py"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/live_transport.py",
+      "ops/start-web.sh"
+    ],
+    "prerequisites": [],
     "blocked_by": []
   }
 }
