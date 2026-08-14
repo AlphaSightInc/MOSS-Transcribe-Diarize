@@ -1,0 +1,54 @@
+{
+  "_comment": [
+    "File ownership per rebuild ticket. Derived from an actual failure: tickets 1 and 3",
+    "independently implemented v2 retryable backpressure with incompatible APIs, because",
+    "nothing declared who owned live_service_runtime.py. An agent that touches a path it",
+    "does not own fails preflight.",
+    "",
+    "'owns' is a list of path prefixes the ticket may create or modify.",
+    "'reads' is advisory only and is not enforced."
+  ],
+
+  "r1-reference-ui": {
+    "title": "Port the reference frontend for real",
+    "owns": [
+      "frontend/src/",
+      "frontend/index.html",
+      "ProjectResources/Frontend/"
+    ],
+    "reads": [
+      "/Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend/"
+    ],
+    "prerequisites": ["reference_repo", "node_toolchain"],
+    "blocks": ["r2-capture-client", "r3-dispatcher"]
+  },
+
+  "r2-capture-client": {
+    "title": "Browser capture client and server-fused capture health",
+    "owns": [
+      "frontend/src/capture/",
+      "frontend/public/worklets/",
+      "moss_transcribe_diarize/app/live_capture_status.py"
+    ],
+    "reads": [
+      "prototypes/browser-capture-feasibility/",
+      "moss_transcribe_diarize/app/live_helper_presence.py"
+    ],
+    "prerequisites": ["reference_repo", "node_toolchain", "capture_harness"],
+    "blocked_by": ["r1-reference-ui"]
+  },
+
+  "r3-dispatcher": {
+    "title": "Bounded inference dispatcher, measured",
+    "owns": [
+      "moss_transcribe_diarize/app/live_service_runtime.py",
+      "prototypes/streaming-diarization/concurrency/"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/live_arbiter.py",
+      "moss_transcribe_diarize/app/live_coordinator.py"
+    ],
+    "prerequisites": ["model_runtime"],
+    "blocked_by": []
+  }
+}
