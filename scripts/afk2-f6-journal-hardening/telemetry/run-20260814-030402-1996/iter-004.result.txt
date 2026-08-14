@@ -1,0 +1,7 @@
+Iteration 4 committed: `8de6568`.
+
+- `None` centroids now emit named `centroid_unavailable` refusals.
+- Validated: focused 2 passed; affected suites 80 passed; preflight OK.
+- Evidence: [iteration-04-none-centroid-refusal.txt](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/5/MOSS-Transcribe-Diarize/evidence/phase1/f6-journal-hardening/iteration-04-none-centroid-refusal.txt)
+- Next: persist exemplar count/provisional status. Final gate still blocked: `.venv/bin/pytest` absent.
+

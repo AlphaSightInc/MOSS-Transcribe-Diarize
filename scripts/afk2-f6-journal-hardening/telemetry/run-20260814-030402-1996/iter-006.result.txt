@@ -1,0 +1,6 @@
+Iteration 6 committed: `7a71b8c`.
+
+- Added per-row session/embedder pin regression; evidence: [iteration-06-row-invariants.txt](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/5/MOSS-Transcribe-Diarize/evidence/phase1/f6-journal-hardening/iteration-06-row-invariants.txt).
+- Pass: focused 4, contract 3, regression 82; preflight OK.
+- Still incomplete: `.venv/bin/pytest` absent; final gate, merge-current-`dev`, issue evidence remain.
+

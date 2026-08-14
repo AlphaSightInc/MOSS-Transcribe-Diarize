@@ -1,0 +1,5 @@
+Committed `012ff51` — torn JSONL tails now get a delimiter before the next session row.
+
+- Regression: `2 passed`; preflight OK.
+- Evidence: `evidence/phase1/f6-journal-hardening/iteration-02-torn-tail.txt`
+- Blocker: required `.venv/bin/pytest` absent; final gate not run.
