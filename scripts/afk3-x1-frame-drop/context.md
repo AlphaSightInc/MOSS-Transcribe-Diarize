@@ -1,6 +1,6 @@
 # Context — x1-frame-drop
 
-Iteration 3.
+Iteration 4.
 
 Branch `afk3/x1-frame-drop` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -26,7 +26,7 @@ python3 scripts/afk-guardrails/preflight.py x1-frame-drop
   direct elapsed-time vs admitted-frame assertion that fails on regression.
 - [ ] G7 runs hidden for more than five minutes at descriptor-enforced
   `frame_samples=8000`, joins strict-v2 admissions, and preserves its raw arrays.
-- [ ] A forced 409 exercises `recreateSession`, drains sends before resetting sequence state,
+- [x] A forced 409 exercises `recreateSession`, drains sends before resetting sequence state,
   resumes cleanly, and leaves a failed-recreate button usable.
 - [ ] All claims have committed, re-runnable probes and raw artifacts under
   `evidence/phase1/x1-frame-drop/`; branch validation runs after merging current `dev`.
@@ -58,13 +58,21 @@ admitted-vs-elapsed gate allows only the one-record observation race. Each lane 
 response and had wire sequences in worklet order; queue depth peaked at 21 of the descriptor's
 320-frame capacity. Raw arrays: `evidence/phase1/x1-frame-drop/iteration-3-slow-post-fifo.json`.
 
-This resolves the P0 slow-POST regression only. It is deterministic-provider/synthetic-source
-evidence at 1,000-frame geometry, not the 8000-frame hidden G7 run; it neither forces overflow
-nor exercises 409/recreate.
+The 409 path now pauses all FIFO senders, waits for every old-session response, resets fresh
+sequences only after that drain, retains queued PCM with wire sequences cleared, and offers an
+explicit recreate control. The capture bearer remains closure-local across recreation and is
+cleared on stop; a failed create re-enables the same control. The forced route probe held an
+already-admitted microphone response for 600 ms while a system sequence conflict returned 409.
+It showed the old microphone lane advance to one before reset, then the retried new session admit
+system/microphone sequence zero and advance each to one. Raw state:
+`evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json`.
+
+These are deterministic local production-route results at 1,000-frame geometry. They do not run
+worklet cadence or a real provider, and they do not satisfy the required 8000-frame hidden G7.
 
 ## Ranked candidates
 
-1. Add a forced 409 → drain → recreate → clean-resume probe. It must prove no in-flight send can
-   poison the reset sequence and the failed-recreate control stays usable.
-2. Restore G7's required `--frame-samples 8000` argument and run the hidden-tab strict-v2
+1. Restore G7's required `--frame-samples 8000` argument and run the hidden-tab strict-v2
    admission join for more than five minutes, preserving raw arrays.
+2. Before a completion claim, merge current `dev` and run branch validation on the merged result;
+   retain the known baseline failures rather than changing their pins.

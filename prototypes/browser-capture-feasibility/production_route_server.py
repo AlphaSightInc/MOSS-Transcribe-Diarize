@@ -169,6 +169,7 @@ def build_app(
     *,
     model_path: Path | None = None,
     live_provider_manifest: Path | None = None,
+    runtime_factory_override=None,
 ):
     from fastapi.responses import FileResponse, JSONResponse
 
@@ -187,7 +188,10 @@ def build_app(
         device_id="browser-route-probe",
         now=1.0,
     )
-    if model_path is None and live_provider_manifest is None:
+    if runtime_factory_override is not None:
+        runtime_factory = runtime_factory_override
+        provider_scope = "real production routes with a probe-supplied deterministic runtime; no model inference"
+    elif model_path is None and live_provider_manifest is None:
         def runtime_factory():
             runtime = helpers.make_live_runtime(
                 max_retained_samples=320_000,

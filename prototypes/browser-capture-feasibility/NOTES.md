@@ -451,3 +451,28 @@ admitted frame discontinuous.
 
 This proves the P0 slow-POST transport case only. It does not exercise an overflow, 409/recreate,
 production 8000-frame geometry, a five-minute hidden tab, display capture, or a real provider.
+
+## X1 409 recreation race — 2026-08-14
+
+**Question:** when one strict-v2 lane returns a 409 while its peer's old-session POST is still
+resolving, can the page drain before resetting sequence state, retry a failed recreate click, and
+resume the new session without a sequence conflict?
+
+**Method:** `probe_recreate_session.py` starts a local production-route app and headless Chrome.
+The page's opt-in probe seam drives its normal FIFO sender and clicks the normal recovery button;
+it injects only an out-of-order system frame (real strict-v2 409), a 600 ms held microphone
+response after that route already admitted it, and a single 503 on the first recreation create.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/browser-capture-feasibility/probe_recreate_session.py \
+  --output evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json
+```
+
+**Verdict:** passed. While the microphone response was held, the page retained the old session,
+kept its sender in flight, and left its sequence at zero. The old route then admitted exactly one
+microphone frame before reset; the forced failed create left the button enabled. The retry created
+`new-session`, whose system and microphone lanes each accepted sequence zero and advanced to one.
+The page retains the descriptor-bounded PCM FIFO but clears its old wire sequence only after the
+drain. This is deterministic local-route evidence, not a real-provider, worklet-cadence, or G7
+measurement. Raw state: `evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json`.

@@ -53,6 +53,12 @@
 </section>
 
 <section>
+  <h2>Session recovery</h2>
+  <p id="recoveryStatus">No session recovery is required.</p>
+  <button id="recreateSession" disabled>Recreate session</button>
+</section>
+
+<section>
   <h2>Real capture (attended Gate-1 harness)</h2>
   <p>Click <b>Start mic</b>, allow. Click <b>Start display</b>, pick the tone tab
      (<a href="/tone" target="_blank">open 997 Hz tone tab</a>) or window/screen, and tick
@@ -84,6 +90,8 @@ const realOut = document.getElementById("realOut");
 const transcriptOut = document.getElementById("transcriptOut");
 const eventOut = document.getElementById("eventOut");
 const pollOut = document.getElementById("pollOut");
+const recoveryStatus = document.getElementById("recoveryStatus");
+const recreateSessionButton = document.getElementById("recreateSession");
 const log = (el, s) => { el.textContent += s + "\n"; };
 const prototypeClientId = new URLSearchParams(location.search).get("client_id") || crypto.randomUUID();
 const prototypeRecord = (record) => ({
@@ -104,6 +112,10 @@ let descriptorPromise = null;
 let liveSession = null;     // server-issued id + credentials, closure memory only
 let sessionPromise = null;
 let sessionFailed = false;
+let retainedCaptureBearer = null;
+let sessionRecreateRequired = false;
+let sessionRecreateInProgress = false;
+let sessionRecreatePromise = null;
 let heartbeatPending = null;
 let heartbeatInFlight = false;
 let heartbeatSequence = 0;
@@ -170,7 +182,11 @@ async function captureBearer() {
   const input = document.getElementById("captureBearer");
   const manual = input.value.trim();
   input.value = "";
-  if (manual) return manual;
+  if (manual) {
+    retainedCaptureBearer = manual;
+    return manual;
+  }
+  if (retainedCaptureBearer) return retainedCaptureBearer;
   // The deterministic loopback probe supplies an ephemeral credential here. A real
   // service has no such route and requires the operator-provided bearer above.
   const response = await fetch("/prototype/bootstrap", { cache: "no-store" });
@@ -179,7 +195,8 @@ async function captureBearer() {
   if (typeof payload.capture_bearer !== "string" || !payload.capture_bearer) {
     throw new Error("prototype bootstrap did not supply a capture bearer");
   }
-  return payload.capture_bearer;
+  retainedCaptureBearer = payload.capture_bearer;
+  return retainedCaptureBearer;
 }
 
 async function captureSession(outEl) {
@@ -216,6 +233,95 @@ async function captureSession(outEl) {
     sessionPromise = null;
   }
 }
+
+function showRecovery(message) {
+  recoveryStatus.textContent = message;
+  recoveryStatus.className = "bad";
+}
+
+function clearRecovery() {
+  recoveryStatus.textContent = "No session recovery is required.";
+  recoveryStatus.className = "good";
+}
+
+function reportRecovery(record) {
+  void fetch("/prototype/phase", {
+    method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(prototypeRecord({ phase: "session-recovery", wall_ms: Date.now(), ...record })),
+  }).catch(() => {});
+}
+
+function requireSessionRecreation(lane, frame, status) {
+  if (sessionRecreateRequired) return;
+  for (const state of Object.values(lanes)) state.sendPaused = true;
+  sessionFailed = true; // prevents a worklet callback from creating a session before the operator acts.
+  sessionRecreateRequired = true;
+  recreateSessionButton.disabled = false;
+  showRecovery(`HTTP ${status} on ${lane} frame ${frame.sequence}; sending paused. Recreate the session manually.`);
+  reportRecovery({ action: "required", lane, sequence: frame.sequence, http_status: status });
+}
+
+function resetReadState() {
+  readState.snapshotVersion = 0;
+  readState.eventSequence = 0;
+  readState.polls = 0;
+  readState.renderFailures = 0;
+  readState.faultInjected = false;
+  readState.events = [];
+  readState.maxPendingWorkItems = 0;
+  transcriptOut.textContent = "";
+  eventOut.textContent = "";
+  pollOut.textContent = "waiting for a recreated session";
+}
+
+async function drainFrameSends() {
+  while (Object.values(lanes).some((state) => state.sendInFlight)) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+}
+
+async function recreateSession() {
+  if (!sessionRecreateRequired || sessionRecreateInProgress || !bothLanesHaveSignal()) return;
+  sessionRecreateInProgress = true;
+  recreateSessionButton.disabled = true;
+  reportRecovery({ action: "drain-started" });
+  try {
+    // A peer lane can still be resolving a successful old-session POST. Let it finish
+    // before resetting its sequence, otherwise that completion can poison the new session.
+    await drainFrameSends();
+    reportRecovery({ action: "drained" });
+    liveSession = null;
+    resetReadState();
+    for (const state of Object.values(lanes)) {
+      state.seq = 0;
+      // The old server's sequence is irrelevant to the fresh session. Preserve the PCM FIFO,
+      // but assign its head only when it is posted to that fresh session.
+      for (const frame of state.frames) frame.sequence = null;
+      state.sendPaused = false;
+    }
+    await captureSession(synthOut);
+    sessionFailed = false;
+    sessionRecreateRequired = false;
+    clearRecovery();
+    reportRecovery({ action: "recreated", session_id: liveSession.id });
+    const config = await captureDescriptor();
+    for (const [lane, state] of Object.entries(lanes)) {
+      void sendQueuedFrames(state, lane, config);
+    }
+  } catch (error) {
+    // Keep this control usable: a transient create failure must not strand the user.
+    sessionRecreateRequired = true;
+    sessionFailed = true;
+    recreateSessionButton.disabled = false;
+    showRecovery(`session recreation failed: ${error.message}; retry when ready.`);
+    reportRecovery({ action: "recreate-failed", error: error.message });
+  } finally {
+    sessionRecreateInProgress = false;
+  }
+}
+
+recreateSessionButton.onclick = () => { sessionRecreatePromise = recreateSession(); };
 
 async function runUnknownFrameKeyProbe(session, config) {
   const body = {
@@ -538,10 +644,10 @@ function reportFrameTelemetry(lane, frame) {
 }
 
 async function sendQueuedFrames(st, lane, config) {
-  if (st.sendInFlight || !liveSession) return;
+  if (st.sendInFlight || st.sendPaused || !liveSession) return;
   st.sendInFlight = true;
   try {
-    while (st.frames.length && liveSession) {
+    while (st.frames.length && !st.sendPaused && liveSession) {
       const frame = st.frames[0];
       // Retrying the FIFO head must reuse its already-assigned sequence. The next sequence
       // advances only after the route accepted that exact frame.
@@ -573,6 +679,7 @@ async function sendQueuedFrames(st, lane, config) {
           // Keep this exact head for the route's retry/recreate taxonomy; a later worklet
           // message may retry it, but an error response must never silently consume audio.
           st.errors++;
+          if (resp.status === 409) requireSessionRecreation(lane, frame, resp.status);
           return;
         }
       } catch (e) {
@@ -676,6 +783,88 @@ async function attachLane(lane, mediaStream, outEl, extraCtx) {
   return st;
 }
 
+// This opt-in seam drives the same FIFO sender and recovery button as the page. It exists only
+// for the committed x1 browser probe; normal capture still starts exclusively from worklet frames.
+if (new URLSearchParams(location.search).has("x1_recreate_probe")) {
+  let x1ProbeConfig = null;
+  let x1RecreatePromise = null;
+
+  function x1ProbeState() {
+    const laneState = {};
+    for (const [lane, state] of Object.entries(lanes)) {
+      laneState[lane] = {
+        seq: state.seq,
+        sent: state.sent,
+        errors: state.errors,
+        http: { ...state.http },
+        queued: state.frames.length,
+        send_in_flight: state.sendInFlight,
+        send_paused: state.sendPaused,
+      };
+    }
+    return {
+      live_session_id: liveSession && liveSession.id,
+      session_recreate_required: sessionRecreateRequired,
+      session_recreate_in_progress: sessionRecreateInProgress,
+      recreate_disabled: recreateSessionButton.disabled,
+      lanes: laneState,
+    };
+  }
+
+  function x1ProbeLane() {
+    return {
+      seq: 0, epoch: 1, sent: 0, emitted: 0, http: {}, errors: 0, hasSignal: true,
+      frames: [], frameCapacity: x1ProbeConfig.transportQueueFrames, sendInFlight: false,
+      droppedFrames: 0, discontinuities: 0, discontinuityPending: false,
+    };
+  }
+
+  function x1ProbeFrame(state, wireSequence) {
+    const emittedSequence = state.emitted++;
+    return {
+      emittedSequence,
+      sequence: wireSequence,
+      samples: new Float32Array(x1ProbeConfig.frameSamples),
+      startFrame: emittedSequence * x1ProbeConfig.frameSamples,
+      rms: 0.1,
+      visibility: document.visibilityState,
+      quanta: 1,
+      queuedWallMs: Date.now(),
+      queueDepthAtEnqueue: state.frames.length + 1,
+      queueCapacity: state.frameCapacity,
+      droppedFrames: 0,
+      discontinuity: false,
+    };
+  }
+
+  window.__mossX1RecreateProbe = Object.freeze({
+    async initialize() {
+      x1ProbeConfig = await captureDescriptor();
+      await captureSession(synthOut);
+      lanes = { system: x1ProbeLane(), microphone: x1ProbeLane() };
+      return x1ProbeState();
+    },
+    enqueue(lane, wireSequence = null) {
+      const state = lanes[lane];
+      if (!state) throw new Error(`unknown x1 probe lane: ${lane}`);
+      state.frames.push(x1ProbeFrame(state, wireSequence));
+      void sendQueuedFrames(state, lane, x1ProbeConfig);
+      return x1ProbeState();
+    },
+    beginRecreate() {
+      recreateSessionButton.click();
+      x1RecreatePromise = sessionRecreatePromise;
+      if (!x1RecreatePromise) throw new Error("recreate control did not start a recovery operation");
+      return x1ProbeState();
+    },
+    async finishRecreate() {
+      await x1RecreatePromise;
+      return x1ProbeState();
+    },
+    state() { return x1ProbeState(); },
+  });
+}
+
 function detachAll(outEl) {
   for (const [lane, st] of Object.entries(lanes)) {
     try { st.node.port.onmessage = null; st.src.disconnect(); st.node.disconnect(); } catch {}
@@ -750,6 +939,11 @@ async function stopCapture(outEl) {
     return payload;
   } finally {
     liveSession = null;
+    retainedCaptureBearer = null;
+    sessionRecreateRequired = false;
+    sessionRecreateInProgress = false;
+    recreateSessionButton.disabled = true;
+    clearRecovery();
     if (pollTimer !== null) { clearTimeout(pollTimer); pollTimer = null; }
     detachAll(outEl);
     await fetch("/prototype/phase", {
