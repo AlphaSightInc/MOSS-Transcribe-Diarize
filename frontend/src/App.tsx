@@ -1,12 +1,11 @@
 import { useRef, useState } from "preact/hooks";
 import { SegmentedControl } from "./components/SegmentedControl";
+import { TranscriptPane } from "./components/TranscriptPane";
 
 type PhaseOneMode = "live" | "file";
 
 export function App() {
   const [mode, setMode] = useState<PhaseOneMode>("live");
-  const [findOpen, setFindOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -102,50 +101,7 @@ export function App() {
         </aside>
 
         <section className="transcript-shell" id="transcript-panel">
-          <div className="transcript-pane">
-            <header className="tr-head">
-              <span className="tr-head-spacer" aria-hidden="true" />
-              <div className="tr-title-wrap">
-                <h1 className="tr-title">Live transcript</h1>
-              </div>
-            </header>
-            <div className="tr-legend" id="legend">
-              <div className="tr-legend-right" />
-            </div>
-            <div className="tr-body-wrap">
-              <div className="tr-floating-tools" id="tr-floating-tools">
-                <button
-                  type="button"
-                  className="mini-btn"
-                  aria-expanded={findOpen}
-                  onClick={() => setFindOpen((current) => !current)}
-                >
-                  Find
-                </button>
-              </div>
-              {findOpen ? (
-                <div className="tr-find">
-                  <label className="tr-find-label" htmlFor="transcript-find-input">Find</label>
-                  <div className="tr-find-field">
-                    <input
-                      id="transcript-find-input"
-                      type="text"
-                      placeholder="Search transcript…"
-                      value={searchQuery}
-                      onInput={(event) => setSearchQuery(event.currentTarget.value)}
-                    />
-                  </div>
-                  {searchQuery ? <span className="tr-find-meta">0 matches</span> : null}
-                </div>
-              ) : null}
-              <div className="tr-body">
-                <p className="empty-state transcript-empty-state">
-                  Transcript will appear here when a session starts.
-                </p>
-              </div>
-              <div className="tr-fade" aria-hidden="true" />
-            </div>
-          </div>
+          <TranscriptPane />
         </section>
 
         <aside

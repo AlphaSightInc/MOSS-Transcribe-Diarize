@@ -1,8 +1,8 @@
 # Context — r1-reference-ui
 
-Iteration 2. The binding acceptance checklist has been reconciled against the
+Iteration 4. The binding acceptance checklist has been reconciled against the
 PRD, charter, T-02, T-05, T-07, and T-10. The first visible reference-shell
-slice now replaces the stub; the full port remains open.
+slice and reduced transcript component now replace the stub; the full port remains open.
 
 ## Where things stand
 
@@ -24,9 +24,17 @@ slice now replaces the stub; the full port remains open.
   generic-label normalization, and match highlighting. The state exposes both event
   upsert and full snapshot replacement: T-02 requires the poller to use replacement
   for `/snapshot`, not event upsert.
+- `frontend/src/components/TranscriptPane.tsx` now ports the reference transcript surface
+  against that signal state: turn grouping, generic-only speaker labels and legend, timestamps,
+  provisional-row/caret treatment, and client-side search (including Cmd/Ctrl-F and match
+  navigation). It intentionally omits title and speaker editing, speaker count, summary/LLM,
+  voiceprints, display mode, clipboard/export, and their removed shortcuts. The adapted
+  reference component tests prove real state-derived rows, provisional rendering, generic-label
+  enforcement, and search navigation; they would fail if the component no longer used transcript
+  state or search results.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
-  Vitest: 6 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
+  Vitest: 8 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
   not a failure.
 
 ## Read before your first change
@@ -84,12 +92,10 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
 
 ## Ranked candidates
 
-1. Port the reference `TranscriptPane` and its meaningful component tests, removing LLM,
-   summary, voiceprint, title/speaker rename, and display-mode controls rather than leaving
-   dead controls. Bind it to the ported transcript signal state while preserving generic labels,
-   search, and provisional-row rendering.
-2. Replace reference `api/ws.ts` with the T-02 poller through the unchanged
+1. Replace reference `api/ws.ts` with the T-02 poller through the unchanged
    `dispatchWsEvent()` seam, then bind the transcript shell to that state. Do not invent server
    routes or a client-side capture-health policy.
+2. Port the generic `ToastLayer` after the poller supplies a real caller; do not add a local
+   substitute toast state or a no-op trigger.
 3. Add committed, re-runnable counts and rendered-rail artifacts after the concrete component
    port; then implement the charter's screenshot-diff probe against the reference bundle.
