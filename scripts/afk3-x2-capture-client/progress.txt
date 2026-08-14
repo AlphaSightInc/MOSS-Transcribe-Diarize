@@ -1,2 +1,4 @@
 
 [loop 20260814-181406-44132] start budget=40 agent=codex branch=afk3/x2-capture-client
+
+[loop 20260814-181406-44132] preflight failed before iteration 1
