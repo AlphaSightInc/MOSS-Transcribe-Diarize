@@ -1,0 +1,6 @@
+Iteration 8 committed: `0086b86 ralph: iteration 8 - escalate route ownership`.
+
+Posted [ownership escalation](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/5#issuecomment-5289087288). Preflight and diff check pass.
+
+Blocked: no ticket owns `live_transport.py`; r1 App/modal integration also pending. No completion claim.
+

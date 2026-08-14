@@ -1,0 +1,6 @@
+Committed `a419240` — `ralph: iteration 7 - repair route owner blocker`.
+
+Validated: guardrail preflight passed; `git diff --check` clean.
+
+Blocked: no active ticket owns `live_transport.py`; orchestrator assignment required. r1 also has not integrated `CaptureClient` into App/modal. No public-route or >5-minute evidence claimed.
+

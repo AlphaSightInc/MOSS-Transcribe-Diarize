@@ -1,0 +1,6 @@
+Committed `218ebfb` — client clean-stop path.
+
+- `CaptureClient.stop(deadlineSeconds)` calls authenticated server stop before local teardown.
+- Frontend typecheck + 6 tests pass; r2 preflight passes.
+- Still blocked: App/modal activation and public status-route fusion outside ownership. No end-to-end claim.
+

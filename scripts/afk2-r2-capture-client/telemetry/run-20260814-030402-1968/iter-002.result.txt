@@ -1,0 +1,7 @@
+Iteration 2 committed: `4fe20e6`.
+
+- Added v2-session status seam; zero frames no longer projects capturing.
+- Clean stop projects `stopped`; terminal server state overrides stale capture presence.
+- Validated: `12 passed`; guardrail preflight OK.
+- Still open: route wiring/terminal persistence outside ticket ownership; `.venv/bin/pytest` absent.
+

@@ -1,0 +1,6 @@
+Iteration 5 committed: `2de7a51 ralph: iteration 5 - request app integration handoff`.
+
+- Posted r1 App/modal handoff: [Issue #4 comment](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/4#issuecomment-5289039116)
+- Preflight passed; `git diff --check` clean.
+- Still blocked on r1 `App.tsx` integration and transport-route ownership; no end-to-end claim.
+
