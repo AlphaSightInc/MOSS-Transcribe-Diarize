@@ -34,25 +34,25 @@
   "local_production_route_measurement": {
     "arrival_intervals_ms": {
       "microphone": [
-        507.123,
-        514.8,
-        515.103,
-        512.402,
-        511.124
+        511.913,
+        517.19,
+        517.503,
+        512.012,
+        514.742
       ],
       "system": [
-        507.201,
-        515.08,
-        515.042,
-        512.377,
-        511.834
+        512.008,
+        517.31,
+        517.61,
+        512.382,
+        514.226
       ]
     },
     "combined_interval_ms": {
       "count": 10,
-      "max": 515.103,
-      "p50": 512.377,
-      "p95": 515.103
+      "max": 517.61,
+      "p50": 514.226,
+      "p95": 517.61
     },
     "stall": {
       "fused_route_status": {
@@ -61,9 +61,9 @@
         "snapshot_http_status": 200,
         "status_line": "Microphone audio has stopped arriving. Check capture and try again."
       },
-      "pre_stall_monotonic_ns": 2254067332709833,
+      "pre_stall_monotonic_ns": 2255141261295375,
       "requested_seconds": 2.05,
-      "server_observed_age_ms": 2064.064,
+      "server_observed_age_ms": 2067.069,
       "stale_after_ms": 2000
     },
     "v2_lanes_after_cadence": {
@@ -133,7 +133,7 @@
     }
   },
   "scope": {
-    "not_covered": "This uses a deterministic local runtime and TestClient, not a browser. Chrome 151 worklet cadence is an already-committed baseline below; terminal readability remains x6-owned.",
+    "not_covered": "This uses a deterministic local runtime and TestClient, not a browser. Chrome 151 worklet cadence is an already-committed baseline below; terminal readability is covered separately by iteration-10-terminal-readable-probe.py.",
     "route": "local create_app -> authenticated v2 frame/heartbeat/snapshot routes -> LiveCaptureObservationRegistry"
   },
   "server_fused_route_status_matrix": {

@@ -84,6 +84,13 @@ The raw output is
 `evidence/phase1/x3-capture-health/iteration-09-terminal-reason.json`, written by its committed
 adjacent probe. This refutes the earlier assumption that x6's terminal-runtime snapshot work
 settles x3 terminal readability: x6 is not yet reconciled into `dev`, and its explicit-abort
-distinction does not preserve access after the helper path releases it. Terminal reason
-reachability remains an open x3 acceptance item; the next change must choose and prove one
-server-authored terminal response contract without exposing credentials.
+distinction does not preserve access after the helper path releases it.
+
+Iteration 10 closes that x3 route-reachability gap by retaining only the capture owner's
+session-authorization binding during terminal media teardown. The snapshot projects a runtime
+terminal lane failure before absent helper or v2 state, so the capture owner receives the
+server-authored permission instruction while the view credential remains rejected. Its committed
+probe and raw output are `evidence/phase1/x3-capture-health/iteration-10-terminal-readable-probe.py`
+and `evidence/phase1/x3-capture-health/iteration-10-terminal-readable.json`: capture receives
+HTTP 200 with `capture_phase: failed` and no credential fields; view receives HTTP 401. This is
+deterministic local-route evidence only, not a browser permission-prompt or deployment result.

@@ -27,4 +27,5 @@ Chrome hidden-tab p95 (506.5 ms), while all four conditions recover on productio
 
 Scope: the local route probe is not a Chrome run and does not cover real display capture or model
 inference. Chrome cadence comes from the already-committed harness measurement named in the JSON.
-Terminal-session reason reachability remains owned by x6.
+Terminal-session reason reachability is separately covered by iteration 10's local route probe;
+neither probe covers a browser permission prompt or deployment.

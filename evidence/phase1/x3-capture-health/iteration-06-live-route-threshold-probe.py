@@ -385,7 +385,8 @@ def _run_probe() -> dict[str, object]:
             "route": "local create_app -> authenticated v2 frame/heartbeat/snapshot routes -> LiveCaptureObservationRegistry",
             "not_covered": (
                 "This uses a deterministic local runtime and TestClient, not a browser. Chrome 151 "
-                "worklet cadence is an already-committed baseline below; terminal readability remains x6-owned."
+                "worklet cadence is an already-committed baseline below; terminal readability is covered "
+                "separately by iteration-10-terminal-readable-probe.py."
             ),
         },
         "browser_worklet_baseline": {

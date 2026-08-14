@@ -1,6 +1,6 @@
 # Context — x3-capture-health
 
-Iteration 9.
+Iteration 11.
 
 Branch `afk3/x3-capture-health` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -35,7 +35,7 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
 - [x] `.venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py` passes, and
   the committed re-runnable route probe plus raw output live under
   `evidence/phase1/x3-capture-health/`.
-- [ ] The focused gate remains green after merging current `dev`; `progress.txt` identifies what
+- [x] The focused gate remains green after merging current `dev`; `progress.txt` identifies what
   each criterion proves and any uncovered boundary.
 
 ## Ranked candidates
@@ -131,6 +131,11 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
     their existing terminal 429. The committed raw probe is
     `evidence/phase1/x3-capture-health/iteration-10-terminal-readable.json`; focused validation
     passed (54 tests, 327 subtests) and preflight passed.
-11. **Next — reconcile only current `dev`, then validate the merged result:** x6's separate
-    runtime-terminal branch is still not in `dev`; wait for reviewer reconciliation, merge only
-    `dev`, and rerun the focused gate plus both committed route probes on that exact merged head.
+11. **Done (iteration 11):** current `dev` (`23afb6d`) was already an ancestor of this branch's
+    `c229ec1` HEAD, so no merge created a new commit. The exact merged head passed the focused
+    gate (54 tests, 327 subtests) and both committed local-route probes. The refreshed
+    non-terminal matrix still makes all six unhealthy scenarios non-healthy; the separate
+    terminal probe still gives only the capture credential its server-authored microphone-denial
+    status. `iteration-06` scope wording now correctly links that distinct terminal evidence.
+    The probes remain deterministic local `TestClient` evidence, not browser-prompt or deployed
+    production proof. Acceptance is now evidenced; await the required independent reviewer.

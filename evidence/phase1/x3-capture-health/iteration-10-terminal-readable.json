@@ -144,7 +144,7 @@
               "state": "capturing"
             }
           },
-          "last_seen_monotonic_ns": 2254932122012291,
+          "last_seen_monotonic_ns": 2255062719085291,
           "schema": "moss-live-helper-health.v1",
           "sent_monotonic_ns": 10,
           "sequence": 0,
