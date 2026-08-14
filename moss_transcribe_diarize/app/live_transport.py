@@ -5,7 +5,7 @@ import base64
 import binascii
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Mapping
 
 from starlette.requests import Request
 
@@ -98,7 +98,11 @@ def attach_live_routes(
         v2_mixers=v2_mixers,
         tapes=tapes,
         helper_presence=helper_presence,
-        access=access,
+        # Terminal cleanup releases media state, but the capture owner retains the tiny
+        # authorization binding needed to read the final server-authored snapshot. The stop
+        # and abort routes use the same contract; view grants still expire through the runtime
+        # lifecycle resolver below.
+        access=None,
         abort_mono=runtime.abort,
     )
     app.state.live_v2_sessions = v2_sessions
@@ -413,7 +417,6 @@ def attach_live_routes(
                     tapes.release(session_id)
                     helper_failures.release(session_id)
                     helper_presence.release(session_id)
-                    access.release_session(session_id)
                     status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
                     failure["snapshot"] = _snapshot_payload(runtime, session_id)
                     failure["v2_session"] = v2_snapshot.to_dict()
@@ -426,7 +429,6 @@ def attach_live_routes(
             tapes.release(session_id)
             helper_failures.release(session_id)
             helper_presence.release(session_id)
-            access.release_session(session_id)
             release_v2_on_error = False
             response = {"snapshot": stopped.to_dict()}
             if v2_snapshot is not None:
@@ -505,7 +507,6 @@ def attach_live_routes(
                 tapes.release(session_id)
             helper_failures.release(session_id)
             helper_presence.release(session_id)
-            access.release_session(session_id)
             return {"snapshot": snapshot.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -734,6 +735,7 @@ def _snapshot_response(
     since_version: int | None = None,
 ) -> dict[str, Any]:
     snapshot = runtime.snapshot(session_id, since_version=since_version)
+    terminal_session_status, terminal_lane_failures = _terminal_capture_facts(snapshot)
     presence = helper_presence.snapshot(session_id)
     v2_session = _v2_snapshot(v2_sessions, session_id)
     observations = _capture_observation_snapshot(capture_observations, session_id)
@@ -750,8 +752,34 @@ def _snapshot_response(
                 frame_samples=runtime.descriptor.frame_samples,
                 sample_rate=runtime.descriptor.sample_rate,
             ),
+            terminal_session_status=terminal_session_status,
+            terminal_lane_failures=terminal_lane_failures,
         ).to_dict(),
     }
+
+
+def _terminal_capture_facts(
+    snapshot: Any,
+) -> tuple[str | None, Mapping[str, str] | None]:
+    if snapshot is None:
+        return None, None
+    terminal_failure = snapshot.terminal_failure
+    if terminal_failure is not None:
+        detail = terminal_failure.detail
+        lane_failures = detail.get("lane_failures") if isinstance(detail, Mapping) else None
+        if isinstance(lane_failures, Mapping):
+            return (
+                "failed",
+                {
+                    str(lane): code
+                    for lane, code in lane_failures.items()
+                    if isinstance(lane, str) and isinstance(code, str) and code
+                },
+            )
+        return "failed", None
+    if snapshot.session.status in {"closed", "aborted", "failed"}:
+        return snapshot.session.status, None
+    return None, None
 
 
 def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str, Any] | None:

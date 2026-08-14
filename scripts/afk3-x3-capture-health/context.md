@@ -30,8 +30,8 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
 - [x] The real route probe proves that each unhealthy case avoids the healthy recording claim:
   missing system lane, stale post-frame arrival, all-silent frames, sustained sequence rejects,
   retryable backpressure, and a server-reported failed lane.
-- [ ] Terminal stop/failure preserves a client-readable server-authored reason, including a
-  microphone-permission denial.
+- [x] Terminal stop/failure preserves a capture-owner-readable server-authored status, including
+  a microphone-permission denial; terminal view authority remains revoked.
 - [x] `.venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py` passes, and
   the committed re-runnable route probe plus raw output live under
   `evidence/phase1/x3-capture-health/`.
@@ -121,9 +121,16 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    probe and NOTES are adjacent. x6 completed a separate runtime-terminal snapshot fix on
    `afk3/x6-terminal-visibility`, but it is not in `dev` and does not solve this helper-abort plus
    access-release path.
-10. **Next — implement and prove one terminal-reason response contract:** the PRD permits
-    preserving terminal readability or returning the server-authored reason on the 403. Use the
-    iteration-09 route fact to choose the narrowest transport contract, add a real-route
-    regression for microphone denial, and ensure its response contains no credential material.
-    Then wait for reviewer reconciliation of x6/current `dev`, merge only `dev`, and rerun the
-    focused gate on that merged result.
+10. **Done (iteration 10):** terminal media teardown now preserves the capture owner's tiny
+    session-authorization binding through helper failure, clean stop, abort, and failed v2 stop;
+    runtime lifecycle still rejects the view credential. The snapshot projects any runtime
+    terminal lane failure before missing helper/v2 state, so microphone denial returns
+    `capture_phase: failed` and the server-owned Chrome permission instruction rather than a
+    403. Real-route regressions prove helper failure (capture 200/view 401/no credential fields)
+    and clean-stop readability; v2 terminal writes return their existing 409 and legacy writes
+    their existing terminal 429. The committed raw probe is
+    `evidence/phase1/x3-capture-health/iteration-10-terminal-readable.json`; focused validation
+    passed (54 tests, 327 subtests) and preflight passed.
+11. **Next — reconcile only current `dev`, then validate the merged result:** x6's separate
+    runtime-terminal branch is still not in `dev`; wait for reviewer reconciliation, merge only
+    `dev`, and rerun the focused gate plus both committed route probes on that exact merged head.

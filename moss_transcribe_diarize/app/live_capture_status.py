@@ -253,6 +253,8 @@ def project_live_capture_status(
     observations: LiveCaptureObservationSnapshot | None = None,
     policy: LiveCaptureHealthPolicy | None = None,
     monotonic_ns: Callable[[], int] | None = None,
+    terminal_session_status: str | None = None,
+    terminal_lane_failures: Mapping[str, str] | None = None,
 ) -> LiveCaptureStatus:
     """Fuse helper and v2 server facts into the client-facing capture judgment.
 
@@ -260,6 +262,13 @@ def project_live_capture_status(
     Known codes get actionable copy here; future native or browser codes use a stable generic
     fallback instead of being rejected or leaked into the UI.
     """
+
+    terminal_status = _terminal_capture_status(
+        terminal_session_status,
+        terminal_lane_failures,
+    )
+    if terminal_status is not None:
+        return terminal_status
 
     if presence is None:
         return LiveCaptureStatus("starting", "Waiting for audio capture to start.")
@@ -322,14 +331,49 @@ def project_live_capture_status(
         return LiveCaptureStatus(phase, _HELPER_STATUS_LINES[presence.state])
 
     not_failed, lane, code = sorted_issues[0]
+    return LiveCaptureStatus(
+        phase,
+        _issue_status_line(lane, code, is_failed=not not_failed, continuing=True),
+    )
+
+
+def _terminal_capture_status(
+    terminal_session_status: str | None,
+    terminal_lane_failures: Mapping[str, str] | None,
+) -> LiveCaptureStatus | None:
+    if terminal_session_status not in {"closed", "aborted", "failed"}:
+        return None
+    failures = terminal_lane_failures or {}
+    if failures:
+        lane, code = sorted(failures.items())[0]
+        return LiveCaptureStatus(
+            "failed",
+            _issue_status_line(lane, code, is_failed=True, continuing=False),
+        )
+    if terminal_session_status == "closed":
+        return LiveCaptureStatus("failed", "Audio capture stopped.")
+    return LiveCaptureStatus("failed", "Audio capture failed.")
+
+
+def _issue_status_line(
+    lane: str,
+    code: str,
+    *,
+    is_failed: bool,
+    continuing: bool,
+) -> str:
     status_line = _FAILURE_STATUS_LINES.get(code)
     if isinstance(status_line, dict):
-        status_line = status_line[lane]
-    if status_line is None:
-        label = "Microphone" if lane == "microphone" else "Shared audio"
-        condition = "is degraded" if not_failed else "failed"
-        status_line = f"{label} capture {condition}. The session is continuing."
-    return LiveCaptureStatus(phase, status_line)
+        if not continuing and code == "browser_track_ended":
+            label = "Microphone" if lane == "microphone" else "Shared audio"
+            return f"{label} audio stopped."
+        return status_line[lane]
+    if status_line is not None:
+        return status_line
+    label = "Microphone" if lane == "microphone" else "Shared audio"
+    condition = "failed" if is_failed else "is degraded"
+    suffix = " The session is continuing." if continuing else ""
+    return f"{label} capture {condition}.{suffix}"
 
 
 def _capture_session_id(value: str) -> None:

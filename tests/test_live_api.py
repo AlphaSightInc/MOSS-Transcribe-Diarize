@@ -647,7 +647,7 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(aborted.json()["snapshot"]["session"]["failure_reason"], "caller cancelled")
 
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
-            self.assertEqual(rejected.status_code, 403)
+            self.assertEqual(rejected.status_code, 429)
 
     def test_clean_stop_immediately_revokes_view_authority(self):
         from moss_transcribe_diarize.app.server import create_app
@@ -676,6 +676,11 @@ class LiveApiTest(unittest.TestCase):
             stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
             self.assertEqual(stopped.status_code, 200)
             self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "closed")
+
+            capture_terminal = client.get(f"/api/live/sessions/{session_id}/snapshot")
+            self.assertEqual(capture_terminal.status_code, 200)
+            self.assertEqual(capture_terminal.json()["capture_phase"], "failed")
+            self.assertEqual(capture_terminal.json()["status_line"], "Audio capture stopped.")
 
             self.assertEqual(
                 viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
@@ -1535,7 +1540,7 @@ class LiveApiTest(unittest.TestCase):
                 f"/api/live/sessions/{session_id}/frames",
                 json=v2_frame_payload(1, 1, lane="microphone"),
             )
-            self.assertEqual(rejected_after_stop.status_code, 403)
+            self.assertEqual(rejected_after_stop.status_code, 409)
 
     def test_v2_failed_terminal_stop_releases_registry_entry(self):
         from fastapi.testclient import TestClient
@@ -1866,7 +1871,7 @@ class LiveApiTest(unittest.TestCase):
             )
 
             self.assertEqual(heartbeat.status_code, 200)
-            self.assertEqual(late_frame.status_code, 403)
+            self.assertEqual(late_frame.status_code, 409)
             self.assertNotIn(session_id, app.state.live_v2_sessions)
             self.assertNotIn(session_id, app.state.live_capture_observations)
             with self.assertRaises(KeyError):
@@ -1876,6 +1881,48 @@ class LiveApiTest(unittest.TestCase):
                 app.state.live_runtime.snapshot(session_id).session.status,
                 "aborted",
             )
+
+    def test_terminal_helper_failure_keeps_capture_reason_readable_after_teardown(self):
+        """The capture owner may read the final server status, but the view grant still dies."""
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            created = client.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+
+            terminal = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(
+                    state="failed",
+                    failed_lane="microphone",
+                    failure_code="browser_microphone_permission_denied",
+                ),
+            )
+            capture_snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot")
+            viewer_snapshot = viewer.get(f"/api/live/sessions/{session_id}/snapshot")
+
+            self.assertEqual(terminal.status_code, 200)
+            self.assertEqual(capture_snapshot.status_code, 200)
+            self.assertEqual(viewer_snapshot.status_code, 401)
+            body = capture_snapshot.json()
+            self.assertEqual(body["snapshot"]["session"]["status"], "aborted")
+            self.assertEqual(body["capture_phase"], "failed")
+            self.assertEqual(
+                body["status_line"],
+                "Microphone access was denied. Allow microphone access in Chrome and try again.",
+            )
+            rendered = json.dumps(body, sort_keys=True)
+            self.assertNotIn("view_token", rendered)
+            self.assertNotIn("device_token", rendered)
 
     def test_stale_lease_callback_after_renewal_does_not_abort_live_session(self):
         from moss_transcribe_diarize.app.server import create_app
