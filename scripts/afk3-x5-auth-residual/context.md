@@ -24,8 +24,9 @@ python3 scripts/afk-guardrails/preflight.py x5-auth-residual
 
 ## Acceptance checklist
 
-- [ ] Merge current `dev` into this branch before final validation; do not re-implement or
-  revert its reserved-`device_id`, whitespace-token, or token-file-permission fixes.
+- [x] Current `dev` is already an ancestor of this branch (`git merge-base --is-ancestor dev
+  HEAD` returned 0 before final validation); its reserved-`device_id`, whitespace-token, and
+  token-file-permission fixes remain intact.
 - [x] Shared-principal revocation survives a fresh registry start. The revocation marker persists
   without the configured bearer or its digest; `iteration-3-shared-revocation-restart.json` is the
   committed raw probe output.
@@ -39,19 +40,19 @@ python3 scripts/afk-guardrails/preflight.py x5-auth-residual
   fixes on the real wire. `iteration-6-uvicorn-wire-auth.json` records reserved pairing 403,
   a persisted pre-fix reserved-id bearer 401, raw `Bearer ` 401, and whitespace token-file
   refusal before startup.
-- [ ] Pass `.venv/bin/pytest -q tests/test_live_auth.py tests/test_live_api.py
-  tests/test_live_service_deployment.py tests/test_speaker_identity_provider.py` after merging
-  `dev`, with committed raw artifacts and a criterion-by-criterion `progress.txt` summary.
+- [x] Required four-file gate passed against this `dev`-containing branch: 161 passed, 1 warning,
+  355 subtests. Preflight also passed; the criterion-by-criterion summary and committed raw
+  probe artifacts are in `progress.txt`.
 
 ## Current base
 
-`dev` is already an ancestor of `HEAD` through merge commit `b8aaa13`; this iteration confirmed
-that relation and `PREFLIGHT OK`. The Phase 1 posture remains a single shared-token trust domain;
-this ticket hardens operator revocation rather than restoring client-asserted identity.
+`dev` remains an ancestor of `HEAD` through merge commit `b8aaa13`; iteration 7 rechecked that
+relation immediately before the final gate. The Phase 1 posture remains a single shared-token
+trust domain; this ticket hardens operator revocation rather than restoring client-asserted
+identity.
 
 ## Ranked candidates
-1. Merge current `dev` if it has advanced, then run the required four-file pytest gate and
-   preflight on that merged result; record the criterion-by-criterion final outcome.
+No open candidates. The acceptance gate is satisfied; await orchestrator review and reconciliation.
 
 ## Completed this run
 
@@ -71,3 +72,7 @@ this ticket hardens operator revocation rather than restoring client-asserted id
   pairing is refused, a pre-fix persisted `shared-token` credential is no longer authoritative,
   and h11-parsed whitespace bearer input reaches a 401. It does not claim production deployment
   verification or general TLS-client coverage.
+- Final integration evidence: immediately before the gate, `dev` (`23afb6d`) was an ancestor of
+  the branch (`git merge-base --is-ancestor dev HEAD` -> 0). The required four-file suite then
+  passed with 161 tests, 355 subtests, and one known FastAPI/TestClient deprecation warning;
+  preflight returned `PREFLIGHT OK`.
