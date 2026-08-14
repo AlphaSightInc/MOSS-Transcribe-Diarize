@@ -117,7 +117,7 @@ def changed_paths(base: str) -> list[str]:
 
 # Paths any ticket may touch: its own loop state, its own evidence, and shared docs.
 ALWAYS_ALLOWED = (
-    "scripts/afk-",
+    "scripts/afk",  # any loop's own state dir: afk-tN, afk2-<ticket>, afk-guardrails
     "evidence/phase1/",
     "docs/",
     ".wayfinder/",
