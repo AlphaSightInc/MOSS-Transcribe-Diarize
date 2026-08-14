@@ -14,11 +14,11 @@
       "route_descriptor_sample_rate": 16000
     },
     "overflow_is_reported_truthfully": {
-      "admitted_frames_flagged_discontinuous": 44,
+      "admitted_frames_flagged_discontinuous": 42,
       "frame_capacity": 4,
       "heartbeat_zero_mutant_dropped_frames": {
-        "microphone": 31,
-        "system": 31
+        "microphone": 32,
+        "system": 32
       },
       "heartbeat_zero_mutant_last_heartbeat_lanes": {
         "microphone": {
@@ -38,30 +38,30 @@
       },
       "lane_counters": {
         "microphone": {
-          "discontinuities": 22,
-          "dropped_frames": 31,
+          "discontinuities": 21,
+          "dropped_frames": 32,
           "emitted": 59,
           "errors": 0,
           "frame_capacity": 4,
           "http": {
-            "200": 28
+            "200": 27
           },
-          "next_wire_sequence": 28,
+          "next_wire_sequence": 27,
           "queued_at_end": 0,
-          "sent": 28
+          "sent": 27
         },
         "system": {
-          "discontinuities": 22,
-          "dropped_frames": 31,
+          "discontinuities": 21,
+          "dropped_frames": 32,
           "emitted": 59,
           "errors": 0,
           "frame_capacity": 4,
           "http": {
-            "200": 28
+            "200": 27
           },
-          "next_wire_sequence": 28,
+          "next_wire_sequence": 27,
           "queued_at_end": 0,
-          "sent": 28
+          "sent": 27
         }
       },
       "last_heartbeat_lanes": {
@@ -119,15 +119,15 @@
         "lane_summaries": {
           "microphone": {
             "accepted_frames": 49,
-            "accepted_minus_elapsed_expected": -1,
+            "accepted_minus_elapsed_expected": 0,
             "accepted_minus_emitted": 0,
-            "elapsed_expected_frames": 50,
-            "elapsed_ms": 3070,
+            "elapsed_expected_frames": 49,
+            "elapsed_ms": 2998,
             "emitted_frames": 49,
-            "emitted_minus_elapsed_expected": -1,
+            "emitted_minus_elapsed_expected": 0,
             "first_sequence": 0,
             "last_sequence": 48,
-            "max_queue_depth_at_enqueue": 19,
+            "max_queue_depth_at_enqueue": 20,
             "queue_capacities": [
               320
             ],
@@ -138,15 +138,15 @@
           },
           "system": {
             "accepted_frames": 49,
-            "accepted_minus_elapsed_expected": -1,
+            "accepted_minus_elapsed_expected": 0,
             "accepted_minus_emitted": 0,
-            "elapsed_expected_frames": 50,
-            "elapsed_ms": 3069,
+            "elapsed_expected_frames": 49,
+            "elapsed_ms": 2998,
             "emitted_frames": 49,
-            "emitted_minus_elapsed_expected": -1,
+            "emitted_minus_elapsed_expected": 0,
             "first_sequence": 0,
             "last_sequence": 48,
-            "max_queue_depth_at_enqueue": 19,
+            "max_queue_depth_at_enqueue": 20,
             "queue_capacities": [
               320
             ],
@@ -155,6 +155,38 @@
               48
             ]
           }
+        }
+      },
+      "g7_cadence_baseline": {
+        "microphone": {
+          "accepted_frames": 49,
+          "accepted_minus_elapsed_expected": 0,
+          "elapsed_expected_frames": 49,
+          "elapsed_ms": 2998,
+          "frame_period_ms": 62.5
+        },
+        "system": {
+          "accepted_frames": 49,
+          "accepted_minus_elapsed_expected": 0,
+          "elapsed_expected_frames": 49,
+          "elapsed_ms": 2998,
+          "frame_period_ms": 62.5
+        }
+      },
+      "g7_cadence_inflight_drop_mutant": {
+        "microphone": {
+          "accepted_frames": 25,
+          "accepted_minus_elapsed_expected": -24,
+          "elapsed_expected_frames": 49,
+          "elapsed_ms": 2999,
+          "frame_period_ms": 62.5
+        },
+        "system": {
+          "accepted_frames": 25,
+          "accepted_minus_elapsed_expected": -24,
+          "elapsed_expected_frames": 49,
+          "elapsed_ms": 2998,
+          "frame_period_ms": 62.5
         }
       },
       "inflight_drop_mutant": {
@@ -194,12 +226,12 @@
         "lane_summaries": {
           "microphone": {
             "accepted_frames": 25,
-            "accepted_minus_elapsed_expected": -25,
+            "accepted_minus_elapsed_expected": -24,
             "accepted_minus_emitted": 0,
-            "elapsed_expected_frames": 50,
-            "elapsed_ms": 3068,
+            "elapsed_expected_frames": 49,
+            "elapsed_ms": 2999,
             "emitted_frames": 25,
-            "emitted_minus_elapsed_expected": -25,
+            "emitted_minus_elapsed_expected": -24,
             "first_sequence": 0,
             "last_sequence": 48,
             "max_queue_depth_at_enqueue": 1,
@@ -213,12 +245,12 @@
           },
           "system": {
             "accepted_frames": 25,
-            "accepted_minus_elapsed_expected": -25,
+            "accepted_minus_elapsed_expected": -24,
             "accepted_minus_emitted": 0,
-            "elapsed_expected_frames": 50,
-            "elapsed_ms": 3069,
+            "elapsed_expected_frames": 49,
+            "elapsed_ms": 2998,
             "emitted_frames": 25,
-            "emitted_minus_elapsed_expected": -25,
+            "emitted_minus_elapsed_expected": -24,
             "first_sequence": 0,
             "last_sequence": 48,
             "max_queue_depth_at_enqueue": 1,
@@ -687,6 +719,8 @@
     "forced_overflow_increments_dropped_frames": true,
     "forced_overflow_is_reported_on_the_heartbeat_route": true,
     "forced_overflow_marks_discontinuity_on_the_next_admitted_frame": true,
+    "g7_cadence_assertion_fails_on_the_historical_drop_guard": true,
+    "g7_cadence_assertion_holds_on_current_page": true,
     "g7_frame_samples_argument_is_required": true,
     "g7_route_advertises_production_frame_samples": true,
     "heartbeat_truthfulness_check_fails_when_the_report_is_hardcoded": true,

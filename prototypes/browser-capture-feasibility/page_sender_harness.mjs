@@ -286,6 +286,10 @@ async function driveWorklet(ctx, lanes, config) {
   const framePeriodMs = (frameSamplesOf(config) / config.descriptor.sample_rate) * 1000;
   const emitted = { system: 0, microphone: 0 };
   const startedWallMs = Date.now();
+  // Self-correcting cadence. A real AudioWorklet is driven by the audio sample clock, so its
+  // frame emission does not drift when the main thread is busy; a naive `sleep(period)` loop
+  // does, and that drift would show up as a fake cadence deficit on a loaded machine.
+  const nextDeadline = (index) => startedWallMs + Math.round((index + 1) * framePeriodMs);
   for (let i = 0; i < config.frames; i++) {
     for (const lane of ["system", "microphone"]) {
       const st = lanes[lane];
@@ -301,7 +305,7 @@ async function driveWorklet(ctx, lanes, config) {
       });
       emitted[lane] += 1;
     }
-    await sleep(framePeriodMs);
+    await sleep(Math.max(0, nextDeadline(i) - Date.now()));
   }
   return { emitted, worklet_elapsed_ms: Date.now() - startedWallMs, frame_period_ms: framePeriodMs };
 }

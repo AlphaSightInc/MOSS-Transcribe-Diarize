@@ -126,6 +126,37 @@ def _last_heartbeat_lanes(run: dict) -> dict:
     return heartbeats[-1].get("lanes", {})
 
 
+def _g7_cadence(run: dict) -> dict:
+    """Score a harness run with probe_g7_hidden_tab's OWN cadence math.
+
+    G7's assertion reads route ACCEPTANCES joined to post-ACK page telemetry, exactly the
+    join `production_route_server.admitted_frames` performs. Rebuilding that join here is
+    what lets the G7 assertion -- not just its slow-POST twin -- be falsified.
+    """
+    import probe_g7_hidden_tab as g7
+
+    descriptor = run["config"]["descriptor"]
+    telemetry = run["server"]["telemetry"]
+    out = {}
+    for lane in LANES:
+        joined = []
+        for accepted in run["server"]["acceptances"]:
+            if accepted["lane"] != lane:
+                continue
+            emitted = next(
+                (
+                    record for record in telemetry
+                    if record.get("lane") == lane
+                    and record.get("wire_sequence") == accepted["sequence"]
+                ),
+                None,
+            )
+            if emitted is not None:
+                joined.append({**accepted, "client_wall_ms": emitted["client_wall_ms"]})
+        out[lane] = g7._admission_cadence(joined, descriptor)
+    return out
+
+
 def _g7_geometry() -> dict:
     """Check the G7 probe's production-geometry contract without launching a browser."""
     import probe_g7_hidden_tab as g7
@@ -181,10 +212,14 @@ def _run(node_bin: str) -> dict:
     )
     baseline_score = _score_transport(baseline)
     defect_score = _score_transport(defect)
+    baseline_g7 = _g7_cadence(baseline)
+    defect_g7 = _g7_cadence(defect)
     findings["p0_frame_loss_gate"] = {
         "baseline": {**baseline_score, "lane_counters": _lane_counters(baseline)},
         "inflight_drop_mutant": {**defect_score, "lane_counters": _lane_counters(defect)},
         "mutation_applied": defect["mutation_applied"],
+        "g7_cadence_baseline": baseline_g7,
+        "g7_cadence_inflight_drop_mutant": defect_g7,
     }
 
     # --- 2. a forced overflow must be reported truthfully --------------------------------
@@ -259,6 +294,13 @@ def _run(node_bin: str) -> dict:
         ],
         # The defect really did lose audio, and really was invisible in the lane counters --
         # this is what makes the previous assertion a meaningful catch rather than noise.
+        # The G7 twin of that assertion, scored with probe_g7_hidden_tab's own function.
+        "g7_cadence_assertion_holds_on_current_page": all(
+            abs(baseline_g7[lane]["accepted_minus_elapsed_expected"]) <= 1 for lane in LANES
+        ),
+        "g7_cadence_assertion_fails_on_the_historical_drop_guard": all(
+            abs(defect_g7[lane]["accepted_minus_elapsed_expected"]) > 1 for lane in LANES
+        ),
         "historical_drop_guard_loses_audio_silently": (
             defect["scenario"]["lanes"]["system"]["dropped_frames"] == 0
             and defect["scenario"]["lanes"]["system"]["sent"]
