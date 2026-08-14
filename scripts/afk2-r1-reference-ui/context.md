@@ -1,6 +1,6 @@
 # Context — r1-reference-ui
 
-Iteration 9. The binding acceptance checklist has been reconciled against the
+Iteration 10. The binding acceptance checklist has been reconciled against the
 PRD, charter, T-02, T-05, T-07, and T-10. The first visible reference-shell
 slice and reduced transcript component now replace the stub; the full port remains open.
 
@@ -60,8 +60,11 @@ slice and reduced transcript component now replace the stub; the full port remai
   honestly: 1440x900 is `11.5220–11.5613%` differing / `3.1278%` largest region; 1280x800 is
   `17.0370–17.1004%` / `7.5531%`, versus the charter's `2%` / `1%`. The settled raw artifacts
   are `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-9-settled-{a,b}/`; superseded
-  iteration-7 timing-sensitive output remains historical evidence only.
-- **BLOCKED — supervisor fidelity ruling required.** The settled diagnostic attributes current
+  iteration-7 timing-sensitive output remains historical evidence only. The identically configured
+  iteration-10 rerun remained RED: 1440x900 is 11.5613% differing / 3.1278% largest region and
+  1280x800 is 17.0361% / 7.5531%; its raw report, screenshots, and masks are under
+  `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-10-blocked/`.
+- **TERMINAL BLOCKED — supervisor fidelity ruling required.** The fresh diagnostic attributes current
   unmasked difference inside the shared control-panel box alone to `5.8448–5.8454%` of the
   1440x900 viewport and `6.4544%` at 1280x800; the shared transcript-panel box adds
   `5.5985–5.6370%` and `7.0905–7.1539%`. Those boxes are measurement regions, not proposed
@@ -72,7 +75,10 @@ slice and reduced transcript component now replace the stub; the full port remai
   canonical rule: (a) amend charter §5 with declared T-05 dropped-control exemption selectors,
   (b) revise T-05/C2 to retain those reference controls, or (c) approve a different canonical
   Phase-1 visual oracle. Evidence and re-runnable probe: `tests/reference_ui_screenshot_diff.py`,
-  `tests/fixtures/reference_ui_screenshot_diff.json`, and the two iteration-9 reports.
+  `tests/fixtures/reference_ui_screenshot_diff.json`, the two iteration-9 reports, and the
+  iteration-10 report. The loop cannot make this binding decision. Every other remaining candidate
+  is also externally blocked: the ToastLayer needs r2's real adapter callbacks, and poller wiring
+  needs r2's session-creation client. Do not invent either implementation on r1.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
   Vitest: 12 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
@@ -131,17 +137,13 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
   `npm --prefix frontend test`, and r1 preflight after merging current `dev`;
   publish a criterion-by-criterion issue comment that also names gaps in coverage.
 
-## Ranked candidates
+## Remaining work / stop condition
 
-1. **BLOCKED on the explicit supervisor fidelity ruling above.** Do not change the mask,
-   reintroduce excluded controls, or claim the screenshot gate can pass until that rule selects
-   the canonical oracle/exemptions.
-2. After that ruling, port the remaining retained reference surface (starting with the
-   Topbar/ControlPanel layout), preserving excluded controls as excluded and using the committed
-   probe to measure only the authorized oracle.
-3. Port the generic `ToastLayer` only when a live/file adapter instantiates the poller and gives
-   its error/terminal callbacks a real caller; do not add a local substitute toast state or a
-   no-op trigger.
-4. When r2 provides session creation, wire its live client to `createMossSessionPoller()` and
-   retain the T-02 sessionStorage reattach contract; do not invent a second poller or capture
-   health state machine here.
+1. **Supervisor input required:** choose one explicit canonical fidelity rule: (a) amend charter
+   §5 with declared T-05 dropped-control exemption selectors, (b) revise T-05/C2 to retain the
+   reference controls, or (c) approve a different Phase-1 visual oracle. Until then, do not change
+   the mask, reintroduce excluded controls, or claim the screenshot gate can pass.
+2. **r2 input required:** after the ruling, port the remaining retained Topbar/ControlPanel layout
+   against the chosen oracle. `ToastLayer` and `createMossSessionPoller()` integration remain
+   blocked until r2 provides the live/file session-creation client and its real callbacks; r1 must
+   not invent a replacement adapter or capture-health state machine.
