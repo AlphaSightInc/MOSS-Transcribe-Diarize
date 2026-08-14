@@ -1,6 +1,6 @@
 # Context — x3-capture-health
 
-Iteration 5.
+Iteration 6.
 
 Branch `afk3/x3-capture-health` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -83,9 +83,17 @@ python3 scripts/afk-guardrails/preflight.py x3-capture-health
    real-route tests prove reset after accepted voiced audio, abort cleanup, and helper-lease
    cleanup. The focused gate passed: 52 tests, 327 subtests; preflight passed. No threshold or
    user-facing status policy changed.
-6. **Next — measure cadence and recovery before policy:** extend the standing browser-capture or
-   streaming-diarization bench to measure normal frame cadence, a genuine post-frame stall,
-   sustained silence, sequence-gap recovery, and retryable-backpressure recovery on the live
-   route. Record the timing/count distributions and a threshold verdict before making the
-   projection call any condition unhealthy. Terminal-readable failure remains constrained by
-   x6-owned `live_service_runtime.py`; do not edit it from this ticket.
+6. **Done (iteration 6):** the committed local `create_app` route probe invokes authenticated v2
+   frame, heartbeat, and snapshot routes at the measured 8,000-sample / 16 kHz geometry. It
+   records actual server-monotonic cadence, a 2.05 s post-frame stall, four silent frames, four
+   sequence rejects, and four per-lane capacity rejects; accepted route frames reset each condition
+   (with a real peer-lane mixer drain before a capacity retry). The Chrome worklet baseline is
+   visible p95 508.1 ms / hidden p95 506.5 ms, so the verdict is 2,000 ms no-arrival, 32,000
+   consecutive silent samples, or four consecutive classified rejects. Raw output and rerunnable
+   probe are `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json` and its
+   adjacent probe; `docs/design-capture-health-observation-contract.md` records the decision.
+   Terminal-readable failure remains constrained by x6-owned `live_service_runtime.py`.
+7. **Next — apply the measured projection policy:** make `project_live_capture_status()` evaluate
+   the recorded descriptor-derived conditions with an injectable projection clock, then add real
+   `/snapshot` route regressions proving stale, silent, sequence-wedged, and backpressured lanes
+   no longer return the healthy recording claim. Preserve the observed accepted-frame recovery.

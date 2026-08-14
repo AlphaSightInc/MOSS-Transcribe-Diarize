@@ -1,6 +1,6 @@
 # Capture-health observation contract
 
-Status: metadata carrier implemented; user-facing policy remains deferred.
+Status: metadata carrier implemented; threshold verdict recorded, projection policy pending.
 
 ## Problem demonstrated
 
@@ -42,13 +42,27 @@ accept/rejection outcome is known, and passes it to `/snapshot` projection. A li
 releases or expires the observation with the v2 session, including helper-lease expiry, which
 prevents stale observations from leaking across session ids.
 
-## Deliberately deferred policy
+## Measured policy inputs
 
-This proposal does **not** choose a stale-age, silence duration, or rejection-count threshold,
-and does not map the facts to `capture_phase` or product wording. No existing lease duration or
-frame geometry is silently reused as a health threshold. A subsequent prototype must measure
-real browser frame cadence and endpoint recovery, then record the policy verdict before this
-carrier drives a status claim.
+Iteration 6's committed local-route probe and raw output record the policy inputs. The probe
+drives `create_app`'s authenticated production v2 frame, heartbeat, and snapshot routes with the
+Chrome harness's measured descriptor geometry (8,000 samples at 16 kHz). It measures server
+arrival cadence, a post-frame stall, sustained silence, repeated classified sequence/capacity
+rejections, and recovery after the next accepted route frame.
+
+The Chrome worklet harness is the browser-cadence source: visible p95 508.1 ms, hidden p95
+506.5 ms, and a maximum 512.4 ms, with no hidden-tab degradation. The route probe's decision is:
+
+| Server observation | Non-healthy threshold | Why | Recovery fact |
+| --- | ---: | --- | --- |
+| No accepted arrival | 2,000 ms | Four descriptor periods, about 3.9× hidden-tab p95 | Next accepted frame refreshes the server arrival time |
+| Consecutive silence | 32,000 samples | Four 8,000-sample descriptor frames = 2,000 ms | Next voiced accepted frame resets to zero |
+| Sequence rejection | 4 consecutive outcomes | Does not flag one resync, but detects the repeated wedge | Correct accepted frame resets to zero |
+| Retryable backpressure | 4 consecutive outcomes | Does not flag one retry, but detects sustained refusal | Peer-lane drain plus accepted retry resets to zero |
+
+The evidence is `evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json`,
+written by its committed adjacent probe. The next projection change must use these
+descriptor-derived values and inject projection time for a deterministic stale-age regression.
 
 Terminal reason reachability remains x6-owned in `live_service_runtime.py`; this carrier does
 not change terminal cleanup or authorization behaviour.
