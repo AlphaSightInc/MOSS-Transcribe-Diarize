@@ -72,13 +72,20 @@ transient counters and refreshes the server arrival time.
 ## Terminal reason readback observation
 
 Iteration 9's committed local-route probe captures the terminal-helper path that the ordinary
-snapshot projection cannot see after cleanup. A helper heartbeat reports the server-owned
+snapshot projection could not see after cleanup. A helper heartbeat reports the server-owned
 `browser_microphone_permission_denied` code, then the helper-failure coordinator records it in
-the runtime's terminal detail, aborts the mono runtime, and releases helper, v2, mixer, tape,
-and access state. The persisted runtime snapshot says `aborted` / `helper_failed` and still
-contains the typed microphone code, but the next authenticated `/snapshot` returns only `403`
-for the former capture credential (and `401` for the former view credential). Neither response
-contains `capture_phase`, a plain-language status line, or the permission reason.
+the runtime's terminal detail, aborts the mono runtime, and releases helper, v2, mixer and tape
+state. The persisted runtime snapshot says `aborted` / `helper_failed` and still contains the
+typed microphone code. When that cleanup *also* released the access binding — as it did before
+iteration 10 — the next authenticated `/snapshot` returned only `403` for the former capture
+credential (and `401` for the former view credential), and neither response contained
+`capture_phase`, a plain-language status line, or the permission reason.
+
+The probe was rewritten during adversarial review so it performs that `release_session` call
+itself rather than asserting the status code the tree happened to return that day: pinned to the
+old status code it crashed once iteration 10 landed and could no longer regenerate the artifact
+it is cited for. It now records both outcomes on every run, which also isolates the cause — the
+access release, not the media teardown, is what destroys the reason.
 
 The raw output is
 `evidence/phase1/x3-capture-health/iteration-09-terminal-reason.json`, written by its committed
@@ -94,3 +101,25 @@ probe and raw output are `evidence/phase1/x3-capture-health/iteration-10-termina
 and `evidence/phase1/x3-capture-health/iteration-10-terminal-readable.json`: capture receives
 HTTP 200 with `capture_phase: failed` and no credential fields; view receives HTTP 401. This is
 deterministic local-route evidence only, not a browser permission-prompt or deployment result.
+
+The caller's `since_version` cursor gates the transported snapshot and nothing else. The capture
+judgment is read from the session as it is, on every poll. The distinction is not academic: the
+portal polls `/snapshot?since_version=${snapshotVersion}` on every tick, so deriving the terminal
+facts from the cursor-gated result made the reason a one-shot — the second tick saw
+`unchanged: true`, no snapshot, and no helper presence, and answered `starting` / "Waiting for
+audio capture to start." for a session that had already died. Pinned by
+`tests/test_live_api.py::LiveApiTest::test_terminal_capture_reason_survives_the_polling_clients_since_version_tick`
+and by scenario 7 of `evidence/phase1/x3-capture-health/review-01-five-scenario-route-probe.py`.
+
+## Known contract risks
+
+- A clean stop reports `capture_phase: "failed"` with the line "Audio capture stopped.". The
+  reference `CapturePhase` union has no terminal-success value, and its
+  `describeLiveSessionStatus` renders `capture_phase === "failed"` as "Live session failed"
+  before it consults anything else, so a user who stops their own meeting would be told it
+  failed. The line is right; the phase needs an owner decision, and adding a value to that union
+  is not this ticket's to make.
+- Retaining the capture binding through terminal state means `LiveAccessRegistry._sessions` is
+  now emptied only by device revocation. `live_auth.py` is not owned here, so no retention bound
+  was added; the cost is ~2.4 MiB and ~0.45 ms of linear view-token scan at 10,000 retained
+  bindings.

@@ -28,3 +28,119 @@
 [loop 20260814-181455-47615] iteration=11 target=reconcile current dev and validate capture-health acceptance on the exact merged head; files=evidence/phase1/x3-capture-health/iteration-06-live-route-threshold-probe.py,evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json,evidence/phase1/x3-capture-health/iteration-06-live-route-threshold-NOTES.md,evidence/phase1/x3-capture-health/iteration-10-terminal-readable.json,docs/design-capture-health-observation-contract.md,scripts/afk3-x3-capture-health/context.md,scripts/afk3-x3-capture-health/progress.txt; validation="git merge-base --is-ancestor dev HEAD; PYTHONPATH=. .venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py; PYTHONPATH=. .venv/bin/python evidence/phase1/x3-capture-health/iteration-06-live-route-threshold-probe.py --write evidence/phase1/x3-capture-health/iteration-06-live-route-thresholds.json; PYTHONPATH=. .venv/bin/python evidence/phase1/x3-capture-health/iteration-10-terminal-readable-probe.py --write evidence/phase1/x3-capture-health/iteration-10-terminal-readable.json; python3 scripts/afk-guardrails/preflight.py x3-capture-health; git diff --check" => dev 23afb6d is already ancestor of HEAD c229ec1; 54 passed, 1 warning, 327 subtests; both local route probes PASS; PREFLIGHT OK / diff clean; evidence=refreshed iteration-06 six-scenario matrix and iteration-10 microphone-denial readback JSON; learned=acceptance has deterministic server-route evidence at the existing merged head, and iteration-06 scope text falsely assigned terminal readability to x6 despite the separate iteration-10 proof; next=await independent review; browser permission prompt and deployment remain uncovered.
 
 [loop 20260814-181455-47615] complete at iteration 11
+
+================================================================================
+ADVERSARIAL REVIEW — 2026-08-14, independent reviewer, on `git merge --no-edit dev`
+(dev f6353eb) merged into afk3/x3-capture-health at 1262da5.
+================================================================================
+
+VERDICT: PASS-WITH-DEFECTS as received. One product-visible defect found and fixed here;
+one stale evidence probe found and repaired; two behaviour changes reported, not fixed.
+
+CRITERION BY CRITERION — what proves it
+
+1. "Dead code at the route" (PRD defect 1). Reproduced on a `git archive dev` export with
+   evidence/phase1/x3-capture-health/review-01-five-scenario-route-probe.py --observe-only:
+   all five scenarios answered "Capturing microphone and shared audio." through the real
+   authenticated /snapshot route. Raw dev output committed as
+   review-01-dev-pre-branch-reproduction.json. The same file, unchanged, passes on this
+   branch (review-01-five-scenario-route.json) and again over a real TLS uvicorn socket on
+   a private address (review-02-live-uvicorn-wire.json). Wiring additionally proven by
+   mutation: dropping v2_session, observations or terminal_lane_failures at the call site in
+   live_transport._snapshot_response is caught by the focused gate AND by review-01.
+
+2. "Fuses one fact out of six" (PRD defect 2). All five named scenarios verified through the
+   real route, in both TestClient and live-uvicorn form, with a healthy control that still
+   reports healthy — without the control, an implementation that never emitted the healthy
+   line would pass and prove nothing. Recency genuinely decays: review-01 and review-02 use a
+   real wall-clock stall against the descriptor-derived threshold, not a patched clock.
+
+3. "Every failed outcome is unreachable" (PRD defect 3). Reproduced (403, no server string)
+   and fixed. iteration-09's probe now reproduces the pre-branch mechanism itself, so the
+   causal claim — it is the access release, not the media teardown, that destroys the reason —
+   is re-runnable rather than a historical assertion that crashes.
+
+4. "awaiting_audio" (PRD note). Present in the CapturePhase union and reachable through the
+   route: scenario 1 returns capture_phase "awaiting_audio" / "Waiting for shared audio to
+   arrive." on both transports.
+
+DEFECT FOUND AND FIXED DURING REVIEW
+
+The terminal reason was a one-shot. live_transport._snapshot_response derived the terminal
+capture facts from the since_version-gated snapshot, so the polling client's *next* tick —
+carrying the version it had just been handed — got unchanged=true, no snapshot, and no helper
+presence (teardown had released it), and the projection answered capture_phase "starting" /
+"Waiting for audio capture to start." for a session that had already died. live_portal.py
+polls exactly that cursor on every tick, so in the shipped client the readable reason would
+have survived one tick before being replaced by a confident wrong answer — worse than the 403
+it replaced. Fixed by reading the session as it is and applying the caller's cursor only to
+the transported snapshot. Regression test:
+tests/test_live_api.py::LiveApiTest::test_terminal_capture_reason_survives_the_polling_clients_since_version_tick
+(fails 'starting' != 'failed' with the fix reverted). Scenario 7 of review-01 covers the same
+thing at the artifact level, on both transports.
+
+WHAT THE TESTS DO NOT COVER
+
+- No browser. Nothing here exercises a real Chrome microphone permission prompt, a real
+  getDisplayMedia rejection, a worklet, or a hidden tab. Every "browser_*" failure code is
+  injected as a helper heartbeat field, so the tests prove the server's handling of a code,
+  never that Chrome emits that code in that situation.
+- No deployed host. Everything runs in a local process; review-02 starts its own uvicorn.
+  Nothing was sent to moss-live-web, moss-vllm or moss-web. Deployment behaviour, TLS
+  termination as configured on the GPU host, and multi-process behaviour are unverified —
+  and would not survive extra Uvicorn workers, since all of this state is process-local.
+- No real audio. Frames are zero-filled PCM and `silent` is a client-asserted flag the server
+  trusts. The server cannot tell a silent room from a muted input from a lying client; the
+  silence status line is a report of what the client claimed, not an acoustic measurement.
+- Thresholds are not validated against human judgment. Four descriptor frame periods for
+  stale and for sustained silence, and four classified rejections, come from
+  iteration-06's local route measurement plus a committed Chrome worklet cadence baseline.
+  Nobody has checked that 2 s of stale audio is the point at which a user wants to be told,
+  and no false-positive rate is measured for a real meeting with pauses in it.
+- Lane precedence is untested for ties. When both lanes are simultaneously unhealthy the
+  projection reports the alphabetically first lane (microphone), and only one condition per
+  response; nothing asserts that this is the right one to surface.
+- Concurrency is untested. LiveCaptureObservationRegistry takes an RLock, but no test drives
+  concurrent ingress and snapshot reads against it.
+- The clean-stop phase is not asserted against the reference UI. See below.
+
+REPORTED, NOT FIXED — needs an owner decision
+
+a. Clean stop reports capture_phase "failed". _terminal_capture_status maps a session status of
+   "closed" to phase "failed" with the line "Audio capture stopped.". The reference UI's
+   CapturePhase union is starting|capture_alive|awaiting_audio|recording|failed and
+   describeLiveSessionStatus renders capture_phase === "failed" as "Live session failed" with an
+   error tone, before it looks at anything else. A user who stops their own meeting would be
+   told it failed. The line is right; the phase is not, and there is no terminal-success value
+   in the reference vocabulary to use instead. Not fixed here because inventing a sixth phase
+   value changes a contract this ticket does not own and collides with x6.
+
+b. Access bindings are now retained forever. Removing access.release_session from the terminal
+   cleanup (live_helper_failure access=None) and from the stop/abort routes is what makes the
+   reason readable, but LiveAccessRegistry._sessions is now only ever emptied by device
+   revocation: measured 10 retained entries after 10 clean stops. Cost is small but unbounded —
+   10,000 retained bindings is ~2.4 MiB and adds ~0.45 ms to the linear view-token scan that
+   runs on every view-authorized request. live_auth.py is not owned by this ticket, so no
+   retention bound was added. Post-terminal, the owning capture credential can also still POST
+   /heartbeat (200, re-registering helper presence on a dead session) and re-POST /abort (200);
+   both were 403 before.
+
+c. Post-terminal mono frames now return 429, not 403. The v1 frame route re-raises the runtime's
+   terminal failure, which _failure_status maps to 429 for kind transport_pacing regardless of
+   the failure's own retryable=false. 429 tells a client to back off and retry a session that
+   can never accept another frame. The v2 lane route correctly returns 409. Pre-existing
+   mapping, newly reachable; three existing tests were edited from 403 to 429/409 to accept it.
+
+COMMANDS RUN IN THIS REVIEW
+
+  PYTHONPATH=. .venv/bin/pytest -q tests/test_live_capture_status.py tests/test_live_api.py
+  PYTHONPATH=. .venv/bin/pytest -q
+  PYTHONPATH=. .venv/bin/python evidence/phase1/x3-capture-health/review-01-five-scenario-route-probe.py --write ...
+  PYTHONPATH=. .venv/bin/python evidence/phase1/x3-capture-health/review-02-live-uvicorn-wire-probe.py --write ...
+  PYTHONPATH=. .venv/bin/python evidence/phase1/x3-capture-health/iteration-{04,06,09,10}-*-probe.py --write ...
+  python3 scripts/afk-guardrails/preflight.py x3-capture-health
+
+Note on the interpreter: this host intermittently refused reads under ~/Desktop (macOS TCC),
+where the shared .venv symlink points. Where .venv was unreachable, the same commands were run
+with an equivalent interpreter and produced identical counts (54 passed / 327 subtests on the
+focused gate); both are recorded above.
