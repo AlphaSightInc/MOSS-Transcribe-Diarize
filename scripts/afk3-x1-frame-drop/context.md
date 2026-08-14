@@ -20,7 +20,28 @@ would falsify a measurement baseline.
 python3 scripts/afk-guardrails/preflight.py x1-frame-drop
 ```
 
+## Gate checklist (recorded iteration 1)
+
+- [ ] Slow-POST probe proves captured frames are queued/backpressured rather than silently
+  discarded, and includes an elapsed-time vs admitted-frame assertion that fails on regression.
+- [ ] G7 runs hidden for more than five minutes at descriptor-enforced
+  `frame_samples=8000`, joins strict-v2 admissions, and preserves its raw arrays.
+- [ ] A forced 409 exercises `recreateSession`, drains sends before resetting sequence state,
+  resumes cleanly, and leaves a failed-recreate button usable.
+- [ ] All claims have committed, re-runnable probes and raw artifacts under
+  `evidence/phase1/x1-frame-drop/`; branch validation runs after merging current `dev`.
+
+## Current integration state
+
+`dev` (`23afb6d`) is already an ancestor of this branch through merge `ccd906d`; preflight
+passed at iteration 1. Re-check the merged-result requirement after product work, before any
+completion claim.
+
 ## Ranked candidates
-1. Read the PRD gate; record it here as a checklist.
-2. Merge `dev` in, confirm preflight OK.
-3. Smallest vertical slice toward the fix — the fix itself, then its proof.
+
+1. Characterize the existing worklet/POST behavior with a committed slow-POST probe and define
+   the smallest bounded queue policy from measured state.
+2. Implement the resulting queue/counter behavior in the capture prototype, then make the
+   elapsed-vs-admitted-frame assertion prove it.
+3. Exercise recreate-after-409 only after send-drain semantics exist; then re-run production-
+   geometry G7 with raw arrays.

@@ -4,3 +4,5 @@
 [loop 20260814-181406-44129] preflight failed before iteration 1
 
 [loop 20260814-181455-47601] start budget=40 agent=codex branch=afk3/x1-frame-drop
+
+[iteration 1] target: record binding x1-frame-drop gate checklist and reconcile integration state; files: scripts/afk3-x1-frame-drop/context.md, scripts/afk3-x1-frame-drop/progress.txt; validation: `python3 scripts/afk-guardrails/preflight.py x1-frame-drop` => PREFLIGHT OK; evidence: `docs/phase1-afk-charter.md` §§4,6 and `scripts/afk3-x1-frame-drop/prd.md`; learned: current `dev` (23afb6d) is already merged via ccd906d, so no merge is needed before the first product slice; next: commit a slow-POST characterization probe before selecting the bounded queue policy.
