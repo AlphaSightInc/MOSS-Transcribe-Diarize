@@ -60,7 +60,8 @@
     "prerequisites": [
       "model_runtime"
     ],
-    "blocked_by": []
+    "blocked_by": [],
+    "_parked": "PARKED 2026-08-14: ga0-alienware-rtx4070ti reports 1125 MiB free -- production vLLM holds the GPU, a second model instance cannot fit, and the charter forbids touching the running services. Concurrency is a scale concern, not an MVP blocker. Unpark when the GPU is free or an operator authorizes measuring against the existing moss-vllm endpoint."
   },
   "f1-canary-fixes": {
     "title": "Repair the canary client: error taxonomy, event cursor, real G7",
@@ -97,6 +98,17 @@
     "reads": [
       "moss_transcribe_diarize/app/live_transport.py",
       "ops/start-web.sh"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
+  },
+  "v0-verifier": {
+    "title": "Independent verifier: no agent certifies its own ticket",
+    "owns": [
+      "evidence/phase1/verification/"
+    ],
+    "reads": [
+      "all"
     ],
     "prerequisites": [],
     "blocked_by": []
