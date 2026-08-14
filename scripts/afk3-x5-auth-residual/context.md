@@ -44,8 +44,10 @@ that relation and `PREFLIGHT OK`. The Phase 1 posture remains a single shared-to
 this ticket hardens operator revocation rather than restoring client-asserted identity.
 
 ## Ranked candidates
-1. Trace `LiveAccessRegistry` persistence/restart semantics and add a failing, committed
-   revocation-durability probe before changing production code.
+1. **Confirmed:** `probe_shared_revocation_restart.py` produces committed raw evidence that
+   loopback revocation succeeds in-process but is neither persisted nor retained by a fresh
+   registry (`true/false/false`). Make the shared-principal revocation durable without persisting
+   its raw bearer, then rerun this probe green.
 2. Inspect the token comparison path and replace the fragile constant-time test with a
    feature-binding property test.
 3. Build a locally-run Uvicorn wire probe for reserved-id and whitespace-token behavior.
