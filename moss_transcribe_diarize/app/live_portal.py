@@ -182,7 +182,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
         sessionId: "",
         viewToken: "",
         snapshotVersion: 0,
-        eventSequence: 0,
+        // `/events?since_seq` is inclusive, and sequence 0 is session_created.  -1
+        // therefore means no event has rendered yet; it lets the first poll render 0 once.
+        eventSequence: -1,
         connected: false,
         generation: 0,
         inFlight: false,
@@ -252,7 +254,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.sessionId = "";
         state.viewToken = "";
         state.snapshotVersion = 0;
-        state.eventSequence = 0;
+        state.eventSequence = -1;
         state.renderedEvents.clear();
         state.renderedEventOrder = [];
         nodes.sharedToken.value = "";
@@ -347,7 +349,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.generation += 1;
         state.retryIndex = 0;
         state.snapshotVersion = 0;
-        state.eventSequence = 0;
+        state.eventSequence = -1;
         state.renderedEvents.clear();
         state.renderedEventOrder = [];
         setText(nodes.events, "");

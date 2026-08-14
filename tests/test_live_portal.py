@@ -287,7 +287,7 @@ class LivePortalRouteTest(unittest.TestCase):
         from moss_transcribe_diarize.app.server import create_app
 
         for deadline, expected_status, expected_state in (
-            (0.0, 409, "active"),
+            (0.0, 409, "failed"),
             (5.0, 200, "closed"),
         ):
             with self.subTest(deadline=deadline), tempfile.TemporaryDirectory() as tmpdir:
@@ -335,13 +335,21 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(first_snapshot["headers"]["Authorization"], "Bearer portal-view-secret")
         self.assertEqual(first_snapshot["cache"], "no-store")
         self.assertEqual(first_snapshot["credentials"], "same-origin")
-        self.assertIn("/api/live/sessions/portal-session%2Falpha/events?since_seq=0", first_events["url"])
+        self.assertIn("/api/live/sessions/portal-session%2Falpha/events?since_seq=-1", first_events["url"])
         self.assertEqual(first_events["headers"]["Authorization"], "Bearer portal-view-secret")
         self.assertIn("since_version=2", second_snapshot["url"])
         self.assertIn("since_seq=3", second_events["url"])
         for request in probe["pollRequests"] + probe["controlRequests"]:
             self.assertNotIn("portal-view-secret", request["url"])
-        self.assertEqual(probe["eventRows"], ["seq: 1 | kind: opened | snapshot: 2", "seq: 3 | kind: partial | snapshot: 2", "seq: 4 | kind: commit | snapshot: 4"])
+        self.assertEqual(
+            probe["eventRows"],
+            [
+                "seq: 0 | kind: session_created | snapshot: 1",
+                "seq: 1 | kind: opened | snapshot: 2",
+                "seq: 3 | kind: partial | snapshot: 2",
+                "seq: 4 | kind: commit | snapshot: 4",
+            ],
+        )
         self.assertIn("hello <script>", probe["transcriptBeforeControls"])
         self.assertEqual(
             probe["statusDetailAfterSecondPoll"],
@@ -393,9 +401,9 @@ class LivePortalRouteTest(unittest.TestCase):
 
         self.assertEqual(len(probe["requests"]), 4)
         self.assertIn("since_version=0", probe["requests"][0]["url"])
-        self.assertIn("since_seq=0", probe["requests"][1]["url"])
+        self.assertIn("since_seq=-1", probe["requests"][1]["url"])
         self.assertIn("since_version=0", probe["requests"][2]["url"])
-        self.assertIn("since_seq=0", probe["requests"][3]["url"])
+        self.assertIn("since_seq=-1", probe["requests"][3]["url"])
         self.assertEqual(probe["retryDelays"], [0, 500])
         self.assertEqual(
             probe["maxPendingTimers"],
@@ -911,7 +919,7 @@ const snapshots = {{
 async function runHappy() {{
   const env = installPortal([
     {{ payload: snapshots.active2 }},
-    {{ payload: {{ events: [{{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 3, kind: "partial", snapshot_version: 2 }}] }} }},
+    {{ payload: {{ events: [{{ seq: 0, kind: "session_created", snapshot_version: 1 }}, {{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 3, kind: "partial", snapshot_version: 2 }}] }} }},
     {{ payload: snapshots.active4 }},
     {{ payload: {{ events: [{{ seq: 3, kind: "partial", snapshot_version: 2 }}, {{ seq: 4, kind: "commit", snapshot_version: 4 }}] }} }},
     {{ payload: snapshots.closing5 }},

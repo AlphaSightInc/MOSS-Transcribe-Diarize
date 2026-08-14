@@ -9,7 +9,7 @@ import threading
 import time
 import uuid
 from collections import deque
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from enum import Enum
 from typing import Any, Awaitable, Callable, Mapping, Protocol
 
@@ -579,7 +579,10 @@ class LiveServiceRuntime:
     def events(self, session_id: str, since_seq: int = 0) -> tuple[LiveServiceEvent, ...]:
         with self._lock:
             state = self._get(session_id)
-            _non_negative(since_seq, "since_seq")
+            # The event endpoint is inclusive.  A reader with no rendered event uses -1,
+            # which is the one cursor before the first valid event sequence (0).
+            if int(since_seq) < -1:
+                raise ValueError("since_seq must be at least -1.")
             return tuple(event for event in state.events if event.seq >= since_seq)
 
     def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
@@ -787,10 +790,21 @@ class LiveServiceRuntime:
         *,
         session_snapshot: LiveSnapshot | None = None,
     ) -> LiveServiceSnapshot:
+        session = session_snapshot or state.session.snapshot()
+        # A runtime failure fences the session before the lower-level session object always
+        # gets a chance to transition itself.  The public snapshot is the client contract,
+        # so it must report that terminal state immediately instead of advertising "active"
+        # beside a terminal_failure record.  An explicit abort retains its distinct status.
+        if state.terminal_failure is not None and session.status != "aborted":
+            session = replace(
+                session,
+                status="failed",
+                failure_reason=state.terminal_failure.message,
+            )
         return LiveServiceSnapshot(
             session_id=state.session_id,
             descriptor=state.descriptor,
-            session=session_snapshot or state.session.snapshot(),
+            session=session,
             pending_work_items=self._pending_work_items(state),
             terminal_failure=state.terminal_failure,
         )

@@ -1,26 +1,20 @@
 # Context — x6-terminal-visibility
 
-Iteration 0.
+Iteration 1 completed locally on `afk3/x6-terminal-visibility`.
 
-Branch `afk3/x6-terminal-visibility` from `dev`. Every defect in the PRD was found by independent adversarial
-review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
-(binding) and the closed decisions in `.wayfinder/tickets/` before your first change.
+## Implemented contract
 
-## Known pre-existing test failures — not yours
+- A `terminal_failure` projects `snapshot.session.status` to `"failed"` immediately; an explicit abort remains `"aborted"`. Snapshot readers can stop from one response without inferring state from events.
+- `/events?since_seq` remains inclusive. `-1` means no event has rendered, so the portal fetches and renders `session_created` sequence 0 once, then advances only after render.
 
-`l2-stage0/test_legacy_ingest.py` (55 != 92) and four `test_macos_uds_tracer.py` tests fail
-identically at `pre-afk-20260813`. `l15/test_l1_baseline.py` fails with `l15_product_tree_drift`:
-that guard correctly refuses to run when the product tree moved — **do not edit its pin**, that
-would falsify a measurement baseline.
+## Evidence and validation
 
-## Validation
+- Committed probe sources: `tests/test_live_api.py::LiveApiTest::test_live_routes_are_runtime_backed_with_descriptor_events_and_backpressure` and `tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_browser_contract_polls_renders_controls_and_stops`.
+- Raw output: `evidence/phase1/x6-terminal-visibility/iteration-01-terminal-visibility.txt`.
+- `dev` is already an ancestor of `HEAD` (`git rev-list --left-right --count HEAD...dev` → `6 0`), so no merge was needed before validation.
+- Worktree validation must prefix `PYTHONPATH="$PWD"`: `.venv` is a symlink to the primary checkout's editable environment; without the prefix it imports the primary checkout rather than this worktree.
+- Ticket gate: `89 passed, 1 warning, 331 subtests passed`.
 
-```bash
-.venv/bin/pytest -q          # ~1006 pass, 2 skip, 387 subtests
-python3 scripts/afk-guardrails/preflight.py x6-terminal-visibility
-```
+## Remaining work
 
-## Ranked candidates
-1. Read the PRD gate; record it here as a checklist.
-2. Merge `dev` in, confirm preflight OK.
-3. Smallest vertical slice toward the fix — the fix itself, then its proof.
+No implementation candidate remains. The branch is ready for the required independent review; do not merge or push `dev` from this worktree.

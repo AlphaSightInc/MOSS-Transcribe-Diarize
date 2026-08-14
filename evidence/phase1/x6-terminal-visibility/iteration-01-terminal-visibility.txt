@@ -1,0 +1,38 @@
+x6-terminal-visibility — iteration 1 raw validation record
+
+Committed re-runnable probes:
+  tests/test_live_api.py::LiveApiTest::test_live_routes_are_runtime_backed_with_descriptor_events_and_backpressure
+  tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_browser_contract_polls_renders_controls_and_stops
+
+The API probe creates a real runtime-backed session, reads `/events?since_seq=-1`, forces the
+terminal backpressure path, then reads one `/snapshot`; it asserts the single read exposes
+`session.status == "failed"` and its terminal failure code. The portal probe uses the served
+page contract, starts at `since_seq=-1`, supplies event 0 plus a duplicate event 1, and asserts
+that event 0 renders once before subsequent events.
+
+The shared `.venv` is editable against the primary checkout, so `PYTHONPATH="$PWD"` selects
+this worktree's source for every recorded command.
+
+$ PYTHONPATH="$PWD" .venv/bin/pytest -vv tests/test_live_api.py::LiveApiTest::test_live_routes_are_runtime_backed_with_descriptor_events_and_backpressure tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_browser_contract_polls_renders_controls_and_stops
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 2 items
+
+tests/test_live_api.py::LiveApiTest::test_live_routes_are_runtime_backed_with_descriptor_events_and_backpressure PASSED [ 50%]
+tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_browser_contract_polls_renders_controls_and_stops PASSED [100%]
+
+========================= 2 passed, 1 warning in 2.43s =========================
+
+$ PYTHONPATH="$PWD" .venv/bin/pytest -q tests/test_live_service_runtime.py tests/test_live_api.py tests/test_live_portal.py
+................................................................. [ 73%]
+........................             [100%]
+=============================== warnings summary ===============================
+tests/test_live_api.py::LiveApiTest::test_a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 89 passed, 1 warning, 331 subtests passed in 6.99s ========================

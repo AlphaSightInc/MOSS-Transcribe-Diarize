@@ -468,6 +468,12 @@ class LiveApiTest(unittest.TestCase):
             self.assertFalse(hasattr(app.state.manager, "live_runtime"))
             self.assertIsNotNone(app.state.live_runtime.snapshot(session_id))
             self.assertIn(session_id, app.state.live_v2_sessions)
+            initial_events = client.get(f"/api/live/sessions/{session_id}/events?since_seq=-1")
+            self.assertEqual(initial_events.status_code, 200)
+            self.assertEqual(
+                [(event["seq"], event["kind"]) for event in initial_events.json()["events"]],
+                [(0, "session_created")],
+            )
 
             ack = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
             self.assertEqual(ack.status_code, 200)
@@ -492,6 +498,11 @@ class LiveApiTest(unittest.TestCase):
             snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot?since_version=0")
             self.assertEqual(snapshot.status_code, 200)
             self.assertFalse(snapshot.json()["unchanged"])
+            self.assertEqual(snapshot.json()["snapshot"]["session"]["status"], "failed")
+            self.assertEqual(
+                snapshot.json()["snapshot"]["terminal_failure"]["code"],
+                "backpressure_or_deadline",
+            )
             self.assertEqual(snapshot.json()["snapshot"]["session"]["next_frame_sequence"], 2)
             self.assertEqual(snapshot.json()["v2_session"]["lanes"]["system"]["next_sequence"], 0)
             self.assertEqual(snapshot.json()["v2_session"]["lanes"]["microphone"]["next_sequence"], 0)
@@ -597,9 +608,9 @@ class LiveApiTest(unittest.TestCase):
             # the ownership entry - the capture client still has to be able to abort.
             stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
             self.assertEqual(stopped.status_code, 409)
-            # The mono session still reads "active" here; only the runtime's terminal
-            # failure records that the session is over. The view must follow the latter.
-            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "active")
+            # The runtime failure projects to the snapshot status immediately, so every
+            # reader can stop from this response without separately interpreting events.
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "failed")
             self.assertEqual(stopped.json()["snapshot"]["terminal_failure"]["kind"], "transport_pacing")
 
             self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 401)
