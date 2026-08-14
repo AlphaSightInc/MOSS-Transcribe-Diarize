@@ -93,20 +93,20 @@ returned **four FAIL and one PASS-WITH-DEFECTS**. The failure modes, verbatim:
 **State plainly what you did not prove.** An honest blocked stop is a good iteration; a false
 completion is the failure this fleet exists to correct.
 
-## Merge protocol
+## Merge protocol — YOU DO NOT MERGE
 
-Merges only — `prompt.md` forbids rebasing. Hold the lock:
+**Changed by the orchestrator, 2026-08-14. This supersedes any merge instruction above.**
 
-```bash
-LOCK="$(git rev-parse --git-common-dir)/afk-merge.lock"
-if ! ( set -o noclobber; echo "$$ r1-reference-ui $(date -u +%FT%TZ)" > "$LOCK" ) 2>/dev/null; then
-  echo "held by: $(cat "$LOCK")"      # wait, retry next iteration; never steal
-else
-  git merge --no-edit dev             # validate the MERGED result, then:
-  git push . HEAD:dev
-  rm -f "$LOCK"                       # always release
-fi
-```
+Do **not** merge to `dev`. Do **not** `git push . HEAD:dev`. Do not take the merge lock.
 
-`dev` is checked out nowhere, which is what makes `git push . HEAD:dev` work. Never force-push,
-never push `main`, never close a GitHub issue.
+Work only on your own branch and commit there. When your gate passes, stop and say so on the
+issue. The orchestrator then runs an adversarial review of your branch, sends you any defects it
+finds, and only reconciles branches into `dev` after those are fixed.
+
+This order is not bureaucracy. The previous fleet merged first and reviewed second; four of six
+branches were later found to have failed their acceptance criteria, and two P0 regressions --
+a total live-capture outage and ordinary overload converting into dead sessions -- reached `dev`
+and had to be repaired by hand. Review before reconcile is the fix.
+
+You may still `git merge --no-edit dev` **into your branch** to stay current, and you must
+validate on that merged result. That direction is safe; the reverse is not.
