@@ -12,6 +12,7 @@ from typing import Protocol, Sequence
 
 JOURNAL_DIRECTORY_MODE = 0o700
 JOURNAL_FILE_MODE = 0o600
+PEER_WRITE_BITS = stat.S_IWGRP | stat.S_IWOTH
 
 
 class LiveVectorJournalObservation(Protocol):
@@ -71,21 +72,13 @@ class LiveVectorJournal:
         created_at: float,
         observations: Sequence[LiveVectorJournalObservation],
     ) -> LiveVectorJournalAppendResult:
-        rows: list[dict[str, object]] = []
+        lines: list[bytes] = []
         refusals: list[LiveVectorJournalRefusal] = []
         for observation in observations:
             values, reason = _observation_values(observation)
-            if reason is not None:
-                refusals.append(
-                    LiveVectorJournalRefusal(
-                        speaker_label=_refusal_speaker_label(values),
-                        reason=reason,
-                    )
-                )
-                continue
-            assert values is not None
-            rows.append(
-                {
+            if reason is None:
+                assert values is not None
+                row = {
                     "session_id": session_id,
                     "speaker_label": values["speaker_label"],
                     "centroid": list(values["centroid"]),
@@ -97,15 +90,32 @@ class LiveVectorJournal:
                     "created_at": created_at,
                     "echo_mode": echo_mode,
                 }
+                # Encode per row. A single unencodable row must decline by name like
+                # any other refusal; joining the batch first would let it raise and
+                # take every other speaker's row in the session with it.
+                try:
+                    lines.append(
+                        (
+                            json.dumps(
+                                row,
+                                allow_nan=False,
+                                separators=(",", ":"),
+                                sort_keys=True,
+                            )
+                            + "\n"
+                        ).encode("utf-8")
+                    )
+                    continue
+                except (TypeError, ValueError, UnicodeEncodeError):
+                    reason = "row_not_serializable"
+            refusals.append(
+                LiveVectorJournalRefusal(
+                    speaker_label=_refusal_speaker_label(values),
+                    reason=reason,
+                )
             )
 
-        payload = b"".join(
-            (
-                json.dumps(row, allow_nan=False, separators=(",", ":"), sort_keys=True)
-                + "\n"
-            ).encode("utf-8")
-            for row in rows
-        )
+        payload = b"".join(lines)
         if payload or self.path.is_file():
             with self._lock:
                 descriptor = os.open(
@@ -123,7 +133,7 @@ class LiveVectorJournal:
                 finally:
                     os.close(descriptor)
 
-        return LiveVectorJournalAppendResult(written=len(rows), refusals=tuple(refusals))
+        return LiveVectorJournalAppendResult(written=len(lines), refusals=tuple(refusals))
 
     def read_rows(self) -> tuple[dict[str, object], ...]:
         """Return complete JSON-object rows while preserving forensic lines on disk."""
@@ -168,13 +178,22 @@ def _observation_values(
 
 
 def _refusal_speaker_label(values: dict[str, object] | None) -> str:
-    if values is None:
+    if values is None or "speaker_label" not in values:
         return "<unnamed>"
-    speaker_label = values.get("speaker_label")
-    return speaker_label if isinstance(speaker_label, str) and speaker_label else "<unnamed>"
+    speaker_label = values["speaker_label"]
+    if isinstance(speaker_label, str) and speaker_label:
+        return speaker_label
+    if speaker_label is None or speaker_label == "":
+        return "<unnamed>"
+    # Name the shape of an unusable label rather than echoing an arbitrary object
+    # into the log line an operator reads.
+    return f"<invalid:{type(speaker_label).__name__}>"
 
 
 def _observation_refusal(values: dict[str, object]) -> str | None:
+    speaker_label = values["speaker_label"]
+    if not isinstance(speaker_label, str) or not speaker_label:
+        return "speaker_label_invalid"
     centroid = values["centroid"]
     if not centroid:
         return "centroid_empty"
@@ -243,8 +262,8 @@ def _prepare_private_directory(directory: Path) -> None:
     The journal leaf is always 0700. Directories created on the way to it are
     individually chmoded because ``mkdir(..., parents=True)`` otherwise leaves
     intermediate components at the process umask. An existing non-sticky
-    group/world-writable ancestor could be swapped by another principal, so
-    starting with that location is refused rather than silently trusting it.
+    group/world-writable ancestor could be swapped by another principal, so it is
+    repaired when this process owns it and refused when it does not.
     """
 
     missing: list[Path] = []
@@ -255,21 +274,48 @@ def _prepare_private_directory(directory: Path) -> None:
 
     # An already-existing leaf is repairable. Its parent and every more distant
     # ancestor are the trust boundary for constructing or reopening that leaf.
-    _refuse_loose_ancestors(directory.parent if not missing else existing)
+    _secure_ancestors(directory.parent if not missing else existing)
     for path in reversed(missing):
         path.mkdir(mode=JOURNAL_DIRECTORY_MODE)
         _enforce_directory_mode(path)
     _enforce_directory_mode(directory)
 
 
-def _refuse_loose_ancestors(start: Path) -> None:
+def _peer_writable(mode: int) -> bool:
+    """A non-sticky directory another principal may create or rename entries in."""
+
+    return bool(mode & PEER_WRITE_BITS) and not mode & stat.S_ISVTX
+
+
+def _secure_ancestors(start: Path) -> None:
+    """Tighten a peer-writable ancestor this process owns; refuse one it cannot.
+
+    Earlier releases created this chain with ``mkdir(parents=True)``, which left
+    every intermediate directory at the process umask -- 0775 under a umask of
+    002. Refusing outright would mean the service can no longer open the journal
+    it created itself, so an ancestor owned by the effective uid has its group and
+    other write bits dropped (0775 -> 0755; read/exec bits are left alone, since
+    the leaf directory is 0700 and the journal file 0600). An ancestor owned by a
+    different principal cannot be made safe from here and is refused, because that
+    principal could swap a path component out from under the journal.
+    """
+
+    euid = os.geteuid()
     for ancestor in (start, *start.parents):
-        mode = ancestor.stat().st_mode
-        writable_by_peer = mode & 0o022
-        if writable_by_peer and not mode & stat.S_ISVTX:
+        info = ancestor.stat()
+        if not _peer_writable(info.st_mode):
+            continue
+        if info.st_uid == euid:
+            try:
+                os.chmod(ancestor, stat.S_IMODE(info.st_mode) & ~PEER_WRITE_BITS)
+            except OSError:
+                pass
+        # Verify the postcondition instead of trusting the chmod: a filesystem
+        # that ignores modes must refuse, not silently pass.
+        if _peer_writable(ancestor.stat().st_mode):
             raise ValueError(
-                "vector journal ancestor is group- or world-writable: "
-                f"{ancestor}"
+                "vector journal ancestor is group- or world-writable and could not "
+                f"be made private: {ancestor}"
             )
 
 

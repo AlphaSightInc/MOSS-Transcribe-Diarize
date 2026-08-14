@@ -125,6 +125,29 @@ consent decision and an explicit deletion/right-to-remove ruling **before the jo
 Until then, the absence of journal CRUD must not be interpreted as a policy that removal is
 unnecessary or unsupported by the eventual product.
 
+### 2026-08-14 addendum — vector-journal storage modes
+
+Journal privacy is a **postcondition asserted on every open**, not a mode argument passed at
+create. `os.open(..., O_CREAT, 0o600)` is ignored for a file that already exists and
+`mkdir(mode=0o700, exist_ok=True)` is ignored for a directory that already exists, so a journal
+first created under a loose umask stayed loose forever. Each append now `fchmod`s the open
+descriptor to 0600 and re-`fstat`s to confirm; the leaf directory is chmoded to 0700 and
+re-stated; intermediate directories are created and chmoded one at a time, because
+`mkdir(parents=True)` leaves them at the process umask.
+
+Ancestors above the leaf are a trust boundary, not a mode to enforce. A non-sticky
+group- or world-writable ancestor lets another principal rename a path component out from under
+the journal, so the writer **repairs the ones it owns and refuses the ones it does not**: an
+ancestor owned by the effective uid has only its group/other write bits dropped (0775 → 0755;
+read and execute bits are left alone, since privacy is carried by the 0700 leaf and the 0600
+file), and an ancestor owned by another principal raises. Repair rather than blanket refusal is
+deliberate: earlier releases created this very chain at the umask-masked 0775, so refusing would
+have made `--live` fail to start on exactly the hosts that ran the older code — `web_cli` builds
+the journal before the app exists, so a refusal there is a startup outage, not a degraded
+session. Operators should still expect a journal ancestor inside the service user's own data
+directory; a repair is a silent one-time correction of the older code's mistake, not a licence
+to place the journal under a shared directory.
+
 ### 2026-08-14 addendum — vector-journal reader contract
 
 The append-only journal preserves a previous unterminated record as a forensic line: before a
@@ -137,6 +160,18 @@ JSON-object lines; skip blank lines and lines that cannot be decoded as UTF-8 JS
 or silently discard those forensic bytes. A reader may validate the returned row schema for its
 own purpose, but malformed-line tolerance is mandatory so one crash artifact cannot hide later
 valid sessions. Missing journal files read as no rows; filesystem access failures still surface.
+
+A completed session is a **batch of independent rows, not a transaction**. Every observation is
+read, validated and encoded on its own, and a refusal is reported by speaker label with a reason
+code rather than raised: `speaker_label_invalid`, `centroid_empty`, `centroid_not_numeric`,
+`centroid_non_finite`, `sample_seconds_invalid`, `exemplar_count_invalid`, `provisional_invalid`,
+`embedder_id_missing`, `embedder_state_sha_invalid`, `<field>_missing` for a provider that does
+not satisfy the structural `LiveVectorJournalObservation` protocol, and `row_not_serializable`
+for a validated row the encoder still rejects. This matters because the runtime catches anything
+`append_session` raises as one opaque `vector_journal_failed` event: a single bad observation
+that escaped as an exception cost every other speaker in that meeting their row. A speaker label
+that is not a non-empty string is refused rather than written, and is reported as `<unnamed>` or
+`<invalid:<type>>` so the log names the failure without echoing an arbitrary object.
 
 ### 2026-08-14 addendum — vector-journal centroid provenance
 

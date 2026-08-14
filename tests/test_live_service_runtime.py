@@ -1201,6 +1201,86 @@ def test_journal_refuses_bad_contract_rows_without_dropping_valid_observations(t
     }
 
 
+def test_journal_declines_an_unserializable_row_without_losing_the_other_speakers(
+    tmp_path, monkeypatch
+):
+    """A four-speaker meeting where one row cannot be encoded keeps the other three.
+
+    Validating field types is not enough on its own: the encode step runs after
+    validation, and joining the whole batch into one payload made any encoder error
+    escape `append_session`. The runtime catches that as one opaque
+    `vector_journal_failed` and the entire meeting's identity evidence is gone.
+    """
+
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    def observation(label):
+        return SimpleNamespace(
+            speaker_label=label,
+            centroid=(0.25, 0.75),
+            sample_seconds=2.5,
+            exemplar_count=1,
+            provisional=False,
+            embedder_id="wespeaker:test-revision",
+            embedder_state_sha="ab" * 32,
+        )
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    journal = live_vector_journal.LiveVectorJournal(journal_path)
+    batch = (
+        observation("speaker-0001"),
+        observation("speaker-0002"),
+        observation(b"speaker-0003"),
+        observation("speaker-0004"),
+    )
+
+    result = journal.append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_011.0,
+        observations=batch,
+    )
+
+    assert result.written == 3
+    assert [(item.speaker_label, item.reason) for item in result.refusals] == [
+        ("<invalid:bytes>", "speaker_label_invalid")
+    ]
+    assert [row["speaker_label"] for row in journal.read_rows()] == [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0004",
+    ]
+
+    # The same guarantee must hold when the encoder itself fails on a row whose
+    # fields all validated -- the reason the encode is per row rather than per batch.
+    real_dumps = live_vector_journal.json.dumps
+
+    def refuse_one_speaker(row, **kwargs):
+        if row["speaker_label"] == "speaker-0002":
+            raise TypeError("probe: this row cannot be encoded")
+        return real_dumps(row, **kwargs)
+
+    injected_path = tmp_path / "injected.jsonl"
+    injected = live_vector_journal.LiveVectorJournal(injected_path)
+    monkeypatch.setattr(live_vector_journal.json, "dumps", refuse_one_speaker)
+    injected_result = injected.append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_012.0,
+        observations=batch[:2] + batch[3:],
+    )
+    monkeypatch.undo()
+
+    assert injected_result.written == 2
+    assert [(item.speaker_label, item.reason) for item in injected_result.refusals] == [
+        ("speaker-0002", "row_not_serializable")
+    ]
+    assert [row["speaker_label"] for row in injected.read_rows()] == [
+        "speaker-0001",
+        "speaker-0004",
+    ]
+
+
 def test_journal_terminates_a_refusal_only_torn_tail_and_reader_skips_it(tmp_path):
     from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
 
@@ -1346,18 +1426,73 @@ def test_declared_journal_repairs_preexisting_loose_directory_and_file(tmp_path)
     assert json.loads(rows[1])["session_id"] == "completed-session"
 
 
-def test_declared_journal_refuses_a_nonsticky_writable_ancestor(tmp_path):
-    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+def test_declared_journal_tightens_a_peer_writable_ancestor_it_owns(tmp_path):
+    """A 0775 ancestor this service created itself is repaired, not made fatal.
+
+    Releases before this one built the chain with `mkdir(parents=True)`, which leaves
+    every intermediate directory at the process umask -- 0775 under a umask of 002.
+    Refusing that outright bricks `--live` startup on exactly the hosts that ran the
+    older code, because `web_cli` builds the journal before the app exists.
+    """
+
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        LiveVectorJournal,
+    )
 
     loose_ancestor = tmp_path / "loose-ancestor"
     loose_ancestor.mkdir()
     os.chmod(loose_ancestor, 0o777)
     journal_path = loose_ancestor / "new-journal" / "speaker-vectors.jsonl"
 
-    with pytest.raises(ValueError, match="ancestor is group- or world-writable"):
-        LiveVectorJournal.declared(journal_path, checkout_root=tmp_path / "checkout")
+    journal = LiveVectorJournal.declared(journal_path, checkout_root=tmp_path / "checkout")
 
+    assert loose_ancestor.stat().st_mode & 0o777 == 0o755
+    assert journal.path.parent.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+
+
+def test_declared_journal_refuses_an_ancestor_it_cannot_make_private(tmp_path, monkeypatch):
+    """An ancestor owned by another principal is refused and left untouched.
+
+    That principal can rename a component out from under the journal, and this
+    process cannot chmod what it does not own -- so there is nothing to repair and
+    the only safe answer is to refuse. `geteuid` is redirected because a test
+    cannot create a directory owned by another user without privilege.
+    """
+
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    loose_ancestor = tmp_path / "loose-ancestor"
+    loose_ancestor.mkdir()
+    os.chmod(loose_ancestor, 0o777)
+    journal_path = loose_ancestor / "new-journal" / "speaker-vectors.jsonl"
+    foreign_uid = os.geteuid() + 1
+    monkeypatch.setattr(live_vector_journal.os, "geteuid", lambda: foreign_uid)
+
+    with pytest.raises(ValueError, match="could not be made private"):
+        live_vector_journal.LiveVectorJournal.declared(
+            journal_path, checkout_root=tmp_path / "checkout"
+        )
+
+    assert loose_ancestor.stat().st_mode & 0o777 == 0o777
     assert not journal_path.parent.exists()
+
+
+def test_declared_journal_refuses_a_filesystem_that_ignores_directory_modes(tmp_path, monkeypatch):
+    """The private mode is asserted as a postcondition, not assumed from chmod."""
+
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    loose_ancestor = tmp_path / "loose-ancestor"
+    loose_ancestor.mkdir()
+    os.chmod(loose_ancestor, 0o777)
+    journal_path = loose_ancestor / "new-journal" / "speaker-vectors.jsonl"
+    monkeypatch.setattr(live_vector_journal.os, "chmod", lambda *args, **kwargs: None)
+
+    with pytest.raises(ValueError, match="could not be made private"):
+        live_vector_journal.LiveVectorJournal.declared(
+            journal_path, checkout_root=tmp_path / "checkout"
+        )
 
 
 def test_declared_journal_creates_private_intermediate_directories(tmp_path):
@@ -1369,13 +1504,54 @@ def test_declared_journal_creates_private_intermediate_directories(tmp_path):
     root = tmp_path / "private-root"
     root.mkdir(mode=JOURNAL_DIRECTORY_MODE)
     intermediate = root / "intermediate"
-    journal = LiveVectorJournal.declared(
-        intermediate / "live" / "speaker-vectors.jsonl",
-        checkout_root=tmp_path / "checkout",
-    )
+    # Pin the umask: under a umask of 0o077 a plain mkdir would land on 0700 by
+    # accident and this assertion would hold with the enforcement deleted.
+    previous_umask = os.umask(0o022)
+    try:
+        journal = LiveVectorJournal.declared(
+            intermediate / "live" / "speaker-vectors.jsonl",
+            checkout_root=tmp_path / "checkout",
+        )
+    finally:
+        os.umask(previous_umask)
 
     assert intermediate.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
     assert journal.path.parent.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+
+
+def test_web_cli_journal_survives_the_umask_masked_chain_an_earlier_release_left(tmp_path):
+    """The real route: `web_cli._live_vector_journal` must open the chain it created.
+
+    This is the caller that a refusal would take down -- it runs before the app is
+    constructed, so a `ValueError` here is a startup outage rather than a degraded
+    session.
+    """
+
+    from types import SimpleNamespace as _Args
+
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        JOURNAL_FILE_MODE,
+    )
+    from moss_transcribe_diarize.app.web_cli import _live_vector_journal
+
+    data_root = tmp_path / "share" / "moss-transcribe-diarize"
+    leaf = data_root / "live"
+    leaf.mkdir(parents=True)
+    journal_path = leaf / "speaker-vectors.jsonl"
+    journal_path.write_text('{"preexisting":true}\n', encoding="utf-8")
+    os.chmod(journal_path, 0o644)
+    os.chmod(data_root, 0o775)
+
+    journal = _live_vector_journal(
+        _Args(live=True, live_vector_journal_path=str(journal_path)),
+        checkout_root=tmp_path / "checkout",
+    )
+
+    assert journal.path == journal_path.resolve()
+    assert data_root.stat().st_mode & 0o777 == 0o755
+    assert leaf.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+    assert journal_path.stat().st_mode & 0o777 == JOURNAL_FILE_MODE
 
 
 def test_journaling_session_accepts_a_bodyless_create_and_records_it_as_unspecified(tmp_path):
