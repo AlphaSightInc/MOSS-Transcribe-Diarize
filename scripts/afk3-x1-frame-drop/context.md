@@ -1,6 +1,6 @@
 # Context — x1-frame-drop
 
-Iteration 0.
+Iteration 2.
 
 Branch `afk3/x1-frame-drop` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -20,7 +20,7 @@ would falsify a measurement baseline.
 python3 scripts/afk-guardrails/preflight.py x1-frame-drop
 ```
 
-## Gate checklist (recorded iteration 1)
+## Gate checklist
 
 - [ ] Slow-POST probe proves captured frames are queued/backpressured rather than silently
   discarded, and includes an elapsed-time vs admitted-frame assertion that fails on regression.
@@ -37,11 +37,29 @@ python3 scripts/afk-guardrails/preflight.py x1-frame-drop
 passed at iteration 1. Re-check the merged-result requirement after product work, before any
 completion claim.
 
+The PRD's literal `sendPaused || sendInFlight` predecessor is on the unmerged
+`afk2/f1-canary-fixes` line, not this checkout. The checked-out page instead starts every frame
+POST immediately and increments `seq` before its response. The P0 behavior requirement remains
+open: the current path is neither a serial queue nor an explicitly backpressured sender.
+
+## Measured decision
+
+`probe_slow_post_characterization.py` now drives the actual page, worklet, local strict-v2 route,
+and 100 ms delayed frame responses. At the route's 1,000 / 16,000 geometry (62.5 ms/frame), each
+lane emitted and the route admitted 50 frames over ~3.065 s, but four responses were held at once.
+The committed elapsed-vs-admitted assertion would fail if an in-flight guard returned and dropped
+worklet messages. This is characterization evidence only, not a passing P0/G7 claim; raw arrays:
+`evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json`.
+
+The smallest bounded policy is a per-lane serial sender and FIFO whose capacity is derived from
+`descriptor.bounds.max_retained_samples / descriptor.frame_samples`. On overflow it must report
+the real `dropped_frames` and mark the first post-gap frame discontinuous; sequences are assigned
+only when the FIFO head is sent. This avoids a new magic capacity while preserving each route
+failure's existing sequence semantics.
+
 ## Ranked candidates
 
-1. Characterize the existing worklet/POST behavior with a committed slow-POST probe and define
-   the smallest bounded queue policy from measured state.
-2. Implement the resulting queue/counter behavior in the capture prototype, then make the
-   elapsed-vs-admitted-frame assertion prove it.
-3. Exercise recreate-after-409 only after send-drain semantics exist; then re-run production-
-   geometry G7 with raw arrays.
+1. Implement the measured descriptor-derived per-lane FIFO/serial sender and true heartbeat
+   counters, then turn the elapsed-vs-admitted assertion into its no-loss regression gate.
+2. Exercise recreate-after-409 only after the new sender can drain deterministically; then re-run
+   production-geometry G7 with raw arrays.

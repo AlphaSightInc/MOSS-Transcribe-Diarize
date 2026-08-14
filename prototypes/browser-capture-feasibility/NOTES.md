@@ -397,3 +397,34 @@ the local service used the repository test runtime provider and synthetic source
 #1's product client has not landed. Repeat this measurement through that client and its local
 production-provider service before checking the issue criterion. Raw output:
 `evidence/phase1/t5/iteration-5-g7-worklet-lease.txt`.
+
+## X1 slow-POST characterization — 2026-08-14
+
+**Question:** when a strict-v2 frame POST takes longer than the route's frame period, does the
+actual worklet page lose frames, serialize them, or accumulate in-flight HTTP requests?
+
+**Method:** `probe_slow_post_characterization.py` starts the existing local production-route
+harness and headless Chrome with its normal synthetic two-lane worklets. Middleware delays each
+frame response by 100 ms only after the real strict-v2 route has admitted it. The page still uses
+its own descriptor (1,000 samples at 16 kHz: 62.5 ms per frame), transport, telemetry, and
+heartbeat path. One command:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/browser-capture-feasibility/probe_slow_post_characterization.py \
+  --output evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json
+```
+
+**Verdict:** the checked-out page did not silently lose frames at this measurement point, but it
+did not queue or backpressure them either. Each lane emitted and the strict-v2 route admitted 50
+frames over about 3.065 s (the elapsed cadence estimate is also 50), while four frame responses
+were simultaneously held. The durable assertion joins route admission to elapsed worklet cadence,
+so a return to a one-in-flight drop guard would fail it. The measurement is not G7 and uses the
+deterministic provider, synthetic sources, and the harness descriptor.
+
+The smallest next policy is one descriptor-driven FIFO and one serial sender **per lane**: derive
+its bounded frame capacity from `max_retained_samples / frame_samples`, assign a sequence only as
+the head is sent, and keep the exact head for the route's established retry taxonomy. If that FIFO
+fills, drop only with a cumulative `dropped_frames` count and a discontinuity mark on the first
+post-gap frame; do not silently advance the wire sequence. Raw arrays and server response-hold
+metrics: `evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json`.
