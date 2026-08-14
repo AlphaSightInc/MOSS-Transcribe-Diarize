@@ -22,6 +22,13 @@ The bare `.venv/bin/pytest` imports
 Use `PYTHONPATH=. .venv/bin/pytest ...` for worktree evidence; repairing that external environment
 is outside this ticket.
 
+`PYTHONPATH=. .venv/bin/pytest -q tests/test_live_service_runtime.py
+tests/test_live_provider_bundle.py` currently has one environment-dependent failure in
+`test_web_cli_enabled_live_rejects_bad_manifest_before_app_construction`: its args omit a journal
+path, so it reaches the real default under `~/.local/share/` before bundle admission. That existing
+directory is `0775`, which the previous private-storage fix correctly rejects. The current slice
+does not touch `web_cli.py` or that external directory; focused provider/runtime checks pass.
+
 ## Validation
 
 ```bash
@@ -35,9 +42,11 @@ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
   refuse a non-sticky group/world-writable ancestor; create every intermediate directory at
   `0700`. Proven by the committed `test_declared_journal_*` probes in
   `tests/test_live_service_runtime.py`. Final raw-artifact capture remains open.
-- [ ] Per-observation resilience: validate `exemplar_count` and `provisional`; a missing
-  Protocol attribute must become that speaker's named refusal without losing valid rows from
-  the same session.  Prove it with a committed probe.
+- [x] Per-observation resilience: observations now carry `exemplar_count` and `provisional` from
+  the provider; invalid values and a missing field become named refusals while valid rows from the
+  same batch persist. Proven by
+  `test_journal_refuses_bad_contract_rows_without_dropping_valid_observations` plus the provider
+  and runtime row-shape probes. Final raw-artifact capture remains open.
 - [ ] Reader contract: document that consumers skip blank and malformed forensic lines, and
   test a journal containing one of those lines.  Recovery must also cover a refusal-only
   session and a truncation race without creating a leading blank line.
@@ -59,12 +68,13 @@ existing leaf directory/file modes and rejects a peer-writable ancestor; `append
 `0600` through its open file descriptor. This does not cover a hostile actor changing the path after
 declaration, nor filesystems that report successful mode changes while later violating them.
 
+Iteration 3 outcome: the observation contract is complete. The provider supplies the new album
+provenance fields, the journal validates their types and reads all structural fields before
+serialization, and one incomplete/invalid observation no longer aborts the complete batch.
+
 ## Ranked candidates
-1. Close the observation contract from the checked-out baseline: add and validate
-   `exemplar_count`/`provisional`, and turn a missing attribute into a per-speaker named refusal
-   without losing valid rows from the same session.
-2. Establish and document the reader contract, including refusal-only torn-tail recovery and the
+1. Establish and document the reader contract, including refusal-only torn-tail recovery and the
    truncation-race no-leading-blank property.
-3. Document and test capped-bank provenance/eviction semantics, including why `provisional` remains.
-4. After all functional criteria pass, capture committed raw artifacts and run the final two-suite
+2. Document and test capped-bank provenance/eviction semantics, including why `provisional` remains.
+3. After all functional criteria pass, capture committed raw artifacts and run the final two-suite
    gate against the worktree, then record criterion-by-criterion coverage limits.

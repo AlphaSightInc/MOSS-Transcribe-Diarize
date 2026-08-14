@@ -1018,6 +1018,8 @@ class JournalingIdentity(FinalizingIdentity):
                 speaker_label="speaker-0001",
                 centroid=(0.25, 0.75),
                 sample_seconds=2.5,
+                exemplar_count=3,
+                provisional=False,
                 embedder_id="wespeaker:test-revision",
                 embedder_state_sha="ab" * 32,
             ),
@@ -1025,6 +1027,8 @@ class JournalingIdentity(FinalizingIdentity):
                 speaker_label="speaker-refused",
                 centroid=(float("nan"),),
                 sample_seconds=1.0,
+                exemplar_count=0,
+                provisional=True,
                 embedder_id="wespeaker:test-revision",
                 embedder_state_sha="ab" * 32,
             ),
@@ -1113,6 +1117,8 @@ def test_clean_stop_journals_completed_identity_and_names_unusable_speaker(tmp_p
         "speaker_label": "speaker-0001",
         "centroid": [0.25, 0.75],
         "sample_seconds": 2.5,
+        "exemplar_count": 3,
+        "provisional": False,
         "embedder_id": "wespeaker:test-revision",
         "embedder_state_sha": "ab" * 32,
         "created_at": 1_800_000_006.0,
@@ -1126,6 +1132,73 @@ def test_clean_stop_journals_completed_identity_and_names_unusable_speaker(tmp_p
         "refusals": {"speaker-refused": "centroid_non_finite"},
     }
     assert "speaker_label=speaker-refused reason=centroid_non_finite" in caplog.text
+
+
+def test_journal_refuses_bad_contract_rows_without_dropping_valid_observations(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    result = LiveVectorJournal(journal_path).append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_007.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-valid",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=1,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+            SimpleNamespace(
+                speaker_label="speaker-bad-count",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=-1,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+            SimpleNamespace(
+                speaker_label="speaker-bad-provisional",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=0,
+                provisional="yes",
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+            SimpleNamespace(
+                speaker_label="speaker-missing-field",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=1,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    assert result.written == 1
+    assert [(item.speaker_label, item.reason) for item in result.refusals] == [
+        ("speaker-bad-count", "exemplar_count_invalid"),
+        ("speaker-bad-provisional", "provisional_invalid"),
+        ("speaker-missing-field", "provisional_missing"),
+    ]
+    assert json.loads(journal_path.read_text(encoding="utf-8")) == {
+        "session_id": "completed-session",
+        "speaker_label": "speaker-valid",
+        "centroid": [0.25, 0.75],
+        "sample_seconds": 2.5,
+        "exemplar_count": 1,
+        "provisional": False,
+        "embedder_id": "wespeaker:test-revision",
+        "embedder_state_sha": "ab" * 32,
+        "created_at": 1_800_000_007.0,
+        "echo_mode": "headphones",
+    }
 
 
 def test_declared_journal_repairs_preexisting_loose_directory_and_file(tmp_path):
@@ -1158,6 +1231,8 @@ def test_declared_journal_repairs_preexisting_loose_directory_and_file(tmp_path)
                 speaker_label="speaker-0002",
                 centroid=(0.25, 0.75),
                 sample_seconds=2.5,
+                exemplar_count=1,
+                provisional=False,
                 embedder_id="wespeaker:test-revision",
                 embedder_state_sha="ab" * 32,
             ),

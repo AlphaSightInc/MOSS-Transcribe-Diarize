@@ -359,6 +359,8 @@ def test_bundle_runtime_factory_journals_completed_provider_observations(tmp_pat
         "speaker_label": "speaker-0001",
         "centroid": [0.6, 0.8],
         "sample_seconds": 0.01,
+        "exemplar_count": 1,
+        "provisional": False,
         "embedder_id": "wespeaker_resnet152_lm:test-revision",
         "embedder_state_sha": _sha256_bytes(b"offline identity provider state"),
         "created_at": row["created_at"],
@@ -1182,8 +1184,12 @@ def test_session_end_exposes_one_journal_observation_per_album_speaker():
     assert [item.speaker_label for item in observations] == ["speaker-0001", "speaker-0002"]
     assert observations[0].centroid == pytest.approx((2 / 5**0.5, 1 / 5**0.5))
     assert observations[0].sample_seconds == pytest.approx(3.0)
+    assert observations[0].exemplar_count == 2
+    assert observations[0].provisional is False
     assert observations[1].centroid == pytest.approx((0.0, 1.0))
     assert observations[1].sample_seconds == pytest.approx(3.0)
+    assert observations[1].exemplar_count == 1
+    assert observations[1].provisional is False
     assert {item.embedder_id for item in observations} == {
         "wespeaker_resnet152_lm:test-revision"
     }

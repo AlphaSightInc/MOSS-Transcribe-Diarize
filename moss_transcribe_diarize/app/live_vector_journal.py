@@ -18,6 +18,8 @@ class LiveVectorJournalObservation(Protocol):
     speaker_label: str
     centroid: tuple[float, ...]
     sample_seconds: float
+    exemplar_count: int
+    provisional: bool
     embedder_id: str
     embedder_state_sha: str
 
@@ -72,23 +74,26 @@ class LiveVectorJournal:
         rows: list[dict[str, object]] = []
         refusals: list[LiveVectorJournalRefusal] = []
         for observation in observations:
-            reason = _observation_refusal(observation)
+            values, reason = _observation_values(observation)
             if reason is not None:
                 refusals.append(
                     LiveVectorJournalRefusal(
-                        speaker_label=observation.speaker_label or "<unnamed>",
+                        speaker_label=_refusal_speaker_label(values),
                         reason=reason,
                     )
                 )
                 continue
+            assert values is not None
             rows.append(
                 {
                     "session_id": session_id,
-                    "speaker_label": observation.speaker_label,
-                    "centroid": list(observation.centroid),
-                    "sample_seconds": observation.sample_seconds,
-                    "embedder_id": observation.embedder_id,
-                    "embedder_state_sha": observation.embedder_state_sha,
+                    "speaker_label": values["speaker_label"],
+                    "centroid": list(values["centroid"]),
+                    "sample_seconds": values["sample_seconds"],
+                    "exemplar_count": values["exemplar_count"],
+                    "provisional": values["provisional"],
+                    "embedder_id": values["embedder_id"],
+                    "embedder_state_sha": values["embedder_state_sha"],
                     "created_at": created_at,
                     "echo_mode": echo_mode,
                 }
@@ -118,20 +123,66 @@ class LiveVectorJournal:
         return LiveVectorJournalAppendResult(written=len(rows), refusals=tuple(refusals))
 
 
-def _observation_refusal(observation: LiveVectorJournalObservation) -> str | None:
-    centroid = observation.centroid
+def _observation_values(
+    observation: LiveVectorJournalObservation,
+) -> tuple[dict[str, object] | None, str | None]:
+    """Read the structural protocol once so one stale provider cannot abort its batch."""
+
+    values: dict[str, object] = {}
+    for field in (
+        "speaker_label",
+        "centroid",
+        "sample_seconds",
+        "exemplar_count",
+        "provisional",
+        "embedder_id",
+        "embedder_state_sha",
+    ):
+        try:
+            values[field] = getattr(observation, field)
+        except AttributeError:
+            return values, f"{field}_missing"
+    return values, _observation_refusal(values)
+
+
+def _refusal_speaker_label(values: dict[str, object] | None) -> str:
+    if values is None:
+        return "<unnamed>"
+    speaker_label = values.get("speaker_label")
+    return speaker_label if isinstance(speaker_label, str) and speaker_label else "<unnamed>"
+
+
+def _observation_refusal(values: dict[str, object]) -> str | None:
+    centroid = values["centroid"]
     if not centroid:
         return "centroid_empty"
     if any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in centroid):
         return "centroid_not_numeric"
     if any(not math.isfinite(value) for value in centroid):
         return "centroid_non_finite"
-    if not math.isfinite(observation.sample_seconds) or observation.sample_seconds <= 0:
+    sample_seconds = values["sample_seconds"]
+    if (
+        isinstance(sample_seconds, bool)
+        or not isinstance(sample_seconds, (int, float))
+        or not math.isfinite(sample_seconds)
+        or sample_seconds <= 0
+    ):
         return "sample_seconds_invalid"
-    if not observation.embedder_id:
+    exemplar_count = values["exemplar_count"]
+    if (
+        isinstance(exemplar_count, bool)
+        or not isinstance(exemplar_count, int)
+        or exemplar_count < 0
+    ):
+        return "exemplar_count_invalid"
+    if not isinstance(values["provisional"], bool):
+        return "provisional_invalid"
+    embedder_id = values["embedder_id"]
+    if not isinstance(embedder_id, str) or not embedder_id:
         return "embedder_id_missing"
-    if len(observation.embedder_state_sha) != 64 or any(
-        character not in "0123456789abcdef" for character in observation.embedder_state_sha
+    embedder_state_sha = values["embedder_state_sha"]
+    if not isinstance(embedder_state_sha, str) or len(embedder_state_sha) != 64 or any(
+        character not in "0123456789abcdef" for character in embedder_state_sha
     ):
         return "embedder_state_sha_invalid"
     return None
