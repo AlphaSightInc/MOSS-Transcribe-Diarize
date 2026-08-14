@@ -1,6 +1,6 @@
 # Context — x2-capture-client
 
-Iteration 8.
+Iteration 9.
 
 Branch `afk3/x2-capture-client` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -94,6 +94,22 @@ typecheck` (pass), `git diff --check`, and `python3 scripts/afk-guardrails/prefl
 x2-capture-client` (`PREFLIGHT OK`). Raw output:
 `evidence/phase1/x2-capture-client/iteration-8-rate-and-preflight.txt`.
 
+Iteration 9 closes the remaining lane replacement/restart transport semantics without reviving a
+server-terminal failed lane. The documented public `replaceLane()` accepts a caller-acquired,
+still-live replacement stream, retires the old graph, increments that lane's epoch and heartbeat
+discontinuity count, and keeps its sequence series. Queue entries now retain their source epoch,
+so old capture queued during a replacement posts first with its old epoch; the first confirmed
+replacement frame carries the new epoch and `discontinuity: true`. An unconfirmed transport
+delivery deliberately leaves that mark pending, because sending it again is harmless after an
+ambiguous response but omitting it can violate the server epoch fence. The focused production-path
+tests hold the first POST, queue an old frame, swap the microphone graph, queue a replacement
+frame, and prove wire tuples `(0,1,false)`, `(1,1,false)`, `(2,2,true)`; a rejected replacement
+POST is followed by another `(epoch=2, discontinuity=true)` frame. Validation:
+`npm --prefix frontend test -- src/capture/captureClient.test.ts` (19 passed),
+`npm --prefix frontend run typecheck` (pass), `git diff --check`, and
+`python3 scripts/afk-guardrails/preflight.py x2-capture-client` (`PREFLIGHT OK`). Raw output:
+`evidence/phase1/x2-capture-client/iteration-9-lane-replacement.txt`.
+
 The top threshold-prototype candidate is blocked by ownership, not missing methodology:
 `prototypes/browser-capture-feasibility/` is `x2` read-only and owned by `f1-canary-fixes` /`x1-frame-drop`.
 Do not modify it from this branch. The `>= 1e-4` preflight threshold is already an explicit PRD
@@ -106,6 +122,6 @@ records the required real-browser threshold measurement.
    sustained-clipping and microphone-silence thresholds, then add the two heartbeat facts. This
    requires a transfer or a committed measurement from the harness owner; do not bypass the
    read-only boundary.
-2. Add the remaining lane replacement/restart semantics: epoch increment and first-frame
-   discontinuity. Actual context sample-rate metadata and thresholded preflight signal are done.
-   Do not touch `App.tsx`; mounting remains orchestrator-owned.
+2. No further owned implementation is unblocked. When the threshold measurement arrives, add the
+   two meter-derived heartbeat facts and then merge the then-current `dev` before the full frontend
+   gate. Do not touch `App.tsx`; mounting remains orchestrator-owned.

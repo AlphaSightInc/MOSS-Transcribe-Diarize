@@ -71,17 +71,22 @@ type WorkletFrame = Readonly<{
   startFrame: number;
 }>;
 
+type QueuedFrame = Readonly<{
+  workletFrame: WorkletFrame;
+  deviceEpoch: number;
+}>;
+
 type LaneState = {
   source: MediaStreamAudioSourceNode;
   framer: AudioWorkletNode;
   mute: GainNode;
   tracks: MediaStreamTrack[];
   trackEndedListeners: Array<Readonly<{ track: MediaStreamTrack; listener: () => void }>>;
-  frameQueue: WorkletFrame[];
+  frameQueue: QueuedFrame[];
   postInFlight: boolean;
   sequence: number;
   deviceEpoch: number;
-  discontinuity: boolean;
+  pendingDiscontinuityEpochs: Set<number>;
   discontinuities: number;
   droppedFrames: number;
   health: LaneHealthState;
@@ -91,7 +96,13 @@ type LaneState = {
 const SILENCE_RMS = 1e-4;
 const LANE_CAPACITY_FAILURE_CODE = "v2_lane_retention_capacity_reached";
 
-type FramePostResult = "accepted" | "retry" | "dropped" | "recreate" | "stopped";
+type FramePostResult =
+  | "accepted"
+  | "retry"
+  | "dropped"
+  | "unconfirmed"
+  | "recreate"
+  | "stopped";
 
 type FrameFailure = Readonly<{
   code: string | null;
@@ -294,6 +305,51 @@ export class CaptureClient {
   }
 
   /**
+   * Swap a still-live lane for a caller-acquired replacement stream.
+   *
+   * The caller must acquire browser media through its required user gesture.
+   * A lane already reported as failed is terminal at the server, so it needs a
+   * new capture session rather than a local replacement. Queued frames keep
+   * their source epoch; the first replacement frame carries the incremented
+   * epoch and an explicit discontinuity.
+   */
+  async replaceLane(
+    lane: CaptureLane,
+    stream: MediaStream,
+    tracks: MediaStreamTrack[],
+  ): Promise<void> {
+    const state = this.lanes.get(lane);
+    if (!state) throw new Error(`${lane} lane is not active`);
+    if (state.health === "failed") {
+      throw new Error(`${lane} lane is failed; recreate the capture session before replacing it`);
+    }
+    const [context, descriptor] = await Promise.all([this.prepare(), this.requireDescriptor()]);
+    const source = context.createMediaStreamSource(stream);
+    const framer = new AudioWorkletNode(context, "lane-framer", {
+      numberOfInputs: 1,
+      numberOfOutputs: 1,
+      processorOptions: { lane, frameSamples: descriptor.frameSamples },
+    });
+    const mute = context.createGain();
+    mute.gain.value = 0;
+    source.connect(framer).connect(mute).connect(context.destination);
+
+    this.detachLaneResources(state);
+    state.source = source;
+    state.framer = framer;
+    state.mute = mute;
+    state.tracks = tracks;
+    state.trackEndedListeners = [];
+    state.deviceEpoch += 1;
+    state.pendingDiscontinuityEpochs.add(state.deviceEpoch);
+    state.discontinuities += 1;
+    state.health = "capturing";
+    state.failureCode = null;
+    this.observeLaneTracks(lane, state);
+    this.observeLaneFrames(lane, state);
+  }
+
+  /**
    * Create a server session after both lanes have proved they carry signal.
    *
    * A terminal frame conflict clears only the delivery state, so callers can
@@ -342,14 +398,7 @@ export class CaptureClient {
 
   async close(): Promise<void> {
     for (const state of this.lanes.values()) {
-      state.framer.port.onmessage = null;
-      for (const { track, listener } of state.trackEndedListeners) {
-        track.removeEventListener("ended", listener);
-      }
-      state.source.disconnect();
-      state.framer.disconnect();
-      state.mute.disconnect();
-      state.tracks.forEach((track) => track.stop());
+      this.detachLaneResources(state);
     }
     this.lanes.clear();
     this.laneHasSignal.clear();
@@ -429,19 +478,38 @@ export class CaptureClient {
       postInFlight: false,
       sequence: 0,
       deviceEpoch: 1,
-      discontinuity: false,
+      pendingDiscontinuityEpochs: new Set(),
       discontinuities: 0,
       droppedFrames: 0,
       health: "capturing",
       failureCode: null,
     };
-    for (const track of tracks) {
+    this.observeLaneTracks(lane, state);
+    this.lanes.set(lane, state);
+    this.observeLaneFrames(lane, state);
+  }
+
+  private detachLaneResources(state: LaneState): void {
+    state.framer.port.onmessage = null;
+    for (const { track, listener } of state.trackEndedListeners) {
+      track.removeEventListener("ended", listener);
+    }
+    state.source.disconnect();
+    state.framer.disconnect();
+    state.mute.disconnect();
+    state.tracks.forEach((track) => track.stop());
+  }
+
+  private observeLaneTracks(lane: CaptureLane, state: LaneState): void {
+    for (const track of state.tracks) {
       const listener = () => this.markLaneFailed(lane, "browser_track_ended");
       track.addEventListener("ended", listener);
       state.trackEndedListeners.push({ track, listener });
     }
-    this.lanes.set(lane, state);
-    framer.port.onmessage = (event: MessageEvent<unknown>) => {
+  }
+
+  private observeLaneFrames(lane: CaptureLane, state: LaneState): void {
+    state.framer.port.onmessage = (event: MessageEvent<unknown>) => {
       const frame = event.data as Partial<WorkletFrame>;
       if (
         frame.type !== "frame" ||
@@ -466,7 +534,7 @@ export class CaptureClient {
     if (!this.session || this.stopping || state.health === "failed") return;
 
     this.queueHeartbeat(workletFrame);
-    state.frameQueue.push(workletFrame);
+    state.frameQueue.push({ workletFrame, deviceEpoch: state.deviceEpoch });
     if (!state.postInFlight) void this.flushFrameQueue(state);
   }
 
@@ -477,12 +545,14 @@ export class CaptureClient {
         const descriptor = this.descriptor;
         const context = this.context;
         if (!descriptor || !context) return;
-        const workletFrame = state.frameQueue[0];
+        const queuedFrame = state.frameQueue[0];
+        const { workletFrame, deviceEpoch } = queuedFrame;
+        const discontinuity = state.pendingDiscontinuityEpochs.has(deviceEpoch);
         const frame = makeV2Frame(
           workletFrame.lane,
           state.sequence,
-          state.deviceEpoch,
-          state.discontinuity,
+          deviceEpoch,
+          discontinuity,
           workletFrame.startFrame,
           workletFrame.samples,
           descriptor,
@@ -493,8 +563,10 @@ export class CaptureClient {
 
         state.frameQueue.shift();
         state.sequence += 1;
-        state.discontinuity = false;
-        if (result === "dropped") state.droppedFrames += 1;
+        if (discontinuity && result !== "unconfirmed") {
+          state.pendingDiscontinuityEpochs.delete(deviceEpoch);
+        }
+        if (result === "dropped" || result === "unconfirmed") state.droppedFrames += 1;
       }
     } finally {
       state.postInFlight = false;
@@ -519,6 +591,7 @@ export class CaptureClient {
       if (response.status === 429 && failure.code === LANE_CAPACITY_FAILURE_CODE) {
         return "retry";
       }
+      if (response.status === 429) return "dropped";
       if (
         response.status === 409 &&
         failure.code === "v2_out_of_order_frame" &&
@@ -541,7 +614,7 @@ export class CaptureClient {
       throw error;
     } catch (caught) {
       this.reportTransportError("frame", caught);
-      return "dropped";
+      return "unconfirmed";
     }
   }
 
@@ -577,6 +650,7 @@ export class CaptureClient {
     for (const state of this.lanes.values()) {
       state.frameQueue.length = 0;
       state.sequence = 0;
+      state.pendingDiscontinuityEpochs.clear();
     }
   }
 

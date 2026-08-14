@@ -22,7 +22,7 @@ type TestLaneState = {
   postInFlight: boolean;
   sequence: number;
   deviceEpoch: number;
-  discontinuity: boolean;
+  pendingDiscontinuityEpochs: Set<number>;
   discontinuities: number;
   droppedFrames: number;
   health: "capturing" | "degraded" | "failed";
@@ -53,7 +53,7 @@ function testLaneState(): TestLaneState {
     postInFlight: false,
     sequence: 0,
     deviceEpoch: 1,
-    discontinuity: false,
+    pendingDiscontinuityEpochs: new Set(),
     discontinuities: 0,
     droppedFrames: 0,
     health: "capturing",
@@ -121,7 +121,10 @@ type EventLaneClient = {
   context: AudioContext | null;
   descriptor: { sampleRate: number; frameSamples: number } | null;
   session: { id: string; viewToken: string } | null;
+  heartbeatNextStartFrame: number;
+  lanes: Map<CaptureLane, TestLaneState>;
   attachLane: (lane: "microphone" | "system", stream: MediaStream, tracks: MediaStreamTrack[]) => Promise<void>;
+  replaceLane: (lane: CaptureLane, stream: MediaStream, tracks: MediaStreamTrack[]) => Promise<void>;
 };
 
 class FakeAudioWorkletNode {
@@ -148,6 +151,7 @@ async function eventLaneClient(): Promise<{ client: EventLaneClient; microphone:
   };
   const context = Object.assign(new EventTarget(), {
     state: "running",
+    sampleRate: 4,
     destination: {},
     createMediaStreamSource: () => source,
     createGain: () => mute,
@@ -157,10 +161,17 @@ async function eventLaneClient(): Promise<{ client: EventLaneClient; microphone:
   active.context = context;
   active.descriptor = { sampleRate: 4, frameSamples: 2 };
   active.session = { id: "session", viewToken: "view-only" };
+  active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
   const microphone = fakeTrack();
   await active.attachLane("microphone", {} as MediaStream, [microphone]);
   await active.attachLane("system", {} as MediaStream, [fakeTrack()]);
   return { client: active, microphone };
+}
+
+function deliverWorkletFrame(state: TestLaneState, frame: ReturnType<typeof workletFrame>): void {
+  const onmessage = state.framer.port.onmessage as ((event: MessageEvent<unknown>) => void) | null;
+  if (!onmessage) throw new Error("lane worklet is not accepting frames");
+  onmessage({ data: frame } as MessageEvent<unknown>);
 }
 
 describe("browser capture frame contract", () => {
@@ -361,6 +372,80 @@ describe("browser capture frame contract", () => {
         system: { state: "capturing", failure_code: null },
       },
     });
+  });
+
+  it("preserves queued-source epochs and marks the first replacement frame discontinuous", async () => {
+    let resolveFirst!: (response: { ok: boolean; status: number }) => void;
+    const firstResponse = new Promise<{ ok: boolean; status: number }>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const fetchSpy = vi.fn().mockReturnValueOnce(firstResponse).mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, microphone } = await eventLaneClient();
+    const initial = client.lanes.get("microphone");
+    if (!initial) throw new Error("missing microphone lane");
+    const initialFramer = initial.framer;
+
+    deliverWorkletFrame(initial, workletFrame(0));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledOnce());
+    deliverWorkletFrame(initial, workletFrame(2));
+
+    const replacementTrack = fakeTrack();
+    await client.replaceLane("microphone", {} as MediaStream, [replacementTrack]);
+    const replacement = client.lanes.get("microphone");
+    if (!replacement) throw new Error("missing replacement microphone lane");
+    expect(initialFramer.port.onmessage).toBeNull();
+    expect(microphone.stop).toHaveBeenCalledOnce();
+    expect(replacement.deviceEpoch).toBe(2);
+    expect(replacement.discontinuities).toBe(1);
+
+    deliverWorkletFrame(replacement, workletFrame(4));
+    resolveFirst({ ok: true, status: 200 });
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(3));
+
+    const bodies = fetchSpy.mock.calls.map(([, request]) =>
+      JSON.parse((request as RequestInit).body as string),
+    );
+    expect(bodies).toMatchObject([
+      { sequence: 0, device_epoch: 1, discontinuity: false },
+      { sequence: 1, device_epoch: 1, discontinuity: false },
+      { sequence: 2, device_epoch: 2, discontinuity: true },
+    ]);
+  });
+
+  it("retains the replacement discontinuity after an unconfirmed frame delivery", async () => {
+    const transportError = new Error("connection reset");
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockRejectedValueOnce(transportError)
+      .mockResolvedValueOnce({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+    const initial = client.lanes.get("microphone");
+    if (!initial) throw new Error("missing microphone lane");
+
+    deliverWorkletFrame(initial, workletFrame(0));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledOnce());
+    await client.replaceLane("microphone", {} as MediaStream, [fakeTrack()]);
+    const replacement = client.lanes.get("microphone");
+    if (!replacement) throw new Error("missing replacement microphone lane");
+
+    deliverWorkletFrame(replacement, workletFrame(2));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(replacement.postInFlight).toBe(false));
+    deliverWorkletFrame(replacement, workletFrame(4));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(3));
+
+    const bodies = fetchSpy.mock.calls.map(([, request]) =>
+      JSON.parse((request as RequestInit).body as string),
+    );
+    expect(bodies).toMatchObject([
+      { sequence: 0, device_epoch: 1, discontinuity: false },
+      { sequence: 1, device_epoch: 2, discontinuity: true },
+      { sequence: 2, device_epoch: 2, discontinuity: true },
+    ]);
+    expect(replacement.droppedFrames).toBe(1);
   });
 
   it("reports a suspended AudioContext from its real statechange event", async () => {
