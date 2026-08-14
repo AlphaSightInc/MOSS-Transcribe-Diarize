@@ -390,6 +390,87 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["activeTimersAfterTerminal"], 0)
         self.assertEqual(probe["storageWrites"], [])
 
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever(self):
+        """The other half of "polled forever", and the half no snapshot contract can reach.
+
+        View authority is derived from the session lifecycle: `live_auth.py` grants a view
+        only while the session status is in `VIEWABLE_SESSION_STATUSES` ({active, closing}).
+        So the instant a session fails terminally, the viewer's very next `/snapshot` and
+        `/events` are 401 -- it never receives the body that would have told it why, no
+        matter what that body says.
+
+        The portal treated that 401 as a transient fault and retried it on a capped backoff
+        with no attempt limit. A meeting that died left a browser sitting on "Reconnecting:
+        HTTP 401" at 0.2 Hz for as long as the tab stayed open, never saying the meeting was
+        over. Both responses replayed below are real refusals off a real route.
+
+        This does not make the failure *reason* visible to a viewer -- that needs
+        `VIEWABLE_SESSION_STATUSES` to admit terminal statuses, in a file this ticket does
+        not own. It stops the endless poll and says the view ended, which is what the portal
+        can honestly know from a 401.
+        """
+
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4),
+                live_auth_state_path=Path(tmpdir) / "live-auth.json",
+                live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+                live_helper_lease_seconds=30.0,
+            )
+            html = TestClient(app).get("/live").text
+            capture = _paired_live_client(app)
+            created = capture.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+
+            capture.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
+            capture.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 2))
+
+            healthy_snapshot = viewer.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version=0"
+            )
+            healthy_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=-1")
+            self.assertEqual(healthy_snapshot.status_code, 200)
+            cursor = healthy_snapshot.json()["snapshot"]["session"]["version"]
+
+            refused = capture.post(
+                f"/api/live/sessions/{session_id}/frames", json=frame_payload(2, 1)
+            )
+            self.assertEqual(refused.status_code, 429)
+
+            dead_snapshot = viewer.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version={cursor}"
+            )
+            dead_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=0")
+            # The premise, stated as an assertion rather than assumed: the viewer cannot
+            # read the terminal snapshot at all.
+            self.assertEqual(dead_snapshot.status_code, 401)
+            self.assertEqual(dead_events.status_code, 401)
+
+            served = [
+                _served(healthy_snapshot),
+                _served(healthy_events),
+                _served(dead_snapshot),
+                _served(dead_events),
+            ]
+
+        probe = _run_served_polls_probe(html, served)
+
+        self.assertEqual(len(probe["requests"]), 4)
+        self.assertEqual(probe["connectionState"], "disconnected")
+        self.assertEqual(
+            probe["activeTimersAtEnd"], 0, "the portal kept retrying a view the server released"
+        )
+        self.assertIn("View ended", probe["statusDetail"])
+        self.assertNotIn("Reconnecting", probe["statusDetail"])
+
     def test_the_portal_stops_on_exactly_the_statuses_the_server_calls_terminal(self):
         """The terminal set is one contract, not two lists that happen to agree today.
 
@@ -429,6 +510,12 @@ class LivePortalRouteTest(unittest.TestCase):
         for `seq >= 0` and discarded seq 0 as already-seen, so `session_created` never
         reached the reader at all. With terminal snapshots suppressed by the version gate,
         the third poll answered `unchanged` and the portal kept polling a dead session.
+
+        The reader here is device-authorised on purpose. A *view*-token reader has its grant
+        released the moment the session stops being viewable and is answered 401 instead --
+        a separate defect on a separate path, held by
+        `test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever`.
+        Both readers have to stop; they learn to stop from different responses.
         """
 
         from fastapi.testclient import TestClient
@@ -465,7 +552,7 @@ class LivePortalRouteTest(unittest.TestCase):
                 events = client.get(events_url)
                 self.assertEqual(snapshot.status_code, 200)
                 self.assertEqual(events.status_code, 200)
-                served.extend([snapshot.json(), events.json()])
+                served.extend([_served(snapshot), _served(events)])
                 # Only the cursor half of the path: the probe drives the portal against a
                 # session id of its own, and it is the cursors that have to agree.
                 requested.extend([snapshot_url.split("/")[-1], events_url.split("/")[-1]])
@@ -491,10 +578,10 @@ class LivePortalRouteTest(unittest.TestCase):
 
         # The server really did serve seq 0 more than once: the endpoint is inclusive, so
         # the reader is the only thing that can keep it from being rendered twice.
-        self.assertEqual([event["seq"] for event in served[1]["events"]], [0])
-        self.assertIn(0, [event["seq"] for event in served[3]["events"]])
+        self.assertEqual([event["seq"] for event in served[1]["payload"]["events"]], [0])
+        self.assertIn(0, [event["seq"] for event in served[3]["payload"]["events"]])
         # And the third snapshot really is the one that carries the death.
-        self.assertEqual(served[4]["snapshot"]["session"]["status"], "failed")
+        self.assertEqual(served[4]["payload"]["snapshot"]["session"]["status"], "failed")
 
         probe = _run_served_polls_probe(html, served)
 
@@ -1322,8 +1409,12 @@ async function runEventRetention() {{
 }}
 
 async function runServedPolls() {{
-  // No hand-written payloads: every body here came off a live route.
-  const env = installPortal(servedResponses.map((payload) => ({{ payload }})));
+  // No hand-written payloads: every body and status code here came off a live route.
+  const env = installPortal(servedResponses.map((served) => ({{
+    payload: served.payload,
+    ok: served.ok,
+    status: served.status,
+  }})));
   env.nodes.sessionId.value = "served-session";
   env.nodes.viewToken.value = "served-view-secret";
   env.nodes.connectButton.listeners.click();
@@ -1425,3 +1516,18 @@ def _run_event_retention_contract_probe(html: str) -> dict:
 
 def _run_served_polls_probe(html: str, responses: list) -> dict:
     return _run_node_probe(html, "servedPolls", responses)
+
+
+def _served(response) -> dict:
+    """One real HTTP response, recorded whole -- body *and* status code.
+
+    The status is not decoration. A viewer's grant is released the moment its session stops
+    being viewable, so the responses that matter most on this path are refusals, and a probe
+    that replayed only bodies would quietly turn every one of them into a 200.
+    """
+
+    return {
+        "payload": response.json(),
+        "ok": response.status_code < 400,
+        "status": response.status_code,
+    }

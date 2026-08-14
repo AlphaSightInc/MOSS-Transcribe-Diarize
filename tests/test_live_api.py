@@ -563,6 +563,13 @@ class LiveApiTest(unittest.TestCase):
             first_delivery = list(delivered)
             sequence_cursor = max(delivered)
 
+            # -1 is the *only* cursor below the first sequence; anything lower is a bug in
+            # the caller and is refused at the wire rather than quietly clamped to 0.
+            self.assertEqual(
+                client.get(f"/api/live/sessions/{session_id}/events?since_seq=-2").status_code,
+                400,
+            )
+
             client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
             client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 2))
 

@@ -1,0 +1,25 @@
+x6-terminal-visibility -- gate-suite.txt
+
+What this proves:
+  The ticket's gate, run whole.
+
+Committed, re-runnable probes:
+  tests/test_live_service_runtime.py
+  tests/test_live_api.py
+  tests/test_live_portal.py
+
+Regenerate with:
+  .venv/bin/python evidence/phase1/x6-terminal-visibility/regenerate_probe_evidence.py
+
+$ PYTHONPATH="$PWD" .venv/bin/pytest -q tests/test_live_service_runtime.py tests/test_live_api.py tests/test_live_portal.py
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m [ 67%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m      [100%][0m
+[33m=============================== warnings summary ===============================[0m
+tests/test_live_api.py::LiveApiTest::test_a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+[33m[32m96 passed[0m, [33m[1m1 warning[0m, [32m331 subtests passed[0m[33m in 7.44s[0m[0m
+
+exit status: 0
