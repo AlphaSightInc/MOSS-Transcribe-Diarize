@@ -4,3 +4,5 @@
 [loop 20260814-030315-98829] preflight failed before iteration 1
 
 [loop 20260814-030402-1961] start budget=40 agent=codex branch=afk2/r1-reference-ui
+
+[iteration 1] target: reconcile the binding r1 acceptance criteria before product work; files: scripts/afk2-r1-reference-ui/context.md, scripts/afk2-r1-reference-ui/progress.txt; validation: `python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check` -> PREFLIGHT OK (reference_repo and node_toolchain present), clean diff; evidence: context.md Acceptance checklist and the re-runnable preflight command; learned: the faithful port must preserve the 3-column shell with an inert 48 px right rail rendered as `data-right-collapsed="true"`, while transport changes remain behind dispatchWsEvent; next: inventory current and reference frontend trees, then port the smallest real shell slice.
