@@ -1,4 +1,17 @@
+import { useRef, useState } from "preact/hooks";
+import { SegmentedControl } from "./components/SegmentedControl";
+
+type PhaseOneMode = "live" | "file";
+
 export function App() {
+  const [mode, setMode] = useState<PhaseOneMode>("live");
+  const [findOpen, setFindOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const modeLabel = mode === "live" ? "Live" : "File";
+
   return (
     <div
       className="app"
@@ -16,7 +29,7 @@ export function App() {
         <div className="session-meta" aria-live="polite">
           <span className="session-title">LiveTranscribe</span>
           <span className="session-dot" aria-hidden="true" />
-          <span className="session-chip">Live</span>
+          <span className="session-chip">{modeLabel}</span>
         </div>
 
         <div className="top-right" />
@@ -26,18 +39,67 @@ export function App() {
         className="main"
         id="main"
         data-left-collapsed="false"
-        data-right-collapsed="false"
+        data-right-collapsed="true"
       >
-        <section className="panel control-panel" aria-labelledby="capture-panel-title">
-          <header className="panel-head">
-            <h2 className="panel-title" id="capture-panel-title">
-              <span className="panel-title-text">Capture</span>
-            </h2>
-          </header>
-          <div className="panel-body">
-            <p className="empty-state">Capture controls are not available yet.</p>
+        <aside className="panel control-panel" id="control-panel" aria-labelledby="capture-panel-title">
+          <div className="panel-head">
+            <h2 className="panel-title" id="capture-panel-title">Controls</h2>
           </div>
-        </section>
+          <div className="panel-body">
+            <section className="control-section">
+              <div className="label">Mode</div>
+              <SegmentedControl
+                ariaLabel="Session mode"
+                options={[
+                  { value: "live", label: "Live" },
+                  { value: "file", label: "File" }
+                ]}
+                value={mode}
+                onChange={setMode}
+              />
+            </section>
+
+            {mode === "live" ? (
+              <section className="control-section" data-mode="live">
+                <div className="label">Capture</div>
+                <p className="hint">Choose Start capture when browser capture is connected.</p>
+                <button type="button" className="record-btn" disabled>
+                  <span>Start capture</span>
+                </button>
+              </section>
+            ) : (
+              <section className="control-section" data-mode="file">
+                <div className="label">File</div>
+                <div className="field field--input-prompt">
+                  <input
+                    aria-label="Selected file"
+                    readOnly
+                    type="text"
+                    value={selectedFileName}
+                    placeholder="No file selected."
+                  />
+                  <button
+                    type="button"
+                    className="field-btn"
+                    aria-label="Choose file"
+                    title="Choose file"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <span aria-hidden="true">↑</span>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="audio/*"
+                    hidden
+                    onChange={(event) => setSelectedFileName(event.currentTarget.files?.[0]?.name ?? "")}
+                  />
+                </div>
+                <p className="hint">Select an audio file to prepare it for transcription.</p>
+              </section>
+            )}
+          </div>
+        </aside>
 
         <section className="transcript-shell" id="transcript-panel">
           <div className="transcript-pane">
@@ -45,29 +107,58 @@ export function App() {
               <span className="tr-head-spacer" aria-hidden="true" />
               <div className="tr-title-wrap">
                 <h1 className="tr-title">Live transcript</h1>
-                <p className="tr-meta">Ready for a session</p>
               </div>
             </header>
+            <div className="tr-legend" id="legend">
+              <div className="tr-legend-right" />
+            </div>
             <div className="tr-body-wrap">
+              <div className="tr-floating-tools" id="tr-floating-tools">
+                <button
+                  type="button"
+                  className="mini-btn"
+                  aria-expanded={findOpen}
+                  onClick={() => setFindOpen((current) => !current)}
+                >
+                  Find
+                </button>
+              </div>
+              {findOpen ? (
+                <div className="tr-find">
+                  <label className="tr-find-label" htmlFor="transcript-find-input">Find</label>
+                  <div className="tr-find-field">
+                    <input
+                      id="transcript-find-input"
+                      type="text"
+                      placeholder="Search transcript…"
+                      value={searchQuery}
+                      onInput={(event) => setSearchQuery(event.currentTarget.value)}
+                    />
+                  </div>
+                  {searchQuery ? <span className="tr-find-meta">0 matches</span> : null}
+                </div>
+              ) : null}
               <div className="tr-body">
                 <p className="empty-state transcript-empty-state">
-                  Start a session to see the transcript.
+                  Transcript will appear here when a session starts.
                 </p>
               </div>
+              <div className="tr-fade" aria-hidden="true" />
             </div>
           </div>
         </section>
 
-        <section className="panel history-panel" aria-labelledby="history-panel-title">
-          <header className="panel-head">
+        <aside
+          className="panel history-panel collapsed"
+          aria-hidden="true"
+          aria-labelledby="history-panel-title"
+        >
+          <div className="panel-head">
             <h2 className="panel-title" id="history-panel-title">
-              <span className="panel-title-text">History</span>
+              <span className="panel-title-rail">History</span>
             </h2>
-          </header>
-          <div className="panel-body">
-            <p className="empty-state">No saved sessions.</p>
           </div>
-        </section>
+        </aside>
       </main>
     </div>
   );

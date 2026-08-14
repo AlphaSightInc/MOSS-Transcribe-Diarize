@@ -1,7 +1,8 @@
 # Context — r1-reference-ui
 
-Iteration 1. The binding acceptance checklist has been reconciled against the
-PRD, charter, T-02, T-05, T-07, and T-10. No product source has changed yet.
+Iteration 2. The binding acceptance checklist has been reconciled against the
+PRD, charter, T-02, T-05, T-07, and T-10. The first visible reference-shell
+slice now replaces the stub; the full port remains open.
 
 ## Where things stand
 
@@ -9,6 +10,18 @@ PRD, charter, T-02, T-05, T-07, and T-10. No product source has changed yet.
 - The first fleet's work is merged into `dev`, with its P0 regressions already repaired by the
   supervisor. You are building on a tree that is green apart from known pre-existing failures.
 - All 12 wayfinder decision tickets are **closed**. Design is settled; this is execution.
+- `frontend/src/App.tsx` now uses the reference shell's layout and class contract:
+  a three-column `.main`, the reference segmented control with only `Live | File`,
+  transcript find affordance, browser file selection surface, and a non-interactive
+  right `History` rail. It renders `data-right-collapsed="true"`; its `HistoryPanel`
+  has no body or click target.
+- `frontend/src/components/SegmentedControl.tsx` is ported from the reference with
+  only unused disabled-option support removed. The current shell is still 165 lines
+  against the reference App's 1773, so this is not a fidelity completion claim.
+- Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
+  python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
+  Vitest: 2 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
+  not a failure.
 
 ## Read before your first change
 
@@ -65,9 +78,11 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
 
 ## Ranked candidates
 
-1. Confirm preflight remains green and inspect the current/reference frontend trees to choose
-   the smallest faithful shell port; if a prerequisite is missing, **stop and escalate**.
-2. Port the smallest vertical slice toward the deliverable — the real reference shell, not an
-   evidence-only substitute — within `frontend/src/` ownership.
-3. Add committed, re-runnable comparison probes and raw artifacts only once the port has a
-   concrete surface to measure.
+1. Port the reference transcript data path: its transcript/state/lib modules and component tests,
+   deleting LLM, summary, voiceprint, and rename surfaces rather than leaving dead controls.
+   Preserve generic speaker labels and search behavior.
+2. Replace reference `api/ws.ts` with the T-02 poller through the unchanged
+   `dispatchWsEvent()` seam, then bind the transcript shell to that state. Do not invent server
+   routes or a client-side capture-health policy.
+3. Add committed, re-runnable counts and rendered-rail artifacts after the concrete component
+   port; then implement the charter's screenshot-diff probe against the reference bundle.
