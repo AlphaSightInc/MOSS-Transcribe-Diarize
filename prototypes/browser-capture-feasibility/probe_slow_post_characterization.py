@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""PROTOTYPE: characterize the page's real worklet-to-POST behavior under a slow POST.
+"""PROTOTYPE: regression-test the page's real worklet-to-POST behavior under a slow POST.
 
 Question: when strict-v2 frame POST responses are slower than the descriptor frame
-period, does the actual browser page lose frames, serialize them, or let outstanding
-requests grow without a bound?
+period, does the actual browser page admit every elapsed-cadence frame while keeping one
+in-flight POST per lane?
 
 Run:
   PYTHONDONTWRITEBYTECODE=1 python3 \
@@ -126,8 +126,14 @@ def _lane_summary(records: list[dict], *, frame_period_ms: float, accepted: int)
         "elapsed_expected_frames": elapsed_expected_frames,
         "emitted_minus_elapsed_expected": len(records) - elapsed_expected_frames,
         "accepted_minus_emitted": accepted - len(records),
+        "accepted_minus_elapsed_expected": accepted - elapsed_expected_frames,
         "first_sequence": records[0].get("sequence"),
         "last_sequence": records[-1].get("sequence"),
+        "wire_sequences": [record.get("wire_sequence") for record in records],
+        "queue_capacities": sorted({record.get("queue_capacity") for record in records}),
+        "max_queue_depth_at_enqueue": max(
+            int(record.get("queue_depth_at_enqueue", 0)) for record in records
+        ),
     }
 
 
@@ -139,12 +145,18 @@ def _attach_response_delay(app, response_delay_seconds: float) -> dict:
         "responses_currently_held": 0,
         "max_responses_held": 0,
         "frame_status_counts": {},
+        "lanes": {},
     }
     lock = threading.Lock()
 
     @app.middleware("http")
     async def delay_frame_response(request, call_next):
         is_frame = request.method == "POST" and request.url.path.endswith("/frames")
+        lane = None
+        if is_frame:
+            lane = request.headers.get("x-prototype-lane")
+            if lane not in {"system", "microphone"}:
+                raise RuntimeError(f"frame route missing prototype lane header: {lane!r}")
         response = await call_next(request)
         if not is_frame:
             return response
@@ -156,6 +168,14 @@ def _attach_response_delay(app, response_delay_seconds: float) -> dict:
             metrics["max_responses_held"] = max(
                 metrics["max_responses_held"], metrics["responses_currently_held"]
             )
+            lane_metrics = metrics["lanes"].setdefault(
+                lane,
+                {"responses_currently_held": 0, "max_responses_held": 0},
+            )
+            lane_metrics["responses_currently_held"] += 1
+            lane_metrics["max_responses_held"] = max(
+                lane_metrics["max_responses_held"], lane_metrics["responses_currently_held"]
+            )
         try:
             import asyncio
 
@@ -165,6 +185,7 @@ def _attach_response_delay(app, response_delay_seconds: float) -> dict:
             with lock:
                 metrics["responses_currently_held"] -= 1
                 metrics["frame_responses_completed"] += 1
+                metrics["lanes"][lane]["responses_currently_held"] -= 1
 
     return metrics
 
@@ -192,10 +213,14 @@ def _run(*, chrome_bin: str, response_delay_seconds: float, target_frames_per_la
             start_new_session=True,
         )
         deadline = time.monotonic() + 30.0
+        last_lane_counts: dict[str, int] = {}
+        last_v2_status = None
         while time.monotonic() < deadline:
             verdict = _json(f"{base_url}/prototype/verdict")
             system = _frame_records(verdict, "system")
             microphone = _frame_records(verdict, "microphone")
+            last_lane_counts = {"system": len(system), "microphone": len(microphone)}
+            last_v2_status = None if verdict.get("v2_session") is None else verdict["v2_session"].get("status")
             if (
                 verdict.get("v2_session")
                 and len(system) >= target_frames_per_lane
@@ -204,11 +229,12 @@ def _run(*, chrome_bin: str, response_delay_seconds: float, target_frames_per_la
                 break
             time.sleep(0.05)
         else:
-            raise RuntimeError("page did not produce the requested strict-v2 frame telemetry")
+            raise RuntimeError(
+                "page did not produce the requested strict-v2 frame telemetry: "
+                f"lane_counts={last_lane_counts} v2_status={last_v2_status} "
+                f"held={slow_post_metrics['max_responses_held']}"
+            )
 
-        # Telemetry is posted immediately before the frame fetch.  Let the real route catch up
-        # once before comparing it with admission, while the delayed responses remain observable.
-        time.sleep(min(response_delay_seconds, 1.0))
         verdict = _json(f"{base_url}/prototype/verdict")
         descriptor = verdict["descriptor"]
         frame_period_ms = descriptor["frame_samples"] / descriptor["sample_rate"] * 1_000
@@ -222,20 +248,26 @@ def _run(*, chrome_bin: str, response_delay_seconds: float, target_frames_per_la
             for lane in ("system", "microphone")
         }
         assertions = {
-            # A one-frame tolerance admits the page/server observation race but would fail if a
-            # one-in-flight guard discarded the worklet messages while this response is delayed.
             "accepted_frames_approximately_match_emitted_frames": all(
                 abs(summary["accepted_minus_emitted"]) <= 1
                 for summary in lane_summaries.values()
             ),
-            "emitted_frames_approximately_match_elapsed_cadence": all(
-                abs(summary["emitted_minus_elapsed_expected"]) <= 1
+            # This direct admission-to-elapsed-cadence join is the P0 gate: reinstating a
+            # one-in-flight worklet guard would make accepted frames fall behind elapsed frames.
+            "admitted_frames_approximately_match_elapsed_cadence": all(
+                abs(summary["accepted_minus_elapsed_expected"]) <= 1
                 for summary in lane_summaries.values()
             ),
-            # This is a characterization assertion, not a desired final state: a serial sender
-            # should make it false after the queued transport lands.
-            "current_page_allows_multiple_frame_posts_to_remain_in_flight": (
-                slow_post_metrics["max_responses_held"] > 1
+            "per_lane_frame_posts_are_serial": all(
+                lane_metrics["max_responses_held"] == 1
+                for lane_metrics in slow_post_metrics["lanes"].values()
+            ) and set(slow_post_metrics["lanes"]) == {"system", "microphone"},
+            "wire_sequences_follow_admitted_worklet_order": all(
+                # The route can admit one response before the page's asynchronous telemetry
+                # POST lands; compare wire order to the recorded successful sends, while the
+                # direct admission-to-cadence assertion above covers that one-record race.
+                summary["wire_sequences"] == list(range(summary["emitted_frames"]))
+                for summary in lane_summaries.values()
             ),
         }
         if not all(assertions.values()):
@@ -273,7 +305,7 @@ def main() -> int:
         "probe": "prototypes/browser-capture-feasibility/probe_slow_post_characterization.py",
         "question": (
             "under a real strict-v2 POST response delay, does the actual page preserve capture "
-            "cadence and admissions without unbounded in-flight requests"
+            "cadence and admissions with a bounded per-lane serial sender"
         ),
         "scope": (
             "local production HTTP routes, deterministic provider, synthetic 48 kHz browser "

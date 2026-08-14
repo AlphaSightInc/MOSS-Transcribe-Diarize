@@ -428,3 +428,26 @@ the head is sent, and keep the exact head for the route's established retry taxo
 fills, drop only with a cumulative `dropped_frames` count and a discontinuity mark on the first
 post-gap frame; do not silently advance the wire sequence. Raw arrays and server response-hold
 metrics: `evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json`.
+
+## X1 descriptor-bounded FIFO regression — 2026-08-14
+
+**Question:** after replacing concurrent frame POSTs with the measured per-lane FIFO, does a
+slow strict-v2 response preserve admitted frames at worklet cadence while keeping each lane to one
+in-flight POST?
+
+**Method:** `probe_slow_post_characterization.py` again drove real headless Chrome, the page's
+two 48 kHz synthetic sources, and the local production strict-v2 route. The middleware held each
+frame response for 100 ms, longer than the 62.5 ms descriptor frame period. The page derived its
+per-lane queue capacity from the live descriptor's `320000 / 1000 = 320` frames; raw worklet
+timestamps, wire sequences, queue depths, route admissions, and held-response arrays are in
+`evidence/phase1/x1-frame-drop/iteration-3-slow-post-fifo.json`.
+
+**Verdict:** passed. Over about 2.93/3.00 s, microphone/system admitted 49/50 frames versus
+48/49 elapsed-cadence frames (the permitted one-record observation race). Both lanes held exactly
+one frame response at a time, wire sequences were 0..47 and 0..48 in worklet order, and queued
+depth peaked at 21 of 320 without drops. The sender retains its FIFO head across an unsuccessful
+response; overflow increments the heartbeat's real `dropped_frames` and marks the first later
+admitted frame discontinuous.
+
+This proves the P0 slow-POST transport case only. It does not exercise an overflow, 409/recreate,
+production 8000-frame geometry, a five-minute hidden tab, display capture, or a real provider.

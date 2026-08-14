@@ -1,6 +1,6 @@
 # Context — x1-frame-drop
 
-Iteration 2.
+Iteration 3.
 
 Branch `afk3/x1-frame-drop` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -22,8 +22,8 @@ python3 scripts/afk-guardrails/preflight.py x1-frame-drop
 
 ## Gate checklist
 
-- [ ] Slow-POST probe proves captured frames are queued/backpressured rather than silently
-  discarded, and includes an elapsed-time vs admitted-frame assertion that fails on regression.
+- [x] Slow-POST probe proves captured frames are queued rather than silently discarded, and has a
+  direct elapsed-time vs admitted-frame assertion that fails on regression.
 - [ ] G7 runs hidden for more than five minutes at descriptor-enforced
   `frame_samples=8000`, joins strict-v2 admissions, and preserves its raw arrays.
 - [ ] A forced 409 exercises `recreateSession`, drains sends before resetting sequence state,
@@ -42,24 +42,29 @@ The PRD's literal `sendPaused || sendInFlight` predecessor is on the unmerged
 POST immediately and increments `seq` before its response. The P0 behavior requirement remains
 open: the current path is neither a serial queue nor an explicitly backpressured sender.
 
-## Measured decision
+## P0 transport result
 
-`probe_slow_post_characterization.py` now drives the actual page, worklet, local strict-v2 route,
-and 100 ms delayed frame responses. At the route's 1,000 / 16,000 geometry (62.5 ms/frame), each
-lane emitted and the route admitted 50 frames over ~3.065 s, but four responses were held at once.
-The committed elapsed-vs-admitted assertion would fail if an in-flight guard returned and dropped
-worklet messages. This is characterization evidence only, not a passing P0/G7 claim; raw arrays:
-`evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json`.
+The page now derives one FIFO capacity per lane from
+`descriptor.bounds.max_retained_samples / descriptor.frame_samples`, keeps one frame POST in
+flight per lane, and assigns a wire sequence only to the FIFO head. It advances that sequence only
+after a successful response; an unsuccessful response retains the same head. Queue overflow
+increments the heartbeat's actual `dropped_frames` and marks the first later accepted frame
+discontinuous.
 
-The smallest bounded policy is a per-lane serial sender and FIFO whose capacity is derived from
-`descriptor.bounds.max_retained_samples / descriptor.frame_samples`. On overflow it must report
-the real `dropped_frames` and mark the first post-gap frame discontinuous; sequences are assigned
-only when the FIFO head is sent. This avoids a new magic capacity while preserving each route
-failure's existing sequence semantics.
+`probe_slow_post_characterization.py` drives the actual page/worklet, local strict-v2 route, and
+100 ms delayed frame responses. At 1,000 / 16,000 geometry (62.5 ms/frame), microphone/system
+admitted 49/50 frames over 2.932/2.996 s versus 48/49 elapsed-cadence frames; the direct
+admitted-vs-elapsed gate allows only the one-record observation race. Each lane held exactly one
+response and had wire sequences in worklet order; queue depth peaked at 21 of the descriptor's
+320-frame capacity. Raw arrays: `evidence/phase1/x1-frame-drop/iteration-3-slow-post-fifo.json`.
+
+This resolves the P0 slow-POST regression only. It is deterministic-provider/synthetic-source
+evidence at 1,000-frame geometry, not the 8000-frame hidden G7 run; it neither forces overflow
+nor exercises 409/recreate.
 
 ## Ranked candidates
 
-1. Implement the measured descriptor-derived per-lane FIFO/serial sender and true heartbeat
-   counters, then turn the elapsed-vs-admitted assertion into its no-loss regression gate.
-2. Exercise recreate-after-409 only after the new sender can drain deterministically; then re-run
-   production-geometry G7 with raw arrays.
+1. Add a forced 409 → drain → recreate → clean-resume probe. It must prove no in-flight send can
+   poison the reset sequence and the failed-recreate control stays usable.
+2. Restore G7's required `--frame-samples 8000` argument and run the hidden-tab strict-v2
+   admission join for more than five minutes, preserving raw arrays.
