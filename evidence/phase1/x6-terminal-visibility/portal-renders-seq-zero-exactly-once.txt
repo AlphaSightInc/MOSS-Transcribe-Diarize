@@ -16,6 +16,8 @@ Committed, re-runnable probes:
 Regenerate with:
   .venv/bin/python evidence/phase1/x6-terminal-visibility/regenerate_probe_evidence.py
 
+Interpreter: /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize/.venv/bin/pytest
+
 $ PYTHONPATH="$PWD" .venv/bin/pytest -v tests/test_live_portal.py::LivePortalRouteTest::test_the_portal_renders_seq_zero_once_and_stops_on_a_served_terminal_snapshot tests/test_live_portal.py::LivePortalRouteTest::test_the_portal_stops_on_exactly_the_statuses_the_server_calls_terminal tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_browser_contract_polls_renders_controls_and_stops tests/test_live_service_runtime.py::test_events_accepts_the_cursor_before_the_first_event_and_refuses_anything_lower
 [1m============================= test session starts ==============================[0m
 platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python3
@@ -36,6 +38,6 @@ tests/test_live_portal.py::LivePortalRouteTest::test_the_portal_renders_seq_zero
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-[33m========================= [32m4 passed[0m, [33m[1m1 warning[0m[33m in 2.84s[0m[33m =========================[0m
+[33m========================= [32m4 passed[0m, [33m[1m1 warning[0m[33m in 2.56s[0m[33m =========================[0m
 
 exit status: 0

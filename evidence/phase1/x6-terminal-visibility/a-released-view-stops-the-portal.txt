@@ -1,0 +1,39 @@
+x6-terminal-visibility -- a-released-view-stops-the-portal.txt
+
+What this proves:
+  The other half of the outage, and the half no snapshot contract can reach: a
+  view-token reader's grant is released the moment its session stops being viewable,
+  so it is answered 401 on /snapshot and /events and never receives the terminal body
+  at all. The probe asserts that premise as well as the fix -- the portal stops on a
+  released view instead of retrying it on a capped backoff forever.
+
+Committed, re-runnable probes:
+  tests/test_live_portal.py::LivePortalRouteTest::test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever
+  tests/test_live_api.py::LiveApiTest::test_failed_stop_revokes_the_view_without_stranding_capture_authority
+
+Regenerate with:
+  .venv/bin/python evidence/phase1/x6-terminal-visibility/regenerate_probe_evidence.py
+
+Interpreter: /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize/.venv/bin/pytest
+
+$ PYTHONPATH="$PWD" .venv/bin/pytest -v tests/test_live_portal.py::LivePortalRouteTest::test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever tests/test_live_api.py::LiveApiTest::test_failed_stop_revokes_the_view_without_stranding_capture_authority
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+[1mcollecting ... [0mcollected 2 items
+
+tests/test_live_portal.py::LivePortalRouteTest::test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever [32mPASSED[0m[32m [ 50%][0m
+tests/test_live_api.py::LiveApiTest::test_failed_stop_revokes_the_view_without_stranding_capture_authority [32mPASSED[0m[33m [100%][0m
+
+[33m=============================== warnings summary ===============================[0m
+tests/test_live_portal.py::LivePortalRouteTest::test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+[33m========================= [32m2 passed[0m, [33m[1m1 warning[0m[33m in 2.46s[0m[33m =========================[0m
+
+exit status: 0

@@ -30,13 +30,17 @@ OWNED = (
     "moss_transcribe_diarize/app/live_service_runtime.py",
     "moss_transcribe_diarize/app/live_portal.py",
 )
+# The scenario builds its session out of the live-API test helpers, so the baseline has to
+# stage dev's copy of those too: this branch's copy imports names dev's runtime does not
+# export, and importing it would fail before the scenario ever ran.
+BASELINE_HELPERS = ("tests/test_live_api.py",)
 
 
-def scenario() -> dict:
+def scenario(staged: str | None = None) -> dict:
     """Create a session, catch a viewer up, kill it, and poll once more."""
     import tempfile as _tempfile
 
-    sys.path.insert(0, str(REPO / "tests"))
+    sys.path.insert(0, str(Path(staged) / "tests") if staged else str(REPO / "tests"))
     from test_live_api import LiveApiTest, frame_payload, make_live_runtime
     from moss_transcribe_diarize.app.server import create_app
 
@@ -87,14 +91,15 @@ def run_baseline() -> dict:
     with tempfile.TemporaryDirectory() as staging:
         stage = Path(staging)
         shutil.copytree(REPO / "moss_transcribe_diarize", stage / "moss_transcribe_diarize")
-        for rel in OWNED:
+        (stage / "tests").mkdir()
+        for rel in (*OWNED, *BASELINE_HELPERS):
             source = subprocess.run(
                 ["git", "show", f"dev:{rel}"],
                 cwd=REPO, capture_output=True, text=True, check=True,
             ).stdout
             (stage / rel).write_text(source, encoding="utf-8")
         done = subprocess.run(
-            [sys.executable, str(Path(__file__).resolve()), "--emit-json"],
+            [sys.executable, str(Path(__file__).resolve()), "--emit-json", "--staged", str(stage)],
             cwd=REPO,
             env={"PYTHONPATH": f"{stage}:{REPO}", "PATH": "/usr/bin:/bin"},
             capture_output=True,
@@ -109,7 +114,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", action="store_true", help="run against dev's product files")
     parser.add_argument("--emit-json", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--staged", default=None, help=argparse.SUPPRESS)
     args = parser.parse_args()
+
+    if args.emit_json:
+        print(json.dumps(scenario(args.staged)))
+        return 0
 
     if args.baseline:
         result = run_baseline()
@@ -117,10 +127,6 @@ def main() -> int:
     else:
         result = scenario()
         label = "AFTER -- product files as they stand on this branch"
-
-    if args.emit_json:
-        print(json.dumps(scenario()))
-        return 0
 
     print(label)
     print(f"the viewer's cursor when the session died: since_version={result['viewer_cursor']}")

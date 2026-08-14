@@ -17,6 +17,8 @@ Committed, re-runnable probes:
 Regenerate with:
   .venv/bin/python evidence/phase1/x6-terminal-visibility/regenerate_probe_evidence.py
 
+Interpreter: /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize/.venv/bin/pytest
+
 $ PYTHONPATH="$PWD" .venv/bin/pytest -v tests/test_live_api.py::LiveApiTest::test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read tests/test_live_service_runtime.py::test_a_terminal_failure_reaches_a_reader_that_already_holds_the_current_version tests/test_live_service_runtime.py::test_a_healthy_session_still_answers_unchanged_to_a_caught_up_reader tests/test_live_service_runtime.py::test_a_terminal_failure_does_not_relabel_a_session_that_already_ended tests/test_live_api.py::LiveApiTest::test_failed_stop_revokes_the_view_without_stranding_capture_authority
 [1m============================= test session starts ==============================[0m
 platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python3
@@ -38,6 +40,6 @@ tests/test_live_api.py::LiveApiTest::test_a_polling_viewer_learns_a_session_died
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-[33m========================= [32m5 passed[0m, [33m[1m1 warning[0m[33m in 2.49s[0m[33m =========================[0m
+[33m========================= [32m5 passed[0m, [33m[1m1 warning[0m[33m in 2.42s[0m[33m =========================[0m
 
 exit status: 0
