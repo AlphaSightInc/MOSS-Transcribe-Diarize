@@ -1,6 +1,7 @@
 import { useRef, useState } from "preact/hooks";
 import { SegmentedControl } from "./components/SegmentedControl";
 import { TranscriptPane } from "./components/TranscriptPane";
+import { sessionStatus, sessionStatusLine } from "./state/session";
 
 type PhaseOneMode = "live" | "file";
 
@@ -10,6 +11,8 @@ export function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const modeLabel = mode === "live" ? "Live" : "File";
+  const status = sessionStatus.value;
+  const statusLabel = sessionStatusLine.value ?? (status === "idle" ? "Standby" : status);
 
   return (
     <div
@@ -20,9 +23,9 @@ export function App() {
       data-font="serif"
     >
       <header className="topbar">
-        <span className="status top-status" data-state="idle">
+        <span className="status top-status" data-state={status}>
           <span className="status-dot" aria-hidden="true" />
-          <span>Standby</span>
+          <span>{statusLabel}</span>
         </span>
 
         <div className="session-meta" aria-live="polite">

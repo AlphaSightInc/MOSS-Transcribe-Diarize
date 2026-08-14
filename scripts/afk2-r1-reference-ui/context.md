@@ -1,6 +1,6 @@
 # Context — r1-reference-ui
 
-Iteration 4. The binding acceptance checklist has been reconciled against the
+Iteration 5. The binding acceptance checklist has been reconciled against the
 PRD, charter, T-02, T-05, T-07, and T-10. The first visible reference-shell
 slice and reduced transcript component now replace the stub; the full port remains open.
 
@@ -32,9 +32,20 @@ slice and reduced transcript component now replace the stub; the full port remai
   reference component tests prove real state-derived rows, provisional rendering, generic-label
   enforcement, and search navigation; they would fail if the component no longer used transcript
   state or search results.
+- `frontend/src/api/mossPoller.ts` now replaces the reference websocket transport with the
+  T-02 two-cursor poller. It fetches snapshot and event cursors together, parses real MOSS
+  snapshot/event shapes, emits only the five reachable reference events through
+  `dispatchWsEvent()`, fully replaces the transcript for each new snapshot, dedupes replayed
+  event sequences, and uses 250 ms active / 2 s finalizing-idle cadence with timeout,
+  cancellation, and capped retry backoff. It maps span-relative timestamps, stable
+  committed/provisional keys, silent relabels, finalization, and server-authored status lines.
+  `mossPoller.test.ts` proves raw payload mapping, stale provisional rows across a generation
+  change, and render-before-cursor advancement. There is deliberately no application caller
+  yet: r2 owns live session creation/capture and must instantiate this adapter, including the
+  ruled sessionStorage reattach contract.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
-  Vitest: 8 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
+  Vitest: 11 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,
   not a failure.
 
 ## Read before your first change
@@ -92,10 +103,11 @@ python3 scripts/afk-guardrails/preflight.py r1-reference-ui
 
 ## Ranked candidates
 
-1. Replace reference `api/ws.ts` with the T-02 poller through the unchanged
-   `dispatchWsEvent()` seam, then bind the transcript shell to that state. Do not invent server
-   routes or a client-side capture-health policy.
-2. Port the generic `ToastLayer` after the poller supplies a real caller; do not add a local
-   substitute toast state or a no-op trigger.
-3. Add committed, re-runnable counts and rendered-rail artifacts after the concrete component
+1. Add committed, re-runnable counts and rendered-rail artifacts after the concrete component
    port; then implement the charter's screenshot-diff probe against the reference bundle.
+2. Port the generic `ToastLayer` only when a live/file adapter instantiates the poller and gives
+   its error/terminal callbacks a real caller; do not add a local substitute toast state or a
+   no-op trigger.
+3. When r2 provides session creation, wire its live client to `createMossSessionPoller()` and
+   retain the T-02 sessionStorage reattach contract; do not invent a second poller or capture
+   health state machine here.
